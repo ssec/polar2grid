@@ -28,7 +28,7 @@ K_REFLECTANCE = 'ReflectanceVar'
 K_NAVIGATION = 'NavigationFilenameGlob'  # glob to search for to find navigation file that corresponds
 K_GEO_REF = 'CdfcbGeolocationFileGlob' # glob to look for to identify likely
 
-GEO_GUIDE = {'M' : 'GMODO', 'I': 'GIMGO'}
+GEO_GUIDE = {'M' : 'GMTCO', 'I': 'GITCO'}
 
 
 # FIXME: add [IM] binding, also add RadianceFactors/ReflectanceFactors
