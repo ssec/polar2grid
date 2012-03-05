@@ -26,22 +26,29 @@ K_ALTITUDE = 'AltitudeVar'
 K_RADIANCE = 'RadianceVar'
 K_REFLECTANCE = 'ReflectanceVar'
 K_NAVIGATION = 'NavigationFilenameGlob'  # glob to search for to find navigation file that corresponds
-K_GEO_REF = 'CdfcbGeolocationFileGlob' # glob to look for to identify likely
+K_GEO_REF = 'CdfcbGeolocationFileGlob' # glob which would match the N_GEO_Ref attribute
 
-GEO_GUIDE = {'M' : 'GMTCO', 'I': 'GITCO'}
+GEO_GUIDE = {'M' : 'GMODO', 'I': 'GIMGO'}
 
-
-# FIXME: add [IM] binding, also add RadianceFactors/ReflectanceFactors
+# FIXME: add RadianceFactors/ReflectanceFactors
 VAR_GUIDE = { r'GITCO.*' : { K_LATITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Latitude',
                              K_LONGITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Longitude',
                              K_ALTITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Height' },
               r'GMTCO.*' : { K_LATITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Latitude',
                              K_LONGITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Longitude',
                              K_ALTITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Height' },
-              r'SV(?P<kind>[IM])(?P<band>\d\d).*': { K_RADIANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Radiance',
-                                        K_REFLECTANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Reflectance',
-                                        K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-                                        K_NAVIGATION: r'G%(kind)sTCO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
+              r'GDNBO.*' : { K_LATITUDE: '/All_Data/VIIRS-DNB-GEO-TC_All/Latitude',
+                             K_LONGITUDE: '/All_Data/VIIRS-DNB-GEO-TC_All/Longitude',
+                             K_ALTITUDE: '/All_Data/VIIRS-DNB-GEO-TC_All/Height' },
+              r'SV(?P<kind>[IM])(?P<band>\d\d).*': { 
+                            K_RADIANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Radiance',
+                            K_REFLECTANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Reflectance',
+                            K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+                            K_NAVIGATION: r'G%(kind)sTCO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
+              r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
+                            K_REFLECTANCE: None,
+                            K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+                            K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
             }
 
 # missing value sentinels for different datasets
