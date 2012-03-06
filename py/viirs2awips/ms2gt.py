@@ -19,11 +19,11 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
     args = ["ll2cr"]
     if verbose:
         args.append("-v")
-    if f_scansout:
+    if f_scansout is not None:
         args.extend(["-f", "%d" % f_scansout])
-    if rind:
+    if rind is not None:
         args.extend(["-r", "%d" % rind])
-    if fill_io:
+    if fill_io is not None:
         args.extend(["-F", "%d" % fill_io[0], "%d" % fill_io[1]])
     args.extend([colsin, scansin, rowsperscan, latfile, lonfile, gpdfile])
     if tag:
@@ -73,17 +73,18 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         args.append("-v")
     if swath_data_type_1:
         args.extend(["-t", "%s" % swath_data_type_1])
-    if swath_fill_1:
+    if swath_fill_1 is not None:
         args.extend(["-f", "%f" % swath_fill_1])
-    if grid_fill_1:
+    if grid_fill_1 is not None:
         args.extend(["-F", "%d" % grid_fill_1])
-    if weight_delta_max:
+    if weight_delta_max is not None:
         args.extend(["-D", "%d" % weight_delta_max])
 
     args.extend([swath_cols, swath_scans, swath_rows_per_scan, colfile, rowfile, swathfile, grid_cols, grid_rows, output_fn])
 
     try:
         args = [ str(a) for a in args ]
+        log.debug("Running fornav with %r" % args)
         check_call(args)
     except CalledProcessError:
         log.error("Error running fornav", exc_info=1)

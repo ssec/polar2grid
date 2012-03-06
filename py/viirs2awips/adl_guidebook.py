@@ -105,11 +105,11 @@ def info(filename):
         eva = evaluator(GEO_GUIDE=GEO_GUIDE, **finfo)
         # Convert time information to datetime objects
         get_datetimes(finfo)
-        nfo.update(finfo)
-        for k,v in nfo.items():
+        finfo.update(**nfo)
+        for k,v in finfo.items():
             if isinstance(v,str):
-                nfo[k] = v % eva
-        return nfo
+                finfo[k] = v % eva
+        return finfo
     LOG.warning('unable to find %s in guidebook' % filename)
     return {}
 
