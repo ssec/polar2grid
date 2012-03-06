@@ -67,7 +67,8 @@ Usage: python nc_to_template.py <input nc> <output nc>
         return -1
 
     columns,rows = nc.variables["image"].shape
-    nc.variables["image"][:] = repeat(repeat([[nan]], columns, axis=1), rows, axis=0)
+    del nc.variables["image"]
+    #nc.variables["image"][:] = repeat(repeat([[nan]], columns, axis=1), rows, axis=0)
     nc.variables["validTime"][:] = 0
     nc.close()
 

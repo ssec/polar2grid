@@ -22,7 +22,6 @@ from adl_guidebook import MISSING_GUIDE, RE_NPP, FMT_NPP, K_LATITUDE, K_LONGITUD
 
 LOG = logging.getLogger(__name__)
 
-
 def _geo_bind(paths):
     "using guidebook, generate geo,img pairs given a sequence of image file paths"
     for pn in paths:
@@ -30,16 +29,14 @@ def _geo_bind(paths):
         g = _guide_info(fn)
         LOG.debug(repr(g))
         (geo,) = glob.glob(os.path.join(dn,g[K_NAVIGATION]))
+        g["geo_path"] = geo
+        g["img_path"] = pn
         LOG.debug('file %s uses %s' % (pn, geo))
-        yield geo, pn
-
-
+        yield g
 
 def h5path(hp, path):
     "traverse an hdf5 path to return a nested data object"
     return reduce(lambda x,a: x[a] if a else x, path.split('/'), hp)
-
-
 
 def narrate(h5_path_pair_seq, kind = K_RADIANCE):
     """append swath from a sequence of (geo, image) filename pairs to output objects
@@ -150,8 +147,10 @@ def swath_to_flat_binary(kind = K_RADIANCE, *pathnames):
 def _test_fbf(*image_paths):
     "convert an image and geo to flat binary files"
     inputs = list(_geo_bind(image_paths))
-    LOG.debug(inputs)
-    swath_to_flat_binary(K_RADIANCE, *inputs)
+    gp = [ (d["geo_path"],d["img_path"]) for d in inputs ]
+    LOG.debug(gp)
+    swath_to_flat_binary(K_RADIANCE, *gp)
+    return inputs[0]
 
 def _test_info(filename):
     m = RE_NPP.match(filename)
@@ -215,7 +214,8 @@ def _test2(pfx='SVM04'):
 
     im,lat,lon = array_appender(), array_appender(), array_appender()
     imfiles = sorted(list(glob.glob(pfx+'*h5')))
-    geoimg = list(_geo_bind(imfiles))
+    inputs = list(_geo_bind(imfiles))
+    geoimg = [ (d["geo_path"],d["img_path"]) for d in inputs ]
     print repr(geoimg)
     q = catenate(im,lat,lon, geoimg, K_REFLECTANCE)
     mask = MISSING_GUIDE[K_REFLECTANCE](im.A)
@@ -246,7 +246,8 @@ def _test3(pfx='SVM04'):
 
     im,lat,lon = array_appender(), array_appender(), array_appender()
     imfiles = sorted(list(glob.glob(pfx+'*h5')))
-    geoimg = list(_geo_bind(imfiles))
+    inputs = list(_geo_bind(imfiles))
+    geoimg = [ (d["geo_path"],d["img_path"]) for d in inputs ]
     print repr(geoimg)
     q = catenate(im,lat,lon, geoimg, K_REFLECTANCE)
     mask = MISSING_GUIDE[K_REFLECTANCE](im.A)

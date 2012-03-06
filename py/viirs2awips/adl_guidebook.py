@@ -14,11 +14,13 @@ Licensed under GNU GPLv3.
 import sys, os
 import re
 import logging
+from datetime import datetime
+from keoni.time.epoch import UTC
 
 import h5py
 
 LOG = logging.getLogger('adl_cdfcb')
-
+UTC= UTC()
 
 K_LATITUDE = 'LatitudeVar'
 K_LONGITUDE = 'LongitudeVar'
@@ -73,6 +75,17 @@ class evaluator(object):
         return eval(expr, globals(), vars(self))
 
 
+def get_datetimes(finfo):
+    d = finfo["date"]
+    st = finfo["start_time"]
+    s_us = int(st[-1])*100000
+    et = finfo["end_time"]
+    e_us = int(et[-1])*100000
+    s_dt = datetime.strptime(d + st[:-1], "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=s_us)
+    e_dt = datetime.strptime(d + et[:-1], "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=e_us)
+    finfo["start_dt"] = s_dt
+    finfo["end_dt"] = e_dt
+
 def info(filename):
     """check guidebook for a given filename
 
@@ -90,7 +103,13 @@ def info(filename):
         # merge the guide info
         finfo.update(m.groupdict())
         eva = evaluator(GEO_GUIDE=GEO_GUIDE, **finfo)
-        return dict((k,v % eva) for (k,v) in nfo.items())
+        # Convert time information to datetime objects
+        get_datetimes(finfo)
+        nfo.update(finfo)
+        for k,v in nfo.items():
+            if isinstance(v,str):
+                nfo[k] = v % eva
+        return nfo
     LOG.warning('unable to find %s in guidebook' % filename)
     return {}
 

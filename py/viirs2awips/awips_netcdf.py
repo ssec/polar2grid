@@ -42,17 +42,22 @@ variables:
 
 import os, sys, logging, re
 import shutil
+import calendar
+from datetime import datetime
+
 from numpy import *
 from netCDF4 import Dataset
 from keoni.fbf import Workspace
+from keoni.time.epoch import UTC
+
 
 log = logging.getLogger(__name__)
-
+UTC = UTC()
 AWIPS_ATTRS = set(re.findall(r'\W:(\w+)', NCDUMP))
 
 def create(nc_pathname, image, **attrs):
     # Clobber will not allow truncating of an existing file
-    nc = Dataset(pathname, 'w', format='NETCDF3_CLASSIC', clobber=False)
+    nc = Dataset(nc_pathname, 'w', format='NETCDF3_CLASSIC', clobber=False)
 
     r,c = image.shape
     dim_x = nc.createDimension('x', c)
@@ -85,7 +90,7 @@ def create(nc_pathname, image, **attrs):
         log.error('missing attributes: %r' % (want_attrs - have_attrs))
     nc.close()
 
-def fill(nc_name, image, template):
+def fill(nc_name, image, template, start_dt):
     """Copy a template file to destination and fill it
     with the provided image data.
 
@@ -117,10 +122,16 @@ def fill(nc_name, image, template):
         log.error("Image shapes aren't equal")
         return False
 
+    # Convert to signed byte keeping large values large
+    large_idxs = nonzero(image > 255)
+    small_idxs = nonzero(image < 0)
+    image[large_idxs] = 255
+    image[small_idxs] = 0
+
     image_var[:] = image
     # FIXME: Time needs to be derived from somewhere
     time_var = nc.variables["validTime"]
-    time_var[:] = 1330537260
+    time_var[:] = float(calendar.timegm( start_dt.utctimetuple() )) + float(start_dt.microsecond)/1e6
     nc.sync() # Just in case
     nc.close()
     log.debug("Data transferred into NC file correctly")
@@ -146,14 +157,13 @@ def go(img_name, template, nc_name=None):
     try:
         W = Workspace(base_dir)
         img = getattr(W, var_name)[0]
-        discard = (img > 65530)
-        data = ma.masked_array(img, discard)
+        data = img.copy()
     except StandardError:
         log.error("Could not open img file %s" % img_name, exc_info=1)
         return False
 
     # Create the NC file
-    fill(nc_path, data, template)
+    fill(nc_path, data, template, datetime.utcnow().replace(tzinfo=UTC))
     return True
 
 if __name__=='__main__':
