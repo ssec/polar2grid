@@ -13,6 +13,8 @@ import sys
 import logging
 import numpy
 
+from adl_guidebook import K_REFLECTANCE,K_RADIANCE#,K_TEMPERATURE
+
 log = logging.getLogger(__name__)
 
 def _make_lin_scale(m, b):
@@ -33,37 +35,45 @@ def passive_scale(img, *args, **kwargs):
 
 def sqrt_scale(img, *args, **kwargs):
     log.debug("Running 'sqrt_scale'...")
+    print img.min(), img.max()
+    # FIXME: Remove this line when unscaled stuff works
+    #numpy.divide(img, 65536.0, img)
+    print img.min(), img.max()
     numpy.multiply(img, 100.0, img)
+    print img.min(), img.max()
     numpy.sqrt(img, out=img)
-    numpy.multiply(img, 255, img)
+    print img.min(), img.max()
+    numpy.multiply(img, 25.5, img)
+    print img.min(), img.max()
     numpy.round(img, out=img)
+    print img.min(), img.max()
     return img
 
 M_SCALES = {
-        1  : passive_scale,
-        2  : passive_scale,
-        3  : passive_scale,
-        4  : passive_scale,
-        5  : sqrt_scale,
-        6  : passive_scale,
-        7  : passive_scale,
-        8  : passive_scale,
-        9  : passive_scale,
-        10 : passive_scale,
-        11 : passive_scale,
-        12 : passive_scale,
-        13 : passive_scale,
-        14 : passive_scale,
-        15 : passive_scale,
-        16 : passive_scale
+        1  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        2  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        3  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        4  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        5  : {K_REFLECTANCE:passive_scale, K_RADIANCE:sqrt_scale},
+        6  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        7  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        8  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        9  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        10 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        11 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        12 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        13 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        14 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        15 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        16 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale}
         }
 
 I_SCALES = {
-        1  : passive_scale,
-        2  : passive_scale,
-        3  : passive_scale,
-        4  : passive_scale,
-        5  : passive_scale,
+        1  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        2  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        3  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        4  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
+        5  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale}
         }
 
 NB_SCALES = {
@@ -75,19 +85,27 @@ SCALES = {
         "NB" : NB_SCALES
         }
 
-def rescale(img, kind="M", band=5):
+def rescale(img, kind="M", band=5, data_kind=K_RADIANCE):
+    band = int(band) # If it came from a filename, it was a string
+
     if kind not in SCALES:
         log.error("Unknown kind %s, only know %r" % (kind, SCALES.keys()))
-        return -1
+        raise ValueError("Unknown kind %s, only know %r" % (kind, SCALES.keys()))
 
     kind_scale = SCALES[kind]
 
     if band not in kind_scale:
         log.error("Unknown band %s for kind %s, only know %r" % (band, kind, kind_scale.keys()))
-        return -1
+        raise ValueError("Unknown band %s for kind %s, only know %r" % (band, kind, kind_scale.keys()))
 
-    scale_func = kind_scale[band]
-    img = scale_func(img, kind=kind, band=band)
+    dkind_scale = kind_scale[band]
+
+    if data_kind not in dkind_scale:
+        log.error("Unknown data kind %s for kind %s band %s" % (data_kind, kind, band))
+        raise ValueError("Unknown data kind %s for kind %s band %s" % (data_kind, kind, band))
+
+    scale_func = dkind_scale[data_kind]
+    img = scale_func(img, kind=kind, band=band, data_kind=data_kind)
     return img
 
 def rescale_and_write(img_file, output_file, *args, **kwargs):

@@ -114,6 +114,7 @@ def run_viirs2awips(gpd_file, nc_template, filepaths, fornav_D=None):
         return
 
     # Run fornav
+    # TODO: Get 5120,5120 from the template file
     file_info["img_output"] = "output.img"
     fornav_dict = ms2gt.fornav(
             1,

@@ -53,6 +53,32 @@ VAR_GUIDE = { r'GITCO.*' : { K_LATITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Latitud
                             K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
             }
 
+DATA_KINDS = {
+        "M01" : K_REFLECTANCE,
+        "M02" : K_REFLECTANCE,
+        "M03" : K_REFLECTANCE,
+        "M04" : K_REFLECTANCE,
+        "M05" : K_REFLECTANCE,
+        "M06" : K_REFLECTANCE,
+        "M07" : K_REFLECTANCE,
+        "M08" : K_REFLECTANCE,
+        "M09" : K_REFLECTANCE,
+        "M10" : K_REFLECTANCE,
+        "M11" : K_REFLECTANCE,
+        "M12" : K_REFLECTANCE,
+        "M13" : K_REFLECTANCE,
+        "M14" : K_REFLECTANCE,
+        "M15" : K_REFLECTANCE,
+        "M16" : K_REFLECTANCE,
+        "I01" : K_REFLECTANCE,
+        "I02" : K_REFLECTANCE,
+        "I03" : K_REFLECTANCE,
+        "I04" : K_REFLECTANCE,
+        "I05" : K_REFLECTANCE,
+        "I06" : K_REFLECTANCE,
+        "DNB" : K_RADIANCE
+        }
+
 # missing value sentinels for different datasets
 MISSING_GUIDE = { K_REFLECTANCE: lambda A: A>=65533,
                   K_RADIANCE: lambda A: A<0.0 }
@@ -100,8 +126,27 @@ def info(filename):
             continue
         # collect info from filename
         finfo = dict(RE_NPP.match(filename).groupdict())
+
+        # For dnb
+        minfo = m.groupdict()
+        if "kind" not in minfo:
+            minfo["kind"] = "DNB"
+            minfo["band"] = ""
+
         # merge the guide info
-        finfo.update(m.groupdict())
+        finfo.update(minfo)
+
+        if finfo["kind"] not in ["M","I","DNB"]:
+            finfo["data_kind"] = None
+        else:
+            # Figure out what type of data we want to use
+            dkind = finfo["kind"] + finfo["band"]
+            if dkind not in DATA_KINDS:
+                LOG.info("Data kind key not known %s" % dkind)
+                finfo["data_kind"] = K_RADIANCE
+            else:
+                finfo["data_kind"] = DATA_KINDS[dkind]
+
         eva = evaluator(GEO_GUIDE=GEO_GUIDE, **finfo)
         # Convert time information to datetime objects
         get_datetimes(finfo)

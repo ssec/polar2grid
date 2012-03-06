@@ -148,9 +148,11 @@ def _test_fbf(*image_paths):
     "convert an image and geo to flat binary files"
     inputs = list(_geo_bind(image_paths))
     gp = [ (d["geo_path"],d["img_path"]) for d in inputs ]
+    swath_info = inputs[0]
     LOG.debug(gp)
-    swath_to_flat_binary(K_RADIANCE, *gp)
-    return inputs[0]
+
+    swath_to_flat_binary(swath_info["data_kind"], *gp)
+    return swath_info
 
 def _test_info(filename):
     m = RE_NPP.match(filename)
