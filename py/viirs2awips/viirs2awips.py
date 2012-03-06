@@ -9,6 +9,7 @@ import logging
 from glob import glob
 
 from viirs_imager_to_swath import _test_fbf
+from rescale import rescale
 from keoni.fbf import Workspace
 import ms2gt
 import awips_netcdf
@@ -149,9 +150,15 @@ def run_viirs2awips(gpd_file, nc_template, filepaths, fornav_D=None):
         log.debug("Files matching %r" % glob("result.*"))
         return
 
+    try:
+        rescaled_data = rescale(data, kind=swath_info["kind"], band=swath_info["band"])
+    except StandardError:
+        log.error("Unexpected error while rescaling data", exc_info=1)
+        return
+
     # Make NetCDF files
     file_info["nc_file"] = "awips.nc"
-    nc_stat = awips_netcdf.fill(file_info["nc_file"], data, file_info["nc_template"], swath_info["start_dt"])
+    nc_stat = awips_netcdf.fill(file_info["nc_file"], rescaled_data, file_info["nc_template"], swath_info["start_dt"])
     if not nc_stat:
         log.error("Error while creating NC file")
         return
