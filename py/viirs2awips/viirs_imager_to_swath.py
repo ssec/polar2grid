@@ -57,7 +57,7 @@ def narrate(h5_path_pair_seq, kind = K_RADIANCE):
         LOG.debug('fetching %s from %s' % (var_path, image_path))
         h5v = h5path(ihp, var_path)
         scaler = scaling_filter(ihp, var_path)
-        image_data = scaler(h5v[:,:])
+        image_data = h5v[:,:]
         del h5v
         ihp.close()
         del ihp
@@ -80,7 +80,7 @@ def narrate(h5_path_pair_seq, kind = K_RADIANCE):
         ghp.close()
 
         mask = MISSING_GUIDE[kind](image_data) if kind in MISSING_GUIDE else None
-        yield lon_data, lat_data, image_data, mask
+        yield lon_data, lat_data, scaler(image_data), mask
 
 
 
