@@ -42,13 +42,25 @@ def remove_products():
         _safe_remove(f)
     for f in glob("image.real4.*"):
         _safe_remove(f)
-    for f in glob("result.real4.*"):
+    for f in glob("swath.img"):
         _safe_remove(f)
+    for f in glob("lat.img"):
+        _safe_remove(f)
+    for f in glob("lon.img"):
+        _safe_remove(f)
+
+    for f in glob("*_rows_*.img"):
+        _safe_remove(f)
+    for f in glob("*_cols_*.img"):
+        _safe_remove(f)
+
     for f in glob("output.img"):
         _safe_remove(f)
-    for f in glob("result.nc"):
+    for f in glob("result.real4.*"):
         _safe_remove(f)
-    # TODO: Add the other files
+
+    for f in glob("awips.nc"):
+        _safe_remove(f)
 
 def run_viirs2awips(gpd_file, nc_template, filepaths, fornav_D=None):
     """Go through the motions of converting
@@ -138,7 +150,7 @@ def run_viirs2awips(gpd_file, nc_template, filepaths, fornav_D=None):
         return
 
     # Make NetCDF files
-    file_info["nc_file"] = "result.nc"
+    file_info["nc_file"] = "awips.nc"
     nc_stat = awips_netcdf.fill(file_info["nc_file"], data, file_info["nc_template"], swath_info["start_dt"])
     if not nc_stat:
         log.error("Error while creating NC file")
@@ -157,9 +169,17 @@ def main():
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level = levels[min(3, options.verbosity)])
 
-    if len(args) == 0:
+    if len(args) == 0 or "help" in args:
         parser.print_help()
         sys.exit(0)
+    elif len(args) == 1 and "remove" in args:
+        log.debug("Removing previous products")
+        remove_products()
+        sys.exit(0)
+
+    if len(args) < 3:
+        log.error("Wrong number of arguments")
+        parser.print_help()
 
     stat = run_viirs2awips(args[0], args[1], args[2:], fornav_D=int(options.fornav_D))
     sys.exit(stat)
