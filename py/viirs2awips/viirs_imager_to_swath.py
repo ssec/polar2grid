@@ -38,6 +38,13 @@ def h5path(hp, path):
     "traverse an hdf5 path to return a nested data object"
     return reduce(lambda x,a: x[a] if a else x, path.split('/'), hp)
 
+def scaling_filter(hp, path):
+    "add Filters to the end of a variable, fetch mx+b scaling factors, and return a lambda function to apply them"
+    factvar = h5path(hp, path+'Factors')   # FUTURE: make this more elegant please
+    (m,b) = factvar[:]
+    LOG.debug('scaling factors for %s are (%f,%f)' % (path, m,b))
+    return lambda x: x*m + b
+
 def narrate(h5_path_pair_seq, kind = K_RADIANCE):
     """append swath from a sequence of (geo, image) filename pairs to output objects
     """
@@ -49,7 +56,8 @@ def narrate(h5_path_pair_seq, kind = K_RADIANCE):
         var_path = info[kind]
         LOG.debug('fetching %s from %s' % (var_path, image_path))
         h5v = h5path(ihp, var_path)
-        image_data = h5v[:,:]
+        scaler = scaling_filter(ihp, var_path)
+        image_data = scaler(h5v[:,:])
         del h5v
         ihp.close()
         del ihp
