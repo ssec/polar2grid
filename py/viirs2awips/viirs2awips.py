@@ -7,6 +7,7 @@ import os
 import sys
 import logging
 from glob import glob
+from netCDF4 import Dataset
 
 from viirs_imager_to_swath import _test_fbf
 from rescale import rescale
@@ -97,7 +98,14 @@ def run_viirs2awips(gpd_file, nc_template, filepaths, fornav_D=None):
     _force_symlink(file_info["fbf_img"], "swath.img")
     file_info["img_swath"] = "swath.img"
 
+    # Get number of rows and columns for the output grid
+    nc = Dataset(file_info["nc_template"], "r")
+    (out_cols,out_rows) = nc.variables["image"].shape
+    log.debug("Number of output columns calculated from NC template %d" % out_cols)
+    log.debug("Number of output rows calculated from NC template %d" % out_rows)
+
     # Run ll2cr
+    # TODO: Do I need to calculate 3200 and 48 from the input data?
     cr_dict = ms2gt.ll2cr(
             3200,
             48,
@@ -119,13 +127,13 @@ def run_viirs2awips(gpd_file, nc_template, filepaths, fornav_D=None):
     fornav_dict = ms2gt.fornav(
             1,
             3200,
-            48,
+            cr_dict["scans_out"],
             len(filepaths) * 16,
             cr_dict["colfile"],
             cr_dict["rowfile"],
             file_info["img_swath"],
-            5120,
-            5120,
+            out_cols,
+            out_rows,
             file_info["img_output"],
             verbose=True,
             swath_data_type_1="f4",

@@ -14,6 +14,32 @@ log = logging.getLogger(__name__)
 CR_REG = r'.*_(\d+).img'
 cr_reg = re.compile(CR_REG)
 
+def _ll2cr_rows_info(fn):
+    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<num_rows>\d+).img'
+    cr_reg = re.compile(CR_REG)
+    row_match = cr_reg.match(fn)
+    if row_match is None:
+        log.error("Couldn't get row information from ll2cr file")
+        return None
+    d = row_match.groupdict()
+    d["scans_out"] = int(d["scans_out"])
+    d["scan_first"] = int(d["scan_first"])
+    d["num_rows"] = int(d["num_rows"])
+    return d
+
+def _ll2cr_cols_info(fn):
+    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<num_cols>\d+).img'
+    cr_reg = re.compile(CR_REG)
+    col_match = cr_reg.match(fn)
+    if col_match is None:
+        log.error("Couldn't get col information from ll2cr file")
+        return None
+    d = col_match.groupdict()
+    d["scans_out"] = int(d["scans_out"])
+    d["scan_first"] = int(d["scan_first"])
+    d["num_cols"] = int(d["num_cols"])
+    return d
+
 def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
         verbose=False, f_scansout=None, rind=None, fill_io=None, tag="ll2cr"):
     args = ["ll2cr"]
@@ -52,16 +78,28 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
     d["rowfile"] = tmp[0]
     log.debug("Rows file is %s" % d["rowfile"])
 
-    num_cols = cr_reg.match(d["colfile"])
-    if num_cols is None:
-        log.error("Couldn't find number of cols from ll2cr file")
-    d["num_cols"] = int(num_cols.groups()[0])
-    log.debug("Number of Columns = %d" % d["num_cols"])
+    col_dict = _ll2cr_cols_info(d["colfile"])
+    row_dict = _ll2cr_rows_info(d["rowfile"])
+    if col_dict is None or row_dict is None:
+        # Log message was delivered before
+        return None
 
-    num_rows = cr_reg.match(d["rowfile"])
-    if num_cols is None:
-        log.error("Couldn't find number of rows from ll2cr file")
-    d["num_rows"] = int(num_rows.groups()[0])
+    d["num_cols"] = col_dict["num_cols"]
+    d["num_rows"] = row_dict["num_rows"]
+
+    if col_dict["scans_out"] != row_dict["scans_out"]:
+        log.error("ll2cr didn't produce the same number of scans for cols and rows")
+        return None
+    d["scans_out"] = col_dict["scans_out"]
+
+    if col_dict["scan_first"] != row_dict["scan_first"]:
+        log.error("ll2cr didn't produce the same number for scan first cols and rows")
+        return None
+    d["scan_first"] = col_dict["scan_first"]
+
+    log.debug("Number of Scans Out = %d" % d["scans_out"])
+    log.debug("Number for Scan First = %d" % d["scan_first"])
+    log.debug("Number of Columns = %d" % d["num_cols"])
     log.debug("Number of Rows = %d" % d["num_rows"])
 
     return d
