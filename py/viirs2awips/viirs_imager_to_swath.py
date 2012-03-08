@@ -33,10 +33,14 @@ def _geo_bind(paths):
         dn,fn = os.path.split(pn)
         g = _guide_info(fn)
         LOG.debug(repr(g))
-        (geo,) = glob.glob(os.path.join(dn,g[K_NAVIGATION]))
-        g["geo_path"] = geo
+        nav_file = os.path.join(dn,g[K_NAVIGATION])
+        results = glob.glob(nav_file)
+        if len(results) != 1:
+            LOG.error("Expected 1 navigation file at %s, found %d" % (nav_file, len(results)))
+            raise ValueError("Expected 1 navigation file at %s, found %d" % (nav_file, len(results)))
+        g["geo_path"] = results[0]
         g["img_path"] = pn
-        LOG.debug('file %s uses %s' % (pn, geo))
+        LOG.debug('file %s uses %s' % (pn, results[0]))
         yield g
 
 def h5path(hp, path):
