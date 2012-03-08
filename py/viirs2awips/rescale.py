@@ -13,7 +13,7 @@ import sys
 import logging
 import numpy
 
-from adl_guidebook import K_REFLECTANCE,K_RADIANCE#,K_TEMPERATURE
+from adl_guidebook import K_REFLECTANCE,K_RADIANCE,K_BTEMP
 
 log = logging.getLogger(__name__)
 
@@ -49,40 +49,50 @@ def sqrt_scale(img, *args, **kwargs):
     print img.min(), img.max()
     return img
 
+def bt_scale(img, *args, **kwargs):
+    log.debug("Running 'bt_scale'...")
+    print img.min(),img.max()
+    high_idx = img >= 242.0
+    low_idx = img < 242.0
+    img[high_idx] = 660 - (2*img[high_idx])
+    img[low_idx] = 418 - img[low_idx]
+    print img.min(),img.max()
+    return img
+
 M_SCALES = {
-        1  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        2  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        3  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        4  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        5  : {K_REFLECTANCE:passive_scale, K_RADIANCE:sqrt_scale},
-        6  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        7  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        8  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        9  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        10 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        11 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        12 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        13 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        14 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        15 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        16 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale}
+        1  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        2  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        3  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        4  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        5  : {K_REFLECTANCE:passive_scale, K_RADIANCE:sqrt_scale, K_BTEMP:passive_scale},
+        6  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        7  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        8  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        9  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        10 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        11 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        12 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        13 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:bt_scale},
+        14 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        15 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:bt_scale},
+        16 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale}
         }
 
 I_SCALES = {
-        1  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        2  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        3  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        4  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale},
-        5  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale}
+        1  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        2  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        3  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        4  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
+        5  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale}
         }
 
-NB_SCALES = {
+DNB_SCALES = {
         }
 
 SCALES = {
         "M"  : M_SCALES,
         "I"  : I_SCALES,
-        "NB" : NB_SCALES
+        "DNB" : DNB_SCALES
         }
 
 def rescale(img, kind="M", band=5, data_kind=K_RADIANCE):

@@ -160,7 +160,7 @@ def run_viirs2awips(gpd_file, nc_template, filepaths, fornav_D=None):
         return
 
     try:
-        rescaled_data = rescale(data, kind=swath_info["kind"], band=swath_info["band"])
+        rescaled_data = rescale(data, kind=swath_info["kind"], band=swath_info["band"], data_kind=swath_info["data_kind"])
     except StandardError:
         log.error("Unexpected error while rescaling data", exc_info=1)
         return

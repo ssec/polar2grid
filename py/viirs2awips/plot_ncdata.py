@@ -6,6 +6,7 @@ data = nc.variables["image"][:]
 data = data.astype(uint8) # How AWIPS reads it
 print data.min(), data.max()
 plt.imshow(data)
-plt.bone()
 plt.colorbar()
+plt.bone()
+#plt.spectral()
 plt.savefig("plot_ncdata.png")

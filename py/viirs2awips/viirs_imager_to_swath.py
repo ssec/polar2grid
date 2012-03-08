@@ -25,6 +25,11 @@ LOG = logging.getLogger(__name__)
 def _geo_bind(paths):
     "using guidebook, generate geo,img pairs given a sequence of image file paths"
     for pn in paths:
+        if not os.path.exists(pn):
+            # The shell will keep the * in the path if it can't match them to
+            # actual files, which fail ugly later on
+            LOG.error("h5 path %s does not exist" % pn)
+            raise ValueError("h5 path %s does not exist" % pn)
         dn,fn = os.path.split(pn)
         g = _guide_info(fn)
         LOG.debug(repr(g))
@@ -36,27 +41,52 @@ def _geo_bind(paths):
 
 def h5path(hp, path):
     "traverse an hdf5 path to return a nested data object"
-    return reduce(lambda x,a: x[a] if a else x, path.split('/'), hp)
+    x = hp
+    for a in path.split('/'):
+        if a:
+            if a in x:
+                x = x[a]
+            else:
+                LOG.info("Couldn't find %s (or its parent) in %s" % (a,path))
+                return None
+        else:
+            # If they put a / at the end of the var path
+            continue
+    if x is hp:
+        LOG.error("Could not get %s from h5 file" % path)
+        return None
+    return x
 
-def scaling_filter(hp, path):
+def scaling_filter(hp, var_path, scale_path):
     "add Filters to the end of a variable, fetch mx+b scaling factors, and return a lambda function to apply them"
-    factvar = h5path(hp, path+'Factors')   # FUTURE: make this more elegant please
-    (m,b) = factvar[:]
-    LOG.debug('scaling factors for %s are (%f,%f)' % (path, m,b))
-    return lambda x: x*m + b
+    factvar = h5path(hp, scale_path)   # FUTURE: make this more elegant please
+    if factvar is None:
+        LOG.debug("No scaling factors found for %s at %s" % (var_path, scale_path))
+        return False,lambda x: x
+    else:
+        (m,b) = factvar[:]
+        LOG.debug('scaling factors for %s are (%f,%f)' % (var_path, m,b))
+        return True,lambda x: x*m + b
 
-def narrate(h5_path_pair_seq, kind = K_RADIANCE):
+def narrate(finfos):
     """append swath from a sequence of (geo, image) filename pairs to output objects
     """
-    for geo_path, image_path in h5_path_pair_seq:
+    for finfo in finfos:
+        #geo_path, image_path in h5_path_pair_seq:
+        geo_path = finfo["geo_path"]
+        image_path = finfo["img_path"]
         LOG.debug('geo %s image %s' % (geo_path, image_path))
         idn,ifn = os.path.split(image_path)
-        info = _guide_info(ifn)
+        #info = _guide_info(ifn)
         ihp = h5.File(image_path, 'r')
-        var_path = info[kind]
+        var_path = finfo[finfo["data_kind"]]
         LOG.debug('fetching %s from %s' % (var_path, image_path))
         h5v = h5path(ihp, var_path)
-        scaler = scaling_filter(ihp, var_path)
+        if h5v is None:
+            LOG.error("Couldn't get data %s from %s" % (var_path, image_path))
+            raise ValueError("Couldn't get data %s from %s" % (var_path, image_path))
+
+        needs_scaling,scaler = scaling_filter(ihp, var_path, finfo[finfo["factors"]])
         image_data = h5v[:,:]
         del h5v
         ihp.close()
@@ -69,25 +99,31 @@ def narrate(h5_path_pair_seq, kind = K_RADIANCE):
         var_path = gnfo[K_LATITUDE]
         LOG.debug('fetching %s from %s' % (var_path, geo_path))
         h5v = h5path(ghp, var_path)
+        if h5v is None:
+            LOG.error("Couldn't get latitude data %s for %s" % (var_path, image_path))
+            raise ValueError("Couldn't get latitude data %s for %s" % (var_path, image_path))
         lat_data = h5v[:,:]
         del h5v
 
         var_path = gnfo[K_LONGITUDE]
         LOG.debug('fetching %s from %s' % (var_path, geo_path))
         h5v = h5path(ghp, var_path)
+        if h5v is None:
+            LOG.error("Couldn't get longitude data %s for %s" % (var_path, image_path))
+            raise ValueError("Couldn't get longitude data %s for %s" % (var_path, image_path))
         lon_data = h5v[:,:]
         del h5v
         ghp.close()
 
-        mask = MISSING_GUIDE[kind](image_data) if kind in MISSING_GUIDE else None
+        mask = MISSING_GUIDE[finfo["data_kind"]][not needs_scaling](image_data) if finfo["data_kind"] in MISSING_GUIDE else None
         yield lon_data, lat_data, scaler(image_data), mask
 
 
 
-def catenate(image, lat, lon, h5_path_pair_seq, kind = K_RADIANCE):
+def catenate(image, lat, lon, finfos):
     """append swath from a sequence of (geo, image) filename pairs to output objects, replacing missing data with -999
     """
-    for dlon, dlat, dimg, missing in narrate( h5_path_pair_seq, kind ):
+    for dlon, dlat, dimg, missing in narrate( finfos ):
         dimg[missing] = -999
         image.append(dimg)
         lon.append(dlon)
@@ -133,7 +169,7 @@ class file_appender(object):
         LOG.debug('%d rows in output file' % self.shape[0])
 
 
-def swath_to_flat_binary(kind = K_RADIANCE, *pathnames):
+def swath_to_flat_binary(*finfos):
     spid = '%d' % os.getpid()
     imname = '.image' + spid
     latname = '.lat' + spid
@@ -144,7 +180,7 @@ def swath_to_flat_binary(kind = K_RADIANCE, *pathnames):
     imfa = file_appender(imfo, dtype=np.float32)
     lafa = file_appender(lafo, dtype=np.float32)
     lofa = file_appender(lofo, dtype=np.float32)
-    catenate(imfa, lafa, lofa, pathnames, kind)
+    catenate(imfa, lafa, lofa, finfos)
     suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
     os.rename(imname, 'image'+suffix)
     os.rename(latname, 'latitude'+suffix)
@@ -155,11 +191,12 @@ def swath_to_flat_binary(kind = K_RADIANCE, *pathnames):
 def _test_fbf(*image_paths):
     "convert an image and geo to flat binary files"
     inputs = list(_geo_bind(image_paths))
-    gp = [ (d["geo_path"],d["img_path"]) for d in inputs ]
     swath_info = inputs[0]
+    gp = [ (d["geo_path"],d["img_path"]) for d in inputs ]
     LOG.debug(gp)
 
-    swath_to_flat_binary(swath_info["data_kind"], *gp)
+    #swath_to_flat_binary(swath_info["data_kind"], *gp)
+    swath_to_flat_binary(*inputs)
     return swath_info
 
 def _test_info(filename):

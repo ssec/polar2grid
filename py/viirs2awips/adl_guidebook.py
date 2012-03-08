@@ -26,11 +26,21 @@ K_LATITUDE = 'LatitudeVar'
 K_LONGITUDE = 'LongitudeVar'
 K_ALTITUDE = 'AltitudeVar'
 K_RADIANCE = 'RadianceVar'
+K_RADIANCE_FACTORS = "RadianceFactorsVar"
 K_REFLECTANCE = 'ReflectanceVar'
+K_REFLECTANCE_FACTORS = "ReflectanceFactorsVar"
+K_BTEMP = "BrightnessTemperatureVar"
+K_BTEMP_FACTORS = "BrightnessTemperatureFactorsVar"
 K_NAVIGATION = 'NavigationFilenameGlob'  # glob to search for to find navigation file that corresponds
 K_GEO_REF = 'CdfcbGeolocationFileGlob' # glob which would match the N_GEO_Ref attribute
 
 GEO_GUIDE = {'M' : 'GMODO', 'I': 'GIMGO'}
+
+FACTORS_GUIDE = {
+        K_REFLECTANCE : K_REFLECTANCE_FACTORS,
+        K_RADIANCE    : K_RADIANCE_FACTORS,
+        K_BTEMP       : K_BTEMP_FACTORS
+        }
 
 # FIXME: add RadianceFactors/ReflectanceFactors
 VAR_GUIDE = { r'GITCO.*' : { K_LATITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Latitude',
@@ -45,10 +55,18 @@ VAR_GUIDE = { r'GITCO.*' : { K_LATITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Latitud
               r'SV(?P<kind>[IM])(?P<band>\d\d).*': { 
                             K_RADIANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Radiance',
                             K_REFLECTANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Reflectance',
+                            K_BTEMP: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/BrightnessTemperature',
+                            K_RADIANCE_FACTORS: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/RadianceFactors',
+                            K_REFLECTANCE_FACTORS: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/ReflectanceFactors',
+                            K_BTEMP_FACTORS: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/BrightnessTemperatureFactors',
                             K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'G%(kind)sTCO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
               r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
                             K_REFLECTANCE: None,
+                            K_BTEMP: None,
+                            K_RADIANCE_FACTORS: '/All_Data/VIIRS-DNB-SDR_All/RadianceFactors',
+                            K_REFLECTANCE_FACTORS: None,
+                            K_BTEMP_FACTORS: None,
                             K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
             }
@@ -65,23 +83,27 @@ DATA_KINDS = {
         "M09" : K_REFLECTANCE,
         "M10" : K_REFLECTANCE,
         "M11" : K_REFLECTANCE,
-        "M12" : K_REFLECTANCE,
-        "M13" : K_REFLECTANCE,
-        "M14" : K_REFLECTANCE,
-        "M15" : K_REFLECTANCE,
-        "M16" : K_REFLECTANCE,
+        "M12" : K_BTEMP,
+        "M13" : K_BTEMP,
+        "M14" : K_BTEMP,
+        "M15" : K_BTEMP,
+        "M16" : K_BTEMP,
         "I01" : K_REFLECTANCE,
         "I02" : K_REFLECTANCE,
         "I03" : K_REFLECTANCE,
-        "I04" : K_REFLECTANCE,
-        "I05" : K_REFLECTANCE,
+        "I04" : K_BTEMP,
+        "I05" : K_BTEMP,
         "I06" : K_REFLECTANCE,
         "DNB" : K_RADIANCE
         }
 
 # missing value sentinels for different datasets
-MISSING_GUIDE = { K_REFLECTANCE: lambda A: A>=65533,
-                  K_RADIANCE: lambda A: A<0.0 }
+# TODO: Make dependent on if there are scaling factors or not
+# 0 if scaling exists, 1 if scaling is None
+MISSING_GUIDE = { K_REFLECTANCE: (lambda A: A>=65533, lambda A:A<0.0),
+                K_RADIANCE: (lambda A: A>=65533, lambda A: A<0.0),
+                K_BTEMP: (lambda A: A>=65533, lambda A: A<0.0)
+                }
 
 
 # a regular expression to split up granule names into dictionaries
@@ -137,6 +159,7 @@ def info(filename):
         finfo.update(minfo)
 
         if finfo["kind"] not in ["M","I","DNB"]:
+            LOG.warning("Band kind not known %s" % finfo["kind"])
             finfo["data_kind"] = None
         else:
             # Figure out what type of data we want to use
@@ -146,6 +169,8 @@ def info(filename):
                 finfo["data_kind"] = K_RADIANCE
             else:
                 finfo["data_kind"] = DATA_KINDS[dkind]
+
+        finfo["factors"] = FACTORS_GUIDE[finfo["data_kind"]]
 
         eva = evaluator(GEO_GUIDE=GEO_GUIDE, **finfo)
         # Convert time information to datetime objects
