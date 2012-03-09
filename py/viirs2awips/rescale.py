@@ -63,7 +63,7 @@ def bt_scale(img, *args, **kwargs):
 
 def dnb_scale(img, *args, **kwargs):
     # TODO: Eva fill this in
-    pass
+    return img*10000.0
 
 M_SCALES = {
         1  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
@@ -93,7 +93,7 @@ I_SCALES = {
         }
 
 DNB_SCALES = {
-        "" : {K_REFLECTANCE:passive_scale, K_RADIANCE:dnb_scale, K_BTEMP:passive_scale}
+        0 : {K_REFLECTANCE:passive_scale, K_RADIANCE:dnb_scale, K_BTEMP:passive_scale}
         }
 
 SCALES = {

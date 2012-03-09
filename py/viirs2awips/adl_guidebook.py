@@ -49,9 +49,9 @@ VAR_GUIDE = { r'GITCO.*' : { K_LATITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Latitud
               r'GMTCO.*' : { K_LATITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Latitude',
                              K_LONGITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Longitude',
                              K_ALTITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Height' },
-              r'GDNBO.*' : { K_LATITUDE: '/All_Data/VIIRS-DNB-GEO-TC_All/Latitude',
-                             K_LONGITUDE: '/All_Data/VIIRS-DNB-GEO-TC_All/Longitude',
-                             K_ALTITUDE: '/All_Data/VIIRS-DNB-GEO-TC_All/Height' },
+              r'GDNBO.*' : { K_LATITUDE: '/All_Data/VIIRS-DNB-GEO_All/Latitude',
+                             K_LONGITUDE: '/All_Data/VIIRS-DNB-GEO_All/Longitude',
+                             K_ALTITUDE: '/All_Data/VIIRS-DNB-GEO_All/Height' },
               r'SV(?P<kind>[IM])(?P<band>\d\d).*': { 
                             K_RADIANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Radiance',
                             K_REFLECTANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Reflectance',
@@ -153,7 +153,7 @@ def info(filename):
         minfo = m.groupdict()
         if "kind" not in minfo:
             minfo["kind"] = "DNB"
-            minfo["band"] = ""
+            minfo["band"] = "00"
 
         # merge the guide info
         finfo.update(minfo)

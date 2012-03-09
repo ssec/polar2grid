@@ -6,6 +6,7 @@ Author: David Hoese,davidh,SSEC
 import os
 import sys
 import logging
+import re
 from glob import glob
 from netCDF4 import Dataset
 
@@ -89,6 +90,12 @@ def run_viirs2awips(gpd_file, nc_template, filepaths, fornav_D=None):
     file_info["fbf_lat"] = _glob_file("latitude.real4.*")
     file_info["fbf_lon"] = _glob_file("longitude.real4.*")
     file_info["fbf_img"] = _glob_file("image.real4.*")
+    swath_reg = r'image.real4.(?P<swath_cols>\d+).(?P<swath_rows>\d+)'
+    SWATH_FINFO_REG = re.compile(swath_reg)
+    swath_dict = SWATH_FINFO_REG.match(file_info["fbf_img"]).groupdict()
+    file_info["swath_rows"] = int(swath_dict["swath_rows"])
+    file_info["swath_cols"] = int(swath_dict["swath_cols"])
+    log.debug("Swath maker returned %d rows and %d cols" % (file_info["swath_rows"], file_info["swath_cols"]))
 
     # Move and/or link recently created files
     _force_symlink(file_info["fbf_lat"], "lat.img")
@@ -107,7 +114,7 @@ def run_viirs2awips(gpd_file, nc_template, filepaths, fornav_D=None):
     # Run ll2cr
     # TODO: Do I need to calculate 3200 and 48 from the input data?
     cr_dict = ms2gt.ll2cr(
-            3200,
+            file_info["swath_cols"],
             48,
             len(filepaths) * 16,
             file_info["img_lat"],
@@ -126,7 +133,7 @@ def run_viirs2awips(gpd_file, nc_template, filepaths, fornav_D=None):
     file_info["img_output"] = "output.img"
     fornav_dict = ms2gt.fornav(
             1,
-            3200,
+            file_info["swath_cols"],
             cr_dict["scans_out"],
             len(filepaths) * 16,
             cr_dict["colfile"],
