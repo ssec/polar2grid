@@ -62,8 +62,34 @@ def bt_scale(img, *args, **kwargs):
     return img
 
 def dnb_scale(img, *args, **kwargs):
-    # TODO: Eva fill this in
-    return img*10000.0
+    """
+    This scaling method uses histogram equalization to flatten the image levels across any given section_masks.
+    section_masks is expected to be a multi dimensional array. The first dimension is an array of different masks
+    and the remaining dimesions must match img. This reflects the fact that section_masks[0] would yield a mask that
+    can be applied directly to img. It is expected that there will be at least one mask (ie. one entry in the first
+    dimension) in section_masks that represents data which is not fill data.
+    A histogram equalization will be performed separately for each part of the img defined by a mask in section_masks.
+    
+    FUTURE: Right now section_masks is not being filled in by the calling code, so there's some temporary code that
+    will create a testing mask.
+    """
+    
+    # TODO, remove this code when the mask is properly filled in
+    section_masks = [img != -999]
+    # TODO, should this be input via params or a constant?
+    num_bins      = 256
+    
+    # perform a histogram equalization for each mask
+    for mask_index in range(len(section_masks)) :
+        current_mask              = section_masks[mask_index]
+        temp_histogram, temp_bins = numpy.histogram(img[current_mask], num_bins, normed=True)
+        cumulative_dist_function  = temp_histogram.cumsum() # calculate the cumulative distribution function
+        cumulative_dist_function  = (num_bins - 1) * cumulative_dist_function / cumulative_dist_function[-1] # normalize our function
+        
+        # linearly interpolate using the distribution function to get the new values
+        img[current_mask] = numpy.interp(img[current_mask], temp_bins[:-1], cumulative_dist_function)
+    
+    return img
 
 M_SCALES = {
         1  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
