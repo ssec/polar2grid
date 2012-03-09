@@ -64,7 +64,7 @@ M_SCALES = {
         2  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
         3  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
         4  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        5  : {K_REFLECTANCE:passive_scale, K_RADIANCE:sqrt_scale, K_BTEMP:passive_scale},
+        5  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
         6  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
         7  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
         8  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
