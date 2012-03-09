@@ -54,8 +54,10 @@ def bt_scale(img, *args, **kwargs):
     print img.min(),img.max()
     high_idx = img >= 242.0
     low_idx = img < 242.0
+    z_idx = img == 0
     img[high_idx] = 660 - (2*img[high_idx])
     img[low_idx] = 418 - img[low_idx]
+    img[z_idx] = 0
     print img.min(),img.max()
     return img
 
