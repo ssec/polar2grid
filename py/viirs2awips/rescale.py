@@ -63,34 +63,41 @@ def bt_scale(img, *args, **kwargs):
 
 def dnb_scale(img, *args, **kwargs):
     """
-    This scaling method uses histogram equalization to flatten the image levels across any given section_masks.
-    section_masks is expected to be a multi dimensional array. The first dimension is an array of different masks
-    and the remaining dimesions must match img. This reflects the fact that section_masks[0] would yield a mask that
-    can be applied directly to img. It is expected that there will be at least one mask (ie. one entry in the first
-    dimension) in section_masks that represents data which is not fill data.
-    A histogram equalization will be performed separately for each part of the img defined by a mask in section_masks.
+    This scaling method uses histogram equalization to flatten the image levels across the day and night masks.
+    The masks are expected to be passed as "day_mask" and "night_mask" in the kwargs for this method. 
     
-    FUTURE: Right now section_masks is not being filled in by the calling code, so there's some temporary code that
-    will create a testing mask.
+    A histogram equalization will be performed separately for each of the two masks that's present in the kwargs.
     """
 
     log.debug("Running 'dnb_scale'...")
-    # TODO, remove this code when the mask is properly filled in
-    section_masks = [img != 0]
-    # TODO, should this be input via params or a constant?
-    num_bins      = 256
     
-    # perform a histogram equalization for each mask
-    for mask_index in range(len(section_masks)) :
-        current_mask              = section_masks[mask_index]
-        temp_histogram, temp_bins = numpy.histogram(img[current_mask], num_bins, normed=True)
-        cumulative_dist_function  = temp_histogram.cumsum() # calculate the cumulative distribution function
-        cumulative_dist_function  = (num_bins - 1) * cumulative_dist_function / cumulative_dist_function[-1] # normalize our function
-        
-        # linearly interpolate using the distribution function to get the new values
-        img[current_mask] = numpy.interp(img[current_mask], temp_bins[:-1], cumulative_dist_function)
+    if "day_mask"   in kwargs :
+        _histogram_equalization(img, kwargs["day_mask"  ])
+    
+    if "night_mask" in kwargs :
+        _histogram_equalization(img, kwargs["night_mask"])
     
     return img
+
+def _histogram_equalization (data, mask_to_equalize, number_of_bins=256) :
+    """
+    Perform a histogram equalization on the data selected by mask_to_equalize.
+    The data will be separated into number_of_bins levels of discrete values.
+    
+    Note: the data will be changed in place.
+    """
+    
+    # bucket all the selected data using numpy's histogram function
+    temp_histogram, temp_bins = numpy.histogram(data[mask_to_equalize], number_of_bins, normed=True)
+    # calculate the cumulative distribution function
+    cumulative_dist_function  = temp_histogram.cumsum()
+    # now normalize the overall distribution function
+    cumulative_dist_function  = (number_of_bins - 1) * cumulative_dist_function / cumulative_dist_function[-1]
+    
+    # linearly interpolate using the distribution function to get the new values
+    data[mask_to_equalize] = numpy.interp(data[mask_to_equalize], temp_bins[:-1], cumulative_dist_function)
+    
+    return data
 
 M_SCALES = {
         1  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
