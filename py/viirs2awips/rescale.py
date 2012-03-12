@@ -71,10 +71,10 @@ def dnb_scale(img, *args, **kwargs):
 
     log.debug("Running 'dnb_scale'...")
     
-    if "day_mask"   in kwargs :
+    if ("day_mask"   in kwargs) and (numpy.sum(kwargs["day_mask"])   > 0) :
         _histogram_equalization(img, kwargs["day_mask"  ])
     
-    if "night_mask" in kwargs :
+    if ("night_mask" in kwargs) and (numpy.sum(kwargs["night_mask"]) > 0) :
         _histogram_equalization(img, kwargs["night_mask"])
     
     return img
