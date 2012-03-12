@@ -76,7 +76,7 @@ def dnb_scale(img, *args, **kwargs):
 
     log.debug("Running 'dnb_scale'...")
     # TODO, remove this code when the mask is properly filled in
-    section_masks = [img != -999]
+    section_masks = [img != 0]
     # TODO, should this be input via params or a constant?
     num_bins      = 256
     
