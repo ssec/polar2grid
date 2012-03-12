@@ -225,7 +225,7 @@ def run_viirs2awips(grid_number, filepaths,
         img = getattr(W, "result")[0]
         data = img.copy()
         scale_kwargs = {}
-        if swath_info["band"] == "DNB":
+        if swath_info["kind"] == "DNB":
             day_mask = W.day_mask[0]
             day_mask = day_mask.copy()
             night_mask = W.night_mask[0]
