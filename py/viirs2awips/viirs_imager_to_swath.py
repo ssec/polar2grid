@@ -18,7 +18,7 @@ import ctypes as c
 import h5py as h5
 import numpy as np
 
-from adl_guidebook import MISSING_GUIDE, RE_NPP, FMT_NPP, K_LATITUDE, K_LONGITUDE, K_ALTITUDE, K_RADIANCE, K_REFLECTANCE, K_NAVIGATION, info as _guide_info
+from adl_guidebook import MISSING_GUIDE, RE_NPP, FMT_NPP, K_LATITUDE, K_LONGITUDE, K_ALTITUDE, K_RADIANCE, K_REFLECTANCE, K_SOLARZENITH, K_NAVIGATION, info as _guide_info
 
 LOG = logging.getLogger(__name__)
 
@@ -117,23 +117,44 @@ def narrate(finfos):
             raise ValueError("Couldn't get longitude data %s for %s" % (var_path, image_path))
         lon_data = h5v[:,:]
         del h5v
+
+        var_path = gnfo[K_SOLARZENITH]
+        if var_path is None:
+            h5v = None
+        else:
+            LOG.debug('fetching %s from %s' % (var_path, geo_path))
+            h5v = h5path(ghp, var_path)
+
+        if h5v is None:
+            if finfo["kind"] == "DNB":
+                LOG.error("Couldn't get solar zenith data %s for %s" % (var_path, image_path))
+                raise ValueError("Couldn't get solar zenith data %s for %s" % (var_path, image_path))
+            else:
+                LOG.info("Couldn't get solar zenith data %s for %s" % (var_path, image_path))
+                don_data = None
+                dmask_data = None
+                nmask_data = None
+        else:
+            don_data = h5v[:,:]
+            dmask_data = don_data <= 90 # True if day
+            nmask_data = ~dmask_data
         ghp.close()
 
         mask = MISSING_GUIDE[finfo["data_kind"]][not needs_scaling](image_data) if finfo["data_kind"] in MISSING_GUIDE else None
-        yield lon_data, lat_data, scaler(image_data), mask
+        yield lon_data, lat_data, scaler(image_data), dmask_data, nmask_data, mask
 
 
 
-def catenate(image, lat, lon, finfos):
+def catenate(image, lat, lon, day_mask, night_mask, finfos):
     """append swath from a sequence of (geo, image) filename pairs to output objects, replacing missing data with -999
     """
-    for dlon, dlat, dimg, missing in narrate( finfos ):
+    for dlon, dlat, dimg, dmask_data, nmask_data, missing in narrate( finfos ):
         dimg[missing] = -999
         image.append(dimg)
         lon.append(dlon)
         lat.append(dlat)
-
-
+        day_mask.append(dmask_data)
+        night_mask.append(nmask_data)
 
 class array_appender(object):
     """wrapper for a numpy array object which gives it a binary data append usable with "catenate"
@@ -167,6 +188,8 @@ class file_appender(object):
 
     def append(self, data):
         # append new rows to the data
+        if data is None:
+            return
         inform = data.astype(self.dtype) if self.dtype != data.dtype else data
         inform.tofile(self.F)
         self.shape = (self.shape[0] + inform.shape[0], ) + data.shape[1:]
@@ -178,17 +201,25 @@ def swath_to_flat_binary(*finfos):
     imname = '.image' + spid
     latname = '.lat' + spid
     lonname = '.lon' + spid
+    dmask_name = '.day_mask' + spid
+    nmask_name = '.night_mask' + spid
     imfo = file(imname, 'wb')
     lafo = file(latname, 'wb')
     lofo = file(lonname, 'wb')
+    dmask_fo = file(dmask_name, 'wb')
+    nmask_fo = file(nmask_name, 'wb')
     imfa = file_appender(imfo, dtype=np.float32)
     lafa = file_appender(lafo, dtype=np.float32)
     lofa = file_appender(lofo, dtype=np.float32)
-    catenate(imfa, lafa, lofa, finfos)
+    dmask_fa = file_appender(dmask_fo, dtype=np.float32)
+    nmask_fa = file_appender(nmask_fo, dtype=np.float32)
+    catenate(imfa, lafa, lofa, dmask_fa, nmask_fa, finfos)
     suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
     os.rename(imname, 'image'+suffix)
     os.rename(latname, 'latitude'+suffix)
     os.rename(lonname, 'longitude'+suffix)
+    os.rename(dmask_name, 'day_mask'+suffix)
+    os.rename(nmask_name, 'night_mask'+suffix)
 
 
 

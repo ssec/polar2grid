@@ -73,7 +73,8 @@ def dnb_scale(img, *args, **kwargs):
     FUTURE: Right now section_masks is not being filled in by the calling code, so there's some temporary code that
     will create a testing mask.
     """
-    
+
+    log.debug("Running 'dnb_scale'...")
     # TODO, remove this code when the mask is properly filled in
     section_masks = [img != -999]
     # TODO, should this be input via params or a constant?
@@ -128,7 +129,7 @@ SCALES = {
         "DNB" : DNB_SCALES
         }
 
-def rescale(img, kind="M", band=5, data_kind=K_RADIANCE):
+def rescale(img, kind="M", band=5, data_kind=K_RADIANCE, **kwargs):
     band = int(band) # If it came from a filename, it was a string
 
     if kind not in SCALES:
@@ -148,7 +149,7 @@ def rescale(img, kind="M", band=5, data_kind=K_RADIANCE):
         raise ValueError("Unknown data kind %s for kind %s band %s" % (data_kind, kind, band))
 
     scale_func = dkind_scale[data_kind]
-    img = scale_func(img, kind=kind, band=band, data_kind=data_kind)
+    img = scale_func(img, kind=kind, band=band, data_kind=data_kind, **kwargs)
     return img
 
 def rescale_and_write(img_file, output_file, *args, **kwargs):
