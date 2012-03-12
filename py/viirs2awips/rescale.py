@@ -36,6 +36,7 @@ def passive_scale(img, *args, **kwargs):
 def sqrt_scale(img, *args, **kwargs):
     log.debug("Running 'sqrt_scale'...")
     mask = img == -999
+    img[mask] = 0 # For invalids because < 0 cant be sqrted
     print img.min(), img.max()
     numpy.multiply(img, 100.0, img)
     print img.min(), img.max()

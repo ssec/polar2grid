@@ -119,7 +119,7 @@ def fill(nc_name, image, template, start_dt):
 
     image_var = nc.variables["image"]
     if image_var.shape != image.shape:
-        log.error("Image shapes aren't equal")
+        log.error("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape),str(image.shape)))
         return False
 
     # Convert to signed byte keeping large values large

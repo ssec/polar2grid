@@ -170,7 +170,7 @@ def run_viirs2awips(grid_number, filepaths,
 
     # Get number of rows and columns for the output grid
     nc = Dataset(file_info["nc_template"], "r")
-    (out_cols,out_rows) = nc.variables["image"].shape
+    (out_rows,out_cols) = nc.variables["image"].shape
     log.debug("Number of output columns calculated from NC template %d" % out_cols)
     log.debug("Number of output rows calculated from NC template %d" % out_rows)
 
@@ -252,8 +252,9 @@ def run_viirs2awips(grid_number, filepaths,
         return
 
     # Move and/or link recently created files
-    _force_symlink(file_info["img_output"], "result.real4.5120.5120")
-    file_info["fbf_output"] = "result.real4.5120.5120"
+    # NetCDF4 has its cols vs rows backwards
+    _force_symlink(file_info["img_output"], "result.real4.%d.%d" % (out_cols,out_rows))
+    file_info["fbf_output"] = "result.real4.%d.%d" % (out_cols,out_rows)
 
     try:
         W = Workspace('.')

@@ -1,0 +1,15 @@
+# Northern Hemisphere Universal Polar Stereographic 2000 m
+Grid Width: 7239
+Grid Height: 8384
+Grid Map Origin Column:-0.5
+Grid Map Origin Row:-0.5
+Grid Map Units per Cell:1001.128
+Map Projection:Polar Stereographic (ellipsoid)
+Map Reference Latitude:90.0
+Map Reference Longitude:-150.0
+Map Equatorial Radius:6378137
+Map Polar Radius:6356752.314
+Map Origin Latitude:64.61976
+Map Origin Longitude:134.0415
+Map Eccentricity:0.0818191910435
+Map Eccentricity Squared:0.006785161574
