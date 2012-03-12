@@ -147,6 +147,8 @@ def narrate(finfos):
             nmask_data[don_mask] = False
             dmask_data[mask] = False
             nmask_data[mask] = False
+            # Only data that has a valid day or night flag is valid
+            mask= mask & don_mask
         ghp.close()
 
         yield lon_data, lat_data, scaler(image_data), dmask_data, nmask_data, mask

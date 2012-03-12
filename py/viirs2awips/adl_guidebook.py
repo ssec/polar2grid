@@ -104,7 +104,7 @@ DATA_KINDS = {
         "I04" : K_BTEMP,
         "I05" : K_BTEMP,
         "I06" : K_REFLECTANCE,
-        "DNB" : K_RADIANCE
+        "DNB00" : K_RADIANCE
         }
 
 # missing value sentinels for different datasets

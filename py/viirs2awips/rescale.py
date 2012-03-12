@@ -35,9 +35,7 @@ def passive_scale(img, *args, **kwargs):
 
 def sqrt_scale(img, *args, **kwargs):
     log.debug("Running 'sqrt_scale'...")
-    print img.min(), img.max()
-    # FIXME: Remove this line when unscaled stuff works
-    #numpy.divide(img, 65536.0, img)
+    mask = img == -999
     print img.min(), img.max()
     numpy.multiply(img, 100.0, img)
     print img.min(), img.max()
@@ -47,6 +45,8 @@ def sqrt_scale(img, *args, **kwargs):
     print img.min(), img.max()
     numpy.round(img, out=img)
     print img.min(), img.max()
+    img[mask] = -999
+    print img.min(), img.max()
     return img
 
 def bt_scale(img, *args, **kwargs):
@@ -54,10 +54,10 @@ def bt_scale(img, *args, **kwargs):
     print img.min(),img.max()
     high_idx = img >= 242.0
     low_idx = img < 242.0
-    z_idx = img == 0
+    z_idx = img == -999
     img[high_idx] = 660 - (2*img[high_idx])
     img[low_idx] = 418 - img[low_idx]
-    img[z_idx] = 0
+    img[z_idx] = -999
     print img.min(),img.max()
     return img
 
