@@ -136,8 +136,11 @@ def narrate(finfos):
                 nmask_data = None
         else:
             don_data = h5v[:,:]
+            don_mask = MISSING_GUIDE[K_SOLARZENITH][not needs_scaling](don_data) if K_SOLARZENITH in MISSING_GUIDE else None
             dmask_data = don_data <= 90 # True if day
             nmask_data = ~dmask_data
+            dmask_data[don_mask] = False
+            nmask_data[don_mask] = False
         ghp.close()
 
         mask = MISSING_GUIDE[finfo["data_kind"]][not needs_scaling](image_data) if finfo["data_kind"] in MISSING_GUIDE else None

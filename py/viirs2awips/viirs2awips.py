@@ -106,7 +106,9 @@ def remove_products():
     elif len(nc_files) == 1:
         _safe_remove(nc_files[0])
 
-def run_viirs2awips(grid_number, filepaths, fornav_D=None, fornav_d=None):
+def run_viirs2awips(grid_number, filepaths,
+        fornav_D=None, fornav_d=None,
+        forced_gpd=None, forced_nc=None):
     """Go through the motions of converting
     a VIIRS h5 file into a AWIPS NetCDF file.
 
@@ -130,9 +132,9 @@ def run_viirs2awips(grid_number, filepaths, fornav_D=None, fornav_d=None):
 
     file_info = {}
     # FIXME: These files will come from guidebook in the future or conf file
-    file_info["grid_gpd"] = GRID_TEMPLATES[grid_number][0]
+    file_info["grid_gpd"] = forced_gpd or GRID_TEMPLATES[grid_number][0]
     log.debug("Using grid template gpd %s" % file_info["grid_gpd"])
-    file_info["nc_template"] = GRID_TEMPLATES[grid_number][1]
+    file_info["nc_template"] = forced_nc or GRID_TEMPLATES[grid_number][1]
     log.debug("Using grid template nc %s" % file_info["nc_template"])
     file_info["nc_format"] = TEMPLATES[(grid_number,band)][1]
     log.debug("Using NC name format %s" % file_info["nc_format"])
@@ -262,6 +264,10 @@ def main():
             help="Specify the -D option for fornav")
     parser.add_option('-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
+    parser.add_option('--gpd', dest='forced_gpd', default=None,
+            help="Specify a different gpd file to use")
+    parser.add_option('--nc', dest='forced_nc', default=None,
+            help="Specify a different nc file to use")
     options,args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
@@ -282,7 +288,7 @@ def main():
         log.error("Wrong number of arguments")
         parser.print_help()
 
-    stat = run_viirs2awips(int(args[0]), args[1:], fornav_D=int(options.fornav_D), fornav_d=int(options.fornav_d))
+    stat = run_viirs2awips(int(args[0]), args[1:], fornav_D=int(options.fornav_D), fornav_d=int(options.fornav_d), forced_gpd=options.forced_gpd, forced_nc=options.forced_nc)
     sys.exit(stat)
 
 if __name__ == "__main__":

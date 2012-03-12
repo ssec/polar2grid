@@ -112,7 +112,8 @@ DATA_KINDS = {
 # 0 if scaling exists, 1 if scaling is None
 MISSING_GUIDE = { K_REFLECTANCE: (lambda A: A>=65533, lambda A:A<0.0),
                 K_RADIANCE: (lambda A: A>=65533, lambda A: A<0.0),
-                K_BTEMP: (lambda A: A>=65533, lambda A: A<0.0)
+                K_BTEMP: (lambda A: A>=65533, lambda A: A<0.0),
+                K_SOLARZENITH: (lambda A: A>=65533, lambda A: A<0.0)
                 }
 
 
