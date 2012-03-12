@@ -7,6 +7,7 @@ import os
 import sys
 import logging
 import re
+import numpy
 from glob import glob
 from netCDF4 import Dataset
 
@@ -165,13 +166,45 @@ def run_viirs2awips(grid_number, filepaths,
     _force_symlink(file_info["fbf_lon"], "lon.img")
     file_info["img_lon"] = "lon.img"
     _force_symlink(file_info["fbf_img"], "swath.img")
-    file_info["img_swath"] = "swath.img"
+    file_info["img_swath_orig"] = "swath.img"
 
     # Get number of rows and columns for the output grid
     nc = Dataset(file_info["nc_template"], "r")
     (out_cols,out_rows) = nc.variables["image"].shape
     log.debug("Number of output columns calculated from NC template %d" % out_cols)
     log.debug("Number of output rows calculated from NC template %d" % out_rows)
+
+    # Run DNB rescaling before running remapping
+    if swath_info["kind"] == "DNB":
+        try:
+            W = Workspace('.')
+            img = getattr(W, "image")[0]
+            data = img.copy()
+            scale_kwargs = {}
+            day_mask = W.day_mask[0]
+            day_mask = day_mask.copy()
+            night_mask = W.night_mask[0]
+            night_mask = night_mask.copy()
+            scale_kwargs["day_mask"] = day_mask.astype(numpy.bool)
+            scale_kwargs["night_mask"] = night_mask.astype(numpy.bool)
+        except StandardError:
+            log.error("Could not open img file %s" % file_info["fbf_output"])
+            log.debug("Files matching %r" % glob("image.*"))
+            return
+
+        try:
+            rescaled_data = rescale(data,
+                    kind=swath_info["kind"],
+                    band=swath_info["band"],
+                    data_kind=swath_info["data_kind"],
+                    **scale_kwargs)
+            file_info["img_swath"] = "./dnb_rescale.real4.%d.%d" % (file_info["swath_cols"],file_info["swath_rows"])
+            rescaled_data.tofile(file_info["img_swath"])
+        except StandardError:
+            log.error("Unexpected error while rescaling data", exc_info=1)
+            return
+    else:
+        file_info["img_swath"] = file_info["img_swath_orig"]
 
     # Run ll2cr
     # TODO: Do I need to calculate 3200 and 48 from the input data?
@@ -225,27 +258,23 @@ def run_viirs2awips(grid_number, filepaths,
         img = getattr(W, "result")[0]
         data = img.copy()
         scale_kwargs = {}
-        if swath_info["kind"] == "DNB":
-            day_mask = W.day_mask[0]
-            day_mask = day_mask.copy()
-            night_mask = W.night_mask[0]
-            night_mask = night_mask.copy()
-            scale_kwargs["day_mask"] = day_mask
-            scale_kwargs["night_mask"] = night_mask
     except StandardError:
         log.error("Could not open img file %s" % file_info["fbf_output"])
         log.debug("Files matching %r" % glob("result.*"))
         return
 
-    try:
-        rescaled_data = rescale(data,
-                kind=swath_info["kind"],
-                band=swath_info["band"],
-                data_kind=swath_info["data_kind"],
-                **scale_kwargs)
-    except StandardError:
-        log.error("Unexpected error while rescaling data", exc_info=1)
-        return
+    if swath_info["kind"] != "DNB":
+        try:
+            rescaled_data = rescale(data,
+                    kind=swath_info["kind"],
+                    band=swath_info["band"],
+                    data_kind=swath_info["data_kind"],
+                    **scale_kwargs)
+        except StandardError:
+            log.error("Unexpected error while rescaling data", exc_info=1)
+            return
+    else:
+        rescaled_data = data
 
     # Make NetCDF files
     file_info["nc_file"] = swath_info["start_dt"].strftime(file_info["nc_format"])

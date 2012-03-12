@@ -118,6 +118,10 @@ def narrate(finfos):
         lon_data = h5v[:,:]
         del h5v
 
+        # Data mask
+        mask = MISSING_GUIDE[finfo["data_kind"]][not needs_scaling](image_data) if finfo["data_kind"] in MISSING_GUIDE else None
+
+        # Day/Night masks
         var_path = gnfo[K_SOLARZENITH]
         if var_path is None:
             h5v = None
@@ -141,9 +145,10 @@ def narrate(finfos):
             nmask_data = ~dmask_data
             dmask_data[don_mask] = False
             nmask_data[don_mask] = False
+            dmask_data[mask] = False
+            nmask_data[mask] = False
         ghp.close()
 
-        mask = MISSING_GUIDE[finfo["data_kind"]][not needs_scaling](image_data) if finfo["data_kind"] in MISSING_GUIDE else None
         yield lon_data, lat_data, scaler(image_data), dmask_data, nmask_data, mask
 
 
