@@ -88,8 +88,13 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=256) :
     Note: the data will be changed in place.
     """
     
+    avg = numpy.mean(data[mask_to_equalize])
+    std = numpy.std (data[mask_to_equalize])
+    # limit our range to +/- 4*std; i.e. about 99.8% of the data
+    concervative_mask = (data < (avg + std*4.0)) & (data > (avg - std*4.0)) & mask_to_equalize
+    
     # bucket all the selected data using numpy's histogram function
-    temp_histogram, temp_bins = numpy.histogram(data[mask_to_equalize], number_of_bins, normed=True)
+    temp_histogram, temp_bins = numpy.histogram(data[concervative_mask], number_of_bins, normed=True)
     # calculate the cumulative distribution function
     cumulative_dist_function  = temp_histogram.cumsum()
     # now normalize the overall distribution function
