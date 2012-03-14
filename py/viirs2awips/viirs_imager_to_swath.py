@@ -129,7 +129,7 @@ def narrate(finfos):
             LOG.debug('fetching %s from %s' % (var_path, geo_path))
             h5v = h5path(ihp, var_path)
 
-        if h5v is None:
+        if h5v is None or finfo["kind"] != "DNB":
             if finfo["kind"] == "DNB":
                 LOG.error("Couldn't get ModeScan data %s for %s" % (var_path, image_path))
                 raise ValueError("Couldn't get ModeScan data %s for %s" % (var_path, image_path))
