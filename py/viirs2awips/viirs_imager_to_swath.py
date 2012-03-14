@@ -18,7 +18,7 @@ import ctypes as c
 import h5py as h5
 import numpy as np
 
-from adl_guidebook import MISSING_GUIDE, RE_NPP, FMT_NPP, K_LATITUDE, K_LONGITUDE, K_ALTITUDE, K_RADIANCE, K_REFLECTANCE, K_SOLARZENITH, K_NAVIGATION, info as _guide_info
+from adl_guidebook import MISSING_GUIDE, RE_NPP, FMT_NPP, K_LATITUDE, K_LONGITUDE, K_ALTITUDE, K_RADIANCE, K_REFLECTANCE, K_MODESCAN, K_NAVIGATION, info as _guide_info
 
 LOG = logging.getLogger(__name__)
 
@@ -93,8 +93,6 @@ def narrate(finfos):
         needs_scaling,scaler = scaling_filter(ihp, var_path, finfo[finfo["factors"]])
         image_data = h5v[:,:]
         del h5v
-        ihp.close()
-        del ihp
 
         gdn,gfn = os.path.split(geo_path)
         gnfo = _guide_info(gfn)
@@ -117,39 +115,57 @@ def narrate(finfos):
             raise ValueError("Couldn't get longitude data %s for %s" % (var_path, image_path))
         lon_data = h5v[:,:]
         del h5v
+        ghp.close()
 
         # Data mask
         mask = MISSING_GUIDE[finfo["data_kind"]][not needs_scaling](image_data) if finfo["data_kind"] in MISSING_GUIDE else None
 
         # Day/Night masks
-        var_path = gnfo[K_SOLARZENITH]
+        # Get data from image hdf file
+        var_path = finfo[K_MODESCAN]
         if var_path is None:
             h5v = None
         else:
             LOG.debug('fetching %s from %s' % (var_path, geo_path))
-            h5v = h5path(ghp, var_path)
+            h5v = h5path(ihp, var_path)
 
         if h5v is None:
             if finfo["kind"] == "DNB":
-                LOG.error("Couldn't get solar zenith data %s for %s" % (var_path, image_path))
-                raise ValueError("Couldn't get solar zenith data %s for %s" % (var_path, image_path))
+                LOG.error("Couldn't get ModeScan data %s for %s" % (var_path, image_path))
+                raise ValueError("Couldn't get ModeScan data %s for %s" % (var_path, image_path))
             else:
-                LOG.info("Couldn't get solar zenith data %s for %s" % (var_path, image_path))
+                LOG.info("Couldn't get ModeScan data %s for %s" % (var_path, image_path))
                 don_data = None
                 dmask_data = None
                 nmask_data = None
         else:
-            don_data = h5v[:,:]
-            don_mask = MISSING_GUIDE[K_SOLARZENITH][not needs_scaling](don_data) if K_SOLARZENITH in MISSING_GUIDE else None
-            dmask_data = don_data <= 90 # True if day
-            nmask_data = ~dmask_data
-            dmask_data[don_mask] = False
-            nmask_data[don_mask] = False
-            dmask_data[mask] = False
-            nmask_data[mask] = False
+            don_data = h5v[:]
+            don_mask = MISSING_GUIDE[K_MODESCAN][0](don_data) if K_MODESCAN in MISSING_GUIDE else None
+            rows_per_scan = finfo["rows_per_scan"]
+            # TODO: The following is probably pretty slow
+            dmask_data = np.zeros_like(image_data, dtype=np.int8)
+            nmask_data = np.zeros_like(image_data, dtype=np.int8)
+            don_mask2 = np.zeros_like(image_data, dtype=np.bool)
+            # Fill in the masks
+            for idx,scan_is_day in enumerate(don_data):
+                start_row = idx*rows_per_scan
+                end_row = start_row + rows_per_scan
+                if don_mask[idx]:
+                    # Bad day/night value
+                    dmask_data[start_row:end_row,:] = 0
+                    nmask_data[start_row:end_row,:] = 0
+                    don_mask2[start_row:end_row,:] = True
+                else:
+                    dmask_data[start_row:end_row,:] = scan_is_day
+                    nmask_data[start_row:end_row,:] = not scan_is_day
+                    don_mask2[start_row:end_row,:] = False
+            # If the image data was bad, then don't use it in the day/night mask
+            dmask_data[mask] = 0
+            nmask_data[mask] = 0
             # Only data that has a valid day or night flag is valid
-            mask= mask & don_mask
-        ghp.close()
+            mask= mask | don_mask2
+        ihp.close()
+        del ihp
 
         yield lon_data, lat_data, scaler(image_data), dmask_data, nmask_data, mask
 
@@ -221,15 +237,16 @@ def swath_to_flat_binary(*finfos):
     imfa = file_appender(imfo, dtype=np.float32)
     lafa = file_appender(lafo, dtype=np.float32)
     lofa = file_appender(lofo, dtype=np.float32)
-    dmask_fa = file_appender(dmask_fo, dtype=np.float32)
-    nmask_fa = file_appender(nmask_fo, dtype=np.float32)
+    dmask_fa = file_appender(dmask_fo, dtype=np.int8)
+    nmask_fa = file_appender(nmask_fo, dtype=np.int8)
     catenate(imfa, lafa, lofa, dmask_fa, nmask_fa, finfos)
     suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
+    suffix2 = '.int1.' + '.'.join(str(x) for x in reversed(imfa.shape))
     os.rename(imname, 'image'+suffix)
     os.rename(latname, 'latitude'+suffix)
     os.rename(lonname, 'longitude'+suffix)
-    os.rename(dmask_name, 'day_mask'+suffix)
-    os.rename(nmask_name, 'night_mask'+suffix)
+    os.rename(dmask_name, 'day_mask'+suffix2)
+    os.rename(nmask_name, 'night_mask'+suffix2)
 
 
 

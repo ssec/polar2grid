@@ -98,7 +98,6 @@ def fill(nc_name, image, template, start_dt):
     """
     nc_name = os.path.abspath(nc_name)
     template = os.path.abspath(template)
-    # TODO: How do I figure out the time?
     if not os.path.exists(template):
         log.error("Template does not exist %s" % template)
         return False
@@ -129,7 +128,6 @@ def fill(nc_name, image, template, start_dt):
     image[small_idxs] = 0
 
     image_var[:] = image
-    # FIXME: Time needs to be derived from somewhere
     time_var = nc.variables["validTime"]
     time_var[:] = float(calendar.timegm( start_dt.utctimetuple() )) + float(start_dt.microsecond)/1e6
     nc.sync() # Just in case

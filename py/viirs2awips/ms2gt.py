@@ -105,7 +105,8 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
     return d
 
 def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, rowfile, swathfile, grid_cols, grid_rows, output_fn,
-        verbose=False, swath_data_type_1=None, swath_fill_1=None, grid_fill_1=None, weight_delta_max=None, weight_distance_max=None):
+        verbose=False, swath_data_type_1=None, swath_fill_1=None, grid_fill_1=None, weight_delta_max=None, weight_distance_max=None,
+        start_scan=None):
     args = ["fornav", "%d" % chan_count]
     if verbose:
         args.append("-v")
@@ -119,6 +120,8 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         args.extend(["-D", "%d" % weight_delta_max])
     if weight_distance_max is not None:
         args.extend(["-d", "%d" % weight_distance_max])
+    if start_scan is not None:
+        args.extend(["-s", "%d" % start_scan[0], "%d" % start_scan[1]])
 
     args.extend([swath_cols, swath_scans, swath_rows_per_scan, colfile, rowfile, swathfile, grid_cols, grid_rows, output_fn])
 
