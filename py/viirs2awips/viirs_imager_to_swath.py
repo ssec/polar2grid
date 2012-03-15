@@ -18,7 +18,7 @@ import ctypes as c
 import h5py as h5
 import numpy as np
 
-from adl_guidebook import MISSING_GUIDE, RE_NPP, FMT_NPP, K_LATITUDE, K_LONGITUDE, K_ALTITUDE, K_RADIANCE, K_REFLECTANCE, K_MODESCAN, K_NAVIGATION, info as _guide_info
+from adl_guidebook import MISSING_GUIDE, RE_NPP, FMT_NPP, K_LATITUDE, K_LONGITUDE, K_ALTITUDE, K_RADIANCE, K_REFLECTANCE, K_MODESCAN, K_QF3, K_NAVIGATION, info as _guide_info
 
 LOG = logging.getLogger(__name__)
 
@@ -105,6 +105,7 @@ def narrate(finfos):
             LOG.error("Couldn't get latitude data %s for %s" % (var_path, image_path))
             raise ValueError("Couldn't get latitude data %s for %s" % (var_path, image_path))
         lat_data = h5v[:,:]
+        lat_mask = MISSING_GUIDE[K_LATITUDE][1](lat_data) if K_LATITUDE in MISSING_GUIDE else None
         del h5v
 
         var_path = gnfo[K_LONGITUDE]
@@ -114,6 +115,7 @@ def narrate(finfos):
             LOG.error("Couldn't get longitude data %s for %s" % (var_path, image_path))
             raise ValueError("Couldn't get longitude data %s for %s" % (var_path, image_path))
         lon_data = h5v[:,:]
+        lon_mask = MISSING_GUIDE[K_LONGITUDE][1](lon_data) if K_LONGITUDE in MISSING_GUIDE else None
         del h5v
         ghp.close()
 
@@ -126,7 +128,7 @@ def narrate(finfos):
         if var_path is None:
             h5v = None
         else:
-            LOG.debug('fetching %s from %s' % (var_path, geo_path))
+            LOG.debug('fetching %s from %s' % (var_path, image_path))
             h5v = h5path(ihp, var_path)
 
         if h5v is None or finfo["kind"] != "DNB":
@@ -164,18 +166,32 @@ def narrate(finfos):
             nmask_data[mask] = 0
             # Only data that has a valid day or night flag is valid
             mask= mask | don_mask2
+
+        # Get the scan quality array
+        var_path = finfo[K_QF3]
+        LOG.debug('fetching %s from %s' % (var_path, image_path))
+        h5v = h5path(ihp, var_path)
+        if h5v is None:
+            LOG.error("Couldn't get data %s from %s" % (var_path, image_path))
+            raise ValueError("Couldn't get data %s from %s" % (var_path, image_path))
+        scan_quality = np.nonzero(np.repeat(h5v[:] > 0, finfo["rows_per_scan"])) # XXX: Increase if found to be a problem later
         ihp.close()
         del ihp
 
-        yield lon_data, lat_data, scaler(image_data), dmask_data, nmask_data, mask
+        yield lon_data, lon_mask, lat_data, lat_mask, scaler(image_data), mask, dmask_data, nmask_data, scan_quality
 
 
 
 def catenate(image, lat, lon, day_mask, night_mask, finfos):
     """append swath from a sequence of (geo, image) filename pairs to output objects, replacing missing data with -999
     """
-    for dlon, dlat, dimg, dmask_data, nmask_data, missing in narrate( finfos ):
-        dimg[missing] = -999
+    for dlon, lon_mask, dlat, lat_mask, dimg, img_mask, dmask_data, nmask_data, scan_quality in narrate( finfos ):
+        dimg[img_mask] = -999
+        dlon[lon_mask] = -999
+        dlat[lat_mask] = -999
+        dimg = np.delete(dimg, scan_quality, axis=0)
+        dlon = np.delete(dlon, scan_quality, axis=0)
+        dlat = np.delete(dlat, scan_quality, axis=0)
         image.append(dimg)
         lon.append(dlon)
         lat.append(dlat)

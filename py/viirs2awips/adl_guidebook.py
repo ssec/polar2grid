@@ -33,6 +33,7 @@ K_BTEMP = "BrightnessTemperatureVar"
 K_BTEMP_FACTORS = "BrightnessTemperatureFactorsVar"
 K_SOLARZENITH = "SolarZenithVar"
 K_MODESCAN = "ModeScanVar"
+K_QF3 = "QF3Var"
 K_NAVIGATION = 'NavigationFilenameGlob'  # glob to search for to find navigation file that corresponds
 K_GEO_REF = 'CdfcbGeolocationFileGlob' # glob which would match the N_GEO_Ref attribute
 
@@ -71,6 +72,7 @@ VAR_GUIDE = { r'GITCO.*' : {
                             K_REFLECTANCE_FACTORS: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/ReflectanceFactors',
                             K_BTEMP_FACTORS: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/BrightnessTemperatureFactors',
                             K_MODESCAN: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/ModeScan',
+                            K_QF3: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'G%(kind)sTCO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
               r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
@@ -80,6 +82,7 @@ VAR_GUIDE = { r'GITCO.*' : {
                             K_REFLECTANCE_FACTORS: None,
                             K_BTEMP_FACTORS: None,
                             K_MODESCAN: '/All_Data/VIIRS-DNB-SDR_All/ModeScan',
+                            K_QF3: '/All_Data/VIIRS-DNB-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
             }
@@ -118,11 +121,13 @@ DATA_KINDS = {
 
 # missing value sentinels for different datasets
 # 0 if scaling exists, 1 if scaling is None
-MISSING_GUIDE = { K_REFLECTANCE: (lambda A: A>=65533, lambda A:A<0.0),
-                K_RADIANCE: (lambda A: A>=65533, lambda A: A<0.0),
-                K_BTEMP: (lambda A: A>=65533, lambda A: A<0.0),
-                K_SOLARZENITH: (lambda A: A>=65533, lambda A: A<0.0),
-                K_MODESCAN: (lambda A: A>1, lambda A: A>1)
+MISSING_GUIDE = { K_REFLECTANCE: (lambda A: A>=65528, lambda A:A<0.0),
+                K_RADIANCE: (lambda A: A>=65528, lambda A: A<0.0),
+                K_BTEMP: (lambda A: A>=65528, lambda A: A<0.0),
+                K_SOLARZENITH: (lambda A: A>=65528, lambda A: A<0.0),
+                K_MODESCAN: (lambda A: A>1, lambda A: A>1),
+                K_LATITUDE: (lambda A: A>=65528, lambda A: A<=-999),
+                K_LONGITUDE: (lambda A: A>=65528, lambda A: A<=-999)
                 }
 
 
