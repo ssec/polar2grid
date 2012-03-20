@@ -75,25 +75,35 @@ def dnb_scale(img, *args, **kwargs):
     log.debug("Running 'dnb_scale'...")
     
     if ("day_mask"   in kwargs) and (numpy.sum(kwargs["day_mask"])   > 0) :
+        log.debug("  scaling DNB in day mask")
         _histogram_equalization(img, kwargs["day_mask"  ])
     
     if ("night_mask" in kwargs) and (numpy.sum(kwargs["night_mask"]) > 0) :
+        log.debug("  scaling DNB in night mask")
         _histogram_equalization(img, kwargs["night_mask"])
     
     return img
 
-def _histogram_equalization (data, mask_to_equalize, number_of_bins=256) :
+def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True) :
     """
     Perform a histogram equalization on the data selected by mask_to_equalize.
-    The data will be separated into number_of_bins levels of discrete values.
+    The data will be separated into number_of_bins levels for equalization and
+    outliers beyond +/- std_mult_cutoff*std will be ignored.
+    
+    If do_zerotoone_normalization is True the data selected by mask_to_equalize
+    will be returned in the 0 to 1 range. Otherwise the data selected by
+    mask_to_equalize will be returned in the 0 to number_of_bins range.
     
     Note: the data will be changed in place.
     """
     
+    log.debug("    determining DNB data range for histogram equalization")
     avg = numpy.mean(data[mask_to_equalize])
     std = numpy.std (data[mask_to_equalize])
-    # limit our range to +/- 4*std; i.e. about 99.8% of the data
-    concervative_mask = (data < (avg + std*4.0)) & (data > (avg - std*4.0)) & mask_to_equalize
+    # limit our range to +/- std_mult_cutoff*std; e.g. the default std_mult_cutoff is 4.0 so about 99.8% of the data
+    concervative_mask = (data < (avg + std*std_mult_cutoff)) & (data > (avg - std*std_mult_cutoff)) & mask_to_equalize
+    
+    log.debug("    running histogram equalization")
     
     # bucket all the selected data using numpy's histogram function
     temp_histogram, temp_bins = numpy.histogram(data[concervative_mask], number_of_bins, normed=True)
@@ -104,6 +114,11 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=256) :
     
     # linearly interpolate using the distribution function to get the new values
     data[mask_to_equalize] = numpy.interp(data[mask_to_equalize], temp_bins[:-1], cumulative_dist_function)
+    
+    # if we were asked to, normalize our data to be between zero and one, rather than zero and number_of_bins
+    if do_zerotoone_normalization :
+        log.debug("    normalizing DNB data into 0 to 1 range")
+        data[mask_to_equalize] = data[mask_to_equalize] / number_of_bins
     
     return data
 
