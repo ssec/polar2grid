@@ -227,6 +227,7 @@ def run_viirs2awips(grid_number, filepaths,
         file_info["img_swath"] = file_info["img_swath_orig"]
 
     # Run ll2cr
+    # FIXME: The num_rows and num_cols returned by the ll2cr wrapper are wrong
     swath_info["swath_scans"] = int(swath_info["swath_rows"]/swath_info["rows_per_scan"])
     log.debug("Calculated %d scans in combined swath" % swath_info["swath_scans"])
     cr_dict = ms2gt.ll2cr(
@@ -299,11 +300,12 @@ def run_viirs2awips(grid_number, filepaths,
     else:
         # TODO: Do this better/prettier
         # Fill should still be 0 here
-        rescaled_data = data * 255.0
+        log.debug("Running DNB rescaling from 0-1 to 0-255")
+        rescaled_data = numpy.multiply(data, 255.0, out=data)
 
     # Make NetCDF files
     file_info["nc_file"] = swath_info["start_dt"].strftime(file_info["nc_format"])
-    nc_stat = awips_netcdf.fill(file_info["nc_file"], data, file_info["nc_template"], swath_info["start_dt"])
+    nc_stat = awips_netcdf.fill(file_info["nc_file"], rescaled_data, file_info["nc_template"], swath_info["start_dt"])
     if not nc_stat:
         log.error("Error while creating NC file")
         return
