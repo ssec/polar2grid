@@ -123,7 +123,7 @@ def run_viirs2awips(grid_number, filepaths,
     5. awips_netcdf.py
     """
     # Get grid templates and figure out the AWIPS product id to use
-    if grid_number not in GRID_TEMPLATES:
+    if (forced_nc is None or forced_gpd is None) and grid_number not in GRID_TEMPLATES:
         log.error("Unknown or unconfigured grid number %d in grids/*" % grid_number)
         return
     band = os.path.split(filepaths[0])[1][2:5]
