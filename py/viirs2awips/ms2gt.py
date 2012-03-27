@@ -108,14 +108,53 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         verbose=False, swath_data_type_1=None, swath_fill_1=None, grid_fill_1=None, weight_delta_max=None, weight_distance_max=None,
         start_scan=None):
     args = ["fornav", "%d" % chan_count]
+
+    if chan_count == 1 and not isinstance(swathfile, list):
+        swathfile = [swathfile]
+    if chan_count == 1 and not isinstance(output_fn, list):
+        output_fn = [output_fn]
+    if chan_count > 1 and len(swathfile) != chan_count:
+        if isinstance(swathfile, list):
+            log.error("Number of input files does not equal channel count %d" % (len(swathfile), chan_count))
+            raise ValueError("Number of input files does not equal channel count %d" % (len(swathfile), chan_count))
+        else:
+            log.error("Input files must be a list if channel count is more than 1")
+            raise ValueError("Input files must be a list if channel count is more than 1")
+
+    if chan_count > 1 and len(output_fn) != chan_count:
+        if isinstance(output_fn, list):
+            log.error("Number of output files does not equal channel count %d" % (len(output_fn), chan_count))
+            raise ValueError("Number of output files does not equal channel count %d" % (len(output_fn), chan_count))
+        else:
+            log.error("Output files must be a list if channel count is more than 1")
+            raise ValueError("Output files must be a list if channel count is more than 1")
+
     if verbose:
         args.append("-v")
     if swath_data_type_1:
-        args.extend(["-t", "%s" % swath_data_type_1])
+        args.append("-t")
+        if chan_count > 1 and not isinstance(swath_data_type_1, list):
+            args.extend(["%s" % swath_data_type_1]*chan_count)
+        elif chan_count > 1:
+            args.extend(swath_data_type_1)
+        else:
+            args.append(swath_data_type_1)
     if swath_fill_1 is not None:
-        args.extend(["-f", "%f" % swath_fill_1])
+        args.append("-f")
+        if chan_count > 1 and not isinstance(swath_fill_1, list):
+            args.extend(["%f" % swath_fill_1]*chan_count)
+        elif chan_count > 1:
+            args.extend(swath_fill_1)
+        else:
+            args.append(swath_fill_1)
     if grid_fill_1 is not None:
-        args.extend(["-F", "%d" % grid_fill_1])
+        args.append("-F")
+        if chan_count > 1 and not isinstance(grid_fill_1, list):
+            args.extend(["%d" % grid_fill_1]*chan_count)
+        elif chan_count > 1:
+            args.extend(grid_fill_1)
+        else:
+            args.append(grid_fill_1)
     if weight_delta_max is not None:
         args.extend(["-D", "%d" % weight_delta_max])
     if weight_distance_max is not None:
@@ -123,7 +162,10 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
     if start_scan is not None:
         args.extend(["-s", "%d" % start_scan[0], "%d" % start_scan[1]])
 
-    args.extend([swath_cols, swath_scans, swath_rows_per_scan, colfile, rowfile, swathfile, grid_cols, grid_rows, output_fn])
+    args.extend([swath_cols, swath_scans, swath_rows_per_scan, colfile, rowfile])
+    args.extend(swathfile)
+    args.extend([grid_cols, grid_rows])
+    args.extend(output_fn)
 
     try:
         args = [ str(a) for a in args ]

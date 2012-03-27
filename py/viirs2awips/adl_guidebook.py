@@ -14,10 +14,11 @@ Licensed under GNU GPLv3.
 import sys, os
 import re
 import logging
-from datetime import datetime
+from datetime import datetime,timedelta
 from keoni.time.epoch import UTC
 
-import h5py
+import h5py as h5
+import numpy as np
 
 LOG = logging.getLogger('adl_cdfcb')
 UTC= UTC()
@@ -32,6 +33,7 @@ K_REFLECTANCE_FACTORS = "ReflectanceFactorsVar"
 K_BTEMP = "BrightnessTemperatureVar"
 K_BTEMP_FACTORS = "BrightnessTemperatureFactorsVar"
 K_SOLARZENITH = "SolarZenithVar"
+K_STARTTIME = "StartTimeVar"
 K_MODESCAN = "ModeScanVar"
 K_QF3 = "QF3Var"
 K_NAVIGATION = 'NavigationFilenameGlob'  # glob to search for to find navigation file that corresponds
@@ -46,25 +48,28 @@ FACTORS_GUIDE = {
         }
 
 # FIXME: add RadianceFactors/ReflectanceFactors
-VAR_GUIDE = { r'GITCO.*' : {
+GEO_FILE_GUIDE = {
+            r'GITCO.*' : {
                             K_LATITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Latitude',
                             K_LONGITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Longitude',
                             K_ALTITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Height',
-                            K_SOLARZENITH: None
+                            K_STARTTIME: '/All_Data/VIIRS-IMG-GEO-TC_All/StartTime'
                             },
-              r'GMTCO.*' : {
+            r'GMTCO.*' : {
                             K_LATITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Latitude',
                             K_LONGITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Longitude',
                             K_ALTITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Height',
-                            K_SOLARZENITH: None
+                            K_STARTTIME: '/All_Data/VIIRS-MOD-GEO-TC_All/StartTime'
                             },
-              r'GDNBO.*' : {
+            r'GDNBO.*' : {
                             K_LATITUDE: '/All_Data/VIIRS-DNB-GEO_All/Latitude',
                             K_LONGITUDE: '/All_Data/VIIRS-DNB-GEO_All/Longitude',
                             K_ALTITUDE: '/All_Data/VIIRS-DNB-GEO_All/Height',
-                            K_SOLARZENITH: '/All_Data/VIIRS-DNB-GEO_All/SolarZenithAngle'
-                            },
-              r'SV(?P<kind>[IM])(?P<band>\d\d).*': { 
+                            K_STARTTIME: '/All_Data/VIIRS-DNB-GEO_All/StartTime'
+                            }
+            }
+SV_FILE_GUIDE = {
+            r'SV(?P<kind>[IM])(?P<band>\d\d).*': { 
                             K_RADIANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Radiance',
                             K_REFLECTANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Reflectance',
                             K_BTEMP: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/BrightnessTemperature',
@@ -75,7 +80,7 @@ VAR_GUIDE = { r'GITCO.*' : {
                             K_QF3: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'G%(kind)sTCO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
-              r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
+            r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
                             K_REFLECTANCE: None,
                             K_BTEMP: None,
                             K_RADIANCE_FACTORS: '/All_Data/VIIRS-DNB-SDR_All/RadianceFactors',
@@ -89,8 +94,17 @@ VAR_GUIDE = { r'GITCO.*' : {
 
 ROWS_PER_SCAN = {
         "M"  : 16,
+        "GMTCO" : 16,
         "I"  : 32,
-        "DNB": 16
+        "GITCO" : 32,
+        "DNB": 16,
+        "GDNBO" : 16
+        }
+
+COLS_PER_ROW = {
+        "M"  : 3200,
+        "I"  : 6400,
+        "DNB": 4064
         }
 
 DATA_KINDS = {
@@ -159,20 +173,71 @@ def get_datetimes(finfo):
     finfo["start_dt"] = s_dt
     finfo["end_dt"] = e_dt
 
-def info(filename):
-    """check guidebook for a given filename
+def h5path(hp, path, h5_path, required=False):
+    "traverse an hdf5 path to return a nested data object"
+    LOG.debug('fetching %s from %s' % (path, h5_path))
+    x = hp
+    for a in path.split('/'):
+        if a:
+            if a in x:
+                x = x[a]
+            else:
+                LOG.info("Couldn't find %s (or its parent) in %s" % (a,path))
+                x = None
+                break
+        else:
+            # If they put a / at the end of the var path
+            continue
+    if x is hp:
+        LOG.error("Could not get %s from h5 file" % path)
+        x = None
 
-    >>> _guide_info('SVM09_npp_d20111208_t1851020_e1852261_b00587_c20111209024749514346_noaa_ops.h5')
-    {'ReflectanceVar': '/All_Data/VIIRS-M9-SDR_All/Reflectance', 'NavigationFilenameGlob': 'GMTCO_npp_d20111208_t1851020_e1852261_b00587_*_noaa_ops.h5', 'RadianceVar': '/All_Data/VIIRS-M9-SDR_All/Radiance'}
-    >>> _guide_info('GITCO_npp_d20111208_t1851020_e1852261_b00587_c20111209023536161164_noaa_ops.h5')
-    {'LatitudeVar': '/All_Data/VIIRS-IMG-GEO-TC_All/Latitude', 'AltitudeVar': '/All_Data/VIIRS-IMG-GEO-TC_All/Height', 'LongitudeVar': '/All_Data/VIIRS-IMG-GEO-TC_All/Longitude'}
+    if x is None and required:
+        LOG.error("Couldn't get data %s from %s" % (path, h5_path))
+        raise ValueError("Couldn't get data %s from %s" % (path, h5_path))
+
+    return x
+
+def scaling_filter(hp, var_path, scale_path, h5_path, required=False):
+    "add Filters to the end of a variable, fetch mx+b scaling factors, and return a lambda function to apply them"
+    factvar = h5path(hp, scale_path, h5_path, required=required)   # FUTURE: make this more elegant please
+    if factvar is None:
+        LOG.debug("No scaling factors found for %s at %s" % (var_path, scale_path))
+        return False,lambda x: x
+    else:
+        (m,b) = factvar[:]
+        LOG.debug('scaling factors for %s are (%f,%f)' % (var_path, m,b))
+        return True,lambda x: x*m + b
+
+def _st_to_datetime(st):
+    """Convert a VIIRS StartTime which is in microseconds since 1958-01-01 to
+    a datetime object.
     """
-    for pat, nfo in VAR_GUIDE.items():
+    base = datetime(1958, 1, 1, 0, 0, 0)
+    return base + timedelta(microseconds=int(st))
+
+def file_info(fn):
+    """Get as much information from the filename of a data file as possible.
+
+    Main rule of this function is don't touch the file system.
+    """
+    fn = os.path.abspath(fn)
+    finfo = {}
+    finfo["img_path"] = fn
+    finfo["base_path"],finfo["filename"] = base_path,filename = os.path.split(fn)
+
+    for pat, nfo in SV_FILE_GUIDE.items():
+        # Find what type of file we have
         m = re.match(pat, filename)
         if not m:
             continue
+
         # collect info from filename
-        finfo = dict(RE_NPP.match(filename).groupdict())
+        pat_match = RE_NPP.match(filename)
+        if not pat_match:
+            LOG.error("Filename matched initial pattern, but not full name pattern")
+            raise ValueError("Filename matched initial pattern, but not full name pattern")
+        pat_info = dict(pat_match.groupdict())
 
         # For dnb
         minfo = m.groupdict()
@@ -181,6 +246,7 @@ def info(filename):
             minfo["band"] = "00"
 
         # merge the guide info
+        finfo.update(pat_info)
         finfo.update(minfo)
 
         if finfo["kind"] not in ["M","I","DNB"]:
@@ -188,6 +254,7 @@ def info(filename):
             LOG.warning("Band kind not known %s" % finfo["kind"])
             finfo["data_kind"] = None
             finfo["rows_per_scan"] = None
+            finfo["cols_per_row"] = None
         else:
             # Figure out what type of data we want to use
             dkind = finfo["kind"] + finfo["band"]
@@ -197,21 +264,223 @@ def info(filename):
             else:
                 finfo["data_kind"] = DATA_KINDS[dkind]
             finfo["rows_per_scan"] = ROWS_PER_SCAN[finfo["kind"]]
+            finfo["cols_per_row"] = COLS_PER_ROW[finfo["kind"]]
 
         finfo["factors"] = FACTORS_GUIDE[finfo["data_kind"]]
 
-        eva = evaluator(GEO_GUIDE=GEO_GUIDE, **finfo)
         # Convert time information to datetime objects
         get_datetimes(finfo)
         finfo.update(**nfo)
+        eva = evaluator(GEO_GUIDE=GEO_GUIDE, **finfo)
+        for k,v in finfo.items():
+            if isinstance(v,str):
+                finfo[k] = v % eva
+        finfo["geo_glob"] = os.path.join(base_path, finfo[K_NAVIGATION])
+        return finfo
+    LOG.warning('unable to find %s in guidebook' % filename)
+    return finfo
+
+def read_file_info(finfo, extra_mask=None, fill_value=-999):
+    hp = h5.File(finfo["img_path"])
+
+    data_kind = finfo["data_kind"]
+    data_var_path = finfo[data_kind]
+    factors_var_path = finfo[finfo["factors"]]
+    modescan_var_path = finfo[K_MODESCAN]
+    qf3_var_path = finfo[K_QF3]
+
+    # Get image data
+    h5v = h5path(hp, data_var_path, finfo["img_path"], required=True)
+    image_data = h5v[:,:]
+    del h5v
+
+    # Get mode scan data
+    if finfo["kind"] == "DNB":
+        h5v = h5path(hp, modescan_var_path, finfo["img_path"], required=True)
+        modescan_data = h5v[:]
+        del h5v
+    else:
+        modescan_data = None
+
+    # Get QF3 data
+    h5v = h5path(hp, qf3_var_path, finfo["img_path"], required=True)
+    qf3_data = h5v[:]
+    del h5v
+
+    # Get scaling function (also reads scaling factors from hdf)
+    needs_scaling,scaler = scaling_filter(hp, data_var_path, factors_var_path, finfo["img_path"])
+
+    # Calculate mask
+    mask = MISSING_GUIDE[data_kind][not needs_scaling](image_data) if data_kind in MISSING_GUIDE else None
+    if extra_mask is not None:
+        mask = mask | extra_mask
+
+    # Create day and night masks
+    if modescan_data is None:
+        dmask_data = None
+        nmask_data = None
+    else:
+        rows_per_scan = finfo["rows_per_scan"]
+        cols_per_row = finfo["cols_per_row"]
+        print image_data.shape, rows_per_scan, cols_per_row, rows_per_scan * cols_per_row
+        dmask_data = np.repeat(modescan_data == 1, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
+        nmask_data = np.repeat(modescan_data == 0, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
+        don_mask = MISSING_GUIDE[K_MODESCAN][0](modescan_data) if K_MODESCAN in MISSING_GUIDE else None
+        don_mask = np.repeat(don_mask, rows_per_scan * cols_per_row).reshape(image_data.shape)
+        mask = mask | don_mask
+
+    # Scale image data
+    image_data = scaler(image_data)
+
+    # Create scan_quality array
+    scan_quality = np.nonzero(np.repeat(qf3_data > 0, finfo["rows_per_scan"]))
+
+    # Mask off image data
+    image_data[mask] = -999
+
+    finfo["image_data"] = image_data
+    finfo["image_mask"] = mask
+    finfo["day_mask"] = dmask_data
+    finfo["night_mask"] = nmask_data
+    finfo["scan_quality"] = scan_quality
+    return finfo
+
+def geo_info(fn):
+    fn = os.path.abspath(fn)
+    finfo = {}
+    finfo["geo_path"] = fn
+    finfo["filename"] = filename = os.path.split(fn)[1]
+    for pat, nfo in GEO_FILE_GUIDE.items():
+        # Find what type of file we have
+        m = re.match(pat, filename)
+        if not m:
+            continue
+
+        # collect info from filename
+        pat_match = RE_NPP.match(filename)
+        if not pat_match:
+            LOG.error("Filename matched initial pattern, but not full name pattern")
+            raise ValueError("Filename matched initial pattern, but not full name pattern")
+        pat_info = dict(pat_match.groupdict())
+        minfo = m.groupdict()
+
+        # merge the guide info
+        finfo.update(pat_info)
+        finfo.update(minfo)
+
+        # Get constant/known information from mappings
+        finfo["rows_per_scan"] = ROWS_PER_SCAN[finfo["kind"]]
+
+        # Fill any information if needed
+        finfo.update(**nfo)
+        eva = evaluator(GEO_GUIDE=GEO_GUIDE, **finfo)
         for k,v in finfo.items():
             if isinstance(v,str):
                 finfo[k] = v % eva
         return finfo
     LOG.warning('unable to find %s in guidebook' % filename)
-    return {}
+    return finfo
 
-if __name__=='__main__':
+def read_geo_info(finfo):
+    hp = h5.File(finfo["geo_path"])
+
+    lat_var_path = finfo[K_LATITUDE]
+    lon_var_path = finfo[K_LONGITUDE]
+    st_var_path = finfo[K_STARTTIME]
+
+    # Get latitude data
+    h5v = h5path(hp, lat_var_path, finfo["geo_path"], required=True)
+    lat_data = h5v[:,:]
+    del h5v
+
+    # Get longitude data
+    h5v = h5path(hp, lon_var_path, finfo["geo_path"], required=True)
+    lon_data = h5v[:,:]
+    del h5v
+
+    # Get start time
+    h5v = h5path(hp, st_var_path, finfo["geo_path"], required=True)
+    start_dt = _st_to_datetime(h5v[0])
+
+    # Calculate latitude mask
+    lat_mask = MISSING_GUIDE[K_LATITUDE][1](lat_data) if K_LATITUDE in MISSING_GUIDE else None
+
+    # Calculate longitude mask
+    lon_mask = MISSING_GUIDE[K_LONGITUDE][1](lat_data) if K_LONGITUDE in MISSING_GUIDE else None
+
+
+    # Mask off image data
+    lat_data[lat_mask] = -999
+    lon_data[lon_mask] = -999
+
+    finfo["lat_data"] = lat_data
+    finfo["lon_data"] = lon_data
+    finfo["lat_mask"] = lat_mask
+    finfo["lon_mask"] = lon_mask
+    finfo["start_dt"] = start_dt
+    # Rows only
+    finfo["scan_quality"] = (np.nonzero(lat_mask)[0],)
+    return finfo
+
+def generic_info(fn):
+    if os.path.split(fn)[1].startswith("S"):
+        return file_info(fn)
+    else:
+        return geo_info(fn)
+
+def generic_read(fn, finfo):
+    if os.path.split(fn)[1].startswith("S"):
+        return read_file_info(finfo)
+    else:
+        return read_geo_info(finfo)
+
+def main():
+    import optparse
     from pprint import pprint
-    for fn in sys.argv[1:]:
-        pprint(info(os.path.split(fn)[-1]))
+    usage = """
+%prog [options] filename1.h5
+
+"""
+    parser = optparse.OptionParser(usage)
+    parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
+            help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
+    parser.add_option('-r', '--no-read', dest='read_h5', action='store_false', default=True,
+            help="don't read or look for the h5 file, only analyze the filename")
+    (options, args) = parser.parse_args()
+
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    logging.basicConfig(level = levels[min(3, options.verbosity)])
+
+    if not args:
+        parser.error( 'must specify 1 filename, try -h or --help.' )
+        return -1
+
+    for fn in args:
+        try:
+            finfo = generic_info(fn)
+        except:
+            LOG.error("Failed to get info from filename '%s'" % fn, exc_info=1)
+            continue
+
+        if options.read_h5:
+            generic_read(fn, finfo)
+            pprint(finfo)
+            if finfo["data_kind"] == K_RADIANCE:
+                data_shape = str(finfo["data"].shape)
+                print "Got Radiance with shape %s" % data_shape
+            elif finfo["data_kind"] == K_REFLECTANCE:
+                data_shape = str(finfo["data"].shape)
+                print "Got Reflectance with shape %s" % data_shape
+            elif finfo["data_kind"] == K_BTEMP:
+                data_shape = str(finfo["data"].shape)
+                print "Got Brightness Temperature with shape %s" % data_shape
+            else:
+                data_shape = "Unknown data type"
+                print "Got %s" % data_shape
+            mask_shape = str(finfo["mask"].shape)
+            print "Mask was created with shape %s" % mask_shape
+        else:
+            pprint(finfo)
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -18,7 +18,7 @@ import ctypes as c
 import h5py as h5
 import numpy as np
 
-from adl_guidebook import MISSING_GUIDE, RE_NPP, FMT_NPP, K_LATITUDE, K_LONGITUDE, K_ALTITUDE, K_RADIANCE, K_REFLECTANCE, K_MODESCAN, K_QF3, K_NAVIGATION, info as _guide_info
+from adl_guidebook import MISSING_GUIDE, RE_NPP, FMT_NPP, K_LATITUDE, K_LONGITUDE, K_ALTITUDE, K_RADIANCE, K_REFLECTANCE, K_MODESCAN, K_QF3, K_NAVIGATION, file_info as _guide_info
 
 LOG = logging.getLogger(__name__)
 
@@ -175,6 +175,8 @@ def narrate(finfos):
             LOG.error("Couldn't get data %s from %s" % (var_path, image_path))
             raise ValueError("Couldn't get data %s from %s" % (var_path, image_path))
         scan_quality = np.nonzero(np.repeat(h5v[:] > 0, finfo["rows_per_scan"])) # XXX: Increase if found to be a problem later
+        if len(scan_quality) != 0:
+            LOG.info("Removing %d bad scans" % len(scan_quality)/finfo["rows_per_scan"])
         ihp.close()
         del ihp
 
@@ -264,7 +266,84 @@ def swath_to_flat_binary(*finfos):
     os.rename(dmask_name, 'day_mask'+suffix2)
     os.rename(nmask_name, 'night_mask'+suffix2)
 
+def script_s2fbf(*image_paths):
+    """Script function to take all image paths of one band
+    and create a latitude, longitude, and image fbf file.
+    """
+    image_paths = sorted(list(set(image_paths)))
+    from adl_guidebook import file_info,read_file_info,geo_info,read_geo_info
+    # Create output files
+    spid = '%d' % os.getpid()
+    imname = '.image' + spid
+    latname = '.lat' + spid
+    lonname = '.lon' + spid
+    dmask_name = '.day_mask' + spid
+    nmask_name = '.night_mask' + spid
+    imfo = file(imname, 'wb')
+    lafo = file(latname, 'wb')
+    lofo = file(lonname, 'wb')
+    dmask_fo = file(dmask_name, 'wb')
+    nmask_fo = file(nmask_name, 'wb')
+    imfa = file_appender(imfo, dtype=np.float32)
+    lafa = file_appender(lafo, dtype=np.float32)
+    lofa = file_appender(lofo, dtype=np.float32)
+    dmask_fa = file_appender(dmask_fo, dtype=np.int8)
+    nmask_fa = file_appender(nmask_fo, dtype=np.int8)
 
+    geo_finfos = {}
+    img_finfos = []
+    for fn in image_paths:
+        finfo = file_info(fn)
+        img_finfos.append(finfo)
+
+        # Handle geonav files
+        geo_files = glob.glob(finfo["geo_glob"])
+        if len(geo_files) != 1:
+            LOG.error("Found more than one geo file %r" % geo_files)
+            raise ValueError("Found more than one geo file %r" % geo_files)
+        finfo["geo_path"] = geo_files[0]
+
+        if finfo["geo_path"] not in geo_finfos:
+            ginfo = geo_info(finfo["geo_path"])
+            geo_finfos[finfo["geo_path"]] = ginfo
+            read_geo_info(ginfo)
+        else:
+            ginfo = geo_finfos[finfo["geo_path"]]
+
+    # Normally this is where grid determination would happen
+    # Get all the image data after all the lat/lon data
+    for finfo in img_finfos:
+        # Assume every image only has 1 nav file
+        ginfo = geo_finfos[finfo["geo_path"]]
+
+        # Read data files
+        read_file_info(finfo, extra_mask=ginfo["lat_mask"] | ginfo["lon_mask"])
+
+        # Remove any bad scans
+        scan_quality = finfo["scan_quality"]
+        if len(scan_quality[0]) != 0:
+            LOG.info("Removing %d bad scans" % (len(scan_quality[0])/finfo["rows_per_scan"]))
+        finfo["image_data"] = np.delete(finfo["image_data"], scan_quality, axis=0)
+        ginfo["lon_data"] = np.delete(ginfo["lon_data"], scan_quality, axis=0)
+        ginfo["lat_data"] = np.delete(ginfo["lat_data"], scan_quality, axis=0)
+
+        # Cut out bad data
+        imfa.append(finfo["image_data"])
+        dmask_fa.append(finfo["day_mask"])
+        nmask_fa.append(finfo["night_mask"])
+        lafa.append(ginfo["lat_data"])
+        lofa.append(ginfo["lon_data"])
+        del finfo["image_data"]
+        del finfo["day_mask"]
+        del finfo["night_mask"]
+
+    suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
+    suffix2 = '.int1.' + '.'.join(str(x) for x in reversed(imfa.shape))
+    os.rename(imname, 'image'+suffix)
+    os.rename(latname, 'latitude'+suffix)
+    os.rename(lonname, 'longitude'+suffix)
+    os.rename(dmask_name, 'day_mask'+suffix2)
+    os.rename(nmask_name, 'night_mask'+suffix2)
 
 def _test_fbf(*image_paths):
     "convert an image and geo to flat binary files"

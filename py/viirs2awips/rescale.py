@@ -17,6 +17,13 @@ from adl_guidebook import K_REFLECTANCE,K_RADIANCE,K_BTEMP
 
 log = logging.getLogger(__name__)
 
+def post_rescale_dnb(data):
+    """Special case DNB rescaling that happens
+    after the remapping (so just a 0-1 to 0-255 scaling.
+    """
+    log.debug("Running DNB rescaling from 0-1 to 0-255")
+    return numpy.multiply(data, 255.0, out=data)
+
 def _make_lin_scale(m, b):
     def linear_scale(img, *args, **kwargs):
         log.debug("Running 'linear_scale' with (m: %f, b: %f)..." % (m,b))
