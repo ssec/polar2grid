@@ -22,18 +22,19 @@ log = logging.getLogger(__name__)
 script_dir = os.path.split(os.path.realpath(__file__))[0]
 default_grids_dir = os.path.join(script_dir, "grids")
 default_templates_file = os.path.join(script_dir, "templates.conf")
+default_shapes_file = os.path.join(script_dir, "shapes.conf")
 TEMPLATE_FILE = os.environ.get("VIIRS_TEMPLATE", default_templates_file)
 GRIDS_DIR = os.environ.get("VIIRS_GRIDS_DIR", default_grids_dir)
+SHAPES_FILE = os.environ.get("VIIRS_SHAPE_FILE", default_shapes_file)
 
 GRID_TEMPLATES = {}
 # Get a set of the "grid211" part of every template
-for t in set([x[:7] for x in os.listdir(GRIDS_DIR) if x.startswith("grid")]):
+for t in set([x.split(".")[0] for x in os.listdir(GRIDS_DIR) if x.startswith("grid")]):
     nc_temp = t + ".nc"
     gpd_temp = t + ".gpd"
     nc_path = os.path.join(GRIDS_DIR, nc_temp)
     gpd_path = os.path.join(GRIDS_DIR, gpd_temp)
-    # FIXME, needs to allow for more than 3 characters
-    grid_number = t[4:7]
+    grid_number = t[4:]
     if os.path.exists(nc_path) and os.path.exists(gpd_path):
         GRID_TEMPLATES[grid_number] = (gpd_path, nc_path)
 del t,nc_temp,gpd_temp,nc_path,gpd_path,grid_number
@@ -71,6 +72,8 @@ for line in open(TEMPLATE_FILE):
     BANDS[band][grid_number] = val
     GRIDS[grid_number][band] = val
 del line,val,parts,product_id,band,nc_name
+
+SHAPES = dict((parts[0],tuple([float(x) for x in parts[1:6]])) for parts in [line.split(",") for line in open(SHAPES_FILE) if not line.startswith("#") ] )
 
 def _get_templates(grid_number, gpd=None, nc=None):
     if grid_number not in GRID_TEMPLATES:
@@ -255,6 +258,7 @@ def process_geo(kind, gfiles, ginfos):
     return start_dt,swath_rows,swath_cols,rows_per_scan,fbf_lat,fbf_lon
 
 def _determine_grid(kind, start_dt, fbf_lat_var, fbf_lon_var, bands, ginfos, grid_jobs, grids, forced_grid=None, forced_gpd=None, forced_nc=None):
+    # top bound, bottom bound, left bound, right bound, percent
     # Detemine grids
     if forced_grid is not None:
         for band in bands.keys():
@@ -273,8 +277,41 @@ def _determine_grid(kind, start_dt, fbf_lat_var, fbf_lon_var, bands, ginfos, gri
                     log.error("The last job was removed, no more to do, quitting...")
                     raise ValueError("The last job was removed, no more to do, quitting...")
     else:
-        log.error("There is no grid determination formula implemented yet")
-        raise NotImplementedError("There is no grid determination formula implemented yet")
+        # Get lat/lon data
+        try:
+            W = Workspace('.')
+            lat_data = getattr(W, fbf_lat_var)[0].flatten()
+            lon_data = getattr(W, fbf_lon_var)[0].flatten()
+            lon_data_flipped = None
+        except StandardError:
+            log.error("There was an error trying to get the lat/lon swath data for grid determination")
+            raise ValueError("There was an error trying to get the lat/lon swath data for grid determination")
+
+        for grid_number in GRIDS:
+            tbound,bbound,lbound,rbound,percent = SHAPES[grid_number]
+            if lbound > rbound:
+                lbound = lbound + 360.0
+                rbound = rbound + 360.0
+                if lon_data_flipped is None:
+                    lon_mask = lon_data < 0
+                    lon_data_flipped = lon_data.copy()
+                    lon_data_flipped[lon_mask] = lon_data_flipped[lon_mask] + 360
+                    lon_data_use = lon_data_flipped
+                    del lon_mask
+                else:
+                    lon_data_use = lon_data
+            grid_mask = numpy.nonzero( (lat_data < tbound) & (lat_data > bbound) & (lon_data_use < rbound) & (lon_data_use > lbound) )[0]
+            grid_percent = (len(grid_mask) / float(len(lat_data)))
+            log.debug("Band %s had a %f coverage in grid %s" % (kind,grid_percent,grid_number))
+            if grid_percent >= percent:
+                for band in bands.keys():
+                    if _verify_grid(kind, band, grid_number):
+                        grid_info = _get_grid_info(kind, band, grid_number, gpd=forced_gpd, nc=forced_nc)
+                        grid_info["start_dt"] = start_dt
+                        log.debug("Adding grid %s to %s%s" % (grid_number,kind,band))
+                        if band not in grid_jobs: grid_jobs[band] = {}
+                        grid_jobs[band][grid_number] = grid_info.copy()
+                        if grid_number not in grids: grids.append(grid_number)
 
 def process_image(kind, gfiles, ginfos, bands):
     # Get image data and save it to an fbf file
@@ -485,6 +522,7 @@ def process_kind(filepaths,
 
     # Run ll2cr
     for grid_number in grids:
+        print "In ll2cr check"
         gpd_template = None
         for grid_job in [ x[grid_number] for x in grid_jobs.values() if grid_number in x ]:
             # Make every grid_job know what the col and row files are tagged with
@@ -772,7 +810,20 @@ def run_viirs2awips(filepaths,
 
 def main():
     import optparse
-    usage = """%prog <grid #> file1.h5 file2.h5 ..."""
+    usage = """
+    For DB:
+    %prog [options] <event directory>
+
+    For testing (usable files are those of bands mentioned in templates.conf):
+    # Looks for all usable files in data directory
+    %prog [options] <data directory>
+    # Uses all usable files of the specfied
+    %prog [options] -f file1.h5 file2.h5 ...
+    # Only use the I01 files of the files specified
+    %prog [options] -b I01 -f file1.h5 file2.h5 ...
+    # Only use the I band files of the files specified
+    %prog [options] -b I -f file1.h5 file2.h5 ...
+    """
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
                     help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
@@ -812,10 +863,10 @@ def main():
     from pprint import pformat
     log.debug("Grid directory that was used %s" % GRIDS_DIR)
     log.debug(pformat(GRID_TEMPLATES))
-    #log.debug(repr(GRID_TEMPLATES))
     log.debug("Template file that was used %s" % TEMPLATE_FILE)
     log.debug(pformat(GRIDS))
-    #log.debug(repr(GRIDS))
+    log.debug("Shapes file that was used %s" % SHAPES_FILE)
+    log.debug(pformat(SHAPES))
 
     if len(args) == 0 or "help" in args:
         parser.print_help()
