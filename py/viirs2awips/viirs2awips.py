@@ -32,7 +32,8 @@ for t in set([x[:7] for x in os.listdir(GRIDS_DIR) if x.startswith("grid")]):
     gpd_temp = t + ".gpd"
     nc_path = os.path.join(GRIDS_DIR, nc_temp)
     gpd_path = os.path.join(GRIDS_DIR, gpd_temp)
-    grid_number = int(t[4:7])
+    # FIXME, needs to allow for more than 3 characters
+    grid_number = t[4:7]
     if os.path.exists(nc_path) and os.path.exists(gpd_path):
         GRID_TEMPLATES[grid_number] = (gpd_path, nc_path)
 del t,nc_temp,gpd_temp,nc_path,gpd_path,grid_number
@@ -48,7 +49,7 @@ for line in open(TEMPLATE_FILE):
     if len(parts) < 4:
         print "ERROR: Need at least 4 columns in templates.conf (%s)" % line
     product_id = parts[0]
-    grid_number = int(parts[1])
+    grid_number = parts[1]
     band = parts[2]
     if len(band) != 3:
         print "ERROR: Expected 3 characters for band got %d (%s)" % (len(band),band)
@@ -57,13 +58,13 @@ for line in open(TEMPLATE_FILE):
     if grid_number not in GRIDS:
         GRIDS[grid_number] = {}
     if band in GRIDS[grid_number]:
-        print "ERROR: templates.conf contains two or more entries for grid %d and band %s" % (grid_number,band)
+        print "ERROR: templates.conf contains two or more entries for grid %s and band %s" % (grid_number,band)
         sys.exit(-1)
 
     if band not in BANDS:
         BANDS[band] = {}
     if grid_number in BANDS[band]:
-        print "ERROR: templates.conf contains two or more entries for grid %d and band %s" % (grid_number,band)
+        print "ERROR: templates.conf contains two or more entries for grid %s and band %s" % (grid_number,band)
         sys.exit(-1)
 
     val = (product_id,nc_name)
@@ -76,8 +77,8 @@ def _get_templates(grid_number, gpd=None, nc=None):
         if nc is not None and gpd is not None:
             return (gpd,nc)
         else:
-            log.error("Couldn't find grid %d in grid templates" % grid_number)
-            raise ValueError("Couldn't find grid %d in grid templates" % grid_number)
+            log.error("Couldn't find grid %s in grid templates" % grid_number)
+            raise ValueError("Couldn't find grid %s in grid templates" % grid_number)
     else:
         use_gpd = GRID_TEMPLATES[grid_number][0]
         use_nc = GRID_TEMPLATES[grid_number][1]
@@ -91,8 +92,8 @@ def _get_awips_info(kind, band, grid_number):
     else:
         bname = kind + band
     if bname not in BANDS or grid_number not in GRIDS:
-        log.error("Band %s or grid %d not found in templates.conf" % (bname,grid_number))
-        raise ValueError("Band %s or grid %d not found in templates.conf" % (bname,grid_number))
+        log.error("Band %s or grid %s not found in templates.conf" % (bname,grid_number))
+        raise ValueError("Band %s or grid %s not found in templates.conf" % (bname,grid_number))
     else:
         return GRIDS[grid_number][bname]
 
@@ -166,6 +167,8 @@ def remove_products():
         _safe_remove(f)
     for f in glob("night_mask*.int1.*"):
         _safe_remove(f)
+    for f in glob("dnb_rescale*.real4.*"):
+        _safe_remove(f)
     for f in glob("swath*.img"):
         _safe_remove(f)
     for f in glob("lat*.img"):
@@ -188,7 +191,17 @@ def remove_products():
 
 def process_geo(kind, gfiles, ginfos):
     start_dt = None
-    ### NAV STUFF ###
+    
+    # Write lat/lon data to fbf files
+    # Create fbf files
+    spid = '%d' % os.getpid()
+    latname = '.lat' + spid
+    lonname = '.lon' + spid
+    lafo = file(latname, 'wb')
+    lofo = file(lonname, 'wb')
+    lafa = file_appender(lafo, dtype=numpy.float32)
+    lofa = file_appender(lofo, dtype=numpy.float32)
+
     for gname in gfiles:
         # Get lat/lon information
         try:
@@ -217,19 +230,14 @@ def process_geo(kind, gfiles, ginfos):
             ginfo["lat_data"] = numpy.delete(ginfo["lat_data"], scan_quality, axis=0)
             ginfo["lon_data"] = numpy.delete(ginfo["lon_data"], scan_quality, axis=0)
 
-    # Write lat/lon data to fbf files
-    # Create fbf files
-    spid = '%d' % os.getpid()
-    latname = '.lat' + spid
-    lonname = '.lon' + spid
-    lafo = file(latname, 'wb')
-    lofo = file(lonname, 'wb')
-    lafa = file_appender(lafo, dtype=numpy.float32)
-    lofa = file_appender(lofo, dtype=numpy.float32)
-    for gname in gfiles:
-        ginfo = ginfos[gname]
+        # Append the data to the swath
         lafa.append(ginfo["lat_data"])
         lofa.append(ginfo["lon_data"])
+        del ginfo["lat_data"]
+        del ginfo["lon_data"]
+        del ginfo["lat_mask"]
+        del ginfo["lon_mask"]
+
     lafo.close()
     lofo.close()
 
@@ -243,13 +251,10 @@ def process_geo(kind, gfiles, ginfos):
     os.rename(lonname, fbf_lon)
     swath_rows,swath_cols = lafa.shape
     rows_per_scan = ginfos[gfiles[0]]["rows_per_scan"]
-    del lafa
-    del lofa
 
-    ### END of NAV FILES STUFF ###
     return start_dt,swath_rows,swath_cols,rows_per_scan,fbf_lat,fbf_lon
 
-def _determine_grid(kind, start_dt, bands, ginfos, grid_jobs, grids, forced_grid=None, forced_gpd=None, forced_nc=None):
+def _determine_grid(kind, start_dt, fbf_lat_var, fbf_lon_var, bands, ginfos, grid_jobs, grids, forced_grid=None, forced_gpd=None, forced_nc=None):
     # Detemine grids
     if forced_grid is not None:
         for band in bands.keys():
@@ -260,7 +265,7 @@ def _determine_grid(kind, start_dt, bands, ginfos, grid_jobs, grids, forced_grid
                 grid_jobs[band][grid_info["grid_number"]] = grid_info.copy()
                 if grid_info["grid_number"] not in grids: grids.append(grid_info["grid_number"])
             else:
-                log.warning("The template files don't have grid %d for %s%s" % (forced_grid, kind, band))
+                log.warning("The template files don't have grid %s for %s%s" % (forced_grid, kind, band))
                 log.warning("Removing job...")
                 del bands[band]
                 if len(bands) == 0:
@@ -270,6 +275,82 @@ def _determine_grid(kind, start_dt, bands, ginfos, grid_jobs, grids, forced_grid
     else:
         log.error("There is no grid determination formula implemented yet")
         raise NotImplementedError("There is no grid determination formula implemented yet")
+
+def process_image(kind, gfiles, ginfos, bands):
+    # Get image data and save it to an fbf file
+    for band,band_job in bands.items():
+        # Create fbf files and appenders
+        spid = '%d' % os.getpid()
+        imname = '.image' + spid
+        dmask_name = '.day_mask' + spid
+        nmask_name = '.night_mask' + spid
+        imfo = file(imname, 'wb')
+        dmask_fo = file(dmask_name, 'wb')
+        nmask_fo = file(nmask_name, 'wb')
+        imfa = file_appender(imfo, dtype=numpy.float32)
+        dmask_fa = file_appender(dmask_fo, dtype=numpy.int8)
+        nmask_fa = file_appender(nmask_fo, dtype=numpy.int8)
+
+        # Get the data
+        for idx,finfo in enumerate(band_job["finfos"]):
+            try:
+                # XXX: May need to pass the lat/lon masks
+                read_file_info(finfo)
+            except StandardError:
+                log.error("Error reading data from %s" % finfo["img_path"], exc_info=1)
+                log.error("Removing entire job associated with this file")
+                del bands[band]
+                if len(bands) == 0:
+                    # We are out of jobs
+                    log.error("The last job was removed, no more to do, quitting...")
+                    raise ValueError("The last job was removed, no more to do, quitting...")
+                # Continue on with the next band
+                break
+
+            # Cut out bad data
+            ginfo = ginfos[gfiles[idx]]
+            if len(ginfo["scan_quality"][0]) != 0:
+                log.info("Removing %d bad scans from %s" % (len(ginfo["scan_quality"][0])/finfo["rows_per_scan"], finfo["img_path"]))
+                finfo["image_data"] = numpy.delete(finfo["image_data"], ginfo["scan_quality"], axis=0)
+                # delete returns an array regardless, file_appender requires None
+                finfo["day_mask"] = finfo["day_mask"] and numpy.delete(finfo["day_mask"], ginfo["scan_quality"], axis=0)
+                finfo["night_mask"] = finfo["night_mask"] and numpy.delete(finfo["night_mask"], ginfo["scan_quality"], axis=0)
+
+            # Append the data to the file
+            imfa.append(finfo["image_data"])
+            dmask_fa.append(finfo["day_mask"])
+            nmask_fa.append(finfo["night_mask"])
+
+            # Remove pointers to data so it gets garbage collected
+            del finfo["image_data"]
+            del finfo["image_mask"]
+            del finfo["day_mask"]
+            del finfo["night_mask"]
+            del finfo["scan_quality"]
+
+        suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
+        suffix2 = '.int1.' + '.'.join(str(x) for x in reversed(imfa.shape))
+        img_base = "image_%s" % band_job["id"]
+        dmask_base = "day_mask_%s" % band_job["id"]
+        nmask_base = "night_mask_%s" % band_job["id"]
+        fbf_img = img_base + suffix
+        fbf_dmask = dmask_base + suffix2
+        fbf_nmask = nmask_base + suffix2
+        os.rename(imname, fbf_img)
+        os.rename(dmask_name, fbf_dmask)
+        os.rename(nmask_name, fbf_nmask)
+        band_job["fbf_img"] = fbf_img
+        band_job["fbf_dmask"] = fbf_dmask
+        band_job["fbf_nmask"] = fbf_nmask
+        band_job["fbf_img_var"] = img_base
+        band_job["fbf_dmask_var"] = dmask_base
+        band_job["fbf_nmask_var"] = nmask_base
+
+        imfo.close()
+        dmask_fo.close()
+        nmask_fo.close()
+
+    return True
 
 def process_kind(filepaths,
         fornav_D=None, fornav_d=None,
@@ -293,8 +374,8 @@ def process_kind(filepaths,
     start_dt = None
     fbf_lat = None
     fbf_lon = None
-    #fbf_lat_var = None
-    #fbf_lon_var = None
+    fbf_lat_var = None
+    fbf_lon_var = None
     img_lat = None
     img_lon = None
 
@@ -302,6 +383,7 @@ def process_kind(filepaths,
     kind = None
 
     # Get image and geonav file info
+    # TODO: This could/should probably go in its own function
     bad_bands = []
     for fn in filepaths:
         try:
@@ -386,22 +468,14 @@ def process_kind(filepaths,
             raise ValueError("Found job with different number of geonav and image files")
         del band_job
 
-    ### NAV FILES ###
     # Get nav data and put it in fbf files
     start_dt,swath_rows,swath_cols,rows_per_scan,fbf_lat,fbf_lon = process_geo(kind, gfiles, ginfos)
-    #fbf_lat_var = fbf_lat.split(".")[0]
-    #fbf_lon_var = fbf_lon.split(".")[0]
+    fbf_lat_var = fbf_lat.split(".")[0]
+    fbf_lon_var = fbf_lon.split(".")[0]
     swath_scans = swath_rows/rows_per_scan
 
     # Determine grid
-    _determine_grid(kind, start_dt, bands, ginfos, grid_jobs, grids, forced_grid, forced_gpd, forced_nc)
-
-    # Delete data that isn't needed anymore (free up some memory)
-    for ginfo in ginfos.values():
-        del ginfo["lat_data"]
-        del ginfo["lon_data"]
-        del ginfo["lat_mask"]
-        del ginfo["lon_mask"]
+    _determine_grid(kind, start_dt, fbf_lat_var, fbf_lon_var, bands, ginfos, grid_jobs, grids, forced_grid, forced_gpd, forced_nc)
 
     # Move nav fbf files to img files to be used by ll2cr
     img_lat = "lat_%s.img" % kind
@@ -414,7 +488,7 @@ def process_kind(filepaths,
         gpd_template = None
         for grid_job in [ x[grid_number] for x in grid_jobs.values() if grid_number in x ]:
             # Make every grid_job know what the col and row files are tagged with
-            log.debug("Adding ll2cr_tag to grid %d" % grid_number)
+            log.debug("Adding ll2cr_tag to grid %s" % grid_number)
             grid_job["ll2cr_tag"] = ll2cr_tag = "ll2cr_%s_%s" % (kind,grid_number)
             gpd_template = grid_job["gpd_template"]
 
@@ -435,12 +509,12 @@ def process_kind(filepaths,
                 tag=ll2cr_tag
                 )
         if cr_dict is None:
-            log.warning("ll2cr failed for %s band, grid %d" % (kind,grid_number))
+            log.warning("ll2cr failed for %s band, grid %s" % (kind,grid_number))
             log.warning("Won't process for this grid...")
             del grids[grid_number]
             for band in bands.keys():
                 if grid_number in grid_jobs[band]:
-                    log.error("Removing %s%s for grid %d because of bad ll2cr execution" % (kind,band,grid_number))
+                    log.error("Removing %s%s for grid %s because of bad ll2cr execution" % (kind,band,grid_number))
                     del grid_jobs[band][grid_number]
                     if len(grid_jobs[band]) == 0:
                         log.error("No more grids to process for %s%s, removing..." % (kind,band))
@@ -456,90 +530,7 @@ def process_kind(filepaths,
 
     ### END of NAV FILES STUFF ###
 
-    # Get image data
-    for band,band_job in bands.items():
-        for finfo in band_job["finfos"]:
-            try:
-                # XXX: May need to pass the lat/lon masks
-                read_file_info(finfo)
-            except StandardError:
-                log.error("Error reading data from %s" % finfo["img_path"], exc_info=1)
-                log.error("Removing entire job associated with this file")
-                del finfo
-                del bands[band]
-                if len(bands) == 0:
-                    # We are out of jobs
-                    log.error("The last job was removed, no more to do, quitting...")
-                    raise ValueError("The last job was removed, no more to do, quitting...")
-                # Continue on with the next band
-                break
-
-    # Cut out the data that is bad
-    # ll2cr/fornav hate entire scans that are bad
-    for idx,gname in enumerate(gfiles):
-        ginfo = ginfos[gname]
-        scan_quality = ginfo["scan_quality"]
-        if len(scan_quality[0]) != 0:
-            # Take the proper image file for each geonav file
-            for finfo in [ x["finfos"][idx] for x in bands.values() ]:
-                log.info("Removing %d bad scans from %s" % (len(scan_quality[0])/finfo["rows_per_scan"], finfo["img_path"]))
-                finfo["image_data"] = numpy.delete(finfo["image_data"], scan_quality, axis=0)
-                finfo["day_mask"] = numpy.delete(finfo["day_mask"], scan_quality, axis=0)
-                finfo["night_mask"] = numpy.delete(finfo["night_mask"], scan_quality, axis=0)
-
-    # Write image data and day/night mask data to fbf files
-    for band,band_job in bands.items():
-        spid = '%d' % os.getpid()
-        imname = '.image' + spid
-        dmask_name = '.day_mask' + spid
-        nmask_name = '.night_mask' + spid
-        imfo = file(imname, 'wb')
-        dmask_fo = file(dmask_name, 'wb')
-        nmask_fo = file(nmask_name, 'wb')
-        imfa = file_appender(imfo, dtype=numpy.float32)
-        dmask_fa = file_appender(dmask_fo, dtype=numpy.int8)
-        nmask_fa = file_appender(nmask_fo, dtype=numpy.int8)
-
-        for finfo in band_job["finfos"]:
-            imfa.append(finfo["image_data"])
-            dmask_fa.append(finfo["day_mask"])
-            nmask_fa.append(finfo["night_mask"])
-            del finfo
-
-        suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
-        suffix2 = '.int1.' + '.'.join(str(x) for x in reversed(imfa.shape))
-        img_base = "image_%s" % band_job["id"]
-        dmask_base = "day_mask_%s" % band_job["id"]
-        nmask_base = "night_mask_%s" % band_job["id"]
-        fbf_img = img_base + suffix
-        fbf_dmask = dmask_base + suffix2
-        fbf_nmask = nmask_base + suffix2
-        os.rename(imname, fbf_img)
-        os.rename(dmask_name, fbf_dmask)
-        os.rename(nmask_name, fbf_nmask)
-        band_job["fbf_img"] = fbf_img
-        band_job["fbf_dmask"] = fbf_dmask
-        band_job["fbf_nmask"] = fbf_nmask
-        band_job["fbf_img_var"] = img_base
-        band_job["fbf_dmask_var"] = dmask_base
-        band_job["fbf_nmask_var"] = nmask_base
-
-        del imfa
-        del dmask_fa
-        del nmask_fa
-        imfo.close()
-        dmask_fo.close()
-        nmask_fo.close()
-        del band_job
-
-    # Free up some memory by deleting image data
-    for band,band_job in bands.items():
-        for finfo in band_job["finfos"]:
-            del finfo["image_data"]
-            del finfo["image_mask"]
-            del finfo["day_mask"]
-            del finfo["night_mask"]
-            del finfo["scan_quality"]
+    process_image(kind, gfiles, ginfos, bands)
 
     # Do any pre-remapping rescaling
     for band,band_job in bands.items():
@@ -591,8 +582,10 @@ def process_kind(filepaths,
             except StandardError:
                 log.error("Unexpected error while rescaling data", exc_info=1)
                 return
+
+            del W,img,data,day_mask,night_mask,rescaled_data
+
         else:
-            print kind,band
             band_job["fbf_swath"] = band_job["fbf_img"]
             band_job["fbf_swath_var"] = band_job["fbf_img_var"]
 
@@ -611,8 +604,8 @@ def process_kind(filepaths,
                         "inputs"        : [],
                         "outputs"       : [],
                         "fbfs"          : [],
-                        "out_rows"      : grid_job["out_cols"],
-                        "out_cols"      : grid_job["out_rows"]
+                        "out_rows"      : grid_job["out_rows"],
+                        "out_cols"      : grid_job["out_cols"]
                         }
             # Fornav dictionary
             fornav_job = fornav_jobs[grid_number]
@@ -648,7 +641,7 @@ def process_kind(filepaths,
                 start_scan=(cr_dict["scan_first"],0)
                 )
         if fornav_dict is None:
-            log.warning("fornav failed for %s band, grid %d" % (kind,grid_number))
+            log.warning("fornav failed for %s band, grid %s" % (kind,grid_number))
             log.warning("Cleaning up for this job...")
             for band in bands.keys():
                 log.error("Removing %s%s because of bad fornav execution" % (kind,band))
@@ -706,7 +699,7 @@ def run_viirs2awips(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None,
         forced_gpd=None, forced_nc=None,
-        remove_prev=True):
+        multiprocess=True):
     """Go through the motions of converting
     a VIIRS h5 file into a AWIPS NetCDF file.
 
@@ -719,17 +712,12 @@ def run_viirs2awips(filepaths,
     7. awips_netcdf.py
     """
     # Rewrite/force parameters to specific format
-    forced_grid = forced_grid and int(forced_grid)
     filepaths = [ os.path.abspath(x) for x in sorted(filepaths) ]
 
     # Get grid templates and figure out the AWIPS product id to use
     if (forced_nc is None or forced_gpd is None) and forced_grid and forced_grid not in GRID_TEMPLATES:
-        log.error("Unknown or unconfigured grid number %d in grids/*" % forced_grid)
+        log.error("Unknown or unconfigured grid number %s in grids/*" % forced_grid)
         return -1
-
-    if remove_prev:
-        log.debug("Removing any previous files")
-        remove_products()
 
     M_files = sorted(set([ x for x in filepaths if os.path.split(x)[1].startswith("SVM") ]))
     I_files = sorted(set([ x for x in filepaths if os.path.split(x)[1].startswith("SVI") ]))
@@ -744,30 +732,36 @@ def run_viirs2awips(filepaths,
     pM = None
     pI = None
     pDNB = None
-    if len(M_files) != 0:
+    if len(M_files) != 0 and len([x for x in BANDS if x.startswith("M") ]) != 0:
         log.debug("Processing M files")
         try:
-            pM = Process(target=process_kind, args=(M_files,), kwargs=dict(fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc))
-            #process_kind(M_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
-            pM.start()
+            if multiprocess:
+                pM = Process(target=process_kind, args=(M_files,), kwargs=dict(fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc))
+                pM.start()
+            else:
+                process_kind(M_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
         except StandardError:
             log.error("Could not process M files", exc_info=1)
 
-    if len(I_files) != 0:
+    if len(I_files) != 0 and len([x for x in BANDS if x.startswith("I") ]) != 0:
         log.debug("Processing I files")
         try:
-            pI = Process(target=process_kind, args=(I_files,), kwargs=dict(fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc))
-            #process_kind(I_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
-            pI.start()
+            if multiprocess:
+                pI = Process(target=process_kind, args=(I_files,), kwargs=dict(fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc))
+                pI.start()
+            else:
+                process_kind(I_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
         except StandardError:
             log.error("Could not process I files", exc_info=1)
 
-    if len(DNB_files) != 0:
+    if len(DNB_files) != 0 and len([x for x in BANDS if x.startswith("DNB") ]) != 0:
         log.debug("Processing DNB files")
         try:
-            pDNB = Process(target=process_kind, args=(DNB_files,), kwargs=dict(fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc))
-            #process_kind(DNB_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
-            pDNB.start()
+            if multiprocess:
+                pDNB = Process(target=process_kind, args=(DNB_files,), kwargs=dict(fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc))
+                pDNB.start()
+            else:
+                process_kind(DNB_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
         except StandardError:
             log.error("Could not process DNB files", exc_info=1)
 
@@ -786,23 +780,42 @@ def main():
             help="Specify the -D option for fornav")
     parser.add_option('-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
+    parser.add_option('-b', dest='force_band', default=None,
+            help="Specify the bands that should be allowed in 'I01' or 'DNB' or 'I' format")
     parser.add_option('-f', dest='get_files', default=False, action="store_true",
             help="Specify that hdf files are listed, not a directory")
     parser.add_option('-g', '--grid', dest='forced_grid', default=None,
             help="Force remapping to only one grid")
+    parser.add_option('--sp', dest='single_process', default=False, action='store_true',
+            help="Processing is sequential instead of one process per kind of band")
     parser.add_option('--gpd', dest='forced_gpd', default=None,
             help="Specify a different gpd file to use")
     parser.add_option('--nc', dest='forced_nc', default=None,
             help="Specify a different nc file to use")
+    parser.add_option('-k', '--keep', dest='remove_prev', default=True, action='store_true',
+            help="Don't delete any files that were previously made (WARNING: processing may not run successfully)")
     options,args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level = levels[min(3, options.verbosity)])
 
+    fornav_D = int(options.fornav_D)
+    fornav_d = int(options.fornav_d)
+    forced_grid = options.forced_grid
+    if options.forced_gpd is not None and not os.path.exists(options.forced_gpd):
+        log.error("Specified gpd file does not exist '%s'" % options.forced_gpd)
+        return -1
+    if options.forced_nc is not None and not os.path.exists(options.forced_nc):
+        log.error("Specified nc file does not exist '%s'" % options.forced_nc)
+        return -1
+
+    from pprint import pformat
     log.debug("Grid directory that was used %s" % GRIDS_DIR)
-    log.debug(repr(GRID_TEMPLATES))
+    log.debug(pformat(GRID_TEMPLATES))
+    #log.debug(repr(GRID_TEMPLATES))
     log.debug("Template file that was used %s" % TEMPLATE_FILE)
-    log.debug(repr(GRIDS))
+    log.debug(pformat(GRIDS))
+    #log.debug(repr(GRIDS))
 
     if len(args) == 0 or "help" in args:
         parser.print_help()
@@ -819,15 +832,31 @@ def main():
             return -1
         hdf_files = args[:]
     elif len(args) == 1:
-        base_dir = args[0]
-        hdf_files = [ x for x in os.listdir(base_dir) if x.endswith(".h5") ]
+        base_dir = os.path.abspath(args[0])
+        hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.endswith(".h5") ]
     else:
         log.error("Wrong number of arguments")
         parser.print_help()
         return -1
 
-    stat = run_viirs2awips(hdf_files, fornav_D=int(options.fornav_D), fornav_d=int(options.fornav_d),
-                forced_gpd=options.forced_gpd, forced_nc=options.forced_nc, forced_grid=options.forced_grid)
+    remove_prev = True
+    if remove_prev:
+        log.debug("Removing any previous files")
+        remove_products()
+
+    if options.force_band is not None:
+        if len( [ x for x in BANDS.keys() if x.startswith(options.force_band) ] ) == 0:
+            log.error("Unknown band %s" % options.force_band)
+            parser.print_help()
+            return -1
+        hdf_files = [ x for x in hdf_files if os.path.split(x)[1].startswith("SV" + options.force_band) ]
+        stat = process_kind(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
+                forced_gpd=options.forced_gpd, forced_nc=options.forced_nc, forced_grid=forced_grid)
+    else:
+        stat = run_viirs2awips(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
+                    forced_gpd=options.forced_gpd, forced_nc=options.forced_nc, forced_grid=forced_grid,
+                    multiprocess=not options.single_process)
+
     sys.exit(stat)
 
 if __name__ == "__main__":

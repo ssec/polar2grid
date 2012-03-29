@@ -8,8 +8,9 @@ for nc_name in glob("SSEC_AWIPS_VIIRS*"):
     data = nc.variables["image"][:]
     data = data.astype(uint8) # How AWIPS reads it
     print data.min(), data.max()
+    plt.figure()
     plt.imshow(data)
-    #plt.colorbar()
+    plt.colorbar()
     plt.bone()
     #plt.spectral()
     plt.savefig("plot_ncdata.%s.png" % nc_name)

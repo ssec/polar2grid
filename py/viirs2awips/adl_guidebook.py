@@ -322,7 +322,6 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999):
     else:
         rows_per_scan = finfo["rows_per_scan"]
         cols_per_row = finfo["cols_per_row"]
-        print image_data.shape, rows_per_scan, cols_per_row, rows_per_scan * cols_per_row
         dmask_data = np.repeat(modescan_data == 1, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
         nmask_data = np.repeat(modescan_data == 0, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
         don_mask = MISSING_GUIDE[K_MODESCAN][0](modescan_data) if K_MODESCAN in MISSING_GUIDE else None
