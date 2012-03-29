@@ -1,11 +1,13 @@
-Grid Width:185
-Grid Height:129
-#Grid Map Origin Column:0.0
-#Grid Map Origin Row:0.0
-#Grid Cells per Map Unit:1.0
-#Grid Columns per Map Unit:1.0
-#Grid Rows per Map Unit:1.0
-Grid Map Units per Cell:40635.25
-#Grid Map Units per Column:40635.25
-#Grid Map Units per Row:40635.25
-Grid MPP File:grid212.mpp
+Grid Width: 4400
+Grid Height: 5120
+Grid Map Units per Cell: 1015.9
+Map Projection: Lambert Conic Conformal (ellipsoid)
+Map Reference Latitude:24.9999
+Map Second Reference Latitude:25.0001
+Map Reference Longitude:-95.000
+Map Equatorial Radius:6378137
+Map Polar Radius:6356752.314
+Map Origin Latitude:54.550
+Map Origin Longitude:-152.759
+Map Eccentricity:0.0818191910435
+Map Eccentricity Squared:0.006785161574
