@@ -223,7 +223,7 @@ def process_geo(kind, gfiles, ginfos):
             # Can't continue without lat/lon data
             log.error("Error reading data from %s for band kind %s" % (ginfo["geo_path"],kind), exc_info=1)
             log.error("Removing any jobs associated with this kind")
-            raise ValueError("Error reading data from %s for band kind %s" % (ginfo["geo_path"],kind), exc_info=1)
+            raise ValueError("Error reading data from %s for band kind %s" % (ginfo["geo_path"],kind))
 
         ginfos[gname] = ginfo
 

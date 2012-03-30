@@ -281,7 +281,7 @@ def file_info(fn):
     return finfo
 
 def read_file_info(finfo, extra_mask=None, fill_value=-999):
-    hp = h5.File(finfo["img_path"])
+    hp = h5.File(finfo["img_path"], 'r')
 
     data_kind = finfo["data_kind"]
     data_var_path = finfo[data_kind]
@@ -381,7 +381,7 @@ def geo_info(fn):
     return finfo
 
 def read_geo_info(finfo):
-    hp = h5.File(finfo["geo_path"])
+    hp = h5.File(finfo["geo_path"], 'r')
 
     lat_var_path = finfo[K_LATITUDE]
     lon_var_path = finfo[K_LONGITUDE]
