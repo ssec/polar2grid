@@ -8,7 +8,6 @@ import sys
 import logging
 import numpy
 from glob import glob
-from netCDF4 import Dataset
 
 from viirs_imager_to_swath import file_appender
 from adl_guidebook import file_info,geo_info,read_file_info,read_geo_info
@@ -16,127 +15,9 @@ from rescale import rescale,post_rescale_dnb
 from keoni.fbf import Workspace
 import ms2gt
 import awips_netcdf
+from awips_config import GRIDS,BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
 
 log = logging.getLogger(__name__)
-
-script_dir = os.path.split(os.path.realpath(__file__))[0]
-default_grids_dir = os.path.join(script_dir, "grids")
-default_templates_file = os.path.join(script_dir, "templates.conf")
-default_shapes_file = os.path.join(script_dir, "shapes.conf")
-TEMPLATE_FILE = os.environ.get("VIIRS_TEMPLATE", default_templates_file)
-GRIDS_DIR = os.environ.get("VIIRS_GRIDS_DIR", default_grids_dir)
-SHAPES_FILE = os.environ.get("VIIRS_SHAPE_FILE", default_shapes_file)
-
-GRID_TEMPLATES = {}
-# Get a set of the "grid211" part of every template
-for t in set([x.split(".")[0] for x in os.listdir(GRIDS_DIR) if x.startswith("grid")]):
-    nc_temp = t + ".nc"
-    gpd_temp = t + ".gpd"
-    nc_path = os.path.join(GRIDS_DIR, nc_temp)
-    gpd_path = os.path.join(GRIDS_DIR, gpd_temp)
-    grid_number = t[4:]
-    if os.path.exists(nc_path) and os.path.exists(gpd_path):
-        GRID_TEMPLATES[grid_number] = (gpd_path, nc_path)
-del t,nc_temp,gpd_temp,nc_path,gpd_path,grid_number
-
-# grid -> band -> (product_id,nc_name)
-GRIDS = {}
-# band -> grid -> (product_id,nc_name)
-BANDS = {}
-for line in open(TEMPLATE_FILE):
-    # For comments
-    if line.startswith("#"): continue
-    parts = line.strip().split(",")
-    if len(parts) < 4:
-        print "ERROR: Need at least 4 columns in templates.conf (%s)" % line
-    product_id = parts[0]
-    grid_number = parts[1]
-    band = parts[2]
-    if len(band) != 3:
-        print "ERROR: Expected 3 characters for band got %d (%s)" % (len(band),band)
-    nc_name = parts[3]
-
-    if grid_number not in GRIDS:
-        GRIDS[grid_number] = {}
-    if band in GRIDS[grid_number]:
-        print "ERROR: templates.conf contains two or more entries for grid %s and band %s" % (grid_number,band)
-        sys.exit(-1)
-
-    if band not in BANDS:
-        BANDS[band] = {}
-    if grid_number in BANDS[band]:
-        print "ERROR: templates.conf contains two or more entries for grid %s and band %s" % (grid_number,band)
-        sys.exit(-1)
-
-    val = (product_id,nc_name)
-    BANDS[band][grid_number] = val
-    GRIDS[grid_number][band] = val
-del line,val,parts,product_id,band,nc_name
-
-SHAPES = dict((parts[0],tuple([float(x) for x in parts[1:6]])) for parts in [line.split(",") for line in open(SHAPES_FILE) if not line.startswith("#") ] )
-
-def _get_templates(grid_number, gpd=None, nc=None):
-    if grid_number not in GRID_TEMPLATES:
-        if nc is not None and gpd is not None:
-            return (gpd,nc)
-        else:
-            log.error("Couldn't find grid %s in grid templates" % grid_number)
-            raise ValueError("Couldn't find grid %s in grid templates" % grid_number)
-    else:
-        use_gpd = GRID_TEMPLATES[grid_number][0]
-        use_nc = GRID_TEMPLATES[grid_number][1]
-        use_gpd = gpd or use_gpd
-        use_nc = nc or use_nc
-        return (use_gpd,use_nc)
-
-def _get_awips_info(kind, band, grid_number):
-    if kind == "DNB":
-        bname = kind
-    else:
-        bname = kind + band
-    if bname not in BANDS or grid_number not in GRIDS:
-        log.error("Band %s or grid %s not found in templates.conf" % (bname,grid_number))
-        raise ValueError("Band %s or grid %s not found in templates.conf" % (bname,grid_number))
-    else:
-        return GRIDS[grid_number][bname]
-
-def _get_grid_info(kind, band, grid_number, gpd=None, nc=None):
-    """Assumes _verify_grid was already run to verify that the information
-    was available.
-    """
-    awips_info = _get_awips_info(kind, band, grid_number)
-    temp_info = _get_templates(grid_number, gpd, nc)
-
-    # Get number of rows and columns for the output grid
-    nc = Dataset(temp_info[1], "r")
-    (out_rows,out_cols) = nc.variables["image"].shape
-    log.debug("Number of output columns calculated from NC template %d" % out_cols)
-    log.debug("Number of output rows calculated from NC template %d" % out_rows)
-
-    grid_info = {}
-    grid_info["grid_number"] = grid_number
-    grid_info["product_id"] = awips_info[0]
-    grid_info["nc_format"] = awips_info[1]
-    grid_info["gpd_template"] = temp_info[0]
-    grid_info["nc_template"] = temp_info[1]
-    grid_info["out_rows"] = out_rows
-    grid_info["out_cols"] = out_cols
-    return grid_info
-
-def _verify_grid(kind, band, grid_number, gpd=None, nc=None):
-    """Return true if this grid is known to the configuration files/dirs.
-    """
-    try:
-        _get_templates(grid_number, gpd, nc)
-    except StandardError:
-        return False
-
-    try:
-        _get_awips_info(kind, band, grid_number)
-    except StandardError:
-        return False
-
-    return True
 
 def _glob_file(pat):
     tmp = glob(pat)
@@ -262,8 +143,8 @@ def _determine_grid(kind, start_dt, fbf_lat_var, fbf_lon_var, bands, ginfos, gri
     # Detemine grids
     if forced_grid is not None:
         for band in bands.keys():
-            if _verify_grid(kind, band, forced_grid):
-                grid_info = _get_grid_info(kind, band, forced_grid, gpd=forced_gpd, nc=forced_nc)
+            if verify_config(kind, band, forced_grid):
+                grid_info = get_grid_info(kind, band, forced_grid, gpd=forced_gpd, nc=forced_nc)
                 grid_info["start_dt"] = start_dt
                 if band not in grid_jobs: grid_jobs[band] = {}
                 grid_jobs[band][grid_info["grid_number"]] = grid_info.copy()
@@ -285,7 +166,7 @@ def _determine_grid(kind, start_dt, fbf_lat_var, fbf_lon_var, bands, ginfos, gri
             lon_data_flipped = None
         except StandardError:
             log.error("There was an error trying to get the lat/lon swath data for grid determination")
-            raise ValueError("There was an error trying to get the lat/lon swath data for grid determination")
+            raise
 
         for grid_number in GRIDS:
             tbound,bbound,lbound,rbound,percent = SHAPES[grid_number]
@@ -305,8 +186,8 @@ def _determine_grid(kind, start_dt, fbf_lat_var, fbf_lon_var, bands, ginfos, gri
             log.debug("Band %s had a %f coverage in grid %s" % (kind,grid_percent,grid_number))
             if grid_percent >= percent:
                 for band in bands.keys():
-                    if _verify_grid(kind, band, grid_number):
-                        grid_info = _get_grid_info(kind, band, grid_number, gpd=forced_gpd, nc=forced_nc)
+                    if verify_config(kind, band, grid_number):
+                        grid_info = get_grid_info(kind, band, grid_number, gpd=forced_gpd, nc=forced_nc)
                         grid_info["start_dt"] = start_dt
                         log.debug("Adding grid %s to %s%s" % (grid_number,kind,band))
                         if band not in grid_jobs: grid_jobs[band] = {}
@@ -350,8 +231,10 @@ def process_image(kind, gfiles, ginfos, bands):
                 log.info("Removing %d bad scans from %s" % (len(ginfo["scan_quality"][0])/finfo["rows_per_scan"], finfo["img_path"]))
                 finfo["image_data"] = numpy.delete(finfo["image_data"], ginfo["scan_quality"], axis=0)
                 # delete returns an array regardless, file_appender requires None
-                finfo["day_mask"] = finfo["day_mask"] and numpy.delete(finfo["day_mask"], ginfo["scan_quality"], axis=0)
-                finfo["night_mask"] = finfo["night_mask"] and numpy.delete(finfo["night_mask"], ginfo["scan_quality"], axis=0)
+                if finfo["day_mask"] is not None:
+                    finfo["day_mask"] = numpy.delete(finfo["day_mask"], ginfo["scan_quality"], axis=0)
+                if finfo["night_mask"] is not None:
+                    finfo["night_mask"] = numpy.delete(finfo["night_mask"], ginfo["scan_quality"], axis=0)
 
             # Append the data to the file
             imfa.append(finfo["image_data"])
@@ -764,7 +647,7 @@ def run_viirs2awips(filepaths,
     all_provided = set(filepaths)
     not_used = all_provided - all_used
     if len(not_used):
-        log.warning("Didn't know what to do with %s" % ", ".join(list(not_used)))
+        log.warning("Didn't know what to do with\n%s" % "\n".join(list(not_used)))
 
     from multiprocessing import Process
     pM = None
@@ -859,14 +742,6 @@ def main():
     if options.forced_nc is not None and not os.path.exists(options.forced_nc):
         log.error("Specified nc file does not exist '%s'" % options.forced_nc)
         return -1
-
-    from pprint import pformat
-    log.debug("Grid directory that was used %s" % GRIDS_DIR)
-    log.debug(pformat(GRID_TEMPLATES))
-    log.debug("Template file that was used %s" % TEMPLATE_FILE)
-    log.debug(pformat(GRIDS))
-    log.debug("Shapes file that was used %s" % SHAPES_FILE)
-    log.debug(pformat(SHAPES))
 
     if len(args) == 0 or "help" in args:
         parser.print_help()
