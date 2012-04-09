@@ -327,6 +327,8 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999):
         don_mask = MISSING_GUIDE[K_MODESCAN][0](modescan_data) if K_MODESCAN in MISSING_GUIDE else None
         don_mask = np.repeat(don_mask, rows_per_scan * cols_per_row).reshape(image_data.shape)
         mask = mask | don_mask
+        dmask_data[mask] = False
+        nmask_data[mask] = False
 
     # Scale image data
     image_data = scaler(image_data)

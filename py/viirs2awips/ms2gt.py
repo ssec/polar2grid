@@ -62,6 +62,9 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
     except CalledProcessError:
         log.error("Error running ll2cr", exc_info=1)
         return None
+    except OSError:
+        log.error("Couldn't find 'll2cr' command in PATH")
+        return None
 
     d = {}
     tmp = glob("%s_cols_*.img" % tag)
@@ -173,6 +176,9 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         check_call(args)
     except CalledProcessError:
         log.error("Error running fornav", exc_info=1)
+        return None
+    except OSError:
+        log.error("Couldn't find 'fornav' command in PATH")
         return None
 
     d = {}
