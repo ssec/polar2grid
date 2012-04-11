@@ -194,7 +194,7 @@ def _determine_grid(kind, start_dt, fbf_lat_var, fbf_lon_var, bands, ginfos, gri
                         grid_jobs[band][grid_number] = grid_info.copy()
                         if grid_number not in grids: grids.append(grid_number)
 
-def process_image(kind, gfiles, ginfos, bands):
+def process_image(kind, gfiles, ginfos, bands, grid_jobs):
     # Get image data and save it to an fbf file
     for band,band_job in bands.items():
         # Create fbf files and appenders
@@ -218,6 +218,7 @@ def process_image(kind, gfiles, ginfos, bands):
                 log.error("Error reading data from %s" % finfo["img_path"], exc_info=1)
                 log.error("Removing entire job associated with this file")
                 del bands[band]
+                del grid_jobs[band]
                 if len(bands) == 0:
                     # We are out of jobs
                     log.error("The last job was removed, no more to do, quitting...")
@@ -451,7 +452,7 @@ def process_kind(filepaths,
 
     ### END of NAV FILES STUFF ###
 
-    process_image(kind, gfiles, ginfos, bands)
+    process_image(kind, gfiles, ginfos, bands, grid_jobs)
 
     # Do any pre-remapping rescaling
     for band,band_job in bands.items():
@@ -486,7 +487,7 @@ def process_kind(filepaths,
                     log.debug("Adding night mask to rescaling arguments")
                     scale_kwargs["night_mask"] = night_mask.copy().astype(numpy.bool)
             except StandardError:
-                log.error("Could not open img file %s" % band_job["fbf_nmask"])
+                log.error("Could not open night mask file %s" % band_job["fbf_nmask"])
                 log.debug("Files matching %r" % glob(band_job["fbf_nmask_var"] + "*"))
                 return
 

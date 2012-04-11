@@ -198,17 +198,6 @@ def h5path(hp, path, h5_path, required=False):
 
     return x
 
-def scaling_filter(hp, var_path, scale_path, h5_path, required=False):
-    "add Filters to the end of a variable, fetch mx+b scaling factors, and return a lambda function to apply them"
-    factvar = h5path(hp, scale_path, h5_path, required=required)   # FUTURE: make this more elegant please
-    if factvar is None:
-        LOG.debug("No scaling factors found for %s at %s" % (var_path, scale_path))
-        return False,lambda x: x
-    else:
-        (m,b) = factvar[:]
-        LOG.debug('scaling factors for %s are (%f,%f)' % (var_path, m,b))
-        return True,lambda x: x*m + b
-
 def _st_to_datetime(st):
     """Convert a VIIRS StartTime which is in microseconds since 1958-01-01 to
     a datetime object.
@@ -280,7 +269,7 @@ def file_info(fn):
     LOG.warning('unable to find %s in guidebook' % filename)
     return finfo
 
-def read_file_info(finfo, extra_mask=None, fill_value=-999):
+def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     hp = h5.File(finfo["img_path"], 'r')
 
     data_kind = finfo["data_kind"]
@@ -292,6 +281,7 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999):
     # Get image data
     h5v = h5path(hp, data_var_path, finfo["img_path"], required=True)
     image_data = h5v[:,:]
+    image_data = image_data.astype(dtype)
     del h5v
 
     # Get mode scan data
@@ -308,12 +298,33 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999):
     del h5v
 
     # Get scaling function (also reads scaling factors from hdf)
-    needs_scaling,scaler = scaling_filter(hp, data_var_path, factors_var_path, finfo["img_path"])
+    factvar = h5path(hp, factors_var_path, finfo["img_path"], required=False)   # FUTURE: make this more elegant please
+    if factvar is None:
+        LOG.debug("No scaling factors found for %s at %s" % (data_var_path, factors_var_path))
+        scaler = lambda x: x
+        scaling_mask = np.zeros(image_data.shape)
+        needs_scaling = False
+    else:
+        (m,b) = factvar[:]
+        LOG.debug("scaling factors for %s are (%f,%f)" % (data_var_path, m, b))
+        # Figure out how data should be scaled
+        if m <= -999 or b <= -999:
+            scaler = lambda x: x
+            scaling_mask = np.ones(image_data.shape)
+        else:
+            scaler = lambda x: x*m + b
+            scaling_mask = np.zeros(image_data.shape)
+        needs_scaling = True
+    scaling_mask = scaling_mask.astype(np.bool)
 
     # Calculate mask
     mask = MISSING_GUIDE[data_kind][not needs_scaling](image_data) if data_kind in MISSING_GUIDE else None
+    mask = mask | scaling_mask
     if extra_mask is not None:
         mask = mask | extra_mask
+
+    # Scale image data
+    image_data = scaler(image_data)
 
     # Create day and night masks
     if modescan_data is None:
@@ -330,14 +341,11 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999):
         dmask_data[mask] = False
         nmask_data[mask] = False
 
-    # Scale image data
-    image_data = scaler(image_data)
-
     # Create scan_quality array
     scan_quality = np.nonzero(np.repeat(qf3_data > 0, finfo["rows_per_scan"]))
 
     # Mask off image data
-    image_data[mask] = -999
+    image_data[mask] = fill_value
 
     finfo["image_data"] = image_data
     finfo["image_mask"] = mask
@@ -382,7 +390,7 @@ def geo_info(fn):
     LOG.warning('unable to find %s in guidebook' % filename)
     return finfo
 
-def read_geo_info(finfo):
+def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     hp = h5.File(finfo["geo_path"], 'r')
 
     lat_var_path = finfo[K_LATITUDE]
@@ -392,11 +400,13 @@ def read_geo_info(finfo):
     # Get latitude data
     h5v = h5path(hp, lat_var_path, finfo["geo_path"], required=True)
     lat_data = h5v[:,:]
+    lat_data = lat_data.astype(dtype)
     del h5v
 
     # Get longitude data
     h5v = h5path(hp, lon_var_path, finfo["geo_path"], required=True)
     lon_data = h5v[:,:]
+    lon_data = lon_data.astype(dtype)
     del h5v
 
     # Get start time
@@ -409,10 +419,9 @@ def read_geo_info(finfo):
     # Calculate longitude mask
     lon_mask = MISSING_GUIDE[K_LONGITUDE][1](lat_data) if K_LONGITUDE in MISSING_GUIDE else None
 
-
     # Mask off image data
-    lat_data[lat_mask] = -999
-    lon_data[lon_mask] = -999
+    lat_data[lat_mask] = fill_value
+    lon_data[lon_mask] = fill_value
 
     finfo["lat_data"] = lat_data
     finfo["lon_data"] = lon_data
