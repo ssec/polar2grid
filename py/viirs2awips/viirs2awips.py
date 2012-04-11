@@ -518,19 +518,25 @@ def process_kind(filepaths,
 
     # Build fornav call
     fornav_jobs = {}
+    fornav_runs = []
     for band,band_job in bands.items():
         for grid_number,grid_job in grid_jobs[band].items():
             if grid_number not in fornav_jobs:
                 # Swath cols and rows should be the same for all
-                fornav_jobs[grid_number] = {
+                fornav_jobs[grid_number] = {}
+            if band_job["data_kind"] not in fornav_jobs[grid_number]:
+                #fornav_jobs[grid_number] = {
+                fornav_jobs[grid_number][band_job["data_kind"]] = {
                         "inputs"        : [],
                         "outputs"       : [],
                         "fbfs"          : [],
                         "out_rows"      : grid_job["out_rows"],
                         "out_cols"      : grid_job["out_cols"]
                         }
+                fornav_runs.append((grid_number,fornav_jobs[grid_number][band_job["data_kind"]]))
             # Fornav dictionary
-            fornav_job = fornav_jobs[grid_number]
+            #fornav_job = fornav_jobs[grid_number]
+            fornav_job = fornav_jobs[grid_number][band_job["data_kind"]]
 
             grid_job["img_output"] = output_img = "output_%s_%s.img" % (band_job["id"],grid_number)
             grid_job["fbf_output_var"] = output_var = "result_%s_%s" % (band_job["id"],grid_number)
@@ -540,7 +546,7 @@ def process_kind(filepaths,
             fornav_job["fbfs"].append(output_fbf)
 
     # Run fornav
-    for grid_number,fornav_job in fornav_jobs.items():
+    for grid_number,fornav_job in fornav_runs:
         # cr_dicts are the same for all bands of that grid, so just pick one
         cr_dict = [ x[grid_number]["cr_dict"] for x in grid_jobs.values() if grid_number in x ][0]
         fornav_dict = ms2gt.fornav(
