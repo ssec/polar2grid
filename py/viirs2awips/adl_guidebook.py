@@ -54,19 +54,22 @@ GEO_FILE_GUIDE = {
                             K_LATITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Latitude',
                             K_LONGITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Longitude',
                             K_ALTITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Height',
-                            K_STARTTIME: '/All_Data/VIIRS-IMG-GEO-TC_All/StartTime'
+                            K_STARTTIME: '/All_Data/VIIRS-IMG-GEO-TC_All/StartTime',
+                            K_SOLARZENITH: '/All_Data/VIIRS-IMG-GEO-TC_All/SolarZenithAngle'
                             },
             r'GMTCO.*' : {
                             K_LATITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Latitude',
                             K_LONGITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Longitude',
                             K_ALTITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Height',
-                            K_STARTTIME: '/All_Data/VIIRS-MOD-GEO-TC_All/StartTime'
+                            K_STARTTIME: '/All_Data/VIIRS-MOD-GEO-TC_All/StartTime',
+                            K_SOLARZENITH: '/All_Data/VIIRS-MOD-GEO-TC_All/SolarZenithAngle'
                             },
             r'GDNBO.*' : {
                             K_LATITUDE: '/All_Data/VIIRS-DNB-GEO_All/Latitude',
                             K_LONGITUDE: '/All_Data/VIIRS-DNB-GEO_All/Longitude',
                             K_ALTITUDE: '/All_Data/VIIRS-DNB-GEO_All/Height',
-                            K_STARTTIME: '/All_Data/VIIRS-DNB-GEO_All/StartTime'
+                            K_STARTTIME: '/All_Data/VIIRS-DNB-GEO_All/StartTime',
+                            K_SOLARZENITH: '/All_Data/VIIRS-DNB-GEO_All/SolarZenithAngle'
                             }
             }
 SV_FILE_GUIDE = {
@@ -278,8 +281,8 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     data_kind = finfo["data_kind"]
     data_var_path = finfo[data_kind]
     factors_var_path = finfo[finfo["factors"]]
-    modescan_var_path = finfo[K_MODESCAN]
-    modegran_var_path = finfo[K_MODEGRAN]
+    #modescan_var_path = finfo[K_MODESCAN]
+    #modegran_var_path = finfo[K_MODEGRAN]
     qf3_var_path = finfo[K_QF3]
 
     # Get image data
@@ -289,19 +292,19 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     del h5v
 
     # Get mode scan data
-    if finfo["kind"] == "DNB":
-        h5v = h5path(hp, modescan_var_path, finfo["img_path"], required=True)
-        modescan_data = h5v[:]
-        del h5v
-    else:
-        modescan_data = None
+    #if finfo["kind"] == "DNB":
+    #    h5v = h5path(hp, modescan_var_path, finfo["img_path"], required=True)
+    #    modescan_data = h5v[:]
+    #    del h5v
+    #else:
+    #    modescan_data = None
 
-    if finfo["kind"] == "DNB":
-        h5v = h5path(hp, modegran_var_path, finfo["img_path"], required=True)
-        modegran_data = h5v[:]
-        del h5v
-    else:
-        modegran_data = None
+    #if finfo["kind"] == "DNB":
+    #    h5v = h5path(hp, modegran_var_path, finfo["img_path"], required=True)
+    #    modegran_data = h5v[:]
+    #    del h5v
+    #else:
+    #    modegran_data = None
 
 
     # Get QF3 data
@@ -339,29 +342,29 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     image_data = scaler(image_data)
 
     # Create day and night masks
-    if modescan_data is None:
-        dmask_data = None
-        nmask_data = None
-        tmask_data = None
-    else:
-        rows_per_scan = finfo["rows_per_scan"]
-        cols_per_row = finfo["cols_per_row"]
-        don_mask = MISSING_GUIDE[K_MODESCAN][0](modescan_data) if K_MODESCAN in MISSING_GUIDE else None
-        don_mask = np.repeat(don_mask, rows_per_scan * cols_per_row).reshape(image_data.shape)
+    #if modescan_data is None:
+    #    dmask_data = None
+    #    nmask_data = None
+    #    tmask_data = None
+    #else:
+    #    rows_per_scan = finfo["rows_per_scan"]
+    #    cols_per_row = finfo["cols_per_row"]
+    #    don_mask = MISSING_GUIDE[K_MODESCAN][0](modescan_data) if K_MODESCAN in MISSING_GUIDE else None
+    #    don_mask = np.repeat(don_mask, rows_per_scan * cols_per_row).reshape(image_data.shape)
 
-        if modegran_data[0] == 2:
-            tmask_data = np.ones(image_data.shape)
-            dmask_data = np.zeros(image_data.shape)
-            nmask_data = np.zeros(image_data.shape)
-        else:
-            tmask_data = np.zeros(image_data.shape)
-            dmask_data = np.repeat(modescan_data == 1, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
-            nmask_data = np.repeat(modescan_data == 0, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
+    #    if modegran_data[0] == 2:
+    #        tmask_data = np.ones(image_data.shape)
+    #        dmask_data = np.zeros(image_data.shape)
+    #        nmask_data = np.zeros(image_data.shape)
+    #    else:
+    #        tmask_data = np.zeros(image_data.shape)
+    #        dmask_data = np.repeat(modescan_data == 1, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
+    #        nmask_data = np.repeat(modescan_data == 0, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
 
-        mask = mask | don_mask
-        dmask_data[mask] = False
-        nmask_data[mask] = False
-        tmask_data[mask] = False
+    #    mask = mask | don_mask
+    #    dmask_data[mask] = False
+    #    nmask_data[mask] = False
+    #    tmask_data[mask] = False
 
     # Create scan_quality array
     scan_quality = np.nonzero(np.repeat(qf3_data > 0, finfo["rows_per_scan"]))
@@ -371,9 +374,10 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
 
     finfo["image_data"] = image_data
     finfo["image_mask"] = mask
-    finfo["day_mask"] = dmask_data
-    finfo["night_mask"] = nmask_data
-    finfo["twilight_mask"] = tmask_data
+    finfo["mode_mask"] = None
+    #finfo["day_mask"] = dmask_data
+    #finfo["night_mask"] = nmask_data
+    #finfo["twilight_mask"] = tmask_data
     finfo["scan_quality"] = scan_quality
     return finfo
 
@@ -419,6 +423,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     lat_var_path = finfo[K_LATITUDE]
     lon_var_path = finfo[K_LONGITUDE]
     st_var_path = finfo[K_STARTTIME]
+    sza_var_path = finfo[K_SOLARZENITH]
 
     # Get latitude data
     h5v = h5path(hp, lat_var_path, finfo["geo_path"], required=True)
@@ -436,20 +441,40 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     h5v = h5path(hp, st_var_path, finfo["geo_path"], required=True)
     start_dt = _st_to_datetime(h5v[0])
 
+    # Get solar zenith angle
+    h5v = h5path(hp, sza_var_path, finfo["geo_path"], required=True)
+    sza_data = h5v[:,:]
+    sza_data = sza_data.astype(dtype)
+
     # Calculate latitude mask
     lat_mask = MISSING_GUIDE[K_LATITUDE][1](lat_data) if K_LATITUDE in MISSING_GUIDE else None
 
     # Calculate longitude mask
     lon_mask = MISSING_GUIDE[K_LONGITUDE][1](lat_data) if K_LONGITUDE in MISSING_GUIDE else None
 
-    # Mask off image data
-    lat_data[lat_mask] = fill_value
-    lon_data[lon_mask] = fill_value
+    # Calculate solar zenith angle mask
+    sza_mask = MISSING_GUIDE[K_SOLARZENITH][1](lat_data) if K_SOLARZENITH in MISSING_GUIDE else None
+
+    # Derive mode mask
+    mode_mask = np.zeros(sza_data.shape, dtype=np.int8)
+    # Night
+    mode_mask[sza_data >= 94] = 1
+    # Day
+    mode_mask[sza_data <= 84] = 2
+    # Mixed
+    mode_mask[(84 < sza_data) & (sza_data < 94)] = 3
+
+    # Mask off bad data
+    # NOTE: There could still be missing image data to account for
+    mode_mask[ lat_mask | lon_mask | sza_mask ] = fill_value
+    lat_data[ lat_mask ] = fill_value
+    lon_data[ lon_mask ] = fill_value
 
     finfo["lat_data"] = lat_data
     finfo["lon_data"] = lon_data
     finfo["lat_mask"] = lat_mask
     finfo["lon_mask"] = lon_mask
+    finfo["mode_mask"] = mode_mask
     finfo["start_dt"] = start_dt
     # Rows only
     finfo["scan_quality"] = (np.nonzero(lat_mask)[0],)

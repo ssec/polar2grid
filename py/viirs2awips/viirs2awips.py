@@ -51,6 +51,10 @@ def remove_products():
         _safe_remove(f)
     for f in glob("night_mask*.int1.*"):
         _safe_remove(f)
+    for f in glob("twilight_mask*.int1.*"):
+        _safe_remove(f)
+    for f in glob("mode_*.int1.*"):
+        _safe_remove(f)
     for f in glob("dnb_rescale*.real4.*"):
         _safe_remove(f)
     for f in glob("swath*.img"):
@@ -81,10 +85,13 @@ def process_geo(kind, gfiles, ginfos):
     spid = '%d' % os.getpid()
     latname = '.lat' + spid
     lonname = '.lon' + spid
+    modename = '.mode' + spid
     lafo = file(latname, 'wb')
     lofo = file(lonname, 'wb')
+    modefo = file(modename, 'wb')
     lafa = file_appender(lafo, dtype=numpy.float32)
     lofa = file_appender(lofo, dtype=numpy.float32)
+    modefa = file_appender(modefo, dtype=numpy.int8)
 
     for gname in gfiles:
         # Get lat/lon information
@@ -113,30 +120,38 @@ def process_geo(kind, gfiles, ginfos):
         if len(scan_quality[0]) != 0:
             ginfo["lat_data"] = numpy.delete(ginfo["lat_data"], scan_quality, axis=0)
             ginfo["lon_data"] = numpy.delete(ginfo["lon_data"], scan_quality, axis=0)
+            ginfo["mode_mask"] = numpy.delete(ginfo["mode_mask"], scan_quality, axis=0)
 
         # Append the data to the swath
         lafa.append(ginfo["lat_data"])
         lofa.append(ginfo["lon_data"])
+        modefa.append(ginfo["mode_mask"])
         del ginfo["lat_data"]
         del ginfo["lon_data"]
         del ginfo["lat_mask"]
         del ginfo["lon_mask"]
+        del ginfo["mode_mask"]
 
     lafo.close()
     lofo.close()
+    modefo.close()
 
     # Rename files
     suffix = '.real4.' + '.'.join(str(x) for x in reversed(lafa.shape))
+    suffix2 = '.int1.' + '.'.join(str(x) for x in reversed(modefa.shape))
     fbf_lat_var = "latitude_%s" % kind
     fbf_lon_var = "longitude_%s" % kind
+    fbf_mode_var = "mode_%s" % kind
     fbf_lat = fbf_lat_var + suffix
     fbf_lon = fbf_lon_var + suffix
+    fbf_mode = fbf_mode_var + suffix2
     os.rename(latname, fbf_lat)
     os.rename(lonname, fbf_lon)
+    os.rename(modename, fbf_mode)
     swath_rows,swath_cols = lafa.shape
     rows_per_scan = ginfos[gfiles[0]]["rows_per_scan"]
 
-    return start_dt,swath_rows,swath_cols,rows_per_scan,fbf_lat,fbf_lon
+    return start_dt,swath_rows,swath_cols,rows_per_scan,fbf_lat,fbf_lon,fbf_mode
 
 def _determine_grid(kind, start_dt, fbf_lat_var, fbf_lon_var, bands, ginfos, grid_jobs, grids, forced_grid=None, forced_gpd=None, forced_nc=None):
     # top bound, bottom bound, left bound, right bound, percent
@@ -200,17 +215,17 @@ def process_image(kind, gfiles, ginfos, bands, grid_jobs):
         # Create fbf files and appenders
         spid = '%d' % os.getpid()
         imname = '.image' + spid
-        dmask_name = '.day_mask' + spid
-        nmask_name = '.night_mask' + spid
-        tmask_name = '.twilight_mask' + spid
+        #dmask_name = '.day_mask' + spid
+        #nmask_name = '.night_mask' + spid
+        #tmask_name = '.twilight_mask' + spid
         imfo = file(imname, 'wb')
-        dmask_fo = file(dmask_name, 'wb')
-        nmask_fo = file(nmask_name, 'wb')
-        tmask_fo = file(tmask_name, 'wb')
+        #dmask_fo = file(dmask_name, 'wb')
+        #nmask_fo = file(nmask_name, 'wb')
+        #tmask_fo = file(tmask_name, 'wb')
         imfa = file_appender(imfo, dtype=numpy.float32)
-        dmask_fa = file_appender(dmask_fo, dtype=numpy.int8)
-        nmask_fa = file_appender(nmask_fo, dtype=numpy.int8)
-        tmask_fa = file_appender(tmask_fo, dtype=numpy.int8)
+        #dmask_fa = file_appender(dmask_fo, dtype=numpy.int8)
+        #nmask_fa = file_appender(nmask_fo, dtype=numpy.int8)
+        #tmask_fa = file_appender(tmask_fo, dtype=numpy.int8)
 
         # Get the data
         for idx,finfo in enumerate(band_job["finfos"]):
@@ -235,54 +250,54 @@ def process_image(kind, gfiles, ginfos, bands, grid_jobs):
                 log.info("Removing %d bad scans from %s" % (len(ginfo["scan_quality"][0])/finfo["rows_per_scan"], finfo["img_path"]))
                 finfo["image_data"] = numpy.delete(finfo["image_data"], ginfo["scan_quality"], axis=0)
                 # delete returns an array regardless, file_appender requires None
-                if finfo["day_mask"] is not None:
-                    finfo["day_mask"] = numpy.delete(finfo["day_mask"], ginfo["scan_quality"], axis=0)
-                if finfo["night_mask"] is not None:
-                    finfo["night_mask"] = numpy.delete(finfo["night_mask"], ginfo["scan_quality"], axis=0)
-                if finfo["twilight_mask"] is not None:
-                    finfo["twilight_mask"] = numpy.delete(finfo["twilight_mask"], ginfo["scan_quality"], axis=0)
+                #if finfo["day_mask"] is not None:
+                #    finfo["day_mask"] = numpy.delete(finfo["day_mask"], ginfo["scan_quality"], axis=0)
+                #if finfo["night_mask"] is not None:
+                #    finfo["night_mask"] = numpy.delete(finfo["night_mask"], ginfo["scan_quality"], axis=0)
+                #if finfo["twilight_mask"] is not None:
+                #    finfo["twilight_mask"] = numpy.delete(finfo["twilight_mask"], ginfo["scan_quality"], axis=0)
 
             # Append the data to the file
             imfa.append(finfo["image_data"])
-            dmask_fa.append(finfo["day_mask"])
-            nmask_fa.append(finfo["night_mask"])
-            tmask_fa.append(finfo["twilight_mask"])
+            #dmask_fa.append(finfo["day_mask"])
+            #nmask_fa.append(finfo["night_mask"])
+            #tmask_fa.append(finfo["twilight_mask"])
 
             # Remove pointers to data so it gets garbage collected
             del finfo["image_data"]
             del finfo["image_mask"]
-            del finfo["day_mask"]
-            del finfo["night_mask"]
-            del finfo["twilight_mask"]
+            #del finfo["day_mask"]
+            #del finfo["night_mask"]
+            #del finfo["twilight_mask"]
             del finfo["scan_quality"]
 
         suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
-        suffix2 = '.int1.' + '.'.join(str(x) for x in reversed(imfa.shape))
+        #suffix2 = '.int1.' + '.'.join(str(x) for x in reversed(imfa.shape))
         img_base = "image_%s" % band_job["id"]
-        dmask_base = "day_mask_%s" % band_job["id"]
-        nmask_base = "night_mask_%s" % band_job["id"]
-        tmask_base = "twilight_mask_%s" % band_job["id"]
+        #dmask_base = "day_mask_%s" % band_job["id"]
+        #nmask_base = "night_mask_%s" % band_job["id"]
+        #tmask_base = "twilight_mask_%s" % band_job["id"]
         fbf_img = img_base + suffix
-        fbf_dmask = dmask_base + suffix2
-        fbf_nmask = nmask_base + suffix2
-        fbf_tmask = tmask_base + suffix2
+        #fbf_dmask = dmask_base + suffix2
+        #fbf_nmask = nmask_base + suffix2
+        #fbf_tmask = tmask_base + suffix2
         os.rename(imname, fbf_img)
-        os.rename(dmask_name, fbf_dmask)
-        os.rename(nmask_name, fbf_nmask)
-        os.rename(tmask_name, fbf_tmask)
+        #os.rename(dmask_name, fbf_dmask)
+        #os.rename(nmask_name, fbf_nmask)
+        #os.rename(tmask_name, fbf_tmask)
         band_job["fbf_img"] = fbf_img
-        band_job["fbf_dmask"] = fbf_dmask
-        band_job["fbf_nmask"] = fbf_nmask
-        band_job["fbf_tmask"] = fbf_tmask
+        #band_job["fbf_dmask"] = fbf_dmask
+        #band_job["fbf_nmask"] = fbf_nmask
+        #band_job["fbf_tmask"] = fbf_tmask
         band_job["fbf_img_var"] = img_base
-        band_job["fbf_dmask_var"] = dmask_base
-        band_job["fbf_nmask_var"] = nmask_base
-        band_job["fbf_tmask_var"] = tmask_base
+        #band_job["fbf_dmask_var"] = dmask_base
+        #band_job["fbf_nmask_var"] = nmask_base
+        #band_job["fbf_tmask_var"] = tmask_base
 
         imfo.close()
-        dmask_fo.close()
-        nmask_fo.close()
-        tmask_fo.close()
+        #dmask_fo.close()
+        #nmask_fo.close()
+        #tmask_fo.close()
 
     return True
 
@@ -310,6 +325,8 @@ def process_kind(filepaths,
     fbf_lon = None
     fbf_lat_var = None
     fbf_lon_var = None
+    fbf_mode = None
+    fbf_mode_var = None
     img_lat = None
     img_lon = None
 
@@ -403,9 +420,10 @@ def process_kind(filepaths,
         del band_job
 
     # Get nav data and put it in fbf files
-    start_dt,swath_rows,swath_cols,rows_per_scan,fbf_lat,fbf_lon = process_geo(kind, gfiles, ginfos)
+    start_dt,swath_rows,swath_cols,rows_per_scan,fbf_lat,fbf_lon,fbf_mode = process_geo(kind, gfiles, ginfos)
     fbf_lat_var = fbf_lat.split(".")[0]
     fbf_lon_var = fbf_lon.split(".")[0]
+    fbf_mode_var = fbf_mode.split(".")[0]
     swath_scans = swath_rows/rows_per_scan
 
     # Determine grid
@@ -484,36 +502,49 @@ def process_kind(filepaths,
 
             scale_kwargs = {}
             try:
-                day_mask = getattr(W, band_job["fbf_dmask_var"])[0]
+                mode_mask = getattr(W, fbf_mode_var)[0]
                 # Only add parameters if they're useful
-                if day_mask.shape == data.shape:
-                    log.debug("Adding day mask to rescaling arguments")
-                    scale_kwargs["day_mask"] = day_mask.copy().astype(numpy.bool)
+                if mode_mask.shape == data.shape:
+                    log.debug("Adding mode mask to rescaling arguments")
+                    scale_kwargs["day_mask"] = mode_mask == 1
+                    scale_kwargs["night_mask"] = mode_mask == 2
+                    scale_kwargs["twilight_mask"] = mode_mask == 3
             except StandardError:
-                log.error("Could not open day mask file %s" % band_job["fbf_dmask"])
-                log.debug("Files matching %r" % glob(band_job["fbf_dmask_var"] + "*"))
+                log.error("Could not open mode mask file %s" % fbf_mode)
+                log.debug("Files matching %r" % glob(fbf_mode_var + "*"))
                 return
 
-            try:
-                night_mask = getattr(W, band_job["fbf_nmask_var"])[0]
-                if night_mask.shape == data.shape:
-                    log.debug("Adding night mask to rescaling arguments")
-                    scale_kwargs["night_mask"] = night_mask.copy().astype(numpy.bool)
-            except StandardError:
-                log.error("Could not open night mask file %s" % band_job["fbf_nmask"])
-                log.debug("Files matching %r" % glob(band_job["fbf_nmask_var"] + "*"))
-                return
+            #try:
+            #    day_mask = getattr(W, band_job["fbf_dmask_var"])[0]
+            #    # Only add parameters if they're useful
+            #    if day_mask.shape == data.shape:
+            #        log.debug("Adding day mask to rescaling arguments")
+            #        scale_kwargs["day_mask"] = day_mask.copy().astype(numpy.bool)
+            #except StandardError:
+            #    log.error("Could not open day mask file %s" % band_job["fbf_dmask"])
+            #    log.debug("Files matching %r" % glob(band_job["fbf_dmask_var"] + "*"))
+            #    return
 
-            try:
-                twilight_mask = getattr(W, band_job["fbf_tmask_var"])[0]
-                if twilight_mask.shape == data.shape:
-                    log.debug("Adding night mask to rescaling arguments")
-                    scale_kwargs["twilight_mask"] = twilight_mask.copy().astype(numpy.bool)
-            except StandardError:
-                log.error("Could not open twilight mask file %s" % band_job["fbf_tmask"])
-                log.debug("Twilight error:",exc_info=1)
-                log.debug("Files matching %r" % glob(band_job["fbf_tmask_var"] + "*"))
-                return
+            #try:
+            #    night_mask = getattr(W, band_job["fbf_nmask_var"])[0]
+            #    if night_mask.shape == data.shape:
+            #        log.debug("Adding night mask to rescaling arguments")
+            #        scale_kwargs["night_mask"] = night_mask.copy().astype(numpy.bool)
+            #except StandardError:
+            #    log.error("Could not open night mask file %s" % band_job["fbf_nmask"])
+            #    log.debug("Files matching %r" % glob(band_job["fbf_nmask_var"] + "*"))
+            #    return
+
+            #try:
+            #    twilight_mask = getattr(W, band_job["fbf_tmask_var"])[0]
+            #    if twilight_mask.shape == data.shape:
+            #        log.debug("Adding night mask to rescaling arguments")
+            #        scale_kwargs["twilight_mask"] = twilight_mask.copy().astype(numpy.bool)
+            #except StandardError:
+            #    log.error("Could not open twilight mask file %s" % band_job["fbf_tmask"])
+            #    log.debug("Twilight error:",exc_info=1)
+            #    log.debug("Files matching %r" % glob(band_job["fbf_tmask_var"] + "*"))
+            #    return
 
             try:
                 rescaled_data = rescale(data,
@@ -529,7 +560,7 @@ def process_kind(filepaths,
                 log.error("Unexpected error while rescaling data", exc_info=1)
                 return
 
-            del W,img,data,day_mask,night_mask,twilight_mask,rescaled_data
+            del W,img,data,rescaled_data,mode_mask#day_mask,night_mask,twilight_mask
 
         else:
             band_job["fbf_swath"] = band_job["fbf_img"]
