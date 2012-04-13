@@ -244,7 +244,7 @@ def process_image(kind, gfiles, ginfos, bands, grid_jobs):
 
             # Append the data to the file
             imfa.append(finfo["image_data"])
-            dmask_fa.append(finfo["twilight_mask"])
+            dmask_fa.append(finfo["day_mask"])
             nmask_fa.append(finfo["night_mask"])
             tmask_fa.append(finfo["twilight_mask"])
 
