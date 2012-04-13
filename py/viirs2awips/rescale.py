@@ -77,9 +77,16 @@ def dnb_scale(img, *args, **kwargs):
         log.debug("  scaling DNB in day mask")
         _histogram_equalization(img, kwargs["day_mask"  ])
     
+    if ("twilight_mask"   in kwargs) and (numpy.sum(kwargs["twilight_mask"])   > 0) :
+        log.debug("  scaling DNB in twilight mask")
+        _histogram_equalization(img, kwargs["twilight_mask"  ])
+    
     if ("night_mask" in kwargs) and (numpy.sum(kwargs["night_mask"]) > 0) :
         log.debug("  scaling DNB in night mask")
         _histogram_equalization(img, kwargs["night_mask"])
+    
+    print("*** max: " + str(img.max()))
+    print("*** min: " + str(img.min()))
     
     return img
 
