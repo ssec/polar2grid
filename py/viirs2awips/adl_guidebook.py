@@ -35,6 +35,7 @@ K_BTEMP_FACTORS = "BrightnessTemperatureFactorsVar"
 K_SOLARZENITH = "SolarZenithVar"
 K_STARTTIME = "StartTimeVar"
 K_MODESCAN = "ModeScanVar"
+K_MODEGRAN = "ModeGranVar"
 K_QF3 = "QF3Var"
 K_NAVIGATION = 'NavigationFilenameGlob'  # glob to search for to find navigation file that corresponds
 K_GEO_REF = 'CdfcbGeolocationFileGlob' # glob which would match the N_GEO_Ref attribute
@@ -77,6 +78,7 @@ SV_FILE_GUIDE = {
                             K_REFLECTANCE_FACTORS: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/ReflectanceFactors',
                             K_BTEMP_FACTORS: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/BrightnessTemperatureFactors',
                             K_MODESCAN: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/ModeScan',
+                            K_MODEGRAN: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/ModeGran',
                             K_QF3: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'G%(kind)sTCO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
@@ -87,6 +89,7 @@ SV_FILE_GUIDE = {
                             K_REFLECTANCE_FACTORS: None,
                             K_BTEMP_FACTORS: None,
                             K_MODESCAN: '/All_Data/VIIRS-DNB-SDR_All/ModeScan',
+                            K_MODEGRAN: '/All_Data/VIIRS-DNB-SDR_All/ModeGran',
                             K_QF3: '/All_Data/VIIRS-DNB-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
@@ -276,6 +279,7 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     data_var_path = finfo[data_kind]
     factors_var_path = finfo[finfo["factors"]]
     modescan_var_path = finfo[K_MODESCAN]
+    modegran_var_path = finfo[K_MODEGRAN]
     qf3_var_path = finfo[K_QF3]
 
     # Get image data
@@ -291,6 +295,14 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
         del h5v
     else:
         modescan_data = None
+
+    if finfo["kind"] == "DNB":
+        h5v = h5path(hp, modegran_var_path, finfo["img_path"], required=True)
+        modegran_data = h5v[:]
+        del h5v
+    else:
+        modegran_data = None
+
 
     # Get QF3 data
     h5v = h5path(hp, qf3_var_path, finfo["img_path"], required=True)
@@ -330,16 +342,26 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     if modescan_data is None:
         dmask_data = None
         nmask_data = None
+        tmask_data = None
     else:
         rows_per_scan = finfo["rows_per_scan"]
         cols_per_row = finfo["cols_per_row"]
-        dmask_data = np.repeat(modescan_data == 1, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
-        nmask_data = np.repeat(modescan_data == 0, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
         don_mask = MISSING_GUIDE[K_MODESCAN][0](modescan_data) if K_MODESCAN in MISSING_GUIDE else None
         don_mask = np.repeat(don_mask, rows_per_scan * cols_per_row).reshape(image_data.shape)
+
+        if modegran_data[0] == 2:
+            tmask_data = np.ones(image_data.shape)
+            dmask_data = np.zeros(image_data.shape)
+            nmask_data = np.zeros(image_data.shape)
+        else:
+            tmask_data = np.zeros(image_data.shape)
+            dmask_data = np.repeat(modescan_data == 1, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
+            nmask_data = np.repeat(modescan_data == 0, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
+
         mask = mask | don_mask
         dmask_data[mask] = False
         nmask_data[mask] = False
+        tmask_data[mask] = False
 
     # Create scan_quality array
     scan_quality = np.nonzero(np.repeat(qf3_data > 0, finfo["rows_per_scan"]))
@@ -351,6 +373,7 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     finfo["image_mask"] = mask
     finfo["day_mask"] = dmask_data
     finfo["night_mask"] = nmask_data
+    finfo["twilight_mask"] = tmask_data
     finfo["scan_quality"] = scan_quality
     return finfo
 

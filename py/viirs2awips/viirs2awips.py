@@ -202,12 +202,15 @@ def process_image(kind, gfiles, ginfos, bands, grid_jobs):
         imname = '.image' + spid
         dmask_name = '.day_mask' + spid
         nmask_name = '.night_mask' + spid
+        tmask_name = '.twilight_mask' + spid
         imfo = file(imname, 'wb')
         dmask_fo = file(dmask_name, 'wb')
         nmask_fo = file(nmask_name, 'wb')
+        tmask_fo = file(tmask_name, 'wb')
         imfa = file_appender(imfo, dtype=numpy.float32)
         dmask_fa = file_appender(dmask_fo, dtype=numpy.int8)
         nmask_fa = file_appender(nmask_fo, dtype=numpy.int8)
+        tmask_fa = file_appender(tmask_fo, dtype=numpy.int8)
 
         # Get the data
         for idx,finfo in enumerate(band_job["finfos"]):
@@ -236,17 +239,21 @@ def process_image(kind, gfiles, ginfos, bands, grid_jobs):
                     finfo["day_mask"] = numpy.delete(finfo["day_mask"], ginfo["scan_quality"], axis=0)
                 if finfo["night_mask"] is not None:
                     finfo["night_mask"] = numpy.delete(finfo["night_mask"], ginfo["scan_quality"], axis=0)
+                if finfo["twilight_mask"] is not None:
+                    finfo["twilight_mask"] = numpy.delete(finfo["twilight_mask"], ginfo["scan_quality"], axis=0)
 
             # Append the data to the file
             imfa.append(finfo["image_data"])
-            dmask_fa.append(finfo["day_mask"])
+            dmask_fa.append(finfo["twilight_mask"])
             nmask_fa.append(finfo["night_mask"])
+            tmask_fa.append(finfo["twilight_mask"])
 
             # Remove pointers to data so it gets garbage collected
             del finfo["image_data"]
             del finfo["image_mask"]
             del finfo["day_mask"]
             del finfo["night_mask"]
+            del finfo["twilight_mask"]
             del finfo["scan_quality"]
 
         suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
@@ -254,22 +261,28 @@ def process_image(kind, gfiles, ginfos, bands, grid_jobs):
         img_base = "image_%s" % band_job["id"]
         dmask_base = "day_mask_%s" % band_job["id"]
         nmask_base = "night_mask_%s" % band_job["id"]
+        tmask_base = "twilight_mask_%s" % band_job["id"]
         fbf_img = img_base + suffix
         fbf_dmask = dmask_base + suffix2
         fbf_nmask = nmask_base + suffix2
+        fbf_tmask = tmask_base + suffix2
         os.rename(imname, fbf_img)
         os.rename(dmask_name, fbf_dmask)
         os.rename(nmask_name, fbf_nmask)
+        os.rename(tmask_name, fbf_tmask)
         band_job["fbf_img"] = fbf_img
         band_job["fbf_dmask"] = fbf_dmask
         band_job["fbf_nmask"] = fbf_nmask
+        band_job["fbf_tmask"] = fbf_tmask
         band_job["fbf_img_var"] = img_base
         band_job["fbf_dmask_var"] = dmask_base
         band_job["fbf_nmask_var"] = nmask_base
+        band_job["fbf_tmask_var"] = tmask_base
 
         imfo.close()
         dmask_fo.close()
         nmask_fo.close()
+        tmask_fo.close()
 
     return True
 
@@ -492,6 +505,17 @@ def process_kind(filepaths,
                 return
 
             try:
+                twilight_mask = getattr(W, band_job["fbf_tmask_var"])[0]
+                if twilight_mask.shape == data.shape:
+                    log.debug("Adding night mask to rescaling arguments")
+                    scale_kwargs["twilight_mask"] = twilight_mask.copy().astype(numpy.bool)
+            except StandardError:
+                log.error("Could not open twilight mask file %s" % band_job["fbf_tmask"])
+                log.debug("Twilight error:",exc_info=1)
+                log.debug("Files matching %r" % glob(band_job["fbf_tmask_var"] + "*"))
+                return
+
+            try:
                 rescaled_data = rescale(data,
                         kind=kind,
                         band=band,
@@ -505,7 +529,7 @@ def process_kind(filepaths,
                 log.error("Unexpected error while rescaling data", exc_info=1)
                 return
 
-            del W,img,data,day_mask,night_mask,rescaled_data
+            del W,img,data,day_mask,night_mask,twilight_mask,rescaled_data
 
         else:
             band_job["fbf_swath"] = band_job["fbf_img"]
