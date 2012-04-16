@@ -118,7 +118,8 @@ def get_geo_meta(gfilepaths):
             "swath_cols"  : None,
             "rows_per_scan" : None,
             "fbf_lat"   : None,
-            "fbf_lon"   : None
+            "fbf_lon"   : None,
+            "fbf_mode"  : None
             }
 
     for gname in gfilepaths:
@@ -142,24 +143,18 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     into 2 concatenated swath files.  One for latitude data and one for
     longitude data.
     """
-    #meta_data = {
-    #        "start_dt"  : None,
-    #        "swath_rows"  : None,
-    #        "swath_cols"  : None,
-    #        "fbf_lat"   : None,
-    #        "fbf_lon"   : None
-    #        }
-
     # Write lat/lon data to fbf files
     # Create fbf files
     spid = '%d' % os.getpid()
     latname = '.lat' + spid
     lonname = '.lon' + spid
+    modename = '.mode' + spid
     lafo = file(latname, 'wb')
     lofo = file(lonname, 'wb')
+    modefo = file(modename, 'wb')
     lafa = file_appender(lafo, dtype=numpy.float32)
     lofa = file_appender(lofo, dtype=numpy.float32)
-
+    modefa = file_appender(modefo, dtype=numpy.int8)
 
     for ginfo in geo_data:
         # Read in lat/lon data
@@ -178,28 +173,38 @@ def process_geo(meta_data, geo_data, cut_bad=False):
         if cut_bad and len(scan_quality[0]) != 0:
             ginfo["lat_data"] = numpy.delete(ginfo["lat_data"], scan_quality, axis=0)
             ginfo["lon_data"] = numpy.delete(ginfo["lon_data"], scan_quality, axis=0)
+            ginfo["mode_mask"] = numpy.delete(ginfo["mode_mask"], scan_quality, axis=0)
 
         # Append the data to the swath
         lafa.append(ginfo["lat_data"])
         lofa.append(ginfo["lon_data"])
+        modefa.append(ginfo["mode_mask"])
         del ginfo["lat_data"]
         del ginfo["lon_data"]
         del ginfo["lat_mask"]
         del ginfo["lon_mask"]
+        del ginfo["mode_mask"]
 
     lafo.close()
     lofo.close()
+    modefo.close()
 
     # Rename files
     suffix = '.real4.' + '.'.join(str(x) for x in reversed(lafa.shape))
+    suffix2 = '.int1.' + '.'.join(str(x) for x in reversed(modefa.shape))
     fbf_lat_var = "latitude_%s" % meta_data["kind"]
     fbf_lon_var = "longitude_%s" % meta_data["kind"]
+    fbf_mode_var = "mode_%s" % meta_data["kind"]
     fbf_lat = fbf_lat_var + suffix
     fbf_lon = fbf_lon_var + suffix
+    fbf_mode = fbf_mode_var + suffix2
     os.rename(latname, fbf_lat)
     os.rename(lonname, fbf_lon)
+    os.rename(modename, fbf_mode)
+
     meta_data["fbf_lat"] = fbf_lat
     meta_data["fbf_lon"] = fbf_lon
+    meta_data["fbf_mode"] = fbf_mode
     swath_rows,swath_cols = lafa.shape
     meta_data["swath_rows"] = swath_rows
     meta_data["swath_cols"] = swath_cols
@@ -215,14 +220,8 @@ def process_image(meta_data, image_data, geo_data, cut_bad=False):
         # Create fbf files and appenders
         spid = '%d' % os.getpid()
         imname = '.image' + spid
-        dmask_name = '.day_mask' + spid
-        nmask_name = '.night_mask' + spid
         imfo = file(imname, 'wb')
-        dmask_fo = file(dmask_name, 'wb')
-        nmask_fo = file(nmask_name, 'wb')
         imfa = file_appender(imfo, dtype=numpy.float32)
-        dmask_fa = file_appender(dmask_fo, dtype=numpy.int8)
-        nmask_fa = file_appender(nmask_fo, dtype=numpy.int8)
 
         # Get the data
         for finfo,ginfo in zip(finfos,geo_data):
@@ -244,43 +243,26 @@ def process_image(meta_data, image_data, geo_data, cut_bad=False):
             if cut_bad and len(ginfo["scan_quality"][0]) != 0:
                 log.info("Removing %d bad scans from %s" % (len(ginfo["scan_quality"][0])/finfo["rows_per_scan"], finfo["img_path"]))
                 finfo["image_data"] = numpy.delete(finfo["image_data"], ginfo["scan_quality"], axis=0)
-                # delete returns an array regardless, file_appender requires None
-                if finfo["day_mask"] is not None:
-                    finfo["day_mask"] = numpy.delete(finfo["day_mask"], ginfo["scan_quality"], axis=0)
-                if finfo["night_mask"] is not None:
-                    finfo["night_mask"] = numpy.delete(finfo["night_mask"], ginfo["scan_quality"], axis=0)
 
             # Append the data to the file
             imfa.append(finfo["image_data"])
-            dmask_fa.append(finfo["day_mask"])
-            nmask_fa.append(finfo["night_mask"])
 
             # Remove pointers to data so it gets garbage collected
             del finfo["image_data"]
             del finfo["image_mask"]
-            del finfo["day_mask"]
-            del finfo["night_mask"]
             del finfo["scan_quality"]
             del finfo
 
         suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
-        suffix2 = '.int1.' + '.'.join(str(x) for x in reversed(imfa.shape))
         img_base = "image_%s" % band_meta["band_name"]
-        dmask_base = "day_mask_%s" % band_meta["band_name"]
-        nmask_base = "night_mask_%s" % band_meta["band_name"]
         fbf_img = img_base + suffix
-        fbf_dmask = dmask_base + suffix2
-        fbf_nmask = nmask_base + suffix2
         os.rename(imname, fbf_img)
-        os.rename(dmask_name, fbf_dmask)
-        os.rename(nmask_name, fbf_nmask)
         band_meta["fbf_img"] = fbf_img
-        band_meta["fbf_dmask"] = fbf_dmask
-        band_meta["fbf_nmask"] = fbf_nmask
         rows,cols = imfa.shape
         band_meta["swath_rows"] = rows
         band_meta["swath_cols"] = cols
         band_meta["swath_scans"] = meta_data["swath_scans"]
+        band_meta["fbf_mode"] = meta_data["fbf_mode"]
 
         if ("swath_rows" in meta_data and "swath_cols" in meta_data) and \
                 (meta_data["swath_rows"] is not None and meta_data["swath_cols"] is not None) and \
@@ -294,11 +276,7 @@ def process_image(meta_data, image_data, geo_data, cut_bad=False):
                 raise ValueError("No more bands to process for %s bands provided" % meta_data["kind"])
 
         imfo.close()
-        dmask_fo.close()
-        nmask_fo.close()
         del imfa
-        del dmask_fa
-        del nmask_fa
         del finfos
 
 class array_appender(object):

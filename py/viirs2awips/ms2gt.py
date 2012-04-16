@@ -57,27 +57,27 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
 
     try:
         args = [ str(a) for a in args ]
-        log.debug("Running ll2cr with %r" % args)
+        log.debug("Running ll2cr with '%s'" % " ".join(args))
         check_call(args)
     except CalledProcessError:
         log.error("Error running ll2cr", exc_info=1)
-        return None
+        raise ValueError("Error running ll2cr")
     except OSError:
         log.error("Couldn't find 'll2cr' command in PATH")
-        return None
+        raise ValueError("Couldn't find 'll2cr' command in PATH")
 
     d = {}
     tmp = glob("%s_cols_*.img" % tag)
     if len(tmp) != 1:
         log.error("Couldn't find cols img file from ll2cr")
-        return None
+        raise ValueError("Couldn't find cols img file from ll2cr")
     d["colfile"] = tmp[0]
     log.debug("Columns file is %s" % d["colfile"])
 
     tmp = glob("%s_rows_*.img" % tag)
     if len(tmp) != 1:
         log.error("Couldn't find rows img file from ll2cr")
-        return None
+        raise ValueError("Couldn't find rows img file from ll2cr")
     d["rowfile"] = tmp[0]
     log.debug("Rows file is %s" % d["rowfile"])
 
@@ -85,19 +85,19 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
     row_dict = _ll2cr_rows_info(d["rowfile"])
     if col_dict is None or row_dict is None:
         # Log message was delivered before
-        return None
+        raise ValueError("Couldn't get information from ll2cr output")
 
     d["num_cols"] = col_dict["num_cols"]
     d["num_rows"] = row_dict["num_rows"]
 
     if col_dict["scans_out"] != row_dict["scans_out"]:
         log.error("ll2cr didn't produce the same number of scans for cols and rows")
-        return None
+        raise ValueError("ll2cr didn't produce the same number of scans for cols and rows")
     d["scans_out"] = col_dict["scans_out"]
 
     if col_dict["scan_first"] != row_dict["scan_first"]:
         log.error("ll2cr didn't produce the same number for scan first cols and rows")
-        return None
+        raise ValueError("ll2cr didn't produce the same number for scan first cols and rows")
     d["scan_first"] = col_dict["scan_first"]
 
     log.debug("Number of Scans Out = %d" % d["scans_out"])
@@ -118,16 +118,16 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         output_fn = [output_fn]
     if chan_count > 1 and len(swathfile) != chan_count:
         if isinstance(swathfile, list):
-            log.error("Number of input files does not equal channel count %d" % (len(swathfile), chan_count))
-            raise ValueError("Number of input files does not equal channel count %d" % (len(swathfile), chan_count))
+            log.error("Number of input files %d does not equal channel count %d" % (len(swathfile), chan_count))
+            raise ValueError("Number of input files %d does not equal channel count %d" % (len(swathfile), chan_count))
         else:
             log.error("Input files must be a list if channel count is more than 1")
             raise ValueError("Input files must be a list if channel count is more than 1")
 
     if chan_count > 1 and len(output_fn) != chan_count:
         if isinstance(output_fn, list):
-            log.error("Number of output files does not equal channel count %d" % (len(output_fn), chan_count))
-            raise ValueError("Number of output files does not equal channel count %d" % (len(output_fn), chan_count))
+            log.error("Number of output files %d does not equal channel count %d" % (len(output_fn), chan_count))
+            raise ValueError("Number of output files %d does not equal channel count %d" % (len(output_fn), chan_count))
         else:
             log.error("Output files must be a list if channel count is more than 1")
             raise ValueError("Output files must be a list if channel count is more than 1")
@@ -172,14 +172,14 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
 
     try:
         args = [ str(a) for a in args ]
-        log.debug("Running fornav with %r" % args)
+        log.debug("Running fornav with '%s'" % " ".join(args))
         check_call(args)
     except CalledProcessError:
         log.error("Error running fornav", exc_info=1)
-        return None
+        raise ValueError("Fornav failed")
     except OSError:
         log.error("Couldn't find 'fornav' command in PATH")
-        return None
+        raise ValueError("Fornav was not found your PATH")
 
     d = {}
     return d

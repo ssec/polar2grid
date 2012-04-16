@@ -40,55 +40,20 @@ variables:
 }
 """
 
+import numpy
+from netCDF4 import Dataset
+from core import Workspace,UTC
+from rescale import rescale,post_rescale_dnb
+
 import os, sys, logging, re
 import shutil
 import calendar
 from datetime import datetime
-
-from numpy import *
-from netCDF4 import Dataset
-from keoni.fbf import Workspace
-from keoni.time.epoch import UTC
-
+from glob import glob
 
 log = logging.getLogger(__name__)
 UTC = UTC()
 AWIPS_ATTRS = set(re.findall(r'\W:(\w+)', NCDUMP))
-
-def create(nc_pathname, image, **attrs):
-    # Clobber will not allow truncating of an existing file
-    nc = Dataset(nc_pathname, 'w', format='NETCDF3_CLASSIC', clobber=False)
-
-    r,c = image.shape
-    dim_x = nc.createDimension('x', c)
-    dim_y = nc.createDimension('y', r)
-
-    if any((image > 255) | (image < 0)):
-        log.warning('image has values outside of unsigned byte range!')
-    #if image.dtype != ubyte:
-    #    log.warning('converting image to uint8')
-    #    image = image.astype(ubyte)
-    if image.dtype != byte:
-        # netCDF4 should do this automatically, but just in case
-        log.warning('converting image to int8')
-        image = image.astype(byte)
-
-    var_image = nc.createVariable('image', 'b', ('y', 'x'))
-    #var_image = nc.createVariable('image', 'u1', ('y', 'x'))
-    log.debug('image(%d,%d)' % (r,c))
-
-    # transfer attributes, converting floating point values to 32-bit
-    want_attrs = set(AWIPS_ATTRS)
-    have_attrs = set()
-    for k,v in attrs.items():
-        if issubdtype(type(v), float):
-            v = float32(v)
-        log.debug('.%s = %r' % (k,v))
-        setattr(nc, k, v)
-        have_attrs.add(k)
-    if not want_attrs.issubset(have_attrs):
-        log.error('missing attributes: %r' % (want_attrs - have_attrs))
-    nc.close()
 
 def fill(nc_name, image, template, start_dt):
     """Copy a template file to destination and fill it
@@ -100,17 +65,17 @@ def fill(nc_name, image, template, start_dt):
     template = os.path.abspath(template)
     if not os.path.exists(template):
         log.error("Template does not exist %s" % template)
-        return False
+        raise ValueError("Template does not exist %s" % template)
 
     if os.path.exists(nc_name):
         log.error("Output file %s already exists" % nc_name)
-        return False
+        raise ValueError("Output file %s already exists" % nc_name)
 
     try:
         shutil.copyfile(template, nc_name)
     except StandardError:
         log.error("Could not copy template file %s to destination %s" % (template,nc_name))
-        return False
+        raise ValueError("Could not copy template file %s to destination %s" % (template,nc_name))
 
     nc = Dataset(nc_name, "a")
     if nc.file_format != "NETCDF3_CLASSIC":
@@ -119,11 +84,11 @@ def fill(nc_name, image, template, start_dt):
     image_var = nc.variables["image"]
     if image_var.shape != image.shape:
         log.error("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape),str(image.shape)))
-        return False
+        raise ValueError("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape),str(image.shape)))
 
     # Convert to signed byte keeping large values large
-    large_idxs = nonzero(image > 255)
-    small_idxs = nonzero(image < 0)
+    large_idxs = numpy.nonzero(image > 255)
+    small_idxs = numpy.nonzero(image < 0)
     image[large_idxs] = 255
     image[small_idxs] = 0
 
@@ -133,7 +98,38 @@ def fill(nc_name, image, template, start_dt):
     nc.sync() # Just in case
     nc.close()
     log.debug("Data transferred into NC file correctly")
-    return True
+
+def awips_backend(img_filepath, nc_template, nc_filepath,
+        kind, band, data_kind, start_dt, **kwargs):
+    try:
+        W = Workspace('.')
+        img_attr = os.path.split(img_filepath)[1].split('.')[0]
+        img_data = getattr(W, img_attr)
+        img_data = img_data.copy()
+    except StandardError:
+        log.error("Could not open img file %s" % img_filepath)
+        log.debug("Files matching %r" % glob(img_attr + "*"))
+        raise
+
+    if kind != "DNB":
+        try:
+            rescaled_data = rescale(img_data,
+                    kind=kind,
+                    band=band,
+                    data_kind=data_kind,
+                    **kwargs)
+            log.debug("Data min: %f, Data max: %f" % (rescaled_data.min(), rescaled_data.max()))
+        except StandardError:
+            log.error("Unexpected error while rescaling data", exc_info=1)
+            raise
+    else:
+        rescaled_data = post_rescale_dnb(img_data)
+
+    try:
+        fill(nc_filepath, rescaled_data, nc_template, start_dt)
+    except StandardError:
+        log.error("Error while filling in NC file with data")
+        raise
 
 def go(img_name, template, nc_name=None):
     # Make up an NC name
@@ -154,7 +150,7 @@ def go(img_name, template, nc_name=None):
     # Open the image file
     try:
         W = Workspace(base_dir)
-        img = getattr(W, var_name)[0]
+        img = getattr(W, var_name)
         data = img.copy()
     except StandardError:
         log.error("Could not open img file %s" % img_name, exc_info=1)

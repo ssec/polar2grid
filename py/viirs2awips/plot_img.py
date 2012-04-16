@@ -1,15 +1,15 @@
 from numpy import *
 from matplotlib import pyplot as plt
-from keoni.fbf import Workspace; W=Workspace('.')
+from core import Workspace; W=Workspace('.')
 from glob import glob
-for img_name in glob("image_*") + glob("dnb_rescale*"):
+for img_name in glob("image_*") + glob("prescale_DNB*"):
     print "Plotting for %s" % img_name
     # Create a new figure everytime so things don't get shared
     plt.figure()
 
     # Get the data and mask it
     img_name = img_name.split(".")[0]
-    img=getattr(W, img_name)[0]
+    img=getattr(W, img_name)
     discard = (img <= -999)
     data=ma.masked_array(img, discard)
 

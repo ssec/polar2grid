@@ -1,6 +1,6 @@
 """Combine 2 or more orbits into one grid.
 """
-from keoni.fbf import Workspace
+from core import Workspace
 
 import os
 import sys
@@ -23,7 +23,7 @@ def compose(*filepaths):
     base_arr = None
     W = Workspace('.')
     for a in fbf_attrs:
-        tmp_arr = getattr(W, a)[0]
+        tmp_arr = getattr(W, a)
         if base_arr is None:
             base_arr = tmp_arr.copy()
             size = base_arr.shape

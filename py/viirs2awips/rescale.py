@@ -8,12 +8,13 @@ to change the array in place.
 
 Author: David Hoese,davidh,SSEC
 """
+
+from adl_guidebook import K_REFLECTANCE,K_RADIANCE,K_BTEMP
+
 import os
 import sys
 import logging
 import numpy
-
-from adl_guidebook import K_REFLECTANCE,K_RADIANCE,K_BTEMP
 
 log = logging.getLogger(__name__)
 
@@ -85,9 +86,6 @@ def dnb_scale(img, *args, **kwargs):
         log.debug("  scaling DNB in night mask")
         _histogram_equalization(img, kwargs["night_mask"])
     
-    print("*** max: " + str(img.max()))
-    print("*** min: " + str(img.min()))
-    
     return img
 
 def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True) :
@@ -156,7 +154,7 @@ I_SCALES = {
         }
 
 DNB_SCALES = {
-        0 : {K_REFLECTANCE:passive_scale, K_RADIANCE:dnb_scale, K_BTEMP:passive_scale}
+        0 : {K_REFLECTANCE:passive_scale, K_RADIANCE:post_rescale_dnb, K_BTEMP:passive_scale}
         }
 
 SCALES = {
@@ -164,6 +162,16 @@ SCALES = {
         "I"  : I_SCALES,
         "DNB" : DNB_SCALES
         }
+
+def prescale(img, kind="DNB", band=0, data_kind=K_REFLECTANCE, **kwargs):
+    band = int(band)
+
+    # FUTURE: If other things need prescaling, mimic the rescale dictionaries
+    if kind == "DNB" and band == 0:
+        new_img = dnb_scale(img, kind=kind, band=band, data_kind=data_kind, **kwargs)
+        return new_img
+    else:
+        return img
 
 def rescale(img, kind="M", band=5, data_kind=K_RADIANCE, **kwargs):
     band = int(band) # If it came from a filename, it was a string

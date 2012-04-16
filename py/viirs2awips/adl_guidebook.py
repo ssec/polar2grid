@@ -15,7 +15,7 @@ import sys, os
 import re
 import logging
 from datetime import datetime,timedelta
-from keoni.time.epoch import UTC
+from core import UTC
 
 import h5py as h5
 import numpy as np
@@ -188,7 +188,7 @@ def h5path(hp, path, h5_path, required=False):
             if a in x:
                 x = x[a]
             else:
-                LOG.info("Couldn't find %s (or its parent) in %s" % (a,path))
+                LOG.debug("Couldn't find %s (or its parent) in %s" % (a,path))
                 x = None
                 break
         else:

@@ -1,7 +1,7 @@
 from keoni.map.graphics import mapshow
 from matplotlib import pyplot as plt
 from numpy import *
-from keoni.fbf import Workspace; W=Workspace('.')
+from core import Workspace; W=Workspace('.')
 img=W.image[0]
 lat=W.latitude[0]
 lon=W.longitude[0]
