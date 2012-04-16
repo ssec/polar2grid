@@ -209,6 +209,8 @@ def process_kind(filepaths,
     FORNAV_FAIL = 16
     # backend failed
     BACKEND_FAIL = 32
+    # grid determination failed
+    GDETER_FAIL = 64
     # there aren't any jobs left, not sure why
     UNKNOWN_FAIL = -1
 
@@ -268,8 +270,14 @@ def process_kind(filepaths,
         return SUCCESS or UNKNOWN_FAIL
 
     # Determine grid
-    ll2cr_jobs,grid_jobs = create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
-            forced_grids=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
+    try:
+        log.info("Determining what grids the data fits in...")
+        ll2cr_jobs,grid_jobs = create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
+                forced_grids=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
+    except StandardError:
+        log.error("Determining data's grids failed")
+        SUCCESS |= GDETER_FAIL
+        return SUCCESS
 
     # Move nav fbf files to img files to be used by ll2cr
     img_lat = "lat_%s.img" % kind
