@@ -40,10 +40,10 @@ variables:
 }
 """
 
-import numpy
+from polar2grid.core import Workspace,UTC
+from polar2grid.rescale import rescale,post_rescale_dnb
 from netCDF4 import Dataset
-from core import Workspace,UTC
-from rescale import rescale,post_rescale_dnb
+import numpy
 
 import os, sys, logging, re
 import shutil

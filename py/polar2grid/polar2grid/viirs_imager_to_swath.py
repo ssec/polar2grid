@@ -11,12 +11,13 @@ Write out Swath binary files used by ms2gt tools.
 Created by rayg@ssec.wisc.edu, Dec 2011.
 Copyright (c) 2011 University of Wisconsin SSEC. All rights reserved.
 """
-from adl_guidebook import file_info,geo_info,read_file_info,read_geo_info
-
-import logging
-import sys, os
-from glob import glob
+from polar2grid.adl_guidebook import file_info,geo_info,read_file_info,read_geo_info
 import numpy
+
+import os
+import sys
+import logging
+from glob import glob
 
 log = logging.getLogger(__name__)
 

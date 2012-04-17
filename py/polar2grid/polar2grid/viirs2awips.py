@@ -3,13 +3,12 @@ NetCDF file.
 
 Author: David Hoese,davidh,SSEC
 """
-#from keoni.fbf import Workspace
-from core import Workspace
-from viirs_imager_to_swath import make_swaths
-from rescale import prescale
-import ms2gt
-from awips_netcdf import awips_backend
-from awips_config import BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
+from polar2grid.core import Workspace
+from polar2grid.viirs_imager_to_swath import make_swaths
+from polar2grid.rescale import prescale
+from polar2grid import ms2gt
+from polar2grid.awips_netcdf import awips_backend
+from polar2grid.awips_config import BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
 
 import os
 import sys

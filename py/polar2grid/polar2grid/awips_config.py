@@ -17,14 +17,14 @@ from netCDF4 import Dataset
 import os
 import sys
 import logging
+import pkg_resources
 
 log = logging.getLogger(__name__)
 
 # Get configuration file locations
-script_dir = os.path.split(os.path.realpath(__file__))[0]
-default_grids_config = os.path.join(script_dir, "awips_grids.conf")
-default_ancil_dir = os.path.join(script_dir, "grids")
-default_shapes_config = os.path.join(script_dir, "awips_shapes.conf")
+default_grids_config = pkg_resources.resource_filename("polar2grid", "awips_grids.conf")
+default_ancil_dir = pkg_resources.resource_filename("polar2grid", "grids")
+default_shapes_config = pkg_resources.resource_filename("polar2grid", "awips_shapes.conf")
 GRIDS_CONFIG = os.environ.get("VIIRS_GRIDS_CONFIG", default_grids_config)
 ANCIL_DIR     = os.environ.get("VIIRS_ANCIL_DIR", default_ancil_dir)
 SHAPES_CONFIG   = os.environ.get("VIIRS_SHAPE_CONFIG", default_shapes_config)

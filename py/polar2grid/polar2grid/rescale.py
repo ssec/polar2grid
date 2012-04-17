@@ -9,7 +9,7 @@ to change the array in place.
 Author: David Hoese,davidh,SSEC
 """
 
-from adl_guidebook import K_REFLECTANCE,K_RADIANCE,K_BTEMP
+from polar2grid.adl_guidebook import K_REFLECTANCE,K_RADIANCE,K_BTEMP
 
 import os
 import sys

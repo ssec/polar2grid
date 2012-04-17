@@ -11,14 +11,14 @@ Copyright (c) 2011 University of Wisconsin SSEC. All rights reserved.
 Licensed under GNU GPLv3.
 """
 
+from polar2grid.core import UTC
+import h5py as h5
+import numpy as np
+
 import sys, os
 import re
 import logging
 from datetime import datetime,timedelta
-from core import UTC
-
-import h5py as h5
-import numpy as np
 
 LOG = logging.getLogger('adl_cdfcb')
 UTC= UTC()
