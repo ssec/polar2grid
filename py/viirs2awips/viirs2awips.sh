@@ -27,7 +27,7 @@ if [ -z "$VIIRS_SHAPE_CONFIG" ]; then
 fi
 
 # Test configs/Egg installation
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.awips_config
+#$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.awips_config
 
 # Call the python module to do the processing, passing all arguments
-#$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.viirs2awips -vv $@
+$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.viirs2awips -vv $@
