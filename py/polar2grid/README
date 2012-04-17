@@ -1,0 +1,14 @@
+===============================================================================
+= Package Name: polar2grid
+= Author:       David Hoese, Ray Garcia, Eva Schiffer, William Straka (SSEC)
+= Organization: Space Science and Engineering Center (SSEC UW-Madison)
+= Description:  Library and scripts for remapping VIIRS data to AWIPS NC files
+===============================================================================
+
+Installation
+============
+polar2grid should be used as an internal package to the polar2grid Workspace.
+The Workspace includes C, IDL, and Python programs/libraries to properly go
+from VIIRS data to AWIPS NC file.
+
+TODO

@@ -1,3 +1,4 @@
+#!python
 from setuptools import setup, find_packages
 
 classifiers = ""
@@ -15,6 +16,7 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     namespace_packages=[],
     include_package_data=True,
+    package_data={'polar2grid': ["grids/*.gpd","grids/*.nc","*.conf"]},
     zip_safe=False,
     install_requires=['numpy', 'netCDF4', 'matplotlib', 'h5py'],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
