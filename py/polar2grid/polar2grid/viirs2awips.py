@@ -91,18 +91,23 @@ def run_prescaling(kind, band, data_kind,
 
     scale_kwargs = {}
     try:
-        mode_mask = getattr(W, mode_attr)[0]
+        mode_mask = getattr(W, mode_attr)
         # Only add parameters if they're useful
         if mode_mask.shape == data.shape:
             log.debug("Adding mode mask to rescaling arguments")
             scale_kwargs["day_mask"] = mode_mask == 1 
             scale_kwargs["night_mask"] = mode_mask == 2
             scale_kwargs["twilight_mask"] = mode_mask == 3
+        elif require_dn:
+            log.error("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
+            raise ValueError("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
     except StandardError:
         if require_dn:
             log.error("Could not open mode mask file %s" % mode_filepath)
             log.debug("Files matching %r" % glob(mode_attr + "*"))
             raise ValueError("Could not open mode mask file %s" % mode_filepath)
+        else:
+            log.debug("Could not open mode mask file %s" % mode_filepath)
 
     try:
         rescaled_data = prescale(data,
@@ -255,7 +260,7 @@ def process_kind(filepaths,
                     band_job["data_kind"],
                     band_job["fbf_img"],
                     band_job["fbf_mode"],
-                    require_dn= band == "DNB"
+                    require_dn = kind == "DNB"
                     )
             band_job["fbf_swath"] = fbf_swath
         except StandardError:
