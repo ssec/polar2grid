@@ -1,12 +1,17 @@
-"""Core of viirs2awips that holds shared utilities and constants.
+#!/usr/bin/env python
+# encoding: utf-8
+""" Core of viirs2awips that holds shared utilities and constants.
 
-FBF Workspace:
-    Wrapper object around numpy's fromfile method to treat a directory as a
-    workspace of flat binary files.
-    Replaces rayg's pykeoni.fbf.Workspace.
-
-Author: David Hoese,davidh,SSEC
+:newfield revision: Revision
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2012
+:license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
+__revision__  = "$Id$"
 import numpy
 
 import os
@@ -16,9 +21,9 @@ import datetime
 
 log = logging.getLogger(__name__)
 
-# time zone class for UTC
 class UTC(datetime.tzinfo):
-    """UTC"""
+    """Time zone class for UTC
+    """
     ZERO = datetime.timedelta(0)
     def utcoffset(self, dt):
         return self.ZERO
@@ -27,17 +32,28 @@ class UTC(datetime.tzinfo):
     def dst(self, dt):
         return self.ZERO
 
-
 str_to_dtype = {
         "real4" : numpy.float32,
         "int1"  : numpy.int8
         }
 
 class Workspace(object):
-    def __init__(self,dir='.'):
+    """Wrapper object around ``numpy.fromfile()`` method to treat a directory as a
+    workspace of flat binary files.
+
+    :attention: Replaces rayg's ``keoni.fbf.Workspace``
+    """
+    def __init__(self, dir='.'):
         self._dir=dir
 
     def _parse_attr_name(self, name):
+        """Take a FBF formatted filename and parse out the binary data
+        details such as number of rows/cols and data type.
+
+        :Parameters:
+            name : str
+                Flat binary formatted name (ex. image_I01.real4.6400.10167).
+        """
         fullpath = os.path.abspath(name)
         filename = os.path.split(fullpath)[1]
         parts = filename.split(".")

@@ -1,15 +1,22 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-adl_guidebook.py
-$Id$
+Provide information about ADL product files for a variety of uses.
 
-Purpose: Provide information about ADL product files for a variety of uses.
+:group Data Kinds: K_*
+:group Guides: ROWS_PER_SCAN,COLS_PER_ROW,DATA_KINDS,*_GUIDE
 
-Created by rayg@ssec.wisc.edu Jan 2012.
-Copyright (c) 2011 University of Wisconsin SSEC. All rights reserved.
-Licensed under GNU GPLv3.
+:newfield revision: Revision
+:author:       David Hoese (davidh)
+:author:       Ray Garcia (rayg)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2012
+:license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
+__revision__  = "$Id$"
 
 from polar2grid.core import UTC
 import h5py as h5
@@ -169,6 +176,9 @@ class evaluator(object):
 
 
 def get_datetimes(finfo):
+    """Takes a file info dictionary and creates a datetime object for the
+    start of the granule and the end of the granule.
+    """
     d = finfo["date"]
     st = finfo["start_time"]
     s_us = int(st[-1])*100000
@@ -212,9 +222,29 @@ def _st_to_datetime(st):
     return base + timedelta(microseconds=int(st))
 
 def file_info(fn):
-    """Get as much information from the filename of a data file as possible.
+    """Given a filename, returns a dictionary of information that could
+    be derived.
 
-    Main rule of this function is don't touch the file system.
+    :postcondition:
+        The returned ``finfo`` will have the following keys:
+            - kind
+            - band
+            - data_kind
+            - rows_per_scan
+            - cols_per_row
+            - factors
+            - geo_glob
+            - img_path
+
+    :attention:
+        This method does not require that the file actually exists.
+
+    :Parameters:
+        fn : str
+            Filename of image data to be analyzed
+
+    :raises ValueError:
+        if filename matches 1 regular expression for a data file, but not of a generic NPP filename
     """
     fn = os.path.abspath(fn)
     finfo = {}
@@ -276,13 +306,37 @@ def file_info(fn):
     return finfo
 
 def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
+    """Reads the hdf file associated with the file info dictionary provided
+    and returns all of the information that could be useful outside of this
+    function.
+
+    :precondition:
+        ``finfo`` was returned from `file_info` or meets the post
+        condition of `file_info`.
+    :precondition:
+        ``finfo`` is allowed to be changed/updated/added to in place.
+    :postcondition:
+        ``finfo`` will have the following new keys:
+            - image_data
+            - image_mask
+            - mode_mask
+
+    :Parameters:
+        finfo : dict
+            File info dictionary returned from `file_info`.
+    :Keywords:
+        extra_mask : ``numpy.ndarray``
+            An additional mask that will be used to fill the data.
+        fill_value : int or float
+            Fill value to be used for all bad data found.
+        dtype : ``numpy.dtype``
+            The data type that the returned data array will be forced to.
+    """
     hp = h5.File(finfo["img_path"], 'r')
 
     data_kind = finfo["data_kind"]
     data_var_path = finfo[data_kind]
     factors_var_path = finfo[finfo["factors"]]
-    #modescan_var_path = finfo[K_MODESCAN]
-    #modegran_var_path = finfo[K_MODEGRAN]
     qf3_var_path = finfo[K_QF3]
 
     # Get image data
@@ -290,22 +344,6 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     image_data = h5v[:,:]
     image_data = image_data.astype(dtype)
     del h5v
-
-    # Get mode scan data
-    #if finfo["kind"] == "DNB":
-    #    h5v = h5path(hp, modescan_var_path, finfo["img_path"], required=True)
-    #    modescan_data = h5v[:]
-    #    del h5v
-    #else:
-    #    modescan_data = None
-
-    #if finfo["kind"] == "DNB":
-    #    h5v = h5path(hp, modegran_var_path, finfo["img_path"], required=True)
-    #    modegran_data = h5v[:]
-    #    del h5v
-    #else:
-    #    modegran_data = None
-
 
     # Get QF3 data
     h5v = h5path(hp, qf3_var_path, finfo["img_path"], required=True)
@@ -341,31 +379,6 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     # Scale image data
     image_data = scaler(image_data)
 
-    # Create day and night masks
-    #if modescan_data is None:
-    #    dmask_data = None
-    #    nmask_data = None
-    #    tmask_data = None
-    #else:
-    #    rows_per_scan = finfo["rows_per_scan"]
-    #    cols_per_row = finfo["cols_per_row"]
-    #    don_mask = MISSING_GUIDE[K_MODESCAN][0](modescan_data) if K_MODESCAN in MISSING_GUIDE else None
-    #    don_mask = np.repeat(don_mask, rows_per_scan * cols_per_row).reshape(image_data.shape)
-
-    #    if modegran_data[0] == 2:
-    #        tmask_data = np.ones(image_data.shape)
-    #        dmask_data = np.zeros(image_data.shape)
-    #        nmask_data = np.zeros(image_data.shape)
-    #    else:
-    #        tmask_data = np.zeros(image_data.shape)
-    #        dmask_data = np.repeat(modescan_data == 1, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
-    #        nmask_data = np.repeat(modescan_data == 0, rows_per_scan * cols_per_row).reshape(image_data.shape).astype(np.int8)
-
-    #    mask = mask | don_mask
-    #    dmask_data[mask] = False
-    #    nmask_data[mask] = False
-    #    tmask_data[mask] = False
-
     # Create scan_quality array
     scan_quality = np.nonzero(np.repeat(qf3_data > 0, finfo["rows_per_scan"]))
 
@@ -375,13 +388,27 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     finfo["image_data"] = image_data
     finfo["image_mask"] = mask
     finfo["mode_mask"] = None
-    #finfo["day_mask"] = dmask_data
-    #finfo["night_mask"] = nmask_data
-    #finfo["twilight_mask"] = tmask_data
     finfo["scan_quality"] = scan_quality
+
     return finfo
 
 def geo_info(fn):
+    """Will return a dictionary of information that could be derived from the
+    provided geo-navigation filename.
+
+    :postcondition:
+        The returned ``finfo`` (or ginfo) will contain the following keys:
+            - geo_path
+            - kind
+            - rows_per_scan
+
+    :Parameters:
+        fn : str
+            Geo-navigation filename to be analyzed
+
+    :raises ValueError:
+        if filename matches 1 regular expression for a geonav, but not of a generic NPP filename
+    """
     fn = os.path.abspath(fn)
     finfo = {}
     finfo["geo_path"] = fn
@@ -418,6 +445,34 @@ def geo_info(fn):
     return finfo
 
 def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
+    """Will fill in finfo with the data that is assumed to
+    be necessary for future processing.
+
+    :precondition:
+        ``finfo`` is allowed to be changed/updated/added to in place.
+    :precondition:
+        ``finfo`` cam from `geo_info` or at least meets the post
+        condition of `geo_info`.
+    :postcondition:
+        ``finfo`` will have the following keys added:
+            - lat_data
+            - lon_data
+            - lat_mask
+            - lon_mask
+            - mode_mask
+            - start_dt
+            - scan_quality
+
+    :Parameters:
+        finfo : dict
+            Dictionary of information from `geo_info`.
+    :Keywords:
+        fill_value : int or float
+            Fill value for any bad data found.
+        dtype : ``numpy.dtype``
+            Data type that the returned data is forced to.
+    """
+
     hp = h5.File(finfo["geo_path"], 'r')
 
     lat_var_path = finfo[K_LATITUDE]
@@ -481,16 +536,36 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     return finfo
 
 def generic_info(fn):
+    """Wrapper function that tells what function should be called based
+    on the first letter of the filename passed.
+
+    'S' for data files, 'G' for geo files
+
+    :raises ValueError: if `fn` doesn't start with 'S' or 'G'
+    """
     if os.path.split(fn)[1].startswith("S"):
         return file_info(fn)
-    else:
+    elif os.path.split(fn)[1].startswith("G"):
         return geo_info(fn)
+    else:
+        LOG.error("Unknown file type for %s" % fn)
+        raise ValueError("Unknown file type for %s" % fn)
 
 def generic_read(fn, finfo):
+    """Wrapper function that tells what read function should be called based
+    on the first letter of the filename passed.
+
+    'S' for data files, 'G' for geo files
+
+    :raises ValueError: if `fn` doesn't start with 'S' or 'G'
+    """
     if os.path.split(fn)[1].startswith("S"):
         return read_file_info(finfo)
-    else:
+    elif os.path.split(fn)[1].startswith("G"):
         return read_geo_info(finfo)
+    else:
+        LOG.error("Unknown file type for %s" % fn)
+        raise ValueError("Unknown file type for %s" % fn)
 
 def main():
     import optparse

@@ -1,17 +1,39 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """Functions to read configuration files for the viirs2awips.
 
 Instances of default configuration file locations and contents.
 
-GRIDS and BANDS: Mappings to product_id and NC filename format
-GRID_TEMPLATES: Mappings to gpd and NC templates.
-SHAPES: Mappings of grid name to lat/lon boundaries and coverage percentage
+Configuration files from which the above are derived
+Global objects representing configuration files
 
-PRODUCTS_FILE: File holding band to grid mappings,
-                including product_id and NC filename format
-ANCIL_DIR: Directory holding gpd and nc templates for AWIPS grids.
-SHAPES_FILE: File holding grid boundaries for grids specified in the
-                grids directory and products.conf file
+:Variables:
+    GRIDS : dict
+        Mappings to product_id and NC filename format
+    BANDS : dict
+        Mappings to product_id and NC filename format
+    GRID_TEMPLATES : dict
+        Mappings to gpd and NC templates.
+    SHAPES : dict 
+        Mappings of grid name to lat/lon boundaries and coverage percentage
+    PRODUCTS_FILE
+        File holding band to grid mappings, including product_id and NC
+        filename format
+    ANCIL_DIR
+        Directory holding gpd and nc templates for AWIPS grids.
+    SHAPES_FILE
+        File holding grid boundaries for grids specified in the
+        grids directory and products.conf file
+
+:newfield revision: Revision
+:author: David Hoese (davidh)
+:contact: david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2012
+:license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
 from netCDF4 import Dataset
 
 import os

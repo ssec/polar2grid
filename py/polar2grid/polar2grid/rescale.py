@@ -1,13 +1,25 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """Functions and mappings for taking rempapped VIIRS data and
 rescaling it to a useable range from 0 to 255 to be compatible
 and "pretty" with AWIPS.
 
-WARNING: A scaling function is not guarenteed to not change the
-original data array passed.  If fact, it is faster in most cases
-to change the array in place.
+:attention:
+    A scaling function is not guarenteed to not change the
+    original data array passed.  If fact, it is faster in most cases
+    to change the array in place.
 
-Author: David Hoese,davidh,SSEC
+:newfield revision: Revision
+:author:       David Hoese (davidh)
+:author:       Eva Schiffer (evas)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2012
+:license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
+__revision__  = "$Id$"
 
 from polar2grid.adl_guidebook import K_REFLECTANCE,K_RADIANCE,K_BTEMP
 

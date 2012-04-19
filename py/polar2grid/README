@@ -7,8 +7,21 @@
 
 Installation
 ============
-polar2grid should be used as an internal package to the polar2grid Workspace.
-The Workspace includes C, IDL, and Python programs/libraries to properly go
-from VIIRS data to AWIPS NC file.
+polar2grid should be used as an internal package to the polar2grid software
+bundle.  The software bundle ncludes C, IDL, and Python packages/libraries
+to properly go from VIIRS data to AWIPS-compatible NC files.  polar2grid is
+tested using the ShellB3 python environment, which includes the necessary
+python packages.  ShellB3 is part of the polar2grid software bundle.
 
-TODO
+The polar2grid python package can be installed like any normal python egg:
+    "easy_install polar2grid"
+    "python setup.py install"
+    "untar polar2grid-<version>.tar.gz; export PYTHONPATH=polar2grid/:$PYTONPATH"
+
+Use Notes
+=========
+It requires that the ms2gt utilties 'll2cr' and 'fornav' be in the PATH
+environment variable.
+
+See the sphinx documentation for how-tos and other usage notes.
+

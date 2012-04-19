@@ -1,16 +1,21 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-viirs_imager_to_swath.py
-$Id$
-
-Purpose:
 Read one or more contiguous in-order HDF5 VIIRS imager granules in any aggregation
 Write out Swath binary files used by ms2gt tools.
 
-Created by rayg@ssec.wisc.edu, Dec 2011.
-Copyright (c) 2011 University of Wisconsin SSEC. All rights reserved.
+:newfield revision: Revision
+:author:       David Hoese (davidh)
+:author:       Ray Garcia (rayg)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2012
+:license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
+__revision__  = " $Id$"
+
 from polar2grid.adl_guidebook import file_info,geo_info,read_file_info,read_geo_info
 import numpy
 
@@ -22,6 +27,10 @@ from glob import glob
 log = logging.getLogger(__name__)
 
 def _glob_file(pat):
+    """Globs for a single file based on the provided pattern.
+
+    :raises ValueError: if more than one file matches pattern
+    """
     tmp = glob(pat)
     if len(tmp) != 1:
         log.error("There were no files or more than one fitting the pattern %s" % pat)
@@ -29,8 +38,38 @@ def _glob_file(pat):
     return tmp[0]
 
 def get_meta_data(ifilepaths, filter=None):
-    """Create all possibly necessary binary files from concatenated
-    granule data.
+    """Get all meta data for the provided data files.
+
+    :Parameters:
+        ifilepaths : list or iterator
+            Filepaths for data files to be analyzed
+    :Keywords:
+        filter : function pointer
+            Function that expects a ``finfo`` object as its only argument
+            and returns True if the finfo should be accepted, False if not.
+            This can be used to specify what types of bands are desired.
+
+    :returns:
+        meta_data : dict
+            - kind
+                kind of band
+            - bands
+                dictionary per band of band info containing the following keys:
+                    - kind
+                    - band
+                    - band_name
+                    - data_kind
+                    - rows_per_scan
+                    - fbf_swath
+        image_data : dict
+            Dictionary where the key is a band ('01','00',etc.) and the
+            value is a list of finfo dictionaries.
+
+    :raises ValueError:
+        if there is more than one kind of band in provided filenames
+    :raises ValueError:
+        if after attempting to process the provided image
+        filenames there was no useful data found.
     """
     ifilepaths = sorted(ifilepaths)
 
@@ -109,8 +148,37 @@ def get_meta_data(ifilepaths, filter=None):
     return meta_data,image_data
 
 def get_geo_meta(gfilepaths):
-    """Return a dictionary of meta data taken from the geonav filenames.
-    Also, return a list of geonav file detailed information dictionaries.
+    """Get all meta data from the geo-navigation files provided.
+
+    :Parameters:
+        gfilepaths : list
+            Filepaths for geo-navigation files to be processed
+
+    :returns:
+        meta_data : dict
+            Dictionary of meta data derived from the provided filepaths.
+            Contains the following keys:
+
+                - start_dt
+                - swath_rows
+                - swath_cols
+                - rows_per_scan
+                - fbf_lat
+                - fbf_lon
+                - fbf_mode
+
+        geo_data : list
+            List of ginfo dictionaries that can be used to read the
+            associated geonav files.
+
+    :attention:
+        Just because a key if put in the meta_data dictionary
+        does not necessarily mean that that data will be valid or filled
+        in after this function has returned.  It will probably be filled
+        in during a later step in the swath extraction process.
+
+    :raises ValueError:
+        if there is an error processing one of the geonav files.
     """
     geo_data = []
     meta_data = {
@@ -140,9 +208,42 @@ def get_geo_meta(gfilepaths):
     return meta_data,geo_data
 
 def process_geo(meta_data, geo_data, cut_bad=False):
-    """Read data from the geonav files and put then all
-    into 2 concatenated swath files.  One for latitude data and one for
-    longitude data.
+    """Read data from the geonav files and put them all
+    into 3 concatenated swath files.  One for latitude data, one for
+    longitude data, and one for mode (day/night masks) data.
+    Has the option of cutting out bad data scans, see ``cut_bad`` below.
+
+    Will add/fill in the following information into the meta_data dictionary:
+        - start_dt
+            Datetime object of the first middle scan time of the
+            first granule
+        - fbf_lat
+            Filename of the flat binary file with latitude data
+        - fbf_lon
+            Filename of the flat binary file with longitude data
+        - fbf_mode
+            Filename of the flat binary file with mode data
+        - swath_rows
+            Number of rows in the concatenated swath
+        - swath_cols
+            Number of cols in the concatenated swath
+        - swath_scans
+            Number of scans in the concatenated swath, which is
+            equal to ``swath_rows / rows_per_scan``
+
+    :Parameters:
+        meta_data : dict
+            The meta data dictionary from `get_meta_data`
+        geo_data : list
+            The list of ``ginfo`` dictionaries from `get_geo_meta`
+    :Keywords:
+        cut_bad : bool
+            Specify whether or not to remove entire scans of data
+            when the scan is found to have bad data.  This is done
+            because the ms2gt utilities don't know how to handle
+            bad geonav data properly.
+
+    :raises ValueError: if there is an error reading in the data from the file
     """
     # Write lat/lon data to fbf files
     # Create fbf files
@@ -214,6 +315,38 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     return meta_data,geo_data
 
 def process_image(meta_data, image_data, geo_data, cut_bad=False):
+    """Read the image data from hdf files and concatenated them
+    into 1 swath file.  Has the option to cut out bad data if
+    bad navigation data was found, see ``cut_bad`` below.
+
+    :Parameters:
+        meta_data : dict
+            The meta data dictionary from `get_meta_data`, that's been updated
+            through the entire swath extraction process.
+        image_data : dict
+            Per band dictionary of ``finfo`` dictionary objects from
+            `get_meta_data`.
+        geo_data : list
+            List of ``ginfo`` dictionaries from `get_geo_meta`.
+    :Keywords:
+        cut_bad : bool
+            Specify whether or not to remove entire scans of data
+            when the geonav scan is found to have bad data.  This is done
+            because the ms2gt utilities don't know how to handle
+            bad geonav data properly.
+
+    Information that is updated in the meta data per band dictionary:
+        - fbf_img
+            Filename of the flat binary file of image data
+        - swath_rows
+            Number of rows in the swath
+        - swath_cols
+            Number of columns in the swath
+        - swath_scans
+            Number of scans in the swath
+        - fbf_mode
+            Filename of the flat binary file of mode data from `process_geo`
+    """
     # Get image data and save it to an fbf file
     for band,finfos in image_data.items():
         band_meta = meta_data["bands"][band]
@@ -320,6 +453,24 @@ class file_appender(object):
         log.debug('%d rows in output file' % self.shape[0])
 
 def make_swaths(ifilepaths, filter=None, cut_bad=False):
+    """Takes SDR hdf files and creates flat binary files for the information
+    required to do further processing.
+
+    :Parameters:
+        ifilepaths : list
+            List of image data filepaths ('SV*') of one kind of band that are
+            to be concatenated into a swath.  For example, all of the data
+            files for the I bands that are in the same time window.
+    :Keywords:
+        filter : function pointer
+            Function that expects a file info dictionary as its only parameter
+            and returns True if that file should continue to be process or
+            False if not.
+        cut_bad : bool
+            Specify whether or not to delete/cut out entire scans of data
+            when navigation data is bad.  This is done because the ms2gt
+            utilities used for remapping can't handle incorrect navigation data
+    """
     # Get meta information from the image data files
     log.info("Getting data file info...")
     meta_data,image_data = get_meta_data(ifilepaths, filter=filter)

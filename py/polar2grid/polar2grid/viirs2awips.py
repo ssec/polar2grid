@@ -1,8 +1,19 @@
-"""Script for going from VIIRS .h5 files to a AWIPS compatible
-NetCDF file.
+#!/usr/bin/env python
+# encoding: utf-8
+"""Script that uses the `polar2grid` toolbox of modules to take VIIRS
+hdf5 (.h5) files and create a properly scaled AWIPS compatible NetCDF file.
 
-Author: David Hoese,davidh,SSEC
+:newfield revision: Revision
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2012
+:license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
+__revision__  = "$Id$"
+
 from polar2grid.core import Workspace
 from polar2grid.viirs_imager_to_swath import make_swaths
 from polar2grid.rescale import prescale
@@ -20,6 +31,15 @@ from glob import glob
 log = logging.getLogger(__name__)
 
 def _force_symlink(dst, linkname):
+    """Create a symbolic link named `linkname` pointing to `dst`.  If the
+    symbolic link already exists, remove it and create the new one.
+
+    :Parameters:
+        dst : str
+            Filename to be pointed to.
+        linkname : str
+            Filename of the symbolic link being created or overwritten.
+    """
     if os.path.exists(linkname):
         log.info("Removing old file %s" % linkname)
         os.remove(linkname)
@@ -27,6 +47,13 @@ def _force_symlink(dst, linkname):
     os.symlink(dst, linkname)
 
 def _safe_remove(fn):
+    """Remove the file `fn` if you can, if not log an error message,
+    but continue on.
+
+    :Parameters:
+        fn : str
+            Filename of the file to be removed.
+    """
     try:
         log.info("Removing %s" % fn)
         os.remove(fn)
@@ -34,6 +61,9 @@ def _safe_remove(fn):
         log.error("Could not remove %s" % fn)
 
 def remove_products():
+    """Remove as many of the possible files that were created from a previous
+    run of this script.
+    """
     for f in glob("latitude*.real4.*"):
         _safe_remove(f)
     for f in glob("longitude*.real4.*"):
@@ -74,6 +104,33 @@ def run_prescaling(kind, band, data_kind,
         img_filepath, mode_filepath,
         require_dn=False
         ):
+    """A wrapper function for calling the prescaling functions.  This function
+    will read the binary image data from ``img_filepath`` as well as any other
+    data that may be required to prescale the data correctly, such as
+    day/night/twilight masks.
+
+    :Parameters:
+        kind : str
+            Kind of band that we are prescaling (ex. ``I`` or ``M`` or ``DNB``).
+        band : str
+            Band number that we are prescaling (ex. ``01`` or ``00`` for DNB).
+        data_kind : str
+            Kind of data being prescaled using the constants defined
+            in `polar2grid.adl_guidebook`.
+        img_filepath : str
+            Filepath to the binary image swath data in FBF format
+            (ex. ``image_I01.real4.6400.10176``).
+        mode_filepath : str
+            Filepath to the binary mode swath data in FBF format
+            (ex. ``mode_I01.real4.6400.10176``).
+    
+    :Keywords:
+        require_dn: bool
+            Specify whether the day/night/twilight masks are required to
+            make properly prescale this data.  Such as DNB data.
+            Defaults to ``False``.
+    """
+        
     log.debug("Prescaling %s%s" % (kind,band))
     img_attr = os.path.split(img_filepath)[1].split('.')[0]
     mode_attr = os.path.split(mode_filepath)[1].split('.')[0]

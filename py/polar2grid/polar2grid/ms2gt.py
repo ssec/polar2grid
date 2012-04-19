@@ -1,14 +1,26 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """Simple python wrapper around the actual shell calls to
 ms2gt utilities.
 
-Author: David Hoese,davidh,SSEC
+:newfield revision: Revision
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2012
+:license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
+__revision__  = "$Id$"
+
 import os
 import sys
 import logging
 import re
 from glob import glob
 from subprocess import check_call,CalledProcessError
+
 log = logging.getLogger(__name__)
 
 CR_REG = r'.*_(\d+).img'
