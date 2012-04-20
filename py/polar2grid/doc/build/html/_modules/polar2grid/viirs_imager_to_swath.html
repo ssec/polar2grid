@@ -1,0 +1,643 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>polar2grid.viirs_imager_to_swath &mdash; polar2grid 0.0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="polar2grid 0.0.4 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">polar2grid 0.0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for polar2grid.viirs_imager_to_swath</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Read one or more contiguous in-order HDF5 VIIRS imager granules in any aggregation</span>
+<span class="sd">Write out Swath binary files used by ms2gt tools.</span>
+
+<span class="sd">:newfield revision: Revision</span>
+<span class="sd">:author:       David Hoese (davidh)</span>
+<span class="sd">:author:       Ray Garcia (rayg)</span>
+<span class="sd">:contact:      david.hoese@ssec.wisc.edu</span>
+<span class="sd">:organization: Space Science and Engineering Center (SSEC)</span>
+<span class="sd">:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</span>
+<span class="sd">:date:         Jan 2012</span>
+<span class="sd">:license:      GNU GPLv3</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&quot;restructuredtext en&quot;</span>
+<span class="n">__revision__</span>  <span class="o">=</span> <span class="s">&quot; $Id: viirs_imager_to_swath.py 67 2012-04-19 21:48:04Z davidh $&quot;</span>
+
+<span class="kn">from</span> <span class="nn">polar2grid.adl_guidebook</span> <span class="kn">import</span> <span class="n">file_info</span><span class="p">,</span><span class="n">geo_info</span><span class="p">,</span><span class="n">read_file_info</span><span class="p">,</span><span class="n">read_geo_info</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_glob_file</span><span class="p">(</span><span class="n">pat</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Globs for a single file based on the provided pattern.</span>
+
+<span class="sd">    :raises ValueError: if more than one file matches pattern</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">pat</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;There were no files or more than one fitting the pattern </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pat</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;There were no files or more than one fitting the pattern </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">pat</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<div class="viewcode-block" id="get_meta_data"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.viirs_imager_to_swath.get_meta_data">[docs]</a><span class="k">def</span> <span class="nf">get_meta_data</span><span class="p">(</span><span class="n">ifilepaths</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get all meta data for the provided data files.</span>
+
+<span class="sd">    :Parameters:</span>
+<span class="sd">        ifilepaths : list or iterator</span>
+<span class="sd">            Filepaths for data files to be analyzed</span>
+<span class="sd">    :Keywords:</span>
+<span class="sd">        filter : function pointer</span>
+<span class="sd">            Function that expects a ``finfo`` object as its only argument</span>
+<span class="sd">            and returns True if the finfo should be accepted, False if not.</span>
+<span class="sd">            This can be used to specify what types of bands are desired.</span>
+
+<span class="sd">    :returns:</span>
+<span class="sd">        meta_data : dict</span>
+<span class="sd">            - kind</span>
+<span class="sd">                kind of band</span>
+<span class="sd">            - bands</span>
+<span class="sd">                dictionary per band of band info containing the following keys:</span>
+<span class="sd">                    - kind</span>
+<span class="sd">                    - band</span>
+<span class="sd">                    - band_name</span>
+<span class="sd">                    - data_kind</span>
+<span class="sd">                    - rows_per_scan</span>
+<span class="sd">                    - fbf_swath</span>
+<span class="sd">        image_data : dict</span>
+<span class="sd">            Dictionary where the key is a band (&#39;01&#39;,&#39;00&#39;,etc.) and the</span>
+<span class="sd">            value is a list of finfo dictionaries.</span>
+
+<span class="sd">    :raises ValueError:</span>
+<span class="sd">        if there is more than one kind of band in provided filenames</span>
+<span class="sd">    :raises ValueError:</span>
+<span class="sd">        if after attempting to process the provided image</span>
+<span class="sd">        filenames there was no useful data found.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ifilepaths</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ifilepaths</span><span class="p">)</span>
+
+    <span class="c"># Data structures</span>
+    <span class="n">meta_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&quot;bands&quot;</span> <span class="p">:</span> <span class="p">{},</span>
+            <span class="s">&quot;kind&quot;</span>   <span class="p">:</span> <span class="bp">None</span>
+            <span class="p">}</span>
+    <span class="n">image_data</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c"># Identify the kind of these files</span>
+    <span class="n">kind</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c"># Get image and geonav file info</span>
+    <span class="n">bad_bands</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">ifilepaths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Data file </span><span class="si">%s</span><span class="s"> does not exist, will try to continue without it...&quot;</span> <span class="o">%</span> <span class="n">fn</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">finfo</span> <span class="o">=</span> <span class="n">file_info</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">StandardError</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;There was an error getting information from filename &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">fn</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Continuing without that image file...&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">filter</span><span class="p">(</span><span class="n">finfo</span><span class="p">):</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;File </span><span class="si">%s</span><span class="s"> was filtered out&quot;</span> <span class="o">%</span> <span class="n">fn</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="c"># Verify some information before adding any jobs</span>
+        <span class="k">if</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;band&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">bad_bands</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t add </span><span class="si">%s</span><span class="s"> because a previous file of that band was bad&quot;</span> <span class="o">%</span> <span class="n">fn</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="c"># Geonav file exists</span>
+        <span class="n">geo_glob</span> <span class="o">=</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;geo_glob&quot;</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;geo_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_glob_file</span><span class="p">(</span><span class="n">geo_glob</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t identify geonav file for </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">fn</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Continuing without that band...&quot;</span><span class="p">)</span>
+            <span class="n">bad_bands</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">finfo</span><span class="p">[</span><span class="s">&quot;band&quot;</span><span class="p">])</span>
+            <span class="k">continue</span>
+
+        <span class="c"># Make sure all files are of the same kind</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">kind</span> <span class="o">=</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">kind</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Inconsistent band kinds in the files provided&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Inconsistent band kinds in the files provided&quot;</span><span class="p">)</span>
+
+        <span class="c"># Create any locations that don&#39;t exist yet</span>
+        <span class="k">if</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;band&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">image_data</span><span class="p">:</span>
+            <span class="c"># Fill in data structure</span>
+            <span class="n">image_data</span><span class="p">[</span><span class="n">finfo</span><span class="p">[</span><span class="s">&quot;band&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;bands&quot;</span><span class="p">][</span><span class="n">finfo</span><span class="p">[</span><span class="s">&quot;band&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s">&quot;kind&quot;</span>          <span class="p">:</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">],</span>
+                    <span class="s">&quot;band&quot;</span>          <span class="p">:</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;band&quot;</span><span class="p">],</span>
+                    <span class="s">&quot;band_name&quot;</span>     <span class="p">:</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;band&quot;</span><span class="p">],</span>
+                    <span class="s">&quot;data_kind&quot;</span>     <span class="p">:</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;data_kind&quot;</span><span class="p">],</span>
+                    <span class="s">&quot;rows_per_scan&quot;</span> <span class="p">:</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;rows_per_scan&quot;</span><span class="p">],</span>
+                    <span class="s">&quot;fbf_swath&quot;</span>     <span class="p">:</span> <span class="bp">None</span>
+                    <span class="p">}</span>
+
+        <span class="c"># Add it to the proper locations for future use</span>
+        <span class="n">image_data</span><span class="p">[</span><span class="n">finfo</span><span class="p">[</span><span class="s">&quot;band&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">finfo</span><span class="p">)</span>
+
+    <span class="c"># SANITY CHECK</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">image_data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;There aren&#39;t any bands left to work on, quitting...&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;There aren&#39;t any bands left to work on, quitting...&quot;</span><span class="p">)</span>
+
+    <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kind</span>
+    <span class="k">return</span> <span class="n">meta_data</span><span class="p">,</span><span class="n">image_data</span>
+</div>
+<div class="viewcode-block" id="get_geo_meta"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.viirs_imager_to_swath.get_geo_meta">[docs]</a><span class="k">def</span> <span class="nf">get_geo_meta</span><span class="p">(</span><span class="n">gfilepaths</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get all meta data from the geo-navigation files provided.</span>
+
+<span class="sd">    :Parameters:</span>
+<span class="sd">        gfilepaths : list</span>
+<span class="sd">            Filepaths for geo-navigation files to be processed</span>
+
+<span class="sd">    :returns:</span>
+<span class="sd">        meta_data : dict</span>
+<span class="sd">            Dictionary of meta data derived from the provided filepaths.</span>
+<span class="sd">            Contains the following keys:</span>
+
+<span class="sd">                - start_dt</span>
+<span class="sd">                - swath_rows</span>
+<span class="sd">                - swath_cols</span>
+<span class="sd">                - rows_per_scan</span>
+<span class="sd">                - fbf_lat</span>
+<span class="sd">                - fbf_lon</span>
+<span class="sd">                - fbf_mode</span>
+
+<span class="sd">        geo_data : list</span>
+<span class="sd">            List of ginfo dictionaries that can be used to read the</span>
+<span class="sd">            associated geonav files.</span>
+
+<span class="sd">    :attention:</span>
+<span class="sd">        Just because a key if put in the meta_data dictionary</span>
+<span class="sd">        does not necessarily mean that that data will be valid or filled</span>
+<span class="sd">        in after this function has returned.  It will probably be filled</span>
+<span class="sd">        in during a later step in the swath extraction process.</span>
+
+<span class="sd">    :raises ValueError:</span>
+<span class="sd">        if there is an error processing one of the geonav files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">geo_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">meta_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&quot;start_dt&quot;</span>  <span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&quot;swath_rows&quot;</span>  <span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&quot;swath_cols&quot;</span>  <span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&quot;rows_per_scan&quot;</span> <span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&quot;fbf_lat&quot;</span>   <span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&quot;fbf_lon&quot;</span>   <span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+            <span class="s">&quot;fbf_mode&quot;</span>  <span class="p">:</span> <span class="bp">None</span>
+            <span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">gname</span> <span class="ow">in</span> <span class="n">gfilepaths</span><span class="p">:</span>
+        <span class="c"># Get lat/lon information</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ginfo</span> <span class="o">=</span> <span class="n">geo_info</span><span class="p">(</span><span class="n">gname</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">StandardError</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Error analyzing geonav filename </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">gname</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Error analyzing geonav filename </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">gname</span><span class="p">)</span>
+
+        <span class="c"># Add meta data to the meta_data dictionary</span>
+        <span class="k">if</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;rows_per_scan&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;rows_per_scan&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;rows_per_scan&quot;</span><span class="p">]</span>
+
+        <span class="n">geo_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ginfo</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">meta_data</span><span class="p">,</span><span class="n">geo_data</span>
+</div>
+<div class="viewcode-block" id="process_geo"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.viirs_imager_to_swath.process_geo">[docs]</a><span class="k">def</span> <span class="nf">process_geo</span><span class="p">(</span><span class="n">meta_data</span><span class="p">,</span> <span class="n">geo_data</span><span class="p">,</span> <span class="n">cut_bad</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read data from the geonav files and put them all</span>
+<span class="sd">    into 3 concatenated swath files.  One for latitude data, one for</span>
+<span class="sd">    longitude data, and one for mode (day/night masks) data.</span>
+<span class="sd">    Has the option of cutting out bad data scans, see ``cut_bad`` below.</span>
+
+<span class="sd">    Will add/fill in the following information into the meta_data dictionary:</span>
+<span class="sd">        - start_dt</span>
+<span class="sd">            Datetime object of the first middle scan time of the</span>
+<span class="sd">            first granule</span>
+<span class="sd">        - fbf_lat</span>
+<span class="sd">            Filename of the flat binary file with latitude data</span>
+<span class="sd">        - fbf_lon</span>
+<span class="sd">            Filename of the flat binary file with longitude data</span>
+<span class="sd">        - fbf_mode</span>
+<span class="sd">            Filename of the flat binary file with mode data</span>
+<span class="sd">        - swath_rows</span>
+<span class="sd">            Number of rows in the concatenated swath</span>
+<span class="sd">        - swath_cols</span>
+<span class="sd">            Number of cols in the concatenated swath</span>
+<span class="sd">        - swath_scans</span>
+<span class="sd">            Number of scans in the concatenated swath, which is</span>
+<span class="sd">            equal to ``swath_rows / rows_per_scan``</span>
+
+<span class="sd">    :Parameters:</span>
+<span class="sd">        meta_data : dict</span>
+<span class="sd">            The meta data dictionary from `get_meta_data`</span>
+<span class="sd">        geo_data : list</span>
+<span class="sd">            The list of ``ginfo`` dictionaries from `get_geo_meta`</span>
+<span class="sd">    :Keywords:</span>
+<span class="sd">        cut_bad : bool</span>
+<span class="sd">            Specify whether or not to remove entire scans of data</span>
+<span class="sd">            when the scan is found to have bad data.  This is done</span>
+<span class="sd">            because the ms2gt utilities don&#39;t know how to handle</span>
+<span class="sd">            bad geonav data properly.</span>
+
+<span class="sd">    :raises ValueError: if there is an error reading in the data from the file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Write lat/lon data to fbf files</span>
+    <span class="c"># Create fbf files</span>
+    <span class="n">spid</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span>
+    <span class="n">latname</span> <span class="o">=</span> <span class="s">&#39;.lat&#39;</span> <span class="o">+</span> <span class="n">spid</span>
+    <span class="n">lonname</span> <span class="o">=</span> <span class="s">&#39;.lon&#39;</span> <span class="o">+</span> <span class="n">spid</span>
+    <span class="n">modename</span> <span class="o">=</span> <span class="s">&#39;.mode&#39;</span> <span class="o">+</span> <span class="n">spid</span>
+    <span class="n">lafo</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="n">latname</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span>
+    <span class="n">lofo</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="n">lonname</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span>
+    <span class="n">modefo</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="n">modename</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span>
+    <span class="n">lafa</span> <span class="o">=</span> <span class="n">file_appender</span><span class="p">(</span><span class="n">lafo</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">lofa</span> <span class="o">=</span> <span class="n">file_appender</span><span class="p">(</span><span class="n">lofo</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">modefa</span> <span class="o">=</span> <span class="n">file_appender</span><span class="p">(</span><span class="n">modefo</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">ginfo</span> <span class="ow">in</span> <span class="n">geo_data</span><span class="p">:</span>
+        <span class="c"># Read in lat/lon data</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">read_geo_info</span><span class="p">(</span><span class="n">ginfo</span><span class="p">)</span>
+            <span class="c"># Start datetime used in product backend for NC creation</span>
+            <span class="k">if</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;start_dt&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;start_dt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;start_dt&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">StandardError</span><span class="p">:</span>
+            <span class="c"># Can&#39;t continue without lat/lon data</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Error reading data from </span><span class="si">%s</span><span class="s"> for band kind </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;geo_path&quot;</span><span class="p">],</span><span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">]),</span> <span class="n">exc_info</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Error reading data from </span><span class="si">%s</span><span class="s"> for band kind </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;geo_path&quot;</span><span class="p">],</span><span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">]))</span>
+
+        <span class="c"># ll2cr/fornav hate entire scans that are bad</span>
+        <span class="n">scan_quality</span> <span class="o">=</span> <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;scan_quality&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">cut_bad</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">scan_quality</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;lat_data&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;lat_data&quot;</span><span class="p">],</span> <span class="n">scan_quality</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;lon_data&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;lon_data&quot;</span><span class="p">],</span> <span class="n">scan_quality</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;mode_mask&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;mode_mask&quot;</span><span class="p">],</span> <span class="n">scan_quality</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c"># Append the data to the swath</span>
+        <span class="n">lafa</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;lat_data&quot;</span><span class="p">])</span>
+        <span class="n">lofa</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;lon_data&quot;</span><span class="p">])</span>
+        <span class="n">modefa</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;mode_mask&quot;</span><span class="p">])</span>
+        <span class="k">del</span> <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;lat_data&quot;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;lon_data&quot;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;lat_mask&quot;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;lon_mask&quot;</span><span class="p">]</span>
+        <span class="k">del</span> <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;mode_mask&quot;</span><span class="p">]</span>
+
+    <span class="n">lafo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">lofo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">modefo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c"># Rename files</span>
+    <span class="n">suffix</span> <span class="o">=</span> <span class="s">&#39;.real4.&#39;</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">lafa</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="n">suffix2</span> <span class="o">=</span> <span class="s">&#39;.int1.&#39;</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">modefa</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="n">fbf_lat_var</span> <span class="o">=</span> <span class="s">&quot;latitude_</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">]</span>
+    <span class="n">fbf_lon_var</span> <span class="o">=</span> <span class="s">&quot;longitude_</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">]</span>
+    <span class="n">fbf_mode_var</span> <span class="o">=</span> <span class="s">&quot;mode_</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">]</span>
+    <span class="n">fbf_lat</span> <span class="o">=</span> <span class="n">fbf_lat_var</span> <span class="o">+</span> <span class="n">suffix</span>
+    <span class="n">fbf_lon</span> <span class="o">=</span> <span class="n">fbf_lon_var</span> <span class="o">+</span> <span class="n">suffix</span>
+    <span class="n">fbf_mode</span> <span class="o">=</span> <span class="n">fbf_mode_var</span> <span class="o">+</span> <span class="n">suffix2</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">latname</span><span class="p">,</span> <span class="n">fbf_lat</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">lonname</span><span class="p">,</span> <span class="n">fbf_lon</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">modename</span><span class="p">,</span> <span class="n">fbf_mode</span><span class="p">)</span>
+
+    <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;fbf_lat&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fbf_lat</span>
+    <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;fbf_lon&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fbf_lon</span>
+    <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;fbf_mode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fbf_mode</span>
+    <span class="n">swath_rows</span><span class="p">,</span><span class="n">swath_cols</span> <span class="o">=</span> <span class="n">lafa</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;swath_rows&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">swath_rows</span>
+    <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;swath_cols&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">swath_cols</span>
+    <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;swath_scans&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">swath_rows</span><span class="o">/</span><span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;rows_per_scan&quot;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">meta_data</span><span class="p">,</span><span class="n">geo_data</span>
+</div>
+<div class="viewcode-block" id="process_image"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.viirs_imager_to_swath.process_image">[docs]</a><span class="k">def</span> <span class="nf">process_image</span><span class="p">(</span><span class="n">meta_data</span><span class="p">,</span> <span class="n">image_data</span><span class="p">,</span> <span class="n">geo_data</span><span class="p">,</span> <span class="n">cut_bad</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read the image data from hdf files and concatenated them</span>
+<span class="sd">    into 1 swath file.  Has the option to cut out bad data if</span>
+<span class="sd">    bad navigation data was found, see ``cut_bad`` below.</span>
+
+<span class="sd">    :Parameters:</span>
+<span class="sd">        meta_data : dict</span>
+<span class="sd">            The meta data dictionary from `get_meta_data`, that&#39;s been updated</span>
+<span class="sd">            through the entire swath extraction process.</span>
+<span class="sd">        image_data : dict</span>
+<span class="sd">            Per band dictionary of ``finfo`` dictionary objects from</span>
+<span class="sd">            `get_meta_data`.</span>
+<span class="sd">        geo_data : list</span>
+<span class="sd">            List of ``ginfo`` dictionaries from `get_geo_meta`.</span>
+<span class="sd">    :Keywords:</span>
+<span class="sd">        cut_bad : bool</span>
+<span class="sd">            Specify whether or not to remove entire scans of data</span>
+<span class="sd">            when the geonav scan is found to have bad data.  This is done</span>
+<span class="sd">            because the ms2gt utilities don&#39;t know how to handle</span>
+<span class="sd">            bad geonav data properly.</span>
+
+<span class="sd">    Information that is updated in the meta data per band dictionary:</span>
+<span class="sd">        - fbf_img</span>
+<span class="sd">            Filename of the flat binary file of image data</span>
+<span class="sd">        - swath_rows</span>
+<span class="sd">            Number of rows in the swath</span>
+<span class="sd">        - swath_cols</span>
+<span class="sd">            Number of columns in the swath</span>
+<span class="sd">        - swath_scans</span>
+<span class="sd">            Number of scans in the swath</span>
+<span class="sd">        - fbf_mode</span>
+<span class="sd">            Filename of the flat binary file of mode data from `process_geo`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Get image data and save it to an fbf file</span>
+    <span class="k">for</span> <span class="n">band</span><span class="p">,</span><span class="n">finfos</span> <span class="ow">in</span> <span class="n">image_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">band_meta</span> <span class="o">=</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;bands&quot;</span><span class="p">][</span><span class="n">band</span><span class="p">]</span>
+
+        <span class="c"># Create fbf files and appenders</span>
+        <span class="n">spid</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span>
+        <span class="n">imname</span> <span class="o">=</span> <span class="s">&#39;.image&#39;</span> <span class="o">+</span> <span class="n">spid</span>
+        <span class="n">imfo</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="n">imname</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span>
+        <span class="n">imfa</span> <span class="o">=</span> <span class="n">file_appender</span><span class="p">(</span><span class="n">imfo</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="c"># Get the data</span>
+        <span class="k">for</span> <span class="n">finfo</span><span class="p">,</span><span class="n">ginfo</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">finfos</span><span class="p">,</span><span class="n">geo_data</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c"># XXX: May need to pass the lat/lon masks</span>
+                <span class="n">read_file_info</span><span class="p">(</span><span class="n">finfo</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">StandardError</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Error reading data from </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;img_path&quot;</span><span class="p">],</span> <span class="n">exc_info</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Removing entire job associated with this file&quot;</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">image_data</span><span class="p">[</span><span class="n">band</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">image_data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c"># We are out of jobs</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;The last job was removed, no more to do, quitting...&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;The last job was removed, no more to do, quitting...&quot;</span><span class="p">)</span>
+                <span class="c"># Continue on with the next band</span>
+                <span class="k">break</span>
+
+            <span class="c"># Cut out bad data</span>
+            <span class="k">if</span> <span class="n">cut_bad</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;scan_quality&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Removing </span><span class="si">%d</span><span class="s"> bad scans from </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;scan_quality&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">finfo</span><span class="p">[</span><span class="s">&quot;rows_per_scan&quot;</span><span class="p">],</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;img_path&quot;</span><span class="p">]))</span>
+                <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;image_data&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">finfo</span><span class="p">[</span><span class="s">&quot;image_data&quot;</span><span class="p">],</span> <span class="n">ginfo</span><span class="p">[</span><span class="s">&quot;scan_quality&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c"># Append the data to the file</span>
+            <span class="n">imfa</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">finfo</span><span class="p">[</span><span class="s">&quot;image_data&quot;</span><span class="p">])</span>
+
+            <span class="c"># Remove pointers to data so it gets garbage collected</span>
+            <span class="k">del</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;image_data&quot;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;image_mask&quot;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;scan_quality&quot;</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">finfo</span>
+
+        <span class="n">suffix</span> <span class="o">=</span> <span class="s">&#39;.real4.&#39;</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">imfa</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">img_base</span> <span class="o">=</span> <span class="s">&quot;image_</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">band_meta</span><span class="p">[</span><span class="s">&quot;band_name&quot;</span><span class="p">]</span>
+        <span class="n">fbf_img</span> <span class="o">=</span> <span class="n">img_base</span> <span class="o">+</span> <span class="n">suffix</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">imname</span><span class="p">,</span> <span class="n">fbf_img</span><span class="p">)</span>
+        <span class="n">band_meta</span><span class="p">[</span><span class="s">&quot;fbf_img&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fbf_img</span>
+        <span class="n">rows</span><span class="p">,</span><span class="n">cols</span> <span class="o">=</span> <span class="n">imfa</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">band_meta</span><span class="p">[</span><span class="s">&quot;swath_rows&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rows</span>
+        <span class="n">band_meta</span><span class="p">[</span><span class="s">&quot;swath_cols&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cols</span>
+        <span class="n">band_meta</span><span class="p">[</span><span class="s">&quot;swath_scans&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;swath_scans&quot;</span><span class="p">]</span>
+        <span class="n">band_meta</span><span class="p">[</span><span class="s">&quot;fbf_mode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;fbf_mode&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="s">&quot;swath_rows&quot;</span> <span class="ow">in</span> <span class="n">meta_data</span> <span class="ow">and</span> <span class="s">&quot;swath_cols&quot;</span> <span class="ow">in</span> <span class="n">meta_data</span><span class="p">)</span> <span class="ow">and</span> \
+                <span class="p">(</span><span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;swath_rows&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;swath_cols&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> \
+                <span class="p">(</span><span class="n">rows</span> <span class="o">!=</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;swath_rows&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">cols</span> <span class="o">!=</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;swath_cols&quot;</span><span class="p">]):</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Expected </span><span class="si">%d</span><span class="s"> rows and </span><span class="si">%d</span><span class="s"> cols, but band </span><span class="si">%s</span><span class="s"> had </span><span class="si">%d</span><span class="s"> rows and </span><span class="si">%d</span><span class="s"> cols&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;swath_rows&quot;</span><span class="p">],</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;swath_cols&quot;</span><span class="p">],</span> <span class="n">band_meta</span><span class="p">[</span><span class="s">&quot;band_name&quot;</span><span class="p">],</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Removing that band from future meta data&quot;</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;bands&quot;</span><span class="p">][</span><span class="n">band</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">image_data</span><span class="p">[</span><span class="n">band</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;bands&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;No more bands to process for </span><span class="si">%s</span><span class="s"> bands provided&quot;</span> <span class="o">%</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">])</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No more bands to process for </span><span class="si">%s</span><span class="s"> bands provided&quot;</span> <span class="o">%</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;kind&quot;</span><span class="p">])</span>
+
+        <span class="n">imfo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">del</span> <span class="n">imfa</span>
+        <span class="k">del</span> <span class="n">finfos</span>
+</div>
+<div class="viewcode-block" id="array_appender"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.viirs_imager_to_swath.array_appender">[docs]</a><span class="k">class</span> <span class="nc">array_appender</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;wrapper for a numpy array object which gives it a binary data append usable with &quot;catenate&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nparray</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">nparray</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="n">nparray</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">nparray</span><span class="o">.</span><span class="n">shape</span>
+
+<div class="viewcode-block" id="array_appender.append"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.viirs_imager_to_swath.array_appender.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c"># append new rows to the data</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;array shape is now </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+</div></div>
+<div class="viewcode-block" id="file_appender"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.viirs_imager_to_swath.file_appender">[docs]</a><span class="k">class</span> <span class="nc">file_appender</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;wrapper for a file object which gives it a binary data append usable with &quot;catenate&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_obj</span><span class="p">,</span> <span class="n">dtype</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">file_obj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
+
+<div class="viewcode-block" id="file_appender.append"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.viirs_imager_to_swath.file_appender.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c"># append new rows to the data</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">inform</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span> <span class="k">else</span> <span class="n">data</span>
+        <span class="n">inform</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">inform</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">)</span> <span class="o">+</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%d</span><span class="s"> rows in output file&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</div></div>
+<div class="viewcode-block" id="make_swaths"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.viirs_imager_to_swath.make_swaths">[docs]</a><span class="k">def</span> <span class="nf">make_swaths</span><span class="p">(</span><span class="n">ifilepaths</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">cut_bad</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Takes SDR hdf files and creates flat binary files for the information</span>
+<span class="sd">    required to do further processing.</span>
+
+<span class="sd">    :Parameters:</span>
+<span class="sd">        ifilepaths : list</span>
+<span class="sd">            List of image data filepaths (&#39;SV*&#39;) of one kind of band that are</span>
+<span class="sd">            to be concatenated into a swath.  For example, all of the data</span>
+<span class="sd">            files for the I bands that are in the same time window.</span>
+<span class="sd">    :Keywords:</span>
+<span class="sd">        filter : function pointer</span>
+<span class="sd">            Function that expects a file info dictionary as its only parameter</span>
+<span class="sd">            and returns True if that file should continue to be process or</span>
+<span class="sd">            False if not.</span>
+<span class="sd">        cut_bad : bool</span>
+<span class="sd">            Specify whether or not to delete/cut out entire scans of data</span>
+<span class="sd">            when navigation data is bad.  This is done because the ms2gt</span>
+<span class="sd">            utilities used for remapping can&#39;t handle incorrect navigation data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Get meta information from the image data files</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Getting data file info...&quot;</span><span class="p">)</span>
+    <span class="n">meta_data</span><span class="p">,</span><span class="n">image_data</span> <span class="o">=</span> <span class="n">get_meta_data</span><span class="p">(</span><span class="n">ifilepaths</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="nb">filter</span><span class="p">)</span>
+
+    <span class="c"># Extract gfilepaths from the ifilepath information</span>
+    <span class="c"># list comprehension here is the fastest way to flatten a list of lists</span>
+    <span class="n">gfilepaths</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span> <span class="n">finfo</span><span class="p">[</span><span class="s">&quot;geo_path&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">band_data</span> <span class="ow">in</span> <span class="n">image_data</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">finfo</span> <span class="ow">in</span> <span class="n">band_data</span> <span class="p">))</span>
+
+    <span class="c"># SANITY CHECK</span>
+    <span class="n">g_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gfilepaths</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">band</span><span class="p">,</span><span class="n">finfos</span> <span class="ow">in</span> <span class="n">image_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">f_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">finfos</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">f_len</span> <span class="o">!=</span> <span class="n">g_len</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Expected same number of image and navigation files for every band, removing band...&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Got (num ifiles: </span><span class="si">%d</span><span class="s">, num gfiles: </span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">f_len</span><span class="p">,</span><span class="n">g_len</span><span class="p">))</span>
+            <span class="k">del</span> <span class="n">image_data</span><span class="p">[</span><span class="n">band</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">meta_data</span><span class="p">[</span><span class="s">&quot;bands&quot;</span><span class="p">][</span><span class="n">band</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">image_data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;There aren&#39;t any bands left to work on, quitting...&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;There aren&#39;t any bands left to work on, quitting...&quot;</span><span class="p">)</span>
+
+    <span class="c"># Get nav data and put it in fbf files</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Getting geonav file info...&quot;</span><span class="p">)</span>
+    <span class="n">geo_meta</span><span class="p">,</span><span class="n">geo_data</span> <span class="o">=</span> <span class="n">get_geo_meta</span><span class="p">(</span><span class="n">gfilepaths</span><span class="p">)</span>
+    <span class="n">meta_data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">geo_meta</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Creating binary files for latitude and longitude data&quot;</span><span class="p">)</span>
+    <span class="n">process_geo</span><span class="p">(</span><span class="n">meta_data</span><span class="p">,</span> <span class="n">geo_data</span><span class="p">,</span> <span class="n">cut_bad</span><span class="o">=</span><span class="n">cut_bad</span><span class="p">)</span>
+
+    <span class="c"># Get image data and put it in fbf files</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Creating binary files for image data and day/night masks&quot;</span><span class="p">)</span>
+    <span class="n">process_image</span><span class="p">(</span><span class="n">meta_data</span><span class="p">,</span> <span class="n">image_data</span><span class="p">,</span> <span class="n">geo_data</span><span class="p">,</span> <span class="n">cut_bad</span><span class="o">=</span><span class="n">cut_bad</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">meta_data</span>
+</div>
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.viirs_imager_to_swath.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">optparse</span>
+    <span class="n">usage</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s">%prog [options] filename1.h,filename2.h,filename3.h,... struct1,struct2,struct3,...</span>
+
+<span class="s">&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">optparse</span><span class="o">.</span><span class="n">OptionParser</span><span class="p">(</span><span class="n">usage</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s">&#39;-t&#39;</span><span class="p">,</span> <span class="s">&#39;--test&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&quot;self_test&quot;</span><span class="p">,</span>
+                    <span class="n">action</span><span class="o">=</span><span class="s">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;run self-tests&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_option</span><span class="p">(</span><span class="s">&#39;-v&#39;</span><span class="p">,</span> <span class="s">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&#39;verbosity&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&quot;count&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">help</span><span class="o">=</span><span class="s">&#39;each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG&#39;</span><span class="p">)</span>
+    <span class="c"># parser.add_option(&#39;-o&#39;, &#39;--output&#39;, dest=&#39;output&#39;,</span>
+    <span class="c">#                 help=&#39;location to store output&#39;)</span>
+    <span class="c"># parser.add_option(&#39;-I&#39;, &#39;--include-path&#39;, dest=&quot;includes&quot;,</span>
+    <span class="c">#                 action=&quot;append&quot;, help=&quot;include path to append to GCCXML call&quot;)</span>
+    <span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="c"># make options a globally accessible structure, e.g. OPTS.</span>
+    <span class="k">global</span> <span class="n">OPTS</span>
+    <span class="n">OPTS</span> <span class="o">=</span> <span class="n">options</span>
+
+    <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">self_test</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">doctest</span>
+        <span class="n">doctest</span><span class="o">.</span><span class="n">testmod</span><span class="p">()</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">levels</span> <span class="o">=</span> <span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARN</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">]</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span> <span class="o">=</span> <span class="n">levels</span><span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span><span class="n">verbosity</span><span class="p">)])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span> <span class="s">&#39;incorrect arguments, try -h or --help.&#39;</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="mi">9</span>
+
+    <span class="kn">import</span> <span class="nn">json</span>
+    <span class="n">meta_data</span> <span class="o">=</span> <span class="n">make_swaths</span><span class="p">(</span><span class="n">args</span><span class="p">[:])</span>
+    <span class="k">print</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">meta_data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">polar2grid 0.0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, University of Wisconsin SSEC.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

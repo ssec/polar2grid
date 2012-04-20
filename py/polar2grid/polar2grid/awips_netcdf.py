@@ -4,16 +4,15 @@
 Fill in AWIPS-compatible NetCDF template files with image data.  Also contains
 the main AWIPS backend to the `polar2grid.viirs2awips` script.
 
-:newfield revision: Revision
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 :date:         Jan 2012
 :license:      GNU GPLv3
+:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
-__revision__  = "$Id$"
 
 NCDUMP = """# /data/fxa/modis/7380/20111127_0352
 netcdf \20111127_0352 {

@@ -1,0 +1,1043 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>polar2grid Package &mdash; polar2grid 0.0.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="polar2grid 0.0.4 documentation" href="index.html" />
+    <link rel="up" title="polar2grid" href="modules.html" />
+    <link rel="prev" title="polar2grid" href="modules.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="polar2grid"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">polar2grid 0.0.4 documentation</a> &raquo;</li>
+          <li><a href="modules.html" accesskey="U">polar2grid</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="polar2grid-package">
+<h1>polar2grid Package<a class="headerlink" href="#polar2grid-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2><tt class="xref py py-mod docutils literal"><span class="pre">polar2grid</span></tt> Package<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-polar2grid.__init__"></span><p>polar2grid is a python package that provides utilities and scripts to
+convert polar orbiting satellite data and remap it into a known grid.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">author:</th><td class="field-body">David Hoese (davidh)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">author:</th><td class="field-body">Ray Garcia (rayg)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">author:</th><td class="field-body">Eva Schiffer (evas)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">contact:</th><td class="field-body"><a class="reference external" href="mailto:david&#46;hoese&#37;&#52;&#48;ssec&#46;wisc&#46;edu">david<span>&#46;</span>hoese<span>&#64;</span>ssec<span>&#46;</span>wisc<span>&#46;</span>edu</a></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">organization:</th><td class="field-body">Space Science and Engineering Center (SSEC)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">copyright:</th><td class="field-body">Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">date:</th><td class="field-body">Jan 2012</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id$</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="module-polar2grid.adl_guidebook">
+<span id="adl-guidebook-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">adl_guidebook</span></tt> Module<a class="headerlink" href="#module-polar2grid.adl_guidebook" title="Permalink to this headline">¶</a></h2>
+<p>Provide information about ADL product files for a variety of uses.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">group Data Kinds:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">K_*</td>
+</tr>
+<tr class="field-even field"><th class="field-name">group Guides:</th><td class="field-body">ROWS_PER_SCAN,COLS_PER_ROW,DATA_KINDS,*_GUIDE</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">author:</th><td class="field-body">David Hoese (davidh)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">author:</th><td class="field-body">Ray Garcia (rayg)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">contact:</th><td class="field-body"><a class="reference external" href="mailto:david&#46;hoese&#37;&#52;&#48;ssec&#46;wisc&#46;edu">david<span>&#46;</span>hoese<span>&#64;</span>ssec<span>&#46;</span>wisc<span>&#46;</span>edu</a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">organization:</th><td class="field-body">Space Science and Engineering Center (SSEC)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body">Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">date:</th><td class="field-body">Jan 2012</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
+</tr>
+<tr class="field-even field"><th class="field-name">revision:</th><td class="field-body">$Id: adl_guidebook.py 67 2012-04-19 21:48:04Z davidh $</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="polar2grid.adl_guidebook.evaluator">
+<em class="property">class </em><tt class="descclassname">polar2grid.adl_guidebook.</tt><tt class="descname">evaluator</tt><big>(</big><em>**argd</em><big>)</big><a class="reference internal" href="_modules/polar2grid/adl_guidebook.html#evaluator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.adl_guidebook.evaluator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>evaluate expressions in format statements
+e.g. &#8216;%(4*2)d %(&#8221;, &#8221;.join([c]*b))s&#8217; % evaluator(a=2,b=3,c=&#8217;foo&#8217;)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.adl_guidebook.file_info">
+<tt class="descclassname">polar2grid.adl_guidebook.</tt><tt class="descname">file_info</tt><big>(</big><em>fn</em><big>)</big><a class="reference internal" href="_modules/polar2grid/adl_guidebook.html#file_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.adl_guidebook.file_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a filename, returns a dictionary of information that could
+be derived.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Postcondition :</th><td class="field-body"><dl class="first docutils">
+<dt>The returned <tt class="docutils literal"><span class="pre">finfo</span></tt> will have the following keys:</dt>
+<dd><ul class="first last simple">
+<li>kind</li>
+<li>band</li>
+<li>data_kind</li>
+<li>rows_per_scan</li>
+<li>cols_per_row</li>
+<li>factors</li>
+<li>geo_glob</li>
+<li>img_path</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Attention :</th><td class="field-body"><p class="first">This method does not require that the file actually exists.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>fn <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Filename of image data to be analyzed</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises ValueError:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">if filename matches 1 regular expression for a data file, but not of a generic NPP filename</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.adl_guidebook.generic_info">
+<tt class="descclassname">polar2grid.adl_guidebook.</tt><tt class="descname">generic_info</tt><big>(</big><em>fn</em><big>)</big><a class="reference internal" href="_modules/polar2grid/adl_guidebook.html#generic_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.adl_guidebook.generic_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper function that tells what function should be called based
+on the first letter of the filename passed.</p>
+<p>&#8216;S&#8217; for data files, &#8216;G&#8217; for geo files</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Raises ValueError:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">if <cite>fn</cite> doesn&#8217;t start with &#8216;S&#8217; or &#8216;G&#8217;</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.adl_guidebook.generic_read">
+<tt class="descclassname">polar2grid.adl_guidebook.</tt><tt class="descname">generic_read</tt><big>(</big><em>fn</em>, <em>finfo</em><big>)</big><a class="reference internal" href="_modules/polar2grid/adl_guidebook.html#generic_read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.adl_guidebook.generic_read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper function that tells what read function should be called based
+on the first letter of the filename passed.</p>
+<p>&#8216;S&#8217; for data files, &#8216;G&#8217; for geo files</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Raises ValueError:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body">if <cite>fn</cite> doesn&#8217;t start with &#8216;S&#8217; or &#8216;G&#8217;</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.adl_guidebook.geo_info">
+<tt class="descclassname">polar2grid.adl_guidebook.</tt><tt class="descname">geo_info</tt><big>(</big><em>fn</em><big>)</big><a class="reference internal" href="_modules/polar2grid/adl_guidebook.html#geo_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.adl_guidebook.geo_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Will return a dictionary of information that could be derived from the
+provided geo-navigation filename.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Postcondition :</th><td class="field-body"><dl class="first docutils">
+<dt>The returned <tt class="docutils literal"><span class="pre">finfo</span></tt> (or ginfo) will contain the following keys:</dt>
+<dd><ul class="first last simple">
+<li>geo_path</li>
+<li>kind</li>
+<li>rows_per_scan</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>fn <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Geo-navigation filename to be analyzed</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Raises ValueError:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first last">if filename matches 1 regular expression for a geonav, but not of a generic NPP filename</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.adl_guidebook.get_datetimes">
+<tt class="descclassname">polar2grid.adl_guidebook.</tt><tt class="descname">get_datetimes</tt><big>(</big><em>finfo</em><big>)</big><a class="reference internal" href="_modules/polar2grid/adl_guidebook.html#get_datetimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.adl_guidebook.get_datetimes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a file info dictionary and creates a datetime object for the
+start of the granule and the end of the granule.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.adl_guidebook.h5path">
+<tt class="descclassname">polar2grid.adl_guidebook.</tt><tt class="descname">h5path</tt><big>(</big><em>hp</em>, <em>path</em>, <em>h5_path</em>, <em>required=False</em><big>)</big><a class="reference internal" href="_modules/polar2grid/adl_guidebook.html#h5path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.adl_guidebook.h5path" title="Permalink to this definition">¶</a></dt>
+<dd><p>traverse an hdf5 path to return a nested data object</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.adl_guidebook.main">
+<tt class="descclassname">polar2grid.adl_guidebook.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/polar2grid/adl_guidebook.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.adl_guidebook.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.adl_guidebook.read_file_info">
+<tt class="descclassname">polar2grid.adl_guidebook.</tt><tt class="descname">read_file_info</tt><big>(</big><em>finfo</em>, <em>extra_mask=None</em>, <em>fill_value=-999</em>, <em>dtype=&lt;type 'numpy.float32'&gt;</em><big>)</big><a class="reference internal" href="_modules/polar2grid/adl_guidebook.html#read_file_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.adl_guidebook.read_file_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the hdf file associated with the file info dictionary provided
+and returns all of the information that could be useful outside of this
+function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Precondition :</th><td class="field-body"><p class="first"><tt class="docutils literal"><span class="pre">finfo</span></tt> was returned from <cite>file_info</cite> or meets the post
+condition of <cite>file_info</cite>.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Precondition :</th><td class="field-body"><p class="first"><tt class="docutils literal"><span class="pre">finfo</span></tt> is allowed to be changed/updated/added to in place.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Postcondition :</th><td class="field-body"><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">finfo</span></tt> will have the following new keys:</dt>
+<dd><ul class="first last simple">
+<li>image_data</li>
+<li>image_mask</li>
+<li>mode_mask</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>finfo <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">File info dictionary returned from <cite>file_info</cite>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Keywords :</th><td class="field-body"><dl class="first last docutils">
+<dt>extra_mask <span class="classifier-delimiter">:</span> <span class="classifier"><tt class="docutils literal"><span class="pre">numpy.ndarray</span></tt></span></dt>
+<dd><p class="first last">An additional mask that will be used to fill the data.</p>
+</dd>
+<dt>fill_value <span class="classifier-delimiter">:</span> <span class="classifier">int or float</span></dt>
+<dd><p class="first last">Fill value to be used for all bad data found.</p>
+</dd>
+<dt>dtype <span class="classifier-delimiter">:</span> <span class="classifier"><tt class="docutils literal"><span class="pre">numpy.dtype</span></tt></span></dt>
+<dd><p class="first last">The data type that the returned data array will be forced to.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.adl_guidebook.read_geo_info">
+<tt class="descclassname">polar2grid.adl_guidebook.</tt><tt class="descname">read_geo_info</tt><big>(</big><em>finfo</em>, <em>fill_value=-999</em>, <em>dtype=&lt;type 'numpy.float32'&gt;</em><big>)</big><a class="reference internal" href="_modules/polar2grid/adl_guidebook.html#read_geo_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.adl_guidebook.read_geo_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Will fill in finfo with the data that is assumed to
+be necessary for future processing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Precondition :</th><td class="field-body"><p class="first"><tt class="docutils literal"><span class="pre">finfo</span></tt> is allowed to be changed/updated/added to in place.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Precondition :</th><td class="field-body"><p class="first"><tt class="docutils literal"><span class="pre">finfo</span></tt> cam from <cite>geo_info</cite> or at least meets the post
+condition of <cite>geo_info</cite>.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Postcondition :</th><td class="field-body"><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">finfo</span></tt> will have the following keys added:</dt>
+<dd><ul class="first last simple">
+<li>lat_data</li>
+<li>lon_data</li>
+<li>lat_mask</li>
+<li>lon_mask</li>
+<li>mode_mask</li>
+<li>start_dt</li>
+<li>scan_quality</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>finfo <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">Dictionary of information from <cite>geo_info</cite>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Keywords :</th><td class="field-body"><dl class="first last docutils">
+<dt>fill_value <span class="classifier-delimiter">:</span> <span class="classifier">int or float</span></dt>
+<dd><p class="first last">Fill value for any bad data found.</p>
+</dd>
+<dt>dtype <span class="classifier-delimiter">:</span> <span class="classifier"><tt class="docutils literal"><span class="pre">numpy.dtype</span></tt></span></dt>
+<dd><p class="first last">Data type that the returned data is forced to.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="awips-config-module">
+<h2><tt class="xref py py-mod docutils literal"><span class="pre">awips_config</span></tt> Module<a class="headerlink" href="#awips-config-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="awips-netcdf-module">
+<h2><tt class="xref py py-mod docutils literal"><span class="pre">awips_netcdf</span></tt> Module<a class="headerlink" href="#awips-netcdf-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-polar2grid.core">
+<span id="core-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">core</span></tt> Module<a class="headerlink" href="#module-polar2grid.core" title="Permalink to this headline">¶</a></h2>
+<p>Core of viirs2awips that holds shared utilities and constants.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">author:</th><td class="field-body">David Hoese (davidh)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">contact:</th><td class="field-body"><a class="reference external" href="mailto:david&#46;hoese&#37;&#52;&#48;ssec&#46;wisc&#46;edu">david<span>&#46;</span>hoese<span>&#64;</span>ssec<span>&#46;</span>wisc<span>&#46;</span>edu</a></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">organization:</th><td class="field-body">Space Science and Engineering Center (SSEC)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">copyright:</th><td class="field-body">Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">date:</th><td class="field-body">Jan 2012</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id$</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="polar2grid.core.UTC">
+<em class="property">class </em><tt class="descclassname">polar2grid.core.</tt><tt class="descname">UTC</tt><a class="reference internal" href="_modules/polar2grid/core.html#UTC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.core.UTC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">datetime.tzinfo</span></tt></p>
+<p>Time zone class for UTC</p>
+<dl class="attribute">
+<dt id="polar2grid.core.UTC.ZERO">
+<tt class="descname">ZERO</tt><em class="property"> = datetime.timedelta(0)</em><a class="headerlink" href="#polar2grid.core.UTC.ZERO" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="polar2grid.core.UTC.dst">
+<tt class="descname">dst</tt><big>(</big><em>dt</em><big>)</big><a class="reference internal" href="_modules/polar2grid/core.html#UTC.dst"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.core.UTC.dst" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="polar2grid.core.UTC.tzname">
+<tt class="descname">tzname</tt><big>(</big><em>dt</em><big>)</big><a class="reference internal" href="_modules/polar2grid/core.html#UTC.tzname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.core.UTC.tzname" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="polar2grid.core.UTC.utcoffset">
+<tt class="descname">utcoffset</tt><big>(</big><em>dt</em><big>)</big><a class="reference internal" href="_modules/polar2grid/core.html#UTC.utcoffset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.core.UTC.utcoffset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="polar2grid.core.Workspace">
+<em class="property">class </em><tt class="descclassname">polar2grid.core.</tt><tt class="descname">Workspace</tt><big>(</big><em>dir='.'</em><big>)</big><a class="reference internal" href="_modules/polar2grid/core.html#Workspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.core.Workspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>Wrapper object around <tt class="docutils literal"><span class="pre">numpy.fromfile()</span></tt> method to treat a directory as a
+workspace of flat binary files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Attention :</th><td class="field-body">Replaces rayg&#8217;s <tt class="docutils literal"><span class="pre">keoni.fbf.Workspace</span></tt></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="polar2grid.core.Workspace.var">
+<tt class="descname">var</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/polar2grid/core.html#Workspace.var"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.core.Workspace.var" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="polar2grid.core.Workspace.variables">
+<tt class="descname">variables</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/polar2grid/core.html#Workspace.variables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.core.Workspace.variables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="polar2grid.core.Workspace.vars">
+<tt class="descname">vars</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/polar2grid/core.html#Workspace.vars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.core.Workspace.vars" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-polar2grid.ms2gt">
+<span id="ms2gt-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">ms2gt</span></tt> Module<a class="headerlink" href="#module-polar2grid.ms2gt" title="Permalink to this headline">¶</a></h2>
+<p>Simple python wrapper around the actual shell calls to
+ms2gt utilities.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">author:</th><td class="field-body">David Hoese (davidh)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">contact:</th><td class="field-body"><a class="reference external" href="mailto:david&#46;hoese&#37;&#52;&#48;ssec&#46;wisc&#46;edu">david<span>&#46;</span>hoese<span>&#64;</span>ssec<span>&#46;</span>wisc<span>&#46;</span>edu</a></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">organization:</th><td class="field-body">Space Science and Engineering Center (SSEC)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">copyright:</th><td class="field-body">Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">date:</th><td class="field-body">Jan 2012</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id$</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="polar2grid.ms2gt.fornav">
+<tt class="descclassname">polar2grid.ms2gt.</tt><tt class="descname">fornav</tt><big>(</big><em>chan_count</em>, <em>swath_cols</em>, <em>swath_scans</em>, <em>swath_rows_per_scan</em>, <em>colfile</em>, <em>rowfile</em>, <em>swathfile</em>, <em>grid_cols</em>, <em>grid_rows</em>, <em>output_fn</em>, <em>verbose=False</em>, <em>swath_data_type_1=None</em>, <em>swath_fill_1=None</em>, <em>grid_fill_1=None</em>, <em>weight_delta_max=None</em>, <em>weight_distance_max=None</em>, <em>start_scan=None</em><big>)</big><a class="reference internal" href="_modules/polar2grid/ms2gt.html#fornav"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.ms2gt.fornav" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.ms2gt.ll2cr">
+<tt class="descclassname">polar2grid.ms2gt.</tt><tt class="descname">ll2cr</tt><big>(</big><em>colsin</em>, <em>scansin</em>, <em>rowsperscan</em>, <em>latfile</em>, <em>lonfile</em>, <em>gpdfile</em>, <em>verbose=False</em>, <em>f_scansout=None</em>, <em>rind=None</em>, <em>fill_io=None</em>, <em>tag='ll2cr'</em><big>)</big><a class="reference internal" href="_modules/polar2grid/ms2gt.html#ll2cr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.ms2gt.ll2cr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="plot-ncdata-module">
+<h2><tt class="xref py py-mod docutils literal"><span class="pre">plot_ncdata</span></tt> Module<a class="headerlink" href="#plot-ncdata-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-polar2grid.rescale">
+<span id="rescale-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">rescale</span></tt> Module<a class="headerlink" href="#module-polar2grid.rescale" title="Permalink to this headline">¶</a></h2>
+<p>Functions and mappings for taking rempapped VIIRS data and
+rescaling it to a useable range from 0 to 255 to be compatible
+and &#8220;pretty&#8221; with AWIPS.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">attention:</th><td class="field-body">A scaling function is not guarenteed to not change the
+original data array passed.  If fact, it is faster in most cases
+to change the array in place.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">author:</th><td class="field-body">David Hoese (davidh)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">author:</th><td class="field-body">Eva Schiffer (evas)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">contact:</th><td class="field-body"><a class="reference external" href="mailto:david&#46;hoese&#37;&#52;&#48;ssec&#46;wisc&#46;edu">david<span>&#46;</span>hoese<span>&#64;</span>ssec<span>&#46;</span>wisc<span>&#46;</span>edu</a></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">organization:</th><td class="field-body">Space Science and Engineering Center (SSEC)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">copyright:</th><td class="field-body">Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">date:</th><td class="field-body">Jan 2012</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id$</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="polar2grid.rescale.bt_scale">
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">bt_scale</tt><big>(</big><em>img</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#bt_scale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.bt_scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.rescale.dnb_scale">
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">dnb_scale</tt><big>(</big><em>img</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#dnb_scale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.dnb_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>This scaling method uses histogram equalization to flatten the image levels across the day and night masks.
+The masks are expected to be passed as &#8220;day_mask&#8221; and &#8220;night_mask&#8221; in the kwargs for this method.</p>
+<p>A histogram equalization will be performed separately for each of the two masks that&#8217;s present in the kwargs.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.rescale.main">
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.rescale.passive_scale">
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">passive_scale</tt><big>(</big><em>img</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#passive_scale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.passive_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>When there is no rescaling necessary or it hasn&#8217;t
+been determined yet, use this function.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.rescale.post_rescale_dnb">
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">post_rescale_dnb</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#post_rescale_dnb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.post_rescale_dnb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Special case DNB rescaling that happens
+after the remapping (so just a 0-1 to 0-255 scaling.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.rescale.prescale">
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">prescale</tt><big>(</big><em>img</em>, <em>kind='DNB'</em>, <em>band=0</em>, <em>data_kind='ReflectanceVar'</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#prescale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.prescale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.rescale.rescale">
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">rescale</tt><big>(</big><em>img</em>, <em>kind='M'</em>, <em>band=5</em>, <em>data_kind='RadianceVar'</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#rescale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.rescale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.rescale.rescale_and_write">
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">rescale_and_write</tt><big>(</big><em>img_file</em>, <em>output_file</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#rescale_and_write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.rescale_and_write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.rescale.sqrt_scale">
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">sqrt_scale</tt><big>(</big><em>img</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#sqrt_scale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.sqrt_scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="viirs2awips-module">
+<h2><tt class="xref py py-mod docutils literal"><span class="pre">viirs2awips</span></tt> Module<a class="headerlink" href="#viirs2awips-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-polar2grid.viirs_imager_to_swath">
+<span id="viirs-imager-to-swath-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">viirs_imager_to_swath</span></tt> Module<a class="headerlink" href="#module-polar2grid.viirs_imager_to_swath" title="Permalink to this headline">¶</a></h2>
+<p>Read one or more contiguous in-order HDF5 VIIRS imager granules in any aggregation
+Write out Swath binary files used by ms2gt tools.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">author:</th><td class="field-body">David Hoese (davidh)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">author:</th><td class="field-body">Ray Garcia (rayg)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">contact:</th><td class="field-body"><a class="reference external" href="mailto:david&#46;hoese&#37;&#52;&#48;ssec&#46;wisc&#46;edu">david<span>&#46;</span>hoese<span>&#64;</span>ssec<span>&#46;</span>wisc<span>&#46;</span>edu</a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">organization:</th><td class="field-body">Space Science and Engineering Center (SSEC)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body">Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">date:</th><td class="field-body">Jan 2012</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
+</tr>
+<tr class="field-even field"><th class="field-name">revision:</th><td class="field-body">$Id: viirs_imager_to_swath.py 67 2012-04-19 21:48:04Z davidh $</td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="polar2grid.viirs_imager_to_swath.array_appender">
+<em class="property">class </em><tt class="descclassname">polar2grid.viirs_imager_to_swath.</tt><tt class="descname">array_appender</tt><big>(</big><em>nparray=None</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs_imager_to_swath.html#array_appender"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.array_appender" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>wrapper for a numpy array object which gives it a binary data append usable with &#8220;catenate&#8221;</p>
+<dl class="attribute">
+<dt id="polar2grid.viirs_imager_to_swath.array_appender.A">
+<tt class="descname">A</tt><em class="property"> = None</em><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.array_appender.A" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="polar2grid.viirs_imager_to_swath.array_appender.append">
+<tt class="descname">append</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs_imager_to_swath.html#array_appender.append"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.array_appender.append" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="polar2grid.viirs_imager_to_swath.array_appender.shape">
+<tt class="descname">shape</tt><em class="property"> = (0, 0)</em><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.array_appender.shape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="polar2grid.viirs_imager_to_swath.file_appender">
+<em class="property">class </em><tt class="descclassname">polar2grid.viirs_imager_to_swath.</tt><tt class="descname">file_appender</tt><big>(</big><em>file_obj</em>, <em>dtype</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs_imager_to_swath.html#file_appender"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.file_appender" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>wrapper for a file object which gives it a binary data append usable with &#8220;catenate&#8221;</p>
+<dl class="attribute">
+<dt id="polar2grid.viirs_imager_to_swath.file_appender.F">
+<tt class="descname">F</tt><em class="property"> = None</em><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.file_appender.F" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="polar2grid.viirs_imager_to_swath.file_appender.append">
+<tt class="descname">append</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs_imager_to_swath.html#file_appender.append"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.file_appender.append" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="polar2grid.viirs_imager_to_swath.file_appender.shape">
+<tt class="descname">shape</tt><em class="property"> = (0, 0)</em><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.file_appender.shape" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs_imager_to_swath.get_geo_meta">
+<tt class="descclassname">polar2grid.viirs_imager_to_swath.</tt><tt class="descname">get_geo_meta</tt><big>(</big><em>gfilepaths</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs_imager_to_swath.html#get_geo_meta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.get_geo_meta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all meta data from the geo-navigation files provided.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>gfilepaths <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd><p class="first last">Filepaths for geo-navigation files to be processed</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>meta_data <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first">Dictionary of meta data derived from the provided filepaths.
+Contains the following keys:</p>
+<blockquote class="last">
+<div><ul class="simple">
+<li>start_dt</li>
+<li>swath_rows</li>
+<li>swath_cols</li>
+<li>rows_per_scan</li>
+<li>fbf_lat</li>
+<li>fbf_lon</li>
+<li>fbf_mode</li>
+</ul>
+</div></blockquote>
+</dd>
+<dt>geo_data <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd><p class="first last">List of ginfo dictionaries that can be used to read the
+associated geonav files.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Attention :</th><td class="field-body"><p class="first">Just because a key if put in the meta_data dictionary
+does not necessarily mean that that data will be valid or filled
+in after this function has returned.  It will probably be filled
+in during a later step in the swath extraction process.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises ValueError:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">if there is an error processing one of the geonav files.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs_imager_to_swath.get_meta_data">
+<tt class="descclassname">polar2grid.viirs_imager_to_swath.</tt><tt class="descname">get_meta_data</tt><big>(</big><em>ifilepaths</em>, <em>filter=None</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs_imager_to_swath.html#get_meta_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.get_meta_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all meta data for the provided data files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>ifilepaths <span class="classifier-delimiter">:</span> <span class="classifier">list or iterator</span></dt>
+<dd><p class="first last">Filepaths for data files to be analyzed</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Keywords :</th><td class="field-body"><dl class="first docutils">
+<dt>filter <span class="classifier-delimiter">:</span> <span class="classifier">function pointer</span></dt>
+<dd><p class="first last">Function that expects a <tt class="docutils literal"><span class="pre">finfo</span></tt> object as its only argument
+and returns True if the finfo should be accepted, False if not.
+This can be used to specify what types of bands are desired.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>meta_data <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>kind</dt>
+<dd><p class="first last">kind of band</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>bands</dt>
+<dd><dl class="first last docutils">
+<dt>dictionary per band of band info containing the following keys:</dt>
+<dd><ul class="first last simple">
+<li>kind</li>
+<li>band</li>
+<li>band_name</li>
+<li>data_kind</li>
+<li>rows_per_scan</li>
+<li>fbf_swath</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt>image_data <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">Dictionary where the key is a band (&#8216;01&#8217;,&#8216;00&#8217;,etc.) and the
+value is a list of finfo dictionaries.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ValueError</strong> &#8211; if there is more than one kind of band in provided filenames</li>
+<li><strong>ValueError</strong> &#8211; if after attempting to process the provided image
+filenames there was no useful data found.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs_imager_to_swath.main">
+<tt class="descclassname">polar2grid.viirs_imager_to_swath.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs_imager_to_swath.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs_imager_to_swath.make_swaths">
+<tt class="descclassname">polar2grid.viirs_imager_to_swath.</tt><tt class="descname">make_swaths</tt><big>(</big><em>ifilepaths</em>, <em>filter=None</em>, <em>cut_bad=False</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs_imager_to_swath.html#make_swaths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.make_swaths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes SDR hdf files and creates flat binary files for the information
+required to do further processing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>ifilepaths <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd><p class="first last">List of image data filepaths (&#8216;SV*&#8217;) of one kind of band that are
+to be concatenated into a swath.  For example, all of the data
+files for the I bands that are in the same time window.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Keywords :</th><td class="field-body"><dl class="first last docutils">
+<dt>filter <span class="classifier-delimiter">:</span> <span class="classifier">function pointer</span></dt>
+<dd><p class="first last">Function that expects a file info dictionary as its only parameter
+and returns True if that file should continue to be process or
+False if not.</p>
+</dd>
+<dt>cut_bad <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">Specify whether or not to delete/cut out entire scans of data
+when navigation data is bad.  This is done because the ms2gt
+utilities used for remapping can&#8217;t handle incorrect navigation data</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs_imager_to_swath.process_geo">
+<tt class="descclassname">polar2grid.viirs_imager_to_swath.</tt><tt class="descname">process_geo</tt><big>(</big><em>meta_data</em>, <em>geo_data</em>, <em>cut_bad=False</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs_imager_to_swath.html#process_geo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.process_geo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read data from the geonav files and put them all
+into 3 concatenated swath files.  One for latitude data, one for
+longitude data, and one for mode (day/night masks) data.
+Has the option of cutting out bad data scans, see <tt class="docutils literal"><span class="pre">cut_bad</span></tt> below.</p>
+<dl class="docutils">
+<dt>Will add/fill in the following information into the meta_data dictionary:</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>start_dt</dt>
+<dd><p class="first last">Datetime object of the first middle scan time of the
+first granule</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>fbf_lat</dt>
+<dd><p class="first last">Filename of the flat binary file with latitude data</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>fbf_lon</dt>
+<dd><p class="first last">Filename of the flat binary file with longitude data</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>fbf_mode</dt>
+<dd><p class="first last">Filename of the flat binary file with mode data</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>swath_rows</dt>
+<dd><p class="first last">Number of rows in the concatenated swath</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>swath_cols</dt>
+<dd><p class="first last">Number of cols in the concatenated swath</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>swath_scans</dt>
+<dd><p class="first last">Number of scans in the concatenated swath, which is
+equal to <tt class="docutils literal"><span class="pre">swath_rows</span> <span class="pre">/</span> <span class="pre">rows_per_scan</span></tt></p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>meta_data <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">The meta data dictionary from <cite>get_meta_data</cite></p>
+</dd>
+<dt>geo_data <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd><p class="first last">The list of <tt class="docutils literal"><span class="pre">ginfo</span></tt> dictionaries from <cite>get_geo_meta</cite></p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Keywords :</th><td class="field-body"><dl class="first docutils">
+<dt>cut_bad <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">Specify whether or not to remove entire scans of data
+when the scan is found to have bad data.  This is done
+because the ms2gt utilities don&#8217;t know how to handle
+bad geonav data properly.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Raises ValueError:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><p class="first last">if there is an error reading in the data from the file</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs_imager_to_swath.process_image">
+<tt class="descclassname">polar2grid.viirs_imager_to_swath.</tt><tt class="descname">process_image</tt><big>(</big><em>meta_data</em>, <em>image_data</em>, <em>geo_data</em>, <em>cut_bad=False</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs_imager_to_swath.html#process_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs_imager_to_swath.process_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the image data from hdf files and concatenated them
+into 1 swath file.  Has the option to cut out bad data if
+bad navigation data was found, see <tt class="docutils literal"><span class="pre">cut_bad</span></tt> below.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>meta_data <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">The meta data dictionary from <cite>get_meta_data</cite>, that&#8217;s been updated
+through the entire swath extraction process.</p>
+</dd>
+<dt>image_data <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">Per band dictionary of <tt class="docutils literal"><span class="pre">finfo</span></tt> dictionary objects from
+<cite>get_meta_data</cite>.</p>
+</dd>
+<dt>geo_data <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd><p class="first last">List of <tt class="docutils literal"><span class="pre">ginfo</span></tt> dictionaries from <cite>get_geo_meta</cite>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Keywords :</th><td class="field-body"><dl class="first last docutils">
+<dt>cut_bad <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">Specify whether or not to remove entire scans of data
+when the geonav scan is found to have bad data.  This is done
+because the ms2gt utilities don&#8217;t know how to handle
+bad geonav data properly.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>Information that is updated in the meta data per band dictionary:</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>fbf_img</dt>
+<dd><p class="first last">Filename of the flat binary file of image data</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>swath_rows</dt>
+<dd><p class="first last">Number of rows in the swath</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>swath_cols</dt>
+<dd><p class="first last">Number of columns in the swath</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>swath_scans</dt>
+<dd><p class="first last">Number of scans in the swath</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>fbf_mode</dt>
+<dd><p class="first last">Filename of the flat binary file of mode data from <cite>process_geo</cite></p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">polar2grid Package</a><ul>
+<li><a class="reference internal" href="#id1"><tt class="docutils literal"><span class="pre">polar2grid</span></tt> Package</a></li>
+<li><a class="reference internal" href="#module-polar2grid.adl_guidebook"><tt class="docutils literal"><span class="pre">adl_guidebook</span></tt> Module</a></li>
+<li><a class="reference internal" href="#awips-config-module"><tt class="docutils literal"><span class="pre">awips_config</span></tt> Module</a></li>
+<li><a class="reference internal" href="#awips-netcdf-module"><tt class="docutils literal"><span class="pre">awips_netcdf</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-polar2grid.core"><tt class="docutils literal"><span class="pre">core</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-polar2grid.ms2gt"><tt class="docutils literal"><span class="pre">ms2gt</span></tt> Module</a></li>
+<li><a class="reference internal" href="#plot-ncdata-module"><tt class="docutils literal"><span class="pre">plot_ncdata</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-polar2grid.rescale"><tt class="docutils literal"><span class="pre">rescale</span></tt> Module</a></li>
+<li><a class="reference internal" href="#viirs2awips-module"><tt class="docutils literal"><span class="pre">viirs2awips</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-polar2grid.viirs_imager_to_swath"><tt class="docutils literal"><span class="pre">viirs_imager_to_swath</span></tt> Module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="modules.html"
+                        title="previous chapter">polar2grid</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/polar2grid.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="polar2grid"
+             >previous</a> |</li>
+        <li><a href="index.html">polar2grid 0.0.4 documentation</a> &raquo;</li>
+          <li><a href="modules.html" >polar2grid</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, University of Wisconsin SSEC.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

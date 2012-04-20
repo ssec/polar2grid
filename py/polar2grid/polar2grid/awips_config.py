@@ -25,15 +25,16 @@ Global objects representing configuration files
         File holding grid boundaries for grids specified in the
         grids directory and products.conf file
 
-:newfield revision: Revision
-:author: David Hoese (davidh)
-:contact: david.hoese@ssec.wisc.edu
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 :date:         Jan 2012
 :license:      GNU GPLv3
+:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
+
 from netCDF4 import Dataset
 
 import os

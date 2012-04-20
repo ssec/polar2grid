@@ -3,16 +3,15 @@
 """Script that uses the `polar2grid` toolbox of modules to take VIIRS
 hdf5 (.h5) files and create a properly scaled AWIPS compatible NetCDF file.
 
-:newfield revision: Revision
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 :date:         Jan 2012
 :license:      GNU GPLv3
+:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
-__revision__  = "$Id$"
 
 from polar2grid.core import Workspace
 from polar2grid.viirs_imager_to_swath import make_swaths

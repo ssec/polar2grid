@@ -4,7 +4,6 @@
 Read one or more contiguous in-order HDF5 VIIRS imager granules in any aggregation
 Write out Swath binary files used by ms2gt tools.
 
-:newfield revision: Revision
 :author:       David Hoese (davidh)
 :author:       Ray Garcia (rayg)
 :contact:      david.hoese@ssec.wisc.edu
@@ -12,9 +11,9 @@ Write out Swath binary files used by ms2gt tools.
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 :date:         Jan 2012
 :license:      GNU GPLv3
+:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
-__revision__  = " $Id$"
 
 from polar2grid.adl_guidebook import file_info,geo_info,read_file_info,read_geo_info
 import numpy

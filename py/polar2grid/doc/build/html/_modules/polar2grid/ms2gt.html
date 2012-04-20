@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>polar2grid.ms2gt &mdash; polar2grid 0.0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="polar2grid 0.0.4 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">polar2grid 0.0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for polar2grid.ms2gt</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;Simple python wrapper around the actual shell calls to</span>
+<span class="sd">ms2gt utilities.</span>
+
+<span class="sd">:newfield revision: Revision</span>
+<span class="sd">:author:       David Hoese (davidh)</span>
+<span class="sd">:contact:      david.hoese@ssec.wisc.edu</span>
+<span class="sd">:organization: Space Science and Engineering Center (SSEC)</span>
+<span class="sd">:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</span>
+<span class="sd">:date:         Jan 2012</span>
+<span class="sd">:license:      GNU GPLv3</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&quot;restructuredtext en&quot;</span>
+<span class="n">__revision__</span>  <span class="o">=</span> <span class="s">&quot;$Id$&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">check_call</span><span class="p">,</span><span class="n">CalledProcessError</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="n">CR_REG</span> <span class="o">=</span> <span class="s">r&#39;.*_(\d+).img&#39;</span>
+<span class="n">cr_reg</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">CR_REG</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_ll2cr_rows_info</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+    <span class="n">CR_REG</span> <span class="o">=</span> <span class="s">r&#39;.*_(?P&lt;scans_out&gt;\d+)_(?P&lt;scan_first&gt;\d+)_(?P&lt;num_rows&gt;\d+).img&#39;</span>
+    <span class="n">cr_reg</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">CR_REG</span><span class="p">)</span>
+    <span class="n">row_match</span> <span class="o">=</span> <span class="n">cr_reg</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">row_match</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t get row information from ll2cr file&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">None</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">row_match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;scans_out&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&quot;scans_out&quot;</span><span class="p">])</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;scan_first&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&quot;scan_first&quot;</span><span class="p">])</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;num_rows&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&quot;num_rows&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">d</span>
+
+<span class="k">def</span> <span class="nf">_ll2cr_cols_info</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+    <span class="n">CR_REG</span> <span class="o">=</span> <span class="s">r&#39;.*_(?P&lt;scans_out&gt;\d+)_(?P&lt;scan_first&gt;\d+)_(?P&lt;num_cols&gt;\d+).img&#39;</span>
+    <span class="n">cr_reg</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">CR_REG</span><span class="p">)</span>
+    <span class="n">col_match</span> <span class="o">=</span> <span class="n">cr_reg</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">col_match</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t get col information from ll2cr file&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">None</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">col_match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;scans_out&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&quot;scans_out&quot;</span><span class="p">])</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;scan_first&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&quot;scan_first&quot;</span><span class="p">])</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;num_cols&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&quot;num_cols&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">d</span>
+
+<div class="viewcode-block" id="ll2cr"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.ms2gt.ll2cr">[docs]</a><span class="k">def</span> <span class="nf">ll2cr</span><span class="p">(</span><span class="n">colsin</span><span class="p">,</span> <span class="n">scansin</span><span class="p">,</span> <span class="n">rowsperscan</span><span class="p">,</span> <span class="n">latfile</span><span class="p">,</span> <span class="n">lonfile</span><span class="p">,</span> <span class="n">gpdfile</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">f_scansout</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">rind</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fill_io</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s">&quot;ll2cr&quot;</span><span class="p">):</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;ll2cr&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;-v&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">f_scansout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&quot;-f&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">f_scansout</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">rind</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&quot;-r&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">rind</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">fill_io</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&quot;-F&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">fill_io</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">fill_io</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">colsin</span><span class="p">,</span> <span class="n">scansin</span><span class="p">,</span> <span class="n">rowsperscan</span><span class="p">,</span> <span class="n">latfile</span><span class="p">,</span> <span class="n">lonfile</span><span class="p">,</span> <span class="n">gpdfile</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">tag</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span> <span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span> <span class="p">]</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Running ll2cr with &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="s">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+        <span class="n">check_call</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">CalledProcessError</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Error running ll2cr&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Error running ll2cr&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t find &#39;ll2cr&#39; command in PATH&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t find &#39;ll2cr&#39; command in PATH&quot;</span><span class="p">)</span>
+
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">_cols_*.img&quot;</span> <span class="o">%</span> <span class="n">tag</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t find cols img file from ll2cr&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t find cols img file from ll2cr&quot;</span><span class="p">)</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;colfile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Columns file is </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">d</span><span class="p">[</span><span class="s">&quot;colfile&quot;</span><span class="p">])</span>
+
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">_rows_*.img&quot;</span> <span class="o">%</span> <span class="n">tag</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t find rows img file from ll2cr&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t find rows img file from ll2cr&quot;</span><span class="p">)</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;rowfile&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Rows file is </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">d</span><span class="p">[</span><span class="s">&quot;rowfile&quot;</span><span class="p">])</span>
+
+    <span class="n">col_dict</span> <span class="o">=</span> <span class="n">_ll2cr_cols_info</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&quot;colfile&quot;</span><span class="p">])</span>
+    <span class="n">row_dict</span> <span class="o">=</span> <span class="n">_ll2cr_rows_info</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&quot;rowfile&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">col_dict</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">row_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="c"># Log message was delivered before</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t get information from ll2cr output&quot;</span><span class="p">)</span>
+
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;num_cols&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">col_dict</span><span class="p">[</span><span class="s">&quot;num_cols&quot;</span><span class="p">]</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;num_rows&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">row_dict</span><span class="p">[</span><span class="s">&quot;num_rows&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">col_dict</span><span class="p">[</span><span class="s">&quot;scans_out&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">row_dict</span><span class="p">[</span><span class="s">&quot;scans_out&quot;</span><span class="p">]:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;ll2cr didn&#39;t produce the same number of scans for cols and rows&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;ll2cr didn&#39;t produce the same number of scans for cols and rows&quot;</span><span class="p">)</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;scans_out&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">col_dict</span><span class="p">[</span><span class="s">&quot;scans_out&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">col_dict</span><span class="p">[</span><span class="s">&quot;scan_first&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">row_dict</span><span class="p">[</span><span class="s">&quot;scan_first&quot;</span><span class="p">]:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;ll2cr didn&#39;t produce the same number for scan first cols and rows&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;ll2cr didn&#39;t produce the same number for scan first cols and rows&quot;</span><span class="p">)</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&quot;scan_first&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">col_dict</span><span class="p">[</span><span class="s">&quot;scan_first&quot;</span><span class="p">]</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Number of Scans Out = </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">d</span><span class="p">[</span><span class="s">&quot;scans_out&quot;</span><span class="p">])</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Number for Scan First = </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">d</span><span class="p">[</span><span class="s">&quot;scan_first&quot;</span><span class="p">])</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Number of Columns = </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">d</span><span class="p">[</span><span class="s">&quot;num_cols&quot;</span><span class="p">])</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Number of Rows = </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">d</span><span class="p">[</span><span class="s">&quot;num_rows&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">d</span>
+</div>
+<div class="viewcode-block" id="fornav"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.ms2gt.fornav">[docs]</a><span class="k">def</span> <span class="nf">fornav</span><span class="p">(</span><span class="n">chan_count</span><span class="p">,</span> <span class="n">swath_cols</span><span class="p">,</span> <span class="n">swath_scans</span><span class="p">,</span> <span class="n">swath_rows_per_scan</span><span class="p">,</span> <span class="n">colfile</span><span class="p">,</span> <span class="n">rowfile</span><span class="p">,</span> <span class="n">swathfile</span><span class="p">,</span> <span class="n">grid_cols</span><span class="p">,</span> <span class="n">grid_rows</span><span class="p">,</span> <span class="n">output_fn</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">swath_data_type_1</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">swath_fill_1</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">grid_fill_1</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">weight_delta_max</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">weight_distance_max</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">start_scan</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;fornav&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">chan_count</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">chan_count</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">swathfile</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">swathfile</span> <span class="o">=</span> <span class="p">[</span><span class="n">swathfile</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">chan_count</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_fn</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">output_fn</span> <span class="o">=</span> <span class="p">[</span><span class="n">output_fn</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">chan_count</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">swathfile</span><span class="p">)</span> <span class="o">!=</span> <span class="n">chan_count</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">swathfile</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Number of input files </span><span class="si">%d</span><span class="s"> does not equal channel count </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">swathfile</span><span class="p">),</span> <span class="n">chan_count</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Number of input files </span><span class="si">%d</span><span class="s"> does not equal channel count </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">swathfile</span><span class="p">),</span> <span class="n">chan_count</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Input files must be a list if channel count is more than 1&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Input files must be a list if channel count is more than 1&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">chan_count</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_fn</span><span class="p">)</span> <span class="o">!=</span> <span class="n">chan_count</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_fn</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Number of output files </span><span class="si">%d</span><span class="s"> does not equal channel count </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">output_fn</span><span class="p">),</span> <span class="n">chan_count</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Number of output files </span><span class="si">%d</span><span class="s"> does not equal channel count </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">output_fn</span><span class="p">),</span> <span class="n">chan_count</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Output files must be a list if channel count is more than 1&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Output files must be a list if channel count is more than 1&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;-v&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">swath_data_type_1</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;-t&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chan_count</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">swath_data_type_1</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&quot;</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">swath_data_type_1</span><span class="p">]</span><span class="o">*</span><span class="n">chan_count</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">chan_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">swath_data_type_1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">swath_data_type_1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">swath_fill_1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;-f&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chan_count</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">swath_fill_1</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&quot;</span><span class="si">%f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">swath_fill_1</span><span class="p">]</span><span class="o">*</span><span class="n">chan_count</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">chan_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">swath_fill_1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">swath_fill_1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">grid_fill_1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;-F&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chan_count</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grid_fill_1</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">grid_fill_1</span><span class="p">]</span><span class="o">*</span><span class="n">chan_count</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">chan_count</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">grid_fill_1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">grid_fill_1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">weight_delta_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&quot;-D&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">weight_delta_max</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">weight_distance_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&quot;-d&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">weight_distance_max</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">start_scan</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s">&quot;-s&quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">start_scan</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">start_scan</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+
+    <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">swath_cols</span><span class="p">,</span> <span class="n">swath_scans</span><span class="p">,</span> <span class="n">swath_rows_per_scan</span><span class="p">,</span> <span class="n">colfile</span><span class="p">,</span> <span class="n">rowfile</span><span class="p">])</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">swathfile</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">grid_cols</span><span class="p">,</span> <span class="n">grid_rows</span><span class="p">])</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">output_fn</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">[</span> <span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span> <span class="p">]</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Running fornav with &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="s">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+        <span class="n">check_call</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">CalledProcessError</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Error running fornav&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Fornav failed&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t find &#39;fornav&#39; command in PATH&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Fornav was not found your PATH&quot;</span><span class="p">)</span>
+
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">return</span> <span class="n">d</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;No scripting implemented&quot;</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">polar2grid 0.0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, University of Wisconsin SSEC.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

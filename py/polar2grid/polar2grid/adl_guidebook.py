@@ -6,7 +6,6 @@ Provide information about ADL product files for a variety of uses.
 :group Data Kinds: K_*
 :group Guides: ROWS_PER_SCAN,COLS_PER_ROW,DATA_KINDS,*_GUIDE
 
-:newfield revision: Revision
 :author:       David Hoese (davidh)
 :author:       Ray Garcia (rayg)
 :contact:      david.hoese@ssec.wisc.edu
@@ -14,9 +13,9 @@ Provide information about ADL product files for a variety of uses.
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 :date:         Jan 2012
 :license:      GNU GPLv3
+:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
-__revision__  = "$Id$"
 
 from polar2grid.core import UTC
 import h5py as h5

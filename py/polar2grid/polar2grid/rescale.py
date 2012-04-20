@@ -9,7 +9,6 @@ and "pretty" with AWIPS.
     original data array passed.  If fact, it is faster in most cases
     to change the array in place.
 
-:newfield revision: Revision
 :author:       David Hoese (davidh)
 :author:       Eva Schiffer (evas)
 :contact:      david.hoese@ssec.wisc.edu
@@ -17,9 +16,9 @@ and "pretty" with AWIPS.
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 :date:         Jan 2012
 :license:      GNU GPLv3
+:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
-__revision__  = "$Id$"
 
 from polar2grid.adl_guidebook import K_REFLECTANCE,K_RADIANCE,K_BTEMP
 

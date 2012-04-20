@@ -2,16 +2,15 @@
 # encoding: utf-8
 """ Core of viirs2awips that holds shared utilities and constants.
 
-:newfield revision: Revision
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 :date:         Jan 2012
 :license:      GNU GPLv3
+:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
-__revision__  = "$Id$"
 import numpy
 
 import os
