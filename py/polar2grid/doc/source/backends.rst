@@ -12,14 +12,15 @@ It then fills in a NetCDF file template with the rescaled image data.
 
 Reflectance data is rescaled using the following formula:
 
-.. math:: rescaleddata = round(\sqrt{data * 100.0} * 25.5)
+.. math:: \text{rescaled\_data} = \operatorname{round}(\sqrt{\text{data} * 100.0} * 25.5)
 
 Brightness Temperature data is rescaled using the following formula:
 
-    if temp_value < 242.0:
+.. math::
 
-    .. math:: rescaleddata = 418 - temp
+    \text{rescaled\_data} = 
+    \begin{cases} 
+        418 - \text{temp} & \text{temp} < 242.0 \\
+        660 - (2 * \text{temp}) & \text{temp}\ge 242.0
+     \end{cases}
 
-    if temp_value >- 242.0:
-
-    .. math:: rescaleddata = 660 - (2 * temp)

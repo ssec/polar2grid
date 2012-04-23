@@ -20,10 +20,7 @@ Contents
     :maxdepth: 2
 
     installation
-    swath_extraction
-    prescaling
-    grid_determination
-    ms2gt
+    chain
     backends
     scripts
     advanced

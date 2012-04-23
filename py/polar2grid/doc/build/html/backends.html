@@ -27,7 +27,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="polar2grid 0.0.4 documentation" href="index.html" />
     <link rel="next" title="Scripts" href="scripts.html" />
-    <link rel="prev" title="ms2gt Utilities" href="ms2gt.html" /> 
+    <link rel="prev" title="The Chain" href="chain.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +43,7 @@
           <a href="scripts.html" title="Scripts"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="ms2gt.html" title="ms2gt Utilities"
+          <a href="chain.html" title="The Chain"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">polar2grid 0.0.4 documentation</a> &raquo;</li> 
       </ul>
@@ -65,17 +65,15 @@ requires unsigned byte integers for its data which results in this range.
 It then fills in a NetCDF file template with the rescaled image data.</p>
 <p>Reflectance data is rescaled using the following formula:</p>
 <div class="math">
-<p><img src="_images/math/e1afe2df5e1ecc817c6e3ef4ebb743b03cda9d7b.png" alt="rescaleddata = round(\sqrt{data * 100.0} * 25.5)"/></p>
+<p><img src="_images/math/f61f5d0864dfc8ece0d1266f2e2b337daf3e4f39.png" alt="\text{rescaled\_data} = \operatorname{round}(\sqrt{\text{data} * 100.0} * 25.5)"/></p>
 </div><p>Brightness Temperature data is rescaled using the following formula:</p>
-<blockquote>
-<div><p>if temp_value &lt; 242.0:</p>
 <div class="math">
-<p><img src="_images/math/64cff68a645cd0a9092e2dae94d3930b883db12e.png" alt="rescaleddata = 418 - temp"/></p>
-</div><p>if temp_value &gt;- 242.0:</p>
-<div class="math">
-<p><img src="_images/math/6ef3e9e64799de5ffc952f5a337f8fbd3cd09507.png" alt="rescaleddata = 660 - (2 * temp)"/></p>
-</div></div></blockquote>
-</div>
+<p><img src="_images/math/37fc9cfe294db0150f44caac288563bff3753c27.png" alt="\text{rescaled\_data} =
+\begin{cases}
+    418 - \text{temp} &amp; \text{temp} &lt; 242.0 \\
+    660 - (2 * \text{temp}) &amp; \text{temp}\ge 242.0
+ \end{cases}"/></p>
+</div></div>
 </div>
 
 
@@ -93,8 +91,8 @@ It then fills in a NetCDF file template with the rescaled image data.</p>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="ms2gt.html"
-                        title="previous chapter">ms2gt Utilities</a></p>
+  <p class="topless"><a href="chain.html"
+                        title="previous chapter">The Chain</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="scripts.html"
                         title="next chapter">Scripts</a></p>
@@ -133,7 +131,7 @@ It then fills in a NetCDF file template with the rescaled image data.</p>
           <a href="scripts.html" title="Scripts"
              >next</a> |</li>
         <li class="right" >
-          <a href="ms2gt.html" title="ms2gt Utilities"
+          <a href="chain.html" title="The Chain"
              >previous</a> |</li>
         <li><a href="index.html">polar2grid 0.0.4 documentation</a> &raquo;</li> 
       </ul>

@@ -4,8 +4,7 @@ Installation
 The polar2grid python package can be installed in 2 types of environments,
 as an individually installed python package or as part of the polar2grid
 software bundle.  The software bundle is the preferred, recommended,
-and intended method of installing the polar2grid software.  The polar2grid
-package is primarily tested using the software bundle method.
+and intended method of installing the polar2grid software.
 
 polar2grid Software Bundle
 --------------------------
