@@ -132,7 +132,7 @@ def go(name, lat, lon, radius, start=None, end=None):
         end = datetime.strptime(end, '%Y-%m-%d').date()
 
     fp = file(name+'.nfo', 'at')
-    for key, _ in sync(lat, lon, radius, start, end):
+    for key in sync(lat, lon, radius, start, end).keys():
         LOG.info('%s is ready' % repr(key))
         print >>fp, '%s %s %s' % key
         fp.flush()
