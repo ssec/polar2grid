@@ -56,8 +56,14 @@
             
   <div class="section" id="backends">
 <h1>Backends<a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h1>
+<p>Backends are blocks of software that, given remapped image data and meta data,
+produce a file that can be used in another piece of software optimized for
+viewing of that data.</p>
+<p>For developers, the main advantage of defining backends is that it should be
+rather simple to swap backends to make new polar2grid scripts.  This should
+simplify and shorten the development cycle of imager to product scripts.</p>
 <div class="section" id="awips-netcdf">
-<h2>AWIPS NetCDF<a class="headerlink" href="#awips-netcdf" title="Permalink to this headline">¶</a></h2>
+<span id="awips-netcdf-backend"></span><h2>AWIPS NetCDF<a class="headerlink" href="#awips-netcdf" title="Permalink to this headline">¶</a></h2>
 <p>The AWIPS NetCDF backend takes remapped binary image data and creates an
 AWIPS-compatible NetCDF file.  To accomplish this the backend must rescale
 the image data to a 0-255 range, where 0 is a fill/invalid value.  AWIPS
@@ -73,7 +79,12 @@ It then fills in a NetCDF file template with the rescaled image data.</p>
     418 - \text{temp} &amp; \text{temp} &lt; 242.0 \\
     660 - (2 * \text{temp}) &amp; \text{temp}\ge 242.0
  \end{cases}"/></p>
-</div></div>
+</div><p>Rescaling will attempt to fit the provided data in the best visual range for
+AWIPS, but can not always do this for outliers.  To correct for this the
+AWIPS NetCDF backend also forces any post-rescaling values above 255 to 255
+and any values below 0 to 0.  This could result in &#8220;washed out&#8221; portions of
+data in the AWIPS NetCDF file.</p>
+</div>
 </div>
 
 

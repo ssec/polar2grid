@@ -56,9 +56,56 @@
             
   <div class="section" id="scripts">
 <h1>Scripts<a class="headerlink" href="#scripts" title="Permalink to this headline">¶</a></h1>
+<p>polar2grid uses specialized scripts to handle the high level processing of
+polar-orbiting satellite data to product generation.  Each script has
+a &#8220;companion&#8221; script that is located in the polar2grid software bundle&#8217;s
+<tt class="docutils literal"><span class="pre">/bin</span></tt> directory.  These &#8220;companion&#8221; scripts are used to setup the
+environment needed by the python scripts, enter defaults into the python
+scripts, and ease the installation/use process of the user.  The &#8220;companion&#8221;
+scripts are callable (once proper installation steps have been taken) by the
+name of the script.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you are using the basic software bundle method of installation, you MUST use
+the companion script to properly run polar2grid processing.</p>
+</div>
 <div class="section" id="viirs2awips">
 <h2>viirs2awips<a class="headerlink" href="#viirs2awips" title="Permalink to this headline">¶</a></h2>
-<p>TODO</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Python Script:</th><td class="field-body"><tt class="docutils literal"><span class="pre">polar2grid.viirs2awips</span></tt></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Comp. Script:</th><td class="field-body"><tt class="docutils literal"><span class="pre">viirs2awips.sh</span></tt></td>
+</tr>
+</tbody>
+</table>
+<p>This script is used to process VIIRS imager data into AWIPS compatible NetCDF
+files.  It can be run using the following command:</p>
+<blockquote>
+<div><tt class="docutils literal"><span class="pre">viirs2awips.sh</span> <span class="pre">/path/to/data/</span></tt></div></blockquote>
+<p>or to force the grid that will be mapped too:</p>
+<blockquote>
+<div><tt class="docutils literal"><span class="pre">viirs2awips.sh</span> <span class="pre">-g</span> <span class="pre">203</span> <span class="pre">/path/to/data/</span></tt></div></blockquote>
+<p>viirs2awips follows the basic chain sequence of:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Swath Extraction</li>
+<li>Prescaling</li>
+<li>Grid Determination (if not forced)</li>
+<li>Remapping</li>
+<li>AWIPS NetCDF Backend</li>
+</ol>
+</div></blockquote>
+<p>The prescaling step only scales the DNB data to a 0-1 range using histogram
+equalization.  It performs different equalization depending on if the data
+is determined to be at daytime, nighttime, or in between.</p>
+<p>The grid determination for viirs2awips uses a bounding box algorithm with
+AWIPS grids&#8217; boxes determined from outer most latitudes and longitudes.</p>
+<p>See the <a class="reference internal" href="backends.html#awips-netcdf-backend"><em>AWIPS NetCDF</em></a> for more
+information on what scaling it does to prepare the data for the
+AWIPS-compatible NetCDF file.</p>
 </div>
 </div>
 
