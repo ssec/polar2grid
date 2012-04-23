@@ -98,13 +98,13 @@ def sync(lat, lon, radius, start=None, end=None):
     good = list()
     new_files = defaultdict(list)
     inventory = list(flo_find(lat, lon, radius, start, end))
-    for nfo, url in inventory:
+    for n, (nfo, url) in enumerate(inventory):
         filename = nfo.group(0)
         LOG.debug('checking %s @ %s' % (filename, url))
         if os.path.isfile(filename):
             LOG.debug('%s is already present' % filename)
         else:
-            LOG.info('downloading %s' % url)
+            LOG.info('downloading %d/%d : %s' % (n+1, len(inventory), url))
             rc = curl(filename, url)
             if rc!=0:
                 bad.append(nfo)
