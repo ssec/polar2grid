@@ -7,7 +7,11 @@ polar2grid
 ======================================
 
 polar2grid provides scripts, utilities, and library functions for converting,
-or remapping, polar-orbiting satellite data to a known map grid.
+or remapping, polar-orbiting satellite data to a known map grid.  All
+polar2grid remapping scripts execute a series of function calls known as
+the "chain".  These functions being called act as a toolbox for software
+developers to make their own scripts.  See :doc:`Advanced Topics <advanced>`
+for more details if the basic documentation doesn't answer your questions.
 
 Contents
 --------
@@ -20,9 +24,9 @@ Contents
     prescaling
     grid_determination
     ms2gt
-    rescaling
     backends
     scripts
+    advanced
 
 Grids
 -----

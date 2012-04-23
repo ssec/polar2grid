@@ -53,14 +53,17 @@
   <div class="section" id="polar2grid">
 <h1>polar2grid<a class="headerlink" href="#polar2grid" title="Permalink to this headline">¶</a></h1>
 <p>polar2grid provides scripts, utilities, and library functions for converting,
-or remapping, polar-orbiting satellite data to a known map grid.</p>
+or remapping, polar-orbiting satellite data to a known map grid.  All
+polar2grid remapping scripts execute a series of function calls known as
+the &#8220;chain&#8221;.  These functions being called act as a toolbox for software
+developers to make their own scripts.  See <a class="reference internal" href="advanced.html"><em>Advanced Topics</em></a>
+for more details if the basic documentation doesn&#8217;t answer your questions.</p>
 <div class="section" id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#polar2grid-software-bundle">polar2grid Software Bundle</a></li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#python-package">Python Package</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="swath_extraction.html">Swath Extraction</a></li>
@@ -71,13 +74,16 @@ or remapping, polar-orbiting satellite data to a known map grid.</p>
 <li class="toctree-l2"><a class="reference internal" href="ms2gt.html#fornav">fornav</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="rescaling.html">Rescaling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="backends.html">Backends</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="backends.html#awips-netcdf">AWIPS NetCDF</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="scripts.html">Scripts</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="scripts.html#viirs2awips">viirs2awips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced Topics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="advanced.html#python-package-install">Python Package Install</a></li>
 </ul>
 </li>
 </ul>
@@ -105,13 +111,13 @@ or remapping, polar-orbiting satellite data to a known map grid.</p>
 <li class="toctree-l2"><a class="reference internal" href="polar2grid.html">polar2grid Package</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="polar2grid.html#id1"><tt class="docutils literal"><span class="pre">polar2grid</span></tt> Package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="polar2grid.html#module-polar2grid.adl_guidebook"><tt class="docutils literal"><span class="pre">adl_guidebook</span></tt> Module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="polar2grid.html#awips-config-module"><tt class="docutils literal"><span class="pre">awips_config</span></tt> Module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="polar2grid.html#awips-netcdf-module"><tt class="docutils literal"><span class="pre">awips_netcdf</span></tt> Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="polar2grid.html#module-polar2grid.awips_config"><tt class="docutils literal"><span class="pre">awips_config</span></tt> Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="polar2grid.html#module-polar2grid.awips_netcdf"><tt class="docutils literal"><span class="pre">awips_netcdf</span></tt> Module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="polar2grid.html#module-polar2grid.core"><tt class="docutils literal"><span class="pre">core</span></tt> Module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="polar2grid.html#module-polar2grid.ms2gt"><tt class="docutils literal"><span class="pre">ms2gt</span></tt> Module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="polar2grid.html#plot-ncdata-module"><tt class="docutils literal"><span class="pre">plot_ncdata</span></tt> Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="polar2grid.html#module-polar2grid.plot_ncdata"><tt class="docutils literal"><span class="pre">plot_ncdata</span></tt> Module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="polar2grid.html#module-polar2grid.rescale"><tt class="docutils literal"><span class="pre">rescale</span></tt> Module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="polar2grid.html#viirs2awips-module"><tt class="docutils literal"><span class="pre">viirs2awips</span></tt> Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="polar2grid.html#module-polar2grid.viirs2awips"><tt class="docutils literal"><span class="pre">viirs2awips</span></tt> Module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="polar2grid.html#module-polar2grid.viirs_imager_to_swath"><tt class="docutils literal"><span class="pre">viirs_imager_to_swath</span></tt> Module</a></li>
 </ul>
 </li>

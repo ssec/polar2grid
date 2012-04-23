@@ -8,7 +8,7 @@
 Installation
 ============
 polar2grid should be used as an internal package to the polar2grid software
-bundle.  The software bundle ncludes C, IDL, and Python packages/libraries
+bundle.  The software bundle includes C, IDL, and Python packages/libraries
 to properly go from VIIRS data to AWIPS-compatible NC files.  polar2grid is
 tested using the ShellB3 python environment, which includes the necessary
 python packages.  ShellB3 is part of the polar2grid software bundle.

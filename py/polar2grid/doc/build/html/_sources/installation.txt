@@ -2,7 +2,7 @@ Installation
 ============
 
 The polar2grid python package can be installed in 2 types of environments,
-as a individually installed python package or as part of the polar2grid
+as an individually installed python package or as part of the polar2grid
 software bundle.  The software bundle is the preferred, recommended,
 and intended method of installing the polar2grid software.  The polar2grid
 package is primarily tested using the software bundle method.
@@ -28,15 +28,5 @@ remappings from satellite data to grid format as they setup the rest
 of the environment. See :doc:`scripts </scripts>` for more information.
 
 
-Python Package
---------------
-
-The polar2grid python package can be installed like any basic python egg:
-
-    ``easy_install -f http://larch.ssec.wisc.edu/cgi-bin/repos.cgi polar2grid``
-
-Installing polar2grid in this way does require, however, that the ms2gt
-utilities ``ll2cr`` and ``fornav`` must be in your $PATH environment
-variable.  This method is allows the freedom to choose the versions and
-locations of the required packages for polar2grid.
+See :doc:`Advanced Topics </advanced>` for python package installing.
 

@@ -78,7 +78,7 @@ convert polar orbiting satellite data and remap it into a known grid.</p>
 </tr>
 <tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id$</td>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: __init__.py 68 2012-04-20 15:35:04Z davidh $</td>
 </tr>
 </tbody>
 </table>
@@ -109,7 +109,7 @@ convert polar orbiting satellite data and remap it into a known grid.</p>
 </tr>
 <tr class="field-odd field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
 </tr>
-<tr class="field-even field"><th class="field-name">revision:</th><td class="field-body">$Id: adl_guidebook.py 67 2012-04-19 21:48:04Z davidh $</td>
+<tr class="field-even field"><th class="field-name">revision:</th><td class="field-body">$Id: adl_guidebook.py 68 2012-04-20 15:35:04Z davidh $</td>
 </tr>
 </tbody>
 </table>
@@ -356,11 +356,136 @@ condition of <cite>geo_info</cite>.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="awips-config-module">
-<h2><tt class="xref py py-mod docutils literal"><span class="pre">awips_config</span></tt> Module<a class="headerlink" href="#awips-config-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-polar2grid.awips_config">
+<span id="awips-config-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">awips_config</span></tt> Module<a class="headerlink" href="#module-polar2grid.awips_config" title="Permalink to this headline">¶</a></h2>
+<p>Functions to read configuration files for the viirs2awips.</p>
+<p>Instances of default configuration file locations and contents.</p>
+<p>Configuration files from which the above are derived
+Global objects representing configuration files</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><dl class="first docutils">
+<dt>GRIDS <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">Mappings to product_id and NC filename format</p>
+</dd>
+<dt>BANDS <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">Mappings to product_id and NC filename format</p>
+</dd>
+<dt>GRID_TEMPLATES <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">Mappings to gpd and NC templates.</p>
+</dd>
+<dt>SHAPES <span class="classifier-delimiter">:</span> <span class="classifier">dict </span></dt>
+<dd><p class="first last">Mappings of grid name to lat/lon boundaries and coverage percentage</p>
+</dd>
+<dt>PRODUCTS_FILE</dt>
+<dd><p class="first last">File holding band to grid mappings, including product_id and NC
+filename format</p>
+</dd>
+<dt>ANCIL_DIR</dt>
+<dd><p class="first last">Directory holding gpd and nc templates for AWIPS grids.</p>
+</dd>
+<dt>SHAPES_FILE</dt>
+<dd><p class="first last">File holding grid boundaries for grids specified in the
+grids directory and products.conf file</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">author:</th><td class="field-body"><p class="first">David Hoese (davidh)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">contact:</th><td class="field-body"><p class="first"><a class="reference external" href="mailto:david&#46;hoese&#37;&#52;&#48;ssec&#46;wisc&#46;edu">david<span>&#46;</span>hoese<span>&#64;</span>ssec<span>&#46;</span>wisc<span>&#46;</span>edu</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">organization:</th><td class="field-body"><p class="first">Space Science and Engineering Center (SSEC)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body"><p class="first">Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">date:</th><td class="field-body"><p class="first">Jan 2012</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">license:</th><td class="field-body"><p class="first">GNU GPLv3</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">revision:</th><td class="field-body"><p class="first last">$Id: awips_config.py 68 2012-04-20 15:35:04Z davidh $</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="polar2grid.awips_config.find_grid_templates">
+<tt class="descclassname">polar2grid.awips_config.</tt><tt class="descname">find_grid_templates</tt><big>(</big><em>ancil_dir</em><big>)</big><a class="reference internal" href="_modules/polar2grid/awips_config.html#find_grid_templates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.awips_config.find_grid_templates" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.awips_config.get_grid_info">
+<tt class="descclassname">polar2grid.awips_config.</tt><tt class="descname">get_grid_info</tt><big>(</big><em>kind</em>, <em>band</em>, <em>grid_number</em>, <em>gpd=None</em>, <em>nc=None</em>, <em>GRIDS={'204': {'I03': ('55779625'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI03_%Y%m%d_%H%M.55779625')</em>, <em>'DNB': ('55779628'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVDNB_%Y%m%d_%H%M.55779628')</em>, <em>'I01': ('55779624'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI01_%Y%m%d_%H%M.55779624')</em>, <em>'I04': ('55779626'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI04_%Y%m%d_%H%M.55779626')</em>, <em>'I05': ('55779627'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI05_%Y%m%d_%H%M.55779627')}</em>, <em>'203': {'I03': ('55779617'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI03_%Y%m%d_%H%M.55779617')</em>, <em>'DNB': ('55779620'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVDNB_%Y%m%d_%H%M.55779620')</em>, <em>'I01': ('55779616'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI01_%Y%m%d_%H%M.55779616')</em>, <em>'I04': ('55779618'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI04_%Y%m%d_%H%M.55779618')</em>, <em>'I05': ('55779619'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI05_%Y%m%d_%H%M.55779619')}</em>, <em>'211e': {'I03': ('55779601'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI03_%Y%m%d_%H%M.55779601')</em>, <em>'DNB': ('55779604'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVDNB_%Y%m%d_%H%M.55779604')</em>, <em>'I01': ('55779600'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI01_%Y%m%d_%H%M.55779600')</em>, <em>'I04': ('55779602'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI04_%Y%m%d_%H%M.55779602')</em>, <em>'I05': ('55779603'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI05_%Y%m%d_%H%M.55779603')}</em>, <em>'211w': {'I03': ('55779609'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI03_%Y%m%d_%H%M.55779609')</em>, <em>'DNB': ('55779612'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVDNB_%Y%m%d_%H%M.55779612')</em>, <em>'I01': ('55779608'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI01_%Y%m%d_%H%M.55779608')</em>, <em>'I04': ('55779610'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI04_%Y%m%d_%H%M.55779610')</em>, <em>'I05': ('55779611'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI05_%Y%m%d_%H%M.55779611')}}</em>, <em>BANDS={'I03': {'204': ('55779625'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI03_%Y%m%d_%H%M.55779625')</em>, <em>'203': ('55779617'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI03_%Y%m%d_%H%M.55779617')</em>, <em>'211e': ('55779601'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI03_%Y%m%d_%H%M.55779601')</em>, <em>'211w': ('55779609'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI03_%Y%m%d_%H%M.55779609')}</em>, <em>'DNB': {'204': ('55779628'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVDNB_%Y%m%d_%H%M.55779628')</em>, <em>'203': ('55779620'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVDNB_%Y%m%d_%H%M.55779620')</em>, <em>'211e': ('55779604'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVDNB_%Y%m%d_%H%M.55779604')</em>, <em>'211w': ('55779612'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVDNB_%Y%m%d_%H%M.55779612')}</em>, <em>'I01': {'204': ('55779624'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI01_%Y%m%d_%H%M.55779624')</em>, <em>'203': ('55779616'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI01_%Y%m%d_%H%M.55779616')</em>, <em>'211e': ('55779600'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI01_%Y%m%d_%H%M.55779600')</em>, <em>'211w': ('55779608'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI01_%Y%m%d_%H%M.55779608')}</em>, <em>'I04': {'204': ('55779626'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI04_%Y%m%d_%H%M.55779626')</em>, <em>'203': ('55779618'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI04_%Y%m%d_%H%M.55779618')</em>, <em>'211e': ('55779602'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI04_%Y%m%d_%H%M.55779602')</em>, <em>'211w': ('55779610'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI04_%Y%m%d_%H%M.55779610')}</em>, <em>'I05': {'204': ('55779627'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI05_%Y%m%d_%H%M.55779627')</em>, <em>'203': ('55779619'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI05_%Y%m%d_%H%M.55779619')</em>, <em>'211e': ('55779603'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI05_%Y%m%d_%H%M.55779603')</em>, <em>'211w': ('55779611'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI05_%Y%m%d_%H%M.55779611')}}</em>, <em>SHAPES={'204': (60.644</em>, <em>-25.0</em>, <em>110.0</em>, <em>-109.129</em>, <em>0.2)</em>, <em>'203': (57.635</em>, <em>19.132</em>, <em>115.601</em>, <em>-53.66</em>, <em>0.2)</em>, <em>'211e': (59.844</em>, <em>14.335</em>, <em>-123.044</em>, <em>-49.385</em>, <em>0.2)</em>, <em>'211w': (61.257</em>, <em>12.19</em>, <em>-152.855</em>, <em>-91.444</em>, <em>0.2)}</em>, <em>GRID_TEMPLATES={'211e': ('/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid211e.gpd'</em>, <em>'/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid211e.nc')</em>, <em>'203': ('/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid203.gpd'</em>, <em>'/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid203.nc')</em>, <em>'204': ('/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid204.gpd'</em>, <em>'/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid204.nc')</em>, <em>'211w': ('/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid211w.gpd'</em>, <em>'/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid211w.nc')}</em><big>)</big><a class="reference internal" href="_modules/polar2grid/awips_config.html#get_grid_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.awips_config.get_grid_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assumes verify_grid was already run to verify that the information
+was available.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.awips_config.read_grid_config">
+<tt class="descclassname">polar2grid.awips_config.</tt><tt class="descname">read_grid_config</tt><big>(</big><em>config_filepath</em><big>)</big><a class="reference internal" href="_modules/polar2grid/awips_config.html#read_grid_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.awips_config.read_grid_config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.awips_config.read_shapes_config">
+<tt class="descclassname">polar2grid.awips_config.</tt><tt class="descname">read_shapes_config</tt><big>(</big><em>config_filepath</em><big>)</big><a class="reference internal" href="_modules/polar2grid/awips_config.html#read_shapes_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.awips_config.read_shapes_config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.awips_config.verify_config">
+<tt class="descclassname">polar2grid.awips_config.</tt><tt class="descname">verify_config</tt><big>(</big><em>kind</em>, <em>band</em>, <em>grid_number</em>, <em>gpd=None</em>, <em>nc=None</em>, <em>GRIDS={'204': {'I03': ('55779625'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI03_%Y%m%d_%H%M.55779625')</em>, <em>'DNB': ('55779628'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVDNB_%Y%m%d_%H%M.55779628')</em>, <em>'I01': ('55779624'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI01_%Y%m%d_%H%M.55779624')</em>, <em>'I04': ('55779626'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI04_%Y%m%d_%H%M.55779626')</em>, <em>'I05': ('55779627'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI05_%Y%m%d_%H%M.55779627')}</em>, <em>'203': {'I03': ('55779617'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI03_%Y%m%d_%H%M.55779617')</em>, <em>'DNB': ('55779620'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVDNB_%Y%m%d_%H%M.55779620')</em>, <em>'I01': ('55779616'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI01_%Y%m%d_%H%M.55779616')</em>, <em>'I04': ('55779618'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI04_%Y%m%d_%H%M.55779618')</em>, <em>'I05': ('55779619'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI05_%Y%m%d_%H%M.55779619')}</em>, <em>'211e': {'I03': ('55779601'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI03_%Y%m%d_%H%M.55779601')</em>, <em>'DNB': ('55779604'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVDNB_%Y%m%d_%H%M.55779604')</em>, <em>'I01': ('55779600'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI01_%Y%m%d_%H%M.55779600')</em>, <em>'I04': ('55779602'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI04_%Y%m%d_%H%M.55779602')</em>, <em>'I05': ('55779603'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI05_%Y%m%d_%H%M.55779603')}</em>, <em>'211w': {'I03': ('55779609'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI03_%Y%m%d_%H%M.55779609')</em>, <em>'DNB': ('55779612'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVDNB_%Y%m%d_%H%M.55779612')</em>, <em>'I01': ('55779608'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI01_%Y%m%d_%H%M.55779608')</em>, <em>'I04': ('55779610'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI04_%Y%m%d_%H%M.55779610')</em>, <em>'I05': ('55779611'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI05_%Y%m%d_%H%M.55779611')}}</em>, <em>BANDS={'I03': {'204': ('55779625'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI03_%Y%m%d_%H%M.55779625')</em>, <em>'203': ('55779617'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI03_%Y%m%d_%H%M.55779617')</em>, <em>'211e': ('55779601'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI03_%Y%m%d_%H%M.55779601')</em>, <em>'211w': ('55779609'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI03_%Y%m%d_%H%M.55779609')}</em>, <em>'DNB': {'204': ('55779628'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVDNB_%Y%m%d_%H%M.55779628')</em>, <em>'203': ('55779620'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVDNB_%Y%m%d_%H%M.55779620')</em>, <em>'211e': ('55779604'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVDNB_%Y%m%d_%H%M.55779604')</em>, <em>'211w': ('55779612'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVDNB_%Y%m%d_%H%M.55779612')}</em>, <em>'I01': {'204': ('55779624'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI01_%Y%m%d_%H%M.55779624')</em>, <em>'203': ('55779616'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI01_%Y%m%d_%H%M.55779616')</em>, <em>'211e': ('55779600'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI01_%Y%m%d_%H%M.55779600')</em>, <em>'211w': ('55779608'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI01_%Y%m%d_%H%M.55779608')}</em>, <em>'I04': {'204': ('55779626'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI04_%Y%m%d_%H%M.55779626')</em>, <em>'203': ('55779618'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI04_%Y%m%d_%H%M.55779618')</em>, <em>'211e': ('55779602'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI04_%Y%m%d_%H%M.55779602')</em>, <em>'211w': ('55779610'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI04_%Y%m%d_%H%M.55779610')}</em>, <em>'I05': {'204': ('55779627'</em>, <em>'SSEC_AWIPS_VIIRS-HI_1KM_SVI05_%Y%m%d_%H%M.55779627')</em>, <em>'203': ('55779619'</em>, <em>'SSEC_AWIPS_VIIRS-AK_1KM_SVI05_%Y%m%d_%H%M.55779619')</em>, <em>'211e': ('55779603'</em>, <em>'SSEC_AWIPS_VIIRS-ECONUS_1KM_SVI05_%Y%m%d_%H%M.55779603')</em>, <em>'211w': ('55779611'</em>, <em>'SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI05_%Y%m%d_%H%M.55779611')}}</em>, <em>SHAPES={'204': (60.644</em>, <em>-25.0</em>, <em>110.0</em>, <em>-109.129</em>, <em>0.2)</em>, <em>'203': (57.635</em>, <em>19.132</em>, <em>115.601</em>, <em>-53.66</em>, <em>0.2)</em>, <em>'211e': (59.844</em>, <em>14.335</em>, <em>-123.044</em>, <em>-49.385</em>, <em>0.2)</em>, <em>'211w': (61.257</em>, <em>12.19</em>, <em>-152.855</em>, <em>-91.444</em>, <em>0.2)}</em>, <em>GRID_TEMPLATES={'211e': ('/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid211e.gpd'</em>, <em>'/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid211e.nc')</em>, <em>'203': ('/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid203.gpd'</em>, <em>'/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid203.nc')</em>, <em>'204': ('/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid204.gpd'</em>, <em>'/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid204.nc')</em>, <em>'211w': ('/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid211w.gpd'</em>, <em>'/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid211w.nc')}</em><big>)</big><a class="reference internal" href="_modules/polar2grid/awips_config.html#verify_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.awips_config.verify_config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
-<div class="section" id="awips-netcdf-module">
-<h2><tt class="xref py py-mod docutils literal"><span class="pre">awips_netcdf</span></tt> Module<a class="headerlink" href="#awips-netcdf-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-polar2grid.awips_netcdf">
+<span id="awips-netcdf-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">awips_netcdf</span></tt> Module<a class="headerlink" href="#module-polar2grid.awips_netcdf" title="Permalink to this headline">¶</a></h2>
+<p>Fill in AWIPS-compatible NetCDF template files with image data.  Also contains
+the main AWIPS backend to the <cite>polar2grid.viirs2awips</cite> script.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">author:</th><td class="field-body">David Hoese (davidh)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">contact:</th><td class="field-body"><a class="reference external" href="mailto:david&#46;hoese&#37;&#52;&#48;ssec&#46;wisc&#46;edu">david<span>&#46;</span>hoese<span>&#64;</span>ssec<span>&#46;</span>wisc<span>&#46;</span>edu</a></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">organization:</th><td class="field-body">Space Science and Engineering Center (SSEC)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">copyright:</th><td class="field-body">Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">date:</th><td class="field-body">Jan 2012</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: awips_netcdf.py 68 2012-04-20 15:35:04Z davidh $</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="polar2grid.awips_netcdf.awips_backend">
+<tt class="descclassname">polar2grid.awips_netcdf.</tt><tt class="descname">awips_backend</tt><big>(</big><em>img_filepath</em>, <em>nc_template</em>, <em>nc_filepath</em>, <em>kind</em>, <em>band</em>, <em>data_kind</em>, <em>start_dt</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/awips_netcdf.html#awips_backend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.awips_netcdf.awips_backend" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.awips_netcdf.fill">
+<tt class="descclassname">polar2grid.awips_netcdf.</tt><tt class="descname">fill</tt><big>(</big><em>nc_name</em>, <em>image</em>, <em>template</em>, <em>start_dt</em><big>)</big><a class="reference internal" href="_modules/polar2grid/awips_netcdf.html#fill"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.awips_netcdf.fill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy a template file to destination and fill it
+with the provided image data.</p>
+<p>WARNING: Timing information is not added</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.awips_netcdf.go">
+<tt class="descclassname">polar2grid.awips_netcdf.</tt><tt class="descname">go</tt><big>(</big><em>img_name</em>, <em>template</em>, <em>nc_name=None</em><big>)</big><a class="reference internal" href="_modules/polar2grid/awips_netcdf.html#go"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.awips_netcdf.go" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 <div class="section" id="module-polar2grid.core">
 <span id="core-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">core</span></tt> Module<a class="headerlink" href="#module-polar2grid.core" title="Permalink to this headline">¶</a></h2>
@@ -381,7 +506,7 @@ condition of <cite>geo_info</cite>.</p>
 </tr>
 <tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id$</td>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: core.py 68 2012-04-20 15:35:04Z davidh $</td>
 </tr>
 </tbody>
 </table>
@@ -464,7 +589,7 @@ ms2gt utilities.</p>
 </tr>
 <tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id$</td>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: ms2gt.py 68 2012-04-20 15:35:04Z davidh $</td>
 </tr>
 </tbody>
 </table>
@@ -479,8 +604,8 @@ ms2gt utilities.</p>
 <dd></dd></dl>
 
 </div>
-<div class="section" id="plot-ncdata-module">
-<h2><tt class="xref py py-mod docutils literal"><span class="pre">plot_ncdata</span></tt> Module<a class="headerlink" href="#plot-ncdata-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-polar2grid.plot_ncdata">
+<span id="plot-ncdata-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">plot_ncdata</span></tt> Module<a class="headerlink" href="#module-polar2grid.plot_ncdata" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-polar2grid.rescale">
 <span id="rescale-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">rescale</span></tt> Module<a class="headerlink" href="#module-polar2grid.rescale" title="Permalink to this headline">¶</a></h2>
@@ -509,7 +634,7 @@ to change the array in place.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id$</td>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: rescale.py 68 2012-04-20 15:35:04Z davidh $</td>
 </tr>
 </tbody>
 </table>
@@ -566,8 +691,116 @@ after the remapping (so just a 0-1 to 0-255 scaling.</p>
 <dd></dd></dl>
 
 </div>
-<div class="section" id="viirs2awips-module">
-<h2><tt class="xref py py-mod docutils literal"><span class="pre">viirs2awips</span></tt> Module<a class="headerlink" href="#viirs2awips-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-polar2grid.viirs2awips">
+<span id="viirs2awips-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">viirs2awips</span></tt> Module<a class="headerlink" href="#module-polar2grid.viirs2awips" title="Permalink to this headline">¶</a></h2>
+<p>Script that uses the <cite>polar2grid</cite> toolbox of modules to take VIIRS
+hdf5 (.h5) files and create a properly scaled AWIPS compatible NetCDF file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">author:</th><td class="field-body">David Hoese (davidh)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">contact:</th><td class="field-body"><a class="reference external" href="mailto:david&#46;hoese&#37;&#52;&#48;ssec&#46;wisc&#46;edu">david<span>&#46;</span>hoese<span>&#64;</span>ssec<span>&#46;</span>wisc<span>&#46;</span>edu</a></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">organization:</th><td class="field-body">Space Science and Engineering Center (SSEC)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">copyright:</th><td class="field-body">Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">date:</th><td class="field-body">Jan 2012</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: viirs2awips.py 68 2012-04-20 15:35:04Z davidh $</td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="polar2grid.viirs2awips.create_grid_jobs">
+<tt class="descclassname">polar2grid.viirs2awips.</tt><tt class="descname">create_grid_jobs</tt><big>(</big><em>kind</em>, <em>bands</em>, <em>fbf_lat</em>, <em>fbf_lon</em>, <em>start_dt</em>, <em>forced_grids=None</em>, <em>forced_gpd=None</em>, <em>forced_nc=None</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs2awips.html#create_grid_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs2awips.create_grid_jobs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs2awips.main">
+<tt class="descclassname">polar2grid.viirs2awips.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs2awips.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs2awips.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs2awips.process_kind">
+<tt class="descclassname">polar2grid.viirs2awips.</tt><tt class="descname">process_kind</tt><big>(</big><em>filepaths</em>, <em>fornav_D=None</em>, <em>fornav_d=None</em>, <em>forced_grid=None</em>, <em>forced_gpd=None</em>, <em>forced_nc=None</em>, <em>num_procs=1</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs2awips.html#process_kind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs2awips.process_kind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process all the files provided from start to finish,
+from filename to AWIPS NC file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs2awips.remove_products">
+<tt class="descclassname">polar2grid.viirs2awips.</tt><tt class="descname">remove_products</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs2awips.html#remove_products"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs2awips.remove_products" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove as many of the possible files that were created from a previous
+run of this script.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs2awips.run_prescaling">
+<tt class="descclassname">polar2grid.viirs2awips.</tt><tt class="descname">run_prescaling</tt><big>(</big><em>kind</em>, <em>band</em>, <em>data_kind</em>, <em>img_filepath</em>, <em>mode_filepath</em>, <em>require_dn=False</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs2awips.html#run_prescaling"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs2awips.run_prescaling" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wrapper function for calling the prescaling functions.  This function
+will read the binary image data from <tt class="docutils literal"><span class="pre">img_filepath</span></tt> as well as any other
+data that may be required to prescale the data correctly, such as
+day/night/twilight masks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>kind <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Kind of band that we are prescaling (ex. <tt class="docutils literal"><span class="pre">I</span></tt> or <tt class="docutils literal"><span class="pre">M</span></tt> or <tt class="docutils literal"><span class="pre">DNB</span></tt>).</p>
+</dd>
+<dt>band <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Band number that we are prescaling (ex. <tt class="docutils literal"><span class="pre">01</span></tt> or <tt class="docutils literal"><span class="pre">00</span></tt> for DNB).</p>
+</dd>
+<dt>data_kind <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Kind of data being prescaled using the constants defined
+in <cite>polar2grid.adl_guidebook</cite>.</p>
+</dd>
+<dt>img_filepath <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Filepath to the binary image swath data in FBF format
+(ex. <tt class="docutils literal"><span class="pre">image_I01.real4.6400.10176</span></tt>).</p>
+</dd>
+<dt>mode_filepath <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Filepath to the binary mode swath data in FBF format
+(ex. <tt class="docutils literal"><span class="pre">mode_I01.real4.6400.10176</span></tt>).</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Keywords :</th><td class="field-body"><dl class="first last docutils">
+<dt>require_dn: bool</dt>
+<dd><p class="first last">Specify whether the day/night/twilight masks are required to
+make properly prescale this data.  Such as DNB data.
+Defaults to <tt class="docutils literal"><span class="pre">False</span></tt>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.viirs2awips.run_viirs2awips">
+<tt class="descclassname">polar2grid.viirs2awips.</tt><tt class="descname">run_viirs2awips</tt><big>(</big><em>filepaths</em>, <em>fornav_D=None</em>, <em>fornav_d=None</em>, <em>forced_grid=None</em>, <em>forced_gpd=None</em>, <em>forced_nc=None</em>, <em>multiprocess=True</em>, <em>num_procs=1</em><big>)</big><a class="reference internal" href="_modules/polar2grid/viirs2awips.html#run_viirs2awips"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.viirs2awips.run_viirs2awips" title="Permalink to this definition">¶</a></dt>
+<dd><p>Go through the motions of converting
+a VIIRS h5 file into a AWIPS NetCDF file.</p>
+<ol class="arabic simple">
+<li>adl_guidebook.py         : Get file info/data</li>
+<li>viirs_imager_to_swath.py : Concatenate data</li>
+<li>Calculat Grid            : Figure out what grids the data fits in</li>
+<li>ll2cr</li>
+<li>fornav</li>
+<li>rescale.py</li>
+<li>awips_netcdf.py</li>
+</ol>
+</dd></dl>
+
 </div>
 <div class="section" id="module-polar2grid.viirs_imager_to_swath">
 <span id="viirs-imager-to-swath-module"></span><h2><tt class="xref py py-mod docutils literal"><span class="pre">viirs_imager_to_swath</span></tt> Module<a class="headerlink" href="#module-polar2grid.viirs_imager_to_swath" title="Permalink to this headline">¶</a></h2>
@@ -591,7 +824,7 @@ Write out Swath binary files used by ms2gt tools.</p>
 </tr>
 <tr class="field-odd field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
 </tr>
-<tr class="field-even field"><th class="field-name">revision:</th><td class="field-body">$Id: viirs_imager_to_swath.py 67 2012-04-19 21:48:04Z davidh $</td>
+<tr class="field-even field"><th class="field-name">revision:</th><td class="field-body">$Id: viirs_imager_to_swath.py 68 2012-04-20 15:35:04Z davidh $</td>
 </tr>
 </tbody>
 </table>
@@ -982,13 +1215,13 @@ bad geonav data properly.</p>
 <li><a class="reference internal" href="#">polar2grid Package</a><ul>
 <li><a class="reference internal" href="#id1"><tt class="docutils literal"><span class="pre">polar2grid</span></tt> Package</a></li>
 <li><a class="reference internal" href="#module-polar2grid.adl_guidebook"><tt class="docutils literal"><span class="pre">adl_guidebook</span></tt> Module</a></li>
-<li><a class="reference internal" href="#awips-config-module"><tt class="docutils literal"><span class="pre">awips_config</span></tt> Module</a></li>
-<li><a class="reference internal" href="#awips-netcdf-module"><tt class="docutils literal"><span class="pre">awips_netcdf</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-polar2grid.awips_config"><tt class="docutils literal"><span class="pre">awips_config</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-polar2grid.awips_netcdf"><tt class="docutils literal"><span class="pre">awips_netcdf</span></tt> Module</a></li>
 <li><a class="reference internal" href="#module-polar2grid.core"><tt class="docutils literal"><span class="pre">core</span></tt> Module</a></li>
 <li><a class="reference internal" href="#module-polar2grid.ms2gt"><tt class="docutils literal"><span class="pre">ms2gt</span></tt> Module</a></li>
-<li><a class="reference internal" href="#plot-ncdata-module"><tt class="docutils literal"><span class="pre">plot_ncdata</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-polar2grid.plot_ncdata"><tt class="docutils literal"><span class="pre">plot_ncdata</span></tt> Module</a></li>
 <li><a class="reference internal" href="#module-polar2grid.rescale"><tt class="docutils literal"><span class="pre">rescale</span></tt> Module</a></li>
-<li><a class="reference internal" href="#viirs2awips-module"><tt class="docutils literal"><span class="pre">viirs2awips</span></tt> Module</a></li>
+<li><a class="reference internal" href="#module-polar2grid.viirs2awips"><tt class="docutils literal"><span class="pre">viirs2awips</span></tt> Module</a></li>
 <li><a class="reference internal" href="#module-polar2grid.viirs_imager_to_swath"><tt class="docutils literal"><span class="pre">viirs_imager_to_swath</span></tt> Module</a></li>
 </ul>
 </li>

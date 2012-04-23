@@ -27,7 +27,7 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="polar2grid 0.0.4 documentation" href="index.html" />
     <link rel="next" title="Scripts" href="scripts.html" />
-    <link rel="prev" title="Rescaling" href="rescaling.html" /> 
+    <link rel="prev" title="ms2gt Utilities" href="ms2gt.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +43,7 @@
           <a href="scripts.html" title="Scripts"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="rescaling.html" title="Rescaling"
+          <a href="ms2gt.html" title="ms2gt Utilities"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">polar2grid 0.0.4 documentation</a> &raquo;</li> 
       </ul>
@@ -58,7 +58,23 @@
 <h1>Backends<a class="headerlink" href="#backends" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="awips-netcdf">
 <h2>AWIPS NetCDF<a class="headerlink" href="#awips-netcdf" title="Permalink to this headline">¶</a></h2>
-<p>TODO</p>
+<p>The AWIPS NetCDF backend takes remapped binary image data and creates an
+AWIPS-compatible NetCDF file.  To accomplish this the backend must rescale
+the image data to a 0-255 range, where 0 is a fill/invalid value.  AWIPS
+requires unsigned byte integers for its data which results in this range.
+It then fills in a NetCDF file template with the rescaled image data.</p>
+<p>Reflectance data is rescaled using the following formula:</p>
+<div class="math">
+<p><img src="_images/math/e1afe2df5e1ecc817c6e3ef4ebb743b03cda9d7b.png" alt="rescaleddata = round(\sqrt{data * 100.0} * 25.5)"/></p>
+</div><p>Brightness Temperature data is rescaled using the following formula:</p>
+<blockquote>
+<div><p>if temp_value &lt; 242.0:</p>
+<div class="math">
+<p><img src="_images/math/64cff68a645cd0a9092e2dae94d3930b883db12e.png" alt="rescaleddata = 418 - temp"/></p>
+</div><p>if temp_value &gt;- 242.0:</p>
+<div class="math">
+<p><img src="_images/math/6ef3e9e64799de5ffc952f5a337f8fbd3cd09507.png" alt="rescaleddata = 660 - (2 * temp)"/></p>
+</div></div></blockquote>
 </div>
 </div>
 
@@ -77,8 +93,8 @@
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="rescaling.html"
-                        title="previous chapter">Rescaling</a></p>
+  <p class="topless"><a href="ms2gt.html"
+                        title="previous chapter">ms2gt Utilities</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="scripts.html"
                         title="next chapter">Scripts</a></p>
@@ -117,7 +133,7 @@
           <a href="scripts.html" title="Scripts"
              >next</a> |</li>
         <li class="right" >
-          <a href="rescaling.html" title="Rescaling"
+          <a href="ms2gt.html" title="ms2gt Utilities"
              >previous</a> |</li>
         <li><a href="index.html">polar2grid 0.0.4 documentation</a> &raquo;</li> 
       </ul>

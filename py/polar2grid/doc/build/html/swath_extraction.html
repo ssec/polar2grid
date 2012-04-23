@@ -56,7 +56,25 @@
             
   <div class="section" id="swath-extraction">
 <h1>Swath Extraction<a class="headerlink" href="#swath-extraction" title="Permalink to this headline">¶</a></h1>
-<p>TODO</p>
+<p>Swath extraction is the process of combining imager data granules into one
+swath.  This is usually the first major step in the polar2grid remapping
+process, which means that it is also responsible for providing all
+the meta data to the rest of the polar2grid &#8220;chain&#8221;.  The very basic
+responsibility of the swath extraction step is to make flat binary
+swath files for latitude, longitude, and image data.</p>
+<p>From a developer stand point, there is no required series of steps or
+order to any steps for the swath extraction process.  It is only required that
+at least the 3 swath files and a meta data dictionary are provided
+to allow for further processing.  As an example the VIIRS swath extractor
+takes these steps:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Parse meta data from the image filepaths</li>
+<li>Parse meta data from the geonav filepaths</li>
+<li>Read in latitude and longitude data and append it to a flat binary file</li>
+<li>Read in image data and append it to a flat binary file</li>
+</ol>
+</div></blockquote>
 </div>
 
 
