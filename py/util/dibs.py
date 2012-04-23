@@ -97,7 +97,8 @@ def sync(lat, lon, radius, start=None, end=None):
     bad = list()
     good = list()
     new_files = defaultdict(list)
-    for nfo, url in flo_find(lat, lon, radius, start, end):
+    inventory = list(flo_find(lat, lon, radius, start, end))
+    for nfo, url in inventory:
         filename = nfo.group(0)
         LOG.debug('checking %s @ %s' % (filename, url))
         if os.path.isfile(filename):
