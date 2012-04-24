@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>polar2grid.awips_config &mdash; polar2grid 0.0.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="polar2grid 0.0.4 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">polar2grid 0.0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for polar2grid.awips_config</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c"># encoding: utf-8</span>
+<span class="sd">&quot;&quot;&quot;Functions to read configuration files for the viirs2awips.</span>
+
+<span class="sd">Instances of default configuration file locations and contents.</span>
+
+<span class="sd">Configuration files from which the above are derived</span>
+<span class="sd">Global objects representing configuration files</span>
+
+<span class="sd">:Variables:</span>
+<span class="sd">    GRIDS : dict</span>
+<span class="sd">        Mappings to product_id and NC filename format</span>
+<span class="sd">    BANDS : dict</span>
+<span class="sd">        Mappings to product_id and NC filename format</span>
+<span class="sd">    GRID_TEMPLATES : dict</span>
+<span class="sd">        Mappings to gpd and NC templates.</span>
+<span class="sd">    SHAPES : dict </span>
+<span class="sd">        Mappings of grid name to lat/lon boundaries and coverage percentage</span>
+<span class="sd">    PRODUCTS_FILE</span>
+<span class="sd">        File holding band to grid mappings, including product_id and NC</span>
+<span class="sd">        filename format</span>
+<span class="sd">    ANCIL_DIR</span>
+<span class="sd">        Directory holding gpd and nc templates for AWIPS grids.</span>
+<span class="sd">    SHAPES_FILE</span>
+<span class="sd">        File holding grid boundaries for grids specified in the</span>
+<span class="sd">        grids directory and products.conf file</span>
+
+<span class="sd">:author:       David Hoese (davidh)</span>
+<span class="sd">:contact:      david.hoese@ssec.wisc.edu</span>
+<span class="sd">:organization: Space Science and Engineering Center (SSEC)</span>
+<span class="sd">:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.</span>
+<span class="sd">:date:         Jan 2012</span>
+<span class="sd">:license:      GNU GPLv3</span>
+<span class="sd">:revision:     $Id: awips_config.py 68 2012-04-20 15:35:04Z davidh $</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s">&quot;restructuredtext en&quot;</span>
+
+<span class="kn">from</span> <span class="nn">netCDF4</span> <span class="kn">import</span> <span class="n">Dataset</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+<span class="c"># Get configuration file locations</span>
+<span class="n">script_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">default_grids_config</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">script_dir</span><span class="p">,</span> <span class="s">&quot;awips_grids.conf&quot;</span><span class="p">)</span>
+<span class="n">default_ancil_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">script_dir</span><span class="p">,</span> <span class="s">&quot;grids&quot;</span><span class="p">)</span>
+<span class="n">default_shapes_config</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">script_dir</span><span class="p">,</span> <span class="s">&quot;awips_shapes.conf&quot;</span><span class="p">)</span>
+<span class="n">GRIDS_CONFIG</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;VIIRS_GRIDS_CONFIG&quot;</span><span class="p">,</span> <span class="n">default_grids_config</span><span class="p">)</span>
+<span class="n">ANCIL_DIR</span>     <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;VIIRS_ANCIL_DIR&quot;</span><span class="p">,</span> <span class="n">default_ancil_dir</span><span class="p">)</span>
+<span class="n">SHAPES_CONFIG</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;VIIRS_SHAPE_CONFIG&quot;</span><span class="p">,</span> <span class="n">default_shapes_config</span><span class="p">)</span>
+
+<div class="viewcode-block" id="find_grid_templates"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.awips_config.find_grid_templates">[docs]</a><span class="k">def</span> <span class="nf">find_grid_templates</span><span class="p">(</span><span class="n">ancil_dir</span><span class="p">):</span>
+    <span class="n">grid_templates</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c"># Get a set of the &quot;grid211&quot; part of every template</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">ANCIL_DIR</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;grid&quot;</span><span class="p">)]):</span>
+        <span class="n">nc_temp</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="s">&quot;.nc&quot;</span>
+        <span class="n">gpd_temp</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="s">&quot;.gpd&quot;</span>
+        <span class="n">nc_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ANCIL_DIR</span><span class="p">,</span> <span class="n">nc_temp</span><span class="p">)</span>
+        <span class="n">gpd_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ANCIL_DIR</span><span class="p">,</span> <span class="n">gpd_temp</span><span class="p">)</span>
+        <span class="n">grid_number</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">nc_path</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">gpd_path</span><span class="p">):</span>
+            <span class="n">grid_templates</span><span class="p">[</span><span class="n">grid_number</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">gpd_path</span><span class="p">,</span> <span class="n">nc_path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grid_templates</span>
+</div>
+<div class="viewcode-block" id="read_grid_config"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.awips_config.read_grid_config">[docs]</a><span class="k">def</span> <span class="nf">read_grid_config</span><span class="p">(</span><span class="n">config_filepath</span><span class="p">):</span>
+    <span class="c"># grid -&gt; band -&gt; (product_id,nc_name)</span>
+    <span class="n">grids_map</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c"># band -&gt; grid -&gt; (product_id,nc_name)</span>
+    <span class="n">bands_map</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_filepath</span><span class="p">):</span>
+        <span class="c"># For comments</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;#&quot;</span><span class="p">):</span> <span class="k">continue</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;,&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;ERROR: Need at least 4 columns in templates.conf (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="n">line</span>
+        <span class="n">product_id</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">grid_number</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">band</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">band</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;ERROR: Expected 3 characters for band got </span><span class="si">%d</span><span class="s"> (</span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">band</span><span class="p">),</span><span class="n">band</span><span class="p">)</span>
+        <span class="n">nc_name</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">grid_number</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">grids_map</span><span class="p">:</span>
+            <span class="n">grids_map</span><span class="p">[</span><span class="n">grid_number</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">band</span> <span class="ow">in</span> <span class="n">grids_map</span><span class="p">[</span><span class="n">grid_number</span><span class="p">]:</span>
+            <span class="k">print</span> <span class="s">&quot;ERROR: templates.conf contains two or more entries for grid </span><span class="si">%s</span><span class="s"> and band </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">grid_number</span><span class="p">,</span><span class="n">band</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">band</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">bands_map</span><span class="p">:</span>
+            <span class="n">bands_map</span><span class="p">[</span><span class="n">band</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">grid_number</span> <span class="ow">in</span> <span class="n">bands_map</span><span class="p">[</span><span class="n">band</span><span class="p">]:</span>
+            <span class="k">print</span> <span class="s">&quot;ERROR: templates.conf contains two or more entries for grid </span><span class="si">%s</span><span class="s"> and band </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">grid_number</span><span class="p">,</span><span class="n">band</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">val</span> <span class="o">=</span> <span class="p">(</span><span class="n">product_id</span><span class="p">,</span><span class="n">nc_name</span><span class="p">)</span>
+        <span class="n">bands_map</span><span class="p">[</span><span class="n">band</span><span class="p">][</span><span class="n">grid_number</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="n">grids_map</span><span class="p">[</span><span class="n">grid_number</span><span class="p">][</span><span class="n">band</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+    <span class="k">return</span> <span class="n">grids_map</span><span class="p">,</span><span class="n">bands_map</span>
+</div>
+<div class="viewcode-block" id="read_shapes_config"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.awips_config.read_shapes_config">[docs]</a><span class="k">def</span> <span class="nf">read_shapes_config</span><span class="p">(</span><span class="n">config_filepath</span><span class="p">):</span>
+    <span class="n">shapes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="nb">tuple</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">6</span><span class="p">]]))</span> <span class="k">for</span> <span class="n">parts</span> <span class="ow">in</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;,&quot;</span><span class="p">)</span> 
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_filepath</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;#&quot;</span><span class="p">)</span> <span class="p">]</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">shapes</span>
+</div>
+<span class="n">GRID_TEMPLATES</span> <span class="o">=</span> <span class="n">find_grid_templates</span><span class="p">(</span><span class="n">ANCIL_DIR</span><span class="p">)</span>
+<span class="n">GRIDS</span><span class="p">,</span><span class="n">BANDS</span> <span class="o">=</span> <span class="n">read_grid_config</span><span class="p">(</span><span class="n">GRIDS_CONFIG</span><span class="p">)</span>
+<span class="n">SHAPES</span> <span class="o">=</span> <span class="n">read_shapes_config</span><span class="p">(</span><span class="n">SHAPES_CONFIG</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_get_awips_info</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">grid_number</span><span class="p">,</span>
+        <span class="n">GRIDS</span><span class="o">=</span><span class="n">GRIDS</span><span class="p">,</span> <span class="n">BANDS</span><span class="o">=</span><span class="n">BANDS</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s">&quot;DNB&quot;</span><span class="p">:</span>
+        <span class="n">bname</span> <span class="o">=</span> <span class="n">kind</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">bname</span> <span class="o">=</span> <span class="n">kind</span> <span class="o">+</span> <span class="n">band</span>
+    <span class="k">if</span> <span class="n">bname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">BANDS</span> <span class="ow">or</span> <span class="n">grid_number</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">GRIDS</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Band </span><span class="si">%s</span><span class="s"> or grid </span><span class="si">%s</span><span class="s"> not found in templates.conf&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">bname</span><span class="p">,</span><span class="n">grid_number</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Band </span><span class="si">%s</span><span class="s"> or grid </span><span class="si">%s</span><span class="s"> not found in templates.conf&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">bname</span><span class="p">,</span><span class="n">grid_number</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">GRIDS</span><span class="p">[</span><span class="n">grid_number</span><span class="p">][</span><span class="n">bname</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">_get_grid_templates</span><span class="p">(</span><span class="n">grid_number</span><span class="p">,</span> <span class="n">gpd</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nc</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">GRID_TEMPLATES</span><span class="o">=</span><span class="n">GRID_TEMPLATES</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">grid_number</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">GRID_TEMPLATES</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">nc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">gpd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">gpd</span><span class="p">,</span><span class="n">nc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t find grid </span><span class="si">%s</span><span class="s"> in grid templates&quot;</span> <span class="o">%</span> <span class="n">grid_number</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t find grid </span><span class="si">%s</span><span class="s"> in grid templates&quot;</span> <span class="o">%</span> <span class="n">grid_number</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">use_gpd</span> <span class="o">=</span> <span class="n">GRID_TEMPLATES</span><span class="p">[</span><span class="n">grid_number</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">use_nc</span> <span class="o">=</span> <span class="n">GRID_TEMPLATES</span><span class="p">[</span><span class="n">grid_number</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">use_gpd</span> <span class="o">=</span> <span class="n">gpd</span> <span class="ow">or</span> <span class="n">use_gpd</span>
+        <span class="n">use_nc</span> <span class="o">=</span> <span class="n">nc</span> <span class="ow">or</span> <span class="n">use_nc</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">use_gpd</span><span class="p">,</span><span class="n">use_nc</span><span class="p">)</span>
+
+<div class="viewcode-block" id="get_grid_info"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.awips_config.get_grid_info">[docs]</a><span class="k">def</span> <span class="nf">get_grid_info</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">grid_number</span><span class="p">,</span> <span class="n">gpd</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nc</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">GRIDS</span><span class="o">=</span><span class="n">GRIDS</span><span class="p">,</span> <span class="n">BANDS</span><span class="o">=</span><span class="n">BANDS</span><span class="p">,</span>
+        <span class="n">SHAPES</span><span class="o">=</span><span class="n">SHAPES</span><span class="p">,</span> <span class="n">GRID_TEMPLATES</span><span class="o">=</span><span class="n">GRID_TEMPLATES</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Assumes verify_grid was already run to verify that the information</span>
+<span class="sd">    was available.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">awips_info</span> <span class="o">=</span> <span class="n">_get_awips_info</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">grid_number</span><span class="p">)</span>
+    <span class="n">temp_info</span> <span class="o">=</span> <span class="n">_get_grid_templates</span><span class="p">(</span><span class="n">grid_number</span><span class="p">,</span> <span class="n">gpd</span><span class="p">,</span> <span class="n">nc</span><span class="p">)</span>
+
+    <span class="c"># Get number of rows and columns for the output grid</span>
+    <span class="n">nc</span> <span class="o">=</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">temp_info</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">out_rows</span><span class="p">,</span><span class="n">out_cols</span><span class="p">)</span> <span class="o">=</span> <span class="n">nc</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s">&quot;image&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Number of output columns calculated from NC template </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out_cols</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Number of output rows calculated from NC template </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">out_rows</span><span class="p">)</span>
+
+    <span class="n">grid_info</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">grid_info</span><span class="p">[</span><span class="s">&quot;grid_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_number</span>
+    <span class="n">grid_info</span><span class="p">[</span><span class="s">&quot;product_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">awips_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">grid_info</span><span class="p">[</span><span class="s">&quot;nc_format&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">awips_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">grid_info</span><span class="p">[</span><span class="s">&quot;gpd_template&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">grid_info</span><span class="p">[</span><span class="s">&quot;nc_template&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">grid_info</span><span class="p">[</span><span class="s">&quot;out_rows&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">out_rows</span>
+    <span class="n">grid_info</span><span class="p">[</span><span class="s">&quot;out_cols&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">out_cols</span>
+    <span class="k">return</span> <span class="n">grid_info</span>
+
+</div>
+<div class="viewcode-block" id="verify_config"><a class="viewcode-back" href="../../polar2grid.html#polar2grid.awips_config.verify_config">[docs]</a><span class="k">def</span> <span class="nf">verify_config</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">band</span><span class="p">,</span> <span class="n">grid_number</span><span class="p">,</span> <span class="n">gpd</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nc</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">GRIDS</span><span class="o">=</span><span class="n">GRIDS</span><span class="p">,</span> <span class="n">BANDS</span><span class="o">=</span><span class="n">BANDS</span><span class="p">,</span>
+        <span class="n">SHAPES</span><span class="o">=</span><span class="n">SHAPES</span><span class="p">,</span> <span class="n">GRID_TEMPLATES</span><span class="o">=</span><span class="n">GRID_TEMPLATES</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s">&quot;DNB&quot;</span><span class="p">:</span>
+        <span class="n">bname</span> <span class="o">=</span> <span class="n">kind</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">bname</span> <span class="o">=</span> <span class="n">kind</span> <span class="o">+</span> <span class="n">band</span>
+
+    <span class="k">if</span> <span class="n">bname</span> <span class="ow">in</span> <span class="n">BANDS</span> <span class="ow">and</span> \
+        <span class="n">grid_number</span> <span class="ow">in</span> <span class="n">GRIDS</span> <span class="ow">and</span> \
+        <span class="n">bname</span> <span class="ow">in</span> <span class="n">GRIDS</span><span class="p">[</span><span class="n">grid_number</span><span class="p">]</span> <span class="ow">and</span> \
+        <span class="n">grid_number</span> <span class="ow">in</span> <span class="n">SHAPES</span> <span class="ow">and</span> \
+        <span class="p">(</span><span class="n">grid_number</span> <span class="ow">in</span> <span class="n">GRID_TEMPLATES</span> <span class="ow">or</span> \
+        <span class="p">(</span><span class="n">gpd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">nc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">False</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+    <span class="k">print</span> <span class="s">&quot;Grid Templates:&quot;</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">GRID_TEMPLATES</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;Grids map:&quot;</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">GRIDS</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;Bands map:&quot;</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">BANDS</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;Shapes map:&quot;</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">SHAPES</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">verify_config</span><span class="p">(</span><span class="o">*</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">valid</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Kind,band,grid_number in configs: YES&quot;</span>
+            <span class="n">pprint</span><span class="p">(</span><span class="n">get_grid_info</span><span class="p">(</span><span class="o">*</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Kind,band,grid_number in configs: NO&quot;</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">polar2grid 0.0.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, University of Wisconsin SSEC.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

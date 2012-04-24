@@ -506,7 +506,7 @@ with the provided image data.</p>
 </tr>
 <tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: core.py 68 2012-04-20 15:35:04Z davidh $</td>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: core.py 78 2012-04-24 17:24:37Z davidh $</td>
 </tr>
 </tbody>
 </table>
@@ -634,7 +634,7 @@ to change the array in place.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: rescale.py 68 2012-04-20 15:35:04Z davidh $</td>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: rescale.py 78 2012-04-24 17:24:37Z davidh $</td>
 </tr>
 </tbody>
 </table>
@@ -650,6 +650,11 @@ to change the array in place.</td>
 The masks are expected to be passed as &#8220;day_mask&#8221; and &#8220;night_mask&#8221; in the kwargs for this method.</p>
 <p>A histogram equalization will be performed separately for each of the two masks that&#8217;s present in the kwargs.</p>
 </dd></dl>
+
+<dl class="function">
+<dt id="polar2grid.rescale.fog_scale">
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">fog_scale</tt><big>(</big><em>img</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#polar2grid.rescale.fog_scale" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="function">
 <dt id="polar2grid.rescale.main">
@@ -672,13 +677,79 @@ after the remapping (so just a 0-1 to 0-255 scaling.</p>
 
 <dl class="function">
 <dt id="polar2grid.rescale.prescale">
-<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">prescale</tt><big>(</big><em>img</em>, <em>kind='DNB'</em>, <em>band=0</em>, <em>data_kind='ReflectanceVar'</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#prescale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.prescale" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">prescale</tt><big>(</big><em>img</em>, <em>kind='DNB'</em>, <em>band='00'</em>, <em>data_kind='ReflectanceVar'</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#prescale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.prescale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls the appropriate scaling function based on the provided keyword
+arguments and returns the new array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>img <span class="classifier-delimiter">:</span> <span class="classifier">numpy.ndarray</span></dt>
+<dd><p class="first last">2D Array of swath satellite imager data to be scaled</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Keywords :</th><td class="field-body"><dl class="first last docutils">
+<dt>kind <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Kind of band (ex. I or M or DNB)</p>
+</dd>
+<dt>band <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Band number (ex. 01 or 00 for DNB)</p>
+</dd>
+<dt>data_kind <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Constant from <cite>polar2grid.core</cite> representing the type of data
+being passed</p>
+</dd>
+<dt>func <span class="classifier-delimiter">:</span> <span class="classifier">function pointer</span></dt>
+<dd><p class="first last">Specify the function to use to scale the data instead of the
+default</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="function">
 <dt id="polar2grid.rescale.rescale">
-<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">rescale</tt><big>(</big><em>img</em>, <em>kind='M'</em>, <em>band=5</em>, <em>data_kind='RadianceVar'</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#rescale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.rescale" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<tt class="descclassname">polar2grid.rescale.</tt><tt class="descname">rescale</tt><big>(</big><em>img</em>, <em>kind='I'</em>, <em>band='01'</em>, <em>data_kind='ReflectanceVar'</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/polar2grid/rescale.html#rescale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#polar2grid.rescale.rescale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls the appropriate scaling function based on the provided keyword
+arguments and returns the new array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters :</th><td class="field-body"><dl class="first docutils">
+<dt>img <span class="classifier-delimiter">:</span> <span class="classifier">numpy.ndarray</span></dt>
+<dd><p class="first last">2D Array of remapped satellite imager data to be scaled</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Keywords :</th><td class="field-body"><dl class="first last docutils">
+<dt>kind <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Kind of band (ex. I or M or DNB)</p>
+</dd>
+<dt>band <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Band number (ex. 01 or 00 for DNB)</p>
+</dd>
+<dt>data_kind <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">Constant from <cite>polar2grid.core</cite> representing the type of data
+being passed</p>
+</dd>
+<dt>func <span class="classifier-delimiter">:</span> <span class="classifier">function pointer</span></dt>
+<dd><p class="first last">Specify the function to use to scale the data instead of the
+default</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="function">
 <dt id="polar2grid.rescale.rescale_and_write">
@@ -711,7 +782,7 @@ hdf5 (.h5) files and create a properly scaled AWIPS compatible NetCDF file.</p>
 </tr>
 <tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: viirs2awips.py 68 2012-04-20 15:35:04Z davidh $</td>
+<tr class="field-odd field"><th class="field-name">revision:</th><td class="field-body">$Id: viirs2awips.py 80 2012-04-24 20:48:42Z davidh $</td>
 </tr>
 </tbody>
 </table>
@@ -759,7 +830,7 @@ day/night/twilight masks.</p>
 </dd>
 <dt>data_kind <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
 <dd><p class="first last">Kind of data being prescaled using the constants defined
-in <cite>polar2grid.adl_guidebook</cite>.</p>
+in <cite>polar2grid.core</cite>.</p>
 </dd>
 <dt>img_filepath <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
 <dd><p class="first last">Filepath to the binary image swath data in FBF format
@@ -791,8 +862,9 @@ Defaults to <tt class="docutils literal"><span class="pre">False</span></tt>.</p
 <dd><p>Go through the motions of converting
 a VIIRS h5 file into a AWIPS NetCDF file.</p>
 <ol class="arabic simple">
-<li>adl_guidebook.py         : Get file info/data</li>
+<li>viirs_guidebook.py       : Get file info/data</li>
 <li>viirs_imager_to_swath.py : Concatenate data</li>
+<li>Prescale DNB</li>
 <li>Calculat Grid            : Figure out what grids the data fits in</li>
 <li>ll2cr</li>
 <li>fornav</li>
@@ -824,7 +896,7 @@ Write out Swath binary files used by ms2gt tools.</p>
 </tr>
 <tr class="field-odd field"><th class="field-name">license:</th><td class="field-body">GNU GPLv3</td>
 </tr>
-<tr class="field-even field"><th class="field-name">revision:</th><td class="field-body">$Id: viirs_imager_to_swath.py 68 2012-04-20 15:35:04Z davidh $</td>
+<tr class="field-even field"><th class="field-name">revision:</th><td class="field-body">$Id: viirs_imager_to_swath.py 80 2012-04-24 20:48:42Z davidh $</td>
 </tr>
 </tbody>
 </table>
