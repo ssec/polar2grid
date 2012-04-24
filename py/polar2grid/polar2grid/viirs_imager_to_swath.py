@@ -255,7 +255,7 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     modefo = file(modename, 'wb')
     lafa = file_appender(lafo, dtype=numpy.float32)
     lofa = file_appender(lofo, dtype=numpy.float32)
-    modefa = file_appender(modefo, dtype=numpy.int8)
+    modefa = file_appender(modefo, dtype=numpy.float32)
 
     for ginfo in geo_data:
         # Read in lat/lon data
@@ -292,13 +292,12 @@ def process_geo(meta_data, geo_data, cut_bad=False):
 
     # Rename files
     suffix = '.real4.' + '.'.join(str(x) for x in reversed(lafa.shape))
-    suffix2 = '.int1.' + '.'.join(str(x) for x in reversed(modefa.shape))
     fbf_lat_var = "latitude_%s" % meta_data["kind"]
     fbf_lon_var = "longitude_%s" % meta_data["kind"]
     fbf_mode_var = "mode_%s" % meta_data["kind"]
     fbf_lat = fbf_lat_var + suffix
     fbf_lon = fbf_lon_var + suffix
-    fbf_mode = fbf_mode_var + suffix2
+    fbf_mode = fbf_mode_var + suffix
     os.rename(latname, fbf_lat)
     os.rename(lonname, fbf_lon)
     os.rename(modename, fbf_mode)

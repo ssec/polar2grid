@@ -153,11 +153,10 @@ def run_prescaling(kind, band, data_kind,
         # Only add parameters if they're useful
         if mode_mask.shape == data.shape:
             log.debug("Adding mode mask to rescaling arguments")
-            mode_mask = mode_mask.copy()
-            mode_mask[img == -999.0] = 0
-            scale_kwargs["night_mask"] = mode_mask == 1 
-            scale_kwargs["day_mask"] = mode_mask == 2
-            scale_kwargs["twilight_mask"] = mode_mask == 3
+            good_mask = ~((img == -999.0) | (mode_mask == -999.0))
+            scale_kwargs["night_mask"]    = (mode_mask >= 100) & good_mask
+            scale_kwargs["day_mask"]      = (mode_mask <= 88 ) & good_mask
+            scale_kwargs["twilight_mask"] = (mode_mask >  88 ) & (mode_mask < 100) & good_mask
         elif require_dn:
             log.error("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
             raise ValueError("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))

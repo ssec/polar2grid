@@ -496,18 +496,9 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     # Calculate solar zenith angle mask
     sza_mask = MISSING_GUIDE[K_SOLARZENITH][1](lat_data) if K_SOLARZENITH in MISSING_GUIDE else None
 
-    # Derive mode mask
-    mode_mask = np.zeros(sza_data.shape, dtype=np.int8)
-    # Night
-    mode_mask[sza_data >= 100] = 1
-    # Day
-    mode_mask[sza_data <= 88] = 2
-    # Mixed
-    mode_mask[(88 < sza_data) & (sza_data < 100)] = 3
-
     # Mask off bad data
     # NOTE: There could still be missing image data to account for
-    mode_mask[ lat_mask | lon_mask | sza_mask ] = 0
+    sza_data[ lat_mask | lon_mask | sza_mask ] = fill_value
     lat_data[ lat_mask ] = fill_value
     lon_data[ lon_mask ] = fill_value
 
@@ -515,7 +506,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     finfo["lon_data"] = lon_data
     finfo["lat_mask"] = lat_mask
     finfo["lon_mask"] = lon_mask
-    finfo["mode_mask"] = mode_mask
+    finfo["mode_mask"] = sza_data
     finfo["start_dt"] = start_dt
     # Rows only
     finfo["scan_quality"] = (np.nonzero(lat_mask)[0],)
