@@ -115,7 +115,7 @@ def run_prescaling(kind, band, data_kind,
             Band number that we are prescaling (ex. ``01`` or ``00`` for DNB).
         data_kind : str
             Kind of data being prescaled using the constants defined
-            in `polar2grid.adl_guidebook`.
+            in `polar2grid.core`.
         img_filepath : str
             Filepath to the binary image swath data in FBF format
             (ex. ``image_I01.real4.6400.10176``).
@@ -558,13 +558,14 @@ def run_viirs2awips(filepaths,
     """Go through the motions of converting
     a VIIRS h5 file into a AWIPS NetCDF file.
 
-    1. adl_guidebook.py         : Get file info/data
+    1. viirs_guidebook.py       : Get file info/data
     2. viirs_imager_to_swath.py : Concatenate data
-    3. Calculat Grid            : Figure out what grids the data fits in
-    4. ll2cr
-    5. fornav
-    6. rescale.py
-    7. awips_netcdf.py
+    3. Prescale DNB
+    4. Calculat Grid            : Figure out what grids the data fits in
+    5. ll2cr
+    6. fornav
+    7. rescale.py
+    8. awips_netcdf.py
     """
     # Rewrite/force parameters to specific format
     filepaths = [ os.path.abspath(x) for x in sorted(filepaths) ]

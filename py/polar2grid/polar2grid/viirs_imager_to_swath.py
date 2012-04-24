@@ -15,7 +15,7 @@ Write out Swath binary files used by ms2gt tools.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.adl_guidebook import file_info,geo_info,read_file_info,read_geo_info
+from polar2grid.viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info
 import numpy
 
 import os

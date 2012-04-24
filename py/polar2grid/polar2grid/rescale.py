@@ -20,7 +20,7 @@ and "pretty" with AWIPS.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.adl_guidebook import K_REFLECTANCE,K_RADIANCE,K_BTEMP
+from polar2grid.core import K_REFLECTANCE,K_RADIANCE,K_BTEMP,K_FOG
 
 import os
 import sys
@@ -74,6 +74,9 @@ def bt_scale(img, *args, **kwargs):
     img[low_idx] = 418 - img[low_idx]
     img[z_idx] = FILL
     return img
+
+def fog_scale(img, *args, **kwargs):
+    pass
 
 def dnb_scale(img, *args, **kwargs):
     """
@@ -137,81 +140,99 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mu
     
     return data
 
-M_SCALES = {
-        1  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        2  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        3  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        4  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        5  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        6  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        7  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        8  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        9  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        10 : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        11 : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        12 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:bt_scale},
-        13 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:bt_scale},
-        14 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:bt_scale},
-        15 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:bt_scale},
-        16 : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:bt_scale}
+RESCALES = {
+        K_REFLECTANCE : sqrt_scale,
+        K_RADIANCE    : post_rescale_dnb,
+        K_BTEMP       : bt_scale,
+        K_FOG         : fog_scale
         }
 
-I_SCALES = {
-        1  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        2  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        3  : {K_REFLECTANCE:sqrt_scale, K_RADIANCE:passive_scale, K_BTEMP:passive_scale},
-        4  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:bt_scale},
-        5  : {K_REFLECTANCE:passive_scale, K_RADIANCE:passive_scale, K_BTEMP:bt_scale}
+PRESCALES = {
+        K_REFLECTANCE : passive_scale,
+        K_RADIANCE    : dnb_scale,
+        K_BTEMP       : passive_scale,
+        K_FOG         : passive_scale
         }
 
-DNB_SCALES = {
-        0 : {K_REFLECTANCE:passive_scale, K_RADIANCE:post_rescale_dnb, K_BTEMP:passive_scale}
-        }
+def prescale(img, kind="DNB", band="00", data_kind=K_REFLECTANCE, **kwargs):
+    """Calls the appropriate scaling function based on the provided keyword
+    arguments and returns the new array.
 
-SCALES = {
-        "M"  : M_SCALES,
-        "I"  : I_SCALES,
-        "DNB" : DNB_SCALES
-        }
-
-def prescale(img, kind="DNB", band=0, data_kind=K_REFLECTANCE, **kwargs):
-    band = int(band)
-
-    # FUTURE: If other things need prescaling, mimic the rescale dictionaries
-    if kind == "DNB" and band == 0:
-        new_img = dnb_scale(img, kind=kind, band=band, data_kind=data_kind, **kwargs)
-        return new_img
+    :Parameters:
+        img : numpy.ndarray
+            2D Array of swath satellite imager data to be scaled
+    :Keywords:
+        kind : str
+            Kind of band (ex. I or M or DNB)
+        band : str
+            Band number (ex. 01 or 00 for DNB)
+        data_kind : str
+            Constant from `polar2grid.core` representing the type of data
+            being passed
+        func : function pointer
+            Specify the function to use to scale the data instead of the
+            default
+    """
+    if "func" in kwargs:
+        scale_func = kwargs["func"]
+    elif data_kind not in PRESCALES:
+        log.error("Unknown data kind %s for rescaling" % (data_kind))
+        raise ValueError("Unknown data kind %s for rescaling" % (data_kind))
     else:
-        return img
+        scale_func = PRESCALES[data_kind]
 
-def rescale(img, kind="M", band=5, data_kind=K_RADIANCE, **kwargs):
-    band = int(band) # If it came from a filename, it was a string
+    img = scale_func(img, kind=kind, band=band, data_kind=data_kind, **kwargs)
+    return img
 
-    if kind not in SCALES:
-        log.error("Unknown kind %s, only know %r" % (kind, SCALES.keys()))
-        raise ValueError("Unknown kind %s, only know %r" % (kind, SCALES.keys()))
+def rescale(img, kind="I", band="01", data_kind=K_REFLECTANCE, **kwargs):
+    """Calls the appropriate scaling function based on the provided keyword
+    arguments and returns the new array.
 
-    kind_scale = SCALES[kind]
+    :Parameters:
+        img : numpy.ndarray
+            2D Array of remapped satellite imager data to be scaled
+    :Keywords:
+        kind : str
+            Kind of band (ex. I or M or DNB)
+        band : str
+            Band number (ex. 01 or 00 for DNB)
+        data_kind : str
+            Constant from `polar2grid.core` representing the type of data
+            being passed
+        func : function pointer
+            Specify the function to use to scale the data instead of the
+            default
+    """
+    if "func" in kwargs:
+        # A different scaling function was specified
+        scale_func = kwargs["func"]
+    else:
+        if data_kind not in RESCALES:
+            log.error("Unknown data kind %s for rescaling" % (data_kind))
+            raise ValueError("Unknown data kind %s for rescaling" % (data_kind))
+        scale_func = RESCALES[data_kind]
 
-    if band not in kind_scale:
-        log.error("Unknown band %s for kind %s, only know %r" % (band, kind, kind_scale.keys()))
-        raise ValueError("Unknown band %s for kind %s, only know %r" % (band, kind, kind_scale.keys()))
-
-    dkind_scale = kind_scale[band]
-
-    if data_kind not in dkind_scale:
-        log.error("Unknown data kind %s for kind %s band %s" % (data_kind, kind, band))
-        raise ValueError("Unknown data kind %s for kind %s band %s" % (data_kind, kind, band))
-
-    scale_func = dkind_scale[data_kind]
     img = scale_func(img, kind=kind, band=band, data_kind=data_kind, **kwargs)
     return img
 
 def rescale_and_write(img_file, output_file, *args, **kwargs):
-    # TODO: Open img file
-    img = None
-    new_img = rescale(img, *args, **kwargs)
-    # TODO: Write new_img to output_file
+    from polar2grid.core import Workspace
+    img_fn = os.path.split(img_file)[1]
+    img_fbf_attr = img_fn.split(".")[0]
+    try:
+        W = Workspace(".")
+        img_data = getattr(W, img_fbf_attr)
+        # Need to copy the memory mapped array
+        img_data = img_data.copy()
+    except StandardError:
+        log.error("Could not retrieve %s" % img_fbf_attr)
+        raise
+
+    log.debug("Rescaling img_file")
+    rescale(img_data, *args, **kwargs)
+
+    img_data.tofile(output_file)
+    return 0
 
 def main():
     import optparse

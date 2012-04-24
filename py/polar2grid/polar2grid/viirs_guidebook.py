@@ -18,6 +18,10 @@ Provide information about ADL product files for a variety of uses.
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import UTC
+from polar2grid.core import K_LATITUDE,K_LONGITUDE,K_ALTITUDE,K_RADIANCE, \
+        K_RADIANCE_FACTORS,K_REFLECTANCE,K_REFLECTANCE_FACTORS,K_BTEMP, \
+        K_BTEMP_FACTORS,K_SOLARZENITH,K_STARTTIME,K_QF3,K_NAVIGATION,K_GEO_REF, \
+        K_MODESCAN, K_MODEGRAN
 import h5py as h5
 import numpy as np
 
@@ -28,23 +32,6 @@ from datetime import datetime,timedelta
 
 LOG = logging.getLogger('adl_cdfcb')
 UTC= UTC()
-
-K_LATITUDE = 'LatitudeVar'
-K_LONGITUDE = 'LongitudeVar'
-K_ALTITUDE = 'AltitudeVar'
-K_RADIANCE = 'RadianceVar'
-K_RADIANCE_FACTORS = "RadianceFactorsVar"
-K_REFLECTANCE = 'ReflectanceVar'
-K_REFLECTANCE_FACTORS = "ReflectanceFactorsVar"
-K_BTEMP = "BrightnessTemperatureVar"
-K_BTEMP_FACTORS = "BrightnessTemperatureFactorsVar"
-K_SOLARZENITH = "SolarZenithVar"
-K_STARTTIME = "StartTimeVar"
-K_MODESCAN = "ModeScanVar"
-K_MODEGRAN = "ModeGranVar"
-K_QF3 = "QF3Var"
-K_NAVIGATION = 'NavigationFilenameGlob'  # glob to search for to find navigation file that corresponds
-K_GEO_REF = 'CdfcbGeolocationFileGlob' # glob which would match the N_GEO_Ref attribute
 
 GEO_GUIDE = {'M' : 'GMODO', 'I': 'GIMGO'}
 
