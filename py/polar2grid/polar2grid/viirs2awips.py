@@ -79,6 +79,8 @@ def remove_products():
         _safe_remove(f)
     for f in glob("dnb_rescale*.real4.*"):
         _safe_remove(f)
+    for f in glob("prescale_*.real4.*"):
+        _safe_remove(f)
     for f in glob("swath*.img"):
         _safe_remove(f)
     for f in glob("lat*.img"):
@@ -143,7 +145,7 @@ def run_prescaling(kind, band, data_kind,
     except StandardError:
         log.error("Could not open img file %s" % img_filepath)
         log.debug("Files matching %r" % glob(img_attr + "*"))
-        raise ValueError("Could not open img file %s" % img_filepath)
+        raise
 
     scale_kwargs = {}
     try:
@@ -151,8 +153,10 @@ def run_prescaling(kind, band, data_kind,
         # Only add parameters if they're useful
         if mode_mask.shape == data.shape:
             log.debug("Adding mode mask to rescaling arguments")
-            scale_kwargs["day_mask"] = mode_mask == 1 
-            scale_kwargs["night_mask"] = mode_mask == 2
+            mode_mask = mode_mask.copy()
+            mode_mask[img == -999.0] = 0
+            scale_kwargs["night_mask"] = mode_mask == 1 
+            scale_kwargs["day_mask"] = mode_mask == 2
             scale_kwargs["twilight_mask"] = mode_mask == 3
         elif require_dn:
             log.error("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
@@ -161,7 +165,7 @@ def run_prescaling(kind, band, data_kind,
         if require_dn:
             log.error("Could not open mode mask file %s" % mode_filepath)
             log.debug("Files matching %r" % glob(mode_attr + "*"))
-            raise ValueError("Could not open mode mask file %s" % mode_filepath)
+            raise
         else:
             log.debug("Could not open mode mask file %s" % mode_filepath)
 
@@ -178,7 +182,7 @@ def run_prescaling(kind, band, data_kind,
         rescaled_data.tofile(fbf_swath)
     except StandardError:
         log.error("Unexpected error while rescaling data", exc_info=1)
-        raise ValueError("Unexpected error while rescaling data")
+        raise
 
     return fbf_swath
 

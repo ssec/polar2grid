@@ -499,15 +499,15 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     # Derive mode mask
     mode_mask = np.zeros(sza_data.shape, dtype=np.int8)
     # Night
-    mode_mask[sza_data >= 94] = 1
+    mode_mask[sza_data >= 100] = 1
     # Day
-    mode_mask[sza_data <= 84] = 2
+    mode_mask[sza_data <= 88] = 2
     # Mixed
-    mode_mask[(84 < sza_data) & (sza_data < 94)] = 3
+    mode_mask[(88 < sza_data) & (sza_data < 100)] = 3
 
     # Mask off bad data
     # NOTE: There could still be missing image data to account for
-    mode_mask[ lat_mask | lon_mask | sza_mask ] = fill_value
+    mode_mask[ lat_mask | lon_mask | sza_mask ] = 0
     lat_data[ lat_mask ] = fill_value
     lon_data[ lon_mask ] = fill_value
 
