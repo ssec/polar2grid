@@ -22,6 +22,9 @@ from datetime import date, timedelta, datetime
 
 LOG = logging.getLogger(__name__)
 
+# FUTURE: generate FLO_FMT using PRODUCT_LIST
+PRODUCT_LIST = 'GITCO GDNBO SVDNB SVI01 SVI02 SVI03 SVI04 SVI05 SVM01 SVM02 SVM03 SVM04 SVM05 SVM06 SVM07 SVM08 SVM09 SVM10 SVM11 SVM12 SVM13 SVM14 SVM15 SVM16'.split(' ')
+
 FLO_FMT = """http://peate.ssec.wisc.edu/flo/api/find?
 			start=%(start)s&end=%(end)s
 			&file_type=GITCO
@@ -83,6 +86,19 @@ def _test_flo_find():
     for nfo, url in flo_find(43, -89, 1000, start, end):
         print nfo.group(0), url # print filename and url
 
+def _all_products_present(key, file_nfos, products = PRODUCT_LIST):
+    needs = set(products)
+    for nfo in file_nfos:
+        product = '%(kind)s%(band)s' % nfo.groupdict()
+        if product in needs:
+            needs.remove(product)
+        else:
+            LOG.error('unknown product type %s was downloaded, how?' % product)
+    if needs:
+        LOG.info('%s is missing %s, skipping for now' % (repr(key), repr(needs)))
+        return False
+    return True
+
 
 def curl(filename, url):
     return call(['curl', '-s', '-o', filename, url])
@@ -123,7 +139,8 @@ def sync(lat, lon, radius, start=None, end=None):
         if key not in badset:
             LOG.debug('adding %s to %s' % (nfo.group(0), key))
             new_files[key].append(nfo)
-    return new_files
+    fully_intact_sets = dict((k,v) for k,v in new_files.items() if _all_products_present(k,v))
+    return fully_intact_sets
 
 def mainsync(name, lat, lon, radius, start=None, end=None):
     "write a .nfo file with 'date start_time end_time when we complete a transfer"
