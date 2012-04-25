@@ -34,6 +34,8 @@ def post_rescale_dnb(data):
     after the remapping (so just a 0-1 to 0-255 scaling.
     """
     log.debug("Running DNB rescaling from 0-1 to 0-255")
+    # Don't need to worry about fills because they will be less than 0 anyway
+    # XXX: Worry about fills if this is used outside of awips netcdf backend
     return numpy.multiply(data, 255.0, out=data)
 
 def _make_lin_scale(m, b):

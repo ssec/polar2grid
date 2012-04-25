@@ -69,15 +69,7 @@ def remove_products():
         _safe_remove(f)
     for f in glob("image*.real4.*"):
         _safe_remove(f)
-    for f in glob("day_mask*.int1.*"):
-        _safe_remove(f)
-    for f in glob("night_mask*.int1.*"):
-        _safe_remove(f)
-    for f in glob("twilight_mask*.int1.*"):
-        _safe_remove(f)
-    for f in glob("mode_*.int1.*"):
-        _safe_remove(f)
-    for f in glob("dnb_rescale*.real4.*"):
+    for f in glob("mode_*.real4.*"):
         _safe_remove(f)
     for f in glob("prescale_*.real4.*"):
         _safe_remove(f)
