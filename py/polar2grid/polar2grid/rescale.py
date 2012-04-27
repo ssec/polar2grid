@@ -36,7 +36,8 @@ def post_rescale_dnb(data):
     log.debug("Running DNB rescaling from 0-1 to 0-255")
     # Don't need to worry about fills because they will be less than 0 anyway
     # XXX: Worry about fills if this is used outside of awips netcdf backend
-    return numpy.multiply(data, 255.0, out=data)
+    numpy.multiply(data, 255.0, out=data)
+    return data
 
 def _make_lin_scale(m, b):
     def linear_scale(img, *args, **kwargs):
@@ -78,7 +79,16 @@ def bt_scale(img, *args, **kwargs):
     return img
 
 def fog_scale(img, *args, **kwargs):
-    pass
+    # Put -10 - 10 range into 5 - 205
+    log.debug("Running 'fog_scale'...")
+    FILL = 0
+    mask = img == FILL
+    numpy.multiply(img, 10.0, out=img)
+    numpy.add(img, 105.0, out=img)
+    img[img < 5] = 4
+    img[img > 205] = 206 
+    img[mask] = FILL
+    return img
 
 def dnb_scale(img, *args, **kwargs):
     """
@@ -94,9 +104,10 @@ def dnb_scale(img, *args, **kwargs):
         log.debug("  scaling DNB in day mask")
         _histogram_equalization(img, kwargs["day_mask"  ])
     
-    if ("twilight_mask"   in kwargs) and (numpy.sum(kwargs["twilight_mask"])   > 0) :
+    if ("mixed_mask"   in kwargs) and (len(kwargs["mixed_mask"])     > 0) :
         log.debug("  scaling DNB in twilight mask")
-        _histogram_equalization(img, kwargs["twilight_mask"  ])
+        for mask in kwargs["mixed_mask"]:
+            _histogram_equalization(img, mask)
     
     if ("night_mask" in kwargs) and (numpy.sum(kwargs["night_mask"]) > 0) :
         log.debug("  scaling DNB in night mask")

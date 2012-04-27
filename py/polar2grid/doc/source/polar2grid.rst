@@ -9,14 +9,6 @@ polar2grid Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`adl_guidebook` Module
----------------------------
-
-.. automodule:: polar2grid.adl_guidebook
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`awips_config` Module
 --------------------------
 
@@ -57,6 +49,14 @@ polar2grid Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`plot_result` Module
+-------------------------
+
+.. automodule:: polar2grid.plot_result
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`rescale` Module
 ---------------------
 
@@ -69,6 +69,14 @@ polar2grid Package
 -------------------------
 
 .. automodule:: polar2grid.viirs2awips
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`viirs_guidebook` Module
+-----------------------------
+
+.. automodule:: polar2grid.viirs_guidebook
     :members:
     :undoc-members:
     :show-inheritance:

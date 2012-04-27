@@ -58,6 +58,7 @@ def get_meta_data(ifilepaths, filter=None):
                     - band
                     - band_name
                     - data_kind
+                    - src_kind
                     - rows_per_scan
                     - fbf_swath
         image_data : dict
@@ -131,6 +132,7 @@ def get_meta_data(ifilepaths, filter=None):
                     "band"          : finfo["band"],
                     "band_name"     : finfo["kind"] + finfo["band"],
                     "data_kind"     : finfo["data_kind"],
+                    "src_kind"      : finfo["data_kind"],
                     "rows_per_scan" : finfo["rows_per_scan"],
                     "fbf_swath"     : None
                     }

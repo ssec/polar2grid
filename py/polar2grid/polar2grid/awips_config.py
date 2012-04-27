@@ -72,15 +72,13 @@ def read_grid_config(config_filepath):
     bands_map = {}
     for line in open(config_filepath):
         # For comments
-        if line.startswith("#"): continue
+        if line.startswith("#") or line.startswith("\n"): continue
         parts = line.strip().split(",")
         if len(parts) < 4:
             print "ERROR: Need at least 4 columns in templates.conf (%s)" % line
         product_id = parts[0]
         grid_number = parts[1]
         band = parts[2]
-        if len(band) != 3:
-            print "ERROR: Expected 3 characters for band got %d (%s)" % (len(band),band)
         nc_name = parts[3]
 
         if grid_number not in grids_map:
@@ -111,38 +109,47 @@ GRIDS,BANDS = read_grid_config(GRIDS_CONFIG)
 SHAPES = read_shapes_config(SHAPES_CONFIG)
 
 def _get_awips_info(kind, band, grid_number,
-        GRIDS=GRIDS, BANDS=BANDS):
+        grids_map=None, bands_map=None):
+    if grids_map is None: grids_map = GRIDS
+    if bands_map is None: bands_map = BANDS
     if kind == "DNB":
         bname = kind
     else:
         bname = kind + band
-    if bname not in BANDS or grid_number not in GRIDS:
+    if bname not in bands_map or grid_number not in grids_map:
         log.error("Band %s or grid %s not found in templates.conf" % (bname,grid_number))
         raise ValueError("Band %s or grid %s not found in templates.conf" % (bname,grid_number))
     else:
-        return GRIDS[grid_number][bname]
+        return grids_map[grid_number][bname]
 
 def _get_grid_templates(grid_number, gpd=None, nc=None,
-        GRID_TEMPLATES=GRID_TEMPLATES):
-    if grid_number not in GRID_TEMPLATES:
+        grid_templates=None):
+    if grid_templates is None: grid_templates = GRID_TEMPLATES
+
+    if grid_number not in grid_templates:
         if nc is not None and gpd is not None:
             return (gpd,nc)
         else:
             log.error("Couldn't find grid %s in grid templates" % grid_number)
             raise ValueError("Couldn't find grid %s in grid templates" % grid_number)
     else:
-        use_gpd = GRID_TEMPLATES[grid_number][0]
-        use_nc = GRID_TEMPLATES[grid_number][1]
+        use_gpd = grid_templates[grid_number][0]
+        use_nc = grid_templates[grid_number][1]
         use_gpd = gpd or use_gpd
         use_nc = nc or use_nc
         return (use_gpd,use_nc)
 
 def get_grid_info(kind, band, grid_number, gpd=None, nc=None,
-        GRIDS=GRIDS, BANDS=BANDS,
-        SHAPES=SHAPES, GRID_TEMPLATES=GRID_TEMPLATES):
+        grids_map=None, bands_map=None,
+        shapes_map=None, grid_templates=None):
     """Assumes verify_grid was already run to verify that the information
     was available.
     """
+    if grids_map is None: grids_map = GRIDS
+    if bands_map is None: bands_map = BANDS
+    if shapes_map is None: shapes_map = SHAPES
+    if grid_templates is None: grid_templates = GRID_TEMPLATES
+
     awips_info = _get_awips_info(kind, band, grid_number)
     temp_info = _get_grid_templates(grid_number, gpd, nc)
 
@@ -164,18 +171,24 @@ def get_grid_info(kind, band, grid_number, gpd=None, nc=None,
 
 
 def verify_config(kind, band, grid_number, gpd=None, nc=None,
-        GRIDS=GRIDS, BANDS=BANDS,
-        SHAPES=SHAPES, GRID_TEMPLATES=GRID_TEMPLATES):
+        grids_map=None, bands_map=None,
+        shapes_map=None, grid_templates=None):
+
+    if grids_map is None: grids_map = GRIDS
+    if bands_map is None: bands_map = BANDS
+    if shapes_map is None: shapes_map = SHAPES
+    if grid_templates is None: grid_templates = GRID_TEMPLATES
+
     if kind == "DNB":
         bname = kind
     else:
         bname = kind + band
 
-    if bname in BANDS and \
-        grid_number in GRIDS and \
-        bname in GRIDS[grid_number] and \
-        grid_number in SHAPES and \
-        (grid_number in GRID_TEMPLATES or \
+    if bname in bands_map and \
+        grid_number in grids_map and \
+        bname in grids_map[grid_number] and \
+        grid_number in shapes_map and \
+        (grid_number in grid_templates or \
         (gpd is not None and nc is not None)):
         return True
     else:

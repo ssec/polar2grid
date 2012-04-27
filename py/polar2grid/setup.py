@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 classifiers = ""
-version = '0.0.4a'
+version = '0.0.4b'
 
 setup(
     name='polar2grid',

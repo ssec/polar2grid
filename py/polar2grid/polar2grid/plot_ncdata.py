@@ -22,3 +22,4 @@ for nc_name in glob("SSEC_AWIPS_VIIRS*"):
     plt.bone()
 
     plt.savefig("plot_ncdata.%s.png" % nc_name)
+    plt.close()

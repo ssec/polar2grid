@@ -13,7 +13,7 @@ hdf5 (.h5) files and create a properly scaled AWIPS compatible NetCDF file.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import Workspace
+from polar2grid.core import Workspace,K_BTEMP,K_FOG
 from polar2grid.viirs_imager_to_swath import make_swaths
 from polar2grid.rescale import prescale
 from polar2grid import ms2gt
@@ -145,10 +145,25 @@ def run_prescaling(kind, band, data_kind,
         # Only add parameters if they're useful
         if mode_mask.shape == data.shape:
             log.debug("Adding mode mask to rescaling arguments")
+            HIGH = 100
+            LOW = 88
+            MIXED_STEP = HIGH - LOW
             good_mask = ~((img == -999.0) | (mode_mask == -999.0))
-            scale_kwargs["night_mask"]    = (mode_mask >= 100) & good_mask
-            scale_kwargs["day_mask"]      = (mode_mask <= 88 ) & good_mask
-            scale_kwargs["twilight_mask"] = (mode_mask >  88 ) & (mode_mask < 100) & good_mask
+            scale_kwargs["night_mask"]    = (mode_mask >= HIGH) & good_mask
+            scale_kwargs["day_mask"]      = (mode_mask <= LOW ) & good_mask
+            scale_kwargs["mixed_mask"] = []
+            steps = range(LOW, HIGH+1, MIXED_STEP)
+            if steps[-1] >= HIGH: steps[-1] = HIGH
+            steps = zip(steps, steps[1:])
+            for i,j in steps:
+                log.debug("Processing step %d to %d" % (i,j))
+                tmp = (mode_mask >  i) & (mode_mask < j) & good_mask
+                if numpy.sum(tmp) > 0:
+                    log.debug("Adding step %d to %d" % (i,j))
+                    scale_kwargs["mixed_mask"].append(tmp)
+                del tmp
+            del good_mask
+
         elif require_dn:
             log.error("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
             raise ValueError("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
@@ -244,6 +259,61 @@ def create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
                 grid_jobs[band][grid_name] = grid_info
     return ll2cr_jobs,grid_jobs
 
+def create_pseudo(kind, bands):
+    # Fog pseudo-band
+    if (kind == "I") and ("05" in bands) and ("04" in bands):
+        log.debug("Creating IFOG pseudo band...")
+        try:
+            W = Workspace('.')
+            mode_attr = bands["05"]["fbf_mode"].split(".")[0]
+            mode_data = getattr(W, mode_attr)
+            night_mask = mode_data >= 100
+            del mode_data
+        except StandardError:
+            log.error("Error getting mode data while creating FOG band")
+            log.debug("Mode error:", exc_info=1)
+            return
+
+        num_night_points = numpy.sum(night_mask)
+        if num_night_points == 0:
+            # We only create fog mask if theres nighttime data
+            log.info("No night data found to create FOG band for")
+            return
+        log.debug("Creating FOG band for %s nighttime data points" % num_night_points)
+
+        fog_dict = {
+                "kind" : "I",
+                "band" : "FOG",
+                "band_name" : "IFOG",
+                "data_kind" : K_FOG,
+                "src_kind"  : K_BTEMP,
+                "rows_per_scan" : bands["05"]["rows_per_scan"],
+                "fbf_img" : "image_IFOG.%s" % ".".join(bands["05"]["fbf_img"].split(".")[1:]),
+                "fbf_mode" : bands["05"]["fbf_mode"],
+                "swath_scans" : bands["05"]["swath_scans"],
+                "swath_rows" : bands["05"]["swath_rows"],
+                "swath_cols" : bands["05"]["swath_cols"]
+                }
+        try:
+            W = Workspace(".")
+            i5_attr = bands["05"]["fbf_img"].split(".")[0]
+            i4_attr = bands["04"]["fbf_img"].split(".")[0]
+            i5 = getattr(W, i5_attr)
+            i4 = getattr(W, i4_attr)
+            fog_map = numpy.memmap(fog_dict["fbf_img"],
+                    dtype=numpy.float32,
+                    mode="w+",
+                    shape=i5.shape
+                    )
+            numpy.subtract(i5, i4, fog_map)
+            fog_map[~night_mask] = -999.0
+            del fog_map
+            del i5,i4
+            bands["FOG"] = fog_dict
+        except StandardError:
+            log.error("Error creating Fog pseudo band")
+            log.debug("Fog creation error:", exc_info=1)
+
 def process_kind(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None,
@@ -295,6 +365,9 @@ def process_kind(filepaths,
     bands = meta_data["bands"]
     fbf_lat = meta_data["fbf_lat"]
     fbf_lon = meta_data["fbf_lon"]
+
+    # Create pseudo-bands
+    create_pseudo(kind, bands)
 
     # Do any pre-remapping rescaling
     log.info("Prescaling data before remapping...")
@@ -411,8 +484,12 @@ def process_kind(filepaths,
     # Build fornav call
     fornav_jobs = {}
     for band,band_job in bands.items():
+        if band not in grid_jobs:
+            log.info("No grids were found for band %s, removing from future processing..." % band)
+            del bands[band]
+            continue
         for grid_number,grid_job in grid_jobs[band].items():
-            k = (grid_number,band_job["data_kind"])
+            k = (grid_number,band_job["src_kind"])
             log.debug("Fornav job key is %s" % str(k))
             if k not in fornav_jobs:
                 fornav_jobs[k] = {
@@ -440,8 +517,8 @@ def process_kind(filepaths,
             fornav_job["fbfs"].append(output_fbf)
 
     # Run fornav
-    for (grid_number,data_kind),fornav_job in fornav_jobs.items():
-        log.info("Running fornav for grid %s, data_kind %s" % (grid_number,data_kind))
+    for (grid_number,src_kind),fornav_job in fornav_jobs.items():
+        log.info("Running fornav for grid %s, data_kind %s" % (grid_number,src_kind))
         fornav_job["result_object"] = proc_pool.apply_async(ms2gt.fornav,
                 args = (
                         len(fornav_job["inputs"]),
@@ -469,7 +546,7 @@ def process_kind(filepaths,
     proc_pool.close()
     proc_pool.join()
 
-    for (grid_number,data_kind),fornav_job in fornav_jobs.items():
+    for (grid_number,src_kind),fornav_job in fornav_jobs.items():
         try:
             #ms2gt.fornav(
             #        len(fornav_job["inputs"]),
@@ -492,7 +569,7 @@ def process_kind(filepaths,
             #        )
             fornav_job["result_object"].get()
         except StandardError:
-            log.warning("fornav failed for %s band, grid %s, data_kind %s" % (kind,grid_number,data_kind))
+            log.warning("fornav failed for %s band, grid %s, data_kind %s" % (kind,grid_number,src_kind))
             log.debug("Exception was:", exc_info=1)
             log.warning("Cleaning up for this job...")
             for band in bands.keys():
