@@ -28,6 +28,8 @@ import logging
 import numpy
 
 log = logging.getLogger(__name__)
+RESCALE_FILL = -999.0
+PRESCALE_FILL = -999.0
 
 def post_rescale_dnb(data):
     """Special case DNB rescaling that happens
@@ -57,7 +59,7 @@ def passive_scale(img, *args, **kwargs):
 
 def sqrt_scale(img, *args, **kwargs):
     log.debug("Running 'sqrt_scale'...")
-    FILL = 0
+    FILL = RESCALE_FILL
     mask = img == FILL
     img[mask] = 0 # For invalids because < 0 cant be sqrted
     numpy.multiply(img, 100.0, img)
@@ -69,7 +71,7 @@ def sqrt_scale(img, *args, **kwargs):
 
 def bt_scale(img, *args, **kwargs):
     log.debug("Running 'bt_scale'...")
-    FILL = 0
+    FILL = RESCALE_FILL
     high_idx = img >= 242.0
     low_idx = img < 242.0
     z_idx = img == FILL
@@ -81,7 +83,7 @@ def bt_scale(img, *args, **kwargs):
 def fog_scale(img, *args, **kwargs):
     # Put -10 - 10 range into 5 - 205
     log.debug("Running 'fog_scale'...")
-    FILL = 0
+    FILL = RESCALE_FILL
     mask = img == FILL
     numpy.multiply(img, 10.0, out=img)
     numpy.add(img, 105.0, out=img)

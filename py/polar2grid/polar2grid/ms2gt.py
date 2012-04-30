@@ -61,7 +61,7 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
     if rind is not None:
         args.extend(["-r", "%d" % rind])
     if fill_io is not None:
-        args.extend(["-F", "%d" % fill_io[0], "%d" % fill_io[1]])
+        args.extend(["-F", "%f" % fill_io[0], "%f" % fill_io[1]])
     args.extend([colsin, scansin, rowsperscan, latfile, lonfile, gpdfile])
     if tag:
         args.append(tag)
@@ -164,7 +164,7 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
     if grid_fill_1 is not None:
         args.append("-F")
         if chan_count > 1 and not isinstance(grid_fill_1, list):
-            args.extend(["%d" % grid_fill_1]*chan_count)
+            args.extend(["%f" % grid_fill_1]*chan_count)
         elif chan_count > 1:
             args.extend(grid_fill_1)
         else:

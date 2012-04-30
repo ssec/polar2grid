@@ -61,8 +61,16 @@ def _safe_remove(fn):
 
 def remove_products():
     """Remove as many of the possible files that were created from a previous
-    run of this script.
+    run of this script, including temporary files.
     """
+    for f in glob(".lat*"):
+        _safe_remove(f)
+    for f in glob(".lon*"):
+        _safe_remove(f)
+    for f in glob(".mode*"):
+        _safe_remove(f)
+    for f in glob(".image*"):
+        _safe_remove(f)
     for f in glob("latitude*.real4.*"):
         _safe_remove(f)
     for f in glob("longitude*.real4.*"):
@@ -262,7 +270,7 @@ def create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
 def create_pseudo(kind, bands):
     # Fog pseudo-band
     if (kind == "I") and ("05" in bands) and ("04" in bands):
-        log.debug("Creating IFOG pseudo band...")
+        log.info("Creating IFOG pseudo band...")
         try:
             W = Workspace('.')
             mode_attr = bands["05"]["fbf_mode"].split(".")[0]
@@ -536,7 +544,7 @@ def process_kind(filepaths,
                         verbose=log.getEffectiveLevel() <= logging.DEBUG,
                         swath_data_type_1="f4",
                         swath_fill_1=-999.0,
-                        grid_fill_1=0,
+                        grid_fill_1=-999.0,
                         weight_delta_max=fornav_D,
                         weight_distance_max=fornav_d,
                         start_scan=(fornav_job["scan_first"],0)
