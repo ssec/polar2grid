@@ -668,8 +668,15 @@ bool ComputeEwa(image *uimg, image *vimg,
                 } else if (!got_fill) {
                   *this_weightp += weight;
                   for (chan = 0; chan < chan_count; chan++) {
-                    *((*this_grid_chanpp++) + grid_offset) +=
-                      *this_swath_chanp++ * weight;
+                      if (*(*this_grid_chanpp + grid_offset) == *this_grid_fillp++) {
+                          // If the fill value is nonzero we don't want to
+                          // effect the weight/grid values
+                        *((*this_grid_chanpp++) + grid_offset) =
+                          *this_swath_chanp++ * weight;
+                      } else {
+                        *((*this_grid_chanpp++) + grid_offset) +=
+                          *this_swath_chanp++ * weight;
+                      }
                   }
                 }
               } /* if (q < f) */
@@ -991,6 +998,7 @@ main (int argc, char *argv[])
             DisplayInvalidParameter("grid_fill");
           if (sscanf(*argv, "%f", &grid_chan_io_image[i].fill) != 1)
             DisplayInvalidParameter("grid_fill");
+          grid_chan_image[i].fill = grid_chan_io_image[i].fill;
         }
         break;
       case 'r':
