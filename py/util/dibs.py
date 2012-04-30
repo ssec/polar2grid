@@ -62,6 +62,8 @@ RE_NPP = re.compile('(?P<kind>[A-Z]+)(?P<band>[0-9]*)_(?P<sat>[A-Za-z0-9]+)_d(?P
 FLO_FMT = re.sub(r'\n\s+', '', FLO_FMT)
 
 ONE_DAY = timedelta(days=1)
+TWO_DAY = timedelta(days=2)
+THREE_DAY = timedelta(days=3)
 
 def flo_find(lat, lon, radius, start, end):
     "return shell script and filename list"
@@ -112,7 +114,7 @@ def sync(lat, lon, radius, start=None, end=None):
     if end is None:
         end = date.today() + ONE_DAY
     if start is None:
-        start = end - ONE_DAY
+        start = end - THREE_DAY
     bad = list()
     good = list()
     new_files = defaultdict(list)
