@@ -1,0 +1,4 @@
+1 reflectance
+2 reflectance
+31 temperature
+32 temperature

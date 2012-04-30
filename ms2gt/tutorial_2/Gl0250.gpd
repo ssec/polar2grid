@@ -1,0 +1,4 @@
+N200correct.mpp	map projection parameters	# EASE-Grid
+9300 8700	columns rows			# Greenland
+800		grid cells per map unit		# 250 m
+9749.5	-1250.5	map origin column,row
