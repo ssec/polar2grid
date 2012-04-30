@@ -314,6 +314,56 @@ def process_geo(meta_data, geo_data, cut_bad=False):
 
     return meta_data,geo_data
 
+def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
+        band_meta, geo_data, finfos, cut_bad=False):
+
+    # Create fbf files and appenders
+    spid = '%d' % os.getpid()
+    imname = '.image_%s.%s' % (band_meta["band_name"], spid)
+    imfo = file(imname, 'wb')
+    imfa = file_appender(imfo, dtype=numpy.float32)
+
+    # Get the data
+    for finfo,ginfo in zip(finfos,geo_data):
+        try:
+            # XXX: May need to pass the lat/lon masks
+            read_file_info(finfo)
+        except StandardError:
+            log.error("Error reading data from %s" % finfo["img_path"])
+            raise ValueError("Error reading data from %s" % finfo["img_path"])
+
+        # Cut out bad data
+        if cut_bad and len(ginfo["scan_quality"][0]) != 0:
+            log.info("Removing %d bad scans from %s" % (len(ginfo["scan_quality"][0])/finfo["rows_per_scan"], finfo["img_path"]))
+            finfo["image_data"] = numpy.delete(finfo["image_data"], ginfo["scan_quality"], axis=0)
+
+        # Append the data to the file
+        imfa.append(finfo["image_data"])
+
+        # Remove pointers to data so it gets garbage collected
+        del finfo["image_data"]
+        del finfo["image_mask"]
+        del finfo["scan_quality"]
+        del finfo
+
+    suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
+    img_base = "image_%s" % band_meta["band_name"]
+    fbf_img = img_base + suffix
+    os.rename(imname, fbf_img)
+    band_meta["fbf_img"] = fbf_img
+    rows,cols = imfa.shape
+    band_meta["swath_rows"] = rows
+    band_meta["swath_cols"] = cols
+    band_meta["swath_scans"] = swath_scans
+    band_meta["fbf_mode"] = fbf_mode
+
+    if rows != swath_rows or cols != swath_cols:
+        log.error("Expected %d rows and %d cols, but band %s had %d rows and %d cols" % (swath_rows, swath_cols, band_meta["band_name"], rows, cols))
+        raise ValueError("Expected %d rows and %d cols, but band %s had %d rows and %d cols" % (swath_rows, swath_cols, band_meta["band_name"], rows, cols))
+
+    imfo.close()
+    del imfa
+
 def process_image(meta_data, image_data, geo_data, cut_bad=False):
     """Read the image data from hdf files and concatenated them
     into 1 swath file.  Has the option to cut out bad data if
@@ -349,69 +399,24 @@ def process_image(meta_data, image_data, geo_data, cut_bad=False):
     """
     # Get image data and save it to an fbf file
     for band,finfos in image_data.items():
-        band_meta = meta_data["bands"][band]
-
-        # Create fbf files and appenders
-        spid = '%d' % os.getpid()
-        imname = '.image' + spid
-        imfo = file(imname, 'wb')
-        imfa = file_appender(imfo, dtype=numpy.float32)
-
-        # Get the data
-        for finfo,ginfo in zip(finfos,geo_data):
-            try:
-                # XXX: May need to pass the lat/lon masks
-                read_file_info(finfo)
-            except StandardError:
-                log.error("Error reading data from %s" % finfo["img_path"], exc_info=1)
-                log.error("Removing entire job associated with this file")
-                del image_data[band]
-                if len(image_data) == 0:
-                    # We are out of jobs
-                    log.error("The last job was removed, no more to do, quitting...")
-                    raise ValueError("The last job was removed, no more to do, quitting...")
-                # Continue on with the next band
-                break
-
-            # Cut out bad data
-            if cut_bad and len(ginfo["scan_quality"][0]) != 0:
-                log.info("Removing %d bad scans from %s" % (len(ginfo["scan_quality"][0])/finfo["rows_per_scan"], finfo["img_path"]))
-                finfo["image_data"] = numpy.delete(finfo["image_data"], ginfo["scan_quality"], axis=0)
-
-            # Append the data to the file
-            imfa.append(finfo["image_data"])
-
-            # Remove pointers to data so it gets garbage collected
-            del finfo["image_data"]
-            del finfo["image_mask"]
-            del finfo["scan_quality"]
-            del finfo
-
-        suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
-        img_base = "image_%s" % band_meta["band_name"]
-        fbf_img = img_base + suffix
-        os.rename(imname, fbf_img)
-        band_meta["fbf_img"] = fbf_img
-        rows,cols = imfa.shape
-        band_meta["swath_rows"] = rows
-        band_meta["swath_cols"] = cols
-        band_meta["swath_scans"] = meta_data["swath_scans"]
-        band_meta["fbf_mode"] = meta_data["fbf_mode"]
-
-        if ("swath_rows" in meta_data and "swath_cols" in meta_data) and \
-                (meta_data["swath_rows"] is not None and meta_data["swath_cols"] is not None) and \
-                (rows != meta_data["swath_rows"] or cols != meta_data["swath_cols"]):
-            log.error("Expected %d rows and %d cols, but band %s had %d rows and %d cols" % (meta_data["swath_rows"], meta_data["swath_cols"], band_meta["band_name"], rows, cols))
-            log.error("Removing that band from future meta data")
+        try:
+            create_image_swath(
+                    meta_data["swath_rows"],
+                    meta_data["swath_cols"],
+                    meta_data["swath_scans"],
+                    meta_data["fbf_mode"],
+                    meta_data["bands"][band],
+                    geo_data, finfos, cut_bad=cut_bad)
+        except StandardError:
+            log.error("Error creating swath for %s, will continue without it..." % meta_data["bands"][band]["band_name"])
+            log.debug("Swath error:", exc_info=1)
             del meta_data["bands"][band]
             del image_data[band]
-            if len(meta_data["bands"]) == 0:
-                log.error("No more bands to process for %s bands provided" % meta_data["kind"])
-                raise ValueError("No more bands to process for %s bands provided" % meta_data["kind"])
-
-        imfo.close()
-        del imfa
         del finfos
+
+    if len(image_data) == 0:
+        log.error("No more bands to process for %s bands provided" % meta_data["kind"])
+        raise ValueError("No more bands to process for %s bands provided" % meta_data["kind"])
 
 class array_appender(object):
     """wrapper for a numpy array object which gives it a binary data append usable with "catenate"
