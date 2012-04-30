@@ -487,7 +487,7 @@ bool ComputeEwa(image *uimg, image *vimg,
                        int chan_count, image *swath_chan_image,
                        bool maximum_weight_mode,
                        int grid_col_start, int grid_row_start,
-                       image *grid_chan_image, image *grid_weight_image)
+                       image *grid_chan_image, image *grid_weight_images)
 {
   int   row;
   int   rows;
@@ -507,7 +507,7 @@ bool ComputeEwa(image *uimg, image *vimg,
   float **this_grid_chanpp;
   float *this_grid_fillp;
   void  *this_buf;
-  bool  got_fill;
+  bool  *got_fills;
   bool  got_point;
   double col_row_fill;
   double u0;
@@ -541,10 +541,14 @@ bool ComputeEwa(image *uimg, image *vimg,
   int   grid_offset;
   image *this_swath;
   image *this_grid;
+  image *this_grid_weight_image;
   ewa_parameters *this_ewap;
 
   if (very_verbose)
     fprintf(stderr, "Computing ewa\n");
+  if ((got_fills = (bool *)calloc(chan_count, sizeof(bool))) == NULL)
+    error_exit("fornav: can't allocate got_fills for computing ewa\n");
+
   col_row_fill = ewaw->col_row_fill;
   rows = uimg->rows;
   cols = uimg->cols;
@@ -557,7 +561,7 @@ bool ComputeEwa(image *uimg, image *vimg,
   swath_fillp = ewaw->swath_fill_buf;
   grid_chanpp = ewaw->grid_chan_buf;
   grid_fillp  = ewaw->grid_fill_buf;
-  weightp = grid_weight_image->buf[0];
+  this_grid_weight_image = grid_weight_images;
   this_swath = swath_chan_image;
   this_grid = grid_chan_image;
   this_swath_fillp = swath_fillp;
@@ -599,8 +603,8 @@ bool ComputeEwa(image *uimg, image *vimg,
           this_swath = swath_chan_image;
           this_swath_chanp = swath_chanp;
           this_swath_fillp = swath_fillp;
-          got_fill = FALSE;
           for (chan = 0; chan < chan_count; chan++, this_swath++) {
+            got_fills[chan] = FALSE;
             this_buf = this_swath->buf[0];
             switch (this_swath->data_type) {
             case TYPE_BYTE:
@@ -623,8 +627,7 @@ bool ComputeEwa(image *uimg, image *vimg,
               break;
             }
             if (*this_swath_chanp++ == *this_swath_fillp++) {
-              got_fill = TRUE;
-              break;
+              got_fills[chan] = TRUE;
             }
           } /* for (chan = 0; chan < chan_count; chan++, this_swath++) */
           a = this_ewap->a;
@@ -647,36 +650,44 @@ bool ComputeEwa(image *uimg, image *vimg,
                   iw = weight_count - 1;
                 weight = wtab[iw];
                 grid_offset = iu + iv * grid_cols;
-                this_weightp = weightp + grid_offset;
+                this_grid_weight_image = grid_weight_images;
                 this_swath_chanp = swath_chanp;
                 this_grid_fillp  = grid_fillp;
                 this_grid_chanpp = grid_chanpp;
                 if (maximum_weight_mode) {
-                  if (weight > *this_weightp) {
-                    *this_weightp = weight;
-                    if (got_fill) {
-                      for (chan = 0; chan < chan_count; chan++)
-                        *((*this_grid_chanpp++) + grid_offset) =
-                          *this_grid_fillp++;
-                    } else {
-                      for (chan = 0; chan < chan_count; chan++) {
-                        *((*this_grid_chanpp++) + grid_offset) =
-                          *this_swath_chanp++;
+                  for (chan = 0; chan < chan_count; chan++) {
+                    this_weightp = ((float *)this_grid_weight_image->buf[0]) + grid_offset;
+                    if (weight > *this_weightp) {
+                      *this_weightp = weight;
+                      if (got_fills[chan]) {
+                        *(*this_grid_chanpp + grid_offset) = *this_grid_fillp;
+                      } else {
+                        *(*this_grid_chanpp + grid_offset) = *this_swath_chanp;
                       }
                     }
+                    this_grid_chanpp++;
+                    this_grid_fillp++;
+                    this_swath_chanp++;
+                    this_grid_weight_image++;
                   }
-                } else if (!got_fill) {
-                  *this_weightp += weight;
+                } else {
                   for (chan = 0; chan < chan_count; chan++) {
-                      if (*(*this_grid_chanpp + grid_offset) == *this_grid_fillp++) {
-                          // If the fill value is nonzero we don't want to
-                          // effect the weight/grid values
-                        *((*this_grid_chanpp++) + grid_offset) =
-                          *this_swath_chanp++ * weight;
+                    if (got_fills[chan] == FALSE) {
+                      this_weightp = ((float *)this_grid_weight_image->buf[0]) + grid_offset;
+                      *this_weightp += weight;
+
+                      if (*(*this_grid_chanpp + grid_offset) == *this_grid_fillp) {
+                        // If the fill value is nonzero we don't want to
+                        // effect the weight/grid values
+                        *(*this_grid_chanpp + grid_offset) = *this_swath_chanp * weight;
                       } else {
-                        *((*this_grid_chanpp++) + grid_offset) +=
-                          *this_swath_chanp++ * weight;
+                        *(*this_grid_chanpp + grid_offset) += *this_swath_chanp * weight;
                       }
+                    }
+                    this_grid_chanpp++;
+                    this_grid_fillp++;
+                    this_swath_chanp++;
+                    this_grid_weight_image++;
                   }
                 }
               } /* if (q < f) */
@@ -688,6 +699,7 @@ bool ComputeEwa(image *uimg, image *vimg,
       } /* if (u0 != col_row_fill && v0 != col_row_fill) */
     } /* for (col = 0, this_ewap = ewap; */
   } /* for (row = 0; row < rows; row++) */
+  free(got_fills);
   return(got_point);
 }
 
@@ -846,7 +858,7 @@ main (int argc, char *argv[])
   image  *swath_chan_image;
   image  *grid_chan_io_image;
   image  *grid_chan_image;
-  image  *grid_weight_image;
+  image  *grid_weight_images;
   image  *ip;
 
   ewa_parameters *ewap;
@@ -899,8 +911,8 @@ main (int argc, char *argv[])
     error_exit("fornav: can't allocate grid_chan_io_image\n");
   if ((grid_chan_image = (image *)calloc(chan_count, sizeof(image))) == NULL)
     error_exit("fornav: can't allocate grid_chan_image\n");
-  if ((grid_weight_image = (image *)malloc(sizeof(image))) == NULL)
-    error_exit("fornav: can't allocate grid_weight_image\n"); 
+  if ((grid_weight_images = (image *)calloc(chan_count, sizeof(image))) == NULL)
+    error_exit("fornav: can't allocate grid_weight_images\n"); 
 
   for (i = 0; i < chan_count; i++) {
     ip = &swath_chan_image[i];
@@ -1152,15 +1164,15 @@ main (int argc, char *argv[])
     sprintf(name, "grid_chan_image %d", i); 
     InitializeImage(&grid_chan_image[i], name, "", "f4",
                     grid_cols, grid_rows, 0);
+    sprintf(name, "grid_weight_images %d", i); 
+    InitializeImage(&grid_weight_images[i], name, "", "f4",
+                    grid_cols, grid_rows, 0);
     n = grid_cols * grid_rows;
     fptr =&(**((float **)grid_chan_image[i].buf));
     fill = grid_chan_io_image[i].fill;
     for (j = 0; j < n; j++)
       *fptr++ = fill;
   }
-
-  InitializeImage(grid_weight_image, "grid_weight_image", "", "f4",
-                  grid_cols, grid_rows, 0);
 
   /*
    *  Allocate an array of ewa parameters, one element per swath column
@@ -1207,7 +1219,7 @@ main (int argc, char *argv[])
     if (ComputeEwa(swath_col_image, swath_row_image, &ewaw, ewap,
                    chan_count, swath_chan_image, maximum_weight_mode,
                    grid_col_start, grid_row_start,
-                   grid_chan_image, grid_weight_image)) {
+                   grid_chan_image, grid_weight_images)) {
       if (first_scan_with_data < 0)
         first_scan_with_data = scan;
       last_scan_with_data = scan;
@@ -1219,7 +1231,7 @@ main (int argc, char *argv[])
    *  Write out gridded channel data for each channel
    */
   for (i = 0; i < chan_count; i++) {
-    fill_count = WriteGridImage(&grid_chan_image[i], grid_weight_image,
+    fill_count = WriteGridImage(&grid_chan_image[i], &grid_weight_images[i],
                                 maximum_weight_mode, weight_sum_min,
                                 &grid_chan_io_image[i]);
     if (verbose)
@@ -1235,8 +1247,8 @@ main (int argc, char *argv[])
     DeInitializeImage(&swath_chan_image[i]);
     DeInitializeImage(&grid_chan_io_image[i]);
     DeInitializeImage(&grid_chan_image[i]);
+    DeInitializeImage(&grid_weight_images[i]);
   }
-  DeInitializeImage(grid_weight_image);
 
   /*
    *  De-Initialize the weight structure
@@ -1251,7 +1263,7 @@ main (int argc, char *argv[])
   free(swath_chan_image);
   free(grid_chan_io_image);
   free(grid_chan_image);
-  free(grid_weight_image);
+  free(grid_weight_images);
   free(ewap);
 
   if (verbose) {
