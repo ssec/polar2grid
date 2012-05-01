@@ -68,14 +68,18 @@ polar2grid's needs.  The original purpose of ms2gt (from the website above):
     produces flat binary files containing gridded data in a variety of map projections. MS2GT can produce a seamless output grid from multiple
     input files corresponding to successively acquired, 5-minute MODIS scenes.
 
+polar2grid uses its own version of ms2gt that is not available through NSIDC.
+See :doc:`Advanced Topics <advanced>` for more on the bugs fixed, changes made,
+and where a copy of this ms2gt version can be found.
+
 ll2cr
-*****
+^^^^^
 
 ll2cr is a ms2gt utility that converts latitude and longitude ('ll') data into
 columns and rows ('cr') which can then be used in fornav.
 
 fornav
-******
+^^^^^^
 
 fornav is a ms2gt utility that remaps imager data to the columns and rows file
 created by ll2cr.  fornav uses elliptical weighted averaging during forward
