@@ -38,7 +38,6 @@ CC = cc
 AR = ar
 RANLIB = touch
 CO = co
-MAKE = make
 MAKEDEPEND = makedepend
 INSTALL = cp
 CP = cp
@@ -65,18 +64,18 @@ CONFIG_CFLAGS = -O
 all:	srcs
 
 srcs:
-	$(CD) $(MAPDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(MAPDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) gtest
-	$(CD) $(MAPDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) gridloc
-	$(CD) $(GSZDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(LL2DIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(NAVDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
+	$(CD) $(MAPDIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(MAPDIR); $(MAKE) $(CONFIG_FLAGS) gtest
+	$(CD) $(MAPDIR); $(MAKE) $(CONFIG_FLAGS) gridloc
+	$(CD) $(GSZDIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(LL2DIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(NAVDIR); $(MAKE) $(CONFIG_FLAGS) all
 
 clean:
-	$(CD) $(MAPDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(GSZDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(LL2DIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(NAVDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
+	$(CD) $(MAPDIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(GSZDIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(LL2DIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(NAVDIR); $(MAKE) $(CONFIG_FLAGS) clean
 
 depend:
 	- $(CO) $(SRCS) $(HDRS)
