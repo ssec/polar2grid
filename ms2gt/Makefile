@@ -13,7 +13,7 @@ RCSID = $Header: /export/data/ms2gth/Makefile,v 1.13 2001/05/30 22:44:32 haran E
 #       define current version and release
 #
 VERSION = 0
-RELEASE = 5
+RELEASE = 5a
 
 #
 #	installation directories

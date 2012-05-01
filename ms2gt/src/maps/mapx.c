@@ -27,32 +27,32 @@ static char *standard_name(char *);
 /*::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
  * projections 
  *
- *	To add a new projection the projection names should be added
- *	to the standard_name function, the standard name is added to
- *	the if-else-if construct in new_mapx and three private functions
- *	must be defined in a separate file and declared in the prototypes 
- *	section below.
+ *        To add a new projection the projection names should be added
+ *        to the standard_name function, the standard name is added to
+ *        the if-else-if construct in new_mapx and three private functions
+ *        must be defined in a separate file and declared in the prototypes 
+ *        section below.
  *
- *	The initialization function sets all pre-computed projection
- *	constants.
+ *        The initialization function sets all pre-computed projection
+ *        constants.
  *
- *	The forward function converts geographic to map coordinates.
+ *        The forward function converts geographic to map coordinates.
  *
- *	input : lat,lon - geographic coords. (decimal degrees)
+ *        input : lat,lon - geographic coords. (decimal degrees)
  *
- *	output: u,v - map coordinates (map units)
+ *        output: u,v - map coordinates (map units)
  *
- *	result: 0 = valid coordinates
- *		-1 = invalid point
+ *        result: 0 = valid coordinates
+ *                -1 = invalid point
  *
- *	The inverse function converts map to geographic coordinates.
+ *        The inverse function converts map to geographic coordinates.
  *
- *	input : u,v - map coordinates (map units)
+ *        input : u,v - map coordinates (map units)
  *
- *	output: lat,lon - geographic coords. (decimal degrees);
+ *        output: lat,lon - geographic coords. (decimal degrees);
  *
- *	result: 0 = valid coordinates
- *		-1 = invalid point
+ *        result: 0 = valid coordinates
+ *                -1 = invalid point
  *
  *
  *::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::*/
@@ -105,85 +105,85 @@ int inverse_albers_conic_equal_area_ellipsoid(void *, float, float, float *, flo
 /*----------------------------------------------------------------------
  * init_mapx - initialize map projection from file
  *
- *	input : filename - map parameters file name
- *			file must have following fields:
- *			 Map Projection: see below
- *			 Map Reference Latitude: lat0
- *			 Map Reference Longitude: lon0
- *			may also contain optional fields:
- *			 Map Second Reference Latitude: lat1
- *			 Map Second Reference Longitude: lon1
- *			 Map Rotation: counter-clockwise
- *			 Map Scale: scale (radius units per map unit)
- *			 Map Origin Latitude: center_lat
- *			 Map Origin Longitude: center_lon
- *			 Map Southern Bound: southernmost lat
- *			 Map Northern Bound: northernmost lat
- *			 Map Western Bound: westernmost longitude
- *			 Map Eastern Bound: easternmost longitude
- *			 Map Graticule Latitude Interval: default 30
- *			 Map Graticule Longitude Interval: default 30
- *			 Map Graticule Label Latitude: default 0N
- *			 Map Graticule Label Longitude: default 0E
- *			 Map CIL Detail Level: default 1
- *			 Map BDY Detail Level: default 0
- *			 Map RIV Detail Level: default 0
- *			 Map Eccentricity: default Clark 1866
- *			 Map Equatorial Radius: default Clark 1866 for ellipsoid, authalic for sphere
+ *        input : filename - map parameters file name
+ *                        file must have following fields:
+ *                         Map Projection: see below
+ *                         Map Reference Latitude: lat0
+ *                         Map Reference Longitude: lon0
+ *                        may also contain optional fields:
+ *                         Map Second Reference Latitude: lat1
+ *                         Map Second Reference Longitude: lon1
+ *                         Map Rotation: counter-clockwise
+ *                         Map Scale: scale (radius units per map unit)
+ *                         Map Origin Latitude: center_lat
+ *                         Map Origin Longitude: center_lon
+ *                         Map Southern Bound: southernmost lat
+ *                         Map Northern Bound: northernmost lat
+ *                         Map Western Bound: westernmost longitude
+ *                         Map Eastern Bound: easternmost longitude
+ *                         Map Graticule Latitude Interval: default 30
+ *                         Map Graticule Longitude Interval: default 30
+ *                         Map Graticule Label Latitude: default 0N
+ *                         Map Graticule Label Longitude: default 0E
+ *                         Map CIL Detail Level: default 1
+ *                         Map BDY Detail Level: default 0
+ *                         Map RIV Detail Level: default 0
+ *                         Map Eccentricity: default Clark 1866
+ *                         Map Equatorial Radius: default Clark 1866 for ellipsoid, authalic for sphere
 
- *			old fixed format was as follows:
- *			 Map_Projection_Name
- *			 lat0 lon0 [lat1 lon1] (decimal degrees)
- *			 rotation (portrait=0, landscape=90)
- *			 scale (kilometers per map unit)
- *			 center_lat center_lon (for map)
- *			 south north (decimal degrees)
- *			 west east (decimal degrees)
- *			 lat_interval lon_interval (for graticule)
- *			 label_lat label_lon (for graticule)
- *			 cil_detail bdy_detail riv_detail (see database_info)
- *	    [optional]   equatorial_radius (kilometers) 
- *	    [optional]	 eccentricity 
- *			                  
+ *                        old fixed format was as follows:
+ *                         Map_Projection_Name
+ *                         lat0 lon0 [lat1 lon1] (decimal degrees)
+ *                         rotation (portrait=0, landscape=90)
+ *                         scale (kilometers per map unit)
+ *                         center_lat center_lon (for map)
+ *                         south north (decimal degrees)
+ *                         west east (decimal degrees)
+ *                         lat_interval lon_interval (for graticule)
+ *                         label_lat label_lon (for graticule)
+ *                         cil_detail bdy_detail riv_detail (see database_info)
+ *            [optional]   equatorial_radius (kilometers) 
+ *            [optional]         eccentricity 
+ *                                          
  *
- *			valid projection names are:
- *			 Azimuthal_Equal_Area
- *			 Cylindrical_Equal_Area
- *			 Mercator
- *			 Mollweide
- *			 Orthographic
- *			 Sinusoidal
- *			 Cylindrical_Equidistant
- *			 Polar_Stereographic
- *			 Polar_Stereographic_Ellipsoid
- *			 Azimuthal_Equal_Area_Ellipsoid			 
- *			 Cylindrical_Equal_Area_Ellipsoid
+ *                        valid projection names are:
+ *                         Azimuthal_Equal_Area
+ *                         Cylindrical_Equal_Area
+ *                         Mercator
+ *                         Mollweide
+ *                         Orthographic
+ *                         Sinusoidal
+ *                         Cylindrical_Equidistant
+ *                         Polar_Stereographic
+ *                         Polar_Stereographic_Ellipsoid
+ *                         Azimuthal_Equal_Area_Ellipsoid                         
+ *                         Cylindrical_Equal_Area_Ellipsoid
  *                       Lambert_Conic_Conformal_Ellipsoid
- *			 Interupted_Homolosine_Equal_Area
+ *                         Interupted_Homolosine_Equal_Area
  *                       Albers_Conic_Equal_Area
  *                       Albers_Conic_Equal_Area_Ellipsoid
- *			or anything reasonably similar
+ *                        or anything reasonably similar
  *
- *	The parameter lat1 is currently used for the Polar_Stereographic
- *	projection to define the "true at" parallel (default pole) and
- *	the Cylindrical_Equal_Area projection to define the latitude of
- *	1:1 aspect ratio (default 30.00). In the Lambert Conic Conformal
- *	and Albers Conic Equal-Area lat0 and lat1 are the standard parallels.
+ *        The parameter lat1 is currently used for the Polar_Stereographic
+ *        projection to define the "true at" parallel (default pole) and
+ *        the Cylindrical_Equal_Area projection to define the latitude of
+ *        1:1 aspect ratio (default 30.00). In the Lambert Conic Conformal
+ *        and Albers Conic Equal-Area lat0 and lat1 are the standard parallels.
  *
- *	result: pointer to new mapx_class instance for this map
- *		or NULL if an error occurs during initialization
+ *        result: pointer to new mapx_class instance for this map
+ *                or NULL if an error occurs during initialization
  *
- *	note  : if unable to open .mpp file on first attempt then the
- *		value of the search path environment variable is prepended
- *		to the filename and a second attempt is made
+ *        note  : if unable to open .mpp file on first attempt then the
+ *                value of the search path environment variable is prepended
+ *                to the filename and a second attempt is made
  *
- *		Some important notes on specifying longitudes:
- *		All longitudes should be >= -180 and <= 360.
- *		West to east should not span more than 360 degrees.
- *		West specifies the left side of the map and east the right,
- *		not necessarily the minimum and maximum longitudes.
- *		For purposes of bounds checking all longitudes are 
- *		normalized -180 to 180.
+ *                Some important notes on specifying longitudes:
+ *                All longitudes should be >= -180 and <= 360.
+ *                West to east should not span more than 360 degrees.
+ *                West specifies the left side of the map and east the right,
+ *                not necessarily the minimum and maximum longitudes.
+ *                For purposes of bounds checking all longitudes are 
+ *                normalized -180 to 180.
  *
  *----------------------------------------------------------------------*/
 mapx_class *init_mapx(char *filename)
@@ -193,7 +193,7 @@ mapx_class *init_mapx(char *filename)
   FILE *mpp_file=NULL;
 
   /*
-   *	open .mpp file and read label
+   *        open .mpp file and read label
    */
   mpp_filename = (char *)malloc(FILENAME_MAX);
   if (!mpp_filename) { perror("init_mapx"); return NULL; }
@@ -208,14 +208,14 @@ mapx_class *init_mapx(char *filename)
   if (NULL == label) goto error_return;
 
   /*
-   *	initialize projection parameters
+   *        initialize projection parameters
    */
   this = new_mapx(label);
   if (NULL == this) goto error_return;
   free(label); label = NULL;
 
   /*
-   *	fill in file and filename fields
+   *        fill in file and filename fields
    */
   this->mpp_filename = mpp_filename;
   this->mpp_file = mpp_file;
@@ -234,11 +234,11 @@ error_return:
 /*----------------------------------------------------------------------
  * new_mapx - initialize map projection from label
  *
- *	input : label - char buffer with initialization information
- *			see init_mapx for format
+ *        input : label - char buffer with initialization information
+ *                        see init_mapx for format
  *
- *	result: pointer to new mapx_class instance for this map
- *		or NULL if an error occurs during initialization
+ *        result: pointer to new mapx_class instance for this map
+ *                or NULL if an error occurs during initialization
  *
  *----------------------------------------------------------------------*/
 mapx_class *new_mapx (char *label)
@@ -246,18 +246,18 @@ mapx_class *new_mapx (char *label)
   mapx_class *this;
   
   /*
-   *	allocate storage for projection parameters
+   *        allocate storage for projection parameters
    */
   this = (mapx_class *)calloc(1, sizeof(mapx_class));
   if (!this) { perror("new_mapx"); return NULL; }
   
   /*
-   *	decode map projection parameters
+   *        decode map projection parameters
    */
   if (!decode_mpp(this, label)) { close_mapx(this); return NULL; }
   
   /*
-   *	match projection name and initialize remaining parameters
+   *        match projection name and initialize remaining parameters
    */
   if (strcmp (this->projection_name, "AZIMUTHALEQUALAREA") == 0)     
   { this->initialize = init_azimuthal_equal_area; 
@@ -361,7 +361,7 @@ mapx_class *new_mapx (char *label)
   }
   
   /*
-   *	initialize map projection constants
+   *        initialize map projection constants
    */
   if (0 != reinit_mapx(this))
   { close_mapx(this);
@@ -375,12 +375,12 @@ mapx_class *new_mapx (char *label)
 /*------------------------------------------------------------------------
  * decode_mpp - parse information in map projection parameters label
  *
- *	input : this - pointer to map data structure (returned by new_mapx)
- *		label - map projection parameters label
+ *        input : this - pointer to map data structure (returned by new_mapx)
+ *                label - map projection parameters label
  *
- *	result: TRUE iff success
+ *        result: TRUE iff success
  *
- *	effect: fills map data structure with values read from label
+ *        effect: fills map data structure with values read from label
  *
  *------------------------------------------------------------------------*/
 static bool decode_mpp(mapx_class *this, char *label)
@@ -389,8 +389,8 @@ static bool decode_mpp(mapx_class *this, char *label)
   char *projection_name=NULL;
 
   /*
-   *	if Map Projection tag present then interpret as new keyval format
-   *  	otherwise try for old fixed format
+   *        if Map Projection tag present then interpret as new keyval format
+   *          otherwise try for old fixed format
    */
   projection_name = get_field_keyval(label, "Map Projection", keyval_FALL_THRU_STRING);
 
@@ -403,7 +403,7 @@ static bool decode_mpp(mapx_class *this, char *label)
   free(projection_name); projection_name = NULL;
 
   /*
-   *	get required fields
+   *        get required fields
    */
   success = get_value_keyval(label, "Map Reference Latitude", "%lat", &(this->lat0), NULL);
   if (!success) {
@@ -417,7 +417,7 @@ static bool decode_mpp(mapx_class *this, char *label)
   }
 
   /*
-   *	get optional fields
+   *        get optional fields
    */
   get_value_keyval(label, "Map Second Reference Latitude", "%lat", &(this->lat1), "999");
   get_value_keyval(label, "Map Second Reference Longitude", "%lon", &(this->lon1), "999");
@@ -454,7 +454,7 @@ static bool decode_mpp(mapx_class *this, char *label)
   get_value_keyval(label, "Map Eccentricity", "%lf", &(this->eccentricity), "999");
 
   /*
-   *	try to make educated guess at defaults for map eccentricity and equatorial radius
+   *        try to make educated guess at defaults for map eccentricity and equatorial radius
    */
   if (strstr(this->projection_name, "ELLIPSOID")) {
     if (999 == this->eccentricity) {
@@ -475,7 +475,7 @@ static bool decode_mpp(mapx_class *this, char *label)
     }
     else if (0 != this->eccentricity) {
       fprintf(stderr,"mapx: eccentricity specified with spherical map projection\n"
-	      "       use Ellipsoid version of projection name\n");
+              "       use Ellipsoid version of projection name\n");
       goto error_return;
     }
   }
@@ -491,12 +491,12 @@ error_return:
 /*------------------------------------------------------------------------
  * old_fixed_format_decode_mpp
  *
- *	input : this - pointer to map data structure (returned by new_mapx)
- *		label - contents of map projection parameters file
+ *        input : this - pointer to map data structure (returned by new_mapx)
+ *                label - contents of map projection parameters file
  *
- *	result: TRUE iff success
+ *        result: TRUE iff success
  *
- *	effect: fills map data structure with values read from label
+ *        effect: fills map data structure with values read from label
  *
  *------------------------------------------------------------------------*/
 static bool old_fixed_format_decode_mpp(mapx_class *this, char *label)
@@ -506,7 +506,7 @@ static bool old_fixed_format_decode_mpp(mapx_class *this, char *label)
   char projection[MAX_STRING], readln[MAX_STRING], original_name[MAX_STRING];
 
   /*
-   *	get projection parameters
+   *        get projection parameters
    */
   if ((label = next_line_from_buffer(label, readln)) == NULL) goto error_return;
   strcpy(original_name, readln);
@@ -560,7 +560,7 @@ static bool old_fixed_format_decode_mpp(mapx_class *this, char *label)
   this->riv_detail = (ios >= 3) ? i3 : 0;
 
   /*
-   *	look for optional parameters
+   *        look for optional parameters
    */
   label = next_line_from_buffer(label, readln);
   if (NULL == label) 
@@ -583,7 +583,7 @@ static bool old_fixed_format_decode_mpp(mapx_class *this, char *label)
   return TRUE;
   
   /*
-   *	check for errors when reading
+   *        check for errors when reading
    */
 error_return:
   if (mapx_verbose && label && strlen(label) <= MAX_STRING) fprintf(stderr,"> bad label: %s\n", label);
@@ -593,10 +593,10 @@ error_return:
 /*------------------------------------------------------------------------
  * next_line_from_buffer
  *
- *	input : bufptr - pointer to current line in buffer
- *		readln - pointer to space to copy current line into
+ *        input : bufptr - pointer to current line in buffer
+ *                readln - pointer to space to copy current line into
  *
- *	result: pointer to next line in buffer or NULL if buffer is empty
+ *        result: pointer to next line in buffer or NULL if buffer is empty
  *
  *------------------------------------------------------------------------*/
 static char *next_line_from_buffer(char *bufptr, char *readln)
@@ -607,7 +607,7 @@ static char *next_line_from_buffer(char *bufptr, char *readln)
   if (NULL == bufptr) return NULL;
 
 /*
- *	get length of field and pointer to next line
+ *        get length of field and pointer to next line
  */
   line_length = strcspn(bufptr, "\n");
   if (0 != line_length) {
@@ -619,7 +619,7 @@ static char *next_line_from_buffer(char *bufptr, char *readln)
   }
 
 /*
- *	copy value field to new buffer
+ *        copy value field to new buffer
  */
   strncpy(readln, bufptr, line_length);
   readln[line_length] = '\0';
@@ -630,7 +630,7 @@ static char *next_line_from_buffer(char *bufptr, char *readln)
 /*------------------------------------------------------------------------
  * close_mapx - free resources associated with active mapx struct
  *
- *	input : this - pointer to map data structure (returned by new_mapx)
+ *        input : this - pointer to map data structure (returned by new_mapx)
  *
  *------------------------------------------------------------------------*/
 void close_mapx (mapx_class *this)
@@ -645,32 +645,32 @@ void close_mapx (mapx_class *this)
 /*------------------------------------------------------------------------
  * reinit_mapx - re-initialize map projection constants
  *
- *	input : this - pointer to map data structure (returned by new_mapx)
+ *        input : this - pointer to map data structure (returned by new_mapx)
  *
- *		The client may set user specified constants in the 
- *		mapx_class struct and this routine will re-calculate
- *		the appropriate private constants for the projection
+ *                The client may set user specified constants in the 
+ *                mapx_class struct and this routine will re-calculate
+ *                the appropriate private constants for the projection
  *
- *	result: 0 = success, -1 = error return
+ *        result: 0 = success, -1 = error return
  *
  *------------------------------------------------------------------------*/
 int reinit_mapx (mapx_class *this)
 { float theta, u, v;
   
   /*
-   *	check map bounds
+   *        check map bounds
    */
   if (this->east < -180 || this->east > 360 
       || this->west < -180 || this->west > 360)
   { fprintf(stderr,"mapx: illegal bounds: west=%f, east=%f\n",
-	    this->west, this->east);
+            this->west, this->east);
     fprintf(stderr,"           should be >= -180 and <= 360\n");
     return -1;
   }
   
   if (fabs(this->east - this->west) > 360)
   { fprintf(stderr,"mapx: illegal bounds: west=%f, east=%f\n",
-	    this->west, this->east);
+            this->west, this->east);
     fprintf(stderr,"           bounds cannot span > 360 degrees.\n");
     return -1;
   }
@@ -681,7 +681,7 @@ int reinit_mapx (mapx_class *this)
   }
   
   /*
-   *	set flag for bounds checking
+   *        set flag for bounds checking
    */
   if (this->east < this->west || this->east > 180)
     this->map_stradles_180 = TRUE;
@@ -692,7 +692,7 @@ int reinit_mapx (mapx_class *this)
   NORMALIZE(this->west);
   
   /*
-   *	set series expansion constants
+   *        set series expansion constants
    */
   this->e2 = (this->eccentricity) * (this->eccentricity);
   this->e4 = (this->e2) * (this->e2);
@@ -701,17 +701,17 @@ int reinit_mapx (mapx_class *this)
   
 
   /*
-   *	set scaled radius for spherical projections
+   *        set scaled radius for spherical projections
    */
   this->Rg = this->equatorial_radius / this->scale;
   
   /*
-   *	set projection constants
+   *        set projection constants
    */
   if ((*(this->initialize))(this)) return -1;
 
   /*
-   *	create rotation matrix
+   *        create rotation matrix
    */
   theta = RADIANS(this->rotation);
   
@@ -721,8 +721,8 @@ int reinit_mapx (mapx_class *this)
   this->T11 =  cos(theta);
   
   /*
-   *	get the offset from the projection origin (lat0,lon0)
-   *	to this map's origin (center_lat, center_lon)
+   *        get the offset from the projection origin (lat0,lon0)
+   *        to this map's origin (center_lat, center_lon)
    */
   this->u0 = this->v0 = 0.0;
   forward_mapx (this, this->center_lat, this->center_lon, &u, &v);
@@ -735,10 +735,10 @@ int reinit_mapx (mapx_class *this)
 /*------------------------------------------------------------------------
  * within_mapx - test if lat,lon are within map transformation bounds
  *
- *	input : this - pointer to map data structure (returned by new_mapx)
- *		lat,lon - geographic coordinates in decimal degrees
+ *        input : this - pointer to map data structure (returned by new_mapx)
+ *                lat,lon - geographic coordinates in decimal degrees
  *
- *	result: TRUE iff lat,lon are within specified mapx min,max
+ *        result: TRUE iff lat,lon are within specified mapx min,max
  *
  *------------------------------------------------------------------------*/
 int within_mapx (mapx_class *this, float lat, float lon)
@@ -762,10 +762,10 @@ int within_mapx (mapx_class *this, float lat, float lon)
 /*------------------------------------------------------------------------
  * forward_mapx - forward map transformation
  *
- *	input : this - pointer to map data structure (returned by new_mapx)
- *		lat,lon - geographic coordinates in decimal degrees
+ *        input : this - pointer to map data structure (returned by new_mapx)
+ *                lat,lon - geographic coordinates in decimal degrees
  *
- *	output: u,v - map coordinates in map units
+ *        output: u,v - map coordinates in map units
  *
  *------------------------------------------------------------------------*/
 int forward_mapx (mapx_class *this, float lat, float lon, float *u, float *v)
@@ -782,10 +782,10 @@ int forward_mapx (mapx_class *this, float lat, float lon, float *u, float *v)
 /*------------------------------------------------------------------------
  * inverse_mapx - inverse map transformation
  *
- *	input : this - pointer to map data structure (returned by new_mapx)
- *		u,v - map coordinates in map units
+ *        input : this - pointer to map data structure (returned by new_mapx)
+ *                u,v - map coordinates in map units
  *
- *	output: lat,lon - geographic coordinates in decimal degrees
+ *        output: lat,lon - geographic coordinates in decimal degrees
  *
  *------------------------------------------------------------------------*/
 int inverse_mapx (mapx_class *this, float u, float v, float *lat, float *lon)
@@ -802,9 +802,9 @@ int inverse_mapx (mapx_class *this, float u, float v, float *lat, float *lon)
 /*--------------------------------------------------------------------------
  * standard_name - standardize projection name
  *
- *	input : original_name - original projection name string
+ *        input : original_name - original projection name string
  *
- *	result: a valid projection name or ""
+ *        result: a valid projection name or ""
  *
  *-------------------------------------------------------------------------*/
 static char *standard_name(char *original_name)
@@ -815,7 +815,7 @@ static char *standard_name(char *original_name)
   for(s = original_name; *s != '\n' && *s != '\0'; ++s)
   {
     if ((*s == '_') || (*s == ' ') || (*s == '-') 
-	|| (*s == '(') || (*s == ')'))
+        || (*s == '(') || (*s == ')'))
       ;
     else 
       *p++ = toupper(*s);
@@ -832,49 +832,49 @@ static char *standard_name(char *original_name)
   { strcpy(new_name,"AZIMUTHALEQUALAREA");
   }
   else if (streq(new_name, "EQUALAREACYLINDRICAL") || 
-	   streq(new_name, "CYLINDRICALEQUALAREA") ) 
+           streq(new_name, "CYLINDRICALEQUALAREA") ) 
   { strcpy(new_name,"CYLINDRICALEQUALAREA");
   }
   else if (streq(new_name, "CYLINDRICALEQUIDISTANT") || 
-	   streq(new_name, "EQUIDISTANTCYLINDRICAL"))
+           streq(new_name, "EQUIDISTANTCYLINDRICAL"))
   { strcpy(new_name, "CYLINDRICALEQUIDISTANT");
   }
   else if (streq(new_name, "POLARSTEREOGRAPHIC") || 
-	   streq(new_name, "STEREOGRAPHICPOLAR"))
+           streq(new_name, "STEREOGRAPHICPOLAR"))
   { strcpy(new_name, "POLARSTEREOGRAPHIC");
   }
   else if (streq(new_name, "POLARSTEREOGRAPHICELLIPSOID") || 
-	   streq(new_name, "ELLIPSOIDPOLARSTEREOGRAPHIC") ||
-	   streq(new_name, "STEREOGRAPHICPOLARELLIPSOID") ||
-	   streq(new_name, "ELLIPSOIDSTEREOGRAPHICPOLAR"))
+           streq(new_name, "ELLIPSOIDPOLARSTEREOGRAPHIC") ||
+           streq(new_name, "STEREOGRAPHICPOLARELLIPSOID") ||
+           streq(new_name, "ELLIPSOIDSTEREOGRAPHICPOLAR"))
   { strcpy(new_name, "POLARSTEREOGRAPHICELLIPSOID");
   }
   else if (streq(new_name, "AZIMUTHALEQUALAREAELLIPSOID") || 
-	   streq(new_name, "ELLIPSOIDAZIMUTHALEQUALAREA") || 
-	   streq(new_name, "EQUALAREAAZIMUTHALELLIPSOID") || 
-	   streq(new_name, "ELLIPSOIDEQUALAREAAZIMUTHAL"))
+           streq(new_name, "ELLIPSOIDAZIMUTHALEQUALAREA") || 
+           streq(new_name, "EQUALAREAAZIMUTHALELLIPSOID") || 
+           streq(new_name, "ELLIPSOIDEQUALAREAAZIMUTHAL"))
   { strcpy(new_name, "AZIMUTHALEQUALAREAELLIPSOID");
   }
   else if (streq(new_name, "CYLINDRICALEQUALAREAELLIPSOID") || 
-	   streq(new_name, "ELLIPSOIDCYLINDRICALEQUALAREA") || 
-	   streq(new_name, "EQUALAREACYLINDRICALELLIPSOID") || 
-	   streq(new_name, "ELLIPSOIDEQUALAREACYLINDRICAL") )
+           streq(new_name, "ELLIPSOIDCYLINDRICALEQUALAREA") || 
+           streq(new_name, "EQUALAREACYLINDRICALELLIPSOID") || 
+           streq(new_name, "ELLIPSOIDEQUALAREACYLINDRICAL") )
   { strcpy(new_name,  "CYLINDRICALEQUALAREAELLIPSOID");
   }
   else if (streq(new_name, "LAMBERTCONICCONFORMALELLIPSOID") ||
-	   streq(new_name, "LAMBERTCONFORMALCONICELLIPSOID") ||
-	   streq(new_name, "ELLIPSOIDLAMBERTCONICCONFORMAL") ||
-	   streq(new_name, "ELLIPSOIDLAMBERTCONFORMALCONIC"))
+           streq(new_name, "LAMBERTCONFORMALCONICELLIPSOID") ||
+           streq(new_name, "ELLIPSOIDLAMBERTCONICCONFORMAL") ||
+           streq(new_name, "ELLIPSOIDLAMBERTCONFORMALCONIC"))
   { strcpy(new_name, "LAMBERTCONICCONFORMALELLIPSOID");
   }
   else if (streq(new_name, "INTERUPTEDHOMOLOSINEEQUALAREA") ||
-	   streq(new_name, "GOODESINTERUPTEDHOMOLOSINE") ||
-	   streq(new_name, "GOODEHOMOLOSINEEQUALAREA") ||
-	   streq(new_name, "GOODESHOMOLOSINEEQUALAREA") ||
-	   streq(new_name, "INTERUPTEDHOMOLOSINE") ||
-	   streq(new_name, "GOODEINTERUPTEDHOMOLOSINE") ||
-	   streq(new_name, "GOODEHOMOLOSINE") ||
-	   streq(new_name, "GOODESHOMOLOSINE"))
+           streq(new_name, "GOODESINTERUPTEDHOMOLOSINE") ||
+           streq(new_name, "GOODEHOMOLOSINEEQUALAREA") ||
+           streq(new_name, "GOODESHOMOLOSINEEQUALAREA") ||
+           streq(new_name, "INTERUPTEDHOMOLOSINE") ||
+           streq(new_name, "GOODEINTERUPTEDHOMOLOSINE") ||
+           streq(new_name, "GOODEHOMOLOSINE") ||
+           streq(new_name, "GOODESHOMOLOSINE"))
   { strcpy(new_name, "INTERUPTEDHOMOLOSINEEQUALAREA");
   }
   else if (streq(new_name, "ALBERSCONICEQUALAREA") || 
@@ -894,9 +894,6 @@ static char *standard_name(char *original_name)
       streq(new_name, "ALBERSCONICELLIPSOID") || 
       streq(new_name, "ALBERSEQUALAREAELLIPSOID"))
   { strcpy(new_name,"ALBERSCONICEQUALAREAELLIPSOID");
-  }
-  else
-  { return original_name;
   }
   
   return new_name;
@@ -932,10 +929,10 @@ main(int argc, char *argv[])
       sscanf(readln, "%f %f", &lat, &lon);
       status = forward_mapx(the_map, lat, lon, &u, &v);
       printf("u,v = %f %f    %s\n", u, v, 
-	     status == 0 ? "valid" : "invalid");
+             status == 0 ? "valid" : "invalid");
       status = inverse_mapx(the_map, u, v, &lat, &lon);
       printf("lat,lon = %f %f     %s\n", lat, lon, 
-	     status == 0 ? "valid" : "invalid");
+             status == 0 ? "valid" : "invalid");
     }
     
     printf("\ninverse_mapx:\n");
@@ -947,10 +944,10 @@ main(int argc, char *argv[])
       sscanf(readln, "%f %f", &u, &v);
       status = inverse_mapx(the_map, u, v, &lat, &lon);
       printf("lat,lon = %f %f    %s\n", lat, lon, 
-	     status == 0 ? "valid" : "invalid");
+             status == 0 ? "valid" : "invalid");
       status = forward_mapx(the_map, lat, lon, &u, &v);
       printf("u,v = %f %f    %s\n", u, v, 
-	     status == 0 ? "valid" : "invalid");
+             status == 0 ? "valid" : "invalid");
     }
     printf("\nwithin_mapx:\n");
     for (;;)
@@ -1040,16 +1037,16 @@ main(int argc, char *argv[])
     { lat = (float)i_lat/pts_lat * dlat + the_map->south;
       for (i_lon = 0; i_lon <= pts_lon; i_lon++)
       { lon = (float)i_lon/pts_lon * dlon + the_map->west;
-	status1 = forward_mapx(the_map, lat, lon, &u, &v);
-	status2 = inverse_mapx(the_map, u, v, &latx, &lonx);
-	if ((status1 | status2) != 0) ++bad_pts;
-	++npts;
+        status1 = forward_mapx(the_map, lat, lon, &u, &v);
+        status2 = inverse_mapx(the_map, u, v, &latx, &lonx);
+        if ((status1 | status2) != 0) ++bad_pts;
+        ++npts;
 #ifdef MACCT
-	if ((status1 | status2) == 0)
-	{ err = dist_km(lat, lon, latx, lonx);
-	  if (err > 0) { sum += err; sum2 += err*err; }
-	  if (err > max_err) { max_err=err; lat_max=lat; lon_max=lon; }
-	}
+        if ((status1 | status2) == 0)
+        { err = dist_km(lat, lon, latx, lonx);
+          if (err > 0) { sum += err; sum2 += err*err; }
+          if (err > max_err) { max_err=err; lat_max=lat; lon_max=lon; }
+        }
 #endif
       }
     }
@@ -1065,8 +1062,8 @@ main(int argc, char *argv[])
   fprintf(stderr,"std dev error = %10.4e km\n", stdv);
   fprintf(stderr,"maximum error = %10.4e km\n", max_err);
   fprintf(stderr,"max error was at %4.2f%c %4.2f%c\n",
-	  fabs(lat_max), lat_max >= 0 ? 'N' : 'S',
-	  fabs(lon_max), lon_max >= 0 ? 'E' : 'W');
+          fabs(lat_max), lat_max >= 0 ? 'N' : 'S',
+          fabs(lon_max), lon_max >= 0 ? 'E' : 'W');
 #endif
 }
 #endif
