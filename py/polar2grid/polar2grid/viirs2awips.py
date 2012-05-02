@@ -24,10 +24,57 @@ import os
 import sys
 import logging
 import multiprocessing
+from multiprocessing import Process
 import numpy
 from glob import glob
 
 log = logging.getLogger(__name__)
+LOG_FN = os.environ.get("VIIRS2AWIPS_LOG", "./viirs2awips.log")
+
+def setup_logging(console_level=logging.INFO):
+    """Setup the logger to the console to the logging level defined in the
+    command line (default INFO).  Sets up a file logging for everything,
+    regardless of command line level specified.  Adds extra logger for
+    tracebacks to go to the log file if the exception is caught.  See
+    `exc_handler` for more information.
+
+    :Keywords:
+        console_level : int
+            Python logging level integer (ex. logging.INFO).
+    """
+    root_logger = logging.getLogger('')
+    root_logger.setLevel(logging.DEBUG)
+
+    # Console output is minimal
+    console = logging.StreamHandler(sys.stderr)
+    console_format = "%(levelname)-8s : %(message)s"
+    console.setFormatter(logging.Formatter(console_format))
+    console.setLevel(console_level)
+    root_logger.addHandler(console)
+
+    # Log file messages have a lot more information
+    file_handler = logging.FileHandler(LOG_FN)
+    file_format = "[%(asctime)s] : %(levelname)-8s : %(name)s : %(funcName)s : %(message)s"
+    file_handler.setFormatter(logging.Formatter(file_format))
+    file_handler.setLevel(logging.DEBUG)
+    root_logger.addHandler(file_handler)
+
+    # Make a traceback logger specifically for adding tracebacks to log file
+    traceback_log = logging.getLogger('traceback')
+    traceback_log.propagate = False
+    traceback_log.setLevel(logging.ERROR)
+    traceback_log.addHandler(file_handler)
+
+def exc_handler(exc_type, exc_value, traceback):
+    """An execption handler/hook that will only be called if an exception
+    isn't called.  This will save us from print tracebacks or unrecognizable
+    errors to the user's console.
+
+    Note, however, that this doesn't effect code in a separate process as the
+    exception never gets raised in the parent.
+    """
+    logging.getLogger(__name__).error(exc_value)
+    logging.getLogger('traceback').error(exc_value, exc_info=(exc_type,exc_value,traceback))
 
 def _force_symlink(dst, linkname):
     """Create a symbolic link named `linkname` pointing to `dst`.  If the
@@ -62,6 +109,10 @@ def _safe_remove(fn):
 def remove_products():
     """Remove as many of the possible files that were created from a previous
     run of this script, including temporary files.
+
+    :note:
+        This does not remove the log file because it requires the log file
+        to report what's being removed.
     """
     for f in glob(".lat*"):
         _safe_remove(f)
@@ -195,7 +246,8 @@ def run_prescaling(kind, band, data_kind,
         fbf_swath = "./%s.real4.%d.%d" % (fbf_swath_var, cols, rows)
         rescaled_data.tofile(fbf_swath)
     except StandardError:
-        log.error("Unexpected error while rescaling data", exc_info=1)
+        log.error("Unexpected error while rescaling data")
+        log.debug("Rescaling error:", exc_info=1)
         raise
 
     return fbf_swath
@@ -267,7 +319,7 @@ def create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
                 grid_jobs[band][grid_name] = grid_info
     return ll2cr_jobs,grid_jobs
 
-def create_pseudo(kind, bands):
+def create_pseudobands(kind, bands):
     # Fog pseudo-band
     if (kind == "I") and ("05" in bands) and ("04" in bands):
         log.info("Creating IFOG pseudo band...")
@@ -326,11 +378,13 @@ def process_kind(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None,
         forced_gpd=None, forced_nc=None,
+        create_pseudo=True,
         num_procs=1
         ):
     """Process all the files provided from start to finish,
     from filename to AWIPS NC file.
     """
+    log_level = logging.getLogger('').handlers[0].level or 0
     SUCCESS = 0
     # Swath extraction failed
     SWATH_FAIL = 2
@@ -375,7 +429,14 @@ def process_kind(filepaths,
     fbf_lon = meta_data["fbf_lon"]
 
     # Create pseudo-bands
-    create_pseudo(kind, bands)
+    try:
+        if create_pseudo:
+            create_pseudobands(kind, bands)
+    except StandardError:
+        log.error("Pseudo band creation failed")
+        log.debug("Pseudo band error:", exc_info=1)
+        SUCCESS |= SWATH_FAIL
+        return SUCCESS
 
     # Do any pre-remapping rescaling
     log.info("Prescaling data before remapping...")
@@ -426,18 +487,6 @@ def process_kind(filepaths,
     # Run ll2cr
     for grid_number,grid_info in ll2cr_jobs.items():
         log.info("Running ll2cr for the %s band and grid %s" % (kind,grid_number))
-        #cr_dict = ms2gt.ll2cr(
-        #        grid_info["swath_cols"],
-        #        grid_info["swath_scans"],
-        #        grid_info["rows_per_scan"],
-        #        img_lat,
-        #        img_lon,
-        #        grid_info["gpd_template"],
-        #        verbose=log.getEffectiveLevel() <= logging.DEBUG,
-        #        fill_io=(-999.0, -1e30),
-        #        tag=grid_info["tag"]
-        #        )
-
         grid_info["result_object"] = proc_pool.apply_async(ms2gt.ll2cr, args=(
                     grid_info["swath_cols"],
                     grid_info["swath_scans"],
@@ -447,7 +496,7 @@ def process_kind(filepaths,
                     grid_info["gpd_template"]
                     ),
                     kwds=dict(
-                        verbose=log.getEffectiveLevel() <= logging.DEBUG,
+                        verbose=log_level <= logging.DEBUG,
                         fill_io=(-999.0, -1e30),
                         tag=grid_info["tag"]
                         )
@@ -541,7 +590,7 @@ def process_kind(filepaths,
                         fornav_job["outputs"]
                         ),
                 kwds = dict(
-                        verbose=log.getEffectiveLevel() <= logging.DEBUG,
+                        verbose=log_level <= logging.DEBUG,
                         swath_data_type_1="f4",
                         swath_fill_1=-999.0,
                         grid_fill_1=-999.0,
@@ -556,25 +605,6 @@ def process_kind(filepaths,
 
     for (grid_number,src_kind),fornav_job in fornav_jobs.items():
         try:
-            #ms2gt.fornav(
-            #        len(fornav_job["inputs"]),
-            #        fornav_job["swath_cols"],
-            #        fornav_job["scans_out"],
-            #        fornav_job["rows_per_scan"],
-            #        fornav_job["colfile"],
-            #        fornav_job["rowfile"],
-            #        fornav_job["inputs"],
-            #        fornav_job["out_cols"],
-            #        fornav_job["out_rows"],
-            #        fornav_job["outputs"],
-            #        verbose=log.getEffectiveLevel() <= logging.DEBUG,
-            #        swath_data_type_1="f4",
-            #        swath_fill_1=-999.0,
-            #        grid_fill_1=0,
-            #        weight_delta_max=fornav_D,
-            #        weight_distance_max=fornav_d,
-            #        start_scan=(fornav_job["scan_first"],0)
-            #        )
             fornav_job["result_object"].get()
         except StandardError:
             log.warning("fornav failed for %s band, grid %s, data_kind %s" % (kind,grid_number,src_kind))
@@ -634,6 +664,7 @@ def run_viirs2awips(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None,
         forced_gpd=None, forced_nc=None,
+        create_pseudo=True,
         multiprocess=True, num_procs=1):
     """Go through the motions of converting
     a VIIRS h5 file into a AWIPS NetCDF file.
@@ -664,7 +695,6 @@ def run_viirs2awips(filepaths,
     if len(not_used):
         log.warning("Didn't know what to do with\n%s" % "\n".join(list(not_used)))
 
-    from multiprocessing import Process
     pM = None
     pI = None
     pDNB = None
@@ -673,48 +703,63 @@ def run_viirs2awips(filepaths,
         log.debug("Processing M files")
         try:
             if multiprocess:
-                pM = Process(target=process_kind, args=(M_files,), kwargs=dict(
-                    fornav_D=fornav_D, fornav_d=fornav_d,
-                    forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
-                    num_procs=num_procs))
+                pM = Process(target=process_kind,
+                        args = (M_files,),
+                        kwargs = dict(
+                            fornav_D=fornav_D, fornav_d=fornav_d,
+                            forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
+                            create_pseudo=create_pseudo,
+                            num_procs=num_procs
+                            )
+                        )
                 pM.start()
             else:
                 stat = process_kind(M_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
                 exit_status = exit_status or stat
         except StandardError:
-            log.error("Could not process M files", exc_info=1)
+            log.error("Could not process M files")
             exit_status = exit_status or len(M_files)
 
     if len(I_files) != 0 and len([x for x in BANDS if x.startswith("I") ]) != 0:
         log.debug("Processing I files")
         try:
             if multiprocess:
-                pI = Process(target=process_kind, args=(I_files,), kwargs=dict(
-                    fornav_D=fornav_D, fornav_d=fornav_d,
-                    forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
-                    num_procs=num_procs))
+                pI = Process(target=process_kind,
+                        args = (I_files,),
+                        kwargs = dict(
+                            fornav_D=fornav_D, fornav_d=fornav_d,
+                            forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
+                            create_pseudo=create_pseudo,
+                            num_procs=num_procs
+                            )
+                        )
                 pI.start()
             else:
                 stat = process_kind(I_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
                 exit_status = exit_status or stat
         except StandardError:
-            log.error("Could not process I files", exc_info=1)
+            log.error("Could not process I files")
             exit_status = exit_status or len(I_files)
 
     if len(DNB_files) != 0 and len([x for x in BANDS if x.startswith("DNB") ]) != 0:
         log.debug("Processing DNB files")
         try:
             if multiprocess:
-                pDNB = Process(target=process_kind, args=(DNB_files,), kwargs=dict(
-                    fornav_D=fornav_D, fornav_d=fornav_d,
-                    forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
-                    num_procs=num_procs))
+                pDNB = Process(target=process_kind,
+                        args = (DNB_files,),
+                        kwargs = dict(
+                            fornav_D=fornav_D, fornav_d=fornav_d,
+                            forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
+                            create_pseudo=create_pseudo,
+                            num_procs=num_procs
+                            )
+                        )
                 pDNB.start()
             else:
                 stat = process_kind(DNB_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
                 exit_status = exit_status or stat
         except StandardError:
-            log.error("Could not process DNB files", exc_info=1)
+            log.error("Could not process DNB files")
             exit_status = exit_status or len(DNB_files)
 
     log.debug("Waiting for subprocesses")
@@ -751,7 +796,7 @@ def main():
     """
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
-                    help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
+            help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_option('-D', dest='fornav_D', default=40,
             help="Specify the -D option for fornav")
     parser.add_option('-d', dest='fornav_d', default=2,
@@ -772,10 +817,15 @@ def main():
             help="Specify a different nc file to use")
     parser.add_option('-k', '--keep', dest='remove_prev', default=True, action='store_true',
             help="Don't delete any files that were previously made (WARNING: processing may not run successfully)")
+    parser.add_option('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
+            help="Don't create pseudo bands")
     options,args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level = levels[min(3, options.verbosity)])
+    setup_logging(console_level=levels[min(3, options.verbosity)])
+
+    # Don't set this up until after you have setup logging
+    sys.excepthook = exc_handler
 
     fornav_D = int(options.fornav_D)
     fornav_d = int(options.fornav_d)
@@ -822,13 +872,15 @@ def main():
             return -1
         hdf_files = [ x for x in hdf_files if os.path.split(x)[1].startswith("SV" + options.force_band) ]
         stat = process_kind(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
-                forced_gpd=options.forced_gpd, forced_nc=options.forced_nc, forced_grid=forced_grid, num_procs=num_procs)
+                forced_gpd=options.forced_gpd, forced_nc=options.forced_nc, forced_grid=forced_grid,
+                create_pseudo=options.create_pseudo, num_procs=num_procs)
     else:
         stat = run_viirs2awips(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
                     forced_gpd=options.forced_gpd, forced_nc=options.forced_nc, forced_grid=forced_grid,
+                    create_pseudo=options.create_pseudo,
                     multiprocess=not options.single_process, num_procs=num_procs)
 
-    sys.exit(stat)
+    return stat
 
 if __name__ == "__main__":
     sys.exit(main())
