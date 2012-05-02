@@ -515,6 +515,9 @@ def process_kind(filepaths,
 
             for grid_job in [ x[grid_number] for x in grid_jobs.values() if grid_number in x ]:
                 grid_job["cr_dict"] = cr_dict
+                if cr_dict["scans_out"] == 0:
+                    log.warning("ll2cr failed to map any %s data to grid %s" % (kind,grid_number))
+                    raise ValueError("ll2cr failed to map any %s data to grid %s" % (kind,grid_number))
         except StandardError:
             log.warning("ll2cr failed for %s band, grid %s" % (kind,grid_number))
             log.warning("Won't process for this grid...")
@@ -658,7 +661,35 @@ def process_kind(filepaths,
             log.warning("AWIPS backend failed for all grids for %s%s" % (kind,band))
             SUCCESS |= BACKEND_FAIL
 
+    log.info("Processing of bands of kind %s is complete" % kind)
+
     return SUCCESS
+
+def _process_kind(*args, **kwargs):
+    """Wrapper function around `process_kind` so that it can called
+    properly from `run_viir2awips`, where the exitcode is the actual
+    returned value from `process_kind`.
+
+    This function also checks for exceptions other than the ones already
+    checked for in `process_kind` so that they are
+    recorded properly.
+    """
+    try:
+        stat = process_kind(*args, **kwargs)
+        sys.exit(stat)
+    except MemoryError:
+        log.error("viirs2awips ran out of memory, check log file for more info")
+        log.debug("Memory error:", exc_info=1)
+    except OSError:
+        log.error("viirs2awips had a OS error, check log file for more info")
+        log.debug("OS error:", exc_info=1)
+    except StandardError:
+        log.error("viirs2awips had an unexpected error, check log file for more info")
+        log.debug("Unexpected/Uncaught error:", exc_info=1)
+    except KeyboardInterrupt:
+        log.info("viirs2awips was cancelled by a keyboard interrupt")
+
+    sys.exit(-1)
 
 def run_viirs2awips(filepaths,
         fornav_D=None, fornav_d=None,
@@ -703,7 +734,7 @@ def run_viirs2awips(filepaths,
         log.debug("Processing M files")
         try:
             if multiprocess:
-                pM = Process(target=process_kind,
+                pM = Process(target=_process_kind,
                         args = (M_files,),
                         kwargs = dict(
                             fornav_D=fornav_D, fornav_d=fornav_d,
@@ -714,7 +745,7 @@ def run_viirs2awips(filepaths,
                         )
                 pM.start()
             else:
-                stat = process_kind(M_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
+                stat = _process_kind(M_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process M files")
@@ -724,7 +755,7 @@ def run_viirs2awips(filepaths,
         log.debug("Processing I files")
         try:
             if multiprocess:
-                pI = Process(target=process_kind,
+                pI = Process(target=_process_kind,
                         args = (I_files,),
                         kwargs = dict(
                             fornav_D=fornav_D, fornav_d=fornav_d,
@@ -735,7 +766,7 @@ def run_viirs2awips(filepaths,
                         )
                 pI.start()
             else:
-                stat = process_kind(I_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
+                stat = _process_kind(I_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process I files")
@@ -745,7 +776,7 @@ def run_viirs2awips(filepaths,
         log.debug("Processing DNB files")
         try:
             if multiprocess:
-                pDNB = Process(target=process_kind,
+                pDNB = Process(target=_process_kind,
                         args = (DNB_files,),
                         kwargs = dict(
                             fornav_D=fornav_D, fornav_d=fornav_d,
@@ -756,7 +787,7 @@ def run_viirs2awips(filepaths,
                         )
                 pDNB.start()
             else:
-                stat = process_kind(DNB_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
+                stat = _process_kind(DNB_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process DNB files")

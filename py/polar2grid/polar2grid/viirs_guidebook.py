@@ -509,7 +509,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     finfo["mode_mask"] = sza_data
     finfo["start_dt"] = start_dt
     # Rows only
-    finfo["scan_quality"] = (np.nonzero(lat_mask)[0],)
+    finfo["scan_quality"] = (np.unique(np.nonzero(lat_mask)[0]),)
     return finfo
 
 def generic_info(fn):
