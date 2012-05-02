@@ -120,3 +120,22 @@ changes were made:
               multi-word projection names being unknown.  This function was
               patched to resolve this issue.
 
+    other:
+
+        * Makefiles did not compile on Enterprise Linux 5 (at least):
+            The root Makefile and the src Makefile had incorrect usage of the
+            MAKEFLAGS variable.  They did this
+            ::
+
+                $(MAKE) $(MAKEFLAGS) ...
+
+            when all you need to do is
+            ::
+
+                $(MAKE) ...
+
+            ``make`` passes these flags automatically in the background.
+            Those 2 make files also redeclared the MAKE variable as ``make``.
+            The ``make`` utility already does this for you.
+
+
