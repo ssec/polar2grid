@@ -251,16 +251,29 @@ def rescale_and_write(img_file, output_file, *args, **kwargs):
 
 def main():
     import optparse
-    usage = """%prog [options] <input.fbf_format> <output.fbf_format> <band>"""
+    usage = """%prog [options] <input.fbf_format> <output.fbf_format> <kind> <band> --datakind=K_REFLECTANCE"""
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
                     help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
+    parser.add_option('--datakind', dest='data_kind', default=None,
+            help="specify the data kind of the provided input file as a constant name (K_REFLECTANCE, K_BTEMP, K_RADIANCE, K_FOG)")
     options,args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level = levels[min(3, options.verbosity)])
 
-    return rescale_and_write(*args)
+    if options.data_kind is None or not options.data_kind.startswith("K_") or options.data_kind not in globals():
+        log.error("%s is not a known constant for a data type, try K_REFLECTANCE, K_BTEMP, K_RADIANCE, K_FOG" % options.data_kind)
+        return -1
+    else:
+        data_kind = globals()[options.data_kind]
+
+    if len(args) != 4:
+        log.error("Rescaling takes only 4 arguments")
+        parser.print_help()
+        return -1
+
+    return rescale_and_write(args[0], args[1], kind=args[2], band=args[3], data_kind=data_kind)
 
 if __name__ == "__main__":
     sys.exit(main())
