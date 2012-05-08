@@ -366,7 +366,7 @@ def create_pseudobands(kind, bands):
                     shape=i5.shape
                     )
             numpy.subtract(i5, i4, fog_map)
-            fog_map[~night_mask] = -999.0
+            fog_map[ (~night_mask) | (i5 == -999.0) | (i4 == -999.0) ] = -999.0
             del fog_map
             del i5,i4
             bands["FOG"] = fog_dict
