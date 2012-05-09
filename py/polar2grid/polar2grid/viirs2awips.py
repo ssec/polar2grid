@@ -650,6 +650,9 @@ def process_kind(filepaths,
                         band,
                         grid_job["data_kind"],
                         grid_job["start_dt"],
+                        grid_job["channel"],
+                        grid_job["source"],
+                        grid_job["sat_name"],
                         **kwargs
                         )
             except StandardError:

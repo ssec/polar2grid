@@ -9,9 +9,11 @@ Global objects representing configuration files
 
 :Variables:
     GRIDS : dict
-        Mappings to product_id and NC filename format
+        Mappings to product_id, NC filename format,
+        and other meta data needed for NC files
     BANDS : dict
-        Mappings to product_id and NC filename format
+        Mappings to product_id, NC filename format,
+        and other meta data needed for NC files
     GRID_TEMPLATES : dict
         Mappings to gpd and NC templates.
     SHAPES : dict 
@@ -74,12 +76,15 @@ def read_grid_config(config_filepath):
         # For comments
         if line.startswith("#") or line.startswith("\n"): continue
         parts = line.strip().split(",")
-        if len(parts) < 4:
+        if len(parts) < 7:
             print "ERROR: Need at least 4 columns in templates.conf (%s)" % line
         product_id = parts[0]
         grid_number = parts[1]
         band = parts[2]
-        nc_name = parts[3]
+        channel = parts[3]
+        source = parts[4]
+        satelliteName = parts[5]
+        nc_name = parts[6]
 
         if grid_number not in grids_map:
             grids_map[grid_number] = {}
@@ -93,7 +98,7 @@ def read_grid_config(config_filepath):
             print "ERROR: templates.conf contains two or more entries for grid %s and band %s" % (grid_number,band)
             sys.exit(-1)
 
-        val = (product_id,nc_name)
+        val = (product_id,channel,source,satelliteName,nc_name)
         bands_map[band][grid_number] = val
         grids_map[grid_number][band] = val
 
@@ -162,7 +167,10 @@ def get_grid_info(kind, band, grid_number, gpd=None, nc=None,
     grid_info = {}
     grid_info["grid_number"] = grid_number
     grid_info["product_id"] = awips_info[0]
-    grid_info["nc_format"] = awips_info[1]
+    grid_info["channel"] = awips_info[1]
+    grid_info["source"] = awips_info[2]
+    grid_info["sat_name"] = awips_info[3]
+    grid_info["nc_format"] = awips_info[4]
     grid_info["gpd_template"] = temp_info[0]
     grid_info["nc_template"] = temp_info[1]
     grid_info["out_rows"] = out_rows

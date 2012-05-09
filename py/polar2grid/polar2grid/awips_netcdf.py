@@ -62,7 +62,8 @@ log = logging.getLogger(__name__)
 UTC = UTC()
 AWIPS_ATTRS = set(re.findall(r'\W:(\w+)', NCDUMP))
 
-def fill(nc_name, image, template, start_dt):
+def fill(nc_name, image, template, start_dt,
+        channel, source, sat_name):
     """Copy a template file to destination and fill it
     with the provided image data.
 
@@ -102,12 +103,19 @@ def fill(nc_name, image, template, start_dt):
     image_var[:] = image
     time_var = nc.variables["validTime"]
     time_var[:] = float(calendar.timegm( start_dt.utctimetuple() )) + float(start_dt.microsecond)/1e6
+
+    # Add AWIPS 2 global attributes
+    nc.channel = channel
+    nc.source = source
+    nc.satelliteName = sat_name
+
     nc.sync() # Just in case
     nc.close()
     log.debug("Data transferred into NC file correctly")
 
 def awips_backend(img_filepath, nc_template, nc_filepath,
-        kind, band, data_kind, start_dt, **kwargs):
+        kind, band, data_kind, start_dt,
+        channel, source, sat_name, **kwargs):
     try:
         W = Workspace('.')
         img_attr = os.path.split(img_filepath)[1].split('.')[0]
@@ -133,7 +141,8 @@ def awips_backend(img_filepath, nc_template, nc_filepath,
         rescaled_data = post_rescale_dnb(img_data)
 
     try:
-        fill(nc_filepath, rescaled_data, nc_template, start_dt)
+        fill(nc_filepath, rescaled_data, nc_template, start_dt,
+                channel, source, sat_name)
     except StandardError:
         log.error("Error while filling in NC file with data")
         raise
