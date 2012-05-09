@@ -642,6 +642,9 @@ def process_kind(filepaths,
                 del kwargs["nc_filename"]
                 del kwargs["data_kind"]
                 del kwargs["start_dt"]
+                del kwargs["source"]
+                del kwargs["channel"]
+                del kwargs["sat_name"]
                 awips_backend(
                         grid_job["fbf_output"],
                         grid_job["nc_template"],
