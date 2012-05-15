@@ -6,7 +6,7 @@ if [ -z "$POLAR2GRID_HOME" ]; then
 fi
 
 # Setup necessary environments
-source $POLAR2GRID_HOME/bin/viirs2awips_env.sh
+source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
 # Call the python module to do the processing, passing all arguments
 $POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.viirs2awips -vv $@

@@ -2,11 +2,6 @@
 ### Run simple tests to verify viirs2awips will run properly ###
 # Should be renamed run.sh in the corresponding test tarball
 
-# Setup viirs2awips environment
-if [ -z "$POLAR2GRID_HOME" ]; then
-    export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
-fi
-source $POLAR2GRID_HOME/bin/viirs2awips_env.sh
 
 oops() {
     echo "OOPS: $*"
@@ -25,6 +20,12 @@ run_test() {
     fi
 }
 
+# Setup viirs2awips environment
+if [ -z "$POLAR2GRID_HOME" ]; then
+    oops "POLAR2GRID_HOME needs to be defined"
+fi
+source $POLAR2GRID_HOME/bin/polar2grid_env.sh
+
 # Find out where the tests are relative to this script
 TEST_BASE="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "Base directory for all test cases is $TEST_BASE"
@@ -34,7 +35,7 @@ which viirs2awips.sh || oops "viirs2awips.sh is not in PATH"
 
 # Check if they specified a different working directory
 if [ $# -ne 1 ]; then
-    WORK_DIR=/tmp/p2g-v2a-test-$$
+    WORK_DIR=/tmp/p2g-v2a-ak-test-$$
 else
     echo "Will use $1 directory, but won't delete it"
     WORK_DIR=$1
@@ -47,6 +48,7 @@ cd $WORK_DIR
 # Run tests for each test data directory in the base directory
 for DDIR in $TEST_BASE/*; do
     if [ -d $DDIR ]; then
+        # Make a unique working test directory
         TDIR=`basename $DDIR`-$$
         echo "Making temporary working directory $TDIR"
         mkdir -p $TDIR || oops "Couldn't make $TDIR test directory"
@@ -54,7 +56,6 @@ for DDIR in $TEST_BASE/*; do
 
         run_test 203 $DDIR
         # Move all NetCDF files here
-        echo "Current directory $PWD"
         mv SSEC_AWIPS_VIIRS-* ../ || oops "No NC files created for $DDIR in $TDIR"
 
         popd
@@ -64,7 +65,7 @@ for DDIR in $TEST_BASE/*; do
 done
 
 # Generate NC product images
-$POLAR2GRID/ShellB3/bin/python -m polar2grid.plot_ncdata
+$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.plot_ncdata
 
 # End of all tests
 echo "SUCCESS"

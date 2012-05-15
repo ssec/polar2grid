@@ -15,6 +15,7 @@ if [ -z "$POLAR2GRID_REV" ]; then
         exit 1
     fi
 
+    export PATH=$POLAR2GRID_HOME/bin:$PATH
     export PYTHONPATH=$EGG_LOC:$PYTHONPATH
 
     # Script config file locations
