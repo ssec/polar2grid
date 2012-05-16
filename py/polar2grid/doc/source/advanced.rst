@@ -26,8 +26,8 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
 
     1. Create the software bundle directory and change to it::
 
-        mkdir polar2grid_swbundle_<version>
-        cd polar2grid_swbundle_<version>
+        mkdir polar2grid-swbundle-<version>
+        cd polar2grid-swbundle-<version>
 
     2. Create binary directory::
 
@@ -39,8 +39,11 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
 
             cd /path/to/repos/checkout/trunk/ms2gt/
             make tar
-            mv ms2gt<ms2gt-version>.tar.gz /path/to/polar2grid_swbundle_<version>
-            cd /path/to/polar2grid_swbundle_<version>
+            mv ms2gt<ms2gt-version>.tar.gz /path/to/polar2grid-swbundle-<version>
+            cd /path/to/polar2grid-swbundle-<version>
+
+            # To delete the temporary directory that was made:
+            rm -r ms2gt
 
         Or you can download the .tar.gz file from here:
             http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/
@@ -60,8 +63,8 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
 
             cd /path/to/repos/checkout/trunk/py/polar2grid/
             python setup.py sdist
-            mv dist/polar2grid-<py-package-version>.tar.gz /path/to/polar2grid_swbundle_<version>/
-            cd /path/to/polar2grid_swbundle_<version>/
+            mv dist/polar2grid-<py-package-version>.tar.gz /path/to/polar2grid-swbundle-<version>/
+            cd /path/to/polar2grid-swbundle-<version>/
 
         Or you can download the .tar.gz file from here:
             http://larch.ssec.wisc.edu/eggs/repos/polar2grid/
@@ -71,23 +74,71 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
             tar -xzf polar2grid-<py-package-version>.tar.gz
             ln -sf polar2grid-<py-package-version> polar2grid
 
-    5. Copy any companion scripts to software bundle directory::
+    5. Copy any companion scripts and environment scripts to software bundle directory::
 
-        cp /path/to/repos/checkout/trunk/py/viirs2awips/viirs2awips.sh /path/to/polar2grid_swbundle_<version>/bin/
+        cp /path/to/repos/checkout/trunk/py/viirs2awips/viirs2awips.sh /path/to/polar2grid-swbundle-<version>/bin/
+        cp /path/to/repos/checkout/trunk/py/viirs2awips/polar2grid_env.sh /path/to/polar2grid-swbundle-<version>/bin/
 
     6. Copy/install precompiled ShellB3 package::
 
         tar -xzf ShellB3-<SB3-version>.tar.gz
 
-    .. note:: Currently there aren't any publicly available ShellB3 tarball packages, contact us to get one.
+       .. note:: Currently there aren't any publicly available ShellB3 tarball packages, contact us to get one.
 
     7. Create any desired test/work directories and populate with test data.
 
     8. Create a README text file that describes the package and its author.
+       There is a copy of a README template in the subversion repository at::
+
+        .../repos/checkout/trunk/py/viirs2awips/p2g_swbundle_readme.txt
 
     9. Compress software bundle into a tarball::
 
-        tar -czf polar2grid_swbundle_<version>.tar.gz polar2grid_swbundle_<version>
+        tar -czf polar2grid-swbundle-<version>.tar.gz polar2grid-swbundle-<version>
+
+Creating A Test Bundle
+----------------------
+
+Most polar2grid test bundles should follow this same sequence of creation
+for consistency.
+
+    1. Make the directory and change into it::
+
+        mkdir p2g-v2a-ak-tests
+        cd p2g-v2a-ak-tests
+
+       where ``p2g`` stands for 'polar2grid'. The ``v2a`` stands for
+       'viirs2awips' or whatever polar2grid script this bundle will be
+       testing.  The ``ak`` is a descriptive identifier, in this case
+       it stands for Alaska meaning that this test bundle has only
+       Alaska (or grid 203) test cases.
+
+    2. Make test case directories::
+
+        mkdir ak_20120408
+
+       where test case input data files are put.
+
+    3. Make a verify directory::
+
+        mkdir verify
+
+       where you put the known valid output files of all the test cases.
+
+    4. Create a ``run.sh`` script that looks at all test case directories
+       running the script being tested.  It will likely need to source the
+       polar2grid_env.sh file to properly use the script.  It should also
+       print "SUCCESS" as the last line of output.  In the product directory
+       created should be all of the product files that were created for all
+       test cases.
+
+    5. Create a ``verify.sh`` script that looks at all the known good
+       output files in the ``verify`` directory and compares them to the
+       test produced files in the product directory.  It should print
+       "SUCCESS" as the last line of output.
+
+    6. Package the bundle directory into a .tar.gz file and distribute to
+       users.
 
 ms2gt Changes or Known issues
 -----------------------------
