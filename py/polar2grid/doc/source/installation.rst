@@ -53,6 +53,10 @@ directory::
 
     p2g-v2a-ak-tests/run.sh [destination directory]
 
+.. warning::
+
+    Do NOT run ``run.sh`` from the ``p2g-v2a-ak-tests`` directory.
+
 where ``destination directory`` is an optional directory name where the test
 products should be placed.  By default the products are placed in
 ``./p2g-v2a-ak-tests-PID``.  Where ``PID`` is a unique identifier created by
