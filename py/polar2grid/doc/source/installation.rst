@@ -21,7 +21,7 @@ installed first by untarring it:
 
 Next, add this line to your .bash_profile:
 
-    ``export POLAR2GRID_PATH=/path/to/softwarebundle``
+    ``export POLAR2GRID_HOME=/path/to/softwarebundle``
 
 Without any other work, polar2grid "companion" scripts (as opposed to the
 python package scripts) must be used to run any processing of
