@@ -10,7 +10,7 @@ if [ -z "$POLAR2GRID_REV" ]; then
     EGG_LOC=$POLAR2GRID_HOME/polar2grid
     PKG_BASE=$EGG_LOC/polar2grid
 
-    if [ ! -f $PKG_BASE ]; then
+    if [ ! -d $PKG_BASE ]; then
         echo "polar2grid software bundle install corrupt.  Could not find polar2grid python package"
         exit 1
     fi
