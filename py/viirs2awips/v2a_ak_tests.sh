@@ -35,7 +35,7 @@ which viirs2awips.sh || oops "viirs2awips.sh is not in PATH"
 
 # Check if they specified a different working directory
 if [ $# -ne 1 ]; then
-    WORK_DIR=/tmp/p2g-v2a-ak-test-$$
+    WORK_DIR=./p2g-v2a-ak-tests-$$
 else
     echo "Will use $1 directory, but won't delete it"
     WORK_DIR=$1
@@ -47,7 +47,7 @@ cd $WORK_DIR
 
 # Run tests for each test data directory in the base directory
 for DDIR in $TEST_BASE/*; do
-    if [ -d $DDIR ]; then
+    if [ -d $DDIR ] && [ `basename $DDIR` != "verify" ]; then
         # Make a unique working test directory
         TDIR=`basename $DDIR`-$$
         echo "Making temporary working directory $TDIR"
