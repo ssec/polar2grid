@@ -65,7 +65,7 @@ for DDIR in $TEST_BASE/*; do
 done
 
 # Generate NC product images
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.plot_ncdata
+$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.plot_ncdata --vmin=0 --vmax=255 || oops "Could not generate png images from NC files.\n\tNC files were still created however."
 
 # End of all tests
 echo "SUCCESS"
