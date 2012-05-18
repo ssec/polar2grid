@@ -38,7 +38,7 @@ for VFILE in $VERIFY_BASE/*; do
         oops "Could not find output file $WFILE"
     fi
     diff $VFILE $WFILE || oops "$WFILE was different than expected"
-    python <<EOF
+    $POLAR2GRID_HOME/ShellB3/bin/python <<EOF
 from netCDF4 import Dataset
 import numpy
 import sys
