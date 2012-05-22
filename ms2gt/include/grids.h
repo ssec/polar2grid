@@ -35,13 +35,13 @@ GLOBAL int grid_verbose;
  * grid parameters structure
  */
 typedef struct {
-        double map_origin_col, map_origin_row;
-        double cols_per_map_unit, rows_per_map_unit;
+	double map_origin_col, map_origin_row;
+	double cols_per_map_unit, rows_per_map_unit;
         double u_min, u_max;
-        int cols, rows;
-        FILE *gpd_file;
-        char *gpd_filename;
-        mapx_class *mapx;
+	int cols, rows;
+	FILE *gpd_file;
+	char *gpd_filename;
+	mapx_class *mapx;
 } grid_class;
 
 /*
@@ -51,8 +51,8 @@ grid_class *init_grid(char *filename);
 grid_class *new_grid(char *label);
 void close_grid(grid_class *this);
 int forward_grid(grid_class *this,
-                double lat, double lon, double *r, double *s);
+		 double lat, double lon, double *r, double *s);
 int inverse_grid(grid_class *this,
-                double r, double s, double *lat, double *lon);
+		 double r, double s, double *lat, double *lon);
 
 #endif

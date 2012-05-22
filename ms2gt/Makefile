@@ -13,7 +13,7 @@ RCSID = $Header: /data/tharan/ms2gth/Makefile,v 1.39 2011/10/13 21:28:57 tharan 
 #       define current version and release
 #
 VERSION = 0
-RELEASE = 23
+RELEASE = 23a
 
 #
 #	installation directories
