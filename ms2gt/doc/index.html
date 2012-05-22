@@ -1,0 +1,1071 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+	   "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE>The MODIS Swath-to-Grid Toolbox</TITLE>
+<LINK REL=STYLESHEET HREF="/css/data_core.css" TYPE="text/css">
+</HEAD>
+<BODY BGCOLOR="#ffffff">
+
+
+<!-- vvvvvvvvvv SSI BELOW vvvvvvvvvv -->
+
+<TABLE ALIGN="center" BGCOLOR="#003366" BORDER="0" CELLPADDING="0" CELLSPACING="0" WIDTH="100%"><TR>
+    <TD><IMG SRC="http://nsidc.org/ssi/images/nsidc.gif" BORDER="0" HEIGHT="18" WIDTH="550" HSPACE="0" VSPACE="0" ALT="NSIDC global navigation" ISMAP USEMAP="#global_nav.map"> 
+      <MAP NAME="global_nav.map"> 
+        <AREA SHAPE="rect" COORDS="1,1,82,17" HREF="http://nsidc.org/" ALT="NSIDC home">
+        <AREA SHAPE="rect" COORDS="119,1,153,17" HREF="http://nsidc.org/data/" ALT="Data">
+        <AREA SHAPE="rect" COORDS="169,1,225,17" HREF="http://nsidc.org/projects.html" ALT="Projects">
+        <AREA SHAPE="rect" COORDS="242,1,302,17" HREF="http://nsidc.org/research/" ALT="Research">
+        <AREA SHAPE="rect" COORDS="315,1,419,17" HREF="http://nsidc.org/cryosphere/" ALT="Cryosphere">
+        <AREA shape="rect" coords="430,2,474,18" href="http://nsidc.org/news/" ALT="News">
+<AREA SHAPE="rect" COORDS="485,1,546,17" HREF="http://nsidc.org/sitemap/" ALT="Site map">
+</MAP></TD></TR></TABLE>
+
+<!-- ^^^^^^^^^^ SSI ABOVE ^^^^^^^^^^ -->
+
+
+
+<!-- vvvvvvvvvv SSI BELOW vvvvvvvvvv -->
+
+<TABLE ALIGN="center" BGCOLOR="#FFFFFF" BORDER="0" CELLPADDING="0" CELLSPACING="0" WIDTH="100%"><TR><TD>
+<IMG SRC="/ssi/images/data_core.gif" WIDTH="450" HEIGHT="35" BORDER="0" USEMAP="#data_banner" ALT="Data section navigation"> 
+<MAP NAME="data_banner"> 
+<AREA SHAPE="rect" COORDS="79,9,171,24" HREF="http://nsidc.org/data/catalog.html" ALT="NSIDC Data Catalog">
+<AREA SHAPE="rect" COORDS="185,10,230,24" HREF="http://nsidc.org/data/search.html" ALT="Search the Data Catalog">
+<AREA SHAPE="rect" COORDS="290,7,319,24" HREF="http://nsidc.org/data/help/" ALT="Data Help Center">
+<AREA SHAPE="rect" COORDS="242,8,278,25" HREF="http://nsidc.org/data/tools/" ALT="Data Tools">
+<AREA SHAPE="rect" COORDS="334,7,386,24" HREF="http://nsidc.org/data/features.html" ALT="Data Features">
+</MAP></TD></TR></TABLE>
+
+<!-- ^^^^^^^^^^ SSI ABOVE ^^^^^^^^^^ -->
+
+
+
+<!-- vvvvvvvvvv SSI BELOW vvvvvvvvvv -->
+
+<A HREF="/daac/index.html"><IMG SRC="/images/logo_nasa_daac_77x65.gif" WIDTH="77" HEIGHT="65" ALIGN="left" ALT="NSIDC DAAC" BORDER="0" HSPACE="18" VSPACE="0"></A>
+<H3>MODIS Data at NSIDC</H3>
+<BR CLEAR="all">
+<HR COLOR="#003366" SIZE="1" NOSHADE>
+<DIV CLASS="SmallText">
+<A HREF="/data/modis/index.html">Home</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/data.html">Data Summaries</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/cmg_browse/index.html">CMG Browse</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/gallery/index.html">Image Gallery</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/order.html">Order Data</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/news.html">News</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/faq.html">FAQs</A>
+</DIV>
+<HR COLOR="#003366" SIZE="1" NOSHADE>
+
+<!-- ^^^^^^^^^^ SSI ABOVE ^^^^^^^^^^ -->
+
+
+<!-- vvvvvvvvvv SSI BELOW vvvvvvvvvv -->
+
+<H2 ALIGN="center">MS2GT: The MODIS Swath-to-Grid Toolbox</H2>
+<DIV ALIGN="center" CLASS="SmallText">
+<B>* Documentation for this product is in development. *</B><BR>
+Please <A HREF="/forms/contact.html">contact NSIDC User Services</A>.</DIV>
+<HR COLOR="#003366" SIZE="1" NOSHADE><BR CLEAR="ALL">
+
+<!-- ^^^^^^^^^^ SSI ABOVE ^^^^^^^^^^ -->
+
+<UL>
+<LI><A HREF="#history">Version History</A>
+	<UL>
+	<LI><A HREF="#version_0.5">Version 0.5</A></LI>
+	<LI><A HREF="#version_0.4">Version 0.4</A></LI>
+	<LI><A HREF="#version_0.3">Version 0.3</A></LI>
+	<LI><A HREF="#version_0.2">Version 0.2</A></LI>
+	<LI><A HREF="#version_0.1">Version 0.1</A></LI>
+	<LI><A HREF="#version_00.00">Version 00.00</A></LI>
+	</UL>
+</LI>
+<LI><A HREF="#overview">Overview</A>
+	<UL>
+	<LI><A HREF="#what">What the Software Does</A></LI>
+	<LI><A HREF="#how">How the Software Works</A></LI>
+	<LI><A HREF="#requirements">Requirements</A></LI>
+	<LI><A HREF="#datasets">Supported Data Sets</A></LI>
+	</UL>
+</LI>
+<LI><A HREF="#installation">Installation Instructions</A>
+	<UL>
+	<LI><A HREF="#obtaining">Obtaining the Software</A></LI>
+	<LI><A HREF="#building">Building the Executables</A></LI>
+	<LI><A HREF="#perl">Verifying your Perl Installation</A></LI>
+	<LI><A HREF="#environment">Setting up the MS2GT Environment</A></LI>
+	<LI><A HREF="#verifying">Verifying the MS2GT Installation</A></LI>
+	</UL>
+</LI>
+<LI><A HREF="#using">Using the MS2GT Software</A>
+	<UL>
+	<LI><A HREF="#searching">Searching for the Data</A></LI>
+	<LI><A HREF="#ordering">Ordering and Downloading the Data</A></LI>
+	<LI><A HREF="#command">Creating a MS2GT Command File</A></LI>
+	<LI><A HREF="#miscellaneous">Creating Miscellaneous Text Files</A></LI>
+	<LI><A HREF="#running">Running the MS2GT Command File</A></LI>
+	<LI><A HREF="#examining">Examining the Results</A></LI>
+	<LI><A HREF="#geolocating">Geolocating the Results</A></LI>
+	</UL>
+</LI>
+<LI><A HREF="#descriptions">Script Descriptions and Usage</A>
+	<UL>
+	<LI><A HREF="#mod02">mod02.pl</A></LI>
+	<LI><A HREF="#mod10_l2">mod10_l2.pl</A></LI>
+	<LI><A HREF="#mod29">mod29.pl</A></LI>
+	</UL>
+</LI>
+<LI><A HREF="tutorials.html">Tutorials</A></LI>
+</UL>
+
+<BR><H2><A NAME="history"></A>Version History</H2>
+
+<H3><A NAME="version_0.5"></A>The current version of MS2GT is 0.5 released May 31, 2001</H3>
+
+<UL>
+<LI>Changed perl location from /usr/local/bin/perl to /usr/bin/perl in idl_sh.pl.</LI>
+<LI>Added exit(EXIT_SUCCESS) for successful exit from gridsize.c, ll2cr.c, and fornav.c to get around apparent Linux problem.</LI>
+<LI>Moved mod10_l2.pl and mod29.pl usage descriptions into separate files.</LI>
+<LI>Added <A HREF="#descriptions">Script Descriptions and Usage</A>.</LI>
+</UL>
+
+<H3><A NAME="version_0.4"></A>Version 0.4 released May 3, 2001</H3>
+
+<UL>
+<LI>Fixed bugs in fornav related to fill value processing.</LI>
+<LI>Enhanced modis_ice_read.pro to allow processing by <A HREF="#mod29">mod29.pl</A> of "dark" MOD29 granules which do not include Sea Ice by Reflectance, Sea Ice by Reflectance PixelQA, nor Combined Sea Ice channels. Gridded arrays containing the fill value of 255 are now returned when these channels are specified for dark MOD29 granules.</LI>
+<LI>Modified <A HREF="#building">Building the Executables</A> so that the make is run from the ms2gt/src directory rather than the ms2gt directory due to an unresolved problem on Linux platforms.</LI>
+</UL>
+
+<H3><A NAME="version_0.3"></A>Version 0.3 released May 1, 2001</H3>
+<UL>
+<LI>Fixed bug in <A HREF="#mod29">mod29.pl</A> related to checking for a temperature channel.</LI>
+<LI>Changed <A HREF="#mod29">mod29.pl</A> mnemonics for better consistency.</LI>
+<LI>Added -F option to ll2cr to allow specification of input and output fill values.</LI>
+<LI>Added -r option to fornav to allow specification of a column-row fill value.</LI>
+<LI>Added <A HREF="tutorial_4.html">Tutorial 4</A>.</LI>
+</UL>
+
+<H3><A NAME="version_0.2"></A>Version 0.2 released April 27, 2001</H3>
+<UL>
+<LI>Changed perl location from /usr/local/bin/perl to /usr/bin/perl.</LI>
+<LI>Added <A HREF="#perl">Verifying your Perl Installation</A>.</LI>
+<LI>Added <A HREF="tutorial_3.html">Tutorial 3</A>.</LI>
+<LI>Fixed bugs in <A HREF="#mod10_l2">mod10_l2.pl</A> and <A HREF="#mod29">mod29.pl</A> related to reading the *.gpd file.</LI>
+<LI>Changed channel numbers to mnemonic strings in output filenames for <A HREF="#mod10_l2">mod10_l2.pl</A> and <A HREF="#mod29">mod29.pl</A>.</LI>
+</UL>
+
+<H3><A NAME="version_0.1"></A>Version 0.1 released April 23, 2001</H3>
+<UL>
+<LI>Added <A HREF="tutorial_2.html">Tutorial 2</A>.</LI>
+<LI>Changed the -d weight_distance_max parameter to fornav from its default value of 1.0 to 1.2 due to the appearance of holes in a preliminary version of the <A HREF="tutorial_2.html">Tutorial 2</A> example. Holes do not now appear to be a problem in this example.</LI>
+</UL>
+
+<H3><A NAME="version_00.00"></A>Version 00.00 released April 20, 2001</H3>
+<UL>
+<LI>Initial version.</LI>
+</UL>
+
+
+<H2>
+<A NAME="overview"></A>Overview</H2>
+
+<BLOCKQUOTE>
+<H3>
+<A NAME="what"></A>What the Software Does</H3>
+The MODIS Swath-to-Grid Toolbox (MS2GT) is a set of software tools that
+can be used to read HDF-EOS files containing MODIS swath data and produce
+flat binary files containing gridded data in a variety of map projections.
+Multiple input files corresponding to successively acquired 5 minute MODIS
+"scenes" can be processed together to produce a seamless output grid.
+<P>MS2GT consists of three perl programs that make calls to several standalone
+IDL and C programs: <A HREF="#mod02">mod02.pl</A> which reads <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>,
+or <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>
+Level 1b files, <A HREF="#mod10_l2">mod10_l2.pl</A> which reads <A HREF="/data/mod10_l2.html">MOD10_L2</A>
+snow cover files, and <A HREF="#mod29">mod29.pl</A> which reads <A HREF="/data/mod29.html">MOD29</A>
+sea ice files.&nbsp; All three Perl programs can optionally read <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD03.shtml">MOD03</A>
+files for geolocation information; in addition, <A HREF="#mod02">mod02.pl</A>
+can extract "ancillary" data (such as illumination and viewing angles)
+from <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+files.
+<H3>
+<A NAME="how"></A>How the Software Works</H3>
+Each of the three Perl scripts provided with MS2GT make similar calls to
+the IDL and C programs outlined below:
+<UL>
+<LI>
+User-specified swath data arrays are read out of HDF-EOS files using a
+suite of IDL programs written by <A HREF="http://cimss.ssec.wisc.edu/~gumley/">Liam
+Gumley</A> of <A HREF="http://www.ssec.wisc.edu/">SSEC at the University
+of Wisconsin</A>. During this step, radiance data can be left as raw integer
+counts or converted to floating-point corrected counts, radiances, or reflectances;
+similarly, thermal data can be left as raw counts or converted to temperatures.
+These swath data arrays, including latitude and longitude arrays, are saved
+as temporary data files.</LI>
+
+<LI>
+The latitude and longitude files are then converted to files containing
+column and row numbers of the target grid by a C program called ll2cr which
+uses the mapx C library written by Ken Knowles of NSIDC.
+The mapx library requires the use of a user-supplied <A HREF="http://cires.colorado.edu/~knowlesk/ppgc.html#parameters">Grid
+Parameters Definition</A> (gpd) text file that specifies the desired grid
+and associated map projection.</LI>
+
+<LI>
+The column and row files and any ancillary data files are then interpolated
+to the resolution of the primary data files (1 km for <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A>
+and <A HREF="/data/mod29.html">MOD29</A>,
+500 m for <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>
+and <A HREF="/data/mod10_l2.html">MOD10_L2</A>,
+or 250 m for <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>)
+as necessary using two IDL programs (interp_colrow.pro and interp_swath.pro).</LI>
+
+<LI>
+Finally, the interpolated column and row files, together with the primary
+data files and any interpolated ancillary data files are run through a
+C program called fornav that performs forward navigation to produce gridded
+flat binary files. The user can specify that either elliptical weighted
+averaging or elliptical maximum weight sampling be used during forward
+navigation.</LI>
+</UL>
+It should relatively easy for a user who is familiar with Perl and IDL
+programming to modify the Perl scripts and IDL procedures in order to process
+other kinds swath data using many of the same standalone programs provided
+with MS2GT. Further details can be found in the <A HREF="tutorials.html">Tutorials</A>.
+<H3>
+<A NAME="requirements"></A>Requirements</H3>
+In its current form, MS2GT runs on a Unix workstation with a standard C
+compiler. It also requires Perl 5.0 or higher and IDL 5.0 or higher. The
+installation instructions assume that the user is running csh or tcsh as
+the Unix shell. Users of other shells (e.g. bash, ksh, sh, etc.) may have
+to make slight changes to the installation instructions.
+<P>MS2GT has been developed and tested on an SGI O2 workstation having
+192 Mbytes of memory and running IRIX 6.5, perl 5.004_04, and IDL 5.4.
+Care has been taken to minimize memory requirements at the expense of increased
+temporary disk storage requirements and slightly slower speed. However,
+in its current form, MS2GT does require that two times a grid's worth of
+single precision floating-point data for one channel fit into virtual memory.
+The result is that fairly large gridded images can be created on a machine
+with a modest amount of memory in a fairly short time. For example, the
+creation of two 1316 x 1384 250 m grids containing MODIS channels 1 and
+2 reflectance data derived from a single <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>
+file takes about three minutes on the above machine and requires about
+2 * 1316 * 1384 * 4 = 15 MB of free virtual memory.
+<BR>&nbsp;
+<H3>
+<A NAME="datasets"></A>Supported Data Sets</H3>
+See the <A HREF="http://modis.gsfc.nasa.gov/">MODIS Home
+Page</A> for general information on the MODIS instrument. See <A HREF="/data/modis/">MODIS
+Snow and Ice Products</A> for information on MODIS snow and ice products
+distributed by NSIDC.</BLOCKQUOTE>
+
+<TABLE BORDER="1" WIDTH="100%">
+<TR>
+<TD>Short Name</TD>
+<TD>Long Name</TD>
+<TD>Channel Data</TD>
+<TD>Ancillary</TD>
+<TD>Lat-lon</TD>
+</TR>
+<TR>
+<TD NOSAVE><A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A></TD>
+
+<TD>MODIS/TERRA CALIBRATED RADIANCES 5-MIN L1B SWATH 1KM</TD>
+
+<TD>1-36 @ 1 km</TD>
+
+<TD>7 @ 5 km</TD>
+
+<TD>5 km</TD>
+</TR>
+
+<TR>
+<TD NOSAVE><A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A></TD>
+
+<TD>MODIS/TERRA CALIBRATED RADIANCES 5-MIN L1B SWATH 500M</TD>
+
+<TD>1-7 @ 500 m</TD>
+
+<TD>none</TD>
+
+<TD>1 km</TD>
+</TR>
+
+<TR>
+<TD><A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A></TD>
+
+<TD>MODIS/TERRA CALIBRATED RADIANCES 5-MIN L1B SWATH 250M</TD>
+
+<TD>1-2 @ 250 m</TD>
+
+<TD>none</TD>
+
+<TD>1 km</TD>
+</TR>
+
+<TR>
+<TD><A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A></TD>
+
+<TD>MODIS/TERRA GEOLOCATION FIELDS 5-MIN L1A SWATH 1KM</TD>
+
+<TD>none</TD>
+
+<TD>8 @ 1 km</TD>
+
+<TD>1 km</TD>
+</TR>
+
+<TR>
+<TD><A HREF="/data/mod10_l2.html">MOD10_L2</A></TD>
+
+<TD>MODIS/TERRA SNOW COVER 5-MIN L2 SWATH 500M</TD>
+
+<TD>2 @ 500 m</TD>
+
+<TD>none</TD>
+
+<TD>5 km</TD>
+</TR>
+
+<TR>
+<TD><A HREF="/data/mod29.html">MOD29</A></TD>
+
+<TD>MODIS/TERRA SEA ICE EXTENT 5-MIN L2 SWATH 1KM</TD>
+
+<TD>6 @ 1 km</TD>
+
+<TD>none</TD>
+
+<TD>5 km</TD>
+</TR>
+</TABLE>
+
+<H2>
+<A NAME="installation"></A>Installation Instructions</H2>
+
+<BLOCKQUOTE>
+<H3>
+<A NAME="obtaining"></A>Obtaining the Software</H3>
+The software and associated documentation can be downloaded from <A HREF="ftp://sidads.colorado.edu/pub/NSIDC/ms2gt0.5.tar.gz">ftp://sidads.colorado.edu/pub/NSIDC/ms2gt0.5.tar.gz</A>,
+where 0.5 is the current version and release. Save this file into some
+directory where you want the MS2GT software installed. If you have a previous
+version of MS2GT installed in the same directory, you should either remove
+it or rename it. For example:
+<P><B><TT>rm -fr ms2gt</TT></B>
+<P>or something like:
+<P><B><TT>mv ms2gt ms2gt.old</TT></B>
+<P>Then type:
+<P><B><TT>gunzip -dc ms2gt0.5.tar.gz | tar xvf -</TT></B>
+<P>This will create a directory in the current directory called ms2gt which
+will contain several subdirectories. Further instructions on the installation
+and use of MS2GT can be then found in html files in the ms2gt/doc subdirectory.
+At this point you can delete the tar.gz file if you want. Point your browser
+to ms2gt/doc/index.html (this document).
+<H3>
+<A NAME="building"></A>Building the Executables</H3>
+Change the current working directory to the ms2gt/src directory and type:
+<P><B><TT>make all</TT></B>
+<P>This will build and install the MS2GT executables under the ms2gt directory.
+The only write privileges required are the ability to write into the ms2gt
+directory and its subdirectories.
+<H3>
+<A NAME="perl"></A>Verifying your Perl Installation</H3>
+Type the command:
+<P><B><TT>perl -v</TT></B>
+<P>If you see something like:
+<P><TT>This is perl, version 5.004_04 built for irix-n32</TT>
+<P><TT>Copyright 1987-1997, Larry Wall</TT>
+<P><TT>Perl may be copied only under the terms of either the Artistic License
+or the</TT>
+<BR><TT>GNU General Public License, which may be found in the Perl 5.0
+source kit.</TT>
+<P>then you know perl has been installed ok. Just make sure you have at
+least perl version 5 installed. However, if you see something like:
+<P><TT>perl: Command not found</TT>
+<P>then you need to contact your system administrator to get perl installed.
+<P>Assuming you have perl installed, then type:
+<P><B><TT>/usr/bin/perl -v</TT></B>
+<P>If you see the same message as before, then you have a proper link to
+your installed version of perl. However, if you see something like:
+<P><TT>/usr/bin/perl: Command not found</TT>
+<P>or you see mention of a lower version of perl, then you need to contact
+your system administrator and have a link called /usr/bin/perl created
+that points to your installed version of perl. For example, if you type:
+<P><B><TT>which perl </TT></B>(or <B><TT>type perl</TT> </B>if you're running
+bash, ksh, or sh)
+<P>and you see:
+<P><TT>/usr/sbin/perl</TT>
+<P>then the command to create the link would be:
+<P><B><TT>ln -s /usr/sbin/perl /usr/bin/perl</TT></B>
+<P>but you'll probably need to be logged in as root to be able to execute
+this command successfully.
+<H3>
+<A NAME="environment"></A>Setting up the MS2GT Environment</H3>
+Edit your .cshrc or your .login file and insert the following two lines:
+<P><TT>setenv MS2GT_HOME $HOME/ms2gt</TT>
+<BR><TT>source $MS2GT_HOME/ms2gt_env.csh</TT>
+<P>If you installed ms2gt into some directory other than $HOME, then change
+the first line accordingly. If your .cshrc or your .login includes lines
+such as:
+<P><TT>setenv IDL_DIR /usr/local/rsi/idl</TT>
+<BR><TT>source $IDL_DIR/bin/idl_setup</TT>
+<BR><TT>setenv IDL_PATH ...</TT>
+<P><TT>or a line such as</TT>
+<P><TT>setenv PATHMPP ...</TT>
+<P>then the two MS2GT lines above should be placed after these IDL and
+PATHMPP lines in the appropriate file. Once your .cshrc or your .login
+file has been editted, then logout and login again, or else type the following
+two lines:
+<P><B><TT>source ~/.cshrc </TT></B>or
+<BR><B><TT>source ~/.login</TT></B>
+<BR><B><TT>rehash</TT></B>
+<P>Finally, create a writeable directory in your home directory called
+tmp that will be used by a perl script called idl_sh.pl. This directory
+will be used for holding temporary shell scripts for running IDL programs:
+<P><B><TT>mkdir ~/tmp</TT></B>
+<H3>
+<A NAME="verifying"></A>Verifying the MS2GT Installation</H3>
+Try typing in the following three commands to get the syntax of each of
+the three perl scripts (note that the name of the first script contains
+a zero (0), followed by a two (2); note that the name of the second script
+contains a one (1), followed by a zero (0), followed by an underbar (_),
+followed by a lower case L (l), followed by a two (2):
+<P><B><TT>mod02.pl</TT></B>
+<BR><B><TT>mod10_l2.pl</TT></B>
+<BR><B><TT>mod29.pl</TT></B>
+<P>You should see a usage message that describes the syntax of each perl
+script that is essentially the same as <A HREF="mod02_usage" TARGET="NEW">mod02_usage</A>,
+<A HREF="mod10_l2_usage" TARGET="NEW">mod10_l2_usage</A>
+and <A HREF="mod29_usage" TARGET="NEW">mod29_usage</A>, respectively. If you get "command not found" or something to that effect, it probably means that your $path
+is being set after the <TT>source $MS2GT_HOME/ms2gt_env.csh
+</TT>command
+in your .cshrc or .login file. Find the line in your .cshrc or .login that
+looks like:
+<P><TT>set path = &lt;something></TT>
+<P>and change it to:
+<P><TT>set path = ($path &lt;something>)</TT>
+<P>Then logout and login and try the commands again.
+<P>Next, verify that the environment variable $IDL_PATH is set correctly.
+Type:
+<P><B><TT>echo $IDL_PATH</TT></B>
+<P>You should see a directory that looks like:
+<P>&lt;<TT>something>/ms2gt/src/idl</TT>
+<P>as one of the directories in the IDL path. If not, then make sure that
+you placed the <TT>source</TT> <TT>$MS2GT_HOME/ms2gt_env.csh </TT>command
+<I>after
+</I>setting
+$IDL_PATH in your .login or .cshrc as decribed <A HREF="#environment">above</A>.
+<P>Finally, verify that the environment varialble $PATHMPP is set correctly.
+Type:
+<P><B><TT>echo $PATHMPP</TT></B>
+<P>You should see a directory that looks like:
+<P>&lt;something>/ms2gt/grids
+<P>as one of the directories in PATHMPP. If not, then make sure that you
+placed the <TT>source $MS2GT_HOME/ms2gt_env.csh </TT>command <I>after </I>setting
+$PATHMPP in your .login or .cshrc as decribed <A HREF="#environment">above</A>.</BLOCKQUOTE>
+
+<H2>
+<A NAME="using"></A>Using the MS2GT Software</H2>
+In most cases, users will need to perform the following steps in order
+to use the MS2GT software (detailed examples of these steps can be found
+in the <A HREF="tutorials.html">Tutorials</A>):
+<BLOCKQUOTE>
+<H3>
+<A NAME="searching"></A>Searching for the Data</H3>
+The user needs to use the <A HREF="http://redhook.gsfc.nasa.gov/~imswww/pub/imswelcome/">EDG</A>
+or a similar tool to find the swath data to be gridded.
+<H3>
+<A NAME="ordering"></A>Ordering and Downloading the Data</H3>
+The user needs to use the <A HREF="http://redhook.gsfc.nasa.gov/~imswww/pub/imswelcome/">EDG</A>
+or a similar tool to order and download the swath data to be gridded.
+<H3>
+<A NAME="command"></A>Creating a MS2GT Command File</H3>
+The user needs to use a text editor to create a command file for running
+the particular MS2GT script: <A HREF="#mod02">mod02.pl</A>, <A HREF="#mod10_l2">mod10_l2.pl</A>,
+or <A HREF="#mod29">mod29.pl</A> . This command file contains an invocation
+of the particular script together with its associated parameters. The parameters
+to a particular script contain the names of miscellaneous text files (described
+<A HREF="#miscellaneous">below</A>)
+as well as other parameters used to control the operation of the script
+including a specification of which data arrays in the input file(s) are
+to be gridded. Alternatively, the invocation of the script and its parameters
+may be simply typed in on the command line once the miscellaneous text
+files have been created.
+<H3>
+<A NAME="miscellaneous"></A>Creating Miscellaneous Text Files</H3>
+The user needs to use a text editor to create miscellaneous text files
+used to control the operation of the particular <A HREF="#mod02">mod02.pl</A>,
+<A HREF="#mod10_l2">mod10_l2.pl</A>,
+or <A HREF="#mod29">mod29.pl</A> script.
+<P>Each script requires a listfile which contains a list of the filenames
+of the HDF-EOS files to be gridded. Each of these HDF-EOS files contains
+MODIS swath data acquired over a five minute interval. Consecutively acquired
+files can be gridded together to produce a seamless gridded result.
+<P>Each script also requires a Grid Parameters Definition (gpd) file, which
+in turn requires an associated Map Projection Parameters (mpp) file. These
+files are used by the mapx library software (developed at NSIDC)
+to define the grid into which the swath data is to be mapped. The format
+of these files and an explanation of the mapx library is provided in <A HREF="http://cires.colorado.edu/~knowlesk/ppgc.html">Points,
+Pixels, Grids, and Cells</A>.
+<P>Other miscellaneous text files used by some of the scripts include a
+chanfile, an ancilfile, and a latlonfile.
+<P>The format and use of each miscellaneous file is described <A HREF="#descriptions">below</A>
+as well as in the <A HREF="tutorials.html">Tutorials</A>.
+<H3>
+<A NAME="running"></A>Running the MS2GT Command File</H3>
+Once all the miscellaneous text files have been created, the MS2GT command
+file can be invoked to actually perform the gridding, or the invocation
+of the particular MS2GT script and its associated parameters may be simply
+typed in on the command line.
+<P>The MS2GT script runs several IDL and C programs to actually perform
+the gridding as outlined <A HREF="#how">above</A>. Further explanations
+are also provided in the <A HREF="tutorials.html">Tutorials</A>.
+<H3>
+<A NAME="examining"></A>Examining the Results</H3>
+Once the particular MS2GT script has completed processing, there will exist
+a single binary flat file containing the gridded data for each channel
+specified in the MS2GT command file. The filenames for each flat file contain
+fields that specify the type of data the file contains as well as the number
+of rows and columns in the grid. A detailed description of the filenames
+created by each script is provided in the <A HREF="tutorials.html">Tutorials</A>.
+The MS2GT software does not currently provide any facility for visualizing
+these data, but they can be easily imported into a variety of visualization
+programs.
+<H3>
+<A NAME="geolocating"></A>Geolocating the Results</H3>
+The MS2GT software contains a utility called gridloc which can be used
+to create binary floating-point flat files containing the latitude and
+longitude of each cell in the grid. An example of how to use gridloc can
+be found at the <A HREF="tutorial_1.html#geolocating">end of Tutorial 1</A>.</BLOCKQUOTE>
+
+<H2>
+<A NAME="descriptions"></A>Script Descriptions and Usage</H2>
+
+<BLOCKQUOTE>
+<H3>
+<A NAME="mod02"></A>mod02.pl</H3>
+This script can process <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>,
+or <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+swath files to produce flat binary gridded files containing MODIS Level
+1B channel data and/or ancillary data. The channel data consist of up to
+36 spectral bands described in <A HREF="http://modis.gsfc.nasa.gov/about/specs.html">MODIS
+Technical Specifications</A>. See <A HREF="#datasets">Supported Data Sets</A>
+for a table summarizing which channels are available at which resolutions
+in which files. The table also shows that ancillary data are available
+in <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A>
+and <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+files at 5 km and 1 km resolutions, respectively. Finally the table shows
+geolocation (lat-lon) data are available at either 1 km or 5 km resolutions.
+Use of 1 km ancillary data and/or 1 km geolocation data will minimize interpolation
+error.
+<P>The mod02.pl script has the following usage:
+<P><TT>mod02.pl dirinout tag listfile gpdfile chanfile</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[ancilfile [latlon_src [ancil_src [keep [rind]]]]]</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; defaults:&nbsp;&nbsp; none&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0&nbsp;&nbsp;&nbsp;&nbsp; 50</TT>
+<P><A HREF="mod02_usage" TARGET="NEW">mod02.pl usage</A> provides a cursory explanation
+of the mod02.pl script parameters. A more expanded discussion of each parameter
+is provided here. Note that the first five parameters to mod02.pl are required;
+the rest are optional.
+<OL>
+<LI>
+<I>dirinout</I> - the directory containing all input files required by
+mod02.pl and all output files created by mod02.pl. If input files must
+reside in some directory other that the one used for output, then the user
+will need to create links to each of these files in the dirinout directory.</LI>
+
+<LI>
+<I>tag</I> - a string used in constructing the names of output files. Each
+output filename will begin with the <I>tag</I> string.</LI>
+
+<LI>
+<I>listfile</I> - the name of a text file containing the names of the <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>,
+or <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+swath files to be gridded. If multiple files are present in <I>listfile</I>,
+then the files must all be of the same type (e.g. if the first file is
+a <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A>
+file, then all subsequent files must also be <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A>
+files). Multiple files must have been acquired at subsequent acquisition
+times without any gaps. If <I>chanfile</I> (below) is "none", then <I>listfile</I>
+must contain a list of one or more <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+files from which the 1 km ancillary data specified in ancilfile (below)
+will be read. If <I>chanfile</I> is not "none", then <I>listfile</I> must
+contain a list of one or more <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>,
+or <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>
+files from which the 1 km, 500 m, or 250 m channel data, respectively,
+specified in <I>chanfile</I> will be read. If, in this latter case, <I>ancilfile</I>
+is also not "none", then the 5 km data specified in <I>ancilfile</I> will
+be read from <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+files whose filenames are constructed from the corresponding filenames
+in <I>chanfile</I> by substituting the MOD021KM, MOD02HKM, or MOD02QKM
+filename prefix with MOD03.</LI>
+
+<LI>
+<I>gpdfile</I> - the name of a Grid Parameters Definition (gpd) file that
+defines the desired output grid. See <A HREF="http://cires.colorado.edu/~knowlesk/ppgc.html">Points,
+Pixels, Grids, and Cells</A> and the <A HREF="tutorials.html">Tutorials</A>
+for more details.</LI>
+
+<LI>
+<I>chanfile</I> - the name of a text file containing a list of the channels
+to be gridded, one line per channel.&nbsp; If <I>chanfile</I> is "none"
+then no channel data will be gridded and <I>ancilfile</I> must not be "none".
+Note that if the first file in
+<I>listfile</I> is a <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+file, then <I>chanfile</I> must be "none" and both <I>latlon_src</I> and
+<I>ancil_src</I>
+(described below) are forced to 3. The channels specified in <I>chanfile</I>
+are always read from the files specified in <I>listfile</I>. Each line
+in <I>chanfile </I>can have up to four fields. The first field is mandatory;
+the rest are optional. The fields are:</LI>
+
+<OL>chan conversion weight_type fill</OL>
+and are defined as follows:
+<UL>
+<LI>
+chan - specifies a channel number (1-36).</LI>
+
+<LI>
+conversion - a string that specifies the type of conversion that should
+be performed on the channel. The conversion string must be one of the following
+five values:</LI>
+
+<UL>
+<LI>
+raw - create a "raw" output file containing raw HDF values (16-bit unsigned
+integers) (default).</LI>
+
+<LI>
+corrected - create a "cor" output file containing corrected counts (floating-point).</LI>
+
+<LI>
+radiance - create a "rad" output file containing radiance values in watts
+per square meter per steradian per micrometer (floating-point).</LI>
+
+<LI>
+reflectance - (channels 1-19 and 26) create a "ref" output file containing
+reflectance values without solar zenith angle correction (floating-point).</LI>
+
+<LI>
+temperature - (channels 20-25 and 27-36) create a "tem" output file containing
+brightness temperature values in kelvin (floating-point).</LI>
+</UL>
+
+<LI>
+weight_type - a string that specifies the type of weighting that should
+be performed on the channel data during swath-to-grid mapping. The weight_type
+string must be one of the following two values:</LI>
+
+<UL>
+<LI>
+avg - use weighted averaging (default). This method can introduce intermediate
+output values that do not necessarily appear in the input. However it produces
+an anti-aliased output image.</LI>
+
+<LI>
+max - use maximum weighting. This method is analogous to nearest neighbor
+sampling in that it will not result in output values to do not appear in
+the input. However it can produce aliasing artifacts in the output image.</LI>
+</UL>
+
+<LI>
+fill - specifies the output fill value to which the input fill value and
+any unfilled output pixels will be mapped. Default is 0.</LI>
+</UL>
+
+<LI>
+<I>ancilfile</I> - the name of a text file containing a list of ancillary
+parameters to be gridded, one line per parameter. The default is "none"
+indicating that no ancillary parameters should be gridded. Each line in
+ancilfile can have up to four fields. The first field is mandatory; the
+rest are optional. The fields are:</LI>
+
+<OL>param conversion weight_type fill</OL>
+and are defined as follows:
+<UL>
+<LI>
+param - a string that specifies an ancillary parameter to be gridded. The
+param string must be one of the following four-character strings:</LI>
+
+<UL>
+<LI>
+hght - Height - create a "hght" output file containing topographic height
+values in meters.</LI>
+
+<LI>
+seze - SensorZenith - create a "seze" output file containing sensor zenith
+values. Scaled values are in degrees. The scale factor is 0.01.</LI>
+
+<LI>
+seaz - SensorAzimuth - create a "seaz" output file containing sensor azimuth
+values.&nbsp; Scaled values are in degrees. The scale factor is 0.01.</LI>
+
+<LI>
+rang - Range - create a "rang" output file containing range values. Scaled
+values are in meters. The scale factor is 25.</LI>
+
+<LI>
+soze - SolarZenith - create a "soze" output file containing solar zenith
+values.&nbsp; Scaled values are in degrees. The scale factor is 0.01.</LI>
+
+<LI>
+soaz - SolarAzimuth - create a "soaz" output file containing solar azimuth
+values.&nbsp; Scaled values are in degrees. The scale factor is 0.01.</LI>
+
+<LI>
+lmsk - Land/SeaMask -&nbsp; create a "lmsk" output file containing land/sea
+mask coded values. This ancillary parameter is available in <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+files only. See <A HREF="http://daac.gsfc.nasa.gov/DAAC_DOCS/direct_broadcast/MOD03.geolocation.fs.txt">MODIS
+Geolocation Version 2 Product Format</A> for a description of lmsk coded
+values.</LI>
+
+<LI>
+gflg - gflags - create a "gflg" output file containing gflags coded values.
+See <A HREF="http://daac.gsfc.nasa.gov/DAAC_DOCS/direct_broadcast/MOD03.geolocation.fs.txt">MODIS
+Geolocation Version 2 Product Format</A> for a description of gflags coded
+values.</LI>
+</UL>
+
+<LI>
+conversion - a string that specifies the type of conversion that should
+be performed on the channel. The conversion string must be one of the following:</LI>
+
+<UL>
+<LI>
+raw - create a "raw" output file containing raw HDF values (16-bit signed
+integers except that Range is 16-bit unsigned integer and Land/SeaMask
+and gflags are unsigned bytes) (default).</LI>
+
+<LI>
+scaled - create a "sca" output file containing raw values multiplied by
+a parameter-specific scale factor (floating-point). Note that the effective
+scale factor for Height, Land/SeaMask, and gflags is 1.</LI>
+</UL>
+
+<LI>
+weight_type - a string that specifies the type of weighting that should
+be performed on the ancillary parameter data during swath-to-grid mapping.
+The weight_type string must be one of the following two values:</LI>
+
+<UL>
+<LI>
+avg - use weighted averaging (default for all except Land/SeaMask and gflags).
+This method can introduce intermediate output values that do not necessarily
+appear in the input. However it produces an anti-aliased output image.</LI>
+
+<LI>
+max - use maximum weighting (default for Land/SeaMask and gflags). This
+method is analogous to nearest neighbor sampling in that it will not result
+in output values to do not appear in the input. However it can produce
+aliasing artifacts in the output image.</LI>
+</UL>
+
+<LI>
+fill - specifies the output fill value to which the input fill value and
+any unfilled output pixels will be mapped. Default is 0.</LI>
+</UL>
+
+<LI>
+<I>latlon_src</I> - a single character code specifying from where the latitude
+and longitude data should be read. The codes are as follows:</LI>
+
+<UL>
+<LI>
+1: use 5 km lat-lon data from <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A>
+file (default).</LI>
+
+<LI>
+3: use 1 km lat-lon data from <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+file.</LI>
+
+<LI>
+H: use 1 km lat-lon data from <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>
+file.</LI>
+
+<LI>
+Q: use 1 km lat-lon data from <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>
+file.</LI>
+</UL>
+Note that if <I>latlon_src</I> is set to 3, then <I>ancil_src</I> (below)
+is forced to 3. Note also that if the first file specified in <I>listfile</I>
+is a <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>,
+or <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+file, then latlon_src is forced to H, Q, or 3, respectively.
+<LI>
+<I>ancil_src</I> - a single character code specifying from where the ancillary
+data should be read. The codes are as follows:</LI>
+
+<UL>
+<LI>
+1: use 5 km ancillary data from <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD021KM.shtml">MOD021KM</A>
+file (default).</LI>
+
+<LI>
+3: use 1 km ancillary data from <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+file.</LI>
+</UL>
+Note that if <I>ancil_src</I> is set to 3, then <I>latlon_src</I> is forced
+to 3. Note also that if the first file specified in <I>listfile</I> is
+a <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+file, then <I>ancil_src</I> is forced to 3.
+<LI>
+<I>keep</I> - a single character code indicating whether intermediate files
+should or should not be deleted. The codes are as follows:</LI>
+
+<UL>
+<LI>
+0: delete intermediate chan, ancil, lat, lon, col, and row files (default).</LI>
+
+<LI>
+1: do not delete intermediate chan, ancil, lat, lon, col, and row files.</LI>
+</UL>
+
+<LI>
+<I>rind</I> - number of pixels to add around intermediate grid to eliminate
+holes in final grid. Default is 50 which should be adequate in most cases.
+If you see pixels being set to the fill value along the seam joining adjacent
+scenes, then you might try increasing the value of <I>rind</I>.</LI>
+</OL>
+
+<H3>
+<A NAME="mod10_l2"></A>mod10_l2.pl</H3>
+This script can process <A HREF="/data/mod10_l2.html">MOD10_L2</A>
+swath files to produce flat binary gridded files containing MODIS snow
+cover data. The snow cover data consist of two 500 m resolution "channels"
+described in <A HREF="mod10_l2_usage" TARGET="NEW">mod10_l2 usage</A> and <A HREF="/data/mod10_l2.html">MOD10_L2</A>.
+The geolocation information stored in <A HREF="/data/mod10_l2.html">MOD10_L2</A>
+files is 5 km resolution, but 1 km resolution geolocation information extracted
+from <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>,
+or <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+files if available can be used by mod10_l2.pl via the <I>latlonlistfile</I>
+parameter (described below). Use of 1 km geolocation information will minimize
+geolocation interpolation error.
+<P>The mod10_l2.pl script has the following usage:
+<P><TT>mod10_l2.pl dirinout tag listfile gpdfile</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[chanlist [latlonlistfile [keep [rind]]]]</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; defaults:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; none&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0&nbsp;&nbsp;&nbsp;&nbsp; 50</TT>
+<P><A HREF="mod10_l2_usage" TARGET="NEW">mod10_l2 usage</A> provides a cursory explanation
+of the mod10_l2.pl script parameters. A more expanded discussion of each
+parameter is provided here. Note that the first four parameters to mod10_l2.pl
+are required; the rest are optional.
+<OL>
+<LI>
+<I>dirinout</I> - the directory containing all input files required by
+mod10_l2.pl and all output files created by mod10_l2.pl. If input files
+must reside in some directory other that the one used for output, then
+the user will need to create links to each of these files in the dirinout
+directory.</LI>
+
+<LI>
+<I>tag</I> - a string used in constructing the names of output files. Each
+output filename will begin with the <I>tag</I> string.</LI>
+
+<LI>
+<I>listfile</I> - the name of a text file containing the names of the <A HREF="/data/mod10_l2.html">MOD10_L2</A>
+swath files to be gridded. Multiple files must have been acquired at subsequent
+acquisition times without any gaps.</LI>
+
+<LI>
+<I>gpdfile</I> - the name of a Grid Parameters Definition (gpd) file that
+defines the desired output grid. See <A HREF="http://cires.colorado.edu/~knowlesk/ppgc.html">Points,
+Pixels, Grids, and Cells</A> and the <A HREF="tutorials.html">Tutorials</A>
+for more details.</LI>
+
+<LI>
+<I>chanlist</I> - string specifying channel numbers to be gridded. The
+default string is 1, i.e. grid channel 1 only. The channel numbers are:</LI>
+
+<UL>
+<LI>
+1: Snow Cover - create a "snow" output file containing 8-bit unsigned coded
+values. See <A HREF="/data/docs/daac/mod10_modis_snow.gd.html">MODIS/Terra
+Snow Cover L2 and L3 Daily and 8-Day 500 m</A> for a table of coded values.</LI>
+
+<LI>
+2: Snow Cover PixelQA - create a "snqa" output file containing 8-bit unsigned
+coded values. See <A HREF="/data/docs/daac/mod10_modis_snow/snowcover_qa.html">MODIS
+Snow Cover Bit Processing</A> for a description of coded values.</LI>
+</UL>
+The <I>chanlist</I> string should not contain any embedded blanks. Thus
+to specify that all channels should be gridded, <I>chanlist</I> should
+be 12.
+<LI>
+<I>latlonlistfile</I> - text file containing a list of <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>,
+or <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+files whose latitude and longitude data should be used in place of the
+latitude and longitude data in the corresponding <A HREF="/data/mod10_l2.html">MOD10_L2</A>
+files in listfile. The default is "none" indicating that the latitude and
+longitude data in each <A HREF="/data/mod10_l2.html">MOD10_L2</A>
+file should be used without substitution.</LI>
+
+<LI>
+<I>keep</I> - a single character code indicating whether intermediate files
+should or should not be deleted. The codes are as follows:</LI>
+
+<UL>
+<LI>
+0: delete intermediate chan, lat, lon, col, and row files (default).</LI>
+
+<LI>
+1: do not delete intermediate chan, lat, lon, col, and row files.</LI>
+</UL>
+
+<LI>
+<I>rind</I> - number of pixels to add around intermediate grid to eliminate
+holes in final grid. Default is 50 which should be adequate in most cases.
+If you see pixels being set to the fill value along the seam joining adjacent
+scenes, then you might try increasing the value of <I>rind</I>.</LI>
+</OL>
+
+<H3>
+<A NAME="mod29"></A>mod29.pl</H3>
+This script can process <A HREF="/data/mod29.html">MOD29</A>
+swath files to produce flat binary gridded files containing MODIS sea ice
+extent data. The sea ice extent data consist of six 1 km resolution "channels"
+described in <A HREF="mod29_usage" TARGET="NEW">mod29 usage</A> and <A HREF="/data/mod29.html">MOD29</A>.
+The geolocation information stored in <A HREF="/data/mod29.html">MOD29</A>
+files is 5 km resolution, but 1 km resolution geolocation information extracted
+from <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>,
+or <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+files if available can be used by mod29.pl via the <I>latlonlistfile</I>
+parameter (described below). Use of 1 km geolocation information will minimize
+geolocation interpolation error.
+<P>The mod29.pl script has the following usage:
+<P><TT>mod29.pl dirinout tag listfile gpdfile</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[chanlist [latlonlistfile [keep [rind]]]]</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; defaults:&nbsp;&nbsp;&nbsp;
+1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; none&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0&nbsp;&nbsp;&nbsp;&nbsp; 50</TT>
+<P><A HREF="mod29_usage" TARGET="NEW">mod29 usage</A> provides a cursory explanation
+of the mod29.pl script parameters. A more expanded discussion of each parameter
+is provided here. Note that the first four parameters to mod29.pl are required;
+the rest are optional.
+<OL>
+<LI>
+<I>dirinout</I> - the directory containing all input files required by
+mod29.pl and all output files created by mod29.pl. If input files must
+reside in some directory other that the one used for output, then the user
+will need to create links to each of these files in the dirinout directory.</LI>
+
+<LI>
+<I>tag</I> - a string used in constructing the names of output files. Each
+output filename will begin with the <I>tag</I> string.</LI>
+
+<LI>
+<I>listfile</I> - the name of a text file containing the names of the <A HREF="/data/mod29.html">MOD29</A>
+swath files to be gridded. Multiple files must have been acquired at subsequent
+acquisition times without any gaps.</LI>
+
+<LI>
+<I>gpdfile</I> - the name of a Grid Parameters Definition (gpd) file that
+defines the desired output grid. See <A HREF="http://cires.colorado.edu/~knowlesk/ppgc.html">Points,
+Pixels, Grids, and Cells</A> and the <A HREF="tutorials.html">Tutorials</A>
+for more details.</LI>
+
+<LI>
+<I>chanlist</I> - string specifying channel numbers to be gridded. The
+default string is 1, i.e. grid channel 1 only. The channel numbers are:</LI>
+
+<UL>
+<LI>
+1: Sea Ice by Reflectance - create an "icer" output file containing 8-bit
+unsigned coded values. See <A HREF="/data/docs/daac/mod29_modis_seaice.gd.html">MODIS/Terra
+Sea Ice Extent L2 and L3 Day and Night 1 km</A> for a table of coded values.</LI>
+
+<LI>
+2: Sea Ice by Reflectance PixelQA - create a "irqa" output file containing
+8-bit unsigned coded values. See <A HREF="/data/docs/daac/mod29_modis_seaice/seaice_qa.html">MODIS
+Sea Ice Bit Processing</A> for a description of values.</LI>
+
+<LI>
+3: Ice Surface Temperature - create a "temp" output file containing 16-bit
+unsigned values representing kelvin * 100. Note that the 16-bit unsigned
+values should be divided by 100. Resulting values in the range 0-255 represent
+coded values while 655.35 represents the fill value; all other values represent
+temperatures in kelvin. See <A HREF="/data/docs/daac/mod29_modis_seaice.gd.html">MODIS/Terra
+Sea Ice Extent L2 and L3 Day and Night 1 km</A> for a table of coded values.</LI>
+
+<LI>
+4: Ice Surface Temperature PixelQA - create a "itqa" output file containing
+8-bit unsigned coded values. See <A HREF="/data/docs/daac/mod29_modis_seaice/seaice_qa.html">MODIS
+Sea Ice Bit Processing</A> for a description of values.</LI>
+
+<LI>
+5: Sea Ice by IST - create a "icet" output file containing 8-bit unsigned
+coded values. See <A HREF="/data/docs/daac/mod29_modis_seaice.gd.html">MODIS/Terra
+Sea Ice Extent L2 and L3 Day and Night 1 km</A> for a table of coded values.</LI>
+
+<LI>
+6: icrt Combined Sea Ice - create a "icrt" output file containing 8-bit
+unsigned coded values. See <A HREF="/data/docs/daac/mod29_modis_seaice/mod29_local_attributes.html">MOD29
+Local Attributes</A> for a table of coded values.</LI>
+</UL>
+The <I>chanlist</I> string should not contain any embedded blanks. Thus
+to specify that all channels should be gridded, <I>chanlist</I> should
+be 123456.
+<BR>NOTE: During twilight and nighttime conditions, "dark" <A HREF="/data/mod29.html">MOD29</A>
+granules may be created that do not include Sea Ice by Reflectance, Sea
+Ice by Reflectance PixelQA, nor Combined Sea Ice channels. Gridded arrays
+containing the fill value of 255 are returned when these channels are specified
+for dark <A HREF="/data/mod29.html">MOD29</A>
+granules.
+<LI>
+<I>latlonlistfile</I> - text file containing a list of <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02HKM.shtml">MOD02HKM</A>,
+<A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD02QKM.shtml">MOD02QKM</A>,
+or <A HREF="http://daac.gsfc.nasa.gov/MODIS/Terra/rad_geo/MOD03.shtml">MOD03</A>
+files whose latitude and longitude data should be used in place of the
+latitude and longitude data in the corresponding <A HREF="/data/mod29.html">MOD29</A>
+files in listfile. The default is "none" indicating that the latitude and
+longitude data in each <A HREF="/data/mod29.html">MOD29</A>
+file should be used without substitution.</LI>
+
+<LI>
+<I>keep</I> - a single character code indicating whether intermediate files
+should or should not be deleted. The codes are as follows:</LI>
+
+<UL>
+<LI>
+0: delete intermediate chan, lat, lon, col, and row files (default).</LI>
+
+<LI>
+1: do not delete intermediate chan, lat, lon, col, and row files.</LI>
+</UL>
+
+<LI>
+<I>rind</I> - number of pixels to add around intermediate grid to eliminate
+holes in final grid. Default is 50 which should be adequate in most cases.
+If you see pixels being set to the fill value along the seam joining adjacent
+scenes, then you might try increasing the value of <I>rind</I>.</LI>
+</OL>
+</BLOCKQUOTE>
+
+<HR><FONT SIZE=-1>Last updated: January 2, 2002 by</FONT>
+<BR><FONT SIZE=-1>Terry Haran</FONT>
+<BR><FONT SIZE=-1>NSIDC-CIRES</FONT>
+<BR><FONT SIZE=-1>449 UCB</FONT>
+<BR><FONT SIZE=-1>University of Colorado</FONT>
+<BR><FONT SIZE=-1>Boulder, CO 80309-0449</FONT>
+<BR><FONT SIZE=-1>303-492-1847</FONT>
+<BR><FONT SIZE=-1><A HREF="mailto:tharan@nsidc.org">tharan@nsidc.org</A></FONT>
+
+</BODY>
+</HTML>

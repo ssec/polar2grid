@@ -1,0 +1,307 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+	   "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE>MODIS Swath-to-Grid Toolbox Tutorial 2</TITLE>
+<LINK REL=STYLESHEET HREF="/css/data_core.css" TYPE="text/css">
+</HEAD>
+<BODY BGCOLOR="#ffffff">
+
+
+<!-- vvvvvvvvvv SSI BELOW vvvvvvvvvv -->
+
+<TABLE ALIGN="center" BGCOLOR="#003366" BORDER="0" CELLPADDING="0" CELLSPACING="0" WIDTH="100%"><TR>
+    <TD><IMG SRC="http://nsidc.org/ssi/images/nsidc.gif" BORDER="0" HEIGHT="18" WIDTH="550" HSPACE="0" VSPACE="0" ALT="NSIDC global navigation" ISMAP USEMAP="#global_nav.map"> 
+      <MAP NAME="global_nav.map"> 
+        <AREA SHAPE="rect" COORDS="1,1,82,17" HREF="http://nsidc.org/" ALT="NSIDC home">
+        <AREA SHAPE="rect" COORDS="119,1,153,17" HREF="http://nsidc.org/data/" ALT="Data">
+        <AREA SHAPE="rect" COORDS="169,1,225,17" HREF="http://nsidc.org/projects.html" ALT="Projects">
+        <AREA SHAPE="rect" COORDS="242,1,302,17" HREF="http://nsidc.org/research/" ALT="Research">
+        <AREA SHAPE="rect" COORDS="315,1,419,17" HREF="http://nsidc.org/cryosphere/" ALT="Cryosphere">
+        <AREA shape="rect" coords="430,2,474,18" href="http://nsidc.org/news/" ALT="News">
+<AREA SHAPE="rect" COORDS="485,1,546,17" HREF="http://nsidc.org/sitemap/" ALT="Site map">
+</MAP></TD></TR></TABLE>
+
+<!-- ^^^^^^^^^^ SSI ABOVE ^^^^^^^^^^ -->
+
+
+
+<!-- vvvvvvvvvv SSI BELOW vvvvvvvvvv -->
+
+<TABLE ALIGN="center" BGCOLOR="#FFFFFF" BORDER="0" CELLPADDING="0" CELLSPACING="0" WIDTH="100%"><TR><TD>
+<IMG SRC="/ssi/images/data_core.gif" WIDTH="450" HEIGHT="35" BORDER="0" USEMAP="#data_banner" ALT="Data section navigation"> 
+<MAP NAME="data_banner"> 
+<AREA SHAPE="rect" COORDS="79,9,171,24" HREF="http://nsidc.org/data/catalog.html" ALT="NSIDC Data Catalog">
+<AREA SHAPE="rect" COORDS="185,10,230,24" HREF="http://nsidc.org/data/search.html" ALT="Search the Data Catalog">
+<AREA SHAPE="rect" COORDS="290,7,319,24" HREF="http://nsidc.org/data/help/" ALT="Data Help Center">
+<AREA SHAPE="rect" COORDS="242,8,278,25" HREF="http://nsidc.org/data/tools/" ALT="Data Tools">
+<AREA SHAPE="rect" COORDS="334,7,386,24" HREF="http://nsidc.org/data/features.html" ALT="Data Features">
+</MAP></TD></TR></TABLE>
+
+<!-- ^^^^^^^^^^ SSI ABOVE ^^^^^^^^^^ -->
+
+
+
+<!-- vvvvvvvvvv SSI BELOW vvvvvvvvvv -->
+
+<A HREF="/daac/index.html"><IMG SRC="/images/logo_nasa_daac_77x65.gif" WIDTH="77" HEIGHT="65" ALIGN="left" ALT="NSIDC DAAC" BORDER="0" HSPACE="18" VSPACE="0"></A>
+<H3>MODIS Data at NSIDC</H3>
+<BR CLEAR="all">
+<HR COLOR="#003366" SIZE="1" NOSHADE>
+<DIV CLASS="SmallText">
+<A HREF="/data/modis/index.html">Home</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/data.html">Data Summaries</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/cmg_browse/index.html">CMG Browse</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/gallery/index.html">Image Gallery</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/order.html">Order Data</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/news.html">News</A>&nbsp;&nbsp;|&nbsp;&nbsp;
+<A HREF="/data/modis/faq.html">FAQs</A>
+</DIV>
+<HR COLOR="#003366" SIZE="1" NOSHADE>
+
+<!-- ^^^^^^^^^^ SSI ABOVE ^^^^^^^^^^ -->
+
+
+<!-- vvvvvvvvvv SSI BELOW vvvvvvvvvv -->
+
+<H2 ALIGN="center">MS2GT: The MODIS Swath-to-Grid Toolbox</H2>
+<DIV ALIGN="center" CLASS="SmallText">
+<B>* Documentation for this product is in development. *</B><BR>
+Please <A HREF="/forms/contact.html">contact NSIDC User Services</A>.</DIV>
+<HR COLOR="#003366" SIZE="1" NOSHADE><BR CLEAR="ALL">
+
+<!-- ^^^^^^^^^^ SSI ABOVE ^^^^^^^^^^ -->
+
+<H2>Tutorial 2: Gridding MODIS 250 m Level 1b Data over Greenland Using mod02.pl</H2>
+
+<UL>
+<LI><A HREF="#requirements">Requirements</A></LI>
+<LI><A HREF="#search">Searching for the Data</A></LI>
+<LI><A HREF="#order">Ordering and Downloading the Data</A></LI>
+<LI><A HREF="#command">Creating the mod02.pl Command File</A></LI>
+<LI><A HREF="#listfile">Creating the listfile</A></LI>
+<LI><A HREF="#gpdfile">Creating the gpd and mpp files</A></LI>
+<LI><A HREF="#chanfile">Creating the chanfile</A></LI>
+<LI><A HREF="#running">Running the mod02.pl Command File</A></LI>
+<LI><A HREF="#examining">Examining the Results</A></LI>
+</UL>
+
+<H2><A NAME="requirements"></A>Requirements</H2>
+
+<P>Suppose we want to put some MODIS 250 m Level 1b swath data covering all of Greenland into the same grid used in <A HREF="tutorial_1.html">Tutorial 1</A>, except that we want to change the resolution of the grid from 1.25 km to 250 m. We want to grid reflective channels 1 and 2, which are the only MODIS channels available at 250m. We need to order <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD02QKM.shtml">MOD02QKM</A> data; however, as we can see in <A HREF="index.html#datasets">Supported Data Sets</A>, the lat-lon data are stored at only 1 km resolution in <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD02QKM.shtml">MOD02QKM</A> granules. Therefore, <A HREF="index.html#mod02">mod02.pl</A> will need to interpolate the 1 km lat-lon data in the <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD02QKM.shtml">MOD02QKM</A> granules to 250 m resolution. There is no need to work with <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD03.shtml">MOD03</A>
+granules since the lat-lon data are also at 1 km resolution in <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD03.shtml">MOD03</A>
+granules and we're not gridding any ancillary data.</P>
+
+<P>NOTE: To run this example, you'll need a machine with at least 750 MB of memory and about 1.5 GB of free disk space.</P>
+
+<H2><A NAME="searching"></A>Searching for the Data</H2>
+
+<P>Let's assume that we want to use data from the same date and time as in <A HREF="tutorial_1.html">Tutorial
+1</A>, except that this time we want to search for <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD02QKM.shtml">MOD02QKM</A> granules rather than <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD021KM.shtml">MOD021KM</A> and <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD03.shtml">MOD03</A> granules. We use the <A HREF="http://redhook.gsfc.nasa.gov/~imswww/pub/imswelcome/">EDG</A> to order two <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD02QKM.shtml">MOD02QKM</A> granules acquired on June 1, 2000 at 1445 and 1450 that appear to cover Greenland. You can use the following values for performing the search using
+the <A HREF="http://redhook.gsfc.nasa.gov/~imswww/pub/imswelcome/">EDG</A>:</P>
+
+<P>Data Set
+<BR><TT>MODIS/TERRA CALIBRATED RADIANCES 5-MIN L1B SWATH 250M</TT></P>
+
+<P>
+Search Area
+<BR>Type in Lat/Lon Range:
+<BR><TT>Northern latitude: 85.0000</TT>
+<BR><TT>Southern latitude: 60.0000</TT>
+<BR><TT>Western longitude: -80.0000</TT>
+<BR><TT>Eastern longitude: 10.0000</TT>
+</P>
+
+<P><TT>Start Date: 2000-06-01&nbsp; Time (UTC): 14:00:00</TT>
+<BR><TT>End Date:&nbsp;&nbsp; 2000-06-01&nbsp; Time (UTC): 15:00:00</TT></P>
+
+<P>The search should find two granules having the following names:</P>
+
+<P><TT>MOD02QKM.A2000153.1445.002.2000156075718.hdf</TT>
+<BR><TT>MOD02QKM.A2000153.1450.002.2000156075717.hdf</TT></P>
+
+<P>Note that June 1, 2000 is day-of-year 153.</P>
+
+<H2><A NAME="order"></A>Ordering and Downloading the Data</H2>
+
+<P>Order and download the above files to some directory we'll call the tutorial_2 directory where you have at least 1.5 GB of free disk space. Note that you can also download the *.met files that accompany the *.hdf files, but the MS2GT software doesn't use them.</P>
+
+<H2><A NAME="command"></A>Creating the mod02.pl Command File</H2>
+
+<P>Create a text file in the tutorial_2 directory called gl250_2000153_1445.csh containing the following line:</P>
+
+<P><TT>mod02.pl . gl250_2000153_1445 listfile.txt Gl0250.gpd chanfile.txt none Q</TT></P>
+
+<P>This command specifies the following information (see <A HREF="index.html#mod02">mod02.pl</A>):</P>
+<UL>
+<LI>dirinout is "." indicating that the current directory in effect when gl250_2000153_1445.csh is invoked will contain the input and output files.</LI>
+<LI>tag is "gl250_2000153_1445" indicating that all output filenames containing gridded data created by <A HREF="index.html#mod02">mod02.pl</A> will begin with the string "gl250_2000153_1445".</LI>
+<LI>listfile is "listfile.txt" containing a list of the MOD02 files to be processed (see <A HREF="#listfile">Creating the listfile</A>).</LI>
+<LI>gpdfile is "Gl0250.gpd" containing a specification of the grid and its associated map projection to use in gridding the data (see <A HREF="#gpdfile">Creating the gpd and mpp files</A>).</LI>
+<LI>chanfile is "chanfile.txt" containing a list of the channels to be gridded as well as specifying how each channel should be processed (see <A HREF="#chanfile">Creating the chanfile</A>).</LI>
+<LI>ancilfile is "none" indicating that we do not wish to grid any ancillary data.</LI>
+<LI>latlon_src is "Q" indicating that&nbsp; the 1 km latitude and longitude data in the <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD02QKM.shtml">MOD02QKM</A> files should be used.</LI>
+<LI>ancil_src is not specified, and ancilfile is "none," so ancil_src is ignored.</LI>
+<LI>keep is not specified, so the default value of "0" is used indicating that intermediate chan, lat, lon, col, and row files should be deleted.</LI>
+<LI>rind is not specified, so the default value of "50" is used. If you see holes in the final grid that seem to correspond to the boundaries between adjacent swath granules, then you might try increasing the rind value.</LI>
+</UL>
+
+<P>Make gl250_2000153_1445.csh executable by typing:</P>
+
+<P><TT>chmod +x gl250_2000153_1445.csh</TT></P>
+
+<H2><A NAME="listfile"></A>Creating the listfile</H2>
+
+<P>Create a text file called listfile.txt in the tutorial_2 directory containing the following two lines:</P>
+
+<P><TT>MOD02QKM.A2000153.1445.002.2000156075718.hdf</TT>
+<BR><TT>MOD02QKM.A2000153.1450.002.2000156075717.hdf</TT></P>
+
+<P>Note that we list the <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD02QKM.shtml">MOD02QKM</A>
+files to be gridded.</P>
+
+<H2><A NAME="gpdfile"></A>Creating the gpd and mpp files</H2>
+
+<P>Let's review the Gl1250.gpd file we created in <A HREF="#gpdfile">Tutorial 1</A>:</P>
+
+<P>
+<TT>N200correct.mpp map projection parameters&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# EASE-Grid</TT>
+<BR><TT>1860 1740&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; columns rows&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# Greenland</TT>
+<BR><TT>160&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+grid cells per map unit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# 1.25 km</TT>
+<BR><TT>1949.5&nbsp; -250.5&nbsp; map origin column,row</TT>
+</P>
+
+<P>We wish now to create Gl0250.gpd which will specify the same grid but at 250 m resolution rather than 1.25 km. The mpp file will be the same, namely <A HREF="/data/grids/N200correct.mpp">N200correct.mpp</A>. Note that 1250 / 250 = 5, so the number of columns and rows in Gl0250.gpd will be 5 * 1860 = 9300 columns and 5 * 1740 = 8700 rows. The grid cells per map unit will be 5 * 160 = 800. The map origin column will be 5 * (1949.5 + 0.5) - 0.5 = 9749.5 and the map origin row will be 5 * (-250.5 + 0.5) - 0.5 = -1250.5. We now have all the information we need to create Gl0250.gpd in the ms2gt/grids directory (if you don't want to type the file in, then just copy Gl0250.gpd from the ms2gt/tutorial_2 directory to the ms2gt/grids directory):</P>
+
+<P>
+<TT>N200correct.mpp map projection parameters&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# EASE-Grid</TT>
+<BR><TT>9300 8700&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; columns rows&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# Greenland</TT>
+<BR><TT>800&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+grid cells per map unit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# 250 m</TT>
+<BR><TT>9749.5&nbsp; -1250.5 map origin column,row</TT>
+</P>
+
+<P>Once Gl0250.gpd has been created in the ms2gt/grids directory, we can use gtest again to check that the latitude and longitude values of the upper left and lower right corners match those in Gl1250.gpd:</P>
+
+<P><B><TT>gtest</TT></B></P>
+
+<P><TT>enter .gpd file name: <B>Gl1250.gpd</B></TT>
+<BR><TT>> assuming old style fixed format file</TT></P>
+
+<P><TT>gpd: /hosts/snow/AVHRR/pathfinder/grids/Gl1250.gpd</TT>
+<BR><TT>mpp:/hosts/snow/AVHRR/pathfinder/grids/N200correct.mpp</TT></P>
+
+<P><TT>forward_grid:</TT>
+<BR><TT>enter lat lon:</TT></P>
+
+<P><TT>inverse_grid:</TT>
+<BR><TT>enter r s: <B>-0.5 -0.5</B></TT>
+<BR><TT>lat,lon = 67.700233 -82.694237&nbsp;&nbsp;&nbsp; status = 1</TT>
+<BR><TT>col,row = -0.500000 -0.499863&nbsp;&nbsp;&nbsp; status = 1</TT>
+<BR><TT>enter r s: <B>1859.5 1739.5</B></TT>
+<BR><TT>lat,lon = 67.400612 -2.589502&nbsp;&nbsp;&nbsp; status = 1</TT>
+<BR><TT>col,row = 1859.500000 1739.500000&nbsp;&nbsp;&nbsp; status = 0</TT>
+<BR><TT>enter r s:</TT>
+</P>
+
+<P><TT>enter .gpd file name: <B>Gl0250.gpd</B></TT>
+<BR><TT>> assuming old style fixed format file</TT></P>
+
+<P><TT>gpd: Gl0250.gpd</TT>
+<BR><TT>mpp:/hosts/snow/AVHRR/pathfinder/grids/N200correct.mpp</TT></P>
+
+<P><TT>forward_grid:</TT>
+<BR><TT>enter lat lon:</TT></P>
+
+<P>
+<TT>inverse_grid:</TT>
+<BR><TT>enter r s: <B>-0.5 -0.5</B></TT>
+<BR><TT>lat,lon = 67.700233 -82.694237&nbsp;&nbsp;&nbsp; status = 1</TT>
+<BR><TT>col,row = -0.500000 -0.499390&nbsp;&nbsp;&nbsp; status = 1</TT>
+<BR><TT>enter r s: <B>9299.5 8699.5</B></TT>
+<BR><TT>lat,lon = 67.400612 -2.589502&nbsp;&nbsp;&nbsp; status = 1</TT>
+<BR><TT>col,row = 9299.500000 8699.500000&nbsp;&nbsp;&nbsp; status = 0</TT>
+<BR><TT>enter r s:</TT>
+</P>
+
+<P><TT>enter .gpd file name:</TT></P>
+
+<P>Note that we used <B>-0.5 -0.5</B> to specify the upper left corner of the upper left pixel (rather than <B>0 0</B> which would be the center of the upper left pixel) for both Gl1250.gpd and Gl0250.gpd, and that the resulting latitude and longitude values were the same, namely 67.700233 N and 82.694237 W, respectively. Similarly, we used <B>1859.5 1739.5</B> for the lower right corner of the lower right pixel for Gl1250.gpd and <B>9299.5 8699.5</B> for the lower right corner of the lower right pixel for Gl0250.gpd, and that the resulting latitude and logitude values were the same, namely 67.400612 N and 2.589502 W, respectively.</P>
+
+<H2><A NAME="chanfile"></A>Creating the chanfile</H2>
+
+<P>Create a text file in the tutorial_2 directory called chanfile.txt containing the following two lines:</P>
+
+<P><TT>1 reflectance</TT>
+<BR><TT>2 reflectance</TT></P>
+
+<P>Here we specify that we want two output grids to be created containing channel 1 reflectance and channel 2 reflectance, respectively. Each file will consist of an array of binary floating-point numbers. Since we didn't specify weight type or fill, they are set to their default values, namely "avg" and "0".</P>
+
+<H2><A NAME="running"></A>Running the mod02.pl Command File</H2>
+
+<P>Run the shell script containing the <A HREF="index.html#mod02">mod02.pl</A> command by changing to the tutorial_2 directory, and then typing:</P>
+
+<P><B><TT>gl250_2000153_1445.csh</TT></B></P>
+
+<P>You'll see lots of messages displayed while the <A HREF="index.html#mod02">mod02.pl</A> script runs various IDL and C programs. In this example, the programs include:</P>
+
+<OL>
+
+<LI>extract_latlon - an IDL procedure for extracting latitude and longitude data from a MOD02 or <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD03.shtml">MOD03</A> file. This program calls another IDL procedure, modis_ancillary_read. In this example, extract_latlon is called twice, once for each of the two <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD02QKM.shtml">MOD02QKM</A> files. Two binary floating-point files are created per call containing latitude and longitude data, respectively. The <A HREF="index.html#mod02">mod02.pl</A> script concatenates the two latitude files and the two longitude files to create a single latitude file and a single longitude file, and the pre-concatenated files are deleted.</LI>
+
+<LI>ll2cr - a C program for converting latitude, longitude pairs to column, row pairs for a particular grid. The grid specified in this example is Gl0250.gpd. The concatenated latitude and longitude files are read and two binary floating-point files are created containing column and row numbers, respectively. The <A HREF="index.html#mod02">mod02.pl</A> script then deletes the concatenated latitude and longitude files.</LI>
+
+<LI>interp_colrow - an IDL procedure for interpolating column, row pairs from a lower resolution swath format to a higher resolution swath format, in this case from 1 km to 250 m. The interpolation must be performed on a scan's worth of data at a time because the column and row numbers have discontinuities at scan boundaries. The interp_colrow procedure calls a function called congridx for each scan's worth of column and row arrays. The congridx function is called once for the column array and once for the row array. The congridx function first performs an extrapolation of the given array to a slightly expanded array, which it then interpolates (bicubic interpolation is used here) to a fully expanded array. The final array is extracted from the fully expanded array. The <A HREF="index.html#mod02">mod02.pl</A> script then deletes the pre-interpolated column and row files.</LI>
+
+<LI>extract_chan - an IDL procedure for extracting channel data from a MOD02 file. This program calls another IDL procedure, modis_level1b_read. In this example, extract_chan is called two times, once for each of the two <A HREF="http://daac.gsfc.nasa.gov/CAMPAIGN_DOCS/MODIS/rad_geo/MOD02QKM.shtml">MOD02QKM</A> files; on each call, channel 1 or channel 2 is extracted, and the result is converted to reflectance. One binary floating-point file is created per call containing the channel data. The <A HREF="index.html#mod02">mod02.pl</A> script concatenates the pair of channel files, creates one concatenated channel file, and then deletes the pre-concatenated channel files.</LI>
+
+<LI>fornav - a C program for performing forward navigation from a swath to a grid. In this example, fornav is called two times, once for each of the two concatenated channel files. On each call, the interpolated column and row files are read as well. An elliptical weighted averaging algorithm is applied during forward navigation to minimize holes and aliasing in the gridded data. One binary floating-point file is created per call containing the gridded data. The <A HREF="index.html#mod02">mod02.pl</A> script then deletes the concatenated channel files as well as the interpolated column and row files.</LI>
+
+</OL>
+
+<P>The final message should contain the string:</P>
+
+<P><TT>MOD02: MESSAGE: done</TT></P>
+
+<H2><A NAME="examining"></A>Examining the Results</H2>
+
+<P>Enter the command:</P>
+
+<P><B><TT>ls -l *.img</TT></B></P>
+
+<P>You should see something like this:</P>
+
+<P>
+<TT>-rw-r--r--&nbsp;&nbsp;&nbsp; 1 haran&nbsp;&nbsp;&nbsp; nsidc&nbsp;&nbsp;&nbsp;&nbsp;
+323640000 Apr 23 13:26 gl250_2000153_1445_refa_ch01_09300_08700.img</TT>
+<BR><TT>-rw-r--r--&nbsp;&nbsp;&nbsp; 1 haran&nbsp;&nbsp;&nbsp; nsidc&nbsp;&nbsp;&nbsp;&nbsp;
+323640000 Apr 23 13:29 gl250_2000153_1445_refa_ch02_09300_08700.img</TT>
+</P>
+
+<P>Each file contains a gridded array of 9300 columns and 8700 rows of binary floating-point values (9300 * 8700 * 4 = 323640000 bytes).</P>
+
+<P>The file naming convention for gridded channel files can be found in <A HREF="tutorial_1.html#examining">Tutorial
+1</A>.</P>
+
+<HR>
+
+<P CLASS="SmallText">
+Last updated: January 2, 2002 by<BR>
+Terry Haran<BR>
+NSIDC-CIRES<BR>
+449 UCB<BR>
+University of Colorado<BR>
+Boulder, CO 80309-0449<BR>
+303-492-1847<BR>
+<A HREF="mailto:tharan@nsidc.org">tharan@nsidc.org</A>
+</P>
+
+</BODY>
+</HTML>

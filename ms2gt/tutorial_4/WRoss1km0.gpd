@@ -1,0 +1,4 @@
+S_stereo.mpp	map projection parameters	# Western Ross Sea
+1006	999	columns rows			# preliminary values
+100		grid cells per map unit		# 1 km
+0	0	origin column, row		# origin south pole initially

@@ -1,0 +1,4 @@
+N200correct.mpp	map projection parameters		# AVHRR 1.25kmEASE-Grid
+7220 7220	columns rows				# Northern Hemisphere
+160		grid cells per map unit			# 1.25 km
+3609.5 3609.5	map origin column,row			#

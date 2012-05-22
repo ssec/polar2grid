@@ -1,0 +1,4 @@
+Colorado.mpp	map projection parameters	# azimuthal equal area
+1700 1776	columns rows			# 
+200		grid cells per map unit		# 500 meters
+849.5	887.5	origin column, row		# center at 40N 150W

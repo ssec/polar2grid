@@ -1,0 +1,16 @@
+; Cold Land Processes Experiment
+; Large Regional Study Area
+; GEO 360 arcseconds
+Map Projection:                 Cylindrical Equidistant
+Map Reference Latitude:         0.0             ; Cold Land Processes
+Map Reference Longitude:        0.0             ; Large-regional study area
+Map Scale:                      1.0             ; 1 arcsecond per map unit
+Map Origin Latitude:            42.05           ; UL outer
+Map Origin Longitude:           -108.55         ;
+Map Equatorial Radius:          206264.797      ; (360.0 * 3600.) / (2 * !pi)
+Grid Width:                     46              ; LR outer = 38.45, -103.95
+Grid Height:                    36              ;
+Grid Map Units per Cell:        360             ; 360" = 6' = 0.1 deg
+                                                ; =~ 11120 m
+Grid Map Origin Column:         -0.5            ; puts Map Origin Lat-Lon
+Grid Map Origin Row:            -0.5            ; in UL outer

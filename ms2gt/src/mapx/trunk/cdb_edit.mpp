@@ -1,0 +1,15 @@
+Azimuthal_Equal_Area
+ 90.00   00.00	lat0 lon0
+0.0		rotation
+0.0		scale (km/in)
+ 00.00	00.00	center lat lon
+-90.0   90.00	lat min max
+-180.00  180.00 lon min max
+30.00  20.00	grid
+00.00	180.00	label lat lon
+0 0 0		cil bdy riv
+
+
+
+
+

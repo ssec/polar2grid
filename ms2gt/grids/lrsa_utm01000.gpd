@@ -1,0 +1,12 @@
+; Cold Land Processes Experiment
+; Large Regional Study Area
+; UTM 1000 m
+Map Projection:			Universal Transverse Mercator
+Map UTM Zone:                   13
+Map Origin X:			175000
+Map Origin Y:			4675000
+Grid Map Origin Column:		-0.5
+Grid Map Origin Row:		-0.5
+Grid Map Units per Cell:	1000
+Grid Width:			425
+Grid Height:			425

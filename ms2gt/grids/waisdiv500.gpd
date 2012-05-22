@@ -1,0 +1,15 @@
+; Western Antarctic Ice Sheet Divide region
+; Polar Stereographic 500 m
+Map Projection:			Polar Stereographic Ellipsoid
+Map Reference Latitude:         -90.0
+Map Reference Longitude:        0.0
+Map Second Reference Latitude:  -71.0
+Map Eccentricity:		0.081819190843 ;wgs84
+Map Equatorial Radius:		6378137.0      ;wgs84 meters
+Map Origin Latitude:            -74.5
+Map Origin Longitude:           -90.0
+Grid Map Origin Column:		-0.5           ; UL outer:
+Grid Map Origin Row:		-0.5           ; 74.50000000S 90.0000000W
+Grid Map Units per Cell:	500
+Grid Width:			2500           ; LR outer:
+Grid Height:			2500           ; -77.8351517S 160.443161W

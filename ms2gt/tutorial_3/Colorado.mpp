@@ -1,0 +1,11 @@
+Azimuthal Equal-Area
+40.0	-105.0	lat0 lon0
+0.0		rotation
+100.0	   	scale (km/map unit)
+40.0	-105.0	center lat lon
+20.0	60.0	lat min max
+-135.0	-75.00	lon min max
+ 10.00 15.00	grid
+0.00	0.00	label lat lon
+1 0 0		cil bdy riv
+6370.997	Earth equatorial radius (km) -- gctp

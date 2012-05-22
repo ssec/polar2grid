@@ -1,0 +1,15 @@
+; MODIS Antarctic Mosaic -- MOA 750 m full grid
+; Polar Stereographic 750 m
+Map Projection:			Polar Stereographic Ellipsoid
+Map Reference Latitude:         -90.0
+Map Reference Longitude:        0.0
+Map Second Reference Latitude:  -71.0
+Map Eccentricity:		0.081819190843 ; wgs84
+Map Equatorial Radius:		6378137.0      ; wgs84 meters
+Map Origin X:                   -3174450.0     ; -3174387.5 - 125.0/2
+Map Origin Y:                   2406325.0      ;  2406262.5 + 125.0/2
+Grid Map Origin Column:		-0.5           ; UL corner of UL pixel
+Grid Map Origin Row:		-0.5
+Grid Map Units per Cell:	750
+Grid Width:			8056
+Grid Height:			6964
