@@ -6,8 +6,8 @@ as an individually installed python package or as part of the polar2grid
 software bundle.  The software bundle is the preferred, recommended,
 and intended method of installing the polar2grid software.
 
-polar2grid Software Bundle
---------------------------
+polar2grid Software Bundle Install
+----------------------------------
 
 The polar2grid software bundle is a pre-compiled set of software required
 to run the polar2grid scripts.  It includes a minimal python 2.7 install,
@@ -19,7 +19,7 @@ installed first by untarring it:
 
     ``tar -xzf polar2grid_softwarebundle.tar.gz``
 
-Next, add this line to your .bash_profile:
+Next, add this line to your ``.bash_profile``:
 
     ``export POLAR2GRID_HOME=/path/to/softwarebundle``
 
@@ -32,6 +32,22 @@ See :doc:`Scripts </scripts>` for more information on running polar2grid.
 
 See :doc:`Advanced Topics </advanced>` for python package installing or other
 options for running polar2grid scripts.
+
+polar2grid Software Bundle Uninstall/Upgrade
+--------------------------------------------
+
+To uninstall the polar2grid software bundle, simply remove the software
+bundle directory that was originally created:
+
+    ``rm -r /path/to/softwarebundle``
+
+If you are permanently removing polar2grid you should also remove the
+``POLAR2GRID_HOME`` line from your ``.bash_profile`` file.
+
+If you are updating polar2grid first uninstall polar2grid by removing the
+directory as above, then follow the installation instructions making sure
+to update the ``POLAR2GRID_HOME`` line in your ``.bash_profile`` to point to
+the new software bundle directory.
 
 polar2grid Test Bundles
 -----------------------
@@ -71,7 +87,10 @@ script::
 
 where ``destination directory`` is the same as for ``run.sh``.  This will
 compare the NetCDF files created to NetCDF files that are known to be
-correct (stored in the ``p2g-v2a-ak-tests/verify`` directory.
+correct (stored in the ``p2g-v2a-ak-tests/verify`` directory.  The comparison
+allows for a difference of ``1`` in the AWIPS NetCDF files due to the unlikely
+possibility that different machines produce slightly different floating point
+results.
 
 Test cases:
 
