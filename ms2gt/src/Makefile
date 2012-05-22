@@ -44,7 +44,6 @@ CC = cc
 AR = ar
 RANLIB = touch
 CO = co
-MAKE = make
 MAKEDEPEND = makedepend
 INSTALL = cp
 CP = cp
@@ -71,28 +70,28 @@ CONFIG_CFLAGS = -O
 all:	srcs
 
 srcs:
-	$(CD) $(MAPDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) $(MAPMAK) allall
-	$(CD) $(GCNDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(GSZDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(LL2DIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(LLXDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(LE2DIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(NAVDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(PRJDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(UTSDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
-	$(CD) $(XY2DIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
+	$(CD) $(MAPDIR); $(MAKE) $(CONFIG_FLAGS) $(MAPMAK) allall
+	$(CD) $(GCNDIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(GSZDIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(LL2DIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(LLXDIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(LE2DIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(NAVDIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(PRJDIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(UTSDIR); $(MAKE) $(CONFIG_FLAGS) all
+	$(CD) $(XY2DIR); $(MAKE) $(CONFIG_FLAGS) all
 
 clean:
-	$(CD) $(MAPDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) $(MAPMAK) cleanall
-	$(CD) $(GCNDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(GSZDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(LL2DIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(LLXDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(LE2DIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(NAVDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(PRJDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(UTSDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
-	$(CD) $(XY2DIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
+	$(CD) $(MAPDIR); $(MAKE) $(CONFIG_FLAGS) $(MAPMAK) cleanall
+	$(CD) $(GCNDIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(GSZDIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(LL2DIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(LLXDIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(LE2DIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(NAVDIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(PRJDIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(UTSDIR); $(MAKE) $(CONFIG_FLAGS) clean
+	$(CD) $(XY2DIR); $(MAKE) $(CONFIG_FLAGS) clean
 
 depend:
 	- $(CO) $(SRCS) $(HDRS)

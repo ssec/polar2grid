@@ -109,7 +109,7 @@ main (int argc, char *argv[])
   grid_class *grid_def;
 
 /*
- *	set defaults
+ *        set defaults
  */
   verbose = FALSE;
   force = FALSE;
@@ -118,45 +118,45 @@ main (int argc, char *argv[])
   fill_out = -1e30;
 
 /* 
- *	get command line options
+ *        get command line options
  */
   while (--argc > 0 && (*++argv)[0] == '-') {
     for (option = argv[0]+1; *option != '\0'; option++) {
       switch (*option) {
       case 'v':
-	verbose = TRUE;
-	break;
+        verbose = TRUE;
+        break;
       case 'f':
-	force = TRUE;
-	break;
+        force = TRUE;
+        break;
       case 'r':
-	++argv; --argc;
-	if (argc <= 0)
-	  DisplayInvalidParameter("rind");
-	if (sscanf(*argv, "%d", &rind) != 1)
-	  DisplayInvalidParameter("rind");
-	break;
+        ++argv; --argc;
+        if (argc <= 0)
+          DisplayInvalidParameter("rind");
+        if (sscanf(*argv, "%d", &rind) != 1)
+          DisplayInvalidParameter("rind");
+        break;
       case 'F':
-	++argv; --argc;
-	if (argc <= 0)
-	  DisplayInvalidParameter("fill_in");
-	if (sscanf(*argv, "%lf", &fill_in) != 1)
-	  DisplayInvalidParameter("fill_in");
-	++argv; --argc;
-	if (argc <= 0)
-	  DisplayInvalidParameter("fill_out");
-	if (sscanf(*argv, "%lf", &fill_out) != 1)
-	  DisplayInvalidParameter("fill_out");
-	break;
+        ++argv; --argc;
+        if (argc <= 0)
+          DisplayInvalidParameter("fill_in");
+        if (sscanf(*argv, "%lf", &fill_in) != 1)
+          DisplayInvalidParameter("fill_in");
+        ++argv; --argc;
+        if (argc <= 0)
+          DisplayInvalidParameter("fill_out");
+        if (sscanf(*argv, "%lf", &fill_out) != 1)
+          DisplayInvalidParameter("fill_out");
+        break;
       default:
-	fprintf(stderr,"invalid option %c\n", *option);
-	DisplayUsage();
+        fprintf(stderr,"invalid option %c\n", *option);
+        DisplayUsage();
       }
     }
   }
 
 /*
- *	get command line arguments
+ *        get command line arguments
  */
   if (argc != 7)
     DisplayUsage();
@@ -225,9 +225,9 @@ main (int argc, char *argv[])
   scansout = scansin;
   scanfirst = 0;
   sprintf(colfile, "%s_cols_%05d_%05d_%05d_%02d.img",
-	  tag, colsin, scansout, scanfirst, rowsperscan);
+          tag, colsin, scansout, scanfirst, rowsperscan);
   sprintf(rowfile, "%s_rows_%05d_%05d_%05d_%02d.img",
-	  tag, colsin, scansout, scanfirst, rowsperscan);
+          tag, colsin, scansout, scanfirst, rowsperscan);
 
   /*
    *  open output files
@@ -245,7 +245,7 @@ main (int argc, char *argv[])
   }
 
 /*
- *	allocate storage for data grids
+ *        allocate storage for data grids
  */
   bytes_per_row = colsin * sizeof(float);
   bytes_per_scan = bytes_per_row * rowsperscan;
@@ -286,12 +286,12 @@ main (int argc, char *argv[])
      *  read a scan's worth of latitudes and longitudes
      */
     if (fread(lat_data, bytes_per_row, rowsperscan, fp_lat) !=
-	rowsperscan) {
+        rowsperscan) {
       fprintf(stderr, "ll2rc: premature end of file on %s\n", latfile);
       exit(ABORT);
     }
     if (fread(lon_data, bytes_per_row, rowsperscan, fp_lon) !=
-	rowsperscan) {
+        rowsperscan) {
       fprintf(stderr, "ll2rc: premature end of file on %s\n", lonfile);
       exit(ABORT);
     }
@@ -310,27 +310,27 @@ main (int argc, char *argv[])
        */
       for (col = 0; col < colsin; col++, colp++, rowp++) {
       
-	/*
-	 *  convert latitude-longitude pair to column-row pair
-	 */
-	dlat = *latp++;
-	dlon = *lonp++;
-	*colp = fill_out;
-	*rowp = fill_out;
-	if (dlat != fill_in && dlon != fill_in) {
-	  forward_grid(grid_def, dlat, dlon, &dcol, &drow);
-	  *colp = dcol;
-	  *rowp = drow;
-	  if (force ||
-	      (*colp >= col_min && *colp <= col_max &&
-	       *rowp >= row_min && *rowp <= row_max)) {
-	    if (!force) {
-	      if (scanfirst < 0)
-		scanfirst = scan;
-	      scanlast = scan;
-	    }
-	  }
-	}
+        /*
+         *  convert latitude-longitude pair to column-row pair
+         */
+        dlat = *latp++;
+        dlon = *lonp++;
+        *colp = fill_out;
+        *rowp = fill_out;
+        if (dlat != fill_in && dlon != fill_in) {
+          forward_grid(grid_def, dlat, dlon, &dcol, &drow);
+          *colp = dcol;
+          *rowp = drow;
+          if (force ||
+              (*colp >= col_min && *colp <= col_max &&
+               *rowp >= row_min && *rowp <= row_max)) {
+            if (!force) {
+              if (scanfirst < 0)
+                scanfirst = scan;
+              scanlast = scan;
+            }
+          }
+        }
       }
     }
 
@@ -342,14 +342,14 @@ main (int argc, char *argv[])
        *  write a scan's worth of column and row numbers
        */
       if (fwrite(col_data, bytes_per_row, rowsperscan, fp_col) !=
-	  rowsperscan) {
-	fprintf(stderr, "ll2rc: error writing to %s\n", colfile);
-	exit(ABORT);
+          rowsperscan) {
+        fprintf(stderr, "ll2rc: error writing to %s\n", colfile);
+        exit(ABORT);
       }
       if (fwrite(row_data, bytes_per_row, rowsperscan, fp_row) !=
-	  rowsperscan) {
-	fprintf(stderr, "ll2rc: error writing to %s\n", rowfile);
-	exit(ABORT);
+          rowsperscan) {
+        fprintf(stderr, "ll2rc: error writing to %s\n", rowfile);
+        exit(ABORT);
       }
     }
   }
@@ -390,9 +390,9 @@ main (int argc, char *argv[])
       scansout = scanlast - scanfirst + 1;
     }
     sprintf(colfile_new, "%s_cols_%05d_%05d_%05d_%02d.img",
-	    tag, colsin, scansout, scanfirst, rowsperscan);
+            tag, colsin, scansout, scanfirst, rowsperscan);
     sprintf(rowfile_new, "%s_rows_%05d_%05d_%05d_%02d.img",
-	    tag, colsin, scansout, scanfirst, rowsperscan);
+            tag, colsin, scansout, scanfirst, rowsperscan);
     rename(colfile, colfile_new);
     rename(rowfile, rowfile_new);
   }

@@ -85,7 +85,6 @@ CC = cc
 AR = ar
 RANLIB = touch
 CO = co
-MAKE = make
 MAKEDEPEND = makedepend
 INSTALL = cp
 CP = cp
@@ -162,10 +161,10 @@ TU4S = $(TU4DIR)/*.txt $(TU4DIR)/*.gpd $(TU4DIR)/*.mpp $(TU4DIR)/*.csh
 all:	srcs
 
 srcs:
-	$(CD) $(SRCDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) all
+	$(CD) $(SRCDIR); $(MAKE) $(CONFIG_FLAGS) all
 
 clean:
-	$(CD) $(SRCDIR); $(MAKE) $(MAKEFLAGS) $(CONFIG_FLAGS) clean
+	$(CD) $(SRCDIR); $(MAKE) $(CONFIG_FLAGS) clean
 	$(RM) $(LIBDIR)/libmaps.a
 
 tar:

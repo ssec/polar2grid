@@ -7,11 +7,8 @@
 
 static const char insert_region_c_rcsid[] = "$Header: /data2/tharan/navdir/src/utils/insert_region.c,v 1.8 2010/07/08 22:49:06 tharan Exp $";
 
-#define _LARGEFILE64_SOURCE
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include "define.h"
@@ -57,7 +54,7 @@ static void DisplayInvalidParameter(char *param)
 /*------------------------------------------------------------------------
  * main - insert_region
  *
- *	input : argc, argv - command line args
+ *        input : argc, argv - command line args
  *
  *      result: EXIT_SUCCESS or EXIT_FAILURE
  *
@@ -123,38 +120,38 @@ int main(int argc, char *argv[])
     for (option = argv[0]+1; *option != '\0'; option++) {
       switch (*option) {
       case 'v':
-	if (very_verbose)
-	  very_very_verbose = TRUE;
-	if (verbose)
-	  very_verbose = TRUE;
-	verbose = TRUE;
-	break;
+        if (very_verbose)
+          very_very_verbose = TRUE;
+        if (verbose)
+          very_verbose = TRUE;
+        verbose = TRUE;
+        break;
       case 'V':
-	fprintf(stderr,"%s\n", insert_region_c_rcsid);
-	break;
+        fprintf(stderr,"%s\n", insert_region_c_rcsid);
+        break;
       case 'i':
         initialize = TRUE;
-	if (argc >= 11 &&
-	    ((*(argv+1)[0] != '-') ||
-	     (strlen(*(argv+1)) > 1 &&
-	      *(*(argv+1)+1) >= '0' && *(*(argv+1)+1) <= '9'))) {
-	  ++argv; --argc;
-	  fill_value_string = *argv;
-	}
+        if (argc >= 11 &&
+            ((*(argv+1)[0] != '-') ||
+             (strlen(*(argv+1)) > 1 &&
+              *(*(argv+1)+1) >= '0' && *(*(argv+1)+1) <= '9'))) {
+          ++argv; --argc;
+          fill_value_string = *argv;
+        }
         break;
       case 't':
-	++argv; --argc;
-	transparent = TRUE;
-	if (argc <= 0)
-	  DisplayInvalidParameter("transparent_value");
-	transparent_value_string = *argv;
-	break;
+        ++argv; --argc;
+        transparent = TRUE;
+        if (argc <= 0)
+          DisplayInvalidParameter("transparent_value");
+        transparent_value_string = *argv;
+        break;
       case 'f':
-	floating_point = TRUE;
-	break;
+        floating_point = TRUE;
+        break;
       default:
-	fprintf(stderr, "insert_region: invalid option %c\n", *option);
-	DisplayUsage();
+        fprintf(stderr, "insert_region: invalid option %c\n", *option);
+        DisplayUsage();
       }
     }
   }
@@ -281,12 +278,12 @@ int main(int argc, char *argv[])
      */
     if (col_start + cols_in > cols_out) {
       fprintf(stderr,
-	      "insert_region: col_start + cols_in must be <= cols_out\n");
+              "insert_region: col_start + cols_in must be <= cols_out\n");
       there_were_errors = TRUE;
     }
     if (row_start + rows_in > rows_out) {
       fprintf(stderr,
-	      "insert_region: row_start + rows_in must be <= rows_out\n");
+              "insert_region: row_start + rows_in must be <= rows_out\n");
       there_were_errors = TRUE;
     }
     if (there_were_errors)
@@ -307,7 +304,7 @@ int main(int argc, char *argv[])
     buf_in = (byte1 *)calloc(bytes_per_row_in, sizeof(byte1));
     if (!buf_in) {
       fprintf(stderr, "error allocating %d bytes for input buffer\n",
-	      bytes_per_row_in);
+              bytes_per_row_in);
       perror("insert_region");
       there_were_errors = TRUE;
       break;
@@ -316,7 +313,7 @@ int main(int argc, char *argv[])
     buf_out = (byte1 *)calloc(bytes_per_row_out, sizeof(byte1));
     if (!buf_out) {
       fprintf(stderr, "error allocating %d bytes for output buffer\n",
-	      bytes_per_row_out);
+              bytes_per_row_out);
       perror("insert_region");
       there_were_errors = TRUE;
       break;
@@ -352,8 +349,8 @@ int main(int argc, char *argv[])
     }
     if (initialize) {
       if (very_verbose)
-	fprintf(stderr, "insert_region: initializing %s\n",
-		file_out);
+        fprintf(stderr, "insert_region: initializing %s\n",
+                file_out);
 
       /*
        *  initialize buf_out to the fill value
@@ -362,33 +359,33 @@ int main(int argc, char *argv[])
       fillp = fill_value;
       bufp_out = buf_out;
       for (col = 0; col < cols_out; col++, bufp_out += bytes_per_cell)
-	memcpy(bufp_out, fillp, bytes_per_cell);
+        memcpy(bufp_out, fillp, bytes_per_cell);
 
       /*
        *  write buf_out to each row in the output file
        */
 
       for (row = 0; row < rows_out; row++) {
-	if (write(fd_out, buf_out,
-		  bytes_per_row_out) != bytes_per_row_out) {
-	  fprintf(stderr, "error writing %s\n", file_out);
-	  perror("insert_region");
-	  there_were_errors = TRUE;
-	  break;
-	}
+        if (write(fd_out, buf_out,
+                  bytes_per_row_out) != bytes_per_row_out) {
+          fprintf(stderr, "error writing %s\n", file_out);
+          perror("insert_region");
+          there_were_errors = TRUE;
+          break;
+        }
       }
       if (there_were_errors)
-	break;
+        break;
     }
 
     /*
      *     seek to row containing region in output file
      */
-    if (lseek64(fd_out,
-	      (off64_t)row_start * bytes_per_row_out,
-	      SEEK_SET) == -1) {
+    if (lseek(fd_out,
+              (off_t)row_start * bytes_per_row_out,
+              SEEK_SET) == -1) {
       fprintf(stderr, "error seeking to row %d in %s\n",
-	      row_start, file_out);
+              row_start, file_out);
       perror("insert_region");
       there_were_errors = TRUE;
       break;
@@ -402,17 +399,17 @@ int main(int argc, char *argv[])
     for (row = row_start; row <= last_row_in_region; row++) {
 
       if (very_verbose)
-	fprintf(stderr, "reading row from %s\n", file_out);
+        fprintf(stderr, "reading row from %s\n", file_out);
 
       /*
        *     read the row from the output file
        */
       if (read(fd_out, buf_out,
-	       bytes_per_row_out) != bytes_per_row_out) {
-	fprintf(stderr, "error reading %s\n", file_out);
-	perror("insert_region");
-	there_were_errors = TRUE;
-	break;
+               bytes_per_row_out) != bytes_per_row_out) {
+        fprintf(stderr, "error reading %s\n", file_out);
+        perror("insert_region");
+        there_were_errors = TRUE;
+        break;
       }
 
       /*
@@ -422,13 +419,13 @@ int main(int argc, char *argv[])
        */
       bufp_in = (transparent) ? buf_in : buf_out + col_start * bytes_per_cell;
       if (very_very_verbose)
-	fprintf(stderr, "reading row %d\n", row);
+        fprintf(stderr, "reading row %d\n", row);
       if (read(fd_in, bufp_in,
-	       bytes_per_row_in) != bytes_per_row_in) {
-	fprintf(stderr, "error reading %s\n", file_in);
-	perror("insert_region");
-	there_were_errors = TRUE;
-	break;
+               bytes_per_row_in) != bytes_per_row_in) {
+        fprintf(stderr, "error reading %s\n", file_in);
+        perror("insert_region");
+        there_were_errors = TRUE;
+        break;
       }
 
       /*
@@ -437,37 +434,37 @@ int main(int argc, char *argv[])
        *  equal to the transparent value.
        */
       if (transparent) {
-	bufp_out = buf_out + col_start * bytes_per_cell;
-	for (col = 0;
-	     col < cols_in;
-	     col++, bufp_in += bytes_per_cell, bufp_out += bytes_per_cell) {
-	  if (memcmp(bufp_in, transp, bytes_per_cell) != 0)
-	    memcpy(bufp_out, bufp_in, bytes_per_cell);
-	}
+        bufp_out = buf_out + col_start * bytes_per_cell;
+        for (col = 0;
+             col < cols_in;
+             col++, bufp_in += bytes_per_cell, bufp_out += bytes_per_cell) {
+          if (memcmp(bufp_in, transp, bytes_per_cell) != 0)
+            memcpy(bufp_out, bufp_in, bytes_per_cell);
+        }
       }
 
       /*
        *     seek back to the beginning of the output row
        */
-      if (lseek64(fd_out,
-		(off64_t)row * bytes_per_row_out,
-		SEEK_SET) == -1) {
-	fprintf(stderr, "error seeking to row %d in %s\n",
-		row, file_out);
-	perror("insert_region");
-	there_were_errors = TRUE;
-	break;
+      if (lseek(fd_out,
+                (off_t)row * bytes_per_row_out,
+                SEEK_SET) == -1) {
+        fprintf(stderr, "error seeking to row %d in %s\n",
+                row, file_out);
+        perror("insert_region");
+        there_were_errors = TRUE;
+        break;
       }
 
       /*
        *     write the output row
        */
       if (write(fd_out, buf_out,
-		bytes_per_row_out) != bytes_per_row_out) {
-	fprintf(stderr, "error writing %s\n", file_out);
-	perror("insert_region");
-	there_were_errors = TRUE;
-	break;
+                bytes_per_row_out) != bytes_per_row_out) {
+        fprintf(stderr, "error writing %s\n", file_out);
+        perror("insert_region");
+        there_were_errors = TRUE;
+        break;
       }
     }
     break;

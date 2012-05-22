@@ -7,11 +7,8 @@
 
 static const char make_mask_c_rcsid[] = "$Header: /data/tharan/ms2gth/src/utils/make_mask.c,v 1.6 2007/05/02 22:04:01 tharan Exp $";
 
-#define _LARGEFILE64_SOURCE
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include "define.h"
@@ -87,7 +84,7 @@ static void DisplayInvalidParameter(char *param)
 /*------------------------------------------------------------------------
  * main - make_mask
  *
- *	input : argc, argv - command line args
+ *        input : argc, argv - command line args
  *
  *      result: EXIT_SUCCESS or EXIT_FAILURE
  *
@@ -164,18 +161,18 @@ int main(int argc, char *argv[])
     for (option = argv[0]+1; *option != '\0'; option++) {
       switch (*option) {
       case 'v':
-	if (very_verbose)
-	  very_very_verbose = TRUE;
-	if (verbose)
-	  very_verbose = TRUE;
-	verbose = TRUE;
-	break;
+        if (very_verbose)
+          very_very_verbose = TRUE;
+        if (verbose)
+          very_verbose = TRUE;
+        verbose = TRUE;
+        break;
       case 'V':
-	fprintf(stderr,"%s\n", make_mask_c_rcsid);
-	break;
+        fprintf(stderr,"%s\n", make_mask_c_rcsid);
+        break;
       case 'd':
-	delete_if_all_masked = TRUE;
-	break;
+        delete_if_all_masked = TRUE;
+        break;
       case 'b':
         byte_swap_input = TRUE;
         break;
@@ -183,45 +180,45 @@ int main(int argc, char *argv[])
         signed_input = TRUE;
         break;
       case 'f':
-	floating_point_input = TRUE;
-	break;
+        floating_point_input = TRUE;
+        break;
       case 'F':
-	++argv; --argc;
-	if (argc <= 0)
-	  DisplayInvalidParameter("factor");
-	if (sscanf(*argv, "%d", &factor) != 1)
-	  DisplayInvalidParameter("factor");
-	break;
+        ++argv; --argc;
+        if (argc <= 0)
+          DisplayInvalidParameter("factor");
+        if (sscanf(*argv, "%d", &factor) != 1)
+          DisplayInvalidParameter("factor");
+        break;
       case 'i':
-	++argv; --argc;
-	if (argc <= 0)
-	  DisplayInvalidParameter("mask_file_in");
-	mask_file_in = *argv;
-	break;
+        ++argv; --argc;
+        if (argc <= 0)
+          DisplayInvalidParameter("mask_file_in");
+        mask_file_in = *argv;
+        break;
       case 'm':
-	++argv; --argc;
-	if (argc <= 0)
-	  DisplayInvalidParameter("mask_value_in");
-	if (sscanf(*argv, "%lf", &mask_value_in) != 1)
-	  DisplayInvalidParameter("mask_value_in");
-	break;
+        ++argv; --argc;
+        if (argc <= 0)
+          DisplayInvalidParameter("mask_value_in");
+        if (sscanf(*argv, "%lf", &mask_value_in) != 1)
+          DisplayInvalidParameter("mask_value_in");
+        break;
       case 'M':
-	++argv; --argc;
-	if (argc <= 0)
-	  DisplayInvalidParameter("mask_value_out");
-	if (sscanf(*argv, "%d", &mask_value_out) != 1)
-	  DisplayInvalidParameter("mask_value_out");
-	break;
+        ++argv; --argc;
+        if (argc <= 0)
+          DisplayInvalidParameter("mask_value_out");
+        if (sscanf(*argv, "%d", &mask_value_out) != 1)
+          DisplayInvalidParameter("mask_value_out");
+        break;
       case 'U':
-	++argv; --argc;
-	if (argc <= 0)
-	  DisplayInvalidParameter("unmask_value_out");
-	if (sscanf(*argv, "%d", &mask_value_out) != 1)
-	  DisplayInvalidParameter("unmask_value_out");
-	break;
+        ++argv; --argc;
+        if (argc <= 0)
+          DisplayInvalidParameter("unmask_value_out");
+        if (sscanf(*argv, "%d", &mask_value_out) != 1)
+          DisplayInvalidParameter("unmask_value_out");
+        break;
       default:
-	fprintf(stderr, "make_mask: invalid option %c\n", *option);
-	DisplayUsage();
+        fprintf(stderr, "make_mask: invalid option %c\n", *option);
+        DisplayUsage();
       }
     }
   }
@@ -294,15 +291,15 @@ int main(int argc, char *argv[])
       break;
     case 4:
       data_type_in = floating_point_input ? MM_FLOAT :
-	(signed_input ? MM_SIGNED_CHAR : MM_UNSIGNED_CHAR);
+        (signed_input ? MM_SIGNED_CHAR : MM_UNSIGNED_CHAR);
       break;
     case 8:
       if (floating_point_input)
-	data_type_in = MM_DOUBLE;
+        data_type_in = MM_DOUBLE;
       else {
-	fprintf(stderr,
-		"make_mask: if bytes_per_cell is 8, then -f must be set.\n");
-	there_were_errors = TRUE;
+        fprintf(stderr,
+                "make_mask: if bytes_per_cell is 8, then -f must be set.\n");
+        there_were_errors = TRUE;
       }
       break;
     default:
@@ -313,7 +310,7 @@ int main(int argc, char *argv[])
     
     if (factor <= 0) {
       fprintf(stderr,
-	      "make_mask: factor must be an integer greater than 0.\n");
+              "make_mask: factor must be an integer greater than 0.\n");
       there_were_errors = TRUE;
     }
     if (floating_point_input && bytes_per_cell != 4 && bytes_per_cell != 8) {
@@ -335,16 +332,16 @@ int main(int argc, char *argv[])
     cols_out = cols_in_region * factor;
     if (col_start_in + cols_in_region > cols_in) {
       fprintf(stderr,
-	      "make_mask: col_start_in + cols_in_region must be <= cols_in\n");
+              "make_mask: col_start_in + cols_in_region must be <= cols_in\n");
       there_were_errors = TRUE;
     }
     if (row_start_in + rows_in_region > rows_in) {
       fprintf(stderr,
-	      "make_mask: row_start_in + rows_in_region must be <= rows_in\n");
+              "make_mask: row_start_in + rows_in_region must be <= rows_in\n");
       there_were_errors = TRUE;
     }
     if (there_were_errors)
-	DisplayUsage();
+        DisplayUsage();
 
     /*
      *    initialize buffer sizes for i/o
@@ -363,7 +360,7 @@ int main(int argc, char *argv[])
     buf_in = (byte1 *)calloc(bytes_per_row_in, sizeof(byte1));
     if (!buf_in) {
       fprintf(stderr, "error allocating %d bytes for input buffer\n",
-	      bytes_per_row_in);
+              bytes_per_row_in);
       perror("make_mask");
       there_were_errors = TRUE;
       break;
@@ -372,19 +369,19 @@ int main(int argc, char *argv[])
     if (bytes_per_mask_row_in) {
       buf_mask_in = (byte1 *)calloc(bytes_per_mask_row_in, sizeof(byte1));
       if (!buf_mask_in) {
-	fprintf(stderr, "error allocating %d bytes for input mask buffer\n",
-		bytes_per_mask_row_in);
-	perror("make_mask");
-	there_were_errors = TRUE;
-	break;
+        fprintf(stderr, "error allocating %d bytes for input mask buffer\n",
+                bytes_per_mask_row_in);
+        perror("make_mask");
+        there_were_errors = TRUE;
+        break;
       }
     }
 
     buf_mask_out = (byte1 **)matrix(rows_per_mask_buf_out, cols_out,
-				    sizeof(byte1), 1);
+                                    sizeof(byte1), 1);
     if (!buf_mask_out) {
       fprintf(stderr, "error allocating %d bytes for output mask buffer\n",
-	      bytes_per_mask_buf_out);
+              bytes_per_mask_buf_out);
       perror("make_mask");
       there_were_errors = TRUE;
       break;
@@ -409,14 +406,14 @@ int main(int argc, char *argv[])
      */
     if (bytes_per_mask_row_in) {
       if (very_verbose)
-	fprintf(stderr, "make_mask: opening input mask file\n");
+        fprintf(stderr, "make_mask: opening input mask file\n");
 
       fd_mask_in = open(mask_file_in, O_RDONLY);
       if (fd_mask_in < 0) {
-	fprintf(stderr, "error opening %s\n", mask_file_in);
-	perror("make_mask");
-	there_were_errors = TRUE;
-	break;
+        fprintf(stderr, "error opening %s\n", mask_file_in);
+        perror("make_mask");
+        there_were_errors = TRUE;
+        break;
       }
     }
 
@@ -439,12 +436,12 @@ int main(int argc, char *argv[])
      */
     if (very_very_verbose)
       fprintf(stderr, "row_start_in: %d  bytes_per_row_in: %d\n",
-	      row_start_in, bytes_per_row_in);
-    if (lseek64(fd_in,
-	      (off64_t)row_start_in * bytes_per_row_in,
-	      SEEK_SET) == -1) {
+              row_start_in, bytes_per_row_in);
+    if (lseek(fd_in,
+              (off_t)row_start_in * bytes_per_row_in,
+              SEEK_SET) == -1) {
       fprintf(stderr, "error seeking to row %d in %s\n",
-	      row_start_in, file_in);
+              row_start_in, file_in);
       perror("make_mask");
       there_were_errors = TRUE;
       break;
@@ -454,14 +451,14 @@ int main(int argc, char *argv[])
       /*
        *     seek to row containing input region in input mask file
        */
-      if (lseek64(fd_mask_in,
-		(off64_t)row_start_in * bytes_per_mask_row_in,
-		SEEK_SET) == -1) {
-	fprintf(stderr, "error seeking to row %d in %s\n",
-		row_start_in, mask_file_in);
-	perror("make_mask");
-	there_were_errors = TRUE;
-	break;
+      if (lseek(fd_mask_in,
+                (off_t)row_start_in * bytes_per_mask_row_in,
+                SEEK_SET) == -1) {
+        fprintf(stderr, "error seeking to row %d in %s\n",
+                row_start_in, mask_file_in);
+        perror("make_mask");
+        there_were_errors = TRUE;
+        break;
       }
     }
 
@@ -476,32 +473,32 @@ int main(int argc, char *argv[])
     for (row = row_start_in; row <= last_row_in_region; row++) {
 
       if (very_very_verbose)
-	fprintf(stderr, "reading row from %s\n", file_in);
+        fprintf(stderr, "reading row from %s\n", file_in);
 
       /*
        *     read the row from the input file
        */
       if (read(fd_in, buf_in,
-	       bytes_per_row_in) != bytes_per_row_in) {
-	fprintf(stderr, "error reading %s\n", file_in);
-	perror("make_mask");
-	there_were_errors = TRUE;
-	break;
+               bytes_per_row_in) != bytes_per_row_in) {
+        fprintf(stderr, "error reading %s\n", file_in);
+        perror("make_mask");
+        there_were_errors = TRUE;
+        break;
       }
 
       if (bytes_per_mask_row_in) {
-	/*
-	 *  read a row from the input mask file.
-	 */
-	if (very_very_verbose)
-	  fprintf(stderr, "reading row from %s\n", mask_file_in);
-	if (read(fd_mask_in, buf_mask_in,
-		 bytes_per_mask_row_in) != bytes_per_mask_row_in) {
-	  fprintf(stderr, "error reading %s\n", mask_file_in);
-	  perror("make_mask");
-	  there_were_errors = TRUE;
-	  break;
-	}
+        /*
+         *  read a row from the input mask file.
+         */
+        if (very_very_verbose)
+          fprintf(stderr, "reading row from %s\n", mask_file_in);
+        if (read(fd_mask_in, buf_mask_in,
+                 bytes_per_mask_row_in) != bytes_per_mask_row_in) {
+          fprintf(stderr, "error reading %s\n", mask_file_in);
+          perror("make_mask");
+          there_were_errors = TRUE;
+          break;
+        }
       }
 
       /*
@@ -512,95 +509,95 @@ int main(int argc, char *argv[])
       col_out = 0;
       for (col = col_start_in; col <= last_col_in_region; col++) {
 
-	if (byte_swap_input) {
+        if (byte_swap_input) {
 
-	  /*
-	   *  byte swap the input
-	   */
-	  if (bytes_per_cell == 4) {
-	    p4 = (byte4 *)bufp_in;
-	    t4 = *p4;
-	    t4 = ((t4 >> 24) & 0xff) | ((t4 >> 8) & 0xff00) |
-	         ((t4 << 8) & 0xff0000) | (t4 << 24);
-	    *p4 = t4;
-	  } else {
-	    p2 = (byte2 *)bufp_in;
-	    t2 = *p2;
-	    t2 = ((t2 >> 8) & 0xff) | (t2 << 8);
-	    *p2 = t2;
-	  }
-	}
-	
-	/*
-	 *  convert the input value to a mask value
-	 */
-	switch (data_type_in) {
-	case MM_UNSIGNED_CHAR:
-	  mask_test = *((byte1 *)bufp_in);
-	  break;
-	case MM_SIGNED_CHAR:
-	  mask_test = *((char *)bufp_in);
-	  break;
-	case MM_UNSIGNED_SHORT:
-	  mask_test = *((byte2 *)bufp_in);
-	  break;
-	case MM_SIGNED_SHORT:
-	  mask_test = *((short *)bufp_in);
-	  break;
-	case MM_UNSIGNED_INT:
-	  mask_test = *((byte4 *)bufp_in);
-	  break;
-	case MM_SIGNED_INT:
-	  mask_test = *((int *)bufp_in);
-	  break;
-	case MM_FLOAT:
-	  mask_test = *((float *)bufp_in);
-	  break;
-	case MM_DOUBLE:
-	  mask_test = *((double *)bufp_in);
-	  break;
-	}
-	bufp_in += bytes_per_cell;
-	if (very_very_verbose)
-	  fprintf(stderr,
-		 "row:%d   col:%d   mask_test:%lf\n", row, col, mask_test);
-	mask = (byte1)((mask_test == mask_value_in) ?
-		       mask_value_out : unmask_value_out);
+          /*
+           *  byte swap the input
+           */
+          if (bytes_per_cell == 4) {
+            p4 = (byte4 *)bufp_in;
+            t4 = *p4;
+            t4 = ((t4 >> 24) & 0xff) | ((t4 >> 8) & 0xff00) |
+                 ((t4 << 8) & 0xff0000) | (t4 << 24);
+            *p4 = t4;
+          } else {
+            p2 = (byte2 *)bufp_in;
+            t2 = *p2;
+            t2 = ((t2 >> 8) & 0xff) | (t2 << 8);
+            *p2 = t2;
+          }
+        }
+        
+        /*
+         *  convert the input value to a mask value
+         */
+        switch (data_type_in) {
+        case MM_UNSIGNED_CHAR:
+          mask_test = *((byte1 *)bufp_in);
+          break;
+        case MM_SIGNED_CHAR:
+          mask_test = *((char *)bufp_in);
+          break;
+        case MM_UNSIGNED_SHORT:
+          mask_test = *((byte2 *)bufp_in);
+          break;
+        case MM_SIGNED_SHORT:
+          mask_test = *((short *)bufp_in);
+          break;
+        case MM_UNSIGNED_INT:
+          mask_test = *((byte4 *)bufp_in);
+          break;
+        case MM_SIGNED_INT:
+          mask_test = *((int *)bufp_in);
+          break;
+        case MM_FLOAT:
+          mask_test = *((float *)bufp_in);
+          break;
+        case MM_DOUBLE:
+          mask_test = *((double *)bufp_in);
+          break;
+        }
+        bufp_in += bytes_per_cell;
+        if (very_very_verbose)
+          fprintf(stderr,
+                 "row:%d   col:%d   mask_test:%lf\n", row, col, mask_test);
+        mask = (byte1)((mask_test == mask_value_in) ?
+                       mask_value_out : unmask_value_out);
 
-	if (bytes_per_mask_row_in) {
+        if (bytes_per_mask_row_in) {
 
-	  /*
-	   *  and the mask with the value from mask_file_in
-	   */
-	  mask &= *bufp_mask_in++;
-	}
-	if (mask == unmask_value_out)
-	  got_unmasked = TRUE;
+          /*
+           *  and the mask with the value from mask_file_in
+           */
+          mask &= *bufp_mask_in++;
+        }
+        if (mask == unmask_value_out)
+          got_unmasked = TRUE;
 
-	/*
-	 *  store the mask in the output buffer, expanding as needed
-	 */
-	last_col_in_output_region = col_out + factor - 1;
-	for (i = 0; i <= last_row_in_output_region; i++) {
-	  for (j = col_out; j <= last_col_in_output_region; j++) {
-	    buf_mask_out[i][j] = mask;
-	  }
-	}
-	col_out += factor;
+        /*
+         *  store the mask in the output buffer, expanding as needed
+         */
+        last_col_in_output_region = col_out + factor - 1;
+        for (i = 0; i <= last_row_in_output_region; i++) {
+          for (j = col_out; j <= last_col_in_output_region; j++) {
+            buf_mask_out[i][j] = mask;
+          }
+        }
+        col_out += factor;
       }
 
       /*
        *     write the output buffer
        */
       if (very_very_verbose)
-	fprintf(stderr, "writing buffer to %s\n", mask_file_out);
+        fprintf(stderr, "writing buffer to %s\n", mask_file_out);
 
       if (write(fd_mask_out, buf_mask_out[0],
-		bytes_per_mask_buf_out) != bytes_per_mask_buf_out) {
-	fprintf(stderr, "error writing %s\n", mask_file_out);
-	perror("make_mask");
-	there_were_errors = TRUE;
-	break;
+                bytes_per_mask_buf_out) != bytes_per_mask_buf_out) {
+        fprintf(stderr, "error writing %s\n", mask_file_out);
+        perror("make_mask");
+        there_were_errors = TRUE;
+        break;
       }
     }
     break;

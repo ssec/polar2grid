@@ -54,7 +54,7 @@ SYSLIBS = -lm
 # end configuration section
 #------------------------------------------------------------------------
 
-CFLAGS = -I$(INCDIR) $(CONFIG_CFLAGS)
+CFLAGS = -I$(INCDIR) $(CONFIG_CFLAGS) -D_FILE_OFFSET_BITS=64
 LIBS = -L$(LIBDIR) -lmapx $(SYSLIBS)
 
 SRCS = fornav.c

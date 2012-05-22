@@ -7,12 +7,8 @@
 
 static const char extract_region_c_rcsid[] = "$Header: /home/haran/navdir/src/utils/extract_region.c,v 1.10 2007/05/02 21:46:55 tharan Exp $";
 
-#define _LARGEFILE64_SOURCE
-
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include "define.h"
@@ -60,7 +56,7 @@ static void DisplayInvalidParameter(char *param)
 }
 
 static void swap_buffer(byte1 *buffer,
-			int cols, int cells_per_col, int bytes_per_cell)
+                        int cols, int cells_per_col, int bytes_per_cell)
 {
   int i;
   int j;
@@ -83,8 +79,8 @@ static void swap_buffer(byte1 *buffer,
 }
 
 static void scale_buffer(byte1 *buffer,
-			 int cols, int cells_per_col, int bytes_per_cell,
-			 double scale, bool float_scale)
+                         int cols, int cells_per_col, int bytes_per_cell,
+                         double scale, bool float_scale)
 {
   int i;
   int cells_per_record;
@@ -97,16 +93,16 @@ static void scale_buffer(byte1 *buffer,
     memcpy(temp, buf, bytes_per_cell);
     if (float_scale) {
       if (bytes_per_cell == 4)
-	*((float *)buf) = (float)(*((float *)buf) * scale);
+        *((float *)buf) = (float)(*((float *)buf) * scale);
       else
-	*((double *)buf) = (double)(*((double *)buf) * scale);
+        *((double *)buf) = (double)(*((double *)buf) * scale);
     } else {
       if (bytes_per_cell == 1)
-	*((byte1 *)buf) = (byte1)(*((byte1 *)buf) * scale);
+        *((byte1 *)buf) = (byte1)(*((byte1 *)buf) * scale);
       else if (bytes_per_cell == 2)
-	*((byte2 *)buf) = (byte2)(*((byte2 *)buf) * scale);
+        *((byte2 *)buf) = (byte2)(*((byte2 *)buf) * scale);
       else if (bytes_per_cell == 4)
-	*((byte4 *)buf) = (byte4)(*((byte4 *)buf) * scale);
+        *((byte4 *)buf) = (byte4)(*((byte4 *)buf) * scale);
     }
     buf += bytes_per_cell;
   }
@@ -115,7 +111,7 @@ static void scale_buffer(byte1 *buffer,
 /*------------------------------------------------------------------------
  * main - extract_region
  *
- *	input : argc, argv - command line args
+ *        input : argc, argv - command line args
  *
  *      result: EXIT_SUCCESS or EXIT_FAILURE
  *
@@ -165,38 +161,38 @@ int main(int argc, char *argv[])
     for (option = argv[0]+1; *option != '\0'; option++) {
       switch (*option) {
       case 'v':
-	if (very_verbose)
-	  very_very_verbose = stdout;
-	if (verbose)
-	  very_verbose = stdout;
-	verbose = stdout;
-	break;
+        if (very_verbose)
+          very_very_verbose = stdout;
+        if (verbose)
+          very_verbose = stdout;
+        verbose = stdout;
+        break;
       case 'V':
-	fprintf(stderr,"%s\n", extract_region_c_rcsid);
-	break;
+        fprintf(stderr,"%s\n", extract_region_c_rcsid);
+        break;
       case 'b':
-	byte_swap = TRUE;
-	break;
+        byte_swap = TRUE;
+        break;
       case 's':
-	++argv; --argc;
-	if (argc <= 0)
-	  DisplayInvalidParameter("scale");
-	if (sscanf(*argv, "%lf", &scale) != 1)
-	  DisplayInvalidParameter("scale");
-	break;
+        ++argv; --argc;
+        if (argc <= 0)
+          DisplayInvalidParameter("scale");
+        if (sscanf(*argv, "%lf", &scale) != 1)
+          DisplayInvalidParameter("scale");
+        break;
       case 'f':
-	float_scale = TRUE;
-	break;
+        float_scale = TRUE;
+        break;
       case 'c':
-	++argv; --argc;
-	if (argc <= 0)
-	  DisplayInvalidParameter("cells_per_col");
-	if (sscanf(*argv, "%d", &cells_per_col) != 1)
-	  DisplayInvalidParameter("cells_per_col");
-	break;
+        ++argv; --argc;
+        if (argc <= 0)
+          DisplayInvalidParameter("cells_per_col");
+        if (sscanf(*argv, "%d", &cells_per_col) != 1)
+          DisplayInvalidParameter("cells_per_col");
+        break;
       default:
-	fprintf(stderr, "extract_region: invalid option %c\n", *option);
-	error_exit(usage);
+        fprintf(stderr, "extract_region: invalid option %c\n", *option);
+        error_exit(usage);
       }
     }
   }
@@ -267,24 +263,24 @@ int main(int argc, char *argv[])
      */
     if (col_start + cols_out > cols_in) {
       fprintf(stderr,
-	      "extract_region: col_start + cols_out must be <= cols_in\n");
+              "extract_region: col_start + cols_out must be <= cols_in\n");
       there_were_errors = TRUE;
     }
     if (row_start + rows_out > rows_in) {
       fprintf(stderr,
-	      "extract_region: row_start + rows_out must be <= rows_in\n");
+              "extract_region: row_start + rows_out must be <= rows_in\n");
       there_were_errors = TRUE;
     }
     if (bytes_per_cell != 1 && bytes_per_cell != 2 &&
-	bytes_per_cell != 4 && bytes_per_cell != 8) {
+        bytes_per_cell != 4 && bytes_per_cell != 8) {
       fprintf(stderr,
-	      "extract_region: bytes_per_cell must be 1, 2, 4, or 8\n");
+              "extract_region: bytes_per_cell must be 1, 2, 4, or 8\n");
       there_were_errors = TRUE;
     }
     if (float_scale == TRUE && scale != 1.0 &&
-	bytes_per_cell != 4 && bytes_per_cell != 8) {
+        bytes_per_cell != 4 && bytes_per_cell != 8) {
       fprintf(stderr,
-	      "extract_region: bytes_per_cell must be 4 or 8 if -f is specified and scale != 1.0\n");
+              "extract_region: bytes_per_cell must be 4 or 8 if -f is specified and scale != 1.0\n");
       there_were_errors = TRUE;
     }
     if (there_were_errors)
@@ -306,7 +302,7 @@ int main(int argc, char *argv[])
     buf_in = (byte1 *)calloc(bytes_per_row_in, sizeof(byte1));
     if (!buf_in) {
       fprintf(stderr, "error allocating %d bytes for file_in buffer\n",
-	      bytes_per_row_in);
+              bytes_per_row_in);
       perror("extract_region");
       there_were_errors = TRUE;
       break;
@@ -347,9 +343,9 @@ int main(int argc, char *argv[])
     if (very_verbose)
       fprintf(stderr, "extract_region: seeking to first byte in region\n");
 
-    if (lseek64(fd_in,
-	      (off64_t)row_start * bytes_per_row_in,
-	      SEEK_SET) == -1) {
+    if (lseek(fd_in,
+              (off_t)row_start * bytes_per_row_in,
+              SEEK_SET) == -1) {
       fprintf(stderr, "error seeking to first row in region of %s\n", file_in);
       perror("extract_region");
       there_were_errors = TRUE;
@@ -361,27 +357,27 @@ int main(int argc, char *argv[])
      */
     for (row = row_start; row <= last_row_in_region; row++) {
       if (very_very_verbose)
-	fprintf(stderr, "reading row %d\n", row);
+        fprintf(stderr, "reading row %d\n", row);
       if (read(fd_in, buf_in,
-	       bytes_per_row_in) != bytes_per_row_in) {
-	fprintf(stderr, "error reading %s\n", file_in);
-	perror("extract_region");
-	there_were_errors = TRUE;
-	break;
+               bytes_per_row_in) != bytes_per_row_in) {
+        fprintf(stderr, "error reading %s\n", file_in);
+        perror("extract_region");
+        there_were_errors = TRUE;
+        break;
       }
       if (byte_swap)
-	swap_buffer(buf_out, cols_out, cells_per_col, bytes_per_cell);
+        swap_buffer(buf_out, cols_out, cells_per_col, bytes_per_cell);
       if (scale != 1.0)
-	scale_buffer(buf_out, cols_out, cells_per_col, bytes_per_cell,
-		     scale, float_scale);
+        scale_buffer(buf_out, cols_out, cells_per_col, bytes_per_cell,
+                     scale, float_scale);
       if (very_very_verbose)
-	fprintf(stderr, "writing row %d\n", row);
+        fprintf(stderr, "writing row %d\n", row);
       if (write(fd_out, buf_out,
-		bytes_per_row_out) != bytes_per_row_out) {
-	fprintf(stderr, "error writing %s\n", file_out);
-	perror("extract_region");
-	there_were_errors = TRUE;
-	break;
+                bytes_per_row_out) != bytes_per_row_out) {
+        fprintf(stderr, "error writing %s\n", file_out);
+        perror("extract_region");
+        there_were_errors = TRUE;
+        break;
       }
     }
     break;
