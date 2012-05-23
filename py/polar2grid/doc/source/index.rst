@@ -24,6 +24,7 @@ Contents
     chain
     backends
     scripts
+    utilscripts
     roadmap
     advanced
 
