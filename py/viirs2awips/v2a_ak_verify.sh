@@ -59,7 +59,7 @@ else:
     sys.exit(0)
 
 EOF
-[ $? -eq 0 ] || oops "$WFILE" was different than expected"
+[ $? -eq 0 ] || oops "$WFILE was different than expected"
 
 done
 

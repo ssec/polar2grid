@@ -22,6 +22,11 @@ packages:
 Creating Software Bundle from Subversion Repository
 ---------------------------------------------------
 
+.. warning::
+
+    When using the ``tar`` command make sure the version used properly
+    handles symbolic links (the fornav, ll2cr, and polar2grid symlinks).
+
 Follow these steps to recreate the software bundle ``*.tar.gz`` file.
 
     1. Create the software bundle directory and change to it::
@@ -51,6 +56,7 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
         Compile and link it::
 
             tar -xzf ms2gt<ms2gt-version>.tar.gz
+            mv ms2gt<version> ms2gt
             cd ms2gt
             make
             cd ..
