@@ -37,7 +37,7 @@ for VFILE in $VERIFY_BASE/*; do
     if [ ! -f $WFILE ]; then
         oops "Could not find output file $WFILE"
     fi
-    diff $VFILE $WFILE || oops "$WFILE was different than expected"
+    echo "Comparing $WFILE to known valid file"
     $POLAR2GRID_HOME/ShellB3/bin/python <<EOF
 from netCDF4 import Dataset
 import numpy
@@ -53,7 +53,7 @@ image1_var = nc1.variables["image"]
 image2_var = nc2.variables["image"]
 image1_var.set_auto_maskandscale(False)
 image2_var.set_auto_maskandscale(False)
-if len(numpy.nonzero(numpy.abs(image2_var[:] - image1_var[:]) >= threshold)[0]) != 0:
+if len(numpy.nonzero(numpy.abs(image2_var[:].astype(numpy.uint8).astype(numpy.float) - image1_var[:].astype(numpy.uint8).astype(numpy.float)) >= threshold)[0]) != 0:
     sys.exit(1)
 else:
     sys.exit(0)
