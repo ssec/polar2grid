@@ -25,10 +25,10 @@ have to be downloaded and placed in the
 ``py/polar2grid/polar2grid/grids/`` directory.  These can be downloaded from
 the following location:
 
-    * http://www.secc.wisc.edu/software/polar2grid/_downloads/grid211e.nc
-    * http://www.secc.wisc.edu/software/polar2grid/_downloads/grid211w.nc
-    * http://www.secc.wisc.edu/software/polar2grid/_downloads/grid203.nc
-    * http://www.secc.wisc.edu/software/polar2grid/_downloads/grid204.nc
+    * http://www.ssec.wisc.edu/software/polar2grid/_downloads/grid211e.nc
+    * http://www.ssec.wisc.edu/software/polar2grid/_downloads/grid211w.nc
+    * http://www.ssec.wisc.edu/software/polar2grid/_downloads/grid203.nc
+    * http://www.ssec.wisc.edu/software/polar2grid/_downloads/grid204.nc
 
 Note that since these are not in version control through git, there is no
 easy way to tell if the files have changed through github.
