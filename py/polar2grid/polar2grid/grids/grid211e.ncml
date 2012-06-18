@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<netcdf xmlns="http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2" location="/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid211e.nc">
+  <dimension name="y" length="5120" />
+  <dimension name="x" length="5120" />
+  <attribute name="depictorName" value="eastConus" />
+  <attribute name="projName" value="LAMBERT_CONFORMAL" />
+  <attribute name="projIndex" type="int" value="3" />
+  <attribute name="lat00" type="float" value="59.84422" />
+  <attribute name="lon00" type="float" value="-123.0438" />
+  <attribute name="latNxNy" type="float" value="14.33462" />
+  <attribute name="lonNxNy" type="float" value="-65.09117" />
+  <attribute name="centralLat" type="float" value="25." />
+  <attribute name="centralLon" type="float" value="-95." />
+  <attribute name="latDxDy" type="float" value="40.53854" />
+  <attribute name="lonDxDy" type="float" value="-87.5972" />
+  <attribute name="dyKm" type="float" value="0.9760742" />
+  <attribute name="dxKm" type="float" value="0.9760754" />
+  <attribute name="rotation" type="float" value="25." />
+  <attribute name="xMin" type="float" value="-0.1179891" />
+  <attribute name="xMax" type="float" value="0.1966484" />
+  <attribute name="yMin" type="float" value="-0.8768772" />
+  <attribute name="yMax" type="float" value="-0.5622401" />
+  <variable name="validTime" type="double">
+    <attribute name="units" value="seconds since 1970-1-1 00:00:00.00 0:00" />
+  </variable>
+  <variable name="image" shape="y x" type="byte">
+    <attribute name="long_name" value="image" />
+  </variable>
+</netcdf>
