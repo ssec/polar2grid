@@ -58,7 +58,7 @@ def find_grid_templates(ancil_dir):
     grid_templates = {}
     # Get a set of the "grid211" part of every template
     for t in set([x.split(".")[0] for x in os.listdir(ANCIL_DIR) if x.startswith("grid")]):
-        nc_temp = t + ".nc"
+        nc_temp = t + ".ncml"
         gpd_temp = t + ".gpd"
         nc_path = os.path.join(ANCIL_DIR, nc_temp)
         gpd_path = os.path.join(ANCIL_DIR, gpd_temp)

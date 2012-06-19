@@ -48,6 +48,7 @@ variables:
 """
 
 from polar2grid.core import Workspace,UTC
+from polar2grid.nc import create_nc_from_ncml
 from polar2grid.rescale import rescale,post_rescale_dnb
 from netCDF4 import Dataset
 import numpy
@@ -80,12 +81,11 @@ def fill(nc_name, image, template, start_dt,
         raise ValueError("Output file %s already exists" % nc_name)
 
     try:
-        shutil.copyfile(template, nc_name)
+        nc = create_nc_from_ncml(nc_name, template, format="NETCDF3_CLASSIC")
     except StandardError:
-        log.error("Could not copy template file %s to destination %s" % (template,nc_name))
-        raise ValueError("Could not copy template file %s to destination %s" % (template,nc_name))
+        log.error("Could not create base netcdf from template %s" % template)
+        raise ValueError("Could not create base netcdf from template %s" % template)
 
-    nc = Dataset(nc_name, "a")
     if nc.file_format != "NETCDF3_CLASSIC":
         log.warning("Expected file format NETCDF3_CLASSIC got %s" % (nc.file_format))
 

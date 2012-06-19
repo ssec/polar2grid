@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<netcdf xmlns="http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2" location="/Users/davidh/repos/svn/polar2awips/trunk/py/polar2grid/polar2grid/grids/grid211e.nc">
+<netcdf xmlns="http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2" location="grid211e.nc">
   <dimension name="y" length="5120" />
   <dimension name="x" length="5120" />
   <attribute name="depictorName" value="eastConus" />
