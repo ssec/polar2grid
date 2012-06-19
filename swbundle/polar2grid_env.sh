@@ -20,7 +20,7 @@ if [ -z "$POLAR2GRID_REV" ]; then
 
     # Script config file locations
     if [ -z "$VIIRS_GRIDS_CONFIG" ]; then
-      export VIIRS_GRIDS_CONFIG=$PKG_BASE/awips_grids.conf
+      export VIIRS_GRIDS_CONFIG=$PKG_BASE/awips/awips_grids.conf
     fi
 
     if [ -z "$VIIRS_ANCIL_DIR" ]; then
@@ -28,7 +28,7 @@ if [ -z "$POLAR2GRID_REV" ]; then
     fi
 
     if [ -z "$VIIRS_SHAPE_CONFIG" ]; then
-      export VIIRS_SHAPE_CONFIG=$PKG_BASE/awips_shapes.conf
+      export VIIRS_SHAPE_CONFIG=$PKG_BASE/awips/awips_shapes.conf
     fi
 
     export POLAR2GRID_REV="$Id$"

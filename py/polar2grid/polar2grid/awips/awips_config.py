@@ -38,6 +38,8 @@ Global objects representing configuration files
 __docformat__ = "restructuredtext en"
 
 from netCDF4 import Dataset
+from xml.etree import cElementTree
+from polar2grid.nc import ncml_tag
 
 import os
 import sys
@@ -145,6 +147,46 @@ def _get_grid_templates(grid_number, gpd=None, nc=None,
         use_nc = nc or use_nc
         return (use_gpd,use_nc)
 
+def get_shape_from_ncml(fn, var_name):
+    """Returns (rows,cols) of the variable with name
+    `var_name` in the ncml file with filename `fn`.
+    """
+    xml_parser = cElementTree.parse(fn)
+    all_vars = xml_parser.findall(ncml_tag("variable"))
+    important_var = [ elem for elem in all_vars if elem.get("name") == var_name]
+    if len(important_var) != 1:
+        log.error("Couldn't find a variable with name %s in the ncml file %s" % (var_name,fn))
+        raise ValueError("Couldn't find a variable with name %s in the ncml file %s" % (var_name,fn))
+    important_var = important_var[0]
+
+    # Get the shape out
+    shape = important_var.get("shape")
+    if shape is None:
+        log.error("NCML variable %s does not have the required shape attribute" % (var_name,))
+        raise ValueError("NCML variable %s does not have the required shape attribute" % (var_name,))
+
+    # Get dimension names from shape attribute
+    shape_dims = shape.split(" ")
+    if len(shape_dims) != 2:
+        log.error("2 dimensions are required for variable %s" % (var_name,))
+        raise ValueError("2 dimensions are required for variable %s" % (var_name,))
+    rows_name,cols_name = shape_dims
+
+    # Get the dimensions by their names
+    all_dims = xml_parser.findall(ncml_tag("dimension"))
+    important_dims = [ elem for elem in all_dims if elem.get("name") == rows_name or elem.get("name") == cols_name ]
+    if len(important_dims) != 2:
+        log.error("Corrupt NCML file %s, can't find both of %s's dimensions" % (fn, var_name))
+        raise ValueError("Corrupt NCML file %s, can't find both of %s's dimensions" % (fn, var_name))
+
+    if important_dims[0].get("name") == rows_name:
+        rows = int(important_dims[0].get("length"))
+        cols = int(important_dims[1].get("length"))
+    else:
+        rows = int(important_dims[1].get("length"))
+        cols = int(important_dims[0].get("length"))
+    return rows,cols
+
 def get_grid_info(kind, band, grid_number, gpd=None, nc=None,
         grids_map=None, bands_map=None,
         shapes_map=None, grid_templates=None):
@@ -160,8 +202,7 @@ def get_grid_info(kind, band, grid_number, gpd=None, nc=None,
     temp_info = _get_grid_templates(grid_number, gpd, nc)
 
     # Get number of rows and columns for the output grid
-    nc = Dataset(temp_info[1], "r")
-    (out_rows,out_cols) = nc.variables["image"].shape
+    out_rows,out_cols = get_shape_from_ncml(temp_info[1], "image")
     log.debug("Number of output columns calculated from NC template %d" % out_cols)
     log.debug("Number of output rows calculated from NC template %d" % out_rows)
 
