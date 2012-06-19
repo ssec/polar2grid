@@ -1,5 +1,0 @@
-Rescaling
-=========
-
-TODO
-
