@@ -38,7 +38,6 @@ def ncml_tag(t):
     return "{http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2}%s" % t
 
 def _process_dimension(xml_parser, nc, elem, event="start", parent=None):
-    print event, elem.tag, elem.items(), elem.getchildren()
     new_dim = nc.createDimension(elem.get("name"), elem.get("length") and int(elem.get("length")))
 
     next_event,next_elem = xml_parser.next()
@@ -52,22 +51,19 @@ def _process_dimension(xml_parser, nc, elem, event="start", parent=None):
 
 def _process_attribute(xml_parser, nc, elem, event="start", parent=None):
     # Handle attribute type and value
-    print event, elem.tag, elem.items(), elem.getchildren()
-    print "Type for %s is %s" % (elem.get("name"),elem.get("type"))
     setattr(parent, elem.get("name"), _types[elem.get("type")](elem.get("value")))
 
     next_event,next_elem = xml_parser.next()
     while not (next_event == "end" and \
         next_elem.tag == ncml_tag("attribute") and \
         next_elem.get("name") == elem.get("name")):
-            # FIXME: I don't know if parent=nc would be correct here
+        # FIXME: I don't know if parent=nc would be correct here
         _process_element(xml_parser, nc, next_elem, event=next_event, parent=nc)
         next_event,next_elem = xml_parser.next()
 
     return
 
 def _process_variable(xml_parser, nc, elem, event="start", parent=None):
-    print event, elem.tag, elem.items(), elem.getchildren(), elem.get("shape")
     if elem.get("shape"):
         dims = tuple(elem.get("shape").split(" "))
         new_var = nc.createVariable(elem.get("name"), _type_str[elem.get("type")], dims)
@@ -77,14 +73,11 @@ def _process_variable(xml_parser, nc, elem, event="start", parent=None):
     new_var[:] = 0
 
     next_event,next_elem = xml_parser.next()
-    print next_event,next_elem.items()
     while not (next_event == "end" and \
         next_elem.tag == ncml_tag("variable") and \
         next_elem.get("name") == elem.get("name")):
-        print "About to process element on variable"
         _process_element(xml_parser, nc, next_elem, event=next_event, parent=new_var)
         next_event,next_elem = xml_parser.next()
-        print next_event,next_elem.items()
 
     return None
 
@@ -92,19 +85,17 @@ def _process_element(xml_parser, nc, elem, event="start", parent=None):
     if elem.tag == "end":
         log.warning("Something went wrong, we shouldn't be parsing an 'end' tag")
         return
-    print "Processing sub element"
-    if elem.tag == "{http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2}dimension":
+    if elem.tag == ncml_tag("dimension"):
         _process_dimension(xml_parser, nc, elem, event=event, parent=parent)
-    elif elem.tag == "{http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2}attribute":
+    elif elem.tag == ncml_tag("attribute"):
         _process_attribute(xml_parser, nc, elem, event=event, parent=parent)
-    elif elem.tag == "{http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2}variable":
+    elif elem.tag == ncml_tag("variable"):
         _process_variable(xml_parser, nc, elem, event=event, parent=parent)
-    elif elem.tag == "{http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2}netcdf":
-        print "Received NetCDF tag"
+    elif elem.tag == ncml_tag("netcdf"):
+        pass
     else:
         log.error("Unknown NCML element found (%r)" % (elem))
         raise ValueError("Unknown NCML element found (%r)" % (elem))
-
 
 def create_nc_from_ncml(nc_filename, ncml_filename, format="NETCDF3_CLASSIC"):
     """Take a NCML file and create a NetCDF file filled with the attributes
@@ -116,27 +107,16 @@ def create_nc_from_ncml(nc_filename, ncml_filename, format="NETCDF3_CLASSIC"):
 
     xml_parser = cElementTree.iterparse(ncml_filename, events=("start", "end"))
     nc = Dataset(nc_filename, "w", format=format)
-    #nc = None
     for event,elem in xml_parser:
-        if elem.tag == "{http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2}dimension":
-            _process_dimension(xml_parser, nc, elem, event=event, parent=nc)
-        elif elem.tag == "{http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2}attribute":
-            _process_attribute(xml_parser, nc, elem, event=event, parent=nc)
-        elif elem.tag == "{http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2}variable":
-            _process_variable(xml_parser, nc, elem, event=event, parent=nc)
-        elif elem.tag == ncml_tag("netcdf"):
-            print "Received NetCDF tag"
-        else:
-            log.error("Unknown NCML element found in %s (%r)" % (ncml_filename,elem))
-            raise ValueError("Unknown NCML element found in %s (%r)" % (ncml_filename,elem))
+        _process_element(xml_parser, nc, elem, event=event, parent=nc)
 
     return nc
 
 def main():
-    import doctest
+    #import doctest
+    #return doctest.testmod()
     logging.basicConfig(level=logging.DEBUG)
     return create_nc_from_ncml(sys.argv[2], sys.argv[1])
-    #return doctest.testmod()
 
 if __name__ == "__main__":
     sys.exit(main())
