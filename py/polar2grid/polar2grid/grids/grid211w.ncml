@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<netcdf xmlns="http://www.unidata.ucar.edu/namespaces/netcdf/ncml-2.2" location="grid211w.nc">
+  <dimension name="y" length="5120" />
+  <dimension name="x" length="4400" />
+  <attribute name="depictorName" value="westConus" />
+  <attribute name="projIndex" value="3" />
+  <attribute name="projName" value="LAMBERT_CONFORMAL" />
+  <attribute name="centralLat" type="float" value="25." />
+  <attribute name="centralLon" type="float" value="-95." />
+  <attribute name="rotation" type="float" value="25." />
+  <attribute name="xMin" type="float" value="-0.2556496" />
+  <attribute name="xMax" type="float" value="0.01474848" />
+  <attribute name="yMin" type="float" value="-0.8768771" />
+  <attribute name="yMax" type="float" value="-0.5622397" />
+  <attribute name="lat00" type="float" value="54.5354" />
+  <attribute name="lon00" type="float" value="-152.8565" />
+  <attribute name="latNxNy" type="float" value="17.5142" />
+  <attribute name="lonNxNy" type="float" value="-92.71996" />
+  <attribute name="dxKm" type="float" value="0.9760742" />
+  <attribute name="dyKm" type="float" value="0.9760754" />
+  <attribute name="latDxDy" type="float" value="39.25658" />
+  <attribute name="lonDxDy" type="float" value="-117.4858" />
+  <variable name="image" shape="y x" type="byte">
+    <attribute name="long_name" value="image" />
+  </variable>
+  <variable name="validTime" type="double">
+    <attribute name="units" value="seconds since 1970-1-1 00:00:00.00 0:00" />
+  </variable>
+</netcdf>

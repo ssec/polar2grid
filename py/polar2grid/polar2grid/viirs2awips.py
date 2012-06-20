@@ -14,11 +14,11 @@ hdf5 (.h5) files and create a properly scaled AWIPS compatible NetCDF file.
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace,K_BTEMP,K_FOG
-from polar2grid.viirs_imager_to_swath import make_swaths
+from polar2grid.viirs import make_swaths
 from polar2grid.rescale import prescale
 from polar2grid import ms2gt
-from polar2grid.awips_netcdf import awips_backend
-from polar2grid.awips_config import BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
+from polar2grid.awips import awips_backend
+from polar2grid.awips import BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
 
 import os
 import sys
@@ -472,6 +472,7 @@ def process_kind(filepaths,
         ll2cr_jobs,grid_jobs = create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
                 forced_grids=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
     except StandardError:
+        log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")
         SUCCESS |= GDETER_FAIL
         return SUCCESS
