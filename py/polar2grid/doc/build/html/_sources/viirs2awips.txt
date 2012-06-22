@@ -1,5 +1,0 @@
-viirs2awips
-===========
-
-TODO
-

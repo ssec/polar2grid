@@ -9,22 +9,6 @@ polar2grid Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`awips_config` Module
---------------------------
-
-.. automodule:: polar2grid.awips_config
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`awips_netcdf` Module
---------------------------
-
-.. automodule:: polar2grid.awips_netcdf
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`core` Module
 ------------------
 
@@ -37,6 +21,14 @@ polar2grid Package
 -------------------
 
 .. automodule:: polar2grid.ms2gt
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`nc` Module
+----------------
+
+.. automodule:: polar2grid.nc
     :members:
     :undoc-members:
     :show-inheritance:
@@ -73,19 +65,11 @@ polar2grid Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`viirs_guidebook` Module
------------------------------
+Subpackages
+-----------
 
-.. automodule:: polar2grid.viirs_guidebook
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. toctree::
 
-:mod:`viirs_imager_to_swath` Module
------------------------------------
-
-.. automodule:: polar2grid.viirs_imager_to_swath
-    :members:
-    :undoc-members:
-    :show-inheritance:
+    polar2grid.awips
+    polar2grid.viirs
 
