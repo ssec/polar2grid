@@ -29,25 +29,25 @@ class TIFFDataType(object):
     } TIFFDataType;
     """
     ctype = ctypes.c_int
-    TIFF_NOTYPE = ctypes.c_int(0)
-    TIFF_BYTE = ctypes.c_int(1)
-    TIFF_ASCII = ctypes.c_int(2)
-    TIFF_SHORT = ctypes.c_int(3)
-    TIFF_LONG = ctypes.c_int(4)
-    TIFF_RATIONAL = ctypes.c_int(5)
-    TIFF_SBYTE = ctypes.c_int(6)
-    TIFF_UNDEFINED = ctypes.c_int(7)
-    TIFF_SSHORT = ctypes.c_int(8)
-    TIFF_SLONG = ctypes.c_int(9)
-    TIFF_SRATIONAL = ctypes.c_int(10)
-    TIFF_FLOAT = ctypes.c_int(11)
-    TIFF_DOUBLE = ctypes.c_int(12)
-    TIFF_IFD = ctypes.c_int(13)
+    TIFF_NOTYPE = 0
+    TIFF_BYTE = 1
+    TIFF_ASCII = 2
+    TIFF_SHORT = 3
+    TIFF_LONG = 4
+    TIFF_RATIONAL = 5
+    TIFF_SBYTE = 6
+    TIFF_UNDEFINED = 7
+    TIFF_SSHORT = 8
+    TIFF_SLONG = 9
+    TIFF_SRATIONAL = 10
+    TIFF_FLOAT = 11
+    TIFF_DOUBLE = 12
+    TIFF_IFD = 13
 
 tiff2ctypes = {
-    TIFFDataType.NOTYPE : None,
+    TIFFDataType.TIFF_NOTYPE : None,
     TIFFDataType.TIFF_BYTE : ctypes.c_ubyte,
-    TIFFDataType.TIFF_ASCII : ctypes.c_char,
+    TIFFDataType.TIFF_ASCII : ctypes.c_char_p,
     TIFFDataType.TIFF_SHORT : ctypes.c_uint16,
     TIFFDataType.TIFF_LONG : ctypes.c_uint32,
     TIFFDataType.TIFF_RATIONAL : ctypes.c_double, # Should be unsigned
@@ -111,6 +111,12 @@ class TIFFExtender(object):
 def tag_array(num_tags):
     return TIFFFieldInfo * num_tags
 
+def add_tags(tag_list):
+    for field_info in tag_list:
+        setattr(libtiff_ctypes, "TIFFTAG_" + str(field_info.field_name).upper(), field_info.field_tag)
+        libtiff_ctypes.tifftags[field_info.field_tag] = (tiff2ctypes[field_info.field_type], lambda d:d.value)
+
+    return TIFFExtender(tag_list)
 
 ### DEFINE NEW TAGS ###
 
@@ -132,17 +138,7 @@ ninjo_tags_inst = ninjo_tags(
         )
 
 # Tell the python library about these new tags
-libtiff_ctypes.TIFFTAG_NINJOTESTBYTE = NINJO_BYTE
-libtiff_ctypes.TIFFTAG_NINJOTESTUINT16 = NINJO_UINT16
-libtiff_ctypes.TIFFTAG_NINJOTESTUINT32 = NINJO_UINT32
-libtiff_ctypes.TIFFTAG_NINJOTESTSTR = NINJO_STR
-libtiff_ctypes.tifftags[libtiff_ctypes.TIFFTAG_NINJOTESTBYTE] = (libtiff_ctypes.ctypes.c_uint8, lambda d:d.value)
-libtiff_ctypes.tifftags[libtiff_ctypes.TIFFTAG_NINJOTESTUINT16] = (libtiff_ctypes.ctypes.c_uint16, lambda d:d.value)
-libtiff_ctypes.tifftags[libtiff_ctypes.TIFFTAG_NINJOTESTUINT32] = (libtiff_ctypes.ctypes.c_uint32, lambda d:d.value)
-libtiff_ctypes.tifftags[libtiff_ctypes.TIFFTAG_NINJOTESTSTR] = (libtiff_ctypes.ctypes.c_char_p, lambda d:d.value)
-
-# Add callback function to libtiff 
-ninjo_extender = TIFFExtender(ninjo_tags_inst)
+ninjo_extender = add_tags(ninjo_tags_inst)
 
 ### TEST FUNCTIONS ###
 
