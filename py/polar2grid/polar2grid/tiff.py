@@ -2,12 +2,15 @@ import sys
 import ctypes
 import numpy
 from libtiff import libtiff_ctypes
-from libtiff import TIFF
+from libtiff import TIFF as _TIFF
 
 # MACROS/defines
 FIELD_CUSTOM=65
 
 ### Redefinition of C structs ###
+class TIFF(_TIFF):
+    pass
+
 class TIFFDataType(object):
     """Place holder for the enum in C.
 
@@ -105,6 +108,7 @@ class TIFFExtender(object):
         # ctypes callback function instance
         self.EXT_FUNC_INST = self.EXT_FUNC(extender_pyfunc)
 
+        libtiff_ctypes.libtiff.TIFFSetTagExtender.restype = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
         self._ParentExtender = libtiff_ctypes.libtiff.TIFFSetTagExtender(self.EXT_FUNC_INST)
 
 # Utility functions
@@ -114,14 +118,23 @@ def tag_array(num_tags):
 def add_tags(tag_list):
     for field_info in tag_list:
         setattr(libtiff_ctypes, "TIFFTAG_" + str(field_info.field_name).upper(), field_info.field_tag)
-        libtiff_ctypes.tifftags[field_info.field_tag] = (tiff2ctypes[field_info.field_type], lambda d:d.value)
+        if field_info.field_writecount > 1 and field_info.field_type != TIFFDataType.TIFF_ASCII:
+            libtiff_ctypes.tifftags[field_info.field_tag] = (ctypes.POINTER(tiff2ctypes[field_info.field_type]), lambda d:d.contents)
+        else:
+            libtiff_ctypes.tifftags[field_info.field_tag] = (tiff2ctypes[field_info.field_type], lambda d:d.value)
+    #libtiff_ctypes.tifftags[40003] = (ctypes.POINTER(ctypes.c_uint32), lambda d:d.contents)
 
     return TIFFExtender(tag_list)
+
+def write_list(list_elems, c_type):
+    return (c_type * len(list_elems))(*list_elems)
+
+def read_list(first_elem, num_elems, dtype=numpy.float32):
+    return list(numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(first_elem), ctypes.sizeof(first_elem)*num_elems), dtype))
 
 ### DEFINE NEW TAGS ###
 
 # Define Tag Numbers and total number of tags
-NUM_NINJO_TAGS = 4
 NINJO_BYTE = 40000
 NINJO_STR = 40001
 NINJO_UINT16 = 40002
@@ -129,12 +142,12 @@ NINJO_UINT32 = 40003
 
 # Define a C structure that says how each tag should be used
 # XXX: The read and write counts shouldn't all need to be -1, but otherwise libtiff gives a warning
-ninjo_tags = tag_array(NUM_NINJO_TAGS)
+ninjo_tags = tag_array(4)
 ninjo_tags_inst = ninjo_tags(
-        TIFFFieldInfo(NINJO_BYTE, -1, -1, TIFFDataType.TIFF_BYTE, FIELD_CUSTOM, True, True, "NinjoTestbyte"),
-        TIFFFieldInfo(NINJO_UINT32, -1, -1, TIFFDataType.TIFF_LONG, FIELD_CUSTOM, True, True, "NinjoTestuint32"),
-        TIFFFieldInfo(NINJO_UINT16, -1, -1, TIFFDataType.TIFF_SHORT, FIELD_CUSTOM, True, True, "NinjoTestuint16"),
-        TIFFFieldInfo(NINJO_STR, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CUSTOM, True, False, "NinjoTeststr")
+        TIFFFieldInfo(40100, -1, -1, TIFFDataType.TIFF_BYTE, FIELD_CUSTOM, True, True, "NinjoTestbyte"),
+        TIFFFieldInfo(40103, 10, 10, TIFFDataType.TIFF_LONG, FIELD_CUSTOM, True, False, "NinjoTestuint32"),
+        TIFFFieldInfo(40102, -1, -1, TIFFDataType.TIFF_SHORT, FIELD_CUSTOM, True, True, "NinjoTestuint16"),
+        TIFFFieldInfo(40101, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CUSTOM, True, False, "NinjoTeststr")
         )
 
 # Tell the python library about these new tags
@@ -147,10 +160,11 @@ def test_write():
 
     a.SetField("ARTIST", "DAVID HOESE")
     a.SetField("NINJOTESTBYTE", 42)
-    a.SetField("NINJOTESTUINT16", 42)
-    a.SetField("NINJOTESTUINT32", 42)
     a.SetField("NINJOTESTSTR", "FAKE")
+    a.SetField("NINJOTESTUINT16", 42)
+    a.SetField("NINJOTESTUINT32", write_list((1,2,3,4,5,6,7,8,9,10), ctypes.c_uint32))
     a.SetField("XPOSITION", 42.0)
+    a.SetField("PRIMARYCHROMATICITIES", write_list((1.0, 2, 3, 4, 5, 6), ctypes.c_float))
 
     arr = numpy.ones((512,512), dtype=numpy.uint8)
     arr[:,:] = 255
@@ -166,8 +180,9 @@ def test_read():
     print a.GetField("ARTIST")
     print a.GetField("NINJOTESTBYTE")
     print a.GetField("NINJOTESTUINT16")
-    print a.GetField("NINJOTESTUINT32")
+    print read_list(a.GetField("NINJOTESTUINT32"), 10, dtype=numpy.uint32)
     print a.GetField("NINJOTESTSTR")
+    print read_list(a.GetField("PRIMARYCHROMATICITIES"), 6, dtype=numpy.float32)
 
 def main():
     test_write()
