@@ -55,7 +55,8 @@ class UTC(datetime.tzinfo):
 
 str_to_dtype = {
         "real4" : numpy.float32,
-        "int1"  : numpy.int8
+        "int1"  : numpy.int8,
+        "uint1" : numpy.uint8
         }
 
 class Workspace(object):
