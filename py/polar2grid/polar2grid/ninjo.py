@@ -14,16 +14,14 @@ places them correctly in to the modified geotiff format accepted by NinJo.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.tiff import add_tags,write_list,read_list
 from polar2grid import libtiff
-from polar2grid.libtiff import TIFF,tag_array,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM
+from polar2grid.libtiff import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
 #from libtiff import libtiff_ctypes as lc
 #from libtiff import TIFF
 
 import os
 import sys
 import logging
-import ctypes
 
 log = logging.getLogger(__name__)
 
@@ -82,9 +80,7 @@ ninjo_tags.append(TIFFFieldInfo(40044, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CU
 #ninjo_tags.append(TIFFFieldInfo(40046, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CUSTOM, True, False, "ValueTableStringField"))
 #ninjo_tags.append(TIFFFieldInfo(40047, -1, -1, TIFFDataType.TIFF_FLOAT, FIELD_CUSTOM, True, False, "ValueTableFloatField"))
 
-#ninjo_tags_struct = tag_array(1)(ninjo_tags[3])
-ninjo_tags_struct = tag_array(len(ninjo_tags))(*ninjo_tags)
-ninjo_extension = add_tags(ninjo_tags_struct)
+ninjo_extension = add_tags(ninjo_tags)
 
 def from_proj4(proj4_str):
     proj4_elements = proj4_str.split(" ")
@@ -105,7 +101,35 @@ def to_proj4(proj4_dict):
     return proj4_str
 
 def create_ninjo_tiff(image_data, output_fn, **kwargs):
-    pass
+
+    out_tiff = TIFF.open(output_fn, "w")
+
+    ### Write Tag Data ###
+    # static for testing (based on data/satellite)
+    out_tiff.SetDirectory(0)
+    out_tiff.SetField("ImageWidth", 2500)
+    out_tiff.SetField("ImageLength", 2500)
+    out_tiff.SetField("BITspersample", 8)
+    out_tiff.SetField("compression", libtiff.COMPRESSION_LZW)
+    out_tiff.SetField("PHOTOMETRIC", libtiff.PHOTOMETRIC_PALETTE)
+    out_tiff.SetField("ORIENTATION", libtiff.ORIENTATION_TOPLEFT)
+    out_tiff.SetField("SamplesPerPixel", 1)
+    out_tiff.SetField("SMinSampleValue", 0)
+    out_tiff.SetField("SMaxsampleValue", 255)
+    out_tiff.SetField("Planarconfig", libtiff.PLANARCONFIG_CONTIG)
+    out_tiff.SetField("ColorMap", [[ x*256 for x in range(256) ]]*3) # Basic B&W colormap
+    out_tiff.SetField("TILEWIDTH", 512)
+    out_tiff.SetField("TILELENGTH", 512)
+    out_tiff.SetField("sampleformat", libtiff.SAMPLEFORMAT_UINT)
+
+    # Projection based tags
+
+    ### Write Base Data Image ###
+    out_tiff.write_tiles(image_data)
+
+    ### Write multi-resolution overviews ###
+    # TODO: Write a python overview operation
+    return
 
 def test_write_tags(*args):
     """Create a sample NinJo file that writes all ninjo tags and a fake data
@@ -127,9 +151,9 @@ def test_write_tags(*args):
 
     ### Write first set of tags ###
     print "ModelTiePoint"
-    tiff_file.SetField("ModelTiePoint", write_list([1,2,3,4,5,6], ctypes.c_double))
+    tiff_file.SetField("ModelTiePoint", [1,2,3,4,5,6])
     print "ModelPixelScale"
-    tiff_file.SetField("ModelPixelScale", write_list([1,2], ctypes.c_double))
+    tiff_file.SetField("ModelPixelScale", [1,2])
     print "TransparentPixel"
     tiff_file.SetField("TransparentPixel", 1)
     print "NinjoName"
@@ -292,8 +316,8 @@ def test_write(*args):
     tiff_file.SetField("sampleformat", libtiff.SAMPLEFORMAT_UINT)
 
     ### NINJO SPECIFIC ###
-    tiff_file.SetField("ModelPixelScale", write_list([0.071957,0.071957], ctypes.c_double))
-    tiff_file.SetField("ModelTiePoint", write_list([0.0, 0.0, 0.0, -164.874313, 89.874321, 0.0], ctypes.c_double))
+    tiff_file.SetField("ModelPixelScale", [0.071957,0.071957])
+    tiff_file.SetField("ModelTiePoint", [0.0, 0.0, 0.0, -164.874313, 89.874321, 0.0])
     tiff_file.SetField("NinjoName", "NINJO")
     tiff_file.SetField("SatelliteNameID", 7300014)
     tiff_file.SetField("DateID", 1337169600)

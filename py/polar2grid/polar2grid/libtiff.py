@@ -222,18 +222,6 @@ ttype2ctype = {
     TIFFDataType.TIFF_IFD : ctypes.c_uint32
     }
 
-#ctype2ntype = {
-#    ctypes.c_ubyte : numpy.ubyte,
-#    ctypes.c_char_p : numpy.char_p,
-#    ctypes.c_uint16,
-#    ctypes.c_uint32,
-#    ctypes.c_double,
-#    ctypes.c_byte,
-#    ctypes.c_char,
-#    ctypes.c_int16,
-#    ctypes.c_int32,
-#    ctypes.c_float
-#    }
 class TIFFFieldInfo(ctypes.Structure):
     """
     typedef struct {
@@ -258,14 +246,39 @@ class TIFFFieldInfo(ctypes.Structure):
             ("field_name", ctypes.c_char_p)
             ]
 
-def tag_array(num_tags):
-    return TIFFFieldInfo * num_tags
+# Custom Tags
+class TIFFExtender(object):
+    def __init__(self, new_tag_list):
+        self._ParentExtender = None
+        self.new_tag_list = new_tag_list
+        def extender_pyfunc(tiff_struct):
+            libtiff.TIFFMergeFieldInfo(tiff_struct, self.new_tag_list, len(self.new_tag_list))
 
-def write_list(list_elems, c_type):
-    return (c_type * len(list_elems))(*list_elems)
+            if self._ParentExtender:
+                self._ParentExtender(tiff_struct)
 
-def read_list(first_elem, num_elems, dtype=np.float32):
-    return list(numpy.frombuffer(numpy.core.multiarray.int_asbuffer(ctypes.addressof(first_elem), ctypes.sizeof(first_elem)*num_elems), dtype))
+            # Just make being a void function more obvious
+            return
+
+        # ctypes callback function prototype (return void, arguments void pointer)
+        self.EXT_FUNC = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
+        # ctypes callback function instance
+        self.EXT_FUNC_INST = self.EXT_FUNC(extender_pyfunc)
+
+        libtiff.TIFFSetTagExtender.restype = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
+        self._ParentExtender = libtiff.TIFFSetTagExtender(self.EXT_FUNC_INST)
+
+def add_tags(tag_list):
+    tag_list_array = (TIFFFieldInfo * len(tag_list))(*tag_list)
+    for field_info in tag_list_array:
+        name = "TIFFTAG_" + str(field_info.field_name).upper()
+        exec 'global %s; %s = %s' % (name, name, field_info.field_tag)
+        if field_info.field_writecount > 1 and field_info.field_type != TIFFDataType.TIFF_ASCII:
+            tifftags[field_info.field_tag] = (ttype2ctype[field_info.field_type]*field_info.field_writecount, lambda d:d.contents[:])
+        else:
+            tifftags[field_info.field_tag] = (ttype2ctype[field_info.field_type], lambda d:d.value)
+
+    return TIFFExtender(tag_list_array)
 
 tifftags = {
 
@@ -627,14 +640,14 @@ class TIFF(ctypes.c_void_p):
         if arr.shape[0] != num_irows or arr.shape[1] != num_icols:
             raise ValueError("Input array %r must have same shape as image tags %r" % (arr.shape,(num_irows,num_icols)))
 
-        status = 1
+        status = 0
         # Rows
         for i in range(0, num_irows, num_trows):
             # Cols
             for j in range(0, num_icols, num_tcols):
                 # If we are over the edge of the image, use 0 as fill
                 if ((i + num_trows) > num_irows) or ((j + num_tcols) > num_icols):
-                    x = np.zeros((num_trows, num_tcols), dtype=np.uint8)
+                    x = np.zeros((num_trows, num_tcols), dtype=arr.dtype)
                     x[:num_irows-i,:num_icols-j] = arr[i:i+num_trows, j:j+num_tcols]
                 else:
                     x = arr[i:i+num_trows,j:j+num_tcols]
@@ -642,9 +655,40 @@ class TIFF(ctypes.c_void_p):
                 x = np.ascontiguousarray(x)
                 log.debug("Writing tile at x: %d, y: %d" % (j,i))
                 r = libtiff.TIFFWriteTile(self, x.ctypes.data, j, i, 0, 0)
-                status = status & r.value
+                status = status + r.value
 
         return status
+
+    def read_tiles(self, dtype=np.uint8):
+        num_trows = self.GetField("TileLength")
+        if num_trows is None:
+            raise ValueError("TIFFTAG_TILELENGTH must be set to write tiles")
+        num_tcols = self.GetField("TileWidth")
+        if num_tcols is None:
+            raise ValueError("TIFFTAG_TILEWIDTH must be set to write tiles")
+        num_irows = self.GetField("ImageLength")
+        if num_irows is None:
+            raise ValueError("TIFFTAG_IMAGELENGTH must be set to write tiles")
+        num_icols = self.GetField("ImageWidth")
+        if num_icols is None:
+            raise ValueError("TIFFTAG_TILEWIDTH must be set to write tiles")
+
+        full_image = np.zeros((num_irows,num_icols), dtype=dtype)
+        tmp_tile = np.zeros((num_trows,num_tcols), dtype=dtype)
+        tmp_tile = np.ascontiguousarray(tmp_tile)
+        for i in range(0, num_irows, num_trows):
+            for j in range(0, num_icols, num_tcols):
+                r = libtiff.TIFFReadTile(self, tmp_tile.ctypes.data, j, i, 0, 0)
+                if not r:
+                    raise ValueError("Could not read tile x:%d,y:%d from file" % (j,i))
+
+                if ((i + num_trows) > num_irows) or ((j + num_tcols) > num_icols):
+                    # We only need part of the tile because we are on the edge
+                    full_image[i:i+num_trows, j:j+num_tcols] = tmp_tile[:num_irows-i,:num_icols-j]
+                else:
+                    full_image[i:i+num_trows, j:j+num_tcols] = tmp_tile[:,:]
+
+        return full_image
 
     def iter_images(self, verbose=False):
         """ Iterator of all images in a TIFF file.
@@ -1152,6 +1196,102 @@ def suppress_warnings():
 def suppress_errors():
     libtiff.TIFFSetErrorHandler(_null_error_handler)
 
+def _test_custom_tags():
+    def _tag_write():
+        a = TIFF.open("/tmp/libtiff_test_custom_tags.tif", "w")
+
+        a.SetField("ARTIST", "MY NAME")
+        a.SetField("LibtiffTestByte", 42)
+        a.SetField("LibtiffTeststr", "FAKE")
+        a.SetField("LibtiffTestuint16", 42)
+        a.SetField("LibtiffTestMultiuint32", (1,2,3,4,5,6,7,8,9,10))
+        a.SetField("XPOSITION", 42.0)
+        a.SetField("PRIMARYCHROMATICITIES", (1.0, 2, 3, 4, 5, 6))
+
+        arr = numpy.ones((512,512), dtype=numpy.uint8)
+        arr[:,:] = 255
+        a.write_image(arr)
+
+        print "Tag Write: SUCCESS"
+
+    def _tag_read():
+        a = TIFF.open("/tmp/libtiff_test_custom_tags.tif", "r")
+
+        tmp = a.read_image()
+        assert tmp.shape==(512,512),"Image read was wrong shape (%r instead of (512,512))" % (tmp.shape,)
+        tmp = a.GetField("XPOSITION")
+        assert tmp == 42.0,"XPosition was not read as 42.0"
+        tmp = a.GetField("ARTIST")
+        assert tmp=="MY NAME","Artist was not read as 'MY NAME'"
+        tmp = a.GetField("LibtiffTestByte")
+        assert tmp==42,"LibtiffTestbyte was not read as 42"
+        tmp = a.GetField("LibtiffTestuint16")
+        assert tmp==42,"LibtiffTestuint16 was not read as 42"
+        tmp = a.GetField("LibtiffTestMultiuint32")
+        assert tmp==[1,2,3,4,5,6,7,8,9,10],"LibtiffTestMultiuint32 was not read as [1,2,3,4,5,6,7,8,9,10]"
+        tmp = a.GetField("LibtiffTeststr")
+        assert tmp=="FAKE","LibtiffTeststr was not read as 'FAKE'"
+        tmp = a.GetField("PRIMARYCHROMATICITIES")
+        assert tmp==[1.0,2.0,3.0,4.0,5.0,6.0],"PrimaryChromaticities was not read as [1.0,2.0,3.0,4.0,5.0,6.0]"
+        print "Tag Read: SUCCESS"
+
+    # Define a C structure that says how each tag should be used
+    test_tags = [
+        TIFFFieldInfo(40100, 1, 1, TIFFDataType.TIFF_BYTE, FIELD_CUSTOM, True, False, "LibtiffTestByte"),
+        TIFFFieldInfo(40103, 10, 10, TIFFDataType.TIFF_LONG, FIELD_CUSTOM, True, False, "LibtiffTestMultiuint32"),
+        TIFFFieldInfo(40102, 1, 1, TIFFDataType.TIFF_SHORT, FIELD_CUSTOM, True, False, "LibtiffTestuint16"),
+        TIFFFieldInfo(40101, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CUSTOM, True, False, "LibtiffTeststr")
+        ]
+
+    # Add tags to the libtiff library
+    test_extender = add_tags(test_tags) # Keep pointer to extender object, no gc
+    _tag_write()
+    _tag_read()
+
+
+def _test_tile_write():
+    a = TIFF.open("/tmp/libtiff_test_tile_write.tiff", "w")
+    assert a.SetField("ImageWidth", 3000)==1,"could not set ImageWidth tag"
+    assert a.SetField("ImageLength", 2500),"could not set ImageLength tag"
+    # Must be multiples of 16
+    assert a.SetField("TileWidth", 512),"could not set TileWidth tag"
+    assert a.SetField("TileLength", 528),"could not set TileLength tag"
+    assert a.SetField("BitsPerSample", 8),"could not set BitsPerSample tag"
+    assert a.SetField("Compression", COMPRESSION_NONE)
+
+    data_array = np.tile(range(500), (2500,6)).astype(np.uint8)
+    # Number of bytes written
+    assert a.write_tiles(data_array)==(512*528) * 5 * 6,"could not write tile images"
+    print "Tile Write: Wrote array of shape %r" % (data_array.shape,)
+    print "Tile Write: SUCCESS"
+
+def _test_tile_read(filename=None):
+    import sys
+    if filename is None:
+        if len(sys.argv) != 2:
+            print "Run `libtiff.py <filename>` for testing."
+            return
+
+    a = TIFF.open(filename, "r")
+    iwidth = tmp = a.GetField("ImageWidth")
+    assert tmp is not None,"ImageWidth tag must be defined for reading tiles"
+    ilength = tmp = a.GetField("ImageLength")
+    assert tmp is not None,"ImageLength tag must be defined for reading tiles"
+    tmp = a.GetField("TileWidth")
+    assert tmp is not None,"TileWidth tag must be defined for reading tiles"
+    tmp = a.GetField("TileLength")
+    assert tmp is not None,"TileLength tag must be defined for reading tiles"
+
+    data_array = a.read_tiles()
+    print "Tile Read: Read array of shape %r" % (data_array.shape,)
+    assert data_array.shape==(ilength,iwidth),"tile data read was the wrong shape"
+    if iwidth == 3000 and ilength == 2500:
+        # The test file was created by _test_tile_write
+        test_array = np.tile(range(500), (2500,6)).astype(np.uint8).flatten()
+        assert np.nonzero(data_array.flatten() != test_array)[0].shape[0] == 0,"tile data read was not the same as the expected data"
+        print "Tile Read: Data is the same as expected from tile write test"
+    print "Tile Read: SUCCESS"
+
 def _test_read(filename=None):
     import sys
     import time
@@ -1237,70 +1377,12 @@ def _test_copy():
                 assert (arr==arr3).all(),'arrays not equal %r' % ((compression, sampleformat, bitspersample),)
     print 'test copy ok'
 
-def default_tile_tags():
-    a = TIFF.open("test.tif", "w")
-    a.SetField("ARTIST", "David Hoese")
-    a.SetField("TILEWIDTH", 512)
-    a.SetField("TILELENGTH", 512)
-    a.SetField("ImageWidth", 2500)
-    a.SetField("ImageLength", 2500)
-    a.SetField("BITspersample", 8)
-    a.SetField("compression", 1)
-    a.SetField("PHOTOMETRIC", PHOTOMETRIC_MINISBLACK)
-    #a.SetField("ORIENTATION", ORIENTATION_BOTLEFT)
-    a.SetField("ORIENTATION", ORIENTATION_TOPLEFT)
-    #a.SetField("ORIENTATION", ORIENTATION_LEFTTOP)
-    a.SetField("Planarconfig", PLANARCONFIG_CONTIG)
-    a.SetField("sampleformat", SAMPLEFORMAT_UINT)
-
-    #libtiff.TIFFWriteTile.argtypes = libtiff.TIFFWriteTile.argtypes[:-1]
-    arr = np.tile(range(500), (2500,5)).astype(np.uint8)
-    num_trows = 512
-    num_tcols = 512
-    num_irows = 2500
-    num_icols = 2500
-    # Rows
-    #for i in range(0, num_irows, num_trows):
-    for i in range(0, num_irows, num_trows):
-        # Cols
-        for j in range(0, num_icols, num_tcols):
-            if ((i + num_trows) > num_irows) or ((j + num_tcols) > num_icols):
-                x = np.zeros((num_trows, num_tcols), dtype=np.uint8)
-                tmp = arr[i : i + num_trows, j : j + num_tcols]
-                print "Temp shape ",tmp.shape
-                x[:num_irows-i,:num_icols-j] = tmp
-                #x[:tmp.shape[0],512-tmp.shape[1]:512] = tmp
-                #if i + num_trows > num_irows: x = tmp
-                #else:
-                #    x = np.zeros((tmp.shape[0],tmp.shape[1]/4))
-                #    #x[0,:32] = tmp[0,:32]
-                #    x[:,0] = tmp[0,0]
-                #    print x[0]
-                #x = tmp
-                #print x[0]
-                #print x[15]
-            else:
-                x = arr[i:i+num_trows,j:j+num_tcols]
-            #x = np.ascontiguousarray(arr[j:j+num_tcols,i:i+num_trows])
-            #x = np.ascontiguousarray(arr[i:i+num_trows,j:j+num_tcols])
-            x = np.ascontiguousarray(x)
-            print i,j,
-            print x.shape,
-            print x[0,-1]
-            #libtiff.TIFFWriteRawTile(a, libtiff.TIFFComputeTile(a, j, i, 0, 0), x.ctypes.data, x.shape[0]*x.shape[1])
-            libtiff.TIFFWriteTile(a, x.ctypes.data, j, i, 0, 0)
-
-    #libtiff.TIFFWriteTile(a, first_tile.ctypes.data, 512, 0, 0)
-    #libtiff.TIFFWriteTile(a, first_tile.ctypes.data, 1024, 0, 0)
-    #libtiff.TIFFWriteTile(a, first_tile.ctypes.data, 1536, 0, 0)
-    #libtiff.TIFFWriteTile(a, last_tile.ctypes.data, 2048, 0, 0)
-    #libtiff.TIFFWriteTile(a, first_tile.ctypes.data, 0, 512, 0)
-
-
 if __name__=='__main__':
+    #_test_custom_tags()
+    _test_tile_write()
+    _test_tile_read("/tmp/libtiff_test_tile_write.tiff")
     #_test_write_float()
     #_test_write()
     #_test_read()
     #_test_copy()
-    default_tile_tags()
     
