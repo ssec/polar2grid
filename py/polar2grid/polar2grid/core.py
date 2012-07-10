@@ -53,6 +53,9 @@ class UTC(datetime.tzinfo):
     def dst(self, dt):
         return self.ZERO
 
+def utc_now():
+    return datetime.datetime.utcnow().replace(tzinfo=UTC())
+
 str_to_dtype = {
         "real4" : numpy.float32,
         "int1"  : numpy.int8,

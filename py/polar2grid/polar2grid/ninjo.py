@@ -14,14 +14,15 @@ places them correctly in to the modified geotiff format accepted by NinJo.
 """
 __docformat__ = "restructuredtext en"
 
+from polar2grid.core import utc_now
 from polar2grid import libtiff
 from polar2grid.libtiff import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
-#from libtiff import libtiff_ctypes as lc
-#from libtiff import TIFF
+import numpy
 
 import os
 import sys
 import logging
+import calendar
 
 log = logging.getLogger(__name__)
 
@@ -101,28 +102,228 @@ def to_proj4(proj4_dict):
     return proj4_str
 
 def create_ninjo_tiff(image_data, output_fn, **kwargs):
+    """Create a NinJo compatible TIFF file with the tags used
+    by the DWD's version of NinJo.  Also stores the image as tiles on disk
+    and creates a multi-resolution/pyramid/overview set of images
+    (deresolution: 2,4,8,16).
 
+    :Parameters:
+        image_data : 2D numpy array
+            Satellite image data to be put into the NinJo compatible tiff
+        output_fn : str
+            The name of the TIFF file to be created
+
+    :Keywords:
+        cmap : tuple/list of 3 lists of uint16's
+            Individual RGB arrays describing the color value for the
+            corresponding data value.  For example, image data with a data
+            type of unsigned 8-bit integers have 256 possible values (0-255).
+            So each list in cmap will have 256 values ranging from 0 to
+            65535 (2**16 - 1). (default linear B&W colormap)
+        sat_id : int
+            DWD NinJo Satellite ID number
+        chan_id : int
+            DWD NinJo Satellite Channel ID number
+        data_source : str
+            String describing where the data came from (SSEC, EUMCAST)
+        tile_width : int
+            Width of tiles on disk (default 512)
+        tile_length : int
+            Length of tiles on disk (default 512)
+        data_type : str
+            NinJo specific data type
+                data_type[0] = P (polar) or G (geostat)
+                data_type[1] = O (original) or P (product)
+                data_type[2:4] = RN or RB or RA or RN or AN (Raster, Bufr, ASCII, NIL)
+            Example: 'PORN' or 'GORN' or 'GPRN' or 'PPRN'
+            (default 'PORN')
+        pixel_xres : float
+            Nadir view pixel resolution in degrees longitude
+        pixel_yres : float
+            Nadir view pixel resolution in degrees latitude
+        origin_lat : float
+            Top left corner latitude
+        origin_lon : float
+            Top left corner longitude
+        image_dt : datetime object
+            Python datetime object describing the date and time of the image
+            data provided in UTC
+        projection : str
+            NinJo compatible projection name (NPOL,PLAT,etc.)
+        meridian_west : float
+            Western image border (default 0.0)
+        meridian_east : float
+            Eastern image border (default 0.0)
+        radius_a : float
+            Large/equatorial radius of the earth (default <not written>)
+        radius_b : float
+            Small/polar radius of the earth (default <not written>)
+        ref_lat1 : float
+            Reference latitude 1 (default <not written>)
+        ref_lat2 : float
+            Reference latitude 2 (default <not written>)
+        central_meridian : float
+            Central Meridian (default <not written>)
+        physic_value : str
+            Physical value type. Examples:
+                - Temperature = 'T'
+                - Albedo = 'ALBEDO'
+        physic_unit : str
+            Physical value units. Examples:
+                - 'CELSIUS'
+                - '%'
+        min_gray_val : int
+            Minimum gray value (default 0)
+        max_gray_val : int
+            Maximum gray value (default 255)
+        gradient : float
+            Gradient/Slope
+        axis_intercept : float
+            Axis Intercept
+        altitude : float
+            Altitude of the data provided (default 0.0)
+        is_atmo_corrected : bool
+            Is the data atmosphere corrected? (True/1 for yes) (default False/0)
+        is_calibrated : bool
+            Is the data calibrated? (True/1 for yes) (default False/0)
+        is_normalized : bool
+            Is the data normalized (True/1 for yes) (default False/0)
+        description : str
+            Description string to be placed in the output TIFF (optional)
+
+    :Raises:
+        KeyError :
+            if required keyword is not provided
+    """
     out_tiff = TIFF.open(output_fn, "w")
 
+    if image_data.dtype != numpy.uint8:
+        log.warning("NinJo image data must be uint8, converting...")
+        image_data = image_data.astype(numpy.uint8)
+
+    # Extract keyword arguments
+    cmap = kwargs.pop("cmap", None)
+    sat_id = int(kwargs.pop("sat_id"))
+    chan_id = int(kwargs.pop("chan_id"))
+    data_source = str(kwargs.pop("data_source"))
+    tile_width = int(kwargs.pop("tile_width", 512))
+    tile_length = int(kwargs.pop("tile_length", 512))
+    data_type = str(kwargs.pop("data_type", "PORN"))
+    pixel_xres = float(kwargs.pop("pixel_xres"))
+    pixel_yres = float(kwargs.pop("pixel_yres"))
+    origin_lat = float(kwargs.pop("origin_lat"))
+    origin_lon = float(kwargs.pop("origin_lon"))
+    image_dt = kwargs.pop("image_dt")
+    projection = kwargs.pop("projection")
+    meridian_west = float(kwargs.pop("meridian_west", 0.0))
+    meridian_east = float(kwargs.pop("meridian_east", 0.0))
+    radius_a = kwargs.pop("radius_a", None)
+    radius_b = kwargs.pop("radius_b", None)
+    ref_lat1 = kwargs.pop("ref_lat1", None)
+    ref_lat2 = kwargs.pop("ref_lat2", None)
+    central_meridian = kwargs.pop("central_meridian", None)
+    physic_value = kwargs.pop("physic_value", "T")
+    physic_unit = kwargs.pop("physic_unit", "CELSIUS")
+    min_gray_val = int(kwargs.pop("min_gray_val", 0))
+    max_gray_val = int(kwargs.pop("max_gray_val", 255))
+    gradient = float(kwargs.pop("gradient"))
+    axis_intercept = float(kwargs.pop("axis_intercept"))
+    altitude = float(kwargs.pop("altitude", 0.0))
+    is_atmo_corrected = int(bool(kwargs.pop("is_atmo_corrected", 0)))
+    is_calibrated = int(bool(kwargs.pop("is_calibrated", 0)))
+    is_normalized = int(bool(kwargs.pop("is_normalized", 0)))
+    description = kwargs.pop("description", None)
+
+    # Keyword checks / verification
+    if cmap is None:
+        cmap = [[ x*256 for x in range(256) ]]*3
+    elif len(cmap) != 3:
+        log.error("Colormap (cmap) must be a list of 3 lists (RGB), not %d" % len(cmap))
+
+    if len(data_type) != 4:
+        log.error("NinJo data type must be 4 characters")
+        raise ValueError("NinJo data type must be 4 characters")
+    if data_type[0] not in ["P", "G"]:
+        log.error("NinJo data type's first character must be 'P' or 'G' not '%s'" % data_type[0])
+        raise ValueError("NinJo data type's first character must be 'P' or 'G' not '%s'" % data_type[0])
+    if data_type[1] not in ["O", "P"]:
+        log.error("NinJo data type's second character must be 'O' or 'P' not '%s'" % data_type[1])
+        raise ValueError("NinJo data type's second character must be 'O' or 'P' not '%s'" % data_type[1])
+    if data_type[2:4] not in ["RN","RB","RA","BN","AN"]:
+        log.error("NinJo data type's last 2 characters must be one of %s not '%s'" % ("['RN','RB','RA','BN','AN']", data_type[2:4]))
+        raise ValueError("NinJo data type's last 2 characters must be one of %s not '%s'" % ("['RN','RB','RA','BN','AN']", data_type[2:4]))
+
+    if description is not None and len(description) >= 1000:
+        log.error("NinJo description must be less than 1000 characters")
+        raise ValueError("NinJo description must be less than 1000 characters")
+
+    file_dt = utc_now()
+    file_epoch = calendar.timegm(file_dt.timetuple())
+    image_epoch = calendar.timegm(image_dt.timetuple())
+
     ### Write Tag Data ###
-    # static for testing (based on data/satellite)
+    # Built ins
     out_tiff.SetDirectory(0)
-    out_tiff.SetField("ImageWidth", 2500)
-    out_tiff.SetField("ImageLength", 2500)
-    out_tiff.SetField("BITspersample", 8)
-    out_tiff.SetField("compression", libtiff.COMPRESSION_LZW)
-    out_tiff.SetField("PHOTOMETRIC", libtiff.PHOTOMETRIC_PALETTE)
-    out_tiff.SetField("ORIENTATION", libtiff.ORIENTATION_TOPLEFT)
+    out_tiff.SetField("ImageWidth", image_data.shape[1])
+    out_tiff.SetField("ImageLength", image_data.shape[0])
+    out_tiff.SetField("BitsPerSample", 8)
+    out_tiff.SetField("Compression", libtiff.COMPRESSION_LZW)
+    out_tiff.SetField("Photometric", libtiff.PHOTOMETRIC_PALETTE)
+    out_tiff.SetField("Orientation", libtiff.ORIENTATION_TOPLEFT)
     out_tiff.SetField("SamplesPerPixel", 1)
     out_tiff.SetField("SMinSampleValue", 0)
     out_tiff.SetField("SMaxsampleValue", 255)
-    out_tiff.SetField("Planarconfig", libtiff.PLANARCONFIG_CONTIG)
-    out_tiff.SetField("ColorMap", [[ x*256 for x in range(256) ]]*3) # Basic B&W colormap
-    out_tiff.SetField("TILEWIDTH", 512)
-    out_tiff.SetField("TILELENGTH", 512)
-    out_tiff.SetField("sampleformat", libtiff.SAMPLEFORMAT_UINT)
+    out_tiff.SetField("PlanarConfig", libtiff.PLANARCONFIG_CONTIG)
+    out_tiff.SetField("ColorMap", cmap) # Basic B&W colormap
+    out_tiff.SetField("TileWidth", tile_width)
+    out_tiff.SetField("TileLength", tile_length)
+    out_tiff.SetField("SampleFormat", libtiff.SAMPLEFORMAT_UINT)
 
-    # Projection based tags
+    # NinJo specific tags
+    if description is not None:
+        out_tiff.SetField("Description", description)
+
+    out_tiff.SetField("ModelPixelScale", [pixel_xres,pixel_yres])
+    out_tiff.SetField("ModelTiePoint", [0.0,  0.0, 0.0, origin_lon, origin_lat, 0.0])
+    out_tiff.SetField("NinjoName", "NINJO")
+    out_tiff.SetField("SatelliteNameID", sat_id)
+    out_tiff.SetField("DateID", image_epoch)
+    out_tiff.SetField("CreationDateID", file_epoch)
+    out_tiff.SetField("ChannelID", chan_id)
+    out_tiff.SetField("HeaderVersion", 2)
+    out_tiff.SetField("FileName", output_fn)
+    out_tiff.SetField("DataType", data_type)
+    out_tiff.SetField("SatelliteNumber", "\x00") # Hardcoded to 0
+    out_tiff.SetField("ColorDepth", 8) # Hardcoded to 8
+    out_tiff.SetField("DataSource", data_source)
+    out_tiff.SetField("XMinimum", 1)
+    out_tiff.SetField("XMaximum", image_data.shape[1])
+    out_tiff.SetField("YMinimum", 1)
+    out_tiff.SetField("YMaximum", image_data.shape[0])
+    out_tiff.SetField("Projection", projection)
+    out_tiff.SetField("MeridianWest", meridian_west)
+    out_tiff.SetField("MeridianEast", meridian_east)
+    if radius_a is not None:
+        out_tiff.SetField("EarthRadiusLarge", float(radius_a))
+    if radius_b is not None:
+        out_tiff.SetField("EarthRadiusSmall", float(radius_b))
+    out_tiff.SetField("GeodeticDate", "\x00") # ---?
+    if ref_lat1 is not None:
+        out_tiff.SetField("ReferenceLatitude1", ref_lat1) # katja
+    if ref_lat2 is not None:
+        out_tiff.SetField("ReferenceLatitude2", ref_lat2)
+    if central_meridian is not None:
+        out_tiff.SetField("CentralMeridian", central_meridian)
+    out_tiff.SetField("PhysicValue", physic_value) 
+    out_tiff.SetField("PhysicUnit", physic_unit)
+    out_tiff.SetField("MinGrayValue", min_gray_val)
+    out_tiff.SetField("MaxGrayValue", max_gray_val)
+    out_tiff.SetField("Gradient", gradient) # fixed for LW
+    out_tiff.SetField("AxisIntercept", axis_intercept) # fixed for LW
+    out_tiff.SetField("Altitude", altitude)
+    out_tiff.SetField("IsAtmosphereCorrected", is_atmo_corrected) # new by katja
+    out_tiff.SetField("IsCalibrated", is_calibrated)
+    out_tiff.SetField("IsNormalized", is_normalized)
 
     ### Write Base Data Image ###
     out_tiff.write_tiles(image_data)
@@ -140,7 +341,6 @@ def test_write_tags(*args):
     else:
         tiff_fn = args[0]
 
-    import numpy
     # Represents original high resolution data array
     #data_array = numpy.zeros((5,5), dtype=numpy.uint8)
     data_array = numpy.zeros((2500,2500), dtype=numpy.uint8)
@@ -286,7 +486,6 @@ def test_write(*args):
     else:
         tiff_fn = args[0]
 
-    import numpy
     # Represents original high resolution data array
     #data_array = numpy.zeros((2500,2500), dtype=numpy.uint8)
     data_array = numpy.tile(range(500), (2500,5)).astype(numpy.uint8)
