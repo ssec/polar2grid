@@ -1,3 +1,4 @@
 include polar2grid/awips/*.conf
+include polar2grid/ninjo/*.conf
 recursive-include polar2grid/grids *.gpd *.ncml
 

@@ -46,9 +46,9 @@ grids_dir = os.path.split(script_dir)[0] # grids directory is in root pkg dir
 default_grids_config = os.path.join(script_dir, "ninjo_grids.conf")
 default_ancil_dir = os.path.join(grids_dir, "grids")
 default_shapes_config = os.path.join(script_dir, "ninjo_shapes.conf")
-GRIDS_CONFIG = os.environ.get("VIIRS_GRIDS_CONFIG", default_grids_config)
-ANCIL_DIR     = os.environ.get("VIIRS_ANCIL_DIR", default_ancil_dir)
-SHAPES_CONFIG   = os.environ.get("VIIRS_SHAPE_CONFIG", default_shapes_config)
+GRIDS_CONFIG = os.environ.get("NINJO_GRIDS_CONFIG", default_grids_config)
+ANCIL_DIR     = os.environ.get("GRIDS_ANCIL_DIR", default_ancil_dir)
+SHAPES_CONFIG   = os.environ.get("NINJO_SHAPE_CONFIG", default_shapes_config)
 
 def find_grid_templates(ancil_dir):
     grid_templates = {}
