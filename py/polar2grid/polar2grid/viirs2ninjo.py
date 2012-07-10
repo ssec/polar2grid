@@ -18,6 +18,7 @@ from polar2grid.viirs import make_swaths
 from polar2grid.rescale import prescale
 from polar2grid import ms2gt
 from polar2grid.ninjo import ninjo_backend
+from polar2grid.ninjo import GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
 #from polar2grid.awips import awips_backend
 #from polar2grid.awips import BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
 
@@ -31,6 +32,17 @@ from glob import glob
 
 log = logging.getLogger(__name__)
 LOG_FN = os.environ.get("VIIRS2AWIPS_LOG", "./viirs2awips.log")
+
+# FIXME : These are WRONG. Most are from MODIS. Fog was found in the word
+# doc and dnb is just the I01 band
+viirs2chanid = {
+        "I01" : 4700015,
+        "I03" : 5000015,
+        "I04" : 4100015,
+        "I05" : 4300015,
+        "DNB00" : 4700015,
+        "IFOG" : 7600015
+        }
 
 def setup_logging(console_level=logging.INFO):
     """Setup the logger to the console to the logging level defined in the
@@ -288,10 +300,10 @@ def _determine_grids(kind, fbf_lat, fbf_lon):
     return grids
 
 def create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
-        forced_grids=None, forced_gpd=None, forced_nc=None):
-    if forced_grids is None and (forced_gpd is not None or forced_nc is not None):
-        log.error("Grid gpd and nc templates cannot be forced if the grids are not forced")
-        raise ValueError("Grid gpd and nc templates cannot be forced if the grids are not forced")
+        forced_grids=None, forced_gpd=None):
+    if forced_grids is None and (forced_gpd is not None):
+        log.error("Grid gpd cannot be forced if the grids are not forced")
+        raise ValueError("Grid gpd cannot be forced if the grids are not forced")
 
     if forced_grids is not None:
         if isinstance(forced_grids, list): grids = forced_grids
@@ -305,7 +317,7 @@ def create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
     for idx,grid_name in enumerate(grids):
         for band in bands.keys():
             if verify_config(kind, band, grid_name):
-                grid_info = get_grid_info(kind, band, grid_name, gpd=forced_gpd, nc=forced_nc)
+                grid_info = get_grid_info(kind, band, grid_name, gpd=forced_gpd)
                 grid_info["start_dt"] = start_dt
                 grid_info["tag"] = "ll2cr_%s_%s" % (kind,grid_name)
                 grid_info["swath_rows"] = bands[band]["swath_rows"]
@@ -316,7 +328,6 @@ def create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
 
                 if band not in grid_jobs: grid_jobs[band] = {}
                 grid_info["data_kind"] = bands[band]["data_kind"]
-                grid_info["nc_filename"] = grid_info["start_dt"].strftime(grid_info["nc_format"])
                 grid_jobs[band][grid_name] = grid_info
     return ll2cr_jobs,grid_jobs
 
@@ -378,7 +389,7 @@ def create_pseudobands(kind, bands):
 def process_kind(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None,
-        forced_gpd=None, forced_nc=None,
+        forced_gpd=None,
         create_pseudo=True,
         num_procs=1
         ):
@@ -408,11 +419,11 @@ def process_kind(filepaths,
     log.info("Extracting swaths...")
     def _band_filter(finfo):
         if finfo["kind"] == "DNB":
-            if "DNB" not in BANDS:
+            if "DNB00" not in viirs2chanid:
                 return False
             else:
                 return True
-        elif finfo["kind"] + finfo["band"] not in BANDS:
+        elif finfo["kind"] + finfo["band"] not in viirs2chanid:
             return False
         else:
             return True
@@ -471,7 +482,7 @@ def process_kind(filepaths,
     try:
         log.info("Determining what grids the data fits in...")
         ll2cr_jobs,grid_jobs = create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
-                forced_grids=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
+                forced_grids=forced_grid, forced_gpd=forced_gpd)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")
@@ -633,16 +644,7 @@ def process_kind(filepaths,
             _force_symlink(o_fn, fbf_name)
 
     ### BACKEND ###
-    # FIXME : These are WRONG. Most are from MODIS. Fog was found in the word
-    # doc and dnb is just the I01 band
-    viirs2chanid = {
-            ("I","01") : 4700015,
-            ("I","03") : 5000015,
-            ("I","04") : 4100015,
-            ("I","05") : 4300015,
-            ("DNB","00") : 4700015,
-            ("I", "FOG") : 7600015
-            }
+
     # Rescale the image
     for band,grid_dict in grid_jobs.items():
         num_grids = len(grid_dict)
@@ -656,26 +658,24 @@ def process_kind(filepaths,
                         image_dt=grid_job["start_dt"],
                         #cmap=None,
                         sat_id=3400014, # FIXME: this is terra modis id
-                        chan_id=viirs2chanid[(kind,band)], # FIXME: this is 
+                        chan_id=viirs2chanid[(kind,band)], # FIXME: these are wrong
                         data_source="SSEC", # FIXME: This should probably be taken from a env variable or config file
                         data_type="PORN", # VIIRS is polar orbitting, original?, and raster binary buffer
-                        pixel_xres=None, # FIXME: From gpd file
-                        pixel_yres=None, # FIXME: From gpd file
-                        origin_lat=None, # FIXME: From gpd file
-                        origin_lon=None, # FIXME: From gpd file
-                        projection=grid_job["nproj"], # FIXME: Put in grid config file
-                        radius_a=grid_job["a"], # FIXME: From gpd file
-                        radius_b=grid_job["b"], # FIXME: From gpd file
+                        pixel_xres=grid_job["xres"],
+                        pixel_yres=grid_job["yres"],
+                        origin_lat=grid_job["proj4"]["lat_0"],
+                        origin_lon=grid_job["proj4"]["lon_0"],
+                        projection=grid_job["nproj"],
+                        radius_a=grid_job["proj4"]["a"],
+                        radius_b=grid_job["proj4"]["b"],
                         is_calibrated=1
                         )
                 if "lat_1" in grid_job:
-                    # FIXME: From gpd file
-                    kwargs["ref_lat1"] = grid_job["lat_1"]
+                    kwargs["ref_lat1"] = grid_job["proj4"]["lat_1"]
                 if "lat_2" in grid_job:
-                    # FIXME: From gpd file
-                    kwargs["ref_lat2"] = grid_job["lat_2"]
+                    kwargs["ref_lat2"] = grid_job["proj4"]["lat_2"]
                 if "lon_0" in grid_job:
-                    kwargs["central_meridian"] = grid_job["lon_0"]
+                    kwargs["central_meridian"] = grid_job["proj4"]["lon_0"]
                 ninjo_backend(
                         grid_job["fbf_output"],
                         grid_job["tiff_filename"],
@@ -723,7 +723,7 @@ def _process_kind(*args, **kwargs):
 def run_viirs2awips(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None,
-        forced_gpd=None, forced_nc=None,
+        forced_gpd=None,
         create_pseudo=True,
         multiprocess=True, num_procs=1):
     """Go through the motions of converting
@@ -742,7 +742,7 @@ def run_viirs2awips(filepaths,
     filepaths = [ os.path.abspath(x) for x in sorted(filepaths) ]
 
     # Get grid templates and figure out the AWIPS product id to use
-    if (forced_nc is None or forced_gpd is None) and forced_grid and forced_grid not in GRID_TEMPLATES:
+    if forced_gpd is None and forced_grid and forced_grid not in GRID_TEMPLATES:
         log.error("Unknown or unconfigured grid number %s in grids/*" % forced_grid)
         return -1
 
@@ -759,7 +759,7 @@ def run_viirs2awips(filepaths,
     pI = None
     pDNB = None
     exit_status = 0
-    if len(M_files) != 0 and len([x for x in BANDS if x.startswith("M") ]) != 0:
+    if len(M_files) != 0 and len([x for x in viirs2chanid if x.startswith("M") ]) != 0:
         log.debug("Processing M files")
         try:
             if multiprocess:
@@ -767,20 +767,20 @@ def run_viirs2awips(filepaths,
                         args = (M_files,),
                         kwargs = dict(
                             fornav_D=fornav_D, fornav_d=fornav_d,
-                            forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
+                            forced_grid=forced_grid, forced_gpd=forced_gpd,
                             create_pseudo=create_pseudo,
                             num_procs=num_procs
                             )
                         )
                 pM.start()
             else:
-                stat = _process_kind(M_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
+                stat = _process_kind(M_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, num_procs=num_procs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process M files")
             exit_status = exit_status or len(M_files)
 
-    if len(I_files) != 0 and len([x for x in BANDS if x.startswith("I") ]) != 0:
+    if len(I_files) != 0 and len([x for x in viirs2chanid if x.startswith("I") ]) != 0:
         log.debug("Processing I files")
         try:
             if multiprocess:
@@ -788,20 +788,20 @@ def run_viirs2awips(filepaths,
                         args = (I_files,),
                         kwargs = dict(
                             fornav_D=fornav_D, fornav_d=fornav_d,
-                            forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
+                            forced_grid=forced_grid, forced_gpd=forced_gpd,
                             create_pseudo=create_pseudo,
                             num_procs=num_procs
                             )
                         )
                 pI.start()
             else:
-                stat = _process_kind(I_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
+                stat = _process_kind(I_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, num_procs=num_procs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process I files")
             exit_status = exit_status or len(I_files)
 
-    if len(DNB_files) != 0 and len([x for x in BANDS if x.startswith("DNB") ]) != 0:
+    if len(DNB_files) != 0 and len([x for x in viirs2chanid if x.startswith("DNB") ]) != 0:
         log.debug("Processing DNB files")
         try:
             if multiprocess:
@@ -809,14 +809,14 @@ def run_viirs2awips(filepaths,
                         args = (DNB_files,),
                         kwargs = dict(
                             fornav_D=fornav_D, fornav_d=fornav_d,
-                            forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
+                            forced_grid=forced_grid, forced_gpd=forced_gpd,
                             create_pseudo=create_pseudo,
                             num_procs=num_procs
                             )
                         )
                 pDNB.start()
             else:
-                stat = _process_kind(DNB_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
+                stat = _process_kind(DNB_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, num_procs=num_procs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process DNB files")
@@ -873,8 +873,6 @@ def main():
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
     parser.add_option('--gpd', dest='forced_gpd', default=None,
             help="Specify a different gpd file to use")
-    parser.add_option('--nc', dest='forced_nc', default=None,
-            help="Specify a different nc file to use")
     parser.add_option('-k', '--keep', dest='remove_prev', default=True, action='store_true',
             help="Don't delete any files that were previously made (WARNING: processing may not run successfully)")
     parser.add_option('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
@@ -893,9 +891,6 @@ def main():
     forced_grid = options.forced_grid
     if options.forced_gpd is not None and not os.path.exists(options.forced_gpd):
         log.error("Specified gpd file does not exist '%s'" % options.forced_gpd)
-        return -1
-    if options.forced_nc is not None and not os.path.exists(options.forced_nc):
-        log.error("Specified nc file does not exist '%s'" % options.forced_nc)
         return -1
 
     if len(args) == 0 or "help" in args:
@@ -926,17 +921,17 @@ def main():
         remove_products()
 
     if options.force_band is not None:
-        if len( [ x for x in BANDS.keys() if x.startswith(options.force_band) ] ) == 0:
+        if len( [ x for x in viirs2chanid.keys() if x.startswith(options.force_band) ] ) == 0:
             log.error("Unknown band %s" % options.force_band)
             parser.print_help()
             return -1
         hdf_files = [ x for x in hdf_files if os.path.split(x)[1].startswith("SV" + options.force_band) ]
         stat = process_kind(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
-                forced_gpd=options.forced_gpd, forced_nc=options.forced_nc, forced_grid=forced_grid,
+                forced_gpd=options.forced_gpd, forced_grid=forced_grid,
                 create_pseudo=options.create_pseudo, num_procs=num_procs)
     else:
         stat = run_viirs2awips(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
-                    forced_gpd=options.forced_gpd, forced_nc=options.forced_nc, forced_grid=forced_grid,
+                    forced_gpd=options.forced_gpd, forced_grid=forced_grid,
                     create_pseudo=options.create_pseudo,
                     multiprocess=not options.single_process, num_procs=num_procs)
 

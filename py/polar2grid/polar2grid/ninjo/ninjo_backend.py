@@ -84,24 +84,6 @@ ninjo_tags.append(TIFFFieldInfo(40044, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CU
 
 ninjo_extension = add_tags(ninjo_tags)
 
-def from_proj4(proj4_str):
-    proj4_elements = proj4_str.split(" ")
-    proj4_dict = dict([ y.split("=") for y in [ x.strip("+") for x in proj4_elements ] ])
-    return proj4_dict
-
-def to_proj4(proj4_dict):
-    """Convert a dictionary of proj4 parameters back into a proj4 string.
-
-    >>> proj4_str = "+proj=lcc +a=123456 +b=12345"
-    >>> proj4_dict = from_proj4(proj4_str)
-    >>> new_proj4_str = to_proj4(proj4_dict)
-    >>> assert(new_proj4_str == proj4_str)
-    """
-    # Make sure 'proj' is first, some proj4 parsers don't accept it otherwise
-    proj4_str = "+proj=%s" % proj4_dict.pop("proj")
-    proj4_str = proj4_str + " " + " ".join(["+%s=%s" % (k,v) for k,v in proj4_dict.items()])
-    return proj4_str
-
 itype2physical = {
         #K_RADIANCE : ("T", "CELSIUS"),
         K_REFLECTANCE : ("ALBEDO", "%"),
