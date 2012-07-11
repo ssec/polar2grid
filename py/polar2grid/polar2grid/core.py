@@ -254,6 +254,8 @@ def _gpd2proj4(gpd_dict):
             if pkey is not None:
                 proj4_dict[gpd2proj4[k]] = v
 
+    return proj4_dict
+
 
 def gpd_to_proj4(gpd_fn):
     gpd_file = open(gpd_fn, "r")

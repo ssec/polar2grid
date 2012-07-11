@@ -658,7 +658,7 @@ def process_kind(filepaths,
                         image_dt=grid_job["start_dt"],
                         #cmap=None,
                         sat_id=3400014, # FIXME: this is terra modis id
-                        chan_id=viirs2chanid[(kind,band)], # FIXME: these are wrong
+                        chan_id=viirs2chanid[kind+band], # FIXME: these are wrong
                         data_source="SSEC", # FIXME: This should probably be taken from a env variable or config file
                         data_type="PORN", # VIIRS is polar orbitting, original?, and raster binary buffer
                         pixel_xres=grid_job["xres"],
@@ -667,8 +667,10 @@ def process_kind(filepaths,
                         origin_lon=grid_job["proj4"]["lon_0"],
                         projection=grid_job["nproj"],
                         radius_a=grid_job["proj4"]["a"],
-                        radius_b=grid_job["proj4"]["b"],
-                        is_calibrated=1
+                        # FIXME: Should be 'b', but ms2gt 0.5 has a bug that it doesn't use the radius b parameter
+                        radius_b=grid_job["proj4"]["a"],
+                        is_calibrated=1,
+                        fill=-999.0
                         )
                 if "lat_1" in grid_job:
                     kwargs["ref_lat1"] = grid_job["proj4"]["lat_1"]
@@ -678,12 +680,13 @@ def process_kind(filepaths,
                     kwargs["central_meridian"] = grid_job["proj4"]["lon_0"]
                 ninjo_backend(
                         grid_job["fbf_output"],
-                        grid_job["tiff_filename"],
+                        #grid_job["tiff_filename"],
+                        "VIIRS_SV%s%s_%s_%s.tif" % (kind,band,grid_job["start_dt"].strftime("%Y%m%d_%H%M%S"),grid_number),
                         **kwargs
                         )
             except StandardError:
-                log.error("Error in the AWIPS backend for %s%s in grid %s" % (kind,band,grid_number))
-                log.debug("AWIPS backend error:", exc_info=1)
+                log.error("Error in the NinJo backend for %s%s in grid %s" % (kind,band,grid_number))
+                log.debug("NinJo backend error:", exc_info=1)
                 num_grids -= 1
 
         if num_grids == 0:

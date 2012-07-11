@@ -653,7 +653,6 @@ class TIFF(ctypes.c_void_p):
                     x = arr[i:i+num_trows,j:j+num_tcols]
 
                 x = np.ascontiguousarray(x)
-                log.debug("Writing tile at x: %d, y: %d" % (j,i))
                 r = libtiff.TIFFWriteTile(self, x.ctypes.data, j, i, 0, 0)
                 status = status + r.value
 

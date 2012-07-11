@@ -17,7 +17,7 @@ __docformat__ = "restructuredtext en"
 from polar2grid.core import Workspace,utc_now,K_RADIANCE,K_REFLECTANCE,K_BTEMP,K_FOG
 from polar2grid import libtiff
 from polar2grid.libtiff import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
-from polar2grid.rescale import rescale,post_rescale_dnb
+from polar2grid.rescale import unlinear_scale,ubyte_filter
 import numpy
 
 import os
@@ -84,14 +84,14 @@ ninjo_tags.append(TIFFFieldInfo(40044, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CU
 
 ninjo_extension = add_tags(ninjo_tags)
 
-itype2physical = {
+dkind2physical = {
         #K_RADIANCE : ("T", "CELSIUS"),
         K_REFLECTANCE : ("ALBEDO", "%"),
         K_BTEMP : ("T", "CELSIUS")
         #K_FOG : ("T", "CELSIUS")
         }
 
-itype2grad = {
+dkind2grad = {
         #K_RADIANCE : (-0.5, 40.0),
         K_REFLECTANCE : (0.490196,0.0),
         K_BTEMP : (-0.5, 0.0)
@@ -111,8 +111,8 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
             The name of the TIFF file to be created
 
     :Keywords:
-        image_type : int
-            polar2grid constant (data_type) describing the sensor type of the
+        data_kind : int
+            polar2grid constant describing the sensor type of the
             image data, such as K_REFLECTANCE or K_BTEMP. This is optional,
             but if not specified then certain keywords below are required. If
             it is specified then a default can be determined for some of the
@@ -171,15 +171,15 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
             Physical value type. Examples:
                 - Temperature = 'T'
                 - Albedo = 'ALBEDO'
-            Defaults to appropriate value based on `image_type`, see `itype2physical`
-            Specifying this overrides the default of `itype2physical`. If `image_type`
+            Defaults to appropriate value based on `data_kind`, see `itype2physical`
+            Specifying this overrides the default of `itype2physical`. If `data_kind`
             is not specified then this keyword is required.
         physic_unit : str
             Physical value units. Examples:
                 - 'CELSIUS'
                 - '%'
-            Defaults to appropriate value based on `image_type`, see `itype2physical`
-            Specifying this overrides the default of `itype2physical`. If `image_type`
+            Defaults to appropriate value based on `data_kind`, see `itype2physical`
+            Specifying this overrides the default of `itype2physical`. If `data_kind`
             is not specified then this keyword is required.
         min_gray_val : int
             Minimum gray value (default 0)
@@ -187,13 +187,13 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
             Maximum gray value (default 255)
         gradient : float
             Gradient/Slope
-            Defaults to appropriate value based on `image_type`, see `itype2grad`
-            Specifying this overrides the default of `itype2grad`. If `image_type`
+            Defaults to appropriate value based on `data_kind`, see `itype2grad`
+            Specifying this overrides the default of `itype2grad`. If `data_kind`
             is not specified then this keyword is required.
         axis_intercept : float
             Axis Intercept
-            Defaults to appropriate value based on `image_type`, see `itype2grad`
-            Specifying this overrides the default of `itype2grad`. If `image_type`
+            Defaults to appropriate value based on `data_kind`, see `itype2grad`
+            Specifying this overrides the default of `itype2grad`. If `data_kind`
             is not specified then this keyword is required.
         altitude : float
             Altitude of the data provided (default 0.0)
@@ -217,11 +217,11 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
         image_data = image_data.astype(numpy.uint8)
 
     # Extract keyword arguments
-    image_type = kwargs.pop("image_type", None) # called as a backend
-    if image_type is not None and image_type not in itype2physical:
+    data_kind = kwargs.pop("data_kind", None) # called as a backend
+    if data_kind is not None and (data_kind not in dkind2physical or data_kind not in dkind2grad):
         # Must do the check here since it matters when pulling out physic value
-        log.warning("'image_type' is not known to the ninjo tiff creator, it will be ignored")
-        image_type = None
+        log.warning("'data_kind' is not known to the ninjo tiff creator, it will be ignored")
+        data_kind = None
     cmap = kwargs.pop("cmap", None)
     sat_id = int(kwargs.pop("sat_id"))
     chan_id = int(kwargs.pop("chan_id"))
@@ -251,9 +251,9 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     description = kwargs.pop("description", None)
 
     # Special cases
-    if image_type is not None:
-        physic_value,physic_unit = itype2physical[image_type]
-        gradient,axis_intercept = itype2grad[image_type]
+    if data_kind is not None:
+        physic_value,physic_unit = dkind2physical[data_kind]
+        gradient,axis_intercept = dkind2grad[data_kind]
         physic_value = kwargs.pop("physic_value", physic_value)
         physic_unit = kwargs.pop("physic_unit", physic_unit)
         gradient = float(kwargs.pop("gradient", gradient))
@@ -362,14 +362,32 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     # TODO: Write a python overview operation
     return
 
+def scale_data(image_data, data_kind, *args, **kwargs):
+    kwargs["fill_out"] = 0
+    if "fill" in kwargs:
+        kwargs["fill_in"] = kwargs["fill"]
+
+    if data_kind == K_REFLECTANCE:
+        # Extra 100 to turn reflectance 0-1 into albedo
+        return unlinear_scale(image_data, 0.490196/100.0, 0, *args, **kwargs)
+    elif data_kind == K_RADIANCE:
+        raise NotImplementedError("NinJo backend does not know how to scale radiance measurements yet")
+    elif data_kind == K_BTEMP:
+        # Extra 273.15 to convert to C from K
+        return unlinear_scale(image_data, -0.5, 40+273.15, *args, **kwargs)
+    elif data_kind == K_FOG:
+        # Extra 273.15 to convert to C from K
+        return unlinear_scale(image_data, -0.5, 40+273.15, *args, **kwargs)
+    else:
+        log.error("NinJo backend does not know how to scale data of kind %d" % data_kind)
+        raise ValueError("NinJo backend does not know how to scale data of kind %d" % data_kind)
+
 def ninjo_backend(input_fn, output_fn, **kwargs):
     # Extract keyword arguments
     try:
         kind = kwargs["kind"]
         band = kwargs["band"]
-        # Ninjo uses data_kind to mean the type of satellite and data format
-        # polar2grid uses it to mean the sensor type of the data
-        data_kind = kwargs["image_kind"]
+        data_kind = kwargs["data_kind"]
     except KeyError:
         log.error("Couldn't get required keyword for ninjo backend")
         raise
@@ -378,24 +396,23 @@ def ninjo_backend(input_fn, output_fn, **kwargs):
         W = Workspace(".")
         image_attr = os.path.split(input_fn)[1].split('.')[0]
         image_data = getattr(W, image_attr)
-        # We don't need to copy the array because we are just reading it
+        image_data = image_data.copy()
     except StandardError:
         log.error("Could not open input file %s" % input_fn)
         raise
 
     if kind != "DNB":
             try:
-                rescaled_data = rescale(image_data,
-                        kind=kind,
-                        band=band,
-                        data_kind=data_kind,
+                rescaled_data = scale_data(image_data,
                         **kwargs)
                 log.debug("Data min: %f, Data max: %f" % (rescaled_data.min(), rescaled_data.max()))
             except StandardError:
-                log.error("Unexpected error while rescaling data", exc_info=1)
+                log.error("Unexpected error while rescaling data")
                 raise
     else:
         rescaled_data = post_rescale_dnb(image_data)
+
+    rescaled_data = ubyte_filter(rescaled_data)
 
     return create_ninjo_tiff(rescaled_data, output_fn, **kwargs)
 

@@ -119,8 +119,8 @@ def get_grid_info(kind, band, grid_number, gpd=None,
     if shapes_map is None: shapes_map = SHAPES
     if grid_templates is None: grid_templates = GRID_TEMPLATES
 
-    grid_meta = _get_grid_meta(kind, band, grid_number)
-    gpd_template = _get_gpd_filename(grid_number, gpd)
+    grid_meta = _get_grid_meta(grid_number, grids_map=grids_map)
+    gpd_template = _get_gpd_filename(grid_number, gpd, grid_templates=grid_templates)
 
     grid_info = {}
     grid_info["grid_number"] = grid_number
@@ -129,8 +129,8 @@ def get_grid_info(kind, band, grid_number, gpd=None,
     grid_info["xres"] = grid_meta[1]
     grid_info["yres"] = grid_meta[2]
     grid_info["proj4"],grid_info["gpd"] = gpd_to_proj4(gpd_template)
-    grid_info["out_rows"] = grid_info["gpd"]["IMAGEWIDTH"]
-    grid_info["out_cols"] = grid_info["gpd"]["IMAGELENGTH"]
+    grid_info["out_rows"] = grid_info["gpd"]["GRIDWIDTH"]
+    grid_info["out_cols"] = grid_info["gpd"]["GRIDHEIGHT"]
     return grid_info
 
 

@@ -50,6 +50,62 @@ def _make_lin_scale(m, b):
         return img
     return linear_scale
 
+def _make_unlin_scale(m, b):
+    "Reverse a linear scaling"
+    def unlinear_scale(img, *args, **kwargs):
+        log.debug("Running 'unlinear_scale' with (m: %f, b: %f)..." % (m,b))
+        # Faster than assigning
+        numpy.subtract(img, b, img)
+        numpy.divide(img, m, img)
+        return img
+    return unlinear_scale
+
+def ubyte_filter(img, *args, **kwargs):
+    """Convert image data to a numpy array with dtype `numpy.uint8` and set
+    values below zero to zero and values above 255 to 255.
+    """
+    large_idxs = numpy.nonzero(img > 255)
+    small_idxs = numpy.nonzero(img < 0)
+    img = img.astype(numpy.uint8)
+    img[large_idxs] = 255
+    img[small_idxs] = 0
+    return img
+
+def linear_scale(img, m, b, *args, **kwargs):
+    log.debug("Running 'linear_scale' with (m: %f, b: %f)..." % (m,b))
+    if "fill_in" in kwargs:
+        fill_mask = numpy.nonzero(img == kwargs["fill_in"])
+
+    numpy.multiply(img, m, img)
+    numpy.add(img, b, img)
+
+    if "fill_in" in kwargs:
+        if "fill_out" in kwargs:
+            img[fill_mask] = kwargs["fill_out"]
+        else:
+            img[fill_mask] = kwargs["fill_in"]
+
+    return img
+
+def unlinear_scale(img, m, b, *args, **kwargs):
+    log.debug("Running 'unlinear_scale' with (m: %f, b: %f)..." % (m,b))
+    print kwargs["fill_in"],kwargs["fill_out"]
+    if "fill_in" in kwargs:
+        fill_mask = numpy.nonzero(img == kwargs["fill_in"])
+
+    # Faster than assigning
+    numpy.subtract(img, b, img)
+    numpy.divide(img, m, img)
+
+    if "fill_in" in kwargs:
+        if "fill_out" in kwargs:
+            print "Replacing fills with fill_out"
+            img[fill_mask] = kwargs["fill_out"]
+        else:
+            img[fill_mask] = kwargs["fill_in"]
+
+    return img
+
 def passive_scale(img, *args, **kwargs):
     """When there is no rescaling necessary or it hasn't
     been determined yet, use this function.
