@@ -89,7 +89,6 @@ def linear_scale(img, m, b, *args, **kwargs):
 
 def unlinear_scale(img, m, b, *args, **kwargs):
     log.debug("Running 'unlinear_scale' with (m: %f, b: %f)..." % (m,b))
-    print kwargs["fill_in"],kwargs["fill_out"]
     if "fill_in" in kwargs:
         fill_mask = numpy.nonzero(img == kwargs["fill_in"])
 

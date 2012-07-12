@@ -98,6 +98,31 @@ dkind2grad = {
         #K_FOG : (-0.5, 0.0)
         }
 
+def get_default_lw_colortable():
+    # Long wave or SVI04 or SVI05 or brightness temp
+    cmap = [
+        1,6,10,13,16,19,21,23,25,27,29,31,33,35,37,39,40,42,44,45,47,48,50,
+        51,53,54,56,57,58,60,61,63,64,65,67,68,69,70,72,73,74,75,
+        77,78,79,80,81,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99,100,
+        101,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,
+        125,126,127,128,129,130,131,132,133,134,135,136,137,138,138,139,140,141,142,143,144,145,146,146,147,
+        148,149,150,151,152,153,153,154,155,156,157,158,159,159,160,161,162,
+        163,164,164,165,166,167,168,169,169,170,171,172,173,173,174,175,176,
+        177,177,178,179,180,181,181,182,183,184,185,185,186,187,188,188,189,
+        190,191,192,192,193,194,195,195,196,197,198,198,199,200,201,201,202,203,
+        204,204,205,206,207,207,208,209,210,210,211,212,213,213,214,215,215,216,217,
+        218,218,219,220,220,221,222,223,223,224,225,225,226,227,228,228,229,230,230,
+        231,232,232,233,234,235,235,236,237,237,238,239,239,240,241,241,242,243,244,
+        244,245,246,246,247,248,248,249,250,250,251,252,252,253,254,254,255
+    ]
+    cmap = [cmap]*3
+    return cmap
+
+def get_default_sw_colortable():
+    # Short wave or SVI01 or SVI03 or reflectance
+    cmap = [[ x*256 for x in range(256) ]]*3
+    return cmap
+
 def create_ninjo_tiff(image_data, output_fn, **kwargs):
     """Create a NinJo compatible TIFF file with the tags used
     by the DWD's version of NinJo.  Also stores the image as tiles on disk
@@ -266,7 +291,10 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
 
     # Keyword checks / verification
     if cmap is None:
-        cmap = [[ x*256 for x in range(256) ]]*3
+        if data_kind == K_BTEMP or data_kind == K_FOG:
+            cmap = get_default_lw_colortable()
+        else:
+            cmap = get_default_sw_colortable()
     elif len(cmap) != 3:
         log.error("Colormap (cmap) must be a list of 3 lists (RGB), not %d" % len(cmap))
 
@@ -291,75 +319,87 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     file_epoch = calendar.timegm(file_dt.timetuple())
     image_epoch = calendar.timegm(image_dt.timetuple())
 
-    ### Write Tag Data ###
-    # Built ins
-    out_tiff.SetDirectory(0)
-    out_tiff.SetField("ImageWidth", image_data.shape[1])
-    out_tiff.SetField("ImageLength", image_data.shape[0])
-    out_tiff.SetField("BitsPerSample", 8)
-    out_tiff.SetField("Compression", libtiff.COMPRESSION_LZW)
-    out_tiff.SetField("Photometric", libtiff.PHOTOMETRIC_PALETTE)
-    out_tiff.SetField("Orientation", libtiff.ORIENTATION_TOPLEFT)
-    out_tiff.SetField("SamplesPerPixel", 1)
-    out_tiff.SetField("SMinSampleValue", 0)
-    out_tiff.SetField("SMaxsampleValue", 255)
-    out_tiff.SetField("PlanarConfig", libtiff.PLANARCONFIG_CONTIG)
-    out_tiff.SetField("ColorMap", cmap) # Basic B&W colormap
-    out_tiff.SetField("TileWidth", tile_width)
-    out_tiff.SetField("TileLength", tile_length)
-    out_tiff.SetField("SampleFormat", libtiff.SAMPLEFORMAT_UINT)
+    def _write_oneres(image_data, pixel_xres, pixel_yres, subfile=False):
+        ### Write Tag Data ###
+        # Built ins
+        out_tiff.SetField("ImageWidth", image_data.shape[1])
+        out_tiff.SetField("ImageLength", image_data.shape[0])
+        out_tiff.SetField("BitsPerSample", 8)
+        out_tiff.SetField("Compression", libtiff.COMPRESSION_LZW)
+        out_tiff.SetField("Photometric", libtiff.PHOTOMETRIC_PALETTE)
+        out_tiff.SetField("Orientation", libtiff.ORIENTATION_TOPLEFT)
+        out_tiff.SetField("SamplesPerPixel", 1)
+        out_tiff.SetField("SMinSampleValue", 0)
+        out_tiff.SetField("SMaxsampleValue", 255)
+        out_tiff.SetField("PlanarConfig", libtiff.PLANARCONFIG_CONTIG)
+        out_tiff.SetField("ColorMap", cmap) # Basic B&W colormap
+        out_tiff.SetField("TileWidth", tile_width)
+        out_tiff.SetField("TileLength", tile_length)
+        out_tiff.SetField("SampleFormat", libtiff.SAMPLEFORMAT_UINT)
 
-    # NinJo specific tags
-    if description is not None:
-        out_tiff.SetField("Description", description)
+        # NinJo specific tags
+        if description is not None:
+            out_tiff.SetField("Description", description)
 
-    out_tiff.SetField("ModelPixelScale", [pixel_xres,pixel_yres])
-    out_tiff.SetField("ModelTiePoint", [0.0,  0.0, 0.0, origin_lon, origin_lat, 0.0])
-    out_tiff.SetField("NinjoName", "NINJO")
-    out_tiff.SetField("SatelliteNameID", sat_id)
-    out_tiff.SetField("DateID", image_epoch)
-    out_tiff.SetField("CreationDateID", file_epoch)
-    out_tiff.SetField("ChannelID", chan_id)
-    out_tiff.SetField("HeaderVersion", 2)
-    out_tiff.SetField("FileName", output_fn)
-    out_tiff.SetField("DataType", data_type)
-    out_tiff.SetField("SatelliteNumber", "\x00") # Hardcoded to 0
-    out_tiff.SetField("ColorDepth", 8) # Hardcoded to 8
-    out_tiff.SetField("DataSource", data_source)
-    out_tiff.SetField("XMinimum", 1)
-    out_tiff.SetField("XMaximum", image_data.shape[1])
-    out_tiff.SetField("YMinimum", 1)
-    out_tiff.SetField("YMaximum", image_data.shape[0])
-    out_tiff.SetField("Projection", projection)
-    out_tiff.SetField("MeridianWest", meridian_west)
-    out_tiff.SetField("MeridianEast", meridian_east)
-    if radius_a is not None:
-        out_tiff.SetField("EarthRadiusLarge", float(radius_a))
-    if radius_b is not None:
-        out_tiff.SetField("EarthRadiusSmall", float(radius_b))
-    out_tiff.SetField("GeodeticDate", "\x00") # ---?
-    if ref_lat1 is not None:
-        out_tiff.SetField("ReferenceLatitude1", ref_lat1)
-    if ref_lat2 is not None:
-        out_tiff.SetField("ReferenceLatitude2", ref_lat2)
-    if central_meridian is not None:
-        out_tiff.SetField("CentralMeridian", central_meridian)
-    out_tiff.SetField("PhysicValue", physic_value) 
-    out_tiff.SetField("PhysicUnit", physic_unit)
-    out_tiff.SetField("MinGrayValue", min_gray_val)
-    out_tiff.SetField("MaxGrayValue", max_gray_val)
-    out_tiff.SetField("Gradient", gradient)
-    out_tiff.SetField("AxisIntercept", axis_intercept)
-    out_tiff.SetField("Altitude", altitude)
-    out_tiff.SetField("IsAtmosphereCorrected", is_atmo_corrected)
-    out_tiff.SetField("IsCalibrated", is_calibrated)
-    out_tiff.SetField("IsNormalized", is_normalized)
+        out_tiff.SetField("ModelPixelScale", [pixel_xres,pixel_yres])
+        out_tiff.SetField("ModelTiePoint", [0.0,  0.0, 0.0, origin_lon, origin_lat, 0.0])
+        out_tiff.SetField("NinjoName", "NINJO")
+        out_tiff.SetField("SatelliteNameID", sat_id)
+        out_tiff.SetField("DateID", image_epoch)
+        out_tiff.SetField("CreationDateID", file_epoch)
+        out_tiff.SetField("ChannelID", chan_id)
+        out_tiff.SetField("HeaderVersion", 2)
+        out_tiff.SetField("FileName", output_fn)
+        out_tiff.SetField("DataType", data_type)
+        out_tiff.SetField("SatelliteNumber", "\x00") # Hardcoded to 0
+        out_tiff.SetField("ColorDepth", 8) # Hardcoded to 8
+        out_tiff.SetField("DataSource", data_source)
+        out_tiff.SetField("XMinimum", 1)
+        out_tiff.SetField("XMaximum", image_data.shape[1])
+        out_tiff.SetField("YMinimum", 1)
+        out_tiff.SetField("YMaximum", image_data.shape[0])
+        out_tiff.SetField("Projection", projection)
+        out_tiff.SetField("MeridianWest", meridian_west)
+        out_tiff.SetField("MeridianEast", meridian_east)
+        if radius_a is not None:
+            out_tiff.SetField("EarthRadiusLarge", float(radius_a))
+        if radius_b is not None:
+            out_tiff.SetField("EarthRadiusSmall", float(radius_b))
+        out_tiff.SetField("GeodeticDate", "\x00") # ---?
+        if ref_lat1 is not None:
+            out_tiff.SetField("ReferenceLatitude1", ref_lat1)
+        if ref_lat2 is not None:
+            out_tiff.SetField("ReferenceLatitude2", ref_lat2)
+        if central_meridian is not None:
+            out_tiff.SetField("CentralMeridian", central_meridian)
+        out_tiff.SetField("PhysicValue", physic_value) 
+        out_tiff.SetField("PhysicUnit", physic_unit)
+        out_tiff.SetField("MinGrayValue", min_gray_val)
+        out_tiff.SetField("MaxGrayValue", max_gray_val)
+        out_tiff.SetField("Gradient", gradient)
+        out_tiff.SetField("AxisIntercept", axis_intercept)
+        out_tiff.SetField("Altitude", altitude)
+        out_tiff.SetField("IsAtmosphereCorrected", is_atmo_corrected)
+        out_tiff.SetField("IsCalibrated", is_calibrated)
+        out_tiff.SetField("IsNormalized", is_normalized)
 
-    ### Write Base Data Image ###
-    out_tiff.write_tiles(image_data)
+        ### Write Base Data Image ###
+        out_tiff.write_tiles(image_data)
+        out_tiff.WriteDirectory()
 
     ### Write multi-resolution overviews ###
-    # TODO: Write a python overview operation
+    out_tiff.SetDirectory(0)
+    _write_oneres(image_data, pixel_xres, pixel_yres)
+    out_tiff.SetDirectory(1)
+    _write_oneres(image_data[::2,::2], pixel_xres*2, pixel_yres*2)
+    out_tiff.SetDirectory(2)
+    _write_oneres(image_data[::4,::4], pixel_xres*4, pixel_yres*4)
+    out_tiff.SetDirectory(3)
+    _write_oneres(image_data[::8,::8], pixel_xres*8, pixel_yres*8)
+    out_tiff.SetDirectory(4)
+    _write_oneres(image_data[::16,::16], pixel_xres*16, pixel_yres*16)
+    out_tiff.close()
+
     return
 
 def scale_data(image_data, data_kind, *args, **kwargs):
