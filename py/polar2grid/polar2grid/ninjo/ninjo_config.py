@@ -137,8 +137,10 @@ def get_grid_info(kind, band, grid_number, gpd=None,
     if "lat_2" in proj4_dict: grid_info["lat_2"] = proj4_dict["lat_2"]
     if "lat_ts" in proj4_dict: grid_info["lat_ts"] = proj4_dict["lat_ts"]
     if "lon_0" in proj4_dict: grid_info["lon_0"] = proj4_dict["lon_0"]
-    grid_info["out_rows"] = grid_info["GRIDWIDTH"]
-    grid_info["out_cols"] = grid_info["GRIDHEIGHT"]
+    if "a" in proj4_dict: grid_info["a"] = proj4_dict["a"]
+    if "b" in proj4_dict: grid_info["b"] = proj4_dict["b"]
+    grid_info["out_rows"] = gpd_dict["GRIDWIDTH"]
+    grid_info["out_cols"] = gpd_dict["GRIDHEIGHT"]
     return grid_info
 
 

@@ -678,7 +678,6 @@ def process_kind(filepaths,
                     kwargs["ref_lat2"] = grid_job["lat_2"]
                 if "lon_0" in grid_job:
                     kwargs["central_meridian"] = grid_job["lon_0"]
-                print kwargs
                 ninjo_backend(
                         grid_job["fbf_output"],
                         #grid_job["tiff_filename"],

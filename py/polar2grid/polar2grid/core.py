@@ -273,6 +273,5 @@ def gpd_to_proj4(gpd_fn):
     gpd_file = open(gpd_fn, "r")
     gpd_dict = _parse_gpd(gpd_file)
     proj4_dict = _gpd2proj4(gpd_dict)
-    print gpd_dict,proj4_dict
     return proj4_dict,gpd_dict
 
