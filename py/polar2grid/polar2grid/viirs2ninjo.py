@@ -31,7 +31,7 @@ import numpy
 from glob import glob
 
 log = logging.getLogger(__name__)
-LOG_FN = os.environ.get("VIIRS2AWIPS_LOG", "./viirs2awips.log")
+LOG_FN = os.environ.get("VIIRS2NINJO_LOG", "./viirs2ninjo.log")
 
 # FIXME : These are WRONG. Most are from MODIS. Fog was found in the word
 # doc and dnb is just the I01 band
@@ -710,20 +710,20 @@ def _process_kind(*args, **kwargs):
         stat = process_kind(*args, **kwargs)
         sys.exit(stat)
     except MemoryError:
-        log.error("viirs2awips ran out of memory, check log file for more info")
+        log.error("viirs2ninjo ran out of memory, check log file for more info")
         log.debug("Memory error:", exc_info=1)
     except OSError:
-        log.error("viirs2awips had a OS error, check log file for more info")
+        log.error("viirs2ninjo had a OS error, check log file for more info")
         log.debug("OS error:", exc_info=1)
     except StandardError:
-        log.error("viirs2awips had an unexpected error, check log file for more info")
+        log.error("viirs2ninjo had an unexpected error, check log file for more info")
         log.debug("Unexpected/Uncaught error:", exc_info=1)
     except KeyboardInterrupt:
-        log.info("viirs2awips was cancelled by a keyboard interrupt")
+        log.info("viirs2ninjo was cancelled by a keyboard interrupt")
 
     sys.exit(-1)
 
-def run_viirs2awips(filepaths,
+def run_viirs2ninjo(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None,
         forced_gpd=None,
@@ -933,7 +933,7 @@ def main():
                 forced_gpd=options.forced_gpd, forced_grid=forced_grid,
                 create_pseudo=options.create_pseudo, num_procs=num_procs)
     else:
-        stat = run_viirs2awips(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
+        stat = run_viirs2ninjo(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
                     forced_gpd=options.forced_gpd, forced_grid=forced_grid,
                     create_pseudo=options.create_pseudo,
                     multiprocess=not options.single_process, num_procs=num_procs)

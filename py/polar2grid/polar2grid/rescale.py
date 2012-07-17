@@ -98,7 +98,6 @@ def unlinear_scale(img, m, b, *args, **kwargs):
 
     if "fill_in" in kwargs:
         if "fill_out" in kwargs:
-            print "Replacing fills with fill_out"
             img[fill_mask] = kwargs["fill_out"]
         else:
             img[fill_mask] = kwargs["fill_in"]
