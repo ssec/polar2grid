@@ -663,21 +663,22 @@ def process_kind(filepaths,
                         data_type="PORN", # VIIRS is polar orbitting, original?, and raster binary buffer
                         pixel_xres=grid_job["xres"],
                         pixel_yres=grid_job["yres"],
-                        origin_lat=grid_job["proj4"]["lat_0"],
-                        origin_lon=grid_job["proj4"]["lon_0"],
+                        origin_lat=grid_job["map_origin_lat"],
+                        origin_lon=grid_job["map_origin_lon"],
                         projection=grid_job["nproj"],
-                        radius_a=grid_job["proj4"]["a"],
+                        radius_a=grid_job["a"],
                         # FIXME: Should be 'b', but ms2gt 0.5 has a bug that it doesn't use the radius b parameter
-                        radius_b=grid_job["proj4"]["a"],
+                        radius_b=grid_job["a"],
                         is_calibrated=1,
                         fill=-999.0
                         )
-                if "lat_1" in grid_job:
-                    kwargs["ref_lat1"] = grid_job["proj4"]["lat_1"]
+                if "lat_ts" in grid_job:
+                    kwargs["ref_lat1"] = grid_job["lat_ts"]
                 if "lat_2" in grid_job:
-                    kwargs["ref_lat2"] = grid_job["proj4"]["lat_2"]
+                    kwargs["ref_lat2"] = grid_job["lat_2"]
                 if "lon_0" in grid_job:
-                    kwargs["central_meridian"] = grid_job["proj4"]["lon_0"]
+                    kwargs["central_meridian"] = grid_job["lon_0"]
+                print kwargs
                 ninjo_backend(
                         grid_job["fbf_output"],
                         #grid_job["tiff_filename"],

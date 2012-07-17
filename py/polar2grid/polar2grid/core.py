@@ -158,6 +158,13 @@ def clean_string(s):
     s = s.upper()
     return s
 
+def remove_comments(s, comment=";"):
+    s = s.strip()
+    c_idx = s.find(comment)
+    if c_idx != -1:
+        return s[:c_idx].strip()
+    return s
+
 gpd_conv_funcs = {
         # gpd file stuff:
         "GRIDWIDTH" : int,
@@ -186,7 +193,7 @@ def _parse_gpd(gpd_file):
         if len(line_parts) != 2:
             log.error("Incorrect gpd syntax: more than one ':' ('%s')" % line)
         key = clean_string(line_parts[0])
-        val = line_parts[1].strip()
+        val = remove_comments(line_parts[1])
 
         if key not in gpd_conv_funcs:
             log.error("Can't parse gpd file, don't know how to handle key '%s'" % key)
@@ -225,13 +232,13 @@ gpd2proj4 = {
         "GRIDCELLSPERMAPUNIT" : None,
         # mpp file stuff:
         "MAPPROJECTION" : "proj",
-        "MAPREFERENCELATITUDE" : "lat_1",
+        "MAPREFERENCELATITUDE" : ["lat_0","lat_1"],
         "MAPSECONDREFERENCELATITUDE" : "lat_ts",
-        "MAPREFERENCELONGITUDE" : "lon_1",
+        "MAPREFERENCELONGITUDE" : "lon_0",
         "MAPEQUATORIALRADIUS" : "a",
         "MAPPOLARRADIUS" : "b",
-        "MAPORIGINLATITUDE" : "lat_0",
-        "MAPORIGINLONGITUDE" : "lon_0",
+        "MAPORIGINLATITUDE" : None,
+        "MAPORIGINLONGITUDE" : None,
         "MAPECCENTRICITY" : "e",
         "MAPECCENTRICITYSQUARED" : "es",
         "MAPFALSEEASTING" : "x_0",
@@ -249,6 +256,11 @@ def _gpd2proj4(gpd_dict):
             proj4_dict[gpd2proj4[k]] = gpd_proj_to_proj4[v]
             if proj4_dict[gpd2proj4[k]] is None:
                 log.warning("Could not find equivalent proj4 projection name for %s" % v)
+        elif k == "MAPREFERENCELATITUDE":
+            pkey = gpd2proj4[k]
+            pk1,pk2 = pkey
+            proj4_dict[pk1] = v
+            proj4_dict[pk2] = v
         else:
             pkey = gpd2proj4[k]
             if pkey is not None:
@@ -261,5 +273,6 @@ def gpd_to_proj4(gpd_fn):
     gpd_file = open(gpd_fn, "r")
     gpd_dict = _parse_gpd(gpd_file)
     proj4_dict = _gpd2proj4(gpd_dict)
+    print gpd_dict,proj4_dict
     return proj4_dict,gpd_dict
 

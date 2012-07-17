@@ -235,6 +235,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
         KeyError :
             if required keyword is not provided
     """
+    print "Inside tiff creator",kwargs
     out_tiff = TIFF.open(output_fn, "w")
 
     if image_data.dtype != numpy.uint8:
@@ -367,6 +368,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
             out_tiff.SetField("EarthRadiusSmall", float(radius_b))
         out_tiff.SetField("GeodeticDate", "\x00") # ---?
         if ref_lat1 is not None:
+            print "Setting ref_lat1"
             out_tiff.SetField("ReferenceLatitude1", ref_lat1)
         if ref_lat2 is not None:
             out_tiff.SetField("ReferenceLatitude2", ref_lat2)

@@ -128,9 +128,17 @@ def get_grid_info(kind, band, grid_number, gpd=None,
     grid_info["nproj"] = grid_meta[0]
     grid_info["xres"] = grid_meta[1]
     grid_info["yres"] = grid_meta[2]
-    grid_info["proj4"],grid_info["gpd"] = gpd_to_proj4(gpd_template)
-    grid_info["out_rows"] = grid_info["gpd"]["GRIDWIDTH"]
-    grid_info["out_cols"] = grid_info["gpd"]["GRIDHEIGHT"]
+    proj4_dict,gpd_dict = gpd_to_proj4(gpd_template)
+    #grid_info["proj4"],grid_info["gpd"] = gpd_to_proj4(gpd_template)
+    grid_info["map_origin_lat"] = gpd_dict["MAPORIGINLATITUDE"]
+    grid_info["map_origin_lon"] = gpd_dict["MAPORIGINLONGITUDE"]
+    if "lat_0" in proj4_dict: grid_info["lat_0"] = proj4_dict["lat_0"]
+    if "lat_1" in proj4_dict: grid_info["lat_1"] = proj4_dict["lat_1"]
+    if "lat_2" in proj4_dict: grid_info["lat_2"] = proj4_dict["lat_2"]
+    if "lat_ts" in proj4_dict: grid_info["lat_ts"] = proj4_dict["lat_ts"]
+    if "lon_0" in proj4_dict: grid_info["lon_0"] = proj4_dict["lon_0"]
+    grid_info["out_rows"] = grid_info["GRIDWIDTH"]
+    grid_info["out_cols"] = grid_info["GRIDHEIGHT"]
     return grid_info
 
 
