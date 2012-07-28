@@ -339,31 +339,45 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     # Get scaling function (also reads scaling factors from hdf)
     factvar = h5path(hp, factors_var_path, finfo["img_path"], required=False)   # FUTURE: make this more elegant please
     if factvar is None:
-        LOG.debug("No scaling factors found for %s at %s" % (data_var_path, factors_var_path))
-        scaler = lambda x: x
-        scaling_mask = np.zeros(image_data.shape)
+        LOG.debug("No scaling factors found for %s at %s (this is OK)" % (data_var_path, factors_var_path))
+        def scaler(image_data):
+            return image_data,np.zeros(image_data.shape).astype(np.bool)
         needs_scaling = False
     else:
-        (m,b) = factvar[:]
-        LOG.debug("scaling factors for %s are (%f,%f)" % (data_var_path, m, b))
+        factor_list = list(factvar[:])
+        LOG.debug("scaling factors for %s are %s" % (data_var_path, str(factor_list)))
+        if len(factor_list) % 2 != 0:
+            LOG.error("There are an odd number of scaling factors for %s" % (data_var_path,))
+            raise ValueError("There are an odd number of scaling factors for %s" % (data_var_path,))
+
         # Figure out how data should be scaled
-        if m <= -999 or b <= -999:
-            scaler = lambda x: x
-            scaling_mask = np.ones(image_data.shape)
-        else:
-            scaler = lambda x: x*m + b
+        def scaler(image_data, scaling_factors=factor_list):
+            num_grans = len(scaling_factors)/2
+            gran_size = image_data.shape[0]/num_grans
             scaling_mask = np.zeros(image_data.shape)
+            for i in range(num_grans):
+                start_idx = i * gran_size
+                end_idx = start_idx + gran_size
+                m = scaling_factors[i*2]
+                b = scaling_factors[i*2 + 1]
+                if m <= -999 or b <= -999:
+                    scaling_mask[start_idx : end_idx] = 1
+                else:
+                    image_data[start_idx : end_idx] = m * image_data[start_idx : end_idx] + b
+
+            scaling_mask = scaling_mask.astype(np.bool)
+            return image_data,scaling_mask
+
         needs_scaling = True
-    scaling_mask = scaling_mask.astype(np.bool)
 
     # Calculate mask
     mask = MISSING_GUIDE[data_kind][not needs_scaling](image_data) if data_kind in MISSING_GUIDE else None
-    mask = mask | scaling_mask
     if extra_mask is not None:
         mask = mask | extra_mask
 
     # Scale image data
-    image_data = scaler(image_data)
+    image_data,scaling_mask = scaler(image_data)
+    mask = mask | scaling_mask
 
     # Create scan_quality array
     scan_quality = np.nonzero(np.repeat(qf3_data > 0, finfo["rows_per_scan"]))

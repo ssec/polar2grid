@@ -885,8 +885,8 @@ def main():
         sys.exit(0)
 
     if options.get_files:
-        if len(args) < 2:
-            log.error("Wrong number of arguments, need 2 or more hdf files")
+        if len(args) < 1:
+            log.error("Wrong number of arguments, need 1 or more hdf files")
             parser.print_help()
             return -1
         hdf_files = args[:]
