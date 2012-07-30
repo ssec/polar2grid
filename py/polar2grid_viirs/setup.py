@@ -16,8 +16,8 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     namespace_packages=["polar2grid"],
     include_package_data=True,
-    zip_safe=False,
-    install_requires=['numpy', 'matplotlib', 'h5py'],
+    zip_safe=True,
+    install_requires=['numpy', 'matplotlib', 'h5py', 'polar2grid.core'],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points = {'console_scripts' : [ ]}
 )

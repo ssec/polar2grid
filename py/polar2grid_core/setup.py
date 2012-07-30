@@ -16,7 +16,7 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     namespace_packages=["polar2grid"],
     include_package_data=True,
-    zip_safe=False,
+    zip_safe=True,
     install_requires=['numpy'],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points = {'console_scripts' : [ ]}
