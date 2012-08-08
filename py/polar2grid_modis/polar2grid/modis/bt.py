@@ -1,15 +1,17 @@
-#!/usr/bin/env python# encoding: utf-8
+#!/usr/bin/env python
+# encoding: utf-8
 """
 polar2grid.modis.bt
 $Id$
 
 Purpose: convert MODIS to Brightness Temp
 
-
 Created by rayg Aug 2012.
 Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 """
 
+
+# copypasta! 
 BT_FORTRAN = """
       REAL FUNCTION MODIS_BRIGHT_SHIFT(RAD, BAND, UNITS)
 
@@ -273,7 +275,6 @@ def _coeffs(platform, offset):
                         tci = MODIS_COEFF_TABLE['tci_' + p][offset])
 
 
-# fundamental constants
 """
 c  Fundamental constants required for the monochromatic
 c  Planck function routines PLANCK_M, PLANC_M, BRIGHT_M, BRITE_M
@@ -294,7 +295,6 @@ h = 6.62606876e-34
 
 # ... Speed of light in vacuum (meters per second)
 c = 2.99792458e+8
-
 
 # ... Boltzmann constant (Joules per Kelvin)      
 k = 1.3806503e-23
@@ -339,7 +339,9 @@ def bright_shift(platform, rad, band, units):
         or "wavenumber" implying milliWatts per square meter per steradian per wavenumber
     """    
     offset = (band - 20) if (band <= 25) else (band - 21)
+    assert(offset >=0 and offset <16)
     C = _coeffs(platform, offset)
+    LOG.debug('Coeffs loaded at offset %d: %s' % (offset, C))
 
     if units == 'micron': # Watts per square meter per steradian per micron
         return (micron_bt(1.0e+4 / C.cwn, rad) - C.tci) / C.tcs
@@ -351,10 +353,11 @@ def bright_shift(platform, rad, band, units):
 
 def _test1():
     from pprint import pprint
-    shape = (147, 31)
+    shape = (147, 31) # arbitrary image-like
     rad = np.random.ranf(shape) - 0.1
-    bt = bright_shift('Terra', rad, 4, 'wavenumber')
+    bt = bright_shift('Terra', rad, 24, 'wavenumber')
     pprint(bt)
+
 
 
 def main():
