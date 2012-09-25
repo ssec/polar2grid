@@ -5,9 +5,9 @@ classifiers = ""
 version = '1.0.0'
 
 setup(
-    name='polar2grid',
+    name='polar2grid.core',
     version=version,
-    description="Library and scripts to remap imager data to a grid",
+    description="Library and scripts to aggregate VIIRS data and get associated metadata",
     classifiers=filter(None, classifiers.split("\n")),
     keywords='',
     author='David Hoese, SSEC',
@@ -16,12 +16,9 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     namespace_packages=["polar2grid"],
     include_package_data=True,
-    package_data={'polar2grid': ["grids/*.gpd","grids/*.ncml","*.conf"]},
-    zip_safe=False,
-    install_requires=['numpy', 'netCDF4', 'matplotlib', 'h5py', 'polar2grid.core', 'polar2grid.viirs'],
+    zip_safe=True,
+    install_requires=['numpy'],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
-    entry_points = {'console_scripts' : [
-            'viirs2awips = polar2grid.viirs2awips:main',
-            ]}
+    entry_points = {'console_scripts' : [ ]}
 )
 
