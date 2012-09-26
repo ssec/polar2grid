@@ -17,7 +17,7 @@ __docformat__ = "restructuredtext en"
 from polar2grid.core import Workspace,utc_now,K_RADIANCE,K_REFLECTANCE,K_BTEMP,K_FOG
 from polar2grid import libtiff
 from polar2grid.libtiff import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
-from polar2grid.rescale import unlinear_scale,ubyte_filter
+from polar2grid.rescale import unlinear_scale,ubyte_filter,linear_scale
 import numpy
 
 import os
@@ -85,7 +85,7 @@ ninjo_tags.append(TIFFFieldInfo(40044, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CU
 ninjo_extension = add_tags(ninjo_tags)
 
 dkind2physical = {
-        #K_RADIANCE : ("T", "CELSIUS"),
+        K_RADIANCE : ("", ""),
         K_REFLECTANCE : ("ALBEDO", "%"),
         K_BTEMP : ("T", "CELSIUS")
         #K_FOG : ("T", "CELSIUS")
@@ -450,7 +450,7 @@ def ninjo_backend(input_fn, output_fn, **kwargs):
                 log.error("Unexpected error while rescaling data")
                 raise
     else:
-        rescaled_data = post_rescale_dnb(image_data)
+        rescaled_data = linear_scale(image_data, 255, 0)
 
     rescaled_data = ubyte_filter(rescaled_data)
 
