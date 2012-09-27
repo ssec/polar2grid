@@ -17,7 +17,7 @@ __docformat__ = "restructuredtext en"
 from polar2grid.core import Workspace,utc_now,K_RADIANCE,K_REFLECTANCE,K_BTEMP,K_FOG
 from polar2grid import libtiff
 from polar2grid.libtiff import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
-from polar2grid.rescale import unlinear_scale,ubyte_filter,linear_scale
+from polar2grid.rescale import unlinear_scale,ubyte_filter
 import numpy
 
 import os
@@ -92,7 +92,7 @@ dkind2physical = {
         }
 
 dkind2grad = {
-        #K_RADIANCE : (-0.5, 40.0),
+        K_RADIANCE : (1/255.0, 0.0),
         K_REFLECTANCE : (0.490196,0.0),
         K_BTEMP : (-0.5, 0.0)
         #K_FOG : (-0.5, 0.0)
@@ -411,7 +411,7 @@ def scale_data(image_data, data_kind, *args, **kwargs):
         # Extra 100 to turn reflectance 0-1 into albedo
         return unlinear_scale(image_data, 0.490196/100.0, 0, *args, **kwargs)
     elif data_kind == K_RADIANCE:
-        raise NotImplementedError("NinJo backend does not know how to scale radiance measurements yet")
+        return unlinear_scale(image_data, 1/255.0, 0, *args, **kwargs)
     elif data_kind == K_BTEMP:
         # Extra 273.15 to convert to C from K
         return unlinear_scale(image_data, -0.5, 40+273.15, *args, **kwargs)
@@ -441,16 +441,13 @@ def ninjo_backend(input_fn, output_fn, **kwargs):
         log.error("Could not open input file %s" % input_fn)
         raise
 
-    if kind != "DNB":
-            try:
-                rescaled_data = scale_data(image_data,
-                        **kwargs)
-                log.debug("Data min: %f, Data max: %f" % (rescaled_data.min(), rescaled_data.max()))
-            except StandardError:
-                log.error("Unexpected error while rescaling data")
-                raise
-    else:
-        rescaled_data = linear_scale(image_data, 255, 0)
+    try:
+        rescaled_data = scale_data(image_data,
+                **kwargs)
+        log.debug("Data min: %f, Data max: %f" % (rescaled_data.min(), rescaled_data.max()))
+    except StandardError:
+        log.error("Unexpected error while rescaling data")
+        raise
 
     rescaled_data = ubyte_filter(rescaled_data)
 
