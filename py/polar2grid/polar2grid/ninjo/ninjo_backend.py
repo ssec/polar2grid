@@ -85,7 +85,7 @@ ninjo_tags.append(TIFFFieldInfo(40044, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CU
 ninjo_extension = add_tags(ninjo_tags)
 
 dkind2physical = {
-        K_RADIANCE : ("", ""),
+        K_RADIANCE : ("\0", "\0"),
         K_REFLECTANCE : ("ALBEDO", "%"),
         K_BTEMP : ("T", "CELSIUS")
         #K_FOG : ("T", "CELSIUS")
@@ -235,6 +235,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
         KeyError :
             if required keyword is not provided
     """
+    log.info("Creating output file '%s'" % (output_fn,))
     out_tiff = TIFF.open(output_fn, "w")
 
     if image_data.dtype != numpy.uint8:
@@ -320,6 +321,8 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     image_epoch = calendar.timegm(image_dt.timetuple())
 
     def _write_oneres(image_data, pixel_xres, pixel_yres, subfile=False):
+        log.info("Writing tag data for a resolution of the output file '%s'" % (output_fn,))
+
         ### Write Tag Data ###
         # Built ins
         out_tiff.SetField("ImageWidth", image_data.shape[1])
@@ -400,6 +403,8 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     _write_oneres(image_data[::16,::16], pixel_xres*16, pixel_yres*16)
     out_tiff.close()
 
+    log.info("Successfully created a NinJo tiff file: '%s'" % (output_fn,))
+
     return
 
 def scale_data(image_data, data_kind, *args, **kwargs):
@@ -449,6 +454,7 @@ def ninjo_backend(input_fn, output_fn, **kwargs):
         log.error("Unexpected error while rescaling data")
         raise
 
+    log.info("Clipping the scaled data to a 0 - 255 range")
     rescaled_data = ubyte_filter(rescaled_data)
 
     return create_ninjo_tiff(rescaled_data, output_fn, **kwargs)
