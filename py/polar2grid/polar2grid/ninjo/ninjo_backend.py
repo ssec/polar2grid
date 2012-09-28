@@ -92,7 +92,7 @@ dkind2physical = {
         }
 
 dkind2grad = {
-        K_RADIANCE : (1/255.0, 0.0),
+        K_RADIANCE : (1.0, 0.0),
         K_REFLECTANCE : (0.490196,0.0),
         K_BTEMP : (-0.5, 0.0)
         #K_FOG : (-0.5, 0.0)
