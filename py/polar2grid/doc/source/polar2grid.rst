@@ -4,10 +4,11 @@ polar2grid Package
 :mod:`polar2grid` Package
 -------------------------
 
-.. automodule:: polar2grid.__init__
-    :members:
-    :undoc-members:
-    :show-inheritance:
+..
+    .. automodule:: polar2grid.__init__
+        :members:
+        :undoc-members:
+        :show-inheritance:
 
 :mod:`core` Module
 ------------------
