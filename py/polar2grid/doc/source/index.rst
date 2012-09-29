@@ -26,6 +26,7 @@ Contents
     scripts
     utilscripts
     roadmap
+    dev_guide
     advanced
 
 Grids
