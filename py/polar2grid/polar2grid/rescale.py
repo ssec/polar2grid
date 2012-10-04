@@ -28,6 +28,15 @@ import logging
 import numpy
 
 log = logging.getLogger(__name__)
+
+PERSISTENT_CONFIGS = {}
+KNOWN_DATA_KINDS = {
+        'reflectance' : K_REFLECTANCE,
+        'radiance' : K_RADIANCE,
+        'btemp' : K_BTEMP,
+        'fog' : K_FOG
+        }
+# See KNOWN_RESCALE_KINDS below
 RESCALE_FILL = -999.0
 PRESCALE_FILL = -999.0
 
@@ -49,6 +58,51 @@ def _make_lin_scale(m, b):
         numpy.add(img, b, img)
         return img
     return linear_scale
+
+def ubyte_filter(img, *args, **kwargs):
+    """Convert image data to a numpy array with dtype `numpy.uint8` and set
+    values below zero to zero and values above 255 to 255.
+    """
+    large_idxs = numpy.nonzero(img > 255)
+    small_idxs = numpy.nonzero(img < 0)
+    numpy.clip(img, 0, 255, out=img)
+    img = img.astype(numpy.uint8)
+    img[large_idxs] = 255
+    img[small_idxs] = 0
+    return img
+
+def linear_scale(img, m, b, *args, **kwargs):
+    log.debug("Running 'linear_scale' with (m: %f, b: %f)..." % (m,b))
+    if "fill_in" in kwargs:
+        fill_mask = numpy.nonzero(img == kwargs["fill_in"])
+
+    numpy.multiply(img, m, img)
+    numpy.add(img, b, img)
+
+    if "fill_in" in kwargs:
+        if "fill_out" in kwargs:
+            img[fill_mask] = kwargs["fill_out"]
+        else:
+            img[fill_mask] = kwargs["fill_in"]
+
+    return img
+
+def unlinear_scale(img, m, b, *args, **kwargs):
+    log.debug("Running 'unlinear_scale' with (m: %f, b: %f)..." % (m,b))
+    if "fill_in" in kwargs:
+        fill_mask = numpy.nonzero(img == kwargs["fill_in"])
+
+    # Faster than assigning
+    numpy.subtract(img, b, img)
+    numpy.divide(img, m, img)
+
+    if "fill_in" in kwargs:
+        if "fill_out" in kwargs:
+            img[fill_mask] = kwargs["fill_out"]
+        else:
+            img[fill_mask] = kwargs["fill_in"]
+
+    return img
 
 def passive_scale(img, *args, **kwargs):
     """When there is no rescaling necessary or it hasn't
@@ -199,7 +253,7 @@ def prescale(img, kind="DNB", band="00", data_kind=K_REFLECTANCE, **kwargs):
     img = scale_func(img, kind=kind, band=band, data_kind=data_kind, **kwargs)
     return img
 
-def rescale(img, kind="I", band="01", data_kind=K_REFLECTANCE, **kwargs):
+def rescale_old(img, kind="I", band="01", data_kind=K_REFLECTANCE, **kwargs):
     """Calls the appropriate scaling function based on the provided keyword
     arguments and returns the new array.
 
@@ -249,31 +303,153 @@ def rescale_and_write(img_file, output_file, *args, **kwargs):
     img_data.tofile(output_file)
     return 0
 
+# Needs to be declared after all of the scaling functions
+KNOWN_RESCALE_KINDS = {
+        'sqrt' : sqrt_scale,
+        'linear' : linear_scale, # TODO: Get from merge with ninjo
+        'raw' : passive_scale,
+        'btemp' : bt_scale
+        }
+
+def unload_config(name):
+    """Shouldn't be needed, but just in case
+    """
+    if name not in PERSISTENT_CONFIGS:
+        log.warning("'%s' rescaling config was never loaded" % name)
+        return
+    del PERSISTENT_CONFIGS[name]
+
+def load_config_str(name, config_str):
+    """Just in case I want to have a config file stored as a string in
+    the future.
+
+    >>> config_str = "#skip this comment\\nnpp,viirs,i,01,reflectance,sqrt,100.0,25.5"
+    >>> load_config_str("test_config", config_str)
+    True
+    >>> config_bad1 = "#skip\\n\\n\\nsat,,empty_inst,field,radiance,linear,"
+    >>> load_config_str("test_config", config_bad1) # should be fine because same name
+    True
+    >>> load_config_str("test_config_bad1", config_bad1)
+    Traceback (most recent call last):
+        ...
+    AssertionError: Field 1 can not be empty
+    >>> assert "test_config_bad1" not in PERSISTENT_CONFIGS
+    >>> assert "test_config" in PERSISTENT_CONFIGS
+
+    >>> config_bad2 = "#skip\\n\\n\\nnpp,viirs,i,01,fake,linear,"
+    >>> load_config_str("test_config_bad2", config_bad2)
+    Traceback (most recent call last):
+        ...
+    ValueError: Rescaling doesn't know the data kind 'fake'
+    >>> config_bad3 = "#skip\\n\\n\\nnpp,viirs,i,01,radiance,fake,"
+    >>> load_config_str("test_config_bad3", config_bad3)
+    Traceback (most recent call last):
+        ...
+    ValueError: Rescaling doesn't know the rescaling kind 'fake'
+    >>> assert "test_config_bad2" not in PERSISTENT_CONFIGS
+    >>> assert "test_config_bad3" not in PERSISTENT_CONFIGS
+    >>> assert "test_config" in PERSISTENT_CONFIGS
+    """
+    # Don't load a config twice
+    if name in PERSISTENT_CONFIGS:
+        return True
+
+    # Get rid of trailing new lines and commas
+    config_lines = [ line.strip(",\n") for line in config_str.split("\n") ]
+    # Get rid of comment lines and blank lines
+    config_lines = [ line for line in config_lines if line and not line.startswith("#") and not line.startswith("\n") ]
+    # Check if we have any useful lines
+    if not config_lines:
+        log.warning("No non-comment lines were found in '%s'" % name)
+        return False
+
+    PERSISTENT_CONFIGS[name] = {}
+
+    try:
+        # Parse config lines
+        for line in config_lines:
+            parts = line.split(",")
+            if len(parts) < 6:
+                log.error("Rescale config line needs at least 6 columns '%s' : '%s'" % (name,line))
+                raise ValueError("Rescale config line needs at least 6 columns '%s'" % (name,line))
+
+            # Verify that each identifying portion is valid
+            for i in range(6):
+                assert parts[i],"Field %d can not be empty" % i
+                # polar2grid demands lowercase fields
+                parts[i] = parts[i].lower()
+            # Make sure we know the data_kind
+            if parts[4] not in KNOWN_DATA_KINDS:
+                log.error("Rescaling doesn't know the data kind '%s'" % parts[4])
+                raise ValueError("Rescaling doesn't know the data kind '%s'" % parts[4])
+            # Make sure we know the scale kind
+            if parts[5] not in KNOWN_RESCALE_KINDS:
+                log.error("Rescaling doesn't know the rescaling kind '%s'" % parts[5])
+                raise ValueError("Rescaling doesn't know the rescaling kind '%s'" % parts[5])
+            # TODO: Check argument lengths and maybe values per rescale kind 
+
+            # Enter the information into the configs dict
+            line_id = "_".join(x.lower() for x in parts[:5])
+            config_entry = (KNOWN_RESCALE_KINDS[parts[5]], tuple(parts[6:]))
+            PERSISTENT_CONFIGS[name][line_id] = config_entry
+    except StandardError:
+        # Clear out the bad config
+        del PERSISTENT_CONFIGS[name]
+        raise
+
+    return True
+
+def load_config(config_filename):
+    """Load a rescaling configuration file for later use by the `rescale`
+    function.
+    """
+    config_filename = os.path.realpath(config_filename)
+    if config_filename in PERSISTENT_CONFIGS:
+        return True
+
+    config_file = open(config_filename, 'r')
+    config_str = config_file.read()
+    return load_config_str(config_filename, config_str)
+
+def rescale(sat, instrument, kind, band, data_kind, data, config=None):
+    """Function that uses previously loaded configuration files to choose
+    how to rescale the provided data.  If the `config` keyword is not provided
+    then a best guess will be made on how to rescale the data.  Usually this
+    best guess is a 0-255 scaling based on the `data_kind`.
+    """
+    band_id = "_".join([sat, instrument, kind, band, data_kind])
+    if config is not None and config not in PERSISTENT_CONFIGS:
+        log.error("'rescale' was passed a configuration file that wasn't loaded yet")
+        raise ValueError("'rescale' was passed a configuration file that wasn't loaded yet")
+    if config is not None and band_id not in PERSISTENT_CONFIGS[config]:
+        # TODO run default scaling functions
+        pass
+    else:
+        # We know how to rescale using the onfiguration file
+        pass
+
 def main():
-    import optparse
-    usage = """%prog [options] <input.fbf_format> <output.fbf_format> <kind> <band> --datakind=K_REFLECTANCE"""
-    parser = optparse.OptionParser(usage=usage)
-    parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
+    from argparse import ArgumentParser
+    description="""
+Run polar2grid rescaling via the command line.  This is not the preferred
+way to do production level rescaling, but is useful for testing.
+"""
+    parser = ArgumentParser(description=description)
+    parser.add_argument('--doctest', dest="doctest", action="store_true",
+            help="run document tests")
+    parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
                     help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
-    parser.add_option('--datakind', dest='data_kind', default=None,
-            help="specify the data kind of the provided input file as a constant name (K_REFLECTANCE, K_BTEMP, K_RADIANCE, K_FOG)")
-    options,args = parser.parse_args()
+    args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level = levels[min(3, options.verbosity)])
+    logging.basicConfig(level = levels[min(3, args.verbosity)])
 
-    if options.data_kind is None or not options.data_kind.startswith("K_") or options.data_kind not in globals():
-        log.error("%s is not a known constant for a data type, try K_REFLECTANCE, K_BTEMP, K_RADIANCE, K_FOG" % options.data_kind)
-        return -1
-    else:
-        data_kind = globals()[options.data_kind]
+    if args.doctest:
+        import doctest
+        return doctest.testmod()
 
-    if len(args) != 4:
-        log.error("Rescaling takes only 4 arguments")
-        parser.print_help()
-        return -1
-
-    return rescale_and_write(args[0], args[1], kind=args[2], band=args[3], data_kind=data_kind)
+    print "Command line interface not implemented yet"
+    parser.print_help()
 
 if __name__ == "__main__":
     sys.exit(main())
