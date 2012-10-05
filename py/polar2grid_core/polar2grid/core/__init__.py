@@ -20,28 +20,6 @@ import datetime
 
 log = logging.getLogger(__name__)
 
-# Constants
-# Data kinds
-K_LATITUDE = 'LatitudeVar'
-K_LONGITUDE = 'LongitudeVar'
-K_RADIANCE = 'RadianceVar'
-K_REFLECTANCE = 'ReflectanceVar'
-K_BTEMP = "BrightnessTemperatureVar"
-K_SOLARZENITH = "SolarZenithVar"
-K_FOG = "FogPseudoBand"
-
-# Other variables
-K_ALTITUDE = 'AltitudeVar'
-K_RADIANCE_FACTORS = "RadianceFactorsVar"
-K_REFLECTANCE_FACTORS = "ReflectanceFactorsVar"
-K_BTEMP_FACTORS = "BrightnessTemperatureFactorsVar"
-K_STARTTIME = "StartTimeVar"
-K_MODESCAN = "ModeScanVar"
-K_MODEGRAN = "ModeGranVar"
-K_QF3 = "QF3Var"
-K_NAVIGATION = 'NavigationFilenameGlob'  # glob to search for to find navigation file that corresponds
-K_GEO_REF = 'CdfcbGeolocationFileGlob' # glob which would match the N_GEO_Ref attribute
-
 class UTC(datetime.tzinfo):
     """Time zone class for UTC
     """

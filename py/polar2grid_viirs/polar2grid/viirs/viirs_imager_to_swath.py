@@ -15,7 +15,8 @@ Write out Swath binary files used by ms2gt tools.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.viirs.viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info
+from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info
+from polar2grid.core.constants import SAT_NPP,INST_VIIRS
 import numpy
 
 import os
@@ -146,6 +147,8 @@ def get_meta_data(ifilepaths, filter=None):
         raise ValueError("There aren't any bands left to work on, quitting...")
 
     meta_data["kind"] = kind
+    meta_data["sat"] = SAT_NPP
+    meta_data["instrument"] = INST_VIIRS
     return meta_data,image_data
 
 def get_geo_meta(gfilepaths):
@@ -197,8 +200,8 @@ def get_geo_meta(gfilepaths):
         try:
             ginfo = geo_info(gname)
         except StandardError:
-            log.error("Error analyzing geonav filename %s" % gname)
-            raise ValueError("Error analyzing geonav filename %s" % gname)
+            log.error("Error getting info from geonav filename %s" % gname)
+            raise
 
         # Add meta data to the meta_data dictionary
         if meta_data["rows_per_scan"] is None:
@@ -330,7 +333,7 @@ def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
             read_file_info(finfo)
         except StandardError:
             log.error("Error reading data from %s" % finfo["img_path"])
-            raise ValueError("Error reading data from %s" % finfo["img_path"])
+            raise
 
         # Cut out bad data
         if cut_bad and len(ginfo["scan_quality"][0]) != 0:

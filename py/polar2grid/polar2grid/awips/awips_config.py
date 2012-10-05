@@ -40,6 +40,7 @@ __docformat__ = "restructuredtext en"
 from netCDF4 import Dataset
 from xml.etree import cElementTree
 from polar2grid.nc import ncml_tag
+from polar2grid.core.constants import NOT_APPLICABLE
 
 import os
 import sys
@@ -79,31 +80,32 @@ def read_grid_config(config_filepath):
         # For comments
         if line.startswith("#") or line.startswith("\n"): continue
         parts = line.strip().split(",")
-        if len(parts) < 7:
+        if len(parts) < 8:
             print "ERROR: Need at least 4 columns in templates.conf (%s)" % line
         product_id = parts[0]
         grid_number = parts[1]
-        band = parts[2]
-        channel = parts[3]
-        source = parts[4]
-        satelliteName = parts[5]
-        nc_name = parts[6]
+        bkind = parts[2].lower()
+        band = parts[3].lower() if parts[3] not in ["NA","None"] else NOT_APPLICABLE
+        channel = parts[4]
+        source = parts[5]
+        satelliteName = parts[6]
+        nc_name = parts[7]
 
         if grid_number not in grids_map:
             grids_map[grid_number] = {}
         if band in grids_map[grid_number]:
-            print "ERROR: templates.conf contains two or more entries for grid %s and band %s" % (grid_number,band)
+            print "ERROR: templates.conf contains two or more entries for grid %s and band %s,%s" % (grid_number,bkind,band)
             sys.exit(-1)
 
-        if band not in bands_map:
-            bands_map[band] = {}
-        if grid_number in bands_map[band]:
-            print "ERROR: templates.conf contains two or more entries for grid %s and band %s" % (grid_number,band)
+        if (bkind,band) not in bands_map:
+            bands_map[(bkind,band)] = {}
+        if grid_number in bands_map[(bkind,band)]:
+            print "ERROR: templates.conf contains two or more entries for grid %s and band %s,%s" % (grid_number,bkind,band)
             sys.exit(-1)
 
         val = (product_id,channel,source,satelliteName,nc_name)
-        bands_map[band][grid_number] = val
-        grids_map[grid_number][band] = val
+        bands_map[(bkind,band)][grid_number] = val
+        grids_map[grid_number][(bkind,band)] = val
 
     return grids_map,bands_map
 
@@ -120,15 +122,12 @@ def _get_awips_info(kind, band, grid_number,
         grids_map=None, bands_map=None):
     if grids_map is None: grids_map = GRIDS
     if bands_map is None: bands_map = BANDS
-    if kind == "DNB":
-        bname = kind
+    key = (kind,band)
+    if key not in bands_map or grid_number not in grids_map:
+        log.error("Kind: %s, Band: %s or grid %s not found in templates.conf" % (key[0],key[1],grid_number))
+        raise ValueError("Kind: %s, Band: %s or grid %s not found in templates.conf" % (key[0],key[1],grid_number))
     else:
-        bname = kind + band
-    if bname not in bands_map or grid_number not in grids_map:
-        log.error("Band %s or grid %s not found in templates.conf" % (bname,grid_number))
-        raise ValueError("Band %s or grid %s not found in templates.conf" % (bname,grid_number))
-    else:
-        return grids_map[grid_number][bname]
+        return grids_map[grid_number][key]
 
 def _get_grid_templates(grid_number, gpd=None, nc=None,
         grid_templates=None):
@@ -229,14 +228,11 @@ def verify_config(kind, band, grid_number, gpd=None, nc=None,
     if shapes_map is None: shapes_map = SHAPES
     if grid_templates is None: grid_templates = GRID_TEMPLATES
 
-    if kind == "DNB":
-        bname = kind
-    else:
-        bname = kind + band
+    key = (kind,band)
 
-    if bname in bands_map and \
+    if key in bands_map and \
         grid_number in grids_map and \
-        bname in grids_map[grid_number] and \
+        key in grids_map[grid_number] and \
         grid_number in shapes_map and \
         (grid_number in grid_templates or \
         (gpd is not None and nc is not None)):
