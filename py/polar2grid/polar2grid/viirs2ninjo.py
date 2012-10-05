@@ -35,13 +35,27 @@ LOG_FN = os.environ.get("VIIRS2NINJO_LOG", "./viirs2ninjo.log")
 
 # FIXME : These are WRONG. Most are from MODIS. Fog was found in the word
 # doc and dnb is just the I01 band
+#viirs2chanid = {
+#        "I01" : 4700015,
+#        "I03" : 5000015,
+#        "I04" : 4100015,
+#        "I05" : 4300015,
+#        "DNB00" : 1200015,
+#        "IFOG" : 7600015
+#        }
+# new official VIIRS IDs
 viirs2chanid = {
-        "I01" : 4700015,
-        "I03" : 5000015,
-        "I04" : 4100015,
-        "I05" : 4300015,
-        "DNB00" : 1200015,
-        "IFOG" : 7600015
+        "I01" : 14800015,
+        "I02" : 15100015,
+        "I03" : 15500015,
+        "I04" : 15700015,
+        "I05" : 16100015,
+        "DNB00" : 15200015,
+        "M03" : 14600015,
+        "M04" : 14700015,
+        "M15" : 16000015,
+        "M16" : 16200015,
+        "IFOG" : 7600015   # don't know what this is
         }
 
 def setup_logging(console_level=logging.INFO):
@@ -657,7 +671,8 @@ def process_kind(filepaths,
                         data_kind=grid_job["data_kind"],
                         image_dt=grid_job["start_dt"],
                         #cmap=None,
-                        sat_id=3400014, # FIXME: this is terra modis id
+#                        sat_id=3400014, # FIXME: this is terra modis id
+                        sat_id=8600014, # FIXME: this is the REAL VIIRS ID
                         chan_id=viirs2chanid[kind+band], # FIXME: these are wrong
                         data_source="SSEC", # FIXME: This should probably be taken from a env variable or config file
                         data_type="PORN", # VIIRS is polar orbitting, original?, and raster binary buffer
