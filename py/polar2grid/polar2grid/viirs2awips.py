@@ -442,7 +442,7 @@ def process_kind(filepaths,
     # Do any pre-remapping rescaling
     log.info("Prescaling data before remapping...")
     for band,band_job in bands.items():
-        if kind != "DNB":
+        if kind != BKIND_DNB:
             # It takes too long to read in the data, so just skip it
             band_job["fbf_swath"] = band_job["fbf_img"]
             continue
@@ -454,7 +454,7 @@ def process_kind(filepaths,
                     band_job["data_kind"],
                     band_job["fbf_img"],
                     band_job["fbf_mode"],
-                    require_dn = kind == "DNB"
+                    require_dn = kind == BKIND_DNB
                     )
             band_job["fbf_swath"] = fbf_swath
         except StandardError:

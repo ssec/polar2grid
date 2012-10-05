@@ -301,10 +301,11 @@ def file_info(fn):
             raise ValueError("Band kind not known '%s'" % minfo["kind"])
 
         # Translate band identifier/number into constants
-        if "file_band" in minfo and minfo["file_band"] not in band2const:
-            LOG.error("Band number not known '%s'" % (minfo["file_band"],))
-            raise ValueError("Band number not known '%s'" % (minfo["file_band"],))
-        minfo["band"] = band2const[minfo["file_band"]]
+        if "file_band" in minfo:
+            if minfo["file_band"] not in band2const:
+                LOG.error("Band number not known '%s'" % (minfo["file_band"],))
+                raise ValueError("Band number not known '%s'" % (minfo["file_band"],))
+            minfo["band"] = band2const[minfo["file_band"]]
 
         # merge the guide info
         finfo.update(pat_info)

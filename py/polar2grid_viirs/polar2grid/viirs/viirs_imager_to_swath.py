@@ -128,10 +128,11 @@ def get_meta_data(ifilepaths, filter=None):
         if finfo["band"] not in image_data:
             # Fill in data structure
             image_data[finfo["band"]] = []
+            bname = finfo["kind"] + (finfo["band"] or "")
             meta_data["bands"][finfo["band"]] = {
                     "kind"          : finfo["kind"],
                     "band"          : finfo["band"],
-                    "band_name"     : finfo["kind"] + finfo["band"],
+                    "band_name"     : bname,
                     "data_kind"     : finfo["data_kind"],
                     "src_kind"      : finfo["data_kind"],
                     "rows_per_scan" : finfo["rows_per_scan"],
