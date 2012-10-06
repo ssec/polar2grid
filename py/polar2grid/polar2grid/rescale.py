@@ -20,7 +20,7 @@ and "pretty" with AWIPS.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import K_REFLECTANCE,K_RADIANCE,K_BTEMP,K_FOG
+from polar2grid.core.constants import DKIND_REFLECTANCE,DKIND_RADIANCE,DKIND_BTEMP,DKIND_FOG,BKIND_I,BID_01,BKIND_DNB,NOT_APPLICABLE
 
 import os
 import sys
@@ -63,12 +63,8 @@ def ubyte_filter(img, *args, **kwargs):
     """Convert image data to a numpy array with dtype `numpy.uint8` and set
     values below zero to zero and values above 255 to 255.
     """
-    large_idxs = numpy.nonzero(img > 255)
-    small_idxs = numpy.nonzero(img < 0)
     numpy.clip(img, 0, 255, out=img)
     img = img.astype(numpy.uint8)
-    img[large_idxs] = 255
-    img[small_idxs] = 0
     return img
 
 def linear_scale(img, m, b, *args, **kwargs):
@@ -210,20 +206,20 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mu
     return data
 
 RESCALES = {
-        K_REFLECTANCE : sqrt_scale,
-        K_RADIANCE    : post_rescale_dnb,
-        K_BTEMP       : bt_scale,
-        K_FOG         : fog_scale
+        DKIND_REFLECTANCE : sqrt_scale,
+        DKIND_RADIANCE    : post_rescale_dnb,
+        DKIND_BTEMP       : bt_scale,
+        DKIND_FOG         : fog_scale
         }
 
 PRESCALES = {
-        K_REFLECTANCE : passive_scale,
-        K_RADIANCE    : dnb_scale,
-        K_BTEMP       : passive_scale,
-        K_FOG         : passive_scale
+        DKIND_REFLECTANCE : passive_scale,
+        DKIND_RADIANCE    : dnb_scale,
+        DKIND_BTEMP       : passive_scale,
+        DKIND_FOG         : passive_scale
         }
 
-def prescale(img, kind="DNB", band="00", data_kind=K_REFLECTANCE, **kwargs):
+def prescale(img, kind=BKIND_DNB, band=NOT_APPLICABLE, data_kind=DKIND_REFLECTANCE, **kwargs):
     """Calls the appropriate scaling function based on the provided keyword
     arguments and returns the new array.
 

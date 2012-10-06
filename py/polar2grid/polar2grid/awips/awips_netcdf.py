@@ -48,6 +48,7 @@ variables:
 """
 
 from polar2grid.core import Workspace,UTC
+from polar2grid.core.constants import BKIND_DNB
 from polar2grid.nc import create_nc_from_ncml
 from polar2grid.rescale import rescale,post_rescale_dnb
 from netCDF4 import Dataset
@@ -126,7 +127,7 @@ def awips_backend(img_filepath, nc_template, nc_filepath,
         log.debug("Files matching %r" % glob(img_attr + "*"))
         raise
 
-    if kind != "DNB":
+    if kind != BKIND_DNB:
         try:
             rescaled_data = rescale(img_data,
                     kind=kind,
