@@ -1,4 +1,4 @@
-Readme for MODIS Swath-to-Grid Toolbox 0.23 --  14 October 2011
+Readme for MODIS Swath-to-Grid Toolbox 0.24 --  01 August 2012
 Terry Haran
 National Snow and Ice Data Center
 tharan@colorado.edu
@@ -19,11 +19,11 @@ files. All four Perl programs can optionally read MOD03 files for
 geolocation and/or ancillary data.
 
 The software and associated documentation can be downloaded
-from http://cires.colorado.edu/~tharan/ms2gt/ms2gt0.23.tar.gz.
+from http://cires.colorado.edu/~tharan/ms2gt/ms2gt0.24.tar.gz.
 Save this file in some directory and type:
 
-gunzip ms2gt0.23.tar.gz
-tar xvf ms2gt0.23.tar 
+gunzip ms2gt0.24.tar.gz
+tar xvf ms2gt0.24.tar 
 
 This will create a directory called ms2gt in the current directory
 containing several subdirectories. Further instructions on the
@@ -151,3 +151,8 @@ is added to u. This effectively allows associated column values to be
 monotonic across the +180/-180 longitude boundary, and avoids "holes"
 and "garbage" from appearing in gridded output images created by
 mod02.pl for grids that include or are close to the boundary.
+
+As of 0.24, fornav.c was modified to fix a bug such that garbage output
+was produced when both averaging and a non-zero fill value were specified
+in chanfile of the mod02.pl script. Thanks to Yinghui Liu of SSEC U. of
+Wisconsin for reporting this bug.

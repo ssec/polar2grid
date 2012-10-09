@@ -4,7 +4,7 @@
 # 26-Nov-2001 T.Haran 303-492-1847  tharan@kryos.colorado.edu
 # National Snow & Ice Data Center, University of Colorado, Boulder
 #========================================================================
-RCSID = $Header: /data/tharan/ms2gth/src/lle2cre/Makefile,v 1.5 2004/09/02 16:51:10 haran Exp $
+RCSID = $Header: /disks/megadune/data/tharan/ms2gth/src/lle2cre/Makefile,v 1.5 2004/09/02 16:51:10 haran Exp $
 
 #------------------------------------------------------------------------
 # configuration section

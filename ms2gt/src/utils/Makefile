@@ -4,7 +4,7 @@
 # 23-Nov-2004 Terry Haran tharan@colorado.edu 303-492-1847
 # National Snow & Ice Data Center, University of Colorado, Boulder
 #========================================================================
-RCSID = $Header: /data/tharan/ms2gth/src/utils/Makefile,v 1.4 2008/09/23 16:03:03 tharan Exp $
+RCSID = $Header: /disks/megadune/data/tharan/ms2gth/src/utils/Makefile,v 1.4 2008/09/23 16:03:03 tharan Exp $
 
 #------------------------------------------------------------------------
 # configuration section
@@ -33,7 +33,7 @@ COMPRESS = gzip
 #
 CONFIG_CFLAGS = -O
 #CONFIG_CFLAGS = -DDEBUG -g
-LOCAL_CFLAGS = -D_FILE_OFFSET_BITS=64
+LOCAL_CFLAGS = $(getconf LFS_CFLAGS)
 
 #
 #	libraries
