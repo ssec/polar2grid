@@ -13,14 +13,13 @@ hdf5 (.h5) files and create a properly scaled NinJo compatible TIFF file.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import Workspace,K_BTEMP,K_FOG
+from polar2grid.core import Workspace
+from polar2grid.core.constants import *
 from polar2grid.viirs import make_swaths
-from polar2grid.rescale import prescale
-from polar2grid import ms2gt
+from .rescale import prescale
+from . import ms2gt
 from polar2grid.ninjo import ninjo_backend
 from polar2grid.ninjo import GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
-#from polar2grid.awips import awips_backend
-#from polar2grid.awips import BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
 
 import os
 import sys
@@ -33,29 +32,18 @@ from glob import glob
 log = logging.getLogger(__name__)
 LOG_FN = os.environ.get("VIIRS2NINJO_LOG", "./viirs2ninjo.log")
 
-# FIXME : These are WRONG. Most are from MODIS. Fog was found in the word
-# doc and dnb is just the I01 band
-#viirs2chanid = {
-#        "I01" : 4700015,
-#        "I03" : 5000015,
-#        "I04" : 4100015,
-#        "I05" : 4300015,
-#        "DNB00" : 1200015,
-#        "IFOG" : 7600015
-#        }
 # new official VIIRS IDs
 viirs2chanid = {
-        "I01" : 14800015,
-        "I02" : 15100015,
-        "I03" : 15500015,
-        "I04" : 15700015,
-        "I05" : 16100015,
-        "DNB00" : 15200015,
-        "M03" : 14600015,
-        "M04" : 14700015,
-        "M15" : 16000015,
-        "M16" : 16200015,
-        "IFOG" : 7600015   # don't know what this is
+        (BKIND_I,BID_01) : 14800015,
+        (BKIND_I,BID_02) : 15100015,
+        (BKIND_I,BID_03) : 15500015,
+        (BKIND_I,BID_04) : 15700015,
+        (BKIND_I,BID_05) : 16100015,
+        (BKIND_DNB,NOT_APPLICABLE) : 15200015,
+        (BKIND_M,BID_03) : 14600015,
+        (BKIND_M,BID_04) : 14700015,
+        (BKIND_M,BID_15) : 16000015,
+        (BKIND_M,BID_16) : 16200015
         }
 
 def setup_logging(console_level=logging.INFO):
@@ -371,8 +359,8 @@ def create_pseudobands(kind, bands):
                 "kind" : "I",
                 "band" : "FOG",
                 "band_name" : "IFOG",
-                "data_kind" : K_FOG,
-                "src_kind"  : K_BTEMP,
+                "data_kind" : DKIND_FOG,
+                "src_kind"  : DKIND_BTEMP,
                 "rows_per_scan" : bands["05"]["rows_per_scan"],
                 "fbf_img" : "image_IFOG.%s" % ".".join(bands["05"]["fbf_img"].split(".")[1:]),
                 "fbf_mode" : bands["05"]["fbf_mode"],
@@ -432,15 +420,7 @@ def process_kind(filepaths,
     # Extract Swaths
     log.info("Extracting swaths...")
     def _band_filter(finfo):
-        if finfo["kind"] == "DNB":
-            if "DNB00" not in viirs2chanid:
-                return False
-            else:
-                return True
-        elif finfo["kind"] + finfo["band"] not in viirs2chanid:
-            return False
-        else:
-            return True
+        return ((finfo["kind"],finfo["band"]) in viirs2chanid)
     try:
         meta_data = make_swaths(filepaths, filter=_band_filter, cut_bad=True)
     except StandardError:
@@ -467,7 +447,7 @@ def process_kind(filepaths,
     # Do any pre-remapping rescaling
     log.info("Prescaling data before remapping...")
     for band,band_job in bands.items():
-        if kind != "DNB":
+        if kind != BKIND_DNB:
             # It takes too long to read in the data, so just skip it
             band_job["fbf_swath"] = band_job["fbf_img"]
             continue
@@ -479,7 +459,7 @@ def process_kind(filepaths,
                     band_job["data_kind"],
                     band_job["fbf_img"],
                     band_job["fbf_mode"],
-                    require_dn = kind == "DNB"
+                    require_dn = kind == BKIND_DNB
                     )
             band_job["fbf_swath"] = fbf_swath
         except StandardError:
@@ -671,9 +651,8 @@ def process_kind(filepaths,
                         data_kind=grid_job["data_kind"],
                         image_dt=grid_job["start_dt"],
                         #cmap=None,
-#                        sat_id=3400014, # FIXME: this is terra modis id
-                        sat_id=8600014, # FIXME: this is the REAL VIIRS ID
-                        chan_id=viirs2chanid[kind+band], # FIXME: these are wrong
+                        sat_id=8600014, # VIIRS ID in NinJo
+                        chan_id=viirs2chanid[(kind,band)],
                         data_source="SSEC", # FIXME: This should probably be taken from a env variable or config file
                         data_type="PORN", # VIIRS is polar orbitting, original?, and raster binary buffer
                         pixel_xres=grid_job["xres"],
@@ -696,7 +675,7 @@ def process_kind(filepaths,
                 ninjo_backend(
                         grid_job["fbf_output"],
                         #grid_job["tiff_filename"],
-                        "VIIRS_SV%s%s_%s_%s.tif" % (kind,band,grid_job["start_dt"].strftime("%Y%m%d_%H%M%S"),grid_number),
+                        "VIIRS_SV%s%s_%s_%s.tif" % (kind.upper(),band or "",grid_job["start_dt"].strftime("%Y%m%d_%H%M%S"),grid_number),
                         **kwargs
                         )
             except StandardError:
@@ -756,6 +735,7 @@ def run_viirs2ninjo(filepaths,
     7. rescale.py
     8. awips_netcdf.py
     """
+    create_pseudo = False #XXX: This is a SSEC only product
     # Rewrite/force parameters to specific format
     filepaths = [ os.path.abspath(x) for x in sorted(filepaths) ]
 
@@ -777,7 +757,7 @@ def run_viirs2ninjo(filepaths,
     pI = None
     pDNB = None
     exit_status = 0
-    if len(M_files) != 0 and len([x for x in viirs2chanid if x.startswith("M") ]) != 0:
+    if len(M_files) != 0 and len([x for x in viirs2chanid if x[0] == BKIND_M ]) != 0:
         log.debug("Processing M files")
         try:
             if multiprocess:
@@ -798,7 +778,7 @@ def run_viirs2ninjo(filepaths,
             log.error("Could not process M files")
             exit_status = exit_status or len(M_files)
 
-    if len(I_files) != 0 and len([x for x in viirs2chanid if x.startswith("I") ]) != 0:
+    if len(I_files) != 0 and len([x for x in viirs2chanid if x[0] == BKIND_I ]) != 0:
         log.debug("Processing I files")
         try:
             if multiprocess:
@@ -819,7 +799,7 @@ def run_viirs2ninjo(filepaths,
             log.error("Could not process I files")
             exit_status = exit_status or len(I_files)
 
-    if len(DNB_files) != 0 and len([x for x in viirs2chanid if x.startswith("DNB") ]) != 0:
+    if len(DNB_files) != 0 and len([x for x in viirs2chanid if x[0] == BKIND_DNB ]) != 0:
         log.debug("Processing DNB files")
         try:
             if multiprocess:

@@ -14,7 +14,8 @@ places them correctly in to the modified geotiff format accepted by NinJo.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import Workspace,utc_now,K_RADIANCE,K_REFLECTANCE,K_BTEMP,K_FOG
+from polar2grid.core import Workspace,utc_now
+from polar2grid.core.constants import DKIND_RADIANCE,DKIND_REFLECTANCE,DKIND_BTEMP,DKIND_FOG
 from polar2grid import libtiff
 from polar2grid.libtiff import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
 from polar2grid.rescale import unlinear_scale,ubyte_filter
@@ -85,17 +86,17 @@ ninjo_tags.append(TIFFFieldInfo(40044, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CU
 ninjo_extension = add_tags(ninjo_tags)
 
 dkind2physical = {
-        K_RADIANCE : ("\0", "\0"),
-        K_REFLECTANCE : ("ALBEDO", "%"),
-        K_BTEMP : ("T", "CELSIUS")
-        #K_FOG : ("T", "CELSIUS")
+        DKIND_RADIANCE : ("\0", "\0"),
+        DKIND_REFLECTANCE : ("ALBEDO", "%"),
+        DKIND_BTEMP : ("T", "CELSIUS")
+        #DKIND_FOG : ("T", "CELSIUS")
         }
 
 dkind2grad = {
-        K_RADIANCE : (1.0, 0.0),
-        K_REFLECTANCE : (0.490196,0.0),
-        K_BTEMP : (-0.5, 0.0)
-        #K_FOG : (-0.5, 0.0)
+        DKIND_RADIANCE : (1.0, 0.0),
+        DKIND_REFLECTANCE : (0.490196,0.0),
+        DKIND_BTEMP : (-0.5, 0.0)
+        #DKIND_FOG : (-0.5, 0.0)
         }
 
 def get_default_lw_colortable():
@@ -138,7 +139,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     :Keywords:
         data_kind : int
             polar2grid constant describing the sensor type of the
-            image data, such as K_REFLECTANCE or K_BTEMP. This is optional,
+            image data, such as DKIND_REFLECTANCE or DKIND_BTEMP. This is optional,
             but if not specified then certain keywords below are required. If
             it is specified then a default can be determined for some of the
             keywords (such as `physic_value`).
@@ -292,7 +293,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
 
     # Keyword checks / verification
     if cmap is None:
-        if data_kind == K_BTEMP or data_kind == K_FOG:
+        if data_kind == DKIND_BTEMP or data_kind == DKIND_FOG:
             cmap = get_default_lw_colortable()
         else:
             cmap = get_default_sw_colortable()
@@ -412,15 +413,15 @@ def scale_data(image_data, data_kind, *args, **kwargs):
     if "fill" in kwargs:
         kwargs["fill_in"] = kwargs["fill"]
 
-    if data_kind == K_REFLECTANCE:
+    if data_kind == DKIND_REFLECTANCE:
         # Extra 100 to turn reflectance 0-1 into albedo
         return unlinear_scale(image_data, 0.490196/100.0, 0, *args, **kwargs)
-    elif data_kind == K_RADIANCE:
+    elif data_kind == DKIND_RADIANCE:
         return unlinear_scale(image_data, 1/255.0, 0, *args, **kwargs)
-    elif data_kind == K_BTEMP:
+    elif data_kind == DKIND_BTEMP:
         # Extra 273.15 to convert to C from K
         return unlinear_scale(image_data, -0.5, 40+273.15, *args, **kwargs)
-    elif data_kind == K_FOG:
+    elif data_kind == DKIND_FOG:
         # Extra 273.15 to convert to C from K
         return unlinear_scale(image_data, -0.5, 40+273.15, *args, **kwargs)
     else:
