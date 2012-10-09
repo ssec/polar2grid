@@ -146,31 +146,35 @@ def dnb_scale(img, *args, **kwargs):
 
     log.debug("Running 'dnb_scale'...")
     
-    _local_histogram_equalization(img, numpy.ones(img.shape, dtype=bool), local_radius_px=200)
+    allValidData = kwargs["day_mask"].copy() | kwargs["night_mask"]
+    for mixed in kwargs["mixed_mask"] :
+        allValidData = allValidData | mixed
+    """
+    #_local_histogram_equalization(img, numpy.ones(img.shape, dtype=bool), local_radius_px=200)
+    _local_histogram_equalization(img, newMask,                           local_radius_px=200)
     
     """
     # TODO, this is temporary for testing
-    # FUTURE, right now there is no control for the radius of the local tiles
     #histogram_to_use = _histogram_equalization
     histogram_to_use = _local_histogram_equalization
     
     if ("day_mask"   in kwargs) and (numpy.sum(kwargs["day_mask"])   > 0) :
         log.debug("  scaling DNB in day mask")
-        histogram_to_use(img, kwargs["day_mask"  ], local_radius_px=200)
+        histogram_to_use(img, kwargs["day_mask"  ], valid_data_mask=allValidData, local_radius_px=200)
     
     if ("mixed_mask"   in kwargs) and (len(kwargs["mixed_mask"])     > 0) :
         log.debug("  scaling DNB in twilight mask")
         for mask in kwargs["mixed_mask"]:
-            histogram_to_use(img, mask, local_radius_px=100)
+            histogram_to_use(img, mask, valid_data_mask=allValidData, local_radius_px=40)
     
     if ("night_mask" in kwargs) and (numpy.sum(kwargs["night_mask"]) > 0) :
         log.debug("  scaling DNB in night mask")
-        histogram_to_use(img, kwargs["night_mask"], local_radius_px=200)
-    """
+        histogram_to_use(img, kwargs["night_mask"], valid_data_mask=allValidData, local_radius_px=300)
+    
     
     return img
 
-def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True) :
+def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True, local_radius_px=None) :
     """
     Perform a histogram equalization on the data selected by mask_to_equalize.
     The data will be separated into number_of_bins levels for equalization and
@@ -207,7 +211,7 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mu
     
     return data
 
-def _local_histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True, local_radius_px=500) :
+def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True, local_radius_px=500) :
     """
     equalize the provided data (in the mask_to_equalize) using adaptive histogram equalization
     tiles of radius local_radius_px will be calculated and results for each pixel will be bilinerarly interpolated from the nearest 4 tiles
@@ -217,6 +221,10 @@ def _local_histogram_equalization (data, mask_to_equalize, number_of_bins=1000, 
     
     returns the equalized data
     """
+    
+    # if we don't have a valid mask, use the mask of what we should be copying
+    if valid_data_mask is None:
+        valid_data_mask = mask_to_equalize.copy()
     
     # calculate some useful numbers for our tile math
     total_rows = data.shape[0]
@@ -247,11 +255,17 @@ def _local_histogram_equalization (data, mask_to_equalize, number_of_bins=1000, 
             min_col = num_col_tile * tile_size
             max_col = min_col + tile_size
             
-            # for speed of calculation, pull out the valid data elements
-            temp_valid_data = data[min_row:max_row, min_col:max_col][mask_to_equalize[min_row:max_row, min_col:max_col]]
+            # for speed of calculation, pull out the mask
+            temp_mask = mask_to_equalize[min_row:max_row, min_col:max_col]
+            
+            #print('data shape: ' + str(data.shape))
+            #print('mask shape: ' + str(mask_to_equalize.shape))
             
             cumulative_dist_function, temp_bins = None, None
-            if len(temp_valid_data) > 0 :
+            if temp_mask.any() :
+                # use all valid data in the tile, so separate sections will blend cleanly
+                #temp_valid_data = data[min_row:max_row, min_col:max_col][valid_data_mask[min_row:max_row, min_col:max_col]]
+                temp_valid_data = data[min_row:max_row, min_col:max_col][mask_to_equalize[min_row:max_row, min_col:max_col]]
                 # do the histogram equalization and get the resulting distribution function and bin information
                 cumulative_dist_function, temp_bins = _histogram_equalization_helper (temp_valid_data, number_of_bins)
             
@@ -259,9 +273,8 @@ def _local_histogram_equalization (data, mask_to_equalize, number_of_bins=1000, 
             all_cumulative_dist_functions[num_row_tile].append(cumulative_dist_function)
             all_bin_information          [num_row_tile].append(temp_bins)
     
-    # get the weights we'll need to interpolate
-    # TODO, right now this is just one ideal center tile worth of weights!
-    tile_weights = _calculate_weights (data.shape, tile_size)
+    # get the tile weight array we'll need to interpolate our data
+    tile_weights = _calculate_weights (tile_size)
     
     # now loop through our tiles and linearly interpolate the tiles
     for num_row_tile in range(row_tiles) :
@@ -273,18 +286,25 @@ def _local_histogram_equalization (data, mask_to_equalize, number_of_bins=1000, 
             min_col = num_col_tile * tile_size
             max_col = min_col + tile_size
             
+            # for convenience, pull some of these tile sized chunks out
             temp_mask = mask_to_equalize[min_row:max_row, min_col:max_col]
             temp_valid_data = data[min_row:max_row, min_col:max_col][temp_mask]
             
+            # a place to hold our weighted sum that represents the interpolated contributions
+            # of the histogram equalizations from the surrounding tiles
             temp_sum = numpy.zeros(temp_valid_data.shape, dtype=data.dtype)
             
+            # if we have any data in this tile, calculate our weighted sum
             if len(temp_valid_data) > 0 :
+                # loop through all the surrounding tiles and process their contributions to this tile
                 for weight_row in range(3) :
                     for weight_col in range(3) :
                         
+                        # figure out the adjacent tile we're processing (in overall tile coordinates instead of relative to our current tile)
                         calculated_row = num_row_tile - 1 + weight_row
                         calculated_col = num_col_tile - 1 + weight_col
                         
+                        # if we're inside the tile array and the tile we're processing has data in it, process it
                         temp_equalized_data = None
                         if ( (calculated_row >= 0) and (calculated_row < row_tiles) and
                              (calculated_col >= 0) and (calculated_col < col_tiles) and
@@ -293,17 +313,16 @@ def _local_histogram_equalization (data, mask_to_equalize, number_of_bins=1000, 
                             temp_equalized_data = numpy.interp(temp_valid_data,
                                                                all_bin_information          [calculated_row][calculated_col][:-1],
                                                                all_cumulative_dist_functions[calculated_row][calculated_col])
-                        else : # if the tile doesn't exist, use our center tile again
+                        else : # if the tile we're processing doesn't exist, use our center tile for it's contribution instead
                             temp_equalized_data = numpy.interp(temp_valid_data,
-                                                               all_bin_information          [num_row_tile ][num_col_tile][:-1],
-                                                               all_cumulative_dist_functions[num_row_tile ][num_col_tile])
+                                                               all_bin_information          [num_row_tile  ][num_col_tile][:-1],
+                                                               all_cumulative_dist_functions[num_row_tile  ][num_col_tile])
                         
+                        # add the contribution for the tile we're processing to our weighted sum
                         temp_sum = temp_sum + (temp_equalized_data * tile_weights[weight_row, weight_col][temp_mask])
             
-            data[min_row:max_row, min_col:max_col][mask_to_equalize[min_row:max_row, min_col:max_col]] = temp_sum
-            
-            # linearly interpolate using the distribution function to get the new values
-            #data[min_row:max_row, min_col:max_col][mask_to_equalize[min_row:max_row, min_col:max_col]] = numpy.interp(temp_valid_data, temp_bins[:-1], cumulative_dist_function)
+            # now that we've calculated the weighted sum for this tile, set it in our data array
+            data[min_row:max_row, min_col:max_col][temp_mask] = temp_sum
     
     # if we were asked to, normalize our data to be between zero and one, rather than zero and number_of_bins
     if do_zerotoone_normalization :
@@ -327,21 +346,24 @@ def _histogram_equalization_helper (valid_data, number_of_bins) :
     
     return cumulative_dist_function, temp_bins
 
-def _calculate_weights (data_shape, tile_size) :
+def _calculate_weights (tile_size) :
     """
-    calculate the weight arrays that will be used to interpolate the histogram equalizations
-    data_shape should be the shape of the data that will be equalized
-    tile size should be the width or height of a tile in pixels
+    calculate the weight arrays that will be used to quickly interpolate the histogram equalizations
+    tile size should be the width and height of a tile in pixels
     
     returns a 4D weight array, where the first 2 dimensions correspond to the grid of where the tiles are relative to the pixel's tile
     where adjacent tiles do not exist (eg. along an edge) the weights for those tiles will be 0.0
     """
     
     # for now let's just make a center tile
-    # FUTURE, handle edges and corners more exactly
     
     # create some template tiles
     template_tile = numpy.zeros((3, 3, tile_size, tile_size), dtype=numpy.float32)
+    
+    """
+    # TEMP FOR TESTING
+    template_tile[1,1] = template_tile[1,1] + 1.0
+    """
     
     center_index = int(tile_size / 2)
     center_dist  =     tile_size / 2.0
