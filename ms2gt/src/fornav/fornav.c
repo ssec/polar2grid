@@ -255,7 +255,7 @@ static void InitializeImage(image *ip, char *name, char *open_type_str,
     offset = ip->bytes_per_row * (off_t)ip->rows * swath_scan_first;
     if (very_verbose)
       fprintf(stderr, "seeking to byte %lld in %s\n", offset, ip->file);
-    if (lseek(fileno(ip->fp), offset, SEEK_SET) != 0) {
+    if (fseeko(ip->fp, offset, SEEK_SET) != 0) {
       fprintf(stderr,
               "fornav: InitializeImage: error seeking to byte %lld in %s\n",
               offset, ip->file);
