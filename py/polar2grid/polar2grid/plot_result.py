@@ -1,5 +1,7 @@
 from glob import glob
 import numpy
+import matplotlib
+matplotlib.use('agg')
 from matplotlib import pyplot as plt
 from polar2grid.core import Workspace
 

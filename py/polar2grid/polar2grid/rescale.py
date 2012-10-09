@@ -20,7 +20,7 @@ and "pretty" with AWIPS.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import K_REFLECTANCE,K_RADIANCE,K_BTEMP,K_FOG
+from polar2grid.core.constants import DKIND_REFLECTANCE,DKIND_RADIANCE,DKIND_BTEMP,DKIND_FOG,BKIND_I,BID_01,BKIND_DNB,NOT_APPLICABLE
 
 import os
 import sys
@@ -210,20 +210,20 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mu
     return data
 
 RESCALES = {
-        K_REFLECTANCE : sqrt_scale,
-        K_RADIANCE    : post_rescale_dnb,
-        K_BTEMP       : bt_scale,
-        K_FOG         : fog_scale
+        DKIND_REFLECTANCE : sqrt_scale,
+        DKIND_RADIANCE    : post_rescale_dnb,
+        DKIND_BTEMP       : bt_scale,
+        DKIND_FOG         : fog_scale
         }
 
 PRESCALES = {
-        K_REFLECTANCE : passive_scale,
-        K_RADIANCE    : dnb_scale,
-        K_BTEMP       : passive_scale,
-        K_FOG         : passive_scale
+        DKIND_REFLECTANCE : passive_scale,
+        DKIND_RADIANCE    : dnb_scale,
+        DKIND_BTEMP       : passive_scale,
+        DKIND_FOG         : passive_scale
         }
 
-def prescale(img, kind="DNB", band="00", data_kind=K_REFLECTANCE, **kwargs):
+def prescale(img, kind=BKIND_DNB, band=NOT_APPLICABLE, data_kind=DKIND_REFLECTANCE, **kwargs):
     """Calls the appropriate scaling function based on the provided keyword
     arguments and returns the new array.
 
@@ -253,7 +253,7 @@ def prescale(img, kind="DNB", band="00", data_kind=K_REFLECTANCE, **kwargs):
     img = scale_func(img, kind=kind, band=band, data_kind=data_kind, **kwargs)
     return img
 
-def rescale(img, kind="I", band="01", data_kind=K_REFLECTANCE, **kwargs):
+def rescale(img, kind=BKIND_I, band=BID_01, data_kind=DKIND_REFLECTANCE, **kwargs):
     """Calls the appropriate scaling function based on the provided keyword
     arguments and returns the new array.
 
@@ -305,19 +305,19 @@ def rescale_and_write(img_file, output_file, *args, **kwargs):
 
 def main():
     import optparse
-    usage = """%prog [options] <input.fbf_format> <output.fbf_format> <kind> <band> --datakind=K_REFLECTANCE"""
+    usage = """%prog [options] <input.fbf_format> <output.fbf_format> <kind> <band> --datakind=DKIND_REFLECTANCE"""
     parser = optparse.OptionParser(usage=usage)
     parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
                     help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
     parser.add_option('--datakind', dest='data_kind', default=None,
-            help="specify the data kind of the provided input file as a constant name (K_REFLECTANCE, K_BTEMP, K_RADIANCE, K_FOG)")
+            help="specify the data kind of the provided input file as a constant name (DKIND_REFLECTANCE, DKIND_BTEMP, DKIND_RADIANCE, DKIND_FOG)")
     options,args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level = levels[min(3, options.verbosity)])
 
     if options.data_kind is None or not options.data_kind.startswith("K_") or options.data_kind not in globals():
-        log.error("%s is not a known constant for a data type, try K_REFLECTANCE, K_BTEMP, K_RADIANCE, K_FOG" % options.data_kind)
+        log.error("%s is not a known constant for a data type, try DKIND_REFLECTANCE, DKIND_BTEMP, DKIND_RADIANCE, DKIND_FOG" % options.data_kind)
         return -1
     else:
         data_kind = globals()[options.data_kind]

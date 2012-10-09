@@ -13,12 +13,13 @@ hdf5 (.h5) files and create a properly scaled AWIPS compatible NetCDF file.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import Workspace,K_BTEMP,K_FOG
+from polar2grid.core import Workspace
+from polar2grid.core.constants import DKIND_BTEMP,DKIND_FOG,BKIND_DNB,BKIND_I,BKIND_M,NOT_APPLICABLE
 from polar2grid.viirs import make_swaths
-from polar2grid.rescale import prescale
-from polar2grid import ms2gt
-from polar2grid.awips import awips_backend
-from polar2grid.awips import BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
+from .rescale import prescale
+from . import ms2gt
+from .awips import awips_backend
+from .awips import BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
 
 import os
 import sys
@@ -345,8 +346,8 @@ def create_pseudobands(kind, bands):
                 "kind" : "I",
                 "band" : "FOG",
                 "band_name" : "IFOG",
-                "data_kind" : K_FOG,
-                "src_kind"  : K_BTEMP,
+                "data_kind" : DKIND_FOG,
+                "src_kind"  : DKIND_BTEMP,
                 "rows_per_scan" : bands["05"]["rows_per_scan"],
                 "fbf_img" : "image_IFOG.%s" % ".".join(bands["05"]["fbf_img"].split(".")[1:]),
                 "fbf_mode" : bands["05"]["fbf_mode"],
@@ -406,12 +407,12 @@ def process_kind(filepaths,
     # Extract Swaths
     log.info("Extracting swaths...")
     def _band_filter(finfo):
-        if finfo["kind"] == "DNB":
-            if "DNB" not in BANDS:
+        if finfo["kind"] == BKIND_DNB:
+            if (BKIND_DNB,NOT_APPLICABLE) not in BANDS:
                 return False
             else:
                 return True
-        elif finfo["kind"] + finfo["band"] not in BANDS:
+        elif (finfo["kind"], finfo["band"]) not in BANDS:
             return False
         else:
             return True
@@ -441,7 +442,7 @@ def process_kind(filepaths,
     # Do any pre-remapping rescaling
     log.info("Prescaling data before remapping...")
     for band,band_job in bands.items():
-        if kind != "DNB":
+        if kind != BKIND_DNB:
             # It takes too long to read in the data, so just skip it
             band_job["fbf_swath"] = band_job["fbf_img"]
             continue
@@ -453,7 +454,7 @@ def process_kind(filepaths,
                     band_job["data_kind"],
                     band_job["fbf_img"],
                     band_job["fbf_mode"],
-                    require_dn = kind == "DNB"
+                    require_dn = kind == BKIND_DNB
                     )
             band_job["fbf_swath"] = fbf_swath
         except StandardError:
@@ -737,7 +738,7 @@ def run_viirs2awips(filepaths,
     pI = None
     pDNB = None
     exit_status = 0
-    if len(M_files) != 0 and len([x for x in BANDS if x.startswith("M") ]) != 0:
+    if len(M_files) != 0 and len([x for x in BANDS if x[0] == BKIND_M ]) != 0:
         log.debug("Processing M files")
         try:
             if multiprocess:
@@ -758,7 +759,7 @@ def run_viirs2awips(filepaths,
             log.error("Could not process M files")
             exit_status = exit_status or len(M_files)
 
-    if len(I_files) != 0 and len([x for x in BANDS if x.startswith("I") ]) != 0:
+    if len(I_files) != 0 and len([x for x in BANDS if x[0] == BKIND_I ]) != 0:
         log.debug("Processing I files")
         try:
             if multiprocess:
@@ -779,7 +780,7 @@ def run_viirs2awips(filepaths,
             log.error("Could not process I files")
             exit_status = exit_status or len(I_files)
 
-    if len(DNB_files) != 0 and len([x for x in BANDS if x.startswith("DNB") ]) != 0:
+    if len(DNB_files) != 0 and len([x for x in BANDS if x[0] == BKIND_DNB ]) != 0:
         log.debug("Processing DNB files")
         try:
             if multiprocess:

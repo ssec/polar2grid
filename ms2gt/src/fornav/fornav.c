@@ -4,7 +4,7 @@
  * 27-Dec-2000 T.Haran tharan@kryos.colorado.edu 303-492-1847
  * National Snow & Ice Data Center, University of Colorado, Boulder
  *========================================================================*/
-static const char fornav_c_rcsid[] = "$Header: /data/tharan/ms2gth/src/fornav/fornav.c,v 1.31 2007/05/07 17:58:44 tharan Exp $";
+static const char fornav_c_rcsid[] = "$Header: /disks/megadune/data/tharan/ms2gth/src/fornav/fornav.c,v 1.32 2012/07/24 21:42:17 tharan Exp $";
 
 #include <stdio.h>
 #include <math.h>
@@ -14,7 +14,7 @@ static const char fornav_c_rcsid[] = "$Header: /data/tharan/ms2gth/src/fornav/fo
 #include "matrix.h"
 
 #define USAGE \
-"$Revision: 1.31 $\n" \
+"$Revision: 1.32 $\n" \
 "usage: fornav chan_count\n"\
 "              [-v] [-m]\n"\
 "              [-s chan_scan_first colrow_scan_first]\n"\
@@ -255,7 +255,7 @@ static void InitializeImage(image *ip, char *name, char *open_type_str,
     offset = ip->bytes_per_row * (off_t)ip->rows * swath_scan_first;
     if (very_verbose)
       fprintf(stderr, "seeking to byte %lld in %s\n", offset, ip->file);
-    if (lseek(fileno(ip->fp), offset, SEEK_SET) != 0) {
+    if (fseeko(ip->fp, offset, SEEK_SET) != 0) {
       fprintf(stderr,
               "fornav: InitializeImage: error seeking to byte %lld in %s\n",
               offset, ip->file);
@@ -688,6 +688,7 @@ bool ComputeEwa(image *uimg, image *vimg,
                         *(*this_grid_chanpp + grid_offset) = *this_swath_chanp;
                       }
                     }
+                    // increment pointers even if we didn't change anything
                     this_grid_chanpp++;
                     this_grid_fillp++;
                     this_swath_chanp++;
@@ -698,15 +699,9 @@ bool ComputeEwa(image *uimg, image *vimg,
                     if (got_fills[chan] == FALSE) {
                       this_weightp = ((float *)this_grid_weight_image->buf[0]) + grid_offset;
                       *this_weightp += weight;
-
-                      if (*(*this_grid_chanpp + grid_offset) == *this_grid_fillp) {
-                        // If the fill value is nonzero we don't want to
-                        // effect the weight/grid values
-                        *(*this_grid_chanpp + grid_offset) = *this_swath_chanp * weight;
-                      } else {
-                        *(*this_grid_chanpp + grid_offset) += *this_swath_chanp * weight;
-                      }
+                      *(this_grid_chanpp + grid_offset) += *this_swath_chanp * weight;
                     }
+                    // increment pointers even if there was a fill value
                     this_grid_chanpp++;
                     this_grid_fillp++;
                     this_swath_chanp++;
@@ -1038,7 +1033,6 @@ int main (int argc, char *argv[])
             DisplayInvalidParameter("grid_fill");
           if (sscanf(*argv, "%f", &grid_chan_io_image[i].fill) != 1)
             DisplayInvalidParameter("grid_fill");
-          grid_chan_image[i].fill = grid_chan_io_image[i].fill;
         }
         break;
       case 'r':
@@ -1215,7 +1209,15 @@ int main (int argc, char *argv[])
     fptr =&(**((float **)grid_chan_image[i].buf));
     fill = grid_chan_io_image[i].fill;
     for (j = 0; j < n; j++)
-      *fptr++ = fill;
+      /*
+       * Filling with a non-zero fill value here produces garbage output
+       * when averaging, but filling with zero is ok and still produces
+       * the desired grid fill value wherever the swath fill value is
+       * encountered.
+       *
+       *  fptr++ = fill;
+       */
+      *fptr++ = 0.0;
   }
 
   /*

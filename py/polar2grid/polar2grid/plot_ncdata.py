@@ -1,4 +1,6 @@
 from numpy import *
+import matplotlib
+matplotlib.use('agg')
 from matplotlib import pyplot as plt
 from netCDF4 import Dataset
 from glob import glob
