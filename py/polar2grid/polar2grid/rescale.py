@@ -146,6 +146,10 @@ def dnb_scale(img, *args, **kwargs):
 
     log.debug("Running 'dnb_scale'...")
     
+    # a way to hang onto our result
+    # because the equalization is done in place, this is needed so the input data isn't corrupted
+    img_result = img.copy()
+    
     # build a mask of all the valid data in the image
     allValidData = numpy.zeros(img.shape, dtype=bool) # by default we don't believe any data is good
     allValidData = allValidData | kwargs["day_mask"]   if "day_mask"   in kwargs else allValidData
@@ -154,26 +158,33 @@ def dnb_scale(img, *args, **kwargs):
         for mixed in kwargs["mixed_mask"] :
             allValidData = allValidData | mixed
     
-    """ TEMP, this was for testing tiled histogram equalization across the whole image
+    """
+    # TEMP, this is for testing tiled histogram equalization across the whole image
     _local_histogram_equalization(img, allValidData, local_radius_px=200)
     """
     
     if ("day_mask"   in kwargs) and (numpy.sum(kwargs["day_mask"])   > 0) :
         log.debug("  scaling DNB in day mask")
-        _local_histogram_equalization(img, kwargs["day_mask"  ], valid_data_mask=allValidData, local_radius_px=200)
+        temp_image = img.copy()
+        _local_histogram_equalization(temp_image, kwargs["day_mask"  ], valid_data_mask=allValidData, local_radius_px=200)
+        img_result[kwargs["day_mask"  ]] = temp_image[kwargs["day_mask"  ]]
     
     if ("mixed_mask"   in kwargs) and (len(kwargs["mixed_mask"])     > 0) :
         log.debug("  scaling DNB in twilight mask")
         for mask in kwargs["mixed_mask"]:
-            _local_histogram_equalization(img, mask, valid_data_mask=allValidData, local_radius_px=40)
+            temp_image = img.copy()
+            _local_histogram_equalization(temp_image, mask, valid_data_mask=allValidData, local_radius_px=50)
+            img_result[mask] = temp_image[mask]
     
     if ("night_mask" in kwargs) and (numpy.sum(kwargs["night_mask"]) > 0) :
         log.debug("  scaling DNB in night mask")
-        _local_histogram_equalization(img, kwargs["night_mask"], valid_data_mask=allValidData, local_radius_px=300)
+        temp_image = img.copy()
+        _local_histogram_equalization(temp_image, kwargs["night_mask"], valid_data_mask=allValidData, local_radius_px=200)
+        img_result[kwargs["night_mask"]] = temp_image[kwargs["night_mask"]]
     
-    
-    return img
+    return img_result
 
+# FUTURE, this version of histogram equalization is no longer used and could be removed
 def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True, local_radius_px=None) :
     """
     Perform a histogram equalization on the data selected by mask_to_equalize.
@@ -211,11 +222,13 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mu
     
     return data
 
-def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True, local_radius_px=500) :
+def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True, local_radius_px=300) :
     """
     equalize the provided data (in the mask_to_equalize) using adaptive histogram equalization
-    tiles of radius local_radius_px will be calculated and results for each pixel will be bilinerarly interpolated from the nearest 4 tiles
-    when pixels fall near the edge of the image (there is no adjacent tile) the current tile will be used in place of the non-existant tile
+    tiles of width/height (2 * local_radius_px + 1) will be calculated and results for each pixel will be bilinerarly interpolated from the nearest 4 tiles
+    when pixels fall near the edge of the image (there is no adjacent tile) the resultant interpolated sum from the available tiles will be multipled to
+    account for the weight of any missing tiles (pixel total interpolated value = pixel available interpolated value / (1 - missing interpolation weight))
+    
     if do_zerotoone_normalization is True the data will be scaled so that all data in the mask_to_equalize falls between 0 and 1; otherwise the data
     in mask_to_equalize will all fall between 0 and number_of_bins
     
@@ -257,16 +270,14 @@ def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None,
             max_col = min_col + tile_size
             
             # for speed of calculation, pull out the mask of pixels that should be used to calculate the histogram
-            mask_for_histogram_creation = mask_to_equalize[min_row:max_row, min_col:max_col] # TODO, until I figure out what's up with the top edge of regions being too light, use only the data in the mask
-            #mask_for_histogram_creation = valid_data_mask[min_row:max_row, min_col:max_col]
+            mask_valid_data_in_tile  = valid_data_mask[min_row:max_row, min_col:max_col]
             
-            # if we have any valid data, calculate a histogram equalization for this tile
-            # (note even if this tile isn't going to be equalized in this mask, it's histogram equalization
-            # may be used by surounding tiles)
+            # if we have any valid data in this tile, calculate a histogram equalization for this tile
+            # (note: even if this tile does no fall in the mask_to_equalize, it's histogram may be used by other tiles)
             cumulative_dist_function, temp_bins = None, None
-            if mask_for_histogram_creation.any() :
+            if mask_valid_data_in_tile.any():
                 # use all valid data in the tile, so separate sections will blend cleanly
-                temp_valid_data = data[min_row:max_row, min_col:max_col][mask_for_histogram_creation]
+                temp_valid_data = data[min_row:max_row, min_col:max_col][mask_valid_data_in_tile]
                 # do the histogram equalization and get the resulting distribution function and bin information
                 cumulative_dist_function, temp_bins = _histogram_equalization_helper (temp_valid_data, number_of_bins)
             
@@ -300,35 +311,48 @@ def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None,
                 # of the histogram equalizations from the surrounding tiles
                 temp_sum = numpy.zeros(temp_data_to_equalize.shape, dtype=data.dtype)
                 
+                # how much weight were we unable to use because those tiles fell off the edge of the image?
+                unused_weight = numpy.zeros((tile_size, tile_size), dtype=tile_weights.dtype)
+                
                 # loop through all the surrounding tiles and process their contributions to this tile
                 for weight_row in range(3) :
                     for weight_col in range(3) :
                         
-                        # figure out the adjacent tile we're processing (in overall tile coordinates instead of relative to our current tile)
+                        # figure out which adjacent tile we're processing (in overall tile coordinates instead of relative to our current tile)
                         calculated_row = num_row_tile - 1 + weight_row
                         calculated_col = num_col_tile - 1 + weight_col
                         
                         # if we're inside the tile array and the tile we're processing has a histogram equalization for us to use, process it
-                        temp_equalized_data = None
                         if ( (calculated_row >= 0) and (calculated_row < row_tiles) and
                              (calculated_col >= 0) and (calculated_col < col_tiles) and
-                             (all_bin_information[calculated_row][calculated_col] is not None) and
+                             (all_bin_information          [calculated_row][calculated_col] is not None) and
                              (all_cumulative_dist_functions[calculated_row][calculated_col] is not None)) :
+                            
+                            # equalize our current tile using the histogram equalization from the tile we're processing
                             temp_equalized_data = numpy.interp(temp_all_valid_data,
                                                                all_bin_information          [calculated_row][calculated_col][:-1],
                                                                all_cumulative_dist_functions[calculated_row][calculated_col])
                             temp_equalized_data = temp_equalized_data[temp_mask_to_equalize[temp_all_valid_data_mask]]
-                        else : # if the tile we're processing doesn't exist, use our center tile for it's contribution instead
-                            temp_equalized_data = numpy.interp(temp_all_valid_data,
-                                                               all_bin_information          [num_row_tile  ][num_col_tile][:-1],
-                                                               all_cumulative_dist_functions[num_row_tile  ][num_col_tile])
-                            temp_equalized_data = temp_equalized_data[temp_mask_to_equalize[temp_all_valid_data_mask]]
-                        
-                        # add the contribution for the tile we're processing to our weighted sum
-                        temp_sum = temp_sum + (temp_equalized_data * tile_weights[weight_row, weight_col][temp_mask_to_equalize])
+                            
+                            # add the contribution for the tile we're processing to our weighted sum
+                            temp_sum = temp_sum + (temp_equalized_data * tile_weights[weight_row, weight_col][temp_mask_to_equalize])
+                            
+                        else : # if the tile we're processing doesn't exist, hang onto the weight we would have used for it so we can correct that later
+                            unused_weight = unused_weight + tile_weights[weight_row, weight_col]
+                
+                # if we have unused weights, scale our values to correct for that
+                if (numpy.sum(unused_weight) > 0) :
+                    temp_sum = temp_sum / ((unused_weight[temp_mask_to_equalize] * - 1) + 1)
                 
                 # now that we've calculated the weighted sum for this tile, set it in our data array
                 data[min_row:max_row, min_col:max_col][temp_mask_to_equalize] = temp_sum
+                
+                """
+                # TEMP, test without using weights
+                data[min_row:max_row, min_col:max_col][temp_mask_to_equalize] = numpy.interp(temp_data_to_equalize,
+                                                                                             all_bin_information          [num_row_tile  ][num_col_tile][:-1],
+                                                                                             all_cumulative_dist_functions[num_row_tile  ][num_col_tile])
+                """
     
     # if we were asked to, normalize our data to be between zero and one, rather than zero and number_of_bins
     if do_zerotoone_normalization :
@@ -350,86 +374,105 @@ def _histogram_equalization_helper (valid_data, number_of_bins) :
     # now normalize the overall distribution function
     cumulative_dist_function  = (number_of_bins - 1) * cumulative_dist_function / cumulative_dist_function[-1]
     
+    # return what someone else will need in order to apply the equalization later
     return cumulative_dist_function, temp_bins
 
 def _calculate_weights (tile_size) :
     """
-    calculate the weight arrays that will be used to quickly interpolate the histogram equalizations
+    calculate a weight array that will be used to quickly bilinearly-interpolate the histogram equalizations
     tile size should be the width and height of a tile in pixels
     
-    returns a 4D weight array, where the first 2 dimensions correspond to the grid of where the tiles are relative to the pixel's tile
-    where adjacent tiles do not exist (eg. along an edge) the weights for those tiles will be 0.0
+    returns a 4D weight array, where the first 2 dimensions correspond to the grid of where the tiles are
+    relative to the tile being interpolated
     """
     
-    # for now let's just make a center tile
+    # we are essentially making a set of weight masks for an ideal center tile that has all 8 surrounding tiles available
     
-    # create some template tiles
+    # create our empty template tiles
     template_tile = numpy.zeros((3, 3, tile_size, tile_size), dtype=numpy.float32)
     
     """
-    # TEMP FOR TESTING
+    # TEMP FOR TESTING, create a weight tile that does no interpolation
     template_tile[1,1] = template_tile[1,1] + 1.0
     """
     
+    # for ease of calculation, figure out the index of the center pixel in a tile
+    # and how far that pixel is from the edge of the tile (in pixel units)
     center_index = int(tile_size / 2)
     center_dist  =     tile_size / 2.0
     
+    # loop through each pixel in the tile and calculate the 9 weights for that pixel
+    # were weights for a pixel are 0.0 they are not set (since the template_tile
+    # starts out as all zeros)
     for row in range(tile_size) :
         for col in range(tile_size) :
             
             vertical_dist   = abs(center_dist - row) # the distance from our pixel to the center of our tile, vertically
             horizontal_dist = abs(center_dist - col) # the distance from our pixel to the center of our tile, horizontally
             
-            # pre-calculate which tiles will affect our tile
+            # pre-calculate which 3 adjacent tiles will affect our tile
+            # (note: these calculations aren't quite right if center_index equals the row or col)
             horizontal_index = 0 if col < center_index else 2
             vertical_index   = 0 if row < center_index else 2
             
-            # if this is the center pixel, we only need to use one tile for it
+            # if this is the center pixel, we only need to use it's own tile for it
             if (row is center_index) and (col is center_index) :
                 
+                # all of the weight for this pixel comes from it's own tile
                 template_tile[1,1][row, col] = 1.0
                 
+            # if this pixel is in the center row, but is not the center pixel
+            # we're going to need to linearly interpolate it's tile and the
+            # tile that is horizontally nearest to it
             elif (row is     center_index)    and (col is not center_index) :
                 
                 # linear interp horizontally
                 
-                beside_weight = horizontal_dist / tile_size
-                local_weight  = (tile_size - horizontal_dist) / tile_size
+                beside_weight = horizontal_dist / tile_size               # the weight from the adjacent tile
+                local_weight  = (tile_size - horizontal_dist) / tile_size # the weight from this tile
                 
-                template_tile[1, 1][row, col]                = local_weight
+                # set the weights for the two relevant tiles
+                template_tile[1, 1]               [row, col] = local_weight
                 template_tile[1, horizontal_index][row, col] = beside_weight
                 
+            # if this pixel is in the center column, but is not the center pixel
+            # we're going to need to linearly interpolate it's tile and the
+            # tile that is vertically nearest to it
             elif (row is not center_index)    and (col is     center_index) :
                 
                 # linear interp vertical
                 
-                beside_weight = vertical_dist / tile_size
-                local_weight  = (tile_size - vertical_dist) / tile_size
+                beside_weight = vertical_dist / tile_size               # the weight from the adjacent tile
+                local_weight  = (tile_size - vertical_dist) / tile_size # the weight from this tile
                 
-                template_tile[1, 1][row, col]                = local_weight
+                # set the weights for the two relevant tiles
+                template_tile[1,              1][row, col]   = local_weight
                 template_tile[vertical_index, 1][row, col]   = beside_weight
                 
+            # if the pixel is in one of the four quadrants that are above or below the center
+            # row and column, we need to bilinearly interpolate it between the nearest four tiles
             else:
                 
                 # bilinear interpolation
                 
-                local_weight      = ((tile_size - vertical_dist) / tile_size) * ((tile_size - horizontal_dist) / tile_size)
-                vertical_weight   = ((            vertical_dist) / tile_size) * ((tile_size - horizontal_dist) / tile_size)
-                horizontal_weight = ((tile_size - vertical_dist) / tile_size) * ((            horizontal_dist) / tile_size)
-                diagonal_weight   = ((            vertical_dist) / tile_size) * ((            horizontal_dist) / tile_size)
+                local_weight      = ((tile_size - vertical_dist) / tile_size) * ((tile_size - horizontal_dist) / tile_size) # the weight from this tile
+                vertical_weight   = ((            vertical_dist) / tile_size) * ((tile_size - horizontal_dist) / tile_size) # the weight from the vertically   adjacent tile
+                horizontal_weight = ((tile_size - vertical_dist) / tile_size) * ((            horizontal_dist) / tile_size) # the weight from the horizontally adjacent tile
+                diagonal_weight   = ((            vertical_dist) / tile_size) * ((            horizontal_dist) / tile_size) # the weight from the diagonally   adjacent tile
                 
+                # set the weights for the four relevant tiles
                 template_tile[1,              1,                row, col] = local_weight
                 template_tile[vertical_index, 1,                row, col] = vertical_weight
                 template_tile[1,              horizontal_index, row, col] = horizontal_weight
                 template_tile[vertical_index, horizontal_index, row, col] = diagonal_weight
     
     
-    # TODO, currently this is not returning a full set of weights for an image, just an ideal center tile!
+    # return the weights for an ideal center tile
     return template_tile
 
 def _linear_normalization_from_0to1 (data, mask, theoretical_max, theoretical_min=0, message="    normalizing DNB data into 0 to 1 range") :
     """
-    do a linear normalization so all data is in the 0 to 1 range. This is a sloppy but fast calculation that relies on you
+    do a linear normalization so all data is in the 0 to 1 range. This is a sloppy but fast calculation that relies on parameters
     giving it the correct theoretical current max and min so it can scale the data accordingly.
     """
     
