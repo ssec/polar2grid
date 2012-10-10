@@ -699,7 +699,7 @@ bool ComputeEwa(image *uimg, image *vimg,
                     if (got_fills[chan] == FALSE) {
                       this_weightp = ((float *)this_grid_weight_image->buf[0]) + grid_offset;
                       *this_weightp += weight;
-                      *(this_grid_chanpp + grid_offset) += *this_swath_chanp * weight;
+                      *(*this_grid_chanpp + grid_offset) += *this_swath_chanp * weight;
                     }
                     // increment pointers even if there was a fill value
                     this_grid_chanpp++;
