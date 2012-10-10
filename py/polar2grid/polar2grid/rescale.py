@@ -166,6 +166,7 @@ def dnb_scale(img, *args, **kwargs):
     if ("day_mask"   in kwargs) and (numpy.sum(kwargs["day_mask"])   > 0) :
         log.debug("  scaling DNB in day mask")
         temp_image = img.copy()
+        #_histogram_equalization(temp_image, kwargs["day_mask"  ])
         _local_histogram_equalization(temp_image, kwargs["day_mask"  ], valid_data_mask=allValidData, local_radius_px=200)
         img_result[kwargs["day_mask"  ]] = temp_image[kwargs["day_mask"  ]]
     
@@ -173,13 +174,15 @@ def dnb_scale(img, *args, **kwargs):
         log.debug("  scaling DNB in twilight mask")
         for mask in kwargs["mixed_mask"]:
             temp_image = img.copy()
+            #_histogram_equalization(temp_image, mask)
             _local_histogram_equalization(temp_image, mask, valid_data_mask=allValidData, local_radius_px=50)
             img_result[mask] = temp_image[mask]
     
     if ("night_mask" in kwargs) and (numpy.sum(kwargs["night_mask"]) > 0) :
         log.debug("  scaling DNB in night mask")
         temp_image = img.copy()
-        _local_histogram_equalization(temp_image, kwargs["night_mask"], valid_data_mask=allValidData, local_radius_px=200)
+        #_histogram_equalization(temp_image, kwargs["night_mask"])
+        _local_histogram_equalization(temp_image, kwargs["night_mask"], valid_data_mask=allValidData, local_radius_px=300)
         img_result[kwargs["night_mask"]] = temp_image[kwargs["night_mask"]]
     
     return img_result
@@ -222,7 +225,7 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mu
     
     return data
 
-def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True, local_radius_px=300) :
+def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None, number_of_bins=1000, std_mult_cutoff=5.0, do_zerotoone_normalization=True, local_radius_px=300) :
     """
     equalize the provided data (in the mask_to_equalize) using adaptive histogram equalization
     tiles of width/height (2 * local_radius_px + 1) will be calculated and results for each pixel will be bilinerarly interpolated from the nearest 4 tiles
@@ -276,10 +279,25 @@ def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None,
             # (note: even if this tile does no fall in the mask_to_equalize, it's histogram may be used by other tiles)
             cumulative_dist_function, temp_bins = None, None
             if mask_valid_data_in_tile.any():
+                
+                # use all valid data in the tile, so separate sections will blend cleanly
+                temp_valid_data = data[min_row:max_row, min_col:max_col][mask_valid_data_in_tile]
+                # limit the contrast by only considering data within a certain range of the average
+                if std_mult_cutoff is not None :
+                    avg               = numpy.mean(temp_valid_data)
+                    std               = numpy.std (temp_valid_data)
+                    # limit our range to avg +/- std_mult_cutoff*std; e.g. the default std_mult_cutoff is 4.0 so about 99.8% of the data
+                    concervative_mask = (temp_valid_data < (avg + std*std_mult_cutoff)) & (temp_valid_data > (avg - std*std_mult_cutoff))
+                    temp_valid_data   = temp_valid_data[concervative_mask]
+                # do the histogram equalization and get the resulting distribution function and bin information
+                cumulative_dist_function, temp_bins = _histogram_equalization_helper (temp_valid_data, number_of_bins)
+                
+                """
                 # use all valid data in the tile, so separate sections will blend cleanly
                 temp_valid_data = data[min_row:max_row, min_col:max_col][mask_valid_data_in_tile]
                 # do the histogram equalization and get the resulting distribution function and bin information
                 cumulative_dist_function, temp_bins = _histogram_equalization_helper (temp_valid_data, number_of_bins)
+                """
             
             # hang on to our equalization related information for use later
             all_cumulative_dist_functions[num_row_tile].append(cumulative_dist_function)
