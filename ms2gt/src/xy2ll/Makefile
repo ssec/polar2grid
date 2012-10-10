@@ -4,7 +4,7 @@
 # 30-Mar-2011 Terry Haran tharan@colorado.edu 303-492-1847
 # National Snow & Ice Data Center, University of Colorado, Boulder
 #========================================================================
-RCSID = $Header: /data/tharan/ms2gth/src/xy2ll/Makefile,v 1.2 2011/03/30 20:45:57 tharan Exp $
+RCSID = $Header: /disks/megadune/data/tharan/ms2gth/src/xy2ll/Makefile,v 1.2 2011/03/30 20:45:57 tharan Exp $
 
 #------------------------------------------------------------------------
 # configuration section

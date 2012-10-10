@@ -7,7 +7,7 @@
 # National Snow & Ice Data Center, University of Colorado, Boulder
 #========================================================================
 
-# $Header: /data/tharan/ms2gth/src/scripts/grids.pl,v 1.4 2006/07/07 17:00:03 tharan Exp $
+# $Header: /disks/megadune/data/tharan/ms2gth/src/scripts/grids.pl,v 1.4 2006/07/07 17:00:03 tharan Exp $
 
 #========================================================================
 # grid_convert_open - open a pipe for sending input to grid_convert

@@ -4,7 +4,7 @@
 ;*
 ;* 19-Nov-2004  Terry Haran  tharan@colorado.edu  492-1847
 ;* National Snow & Ice Data Center, University of Colorado, Boulder
-;$Header: /data/tharan/ms2gth/src/idl/modis_utils/extract_valid_scans.pro,v 1.23 2010/09/04 18:44:16 tharan Exp $
+;$Header: /disks/megadune/data/tharan/ms2gth/src/idl/modis_utils/extract_valid_scans.pro,v 1.23 2010/09/04 18:44:16 tharan Exp $
 ;*========================================================================*/
 
 ;+
