@@ -59,7 +59,7 @@ def get_meta_data(ifilepaths, filter=None):
                     - band
                     - band_name
                     - data_kind
-                    - src_kind
+                    - remap_data_as
                     - rows_per_scan
                     - fbf_swath
         image_data : dict
@@ -98,7 +98,7 @@ def get_meta_data(ifilepaths, filter=None):
             log.error("Continuing without that image file...")
             continue
 
-        if not filter(finfo):
+        if filter and not filter(finfo):
             log.debug("File %s was filtered out" % fn)
             continue
 
@@ -134,7 +134,7 @@ def get_meta_data(ifilepaths, filter=None):
                     "band"          : finfo["band"],
                     "band_name"     : bname,
                     "data_kind"     : finfo["data_kind"],
-                    "src_kind"      : finfo["data_kind"],
+                    "remap_data_as" : finfo["data_kind"],
                     "rows_per_scan" : finfo["rows_per_scan"],
                     "fbf_swath"     : None
                     }
@@ -164,7 +164,7 @@ def get_geo_meta(gfilepaths):
             Dictionary of meta data derived from the provided filepaths.
             Contains the following keys:
 
-                - start_dt
+                - start_time
                 - swath_rows
                 - swath_cols
                 - rows_per_scan
@@ -187,7 +187,7 @@ def get_geo_meta(gfilepaths):
     """
     geo_data = []
     meta_data = {
-            "start_dt"  : None,
+            "start_time"  : None,
             "swath_rows"  : None,
             "swath_cols"  : None,
             "rows_per_scan" : None,
@@ -219,7 +219,7 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     Has the option of cutting out bad data scans, see ``cut_bad`` below.
 
     Will add/fill in the following information into the meta_data dictionary:
-        - start_dt
+        - start_time
             Datetime object of the first middle scan time of the
             first granule
         - fbf_lat
@@ -262,14 +262,18 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     lafa = file_appender(lafo, dtype=numpy.float32)
     lofa = file_appender(lofo, dtype=numpy.float32)
     modefa = file_appender(modefo, dtype=numpy.float32)
+    lat_min = 91.0
+    lat_max = -1.0
+    lon_min = 181.0
+    lon_max = -181.0
 
     for ginfo in geo_data:
         # Read in lat/lon data
         try:
             read_geo_info(ginfo)
             # Start datetime used in product backend for NC creation
-            if meta_data["start_dt"] is None:
-                meta_data["start_dt"] = ginfo["start_dt"]
+            if meta_data["start_time"] is None:
+                meta_data["start_time"] = ginfo["start_time"]
         except StandardError:
             # Can't continue without lat/lon data
             log.error("Error reading data from %s for band kind %s" % (ginfo["geo_path"],meta_data["kind"]), exc_info=1)
@@ -281,6 +285,12 @@ def process_geo(meta_data, geo_data, cut_bad=False):
             ginfo["lat_data"] = numpy.delete(ginfo["lat_data"], scan_quality, axis=0)
             ginfo["lon_data"] = numpy.delete(ginfo["lon_data"], scan_quality, axis=0)
             ginfo["mode_mask"] = numpy.delete(ginfo["mode_mask"], scan_quality, axis=0)
+
+        # Calculate min and max lat/lon values for use in remapping
+        lat_min = min(lat_min,ginfo["lat_data"][ginfo["lat_data"] != -999].min())
+        lat_max = max(lat_max,ginfo["lat_data"][ginfo["lat_data"] != -999].max())
+        lon_min = min(lon_min,ginfo["lon_data"][ginfo["lon_data"] != -999].min())
+        lon_max = max(lon_max,ginfo["lon_data"][ginfo["lon_data"] != -999].max())
 
         # Append the data to the swath
         lafa.append(ginfo["lat_data"])
@@ -315,6 +325,11 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     meta_data["swath_rows"] = swath_rows
     meta_data["swath_cols"] = swath_cols
     meta_data["swath_scans"] = swath_rows/meta_data["rows_per_scan"]
+    log.debug("Data min_lon: %f, max_lat: %f, max_lon: %f, min_lat: %f" % (lon_min,lat_max,lon_max,lat_min))
+    meta_data["lat_min"] = lat_min
+    meta_data["lat_max"] = lat_max
+    meta_data["lon_min"] = lon_min
+    meta_data["lon_max"] = lon_max
 
     return meta_data,geo_data
 

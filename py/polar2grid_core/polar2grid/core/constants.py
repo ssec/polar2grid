@@ -8,6 +8,11 @@ Rules/Preferences:
     - user-legible (assume that they may be printed in log messages)
     - use == for comparison (not 'is' or 'not' or other)
 
+Possible confusions:
+    The VIIRS fog product created by polar2grid is a temperature difference of
+    2 I bands.  It is classified as an I band for this reason, meaning the
+    band is "fog", not the usual number.
+
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
@@ -47,13 +52,20 @@ BID_13 = "13"
 BID_14 = "14"
 BID_15 = "15"
 BID_16 = "16"
+BID_FOG = "fog"
 
 # Data kinds
-DKIND_LATITUDE = "LatitudeVar"
-DKIND_LONGITUDE = "LongitudeVar"
-DKIND_RADIANCE = "RadianceVar"
-DKIND_REFLECTANCE = "ReflectanceVar"
-DKIND_BTEMP = "BrightnessTemperatureVar"
-DKIND_FOG = "FogPseudoBand"
+DKIND_LATITUDE = "latitude"
+DKIND_LONGITUDE = "longitude"
+DKIND_RADIANCE = "radiance"
+DKIND_REFLECTANCE = "reflectance"
+DKIND_BTEMP = "brightnesstemperature"
+DKIND_FOG = "fog"
 
+# Grid Constants
+GRIDS_ANY = "any_grid"
+GRIDS_ANY_GPD = "any_gpd_grid"
+GRIDS_ANY_PROJ4 = "any_proj4_grid"
+GRID_KIND_GPD = "gpd"
+GRID_KIND_PROJ4 = "proj4"
 

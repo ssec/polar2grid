@@ -50,7 +50,7 @@ variables:
 from polar2grid.core import Workspace,UTC
 from polar2grid.core.constants import BKIND_DNB
 from polar2grid.nc import create_nc_from_ncml
-from polar2grid.rescale import rescale,post_rescale_dnb
+from polar2grid.rescale import rescale,linear_scale as post_rescale_dnb
 from netCDF4 import Dataset
 import numpy
 
