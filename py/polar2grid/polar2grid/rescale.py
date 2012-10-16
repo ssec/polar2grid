@@ -175,20 +175,20 @@ def dnb_scale(img, *args, **kwargs):
         for mask in kwargs["mixed_mask"]:
             temp_image = img.copy()
             #_histogram_equalization(temp_image, mask)
-            _local_histogram_equalization(temp_image, mask, valid_data_mask=allValidData, local_radius_px=50)
+            _local_histogram_equalization(temp_image, mask, valid_data_mask=allValidData, local_radius_px=100)
             img_result[mask] = temp_image[mask]
     
     if ("night_mask" in kwargs) and (numpy.sum(kwargs["night_mask"]) > 0) :
         log.debug("  scaling DNB in night mask")
         temp_image = img.copy()
         #_histogram_equalization(temp_image, kwargs["night_mask"])
-        _local_histogram_equalization(temp_image, kwargs["night_mask"], valid_data_mask=allValidData, local_radius_px=300)
+        _local_histogram_equalization(temp_image, kwargs["night_mask"], valid_data_mask=allValidData, local_radius_px=200)
         img_result[kwargs["night_mask"]] = temp_image[kwargs["night_mask"]]
     
     return img_result
 
 # FUTURE, this version of histogram equalization is no longer used and could be removed
-def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True, local_radius_px=None) :
+def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True, local_radius_px=None, clip_limit=None) :
     """
     Perform a histogram equalization on the data selected by mask_to_equalize.
     The data will be separated into number_of_bins levels for equalization and
@@ -225,7 +225,10 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mu
     
     return data
 
-def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None, number_of_bins=1000, std_mult_cutoff=5.0, do_zerotoone_normalization=True, local_radius_px=300) :
+def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None, number_of_bins=1000,
+                                   std_mult_cutoff=5.0,
+                                   do_zerotoone_normalization=True,
+                                   local_radius_px=300, clip_limit=0.0005) :
     """
     equalize the provided data (in the mask_to_equalize) using adaptive histogram equalization
     tiles of width/height (2 * local_radius_px + 1) will be calculated and results for each pixel will be bilinerarly interpolated from the nearest 4 tiles
@@ -290,14 +293,7 @@ def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None,
                     concervative_mask = (temp_valid_data < (avg + std*std_mult_cutoff)) & (temp_valid_data > (avg - std*std_mult_cutoff))
                     temp_valid_data   = temp_valid_data[concervative_mask]
                 # do the histogram equalization and get the resulting distribution function and bin information
-                cumulative_dist_function, temp_bins = _histogram_equalization_helper (temp_valid_data, number_of_bins)
-                
-                """
-                # use all valid data in the tile, so separate sections will blend cleanly
-                temp_valid_data = data[min_row:max_row, min_col:max_col][mask_valid_data_in_tile]
-                # do the histogram equalization and get the resulting distribution function and bin information
-                cumulative_dist_function, temp_bins = _histogram_equalization_helper (temp_valid_data, number_of_bins)
-                """
+                cumulative_dist_function, temp_bins = _histogram_equalization_helper (temp_valid_data, number_of_bins, clip_limit=clip_limit)
             
             # hang on to our equalization related information for use later
             all_cumulative_dist_functions[num_row_tile].append(cumulative_dist_function)
@@ -378,7 +374,7 @@ def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None,
     
     return data
 
-def _histogram_equalization_helper (valid_data, number_of_bins) :
+def _histogram_equalization_helper (valid_data, number_of_bins, clip_limit=None, do_clip_before=True) :
     """
     calculate the simplest possible histogram equalization, using only valid data
     
@@ -386,9 +382,40 @@ def _histogram_equalization_helper (valid_data, number_of_bins) :
     """
     
     # bucket all the selected data using numpy's histogram function
-    temp_histogram, temp_bins = numpy.histogram(valid_data, number_of_bins, normed=True)
+    temp_histogram, temp_bins = numpy.histogram(valid_data, number_of_bins)
+    
+    # if we have a clip limit and we should do our clipping before building the cumulative distribution function, clip off our histogram
+    if do_clip_before and (clip_limit is not None) :
+        
+        # clip our histogram and remember how much we removed
+        pixels_to_clip_at            = int(clip_limit * valid_data.size)
+        mask_to_clip                 = temp_histogram > clip_limit
+        num_bins_clipped             = sum(mask_to_clip)
+        num_pixels_clipped           = sum(temp_histogram[mask_to_clip]) - (num_bins_clipped * pixels_to_clip_at)
+        temp_histogram[mask_to_clip] = pixels_to_clip_at
+        
+        # re-add the pixels we removed but add them evenly across all bins
+        to_add_per_bin               = int(num_pixels_clipped / number_of_bins) # at most one pixel may be lost here TODO, is this ok?
+        temp_histogram               = temp_histogram + to_add_per_bin
+    
     # calculate the cumulative distribution function
     cumulative_dist_function  = temp_histogram.cumsum()
+    
+    # FUTURE: this version of the contrast limiting hasn't been tested, so keep do_clip_before as True until this can be evaluated
+    # if we have a clip limit and we should do our clipping after building the cumulative distribution function, clip off our cdf
+    if (not do_clip_before) and (clip_limit is not None) :
+        
+        # clip our cdf and remember how much we removed
+        pixels_to_clip_at            = int(clip_limit * valid_data.size)
+        shifted_cdf                  = [cumulative_dist_function[0]] + cumulative_dist_function[0:-1]
+        too_much_change_mask         = (cumulative_dist_function - shifted_cdf) > pixels_to_clip_at
+        num_pixels_clipped           = sum((cumulative_dist_function - (shifted_cdf + pixels_to_clip_at))[too_much_change_mask])
+        cumulative_dist_function[too_much_change_mask] = shifted_cdf[too_much_change_mask] + pixels_to_clip_at
+        
+        # re-add the pixels we removed but add them evenly across all bins
+        to_add_per_bin               = int(num_pixels_clipped / number_of_bins)
+        cumulative_dist_function     = cumulative_dist_function + to_add_per_bin
+    
     # now normalize the overall distribution function
     cumulative_dist_function  = (number_of_bins - 1) * cumulative_dist_function / cumulative_dist_function[-1]
     
