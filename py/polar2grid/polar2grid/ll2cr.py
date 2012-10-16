@@ -1,6 +1,7 @@
 """Python replacement for ms2gt's ll2cr using pyproj and
 proj4 strings.
 """
+from polar2grid.core import Workspace
 import pyproj
 import numpy
 
@@ -12,43 +13,40 @@ import math
 log = logging.getLogger(__name__)
 
 def ll2cr(lon_arr, lat_arr, proj4_str,
-        xres=None, yres=None,
-        origin_lon=None, origin_lat=None,
+        pixel_size_x=None, pixel_size_y=None,
+        grid_origin_x=None, grid_origin_y=None,
+        swath_lat_min=None, swath_lat_max=None,
+        swath_lon_min=None, swath_lon_max=None,
         grid_width=None, grid_height=None,
-        dtype=None, fill_in=-999.0, fill_out=-1e30):
+        dtype=None, fill_in=-999.0, fill_out=-1e30,
+        prefix="ll2cr_"):
     """Similar to GDAL, y pixel resolution should be negative for downward
     images.
 
     origin_lon,origin_lat are the grids origins
     """
-
     if lat_arr.shape != lon_arr.shape:
         log.error("Longitude and latitude arrays must be the same shape (%r vs %r)" % (lat_arr.shape, lon_arr.shape))
         raise ValueError("Longitude and latitude arrays must be the same shape (%r vs %r)" % (lat_arr.shape, lon_arr.shape))
 
-    if (xres is None and yres is not None) or \
-            (yres is None and xres is not None):
-        log.error("xres and yres must both be specified or neither")
-        raise ValueError("xres and yres must both be specified or neither")
-
-    # XXX: For initial testing, always provide pixel size and origin location
-    if xres is None:
-        calc_res = True
-        raise NotImplementedError("Need resolutions")
-    else:
-        calc_res = False
-
-    if (origin_lon is None and origin_lat is not None) or \
-            (origin_lat is None and origin_lon is not None):
-        log.error("origin_lon and origin_lat must both be specified or neither")
-        raise ValueError("origin_lon and origin_lat must both be specified or neither")
+    if (pixel_size_x is None and pixel_size_y is not None) or \
+            (pixel_size_y is None and pixel_size_x is not None):
+        log.error("pixel_size_x and pixel_size_y must both be specified or neither")
+        raise ValueError("pixel_size_x and pixel_size_y must both be specified or neither")
 
     if (grid_width is None and grid_height is not None) or \
             (grid_width is not None and grid_height is None):
         log.error("grid_width and grid_height must both be specified or neither")
         raise ValueError("grid_width and grid_height must both be specified or neither")
-    #else:
-    #    calc_origin = False
+
+    if (grid_origin_x is None and grid_origin_y is not None) or \
+            (grid_origin_y is None and grid_origin_x is not None):
+        log.error("grid_origin_x and grid_origin_y must both be specified or neither")
+        raise ValueError("grid_origin_x and grid_origin_y must both be specified or neither")
+
+    if pixel_size_x is None and grid_width is None:
+        log.error("Either pixel size or grid width/height must be specified")
+        raise ValueError("Either pixel size or grid width/height must be specified")
 
     # Handle EPSG codes
     if proj4_str[:4].lower() == "epsg":
@@ -59,124 +57,96 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     if dtype is None:
         dtype = lat_arr.dtype
 
-    # TODO: Figure out filenames
+    # Memory map the output filenames
     # cols then rows in FBF filenames
-    rows_fn = "rows.real4.%d.%d" % lat_arr.shape[::-1]
+    rows_fn = prefix + "rows.real4.%d.%d" % lat_arr.shape[::-1]
     rows_arr = numpy.memmap(rows_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
-    cols_fn = "cols.real4.%d.%d" % lat_arr.shape[::-1]
+    cols_fn = prefix + "cols.real4.%d.%d" % lat_arr.shape[::-1]
     cols_arr = numpy.memmap(cols_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
 
     good_mask = (lon_arr != -999) & (lat_arr != -999)
-    if origin_lon is None:
-        #calc_origin = True
-        origin_lon = lon_arr[good_mask].min()
-        print "Data left longitude: ",origin_lon
-        #origin_lon -= 10
-        #print "Grid left longitude: ",origin_lon
-        origin_lat = lat_arr[good_mask].max()
-        print "Data upper latitude: ",origin_lat
-        #origin_lat += 5
-        #print "Grid upper latitude: ",origin_lat
-    grid_origin_x,grid_origin_y = tformer(origin_lon, origin_lat)
-    print grid_origin_x,grid_origin_y
+    fine_tune_origin = False
+    if grid_origin_x is None:
+        if swath_lon_min is None:
+            swath_lon_min = lon_arr[good_mask].min()
+            log.debug("Data left longitude: %f" % swath_lon_min)
+        if swath_lat_max is None:
+            swath_lat_max = lat_arr[good_mask].max()
+            log.debug("Data upper latitude: %f" % swath_lat_max)
+        grid_origin_x,grid_origin_y = tformer(swath_lon_min, swath_lat_max)
+        fine_tune_origin = True
 
-    if grid_width is None:
-        xmax = lon_arr[good_mask].max()
-        print "Data right longitude: ",xmax
-        #xmax += 10
-        #print "Grid right longitude: ",xmax
-        ymin = lat_arr[good_mask].min()
-        print "Data lower latitude: ",ymin
-        #ymin -= 4
-        #print "Grid lower latitude: ",ymin
-        #corner_x,corner_y = tformer(xmax,ymin)
-        corner_x1,corner_y1 = tformer(xmax,ymin)
-        print "corners 1: ",corner_x1,corner_y1
-        corner_x2,corner_y2 = tformer(origin_lon,ymin)
-        print "corners 2: ",corner_x2,corner_y2
-        corner_x3,corner_y3 = tformer(xmax,origin_lat)
-        print "corners 3: ",corner_x3,corner_y3
-        grid_origin_x = min(corner_x1,corner_x2,corner_x3,grid_origin_x)
+    if grid_width is None or pixel_size_x is None:
+        if swath_lon_max is None:
+            swath_lon_max = lon_arr[good_mask].max()
+            log.debug("Data right longitude: %f" % swath_lon_max)
+        if swath_lat_min is None:
+            swath_lat_min = lat_arr[good_mask].min()
+            log.debug("Data lower latitude: %f" % swath_lat_min)
+
+        corner_x1,corner_y1 = tformer(swath_lon_max,swath_lat_min)
+        log.debug("corners 1: %f,%f" % (corner_x1,corner_y1))
+        corner_x2,corner_y2 = tformer(swath_lon_min,swath_lat_min)
+        log.debug("corners 2: %f,%f" % (corner_x2,corner_y2))
+        corner_x3,corner_y3 = tformer(swath_lon_max,swath_lat_max)
+        log.debug("corners 3: %f,%f" % (corner_x3,corner_y3))
+
+        # Due to the way projection coordinates work, if we are fitting the
+        # grid to the data we need to find the extremes of the grid, not the
+        # data
         corner_x = max(corner_x1,corner_x2,corner_x3,grid_origin_x)
-        grid_origin_y = max(corner_y1,corner_y2,corner_y3,grid_origin_y)
         corner_y = min(corner_y1,corner_y2,corner_y3,grid_origin_y)
-        print "corners: ",corner_x,corner_y
+        if fine_tune_origin:
+            grid_origin_x = min(corner_x1,corner_x2,corner_x3,grid_origin_x)
+            grid_origin_y = max(corner_y1,corner_y2,corner_y3,grid_origin_y)
+            log.debug("Grid Origin: %f,%f" % (grid_origin_x,grid_origin_y))
+        log.debug("Grid Corners: %f,%f" % (corner_x,corner_y))
 
-        grid_width = (corner_x - grid_origin_x) / xres
-        grid_height = (corner_y - grid_origin_y) / yres
-        #print "Grid width/height estimates (%f, %f)" % (grid_width, grid_height)
-        #if grid_width % 1 != 0 or grid_height % 1 != 0:
-        #    grid_width = math.ceil(grid_width) if grid_width > 0 else math.floor(grid_width)
-        #    grid_height = math.ceil(grid_height) if grid_height > 0 else math.floor(grid_height)
-        #    xres = float(corner_x - grid_origin_x) / grid_width
-        #    yres = float(corner_y - grid_origin_y) / grid_height
-        #    log.warning("Changing xres and yres to (%f, %f) to fit integer size" % (xres,yres))
-        print "Grid width/height (%d, %d)" % (grid_width,grid_height)
+        if grid_width is None:
+            # Calculate grid size
+            grid_width = math.ceil((corner_x - grid_origin_x) / pixel_size_x)
+            grid_height = math.ceil((corner_y - grid_origin_y) / pixel_size_y)
+            log.debug("Grid width/height (%d, %d)" % (grid_width,grid_height))
+        else:
+            # Calculate pixel size
+            pixel_size_x = (corner_x - grid_origin_x) / float(grid_width)
+            pixel_size_y = (corner_y - grid_origin_y) / float(grid_height)
+            log.debug("Grid pixel size (%f, %f)" % (pixel_size_x,pixel_size_y))
         
-    #if not calc_origin:
-    #if calc_origin or calc_res:
-    #    x_buffer = numpy.zeros(lat_arr.shape)
-    #    y_buffer = numpy.zeros(lat_arr.shape)
-    #    bad_mask = numpy.zeros(lat_arr.shape[1])
     good_mask = numpy.zeros(lat_arr.shape[1], dtype=numpy.bool)
-    #grid_width = 5120
-    #grid_height = 5120
-    #grid_width = lat_arr.shape[1]
-    #grid_height = lat_arr.shape[0]
-    #print tformer(0, 0, inverse=True)
-    print "Real upper-left corner (%f,%f)" % tformer(grid_origin_x, grid_origin_y, inverse=True)
-    print "Real lower-right corner (%f,%f)" % tformer(grid_origin_x+xres*grid_width, grid_origin_y+yres*grid_height, inverse=True)
+    log.debug("Real upper-left corner (%f,%f)" % tformer(grid_origin_x, grid_origin_y, inverse=True))
+    log.debug("Real lower-right corner (%f,%f)" % tformer(grid_origin_x+pixel_size_x*grid_width, grid_origin_y+pixel_size_y*grid_height, inverse=True))
+
     ll2cr_info = {}
-    ll2cr_info["grid_origin_x"] = grid_origin_x
-    ll2cr_info["grid_origin_y"] = grid_origin_y
+    if "latlong" in proj4_str:
+        # Everyone else uses degrees, not radians
+        ll2cr_info["grid_origin_x"],ll2cr_info["grid_origin_y"] = tformer(grid_origin_x,grid_origin_y, inverse=True)
+    else:
+        ll2cr_info["grid_origin_x"] = grid_origin_x
+        ll2cr_info["grid_origin_y"] = grid_origin_y
     ll2cr_info["grid_width"] = grid_width
     ll2cr_info["grid_height"] = grid_height
-    ll2cr_info["pixel_size_x"] = xres
-    ll2cr_info["pixel_size_y"] = yres
-    #print tformer(xres*(grid_width+0.5), yres*(grid_height+0.5), inverse=True)
-    #print grid_origin_x,grid_origin_y,tformer(-122.0,59.0)
-    #print xres,yres,origin_lon,origin_lat,grid_width,grid_height
+    if "latlong" in proj4_str:
+        # Everyone else uses degrees, not radians
+        x,y = tformer(pixel_size_x, pixel_size_y, inverse=True)
+        ll2cr_info["pixel_size_x"] = x
+        ll2cr_info["pixel_size_y"] = y
+    else:
+        ll2cr_info["pixel_size_x"] = pixel_size_x
+        ll2cr_info["pixel_size_y"] = pixel_size_y
+    ll2cr_info["rows_filename"] = rows_fn
+    ll2cr_info["cols_filename"] = cols_fn
 
     # Do calculations for each row in the source file
     # Go per row to save on memory
     for idx in range(lon_arr.shape[0]):
         x_tmp,y_tmp = tformer(lon_arr[idx], lat_arr[idx])
-        #if calc_origin:
-        #    origin_lon = min(x_tmp[x_tmp != fill_in].min(), origin_lon)
-        #    origin_lat = max(y_tmp[y_tmp != fill_in].max(), origin_lat)
-        #if calc_res and idx == 0:
-        #    xres = abs(x_tmp[idx,x_tmp != fill_in].max() - x_tmp[idx,x_tmp != fill_in].min())
-        #    yres = y_tmp[idx,y_tmp != fill_in].max()
-        #elif calc_res and idx == lon_arr.shape[0] - 1:
-        #    xres = xres/lat_arr.shape[1]
-        #    yres = abs(y_tmp[idx,y_tmp != fill_in].min() - yres)/lat_arr.shape[0]
-
-        #if calc_origin or calc_res:
-        #    # bad_mask is True for good values
-        #    bad_mask[:] = (lon_arr[idx] != fill_in) & (lat_arr[idx] != fill_in)
-        #    x_buffer[idx,bad_mask] = x_tmp[bad_mask]
-        #    y_buffer[idx,bad_mask] = y_tmp[bad_mask]
-        #    x_buffer[idx,not bad_mask] = fill_out
-        #    y_buffer[idx,not bad_mask] = fill_out
-        #else:
         numpy.subtract(x_tmp, grid_origin_x, x_tmp)
-        numpy.divide(x_tmp, xres, x_tmp)
+        numpy.divide(x_tmp, pixel_size_x, x_tmp)
         numpy.subtract(y_tmp, grid_origin_y, y_tmp)
-        numpy.divide(y_tmp, yres, y_tmp)
-
-        #if idx == 0 or idx == 1535:
-        #    print lon_arr[idx,:10]
-        #    print lon_arr[idx,-10:]
-        #    print lat_arr[idx,:10]
-        #    print lat_arr[idx,-10:]
-        #    print x_tmp[:10]
-        #    print x_tmp[-10:]
-        #    print y_tmp[:10]
-        #    print y_tmp[-10:]
-        #    print grid_width + 0.5, grid_height + 0.5
+        numpy.divide(y_tmp, pixel_size_y, y_tmp)
 
         # good_mask here is True for good values
-        #print numpy.nonzero((lon_arr[idx] != fill_in) & (lat_arr[idx] != fill_in))
         good_mask[:] =  ~( ((lon_arr[idx] == fill_in) | (lat_arr[idx] == fill_in)) | \
                 ( (x_tmp < -0.5) | (x_tmp > (grid_width + 0.5)) ) | \
                 ( (y_tmp < -0.5) | (y_tmp > (grid_height + 0.5)) ) )
@@ -187,15 +157,19 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
 
     log.info("row and column calculation complete")
 
-    #if calc_origin or calc_res:
-    #    # TODO finish calculations
-    #    bad_mask = cols_arr != fill_out
-    #    cols_arr[bad_mask] = (x_buffer[bad_mask] - grid_origin_x)/xres
-    #    rows_arr[bad_mask] = (y_buffer[bad_mask] - grid_origin_y)/yres
     return ll2cr_info
 
+def ll2cr_fbf(lon_fbf, lat_fbf, *args, **kwargs):
+    """Wrapper around the python version of ll2cr that accepts numpy arrays
+    as arguments.  This function will load the numpy arrays from flat binary
+    files.
+    """
+    W = Workspace('.')
+    lon_arr = getattr(W, lon_fbf.split('.')[0])
+    lat_arr = getattr(W, lat_fbf.split('.')[0])
+    return ll2cr(lon_arr, lat_arr, *args, **kwargs)
+
 def main():
-    from polar2grid.core import Workspace
     from optparse import OptionParser
     usage = """
     %prog [options] lon_file lat_file "quoted proj4 string (can be 'epsg:####')"
@@ -203,11 +177,11 @@ def main():
     Resolutions
     ===========
 
-    If 'xres' is not specified it will be computed by the following formula:
+    If 'pixel_size_x' is not specified it will be computed by the following formula:
 
-        xres = abs(in_meters(lat[0,0]) - in_meters(lat[-1,0])) / num_lines
+        pixel_size_x = abs(in_meters(lat[0,0]) - in_meters(lat[-1,0])) / num_lines
 
-    Same for 'yres'.
+    Same for 'pixel_size_y'.
 
     Grid Origin
     ===========
@@ -220,9 +194,9 @@ def main():
 
     """
     parser = OptionParser(usage=usage)
-    parser.add_option("--xres", dest="xres", default=None,
+    parser.add_option("--pixel_size_x", dest="pixel_size_x", default=None,
             help="Specify the X resolution (pixel size) of the output grid (in meters)")
-    parser.add_option("--yres", dest="yres", default=None,
+    parser.add_option("--pixel_size_y", dest="pixel_size_y", default=None,
             help="Specify the Y resolution (pixel size) of the output grid (in meters)")
     parser.add_option("--olon", dest="origin_lon", default=None,
             help="Specify the longitude of the grid's origin (upper-left corner)")
@@ -240,8 +214,8 @@ def main():
 
     fill_in = float(options.fill_in)
     fill_out = float(options.fill_out)
-    xres = options.xres and float(options.xres)
-    yres = options.yres and float(options.yres)
+    pixel_size_x = options.pixel_size_x and float(options.pixel_size_x)
+    pixel_size_y = options.pixel_size_y and float(options.pixel_size_y)
     origin_lon = options.origin_lon
     if origin_lon is not None: origin_lon = float(origin_lon)
     origin_lat = options.origin_lat
@@ -264,10 +238,12 @@ def main():
     W = Workspace(w_dir)
     lon_arr = getattr(W, lon_var)
 
-    return ll2cr(lon_arr, lat_arr, proj4_str,
-            xres=xres, yres=yres,
-            origin_lon=origin_lon, origin_lat=origin_lat,
+    from pprint import pprint
+    ll2cr_dict = ll2cr(lon_arr, lat_arr, proj4_str,
+            pixel_size_x=pixel_size_x, pixel_size_y=pixel_size_y,
+            swath_origin_lon=origin_lon, swath_origin_lat=origin_lat,
             fill_in=fill_in, fill_out=fill_out)
+    pprint(ll2cr_dict)
 
 if __name__ == "__main__":
     sys.exit(main())
