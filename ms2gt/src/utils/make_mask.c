@@ -5,7 +5,7 @@
  * National Snow & Ice Data Center, University of Colorado, Boulder
  *======================================================================*/
 
-static const char make_mask_c_rcsid[] = "$Header: /data/tharan/ms2gth/src/utils/make_mask.c,v 1.6 2007/05/02 22:04:01 tharan Exp $";
+static const char make_mask_c_rcsid[] = "$Header: /disks/megadune/data/tharan/ms2gth/src/utils/make_mask.c,v 1.6 2007/05/02 22:04:01 tharan Exp $";
 
 #include <stdio.h>
 #include <sys/stat.h>
