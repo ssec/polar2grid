@@ -34,8 +34,8 @@ def run_ll2cr_py(*args, **kwargs):
 
 def run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
         grid_jobs,
-        num_procs=1, verbose=False, lat_min=None, lat_max=None,
-        lon_min=None, lon_max=None):
+        num_procs=1, verbose=False, forced_gpd=None,
+        lat_min=None, lat_max=None, lon_min=None, lon_max=None):
     """Run one of the ll2crs and return a dictionary mapping the
     `grid_name` to the cols and rows files.
     """
@@ -92,7 +92,7 @@ def run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
                     rows_per_scan,
                     lat_fbf,
                     lon_fbf,
-                    grid_info["gpd_template"],
+                    forced_gpd or grid_info["gpd_filepath"],
                     verbose = verbose,
                     fill_io = (-999.0, -1e30),
                     tag=ll2cr_tag,
@@ -107,7 +107,7 @@ def run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
             cr_dict = ll2cr_results[grid_name].get()
             ll2cr_output[grid_name].update(cr_dict)
             for band,band_dict in grid_jobs[grid_name].items():
-                band_dict.update(cr_dict)
+                band_dict.update(ll2cr_output[grid_name])
         except StandardError:
             log.warning("ll2cr failed for %s band, grid %s" % (kind,grid_name))
             log.warning("Won't process for this grid...")
@@ -144,12 +144,10 @@ def run_fornav(sat, instrument, kind, grid_jobs, ll2cr_output,
     """
     # Copy the grid_jobs dict (shallow copy)
     fornav_output = grid_jobs
-    #fornav_results = grid_jobs.copy()
 
     proc_pool = multiprocessing.Pool(num_procs)
 
-    # TODO: Need to get results to the caller
-    # TODO: Need to add process to pool
+    # Add fornav calls to the process pool
     fornav_jobs = {} # Store the information for each job
     for grid_name in grid_jobs:
         # Collect information for each "fornav job" (sorted by `remap_data_as`)
@@ -190,36 +188,38 @@ def run_fornav(sat, instrument, kind, grid_jobs, ll2cr_output,
                         pool=proc_pool
                         )
 
-        proc_pool.close()
-        proc_pool.join()
+    proc_pool.close()
+    proc_pool.join()
 
-        for grid_name,fornav_group in fornav_jobs.items():
-            for remap_data_as,fornav_job in fornav_group.items():
-                try:
-                    fornav_dict = fornav_job["result"].get()
-                    for band,band_dict in fornav_output[grid_name].items():
-                        band_dict.update(fornav_dict)
-                        band_dict.update(ll2cr_output[grid_name])
-                    log.debug("Fornav successfully completed for grid %s, %s data" % (grid_name,remap_data_as))
-                except StandardError:
-                    log.warning("fornav failed for %s band, grid %s, remapping as %s" % (kind,grid_name,remap_data_as))
-                    log.debug("Exception was:", exc_info=1)
-                    log.warning("Cleaning up for this job...")
-                    for band in fornav_output[grid_name].keys():
-                        if fornav_output[grid_name][band]["remap_data_as"] == remap_data_as:
-                            log.error("Removing %s%s because of bad fornav execution" % (kind,band))
-                            del fornav_output[grid_name][band]
-                    if len(fornav_output[grid_name]) == 0:
-                        log.error("The last grid job for grid %s was removed" % (grid_name,))
-                        del fornav_output[grid_name]
+    # Get all the results
+    for grid_name,fornav_group in fornav_jobs.items():
+        for remap_data_as,fornav_job in fornav_group.items():
+            try:
+                fornav_dict = fornav_job["result"].get()
+                for band,band_dict in fornav_output[grid_name].items():
+                    band_dict.update(fornav_dict)
+                log.debug("Fornav successfully completed for grid %s, %s data" % (grid_name,remap_data_as))
+            except StandardError:
+                log.warning("fornav failed for %s band, grid %s, remapping as %s" % (kind,grid_name,remap_data_as))
+                log.debug("Exception was:", exc_info=1)
+                log.warning("Cleaning up for this job...")
+                for band in fornav_output[grid_name].keys():
+                    print fornav_output[grid_name][band]["remap_data_as"],remap_data_as
+                    if fornav_output[grid_name][band]["remap_data_as"] == remap_data_as:
+                        log.error("Removing %s%s because of bad fornav execution" % (kind,band))
+                        del fornav_output[grid_name][band]
 
-        if len(fornav_output) == 0:
-            log.error("Fornav was not able to complete any remapping for %s bands" % (kind,))
+        if len(fornav_output[grid_name]) == 0:
+            log.error("The last grid job for grid %s was removed" % (grid_name,))
+            del fornav_output[grid_name]
 
-        return fornav_output
+    if len(fornav_output) == 0:
+        log.error("Fornav was not able to complete any remapping for %s bands" % (kind,))
+
+    return fornav_output
 
 def remap_bands(sat, instrument, kind, lon_fbf, lat_fbf,
-        grid_jobs, num_procs=1, fornav_d=None, fornav_D=None,
+        grid_jobs, num_procs=1, fornav_d=None, fornav_D=None, forced_gpd=None,
         lat_min=None, lat_max=None, lon_min=None, lon_max=None):
     """Remap data using the C or python version of ll2cr and the
     C version of fornav.
@@ -239,7 +239,7 @@ def remap_bands(sat, instrument, kind, lon_fbf, lat_fbf,
     # Run ll2cr
     ll2cr_output = run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
             grid_jobs,
-            num_procs=num_procs, verbose=log_level <= logging.DEBUG,
+            num_procs=num_procs, verbose=log_level <= logging.DEBUG, forced_gpd=forced_gpd,
             lat_min=lat_min, lat_max=lat_max, lon_min=lon_min, lon_max=lon_max)
 
     # Run fornav

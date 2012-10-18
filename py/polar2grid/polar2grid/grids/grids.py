@@ -18,8 +18,8 @@ log = logging.getLogger(__name__)
 
 script_dir = os.path.split(os.path.realpath(__file__))[0]
 GRIDS_DIR = script_dir #os.path.split(script_dir)[0] # grids directory is in root pkg dir
-SHAPES_CONFIG_FILEPATH = os.path.join(GRIDS_DIR, "grid_shapes.conf")
-GRIDS_CONFIG_FILEPATH = os.path.join(GRIDS_DIR, "grids.conf")
+SHAPES_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_SHAPES_CONFIG", os.path.join(GRIDS_DIR, "grid_shapes.conf"))
+GRIDS_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_GRIDS_CONFIG", os.path.join(GRIDS_DIR, "grids.conf"))
 
 # Filled in later
 SHAPES = None
@@ -179,9 +179,16 @@ def determine_grid_coverage(lon_data, lat_data, grids):
     set of constants `GRIDS_ANY`, `GRIDS_ANY_GPD`, `GRIDS_ANY_PROJ4`.
     """
     # Interpret constants
-    if grids == GRIDS_ANY: grids = GPD_GRIDS.keys() + PROJ4_GRIDS.keys()
-    if grids == GRIDS_ANY_PROJ4: grids = PROJ4_GRIDS.keys()
-    if grids == GRIDS_ANY_GPD: grids = GPD_GRIDS.keys()
+    # Make sure to remove the constant from the list of valid grids
+    if grids == GRIDS_ANY or GRIDS_ANY in grids:
+        grids = list(set(grids + GPD_GRIDS.keys() + PROJ4_GRIDS.keys()))
+        grids.remove(GRIDS_ANY)
+    if grids == GRIDS_ANY_PROJ4 or GRIDS_ANY_PROJ4 in grids:
+        grids = list(set(grids + PROJ4_GRIDS.keys()))
+        grids.remove(GRIDS_ANY_PROJ4)
+    if grids == GRIDS_ANY_GPD or GRIDS_ANY_GPD in grids:
+        grids = list(set(grids + GPD_GRIDS.keys()))
+        grids.remove(GRIDS_ANY_GPD)
 
     # Flatten the data for easier operations
     lon_data = lon_data.flatten()
@@ -197,6 +204,7 @@ def determine_grid_coverage(lon_data, lat_data, grids):
             useful_grids.append(grid_name)
             continue
         tbound,bbound,lbound,rbound,percent = SHAPES[grid_name]
+        lon_data_use = lon_data
         if lbound > rbound:
             lbound = lbound + 360.0
             rbound = rbound + 360.0
@@ -204,8 +212,6 @@ def determine_grid_coverage(lon_data, lat_data, grids):
                 lon_data_flipped = lon_data.copy()
                 lon_data_flipped[lon_data < 0] += 360
                 lon_data_use = lon_data_flipped
-            else:
-                lon_data_use = lon_data
         grid_mask = numpy.nonzero( (lat_data < tbound) & (lat_data > bbound) & (lon_data_use < rbound) & (lon_data_use > lbound) )[0]
         grid_percent = (len(grid_mask) / float(len(lat_data)))
         log.debug("Data had a %f coverage in grid %s" % (grid_percent,grid_name))

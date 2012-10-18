@@ -341,10 +341,7 @@ def load_config(config_filename, config_name=None):
             config_filename = os.path.join(DEFAULT_CONFIG_DIR, config_filename)
     config_filename = os.path.realpath(config_filename)
 
-    if config_filename is None:
-        log.debug("Using default rescaling parameters to scale data")
-    else:
-        log.debug("Using rescaling configuration '%s'" % (config_filename,))
+    log.debug("Using rescaling configuration '%s'" % (config_filename,))
 
     if config_filename in PERSISTENT_CONFIGS:
         return True

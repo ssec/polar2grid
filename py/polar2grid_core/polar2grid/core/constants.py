@@ -59,7 +59,7 @@ DKIND_LATITUDE = "latitude"
 DKIND_LONGITUDE = "longitude"
 DKIND_RADIANCE = "radiance"
 DKIND_REFLECTANCE = "reflectance"
-DKIND_BTEMP = "brightnesstemperature"
+DKIND_BTEMP = "btemp"
 DKIND_FOG = "fog"
 
 # Grid Constants

@@ -163,7 +163,7 @@ def backend(sat, instrument, kind, band, data_kind, data,
                 )
 
     # Rescale the data based on the configuration that was loaded earlier
-    rescale(sat, instrument, kind, band, data_kind, data, config=rescale_config)
+    data = rescale(sat, instrument, kind, band, data_kind, data, config=rescale_config)
 
     # Create the geotiff
     geotransform = (grid_origin_x, pixel_size_x, rotate_x, grid_origin_y, rotate_y, pixel_size_y)

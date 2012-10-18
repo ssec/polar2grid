@@ -17,10 +17,9 @@ from polar2grid.core import Workspace
 from polar2grid.core.constants import *
 from polar2grid.viirs import make_swaths
 from .grids.grids import determine_grid_coverage_fbf,get_grid_info
-from .viirs2awips import run_prescaling,_safe_remove
+from .viirs2awips import run_prescaling,_safe_remove,create_grid_jobs,create_pseudobands
 from .remap import remap_bands
 from .gtiff_backend import can_handle_inputs,backend,_bits_to_etype
-import pyproj
 
 import os
 import sys
@@ -103,135 +102,14 @@ def remove_products():
         _safe_remove(f)
     for f in glob("prescale_*.real4.*"):
         _safe_remove(f)
-    for f in glob("swath*.img"):
-        _safe_remove(f)
-    for f in glob("lat*.img"):
-        _safe_remove(f)
-    for f in glob("lon*.img"):
+    for f in glob("ll2cr_*.real4.*"):
         _safe_remove(f)
 
-    for f in glob("*_rows_*.img"):
-        _safe_remove(f)
-    for f in glob("*_cols_*.img"):
-        _safe_remove(f)
-
-    for f in glob("output*.img"):
-        _safe_remove(f)
     for f in glob("result*.real4.*"):
         _safe_remove(f)
 
     for f in glob("npp_viirs*.tif"):
         _safe_remove(f)
-
-def create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon,
-        forced_grids=None, custom_proj_name=None):
-    if forced_grids is not None:
-        if isinstance(forced_grids, list): grids = forced_grids
-        else: grids = [forced_grids]
-    grids = set(grids)
-
-    # Check what grids the backend can handle
-    all_possible_grids = set()
-    for band in bands.keys():
-        this_band_can_handle  = can_handle_inputs(sat, instrument, kind, band, bands[band]["data_kind"])
-        bands[band]["grids"] = this_band_can_handle
-        all_possible_grids.update(this_band_can_handle)
-
-    # If they forced grids make sure we can handle them
-    if forced_grids is not None:
-        grid_infos = dict((g,get_grid_info(g)) for g in grids)
-        for band in bands.keys():
-            if bands[band]["grids"] == GRIDS_ANY:
-                bands[band]["grids"] = grids
-            elif bands[band]["grids"] == GRIDS_ANY_PROJ4:
-                bands[band]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_PROJ4 ]
-            elif bands[band]["grids"] == GRIDS_ANY_GPD:
-                bands[band]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_GPD ]
-            else:
-                bands[band]["grids"] = grids.intersection(bands[band]["grids"])
-                bad_grids = grids - set(bands[band]["grids"])
-                if len(bad_grids) != 0:
-                    log.error("Backend does not know how to handle grids '%r'" % list(bad_grids))
-                    raise ValueError("Backend does not know how to handle grids '%r'" % list(bad_grids))
-    elif custom_proj_name is not None:
-        # We are fitting the grid to the data
-        # the else statement should never be executed
-        # TODO
-        pass
-    else:
-        # Check if the data fits in the grids
-        all_useful_grids = determine_grid_coverage_fbf(fbf_lon, fbf_lat, list(all_possible_grids))
-
-        # Filter out the grids that aren't useful to the data
-        for band in bands.keys():
-            bands[band]["grids"] = all_useful_grids.intersection(bands[band]["grids"])
-
-    # Create "grid" jobs to be run through remapping
-    # Jobs are per grid per band
-    grid_jobs = {}
-    for band in bands.keys():
-        for grid_name in bands[band]["grids"]:
-            if grid_name not in grid_jobs: grid_jobs[grid_name] = {}
-            if band not in grid_jobs[grid_name]: grid_jobs[grid_name][band] = {}
-            log.debug("Kind %s band %s will be remapped to grid %s" % (kind,band,grid_name))
-            grid_jobs[grid_name][band] = bands[band].copy()
-
-    return grid_jobs
-
-def create_pseudobands(kind, bands):
-    # Fog pseudo-band
-    if (kind == BKIND_I) and (BID_05 in bands) and (BID_04 in bands):
-        log.info("Creating IFOG pseudo band...")
-        try:
-            W = Workspace('.')
-            mode_attr = bands[BID_05]["fbf_mode"].split(".")[0]
-            mode_data = getattr(W, mode_attr)
-            night_mask = mode_data >= 100
-            del mode_data
-        except StandardError:
-            log.error("Error getting mode data while creating FOG band")
-            log.debug("Mode error:", exc_info=1)
-            return
-
-        num_night_points = numpy.sum(night_mask)
-        if num_night_points == 0:
-            # We only create fog mask if theres nighttime data
-            log.info("No night data found to create FOG band for")
-            return
-        log.debug("Creating FOG band for %s nighttime data points" % num_night_points)
-
-        fog_dict = {
-                "kind" : "I",
-                "band" : "FOG",
-                "band_name" : "IFOG",
-                "data_kind" : DKIND_FOG,
-                "remap_data_as"  : DKIND_BTEMP,
-                "rows_per_scan" : bands[BID_05]["rows_per_scan"],
-                "fbf_img" : "image_IFOG.%s" % ".".join(bands[BID_05]["fbf_img"].split(".")[1:]),
-                "fbf_mode" : bands[BID_05]["fbf_mode"],
-                "swath_scans" : bands[BID_05]["swath_scans"],
-                "swath_rows" : bands[BID_05]["swath_rows"],
-                "swath_cols" : bands[BID_05]["swath_cols"]
-                }
-        try:
-            W = Workspace(".")
-            i5_attr = bands[BID_05]["fbf_img"].split(".")[0]
-            i4_attr = bands[BID_04]["fbf_img"].split(".")[0]
-            i5 = getattr(W, i5_attr)
-            i4 = getattr(W, i4_attr)
-            fog_map = numpy.memmap(fog_dict["fbf_img"],
-                    dtype=numpy.float32,
-                    mode="w+",
-                    shape=i5.shape
-                    )
-            numpy.subtract(i5, i4, fog_map)
-            fog_map[ (~night_mask) | (i5 == -999.0) | (i4 == -999.0) ] = -999.0
-            del fog_map
-            del i5,i4
-            bands[BID_FOG] = fog_dict
-        except StandardError:
-            log.error("Error creating Fog pseudo band")
-            log.debug("Fog creation error:", exc_info=1)
 
 def process_kind(filepaths,
         fornav_D=None, fornav_d=None,
@@ -241,7 +119,7 @@ def process_kind(filepaths,
         rescale_config=None
         ):
     """Process all the files provided from start to finish,
-    from filename to AWIPS NC file.
+    from filename to Geotiff file.
     """
     SUCCESS = 0
     # Swath extraction failed
@@ -317,7 +195,7 @@ def process_kind(filepaths,
     try:
         log.info("Determining what grids the data fits in...")
         grid_jobs = create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon,
-                forced_grids=forced_grid)
+                forced_grids=forced_grid, can_handle_inputs=can_handle_inputs)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")
@@ -346,7 +224,7 @@ def process_kind(filepaths,
         for band,band_dict in grid_dict.items():
             log.info("Running geotiff backend for %s%s band grid %s" % (kind,band,grid_name))
             try:
-                # Get the data from the fbf file
+                # Get the data from the flat binary file
                 data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
 
                 # Call the backend
@@ -518,20 +396,6 @@ def main():
     Create VIIRS swaths, remap them to a grid, and place that remapped data
     into a GeoTiff.
     """
-    description2 = """
-    For DB:
-    %prog [options] <event directory>
-
-    For testing (usable files are those of bands mentioned in templates.conf):
-    # Looks for all usable files in data directory
-    %prog [options] <data directory>
-    # Uses all usable files of the specfied
-    %prog [options] -f file1.h5 file2.h5 ...
-    # Only use the I01 files of the files specified
-    %prog [options] -b I01 -f file1.h5 file2.h5 ...
-    # Only use the I band files of the files specified
-    %prog [options] -b I -f file1.h5 file2.h5 ...
-    """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
@@ -543,8 +407,8 @@ def main():
             help="Specify the -d option for fornav")
     parser.add_argument('-f', dest='get_files', default=False, action="store_true",
             help="Specify that hdf files are listed, not a directory")
-    parser.add_argument('-g', '--grid', dest='forced_grid', default=None,
-            help="Force remapping to only one grid")
+    parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="wgs84_fit",
+            help="Force remapping to only some grids")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
             help="Processing is sequential instead of one process per kind of band")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
@@ -570,7 +434,8 @@ def main():
     fornav_D = int(args.fornav_D)
     fornav_d = int(args.fornav_d)
     num_procs = int(args.num_procs)
-    forced_grid = args.forced_grid
+    forced_grids = args.forced_grids
+    if forced_grids == 'all': forced_grids = None
 
     if "help" in args.data_files:
         parser.print_help()
@@ -590,40 +455,12 @@ def main():
         parser.print_help()
         return -1
 
-    remove_prev = True
-    if remove_prev:
+    if args.remove_prev:
         log.debug("Removing any previous files")
         remove_products()
 
-    if forced_grid:
-        proj4_str = None
-        pixel_size_x = None
-        pixel_size_y = None
-        grid_width = None
-        grid_height = None
-        grid_name = None
-    else:
-        default_projection = "+proj=latlong +a=6378137 +b=6378137"
-        grid_name = args.grid_name
-        proj4_str = args.proj4_str or default_projection
-        p = pyproj.Proj(proj4_str)
-        del p
-        if args.pixel_size is None and args.grid_size is None:
-            log.error("Either pixel size or grid size must be specified")
-            return -1
-        if args.pixel_size is None:
-            pixel_size_x = None
-            pixel_size_y = None
-        else:
-            pixel_size_x,pixel_size_y = args.pixel_size
-        if args.grid_size is None:
-            grid_width = None
-            grid_height = None
-        else:
-            grid_width,grid_height = args.grid_size
-
     stat = run_viirs2gtiff(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
-                forced_grid=forced_grid, etype=args.etype,
+                forced_grid=forced_grids, etype=args.etype,
                 create_pseudo=args.create_pseudo,
                 multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config

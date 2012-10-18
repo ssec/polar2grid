@@ -14,17 +14,16 @@ hdf5 (.h5) files and create a properly scaled AWIPS compatible NetCDF file.
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
-from polar2grid.core.constants import DKIND_BTEMP,DKIND_FOG,BKIND_DNB,BKIND_I,BKIND_M,NOT_APPLICABLE
+from polar2grid.core.constants import *
 from polar2grid.viirs import make_swaths
-from .rescale import prescale
-from . import ms2gt
-from .awips import awips_backend
-from .awips import BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
+from .rescale import dnb_scale
+from .grids.grids import determine_grid_coverage_fbf,get_grid_info
+from .remap import remap_bands
+from .awips import can_handle_inputs,backend,load_config as load_backend_config
 
 import os
 import sys
 import logging
-import multiprocessing
 from multiprocessing import Process
 import numpy
 from glob import glob
@@ -133,58 +132,30 @@ def remove_products():
         _safe_remove(f)
     for f in glob("prescale_*.real4.*"):
         _safe_remove(f)
-    for f in glob("swath*.img"):
-        _safe_remove(f)
-    for f in glob("lat*.img"):
-        _safe_remove(f)
-    for f in glob("lon*.img"):
+    for f in glob("ll2cr_*.real4.*"):
         _safe_remove(f)
 
-    for f in glob("*_rows_*.img"):
-        _safe_remove(f)
-    for f in glob("*_cols_*.img"):
-        _safe_remove(f)
-
-    for f in glob("output*.img"):
-        _safe_remove(f)
     for f in glob("result*.real4.*"):
         _safe_remove(f)
 
     for f in glob("SSEC_AWIPS_VIIRS*"):
         _safe_remove(f)
 
-def run_prescaling(kind, band, data_kind,
-        img_filepath, mode_filepath,
-        require_dn=False
-        ):
-    """A wrapper function for calling the prescaling functions.  This function
-    will read the binary image data from ``img_filepath`` as well as any other
-    data that may be required to prescale the data correctly, such as
-    day/night/twilight masks.
+def run_prescaling(img_filepath, mode_filepath):
+    """A wrapper function for calling the prescaling function for dnb.
+    This function will read the binary image data from ``img_filepath``
+    as well as any other data that may be required to prescale the data
+    correctly, such as day/night/twilight masks.
 
     :Parameters:
-        kind : str
-            Kind of band that we are prescaling (ex. ``I`` or ``M`` or ``DNB``).
-        band : str
-            Band number that we are prescaling (ex. ``01`` or ``00`` for DNB).
-        data_kind : str
-            Kind of data being prescaled using the constants defined
-            in `polar2grid.core`.
         img_filepath : str
             Filepath to the binary image swath data in FBF format
             (ex. ``image_I01.real4.6400.10176``).
         mode_filepath : str
             Filepath to the binary mode swath data in FBF format
             (ex. ``mode_I01.real4.6400.10176``).
-    
-    :Keywords:
-        require_dn: bool
-            Specify whether the day/night/twilight masks are required to
-            make properly prescale this data.  Such as DNB data.
-            Defaults to ``False``.
     """
         
-    log.debug("Prescaling %s%s" % (kind,band))
     img_attr = os.path.split(img_filepath)[1].split('.')[0]
     mode_attr = os.path.split(mode_filepath)[1].split('.')[0]
 
@@ -224,26 +195,20 @@ def run_prescaling(kind, band, data_kind,
                 del tmp
             del good_mask
 
-        elif require_dn:
+        else:
             log.error("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
             raise ValueError("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
     except StandardError:
-        if require_dn:
-            log.error("Could not open mode mask file %s" % mode_filepath)
-            log.debug("Files matching %r" % glob(mode_attr + "*"))
-            raise
-        else:
-            log.debug("Could not open mode mask file %s" % mode_filepath)
+        log.error("Could not open mode mask file %s" % mode_filepath)
+        log.debug("Files matching %r" % glob(mode_attr + "*"))
+        raise
 
     try:
-        rescaled_data = prescale(data,
-                kind=kind,
-                band=band,
-                data_kind=data_kind,
+        rescaled_data = dnb_scale(data,
                 **scale_kwargs)
         log.debug("Data min: %f, Data max: %f" % (rescaled_data.min(),rescaled_data.max()))
         rows,cols = rescaled_data.shape
-        fbf_swath_var = "prescale_%s%s" % (kind,band)
+        fbf_swath_var = "prescale_dnb"
         fbf_swath = "./%s.real4.%d.%d" % (fbf_swath_var, cols, rows)
         rescaled_data.tofile(fbf_swath)
     except StandardError:
@@ -253,80 +218,71 @@ def run_prescaling(kind, band, data_kind,
 
     return fbf_swath
 
-def _determine_grids(kind, fbf_lat, fbf_lon):
-    grids = []
-    # Get lat/lon data
-    try:
-        fbf_lat_var = os.path.split(fbf_lat)[1].split('.')[0]
-        fbf_lon_var = os.path.split(fbf_lon)[1].split('.')[0]
-        W = Workspace('.')
-        lat_data = getattr(W, fbf_lat_var).flatten()
-        lon_data = getattr(W, fbf_lon_var).flatten()
-        lon_data_flipped = None
-    except StandardError:
-        log.error("There was an error trying to get the lat/lon swath data for grid determination")
-        raise
+def create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon,
+        forced_grids=None, can_handle_inputs=can_handle_inputs):
+    # Check what grids the backend can handle
+    all_possible_grids = set()
+    for band in bands.keys():
+        this_band_can_handle  = can_handle_inputs(sat, instrument, kind, band, bands[band]["data_kind"])
+        bands[band]["grids"] = this_band_can_handle
+        if isinstance(this_band_can_handle, str):
+            all_possible_grids.update([this_band_can_handle])
+        else:
+            all_possible_grids.update(this_band_can_handle)
+        log.debug("Kind %s Band %s can handle these grids: '%r'" % (kind,band,this_band_can_handle))
 
-    for grid_number in SHAPES.keys():
-        tbound,bbound,lbound,rbound,percent = SHAPES[grid_number]
-        if lbound > rbound:
-            lbound = lbound + 360.0
-            rbound = rbound + 360.0
-            if lon_data_flipped is None:
-                lon_mask = lon_data < 0
-                lon_data_flipped = lon_data.copy()
-                lon_data_flipped[lon_mask] = lon_data_flipped[lon_mask] + 360
-                lon_data_use = lon_data_flipped
-                del lon_mask
-            else:
-                lon_data_use = lon_data
-        grid_mask = numpy.nonzero( (lat_data < tbound) & (lat_data > bbound) & (lon_data_use < rbound) & (lon_data_use > lbound) )[0]
-        grid_percent = (len(grid_mask) / float(len(lat_data)))
-        log.debug("Band %s had a %f coverage in grid %s" % (kind,grid_percent,grid_number))
-        if grid_percent >= percent:
-            grids.append(grid_number)
-    return grids
-
-def create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
-        forced_grids=None, forced_gpd=None, forced_nc=None):
-    if forced_grids is None and (forced_gpd is not None or forced_nc is not None):
-        log.error("Grid gpd and nc templates cannot be forced if the grids are not forced")
-        raise ValueError("Grid gpd and nc templates cannot be forced if the grids are not forced")
-
+    # Get the set of grids we will use
     if forced_grids is not None:
         if isinstance(forced_grids, list): grids = forced_grids
         else: grids = [forced_grids]
+        grids = set(grids)
     else:
-        grids = _determine_grids(kind, fbf_lat, fbf_lon)
+        # Check if the data fits in the grids
+        all_useful_grids = determine_grid_coverage_fbf(fbf_lon, fbf_lat, list(all_possible_grids))
+        grids = set(all_useful_grids)
 
-    ll2cr_jobs = {}
+    # Figure out which grids are useful for data coverage (or forced grids) and the backend can support
+    grid_infos = dict((g,get_grid_info(g)) for g in grids)# if g not in [GRIDS_ANY,GRIDS_ANY_GPD,GRIDS_ANY_PROJ4])
+    for band in bands.keys():
+        if bands[band]["grids"] == GRIDS_ANY:
+            bands[band]["grids"] = list(grids)
+        elif bands[band]["grids"] == GRIDS_ANY_PROJ4:
+            bands[band]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_PROJ4 ]
+        elif bands[band]["grids"] == GRIDS_ANY_GPD:
+            bands[band]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_GPD ]
+        elif len(bands[band]["grids"]) == 0:
+            log.error("The backend does not support kind %s band %s, won't add to job list..." % (kind, band))
+            # Handled in the next for loop via the inner for loop not adding anything
+        else:
+            bands[band]["grids"] = grids.intersection(bands[band]["grids"])
+            bad_grids = grids - set(bands[band]["grids"])
+            if len(bad_grids) != 0 and forced_grids is not None:
+                log.error("Backend does not know how to handle grids '%r'" % list(bad_grids))
+                raise ValueError("Backend does not know how to handle grids '%r'" % list(bad_grids))
+
+    # Create "grid" jobs to be run through remapping
+    # Jobs are per grid per band
     grid_jobs = {}
-    log.debug("Grids to be analyzed %r" % grids)
-    for idx,grid_name in enumerate(grids):
-        for band in bands.keys():
-            if verify_config(kind, band, grid_name):
-                grid_info = get_grid_info(kind, band, grid_name, gpd=forced_gpd, nc=forced_nc)
-                grid_info["start_dt"] = start_dt
-                grid_info["tag"] = "ll2cr_%s_%s" % (kind,grid_name)
-                grid_info["swath_rows"] = bands[band]["swath_rows"]
-                grid_info["swath_cols"] = bands[band]["swath_cols"]
-                grid_info["swath_scans"] = bands[band]["swath_scans"]
-                grid_info["rows_per_scan"] = bands[band]["rows_per_scan"]
-                if grid_name not in ll2cr_jobs: ll2cr_jobs[grid_name] = grid_info.copy()
+    for band in bands.keys():
+        for grid_name in bands[band]["grids"]:
+            if grid_name not in grid_jobs: grid_jobs[grid_name] = {}
+            if band not in grid_jobs[grid_name]: grid_jobs[grid_name][band] = {}
+            log.debug("Kind %s band %s will be remapped to grid %s" % (kind,band,grid_name))
+            grid_jobs[grid_name][band] = bands[band].copy()
 
-                if band not in grid_jobs: grid_jobs[band] = {}
-                grid_info["data_kind"] = bands[band]["data_kind"]
-                grid_info["nc_filename"] = grid_info["start_dt"].strftime(grid_info["nc_format"])
-                grid_jobs[band][grid_name] = grid_info
-    return ll2cr_jobs,grid_jobs
+    if len(grid_jobs) == 0:
+        log.error("No backend compatible grids were found to fit the data for kind %s" % (kind,))
+        raise ValueError("No backend compatible grids were found to fit the data for kind %s" % (kind,))
+
+    return grid_jobs
 
 def create_pseudobands(kind, bands):
     # Fog pseudo-band
-    if (kind == "I") and ("05" in bands) and ("04" in bands):
+    if (kind == BKIND_I) and (BID_05 in bands) and (BID_04 in bands):
         log.info("Creating IFOG pseudo band...")
         try:
             W = Workspace('.')
-            mode_attr = bands["05"]["fbf_mode"].split(".")[0]
+            mode_attr = bands[BID_05]["fbf_mode"].split(".")[0]
             mode_data = getattr(W, mode_attr)
             night_mask = mode_data >= 100
             del mode_data
@@ -347,18 +303,18 @@ def create_pseudobands(kind, bands):
                 "band" : "FOG",
                 "band_name" : "IFOG",
                 "data_kind" : DKIND_FOG,
-                "src_kind"  : DKIND_BTEMP,
-                "rows_per_scan" : bands["05"]["rows_per_scan"],
-                "fbf_img" : "image_IFOG.%s" % ".".join(bands["05"]["fbf_img"].split(".")[1:]),
-                "fbf_mode" : bands["05"]["fbf_mode"],
-                "swath_scans" : bands["05"]["swath_scans"],
-                "swath_rows" : bands["05"]["swath_rows"],
-                "swath_cols" : bands["05"]["swath_cols"]
+                "remap_data_as"  : DKIND_BTEMP,
+                "rows_per_scan" : bands[BID_05]["rows_per_scan"],
+                "fbf_img" : "image_IFOG.%s" % ".".join(bands[BID_05]["fbf_img"].split(".")[1:]),
+                "fbf_mode" : bands[BID_05]["fbf_mode"],
+                "swath_scans" : bands[BID_05]["swath_scans"],
+                "swath_rows" : bands[BID_05]["swath_rows"],
+                "swath_cols" : bands[BID_05]["swath_cols"]
                 }
         try:
             W = Workspace(".")
-            i5_attr = bands["05"]["fbf_img"].split(".")[0]
-            i4_attr = bands["04"]["fbf_img"].split(".")[0]
+            i5_attr = bands[BID_05]["fbf_img"].split(".")[0]
+            i4_attr = bands[BID_04]["fbf_img"].split(".")[0]
             i5 = getattr(W, i5_attr)
             i4 = getattr(W, i4_attr)
             fog_map = numpy.memmap(fog_dict["fbf_img"],
@@ -370,7 +326,7 @@ def create_pseudobands(kind, bands):
             fog_map[ (~night_mask) | (i5 == -999.0) | (i4 == -999.0) ] = -999.0
             del fog_map
             del i5,i4
-            bands["FOG"] = fog_dict
+            bands[BID_FOG] = fog_dict
         except StandardError:
             log.error("Error creating Fog pseudo band")
             log.debug("Fog creation error:", exc_info=1)
@@ -380,12 +336,13 @@ def process_kind(filepaths,
         forced_grid=None,
         forced_gpd=None, forced_nc=None,
         create_pseudo=True,
-        num_procs=1
+        num_procs=1,
+        rescale_config=None,
+        backend_config=None
         ):
     """Process all the files provided from start to finish,
     from filename to AWIPS NC file.
     """
-    log_level = logging.getLogger('').handlers[0].level or 0
     SUCCESS = 0
     # Swath extraction failed
     SWATH_FAIL = 2
@@ -395,6 +352,8 @@ def process_kind(filepaths,
     LL2CR_FAIL = 8
     # fornav failed
     FORNAV_FAIL = 16
+    # remap failed
+    REMAP_FAIL = 24 # ll2cr and fornav
     # backend failed
     BACKEND_FAIL = 32
     # grid determination failed
@@ -402,29 +361,23 @@ def process_kind(filepaths,
     # there aren't any jobs left, not sure why
     UNKNOWN_FAIL = -1
 
-    proc_pool = multiprocessing.Pool(num_procs)
+    # Load any configuration files needed
+    # XXX: Fix this by using object orientated components
+    load_backend_config(backend_config) # default
 
     # Extract Swaths
     log.info("Extracting swaths...")
-    def _band_filter(finfo):
-        if finfo["kind"] == BKIND_DNB:
-            if (BKIND_DNB,NOT_APPLICABLE) not in BANDS:
-                return False
-            else:
-                return True
-        elif (finfo["kind"], finfo["band"]) not in BANDS:
-            return False
-        else:
-            return True
     try:
-        meta_data = make_swaths(filepaths, filter=_band_filter, cut_bad=True)
+        meta_data = make_swaths(filepaths, cut_bad=True)
     except StandardError:
         log.error("Swath creation failed")
         log.debug("Swath creation error:", exc_info=1)
         SUCCESS |= SWATH_FAIL
         return SUCCESS
+    sat = meta_data["sat"]
+    instrument = meta_data["instrument"]
     kind = meta_data["kind"]
-    start_dt = meta_data["start_dt"]
+    start_time = meta_data["start_time"]
     bands = meta_data["bands"]
     fbf_lat = meta_data["fbf_lat"]
     fbf_lon = meta_data["fbf_lon"]
@@ -440,21 +393,17 @@ def process_kind(filepaths,
         return SUCCESS
 
     # Do any pre-remapping rescaling
-    log.info("Prescaling data before remapping...")
     for band,band_job in bands.items():
         if kind != BKIND_DNB:
             # It takes too long to read in the data, so just skip it
             band_job["fbf_swath"] = band_job["fbf_img"]
             continue
 
+        log.info("Prescaling data before remapping...")
         try:
             fbf_swath = run_prescaling(
-                    kind,
-                    band,
-                    band_job["data_kind"],
                     band_job["fbf_img"],
-                    band_job["fbf_mode"],
-                    require_dn = kind == BKIND_DNB
+                    band_job["fbf_mode"]
                     )
             band_job["fbf_swath"] = fbf_swath
         except StandardError:
@@ -470,204 +419,65 @@ def process_kind(filepaths,
     # Determine grid
     try:
         log.info("Determining what grids the data fits in...")
-        ll2cr_jobs,grid_jobs = create_grid_jobs(kind, bands, fbf_lat, fbf_lon, start_dt,
-                forced_grids=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc)
+        grid_jobs = create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon,
+                forced_grids=forced_grid)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")
         SUCCESS |= GDETER_FAIL
         return SUCCESS
 
-    # Move nav fbf files to img files to be used by ll2cr
-    img_lat = "lat_%s.img" % kind
-    img_lon = "lon_%s.img" % kind
-    _force_symlink(fbf_lat, img_lat)
-    _force_symlink(fbf_lon, img_lon)
-    meta_data["img_lat"] = img_lat
-    meta_data["img_lon"] = img_lon
-
-    # Run ll2cr
-    for grid_number,grid_info in ll2cr_jobs.items():
-        log.info("Running ll2cr for the %s band and grid %s" % (kind,grid_number))
-        grid_info["result_object"] = proc_pool.apply_async(ms2gt.ll2cr, args=(
-                    grid_info["swath_cols"],
-                    grid_info["swath_scans"],
-                    grid_info["rows_per_scan"],
-                    img_lat,
-                    img_lon,
-                    grid_info["gpd_template"]
-                    ),
-                    kwds=dict(
-                        verbose=log_level <= logging.DEBUG,
-                        fill_io=(-999.0, -1e30),
-                        tag=grid_info["tag"]
-                        )
-                    )
-
-    proc_pool.close()
-    proc_pool.join()
-    # Yes it would be faster to check each individually and reuse the same pool
-    # but its a lot more complicated
-    proc_pool = multiprocessing.Pool(num_procs)
-
-    for grid_number,grid_info in ll2cr_jobs.items():
-        r = grid_info["result_object"]
-        try:
-            cr_dict = r.get()
-
-            for grid_job in [ x[grid_number] for x in grid_jobs.values() if grid_number in x ]:
-                grid_job["cr_dict"] = cr_dict
-                if cr_dict["scans_out"] == 0:
-                    log.warning("ll2cr failed to map any %s data to grid %s" % (kind,grid_number))
-                    raise ValueError("ll2cr failed to map any %s data to grid %s" % (kind,grid_number))
-        except StandardError:
-            log.warning("ll2cr failed for %s band, grid %s" % (kind,grid_number))
-            log.warning("Won't process for this grid...")
-            log.debug("ll2cr error:", exc_info=1)
-            for band in bands.keys():
-                if grid_number in grid_jobs[band]:
-                    log.error("Removing %s%s for grid %s because of bad ll2cr execution" % (kind,band,grid_number))
-                    del grid_jobs[band][grid_number]
-                    if len(grid_jobs[band]) == 0:
-                        log.error("No more grids to process for %s%s, removing..." % (kind,band))
-                        del grid_jobs[band]
-                        del bands[band]
-                        SUCCESS |= LL2CR_FAIL
-
-    if len(grid_jobs) == 0:
-        log.error("No more grids to process for %s, quitting..." % kind)
-        return SUCCESS or UNKNOWN_FAIL
-
-    # Move fbf files to img files to be used by ms2gt utilities
-    for band,band_job in bands.items():
-        band_job["img_swath"] = "swath_%s.img" % band_job["band_name"]
-        _force_symlink(band_job["fbf_swath"], band_job["img_swath"])
-
-    # Build fornav call
-    fornav_jobs = {}
-    for band,band_job in bands.items():
-        if band not in grid_jobs:
-            log.info("No grids were found for band %s, removing from future processing..." % band)
-            del bands[band]
-            continue
-        for grid_number,grid_job in grid_jobs[band].items():
-            k = (grid_number,band_job["src_kind"])
-            log.debug("Fornav job key is %s" % str(k))
-            if k not in fornav_jobs:
-                fornav_jobs[k] = {
-                        "inputs"        : [],
-                        "outputs"       : [],
-                        "fbfs"          : [],
-                        "out_rows"      : grid_job["out_rows"],
-                        "out_cols"      : grid_job["out_cols"],
-                        "swath_cols"    : grid_job["swath_cols"],
-                        "swath_rows"    : grid_job["swath_rows"],
-                        "rows_per_scan" : grid_job["rows_per_scan"],
-                        "scans_out"     : grid_job["cr_dict"]["scans_out"],
-                        "colfile"       : grid_job["cr_dict"]["colfile"],
-                        "rowfile"       : grid_job["cr_dict"]["rowfile"],
-                        "scan_first"    : grid_job["cr_dict"]["scan_first"]
-                        }
-            # Fornav dictionary
-            fornav_job = fornav_jobs[k]
-
-            grid_job["img_output"] = output_img = "output_%s_%s.img" % (band_job["band_name"],grid_number)
-            grid_job["fbf_output_var"] = output_var = "result_%s_%s" % (band_job["band_name"],grid_number)
-            grid_job["fbf_output"] = output_fbf = "%s.real4.%d.%d" % (output_var, fornav_job["out_cols"], fornav_job["out_rows"])
-            fornav_job["inputs"].append(band_job["img_swath"])
-            fornav_job["outputs"].append(output_img)
-            fornav_job["fbfs"].append(output_fbf)
-
-    # Run fornav
-    for (grid_number,src_kind),fornav_job in fornav_jobs.items():
-        log.info("Running fornav for grid %s, data_kind %s" % (grid_number,src_kind))
-        fornav_job["result_object"] = proc_pool.apply_async(ms2gt.fornav,
-                args = (
-                        len(fornav_job["inputs"]),
-                        fornav_job["swath_cols"],
-                        fornav_job["scans_out"],
-                        fornav_job["rows_per_scan"],
-                        fornav_job["colfile"],
-                        fornav_job["rowfile"],
-                        fornav_job["inputs"],
-                        fornav_job["out_cols"],
-                        fornav_job["out_rows"],
-                        fornav_job["outputs"]
-                        ),
-                kwds = dict(
-                        verbose=log_level <= logging.DEBUG,
-                        swath_data_type_1="f4",
-                        swath_fill_1=-999.0,
-                        grid_fill_1=-999.0,
-                        weight_delta_max=fornav_D,
-                        weight_distance_max=fornav_d,
-                        start_scan=(fornav_job["scan_first"],0)
-                        ),
+    ### Remap the data
+    try:
+        remapped_jobs = remap_bands(sat, instrument, kind,
+                fbf_lon, fbf_lat, grid_jobs,
+                num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
+                lat_min=meta_data.get("lat_min", None),
+                lat_max=meta_data.get("lat_max", None),
+                lon_min=meta_data.get("lon_min", None),
+                lon_max=meta_data.get("lon_max", None)
                 )
-
-    proc_pool.close()
-    proc_pool.join()
-
-    for (grid_number,src_kind),fornav_job in fornav_jobs.items():
-        try:
-            fornav_job["result_object"].get()
-        except StandardError:
-            log.warning("fornav failed for %s band, grid %s, data_kind %s" % (kind,grid_number,src_kind))
-            log.debug("Exception was:", exc_info=1)
-            log.warning("Cleaning up for this job...")
-            for band in bands.keys():
-                log.error("Removing %s%s because of bad fornav execution" % (kind,band))
-                if grid_number in grid_jobs[band]:
-                    del grid_jobs[band][grid_number]
-                if len(grid_jobs[band]) == 0:
-                    log.error("The last grid job for %s%s was removed" % (kind,band))
-                    del grid_jobs[band]
-                    del bands[band]
-                    SUCCESS |= FORNAV_FAIL
-                if len(grid_jobs) == 0:
-                    log.error("All bands for %s were removed, quitting..." % (kind))
-                    return SUCCESS or UNKNOWN_FAIL
-
-        # Move and/or link recently created files
-        for o_fn,fbf_name in zip(fornav_job["outputs"],fornav_job["fbfs"]):
-            _force_symlink(o_fn, fbf_name)
+    except StandardError:
+        log.debug("Remapping Error:", exc_info=1)
+        log.error("Remapping data failed")
+        SUCCESS |= REMAP_FAIL
+        return SUCCESS
 
     ### BACKEND ###
-    # Rescale the image
-    for band,grid_dict in grid_jobs.items():
-        num_grids = len(grid_dict)
-        for grid_number,grid_job in grid_dict.items():
-            log.info("Running AWIPS backend for %s%s band grid %s" % (kind,band,grid_number))
+    W = Workspace('.')
+    for grid_name,grid_dict in remapped_jobs.items():
+        for band,band_dict in grid_dict.items():
+            log.info("Running AWIPS backend for %s%s band grid %s" % (kind,band,grid_name))
             try:
-                kwargs = grid_job.copy()
-                del kwargs["nc_template"]
-                del kwargs["nc_filename"]
-                del kwargs["data_kind"]
-                del kwargs["start_dt"]
-                del kwargs["source"]
-                del kwargs["channel"]
-                del kwargs["sat_name"]
-                awips_backend(
-                        grid_job["fbf_output"],
-                        grid_job["nc_template"],
-                        grid_job["nc_filename"],
+                # Get the data from the flat binary file
+                data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
+
+                # Call the backend
+                backend(
+                        sat,
+                        instrument,
                         kind,
                         band,
-                        grid_job["data_kind"],
-                        grid_job["start_dt"],
-                        grid_job["channel"],
-                        grid_job["source"],
-                        grid_job["sat_name"],
-                        **kwargs
+                        band_dict["data_kind"],
+                        data,
+                        start_time=start_time,
+                        grid_name=grid_name,
+                        ncml_template=forced_nc or None,
+                        rescale_config=rescale_config,
+                        backend_config=backend_config
                         )
             except StandardError:
-                log.error("Error in the AWIPS backend for %s%s in grid %s" % (kind,band,grid_number))
+                log.error("Error in the AWIPS backend for %s%s in grid %s" % (kind,band,grid_name))
                 log.debug("AWIPS backend error:", exc_info=1)
-                num_grids -= 1
+                del remapped_jobs[grid_name][band]
 
-        if num_grids == 0:
-            log.warning("AWIPS backend failed for all grids for %s%s" % (kind,band))
-            SUCCESS |= BACKEND_FAIL
+        if len(remapped_jobs[grid_name]) == 0:
+            log.error("All backend jobs for grid %s failed" % (grid_name,))
+            del remapped_jobs[grid_name]
+
+    if len(remapped_jobs) == 0:
+        log.warning("AWIPS backend failed for all grids for %s%s" % (kind,band))
+        SUCCESS |= BACKEND_FAIL
 
     log.info("Processing of bands of kind %s is complete" % kind)
 
@@ -700,11 +510,7 @@ def _process_kind(*args, **kwargs):
     sys.exit(-1)
 
 def run_viirs2awips(filepaths,
-        fornav_D=None, fornav_d=None,
-        forced_grid=None,
-        forced_gpd=None, forced_nc=None,
-        create_pseudo=True,
-        multiprocess=True, num_procs=1):
+        multiprocess=True, **kwargs):
     """Go through the motions of converting
     a VIIRS h5 file into a AWIPS NetCDF file.
 
@@ -720,11 +526,6 @@ def run_viirs2awips(filepaths,
     # Rewrite/force parameters to specific format
     filepaths = [ os.path.abspath(x) for x in sorted(filepaths) ]
 
-    # Get grid templates and figure out the AWIPS product id to use
-    if (forced_nc is None or forced_gpd is None) and forced_grid and forced_grid not in GRID_TEMPLATES:
-        log.error("Unknown or unconfigured grid number %s in grids/*" % forced_grid)
-        return -1
-
     M_files = sorted(set([ x for x in filepaths if os.path.split(x)[1].startswith("SVM") ]))
     I_files = sorted(set([ x for x in filepaths if os.path.split(x)[1].startswith("SVI") ]))
     DNB_files = sorted(set([ x for x in filepaths if os.path.split(x)[1].startswith("SVDNB") ]))
@@ -738,64 +539,49 @@ def run_viirs2awips(filepaths,
     pI = None
     pDNB = None
     exit_status = 0
-    if len(M_files) != 0 and len([x for x in BANDS if x[0] == BKIND_M ]) != 0:
+    if len(M_files) != 0:
         log.debug("Processing M files")
         try:
             if multiprocess:
                 pM = Process(target=_process_kind,
                         args = (M_files,),
-                        kwargs = dict(
-                            fornav_D=fornav_D, fornav_d=fornav_d,
-                            forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
-                            create_pseudo=create_pseudo,
-                            num_procs=num_procs
-                            )
+                        kwargs = kwargs
                         )
                 pM.start()
             else:
-                stat = _process_kind(M_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
+                stat = _process_kind(M_files, **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process M files")
             exit_status = exit_status or len(M_files)
 
-    if len(I_files) != 0 and len([x for x in BANDS if x[0] == BKIND_I ]) != 0:
+    if len(I_files) != 0:
         log.debug("Processing I files")
         try:
             if multiprocess:
                 pI = Process(target=_process_kind,
                         args = (I_files,),
-                        kwargs = dict(
-                            fornav_D=fornav_D, fornav_d=fornav_d,
-                            forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
-                            create_pseudo=create_pseudo,
-                            num_procs=num_procs
-                            )
+                        kwargs = kwargs
                         )
                 pI.start()
             else:
-                stat = _process_kind(I_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
+                stat = _process_kind(I_files, **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process I files")
             exit_status = exit_status or len(I_files)
 
-    if len(DNB_files) != 0 and len([x for x in BANDS if x[0] == BKIND_DNB ]) != 0:
+    if len(DNB_files) != 0:
         log.debug("Processing DNB files")
         try:
             if multiprocess:
                 pDNB = Process(target=_process_kind,
                         args = (DNB_files,),
-                        kwargs = dict(
-                            fornav_D=fornav_D, fornav_d=fornav_d,
-                            forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc,
-                            create_pseudo=create_pseudo,
-                            num_procs=num_procs
-                            )
+                        kwargs = kwargs
                         )
                 pDNB.start()
             else:
-                stat = _process_kind(DNB_files, fornav_D=fornav_D, fornav_d=fornav_d, forced_grid=forced_grid, forced_gpd=forced_gpd, forced_nc=forced_nc, num_procs=num_procs)
+                stat = _process_kind(DNB_files, **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process DNB files")
@@ -818,8 +604,12 @@ def run_viirs2awips(filepaths,
     return exit_status
 
 def main():
-    import optparse
-    usage = """
+    import argparse
+    description = """
+    Create VIIRS swaths, remap them to a grid, and place that remapped data
+    into a AWIPS compatible netcdf file.
+    """
+    description2 = """
     For DB:
     %prog [options] <event directory>
 
@@ -833,65 +623,67 @@ def main():
     # Only use the I band files of the files specified
     %prog [options] -b I -f file1.h5 file2.h5 ...
     """
-    parser = optparse.OptionParser(usage=usage)
-    parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
-    parser.add_option('-D', dest='fornav_D', default=40,
+    parser.add_argument('-D', dest='fornav_D', default=40,
             help="Specify the -D option for fornav")
-    parser.add_option('-d', dest='fornav_d', default=2,
+    parser.add_argument('-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
-    parser.add_option('-b', dest='force_band', default=None,
-            help="Specify the bands that should be allowed in 'I01' or 'DNB' or 'I' format")
-    parser.add_option('-f', dest='get_files', default=False, action="store_true",
+    parser.add_argument('-f', dest='get_files', default=False, action="store_true",
             help="Specify that hdf files are listed, not a directory")
-    parser.add_option('-g', '--grid', dest='forced_grid', default=None,
-            help="Force remapping to only one grid")
-    parser.add_option('--sp', dest='single_process', default=False, action='store_true',
+    parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+",
+            help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
+    parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
             help="Processing is sequential instead of one process per kind of band")
-    parser.add_option('--num-procs', dest="num_procs", default=1,
+    parser.add_argument('--num-procs', dest="num_procs", default=1,
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
-    parser.add_option('--gpd', dest='forced_gpd', default=None,
-            help="Specify a different gpd file to use")
-    parser.add_option('--nc', dest='forced_nc', default=None,
-            help="Specify a different nc file to use")
-    parser.add_option('-k', '--keep', dest='remove_prev', default=True, action='store_true',
+    parser.add_argument('-k', '--keep', dest='remove_prev', default=True, action='store_true',
             help="Don't delete any files that were previously made (WARNING: processing may not run successfully)")
-    parser.add_option('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
+    parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
-    options,args = parser.parse_args()
+    parser.add_argument('--rescale-config', dest='rescale_config', default=None,
+            help="specify alternate rescale configuration file")
+    parser.add_argument('--gpd', dest='forced_gpd', default=None,
+            help="Specify a different gpd file to use")
+    parser.add_argument('--nc', dest='forced_nc', default=None,
+            help="Specify a different nc file to use")
+    parser.add_argument('--backend-config', dest='backend_config', default=None,
+            help="specify alternate backend configuration file")
+
+    parser.add_argument('data_files', nargs="+",
+            help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
+    args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, options.verbosity)])
+    setup_logging(console_level=levels[min(3, args.verbosity)])
 
     # Don't set this up until after you have setup logging
     sys.excepthook = exc_handler
 
-    fornav_D = int(options.fornav_D)
-    fornav_d = int(options.fornav_d)
-    num_procs = int(options.num_procs)
-    forced_grid = options.forced_grid
-    if options.forced_gpd is not None and not os.path.exists(options.forced_gpd):
-        log.error("Specified gpd file does not exist '%s'" % options.forced_gpd)
+    fornav_D = int(args.fornav_D)
+    fornav_d = int(args.fornav_d)
+    num_procs = int(args.num_procs)
+    forced_grids = args.forced_grids
+    if args.forced_gpd is not None and not os.path.exists(args.forced_gpd):
+        log.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
         return -1
-    if options.forced_nc is not None and not os.path.exists(options.forced_nc):
-        log.error("Specified nc file does not exist '%s'" % options.forced_nc)
+    if args.forced_nc is not None and not os.path.exists(args.forced_nc):
+        log.error("Specified nc file does not exist '%s'" % args.forced_nc)
         return -1
 
-    if len(args) == 0 or "help" in args:
+    if "help" in args.data_files:
         parser.print_help()
         sys.exit(0)
-    elif len(args) == 1 and "remove" in args:
+    elif "remove" in args.data_files:
         log.debug("Removing previous products")
         remove_products()
         sys.exit(0)
 
-    if options.get_files:
-        if len(args) < 1:
-            log.error("Wrong number of arguments, need 1 or more hdf files")
-            parser.print_help()
-            return -1
-        hdf_files = args[:]
-    elif len(args) == 1:
+    if args.get_files:
+        hdf_files = args.data_files[:]
+    elif len(args.data_files) == 1:
         base_dir = os.path.abspath(args[0])
         hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
     else:
@@ -899,25 +691,16 @@ def main():
         parser.print_help()
         return -1
 
-    remove_prev = True
-    if remove_prev:
+    if args.remove_prev:
         log.debug("Removing any previous files")
         remove_products()
 
-    if options.force_band is not None:
-        if len( [ x for x in BANDS.keys() if x.startswith(options.force_band) ] ) == 0:
-            log.error("Unknown band %s" % options.force_band)
-            parser.print_help()
-            return -1
-        hdf_files = [ x for x in hdf_files if os.path.split(x)[1].startswith("SV" + options.force_band) ]
-        stat = process_kind(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
-                forced_gpd=options.forced_gpd, forced_nc=options.forced_nc, forced_grid=forced_grid,
-                create_pseudo=options.create_pseudo, num_procs=num_procs)
-    else:
-        stat = run_viirs2awips(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
-                    forced_gpd=options.forced_gpd, forced_nc=options.forced_nc, forced_grid=forced_grid,
-                    create_pseudo=options.create_pseudo,
-                    multiprocess=not options.single_process, num_procs=num_procs)
+    stat = run_viirs2awips(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
+                forced_gpd=args.forced_gpd, forced_nc=args.forced_nc, forced_grid=forced_grids,
+                create_pseudo=args.create_pseudo,
+                rescale_config=args.rescale_config,
+                backend_config=args.backend_config,
+                multiprocess=not args.single_process, num_procs=num_procs)
 
     return stat
 
