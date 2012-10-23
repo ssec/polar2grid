@@ -13,7 +13,7 @@ DEF_PAT = "SSEC_AWIPS_*"
 def exc_handler(exc_type, exc_value, traceback):
     print "Uncaught error creating png images"
 
-def main(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=0, vmax=255):
+def main(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=0, vmax=255, dpi_to_use=100):
     glob_pat = os.path.join(base_dir, base_pat)
     for nc_name in glob(glob_pat):
         nc_name = os.path.split(nc_name)[1]
@@ -38,7 +38,7 @@ def main(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=0, vmax=255):
         #plt.spectral()
         plt.bone()
 
-        plt.savefig("plot_ncdata.%s.png" % nc_name)
+        plt.savefig("plot_ncdata.%s.png" % nc_name, dpi=dpi_to_use)
         plt.close()
 
 if __name__ == "__main__":
@@ -51,6 +51,8 @@ if __name__ == "__main__":
             help="Specify maximum brightness value. Defaults to maximum value of data.")
     parser.add_option('--pat', dest="base_pat", default=DEF_PAT,
             help="Specify the glob pattern of NetCDF files to look for. Defaults to '%s'" % DEF_PAT)
+    parser.add_option('--dpi', dest="dpi",   default=100, type='float',
+            help="Specify the dpi for the resulting figure, higher dpi will result in larger figures and longer run times")
     options,args = parser.parse_args()
     sys.excepthook=exc_handler
 
@@ -69,5 +71,5 @@ if __name__ == "__main__":
     else:
         vmax = int(options.vmax)
 
-    sys.exit(main(base_dir=base_dir, base_pat=options.base_pat, vmin=vmin, vmax=vmax))
+    sys.exit(main(base_dir=base_dir, base_pat=options.base_pat, vmin=vmin, vmax=vmax, dpi_to_use=options.dpi))
 
