@@ -82,18 +82,18 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
     if len(tmp) != 1:
         log.error("Couldn't find cols img file from ll2cr")
         raise ValueError("Couldn't find cols img file from ll2cr")
-    d["colfile"] = tmp[0]
-    log.debug("Columns file is %s" % d["colfile"])
+    d["cols_filename"] = tmp[0]
+    log.debug("Columns file is %s" % d["cols_filename"])
 
     tmp = glob("%s_rows_*.img" % tag)
     if len(tmp) != 1:
         log.error("Couldn't find rows img file from ll2cr")
         raise ValueError("Couldn't find rows img file from ll2cr")
-    d["rowfile"] = tmp[0]
-    log.debug("Rows file is %s" % d["rowfile"])
+    d["rows_filename"] = tmp[0]
+    log.debug("Rows file is %s" % d["rows_filename"])
 
-    col_dict = _ll2cr_cols_info(d["colfile"])
-    row_dict = _ll2cr_rows_info(d["rowfile"])
+    col_dict = _ll2cr_cols_info(d["cols_filename"])
+    row_dict = _ll2cr_rows_info(d["rows_filename"])
     if col_dict is None or row_dict is None:
         # Log message was delivered before
         raise ValueError("Couldn't get information from ll2cr output")

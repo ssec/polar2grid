@@ -27,7 +27,7 @@ import re
 import logging
 from datetime import datetime,timedelta
 
-LOG = logging.getLogger('adl_cdfcb')
+LOG = logging.getLogger(__name__)
 UTC= UTC()
 
 K_LATITUDE = 'LatitudeVar'
@@ -53,9 +53,9 @@ GEO_GUIDE = {
         }
 
 FACTORS_GUIDE = {
-        K_REFLECTANCE : K_REFLECTANCE_FACTORS,
-        K_RADIANCE    : K_RADIANCE_FACTORS,
-        K_BTEMP       : K_BTEMP_FACTORS
+        DKIND_REFLECTANCE : K_REFLECTANCE_FACTORS,
+        DKIND_RADIANCE    : K_RADIANCE_FACTORS,
+        DKIND_BTEMP       : K_BTEMP_FACTORS
         }
 
 # FIXME: add RadianceFactors/ReflectanceFactors
@@ -93,8 +93,8 @@ SV_FILE_GUIDE = {
                             K_MODESCAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeScan',
                             K_MODEGRAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeGran',
                             K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
-                            K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-                            K_NAVIGATION: r'G%(file_kind)sTCO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
+                            K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+                            K_NAVIGATION: r'G%(file_kind)sTCO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
             r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
                             K_REFLECTANCE: None,
                             K_BTEMP: None,
@@ -104,8 +104,8 @@ SV_FILE_GUIDE = {
                             K_MODESCAN: '/All_Data/VIIRS-DNB-SDR_All/ModeScan',
                             K_MODEGRAN: '/All_Data/VIIRS-DNB-SDR_All/ModeGran',
                             K_QF3: '/All_Data/VIIRS-DNB-SDR_All/QF3_SCAN_RDR',
-                            K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-                            K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
+                            K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+                            K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
             }
 
 ROWS_PER_SCAN = {
@@ -149,6 +149,32 @@ DATA_KINDS = {
         (BKIND_DNB,NOT_APPLICABLE) : DKIND_RADIANCE
         }
 
+VAR_PATHS = {
+        (BKIND_M,BID_01) : K_REFLECTANCE,
+        (BKIND_M,BID_02) : K_REFLECTANCE,
+        (BKIND_M,BID_03) : K_REFLECTANCE,
+        (BKIND_M,BID_04) : K_REFLECTANCE,
+        (BKIND_M,BID_05) : K_REFLECTANCE,
+        (BKIND_M,BID_06) : K_REFLECTANCE,
+        (BKIND_M,BID_07) : K_REFLECTANCE,
+        (BKIND_M,BID_08) : K_REFLECTANCE,
+        (BKIND_M,BID_09) : K_REFLECTANCE,
+        (BKIND_M,BID_10) : K_REFLECTANCE,
+        (BKIND_M,BID_11) : K_REFLECTANCE,
+        (BKIND_M,BID_12) : K_BTEMP,
+        (BKIND_M,BID_13) : K_BTEMP,
+        (BKIND_M,BID_14) : K_BTEMP,
+        (BKIND_M,BID_15) : K_BTEMP,
+        (BKIND_M,BID_16) : K_BTEMP,
+        (BKIND_I,BID_01) : K_REFLECTANCE,
+        (BKIND_I,BID_02) : K_REFLECTANCE,
+        (BKIND_I,BID_03) : K_REFLECTANCE,
+        (BKIND_I,BID_04) : K_BTEMP,
+        (BKIND_I,BID_05) : K_BTEMP,
+        (BKIND_I,BID_06) : K_REFLECTANCE,
+        (BKIND_DNB,NOT_APPLICABLE) : K_RADIANCE
+        }
+
 band2const = {
         "01" : BID_01,
         "02" : BID_02,
@@ -182,9 +208,9 @@ MISSING_GUIDE = {
 
 
 # a regular expression to split up granule names into dictionaries
-RE_NPP = re.compile('(?P<file_kindnband>[A-Z0-9]+)_(?P<sat>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_e(?P<end_time>\d+)_b(?P<orbit>\d+)_c(?P<created_time>\d+)_(?P<site>[a-zA-Z0-9]+)_(?P<domain>[a-zA-Z0-9]+)\.h5')
+RE_NPP = re.compile('(?P<file_kindnband>[A-Z0-9]+)_(?P<sat>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<file_start_time_str>\d+)_e(?P<file_end_time_str>\d+)_b(?P<orbit>\d+)_c(?P<created_time>\d+)_(?P<site>[a-zA-Z0-9]+)_(?P<domain>[a-zA-Z0-9]+)\.h5')
 # format string to turn it back into a filename
-FMT_NPP = r'%(file_kindnband)s_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_c%(created_time)s_%(site)s_%(domain)s.h5'
+FMT_NPP = r'%(file_kindnband)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_c%(created_time)s_%(site)s_%(domain)s.h5'
 
 class evaluator(object):
     """
@@ -202,14 +228,14 @@ def get_datetimes(finfo):
     start of the granule and the end of the granule.
     """
     d = finfo["date"]
-    st = finfo["start_time"]
+    st = finfo["file_start_time_str"]
     s_us = int(st[-1])*100000
-    et = finfo["end_time"]
+    et = finfo["file_end_time_str"]
     e_us = int(et[-1])*100000
     s_dt = datetime.strptime(d + st[:-1], "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=s_us)
     e_dt = datetime.strptime(d + et[:-1], "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=e_us)
-    finfo["start_dt"] = s_dt
-    finfo["end_dt"] = e_dt
+    finfo["file_start_time"] = s_dt
+    finfo["file_end_time"] = e_dt
 
 def h5path(hp, path, h5_path, required=False):
     "traverse an hdf5 path to return a nested data object"
@@ -363,7 +389,7 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     hp = h5.File(finfo["img_path"], 'r')
 
     data_kind = finfo["data_kind"]
-    data_var_path = finfo[data_kind]
+    data_var_path = finfo[VAR_PATHS[(finfo["kind"],finfo["band"])]]
     factors_var_path = finfo[finfo["factors"]]
     qf3_var_path = finfo[K_QF3]
 
@@ -502,7 +528,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
             - lat_mask
             - lon_mask
             - mode_mask
-            - start_dt
+            - start_time
             - scan_quality
 
     :Parameters:
@@ -536,7 +562,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
 
     # Get start time
     h5v = h5path(hp, st_var_path, finfo["geo_path"], required=True)
-    start_dt = _st_to_datetime(h5v[0])
+    start_time = _st_to_datetime(h5v[0])
 
     # Get solar zenith angle
     h5v = h5path(hp, sza_var_path, finfo["geo_path"], required=True)
@@ -563,7 +589,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     finfo["lat_mask"] = lat_mask
     finfo["lon_mask"] = lon_mask
     finfo["mode_mask"] = sza_data
-    finfo["start_dt"] = start_dt
+    finfo["start_time"] = start_time
     # Rows only
     finfo["scan_quality"] = (np.unique(np.nonzero(lat_mask)[0]),)
     return finfo
