@@ -132,7 +132,7 @@ def fog_scale(img, m, b, floor, floor_val, ceil, ceil_val, fill_in=DEFAULT_FILL_
     img[mask] = fill_out
     return img
 
-def dnb_scale(img, day_mask, mixed_mask, night_mask, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
+def dnb_scale(img, day_mask=None, mixed_mask=None, night_mask=None, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     """
     This scaling method uses histogram equalization to flatten the image levels across the day and night masks.
     The masks are expected to be passed as `day_mask`, `mixed_mask`, and `night_mask` arguments.  They should
