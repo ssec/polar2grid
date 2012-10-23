@@ -226,9 +226,14 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mu
     return data
 
 def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None, number_of_bins=1000,
-                                   std_mult_cutoff=5.0,
+                                   std_mult_cutoff=3.0,
                                    do_zerotoone_normalization=True,
-                                   local_radius_px=300, clip_limit=0.0005) :
+                                   local_radius_px=300,
+                                   clip_limit=20.0,
+                                   slope_limit=0.5,
+                                   do_log_scale=True,
+                                   log_offset=0.00001 # can't take the log of zero, so the offset may be needed; pass 0.0 if your data doesn't need it
+                                   ) :
     """
     equalize the provided data (in the mask_to_equalize) using adaptive histogram equalization
     tiles of width/height (2 * local_radius_px + 1) will be calculated and results for each pixel will be bilinerarly interpolated from the nearest 4 tiles
@@ -292,8 +297,13 @@ def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None,
                     # limit our range to avg +/- std_mult_cutoff*std; e.g. the default std_mult_cutoff is 4.0 so about 99.8% of the data
                     concervative_mask = (temp_valid_data < (avg + std*std_mult_cutoff)) & (temp_valid_data > (avg - std*std_mult_cutoff))
                     temp_valid_data   = temp_valid_data[concervative_mask]
+                
+                # if we are taking the log of our data, do so now
+                if do_log_scale :
+                    temp_valid_data = numpy.log(temp_valid_data + log_offset)
+                
                 # do the histogram equalization and get the resulting distribution function and bin information
-                cumulative_dist_function, temp_bins = _histogram_equalization_helper (temp_valid_data, number_of_bins, clip_limit=clip_limit)
+                cumulative_dist_function, temp_bins = _histogram_equalization_helper (temp_valid_data, number_of_bins, clip_limit=clip_limit, slope_limit=slope_limit)
             
             # hang on to our equalization related information for use later
             all_cumulative_dist_functions[num_row_tile].append(cumulative_dist_function)
@@ -301,6 +311,10 @@ def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None,
     
     # get the tile weight array so we can use it to interpolate our data
     tile_weights = _calculate_weights (tile_size)
+    
+    # if we are taking the log of our data, we can safely take the log of all of it now
+    if do_log_scale :
+        data[valid_data_mask] = numpy.log(data[valid_data_mask] + log_offset) 
     
     # now loop through our tiles and linearly interpolate the equalized versions of the data
     for num_row_tile in range(row_tiles) :
@@ -374,7 +388,7 @@ def _local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None,
     
     return data
 
-def _histogram_equalization_helper (valid_data, number_of_bins, clip_limit=None, do_clip_before=True) :
+def _histogram_equalization_helper (valid_data, number_of_bins, clip_limit=None, slope_limit=None, do_clip_before=True, do_slope_limit=True) :
     """
     calculate the simplest possible histogram equalization, using only valid data
     
@@ -388,33 +402,35 @@ def _histogram_equalization_helper (valid_data, number_of_bins, clip_limit=None,
     if do_clip_before and (clip_limit is not None) :
         
         # clip our histogram and remember how much we removed
-        pixels_to_clip_at            = int(clip_limit * valid_data.size)
+        pixels_to_clip_at            = int(clip_limit * (valid_data.size / float(number_of_bins)))
         mask_to_clip                 = temp_histogram > clip_limit
         num_bins_clipped             = sum(mask_to_clip)
         num_pixels_clipped           = sum(temp_histogram[mask_to_clip]) - (num_bins_clipped * pixels_to_clip_at)
         temp_histogram[mask_to_clip] = pixels_to_clip_at
-        
-        # re-add the pixels we removed but add them evenly across all bins
-        to_add_per_bin               = int(num_pixels_clipped / number_of_bins) # at most one pixel may be lost here TODO, is this ok?
-        temp_histogram               = temp_histogram + to_add_per_bin
     
     # calculate the cumulative distribution function
     cumulative_dist_function  = temp_histogram.cumsum()
     
-    # FUTURE: this version of the contrast limiting hasn't been tested, so keep do_clip_before as True until this can be evaluated
     # if we have a clip limit and we should do our clipping after building the cumulative distribution function, clip off our cdf
-    if (not do_clip_before) and (clip_limit is not None) :
+    if do_slope_limit and (slope_limit is not None) :
         
         # clip our cdf and remember how much we removed
-        pixels_to_clip_at            = int(clip_limit * valid_data.size)
-        shifted_cdf                  = [cumulative_dist_function[0]] + cumulative_dist_function[0:-1]
-        too_much_change_mask         = (cumulative_dist_function - shifted_cdf) > pixels_to_clip_at
-        num_pixels_clipped           = sum((cumulative_dist_function - (shifted_cdf + pixels_to_clip_at))[too_much_change_mask])
-        cumulative_dist_function[too_much_change_mask] = shifted_cdf[too_much_change_mask] + pixels_to_clip_at
+        pixel_height_limit       = int(slope_limit * (valid_data.size / float(number_of_bins)))
+        cumulative_excess_height = 0
+        num_clipped_pixels       = 0
+        weight_metric            = numpy.zeros(cumulative_dist_function.shape, dtype=float)
         
-        # re-add the pixels we removed but add them evenly across all bins
-        to_add_per_bin               = int(num_pixels_clipped / number_of_bins)
-        cumulative_dist_function     = cumulative_dist_function + to_add_per_bin
+        for pixel_index in range(1, cumulative_dist_function.size) :
+            
+            current_pixel_count = cumulative_dist_function[pixel_index]
+            
+            diff_from_acceptable      = (current_pixel_count - cumulative_dist_function[pixel_index-1] -
+                                              pixel_height_limit - cumulative_excess_height)
+            if diff_from_acceptable < 0:
+                weight_metric[pixel_index] = abs(diff_from_acceptable)
+            cumulative_excess_height += max( diff_from_acceptable, 0)
+            cumulative_dist_function[pixel_index] = current_pixel_count - cumulative_excess_height
+            num_clipped_pixels = num_clipped_pixels + cumulative_excess_height
     
     # now normalize the overall distribution function
     cumulative_dist_function  = (number_of_bins - 1) * cumulative_dist_function / cumulative_dist_function[-1]
