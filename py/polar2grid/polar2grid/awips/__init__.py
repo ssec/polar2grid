@@ -1,3 +1,3 @@
-from polar2grid.awips.awips_netcdf import awips_backend
-from polar2grid.awips.awips_config import BANDS,GRID_TEMPLATES,SHAPES,verify_config,get_grid_info
+from .awips_netcdf import backend,can_handle_inputs
+from .awips_config import load_config
 

@@ -37,7 +37,6 @@ Global objects representing configuration files
 """
 __docformat__ = "restructuredtext en"
 
-from netCDF4 import Dataset
 from xml.etree import cElementTree
 from polar2grid.nc import ncml_tag
 from polar2grid.core.constants import NOT_APPLICABLE
@@ -48,15 +47,22 @@ import logging
 
 log = logging.getLogger(__name__)
 
-# Get configuration file locations
 script_dir = os.path.split(os.path.realpath(__file__))[0]
-grids_dir = os.path.split(script_dir)[0] # grids directory is in root pkg dir
-default_grids_config = os.path.join(script_dir, "awips_grids.conf")
-default_ancil_dir = os.path.join(grids_dir, "grids")
-default_shapes_config = os.path.join(script_dir, "awips_shapes.conf")
-GRIDS_CONFIG = os.environ.get("VIIRS_GRIDS_CONFIG", default_grids_config)
-ANCIL_DIR     = os.environ.get("VIIRS_ANCIL_DIR", default_ancil_dir)
-SHAPES_CONFIG   = os.environ.get("VIIRS_SHAPE_CONFIG", default_shapes_config)
+# Default config file if none is specified
+DEFAULT_CONFIG_NAME = "awips_grids.conf"
+DEFAULT_CONFIG_FILE = os.path.join(script_dir, DEFAULT_CONFIG_NAME)
+# Default search directory for any awips configuration files
+DEFAULT_CONFIG_DIR = script_dir
+# Default search directory for NCML files
+DEFAULT_NCML_DIR = os.path.join(script_dir, "ncml")
+
+# Get configuration file locations
+CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", DEFAULT_CONFIG_FILE)
+CONFIG_DIR  = os.environ.get("AWIPS_CONFIG_DIR", DEFAULT_CONFIG_DIR)
+NCML_DIR    = os.environ.get("AWIPS_NCML_DIR", DEFAULT_NCML_DIR)
+
+
+PERSISTENT_CONFIGS = {}
 
 def find_grid_templates(ancil_dir):
     grid_templates = {}
@@ -71,81 +77,9 @@ def find_grid_templates(ancil_dir):
             grid_templates[grid_number] = (gpd_path, nc_path)
     return grid_templates
 
-def read_grid_config(config_filepath):
-    # grid -> band -> (product_id,nc_name)
-    grids_map = {}
-    # band -> grid -> (product_id,nc_name)
-    bands_map = {}
-    for line in open(config_filepath):
-        # For comments
-        if line.startswith("#") or line.startswith("\n"): continue
-        parts = line.strip().split(",")
-        if len(parts) < 8:
-            print "ERROR: Need at least 4 columns in templates.conf (%s)" % line
-        product_id = parts[0]
-        grid_number = parts[1]
-        bkind = parts[2].lower()
-        band = parts[3].lower() if parts[3] not in ["NA","None"] else NOT_APPLICABLE
-        channel = parts[4]
-        source = parts[5]
-        satelliteName = parts[6]
-        nc_name = parts[7]
-
-        if grid_number not in grids_map:
-            grids_map[grid_number] = {}
-        if band in grids_map[grid_number]:
-            print "ERROR: templates.conf contains two or more entries for grid %s and band %s,%s" % (grid_number,bkind,band)
-            sys.exit(-1)
-
-        if (bkind,band) not in bands_map:
-            bands_map[(bkind,band)] = {}
-        if grid_number in bands_map[(bkind,band)]:
-            print "ERROR: templates.conf contains two or more entries for grid %s and band %s,%s" % (grid_number,bkind,band)
-            sys.exit(-1)
-
-        val = (product_id,channel,source,satelliteName,nc_name)
-        bands_map[(bkind,band)][grid_number] = val
-        grids_map[grid_number][(bkind,band)] = val
-
-    return grids_map,bands_map
-
-def read_shapes_config(config_filepath):
-    shapes = dict((parts[0],tuple([float(x) for x in parts[1:6]])) for parts in [line.split(",") 
-        for line in open(config_filepath) if not line.startswith("#") ] )
-    return shapes
-
-GRID_TEMPLATES = find_grid_templates(ANCIL_DIR)
-GRIDS,BANDS = read_grid_config(GRIDS_CONFIG)
-SHAPES = read_shapes_config(SHAPES_CONFIG)
-
-def _get_awips_info(kind, band, grid_number,
-        grids_map=None, bands_map=None):
-    if grids_map is None: grids_map = GRIDS
-    if bands_map is None: bands_map = BANDS
-    key = (kind,band)
-    if key not in bands_map or grid_number not in grids_map:
-        log.error("Kind: %s, Band: %s or grid %s not found in templates.conf" % (key[0],key[1],grid_number))
-        raise ValueError("Kind: %s, Band: %s or grid %s not found in templates.conf" % (key[0],key[1],grid_number))
-    else:
-        return grids_map[grid_number][key]
-
-def _get_grid_templates(grid_number, gpd=None, nc=None,
-        grid_templates=None):
-    if grid_templates is None: grid_templates = GRID_TEMPLATES
-
-    if grid_number not in grid_templates:
-        if nc is not None and gpd is not None:
-            return (gpd,nc)
-        else:
-            log.error("Couldn't find grid %s in grid templates" % grid_number)
-            raise ValueError("Couldn't find grid %s in grid templates" % grid_number)
-    else:
-        use_gpd = grid_templates[grid_number][0]
-        use_nc = grid_templates[grid_number][1]
-        use_gpd = gpd or use_gpd
-        use_nc = nc or use_nc
-        return (use_gpd,use_nc)
-
+# This isn't used anymore, but its a handy function to hold on to
+# This was replaced by the grids/grids.py API which requires grid size to be
+# in the grids.conf file
 def get_shape_from_ncml(fn, var_name):
     """Returns (rows,cols) of the variable with name
     `var_name` in the ncml file with filename `fn`.
@@ -186,76 +120,139 @@ def get_shape_from_ncml(fn, var_name):
         cols = int(important_dims[0].get("length"))
     return rows,cols
 
-def get_grid_info(kind, band, grid_number, gpd=None, nc=None,
-        grids_map=None, bands_map=None,
-        shapes_map=None, grid_templates=None):
-    """Assumes verify_grid was already run to verify that the information
-    was available.
-    """
-    if grids_map is None: grids_map = GRIDS
-    if bands_map is None: bands_map = BANDS
-    if shapes_map is None: shapes_map = SHAPES
-    if grid_templates is None: grid_templates = GRID_TEMPLATES
-
-    awips_info = _get_awips_info(kind, band, grid_number)
-    temp_info = _get_grid_templates(grid_number, gpd, nc)
-
-    # Get number of rows and columns for the output grid
-    out_rows,out_cols = get_shape_from_ncml(temp_info[1], "image")
-    log.debug("Number of output columns calculated from NC template %d" % out_cols)
-    log.debug("Number of output rows calculated from NC template %d" % out_rows)
-
-    grid_info = {}
-    grid_info["grid_number"] = grid_number
-    grid_info["product_id"] = awips_info[0]
-    grid_info["channel"] = awips_info[1]
-    grid_info["source"] = awips_info[2]
-    grid_info["sat_name"] = awips_info[3]
-    grid_info["nc_format"] = awips_info[4]
-    grid_info["gpd_template"] = temp_info[0]
-    grid_info["nc_template"] = temp_info[1]
-    grid_info["out_rows"] = out_rows
-    grid_info["out_cols"] = out_cols
-    return grid_info
-
-
-def verify_config(kind, band, grid_number, gpd=None, nc=None,
-        grids_map=None, bands_map=None,
-        shapes_map=None, grid_templates=None):
-
-    if grids_map is None: grids_map = GRIDS
-    if bands_map is None: bands_map = BANDS
-    if shapes_map is None: shapes_map = SHAPES
-    if grid_templates is None: grid_templates = GRID_TEMPLATES
-
-    key = (kind,band)
-
-    if key in bands_map and \
-        grid_number in grids_map and \
-        key in grids_map[grid_number] and \
-        grid_number in shapes_map and \
-        (grid_number in grid_templates or \
-        (gpd is not None and nc is not None)):
-        return True
+def _create_config_id(sat, instrument, kind, band, data_kind, grid_name=None):
+    if grid_name is None:
+        # This is used for searching the configs
+        return "_".join([sat, instrument, kind, band or "", data_kind])
     else:
+        # This is used for adding to the configs
+        return "_".join([sat, instrument, kind, band or "", data_kind, grid_name])
+
+def _rel_to_abs(filename, default_base_path):
+    """Function that checks if a filename provided is not an absolute
+    path.  If it is not, then it checks if the file exists in the current
+    working directory.  If it does not exist in the cwd, then the default
+    base path is used.  If that file does not exist an exception is raised.
+    """
+    if not os.path.isabs(filename):
+        cwd_filepath = os.path.join(os.path.curdir, filename)
+        if os.path.exists(cwd_filepath):
+            filename = cwd_filepath
+        else:
+            filename = os.path.join(default_base_path, filename)
+    filename = os.path.realpath(filename)
+
+    if not os.path.exists(filename):
+        log.error("File '%s' could not be found" % (filename,))
+        raise ValueError("File '%s' could not be found" % (filename,))
+
+    return filename
+
+def load_config_str(name, config_str):
+    # Don't load a config twice
+    if name in PERSISTENT_CONFIGS:
+        return True
+
+    # Get rid of trailing new lines and commas
+    config_lines = [ line.strip(",\n") for line in config_str.split("\n") ]
+    # Get rid of comment lines and blank lines
+    config_lines = [ line for line in config_lines if line and not line.startswith("#") and not line.startswith("\n") ]
+    # Check if we have any useful lines
+    if not config_lines:
+        log.warning("No non-comment lines were found in '%s'" % name)
         return False
 
-if __name__ == "__main__":
-    from pprint import pprint
-    print "Grid Templates:"
-    pprint(GRID_TEMPLATES)
-    print "Grids map:"
-    pprint(GRIDS)
-    print "Bands map:"
-    pprint(BANDS)
-    print "Shapes map:"
-    pprint(SHAPES)
+    PERSISTENT_CONFIGS[name] = {}
 
-    if len(sys.argv) == 4:
-        valid = verify_config(*sys.argv[1:4])
-        if valid:
-            print "Kind,band,grid_number in configs: YES"
-            pprint(get_grid_info(*sys.argv[1:4]))
-        else:
-            print "Kind,band,grid_number in configs: NO"
+    try:
+        # Parse config lines
+        for line in config_lines:
+            parts = line.split(",")
+            if len(parts) != 12:
+                log.error("AWIPS config line needs exactly 12 columns '%s' : '%s'" % (name,line))
+                raise ValueError("AWIPS config line needs exactly 12 columns '%s' : '%s'" % (name,line))
+
+            # Verify that each identifying portion is valid
+            for i in range(6):
+                assert parts[i],"Field %d can not be empty" % i
+                # polar2grid demands lowercase fields
+                parts[i] = parts[i].lower()
+
+            # Convert band if none
+            if parts[3] == '' or parts[3] == "none":
+                parts[3] = NOT_APPLICABLE
+
+            line_id = _create_config_id(*parts[:6])
+            if line_id in PERSISTENT_CONFIGS[name]:
+                log.error("AWIPS config has 2 entries for %s" % (line_id,))
+                raise ValueError("AWIPS config has 2 entries for %s" % (line_id,))
+
+            # Parse out the awips specific elements
+            product_id = parts[6]
+            awips2_channel = parts[7]
+            awips2_source = parts[8]
+            awips2_satellitename = parts[9]
+            ncml_template = _rel_to_abs(parts[10], NCML_DIR)
+            nc_format = parts[11]
+            config_entry = {
+                    "grid_name" : parts[5],
+                    "product_id" : product_id,
+                    "awips2_channel" : awips2_channel,
+                    "awips2_source" : awips2_source,
+                    "awips2_satellitename" : awips2_satellitename,
+                    "ncml_template" : ncml_template,
+                    "nc_format" : nc_format
+                    }
+            PERSISTENT_CONFIGS[name][line_id] = config_entry
+    except StandardError:
+        # Clear out the bad config
+        del PERSISTENT_CONFIGS[name]
+        raise
+
+    return True
+
+def load_config(config_filename=None, config_name=None):
+    if config_filename is None:
+        config_filename = DEFAULT_CONFIG_FILE
+        config_name = DEFAULT_CONFIG_NAME
+    if config_name is None: config_name = config_filename
+
+    # Load a configuration file, even if it's in the package
+    config_filename = _rel_to_abs(config_filename, CONFIG_DIR)
+
+    log.debug("Using AWIPS configuration '%s'" % (config_filename,))
+
+    if config_filename in PERSISTENT_CONFIGS:
+        return True
+
+    config_file = open(config_filename, 'r')
+    config_str = config_file.read()
+    return load_config_str(config_name, config_str)
+
+def can_handle_inputs(sat, instrument, kind, band, data_kind):
+    """Search through the configuration files and return all the grids for
+    this band and data_kind
+    """
+    band_id = _create_config_id(sat, instrument, kind, band, data_kind)
+    log.debug("Searching AWIPS configs for '%s'" % (band_id,))
+    grids = []
+    for config_file,config_dict in PERSISTENT_CONFIGS.items():
+        for k in config_dict.keys():
+            if k.startswith(band_id):
+                grids.append(config_dict[k]["grid_name"])
+    return grids
+
+def get_awips_info(sat, instrument, kind, band, data_kind, grid_name, config_name):
+    if config_name not in PERSISTENT_CONFIGS:
+        log.error("Information was asked for about a config file that wasn't loaded: '%s'" % (config_name,))
+        raise ValueError("Information was asked for about a config file that wasn't loaded: '%s'" % (config_name,))
+
+    config_id = _create_config_id(sat, instrument, kind, band, data_kind, grid_name)
+    if config_id not in PERSISTENT_CONFIGS[config_name]:
+        log.error("'%s' could not be found in the loaded configuration '%s', available '%r'" % (config_id,config_name,PERSISTENT_CONFIGS[config_name].keys()))
+        raise ValueError("'%s' could not be found in the loaded configuration '%s'" % (config_id,config_name))
+
+    return PERSISTENT_CONFIGS[config_name][config_id]
+
+if __name__ == "__main__":
     sys.exit(0)

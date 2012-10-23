@@ -18,4 +18,3 @@ converted to git using "svn2git" which does not support this structure.
 For now, the "vendor" directory is not included in the git repository although
 it may be added later.
 
-
