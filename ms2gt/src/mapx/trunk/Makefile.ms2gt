@@ -24,20 +24,20 @@ DOCDIR = Documentation
 #
 #	commands
 #
-SHELL = /bin/sh
-CC = cc
-AR = ar
-RANLIB = touch
+SHELL ?= /bin/sh
+CC ?= cc
+AR ?= ar
+RANLIB ?= touch
 # Uncomment the next line for MAC OSX
 #RANLIB = ranlib
-CO = co
-MAKEDEPEND = makedepend
-INSTALL = cp -f -p
-MKDIR = mkdir -p
-CP = cp -f -p
-RM = rm -f
-TAR = tar
-COMPRESS = gzip
+CO ?= co
+MAKEDEPEND ?= makedepend
+INSTALL ?= cp -f -p
+MKDIR ?= mkdir -p
+CP ?= cp -f -p
+RM ?= rm -f
+TAR ?= tar
+COMPRESS ?= gzip
 
 #
 #	archive file name

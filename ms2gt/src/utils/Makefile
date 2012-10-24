@@ -19,14 +19,14 @@ BINDIR = $(TOPDIR)/bin
 #
 #	commands
 #
-SHELL = /bin/sh
-CC = cc
-CO = co
-MAKEDEPEND = makedepend
-INSTALL = cp
-RM = rm -f
-TAR = tar
-COMPRESS = gzip
+SHELL ?= /bin/sh
+CC ?= cc
+CO ?= co
+MAKEDEPEND ?= makedepend
+INSTALL ?= cp
+RM ?= rm -f
+TAR ?= tar
+COMPRESS ?= gzip
 
 #
 #	debug or optimization settings
