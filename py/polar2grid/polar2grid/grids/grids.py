@@ -206,7 +206,6 @@ def determine_grid_coverage(lon_data, lat_data, grids):
         tbound,bbound,lbound,rbound,percent = SHAPES[grid_name]
         lon_data_use = lon_data
         if lbound > rbound:
-            lbound = lbound + 360.0
             rbound = rbound + 360.0
             if lon_data_flipped is None:
                 lon_data_flipped = lon_data.copy()
