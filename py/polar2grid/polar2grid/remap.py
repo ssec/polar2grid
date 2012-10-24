@@ -102,7 +102,7 @@ def run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
     proc_pool.close()
     proc_pool.join()
 
-    for grid_name in grid_jobs:
+    for grid_name in grid_jobs.keys():
         try:
             cr_dict = ll2cr_results[grid_name].get()
             ll2cr_output[grid_name].update(cr_dict)
