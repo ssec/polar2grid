@@ -15,17 +15,15 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.constants import *
-from polar2grid.viirs import make_swaths
-from .grids.grids import determine_grid_coverage_fbf,get_grid_info
+from polar2grid.viirs import Frontend
 from .viirs2awips import run_prescaling,_safe_remove,create_grid_jobs,create_pseudobands
 from .remap import remap_bands
-from .gtiff_backend import can_handle_inputs,backend,_bits_to_etype
+from .gtiff_backend import Backend,_bits_to_etype
 
 import os
 import sys
 import logging
 from multiprocessing import Process
-import numpy
 from glob import glob
 
 log = logging.getLogger(__name__)
@@ -139,23 +137,28 @@ def process_kind(filepaths,
     # there aren't any jobs left, not sure why
     UNKNOWN_FAIL = -1
 
+    # Declare polar2grid components
+    frontend = Frontend()
+    backend = Backend(etype=etype, rescale_config=rescale_config)
+
     # Extract Swaths
     log.info("Extracting swaths...")
     try:
-        meta_data = make_swaths(filepaths, cut_bad=True)
+        meta_data = frontend.make_swaths(filepaths, cut_bad=True)
+
+        # Let's be lazy and give names to the 'global' viirs info
+        sat = meta_data["sat"]
+        instrument = meta_data["instrument"]
+        kind = meta_data["kind"]
+        start_time = meta_data["start_time"]
+        bands = meta_data["bands"]
+        fbf_lat = meta_data["fbf_lat"]
+        fbf_lon = meta_data["fbf_lon"]
     except StandardError:
         log.error("Swath creation failed")
         log.debug("Swath creation error:", exc_info=1)
         SUCCESS |= SWATH_FAIL
         return SUCCESS
-    # Let's be lazy and give names to the 'global' viirs info
-    sat = meta_data["sat"]
-    instrument = meta_data["instrument"]
-    kind = meta_data["kind"]
-    start_time = meta_data["start_time"]
-    bands = meta_data["bands"]
-    fbf_lat = meta_data["fbf_lat"]
-    fbf_lon = meta_data["fbf_lon"]
 
     # Create pseudo-bands
     try:
@@ -194,8 +197,8 @@ def process_kind(filepaths,
     # Determine grid
     try:
         log.info("Determining what grids the data fits in...")
-        grid_jobs = create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon,
-                forced_grids=forced_grid, can_handle_inputs=can_handle_inputs)
+        grid_jobs = create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon, backend,
+                forced_grids=forced_grid)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")
@@ -228,7 +231,7 @@ def process_kind(filepaths,
                 data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
 
                 # Call the backend
-                backend(
+                backend.create_product(
                         sat,
                         instrument,
                         kind,
@@ -241,10 +244,7 @@ def process_kind(filepaths,
                         grid_origin_x=band_dict["grid_origin_x"],
                         grid_origin_y=band_dict["grid_origin_y"],
                         pixel_size_x=band_dict["pixel_size_x"],
-                        pixel_size_y=band_dict["pixel_size_y"],
-                        etype=etype,
-                        rescale_config=rescale_config
-                        )
+                        pixel_size_y=band_dict["pixel_size_y"])
             except StandardError:
                 log.error("Error in the Geotiff backend for %s%s in grid %s" % (kind,band,grid_name))
                 log.debug("Geotiff backend error:", exc_info=1)

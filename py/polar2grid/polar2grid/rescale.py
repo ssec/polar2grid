@@ -22,6 +22,7 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core.constants import DKIND_REFLECTANCE,DKIND_RADIANCE, \
         DKIND_BTEMP,DKIND_FOG,NOT_APPLICABLE
+from polar2grid.core import roles
 
 import os
 import sys
@@ -195,13 +196,6 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mu
     
     return data
 
-# Needs to be declared after all of the scaling functions
-KNOWN_RESCALE_KINDS = {
-        'sqrt' : sqrt_scale,
-        'linear' : linear_scale,
-        'raw' : passive_scale,
-        'btemp' : bt_scale
-        }
 
 # DEFAULTS
 RESCALE_FOR_KIND = {
@@ -222,7 +216,7 @@ def unload_config(name):
         return
     del PERSISTENT_CONFIGS[name]
 
-def load_config_str(name, config_str):
+def load_config_str(name, config_str, persistent_dict=PERSISTENT_CONFIGS):
     """Just in case I want to have a config file stored as a string in
     the future.
 
@@ -254,7 +248,7 @@ def load_config_str(name, config_str):
     >>> assert "test_config" in PERSISTENT_CONFIGS
     """
     # Don't load a config twice
-    if name in PERSISTENT_CONFIGS:
+    if name in persistent_dict:
         return True
 
     # Get rid of trailing new lines and commas
@@ -266,7 +260,7 @@ def load_config_str(name, config_str):
         log.warning("No non-comment lines were found in '%s'" % name)
         return False
 
-    PERSISTENT_CONFIGS[name] = {}
+    persistent_dict[name] = {}
 
     # Used in configuration reader
     KNOWN_DATA_KINDS = {
@@ -312,10 +306,10 @@ def load_config_str(name, config_str):
             # Enter the information into the configs dict
             line_id = _create_config_id(*parts[:5])
             config_entry = (parts[5], tuple(float(x) for x in parts[6:]))
-            PERSISTENT_CONFIGS[name][line_id] = config_entry
+            persistent_dict[name][line_id] = config_entry
     except StandardError:
         # Clear out the bad config
-        del PERSISTENT_CONFIGS[name]
+        del persistent_dict[name]
         raise
 
     return True
@@ -350,7 +344,7 @@ def load_config(config_filename, config_name=None):
     config_str = config_file.read()
     return load_config_str(config_name, config_str)
 
-def rescale(sat, instrument, kind, band, data_kind, data, config=None):
+def rescale(sat, instrument, kind, band, data_kind, data, config=None, persistent_dict=PERSISTENT_CONFIGS):
     """Function that uses previously loaded configuration files to choose
     how to rescale the provided data.  If the `config` keyword is not provided
     then a best guess will be made on how to rescale the data.  Usually this
@@ -359,13 +353,13 @@ def rescale(sat, instrument, kind, band, data_kind, data, config=None):
     log_level = logging.getLogger('').handlers[0].level or 0
     band_id = _create_config_id(sat, instrument, kind, band, data_kind)
 
-    if config is not None and config not in PERSISTENT_CONFIGS:
+    if config is not None and config not in persistent_dict:
         log.error("rescaling was passed a configuration file that wasn't loaded yet: '%s'" % (config,))
         raise ValueError("rescaling was passed a configuration file that wasn't loaded yet: '%s'" % (config,))
 
-    if config is None or band_id not in PERSISTENT_CONFIGS[config]:
+    if config is None or band_id not in persistent_dict[config]:
         # Run the default scaling functions
-        log.debug("Config ID '%s' was not found in '%r'" % (band_id,PERSISTENT_CONFIGS[config].keys()))
+        log.debug("Config ID '%s' was not found in '%r'" % (band_id,persistent_dict[config].keys()))
         log.info("Running default rescaling method for kind: %s, band: %s" % (kind,band))
         if data_kind not in RESCALE_FOR_KIND:
             log.error("No default rescaling is set for data of kind %s" % data_kind)
@@ -374,7 +368,7 @@ def rescale(sat, instrument, kind, band, data_kind, data, config=None):
     else:
         # We know how to rescale using the onfiguration file
         log.info("'%s' was found in the rescaling configuration" % (band_id))
-        rescale_func,rescale_args = PERSISTENT_CONFIGS[config][band_id]
+        rescale_func,rescale_args = persistent_dict[config][band_id]
 
     log.debug("Using rescale arguments: %r" % (rescale_args,))
     data = rescale_func(data, *rescale_args)
@@ -384,6 +378,59 @@ def rescale(sat, instrument, kind, band, data_kind, data, config=None):
         log.debug("Data min: %f, max: %f" % (data.min(),data.max()))
 
     return data
+
+class Rescaler(roles.RescalerRole):
+
+    @property
+    def default_config_dir(self):
+        """Return the default search path to find a configuration file if
+        the configuration file provided is not an absolute path and the
+        configuration filename was not found in the current working
+        directory.
+        """
+        return os.path.split(os.path.realpath(__file__))[0]
+
+    _known_rescale_kinds = {
+                'sqrt' : sqrt_scale,
+                'linear' : linear_scale,
+                'raw' : passive_scale,
+                'btemp' : bt_scale
+                }
+    @property
+    def known_rescale_kinds(self):
+        # Override the role's rescale property
+        return self._known_rescale_kinds
+
+    def __call__(self, sat, instrument, kind, band, data_kind, data):
+        """Function that uses previously loaded configuration files to choose
+        how to rescale the provided data.  If the `config` keyword is not provided
+        then a best guess will be made on how to rescale the data.  Usually this
+        best guess is a 0-255 scaling based on the `data_kind`.
+        """
+        log_level = logging.getLogger('').handlers[0].level or 0
+        band_id = _create_config_id(sat, instrument, kind, band, data_kind)
+
+        if self.config is None or band_id not in self.config:
+            # Run the default scaling functions
+            log.debug("Config ID '%s' was not found in '%r'" % (band_id,self.config.keys()))
+            log.info("Running default rescaling method for kind: %s, band: %s" % (kind,band))
+            if data_kind not in RESCALE_FOR_KIND:
+                log.error("No default rescaling is set for data of kind %s" % data_kind)
+                raise ValueError("No default rescaling is set for data of kind %s" % data_kind)
+            rescale_func,rescale_args = RESCALE_FOR_KIND[data_kind]
+        else:
+            # We know how to rescale using the onfiguration file
+            log.info("'%s' was found in the rescaling configuration" % (band_id))
+            rescale_func,rescale_args = self.config[band_id]
+
+        log.debug("Using rescale arguments: %r" % (rescale_args,))
+        data = rescale_func(data, *rescale_args)
+
+        # Only perform this calculation if it will be shown, its very time consuming
+        if log_level <= logging.DEBUG:
+            log.debug("Data min: %f, max: %f" % (data.min(),data.max()))
+
+        return data
 
 def main():
     from argparse import ArgumentParser

@@ -17,6 +17,7 @@ __docformat__ = "restructuredtext en"
 
 from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info
 from polar2grid.core.constants import SAT_NPP,INST_VIIRS
+from polar2grid.core import roles
 import numpy
 
 import os
@@ -530,6 +531,13 @@ def make_swaths(ifilepaths, filter=None, cut_bad=False):
     process_image(meta_data, image_data, geo_data, cut_bad=cut_bad)
 
     return meta_data
+
+class Frontend(roles.FrontendRole):
+    def __init__(self):
+        pass
+
+    def make_swaths(self, *args, **kwargs):
+        return make_swaths(*args, **kwargs)
 
 def main():
     import optparse
