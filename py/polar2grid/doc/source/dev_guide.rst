@@ -229,8 +229,9 @@ Glue scripts are the first python script that should be called by the user.
 They have command line arguments that are relevant to their specific frontends
 and backends, as well as those common to all glue scripts (like remapping and
 grid determination options).  The main responsibility of a glue script is to
-take input data filenames from the command line, separate them by kind of band
-(usually by filename pattern), and process each kind of band separately.
+take input data filenames from the command line, separate them by files that
+share the navigation data
+(usually by filename pattern), and process each set of those files separately.
 Processing means calling the frontend to get the data into swaths, calling
 the grid determiner to find what grids the data should be mapped to,
 calling the remapper to remap/grid the data, and calling the backend to
@@ -249,6 +250,11 @@ examples of information that may be added by a connecting script:
    prescaling has to be done, otherwise it is the same.  This should be
    added to the band metadata dictionary since there is a different
    swath file for each band being processed.
+
+.. note::
+
+    The ``fbf_swath`` example above may not be relevant if prescaling
+    is done in the frontend.
 
 Data Frontends
 --------------
@@ -271,18 +277,17 @@ The required flat binary files that should be created are:
 
 Data files and navigation files must have the same shape.  It is also assumed
 that all data files have 1 pair of navigation files (latitude and longitude).
-Frontends should be called once per 'kind of band', where all bands for a
-specific kind share the same navigation data.
+Frontends should be called once per set of navigation sharing files.  If it
+is desired or more efficient to break these navigation sets into smaller sets
+this is up to the glue script and must be made possible by the frontend.
 
 The pieces of information in the metadata dictionary are listed below. All
 the information is required unless stated otherwise. A data type of 'constant'
 means the value is a constant in the ``polar2grid.core.constants`` module.
 Metadata 'key (data type): description':
 
- - ``sat`` (constant): Satellite name or identifier, lowercase (ex. npp, aqua, terra)
- - ``instrument`` (constant): Instrument name on the satellite, lowercase (ex. viirs, modis, etc)
- - ``kind`` (constant): The kind of the band of data, lowercase.  For example, VIIRS has 'i' bands, 'm' bands,
-    and 'dnb'.
+ - ``sat`` (constant): Satellite name or identifier (ex. SAT_NPP, SAT_AQUA, SAT_TERRA)
+ - ``instrument`` (constant): Instrument name on the satellite (ex. INST_VIIRS, INST_MODIS, etc)
  - ``start_time`` (datetime object): First scanline measurement time for the entire swath
  - ``fbf_lat`` (str): Filename of the binary latitude file
  - ``fbf_lon`` (str): Filename of the binary longitude file
@@ -303,19 +308,25 @@ Metadata 'key (data type): description':
    is usually constant for each satellite sensor type.
  - ``bands`` (dict of dicts): One python dictionary for each band
    (I01,I02,DNB,etc).  The key of the dictionary
-   is the band as a constant (ex. BID_01 for I01, NOT_APPLICABLE for DNB). Each
+   is a 2-element tuple of (kind of band, band ID), each being a constant.
+   Some examples would be (BKIND_I,BID_01) for I01 or
+   (BKIND_DNB,NOT_APPLICABLE) for DNB). Each
    of the band dictionaries must contain the following items:
 
     - ``data_kind`` (constant): Constant describing what the data for
       this band is. Common cases are brightness temperatures, radiances, or
       reflectances.  For psuedobands created later in processing this value
-      will represent what that psuedoband means (ex. Fog products).
+      will represent what that psuedoband means (ex. Fog products)
     - ``remap_data_as`` (constant): Same as ``data_kind`` for 'raw'
       data from the files.  During psuedoband creation this value is copied
       from the data used to create the psuedoband to tell the remapping that
       it shares the same invalid mask as its creating bands and can be
-      separated based on this type.
-    - ``band`` (constant) : Same as the key value for this dictionary
+      separated based on this type
+    - ``kind`` (constant): The kind of the band of data, constant.
+      For example, VIIRS has BKIND_I, BKIND_M, BKIND_DNB. Same as the key's
+      first element for this dictionary
+    - ``band`` (constant) : Same as the key's second element for this
+      dictionary
     - ``fbf_img`` (str) : Filename of the binary swath file
     - ``swath_rows`` (int) : Copy of metadata dict entry
     - ``swath_cols`` (int) : Copy of metadata dict entry
