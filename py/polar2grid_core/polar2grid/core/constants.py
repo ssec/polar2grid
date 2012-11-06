@@ -25,15 +25,20 @@ __docformat__ = "restructuredtext en"
 NOT_APPLICABLE = None
 
 # Satellites
-SAT_NPP = "npp"
+SAT_NPP   = "npp"
+SAT_TERRA = "terra"
+SAT_AQUA  = "aqua"
 
 # Instruments
 INST_VIIRS = "viirs"
+INST_MODIS = "modis"
 
 # Band Kinds
-BKIND_I = "i"
-BKIND_M = "m"
+BKIND_I   = "i"
+BKIND_M   = "m"
 BKIND_DNB = "dnb"
+BKIND_VIS = "visible"
+BKIND_IR  = "infrared"
 
 # Band Identifier
 BID_01 = "01"
@@ -53,6 +58,10 @@ BID_14 = "14"
 BID_15 = "15"
 BID_16 = "16"
 BID_FOG = "fog"
+BID_20 = "20"
+BID_26 = "26"
+BID_27 = "27"
+BID_31 = "31"
 
 # Data kinds
 DKIND_LATITUDE = "latitude"
