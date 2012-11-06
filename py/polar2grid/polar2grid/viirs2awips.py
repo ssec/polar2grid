@@ -15,11 +15,11 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.constants import *
-from polar2grid.viirs import make_swaths
+from polar2grid.viirs import Frontend
 from .rescale import dnb_scale
 from .grids.grids import determine_grid_coverage_fbf,get_grid_info
 from .remap import remap_bands
-from .awips import can_handle_inputs,backend,load_config as load_backend_config
+from .awips import Backend
 
 import os
 import sys
@@ -220,12 +220,12 @@ def run_prescaling(img_filepath, mode_filepath):
 
     return fbf_swath
 
-def create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon,
-        forced_grids=None, can_handle_inputs=can_handle_inputs):
+def create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon, backend,
+        forced_grids=None):
     # Check what grids the backend can handle
     all_possible_grids = set()
     for band in bands.keys():
-        this_band_can_handle  = can_handle_inputs(sat, instrument, kind, band, bands[band]["data_kind"])
+        this_band_can_handle  = backend.can_handle_inputs(sat, instrument, kind, band, bands[band]["data_kind"])
         bands[band]["grids"] = this_band_can_handle
         if isinstance(this_band_can_handle, str):
             all_possible_grids.update([this_band_can_handle])
@@ -364,13 +364,13 @@ def process_kind(filepaths,
     UNKNOWN_FAIL = -1
 
     # Load any configuration files needed
-    # XXX: Fix this by using object orientated components
-    load_backend_config(backend_config) # default
+    frontend = Frontend()
+    backend = Backend(rescale_config=rescale_config, backend_config=backend_config)
 
     # Extract Swaths
     log.info("Extracting swaths...")
     try:
-        meta_data = make_swaths(filepaths, cut_bad=True)
+        meta_data = frontend.make_swaths(filepaths, cut_bad=True)
     except StandardError:
         log.error("Swath creation failed")
         log.debug("Swath creation error:", exc_info=1)
@@ -421,7 +421,7 @@ def process_kind(filepaths,
     # Determine grid
     try:
         log.info("Determining what grids the data fits in...")
-        grid_jobs = create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon,
+        grid_jobs = create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon, backend,
                 forced_grids=forced_grid)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
@@ -455,7 +455,7 @@ def process_kind(filepaths,
                 data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
 
                 # Call the backend
-                backend(
+                backend.create_product(
                         sat,
                         instrument,
                         kind,
@@ -464,9 +464,7 @@ def process_kind(filepaths,
                         data,
                         start_time=start_time,
                         grid_name=grid_name,
-                        ncml_template=forced_nc or None,
-                        rescale_config=rescale_config,
-                        backend_config=backend_config
+                        ncml_template=forced_nc or None
                         )
             except StandardError:
                 log.error("Error in the AWIPS backend for %s%s in grid %s" % (kind,band,grid_name))

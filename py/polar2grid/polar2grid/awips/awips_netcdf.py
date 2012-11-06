@@ -48,8 +48,9 @@ variables:
 """
 
 from polar2grid.core import Workspace
+from polar2grid.core import roles
 from polar2grid.nc import create_nc_from_ncml
-from ..rescale import rescale,ubyte_filter,load_config as load_rescale_config
+from ..rescale import Rescaler,ubyte_filter
 from .awips_config import get_awips_info,load_config as load_awips_config,can_handle_inputs as config_can_handle_inputs
 
 import os, sys, logging, re
@@ -60,17 +61,6 @@ log = logging.getLogger(__name__)
 AWIPS_ATTRS = set(re.findall(r'\W:(\w+)', NCDUMP))
 DEFAULT_8BIT_RCONFIG = "rescale.8bit.conf"
 DEFAULT_AWIPS_CONFIG = "awips_grids.conf"
-
-def can_handle_inputs(sat, instrument, kind, band, data_kind):
-    """Function for backend-calling script to ask if the backend will be
-    able to handle the data that will be processed.  For the AWIPS backend
-    it can handle any gpd grid that it is configured for in
-    polar2grid/awips/awips.conf
-
-    It is also assumed that rescaling will be able to handle the `data_kind`
-    provided.
-    """
-    return config_can_handle_inputs(sat, instrument, kind, band, data_kind)
 
 def fill(nc_name, image, template, start_dt,
         channel, source, sat_name):
@@ -119,57 +109,68 @@ def fill(nc_name, image, template, start_dt,
     nc.close()
     log.debug("Data transferred into NC file correctly")
 
-# Meet the polar2grid backend interface (part 2)
-#def backend(img_filepath, nc_template, nc_filepath,
-#        kind, band, data_kind, start_dt,
-#        channel, source, sat_name, **kwargs):
-def backend(sat, instrument, kind, band, data_kind, data,
-        start_time=None, end_time=None, grid_name=None,
-        output_filename=None, rescale_config=None, backend_config=None,
-        ncml_template=None):
-    # Filter out required keywords
-    if grid_name is None:
-        log.error("'grid_name' is a required keyword for this backend")
-        raise ValueError("'grid_name' is a required keyword for this backend")
-    if start_time is None and output_filename is None:
-        log.error("'start_time' is a required keyword for this backend if 'output_filename' is not specified")
-        raise ValueError("'start_time' is a required keyword for this backend if 'output_filename' is not specified")
+class Backend(roles.BackendRole):
+    config = {}
+    def __init__(self, backend_config=None, rescale_config=None):
+        # Load AWIPS backend configuration
+        if backend_config is None:
+            log.debug("Using default AWIPS configuration: '%s'" % DEFAULT_AWIPS_CONFIG)
+            backend_config = DEFAULT_AWIPS_CONFIG
 
-    # Load rescaling configuration
-    if rescale_config is None:
-        log.debug("Using default 8bit rescaling '%s'" % DEFAULT_8BIT_RCONFIG)
-        rescale_config = DEFAULT_8BIT_RCONFIG
+        self.backend_config = backend_config
+        load_awips_config(self.config, self.backend_config)
 
-    if rescale_config is not None:
-        load_rescale_config(rescale_config)
+        # Load rescaling configuration
+        if rescale_config is None:
+            log.debug("Using default 8bit rescaling '%s'" % DEFAULT_8BIT_RCONFIG)
+            rescale_config = DEFAULT_8BIT_RCONFIG
+        self.rescale_config = rescale_config
+        self.rescaler = Rescaler(config=self.rescale_config)
 
-    # Load AWIPS backend configuration
-    if backend_config is None:
-        log.debug("Using default AWIPS configuration: '%s'" % DEFAULT_AWIPS_CONFIG)
-        backend_config = DEFAULT_AWIPS_CONFIG
+    def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
+        """Function for backend-calling script to ask if the backend will be
+        able to handle the data that will be processed.  For the AWIPS backend
+        it can handle any gpd grid that it is configured for in
+        polar2grid/awips/awips.conf
 
-    load_awips_config(backend_config)
+        It is also assumed that rescaling will be able to handle the `data_kind`
+        provided.
+        """
+        return config_can_handle_inputs(self.config, sat, instrument, kind, band, data_kind)
 
-    data = rescale(sat, instrument, kind, band, data_kind, data, config=rescale_config)
+    def create_product(self, sat, instrument, kind, band, data_kind, data,
+            start_time=None, end_time=None, grid_name=None,
+            output_filename=None,
+            ncml_template=None):
+        # Filter out required keywords
+        if grid_name is None:
+            log.error("'grid_name' is a required keyword for this backend")
+            raise ValueError("'grid_name' is a required keyword for this backend")
+        if start_time is None and output_filename is None:
+            log.error("'start_time' is a required keyword for this backend if 'output_filename' is not specified")
+            raise ValueError("'start_time' is a required keyword for this backend if 'output_filename' is not specified")
 
-    # Get information from the configuration files
-    awips_info = get_awips_info(sat, instrument, kind, band, data_kind, grid_name, backend_config)
-    # Get the proper output name if it wasn't forced to something else
-    if output_filename is None:
-        output_filename = start_time.strftime(awips_info["nc_format"])
 
-    try:
-        fill(output_filename,
-                data,
-                ncml_template or awips_info["ncml_template"],
-                start_time,
-                awips_info["awips2_channel"],
-                awips_info["awips2_source"],
-                awips_info["awips2_satellitename"]
-                )
-    except StandardError:
-        log.error("Error while filling in NC file with data")
-        raise
+        data = self.rescaler(sat, instrument, kind, band, data_kind, data)
+
+        # Get information from the configuration files
+        awips_info = get_awips_info(self.config, sat, instrument, kind, band, data_kind, grid_name)
+        # Get the proper output name if it wasn't forced to something else
+        if output_filename is None:
+            output_filename = start_time.strftime(awips_info["nc_format"])
+
+        try:
+            fill(output_filename,
+                    data,
+                    ncml_template or awips_info["ncml_template"],
+                    start_time,
+                    awips_info["awips2_channel"],
+                    awips_info["awips2_source"],
+                    awips_info["awips2_satellitename"]
+                    )
+        except StandardError:
+            log.error("Error while filling in NC file with data")
+            raise
 
 def go(img_name, template, nc_name=None):
     from polar2grid.core import UTC
