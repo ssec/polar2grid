@@ -289,8 +289,18 @@ def process_geo(meta_data, geo_data, cut_bad=False):
         # Calculate min and max lat/lon values for use in remapping
         lat_min = min(lat_min,ginfo["lat_data"][ginfo["lat_data"] != -999].min())
         lat_max = max(lat_max,ginfo["lat_data"][ginfo["lat_data"] != -999].max())
-        lon_min = min(lon_min,ginfo["lon_data"][ginfo["lon_data"] != -999].min())
-        lon_max = max(lon_max,ginfo["lon_data"][ginfo["lon_data"] != -999].max())
+        lon_min_tmp = min(lon_min,ginfo["lon_data"][ginfo["lon_data"] != -999].min())
+        lon_max_tmp = max(lon_max,ginfo["lon_data"][ginfo["lon_data"] != -999].max())
+        if lon_min_tmp <= -179.0 and lon_max_tmp >= 179.0:
+            # We hit the -180/180 boundary
+            lon_min_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] >= 0)].min()
+            lon_min_tmp = min(lon_min, ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] >= 0)].min())
+
+            lon_max_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] <= 0)].max()
+            lon_max_tmp = max(lon_max, ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] <= 0)].max())
+
+        lon_min = lon_min_tmp
+        lon_max = lon_max_tmp
 
         # Append the data to the swath
         lafa.append(ginfo["lat_data"])
