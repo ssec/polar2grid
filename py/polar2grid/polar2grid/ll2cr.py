@@ -45,8 +45,8 @@ def _transform_array(tformer, lon, lat, proj_circum, stradles_anti=False):
 def ll2cr(lon_arr, lat_arr, proj4_str,
         pixel_size_x=None, pixel_size_y=None,
         grid_origin_x=None, grid_origin_y=None,
-        swath_lat_min=None, swath_lat_max=None,
-        swath_lon_min=None, swath_lon_max=None,
+        swath_lat_south=None, swath_lat_north=None,
+        swath_lon_west=None, swath_lon_east=None,
         grid_width=None, grid_height=None,
         dtype=None, fill_in=-999.0, fill_out=-1e30,
         prefix="ll2cr_"):
@@ -99,26 +99,26 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     # Calculate west/east south/north boundaries
     stradles_180 = False
     if grid_origin_x is None or grid_width is None or pixel_size_x is None:
-        if swath_lon_min is None:
-            swath_lon_min = lon_arr[good_mask].min()
-            log.debug("Data left longitude: %f" % swath_lon_min)
-        if swath_lon_max is None:
-            swath_lon_max = lon_arr[good_mask].max()
-            log.debug("Data right longitude: %f" % swath_lon_max)
-        if swath_lat_min is None:
-            swath_lat_min = lat_arr[good_mask].min()
-            log.debug("Data lower latitude: %f" % swath_lat_min)
-        if swath_lat_max is None:
-            swath_lat_max = lat_arr[good_mask].max()
-            log.debug("Data upper latitude: %f" % swath_lat_max)
+        if swath_lon_west is None:
+            swath_lon_west = lon_arr[good_mask].min()
+            log.debug("Data west longitude: %f" % swath_lon_west)
+        if swath_lon_east is None:
+            swath_lon_east = lon_arr[good_mask].max()
+            log.debug("Data east longitude: %f" % swath_lon_east)
+        if swath_lat_south is None:
+            swath_lat_south = lat_arr[good_mask].min()
+            log.debug("Data south latitude: %f" % swath_lat_south)
+        if swath_lat_north is None:
+            swath_lat_north = lat_arr[good_mask].max()
+            log.debug("Data upper latitude: %f" % swath_lat_north)
 
         # Are we on the -180/180 boundary
-        if swath_lon_min <= -179.0 and swath_lon_max >= 179.0:
+        if swath_lon_west <= -179.0 and swath_lon_east >= 179.0:
             # Obviously assumes data is not smaller than 1 degree longitude wide
-            swath_lon_min = lon_arr[ good_mask & lon_arr < 0 ].max()
-            log.debug("Data left longitude: %f" % swath_lon_min)
-            swath_lon_max = lon_arr[ good_mask & lon_arr > 0 ].min()
-            log.debug("Data right longitude: %f" % swath_lon_max)
+            swath_lon_west = lon_arr[ good_mask & (lon_arr < 0) ].max()
+            log.debug("Data west longitude: %f" % swath_lon_west)
+            swath_lon_east = lon_arr[ good_mask & (lon_arr > 0) ].min()
+            log.debug("Data east longitude: %f" % swath_lon_east)
             stadles_180 = True
 
     ### Find out if we stradle the anti-meridian of the projection ###
@@ -133,8 +133,15 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     # half the circumerence multiplied by 2 (full circumference in projection units)
     proj_circum = proj_anti_x * 2
     # Get data bounds as projection units
-    data_grid_west = tformer(swath_lon_min, proj_anti_lat)[0]
-    data_grid_east = tformer(swath_lon_max, proj_anti_lat)[0]
+    if grid_width is not None and pixel_size_x is not None and grid_origin_x is not None:
+        # If we have a fully defined grid then we can do exact measurements
+        # XXX: Can this be done with one less parameter? I don't think so -djh
+        data_grid_west = grid_origin_x
+        data_grid_east = grid_origin_x + pixel_size_x * grid_width
+    else:
+        # The size of the grid is based on the data, so use the data bounds
+        data_grid_west = tformer(swath_lon_west, proj_anti_lat)[0]
+        data_grid_east = tformer(swath_lon_east, proj_anti_lat)[0]
     # Put data into positive domain
     data_grid_west += proj_circum if data_grid_west < 0 else 0
     data_grid_east += proj_circum if data_grid_east < 0 else 0
@@ -145,21 +152,18 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     # Get origin and corners of grid
     fine_tune_origin = False
     if grid_origin_x is None:
-        grid_origin_x,grid_origin_y = _transform_point(tformer, swath_lon_min, swath_lat_max, proj_circum, stradles_anti=stradles_anti)
+        grid_origin_x,grid_origin_y = _transform_point(tformer, swath_lon_west, swath_lat_north, proj_circum, stradles_anti=stradles_anti)
         fine_tune_origin = True
 
     # Calculate the best corners of the data
     if grid_width is None or pixel_size_x is None or fine_tune_origin:
         # only used if origin needs fine tuning or we need to
         # calculate grid/pixel size
-        #corner_x1,corner_y1 = tformer(swath_lon_max,swath_lat_min)
-        corner_x1,corner_y1 = _transform_point(tformer, swath_lon_max, swath_lat_min, proj_circum, stradles_anti=stradles_anti)
+        corner_x1,corner_y1 = _transform_point(tformer, swath_lon_east, swath_lat_south, proj_circum, stradles_anti=stradles_anti)
         log.debug("corners 1: %f,%f" % (corner_x1,corner_y1))
-        #corner_x2,corner_y2 = tformer(swath_lon_min,swath_lat_min)
-        corner_x2,corner_y2 = _transform_point(tformer, swath_lon_min, swath_lat_min, proj_circum, stradles_anti=stradles_anti)
+        corner_x2,corner_y2 = _transform_point(tformer, swath_lon_west, swath_lat_south, proj_circum, stradles_anti=stradles_anti)
         log.debug("corners 2: %f,%f" % (corner_x2,corner_y2))
-        #corner_x3,corner_y3 = tformer(swath_lon_max,swath_lat_max)
-        corner_x3,corner_y3 = _transform_point(tformer, swath_lon_max, swath_lat_max, proj_circum, stradles_anti=stradles_anti)
+        corner_x3,corner_y3 = _transform_point(tformer, swath_lon_east, swath_lat_north, proj_circum, stradles_anti=stradles_anti)
         log.debug("corners 3: %f,%f" % (corner_x3,corner_y3))
 
         # Due to the way projection coordinates work, if we are fitting the

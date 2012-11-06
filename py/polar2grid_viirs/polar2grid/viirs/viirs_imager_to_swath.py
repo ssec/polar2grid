@@ -262,10 +262,10 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     lafa = file_appender(lafo, dtype=numpy.float32)
     lofa = file_appender(lofo, dtype=numpy.float32)
     modefa = file_appender(modefo, dtype=numpy.float32)
-    lat_min = 91.0
-    lat_max = -1.0
-    lon_min = 181.0
-    lon_max = -181.0
+    lat_south = 91.0
+    lat_north = -1.0
+    lon_west = 181.0
+    lon_east = -181.0
 
     for ginfo in geo_data:
         # Read in lat/lon data
@@ -287,20 +287,20 @@ def process_geo(meta_data, geo_data, cut_bad=False):
             ginfo["mode_mask"] = numpy.delete(ginfo["mode_mask"], scan_quality, axis=0)
 
         # Calculate min and max lat/lon values for use in remapping
-        lat_min = min(lat_min,ginfo["lat_data"][ginfo["lat_data"] != -999].min())
-        lat_max = max(lat_max,ginfo["lat_data"][ginfo["lat_data"] != -999].max())
-        lon_min_tmp = min(lon_min,ginfo["lon_data"][ginfo["lon_data"] != -999].min())
-        lon_max_tmp = max(lon_max,ginfo["lon_data"][ginfo["lon_data"] != -999].max())
-        if lon_min_tmp <= -179.0 and lon_max_tmp >= 179.0:
+        lat_south = min(lat_south,ginfo["lat_data"][ginfo["lat_data"] != -999].min())
+        lat_north = max(lat_north,ginfo["lat_data"][ginfo["lat_data"] != -999].max())
+        lon_west_tmp = min(lon_west,ginfo["lon_data"][ginfo["lon_data"] != -999].min())
+        lon_east_tmp = max(lon_east,ginfo["lon_data"][ginfo["lon_data"] != -999].max())
+        if lon_west_tmp <= -179.0 and lon_east_tmp >= 179.0:
             # We hit the -180/180 boundary
-            lon_min_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] >= 0)].min()
-            lon_min_tmp = min(lon_min, ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] >= 0)].min())
+            lon_west_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] >= 0)].min()
+            lon_west_tmp = min(lon_west, ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] >= 0)].min())
 
-            lon_max_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] <= 0)].max()
-            lon_max_tmp = max(lon_max, ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] <= 0)].max())
+            lon_east_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] <= 0)].max()
+            lon_east_tmp = max(lon_east, ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] <= 0)].max())
 
-        lon_min = lon_min_tmp
-        lon_max = lon_max_tmp
+        lon_west = lon_west_tmp
+        lon_east = lon_east_tmp
 
         # Append the data to the swath
         lafa.append(ginfo["lat_data"])
@@ -335,11 +335,11 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     meta_data["swath_rows"] = swath_rows
     meta_data["swath_cols"] = swath_cols
     meta_data["swath_scans"] = swath_rows/meta_data["rows_per_scan"]
-    log.debug("Data min_lon: %f, max_lat: %f, max_lon: %f, min_lat: %f" % (lon_min,lat_max,lon_max,lat_min))
-    meta_data["lat_min"] = lat_min
-    meta_data["lat_max"] = lat_max
-    meta_data["lon_min"] = lon_min
-    meta_data["lon_max"] = lon_max
+    log.debug("Data East Lon: %f, North Lat: %f, West Lon: %f, South Lat: %f" % (lon_west,lat_north,lon_east,lat_south))
+    meta_data["lat_south"] = lat_south
+    meta_data["lat_north"] = lat_north
+    meta_data["lon_west"] = lon_west
+    meta_data["lon_east"] = lon_east
 
     return meta_data,geo_data
 

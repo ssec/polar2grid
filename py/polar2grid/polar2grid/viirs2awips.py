@@ -432,10 +432,10 @@ def process_kind(filepaths,
         remapped_jobs = remap_bands(sat, instrument, kind,
                 fbf_lon, fbf_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
-                lat_min=meta_data.get("lat_min", None),
-                lat_max=meta_data.get("lat_max", None),
-                lon_min=meta_data.get("lon_min", None),
-                lon_max=meta_data.get("lon_max", None)
+                lat_south=meta_data.get("lat_south", None),
+                lat_north=meta_data.get("lat_north", None),
+                lon_west=meta_data.get("lon_west", None),
+                lon_east=meta_data.get("lon_east", None)
                 )
     except StandardError:
         log.debug("Remapping Error:", exc_info=1)

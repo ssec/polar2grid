@@ -35,7 +35,7 @@ def run_ll2cr_py(*args, **kwargs):
 def run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
         grid_jobs,
         num_procs=1, verbose=False, forced_gpd=None,
-        lat_min=None, lat_max=None, lon_min=None, lon_max=None):
+        lat_south=None, lat_north=None, lon_west=None, lon_east=None):
     """Run one of the ll2crs and return a dictionary mapping the
     `grid_name` to the cols and rows files.
     """
@@ -79,10 +79,10 @@ def run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
                     fill_in=-999.0,
                     fill_out=-1e30,
                     prefix=ll2cr_tag,
-                    swath_lat_min=lat_min,
-                    swath_lat_max=lat_max,
-                    swath_lon_min=lon_min,
-                    swath_lon_max=lon_max,
+                    swath_lat_south=lat_south,
+                    swath_lat_north=lat_north,
+                    swath_lon_west=lon_west,
+                    swath_lon_east=lon_east,
                     pool=proc_pool
                     )
         elif grid_info["grid_kind"] == GRID_KIND_GPD:
@@ -220,7 +220,7 @@ def run_fornav(sat, instrument, kind, grid_jobs, ll2cr_output,
 
 def remap_bands(sat, instrument, kind, lon_fbf, lat_fbf,
         grid_jobs, num_procs=1, fornav_d=None, fornav_D=None, forced_gpd=None,
-        lat_min=None, lat_max=None, lon_min=None, lon_max=None):
+        lat_south=None, lat_north=None, lon_west=None, lon_east=None):
     """Remap data using the C or python version of ll2cr and the
     C version of fornav.
 
@@ -240,7 +240,7 @@ def remap_bands(sat, instrument, kind, lon_fbf, lat_fbf,
     ll2cr_output = run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
             grid_jobs,
             num_procs=num_procs, verbose=log_level <= logging.DEBUG, forced_gpd=forced_gpd,
-            lat_min=lat_min, lat_max=lat_max, lon_min=lon_min, lon_max=lon_max)
+            lat_south=lat_south, lat_north=lat_north, lon_west=lon_west, lon_east=lon_east)
 
     # Run fornav
     fornav_output = run_fornav(sat, instrument, kind, grid_jobs, ll2cr_output,
