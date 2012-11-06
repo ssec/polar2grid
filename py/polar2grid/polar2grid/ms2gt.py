@@ -80,14 +80,14 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
     d = {}
     tmp = glob("%s_cols_*.img" % tag)
     if len(tmp) != 1:
-        log.error("Couldn't find cols img file from ll2cr")
+        log.error("Couldn't find cols img file from ll2cr: '%s'" % tag)
         raise ValueError("Couldn't find cols img file from ll2cr")
     d["cols_filename"] = tmp[0]
     log.debug("Columns file is %s" % d["cols_filename"])
 
     tmp = glob("%s_rows_*.img" % tag)
     if len(tmp) != 1:
-        log.error("Couldn't find rows img file from ll2cr")
+        log.error("Couldn't find rows img file from ll2cr: '%s'" % tag)
         raise ValueError("Couldn't find rows img file from ll2cr")
     d["rows_filename"] = tmp[0]
     log.debug("Rows file is %s" % d["rows_filename"])
@@ -105,6 +105,9 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
         log.error("ll2cr didn't produce the same number of scans for cols and rows")
         raise ValueError("ll2cr didn't produce the same number of scans for cols and rows")
     d["scans_out"] = col_dict["scans_out"]
+    if d["scans_out"] == 0:
+        log.error("ll2cr did not map any data, 0 scans out")
+        raise ValueError("ll2cr did not map any data, 0 scans out")
 
     if col_dict["scan_first"] != row_dict["scan_first"]:
         log.error("ll2cr didn't produce the same number for scan first cols and rows")

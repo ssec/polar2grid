@@ -134,6 +134,8 @@ def remove_products():
         _safe_remove(f)
     for f in glob("ll2cr_*.real4.*"):
         _safe_remove(f)
+    for f in glob("ll2cr_*.img"):
+        _safe_remove(f)
 
     for f in glob("result*.real4.*"):
         _safe_remove(f)
