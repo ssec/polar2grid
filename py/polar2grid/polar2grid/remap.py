@@ -153,15 +153,18 @@ def run_fornav(sat, instrument, kind, grid_jobs, ll2cr_output,
         # Collect information for each "fornav job" (sorted by `remap_data_as`)
         fornav_jobs[grid_name] = {}
         fornav_group = fornav_jobs[grid_name]
-        for band,band_info in fornav_output[grid_name].items():
+        for band, band_info in fornav_output[grid_name].items():
+            
             if band_info["remap_data_as"] not in fornav_group:
                 fornav_group[band_info["remap_data_as"]] = {
                         "inputs" : [],
                         "outputs" : [],
                         "result" : None
                         }
-            fornav_group[band_info["remap_data_as"]]["inputs"].append(band_info["fbf_swath"])
-            stem = "result_%s%s_%s" % (kind,band,grid_name)
+            fbf_swath_temp = band_info["fbf_swath"] if "fbf_swath" in band_info else band_info["fbf_img"]
+            fornav_group[band_info["remap_data_as"]]["inputs"].append(fbf_swath_temp)
+            #stem = "result_%s%s_%s" % (kind,band,grid_name) # The format of the band key has changed!
+            stem = "result_%s%s_%s" % (band[0], band[1], grid_name)
             output_name = "%s.real4.%d.%d" % (stem, band_info["grid_width"], band_info["grid_height"])
             fornav_group[band_info["remap_data_as"]]["outputs"].append(output_name)
             band_info["fbf_remapped"] = output_name
