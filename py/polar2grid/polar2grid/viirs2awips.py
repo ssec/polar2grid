@@ -333,7 +333,7 @@ def create_pseudobands(kind, bands, fill_value=DEFAULT_FILL_VALUE):
             log.error("Error creating Fog pseudo band")
             log.debug("Fog creation error:", exc_info=1)
 
-def process_kind(filepaths,
+def process_data_sets(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None,
         forced_gpd=None, forced_nc=None,
@@ -345,23 +345,7 @@ def process_kind(filepaths,
     """Process all the files provided from start to finish,
     from filename to AWIPS NC file.
     """
-    SUCCESS = 0
-    # Swath extraction failed
-    SWATH_FAIL = 2
-    # Swath prescaling failed
-    PRESCALE_FAIL = 4
-    # ll2cr failed
-    LL2CR_FAIL = 8
-    # fornav failed
-    FORNAV_FAIL = 16
-    # remap failed
-    REMAP_FAIL = 24 # ll2cr and fornav
-    # backend failed
-    BACKEND_FAIL = 32
-    # grid determination failed
-    GDETER_FAIL = 64
-    # there aren't any jobs left, not sure why
-    UNKNOWN_FAIL = -1
+    status_to_return = STATUS_SUCCESS
 
     # Load any configuration files needed
     frontend = Frontend()
@@ -371,30 +355,34 @@ def process_kind(filepaths,
     log.info("Extracting swaths...")
     try:
         meta_data = frontend.make_swaths(filepaths, cut_bad=True)
+
+        # Let's be lazy and give names to the 'global' viirs info
+        sat = meta_data["sat"]
+        instrument = meta_data["instrument"]
+        kind = meta_data["kind"]
+        start_time = meta_data["start_time"]
+        bands = meta_data["bands"]
+        fbf_lat = meta_data["fbf_lat"]
+        fbf_lon = meta_data["fbf_lon"]
     except StandardError:
         log.error("Swath creation failed")
         log.debug("Swath creation error:", exc_info=1)
-        SUCCESS |= SWATH_FAIL
-        return SUCCESS
-    sat = meta_data["sat"]
-    instrument = meta_data["instrument"]
-    kind = meta_data["kind"]
-    start_time = meta_data["start_time"]
-    bands = meta_data["bands"]
-    fbf_lat = meta_data["fbf_lat"]
-    fbf_lon = meta_data["fbf_lon"]
+        status_to_return |= STATUS_FRONTEND_FAIL
+        return status_to_return
 
     # Create pseudo-bands
+    # FIXME: Move pseudoband creation to the frontend
     try:
         if create_pseudo:
             create_pseudobands(kind, bands)
     except StandardError:
         log.error("Pseudo band creation failed")
         log.debug("Pseudo band error:", exc_info=1)
-        SUCCESS |= SWATH_FAIL
-        return SUCCESS
+        status_to_return |= STATUS_FRONTEND_FAIL
+        return status_to_return
 
     # Do any pre-remapping rescaling
+    # FIXME: Move DNB scaling to the frontend
     for band,band_job in bands.items():
         if kind != BKIND_DNB:
             # It takes too long to read in the data, so just skip it
@@ -412,11 +400,11 @@ def process_kind(filepaths,
             log.error("Unexpected error prescaling %s, removing..." % band_job["band_name"])
             log.debug("Prescaling error:", exc_info=1)
             del bands[band]
-            SUCCESS |= PRESCALE_FAIL
+            status_to_return |= STATUS_FRONTEND_FAIL
 
     if len(bands) == 0:
         log.error("No more bands to process, quitting...")
-        return SUCCESS or UNKNOWN_FAIL
+        return status_to_return or UNKNOWN_FAIL
 
     # Determine grid
     try:
@@ -426,8 +414,8 @@ def process_kind(filepaths,
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")
-        SUCCESS |= GDETER_FAIL
-        return SUCCESS
+        status_to_return |= STATUS_GDETER_FAIL
+        return status_to_return
 
     ### Remap the data
     try:
@@ -442,8 +430,8 @@ def process_kind(filepaths,
     except StandardError:
         log.debug("Remapping Error:", exc_info=1)
         log.error("Remapping data failed")
-        SUCCESS |= REMAP_FAIL
-        return SUCCESS
+        status_to_return |= STATUS_REMAP_FAIL
+        return status_to_return
 
     ### BACKEND ###
     W = Workspace('.')
@@ -478,23 +466,23 @@ def process_kind(filepaths,
 
     if len(remapped_jobs) == 0:
         log.warning("AWIPS backend failed for all grids for %s%s" % (kind,band))
-        SUCCESS |= BACKEND_FAIL
+        status_to_return |= STATUS_BACKEND_FAIL
 
     log.info("Processing of bands of kind %s is complete" % kind)
 
-    return SUCCESS
+    return status_to_return
 
-def _process_kind(*args, **kwargs):
-    """Wrapper function around `process_kind` so that it can called
+def _process_data_sets(*args, **kwargs):
+    """Wrapper function around `process_data_sets` so that it can called
     properly from `run_viir2awips`, where the exitcode is the actual
-    returned value from `process_kind`.
+    returned value from `process_data_sets`.
 
     This function also checks for exceptions other than the ones already
-    checked for in `process_kind` so that they are
+    checked for in `process_data_sets` so that they are
     recorded properly.
     """
     try:
-        stat = process_kind(*args, **kwargs)
+        stat = process_data_sets(*args, **kwargs)
         sys.exit(stat)
     except MemoryError:
         log.error("viirs2awips ran out of memory, check log file for more info")
@@ -510,22 +498,16 @@ def _process_kind(*args, **kwargs):
 
     sys.exit(-1)
 
-def run_viirs2awips(filepaths,
-        multiprocess=True, **kwargs):
-    """Go through the motions of converting
-    a VIIRS h5 file into a AWIPS NetCDF file.
+def run_glue(filepaths,
+        multiprocess=True, **kwargs
+        ):
+    """Separate input files into groups that share navigation files data.
 
-    1. viirs_guidebook.py       : Get file info/data
-    2. viirs_imager_to_swath.py : Concatenate data
-    3. Prescale DNB
-    4. Calculat Grid            : Figure out what grids the data fits in
-    5. ll2cr
-    6. fornav
-    7. rescale.py
-    8. awips_netcdf.py
+    Call the processing function in separate process or same process depending
+    on value of `multiprocess` keyword.
     """
     # Rewrite/force parameters to specific format
-    filepaths = [ os.path.abspath(x) for x in sorted(filepaths) ]
+    filepaths = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(filepaths) ]
 
     M_files = sorted(set([ x for x in filepaths if os.path.split(x)[1].startswith("SVM") ]))
     I_files = sorted(set([ x for x in filepaths if os.path.split(x)[1].startswith("SVI") ]))
@@ -544,13 +526,13 @@ def run_viirs2awips(filepaths,
         log.debug("Processing M files")
         try:
             if multiprocess:
-                pM = Process(target=_process_kind,
+                pM = Process(target=_process_data_sets,
                         args = (M_files,),
                         kwargs = kwargs
                         )
                 pM.start()
             else:
-                stat = _process_kind(M_files, **kwargs)
+                stat = _process_data_sets(M_files, **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process M files")
@@ -560,13 +542,13 @@ def run_viirs2awips(filepaths,
         log.debug("Processing I files")
         try:
             if multiprocess:
-                pI = Process(target=_process_kind,
+                pI = Process(target=_process_data_sets,
                         args = (I_files,),
                         kwargs = kwargs
                         )
                 pI.start()
             else:
-                stat = _process_kind(I_files, **kwargs)
+                stat = _process_data_sets(I_files, **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process I files")
@@ -576,13 +558,13 @@ def run_viirs2awips(filepaths,
         log.debug("Processing DNB files")
         try:
             if multiprocess:
-                pDNB = Process(target=_process_kind,
+                pDNB = Process(target=_process_data_sets,
                         args = (DNB_files,),
                         kwargs = kwargs
                         )
                 pDNB.start()
             else:
-                stat = _process_kind(DNB_files, **kwargs)
+                stat = _process_data_sets(DNB_files, **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process DNB files")
@@ -610,20 +592,6 @@ def main():
     Create VIIRS swaths, remap them to a grid, and place that remapped data
     into a AWIPS compatible netcdf file.
     """
-    description2 = """
-    For DB:
-    %prog [options] <event directory>
-
-    For testing (usable files are those of bands mentioned in templates.conf):
-    # Looks for all usable files in data directory
-    %prog [options] <data directory>
-    # Uses all usable files of the specfied
-    %prog [options] -f file1.h5 file2.h5 ...
-    # Only use the I01 files of the files specified
-    %prog [options] -b I01 -f file1.h5 file2.h5 ...
-    # Only use the I band files of the files specified
-    %prog [options] -b I -f file1.h5 file2.h5 ...
-    """
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
@@ -634,8 +602,6 @@ def main():
             help="Specify the -d option for fornav")
     parser.add_argument('-f', dest='get_files', default=False, action="store_true",
             help="Specify that hdf files are listed, not a directory")
-    parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+",
-            help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
             help="Processing is sequential instead of one process per kind of band")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
@@ -646,15 +612,22 @@ def main():
             help="Don't create pseudo bands")
     parser.add_argument('--rescale-config', dest='rescale_config', default=None,
             help="specify alternate rescale configuration file")
+
+    # Remapping/Grids
+    parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="all",
+            help="Force remapping to only some grids, defaults to 'all', use 'all' for determination")
     parser.add_argument('--gpd', dest='forced_gpd', default=None,
             help="Specify a different gpd file to use")
+
+    # Backend Specific
     parser.add_argument('--nc', dest='forced_nc', default=None,
-            help="Specify a different nc file to use")
+            help="Specify a different ncml file to use")
     parser.add_argument('--backend-config', dest='backend_config', default=None,
             help="specify alternate backend configuration file")
 
     parser.add_argument('data_files', nargs="+",
             help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
+
     args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
@@ -667,6 +640,7 @@ def main():
     fornav_d = int(args.fornav_d)
     num_procs = int(args.num_procs)
     forced_grids = args.forced_grids
+    if forced_grids == 'all': forced_grids = None
     if args.forced_gpd is not None and not os.path.exists(args.forced_gpd):
         log.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
         return -1
@@ -685,7 +659,7 @@ def main():
     if args.get_files:
         hdf_files = args.data_files[:]
     elif len(args.data_files) == 1:
-        base_dir = os.path.abspath(args[0])
+        base_dir = os.path.abspath(args.data_files[0])
         hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
     else:
         log.error("Wrong number of arguments")
@@ -696,12 +670,14 @@ def main():
         log.debug("Removing any previous files")
         remove_products()
 
-    stat = run_viirs2awips(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
-                forced_gpd=args.forced_gpd, forced_nc=args.forced_nc, forced_grid=forced_grids,
+    stat = run_glue(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
+                forced_grid=forced_grids,
+                forced_gpd=args.forced_gpd, forced_nc=args.forced_nc,
                 create_pseudo=args.create_pseudo,
+                multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config,
-                backend_config=args.backend_config,
-                multiprocess=not args.single_process, num_procs=num_procs)
+                backend_config=args.backend_config
+                )
 
     return stat
 
