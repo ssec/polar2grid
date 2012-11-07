@@ -244,7 +244,9 @@ def process_kind(filepaths,
                         grid_origin_x=band_dict["grid_origin_x"],
                         grid_origin_y=band_dict["grid_origin_y"],
                         pixel_size_x=band_dict["pixel_size_x"],
-                        pixel_size_y=band_dict["pixel_size_y"])
+                        pixel_size_y=band_dict["pixel_size_y"],
+                        fill_value=band_dict.get("fill_value", None)
+                        )
             except StandardError:
                 log.error("Error in the Geotiff backend for %s%s in grid %s" % (kind,band,grid_name))
                 log.debug("Geotiff backend error:", exc_info=1)

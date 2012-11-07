@@ -6,7 +6,7 @@ from osgeo import gdal
 import osr
 
 from .rescale import Rescaler,uint16_filter,ubyte_filter
-from polar2grid.core.constants import GRIDS_ANY_PROJ4
+from polar2grid.core.constants import GRIDS_ANY_PROJ4,DEFAULT_FILL_VALUE
 from polar2grid.core import roles
 
 import sys
@@ -66,7 +66,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
     # Garbage collection/destructor should close the file properly
 
 class Backend(roles.BackendRole):
-    def __init__(self, etype=None, rescale_config=None):
+    def __init__(self, etype=None, rescale_config=None, fill_value=DEFAULT_FILL_VALUE):
         """
             - etype:
                 Specify the GDAL data type of the produced geotiff. Default 16bit
@@ -87,7 +87,9 @@ class Backend(roles.BackendRole):
         self.rescale_config = rescale_config
 
         # Instantiate the rescaler
-        self.rescaler = Rescaler(config=self.rescale_config)
+        self.fill_in = fill_value
+        self.fill_out = DEFAULT_FILL_VALUE
+        self.rescaler = Rescaler(config=self.rescale_config, fill_in=self.fill_in, fill_out=self.fill_out)
 
     def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
         """Function for backend-calling script to ask if the backend
@@ -104,7 +106,7 @@ class Backend(roles.BackendRole):
             start_time=None, end_time=None, grid_name=None,
             proj4_str=None, grid_origin_x=None, grid_origin_y=None,
             pixel_size_x=None, pixel_size_y=None,
-            output_filename=None, etype=None,
+            output_filename=None, etype=None, fill_value=None,
             rotate_x=0, rotate_y=0):
         """Function to be called from a connecting script to interpret the
         information provided and create a geotiff.
@@ -153,6 +155,7 @@ class Backend(roles.BackendRole):
             None
         """
         etype = self.etype
+        fill_in = fill_value or self.fill_in
 
         # Create the filename if it wasn't provided
         if output_filename is None:
@@ -169,7 +172,7 @@ class Backend(roles.BackendRole):
                     )
 
         # Rescale the data based on the configuration that was loaded earlier
-        data = self.rescaler(sat, instrument, kind, band, data_kind, data)
+        data = self.rescaler(sat, instrument, kind, band, data_kind, data, fill_in=fill_in, fill_out=self.fill_out)
 
         # Create the geotiff
         geotransform = (grid_origin_x, pixel_size_x, rotate_x, grid_origin_y, rotate_y, pixel_size_y)

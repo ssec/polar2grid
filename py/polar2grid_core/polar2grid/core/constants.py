@@ -69,3 +69,6 @@ GRIDS_ANY_PROJ4 = "any_proj4_grid"
 GRID_KIND_GPD = "gpd"
 GRID_KIND_PROJ4 = "proj4"
 
+# Other
+DEFAULT_FILL_VALUE=-999.0
+

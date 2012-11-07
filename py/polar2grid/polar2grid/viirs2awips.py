@@ -143,7 +143,7 @@ def remove_products():
     for f in glob("SSEC_AWIPS_VIIRS*"):
         _safe_remove(f)
 
-def run_prescaling(img_filepath, mode_filepath):
+def run_prescaling(img_filepath, mode_filepath, fill_value=DEFAULT_FILL_VALUE):
     """A wrapper function for calling the prescaling function for dnb.
     This function will read the binary image data from ``img_filepath``
     as well as any other data that may be required to prescale the data
@@ -181,7 +181,7 @@ def run_prescaling(img_filepath, mode_filepath):
             HIGH = 100
             LOW = 88
             MIXED_STEP = HIGH - LOW
-            good_mask = ~((img == -999.0) | (mode_mask == -999.0))
+            good_mask = ~((img == fill_value) | (mode_mask == fill_value))
             scale_kwargs["night_mask"]    = (mode_mask >= HIGH) & good_mask
             scale_kwargs["day_mask"]      = (mode_mask <= LOW ) & good_mask
             scale_kwargs["mixed_mask"] = []
@@ -278,7 +278,7 @@ def create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon, backend,
 
     return grid_jobs
 
-def create_pseudobands(kind, bands):
+def create_pseudobands(kind, bands, fill_value=DEFAULT_FILL_VALUE):
     # Fog pseudo-band
     if (kind == BKIND_I) and (BID_05 in bands) and (BID_04 in bands):
         log.info("Creating IFOG pseudo band...")
@@ -325,7 +325,7 @@ def create_pseudobands(kind, bands):
                     shape=i5.shape
                     )
             numpy.subtract(i5, i4, fog_map)
-            fog_map[ (~night_mask) | (i5 == -999.0) | (i4 == -999.0) ] = -999.0
+            fog_map[ (~night_mask) | (i5 == fill_value) | (i4 == fill_value) ] = fill_value
             del fog_map
             del i5,i4
             bands[BID_FOG] = fog_dict
@@ -464,7 +464,8 @@ def process_kind(filepaths,
                         data,
                         start_time=start_time,
                         grid_name=grid_name,
-                        ncml_template=forced_nc or None
+                        ncml_template=forced_nc or None,
+                        fill_value=band_dict.get("fill_value", None)
                         )
             except StandardError:
                 log.error("Error in the AWIPS backend for %s%s in grid %s" % (kind,band,grid_name))

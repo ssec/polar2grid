@@ -31,11 +31,8 @@ import numpy
 
 log = logging.getLogger(__name__)
 
-# See KNOWN_RESCALE_KINDS below
-DEFAULT_CONFIG_DIR = os.path.split(os.path.realpath(__file__))[0]
-PERSISTENT_CONFIGS = {}
-
-# FIXME: If we can require numpy 1.7 we can use the mask keyword in ufuncs
+# Default fills for individual functions, see Rescaler and RescalerRole for
+# other defaults
 DEFAULT_FILL_IN  = -999.0
 DEFAULT_FILL_OUT = -999.0
 
@@ -205,181 +202,9 @@ RESCALE_FOR_KIND = {
         DKIND_FOG         : (fog_scale,    (10.0,105.0,5,4,205,206))
         }
 
-def _create_config_id(sat, instrument, kind, band, data_kind):
-    return "_".join([sat.lower(), instrument.lower(), kind.lower(), (band or "").lower(), data_kind.lower()])
-
-def unload_config(name):
-    """Shouldn't be needed, but just in case
-    """
-    if name not in PERSISTENT_CONFIGS:
-        log.warning("'%s' rescaling config was never loaded" % name)
-        return
-    del PERSISTENT_CONFIGS[name]
-
-def load_config_str(name, config_str, persistent_dict=PERSISTENT_CONFIGS):
-    """Just in case I want to have a config file stored as a string in
-    the future.
-
-    >>> config_str = "#skip this comment\\nnpp,viirs,i,01,reflectance,sqrt,100.0,25.5"
-    >>> load_config_str("test_config", config_str)
-    True
-    >>> config_bad1 = "#skip\\n\\n\\nsat,,empty_inst,field,radiance,linear,"
-    >>> load_config_str("test_config", config_bad1) # should be fine because same name
-    True
-    >>> load_config_str("test_config_bad1", config_bad1)
-    Traceback (most recent call last):
-        ...
-    AssertionError: Field 1 can not be empty
-    >>> assert "test_config_bad1" not in PERSISTENT_CONFIGS
-    >>> assert "test_config" in PERSISTENT_CONFIGS
-
-    >>> config_bad2 = "#skip\\n\\n\\nnpp,viirs,i,01,fake,linear,"
-    >>> load_config_str("test_config_bad2", config_bad2)
-    Traceback (most recent call last):
-        ...
-    ValueError: Rescaling doesn't know the data kind 'fake'
-    >>> config_bad3 = "#skip\\n\\n\\nnpp,viirs,i,01,radiance,fake,"
-    >>> load_config_str("test_config_bad3", config_bad3)
-    Traceback (most recent call last):
-        ...
-    ValueError: Rescaling doesn't know the rescaling kind 'fake'
-    >>> assert "test_config_bad2" not in PERSISTENT_CONFIGS
-    >>> assert "test_config_bad3" not in PERSISTENT_CONFIGS
-    >>> assert "test_config" in PERSISTENT_CONFIGS
-    """
-    # Don't load a config twice
-    if name in persistent_dict:
-        return True
-
-    # Get rid of trailing new lines and commas
-    config_lines = [ line.strip(",\n") for line in config_str.split("\n") ]
-    # Get rid of comment lines and blank lines
-    config_lines = [ line for line in config_lines if line and not line.startswith("#") and not line.startswith("\n") ]
-    # Check if we have any useful lines
-    if not config_lines:
-        log.warning("No non-comment lines were found in '%s'" % name)
-        return False
-
-    persistent_dict[name] = {}
-
-    # Used in configuration reader
-    KNOWN_DATA_KINDS = {
-        'reflectance' : DKIND_REFLECTANCE,
-        'radiance'    : DKIND_RADIANCE,
-        'btemp'       : DKIND_BTEMP,
-        'fog'         : DKIND_FOG,
-        # if they copy the constants
-        DKIND_REFLECTANCE : DKIND_REFLECTANCE,
-        DKIND_RADIANCE    : DKIND_RADIANCE,
-        DKIND_BTEMP       : DKIND_BTEMP,
-        DKIND_FOG         : DKIND_FOG
-        }
-    try:
-        # Parse config lines
-        for line in config_lines:
-            parts = line.split(",")
-            if len(parts) < 6:
-                log.error("Rescale config line needs at least 6 columns '%s' : '%s'" % (name,line))
-                raise ValueError("Rescale config line needs at least 6 columns '%s'" % (name,line))
-
-            # Verify that each identifying portion is valid
-            for i in range(6):
-                assert parts[i],"Field %d can not be empty" % i
-                # polar2grid demands lowercase fields
-                parts[i] = parts[i].lower()
-
-            # Convert band if none
-            if parts[3] == '' or parts[3] == "none":
-                parts[3] = NOT_APPLICABLE
-            # Make sure we know the data_kind
-            if parts[4] not in KNOWN_DATA_KINDS:
-                log.error("Rescaling doesn't know the data kind '%s'" % parts[4])
-                raise ValueError("Rescaling doesn't know the data kind '%s'" % parts[4])
-            parts[4] = KNOWN_DATA_KINDS[parts[4]]
-            # Make sure we know the scale kind
-            if parts[5] not in KNOWN_RESCALE_KINDS:
-                log.error("Rescaling doesn't know the rescaling kind '%s'" % parts[5])
-                raise ValueError("Rescaling doesn't know the rescaling kind '%s'" % parts[5])
-            parts[5] = KNOWN_RESCALE_KINDS[parts[5]]
-            # TODO: Check argument lengths and maybe values per rescale kind 
-
-            # Enter the information into the configs dict
-            line_id = _create_config_id(*parts[:5])
-            config_entry = (parts[5], tuple(float(x) for x in parts[6:]))
-            persistent_dict[name][line_id] = config_entry
-    except StandardError:
-        # Clear out the bad config
-        del persistent_dict[name]
-        raise
-
-    return True
-
-def load_config(config_filename, config_name=None):
-    """Load a rescaling configuration file for later use by the `rescale`
-    function.
-
-    If the config isn't an absolute path, it checks the current directory,
-    and if the config can't be found there it is assumed to be relative to
-    the package structure. So entering just the filename will look in the
-    default rescaling configuration location (the package root) for the
-    filename provided.
-    """
-    # the name used in the actual configuration dictionary
-    if config_name is None: config_name = config_filename
-
-    if not os.path.isabs(config_filename):
-        cwd_config = os.path.join(os.path.curdir, config_filename)
-        if os.path.exists(cwd_config):
-            config_filename = cwd_config
-        else:
-            config_filename = os.path.join(DEFAULT_CONFIG_DIR, config_filename)
-    config_filename = os.path.realpath(config_filename)
-
-    log.debug("Using rescaling configuration '%s'" % (config_filename,))
-
-    if config_filename in PERSISTENT_CONFIGS:
-        return True
-
-    config_file = open(config_filename, 'r')
-    config_str = config_file.read()
-    return load_config_str(config_name, config_str)
-
-def rescale(sat, instrument, kind, band, data_kind, data, config=None, persistent_dict=PERSISTENT_CONFIGS):
-    """Function that uses previously loaded configuration files to choose
-    how to rescale the provided data.  If the `config` keyword is not provided
-    then a best guess will be made on how to rescale the data.  Usually this
-    best guess is a 0-255 scaling based on the `data_kind`.
-    """
-    log_level = logging.getLogger('').handlers[0].level or 0
-    band_id = _create_config_id(sat, instrument, kind, band, data_kind)
-
-    if config is not None and config not in persistent_dict:
-        log.error("rescaling was passed a configuration file that wasn't loaded yet: '%s'" % (config,))
-        raise ValueError("rescaling was passed a configuration file that wasn't loaded yet: '%s'" % (config,))
-
-    if config is None or band_id not in persistent_dict[config]:
-        # Run the default scaling functions
-        log.debug("Config ID '%s' was not found in '%r'" % (band_id,persistent_dict[config].keys()))
-        log.info("Running default rescaling method for kind: %s, band: %s" % (kind,band))
-        if data_kind not in RESCALE_FOR_KIND:
-            log.error("No default rescaling is set for data of kind %s" % data_kind)
-            raise ValueError("No default rescaling is set for data of kind %s" % data_kind)
-        rescale_func,rescale_args = RESCALE_FOR_KIND[data_kind]
-    else:
-        # We know how to rescale using the onfiguration file
-        log.info("'%s' was found in the rescaling configuration" % (band_id))
-        rescale_func,rescale_args = persistent_dict[config][band_id]
-
-    log.debug("Using rescale arguments: %r" % (rescale_args,))
-    data = rescale_func(data, *rescale_args)
-
-    # Only perform this calculation if it will be shown, its very time consuming
-    if log_level <= logging.DEBUG:
-        log.debug("Data min: %f, max: %f" % (data.min(),data.max()))
-
-    return data
-
 class Rescaler(roles.RescalerRole):
+    DEFAULT_FILL_IN = DEFAULT_FILL_IN
+    DEFAULT_FILL_OUT = DEFAULT_FILL_OUT
 
     @property
     def default_config_dir(self):
@@ -401,14 +226,17 @@ class Rescaler(roles.RescalerRole):
         # Override the role's rescale property
         return self._known_rescale_kinds
 
-    def __call__(self, sat, instrument, kind, band, data_kind, data):
+    def __call__(self, sat, instrument, kind, band, data_kind, data,
+            fill_in=None, fill_out=None):
         """Function that uses previously loaded configuration files to choose
         how to rescale the provided data.  If the `config` keyword is not provided
         then a best guess will be made on how to rescale the data.  Usually this
         best guess is a 0-255 scaling based on the `data_kind`.
         """
         log_level = logging.getLogger('').handlers[0].level or 0
-        band_id = _create_config_id(sat, instrument, kind, band, data_kind)
+        band_id = self._create_config_id(sat, instrument, kind, band, data_kind)
+        fill_in = fill_in or self.fill_in
+        fill_out = fill_out or self.fill_out
 
         if self.config is None or band_id not in self.config:
             # Run the default scaling functions
@@ -424,7 +252,8 @@ class Rescaler(roles.RescalerRole):
             rescale_func,rescale_args = self.config[band_id]
 
         log.debug("Using rescale arguments: %r" % (rescale_args,))
-        data = rescale_func(data, *rescale_args)
+        log.debug("Using fill in/out values: (%s,%s)" % (fill_in,fill_out))
+        data = rescale_func(data, *rescale_args, fill_in=fill_in, fill_out=fill_out)
 
         # Only perform this calculation if it will be shown, its very time consuming
         if log_level <= logging.DEBUG:

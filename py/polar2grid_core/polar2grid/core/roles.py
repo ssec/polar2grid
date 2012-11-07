@@ -14,6 +14,10 @@ log = logging.getLogger(__name__)
 class RescalerRole(object):
     __metaclass__ = ABCMeta
 
+    # Fill values in the input and to set in the output
+    DEFAULT_FILL_IN = -999.0
+    DEFAULT_FILL_OUT = -999.0
+
     # Dictionary mapping of data identifier to rescaling function and its
     # arguments
     config = {}
@@ -71,12 +75,15 @@ class RescalerRole(object):
         # Used in configuration reader
         return self._known_data_kinds
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, fill_in=None, fill_out=None):
         """Load the initial configuration file and any other information
         needed for later rescaling.
         """
         if config is not None:
             self.load_config(config)
+
+        self.fill_in = fill_in or self.DEFAULT_FILL_IN
+        self.fill_out = fill_out or self.DEFAULT_FILL_OUT
 
     def _create_config_id(self, sat, instrument, kind, band, data_kind):
         return "_".join([sat.lower(), instrument.lower(), kind.lower(), (band or "").lower(), data_kind.lower()])
