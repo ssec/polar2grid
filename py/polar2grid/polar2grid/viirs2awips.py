@@ -220,18 +220,22 @@ def run_prescaling(img_filepath, mode_filepath, fill_value=DEFAULT_FILL_VALUE):
 
     return fbf_swath
 
-def create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon, backend,
+def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
         forced_grids=None):
+    """
+    TODO, documentation
+    """
+
     # Check what grids the backend can handle
     all_possible_grids = set()
-    for band in bands.keys():
-        this_band_can_handle  = backend.can_handle_inputs(sat, instrument, kind, band, bands[band]["data_kind"])
-        bands[band]["grids"] = this_band_can_handle
+    for band_kind, band_id in bands.keys():
+        this_band_can_handle = backend.can_handle_inputs(sat, instrument, band_kind, band_id, bands[(band_kind, band_id)]["data_kind"])
+        bands[(band_kind, band_id)]["grids"] = this_band_can_handle
         if isinstance(this_band_can_handle, str):
             all_possible_grids.update([this_band_can_handle])
         else:
             all_possible_grids.update(this_band_can_handle)
-        log.debug("Kind %s Band %s can handle these grids: '%r'" % (kind,band,this_band_can_handle))
+        log.debug("Kind %s Band %s can handle these grids: '%r'" % (band_kind, band_id, this_band_can_handle))
 
     # Get the set of grids we will use
     if forced_grids is not None:
@@ -245,19 +249,19 @@ def create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon, backend,
 
     # Figure out which grids are useful for data coverage (or forced grids) and the backend can support
     grid_infos = dict((g,get_grid_info(g)) for g in grids)# if g not in [GRIDS_ANY,GRIDS_ANY_GPD,GRIDS_ANY_PROJ4])
-    for band in bands.keys():
-        if bands[band]["grids"] == GRIDS_ANY:
-            bands[band]["grids"] = list(grids)
-        elif bands[band]["grids"] == GRIDS_ANY_PROJ4:
-            bands[band]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_PROJ4 ]
-        elif bands[band]["grids"] == GRIDS_ANY_GPD:
-            bands[band]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_GPD ]
-        elif len(bands[band]["grids"]) == 0:
-            log.error("The backend does not support kind %s band %s, won't add to job list..." % (kind, band))
+    for band_kind, band_id in bands.keys():
+        if bands [(band_kind, band_id)]["grids"] == GRIDS_ANY:
+            bands [(band_kind, band_id)]["grids"] = list(grids)
+        elif bands[(band_kind, band_id)]["grids"] == GRIDS_ANY_PROJ4:
+            bands [(band_kind, band_id)]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_PROJ4 ]
+        elif bands[(band_kind, band_id)]["grids"] == GRIDS_ANY_GPD:
+            bands [(band_kind, band_id)]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_GPD ]
+        elif len(bands[(band_kind, band_id)]["grids"]) == 0:
+            log.error("The backend does not support kind %s band %s, won't add to job list..." % (band_kind, band_id))
             # Handled in the next for loop via the inner for loop not adding anything
         else:
-            bands[band]["grids"] = grids.intersection(bands[band]["grids"])
-            bad_grids = grids - set(bands[band]["grids"])
+            bands[(band_kind, band_id)]["grids"] = grids.intersection(bands[(band_kind, band_id)]["grids"])
+            bad_grids = grids - set(bands[(band_kind, band_id)]["grids"])
             if len(bad_grids) != 0 and forced_grids is not None:
                 log.error("Backend does not know how to handle grids '%r'" % list(bad_grids))
                 raise ValueError("Backend does not know how to handle grids '%r'" % list(bad_grids))
@@ -265,26 +269,27 @@ def create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon, backend,
     # Create "grid" jobs to be run through remapping
     # Jobs are per grid per band
     grid_jobs = {}
-    for band in bands.keys():
-        for grid_name in bands[band]["grids"]:
+    for band_kind, band_id in bands.keys():
+        for grid_name in bands[(band_kind, band_id)]["grids"]:
             if grid_name not in grid_jobs: grid_jobs[grid_name] = {}
-            if band not in grid_jobs[grid_name]: grid_jobs[grid_name][band] = {}
-            log.debug("Kind %s band %s will be remapped to grid %s" % (kind,band,grid_name))
-            grid_jobs[grid_name][band] = bands[band].copy()
+            if (band_kind, band_id) not in grid_jobs[grid_name]: grid_jobs[grid_name][(band_kind, band_id)] = {}
+            log.debug("Kind %s band %s will be remapped to grid %s" % (band_kind, band_id, grid_name))
+            grid_jobs[grid_name][(band_kind, band_id)] = bands[(band_kind, band_id)].copy()
 
     if len(grid_jobs) == 0:
-        log.error("No backend compatible grids were found to fit the data for kind %s" % (kind,))
-        raise ValueError("No backend compatible grids were found to fit the data for kind %s" % (kind,))
+        msg = "No backend compatible grids were found to fit the data set"
+        log.error(msg)
+        raise ValueError(msg)
 
     return grid_jobs
 
-def create_pseudobands(kind, bands, fill_value=DEFAULT_FILL_VALUE):
+def create_pseudobands(bands, fill_value=DEFAULT_FILL_VALUE):
     # Fog pseudo-band
-    if (kind == BKIND_I) and (BID_05 in bands) and (BID_04 in bands):
+    if (BKIND_I, BID_04) in bands and (BKIND_I, BID_05) in bands:
         log.info("Creating IFOG pseudo band...")
         try:
             W = Workspace('.')
-            mode_attr = bands[BID_05]["fbf_mode"].split(".")[0]
+            mode_attr = bands[(BKIND_I,BID_05)]["fbf_mode"].split(".")[0]
             mode_data = getattr(W, mode_attr)
             night_mask = mode_data >= 100
             del mode_data
@@ -301,22 +306,21 @@ def create_pseudobands(kind, bands, fill_value=DEFAULT_FILL_VALUE):
         log.debug("Creating FOG band for %s nighttime data points" % num_night_points)
 
         fog_dict = {
-                "kind" : "I",
-                "band" : "FOG",
-                "band_name" : "IFOG",
-                "data_kind" : DKIND_FOG,
+                "kind"           : BKIND_I,
+                "band"           : BID_FOG,
+                "data_kind"      : DKIND_FOG,
                 "remap_data_as"  : DKIND_BTEMP,
-                "rows_per_scan" : bands[BID_05]["rows_per_scan"],
-                "fbf_img" : "image_IFOG.%s" % ".".join(bands[BID_05]["fbf_img"].split(".")[1:]),
-                "fbf_mode" : bands[BID_05]["fbf_mode"],
-                "swath_scans" : bands[BID_05]["swath_scans"],
-                "swath_rows" : bands[BID_05]["swath_rows"],
-                "swath_cols" : bands[BID_05]["swath_cols"]
+                "rows_per_scan"  : bands[(BKIND_I, BID_05)]["rows_per_scan"],
+                "fbf_img"        : "image_IFOG.%s" % ".".join(bands[(BKIND_I, BID_05)]["fbf_img"].split(".")[1:]),
+                "fbf_mode"       : bands[(BKIND_I, BID_05)]["fbf_mode"],
+                "swath_scans"    : bands[(BKIND_I, BID_05)]["swath_scans"],
+                "swath_rows"     : bands[(BKIND_I, BID_05)]["swath_rows"],
+                "swath_cols"     : bands[(BKIND_I, BID_05)]["swath_cols"]
                 }
         try:
             W = Workspace(".")
-            i5_attr = bands[BID_05]["fbf_img"].split(".")[0]
-            i4_attr = bands[BID_04]["fbf_img"].split(".")[0]
+            i5_attr = bands[(BKIND_I, BID_05)]["fbf_img"].split(".")[0]
+            i4_attr = bands[(BKIND_I, BID_04)]["fbf_img"].split(".")[0]
             i5 = getattr(W, i5_attr)
             i4 = getattr(W, i4_attr)
             fog_map = numpy.memmap(fog_dict["fbf_img"],
@@ -328,7 +332,7 @@ def create_pseudobands(kind, bands, fill_value=DEFAULT_FILL_VALUE):
             fog_map[ (~night_mask) | (i5 == fill_value) | (i4 == fill_value) ] = fill_value
             del fog_map
             del i5,i4
-            bands[BID_FOG] = fog_dict
+            bands[(BKIND_I, BID_FOG)] = fog_dict
         except StandardError:
             log.error("Error creating Fog pseudo band")
             log.debug("Fog creation error:", exc_info=1)
@@ -359,11 +363,11 @@ def process_data_sets(filepaths,
         # Let's be lazy and give names to the 'global' viirs info
         sat = meta_data["sat"]
         instrument = meta_data["instrument"]
-        kind = meta_data["kind"]
         start_time = meta_data["start_time"]
         bands = meta_data["bands"]
         fbf_lat = meta_data["fbf_lat"]
         fbf_lon = meta_data["fbf_lon"]
+        nav_set_uid = meta_data["nav_set_uid"]
     except StandardError:
         log.error("Swath creation failed")
         log.debug("Swath creation error:", exc_info=1)
@@ -374,7 +378,7 @@ def process_data_sets(filepaths,
     # FIXME: Move pseudoband creation to the frontend
     try:
         if create_pseudo:
-            create_pseudobands(kind, bands)
+            create_pseudobands(bands)
     except StandardError:
         log.error("Pseudo band creation failed")
         log.debug("Pseudo band error:", exc_info=1)
@@ -383,8 +387,8 @@ def process_data_sets(filepaths,
 
     # Do any pre-remapping rescaling
     # FIXME: Move DNB scaling to the frontend
-    for band,band_job in bands.items():
-        if kind != BKIND_DNB:
+    for (band_kind, band_id),band_job in bands.items():
+        if band_kind != BKIND_DNB:
             # It takes too long to read in the data, so just skip it
             band_job["fbf_swath"] = band_job["fbf_img"]
             continue
@@ -399,7 +403,7 @@ def process_data_sets(filepaths,
         except StandardError:
             log.error("Unexpected error prescaling %s, removing..." % band_job["band_name"])
             log.debug("Prescaling error:", exc_info=1)
-            del bands[band]
+            del bands[(band_kind, band_id)]
             status_to_return |= STATUS_FRONTEND_FAIL
 
     if len(bands) == 0:
@@ -409,7 +413,7 @@ def process_data_sets(filepaths,
     # Determine grid
     try:
         log.info("Determining what grids the data fits in...")
-        grid_jobs = create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon, backend,
+        grid_jobs = create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
                 forced_grids=forced_grid)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
@@ -419,7 +423,7 @@ def process_data_sets(filepaths,
 
     ### Remap the data
     try:
-        remapped_jobs = remap_bands(sat, instrument, kind,
+        remapped_jobs = remap_bands(sat, instrument, nav_set_uid,
                 fbf_lon, fbf_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
                 lat_south=meta_data.get("lat_south", None),
@@ -436,8 +440,8 @@ def process_data_sets(filepaths,
     ### BACKEND ###
     W = Workspace('.')
     for grid_name,grid_dict in remapped_jobs.items():
-        for band,band_dict in grid_dict.items():
-            log.info("Running AWIPS backend for %s%s band grid %s" % (kind,band,grid_name))
+        for (band_kind, band_id),band_dict in grid_dict.items():
+            log.info("Running AWIPS backend for %s%s band grid %s" % (band_kind, band_id, grid_name))
             try:
                 # Get the data from the flat binary file
                 data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
@@ -446,8 +450,8 @@ def process_data_sets(filepaths,
                 backend.create_product(
                         sat,
                         instrument,
-                        kind,
-                        band,
+                        band_kind,
+                        band_id,
                         band_dict["data_kind"],
                         data,
                         start_time=start_time,
@@ -456,19 +460,19 @@ def process_data_sets(filepaths,
                         fill_value=band_dict.get("fill_value", None)
                         )
             except StandardError:
-                log.error("Error in the AWIPS backend for %s%s in grid %s" % (kind,band,grid_name))
+                log.error("Error in the AWIPS backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
                 log.debug("AWIPS backend error:", exc_info=1)
-                del remapped_jobs[grid_name][band]
+                del remapped_jobs[grid_name][(band_kind, band_id)]
 
         if len(remapped_jobs[grid_name]) == 0:
             log.error("All backend jobs for grid %s failed" % (grid_name,))
             del remapped_jobs[grid_name]
 
     if len(remapped_jobs) == 0:
-        log.warning("AWIPS backend failed for all grids for %s%s" % (kind,band))
+        log.warning("AWIPS backend failed for all grids for bands %r" % (bands.keys(),))
         status_to_return |= STATUS_BACKEND_FAIL
 
-    log.info("Processing of bands of kind %s is complete" % kind)
+    log.info("Processing of bands %r is complete" % (bands.keys(),))
 
     return status_to_return
 

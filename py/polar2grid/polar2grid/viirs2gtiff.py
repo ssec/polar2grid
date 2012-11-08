@@ -133,11 +133,11 @@ def process_data_sets(filepaths,
         # Let's be lazy and give names to the 'global' viirs info
         sat = meta_data["sat"]
         instrument = meta_data["instrument"]
-        kind = meta_data["kind"]
         start_time = meta_data["start_time"]
         bands = meta_data["bands"]
         fbf_lat = meta_data["fbf_lat"]
         fbf_lon = meta_data["fbf_lon"]
+        nav_set_uid = meta_data["nav_set_uid"]
     except StandardError:
         log.error("Swath creation failed")
         log.debug("Swath creation error:", exc_info=1)
@@ -148,7 +148,7 @@ def process_data_sets(filepaths,
     # FIXME: Move pseudoband creation to the frontend
     try:
         if create_pseudo:
-            create_pseudobands(kind, bands)
+            create_pseudobands(bands)
     except StandardError:
         log.error("Pseudo band creation failed")
         log.debug("Pseudo band error:", exc_info=1)
@@ -157,8 +157,8 @@ def process_data_sets(filepaths,
 
     # Do any pre-remapping rescaling
     # FIXME: Move DNB scaling to the frontend
-    for band,band_job in bands.items():
-        if kind != BKIND_DNB:
+    for (band_kind, band_id),band_job in bands.items():
+        if band_kind != BKIND_DNB:
             # It takes too long to read in the data, so just skip it
             band_job["fbf_swath"] = band_job["fbf_img"]
             continue
@@ -173,7 +173,7 @@ def process_data_sets(filepaths,
         except StandardError:
             log.error("Unexpected error prescaling %s, removing..." % band_job["band_name"])
             log.debug("Prescaling error:", exc_info=1)
-            del bands[band]
+            del bands[(band_kind, band_id)]
             status_to_return |= STATUS_FRONTEND_FAIL
 
     if len(bands) == 0:
@@ -183,7 +183,7 @@ def process_data_sets(filepaths,
     # Determine grid
     try:
         log.info("Determining what grids the data fits in...")
-        grid_jobs = create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon, backend,
+        grid_jobs = create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
                 forced_grids=forced_grid)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
@@ -193,7 +193,7 @@ def process_data_sets(filepaths,
 
     ### Remap the data
     try:
-        remapped_jobs = remap_bands(sat, instrument, kind,
+        remapped_jobs = remap_bands(sat, instrument, nav_set_uid,
                 fbf_lon, fbf_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
                 lat_south=meta_data.get("lat_south", None),
@@ -210,8 +210,8 @@ def process_data_sets(filepaths,
     ### BACKEND ###
     W = Workspace('.')
     for grid_name,grid_dict in remapped_jobs.items():
-        for band,band_dict in grid_dict.items():
-            log.info("Running geotiff backend for %s%s band grid %s" % (kind,band,grid_name))
+        for (band_kind, band_id),band_dict in grid_dict.items():
+            log.info("Running geotiff backend for %s%s band grid %s" % (band_kind, band_id, grid_name))
             try:
                 # Get the data from the flat binary file
                 data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
@@ -220,8 +220,8 @@ def process_data_sets(filepaths,
                 backend.create_product(
                         sat,
                         instrument,
-                        kind,
-                        band,
+                        band_kind,
+                        band_id,
                         band_dict["data_kind"],
                         data,
                         start_time=start_time,
@@ -234,19 +234,19 @@ def process_data_sets(filepaths,
                         fill_value=band_dict.get("fill_value", None)
                         )
             except StandardError:
-                log.error("Error in the Geotiff backend for %s%s in grid %s" % (kind,band,grid_name))
+                log.error("Error in the Geotiff backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
                 log.debug("Geotiff backend error:", exc_info=1)
-                del remapped_jobs[grid_name][band]
+                del remapped_jobs[grid_name][(band_kind, band_id)]
 
         if len(remapped_jobs[grid_name]) == 0:
             log.error("All backend jobs for grid %s failed" % (grid_name,))
             del remapped_jobs[grid_name]
 
     if len(remapped_jobs) == 0:
-        log.warning("Geotiff backend failed for all grids for %s bands" % (kind))
+        log.warning("Geotiff backend failed for all grids for bands %r" % (bands.keys(),))
         status_to_return |= STATUS_BACKEND_FAIL
 
-    log.info("Processing of bands of kind %s is complete" % kind)
+    log.info("Processing of bands %r is complete" % (bands.keys(),))
 
     return status_to_return
 
