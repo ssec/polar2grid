@@ -2,6 +2,7 @@
 proj4 strings.
 """
 from polar2grid.core import Workspace
+from polar2grid.core.constants import DEFAULT_FILL_VALUE
 import pyproj
 import numpy
 
@@ -48,13 +49,20 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
         swath_lat_south=None, swath_lat_north=None,
         swath_lon_west=None, swath_lon_east=None,
         grid_width=None, grid_height=None,
-        dtype=None, fill_in=-999.0, fill_out=-1e30,
+        dtype=None,
+        fill_in=None,
+        lon_fill_in=None,
+        lat_fill_in=None,
+        fill_out=-1e30,
         prefix="ll2cr_"):
     """Similar to GDAL, y pixel resolution should be negative for downward
     images.
 
     origin_lon,origin_lat are the grids origins
     """
+    lon_fill_in = lon_fill_in or fill_in or DEFAULT_FILL_VALUE
+    lat_fill_in = lat_fill_in or lon_fill_in
+
     if lat_arr.shape != lon_arr.shape:
         log.error("Longitude and latitude arrays must be the same shape (%r vs %r)" % (lat_arr.shape, lon_arr.shape))
         raise ValueError("Longitude and latitude arrays must be the same shape (%r vs %r)" % (lat_arr.shape, lon_arr.shape))
@@ -94,7 +102,7 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     cols_fn = prefix + "cols.real4.%d.%d" % lat_arr.shape[::-1]
     cols_arr = numpy.memmap(cols_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
 
-    good_mask = (lon_arr != -999) & (lat_arr != -999)
+    good_mask = (lon_arr != lon_fill_in) & (lat_arr != lat_fill_in)
 
     # Calculate west/east south/north boundaries
     stradles_180 = False
@@ -224,7 +232,7 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
         numpy.divide(y_tmp, pixel_size_y, y_tmp)
 
         # good_mask here is True for good values
-        good_mask[:] =  ~( ((lon_arr[idx] == fill_in) | (lat_arr[idx] == fill_in)) | \
+        good_mask[:] =  ~( ((lon_arr[idx] == lon_fill_in) | (lat_arr[idx] == lon_fill_in)) | \
                 ( (x_tmp < -0.5) | (x_tmp > (grid_width + 0.5)) ) | \
                 ( (y_tmp < -0.5) | (y_tmp > (grid_height + 0.5)) ) )
         cols_arr[idx,good_mask] = x_tmp[good_mask]

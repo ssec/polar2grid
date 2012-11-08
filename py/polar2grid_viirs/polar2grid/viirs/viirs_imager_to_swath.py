@@ -27,6 +27,8 @@ from glob import glob
 
 log = logging.getLogger(__name__)
 
+FILL_VALUE=-999.0
+
 def _glob_file(pat):
     """Globs for a single file based on the provided pattern.
 
@@ -268,7 +270,7 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     for ginfo in geo_data:
         # Read in lat/lon data
         try:
-            read_geo_info(ginfo)
+            read_geo_info(ginfo, fill_value=FILL_VALUE)
             # Start datetime used in product backend for NC creation
             if meta_data["start_time"] is None:
                 meta_data["start_time"] = ginfo["start_time"]
@@ -286,17 +288,17 @@ def process_geo(meta_data, geo_data, cut_bad=False):
             ginfo["mode_mask"] = numpy.delete(ginfo["mode_mask"], scan_quality, axis=0)
 
         # Calculate min and max lat/lon values for use in remapping
-        lat_south = min(lat_south,ginfo["lat_data"][ginfo["lat_data"] != -999].min())
-        lat_north = max(lat_north,ginfo["lat_data"][ginfo["lat_data"] != -999].max())
-        lon_west_tmp = min(lon_west,ginfo["lon_data"][ginfo["lon_data"] != -999].min())
-        lon_east_tmp = max(lon_east,ginfo["lon_data"][ginfo["lon_data"] != -999].max())
+        lat_south = min(lat_south,ginfo["lat_data"][ginfo["lat_data"] != FILL_VALUE].min())
+        lat_north = max(lat_north,ginfo["lat_data"][ginfo["lat_data"] != FILL_VALUE].max())
+        lon_west_tmp = min(lon_west,ginfo["lon_data"][ginfo["lon_data"] != FILL_VALUE].min())
+        lon_east_tmp = max(lon_east,ginfo["lon_data"][ginfo["lon_data"] != FILL_VALUE].max())
         if lon_west_tmp <= -179.0 and lon_east_tmp >= 179.0:
             # We hit the -180/180 boundary
-            lon_west_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] >= 0)].min()
-            lon_west_tmp = min(lon_west, ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] >= 0)].min())
+            lon_west_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] >= 0)].min()
+            lon_west_tmp = min(lon_west, ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] >= 0)].min())
 
-            lon_east_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] <= 0)].max()
-            lon_east_tmp = max(lon_east, ginfo["lon_data"][(ginfo["lon_data"] != -999) & (ginfo["lon_data"] <= 0)].max())
+            lon_east_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] <= 0)].max()
+            lon_east_tmp = max(lon_east, ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] <= 0)].max())
 
         lon_west = lon_west_tmp
         lon_east = lon_east_tmp
@@ -339,6 +341,8 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     meta_data["lat_north"] = lat_north
     meta_data["lon_west"] = lon_west
     meta_data["lon_east"] = lon_east
+    meta_data["lon_fill_value"] = FILL_VALUE
+    meta_data["lat_fill_value"] = FILL_VALUE
 
     return meta_data,geo_data
 
@@ -356,7 +360,7 @@ def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
     for finfo,ginfo in zip(finfos,geo_data):
         try:
             # XXX: May need to pass the lat/lon masks
-            read_file_info(finfo)
+            read_file_info(finfo, fill_value=FILL_VALUE)
         except StandardError:
             log.error("Error reading data from %s" % finfo["img_path"])
             raise
@@ -385,6 +389,7 @@ def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
     band_meta["swath_cols"] = cols
     band_meta["swath_scans"] = swath_scans
     band_meta["fbf_mode"] = fbf_mode
+    band_meta["fill_value"] = FILL_VALUE
 
     if rows != swath_rows or cols != swath_cols:
         log.error("Expected %d rows and %d cols, but band %s had %d rows and %d cols" % (swath_rows, swath_cols, band_name, rows, cols))

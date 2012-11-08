@@ -36,13 +36,14 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
         grid_jobs,
         num_procs=1, verbose=False, forced_gpd=None,
         lat_south=None, lat_north=None, lon_west=None, lon_east=None,
-        fill_value=None):
+        lon_fill_value=None, lat_fill_value=None):
     """Run one of the ll2crs and return a dictionary mapping the
     `grid_name` to the cols and rows files.
     """
     proc_pool = multiprocessing.Pool(num_procs)
     # Use the default fill value if the user didn't specify or forced None
-    fill_value = fill_value or DEFAULT_FILL_VALUE
+    lon_fill_value = lon_fill_value or DEFAULT_FILL_VALUE
+    lat_fill_value = lat_fill_value or DEFAULT_FILL_VALUE
 
     # Run ll2cr
     ll2cr_results = dict((grid_name,None) for grid_name in grid_jobs)
@@ -79,7 +80,8 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
                     grid_origin_y=grid_info["grid_origin_y"],
                     grid_width=grid_info["grid_width"],
                     grid_height=grid_info["grid_height"],
-                    fill_in=fill_value,
+                    lat_fill_in=lat_fill_value,
+                    lon_fill_in=lon_fill_value,
                     fill_out=-1e30,
                     prefix=ll2cr_tag,
                     swath_lat_south=lat_south,
@@ -89,6 +91,13 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
                     pool=proc_pool
                     )
         elif grid_info["grid_kind"] == GRID_KIND_GPD:
+            # C version of ll2cr can't handle different nav fill values
+            if lon_fill_value != lat_fill_value:
+                msg = "Navigation files must have the same fill value when using the C ll2cr (%f vs %f)" % (lon_fill_value, lat_fill_value)
+                log.warning(msg)
+                del grid_jobs[grid_name]
+                continue
+
             ll2cr_results[grid_name] = run_ll2cr_c(
                     swath_cols,
                     swath_rows/rows_per_scan, # swath_scans
@@ -97,7 +106,7 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
                     lon_fbf,
                     forced_gpd or grid_info["gpd_filepath"],
                     verbose = verbose,
-                    fill_io = (fill_value, -1e30),
+                    fill_io = (lon_fill_value, -1e30),
                     tag=ll2cr_tag,
                     pool=proc_pool
                     )
@@ -162,12 +171,16 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
                 fornav_group[band_info["remap_data_as"]] = {
                         "inputs" : [],
                         "outputs" : [],
+                        "swath_fill_1" : [],
+                        "grid_fill_1" : [],
                         "result" : None
                         }
             fornav_group[band_info["remap_data_as"]]["inputs"].append(band_info["fbf_swath"])
             stem = "result_%s%s_%s" % (band_kind,band_id,grid_name)
             output_name = "%s.real4.%d.%d" % (stem, band_info["grid_width"], band_info["grid_height"])
             fornav_group[band_info["remap_data_as"]]["outputs"].append(output_name)
+            fornav_group[band_info["remap_data_as"]]["swath_fill_1"].append(band_info.get("fill_value", fill_value))
+            fornav_group[band_info["remap_data_as"]]["grid_fill_1"].append(band_info.get("fill_value", fill_value))
             band_info["fbf_remapped"] = output_name
 
         for remap_data_as,fornav_job in fornav_group.items():
@@ -184,8 +197,8 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
                         fornav_job["outputs"],
                         verbose=verbose,
                         swath_data_type_1="f4",
-                        swath_fill_1=fill_value,
-                        grid_fill_1=fill_value,
+                        swath_fill_1=fornav_job["swath_fill_1"],
+                        grid_fill_1=fornav_job["grid_fill_1"],
                         weight_delta_max=fornav_D,
                         weight_distance_max=fornav_d,
                         start_scan=(ll2cr_output[grid_name]["scan_first"],0),
@@ -223,7 +236,8 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
 
 def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
         grid_jobs, num_procs=1, fornav_d=None, fornav_D=None, forced_gpd=None,
-        lat_south=None, lat_north=None, lon_west=None, lon_east=None, fill_value=None):
+        lat_south=None, lat_north=None, lon_west=None, lon_east=None,
+        lat_fill_value=None, lon_fill_value=None, fill_value=None):
     """Remap data using the C or python version of ll2cr and the
     C version of fornav.
 
@@ -243,7 +257,7 @@ def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
             grid_jobs,
             num_procs=num_procs, verbose=log_level <= logging.DEBUG, forced_gpd=forced_gpd,
             lat_south=lat_south, lat_north=lat_north, lon_west=lon_west, lon_east=lon_east,
-            fill_value=fill_value)
+            lat_fill_value=lat_fill_value, lon_fill_value=lon_fill_value)
 
     # Run fornav
     fornav_output = run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,

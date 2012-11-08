@@ -162,6 +162,8 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
             args.extend(["%f" % swath_fill_1]*chan_count)
         elif chan_count > 1:
             args.extend(swath_fill_1)
+        elif isinstance(swath_fill_1, list):
+            args.append(swath_fill_1[0])
         else:
             args.append(swath_fill_1)
     if grid_fill_1 is not None:
@@ -170,6 +172,8 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
             args.extend(["%f" % grid_fill_1]*chan_count)
         elif chan_count > 1:
             args.extend(grid_fill_1)
+        elif isinstance(grid_fill_1, list):
+            args.append(grid_fill_1[0])
         else:
             args.append(grid_fill_1)
     if weight_delta_max is not None:
