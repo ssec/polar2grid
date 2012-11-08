@@ -1,31 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Functions to read configuration files for the viirs2awips.
-
-Instances of default configuration file locations and contents.
-
-Configuration files from which the above are derived
-Global objects representing configuration files
-
-:Variables:
-    GRIDS : dict
-        Mappings to product_id, NC filename format,
-        and other meta data needed for NC files
-    BANDS : dict
-        Mappings to product_id, NC filename format,
-        and other meta data needed for NC files
-    GRID_TEMPLATES : dict
-        Mappings to gpd and NC templates.
-    SHAPES : dict 
-        Mappings of grid name to lat/lon boundaries and coverage percentage
-    PRODUCTS_FILE
-        File holding band to grid mappings, including product_id and NC
-        filename format
-    ANCIL_DIR
-        Directory holding gpd and nc templates for AWIPS grids.
-    SHAPES_FILE
-        File holding grid boundaries for grids specified in the
-        grids directory and products.conf file
+"""Functions to read configuration files for the AWIPS backend.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -190,7 +165,7 @@ def load_config_str(config_dict, config_str):
 
 def load_config(config_dict, config_filename=None):
     if config_filename is None:
-        config_filename = DEFAULT_CONFIG_FILE
+        config_filename = CONFIG_FILE
 
     # Load a configuration file, even if it's in the package
     config_filename = _rel_to_abs(config_filename, CONFIG_DIR)
