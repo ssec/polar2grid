@@ -1,3 +1,4 @@
+### PYTHON IGNORES ###
 *.py[cod]
 
 # C extensions
@@ -31,5 +32,25 @@ nosetests.xml
 
 #Mr Developer
 .mr.developer.cfg
+
+### C IGNORES ###
+# Object files
+*.o
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
 
 

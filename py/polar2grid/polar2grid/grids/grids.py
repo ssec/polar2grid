@@ -255,9 +255,9 @@ def validate_configs(shapes_dict, gpd_dict, proj4_dict):
     for grid in list(in_grids):
         # Remove grids that fit to the data
         # Could use some more that as to "will the data actually fit this fit grid"
-        if grid in PROJ4_GRIDS and PROJ4_GRIDS[grid]["grid_width"] is None or \
-                PROJ4_GRIDS[grid]["pixel_size_x"] is None or \
-                PROJ4_GRIDS[grid]["grid_origin_x"] is None:
+        if grid in proj4_dict and (proj4_dict[grid]["grid_width"] is None or \
+                proj4_dict[grid]["pixel_size_x"] is None or \
+                proj4_dict[grid]["grid_origin_x"] is None):
             in_grids.remove(grid)
     if len(in_grids) != 0:
         log.error("These grids are in the grids config, but not the shapes config: \n%s" % "\n".join(in_grids))

@@ -15,17 +15,15 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.constants import *
-from polar2grid.viirs import make_swaths
-from .grids.grids import determine_grid_coverage_fbf,get_grid_info
+from polar2grid.viirs import Frontend
 from .viirs2awips import run_prescaling,_safe_remove,create_grid_jobs,create_pseudobands
 from .remap import remap_bands
-from .gtiff_backend import can_handle_inputs,backend,_bits_to_etype
+from .gtiff_backend import Backend,_bits_to_etype
 
 import os
 import sys
 import logging
 from multiprocessing import Process
-import numpy
 from glob import glob
 
 log = logging.getLogger(__name__)
@@ -111,70 +109,63 @@ def remove_products():
     for f in glob("npp_viirs*.tif"):
         _safe_remove(f)
 
-def process_kind(filepaths,
+def process_data_sets(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None, etype=None,
         create_pseudo=True,
         num_procs=1,
-        rescale_config=None
+        rescale_config=None,
+        inc_by_one=False
         ):
     """Process all the files provided from start to finish,
     from filename to Geotiff file.
     """
-    SUCCESS = 0
-    # Swath extraction failed
-    SWATH_FAIL = 2
-    # Swath prescaling failed
-    PRESCALE_FAIL = 4
-    # ll2cr failed
-    LL2CR_FAIL = 8
-    # fornav failed
-    FORNAV_FAIL = 16
-    # remap failed
-    REMAP_FAIL = 24 # ll2cr and fornav
-    # backend failed
-    BACKEND_FAIL = 32
-    # grid determination failed
-    GDETER_FAIL = 64
-    # there aren't any jobs left, not sure why
-    UNKNOWN_FAIL = -1
+    status_to_return = STATUS_SUCCESS
+
+    # Declare polar2grid components
+    frontend = Frontend()
+    backend = Backend(etype=etype, rescale_config=rescale_config,
+            inc_by_one=inc_by_one)
 
     # Extract Swaths
     log.info("Extracting swaths...")
     try:
-        meta_data = make_swaths(filepaths, cut_bad=True)
+        meta_data = frontend.make_swaths(filepaths, cut_bad=True)
+
+        # Let's be lazy and give names to the 'global' viirs info
+        sat = meta_data["sat"]
+        instrument = meta_data["instrument"]
+        start_time = meta_data["start_time"]
+        bands = meta_data["bands"]
+        fbf_lat = meta_data["fbf_lat"]
+        fbf_lon = meta_data["fbf_lon"]
+        nav_set_uid = meta_data["nav_set_uid"]
     except StandardError:
         log.error("Swath creation failed")
         log.debug("Swath creation error:", exc_info=1)
-        SUCCESS |= SWATH_FAIL
-        return SUCCESS
-    # Let's be lazy and give names to the 'global' viirs info
-    sat = meta_data["sat"]
-    instrument = meta_data["instrument"]
-    kind = meta_data["kind"]
-    start_time = meta_data["start_time"]
-    bands = meta_data["bands"]
-    fbf_lat = meta_data["fbf_lat"]
-    fbf_lon = meta_data["fbf_lon"]
+        status_to_return |= STATUS_FRONTEND_FAIL
+        return status_to_return
 
     # Create pseudo-bands
+    # FIXME: Move pseudoband creation to the frontend
     try:
         if create_pseudo:
-            create_pseudobands(kind, bands)
+            create_pseudobands(bands)
     except StandardError:
         log.error("Pseudo band creation failed")
         log.debug("Pseudo band error:", exc_info=1)
-        SUCCESS |= SWATH_FAIL
-        return SUCCESS
+        status_to_return |= STATUS_FRONTEND_FAIL
+        return status_to_return
 
     # Do any pre-remapping rescaling
-    log.info("Prescaling data before remapping...")
-    for band,band_job in bands.items():
-        if kind != BKIND_DNB:
+    # FIXME: Move DNB scaling to the frontend
+    for (band_kind, band_id),band_job in bands.items():
+        if band_kind != BKIND_DNB:
             # It takes too long to read in the data, so just skip it
             band_job["fbf_swath"] = band_job["fbf_img"]
             continue
 
+        log.info("Prescaling data before remapping...")
         try:
             fbf_swath = run_prescaling(
                     band_job["fbf_img"],
@@ -184,55 +175,57 @@ def process_kind(filepaths,
         except StandardError:
             log.error("Unexpected error prescaling %s, removing..." % band_job["band_name"])
             log.debug("Prescaling error:", exc_info=1)
-            del bands[band]
-            SUCCESS |= PRESCALE_FAIL
+            del bands[(band_kind, band_id)]
+            status_to_return |= STATUS_FRONTEND_FAIL
 
     if len(bands) == 0:
         log.error("No more bands to process, quitting...")
-        return SUCCESS or UNKNOWN_FAIL
+        return status_to_return or UNKNOWN_FAIL
 
     # Determine grid
     try:
         log.info("Determining what grids the data fits in...")
-        grid_jobs = create_grid_jobs(sat, instrument, kind, bands, fbf_lat, fbf_lon,
-                forced_grids=forced_grid, can_handle_inputs=can_handle_inputs)
+        grid_jobs = create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
+                forced_grids=forced_grid)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")
-        SUCCESS |= GDETER_FAIL
-        return SUCCESS
+        status_to_return |= STATUS_GDETER_FAIL
+        return status_to_return
 
     ### Remap the data
     try:
-        remapped_jobs = remap_bands(sat, instrument, kind,
+        remapped_jobs = remap_bands(sat, instrument, nav_set_uid,
                 fbf_lon, fbf_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
-                lat_min=meta_data.get("lat_min", None),
-                lat_max=meta_data.get("lat_max", None),
-                lon_min=meta_data.get("lon_min", None),
-                lon_max=meta_data.get("lon_max", None)
+                lat_fill_value=meta_data.get("lat_fill_value", None),
+                lon_fill_value=meta_data.get("lon_fill_value", None),
+                lat_south=meta_data.get("lat_south", None),
+                lat_north=meta_data.get("lat_north", None),
+                lon_west=meta_data.get("lon_west", None),
+                lon_east=meta_data.get("lon_east", None)
                 )
     except StandardError:
         log.debug("Remapping Error:", exc_info=1)
         log.error("Remapping data failed")
-        SUCCESS |= REMAP_FAIL
-        return SUCCESS
+        status_to_return |= STATUS_REMAP_FAIL
+        return status_to_return
 
     ### BACKEND ###
     W = Workspace('.')
     for grid_name,grid_dict in remapped_jobs.items():
-        for band,band_dict in grid_dict.items():
-            log.info("Running geotiff backend for %s%s band grid %s" % (kind,band,grid_name))
+        for (band_kind, band_id),band_dict in grid_dict.items():
+            log.info("Running geotiff backend for %s%s band grid %s" % (band_kind, band_id, grid_name))
             try:
                 # Get the data from the flat binary file
                 data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
 
                 # Call the backend
-                backend(
+                backend.create_product(
                         sat,
                         instrument,
-                        kind,
-                        band,
+                        band_kind,
+                        band_id,
                         band_dict["data_kind"],
                         data,
                         start_time=start_time,
@@ -242,37 +235,36 @@ def process_kind(filepaths,
                         grid_origin_y=band_dict["grid_origin_y"],
                         pixel_size_x=band_dict["pixel_size_x"],
                         pixel_size_y=band_dict["pixel_size_y"],
-                        etype=etype,
-                        rescale_config=rescale_config
+                        fill_value=band_dict.get("fill_value", None)
                         )
             except StandardError:
-                log.error("Error in the Geotiff backend for %s%s in grid %s" % (kind,band,grid_name))
+                log.error("Error in the Geotiff backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
                 log.debug("Geotiff backend error:", exc_info=1)
-                del remapped_jobs[grid_name][band]
+                del remapped_jobs[grid_name][(band_kind, band_id)]
 
         if len(remapped_jobs[grid_name]) == 0:
             log.error("All backend jobs for grid %s failed" % (grid_name,))
             del remapped_jobs[grid_name]
 
     if len(remapped_jobs) == 0:
-        log.warning("Geotiff backend failed for all grids for %s bands" % (kind))
-        SUCCESS |= BACKEND_FAIL
+        log.warning("Geotiff backend failed for all grids for bands %r" % (bands.keys(),))
+        status_to_return |= STATUS_BACKEND_FAIL
 
-    log.info("Processing of bands of kind %s is complete" % kind)
+    log.info("Processing of bands %r is complete" % (bands.keys(),))
 
-    return SUCCESS
+    return status_to_return
 
-def _process_kind(*args, **kwargs):
-    """Wrapper function around `process_kind` so that it can called
+def _process_data_sets(*args, **kwargs):
+    """Wrapper function around `process_data_sets` so that it can called
     properly from `run_viir2awips`, where the exitcode is the actual
-    returned value from `process_kind`.
+    returned value from `process_data_sets`.
 
     This function also checks for exceptions other than the ones already
-    checked for in `process_kind` so that they are
+    checked for in `process_data_sets` so that they are
     recorded properly.
     """
     try:
-        stat = process_kind(*args, **kwargs)
+        stat = process_data_sets(*args, **kwargs)
         sys.exit(stat)
     except MemoryError:
         log.error("viirs2gtiff ran out of memory, check log file for more info")
@@ -288,27 +280,13 @@ def _process_kind(*args, **kwargs):
 
     sys.exit(-1)
 
-def run_viirs2gtiff(filepaths,
+def run_glue(filepaths,
         multiprocess=True, **kwargs
         ):
-    """
-        num_procs=1,
-        fornav_D=None, fornav_d=None,
-        forced_grid=None, etype=None,
-        create_pseudo=True,
-        proj4_str=None, grid_width=None, grid_height=None,
-        pixel_size_x=None, pixel_size_y=None):
-    Go through the motions of converting
-    a VIIRS h5 file into a AWIPS NetCDF file.
+    """Separate input files into groups that share navigation files data.
 
-    1. viirs_guidebook.py       : Get file info/data
-    2. viirs_imager_to_swath.py : Concatenate data
-    3. Prescale DNB
-    4. Calculat Grid            : Figure out what grids the data fits in
-    5. ll2cr
-    6. fornav
-    7. rescale.py
-    8. awips_netcdf.py
+    Call the processing function in separate process or same process depending
+    on value of `multiprocess` keyword.
     """
     # Rewrite/force parameters to specific format
     filepaths = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(filepaths) ]
@@ -330,13 +308,13 @@ def run_viirs2gtiff(filepaths,
         log.debug("Processing M files")
         try:
             if multiprocess:
-                pM = Process(target=_process_kind,
+                pM = Process(target=_process_data_sets,
                         args = (M_files,),
                         kwargs = kwargs
                         )
                 pM.start()
             else:
-                stat = _process_kind(M_files, **kwargs)
+                stat = _process_data_sets(M_files, **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process M files")
@@ -346,13 +324,13 @@ def run_viirs2gtiff(filepaths,
         log.debug("Processing I files")
         try:
             if multiprocess:
-                pI = Process(target=_process_kind,
+                pI = Process(target=_process_data_sets,
                         args = (I_files,),
                         kwargs = kwargs
                         )
                 pI.start()
             else:
-                stat = _process_kind(I_files, **kwargs)
+                stat = _process_data_sets(I_files, **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process I files")
@@ -362,13 +340,13 @@ def run_viirs2gtiff(filepaths,
         log.debug("Processing DNB files")
         try:
             if multiprocess:
-                pDNB = Process(target=_process_kind,
+                pDNB = Process(target=_process_data_sets,
                         args = (DNB_files,),
                         kwargs = kwargs
                         )
                 pDNB.start()
             else:
-                stat = _process_kind(DNB_files, **kwargs)
+                stat = _process_data_sets(DNB_files, **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process DNB files")
@@ -397,18 +375,15 @@ def main():
     into a GeoTiff.
     """
     parser = argparse.ArgumentParser(description=description)
+
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
-    parser.add_argument('--bits', dest="etype", default=None, type=_bits_to_etype,
-            help="number of bits in the geotiff, usually unsigned")
     parser.add_argument('-D', dest='fornav_D', default=40,
             help="Specify the -D option for fornav")
     parser.add_argument('-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
     parser.add_argument('-f', dest='get_files', default=False, action="store_true",
             help="Specify that hdf files are listed, not a directory")
-    parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="wgs84_fit",
-            help="Force remapping to only some grids")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
             help="Processing is sequential instead of one process per kind of band")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
@@ -419,6 +394,16 @@ def main():
             help="Don't create pseudo bands")
     parser.add_argument('--rescale-config', dest='rescale_config', default=None,
             help="specify alternate rescale configuration file")
+
+    # Remapping/Grids
+    parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="wgs84_fit",
+            help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
+
+    # Backend Specific
+    parser.add_argument('--bits', dest="etype", default=None, type=_bits_to_etype,
+            help="number of bits in the geotiff, usually unsigned")
+    parser.add_argument('--inc_by_one', dest="inc_by_one", default=False, action="store_true",
+            help="tell rescaler to increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
 
     parser.add_argument('data_files', nargs="+",
             help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
@@ -459,11 +444,12 @@ def main():
         log.debug("Removing any previous files")
         remove_products()
 
-    stat = run_viirs2gtiff(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
-                forced_grid=forced_grids, etype=args.etype,
+    stat = run_glue(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
+                forced_grid=forced_grids,
+                etype=args.etype,
                 create_pseudo=args.create_pseudo,
                 multiprocess=not args.single_process, num_procs=num_procs,
-                rescale_config=args.rescale_config
+                rescale_config=args.rescale_config, inc_by_one=args.inc_by_one
                 )
 
     return stat

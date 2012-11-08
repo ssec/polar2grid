@@ -39,20 +39,20 @@ UTLDIR = $(IDLDIR)/modis_utils
 #
 #	commands
 #
-SHELL = /bin/sh
-CC = cc
-AR = ar
-RANLIB = touch
-CO = co
-MAKEDEPEND = makedepend
-INSTALL = cp
-CP = cp
-CD = cd
-RM = rm -f
-RMDIR = rm -fr
-MKDIR = mkdir -p
-TAR = tar
-COMPRESS = gzip
+SHELL ?= /bin/sh
+CC ?= cc
+AR ?= ar
+RANLIB ?= touch
+CO ?= co
+MAKEDEPEND ?= makedepend
+INSTALL ?= cp
+CP ?= cp
+CD ?= cd
+RM ?= rm -f
+RMDIR ?= rm -fr
+MKDIR ?= mkdir -p
+TAR ?= tar
+COMPRESS ?= gzip
 
 #
 #	debug or optimization settings
