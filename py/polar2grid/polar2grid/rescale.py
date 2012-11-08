@@ -226,12 +226,21 @@ class Rescaler(roles.RescalerRole):
         # Override the role's rescale property
         return self._known_rescale_kinds
 
+    def __init__(self, *args, **kwargs):
+        self.inc_by_one = kwargs.pop("inc_by_one", False)
+        super(Rescaler, self).__init__(*args, **kwargs)
+
     def __call__(self, sat, instrument, kind, band, data_kind, data,
-            fill_in=None, fill_out=None):
+            fill_in=None, fill_out=None, inc_by_one=None):
         """Function that uses previously loaded configuration files to choose
         how to rescale the provided data.  If the `config` keyword is not provided
         then a best guess will be made on how to rescale the data.  Usually this
         best guess is a 0-255 scaling based on the `data_kind`.
+
+        `inc_by_one` is meant to make scaling easier in the case of data
+        needing the lowest value of data to be the new fill value.  When this
+        keyword is set to True (default uses value passed to __init__) it will
+        add 1 to the scaled data excluding the invalid values.
         """
         log_level = logging.getLogger('').handlers[0].level or 0
         band_id = self._create_config_id(sat, instrument, kind, band, data_kind)
@@ -251,13 +260,22 @@ class Rescaler(roles.RescalerRole):
             log.info("'%s' was found in the rescaling configuration" % (band_id))
             rescale_func,rescale_args = self.config[band_id]
 
+        # Only perform this calculation if it will be shown, its very time consuming
+        if log_level <= logging.DEBUG:
+            log.debug("Data min: %f, max: %f" % (data[ data != fill_in ].min(),data[ data != fill_in ].max()))
+
         log.debug("Using rescale arguments: %r" % (rescale_args,))
         log.debug("Using fill in/out values: (%s,%s)" % (fill_in,fill_out))
         data = rescale_func(data, *rescale_args, fill_in=fill_in, fill_out=fill_out)
 
+        # Increment by one to help the backend product
+        inc_by_one = inc_by_one if inc_by_one is not None else self.inc_by_one
+        if inc_by_one:
+            data[ data != fill_out ] += 1
+
         # Only perform this calculation if it will be shown, its very time consuming
         if log_level <= logging.DEBUG:
-            log.debug("Data min: %f, max: %f" % (data.min(),data.max()))
+            log.debug("Data min: %f, max: %f" % (data[ data != fill_out ].min(),data[ data != fill_out ].max()))
 
         return data
 

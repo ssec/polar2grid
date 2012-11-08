@@ -208,7 +208,11 @@ def run_prescaling(img_filepath, mode_filepath, fill_value=DEFAULT_FILL_VALUE):
     try:
         rescaled_data = dnb_scale(data,
                 **scale_kwargs)
-        log.debug("Data min: %f, Data max: %f" % (rescaled_data.min(),rescaled_data.max()))
+        if (logging.getLogger('').handlers[0].level or 0) <= logging.DEBUG:
+            log.debug("Data min: %f, Data max: %f" % (
+                rescaled_data[ rescaled_data != fill_value ].min(),
+                rescaled_data[ rescaled_data != fill_value ].max()
+                ))
         rows,cols = rescaled_data.shape
         fbf_swath_var = "prescale_dnb"
         fbf_swath = "./%s.real4.%d.%d" % (fbf_swath_var, cols, rows)

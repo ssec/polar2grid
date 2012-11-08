@@ -66,13 +66,17 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
     # Garbage collection/destructor should close the file properly
 
 class Backend(roles.BackendRole):
-    def __init__(self, etype=None, rescale_config=None, fill_value=DEFAULT_FILL_VALUE):
+    def __init__(self, etype=None, rescale_config=None, fill_value=DEFAULT_FILL_VALUE,
+        inc_by_one=False):
         """
             - etype:
                 Specify the GDAL data type of the produced geotiff. Default 16bit
                 unsigned integers.
             - rescale_config:
                 Rescaling configuration file to be used in scaling the data
+            - inc_by_one:
+                Used by the Rescaler to add one to the scaled data.  See
+                `Rescaler` documentation for more information.
         """
         if etype is None:
             etype = gdal.GDT_UInt16
@@ -89,7 +93,10 @@ class Backend(roles.BackendRole):
         # Instantiate the rescaler
         self.fill_in = fill_value
         self.fill_out = DEFAULT_FILL_VALUE
-        self.rescaler = Rescaler(config=self.rescale_config, fill_in=self.fill_in, fill_out=self.fill_out)
+        self.rescaler = Rescaler(config=self.rescale_config,
+                fill_in=self.fill_in, fill_out=self.fill_out,
+                inc_by_one=inc_by_one
+                )
 
     def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
         """Function for backend-calling script to ask if the backend
@@ -107,7 +114,7 @@ class Backend(roles.BackendRole):
             proj4_str=None, grid_origin_x=None, grid_origin_y=None,
             pixel_size_x=None, pixel_size_y=None,
             output_filename=None, etype=None, fill_value=None,
-            rotate_x=0, rotate_y=0):
+            rotate_x=0, rotate_y=0, inc_by_one=None):
         """Function to be called from a connecting script to interpret the
         information provided and create a geotiff.
 
@@ -150,9 +157,8 @@ class Backend(roles.BackendRole):
             - rotate_y (not part of the backend interface):
                 Parameter that can be used in GDAL geotransforms, but is rarely
                 useful.
-
-        Unused keywords:
-            None
+            - inc_by_one:
+                See __init__ documentation or Rescaler documentation
         """
         etype = self.etype
         fill_in = fill_value or self.fill_in
@@ -172,7 +178,11 @@ class Backend(roles.BackendRole):
                     )
 
         # Rescale the data based on the configuration that was loaded earlier
-        data = self.rescaler(sat, instrument, kind, band, data_kind, data, fill_in=fill_in, fill_out=self.fill_out)
+        data = self.rescaler(sat, instrument, kind, band, data_kind, data,
+                fill_in=fill_in, fill_out=self.fill_out, inc_by_one=inc_by_one)
+        # If the data is incremented by one the data filters in create_geotiff
+        # will cause the fill value to be set to zero (so positive fills won't
+        # work)
 
         # Create the geotiff
         geotransform = (grid_origin_x, pixel_size_x, rotate_x, grid_origin_y, rotate_y, pixel_size_y)

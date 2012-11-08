@@ -114,7 +114,8 @@ def process_data_sets(filepaths,
         forced_grid=None, etype=None,
         create_pseudo=True,
         num_procs=1,
-        rescale_config=None
+        rescale_config=None,
+        inc_by_one=False
         ):
     """Process all the files provided from start to finish,
     from filename to Geotiff file.
@@ -123,7 +124,8 @@ def process_data_sets(filepaths,
 
     # Declare polar2grid components
     frontend = Frontend()
-    backend = Backend(etype=etype, rescale_config=rescale_config)
+    backend = Backend(etype=etype, rescale_config=rescale_config,
+            inc_by_one=inc_by_one)
 
     # Extract Swaths
     log.info("Extracting swaths...")
@@ -398,6 +400,8 @@ def main():
     # Backend Specific
     parser.add_argument('--bits', dest="etype", default=None, type=_bits_to_etype,
             help="number of bits in the geotiff, usually unsigned")
+    parser.add_argument('--inc_by_one', dest="inc_by_one", default=False, action="store_true",
+            help="tell rescaler to increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
 
     parser.add_argument('data_files', nargs="+",
             help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
@@ -443,7 +447,7 @@ def main():
                 etype=args.etype,
                 create_pseudo=args.create_pseudo,
                 multiprocess=not args.single_process, num_procs=num_procs,
-                rescale_config=args.rescale_config
+                rescale_config=args.rescale_config, inc_by_one=args.inc_by_one
                 )
 
     return stat
