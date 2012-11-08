@@ -115,7 +115,8 @@ def process_data_sets(filepaths,
         create_pseudo=True,
         num_procs=1,
         rescale_config=None,
-        inc_by_one=False
+        inc_by_one=False,
+        new_dnb=False # XXX
         ):
     """Process all the files provided from start to finish,
     from filename to Geotiff file.
@@ -169,7 +170,8 @@ def process_data_sets(filepaths,
         try:
             fbf_swath = run_prescaling(
                     band_job["fbf_img"],
-                    band_job["fbf_mode"]
+                    band_job["fbf_mode"],
+                    new_dnb=new_dnb # XXX
                     )
             band_job["fbf_swath"] = fbf_swath
         except StandardError:
@@ -404,6 +406,8 @@ def main():
             help="number of bits in the geotiff, usually unsigned")
     parser.add_argument('--inc_by_one', dest="inc_by_one", default=False, action="store_true",
             help="tell rescaler to increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
+    parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
+            help="run new DNB scaling if provided DNB data (temporary)") # XXX
 
     parser.add_argument('data_files', nargs="+",
             help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
@@ -449,7 +453,9 @@ def main():
                 etype=args.etype,
                 create_pseudo=args.create_pseudo,
                 multiprocess=not args.single_process, num_procs=num_procs,
-                rescale_config=args.rescale_config, inc_by_one=args.inc_by_one
+                rescale_config=args.rescale_config,
+                inc_by_one=args.inc_by_one,
+                new_dnb=args.new_dnb # XXX
                 )
 
     return stat

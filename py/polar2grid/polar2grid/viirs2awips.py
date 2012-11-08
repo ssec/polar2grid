@@ -143,7 +143,10 @@ def remove_products():
     for f in glob("SSEC_AWIPS_VIIRS*"):
         _safe_remove(f)
 
-def run_prescaling(img_filepath, mode_filepath, fill_value=DEFAULT_FILL_VALUE):
+# XXX: Remove new_dnb when a method has been decided on
+# XXX: It is just temporary
+def run_prescaling(img_filepath, mode_filepath,
+        new_dnb=False, fill_value=DEFAULT_FILL_VALUE):
     """A wrapper function for calling the prescaling function for dnb.
     This function will read the binary image data from ``img_filepath``
     as well as any other data that may be required to prescale the data
@@ -172,7 +175,9 @@ def run_prescaling(img_filepath, mode_filepath, fill_value=DEFAULT_FILL_VALUE):
         log.debug("Files matching %r" % glob(img_attr + "*"))
         raise
 
-    scale_kwargs = {}
+    scale_kwargs = {
+            'new_dnb':new_dnb # XXX
+            }
     try:
         mode_mask = getattr(W, mode_attr)
         # Only add parameters if they're useful
@@ -348,7 +353,8 @@ def process_data_sets(filepaths,
         create_pseudo=True,
         num_procs=1,
         rescale_config=None,
-        backend_config=None
+        backend_config=None,
+        new_dnb=False # XXX
         ):
     """Process all the files provided from start to finish,
     from filename to AWIPS NC file.
@@ -401,7 +407,8 @@ def process_data_sets(filepaths,
         try:
             fbf_swath = run_prescaling(
                     band_job["fbf_img"],
-                    band_job["fbf_mode"]
+                    band_job["fbf_mode"],
+                    new_dnb=new_dnb # XXX
                     )
             band_job["fbf_swath"] = fbf_swath
         except StandardError:
@@ -634,6 +641,8 @@ def main():
             help="Specify a different ncml file to use")
     parser.add_argument('--backend-config', dest='backend_config', default=None,
             help="specify alternate backend configuration file")
+    parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
+            help="run new DNB scaling if provided DNB data (temporary)") # XXX
 
     parser.add_argument('data_files', nargs="+",
             help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
@@ -686,7 +695,8 @@ def main():
                 create_pseudo=args.create_pseudo,
                 multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config,
-                backend_config=args.backend_config
+                backend_config=args.backend_config,
+                new_dnb=args.new_dnb # XXX
                 )
 
     return stat

@@ -130,19 +130,28 @@ def fog_scale(img, m, b, floor, floor_val, ceil, ceil_val, fill_in=DEFAULT_FILL_
     img[mask] = fill_out
     return img
 
-def dnb_scale(img, day_mask=None, mixed_mask=None, night_mask=None, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
+def dnb_scale(img, day_mask=None, mixed_mask=None, night_mask=None,
+        new_dnb=False, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     """
-    This scaling method uses histogram equalization to flatten the image levels across the day and night masks.
-    The masks are expected to be passed as `day_mask`, `mixed_mask`, and `night_mask` arguments.  They should
-    be `None` if not used. 
+    This scaling method uses histogram equalization to flatten the image
+    levels across the day and night masks.  The masks are expected to be
+    passed as `day_mask`, `mixed_mask`, and `night_mask` keyword arguments.
+    They should be `None` if not used. 
 
-    `mixed_mask` should be a python list of masks for any number of desired 'levels' of distinction in the mixed
-    data region.  Each mask in `mixed_mask` should have the same shape as the data and day and night masks.
+    `mixed_mask` should be a python list of masks for any number of desired
+    'levels' of distinction in the mixed data region.  Each mask in
+    `mixed_mask` should have the same shape as the data and day and night
+    masks.
     
-    A histogram equalization will be performed separately for each of the three masks that's present (not `None`).
+    A histogram equalization will be performed separately for each of the
+    three masks that's present (not `None`).
     """
 
-    log.debug("Running 'dnb_scale'...")
+    #log.debug("Running 'dnb_scale'...")
+    if new_dnb:
+        log.debug("Running NEW DNB scaling...")
+    else:
+        log.debug("Running OLD DNB scaling...")
     
     # a way to hang onto our result
     # because the equalization is done in place, this is needed so the input data isn't corrupted
@@ -164,23 +173,29 @@ def dnb_scale(img, day_mask=None, mixed_mask=None, night_mask=None, fill_in=DEFA
     if day_mask is not None and (numpy.sum(day_mask)   > 0) :
         log.debug("  scaling DNB in day mask")
         temp_image = img.copy()
-        #_histogram_equalization(temp_image, day_mask)
-        _local_histogram_equalization(temp_image, day_mask, valid_data_mask=allValidData, local_radius_px=200)
+        if new_dnb:
+            _local_histogram_equalization(temp_image, day_mask, valid_data_mask=allValidData, local_radius_px=200)
+        else:
+            _histogram_equalization(temp_image, day_mask)
         img_result[day_mask] = temp_image[day_mask]
     
     if mixed_mask is not None and (len(mixed_mask)     > 0) :
         log.debug("  scaling DNB in twilight mask")
         for mask in mixed_mask:
             temp_image = img.copy()
-            #_histogram_equalization(temp_image, mask)
-            _local_histogram_equalization(temp_image, mask, valid_data_mask=allValidData, local_radius_px=100)
+            if new_dnb:
+                _local_histogram_equalization(temp_image, mask, valid_data_mask=allValidData, local_radius_px=100)
+            else:
+                _histogram_equalization(temp_image, mask)
             img_result[mask] = temp_image[mask]
     
     if night_mask is not None and (numpy.sum(night_mask) > 0) :
         log.debug("  scaling DNB in night mask")
         temp_image = img.copy()
-        #_histogram_equalization(temp_image, night_mask)
-        _local_histogram_equalization(temp_image, night_mask, valid_data_mask=allValidData, local_radius_px=200)
+        if new_dnb:
+            _local_histogram_equalization(temp_image, night_mask, valid_data_mask=allValidData, local_radius_px=200)
+        else:
+            _histogram_equalization(temp_image, night_mask)
         img_result[night_mask] = temp_image[night_mask]
     
     return img_result
