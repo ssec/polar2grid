@@ -32,7 +32,7 @@ def run_ll2cr_py(*args, **kwargs):
                 args=args, kwds=kwargs)
     return result
 
-def run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
+def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
         grid_jobs,
         num_procs=1, verbose=False, forced_gpd=None,
         lat_south=None, lat_north=None, lon_west=None, lon_east=None,
@@ -52,7 +52,7 @@ def run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
         # Get grid info from the grids module
         grid_info = get_grid_info(grid_name)
         ll2cr_output[grid_name] = grid_info.copy()
-        ll2cr_tag = "ll2cr_%s_%s" % (kind,grid_name)
+        ll2cr_tag = "ll2cr_%s_%s" % (nav_set_uid,grid_name)
 
         # Get information that is usually per band, but since we are already
         # separated by 'similar' data, just pick one of the bands to pull the
@@ -121,8 +121,8 @@ def run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
             del ll2cr_output[grid_name]
 
     if len(grid_jobs) == 0:
-        log.error("All grids failed during ll2cr processing for %s" % (kind,))
-        raise ValueError("All grids failed during ll2cr processing for %s" % (kind,))
+        log.error("All grids failed during ll2cr processing for %s" % (nav_set_uid,))
+        raise ValueError("All grids failed during ll2cr processing for %s" % (nav_set_uid,))
 
     return ll2cr_output
 
@@ -140,7 +140,7 @@ def run_fornav_c(*args, **kwargs):
 def run_fornav_py():
     pass
 
-def run_fornav(sat, instrument, kind, grid_jobs, ll2cr_output,
+def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
         num_procs=1, verbose=False, fornav_d=None, fornav_D=None, fill_value=None):
     """Run one of the fornavs and return a dictionary mapping grid_name
     to the fornav remapped image data, among other information.
@@ -204,7 +204,7 @@ def run_fornav(sat, instrument, kind, grid_jobs, ll2cr_output,
                     band_dict.update(fornav_dict)
                 log.debug("Fornav successfully completed for grid %s, %s data" % (grid_name,remap_data_as))
             except StandardError:
-                log.warning("fornav failed for %s band, grid %s, remapping as %s" % (kind,grid_name,remap_data_as))
+                log.warning("fornav failed for %s band, grid %s, remapping as %s" % (nav_set_uid,grid_name,remap_data_as))
                 log.debug("Exception was:", exc_info=1)
                 log.warning("Cleaning up for this job...")
                 for (band_kind, band_id) in fornav_output[grid_name].keys():
@@ -217,11 +217,11 @@ def run_fornav(sat, instrument, kind, grid_jobs, ll2cr_output,
             del fornav_output[grid_name]
 
     if len(fornav_output) == 0:
-        log.error("Fornav was not able to complete any remapping for navigation set %s" % (kind,))
+        log.error("Fornav was not able to complete any remapping for navigation set %s" % (nav_set_uid,))
 
     return fornav_output
 
-def remap_bands(sat, instrument, kind, lon_fbf, lat_fbf,
+def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
         grid_jobs, num_procs=1, fornav_d=None, fornav_D=None, forced_gpd=None,
         lat_south=None, lat_north=None, lon_west=None, lon_east=None, fill_value=None):
     """Remap data using the C or python version of ll2cr and the
@@ -235,20 +235,18 @@ def remap_bands(sat, instrument, kind, lon_fbf, lat_fbf,
         the number of rows is passed for the likely future requirement
         of software to need the size of the data being provided.
     """
-    # FIXME: kind is just a unique identifier and not actually the kind
-
     # Used to determine verbosity
     log_level = logging.getLogger('').handlers[0].level or 0
 
     # Run ll2cr
-    ll2cr_output = run_ll2cr(sat, instrument, kind, lon_fbf, lat_fbf,
+    ll2cr_output = run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
             grid_jobs,
             num_procs=num_procs, verbose=log_level <= logging.DEBUG, forced_gpd=forced_gpd,
             lat_south=lat_south, lat_north=lat_north, lon_west=lon_west, lon_east=lon_east,
             fill_value=fill_value)
 
     # Run fornav
-    fornav_output = run_fornav(sat, instrument, kind, grid_jobs, ll2cr_output,
+    fornav_output = run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
             num_procs=num_procs, verbose=log_level <= logging.DEBUG,
             fornav_d=fornav_d, fornav_D=fornav_D, fill_value=fill_value)
 
