@@ -32,6 +32,7 @@ def _transform_point(tformer, lon, lat, proj_circum, stradles_anti=False):
     x,y = tformer(lon, lat)
     if stradles_anti and x < 0:
         # Put negative values into the positive side
+        log.debug("Point crosses the anti-meridian, adding %f" % (proj_circum,))
         x += proj_circum
     return x,y
 
@@ -163,27 +164,20 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
         grid_origin_x,grid_origin_y = _transform_point(tformer, swath_lon_west, swath_lat_north, proj_circum, stradles_anti=stradles_anti)
         fine_tune_origin = True
 
+    normal_lon_east = swath_lon_east if swath_lon_east > swath_lon_west else swath_lon_east + 360
+    lon_range = numpy.linspace(swath_lon_west, normal_lon_east, 15)
+    lat_range = numpy.linspace(swath_lat_north, swath_lat_south, 15)
+
     # Calculate the best corners of the data
     if grid_width is None or pixel_size_x is None or fine_tune_origin:
-        # only used if origin needs fine tuning or we need to
-        # calculate grid/pixel size
-        corner_x1,corner_y1 = _transform_point(tformer, swath_lon_east, swath_lat_south, proj_circum, stradles_anti=stradles_anti)
-        log.debug("corners 1: %f,%f" % (corner_x1,corner_y1))
-        corner_x2,corner_y2 = _transform_point(tformer, swath_lon_west, swath_lat_south, proj_circum, stradles_anti=stradles_anti)
-        log.debug("corners 2: %f,%f" % (corner_x2,corner_y2))
-        corner_x3,corner_y3 = _transform_point(tformer, swath_lon_east, swath_lat_north, proj_circum, stradles_anti=stradles_anti)
-        log.debug("corners 3: %f,%f" % (corner_x3,corner_y3))
-
-        # Due to the way projection coordinates work, if we are fitting the
-        # grid to the data we need to find the extremes of the grid, not the
-        # data
-        corner_x = max(corner_x1,corner_x3)
-        corner_y = min(corner_y1,corner_y2)
+        # only used if calculate grid/pixel size
+        corner_x = _transform_array(tformer, numpy.array([swath_lon_east]*15), lat_range, proj_circum, stradles_anti=stradles_anti)[0].max()
+        corner_y = _transform_array(tformer, lon_range, numpy.array([swath_lat_south]*15), proj_circum, stradles_anti=stradles_anti)[1].min()
         log.debug("Grid Corners: %f,%f" % (corner_x,corner_y))
 
     if fine_tune_origin:
-        grid_origin_x = min(corner_x2,grid_origin_x)
-        grid_origin_y = max(corner_y3,grid_origin_y)
+        grid_origin_x = _transform_array(tformer, numpy.array([swath_lon_west]*15), lat_range, proj_circum, stradles_anti=stradles_anti)[0].min()
+        grid_origin_y = _transform_array(tformer, lon_range, numpy.array([swath_lat_north]*15), proj_circum, stradles_anti=stradles_anti)[1].max()
         log.debug("Grid Origin: %f,%f" % (grid_origin_x,grid_origin_y))
 
     if grid_width is None or pixel_size_x is None:

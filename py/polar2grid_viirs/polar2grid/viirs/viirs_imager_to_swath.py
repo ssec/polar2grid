@@ -336,7 +336,7 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     meta_data["swath_rows"] = swath_rows
     meta_data["swath_cols"] = swath_cols
     meta_data["swath_scans"] = swath_rows/meta_data["rows_per_scan"]
-    log.debug("Data East Lon: %f, North Lat: %f, West Lon: %f, South Lat: %f" % (lon_west,lat_north,lon_east,lat_south))
+    log.debug("Data West Lon: %f, North Lat: %f, East Lon: %f, South Lat: %f" % (lon_west,lat_north,lon_east,lat_south))
     meta_data["lat_south"] = lat_south
     meta_data["lat_north"] = lat_north
     meta_data["lon_west"] = lon_west
