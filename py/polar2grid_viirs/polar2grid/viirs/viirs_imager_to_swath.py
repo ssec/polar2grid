@@ -263,7 +263,7 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     lofa = file_appender(lofo, dtype=numpy.float32)
     modefa = file_appender(modefo, dtype=numpy.float32)
     lat_south = 91.0
-    lat_north = -1.0
+    lat_north = -91.0
     lon_west = 181.0
     lon_east = -181.0
 
