@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """Script that uses the `polar2grid` toolbox of modules to take VIIRS
-hdf5 (.h5) files and create a properly scaled geotiff file.
+hdf5 (.h5) files and create a remapped binary file.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -18,7 +18,7 @@ from polar2grid.core.constants import *
 from polar2grid.viirs import Frontend
 from .viirs2awips import run_prescaling,_safe_remove,create_grid_jobs,create_pseudobands
 from .remap import remap_bands
-from .gtiff_backend import Backend,_bits_to_etype
+from .binary import Backend
 
 import os
 import sys
@@ -27,7 +27,7 @@ from multiprocessing import Process
 from glob import glob
 
 log = logging.getLogger(__name__)
-LOG_FN = os.environ.get("VIIRS2GTIFF_LOG", "./viirs2gtiff.log")
+LOG_FN = os.environ.get("VIIRS2INBARY_LOG", "./viirs2binary.log")
 
 def setup_logging(console_level=logging.INFO):
     """Setup the logger to the console to the logging level defined in the
@@ -106,27 +106,21 @@ def remove_products():
     for f in glob("result*.real4.*"):
         _safe_remove(f)
 
-    for f in glob("npp_viirs*.tif"):
-        _safe_remove(f)
-
 def process_data_sets(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None, etype=None,
         create_pseudo=True,
         num_procs=1,
-        rescale_config=None,
-        inc_by_one=False,
         new_dnb=False # XXX
         ):
     """Process all the files provided from start to finish,
-    from filename to Geotiff file.
+    from filename to binary file.
     """
     status_to_return = STATUS_SUCCESS
 
     # Declare polar2grid components
     frontend = Frontend()
-    backend = Backend(etype=etype, rescale_config=rescale_config,
-            inc_by_one=inc_by_one)
+    backend = Backend()
 
     # Extract Swaths
     log.info("Extracting swaths...")
@@ -217,7 +211,7 @@ def process_data_sets(filepaths,
     W = Workspace('.')
     for grid_name,grid_dict in remapped_jobs.items():
         for (band_kind, band_id),band_dict in grid_dict.items():
-            log.info("Running geotiff backend for %s%s band grid %s" % (band_kind, band_id, grid_name))
+            log.info("Running binary backend for %s%s band grid %s" % (band_kind, band_id, grid_name))
             try:
                 # Get the data from the flat binary file
                 data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
@@ -229,19 +223,13 @@ def process_data_sets(filepaths,
                         band_kind,
                         band_id,
                         band_dict["data_kind"],
-                        data,
-                        start_time=start_time,
-                        grid_name=grid_name,
-                        proj4_str=band_dict["proj4_str"],
-                        grid_origin_x=band_dict["grid_origin_x"],
-                        grid_origin_y=band_dict["grid_origin_y"],
-                        pixel_size_x=band_dict["pixel_size_x"],
-                        pixel_size_y=band_dict["pixel_size_y"],
-                        fill_value=band_dict.get("fill_value", None)
+                        data
                         )
+
+                log.info("Binary filename: '%s'" % (band_dict["fbf_remapped"]))
             except StandardError:
-                log.error("Error in the Geotiff backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
-                log.debug("Geotiff backend error:", exc_info=1)
+                log.error("Error in the Binary backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
+                log.debug("Binary backend error:", exc_info=1)
                 del remapped_jobs[grid_name][(band_kind, band_id)]
 
         if len(remapped_jobs[grid_name]) == 0:
@@ -249,7 +237,7 @@ def process_data_sets(filepaths,
             del remapped_jobs[grid_name]
 
     if len(remapped_jobs) == 0:
-        log.warning("Geotiff backend failed for all grids for bands %r" % (bands.keys(),))
+        log.warning("Binary backend failed for all grids for bands %r" % (bands.keys(),))
         status_to_return |= STATUS_BACKEND_FAIL
 
     log.info("Processing of bands %r is complete" % (bands.keys(),))
@@ -258,7 +246,7 @@ def process_data_sets(filepaths,
 
 def _process_data_sets(*args, **kwargs):
     """Wrapper function around `process_data_sets` so that it can called
-    properly from `run_viir2awips`, where the exitcode is the actual
+    properly from `run_glue`, where the exitcode is the actual
     returned value from `process_data_sets`.
 
     This function also checks for exceptions other than the ones already
@@ -269,16 +257,16 @@ def _process_data_sets(*args, **kwargs):
         stat = process_data_sets(*args, **kwargs)
         sys.exit(stat)
     except MemoryError:
-        log.error("viirs2gtiff ran out of memory, check log file for more info")
+        log.error("viirs2binary ran out of memory, check log file for more info")
         log.debug("Memory error:", exc_info=1)
     except OSError:
-        log.error("viirs2gtiff had a OS error, check log file for more info")
+        log.error("viirs2binary had a OS error, check log file for more info")
         log.debug("OS error:", exc_info=1)
     except StandardError:
-        log.error("viirs2gtiff had an unexpected error, check log file for more info")
+        log.error("viirs2binary had an unexpected error, check log file for more info")
         log.debug("Unexpected/Uncaught error:", exc_info=1)
     except KeyboardInterrupt:
-        log.info("viirs2gtiff was cancelled by a keyboard interrupt")
+        log.info("viirs2binary was cancelled by a keyboard interrupt")
 
     sys.exit(-1)
 
@@ -380,10 +368,6 @@ def main():
 
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
-    parser.add_argument('-D', dest='fornav_D', default=40,
-            help="Specify the -D option for fornav")
-    parser.add_argument('-d', dest='fornav_d', default=2,
-            help="Specify the -d option for fornav")
     parser.add_argument('-f', dest='get_files', default=False, action="store_true",
             help="Specify that hdf files are listed, not a directory")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
@@ -402,12 +386,10 @@ def main():
     # Remapping/Grids
     parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="wgs84_fit",
             help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
-
-    # Backend Specific
-    parser.add_argument('--bits', dest="etype", default=None, type=_bits_to_etype,
-            help="number of bits in the geotiff, usually unsigned")
-    parser.add_argument('--inc_by_one', dest="inc_by_one", default=False, action="store_true",
-            help="tell rescaler to increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
+    parser.add_argument('-D', dest='fornav_D', default=40,
+            help="Specify the -D option for fornav")
+    parser.add_argument('-d', dest='fornav_d', default=2,
+            help="Specify the -d option for fornav")
 
     parser.add_argument('data_files', nargs="+",
             help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
@@ -450,11 +432,8 @@ def main():
 
     stat = run_glue(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
                 forced_grid=forced_grids,
-                etype=args.etype,
                 create_pseudo=args.create_pseudo,
                 multiprocess=not args.single_process, num_procs=num_procs,
-                rescale_config=args.rescale_config,
-                inc_by_one=args.inc_by_one,
                 new_dnb=args.new_dnb # XXX
                 )
 
