@@ -16,7 +16,6 @@ __docformat__ = "restructuredtext en"
 from polar2grid.core import Workspace
 from polar2grid.core.constants import *
 from polar2grid.viirs import Frontend
-from polar2grid.core.rescale import dnb_scale
 from .grids.grids import determine_grid_coverage_fbf,get_grid_info
 from .remap import remap_bands
 from .awips import Backend
@@ -25,7 +24,6 @@ import os
 import sys
 import logging
 from multiprocessing import Process
-import numpy
 from glob import glob
 
 log = logging.getLogger(__name__)
@@ -143,92 +141,6 @@ def remove_products():
     for f in glob("SSEC_AWIPS_VIIRS*"):
         _safe_remove(f)
 
-# XXX: Remove new_dnb when a method has been decided on
-# XXX: It is just temporary
-def run_prescaling(img_filepath, mode_filepath,
-        new_dnb=False, fill_value=DEFAULT_FILL_VALUE):
-    """A wrapper function for calling the prescaling function for dnb.
-    This function will read the binary image data from ``img_filepath``
-    as well as any other data that may be required to prescale the data
-    correctly, such as day/night/twilight masks.
-
-    :Parameters:
-        img_filepath : str
-            Filepath to the binary image swath data in FBF format
-            (ex. ``image_I01.real4.6400.10176``).
-        mode_filepath : str
-            Filepath to the binary mode swath data in FBF format
-            (ex. ``mode_I01.real4.6400.10176``).
-    """
-        
-    img_attr = os.path.split(img_filepath)[1].split('.')[0]
-    mode_attr = os.path.split(mode_filepath)[1].split('.')[0]
-
-    # Rescale the image
-    try:
-        W = Workspace('.')
-        img = getattr(W, img_attr)
-        data = img.copy()
-        log.debug("Data min: %f, Data max: %f" % (data.min(),data.max()))
-    except StandardError:
-        log.error("Could not open img file %s" % img_filepath)
-        log.debug("Files matching %r" % glob(img_attr + "*"))
-        raise
-
-    scale_kwargs = {
-            'new_dnb':new_dnb # XXX
-            }
-    try:
-        mode_mask = getattr(W, mode_attr)
-        # Only add parameters if they're useful
-        if mode_mask.shape == data.shape:
-            log.debug("Adding mode mask to rescaling arguments")
-            HIGH = 100
-            LOW = 88
-            MIXED_STEP = HIGH - LOW
-            good_mask = ~((img == fill_value) | (mode_mask == fill_value))
-            scale_kwargs["night_mask"]    = (mode_mask >= HIGH) & good_mask
-            scale_kwargs["day_mask"]      = (mode_mask <= LOW ) & good_mask
-            scale_kwargs["mixed_mask"] = []
-            steps = range(LOW, HIGH+1, MIXED_STEP)
-            if steps[-1] >= HIGH: steps[-1] = HIGH
-            steps = zip(steps, steps[1:])
-            for i,j in steps:
-                log.debug("Processing step %d to %d" % (i,j))
-                tmp = (mode_mask >  i) & (mode_mask < j) & good_mask
-                if numpy.sum(tmp) > 0:
-                    log.debug("Adding step %d to %d" % (i,j))
-                    scale_kwargs["mixed_mask"].append(tmp)
-                del tmp
-            del good_mask
-
-        else:
-            log.error("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
-            raise ValueError("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
-    except StandardError:
-        log.error("Could not open mode mask file %s" % mode_filepath)
-        log.debug("Files matching %r" % glob(mode_attr + "*"))
-        raise
-
-    try:
-        rescaled_data = dnb_scale(data,
-                **scale_kwargs)
-        if (logging.getLogger('').handlers[0].level or 0) <= logging.DEBUG:
-            log.debug("Data min: %f, Data max: %f" % (
-                rescaled_data[ rescaled_data != fill_value ].min(),
-                rescaled_data[ rescaled_data != fill_value ].max()
-                ))
-        rows,cols = rescaled_data.shape
-        fbf_swath_var = "prescale_dnb"
-        fbf_swath = "./%s.real4.%d.%d" % (fbf_swath_var, cols, rows)
-        rescaled_data.tofile(fbf_swath)
-    except StandardError:
-        log.error("Unexpected error while rescaling data")
-        log.debug("Rescaling error:", exc_info=1)
-        raise
-
-    return fbf_swath
-
 def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
         forced_grids=None):
     """
@@ -292,60 +204,6 @@ def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
 
     return grid_jobs
 
-def create_pseudobands(bands, fill_value=DEFAULT_FILL_VALUE):
-    # Fog pseudo-band
-    if (BKIND_I, BID_04) in bands and (BKIND_I, BID_05) in bands:
-        log.info("Creating IFOG pseudo band...")
-        try:
-            W = Workspace('.')
-            mode_attr = bands[(BKIND_I,BID_05)]["fbf_mode"].split(".")[0]
-            mode_data = getattr(W, mode_attr)
-            night_mask = mode_data >= 100
-            del mode_data
-        except StandardError:
-            log.error("Error getting mode data while creating FOG band")
-            log.debug("Mode error:", exc_info=1)
-            return
-
-        num_night_points = numpy.sum(night_mask)
-        if num_night_points == 0:
-            # We only create fog mask if theres nighttime data
-            log.info("No night data found to create FOG band for")
-            return
-        log.debug("Creating FOG band for %s nighttime data points" % num_night_points)
-
-        fog_dict = {
-                "kind"           : BKIND_I,
-                "band"           : BID_FOG,
-                "data_kind"      : DKIND_FOG,
-                "remap_data_as"  : DKIND_BTEMP,
-                "rows_per_scan"  : bands[(BKIND_I, BID_05)]["rows_per_scan"],
-                "fbf_img"        : "image_IFOG.%s" % ".".join(bands[(BKIND_I, BID_05)]["fbf_img"].split(".")[1:]),
-                "fbf_mode"       : bands[(BKIND_I, BID_05)]["fbf_mode"],
-                "swath_scans"    : bands[(BKIND_I, BID_05)]["swath_scans"],
-                "swath_rows"     : bands[(BKIND_I, BID_05)]["swath_rows"],
-                "swath_cols"     : bands[(BKIND_I, BID_05)]["swath_cols"]
-                }
-        try:
-            W = Workspace(".")
-            i5_attr = bands[(BKIND_I, BID_05)]["fbf_img"].split(".")[0]
-            i4_attr = bands[(BKIND_I, BID_04)]["fbf_img"].split(".")[0]
-            i5 = getattr(W, i5_attr)
-            i4 = getattr(W, i4_attr)
-            fog_map = numpy.memmap(fog_dict["fbf_img"],
-                    dtype=numpy.float32,
-                    mode="w+",
-                    shape=i5.shape
-                    )
-            numpy.subtract(i5, i4, fog_map)
-            fog_map[ (~night_mask) | (i5 == fill_value) | (i4 == fill_value) ] = fill_value
-            del fog_map
-            del i5,i4
-            bands[(BKIND_I, BID_FOG)] = fog_dict
-        except StandardError:
-            log.error("Error creating Fog pseudo band")
-            log.debug("Fog creation error:", exc_info=1)
-
 def process_data_sets(filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None,
@@ -368,7 +226,13 @@ def process_data_sets(filepaths,
     # Extract Swaths
     log.info("Extracting swaths...")
     try:
-        meta_data = frontend.make_swaths(filepaths, cut_bad=True)
+        meta_data = frontend.make_swaths(
+                filepaths,
+                scale_dnb=True,
+                new_dnb=new_dnb,
+                create_fog=True,
+                cut_bad=True
+                )
 
         # Let's be lazy and give names to the 'global' viirs info
         sat = meta_data["sat"]
@@ -384,42 +248,9 @@ def process_data_sets(filepaths,
         status_to_return |= STATUS_FRONTEND_FAIL
         return status_to_return
 
-    # Create pseudo-bands
-    # FIXME: Move pseudoband creation to the frontend
-    try:
-        if create_pseudo:
-            create_pseudobands(bands)
-    except StandardError:
-        log.error("Pseudo band creation failed")
-        log.debug("Pseudo band error:", exc_info=1)
-        status_to_return |= STATUS_FRONTEND_FAIL
-        return status_to_return
-
-    # Do any pre-remapping rescaling
-    # FIXME: Move DNB scaling to the frontend
-    for (band_kind, band_id),band_job in bands.items():
-        if band_kind != BKIND_DNB:
-            # It takes too long to read in the data, so just skip it
-            band_job["fbf_swath"] = band_job["fbf_img"]
-            continue
-
-        log.info("Prescaling data before remapping...")
-        try:
-            fbf_swath = run_prescaling(
-                    band_job["fbf_img"],
-                    band_job["fbf_mode"],
-                    new_dnb=new_dnb # XXX
-                    )
-            band_job["fbf_swath"] = fbf_swath
-        except StandardError:
-            log.error("Unexpected error prescaling %s, removing..." % band_job["band_name"])
-            log.debug("Prescaling error:", exc_info=1)
-            del bands[(band_kind, band_id)]
-            status_to_return |= STATUS_FRONTEND_FAIL
-
     if len(bands) == 0:
         log.error("No more bands to process, quitting...")
-        return status_to_return or UNKNOWN_FAIL
+        return status_to_return or STATUS_UNKNOWN_FAIL
 
     # Determine grid
     try:

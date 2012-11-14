@@ -16,7 +16,9 @@ Write out Swath binary files used by ms2gt tools.
 __docformat__ = "restructuredtext en"
 
 from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info
-from polar2grid.core.constants import SAT_NPP,INST_VIIRS
+from .prescale import run_dnb_scale
+from .pseudo import create_fog_band
+from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE
 from polar2grid.core import roles
 import numpy
 
@@ -551,7 +553,44 @@ class Frontend(roles.FrontendRole):
         pass
 
     def make_swaths(self, *args, **kwargs):
-        return make_swaths(*args, **kwargs)
+        scale_dnb = kwargs.pop("scale_dnb", False)
+        new_dnb = kwargs.pop("new_dnb", False)
+        create_fog = kwargs.pop("create_fog", False)
+
+        meta_data = make_swaths(*args, **kwargs)
+        bands = meta_data["bands"]
+
+        # These steps used to be part of the glue scripts
+        # Due to laziness they are just called as separate functions here
+        if create_fog:
+            try:
+                create_fog_band(bands)
+            except StandardError:
+                log.error("Fog band creation failed")
+                raise
+
+        # These steps used to be part of the glue scripts
+        # Due to laziness they are just called as separate functions here
+        for (band_kind, band_id),band_job in bands.items():
+            if band_kind != BKIND_DNB or not scale_dnb:
+                # We don't need to scale non-DNB data
+                band_job["fbf_swath"] = band_job["fbf_img"]
+                continue
+
+            log.info("Prescaling DNB data...")
+            try:
+                fbf_swath = run_dnb_scale(
+                        band_job["fbf_img"],
+                        band_job["fbf_mode"],
+                        new_dnb=new_dnb # XXX
+                        )
+                band_job["fbf_swath"] = fbf_swath
+            except StandardError:
+                log.error("Unexpected error DNB, removing job...")
+                log.debug("DNB scaling error:", exc_info=1)
+                del bands[(band_kind, band_id)]
+
+        return meta_data
 
 def main():
     import optparse

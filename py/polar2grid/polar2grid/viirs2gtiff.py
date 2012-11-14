@@ -16,7 +16,7 @@ __docformat__ = "restructuredtext en"
 from polar2grid.core import Workspace
 from polar2grid.core.constants import *
 from polar2grid.viirs import Frontend
-from .viirs2awips import run_prescaling,_safe_remove,create_grid_jobs,create_pseudobands
+from .viirs2awips import _safe_remove,create_grid_jobs
 from .remap import remap_bands
 from .gtiff_backend import Backend,_bits_to_etype
 
@@ -131,7 +131,13 @@ def process_data_sets(filepaths,
     # Extract Swaths
     log.info("Extracting swaths...")
     try:
-        meta_data = frontend.make_swaths(filepaths, cut_bad=True)
+        meta_data = frontend.make_swaths(
+                filepaths,
+                scale_dnb=True,
+                new_dnb=new_dnb,
+                create_fog=True,
+                cut_bad=True
+                )
 
         # Let's be lazy and give names to the 'global' viirs info
         sat = meta_data["sat"]
@@ -147,42 +153,9 @@ def process_data_sets(filepaths,
         status_to_return |= STATUS_FRONTEND_FAIL
         return status_to_return
 
-    # Create pseudo-bands
-    # FIXME: Move pseudoband creation to the frontend
-    try:
-        if create_pseudo:
-            create_pseudobands(bands)
-    except StandardError:
-        log.error("Pseudo band creation failed")
-        log.debug("Pseudo band error:", exc_info=1)
-        status_to_return |= STATUS_FRONTEND_FAIL
-        return status_to_return
-
-    # Do any pre-remapping rescaling
-    # FIXME: Move DNB scaling to the frontend
-    for (band_kind, band_id),band_job in bands.items():
-        if band_kind != BKIND_DNB:
-            # It takes too long to read in the data, so just skip it
-            band_job["fbf_swath"] = band_job["fbf_img"]
-            continue
-
-        log.info("Prescaling data before remapping...")
-        try:
-            fbf_swath = run_prescaling(
-                    band_job["fbf_img"],
-                    band_job["fbf_mode"],
-                    new_dnb=new_dnb # XXX
-                    )
-            band_job["fbf_swath"] = fbf_swath
-        except StandardError:
-            log.error("Unexpected error prescaling %s, removing..." % band_job["band_name"])
-            log.debug("Prescaling error:", exc_info=1)
-            del bands[(band_kind, band_id)]
-            status_to_return |= STATUS_FRONTEND_FAIL
-
     if len(bands) == 0:
         log.error("No more bands to process, quitting...")
-        return status_to_return or UNKNOWN_FAIL
+        return status_to_return or STATUS_UNKNOWN_FAIL
 
     # Determine grid
     try:
