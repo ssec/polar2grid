@@ -9,6 +9,14 @@ import sys
 import logging
 from abc import ABCMeta,abstractmethod,abstractproperty
 
+try:
+    # try getting setuptools/distribute's version of resource retrieval first
+    import pkg_resources
+    get_resource_string = pkg_resources.resource_string
+except ImportError:
+    import pkgutil
+    get_resource_string = pkgutil.get_data
+
 log = logging.getLogger(__name__)
 
 class RescalerRole(object):
@@ -154,11 +162,20 @@ class RescalerRole(object):
         filename provided.
         """
         if not os.path.isabs(config_filename):
+            # Its not an absolute path, lets see if its relative path
             cwd_config = os.path.join(os.path.curdir, config_filename)
             if os.path.exists(cwd_config):
                 config_filename = cwd_config
             else:
-                config_filename = os.path.join(self.default_config_dir, config_filename)
+                # they have specified a package provided file
+                log.info("Loading package provided rescale config: '%s'" % (config_filename,))
+                try:
+                    config_str = get_resource_string(self.__module__, config_filename)
+                except StandardError:
+                    log.error("Rescale config '%s' was not found" % (config_filename,))
+                    raise
+                return self.load_config_str(config_str)
+
         config = os.path.realpath(config_filename)
 
         log.debug("Using rescaling configuration '%s'" % (config,))

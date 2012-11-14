@@ -20,9 +20,9 @@ and "pretty" with AWIPS.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.constants import DKIND_REFLECTANCE,DKIND_RADIANCE, \
+from .constants import DKIND_REFLECTANCE,DKIND_RADIANCE, \
         DKIND_BTEMP,DKIND_FOG,NOT_APPLICABLE
-from polar2grid.core import roles
+from . import roles
 
 import os
 import sys

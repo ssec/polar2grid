@@ -51,7 +51,7 @@ from polar2grid.core import Workspace
 from polar2grid.core import roles
 from polar2grid.core.constants import DEFAULT_FILL_VALUE
 from polar2grid.nc import create_nc_from_ncml
-from ..rescale import Rescaler,ubyte_filter
+from polar2grid.core.rescale import Rescaler,ubyte_filter
 from .awips_config import get_awips_info,load_config as load_awips_config,can_handle_inputs as config_can_handle_inputs
 
 import os, sys, logging, re
@@ -60,7 +60,7 @@ from datetime import datetime
 
 log = logging.getLogger(__name__)
 AWIPS_ATTRS = set(re.findall(r'\W:(\w+)', NCDUMP))
-DEFAULT_8BIT_RCONFIG = "rescale.8bit.conf"
+DEFAULT_8BIT_RCONFIG = "rescale_configs/rescale.8bit.conf"
 DEFAULT_AWIPS_CONFIG = "awips_grids.conf"
 
 def create_netcdf(nc_name, image, template, start_dt,

@@ -5,7 +5,7 @@ and place it into a geotiff.
 from osgeo import gdal
 import osr
 
-from .rescale import Rescaler,uint16_filter,ubyte_filter
+from polar2grid.core.rescale import Rescaler,uint16_filter,ubyte_filter
 from polar2grid.core.constants import GRIDS_ANY_PROJ4,DEFAULT_FILL_VALUE
 from polar2grid.core import roles
 
@@ -17,8 +17,8 @@ log = logging.getLogger(__name__)
 gtiff_driver = gdal.GetDriverByName("GTIFF")
 
 DEF_FN_FORMAT = "%(sat)s_%(instrument)s_%(kindband)s_%(timestamp)s_%(grid_name)s.tif"
-DEFAULT_8BIT_RCONFIG="rescale.8bit.conf"
-DEFAULT_16BIT_RCONFIG="rescale.16bit.conf"
+DEFAULT_8BIT_RCONFIG="rescale_configs/rescale.8bit.conf"
+DEFAULT_16BIT_RCONFIG="rescale_configs/rescale.16bit.conf"
 
 def _proj4_to_srs(proj4_str):
     """Helper function to convert a proj4 string
@@ -305,9 +305,6 @@ custom name if proj4_str is provided""")
     print "Input Filename: ",args.input_filename
     W = Workspace('.')
     data = getattr(W, args.input_filename.split('.')[0]).copy()
-    # XXX Remove this once scaling is added to the backend
-    #from polar2grid.rescale import sqrt_scale
-    #data = sqrt_scale(data)
     arg_list.append(data)
     print "Output Filename: ",args.output_filename
 

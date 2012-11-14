@@ -16,7 +16,7 @@ __docformat__ = "restructuredtext en"
 from polar2grid.core import Workspace
 from polar2grid.core.constants import *
 from polar2grid.viirs import Frontend
-from .rescale import dnb_scale
+from polar2grid.core.rescale import dnb_scale
 from .grids.grids import determine_grid_coverage_fbf,get_grid_info
 from .remap import remap_bands
 from .awips import Backend
