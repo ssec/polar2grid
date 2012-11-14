@@ -105,7 +105,7 @@ class RescalerRole(object):
         try:
             # Parse config lines
             for line in config_lines:
-                parts = line.split(",")
+                parts = [ part.strip() for part in line.split(",") ]
                 if len(parts) < 6:
                     log.error("Rescale config line needs at least 6 columns : '%s'" % (line))
                     raise ValueError("Rescale config line needs at least 6 columns : '%s'" % (line))

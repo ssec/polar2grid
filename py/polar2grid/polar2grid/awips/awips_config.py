@@ -120,7 +120,7 @@ def load_config_str(config_dict, config_str):
     try:
         # Parse config lines
         for line in config_lines:
-            parts = line.split(",")
+            parts = [ part.strip() for part in line.split(",") ]
             if len(parts) != 12:
                 log.error("AWIPS config line needs exactly 12 columns : '%s'" % (line,))
                 raise ValueError("AWIPS config line needs exactly 12 columns : '%s'" % (line,))

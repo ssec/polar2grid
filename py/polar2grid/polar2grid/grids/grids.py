@@ -43,8 +43,11 @@ def read_shapes_config(config_filepath):
        log.error("Shapes configuration file '%s' does not exist" % (config_filepath,))
        raise ValueError("Shapes configuration file '%s' does not exist" % (config_filepath,))
 
-    shapes = dict((parts[0],tuple([float(x) for x in parts[1:6]])) for parts in [line.split(",") 
-        for line in open(config_filepath) if not line.startswith("#") ] )
+    # NEW RECORD: Most illegible list comprehensions
+    shapes = dict(
+            (parts[0],tuple([float(x) for x in parts[1:6]])) for parts in
+                    [ [ part.strip() for part in line.split(",") ] for line in open(config_filepath) if not line.startswith("#") ]
+            )
     return shapes
 
 def read_grids_config(config_filepath):
@@ -78,14 +81,14 @@ def read_grids_config(config_filepath):
 
         # Clean up the configuration line
         line = line.strip("\n,")
-        parts = line.split(",")
+        parts = [ part.strip() for part in line.split(",") ]
 
         if len(parts) != 5 and len(parts) != 9:
             log.error("Grid configuration line '%s' in '%s' does not have the correct format" % (line,config_filepath))
             raise ValueError("Grid configuration line '%s' in '%s' does not have the correct format" % (line,config_filepath))
 
         grid_name = parts[0]
-        if grid_name in gpd_grids or grid_name in proj4_grids:
+        if (grid_name in gpd_grids) or (grid_name in proj4_grids):
             log.error("Grid '%s' is in '%s' more than once" % (grid_name,config_filepath))
             raise ValueError("Grid '%s' is in '%s' more than once" % (grid_name,config_filepath))
 
