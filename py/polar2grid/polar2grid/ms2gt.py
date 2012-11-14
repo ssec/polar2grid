@@ -192,6 +192,12 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         args = [ str(a) for a in args ]
         log.debug("Running fornav with '%s'" % " ".join(args))
         check_call(args)
+
+        # Check to make sure fornav actually created the files
+        for o_fn in output_fn:
+            if not os.path.exists(o_fn):
+                log.error("Couldn't find fornav output file '%s'" % o_fn)
+                raise RuntimeError("Couldn't find fornav output file '%s'" % o_fn)
     except CalledProcessError:
         log.error("Error running fornav", exc_info=1)
         raise ValueError("Fornav failed")

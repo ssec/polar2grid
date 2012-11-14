@@ -201,7 +201,7 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
                         grid_fill_1=fornav_job["grid_fill_1"],
                         weight_delta_max=fornav_D,
                         weight_distance_max=fornav_d,
-                        start_scan=(ll2cr_output[grid_name]["scan_first"],0),
+                        start_scan=(0,ll2cr_output[grid_name]["scan_first"]),
                         pool=proc_pool
                         )
 
