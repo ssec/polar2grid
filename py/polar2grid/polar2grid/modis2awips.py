@@ -17,8 +17,11 @@ from polar2grid.core import Workspace
 from polar2grid.core.constants import *
 from polar2grid.modis import make_swaths
 from polar2grid.modis import VIS_INF_FILE_PATTERN
+from polar2grid.modis import SHOULD_CONVERT_TO_BT
+from polar2grid.modis import convert_radiance_to_bt
+
 from .util_glue_functions import *
-from .remap import remap_bands # TODO, is this needed?
+from .remap import remap_bands
 from .awips import can_handle_inputs,backend,load_config as load_backend_config
 
 import os
@@ -73,17 +76,14 @@ def clean_up_files():
         to report what's being removed.
     """
     
-    # TODO revise this list
-    list_to_remove = [ ".lat*", ".lon*", ".image*",
-                      "latitude*.real4.*", "longitude*.real4.*",
-                      "image*.real4.*",
-                      "prescale_*.real4.*", "ll2cr_*.real4.*",
+    list_to_remove = ["latitude*.real4.*", "longitude*.real4.*",
+                      "image*.real4.*", "btimage*.real4.*",
+                      "bt_prescale_*.real4.*", "ll2cr_*.img",
                       "result*.real4.*",
                       "SSEC_AWIPS_MODIS*" ]
     
     remove_products(list_to_remove)
 
-# TODO, revise parameters
 def process_data_sets(filepaths,
                       fornav_D=None, fornav_d=None,
                       forced_grid=None,
@@ -133,27 +133,22 @@ def process_data_sets(filepaths,
         return status_to_return
     """
     
-    """ TODO we may need prescaling of some kind in the future, but not yet
-    # Do any pre-remapping rescaling
-    for band, band_job in bands.items():
-        if kind != BKIND_DNB:
-            # It takes too long to read in the data, so just skip it
-            band_job["fbf_swath"] = band_job["fbf_img"]
-            continue
+    # convert some of our bands to brightness temperature
+    for band_kind, band_id in band_info.keys() :
         
-        log.info("Prescaling data before remapping...")
-        try:
-            fbf_swath = run_prescaling(
-                    band_job["fbf_img"],
-                    band_job["fbf_mode"]
-                    )
-            band_job["fbf_swath"] = fbf_swath
-        except StandardError:
-            log.error("Unexpected error prescaling %s, removing..." % band_job["band_name"])
-            log.debug("Prescaling error:", exc_info=1)
-            del bands[band]
-            status_to_return |= PRESCALE_FAIL
-    """
+        # only do the conversion if it's appropriate for this band
+        if SHOULD_CONVERT_TO_BT[(band_kind, band_id)] :
+            
+            try :
+                # TODO, there's meta data info encoded here that might belong elsewhere
+                new_path = convert_radiance_to_bt (band_info[band_kind, band_id]["fbf_img"], sat, band_id, fill_value=band_info[band_kind, band_id]["fill_value"])
+                band_info[band_kind, band_id]["fbf_swath"]     = new_path
+                band_info[band_kind, band_id]["data_kind"] = DKIND_BTEMP
+            except StandardError :
+                log.error("Unexpected error prescaling " + str(band_kind) + " " + str(band_id) + ", removing...")
+                log.debug("Prescaling error:", exc_info=1)
+                del band_info[(band_kind, band_id)]
+                status_to_return |= PRESCALE_FAIL
     
     if len(band_info) == 0:
         log.error("No more bands to process, quitting...")
@@ -176,10 +171,12 @@ def process_data_sets(filepaths,
         remapped_jobs = remap_bands(sat, instrument, "geo_nav",
                 flatbinaryfilename_lon, flatbinaryfilename_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
-                lat_min=meta_data.get("lat_min", None),
-                lat_max=meta_data.get("lat_max", None),
-                lon_min=meta_data.get("lon_min", None),
-                lon_max=meta_data.get("lon_max", None)
+                lat_min       =meta_data.get("lat_min",        None),
+                lat_max       =meta_data.get("lat_max",        None),
+                lon_min       =meta_data.get("lon_min",        None),
+                lon_max       =meta_data.get("lon_max",        None),
+                lat_fill_value=meta_data.get("lat_fill_value", None),
+                lon_fill_value=meta_data.get("lon_fill_value", None)
                 )
     except StandardError:
         log.debug("Remapping Error:", exc_info=1)
@@ -214,7 +211,8 @@ def process_data_sets(filepaths,
                         grid_name=grid_name,
                         ncml_template=forced_nc or None,
                         rescale_config=rescale_config,
-                        backend_config=backend_config
+                        backend_config=backend_config,
+                        fill_in=band_dict["fill_value"]
                         )
             except StandardError:
                 log.error("Error in the AWIPS backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
@@ -265,11 +263,10 @@ def run_modis2awips(filepaths,
     """Go through the motions of converting
     a MODIS hdf file into a AWIPS NetCDF file.
     
-    TODO, change this to reflect what's actually being done
-    1. viirs_guidebook.py       : Get file info/data
-    2. viirs_imager_to_swath.py : Concatenate data
-    3. Prescale DNB
-    4. Calculate Grid            : Figure out what grids the data fits in
+    1. modis_guidebook.py       : Info on what's in the files
+    2. modis_to_swath.py        : Code to load the data
+    3. Convert BT               : (in to_swath) converts IR channels to brightness temps
+    4. create_grid_jobs         : Figure out what grids the data fits in
     5. ll2cr
     6. fornav
     7. rescale.py
