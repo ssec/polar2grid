@@ -308,7 +308,7 @@ c2 = (h * c) / k
 
 
 def micron_bt(w, r):
-    zult = np.empty_like(r)
+    zult = np.empty_like(r, dtype=np.float64)
     if r.dtype != np.float64:
         r = r.astype(np.float64)
     zult[:] = np.nan
@@ -319,7 +319,7 @@ def micron_bt(w, r):
     
     
 def wnum_bt(v, r):
-    zult = np.empty_like(r)
+    zult = np.empty_like(r, dtype=np.float64)
     if r.dtype != np.float64:
         r = r.astype(np.float64)
     zult[:] = np.nan
@@ -330,13 +330,16 @@ def wnum_bt(v, r):
 
     
 
-def bright_shift(platform, rad, band, units):
+def bright_shift(platform, rad, band, units="micron"):
     """compute brightness temperature for MODIS on Terra and Aqua
     platform: "Terra" or "Aqua" 
-    rad: radiance spectra, shape (nspectra,nwavenumbers)
+    rad: radiance spectra, arbitrary shape
     band: band number
     units: "micron" implying Watts per square meter per steradian per micron for radiance
         or "wavenumber" implying milliWatts per square meter per steradian per wavenumber
+    
+    Note: the return array is in Kelvin and contains numpy.nan values where the inputs
+    could not be processed
     """    
     offset = (band - 20) if (band <= 25) else (band - 21)
     assert(offset >=0 and offset <16)
@@ -358,6 +361,69 @@ def _test1():
     bt = bright_shift('Terra', rad, 24, 'wavenumber')
     pprint(bt)
 
+def _test2 () :
+    """
+    This test is based on the averaged coefficients for both Aqua and Terra.
+    The reverse calculations were done using an IDL version of this code provided by Liam.
+    The radiances for three bands that should result in temperatures of 250K were
+    calculated.
+    
+    For now the test only runs in 'micron' (Watts per square meter per steradian per micron)
+    mode. The radiances for 'wavenumber' mode are also given below
+    
+    William calculated these:
+    
+        Assuming Watts per square meter per steradian per micron, radiance will be:
+        
+        Band 20 = 0.0389763
+        Band 27 = 1.70482
+        Band 31 = 3.97578
+        
+        Assuming milliWatts per square meter per steradian per inverse centimeter:
+        
+        Band 20 = 0.0558482
+        Band 27 = 7.80456
+        Band 31 = 48.2132
+    
+    If you use these radiances as an input, and you should get approx 250 as a result. 
+    """
+    
+    MICRON_RADS = {
+                    20: 0.0389763,
+                    27: 1.70482,
+                    31: 3.97578
+                  }
+    WAVENUM_RADS = \
+                  {
+                    20: 0.0558482,
+                    27: 7.80456,
+                    31: 48.2132
+                  }
+    EXPECTED_BT = 250.0
+    
+    # the micron test
+    results_Aqua  = { }
+    results_Terra = { }
+    
+    for band_key in MICRON_RADS.keys() :
+        results_Aqua [band_key] = bright_shift("Aqua",  np.array([MICRON_RADS[band_key]]), band_key, units="micron")[0]
+        results_Terra[band_key] = bright_shift("Terra", np.array([MICRON_RADS[band_key]]), band_key, units="micron")[0]
+    
+    print ("Micron Expected Result: %dK" % EXPECTED_BT )
+    print ("Aqua  Results by Band: " + str(results_Aqua))
+    print ("Terra Results by Band: " + str(results_Terra))
+    
+    # the wave number test
+    results_Aqua  = { }
+    results_Terra = { }
+    
+    for band_key in WAVENUM_RADS.keys() :
+        results_Aqua [band_key] = bright_shift("Aqua",  np.array([WAVENUM_RADS[band_key]]), band_key, units="wavenumber")[0]
+        results_Terra[band_key] = bright_shift("Terra", np.array([WAVENUM_RADS[band_key]]), band_key, units="wavenumber")[0]
+    
+    print ("Wave Number Expected Result: %dK" % EXPECTED_BT )
+    print ("Aqua  Results by Band: " + str(results_Aqua))
+    print ("Terra Results by Band: " + str(results_Terra))
 
 
 def main():
@@ -391,6 +457,7 @@ def main():
 #         return 9
        
     _test1()
+    _test2()
 
     return 0
 
