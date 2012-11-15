@@ -16,7 +16,9 @@ __docformat__ = "restructuredtext en"
 
 import modis_guidebook
 from polar2grid.core.constants import *
-
+from polar2grid.core.constants import DEFAULT_FILL_VALUE
+from polar2grid.modis.bt       import bright_shift
+from polar2grid.core           import Workspace
 
 import numpy
 from pyhdf.SD import SD,SDC, SDS, HDF4Error
@@ -148,15 +150,17 @@ def _load_meta_data (file_objects) :
                  "rows_per_scan": modis_guidebook.ROWS_PER_SCAN,
                  
                  # TO FILL IN LATER
-                 "fbf_lat":       None,
-                 "fbf_lon":       None,
-                 "lat_min":       None,
-                 "lon_min":       None,
-                 "lat_max":       None,
-                 "lon_max":       None,
-                 "swath_rows":    None,
-                 "swath_cols":    None,
-                 "swath_scans":   None,
+                 "lon_fill_value": None,
+                 "lat_fill_value": None,
+                 "fbf_lat":        None,
+                 "fbf_lon":        None,
+                 #"lat_min":        None,
+                 #"lon_min":        None,
+                 #"lat_max":        None,
+                 #"lon_max":        None,
+                 "swath_rows":     None,
+                 "swath_cols":     None,
+                 "swath_scans":    None,
                 }
     
     # pull information on the data that should be in this file
@@ -178,6 +182,7 @@ def _load_meta_data (file_objects) :
                                                             "rows_per_scan": modis_guidebook.ROWS_PER_SCAN,
                                                             
                                                             # TO FILL IN LATER
+                                                            "fill_value":    None,
                                                             "fbf_img":       None,
                                                             "swath_rows":    None,
                                                             "swath_cols":    None,
@@ -189,12 +194,13 @@ def _load_meta_data (file_objects) :
     
     return meta_data
 
-def _load_geonav_data (meta_data_to_update, file_info_objects, cut_bad=False) :
+def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid="geo_nav", cut_bad=False) :
     """
     load the geonav data and save it in flat binary files; update the given meta_data_to_update
     with information on where the files are and what the shape and range of the nav data are
     
     TODO, cut_bad currently does nothing
+    FUTURE nav_uid will need to be passed once we are using more types of navigation
     """
     
     list_of_geo_files = [ ]
@@ -211,28 +217,27 @@ def _load_geonav_data (meta_data_to_update, file_info_objects, cut_bad=False) :
     # rename the flat file to a more descriptive name
     shape_temp = lat_stats["shape"]
     suffix = '.real4.' + '.'.join(str(x) for x in reversed(shape_temp))
-    new_lat_file_name = "latitude"  + suffix # TODO, when we have multiple sources, this will break down!
-    new_lon_file_name = "longitude" + suffix # TODO, when we have multiple sources, this will break down!
+    new_lat_file_name = "latitude_"  + str(nav_uid) + suffix 
+    new_lon_file_name = "longitude_" + str(nav_uid) + suffix 
     os.rename(lat_temp_file_name, new_lat_file_name)
     os.rename(lon_temp_file_name, new_lon_file_name)
     
     # based on our statistics, save some meta data to our meta data dictionary
     rows, cols = shape_temp
-    meta_data_to_update["fbf_lat"]     = new_lat_file_name
-    meta_data_to_update["fbf_lon"]     = new_lon_file_name
-    meta_data_to_update["swath_rows"]  = rows
-    meta_data_to_update["swath_cols"]  = cols
-    meta_data_to_update["swath_scans"] = rows / modis_guidebook.ROWS_PER_SCAN
-    meta_data_to_update["lat_min"]     = lat_stats["min"]
-    meta_data_to_update["lat_max"]     = lat_stats["max"]
-    meta_data_to_update["lon_min"]     = lon_stats["min"]
-    meta_data_to_update["lon_max"]     = lon_stats["max"]
+    meta_data_to_update["lon_fill_value"] = lon_stats["fill_value"]
+    meta_data_to_update["lat_fill_value"] = lat_stats["fill_value"]
+    meta_data_to_update["fbf_lat"]        = new_lat_file_name
+    meta_data_to_update["fbf_lon"]        = new_lon_file_name
+    meta_data_to_update["swath_rows"]     = rows
+    meta_data_to_update["swath_cols"]     = cols
+    meta_data_to_update["swath_scans"]    = rows / modis_guidebook.ROWS_PER_SCAN
+    meta_data_to_update["nav_set_uid"]    = nav_uid
     
-    """ TODO, talk to Dave about these; will need to sub for the min_fn and max_fn to get the right behavior at discontinuities
-    "lat_min":       None,
-    "lon_min":       None,
-    "lat_max":       None,
-    "lon_max":       None,
+    """ Dave tells me these have changed and the backend will calc them, so don't bother
+    meta_data_to_update["lat_min"]        = lat_stats["min"]
+    meta_data_to_update["lat_max"]        = lat_stats["max"]
+    meta_data_to_update["lon_min"]        = lon_stats["min"]
+    meta_data_to_update["lon_max"]        = lon_stats["max"]
     """
 
 def _load_data_to_flat_file (file_objects, descriptive_string, variable_name, missing_attribute_name,
@@ -248,59 +253,72 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name, mi
     # a couple of temporaries to hold some stats
     minimum_value = None
     maximum_value = None
+    fill_value    = None
     
     # open the file with a temporary name and set up a file appender
     temp_id        = str(os.getpid())
     temp_file_name = temp_id + "." + descriptive_string
     temp_flat_file = file(temp_file_name, 'wb')
-    temp_appender  = file_appender(temp_flat_file, dtype=numpy.float32) # TODO does this need to be a particular dtype?
+    temp_appender  = file_appender(temp_flat_file, dtype=numpy.float32) # set to float32 to keep everything consistent
     
     # append in data from each file
-    # TODO, these files aren't currently sorted by date?
+    # TODO, these files aren't currently sorted by date
     for file_object in file_objects :
         
         # get the appropriate file and variable object
-        #print ("variable name: " + str(variable_name))
         temp_var_object = file_object.select(variable_name)
         
         # extract the variable data
-        temp_var_data   = temp_var_object[:] if variable_idx is None else temp_var_object[variable_idx]
+        temp_var_data   = temp_var_object[:].astype(numpy.float32) if variable_idx is None else temp_var_object[variable_idx].astype(numpy.float32)
         
         # figure out where the missing values are
-        #log.debug("attributes: " + str(temp_var_object.attributes()))
-        fill_value      = temp_var_object.attributes()[missing_attribute_name]
+        temp_fill_value = temp_var_object.attributes()[missing_attribute_name]
+        # if we already have a fill value and it's not the same as the one we just loaded, fix our data
+        if (fill_value is not None) and (temp_fill_value != fill_value) :
+            temp_var_data[temp_var_data == temp_fill_value] = fill_value
+            temp_fill_value = fill_value
+        fill_value      = temp_fill_value
         not_fill_mask   = temp_var_data != fill_value
         
         # if there's a scale and/or offset load them
         scale_value  = None
         if scale_name  is not None :
             scale_value  = temp_var_object.attributes()[scale_name] if variable_idx  is None else temp_var_object.attributes()[scale_name][variable_idx]
+            scale_value  = float(scale_value)  if scale_value  is not None else scale_value
         offset_value = None
         if offset_name is not None :
             offset_value = temp_var_object.attributes()[offset_name] if variable_idx is None else temp_var_object.attributes()[offset_name][variable_idx]
+            offset_value = float(offset_value) if offset_value is not None else offset_value
+        
+        log.debug("Using scale value " + str(scale_value) + " and offset value " + str(offset_value))
         
         # abstractly the formula for scaling is:
-        #           scaled_data = (unscaled_data * scale_value) + offset_value
+        #           data_to_return = (data_from_file - offset_value) * scale_value
         
+        # if we found an offset use it to offset the data
+        if offset_value is not None :
+            temp_var_data[not_fill_mask] -= offset_value
         # if we found a scale use it to scale the data
         if scale_value  is not None :
             temp_var_data[not_fill_mask] *= scale_value
-        # if we found an offset use it to offset the data
-        if offset_value is not None :
-            temp_var_data[not_fill_mask] += offset_value
         
         # append the file data to the flat file
         temp_appender.append(temp_var_data)
         
         # at this point we need to calculate some statistics based on the data we're saving
-        minimum_value = min_fn(numpy.append(temp_var_data[not_fill_mask], minimum_value))
-        maximum_value = max_fn(numpy.append(temp_var_data[not_fill_mask], maximum_value))
+        to_use_temp   = numpy.append(temp_var_data[not_fill_mask], minimum_value) if minimum_value is not None else temp_var_data[not_fill_mask]
+        minimum_value = min_fn(to_use_temp)
+        to_use_temp   = numpy.append(temp_var_data[not_fill_mask], maximum_value) if maximum_value is not None else temp_var_data[not_fill_mask]
+        maximum_value = max_fn(to_use_temp)
+        
+        #print ("variable " + str(variable_name) + " has fill value " + str(fill_value) + " and data range " + str(minimum_value) + " to " + str(maximum_value))
     
-    # save some statistics to a dictionary TODO, more statistics are still needed here
+    # save some statistics to a dictionary
     stats = {
              "shape": temp_appender.shape,
              "min":         minimum_value,
              "max":         maximum_value,
+             "fill_value":     fill_value,
             }
     
     # close the flat binary file object (insuring that all appends are flushed to disk)
@@ -326,7 +344,7 @@ def _load_image_data (meta_data_to_update, cut_bad=False) :
                                                                      scale_name=scale_name, offset_name=offset_name)
         
         # we don't need this entry with the file object anymore, so remove it
-        #del meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"] # TODO, make sure this is the right syntax
+        del meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"]
         
         # rename the file with a more descriptive name
         shape_temp = image_stats["shape"]
@@ -336,6 +354,7 @@ def _load_image_data (meta_data_to_update, cut_bad=False) :
         
         # based on our statistics, save some meta data to our meta data dictionary
         rows, cols = shape_temp
+        meta_data_to_update["bands"][(band_kind, band_id)]["fill_value"]  = image_stats["fill_value"]
         meta_data_to_update["bands"][(band_kind, band_id)]["fbf_img"]     = new_img_file_name
         meta_data_to_update["bands"][(band_kind, band_id)]["swath_rows"]  = rows
         meta_data_to_update["bands"][(band_kind, band_id)]["swath_cols"]  = cols
@@ -346,6 +365,68 @@ def _load_image_data (meta_data_to_update, cut_bad=False) :
                    % (meta_data_to_update["swath_rows"], meta_data_to_update["swath_cols"], band_kind, band_id, rows, cols))
             log.error(msg)
             raise ValueError(msg)
+
+def convert_radiance_to_bt (img_filepath, satellite, band_number, fill_value=DEFAULT_FILL_VALUE):
+    """Convert a set of radiances to brightness temperatures.
+
+    :Parameters:
+        img_filepath : str
+            Filepath to get the binary image swath data in FBF format
+            (ex. ``image_infrared20.real4.6400.10176``).
+        satellite : str
+            The constant representing Aqua or Terra. This should
+            match the constant SAT_AQUA or SAT_TERRA from the
+            core constants.py module
+    """
+    
+    img_file_name = os.path.split(img_filepath)[1]
+    img_attr      = img_file_name.split('.')[0]
+    
+    # Rescale the image
+    try:
+        W    = Workspace('.')
+        img  = getattr(W, img_attr)
+        data = img.copy()
+        log.debug("Data min: %f, Data max: %f" % (data.min(),data.max()))
+    except StandardError:
+        log.error("Could not open img file %s" % img_filepath)
+        log.debug("Files matching %r" % glob(img_attr + "*"))
+        raise
+    
+    # This is very suboptimal, FUTURE: find a better way to do this translation
+    if satellite is SAT_AQUA :
+        satellite = "Aqua"
+    if satellite is SAT_TERRA :
+        satellite = "Terra"
+    
+    # calculate the brightness temperatures
+    # TODO, I don't know if there are any exceptions I need to catch here
+    not_fill_mask           = data != fill_value
+    new_data                = data.copy().astype(numpy.float64)
+    new_data[not_fill_mask] = bright_shift(satellite, new_data[not_fill_mask], int(band_number))
+    new_data                = new_data.astype(numpy.float32)
+    new_data[~numpy.isfinite(new_data)] = fill_value
+    
+    """
+    # TEMP, some debug code
+    not_fill_mask = new_data != fill_value
+    max_temp      = numpy.max(new_data[not_fill_mask])
+    min_temp      = numpy.min(new_data[not_fill_mask])
+    print ("after bt conversion band " + str(band_number) + " uses fill value " + str(fill_value) + " and has range " + str(min_temp) + " to " + str(max_temp))
+    """
+    
+    # save to a file
+    bt_file_path = None
+    try :
+        bt_file_name = "bt_prescale.%s" % (img_file_name)
+        bt_file_path = os.path.join(os.path.split(img_filepath)[0], bt_file_name)
+        new_data.tofile(bt_file_path)
+    except StandardError:
+        log.error("Unexpected error while saving rescaled data")
+        log.debug("Rescaling error:", exc_info=1)
+        raise
+    
+    return bt_file_path
 
 def make_swaths(ifilepaths, cut_bad=False):
     """Takes MODIS hdf files and creates flat binary files for the information
@@ -363,7 +444,7 @@ def make_swaths(ifilepaths, cut_bad=False):
             Specify whether or not to delete/cut out entire scans of data
             when navigation data is bad.  This is done because the ms2gt
             utilities used for remapping can't handle incorrect navigation data
-            TODO, for now this doesn't really do anything!
+            TODO, for now this doesn't do anything!
     """
     
     # TODO, for now this method only handles one file, eventually it will need to handle more
