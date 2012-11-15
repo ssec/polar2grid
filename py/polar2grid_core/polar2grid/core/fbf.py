@@ -44,30 +44,31 @@ class Workspace(object):
         fullpath = os.path.abspath(name)
         filename = os.path.split(fullpath)[1]
         parts = filename.split(".")
-        if len(parts) != 4:
-            log.error("Found filename %s with incorrect format, need 4 parts" % filename)
-            raise ValueError("Found filename %s with incorrect format, need 4 parts" % filename)
+        if len(parts) != 4 and len(parts) != 5:
+            log.error("Found filename %s with incorrect format, need 4 or 5 parts" % filename)
+            raise ValueError("Found filename %s with incorrect format, need 4 or 5parts" % filename)
 
-        attr_name,type,cols,rows = parts
+        attr_name = parts[0]
+        type = parts[1]
+        shape = parts[2:][::-1] # Flip shape order, fbf is minor to major, numpy is major to minor
         if type not in str_to_dtype:
             log.error("Don't know how to interpret data type %s from %s" % (type,filename))
             raise ValueError("Don't know how to interpret data type %s from %s" % (type,filename))
         dtype = str_to_dtype[type]
 
         try:
-            cols = int(cols)
-            rows = int(rows)
+            shape = tuple(list( int(x) for x in shape ))
         except ValueError:
-            log.error("Columns and rows must be integers not (%s,%s)" % (str(cols),str(rows)))
-            raise ValueError("Columns and rows must be integers not (%s,%s)" % (str(cols),str(rows)))
+            log.error("Shape must be integers not (%r)" % (shape,))
+            raise ValueError("Shape must be integers not (%r)" % (shape,))
 
-        return attr_name,dtype,cols,rows
+        return attr_name,dtype,shape
 
     def __getattr__(self, name, mode='r'):
         g = glob( os.path.join(self._dir,name+'.*') )
         if len(g)==1:
-            attr_name,dtype,cols,rows = self._parse_attr_name(g[0])
-            mmap_arr = numpy.memmap(g[0], dtype=dtype, mode=mode, shape=(rows,cols))
+            attr_name,dtype,shape = self._parse_attr_name(g[0])
+            mmap_arr = numpy.memmap(g[0], dtype=dtype, mode=mode, shape=shape)
             setattr(self,name,mmap_arr)
             return mmap_arr
         elif len(g) > 1:
@@ -82,7 +83,7 @@ class Workspace(object):
         for path in os.listdir(self._dir):
             try:
                 fullpath = os.path.join(self._dir, path)
-                stemname,_,_,_ = self._parse_attr_name(fullpath)
+                stemname,_,_ = self._parse_attr_name(fullpath)
                 yield stemname, self.__getattr__(stemname)
             except:
                 pass

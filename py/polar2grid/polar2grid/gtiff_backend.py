@@ -6,7 +6,7 @@ from osgeo import gdal
 import osr
 
 from polar2grid.core.rescale import Rescaler,uint16_filter,ubyte_filter
-from polar2grid.core.constants import GRIDS_ANY_PROJ4,DEFAULT_FILL_VALUE
+from polar2grid.core.constants import GRIDS_ANY_PROJ4,DEFAULT_FILL_VALUE,NOT_APPLICABLE
 from polar2grid.core import roles
 
 import sys
@@ -43,26 +43,62 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
     """
     log_level = logging.getLogger('').handlers[0].level or 0
     log.info("Creating geotiff '%s'" % (output_filename,))
-    gtiff = gtiff_driver.Create(output_filename,
-            data.shape[1], data.shape[0],
-            bands=1, eType=etype)
+
+    # Find the number of bands provided
+    if isinstance(data, (list, tuple)):
+        num_bands = len(data)
+    elif len(data.shape) == 2:
+        num_bands = 1
+    else:
+        num_bands = data.shape[0]
+
+    # We only know how to handle gray scale, RGB, and RGBA
+    if num_bands not in [1,3,4]:
+        msg = "Geotiff backend doesn't know how to handle data of shape '%r'" % (data.shape,)
+        log.error(msg)
+        raise ValueError(msg)
+
+    if num_bands == 1:
+        photometric = "PHOTOMETRIC=MINISBLACK"
+    elif num_bands == 3:
+        photometric = "PHOTOMETRIC=RGB"
+    elif num_bands == 4:
+        photometric = "PHOTOMETRIC=RGB"
+
+    if num_bands == 1:
+        gtiff = gtiff_driver.Create(output_filename,
+                data.shape[1], data.shape[0],
+                bands=num_bands, eType=etype, options = [ photometric ])
+    else:
+        gtiff = gtiff_driver.Create(output_filename,
+                data[0].shape[1], data[0].shape[0],
+                bands=num_bands, eType=etype, options = [ photometric ])
+
     gtiff.SetGeoTransform(geotransform)
     srs = _proj4_to_srs(proj4_str)
     gtiff.SetProjection(srs.ExportToWkt())
-    gtiff_band = gtiff.GetRasterBand(1)
 
-    # Clip data to datatype, otherwise let it go and see what happens
-    if etype == gdal.GDT_UInt16:
-        data = uint16_filter(data)
-    elif etype == gdal.GDT_Byte:
-        data = ubyte_filter(data)
-    if log_level <= logging.DEBUG:
-        log.debug("Data min: %f, max: %f" % (data.min(),data.max()))
+    for idx in range(num_bands):
+        gtiff_band = gtiff.GetRasterBand(idx + 1)
 
-    # Write the data
-    if gtiff_band.WriteArray(data) != 0:
-        log.error("Could not write band 1 data to geotiff '%s'" % (output_filename,))
-        raise ValueError("Could not write band 1 data to geotiff '%s'" % (output_filename,))
+        if num_bands == 1: band_data = data
+        else: band_data = data[idx]
+
+        # Clip data to datatype, otherwise let it go and see what happens
+        # XXX: This might need to operate on colors as a whole or
+        # do a linear scaling. No one should be scaling data to outside these
+        # ranges anyway
+        if etype == gdal.GDT_UInt16:
+            band_data = uint16_filter(band_data)
+        elif etype == gdal.GDT_Byte:
+            band_data = ubyte_filter(band_data)
+        if log_level <= logging.DEBUG:
+            log.debug("Data min: %f, max: %f" % (band_data.min(),band_data.max()))
+
+        # Write the data
+        if gtiff_band.WriteArray(band_data) != 0:
+            log.error("Could not write band 1 data to geotiff '%s'" % (output_filename,))
+            raise ValueError("Could not write band 1 data to geotiff '%s'" % (output_filename,))
     # Garbage collection/destructor should close the file properly
 
 class Backend(roles.BackendRole):
@@ -205,6 +241,11 @@ def _type_datakind(kind_str):
         return DKIND_FOG
     raise ValueError("Unknown data kind '%s'" % kind_str)
 
+def _type_band(band_str):
+    if band_str in ["NA", "None", "none"]:
+        return NOT_APPLICABLE
+    return band_str
+
 def _bits_to_etype(bits_str):
     if bits_str is None:
         return None
@@ -300,7 +341,7 @@ custom name if proj4_str is provided""")
     kwargs["pixel_size_y"] = args.geotransform[5]
 
     print "Rescaling configuration file: ",args.rescale_config
-    kwargs["rescale_config"] = args.rescale_config
+    rescale_config = args.rescale_config
 
     print "Input Filename: ",args.input_filename
     W = Workspace('.')
@@ -308,7 +349,8 @@ custom name if proj4_str is provided""")
     arg_list.append(data)
     print "Output Filename: ",args.output_filename
 
-    return backend(*arg_list, output_filename=args.output_filename, etype=args.etype, **kwargs)
+    backend = Backend(etype=args.etype, rescale_config=rescale_config)
+    return backend.create_product(*arg_list, output_filename=args.output_filename, **kwargs)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)

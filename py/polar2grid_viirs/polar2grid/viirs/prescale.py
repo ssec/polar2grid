@@ -23,7 +23,7 @@ from polar2grid.core import Workspace
 
 import os
 import sys
-import glob
+from glob import glob
 import logging
 
 log = logging.getLogger(__name__)
