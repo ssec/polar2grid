@@ -45,11 +45,13 @@ INFRARED_OFFSET_ATTR_NAME    = "radiance_offsets"
 
 GEO_FILE_SUFFIX              = ".geo.hdf"
 
-# TODO, this is true for the 1km data, when we get to other kinds, this will need to be more sophisicated
+# this is true for the 1km data, FUTURE: when we get to other kinds, this will need to be more sophisicated
 ROWS_PER_SCAN                = 10
 
+# a regular expression that will match files containing the visible and infrared bands
 VIS_INF_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.1000m\.hdf'
 
+# a mapping between regular expressions to match files and their band_kind and band_id contents
 FILE_CONTENTS_GUIDE = {
                         VIS_INF_FILE_PATTERN:                       {
                                                                      BKIND_VIS: [BID_01, BID_07, BID_26],
@@ -57,6 +59,7 @@ FILE_CONTENTS_GUIDE = {
                                                                     }
                       }
 
+# a mapping between the bands and their data kinds (in the file)
 DATA_KINDS = {
               (BKIND_VIS, BID_01): DKIND_REFLECTANCE,
               (BKIND_VIS, BID_07): DKIND_REFLECTANCE,
@@ -66,6 +69,7 @@ DATA_KINDS = {
               (BKIND_IR,  BID_31): DKIND_RADIANCE
              }
 
+# a mapping between the bands and the variable names used in the files to hold them
 VAR_NAMES  = {
               (BKIND_VIS, BID_01): VISIBLE_CH_1_VARIABLE_NAME,
               (BKIND_VIS, BID_07): VISIBLE_CH_7_VARIABLE_NAME,
@@ -75,6 +79,8 @@ VAR_NAMES  = {
               (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_NAME
              }
 
+# a mapping between the bands and any index needed to access the data in the variable (for slicing)
+# if no slicing is needed the index will be None
 VAR_IDX    = {
               (BKIND_VIS, BID_01): VISIBLE_CH_1_VARIABLE_IDX,
               (BKIND_VIS, BID_07): VISIBLE_CH_7_VARIABLE_IDX,
@@ -84,6 +90,7 @@ VAR_IDX    = {
               (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_IDX,
         }
 
+# a mapping between bands and the names of their scale and offset attributes
 RESCALING_ATTRS = \
              {
               (BKIND_VIS, BID_01): (VISIBLE_SCALE_ATTR_NAME,  VISIBLE_OFFSET_ATTR_NAME),
@@ -94,6 +101,7 @@ RESCALING_ATTRS = \
               (BKIND_IR,  BID_31): (INFRARED_SCALE_ATTR_NAME, INFRARED_OFFSET_ATTR_NAME),
              }
 
+# whether or not each band should be cloud cleared
 IS_CLOUD_CLEARED = \
              {
               (BKIND_VIS, BID_01): False,
@@ -104,7 +112,18 @@ IS_CLOUD_CLEARED = \
               (BKIND_IR,  BID_31): False,
              }
 
-# TODO, how am I handling missing values? so far they all appear to be in the _fillvalue attribute?
+# whether or not each band should be converted to brightness temperature
+SHOULD_CONVERT_TO_BT = \
+             {
+              (BKIND_VIS, BID_01): False,
+              (BKIND_VIS, BID_07): False,
+              (BKIND_VIS, BID_26): False,
+              (BKIND_IR,  BID_20): True,
+              (BKIND_IR,  BID_27): True,
+              (BKIND_IR,  BID_31): True,
+             }
+
+# TODO, how am I handling missing values? so far they all appear to be in the _fillvalue attribute in files?
 
 def parse_datetime_from_filename (file_name_string) :
     """parse the given file_name_string and create an appropriate datetime object
@@ -118,7 +137,7 @@ def parse_datetime_from_filename (file_name_string) :
     
     if (file_name_string.startswith('a1') or file_name_string.startswith('t1')) :
         temp = file_name_string.split('.')
-        datetime_to_return = datetime.strptime(temp[1] + temp[2], "%y%j%H%M") # TODO, are hours on 24 hour clock?
+        datetime_to_return = datetime.strptime(temp[1] + temp[2], "%y%j%H%M")
         # TODO, the viirs guidebook is using .replace(tzinfo=UTC, microsecond=***) do I need to do this?
     
     return datetime_to_return
@@ -152,7 +171,7 @@ def get_equivalent_geolocation_filename (data_file_name_string) :
     
     # TODO there are going to be other sources of geolocation besides the .geo.hdf file when we get to later products
     
-    if re.match(r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.1000m\.hdf', data_file_name_string) is not None :
+    if re.match(VIS_INF_FILE_PATTERN, data_file_name_string) is not None :
         filename_to_return = data_file_name_string.split('.1000m.hdf')[0] + GEO_FILE_SUFFIX
     
     return filename_to_return
