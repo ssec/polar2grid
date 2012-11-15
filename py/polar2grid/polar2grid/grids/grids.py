@@ -14,12 +14,20 @@ import os
 import sys
 import logging
 
+try:
+    # try getting setuptools/distribute's version of resource retrieval first
+    import pkg_resources
+    get_resource_string = pkg_resources.resource_string
+except ImportError:
+    import pkgutil
+    get_resource_string = pkgutil.get_data
+
 log = logging.getLogger(__name__)
 
 script_dir = os.path.split(os.path.realpath(__file__))[0]
 GRIDS_DIR = script_dir #os.path.split(script_dir)[0] # grids directory is in root pkg dir
-SHAPES_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_SHAPES_CONFIG", os.path.join(GRIDS_DIR, "grid_shapes.conf"))
-GRIDS_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_GRIDS_CONFIG", os.path.join(GRIDS_DIR, "grids.conf"))
+SHAPES_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_SHAPES_CONFIG", "grid_shapes.conf")
+GRIDS_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
 
 # Filled in later
 SHAPES = None
@@ -34,63 +42,50 @@ def _load_proj_string(proj_str):
     else:
         return pyproj.Proj(proj_str)
 
+def read_shapes_config_str(config_str):
+    # NEW RECORD: Most illegible list comprehensions
+    shapes = dict(
+            (parts[0],tuple([float(x) for x in parts[1:6]])) for parts in
+                    [ [ part.strip() for part in line.split(",") ] for line in config_str.split("\n") if line and not line.startswith("#") ]
+            )
+    return shapes
+
 def read_shapes_config(config_filepath):
     """Read the "grid_shapes.conf" file and create a dictionary mapping the
     grid name to the bounding box information held in the configuration file.
     """
-    config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
-    if not os.path.exists(config_filepath):
-       log.error("Shapes configuration file '%s' does not exist" % (config_filepath,))
-       raise ValueError("Shapes configuration file '%s' does not exist" % (config_filepath,))
+    full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
+    if not os.path.exists(full_config_filepath):
+        try:
+            config_str = get_resource_string(__name__, config_filepath)
+            return read_shapes_config_str(config_str)
+        except StandardError:
+            log.error("Shapes configuration file '%s' does not exist" % (config_filepath,))
+            raise ValueError("Shapes configuration file '%s' does not exist" % (config_filepath,))
 
-    # NEW RECORD: Most illegible list comprehensions
-    shapes = dict(
-            (parts[0],tuple([float(x) for x in parts[1:6]])) for parts in
-                    [ [ part.strip() for part in line.split(",") ] for line in open(config_filepath) if not line.startswith("#") ]
-            )
-    return shapes
+    config_str = open(full_config_filepath, 'r').read()
+    return read_shapes_config_str(config_str)
 
-def read_grids_config(config_filepath):
-    """Read the "grids.conf" file and create dictionaries mapping the
-    grid name to the necessary information. There are two dictionaries
-    created, one for gpd file grids and one for proj4 grids.
-
-    Format for gpd grids:
-    grid_name,gpd,gpd_filename
-
-    where 'gpd' is the actual text 'gpd' to define the grid as a gpd grid.
-
-    Format for proj4 grids:
-    grid_name,proj4,proj4_str,pixel_size_x,pixel_size_y,origin_x,origin_y,width,height
-
-    where 'proj4' is the actual text 'proj4' to define the grid as a proj4
-    grid.
-
-    """
-    config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
-    if not os.path.exists(config_filepath):
-        log.error("Grids configuration file '%s' does not exist" % (config_filepath,))
-        raise ValueError("Grids configuration file '%s' does not exist" % (config_filepath,))
-
+def read_grids_config_str(config_str):
     gpd_grids = {}
     proj4_grids = {}
-    config_file = open(config_filepath, "r")
-    for line in config_file:
+
+    for line in config_str.split("\n"):
         # Skip comments and empty lines
-        if line.startswith("#") or line.startswith("\n"): continue
+        if not line or line.startswith("#") or line.startswith("\n"): continue
 
         # Clean up the configuration line
         line = line.strip("\n,")
         parts = [ part.strip() for part in line.split(",") ]
 
         if len(parts) != 5 and len(parts) != 9:
-            log.error("Grid configuration line '%s' in '%s' does not have the correct format" % (line,config_filepath))
-            raise ValueError("Grid configuration line '%s' in '%s' does not have the correct format" % (line,config_filepath))
+            log.error("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
+            raise ValueError("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
 
         grid_name = parts[0]
         if (grid_name in gpd_grids) or (grid_name in proj4_grids):
-            log.error("Grid '%s' is in '%s' more than once" % (grid_name,config_filepath))
-            raise ValueError("Grid '%s' is in '%s' more than once" % (grid_name,config_filepath))
+            log.error("Grid '%s' is in grid config more than once" % (grid_name,))
+            raise ValueError("Grid '%s' is in grid config more than once" % (grid_name,))
 
         grid_type = parts[1].lower()
         if grid_type == "gpd":
@@ -165,10 +160,41 @@ def read_grids_config(config_filepath):
             proj4_grids[grid_name]["grid_width"]        = grid_width
             proj4_grids[grid_name]["grid_height"]       = grid_height
         else:
-            log.error("Unknown grid type '%s' for grid '%s' in '%s'" % (grid_type,grid_name,config_filepath))
-            raise ValueError("Unknown grid type '%s' for grid '%s' in '%s'" % (grid_type,grid_name,config_filepath))
+            log.error("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type,grid_name))
+            raise ValueError("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type,grid_name))
 
     return gpd_grids,proj4_grids
+
+def read_grids_config(config_filepath):
+    """Read the "grids.conf" file and create dictionaries mapping the
+    grid name to the necessary information. There are two dictionaries
+    created, one for gpd file grids and one for proj4 grids.
+
+    Format for gpd grids:
+    grid_name,gpd,gpd_filename
+
+    where 'gpd' is the actual text 'gpd' to define the grid as a gpd grid.
+
+    Format for proj4 grids:
+    grid_name,proj4,proj4_str,pixel_size_x,pixel_size_y,origin_x,origin_y,width,height
+
+    where 'proj4' is the actual text 'proj4' to define the grid as a proj4
+    grid.
+
+    """
+    full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
+    if not os.path.exists(full_config_filepath):
+        try:
+            config_str = get_resource_string(__name__, config_filepath)
+            return read_grids_config_str(config_str)
+        except StandardError:
+            log.error("Grids configuration file '%s' does not exist" % (config_filepath,))
+            log.debug("Grid configuration error: ", exc_info=1)
+            raise
+
+    config_file = open(full_config_filepath, "r")
+    config_str = config_file.read()
+    return read_grids_config_str(config_str)
 
 def determine_grid_coverage(lon_data, lat_data, grids):
     """Take latitude and longitude arrays and a list of grids and determine

@@ -20,12 +20,20 @@ import os
 import sys
 import logging
 
+try:
+    # try getting setuptools/distribute's version of resource retrieval first
+    import pkg_resources
+    get_resource_string = pkg_resources.resource_string
+except ImportError:
+    import pkgutil
+    get_resource_string = pkgutil.get_data
+
 log = logging.getLogger(__name__)
 
 script_dir = os.path.split(os.path.realpath(__file__))[0]
 # Default config file if none is specified
 DEFAULT_CONFIG_NAME = "awips_grids.conf"
-DEFAULT_CONFIG_FILE = os.path.join(script_dir, DEFAULT_CONFIG_NAME)
+DEFAULT_CONFIG_FILE = DEFAULT_CONFIG_NAME
 # Default search directory for any awips configuration files
 DEFAULT_CONFIG_DIR = script_dir
 # Default search directory for NCML files
@@ -163,16 +171,24 @@ def load_config_str(config_dict, config_str):
 
     return True
 
-def load_config(config_dict, config_filename=None):
-    if config_filename is None:
-        config_filename = CONFIG_FILE
+def load_config(config_dict, config_filepath=None):
+    if config_filepath is None:
+        config_filepath = CONFIG_FILE
 
     # Load a configuration file, even if it's in the package
-    config_filename = _rel_to_abs(config_filename, CONFIG_DIR)
+    full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
+    if not os.path.exists(full_config_filepath):
+        try:
+            config_str = get_resource_string(__name__, config_filepath)
+            log.debug("Using package provided AWIPS configuration '%s'" % (config_filepath,))
+            return load_config_str(config_dict, config_str)
+        except StandardError:
+            log.error("AWIPS file '%s' could not be found" % (config_filepath,))
+            raise ValueError("AWIPS file '%s' could not be found" % (config_filepath,))
 
-    log.debug("Using AWIPS configuration '%s'" % (config_filename,))
+    log.debug("Using AWIPS configuration '%s'" % (config_filepath,))
 
-    config_file = open(config_filename, 'r')
+    config_file = open(config_filepath, 'r')
     config_str = config_file.read()
     return load_config_str(config_dict, config_str)
 
