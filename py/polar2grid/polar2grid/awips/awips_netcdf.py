@@ -126,7 +126,8 @@ def fill(nc_name, image, template, start_dt,
 def backend(sat, instrument, kind, band, data_kind, data,
         start_time=None, end_time=None, grid_name=None,
         output_filename=None, rescale_config=None, backend_config=None,
-        ncml_template=None):
+        ncml_template=None, fill_in=None):
+    
     # Filter out required keywords
     if grid_name is None:
         log.error("'grid_name' is a required keyword for this backend")
@@ -149,8 +150,8 @@ def backend(sat, instrument, kind, band, data_kind, data,
         backend_config = DEFAULT_AWIPS_CONFIG
 
     load_awips_config(backend_config)
-
-    data = rescale(sat, instrument, kind, band, data_kind, data, config=rescale_config)
+    
+    data = rescale(sat, instrument, kind, band, data_kind, data, config=rescale_config, fill_in=fill_in)
 
     # Get information from the configuration files
     awips_info = get_awips_info(sat, instrument, kind, band, data_kind, grid_name, backend_config)

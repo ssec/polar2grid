@@ -24,6 +24,9 @@ __docformat__ = "restructuredtext en"
 
 NOT_APPLICABLE = None
 
+# default fill value
+DEFAULT_FILL_VALUE = -999.0
+
 # Satellites
 SAT_NPP   = "npp"
 SAT_TERRA = "terra"

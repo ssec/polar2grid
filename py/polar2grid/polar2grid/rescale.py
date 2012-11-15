@@ -21,7 +21,7 @@ and "pretty" with AWIPS.
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.constants import DKIND_REFLECTANCE,DKIND_RADIANCE, \
-        DKIND_BTEMP,DKIND_FOG,NOT_APPLICABLE
+        DKIND_BTEMP,DKIND_FOG,NOT_APPLICABLE,DEFAULT_FILL_VALUE
 
 import os
 import sys
@@ -35,8 +35,8 @@ DEFAULT_CONFIG_DIR = os.path.split(os.path.realpath(__file__))[0]
 PERSISTENT_CONFIGS = {}
 
 # FIXME: If we can require numpy 1.7 we can use the mask keyword in ufuncs
-DEFAULT_FILL_IN  = -999.0
-DEFAULT_FILL_OUT = -999.0
+DEFAULT_FILL_IN  = DEFAULT_FILL_VALUE
+DEFAULT_FILL_OUT = DEFAULT_FILL_VALUE
 
 def _make_lin_scale(m, b):
     """Factory function to make a static linear scaling function
@@ -350,7 +350,8 @@ def load_config(config_filename, config_name=None):
     config_str = config_file.read()
     return load_config_str(config_name, config_str)
 
-def rescale(sat, instrument, kind, band, data_kind, data, config=None):
+def rescale(sat, instrument, kind, band, data_kind, data, config=None,
+            fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     """Function that uses previously loaded configuration files to choose
     how to rescale the provided data.  If the `config` keyword is not provided
     then a best guess will be made on how to rescale the data.  Usually this
@@ -375,10 +376,13 @@ def rescale(sat, instrument, kind, band, data_kind, data, config=None):
         # We know how to rescale using the onfiguration file
         log.info("'%s' was found in the rescaling configuration" % (band_id))
         rescale_func,rescale_args = PERSISTENT_CONFIGS[config][band_id]
-
+    
+    # use key word args for the fill values
+    kwargs = {"fill_in": fill_in, "fill_out": fill_out }
+    
     log.debug("Using rescale arguments: %r" % (rescale_args,))
-    data = rescale_func(data, *rescale_args)
-
+    data = rescale_func(data, *rescale_args, **kwargs)
+    
     # Only perform this calculation if it will be shown, its very time consuming
     if log_level <= logging.DEBUG:
         log.debug("Data min: %f, max: %f" % (data.min(),data.max()))
