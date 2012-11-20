@@ -107,6 +107,19 @@ def sqrt_scale(img, inner_mult, outer_mult, fill_in=DEFAULT_FILL_IN, fill_out=DE
     img[mask] = fill_out
     return img
 
+def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
+    """
+    this is a version of the brightness temperature scaling that is intended to work for data in celsius
+    """
+    log.debug("Converting image data to Kelvin...")
+    
+    not_fill_mask = img != fill_in
+    img[not_fill_mask] = img[not_fill_mask] + 273.15
+    
+    return bt_scale (img, threshold, high_max, high_mult, low_max, low_mult, fill_in=fill_in, fill_out=fill_out)
+    
+
+# this method is intended to work on brightness temperatures in Kelvin
 def bt_scale(img, threshold, high_max, high_mult, low_max, low_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     log.debug("Running 'bt_scale'...")
     high_idx = img >= threshold
@@ -157,6 +170,38 @@ def dnb_scale(img, day_mask, mixed_mask, night_mask, fill_in=DEFAULT_FILL_IN, fi
     
     return img
 
+# linear scale from a to b range to c to d range; if greater than b, set to d instead of scaling, if less than a, set to fill value x instead of scaling
+# for winter/normal (a, b) is (233.2K, 322.0K) and (c, d) is (5, 245)
+# for summer        (a, b) is (255.4K, 344.3K) and (c, d) is (5, 245)
+def lst_scale (data, min_before, max_before, min_after, max_after, fill_in=DEFAULT_FILL_VALUE, fill_out=DEFAULT_FILL_VALUE) :
+    """
+    Given LST data with valid values in the range min_before to max_before (the data may leave this range, but all you want to keep is that range),
+    linearly scale from min_before, max_before to min_after, max_after. Any values that fall below the minimum will be set to the fill value. Any values
+    that fall above the maximum will be set to max_after. Values that already equal the fill value will be left as fill data.
+    """
+    
+    # make a mask of our fill data
+    not_fill_data = data != fill_in
+    
+    # get rid of anything below the minimum
+    not_fill_data = not_fill_data & (data >= min_before)
+    data[~not_fill_data] = fill_in
+    
+    # linearly scale the non-fill data
+    data[not_fill_data] -= min_before
+    data[not_fill_data] /= (max_before - min_before)
+    data[not_fill_data] *= (max_after  - min_after)
+    data[not_fill_data] += min_after
+    
+    # set values that are greater than the max down to the max
+    too_high = not_fill_data & (data > max_after)
+    data[too_high] = max_after
+    
+    # swap out the fill value
+    data[data == fill_in] = fill_out
+    
+    return data
+
 def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mult_cutoff=4.0, do_zerotoone_normalization=True) :
     """
     Perform a histogram equalization on the data selected by mask_to_equalize.
@@ -197,10 +242,12 @@ def _histogram_equalization (data, mask_to_equalize, number_of_bins=1000, std_mu
 
 # Needs to be declared after all of the scaling functions
 KNOWN_RESCALE_KINDS = {
-        'sqrt' : sqrt_scale,
+        'sqrt' :   sqrt_scale,
         'linear' : linear_scale,
-        'raw' : passive_scale,
-        'btemp' : bt_scale
+        'raw' :    passive_scale,
+        'btemp' :  bt_scale,
+        'btemp_c': bt_scale_c,
+        'lst':     lst_scale
         }
 
 # DEFAULTS
