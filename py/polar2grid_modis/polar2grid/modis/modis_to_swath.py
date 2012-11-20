@@ -16,9 +16,6 @@ __docformat__ = "restructuredtext en"
 
 import modis_guidebook
 from polar2grid.core.constants import *
-from polar2grid.core.constants import DEFAULT_FILL_VALUE
-from polar2grid.modis.bt       import bright_shift
-from polar2grid.core           import Workspace
 
 import numpy
 from pyhdf.SD import SD,SDC, SDS, HDF4Error
@@ -27,7 +24,6 @@ import os
 import re
 import sys
 import logging
-from glob import glob
 
 log = logging.getLogger(__name__)
 
@@ -96,6 +92,8 @@ class FileInfoObject (object) :
         """
         get the geonavigation file as an opened file object, open it if needed
         """
+        
+        #print("geo file name: " + str(os.path.join(os.path.split(self.full_path)[0], self.geo_file_name)))
         
         if self.geo_file_obj is None :
             self.geo_file_obj = SD(os.path.join(os.path.split(self.full_path)[0], self.geo_file_name), SDC.READ)
@@ -209,10 +207,10 @@ def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid="geo_nav"
     
     lat_temp_file_name, lat_stats = _load_data_to_flat_file (list_of_geo_files, "lat",
                                                              modis_guidebook.LATITUDE_GEO_VARIABLE_NAME,
-                                                             "_FillValue")
+                                                             modis_guidebook.FILL_VALUE_ATTR_NAME)
     lon_temp_file_name, lon_stats = _load_data_to_flat_file (list_of_geo_files, "lon",
                                                              modis_guidebook.LONGITUDE_GEO_VARIABLE_NAME,
-                                                             "_FillValue")
+                                                             modis_guidebook.FILL_VALUE_ATTR_NAME)
     
     # rename the flat file to a more descriptive name
     shape_temp = lat_stats["shape"]
@@ -339,7 +337,7 @@ def _load_image_data (meta_data_to_update, cut_bad=False) :
         temp_image_file_name, image_stats = _load_data_to_flat_file ([meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"].file_object],
                                                                      str(band_kind) + str(band_id),
                                                                      modis_guidebook.VAR_NAMES[(band_kind, band_id)],
-                                                                     "_FillValue",
+                                                                     modis_guidebook.FILL_VALUE_ATTR_NAMES[(band_kind, band_id)],
                                                                      variable_idx=modis_guidebook.VAR_IDX[(band_kind, band_id)],
                                                                      scale_name=scale_name, offset_name=offset_name)
         
@@ -365,68 +363,6 @@ def _load_image_data (meta_data_to_update, cut_bad=False) :
                    % (meta_data_to_update["swath_rows"], meta_data_to_update["swath_cols"], band_kind, band_id, rows, cols))
             log.error(msg)
             raise ValueError(msg)
-
-def convert_radiance_to_bt (img_filepath, satellite, band_number, fill_value=DEFAULT_FILL_VALUE):
-    """Convert a set of radiances to brightness temperatures.
-
-    :Parameters:
-        img_filepath : str
-            Filepath to get the binary image swath data in FBF format
-            (ex. ``image_infrared20.real4.6400.10176``).
-        satellite : str
-            The constant representing Aqua or Terra. This should
-            match the constant SAT_AQUA or SAT_TERRA from the
-            core constants.py module
-    """
-    
-    img_file_name = os.path.split(img_filepath)[1]
-    img_attr      = img_file_name.split('.')[0]
-    
-    # Rescale the image
-    try:
-        W    = Workspace('.')
-        img  = getattr(W, img_attr)
-        data = img.copy()
-        log.debug("Data min: %f, Data max: %f" % (data.min(),data.max()))
-    except StandardError:
-        log.error("Could not open img file %s" % img_filepath)
-        log.debug("Files matching %r" % glob(img_attr + "*"))
-        raise
-    
-    # This is very suboptimal, FUTURE: find a better way to do this translation
-    if satellite is SAT_AQUA :
-        satellite = "Aqua"
-    if satellite is SAT_TERRA :
-        satellite = "Terra"
-    
-    # calculate the brightness temperatures
-    # TODO, I don't know if there are any exceptions I need to catch here
-    not_fill_mask           = data != fill_value
-    new_data                = data.copy().astype(numpy.float64)
-    new_data[not_fill_mask] = bright_shift(satellite, new_data[not_fill_mask], int(band_number))
-    new_data                = new_data.astype(numpy.float32)
-    new_data[~numpy.isfinite(new_data)] = fill_value
-    
-    """
-    # TEMP, some debug code
-    not_fill_mask = new_data != fill_value
-    max_temp      = numpy.max(new_data[not_fill_mask])
-    min_temp      = numpy.min(new_data[not_fill_mask])
-    print ("after bt conversion band " + str(band_number) + " uses fill value " + str(fill_value) + " and has range " + str(min_temp) + " to " + str(max_temp))
-    """
-    
-    # save to a file
-    bt_file_path = None
-    try :
-        bt_file_name = "bt_prescale.%s" % (img_file_name)
-        bt_file_path = os.path.join(os.path.split(img_filepath)[0], bt_file_name)
-        new_data.tofile(bt_file_path)
-    except StandardError:
-        log.error("Unexpected error while saving rescaled data")
-        log.debug("Rescaling error:", exc_info=1)
-        raise
-    
-    return bt_file_path
 
 def make_swaths(ifilepaths, cut_bad=False):
     """Takes MODIS hdf files and creates flat binary files for the information
