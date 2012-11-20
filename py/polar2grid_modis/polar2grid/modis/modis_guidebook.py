@@ -38,26 +38,80 @@ INFRARED_CH_27_VARIABLE_IDX  = 6
 INFRARED_CH_31_VARIABLE_NAME = 'EV_1KM_Emissive'
 INFRARED_CH_31_VARIABLE_IDX  = 10
 
+CLOUD_MASK_NAME              = 'MODIS_Cloud_Mask'
+CLOUD_MASK_IDX               = None
+SEA_SURFACE_TEMP_NAME        = 'Sea_Surface_Temperature'
+SEA_SURFACE_TEMP_IDX         = None
+LAND_SURFACE_TEMP_NAME       = "LST"
+LAND_SURFACE_TEMP_IDX        = None
+
 VISIBLE_SCALE_ATTR_NAME      = "reflectance_scales"
 VISIBLE_OFFSET_ATTR_NAME     = "reflectance_offsets"
 INFRARED_SCALE_ATTR_NAME     = "radiance_scales"
 INFRARED_OFFSET_ATTR_NAME    = "radiance_offsets"
+
+GENERIC_SCALE_ATTR_NAME      = "scale_factor"
+GENERIC_OFFSET_ATTR_NAME     = "add_offset"
+
+FILL_VALUE_ATTR_NAME         = "_FillValue"
+MISSING_VALUE_ATTR_NAME      = "missing_value"
 
 GEO_FILE_SUFFIX              = ".geo.hdf"
 
 # this is true for the 1km data, FUTURE: when we get to other kinds, this will need to be more sophisicated
 ROWS_PER_SCAN                = 10
 
+# TODO, this is not right, just a stand in until I get the right answer
+CLOUDS_VALUES_TO_CLEAR       = [1, 2]
+
 # a regular expression that will match files containing the visible and infrared bands
-VIS_INF_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.1000m\.hdf'
+VIS_INF_FILE_PATTERN           = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.1000m\.hdf'
+# a regular expression that will match files containing the cloud mask
+CLOUD_MASK_FILE_PATTERN        = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mask_byte1\.hdf'
+# a regular expression that will match files containing sea surface temperature
+SEA_SURFACE_TEMP_FILE_PATTERN  = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mod28\.hdf'
+# a regular expression that will match files containing land surface temperature
+LAND_SURFACE_TEMP_FILE_PATTERN = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.modlst\.hdf'
+
+BANDS_REQUIRED_TO_CALCULATE_FOG_BAND = [(BKIND_IR,  BID_20), (BKIND_IR,  BID_31)]
+
+GEO_FILE_GROUPING = {
+                      "geo_nav": [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN, SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN]
+                    }
 
 # a mapping between regular expressions to match files and their band_kind and band_id contents
 FILE_CONTENTS_GUIDE = {
                         VIS_INF_FILE_PATTERN:                       {
-                                                                     BKIND_VIS: [BID_01, BID_07, BID_26],
-                                                                     BKIND_IR:  [BID_20, BID_27, BID_31]
+                                                                     BKIND_VIS:   [BID_01, BID_07, BID_26],
+                                                                     BKIND_IR:    [BID_20, BID_27, BID_31]
+                                                                    },
+                        CLOUD_MASK_FILE_PATTERN:                    {
+                                                                     BKIND_CMASK: [NOT_APPLICABLE]
+                                                                    },
+                        SEA_SURFACE_TEMP_FILE_PATTERN:              {
+                                                                     BKIND_SST:   [NOT_APPLICABLE]
+                                                                    },
+                        LAND_SURFACE_TEMP_FILE_PATTERN:             {
+                                                                     BKIND_LST:   [NOT_APPLICABLE],
+                                                                     BKIND_SLST:  [NOT_APPLICABLE]
                                                                     }
                       }
+
+# a mapping between bands and their fill value attribute names
+FILL_VALUE_ATTR_NAMES = \
+            {
+              (BKIND_VIS, BID_01):           FILL_VALUE_ATTR_NAME,
+              (BKIND_VIS, BID_07):           FILL_VALUE_ATTR_NAME,
+              (BKIND_VIS, BID_26):           FILL_VALUE_ATTR_NAME,
+              (BKIND_IR,  BID_20):           FILL_VALUE_ATTR_NAME,
+              (BKIND_IR,  BID_27):           FILL_VALUE_ATTR_NAME,
+              (BKIND_IR,  BID_31):           FILL_VALUE_ATTR_NAME,
+              
+              (BKIND_CMASK, NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
+              (BKIND_SST,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
+              (BKIND_LST,   NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
+              (BKIND_SLST,   NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
+            }
 
 # a mapping between the bands and their data kinds (in the file)
 DATA_KINDS = {
@@ -66,7 +120,12 @@ DATA_KINDS = {
               (BKIND_VIS, BID_26): DKIND_REFLECTANCE,
               (BKIND_IR,  BID_20): DKIND_RADIANCE,
               (BKIND_IR,  BID_27): DKIND_RADIANCE,
-              (BKIND_IR,  BID_31): DKIND_RADIANCE
+              (BKIND_IR,  BID_31): DKIND_RADIANCE,
+              
+              (BKIND_CMASK, NOT_APPLICABLE): DKIND_CATEGORY,
+              (BKIND_SST,   NOT_APPLICABLE): DKIND_BTEMP,
+              (BKIND_LST,   NOT_APPLICABLE): DKIND_BTEMP,
+              (BKIND_SLST,  NOT_APPLICABLE): DKIND_BTEMP
              }
 
 # a mapping between the bands and the variable names used in the files to hold them
@@ -76,7 +135,12 @@ VAR_NAMES  = {
               (BKIND_VIS, BID_26): VISIBLE_CH_26_VARIABLE_NAME,
               (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_NAME,
               (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_NAME,
-              (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_NAME
+              (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_NAME,
+              
+              (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_NAME,
+              (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_NAME,
+              (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
+              (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
              }
 
 # a mapping between the bands and any index needed to access the data in the variable (for slicing)
@@ -88,6 +152,11 @@ VAR_IDX    = {
               (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_IDX,
               (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_IDX,
               (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_IDX,
+              
+              (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_IDX,
+              (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_IDX,
+              (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
+              (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
         }
 
 # a mapping between bands and the names of their scale and offset attributes
@@ -99,6 +168,11 @@ RESCALING_ATTRS = \
               (BKIND_IR,  BID_20): (INFRARED_SCALE_ATTR_NAME, INFRARED_OFFSET_ATTR_NAME),
               (BKIND_IR,  BID_27): (INFRARED_SCALE_ATTR_NAME, INFRARED_OFFSET_ATTR_NAME),
               (BKIND_IR,  BID_31): (INFRARED_SCALE_ATTR_NAME, INFRARED_OFFSET_ATTR_NAME),
+              
+              (BKIND_CMASK, NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
+              (BKIND_SST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
+              (BKIND_LST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
+              (BKIND_SLST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
              }
 
 # whether or not each band should be cloud cleared
@@ -110,6 +184,11 @@ IS_CLOUD_CLEARED = \
               (BKIND_IR,  BID_20): False,
               (BKIND_IR,  BID_27): False,
               (BKIND_IR,  BID_31): False,
+              
+              (BKIND_CMASK, NOT_APPLICABLE): False,
+              (BKIND_SST,   NOT_APPLICABLE): True,
+              (BKIND_LST,   NOT_APPLICABLE): True,
+              (BKIND_SLST,  NOT_APPLICABLE): True,
              }
 
 # whether or not each band should be converted to brightness temperature
@@ -121,9 +200,12 @@ SHOULD_CONVERT_TO_BT = \
               (BKIND_IR,  BID_20): True,
               (BKIND_IR,  BID_27): True,
               (BKIND_IR,  BID_31): True,
+              
+              (BKIND_CMASK, NOT_APPLICABLE): False,
+              (BKIND_SST,   NOT_APPLICABLE): False,
+              (BKIND_LST,   NOT_APPLICABLE): False,
+              (BKIND_SLST,  NOT_APPLICABLE): False
              }
-
-# TODO, how am I handling missing values? so far they all appear to be in the _fillvalue attribute in files?
 
 def parse_datetime_from_filename (file_name_string) :
     """parse the given file_name_string and create an appropriate datetime object
@@ -171,8 +253,14 @@ def get_equivalent_geolocation_filename (data_file_name_string) :
     
     # TODO there are going to be other sources of geolocation besides the .geo.hdf file when we get to later products
     
-    if re.match(VIS_INF_FILE_PATTERN, data_file_name_string) is not None :
-        filename_to_return = data_file_name_string.split('.1000m.hdf')[0] + GEO_FILE_SUFFIX
+    if re.match(VIS_INF_FILE_PATTERN,           data_file_name_string) is not None :
+        filename_to_return = data_file_name_string.split('.1000m.hdf'     )[0] + GEO_FILE_SUFFIX
+    if re.match(CLOUD_MASK_FILE_PATTERN,        data_file_name_string) is not None :
+        filename_to_return = data_file_name_string.split('.mask_byte1.hdf')[0] + GEO_FILE_SUFFIX
+    if re.match(SEA_SURFACE_TEMP_FILE_PATTERN,  data_file_name_string) is not None :
+        filename_to_return = data_file_name_string.split('.mod28.hdf'     )[0] + GEO_FILE_SUFFIX
+    if re.match(LAND_SURFACE_TEMP_FILE_PATTERN, data_file_name_string) is not None :
+        filename_to_return = data_file_name_string.split('.modlst.hdf'    )[0] + GEO_FILE_SUFFIX
     
     return filename_to_return
 
