@@ -37,11 +37,15 @@ INST_VIIRS = "viirs"
 INST_MODIS = "modis"
 
 # Band Kinds
-BKIND_I   = "i"
-BKIND_M   = "m"
-BKIND_DNB = "dnb"
-BKIND_VIS = "visible"
-BKIND_IR  = "infrared"
+BKIND_I     = "i"
+BKIND_M     = "m"
+BKIND_DNB   = "dnb"
+BKIND_VIS   = "visible"
+BKIND_IR    = "infrared"
+BKIND_CMASK = "cloud_mask"
+BKIND_SST   = "sea_surface_temp"
+BKIND_LST   = "land_surface_temp"
+BKIND_SLST  = "summer_land_surface_temp"
 
 # Band Identifier
 BID_01 = "01"
@@ -67,12 +71,13 @@ BID_27 = "27"
 BID_31 = "31"
 
 # Data kinds
-DKIND_LATITUDE = "latitude"
-DKIND_LONGITUDE = "longitude"
-DKIND_RADIANCE = "radiance"
+DKIND_LATITUDE    = "latitude"
+DKIND_LONGITUDE   = "longitude"
+DKIND_RADIANCE    = "radiance"
 DKIND_REFLECTANCE = "reflectance"
-DKIND_BTEMP = "btemp"
-DKIND_FOG = "fog"
+DKIND_BTEMP       = "btemp"
+DKIND_FOG         = "fog"
+DKIND_CATEGORY    = "category"
 
 # Grid Constants
 GRIDS_ANY = "any_grid"
