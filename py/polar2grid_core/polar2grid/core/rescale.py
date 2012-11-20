@@ -563,7 +563,10 @@ class Rescaler(roles.RescalerRole):
 
         # Only perform this calculation if it will be shown, its very time consuming
         if log_level <= logging.DEBUG:
-            log.debug("Data min: %f, max: %f" % (data[ data != fill_in ].min(),data[ data != fill_in ].max()))
+            try:
+                log.debug("Data min: %f, max: %f" % (data[ data != fill_in ].min(),data[ data != fill_in ].max()))
+            except StandardError:
+                log.debug("Couldn't get min/max values for %s %s (all fill data?)" % (kind,band))
 
         log.debug("Using rescale arguments: %r" % (rescale_args,))
         log.debug("Using fill in/out values: (%s,%s)" % (fill_in,fill_out))
@@ -576,7 +579,10 @@ class Rescaler(roles.RescalerRole):
 
         # Only perform this calculation if it will be shown, its very time consuming
         if log_level <= logging.DEBUG:
-            log.debug("Data min: %f, max: %f" % (data[ data != fill_out ].min(),data[ data != fill_out ].max()))
+            try:
+                log.debug("Data min: %f, max: %f" % (data[ data != fill_out ].min(),data[ data != fill_out ].max()))
+            except StandardError:
+                log.debug("Couldn't get min/max values for %s %s (all fill data?)" % (kind,band))
 
         return data
 
