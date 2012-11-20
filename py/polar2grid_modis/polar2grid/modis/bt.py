@@ -316,8 +316,8 @@ def micron_bt(w, r):
     ws = 1.0e-6 * w
     zult[mask] = c2 / (ws * np.log(c1 / (1.0e6 * r[mask] * ws**5) + 1.0))
     return zult
-    
-    
+
+
 def wnum_bt(v, r):
     zult = np.empty_like(r, dtype=np.float64)
     if r.dtype != np.float64:
@@ -328,7 +328,6 @@ def wnum_bt(v, r):
     zult[mask] = c2 * vs / np.log(c1 * vs**3 / (1.0e-5 * r[mask]) + 1.0)
     return zult
 
-    
 
 def bright_shift(platform, rad, band, units="micron"):
     """compute brightness temperature for MODIS on Terra and Aqua
