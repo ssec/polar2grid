@@ -15,10 +15,8 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.constants import *
-from polar2grid.modis import make_swaths
-from polar2grid.modis import VIS_INF_FILE_PATTERN
-from polar2grid.modis import SHOULD_CONVERT_TO_BT
-from polar2grid.modis import convert_radiance_to_bt
+from polar2grid.modis import make_swaths, convert_radiance_to_bt, make_data_cloud_cleared, create_fog_band
+from polar2grid.modis import GEO_FILE_GROUPING, SHOULD_CONVERT_TO_BT, IS_CLOUD_CLEARED, CLOUDS_VALUES_TO_CLEAR, BANDS_REQUIRED_TO_CALCULATE_FOG_BAND
 
 from .util_glue_functions import *
 from .remap import remap_bands
@@ -31,6 +29,7 @@ import logging
 from multiprocessing import Process
 import numpy
 from glob import glob
+from collections import defaultdict
 
 # Status Constants
 
@@ -78,7 +77,8 @@ def clean_up_files():
     
     list_to_remove = ["latitude*.real4.*", "longitude*.real4.*",
                       "image*.real4.*", "btimage*.real4.*",
-                      "bt_prescale_*.real4.*", "ll2cr_*.img",
+                      "bt_prescale*.real4.*", "cloud_cleared*.real4.*",
+                      "ll2cr_*.img",
                       "result*.real4.*",
                       "SSEC_AWIPS_MODIS*" ]
     
@@ -107,13 +107,26 @@ def process_data_sets(filepaths,
     
     # Extract Swaths
     log.info("Extracting swaths...")
-    try:
-        meta_data = make_swaths(filepaths, cut_bad=True)
-    except StandardError:
-        log.error("Swath creation failed")
-        log.debug("Swath creation error:", exc_info=1)
-        status_to_return |= SWATH_FAIL
-        return status_to_return
+    meta_data = { }
+    for file_pattern_key in filepaths.keys() :
+        temp_filepaths = sorted(filepaths[file_pattern_key])
+        
+        try:
+            temp_meta_data = make_swaths(temp_filepaths, cut_bad=True)
+            temp_bands     = { } if "bands" not in meta_data else meta_data["bands"]
+            meta_data.update(temp_meta_data)
+            meta_data["bands"].update(temp_bands)
+        except StandardError:
+            log.error("Swath creation failed")
+            log.debug("Swath creation error:", exc_info=1)
+            status_to_return |= SWATH_FAIL
+    
+    # if we weren't able to load any of the swaths... stop now
+    if len(meta_data.keys()) <= 0 :
+        log.error("Unable to load swaths for the specified bands, quitting...")
+        return status_to_return or UNKNOWN_FAIL
+    
+    # for convenience, pull some things out of the meta data
     sat = meta_data["sat"]
     instrument = meta_data["instrument"]
     start_time = meta_data["start_time"]
@@ -121,17 +134,36 @@ def process_data_sets(filepaths,
     flatbinaryfilename_lat = meta_data["fbf_lat"]
     flatbinaryfilename_lon = meta_data["fbf_lon"]
     
-    """ TODO, something like this will be needed for fog
-    # Create pseudo-bands
-    try:
-        if create_pseudo:
-            create_pseudobands(kind, bands)
-    except StandardError:
-        log.error("Pseudo band creation failed")
-        log.debug("Pseudo band error:", exc_info=1)
-        status_to_return |= SWATH_FAIL
-        return status_to_return
-    """
+    # cloud clear some of our bands if we have the cloud mask
+    for band_kind, band_id in band_info.keys() :
+        
+        # only do the clearing if it's appropriate for this band
+        if IS_CLOUD_CLEARED[(band_kind, band_id)] :
+            
+            # we can only cloud clear if we have a cloud mask
+            if (BKIND_CMASK, NOT_APPLICABLE) in band_info :
+                
+                file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
+                try:
+                    new_path = make_data_cloud_cleared(file_to_use, band_info[(BKIND_CMASK, NOT_APPLICABLE)]["fbf_img"],
+                                                       CLOUDS_VALUES_TO_CLEAR, data_fill_value=band_info[band_kind, band_id]["fill_value"])
+                    band_info[band_kind, band_id]["fbf_swath"] = new_path
+                except StandardError:
+                    log.error("Unexpected error while cloud clearing " + str(band_kind) + " " + str(band_id) + ", removing...")
+                    log.debug("Error:", exc_info=1)
+                    del band_info[(band_kind, band_id)]
+                    status_to_return |= PRESCALE_FAIL
+                
+            # if we don't have the cloud mask to clear this product, we can't produce it
+            else :
+                
+                log.error("Cloud mask unavailable to cloud clear " + str(band_kind) + " " + str(band_id) + ", removing...")
+                del band_info[(band_kind, band_id)]
+                status_to_return |= PRESCALE_FAIL
+    
+    if len(band_info) == 0:
+        log.error("No more bands to process, quitting...")
+        return status_to_return or UNKNOWN_FAIL
     
     # convert some of our bands to brightness temperature
     for band_kind, band_id in band_info.keys() :
@@ -139,10 +171,12 @@ def process_data_sets(filepaths,
         # only do the conversion if it's appropriate for this band
         if SHOULD_CONVERT_TO_BT[(band_kind, band_id)] :
             
+            file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
+            
             try :
                 # TODO, there's meta data info encoded here that might belong elsewhere
-                new_path = convert_radiance_to_bt (band_info[band_kind, band_id]["fbf_img"], sat, band_id, fill_value=band_info[band_kind, band_id]["fill_value"])
-                band_info[band_kind, band_id]["fbf_swath"]     = new_path
+                new_path = convert_radiance_to_bt (file_to_use, sat, band_id, fill_value=band_info[band_kind, band_id]["fill_value"])
+                band_info[band_kind, band_id]["fbf_swath"] = new_path
                 band_info[band_kind, band_id]["data_kind"] = DKIND_BTEMP
             except StandardError :
                 log.error("Unexpected error prescaling " + str(band_kind) + " " + str(band_id) + ", removing...")
@@ -154,6 +188,19 @@ def process_data_sets(filepaths,
         log.error("No more bands to process, quitting...")
         return status_to_return or UNKNOWN_FAIL
     
+    # the fog band must be calculated after the other bands are converted to brightness temperatures
+    
+    # if we have what we need, we want to build the fog band
+    have_bands_needed_for_fog = True
+    for band_kind, band_id in BANDS_REQUIRED_TO_CALCULATE_FOG_BAND :
+        have_bands_needed_for_fog = False if (band_kind, band_id) not in band_info else have_bands_needed_for_fog
+    if have_bands_needed_for_fog :
+        fog_meta_data = create_fog_band (band_info[(BKIND_IR,  BID_20)], band_info[(BKIND_IR,  BID_31)],
+                                         fog_fill_value=band_info[(BKIND_IR,  BID_20)]['fill_value']) # for now, use one of the fill values
+        band_info[(fog_meta_data["kind"], fog_meta_data["band"])] = fog_meta_data
+    
+    print("band_info: " + str(band_info.keys()))
+    
     # Determine grids
     try:
         log.info("Determining what grids the data fits in...")
@@ -164,7 +211,6 @@ def process_data_sets(filepaths,
         log.error("Determining data's grids failed")
         status_to_return |= GDETER_FAIL
         return status_to_return
-    
     
     ### Remap the data
     try:
@@ -276,38 +322,52 @@ def run_modis2awips(filepaths,
     filepaths = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(filepaths) ]
     
     # separate these by the MODIS types
-    vis_inf_files = sorted(set([ x for x in filepaths if re.match(VIS_INF_FILE_PATTERN ,os.path.split(x)[1]) ]))
-    all_used = set(vis_inf_files)
+    nav_file_type_sets = defaultdict(dict)
+    all_used           = set([ ])
+    # for each of the possible navigation types
+    for nav_file_pattern_key in GEO_FILE_GROUPING.keys() :
+        # for each file pattern that uses that navigation type
+        for file_pattern in GEO_FILE_GROUPING[nav_file_pattern_key] :
+            # add the files matching that pattern to the appropriate set
+            nav_file_type_sets[nav_file_pattern_key][file_pattern] = set([ ]) if file_pattern not in nav_file_type_sets[nav_file_pattern_key] else nav_file_type_sets[nav_file_pattern_key][file_pattern]
+            nav_file_type_sets[nav_file_pattern_key][file_pattern].update(set([ x for x in filepaths if re.match(file_pattern, os.path.split(x)[1]) ]))
+            all_used.update(nav_file_type_sets[nav_file_pattern_key][file_pattern]) # keep a running set of all the files we've found matching nav files for
     all_provided = set(filepaths)
     not_used = all_provided - all_used
     if len(not_used):
         log.warning("Didn't know what to do with\n%s" % "\n".join(list(not_used)))
     
-    #print ("visible and infrared files: " + str(vis_inf_files))
+    # some things that we'll use later for clean up
+    processes_to_wait_for = defaultdict(list)
+    exit_status           = 0
     
-    visible_and_infrared_processes = None
-    exit_status = 0
-    if len(vis_inf_files) > 0 :
-        log.debug("Processing visible and infrared files")
+    # go through and process each of our file sets by navigation type
+    for geo_nav_key in nav_file_type_sets.keys() :
+        log.debug("Processing files for %s navigation" % geo_nav_key)
+        
+        temp_files_for_this_nav = nav_file_type_sets[geo_nav_key]
         try:
             if multiprocess:
-                visible_and_infrared_processes = Process(target=_process_data_sets,
-                                                         args = (vis_inf_files,),
-                                                         kwargs = kwargs
-                                                         )
-                visible_and_infrared_processes.start()
+                temp_processes = Process(target=_process_data_sets,
+                                         args = (temp_files_for_this_nav,),
+                                         kwargs = kwargs
+                                         )
+                temp_processes.start()
+                processes_to_wait_for[geo_nav_key].append(temp_processes)
             else:
-                stat = _process_data_sets(vis_inf_files, **kwargs)
+                stat = _process_data_sets(temp_files_for_this_nav, **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
-            log.error("Could not process visible and infrared files")
-            exit_status = exit_status or len(vis_inf_files)
+            log.error("Could not process files for %s navigation" % geo_nav_key)
+            exit_status = exit_status or len(temp_files_for_this_nav)
     
     log.debug("Waiting for subprocesses")
-    if visible_and_infrared_processes is not None:
-        visible_and_infrared_processes.join()
-        stat = visible_and_infrared_processes.exitcode
-        exit_status = exit_status or stat
+    # look through our processes and wait for any processes we saved to wait for
+    for geo_nav_key in processes_to_wait_for.keys() :
+        for each_process in processes_to_wait_for[geo_nav_key] :
+            each_process.join()
+            stat = each_process.exitcode
+            exit_status = exit_status or stat
     
     return exit_status
 
