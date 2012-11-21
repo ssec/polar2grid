@@ -305,9 +305,9 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name, mi
         
         # at this point we need to calculate some statistics based on the data we're saving
         to_use_temp   = numpy.append(temp_var_data[not_fill_mask], minimum_value) if minimum_value is not None else temp_var_data[not_fill_mask]
-        minimum_value = min_fn(to_use_temp)
+        minimum_value = min_fn(to_use_temp) if to_use_temp.size > 0 else minimum_value
         to_use_temp   = numpy.append(temp_var_data[not_fill_mask], maximum_value) if maximum_value is not None else temp_var_data[not_fill_mask]
-        maximum_value = max_fn(to_use_temp)
+        maximum_value = max_fn(to_use_temp) if to_use_temp.size > 0 else maximum_value
         
         #print ("variable " + str(variable_name) + " has fill value " + str(fill_value) + " and data range " + str(minimum_value) + " to " + str(maximum_value))
     
@@ -382,6 +382,8 @@ def make_swaths(ifilepaths, cut_bad=False):
             utilities used for remapping can't handle incorrect navigation data
             TODO, for now this doesn't do anything!
     """
+    
+    #print("ifilepaths: " + str(ifilepaths))
     
     # TODO, for now this method only handles one file, eventually it will need to handle more
     if len(ifilepaths) != 1 :
