@@ -135,6 +135,7 @@ def fog_scale(img, m, b, floor, floor_val, ceil, ceil_val, fill_in=DEFAULT_FILL_
     but instead of a usual clipping set the lower clipped values to
     `floor_val` and the upper clipped values to `ceil_val`.
     """
+    
     # Put -10 - 10 range into 5 - 205
     log.debug("Running 'fog_scale'...")
     mask = img == fill_in
