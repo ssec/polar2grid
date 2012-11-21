@@ -40,6 +40,9 @@ INFRARED_CH_31_VARIABLE_IDX  = 10
 
 CLOUD_MASK_NAME              = 'MODIS_Cloud_Mask'
 CLOUD_MASK_IDX               = None
+SOLAR_ZENITH_ANGLE_NAME      = "SolarZenith"
+SOLAR_ZENITH_ANGLE_IDX       = None
+
 SEA_SURFACE_TEMP_NAME        = 'Sea_Surface_Temperature'
 SEA_SURFACE_TEMP_IDX         = None
 LAND_SURFACE_TEMP_NAME       = "LST"
@@ -72,11 +75,13 @@ CLOUD_MASK_FILE_PATTERN        = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mask_byte1\.hdf'
 SEA_SURFACE_TEMP_FILE_PATTERN  = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mod28\.hdf'
 # a regular expression that will match files containing land surface temperature
 LAND_SURFACE_TEMP_FILE_PATTERN = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.modlst\.hdf'
+# a regular expression that will match files containing the nav data (including lon/lat and solar zenith angle)
+GEO_FILE_PATTTERN              = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.geo\.hdf'
 
-BANDS_REQUIRED_TO_CALCULATE_FOG_BAND = [(BKIND_IR,  BID_20), (BKIND_IR,  BID_31)]
+BANDS_REQUIRED_TO_CALCULATE_FOG_BAND = [(BKIND_IR,  BID_20), (BKIND_IR,  BID_31), (BKIND_SZA, NOT_APPLICABLE)]
 
 GEO_FILE_GROUPING = {
-                      "geo_nav": [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN, SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN]
+                      "geo_nav": [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN, SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN, GEO_FILE_PATTTERN]
                     }
 
 # a mapping between regular expressions to match files and their band_kind and band_id contents
@@ -94,7 +99,10 @@ FILE_CONTENTS_GUIDE = {
                         LAND_SURFACE_TEMP_FILE_PATTERN:             {
                                                                      BKIND_LST:   [NOT_APPLICABLE],
                                                                      BKIND_SLST:  [NOT_APPLICABLE]
-                                                                    }
+                                                                    },
+                        GEO_FILE_PATTTERN:                          {
+                                                                     BKIND_SZA:   [NOT_APPLICABLE]
+                                                                    },
                       }
 
 # a mapping between bands and their fill value attribute names
@@ -108,9 +116,11 @@ FILL_VALUE_ATTR_NAMES = \
               (BKIND_IR,  BID_31):           FILL_VALUE_ATTR_NAME,
               
               (BKIND_CMASK, NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
+              (BKIND_SZA,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
+              
               (BKIND_SST,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
               (BKIND_LST,   NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
-              (BKIND_SLST,   NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
+              (BKIND_SLST,  NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
             }
 
 # a mapping between the bands and their data kinds (in the file)
@@ -123,6 +133,8 @@ DATA_KINDS = {
               (BKIND_IR,  BID_31): DKIND_RADIANCE,
               
               (BKIND_CMASK, NOT_APPLICABLE): DKIND_CATEGORY,
+              (BKIND_SZA,   NOT_APPLICABLE): DKIND_ANGLE,
+              
               (BKIND_SST,   NOT_APPLICABLE): DKIND_BTEMP,
               (BKIND_LST,   NOT_APPLICABLE): DKIND_BTEMP,
               (BKIND_SLST,  NOT_APPLICABLE): DKIND_BTEMP
@@ -138,6 +150,8 @@ VAR_NAMES  = {
               (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_NAME,
               
               (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_NAME,
+              (BKIND_SZA,   NOT_APPLICABLE): SOLAR_ZENITH_ANGLE_NAME,
+              
               (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_NAME,
               (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
               (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
@@ -154,6 +168,8 @@ VAR_IDX    = {
               (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_IDX,
               
               (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_IDX,
+              (BKIND_SZA,   NOT_APPLICABLE): SOLAR_ZENITH_ANGLE_IDX,
+              
               (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_IDX,
               (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
               (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
@@ -170,6 +186,8 @@ RESCALING_ATTRS = \
               (BKIND_IR,  BID_31): (INFRARED_SCALE_ATTR_NAME, INFRARED_OFFSET_ATTR_NAME),
               
               (BKIND_CMASK, NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
+              (BKIND_SZA,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
+              
               (BKIND_SST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
               (BKIND_LST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
               (BKIND_SLST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
@@ -186,6 +204,8 @@ IS_CLOUD_CLEARED = \
               (BKIND_IR,  BID_31): False,
               
               (BKIND_CMASK, NOT_APPLICABLE): False,
+              (BKIND_SZA,   NOT_APPLICABLE): False,
+              
               (BKIND_SST,   NOT_APPLICABLE): True,
               (BKIND_LST,   NOT_APPLICABLE): True,
               (BKIND_SLST,  NOT_APPLICABLE): True,
@@ -202,6 +222,8 @@ SHOULD_CONVERT_TO_BT = \
               (BKIND_IR,  BID_31): True,
               
               (BKIND_CMASK, NOT_APPLICABLE): False,
+              (BKIND_SZA,   NOT_APPLICABLE): False,
+              
               (BKIND_SST,   NOT_APPLICABLE): False,
               (BKIND_LST,   NOT_APPLICABLE): False,
               (BKIND_SLST,  NOT_APPLICABLE): False
@@ -261,6 +283,8 @@ def get_equivalent_geolocation_filename (data_file_name_string) :
         filename_to_return = data_file_name_string.split('.mod28.hdf'     )[0] + GEO_FILE_SUFFIX
     if re.match(LAND_SURFACE_TEMP_FILE_PATTERN, data_file_name_string) is not None :
         filename_to_return = data_file_name_string.split('.modlst.hdf'    )[0] + GEO_FILE_SUFFIX
+    if re.match(GEO_FILE_PATTTERN,              data_file_name_string) is not None :
+        filename_to_return = data_file_name_string
     
     return filename_to_return
 
