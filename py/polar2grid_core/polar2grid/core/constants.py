@@ -46,6 +46,7 @@ BKIND_CMASK = "cloud_mask"
 BKIND_SST   = "sea_surface_temp"
 BKIND_LST   = "land_surface_temp"
 BKIND_SLST  = "summer_land_surface_temp"
+BKIND_SZA   = "solar_zenith_angle"
 
 # Band Identifier
 BID_01 = "01"
@@ -78,6 +79,7 @@ DKIND_REFLECTANCE = "reflectance"
 DKIND_BTEMP       = "btemp"
 DKIND_FOG         = "fog"
 DKIND_CATEGORY    = "category"
+DKIND_ANGLE       = "angle"
 
 # Grid Constants
 GRIDS_ANY = "any_grid"
