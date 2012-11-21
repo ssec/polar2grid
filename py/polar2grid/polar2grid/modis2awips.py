@@ -111,15 +111,16 @@ def process_data_sets(filepaths,
     for file_pattern_key in filepaths.keys() :
         temp_filepaths = sorted(filepaths[file_pattern_key])
         
-        try:
-            temp_meta_data = make_swaths(temp_filepaths, cut_bad=True)
-            temp_bands     = { } if "bands" not in meta_data else meta_data["bands"]
-            meta_data.update(temp_meta_data)
-            meta_data["bands"].update(temp_bands)
-        except StandardError:
-            log.error("Swath creation failed")
-            log.debug("Swath creation error:", exc_info=1)
-            status_to_return |= SWATH_FAIL
+        if len(temp_filepaths) > 0 :
+            try:
+                temp_meta_data = make_swaths(temp_filepaths, cut_bad=True)
+                temp_bands     = { } if "bands" not in meta_data else meta_data["bands"]
+                meta_data.update(temp_meta_data)
+                meta_data["bands"].update(temp_bands)
+            except StandardError:
+                log.error("Swath creation failed")
+                log.debug("Swath creation error:", exc_info=1)
+                status_to_return |= SWATH_FAIL
     
     # if we weren't able to load any of the swaths... stop now
     if len(meta_data.keys()) <= 0 :
@@ -195,8 +196,9 @@ def process_data_sets(filepaths,
     for band_kind, band_id in BANDS_REQUIRED_TO_CALCULATE_FOG_BAND :
         have_bands_needed_for_fog = False if (band_kind, band_id) not in band_info else have_bands_needed_for_fog
     if have_bands_needed_for_fog :
-        fog_meta_data = create_fog_band (band_info[(BKIND_IR,  BID_20)], band_info[(BKIND_IR,  BID_31)],
-                                         fog_fill_value=band_info[(BKIND_IR,  BID_20)]['fill_value']) # for now, use one of the fill values
+        fog_meta_data = create_fog_band (band_info[(BKIND_IR, BID_20)], band_info[(BKIND_IR, BID_31)],
+                                         sza_meta_data=band_info[(BKIND_SZA, NOT_APPLICABLE)],
+                                         fog_fill_value=band_info[(BKIND_IR, BID_20)]['fill_value']) # for now, use one of the fill values
         band_info[(fog_meta_data["kind"], fog_meta_data["band"])] = fog_meta_data
     
     print("band_info: " + str(band_info.keys()))
