@@ -159,7 +159,7 @@ def make_data_cloud_cleared (data_fbf_path, clouds_fbf_path, list_of_cloud_value
     
     return new_file_path
 
-def create_fog_band (band_20_bt_meta_data, band_31_bt_meta_data, fog_fill_value=DEFAULT_FILL_VALUE) :
+def create_fog_band (band_20_bt_meta_data, band_31_bt_meta_data, sza_meta_data=None, fog_fill_value=DEFAULT_FILL_VALUE) :
     """
     Given bands 20 and 31 as brightness temperatures, create the fog band, with associcated flat binary file and meta data.
     
@@ -189,6 +189,17 @@ def create_fog_band (band_20_bt_meta_data, band_31_bt_meta_data, fog_fill_value=
     fog_data[band_20_data == band_20_fill_value] = fog_fill_value
     fog_data[band_31_data == band_31_fill_value] = fog_fill_value
     
+    # if we have solar zenith angle information, filter so that only night data is being considered
+    if sza_meta_data is not None:
+        
+        sza_fbf_path   = sza_meta_data["fbf_swath"] if "fbf_swath" in sza_meta_data else sza_meta_data["fbf_img"]
+        sza_fill_value = sza_meta_data["fill_value"]
+        sza_data       = _load_data_from_workspace(os.path.split(sza_fbf_path)[1].split('.')[0])
+        
+        # if the angle is fill or is less than 90 (day) we don't want to calculate the fog there
+        where_mask     = (sza_data == sza_fill_value) | (sza_data < 90.0)
+        fog_data[where_mask] = fog_fill_value
+    
     # save the fog data to disk
     name_suffix = band_31_file_name.split('infrared_31')[1]
     fog_name    = "image_infrared_fog%s" % name_suffix
@@ -208,6 +219,7 @@ def create_fog_band (band_20_bt_meta_data, band_31_bt_meta_data, fog_fill_value=
     fog_meta_data["band"]          = BID_FOG
     fog_meta_data["fill_value"]    = fog_fill_value
     fog_meta_data["fbf_img"]       = fog_file_path
+    del fog_meta_data["fbf_swath"]
     
     return fog_meta_data
 
