@@ -47,6 +47,7 @@ BKIND_SST   = "sea_surface_temp"
 BKIND_LST   = "land_surface_temp"
 BKIND_SLST  = "summer_land_surface_temp"
 BKIND_SZA   = "solar_zenith_angle"
+BKIND_CTT   = "cloud_top_temperature"
 
 # Band Identifier
 BID_01 = "01"
