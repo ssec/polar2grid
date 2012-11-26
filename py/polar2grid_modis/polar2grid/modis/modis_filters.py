@@ -182,23 +182,18 @@ def create_fog_band (band_20_bt_meta_data, band_31_bt_meta_data, sza_meta_data=N
     band_20_data = _load_data_from_workspace(band_20_attr)
     band_31_data = _load_data_from_workspace(band_31_attr)
     
-    # create the fog data
-    fog_data     = band_31_data - band_20_data
-    
-    # handle the fill values
-    fog_data[band_20_data == band_20_fill_value] = fog_fill_value
-    fog_data[band_31_data == band_31_fill_value] = fog_fill_value
-    
     # if we have solar zenith angle information, filter so that only night data is being considered
+    sza_data       = None
+    sza_fill_value = None
     if sza_meta_data is not None:
         
         sza_fbf_path   = sza_meta_data["fbf_swath"] if "fbf_swath" in sza_meta_data else sza_meta_data["fbf_img"]
         sza_fill_value = sza_meta_data["fill_value"]
         sza_data       = _load_data_from_workspace(os.path.split(sza_fbf_path)[1].split('.')[0])
-        
-        # if the angle is fill or is less than 90 (day) we don't want to calculate the fog there
-        where_mask     = (sza_data == sza_fill_value) | (sza_data < 90.0)
-        fog_data[where_mask] = fog_fill_value
+    
+    fog_data, fog_fill_value = create_fog(band_20_data, band_20_fill_value,
+                                          band_31_data, band_31_fill_value,
+                                          sza_data=sza_data, sza_fill_value=sza_fill_value)
     
     # save the fog data to disk
     name_suffix = band_31_file_name.split('infrared_31')[1]
@@ -222,6 +217,41 @@ def create_fog_band (band_20_bt_meta_data, band_31_bt_meta_data, sza_meta_data=N
     del fog_meta_data["fbf_swath"]
     
     return fog_meta_data
+
+def create_fog (band_20_data, band_20_fill_value, band_31_data, band_31_fill_value, sza_data=None, sza_fill_value=None, too_little_data=10) :
+    """
+    given the data and fill values for bands 20 and 31 (as brightness temperatures) construct the fog band data
+    
+    if the sza_data and sza_fill_value are given, limit the fog to only be calculated for night data (ie. angle >= 90.0 degrees)
+    if less than too_little_data% of the data is night (according to the sza) don't produce the fog data
+    """
+    
+    # we'll pick one of the two fill values to give to fog
+    fog_fill_value = band_20_fill_value
+    
+    # create the raw fog data
+    fog_data = band_31_data - band_20_data
+    
+    # set the fill value where the data in the originals is missing
+    fog_data[band_20_data == band_20_fill_value] = fog_fill_value
+    fog_data[band_31_data == band_31_fill_value] = fog_fill_value
+    
+    # if we have the solar zenith angle, use that to limit ourselves to night data
+    if sza_data is not None :
+        
+        # make some masks based on our sza values
+        invalid_sza = (sza_data == sza_fill_value)
+        night_mask  = (sza_data >= 90.0) & ~invalid_sza
+        
+        # if we don't have enough night data, we can't make the fog data
+        fraction_night = numpy.sum(night_mask) / (sza_data.size - numpy.sum(invalid_sza))
+        if fraction_night < (too_little_data / 100.0) :
+            raise ValueError ("Less than " + str(too_little_data) +"% of the data provided for fog calculation was night data.")
+        
+        # clear out the non-night values
+        fog_data[invalid_sza | ~night_mask] = fog_fill_value
+    
+    return fog_data, fog_fill_value
 
 def main():
     import optparse
