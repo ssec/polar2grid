@@ -192,7 +192,7 @@ def _load_meta_data (file_objects) :
     
     return meta_data
 
-def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid="geo_nav", cut_bad=False) :
+def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid=None, cut_bad=False) :
     """
     load the geonav data and save it in flat binary files; update the given meta_data_to_update
     with information on where the files are and what the shape and range of the nav data are
@@ -205,12 +205,13 @@ def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid="geo_nav"
     for file_info in file_info_objects :
         list_of_geo_files.append(file_info.get_geo_file())
     
+    # FUTURE, if the longitude and latitude ever have different variable names, this will need refactoring
     lat_temp_file_name, lat_stats = _load_data_to_flat_file (list_of_geo_files, "lat",
                                                              modis_guidebook.LATITUDE_GEO_VARIABLE_NAME,
-                                                             modis_guidebook.FILL_VALUE_ATTR_NAME)
+                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid])
     lon_temp_file_name, lon_stats = _load_data_to_flat_file (list_of_geo_files, "lon",
                                                              modis_guidebook.LONGITUDE_GEO_VARIABLE_NAME,
-                                                             modis_guidebook.FILL_VALUE_ATTR_NAME)
+                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid])
     
     # rename the flat file to a more descriptive name
     shape_temp = lat_stats["shape"]
@@ -238,7 +239,8 @@ def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid="geo_nav"
     meta_data_to_update["lon_max"]        = lon_stats["max"]
     """
 
-def _load_data_to_flat_file (file_objects, descriptive_string, variable_name, missing_attribute_name,
+def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
+                             missing_attribute_name=None, fill_value_default=DEFAULT_FILL_VALUE,
                              variable_idx=None, scale_name=None, offset_name=None,
                              min_fn=numpy.min, max_fn=numpy.max) :
     """
@@ -270,7 +272,12 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name, mi
         temp_var_data   = temp_var_object[:].astype(numpy.float32) if variable_idx is None else temp_var_object[variable_idx].astype(numpy.float32)
         
         # figure out where the missing values are
-        temp_fill_value = temp_var_object.attributes()[missing_attribute_name]
+        temp_fill_value = None
+        # if we have an attribute name for the fill value then load it, otherwise use the default
+        if missing_attribute_name is not None :
+            temp_fill_value = temp_var_object.attributes()[missing_attribute_name]
+        else :
+            temp_fill_value = fill_value_default
         # if we already have a fill value and it's not the same as the one we just loaded, fix our data
         if (fill_value is not None) and (temp_fill_value != fill_value) :
             temp_var_data[temp_var_data == temp_fill_value] = fill_value
@@ -337,7 +344,7 @@ def _load_image_data (meta_data_to_update, cut_bad=False) :
         temp_image_file_name, image_stats = _load_data_to_flat_file ([meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"].file_object],
                                                                      str(band_kind) + str(band_id),
                                                                      modis_guidebook.VAR_NAMES[(band_kind, band_id)],
-                                                                     modis_guidebook.FILL_VALUE_ATTR_NAMES[(band_kind, band_id)],
+                                                                     missing_attribute_name=modis_guidebook.FILL_VALUE_ATTR_NAMES[(band_kind, band_id)],
                                                                      variable_idx=modis_guidebook.VAR_IDX[(band_kind, band_id)],
                                                                      scale_name=scale_name, offset_name=offset_name)
         
@@ -364,7 +371,7 @@ def _load_image_data (meta_data_to_update, cut_bad=False) :
             log.error(msg)
             raise ValueError(msg)
 
-def make_swaths(ifilepaths, cut_bad=False):
+def make_swaths(ifilepaths, cut_bad=False, nav_uid=None):
     """Takes MODIS hdf files and creates flat binary files for the information
     required to do further processing.
 
@@ -399,7 +406,7 @@ def make_swaths(ifilepaths, cut_bad=False):
     
     # load the geonav data and put it in flat binary files
     log.info("Creating binary files for latitude and longitude data")
-    _load_geonav_data (meta_data, [file_info], cut_bad=cut_bad)
+    _load_geonav_data (meta_data, [file_info], cut_bad=cut_bad, nav_uid=nav_uid)
     
     # load the image data and put it in flat binary files
     log.info("Creating binary files for image data")
