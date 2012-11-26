@@ -85,6 +85,7 @@ def clean_up_files():
     remove_products(list_to_remove)
 
 def process_data_sets(filepaths,
+                      nav_uid,
                       fornav_D=None, fornav_d=None,
                       forced_grid=None,
                       forced_gpd=None, forced_nc=None,
@@ -113,7 +114,7 @@ def process_data_sets(filepaths,
         
         if len(temp_filepaths) > 0 :
             try:
-                temp_meta_data = make_swaths(temp_filepaths, cut_bad=True)
+                temp_meta_data = make_swaths(temp_filepaths, cut_bad=True, nav_uid=nav_uid)
                 temp_bands     = { } if "bands" not in meta_data else meta_data["bands"]
                 meta_data.update(temp_meta_data)
                 meta_data["bands"].update(temp_bands)
@@ -206,7 +207,7 @@ def process_data_sets(filepaths,
             log.debug("Fog creation error:", exc_info=1)
             status_to_return |= PRESCALE_FAIL
     
-    print("band_info: " + str(band_info.keys()))
+    log.debug("band_info after prescaling: " + str(band_info.keys()))
     
     # Determine grids
     try:
@@ -221,7 +222,7 @@ def process_data_sets(filepaths,
     
     ### Remap the data
     try:
-        remapped_jobs = remap_bands(sat, instrument, "geo_nav",
+        remapped_jobs = remap_bands(sat, instrument, nav_uid,
                 flatbinaryfilename_lon, flatbinaryfilename_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
                 lat_min       =meta_data.get("lat_min",        None),
@@ -356,13 +357,13 @@ def run_modis2awips(filepaths,
         try:
             if multiprocess:
                 temp_processes = Process(target=_process_data_sets,
-                                         args = (temp_files_for_this_nav,),
+                                         args = (temp_files_for_this_nav, geo_nav_key),
                                          kwargs = kwargs
                                          )
                 temp_processes.start()
                 processes_to_wait_for[geo_nav_key].append(temp_processes)
             else:
-                stat = _process_data_sets(temp_files_for_this_nav, **kwargs)
+                stat = _process_data_sets(temp_files_for_this_nav, geo_nav_key **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
             log.error("Could not process files for %s navigation" % geo_nav_key)
