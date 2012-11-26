@@ -196,10 +196,15 @@ def process_data_sets(filepaths,
     for band_kind, band_id in BANDS_REQUIRED_TO_CALCULATE_FOG_BAND :
         have_bands_needed_for_fog = False if (band_kind, band_id) not in band_info else have_bands_needed_for_fog
     if have_bands_needed_for_fog :
-        fog_meta_data = create_fog_band (band_info[(BKIND_IR, BID_20)], band_info[(BKIND_IR, BID_31)],
-                                         sza_meta_data=band_info[(BKIND_SZA, NOT_APPLICABLE)],
-                                         fog_fill_value=band_info[(BKIND_IR, BID_20)]['fill_value']) # for now, use one of the fill values
-        band_info[(fog_meta_data["kind"], fog_meta_data["band"])] = fog_meta_data
+        try :
+            fog_meta_data = create_fog_band (band_info[(BKIND_IR, BID_20)], band_info[(BKIND_IR, BID_31)],
+                                             sza_meta_data=band_info[(BKIND_SZA, NOT_APPLICABLE)],
+                                             fog_fill_value=band_info[(BKIND_IR, BID_20)]['fill_value']) # for now, use one of the fill values
+            band_info[(fog_meta_data["kind"], fog_meta_data["band"])] = fog_meta_data
+        except StandardError :
+            log.error("Error while creating fog band; fog will not be created...")
+            log.debug("Fog creation error:", exc_info=1)
+            status_to_return |= PRESCALE_FAIL
     
     print("band_info: " + str(band_info.keys()))
     
