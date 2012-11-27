@@ -20,7 +20,7 @@ from polar2grid.modis import GEO_FILE_GROUPING, SHOULD_CONVERT_TO_BT, IS_CLOUD_C
 
 from .util_glue_functions import *
 from .remap import remap_bands
-from .awips import can_handle_inputs,backend,load_config as load_backend_config
+from .awips import Backend
 
 import os
 import sys
@@ -30,27 +30,6 @@ from multiprocessing import Process
 import numpy
 from glob import glob
 from collections import defaultdict
-
-# Status Constants
-
-# processing successful
-SUCCESS = 0
-# Swath extraction failed
-SWATH_FAIL = 2
-# Swath prescaling failed
-PRESCALE_FAIL = 4
-# ll2cr failed
-LL2CR_FAIL = 8
-# fornav failed
-FORNAV_FAIL = 16
-# remap failed
-REMAP_FAIL = 24 # ll2cr and fornav
-# backend failed
-BACKEND_FAIL = 32
-# grid determination failed
-GDETER_FAIL = 64
-# there aren't any jobs left, not sure why
-UNKNOWN_FAIL = -1
 
 log = logging.getLogger(__name__)
 LOG_FN = os.environ.get("MODIS2AWIPS_LOG", "./modis2awips.log")
@@ -100,11 +79,10 @@ def process_data_sets(filepaths,
     Note: all files provided are expected to share a navigation source.
     """
     
-    status_to_return = SUCCESS
+    status_to_return = STATUS_SUCCESS
     
     # Load any configuration files needed
-    # XXX: Fix this by using object orientated components
-    load_backend_config(backend_config) # default
+    backend_object = Backend(rescale_config=rescale_config, backend_config=backend_config)
     
     # Extract Swaths
     log.info("Extracting swaths...")
@@ -121,12 +99,12 @@ def process_data_sets(filepaths,
             except StandardError:
                 log.error("Swath creation failed")
                 log.debug("Swath creation error:", exc_info=1)
-                status_to_return |= SWATH_FAIL
+                status_to_return |= STATUS_FRONTEND_FAIL
     
     # if we weren't able to load any of the swaths... stop now
     if len(meta_data.keys()) <= 0 :
         log.error("Unable to load swaths for the specified bands, quitting...")
-        return status_to_return or UNKNOWN_FAIL
+        return status_to_return or STATUS_UNKNOWN_FAIL
     
     # for convenience, pull some things out of the meta data
     sat = meta_data["sat"]
@@ -154,18 +132,18 @@ def process_data_sets(filepaths,
                     log.error("Unexpected error while cloud clearing " + str(band_kind) + " " + str(band_id) + ", removing...")
                     log.debug("Error:", exc_info=1)
                     del band_info[(band_kind, band_id)]
-                    status_to_return |= PRESCALE_FAIL
+                    status_to_return |= STATUS_FRONTEND_FAIL
                 
             # if we don't have the cloud mask to clear this product, we can't produce it
             else :
                 
                 log.error("Cloud mask unavailable to cloud clear " + str(band_kind) + " " + str(band_id) + ", removing...")
                 del band_info[(band_kind, band_id)]
-                status_to_return |= PRESCALE_FAIL
+                status_to_return |= STATUS_FRONTEND_FAIL
     
     if len(band_info) == 0:
         log.error("No more bands to process, quitting...")
-        return status_to_return or UNKNOWN_FAIL
+        return status_to_return or STATUS_UNKNOWN_FAIL
     
     # convert some of our bands to brightness temperature
     for band_kind, band_id in band_info.keys() :
@@ -184,11 +162,11 @@ def process_data_sets(filepaths,
                 log.error("Unexpected error prescaling " + str(band_kind) + " " + str(band_id) + ", removing...")
                 log.debug("Prescaling error:", exc_info=1)
                 del band_info[(band_kind, band_id)]
-                status_to_return |= PRESCALE_FAIL
+                status_to_return |= STATUS_FRONTEND_FAIL
     
     if len(band_info) == 0:
         log.error("No more bands to process, quitting...")
-        return status_to_return or UNKNOWN_FAIL
+        return status_to_return or STATUS_UNKNOWN_FAIL
     
     # the fog band must be calculated after the other bands are converted to brightness temperatures
     
@@ -205,7 +183,7 @@ def process_data_sets(filepaths,
         except StandardError :
             log.error("Error while creating fog band; fog will not be created...")
             log.debug("Fog creation error:", exc_info=1)
-            status_to_return |= PRESCALE_FAIL
+            status_to_return |= STATUS_FRONTEND_FAIL
     
     log.debug("band_info after prescaling: " + str(band_info.keys()))
     
@@ -213,11 +191,11 @@ def process_data_sets(filepaths,
     try:
         log.info("Determining what grids the data fits in...")
         grid_jobs = create_grid_jobs(sat, instrument, band_info, flatbinaryfilename_lat, flatbinaryfilename_lon,
-                forced_grids=forced_grid, can_handle_inputs=can_handle_inputs)
+                                     backend_object, forced_grids=forced_grid)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")
-        status_to_return |= GDETER_FAIL
+        status_to_return |= STATUS_GDETER_FAIL
         return status_to_return
     
     ### Remap the data
@@ -225,17 +203,18 @@ def process_data_sets(filepaths,
         remapped_jobs = remap_bands(sat, instrument, nav_uid,
                 flatbinaryfilename_lon, flatbinaryfilename_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
-                lat_min       =meta_data.get("lat_min",        None),
-                lat_max       =meta_data.get("lat_max",        None),
-                lon_min       =meta_data.get("lon_min",        None),
-                lon_max       =meta_data.get("lon_max",        None),
+                # these have been changed to north, south, east, west
+                #lat_min       =meta_data.get("lat_min",        None),
+                #lat_max       =meta_data.get("lat_max",        None),
+                #lon_min       =meta_data.get("lon_min",        None),
+                #lon_max       =meta_data.get("lon_max",        None),
                 lat_fill_value=meta_data.get("lat_fill_value", None),
                 lon_fill_value=meta_data.get("lon_fill_value", None)
                 )
     except StandardError:
         log.debug("Remapping Error:", exc_info=1)
         log.error("Remapping data failed")
-        status_to_return |= REMAP_FAIL
+        status_to_return |= STATUS_REMAP_FAIL
         return status_to_return
     
     ### BACKEND ###
@@ -254,20 +233,18 @@ def process_data_sets(filepaths,
                 data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
                 
                 # Call the backend
-                backend(
-                        sat,
-                        instrument,
-                        band_kind,
-                        band_id,
-                        band_dict["data_kind"],
-                        data,
-                        start_time=start_time,
-                        grid_name=grid_name,
-                        ncml_template=forced_nc or None,
-                        rescale_config=rescale_config,
-                        backend_config=backend_config,
-                        fill_in=band_dict["fill_value"]
-                        )
+                backend_object.create_product(
+                                            sat,
+                                            instrument,
+                                            band_kind,
+                                            band_id,
+                                            band_dict["data_kind"],
+                                            data,
+                                            start_time=start_time,
+                                            grid_name=grid_name,
+                                            ncml_template=forced_nc or None,
+                                            fill_value=band_dict.get("fill_value", None)
+                                            )
             except StandardError:
                 log.error("Error in the AWIPS backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
                 log.debug("AWIPS backend error:", exc_info=1)
@@ -279,7 +256,7 @@ def process_data_sets(filepaths,
     
     if len(remapped_jobs) == 0:
         log.warning("AWIPS backend failed for all grids in this data set")
-        status_to_return |= BACKEND_FAIL
+        status_to_return |= STATUS_BACKEND_FAIL
     
     log.info("Processing of data set is complete")
     
@@ -423,17 +400,19 @@ def main():
             help="Specify a different nc file to use")
     parser.add_argument('--backend-config', dest='backend_config', default=None,
             help="specify alternate backend configuration file")
-
+    
+    # TODO, compare the arguments here against those in viirs2awips
+    
     parser.add_argument('data_files', nargs="+",
             help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
     args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(LOG_FN, console_level=levels[min(3, args.verbosity)])
-
+    
     # Don't set this up until after you have setup logging
     sys.excepthook = exc_handler
-
+    
     fornav_D = int(args.fornav_D)
     fornav_d = int(args.fornav_d)
     num_procs = int(args.num_procs)
@@ -444,7 +423,7 @@ def main():
     if args.forced_nc is not None and not os.path.exists(args.forced_nc):
         log.error("Specified nc file does not exist '%s'" % args.forced_nc)
         return -1
-
+    
     if "help" in args.data_files:
         parser.print_help()
         sys.exit(0)
@@ -452,7 +431,7 @@ def main():
         log.debug("Removing previous products")
         clean_up_files()
         sys.exit(0)
-
+    
     if args.get_files:
         hdf_files = args.data_files[:]
     elif len(args.data_files) == 1:
@@ -462,18 +441,18 @@ def main():
         log.error("Wrong number of arguments")
         parser.print_help()
         return -1
-
+    
     if args.remove_prev:
         log.debug("Removing any previous files")
         clean_up_files()
-
+    
     stat = run_modis2awips(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
                 forced_gpd=args.forced_gpd, forced_nc=args.forced_nc, forced_grid=forced_grids,
                 create_pseudo=False, # TODO args.create_pseudo,
                 rescale_config=args.rescale_config,
                 backend_config=args.backend_config,
                 multiprocess=not args.single_process, num_procs=num_procs)
-
+    
     return stat
 
 if __name__ == "__main__":
