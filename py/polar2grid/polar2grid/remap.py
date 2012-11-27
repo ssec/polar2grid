@@ -184,7 +184,6 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
             fornav_group[band_info["remap_data_as"]]["swath_fill_1"].append(band_info.get("fill_value", fill_value))
             fornav_group[band_info["remap_data_as"]]["grid_fill_1"].append(band_info.get("fill_value", fill_value))
             band_info["fbf_remapped"] = output_name
-            fill_value_in = band_info["fill_value"] if "fill_value" in band_info else fill_value_in
         
         for remap_data_as,fornav_job in fornav_group.items():
             fornav_job["result"] = run_fornav_c(
