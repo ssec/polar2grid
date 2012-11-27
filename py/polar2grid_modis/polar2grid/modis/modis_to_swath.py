@@ -152,6 +152,7 @@ def _load_meta_data (file_objects) :
                  "lat_fill_value": None,
                  "fbf_lat":        None,
                  "fbf_lon":        None,
+                 # these have been changed to north, south, east, west
                  #"lat_min":        None,
                  #"lon_min":        None,
                  #"lat_max":        None,
@@ -232,7 +233,7 @@ def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid=None, cut
     meta_data_to_update["swath_scans"]    = rows / modis_guidebook.ROWS_PER_SCAN
     meta_data_to_update["nav_set_uid"]    = nav_uid
     
-    """ Dave tells me these have changed and the backend will calc them, so don't bother
+    """ # these have been changed to north, south, east, west and the backend will calculate them anyway
     meta_data_to_update["lat_min"]        = lat_stats["min"]
     meta_data_to_update["lat_max"]        = lat_stats["max"]
     meta_data_to_update["lon_min"]        = lon_stats["min"]
