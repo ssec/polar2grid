@@ -94,4 +94,42 @@ class Workspace(object):
     def __getitem__(self,name):
         return getattr(self,name)
 
+class array_appender(object):
+    """wrapper for a numpy array object which gives it a binary data append usable with "catenate"
+    """
+    A = None
+    shape = (0,0)
+    def __init__(self, nparray = None):
+        if nparray:
+            self.A = nparray
+            self.shape = nparray.shape
+
+    def append(self, data):
+        # append new rows to the data
+        if self.A is None:
+            self.A = numpy.array(data)
+            self.shape = data.shape
+        else:
+            self.A = numpy.concatenate((self.A, data))
+            self.shape = self.A.shape
+        log.debug('array shape is now %s' % repr(self.A.shape))
+
+
+class file_appender(object):
+    """wrapper for a file object which gives it a binary data append usable with "catenate"
+    """
+    F = None
+    shape = (0,0)
+    def __init__(self, file_obj, dtype):
+        self.F = file_obj
+        self.dtype = dtype
+
+    def append(self, data):
+        # append new rows to the data
+        if data is None:
+            return
+        inform = data.astype(self.dtype) if self.dtype != data.dtype else data
+        inform.tofile(self.F)
+        self.shape = (self.shape[0] + inform.shape[0], ) + data.shape[1:]
+        log.debug('%d rows in output file' % self.shape[0])
 
