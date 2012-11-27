@@ -15,9 +15,7 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.constants import *
-from .rescale import dnb_scale
 from .grids.grids import determine_grid_coverage_fbf,get_grid_info
-from .awips import can_handle_inputs as awips_can_handle_inputs
 
 import os
 import sys
@@ -116,9 +114,8 @@ def remove_products(list_of_file_patterns_to_remove, log=logging.getLogger('')):
             _safe_remove(file_name, log)
 
 # TODO, by default can_handle_inputs runs on awips, is there a more elegant way of doing this?
-def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon,
-        forced_grids=None, can_handle_inputs=awips_can_handle_inputs, 
-        log=logging.getLogger('')):
+def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend_object,
+        forced_grids=None, log=logging.getLogger('')):
     """
     TODO, documentation
     """
@@ -126,7 +123,7 @@ def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon,
     # Check what grids the backend can handle
     all_possible_grids = set()
     for band_kind, band_id in bands.keys():
-        this_band_can_handle = can_handle_inputs(sat, instrument, band_kind, band_id, bands[(band_kind, band_id)]["data_kind"])
+        this_band_can_handle = backend_object.can_handle_inputs(sat, instrument, band_kind, band_id, bands[(band_kind, band_id)]["data_kind"])
         bands[(band_kind, band_id)]["grids"] = this_band_can_handle
         if isinstance(this_band_can_handle, str):
             all_possible_grids.update([this_band_can_handle])
@@ -179,148 +176,6 @@ def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon,
         raise ValueError(msg)
 
     return grid_jobs
-
-def run_DNB_prescaling(img_filepath, mode_filepath,
-                       high_angle_limit=TERMINATOR_HIGH_ANGLE_LIMIT, low_angle_limit=TERMINATOR_LOW_ANGLE_LIMIT,
-                       fill_value=-999.0,
-                       log=logging.getLogger('')):
-    """A wrapper function for calling the prescaling function for dnb.
-    This function will read the binary image data from ``img_filepath``
-    as well as any other data that may be required to prescale the data
-    correctly, such as day/night/twilight masks.
-
-    :Parameters:
-        img_filepath : str
-            Filepath to the binary image swath data in FBF format
-            (ex. ``image_I01.real4.6400.10176``).
-        mode_filepath : str
-            Filepath to the binary mode swath data in FBF format
-            (ex. ``mode_I01.real4.6400.10176``).
-    """
-        
-    img_attr = os.path.split(img_filepath)[1].split('.')[0]
-    mode_attr = os.path.split(mode_filepath)[1].split('.')[0]
-
-    # Rescale the image
-    try:
-        W = Workspace('.')
-        img = getattr(W, img_attr)
-        data = img.copy()
-        log.debug("Data min: %f, Data max: %f" % (data.min(),data.max()))
-    except StandardError:
-        log.error("Could not open img file %s" % img_filepath)
-        log.debug("Files matching %r" % glob(img_attr + "*"))
-        raise
-
-    scale_kwargs = {}
-    try:
-        mode_mask = getattr(W, mode_attr)
-        # Only add parameters if they're useful
-        if mode_mask.shape == data.shape:
-            log.debug("Adding mode mask to rescaling arguments")
-            HIGH = high_angle_limit
-            LOW  = low_angle_limit
-            MIXED_STEP = HIGH - LOW
-            good_mask = ~((img == fill_value) | (mode_mask == fill_value))
-            scale_kwargs["night_mask"]    = (mode_mask >= HIGH) & good_mask
-            scale_kwargs["day_mask"]      = (mode_mask <= LOW ) & good_mask
-            scale_kwargs["mixed_mask"] = []
-            steps = range(LOW, HIGH+1, MIXED_STEP)
-            if steps[-1] >= HIGH: steps[-1] = HIGH
-            steps = zip(steps, steps[1:])
-            for i,j in steps:
-                log.debug("Processing step %d to %d" % (i,j))
-                tmp = (mode_mask >  i) & (mode_mask < j) & good_mask
-                if numpy.sum(tmp) > 0:
-                    log.debug("Adding step %d to %d" % (i,j))
-                    scale_kwargs["mixed_mask"].append(tmp)
-                del tmp
-            del good_mask
-
-        else:
-            log.error("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
-            raise ValueError("Mode shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
-    except StandardError:
-        log.error("Could not open mode mask file %s" % mode_filepath)
-        log.debug("Files matching %r" % glob(mode_attr + "*"))
-        raise
-
-    try:
-        rescaled_data = dnb_scale(data,
-                **scale_kwargs)
-        log.debug("Data min: %f, Data max: %f" % (rescaled_data.min(),rescaled_data.max()))
-        rows,cols = rescaled_data.shape
-        fbf_swath_var = "prescale_dnb"
-        fbf_swath = "./%s.real4.%d.%d" % (fbf_swath_var, cols, rows)
-        rescaled_data.tofile(fbf_swath)
-    except StandardError:
-        log.error("Unexpected error while rescaling data")
-        log.debug("Rescaling error:", exc_info=1)
-        raise
-
-    return fbf_swath
-
-def create_viirs_fog_pseudobands(kind, bands,
-                                 high_angle_limit=TERMINATOR_HIGH_ANGLE_LIMIT,
-                                 fill_value=-999.0,
-                                 log=logging.getLogger('')):
-    """
-    TODO documentation
-    """
-    
-    # Fog pseudo-band
-    if (kind == BKIND_I) and (BID_05 in bands) and (BID_04 in bands):
-        log.info("Creating IFOG pseudo band...")
-        try:
-            W = Workspace('.')
-            mode_attr = bands[BID_05]["fbf_mode"].split(".")[0]
-            mode_data = getattr(W, mode_attr)
-            night_mask = mode_data >= high_angle_limit
-            del mode_data
-        except StandardError:
-            log.error("Error getting mode data while creating FOG band")
-            log.debug("Mode error:", exc_info=1)
-            return
-
-        num_night_points = numpy.sum(night_mask)
-        if num_night_points == 0:
-            # We only create fog mask if theres nighttime data
-            log.info("No night data found to create FOG band for")
-            return
-        log.debug("Creating FOG band for %s nighttime data points" % num_night_points)
-
-        fog_dict = {
-                "kind" : "I",
-                "band" : "FOG",
-                "band_name" : "IFOG",
-                "data_kind" : DKIND_FOG,
-                "remap_data_as"  : DKIND_BTEMP,
-                "rows_per_scan" : bands[BID_05]["rows_per_scan"],
-                "fbf_img" : "image_IFOG.%s" % ".".join(bands[BID_05]["fbf_img"].split(".")[1:]),
-                "fbf_mode" : bands[BID_05]["fbf_mode"],
-                "swath_scans" : bands[BID_05]["swath_scans"],
-                "swath_rows" : bands[BID_05]["swath_rows"],
-                "swath_cols" : bands[BID_05]["swath_cols"]
-                }
-        try:
-            W = Workspace(".")
-            i5_attr = bands[BID_05]["fbf_img"].split(".")[0]
-            i4_attr = bands[BID_04]["fbf_img"].split(".")[0]
-            i5 = getattr(W, i5_attr)
-            i4 = getattr(W, i4_attr)
-            fog_map = numpy.memmap(fog_dict["fbf_img"],
-                    dtype=numpy.float32,
-                    mode="w+",
-                    shape=i5.shape
-                    )
-            numpy.subtract(i5, i4, fog_map)
-            fog_map[ (~night_mask) | (i5 == fill_value) | (i4 == fill_value) ] = fill_value
-            del fog_map
-            del i5,i4
-            bands[BID_FOG] = fog_dict
-        except StandardError:
-            log.error("Error creating Fog pseudo band")
-            log.debug("Fog creation error:", exc_info=1)
 
 if __name__=='__main__':
     import doctest
