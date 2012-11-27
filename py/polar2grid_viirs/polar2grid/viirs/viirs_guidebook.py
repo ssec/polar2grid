@@ -573,10 +573,10 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     lat_mask = MISSING_GUIDE[K_LATITUDE][1](lat_data) if K_LATITUDE in MISSING_GUIDE else None
 
     # Calculate longitude mask
-    lon_mask = MISSING_GUIDE[K_LONGITUDE][1](lat_data) if K_LONGITUDE in MISSING_GUIDE else None
+    lon_mask = MISSING_GUIDE[K_LONGITUDE][1](lon_data) if K_LONGITUDE in MISSING_GUIDE else None
 
     # Calculate solar zenith angle mask
-    sza_mask = MISSING_GUIDE[K_SOLARZENITH][1](lat_data) if K_SOLARZENITH in MISSING_GUIDE else None
+    sza_mask = MISSING_GUIDE[K_SOLARZENITH][1](sza_data) if K_SOLARZENITH in MISSING_GUIDE else None
 
     # Mask off bad data
     # NOTE: There could still be missing image data to account for

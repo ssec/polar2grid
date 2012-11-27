@@ -1,31 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Functions to read configuration files for the viirs2awips.
-
-Instances of default configuration file locations and contents.
-
-Configuration files from which the above are derived
-Global objects representing configuration files
-
-:Variables:
-    GRIDS : dict
-        Mappings to product_id, NC filename format,
-        and other meta data needed for NC files
-    BANDS : dict
-        Mappings to product_id, NC filename format,
-        and other meta data needed for NC files
-    GRID_TEMPLATES : dict
-        Mappings to gpd and NC templates.
-    SHAPES : dict 
-        Mappings of grid name to lat/lon boundaries and coverage percentage
-    PRODUCTS_FILE
-        File holding band to grid mappings, including product_id and NC
-        filename format
-    ANCIL_DIR
-        Directory holding gpd and nc templates for AWIPS grids.
-    SHAPES_FILE
-        File holding grid boundaries for grids specified in the
-        grids directory and products.conf file
+"""Functions to read configuration files for the AWIPS backend.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -45,12 +20,20 @@ import os
 import sys
 import logging
 
+try:
+    # try getting setuptools/distribute's version of resource retrieval first
+    import pkg_resources
+    get_resource_string = pkg_resources.resource_string
+except ImportError:
+    import pkgutil
+    get_resource_string = pkgutil.get_data
+
 log = logging.getLogger(__name__)
 
 script_dir = os.path.split(os.path.realpath(__file__))[0]
 # Default config file if none is specified
 DEFAULT_CONFIG_NAME = "awips_grids.conf"
-DEFAULT_CONFIG_FILE = os.path.join(script_dir, DEFAULT_CONFIG_NAME)
+DEFAULT_CONFIG_FILE = DEFAULT_CONFIG_NAME
 # Default search directory for any awips configuration files
 DEFAULT_CONFIG_DIR = script_dir
 # Default search directory for NCML files
@@ -60,22 +43,6 @@ DEFAULT_NCML_DIR = os.path.join(script_dir, "ncml")
 CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", DEFAULT_CONFIG_FILE)
 CONFIG_DIR  = os.environ.get("AWIPS_CONFIG_DIR", DEFAULT_CONFIG_DIR)
 NCML_DIR    = os.environ.get("AWIPS_NCML_DIR", DEFAULT_NCML_DIR)
-
-
-PERSISTENT_CONFIGS = {}
-
-def find_grid_templates(ancil_dir):
-    grid_templates = {}
-    # Get a set of the "grid211" part of every template
-    for t in set([x.split(".")[0] for x in os.listdir(ANCIL_DIR) if x.startswith("grid")]):
-        nc_temp = t + ".ncml"
-        gpd_temp = t + ".gpd"
-        nc_path = os.path.join(ANCIL_DIR, nc_temp)
-        gpd_path = os.path.join(ANCIL_DIR, gpd_temp)
-        grid_number = t[4:]
-        if os.path.exists(nc_path) and os.path.exists(gpd_path):
-            grid_templates[grid_number] = (gpd_path, nc_path)
-    return grid_templates
 
 # This isn't used anymore, but its a handy function to hold on to
 # This was replaced by the grids/grids.py API which requires grid size to be
@@ -148,29 +115,23 @@ def _rel_to_abs(filename, default_base_path):
 
     return filename
 
-def load_config_str(name, config_str):
-    # Don't load a config twice
-    if name in PERSISTENT_CONFIGS:
-        return True
-
+def load_config_str(config_dict, config_str):
     # Get rid of trailing new lines and commas
     config_lines = [ line.strip(",\n") for line in config_str.split("\n") ]
     # Get rid of comment lines and blank lines
     config_lines = [ line for line in config_lines if line and not line.startswith("#") and not line.startswith("\n") ]
     # Check if we have any useful lines
     if not config_lines:
-        log.warning("No non-comment lines were found in '%s'" % name)
+        log.warning("No non-comment lines were found in AWIPS config")
         return False
-
-    PERSISTENT_CONFIGS[name] = {}
 
     try:
         # Parse config lines
         for line in config_lines:
-            parts = line.split(",")
+            parts = [ part.strip() for part in line.split(",") ]
             if len(parts) != 12:
-                log.error("AWIPS config line needs exactly 12 columns '%s' : '%s'" % (name,line))
-                raise ValueError("AWIPS config line needs exactly 12 columns '%s' : '%s'" % (name,line))
+                log.error("AWIPS config line needs exactly 12 columns : '%s'" % (line,))
+                raise ValueError("AWIPS config line needs exactly 12 columns : '%s'" % (line,))
 
             # Verify that each identifying portion is valid
             for i in range(6):
@@ -183,7 +144,7 @@ def load_config_str(name, config_str):
                 parts[3] = NOT_APPLICABLE
 
             line_id = _create_config_id(*parts[:6])
-            if line_id in PERSISTENT_CONFIGS[name]:
+            if line_id in config_dict:
                 log.error("AWIPS config has 2 entries for %s" % (line_id,))
                 raise ValueError("AWIPS config has 2 entries for %s" % (line_id,))
 
@@ -203,56 +164,53 @@ def load_config_str(name, config_str):
                     "ncml_template" : ncml_template,
                     "nc_format" : nc_format
                     }
-            PERSISTENT_CONFIGS[name][line_id] = config_entry
+            config_dict[line_id] = config_entry
     except StandardError:
         # Clear out the bad config
-        del PERSISTENT_CONFIGS[name]
         raise
 
     return True
 
-def load_config(config_filename=None, config_name=None):
-    if config_filename is None:
-        config_filename = DEFAULT_CONFIG_FILE
-        config_name = DEFAULT_CONFIG_NAME
-    if config_name is None: config_name = config_filename
+def load_config(config_dict, config_filepath=None):
+    if config_filepath is None:
+        config_filepath = CONFIG_FILE
 
     # Load a configuration file, even if it's in the package
-    config_filename = _rel_to_abs(config_filename, CONFIG_DIR)
+    full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
+    if not os.path.exists(full_config_filepath):
+        try:
+            config_str = get_resource_string(__name__, config_filepath)
+            log.debug("Using package provided AWIPS configuration '%s'" % (config_filepath,))
+            return load_config_str(config_dict, config_str)
+        except StandardError:
+            log.error("AWIPS file '%s' could not be found" % (config_filepath,))
+            raise ValueError("AWIPS file '%s' could not be found" % (config_filepath,))
 
-    log.debug("Using AWIPS configuration '%s'" % (config_filename,))
+    log.debug("Using AWIPS configuration '%s'" % (config_filepath,))
 
-    if config_filename in PERSISTENT_CONFIGS:
-        return True
-
-    config_file = open(config_filename, 'r')
+    config_file = open(config_filepath, 'r')
     config_str = config_file.read()
-    return load_config_str(config_name, config_str)
+    return load_config_str(config_dict, config_str)
 
-def can_handle_inputs(sat, instrument, kind, band, data_kind):
+def can_handle_inputs(config_dict, sat, instrument, kind, band, data_kind):
     """Search through the configuration files and return all the grids for
     this band and data_kind
     """
     band_id = _create_config_id(sat, instrument, kind, band, data_kind)
     log.debug("Searching AWIPS configs for '%s'" % (band_id,))
     grids = []
-    for config_file,config_dict in PERSISTENT_CONFIGS.items():
-        for k in config_dict.keys():
-            if k.startswith(band_id):
-                grids.append(config_dict[k]["grid_name"])
+    for k in config_dict.keys():
+        if k.startswith(band_id):
+            grids.append(config_dict[k]["grid_name"])
     return grids
 
-def get_awips_info(sat, instrument, kind, band, data_kind, grid_name, config_name):
-    if config_name not in PERSISTENT_CONFIGS:
-        log.error("Information was asked for about a config file that wasn't loaded: '%s'" % (config_name,))
-        raise ValueError("Information was asked for about a config file that wasn't loaded: '%s'" % (config_name,))
-
+def get_awips_info(config_dict, sat, instrument, kind, band, data_kind, grid_name):
     config_id = _create_config_id(sat, instrument, kind, band, data_kind, grid_name)
-    if config_id not in PERSISTENT_CONFIGS[config_name]:
-        log.error("'%s' could not be found in the loaded configuration '%s', available '%r'" % (config_id,config_name,PERSISTENT_CONFIGS[config_name].keys()))
-        raise ValueError("'%s' could not be found in the loaded configuration '%s'" % (config_id,config_name))
+    if config_id not in config_dict:
+        log.error("'%s' could not be found in the loaded configuration, available '%r'" % (config_id,config_dict.keys()))
+        raise ValueError("'%s' could not be found in the loaded configuration" % (config_id,))
 
-    return PERSISTENT_CONFIGS[config_name][config_id]
+    return config_dict[config_id]
 
 if __name__ == "__main__":
     sys.exit(0)

@@ -5,10 +5,10 @@ and place it into a geotiff.
 from osgeo import gdal
 import osr
 
-from .rescale import load_config,rescale,uint16_filter,ubyte_filter
-from polar2grid.core.constants import GRIDS_ANY_PROJ4
+from polar2grid.core.rescale import Rescaler,uint16_filter,ubyte_filter
+from polar2grid.core.constants import GRIDS_ANY_PROJ4,DEFAULT_FILL_VALUE,NOT_APPLICABLE
+from polar2grid.core import roles
 
-import os
 import sys
 import logging
 
@@ -17,8 +17,8 @@ log = logging.getLogger(__name__)
 gtiff_driver = gdal.GetDriverByName("GTIFF")
 
 DEF_FN_FORMAT = "%(sat)s_%(instrument)s_%(kindband)s_%(timestamp)s_%(grid_name)s.tif"
-DEFAULT_8BIT_RCONFIG="rescale.8bit.conf"
-DEFAULT_16BIT_RCONFIG="rescale.16bit.conf"
+DEFAULT_8BIT_RCONFIG="rescale_configs/rescale.8bit.conf"
+DEFAULT_16BIT_RCONFIG="rescale_configs/rescale.16bit.conf"
 
 def _proj4_to_srs(proj4_str):
     """Helper function to convert a proj4 string
@@ -37,137 +37,192 @@ def _proj4_to_srs(proj4_str):
         raise ValueError("Could not convert Proj4 string '%s' into a GDAL SRS" % (proj4_str,))
     return srs
 
-# Meet the interface requirement for backends (part 1)
-def can_handle_inputs(sat, instrument, kind, band, data_kind):
-    """Function for backend-calling script to ask if the backend
-    will be able to handle the data that will be processed.
-    For the geotiff backend it can handle any kind or band with a proj4
-    projection.
-
-    It is also assumed that rescaling will be able to handle the `data_kind`
-    provided.
-    """
-    return GRIDS_ANY_PROJ4
-
 def create_geotiff(data, output_filename, proj4_str, geotransform,
         etype=gdal.GDT_UInt16):
     """Function that creates a geotiff from the information provided.
     """
     log_level = logging.getLogger('').handlers[0].level or 0
     log.info("Creating geotiff '%s'" % (output_filename,))
-    gtiff = gtiff_driver.Create(output_filename,
-            data.shape[1], data.shape[0],
-            bands=1, eType=etype)
+
+    # Find the number of bands provided
+    if isinstance(data, (list, tuple)):
+        num_bands = len(data)
+    elif len(data.shape) == 2:
+        num_bands = 1
+    else:
+        num_bands = data.shape[0]
+
+    # We only know how to handle gray scale, RGB, and RGBA
+    if num_bands not in [1,3,4]:
+        msg = "Geotiff backend doesn't know how to handle data of shape '%r'" % (data.shape,)
+        log.error(msg)
+        raise ValueError(msg)
+
+    if num_bands == 1:
+        photometric = "PHOTOMETRIC=MINISBLACK"
+    elif num_bands == 3:
+        photometric = "PHOTOMETRIC=RGB"
+    elif num_bands == 4:
+        photometric = "PHOTOMETRIC=RGB"
+
+    if num_bands == 1:
+        gtiff = gtiff_driver.Create(output_filename,
+                data.shape[1], data.shape[0],
+                bands=num_bands, eType=etype, options = [ photometric ])
+    else:
+        gtiff = gtiff_driver.Create(output_filename,
+                data[0].shape[1], data[0].shape[0],
+                bands=num_bands, eType=etype, options = [ photometric ])
+
     gtiff.SetGeoTransform(geotransform)
     srs = _proj4_to_srs(proj4_str)
     gtiff.SetProjection(srs.ExportToWkt())
-    gtiff_band = gtiff.GetRasterBand(1)
 
-    # Clip data to datatype, otherwise let it go and see what happens
-    if etype == gdal.GDT_UInt16:
-        data = uint16_filter(data)
-    elif etype == gdal.GDT_Byte:
-        data = ubyte_filter(data)
-    if log_level <= logging.DEBUG:
-        log.debug("Data min: %f, max: %f" % (data.min(),data.max()))
+    for idx in range(num_bands):
+        gtiff_band = gtiff.GetRasterBand(idx + 1)
 
-    # Write the data
-    if gtiff_band.WriteArray(data) != 0:
-        log.error("Could not write band 1 data to geotiff '%s'" % (output_filename,))
-        raise ValueError("Could not write band 1 data to geotiff '%s'" % (output_filename,))
+        if num_bands == 1: band_data = data
+        else: band_data = data[idx]
+
+        # Clip data to datatype, otherwise let it go and see what happens
+        # XXX: This might need to operate on colors as a whole or
+        # do a linear scaling. No one should be scaling data to outside these
+        # ranges anyway
+        if etype == gdal.GDT_UInt16:
+            band_data = uint16_filter(band_data)
+        elif etype == gdal.GDT_Byte:
+            band_data = ubyte_filter(band_data)
+        if log_level <= logging.DEBUG:
+            log.debug("Data min: %f, max: %f" % (band_data.min(),band_data.max()))
+
+        # Write the data
+        if gtiff_band.WriteArray(band_data) != 0:
+            log.error("Could not write band 1 data to geotiff '%s'" % (output_filename,))
+            raise ValueError("Could not write band 1 data to geotiff '%s'" % (output_filename,))
     # Garbage collection/destructor should close the file properly
 
-# Meet the interface requirement for backends (part 2)
-def backend(sat, instrument, kind, band, data_kind, data,
-        start_time=None, end_time=None, grid_name=None,
-        proj4_str=None, grid_origin_x=None, grid_origin_y=None,
-        pixel_size_x=None, pixel_size_y=None,
-        output_filename=None, etype=None,
-        rotate_x=0, rotate_y=0, rescale_config=None):
-    """Function to be called from a connecting script to interpret the
-    information provided and create a geotiff.
+class Backend(roles.BackendRole):
+    def __init__(self, etype=None, rescale_config=None, fill_value=DEFAULT_FILL_VALUE,
+        inc_by_one=False):
+        """
+            - etype:
+                Specify the GDAL data type of the produced geotiff. Default 16bit
+                unsigned integers.
+            - rescale_config:
+                Rescaling configuration file to be used in scaling the data
+            - inc_by_one:
+                Used by the Rescaler to add one to the scaled data.  See
+                `Rescaler` documentation for more information.
+        """
+        if etype is None:
+            etype = gdal.GDT_UInt16
+        self.etype = etype
 
-    Most arguments are keywords to fit the backend interface, but some
-    of these keywords are required:
-        - start_time (required if `output_filename` is not):
-            Parameter to make the output filename more specific
-        - grid_name (required if `output_filename` is not):
-            Parameter to make the output filename more specific.
-            Does not have to equal an actual grid_name in a configuration
-            file.
-        - proj4_str:
-            Used to set the projection in the geotiff file
-        - grid_origin_x:
-            Used in the geotransform of the geotiff. No value checking is done
-            for this value, so an understanding of GDAL geotiff geotransforms
-            is required.
-        - grid_origin_y:
-            Used in the geotransform of the geotiff. No value checking is done
-            for this value, so an understanding of GDAL geotiff geotransforms
-            is required.
-        - pixel_size_x:
-            Used in the geotransform of the geotiff. No value checking is done
-            for this value, so an understanding of GDAL geotiff geotransforms
-            is required.
-        - pixel_size_y:
-            Used in the geotransform of the geotiff. No value checking is done
-            for this value, so an understanding of GDAL geotiff geotransforms
-            is required.
-        - etype (not part of the backend interface):
-            Specify the GDAL data type of the produced geotiff. Default 16bit
-            unsigned integers.
+        # Use predefined rescaling configurations if we weren't told what to do
+        if rescale_config is None:
+            if etype == gdal.GDT_UInt16:
+                rescale_config = DEFAULT_16BIT_RCONFIG
+            elif etype == gdal.GDT_Byte:
+                rescale_config = DEFAULT_8BIT_RCONFIG
+        self.rescale_config = rescale_config
 
-    Optional keywords:
-        - end_time (used if `output_filename` is not):
-            Parameter to make the output filename more specific, added to
-            start_time to produce "YYYYMMDD_HHMMSS_YYYYMMDD_HHMMSS"
-        - output_filename:
-            Force the filename of the geotiff being produced
-        - rotate_x (not part of the backend interface):
-            Parameter that can be used in GDAL geotransforms, but is rarely
-            useful.
-        - rotate_y (not part of the backend interface):
-            Parameter that can be used in GDAL geotransforms, but is rarely
-            useful.
-        - rescale_config:
-            Rescaling configuration file to be used in scaling the data
-
-    Unused keywords:
-        None
-    """
-    if etype is None:
-        etype = gdal.GDT_UInt16
-
-    # Use predefined rescaling configurations if we weren't told what to do
-    if rescale_config is None:
-        if etype == gdal.GDT_UInt16:
-            rescale_config = DEFAULT_16BIT_RCONFIG
-        elif etype == gdal.GDT_Byte:
-            rescale_config = DEFAULT_8BIT_RCONFIG
-    # Load the rescaling configuration, uses the default otherwise
-    if rescale_config is not None:
-        load_config(rescale_config)
-
-    # Create the filename if it wasn't provided
-    if output_filename is None:
-        # don't include band if its not applicable
-        kindband = "%s%s" % (kind,band or "")
-        timestamp = start_time.strftime("%Y%m%d_%H%M%S")
-        if end_time: timestamp += "_" + end_time.strftime("%Y%m%d_%H%M%S")
-        output_filename = DEF_FN_FORMAT % dict(
-                sat=sat,
-                instrument=instrument,
-                kindband=kindband,
-                timestamp=timestamp,
-                grid_name=grid_name
+        # Instantiate the rescaler
+        self.fill_in = fill_value
+        self.fill_out = DEFAULT_FILL_VALUE
+        self.rescaler = Rescaler(config=self.rescale_config,
+                fill_in=self.fill_in, fill_out=self.fill_out,
+                inc_by_one=inc_by_one
                 )
 
-    # Rescale the data based on the configuration that was loaded earlier
-    data = rescale(sat, instrument, kind, band, data_kind, data, config=rescale_config)
+    def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
+        """Function for backend-calling script to ask if the backend
+        will be able to handle the data that will be processed.
+        For the geotiff backend it can handle any kind or band with a proj4
+        projection.
 
-    # Create the geotiff
-    geotransform = (grid_origin_x, pixel_size_x, rotate_x, grid_origin_y, rotate_y, pixel_size_y)
-    create_geotiff(data, output_filename, proj4_str, geotransform, etype=etype)
+        It is also assumed that rescaling will be able to handle the `data_kind`
+        provided.
+        """
+        return GRIDS_ANY_PROJ4
+
+    def create_product(self, sat, instrument, kind, band, data_kind, data,
+            start_time=None, end_time=None, grid_name=None,
+            proj4_str=None, grid_origin_x=None, grid_origin_y=None,
+            pixel_size_x=None, pixel_size_y=None,
+            output_filename=None, etype=None, fill_value=None,
+            rotate_x=0, rotate_y=0, inc_by_one=None):
+        """Function to be called from a connecting script to interpret the
+        information provided and create a geotiff.
+
+        Most arguments are keywords to fit the backend interface, but some
+        of these keywords are required:
+            - start_time (required if `output_filename` is not):
+                Parameter to make the output filename more specific
+            - grid_name (required if `output_filename` is not):
+                Parameter to make the output filename more specific.
+                Does not have to equal an actual grid_name in a configuration
+                file.
+            - proj4_str:
+                Used to set the projection in the geotiff file
+            - grid_origin_x:
+                Used in the geotransform of the geotiff. No value checking is done
+                for this value, so an understanding of GDAL geotiff geotransforms
+                is required.
+            - grid_origin_y:
+                Used in the geotransform of the geotiff. No value checking is done
+                for this value, so an understanding of GDAL geotiff geotransforms
+                is required.
+            - pixel_size_x:
+                Used in the geotransform of the geotiff. No value checking is done
+                for this value, so an understanding of GDAL geotiff geotransforms
+                is required.
+            - pixel_size_y:
+                Used in the geotransform of the geotiff. No value checking is done
+                for this value, so an understanding of GDAL geotiff geotransforms
+                is required.
+
+        Optional keywords:
+            - end_time (used if `output_filename` is not):
+                Parameter to make the output filename more specific, added to
+                start_time to produce "YYYYMMDD_HHMMSS_YYYYMMDD_HHMMSS"
+            - output_filename:
+                Force the filename of the geotiff being produced
+            - rotate_x (not part of the backend interface):
+                Parameter that can be used in GDAL geotransforms, but is rarely
+                useful.
+            - rotate_y (not part of the backend interface):
+                Parameter that can be used in GDAL geotransforms, but is rarely
+                useful.
+            - inc_by_one:
+                See __init__ documentation or Rescaler documentation
+        """
+        etype = self.etype
+        fill_in = fill_value or self.fill_in
+
+        # Create the filename if it wasn't provided
+        if output_filename is None:
+            # don't include band if its not applicable
+            kindband = "%s%s" % (kind,band or "")
+            timestamp = start_time.strftime("%Y%m%d_%H%M%S")
+            if end_time: timestamp += "_" + end_time.strftime("%Y%m%d_%H%M%S")
+            output_filename = DEF_FN_FORMAT % dict(
+                    sat=sat,
+                    instrument=instrument,
+                    kindband=kindband,
+                    timestamp=timestamp,
+                    grid_name=grid_name
+                    )
+
+        # Rescale the data based on the configuration that was loaded earlier
+        data = self.rescaler(sat, instrument, kind, band, data_kind, data,
+                fill_in=fill_in, fill_out=self.fill_out, inc_by_one=inc_by_one)
+        # If the data is incremented by one the data filters in create_geotiff
+        # will cause the fill value to be set to zero (so positive fills won't
+        # work)
+
+        # Create the geotiff
+        geotransform = (grid_origin_x, pixel_size_x, rotate_x, grid_origin_y, rotate_y, pixel_size_y)
+        create_geotiff(data, output_filename, proj4_str, geotransform, etype=etype)
 
 def _type_dt(datestring):
     from datetime import datetime
@@ -185,6 +240,11 @@ def _type_datakind(kind_str):
     elif kind_str in ["fog"]:
         return DKIND_FOG
     raise ValueError("Unknown data kind '%s'" % kind_str)
+
+def _type_band(band_str):
+    if band_str in ["NA", "None", "none"]:
+        return NOT_APPLICABLE
+    return band_str
 
 def _bits_to_etype(bits_str):
     if bits_str is None:
@@ -281,18 +341,16 @@ custom name if proj4_str is provided""")
     kwargs["pixel_size_y"] = args.geotransform[5]
 
     print "Rescaling configuration file: ",args.rescale_config
-    kwargs["rescale_config"] = args.rescale_config
+    rescale_config = args.rescale_config
 
     print "Input Filename: ",args.input_filename
     W = Workspace('.')
     data = getattr(W, args.input_filename.split('.')[0]).copy()
-    # XXX Remove this once scaling is added to the backend
-    #from polar2grid.rescale import sqrt_scale
-    #data = sqrt_scale(data)
     arg_list.append(data)
     print "Output Filename: ",args.output_filename
 
-    return backend(*arg_list, output_filename=args.output_filename, etype=args.etype, **kwargs)
+    backend = Backend(etype=args.etype, rescale_config=rescale_config)
+    return backend.create_product(*arg_list, output_filename=args.output_filename, **kwargs)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)

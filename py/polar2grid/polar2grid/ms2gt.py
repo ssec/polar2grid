@@ -80,14 +80,14 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
     d = {}
     tmp = glob("%s_cols_*.img" % tag)
     if len(tmp) != 1:
-        log.error("Couldn't find cols img file from ll2cr")
+        log.error("Couldn't find cols img file from ll2cr: '%s'" % tag)
         raise ValueError("Couldn't find cols img file from ll2cr")
     d["cols_filename"] = tmp[0]
     log.debug("Columns file is %s" % d["cols_filename"])
 
     tmp = glob("%s_rows_*.img" % tag)
     if len(tmp) != 1:
-        log.error("Couldn't find rows img file from ll2cr")
+        log.error("Couldn't find rows img file from ll2cr: '%s'" % tag)
         raise ValueError("Couldn't find rows img file from ll2cr")
     d["rows_filename"] = tmp[0]
     log.debug("Rows file is %s" % d["rows_filename"])
@@ -105,6 +105,9 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
         log.error("ll2cr didn't produce the same number of scans for cols and rows")
         raise ValueError("ll2cr didn't produce the same number of scans for cols and rows")
     d["scans_out"] = col_dict["scans_out"]
+    if d["scans_out"] == 0:
+        log.error("ll2cr did not map any data, 0 scans out")
+        raise ValueError("ll2cr did not map any data, 0 scans out")
 
     if col_dict["scan_first"] != row_dict["scan_first"]:
         log.error("ll2cr didn't produce the same number for scan first cols and rows")
@@ -159,6 +162,8 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
             args.extend(["%f" % swath_fill_1]*chan_count)
         elif chan_count > 1:
             args.extend(swath_fill_1)
+        elif isinstance(swath_fill_1, list):
+            args.append(swath_fill_1[0])
         else:
             args.append(swath_fill_1)
     if grid_fill_1 is not None:
@@ -167,6 +172,8 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
             args.extend(["%f" % grid_fill_1]*chan_count)
         elif chan_count > 1:
             args.extend(grid_fill_1)
+        elif isinstance(grid_fill_1, list):
+            args.append(grid_fill_1[0])
         else:
             args.append(grid_fill_1)
     if weight_delta_max is not None:
@@ -185,6 +192,12 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         args = [ str(a) for a in args ]
         log.debug("Running fornav with '%s'" % " ".join(args))
         check_call(args)
+
+        # Check to make sure fornav actually created the files
+        for o_fn in output_fn:
+            if not os.path.exists(o_fn):
+                log.error("Couldn't find fornav output file '%s'" % o_fn)
+                raise RuntimeError("Couldn't find fornav output file '%s'" % o_fn)
     except CalledProcessError:
         log.error("Error running fornav", exc_info=1)
         raise ValueError("Fornav failed")

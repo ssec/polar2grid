@@ -2,6 +2,7 @@
 proj4 strings.
 """
 from polar2grid.core import Workspace
+from polar2grid.core.constants import DEFAULT_FILL_VALUE
 import pyproj
 import numpy
 
@@ -12,19 +13,57 @@ import math
 
 log = logging.getLogger(__name__)
 
+def _transform_point(tformer, lon, lat, proj_circum, stradles_anti=False):
+    """Transform single points into the projection Proj object provided.
+
+    Main purpose is to handle if the data is in the west/negative side
+    of the projections reference and it stradles the anti-meridian, then move
+    it to the positive side by adding on 360 degrees worth of projection
+    units.
+
+    Example (EPSG 4326 : wgs84 lat/lon)
+    -----------------------------------
+    If data crosses -180/180 (the anti-meridian of 4326) then if -179.0
+    is the longitude value of the data, add a full circumference (360) to that
+    projected value to place it in the positive range (181.0).  That way
+    origin math difference calculations work properly (181-170=11 instead of
+    -179-170=-349).
+    """
+    x,y = tformer(lon, lat)
+    if stradles_anti and x < 0:
+        # Put negative values into the positive side
+        log.debug("Point crosses the anti-meridian, adding %f" % (proj_circum,))
+        x += proj_circum
+    return x,y
+
+def _transform_array(tformer, lon, lat, proj_circum, stradles_anti=False):
+    """See _transform_point above
+    """
+    x,y = tformer(lon, lat)
+    if stradles_anti:
+        x[x < 0] += proj_circum
+    return x,y
+
 def ll2cr(lon_arr, lat_arr, proj4_str,
         pixel_size_x=None, pixel_size_y=None,
         grid_origin_x=None, grid_origin_y=None,
-        swath_lat_min=None, swath_lat_max=None,
-        swath_lon_min=None, swath_lon_max=None,
+        swath_lat_south=None, swath_lat_north=None,
+        swath_lon_west=None, swath_lon_east=None,
         grid_width=None, grid_height=None,
-        dtype=None, fill_in=-999.0, fill_out=-1e30,
+        dtype=None,
+        fill_in=None,
+        lon_fill_in=None,
+        lat_fill_in=None,
+        fill_out=-1e30,
         prefix="ll2cr_"):
     """Similar to GDAL, y pixel resolution should be negative for downward
     images.
 
     origin_lon,origin_lat are the grids origins
     """
+    lon_fill_in = lon_fill_in or fill_in or DEFAULT_FILL_VALUE
+    lat_fill_in = lat_fill_in or lon_fill_in
+
     if lat_arr.shape != lon_arr.shape:
         log.error("Longitude and latitude arrays must be the same shape (%r vs %r)" % (lat_arr.shape, lon_arr.shape))
         raise ValueError("Longitude and latitude arrays must be the same shape (%r vs %r)" % (lat_arr.shape, lon_arr.shape))
@@ -64,44 +103,84 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     cols_fn = prefix + "cols.real4.%d.%d" % lat_arr.shape[::-1]
     cols_arr = numpy.memmap(cols_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
 
-    good_mask = (lon_arr != -999) & (lat_arr != -999)
+    good_mask = (lon_arr != lon_fill_in) & (lat_arr != lat_fill_in)
+
+    # Calculate west/east south/north boundaries
+    stradles_180 = False
+    if grid_origin_x is None or grid_width is None or pixel_size_x is None:
+        if swath_lon_west is None:
+            swath_lon_west = lon_arr[good_mask].min()
+            log.debug("Data west longitude: %f" % swath_lon_west)
+        if swath_lon_east is None:
+            swath_lon_east = lon_arr[good_mask].max()
+            log.debug("Data east longitude: %f" % swath_lon_east)
+        if swath_lat_south is None:
+            swath_lat_south = lat_arr[good_mask].min()
+            log.debug("Data south latitude: %f" % swath_lat_south)
+        if swath_lat_north is None:
+            swath_lat_north = lat_arr[good_mask].max()
+            log.debug("Data upper latitude: %f" % swath_lat_north)
+
+        # Are we on the -180/180 boundary
+        if swath_lon_west <= -179.0 and swath_lon_east >= 179.0:
+            # Obviously assumes data is not smaller than 1 degree longitude wide
+            swath_lon_west = lon_arr[ good_mask & (lon_arr < 0) ].max()
+            log.debug("Data west longitude: %f" % swath_lon_west)
+            swath_lon_east = lon_arr[ good_mask & (lon_arr > 0) ].min()
+            log.debug("Data east longitude: %f" % swath_lon_east)
+            stadles_180 = True
+
+    ### Find out if we stradle the anti-meridian of the projection ###
+    # Get the projections origin in lon/lat space
+    proj_anti_lon,proj_anti_lat = tformer(0, 0, inverse=True)
+    # get the 'opposite' site of the globe
+    proj_anti_lon += 180 if proj_anti_lon < 0 else -180
+    # see if the grids bounds stadle the anti-meridian
+    stradles_anti = False
+    # Get projection units of the anti-meridian (positive only)
+    proj_anti_x = abs(tformer(proj_anti_lon, proj_anti_lat)[0])
+    # half the circumerence multiplied by 2 (full circumference in projection units)
+    proj_circum = proj_anti_x * 2
+    # Get data bounds as projection units
+    if grid_width is not None and pixel_size_x is not None and grid_origin_x is not None:
+        # If we have a fully defined grid then we can do exact measurements
+        # XXX: Can this be done with one less parameter? I don't think so -djh
+        data_grid_west = grid_origin_x
+        data_grid_east = grid_origin_x + pixel_size_x * grid_width
+    else:
+        # The size of the grid is based on the data, so use the data bounds
+        data_grid_west = tformer(swath_lon_west, proj_anti_lat)[0]
+        data_grid_east = tformer(swath_lon_east, proj_anti_lat)[0]
+    # Put data into positive domain
+    data_grid_west += proj_circum if data_grid_west < 0 else 0
+    data_grid_east += proj_circum if data_grid_east < 0 else 0
+    if (data_grid_west < proj_anti_x) and (data_grid_east > proj_anti_x):
+        log.debug("Data crosses the projections anti-meridian")
+        stradles_anti = True
+
+    # Get origin and corners of grid
     fine_tune_origin = False
     if grid_origin_x is None:
-        if swath_lon_min is None:
-            swath_lon_min = lon_arr[good_mask].min()
-            log.debug("Data left longitude: %f" % swath_lon_min)
-        if swath_lat_max is None:
-            swath_lat_max = lat_arr[good_mask].max()
-            log.debug("Data upper latitude: %f" % swath_lat_max)
-        grid_origin_x,grid_origin_y = tformer(swath_lon_min, swath_lat_max)
+        grid_origin_x,grid_origin_y = _transform_point(tformer, swath_lon_west, swath_lat_north, proj_circum, stradles_anti=stradles_anti)
         fine_tune_origin = True
 
-    if grid_width is None or pixel_size_x is None:
-        if swath_lon_max is None:
-            swath_lon_max = lon_arr[good_mask].max()
-            log.debug("Data right longitude: %f" % swath_lon_max)
-        if swath_lat_min is None:
-            swath_lat_min = lat_arr[good_mask].min()
-            log.debug("Data lower latitude: %f" % swath_lat_min)
+    normal_lon_east = swath_lon_east if swath_lon_east > swath_lon_west else swath_lon_east + 360
+    lon_range = numpy.linspace(swath_lon_west, normal_lon_east, 15)
+    lat_range = numpy.linspace(swath_lat_north, swath_lat_south, 15)
 
-        corner_x1,corner_y1 = tformer(swath_lon_max,swath_lat_min)
-        log.debug("corners 1: %f,%f" % (corner_x1,corner_y1))
-        corner_x2,corner_y2 = tformer(swath_lon_min,swath_lat_min)
-        log.debug("corners 2: %f,%f" % (corner_x2,corner_y2))
-        corner_x3,corner_y3 = tformer(swath_lon_max,swath_lat_max)
-        log.debug("corners 3: %f,%f" % (corner_x3,corner_y3))
-
-        # Due to the way projection coordinates work, if we are fitting the
-        # grid to the data we need to find the extremes of the grid, not the
-        # data
-        corner_x = max(corner_x1,corner_x2,corner_x3,grid_origin_x)
-        corner_y = min(corner_y1,corner_y2,corner_y3,grid_origin_y)
-        if fine_tune_origin:
-            grid_origin_x = min(corner_x1,corner_x2,corner_x3,grid_origin_x)
-            grid_origin_y = max(corner_y1,corner_y2,corner_y3,grid_origin_y)
-            log.debug("Grid Origin: %f,%f" % (grid_origin_x,grid_origin_y))
+    # Calculate the best corners of the data
+    if grid_width is None or pixel_size_x is None or fine_tune_origin:
+        # only used if calculate grid/pixel size
+        corner_x = _transform_array(tformer, numpy.array([swath_lon_east]*15), lat_range, proj_circum, stradles_anti=stradles_anti)[0].max()
+        corner_y = _transform_array(tformer, lon_range, numpy.array([swath_lat_south]*15), proj_circum, stradles_anti=stradles_anti)[1].min()
         log.debug("Grid Corners: %f,%f" % (corner_x,corner_y))
 
+    if fine_tune_origin:
+        grid_origin_x = _transform_array(tformer, numpy.array([swath_lon_west]*15), lat_range, proj_circum, stradles_anti=stradles_anti)[0].min()
+        grid_origin_y = _transform_array(tformer, lon_range, numpy.array([swath_lat_north]*15), proj_circum, stradles_anti=stradles_anti)[1].max()
+        log.debug("Grid Origin: %f,%f" % (grid_origin_x,grid_origin_y))
+
+    if grid_width is None or pixel_size_x is None:
         if grid_width is None:
             # Calculate grid size
             grid_width = math.ceil((corner_x - grid_origin_x) / pixel_size_x)
@@ -140,14 +219,14 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     # Do calculations for each row in the source file
     # Go per row to save on memory
     for idx in range(lon_arr.shape[0]):
-        x_tmp,y_tmp = tformer(lon_arr[idx], lat_arr[idx])
+        x_tmp,y_tmp = _transform_array(tformer, lon_arr[idx], lat_arr[idx], proj_circum, stradles_anti=stradles_anti)
         numpy.subtract(x_tmp, grid_origin_x, x_tmp)
         numpy.divide(x_tmp, pixel_size_x, x_tmp)
         numpy.subtract(y_tmp, grid_origin_y, y_tmp)
         numpy.divide(y_tmp, pixel_size_y, y_tmp)
 
         # good_mask here is True for good values
-        good_mask[:] =  ~( ((lon_arr[idx] == fill_in) | (lat_arr[idx] == fill_in)) | \
+        good_mask[:] =  ~( ((lon_arr[idx] == lon_fill_in) | (lat_arr[idx] == lon_fill_in)) | \
                 ( (x_tmp < -0.5) | (x_tmp > (grid_width + 0.5)) ) | \
                 ( (y_tmp < -0.5) | (y_tmp > (grid_height + 0.5)) ) )
         cols_arr[idx,good_mask] = x_tmp[good_mask]

@@ -1,3 +1,2 @@
-from .awips_netcdf import backend,can_handle_inputs
-from .awips_config import load_config
+from .awips_netcdf import Backend
 

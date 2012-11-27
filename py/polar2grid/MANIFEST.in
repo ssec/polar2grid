@@ -1,3 +1,6 @@
 include polar2grid/awips/*.conf
-recursive-include polar2grid/grids *.gpd *.ncml
+include polar2grid/awips/ncml/*.ncml
+include polar2grid/grids/*.conf
+include polar2grid/*.conf
+recursive-include polar2grid/grids *.gpd
 
