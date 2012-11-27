@@ -174,7 +174,6 @@ class Backend(roles.BackendRole):
         except StandardError:
             log.error("Error while filling in NC file with data")
             raise
->>>>>>> d7050b6a77a5a1cd139bdd61b34b40d62d09551f
 
 def go(img_name, template, nc_name=None):
     from polar2grid.core import UTC
