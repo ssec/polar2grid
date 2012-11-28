@@ -19,6 +19,8 @@ gtiff_driver = gdal.GetDriverByName("GTIFF")
 DEF_FN_FORMAT = "%(sat)s_%(instrument)s_%(kindband)s_%(timestamp)s_%(grid_name)s.tif"
 DEFAULT_8BIT_RCONFIG="rescale_configs/rescale.8bit.conf"
 DEFAULT_16BIT_RCONFIG="rescale_configs/rescale.16bit.conf"
+DEFAULT_INC_8BIT_RCONFIG="rescale_configs/rescale_inc.8bit.conf"
+DEFAULT_INC_16BIT_RCONFIG="rescale_configs/rescale_inc.16bit.conf"
 
 def _proj4_to_srs(proj4_str):
     """Helper function to convert a proj4 string
@@ -121,9 +123,15 @@ class Backend(roles.BackendRole):
         # Use predefined rescaling configurations if we weren't told what to do
         if rescale_config is None:
             if etype == gdal.GDT_UInt16:
-                rescale_config = DEFAULT_16BIT_RCONFIG
+                if inc_by_one:
+                    rescale_config = DEFAULT_INC_16BIT_RCONFIG
+                else:
+                    rescale_config = DEFAULT_16BIT_RCONFIG
             elif etype == gdal.GDT_Byte:
-                rescale_config = DEFAULT_8BIT_RCONFIG
+                if inc_by_one:
+                    rescale_config = DEFAULT_INC_8BIT_RCONFIG
+                else:
+                    rescale_config = DEFAULT_8BIT_RCONFIG
         self.rescale_config = rescale_config
 
         # Instantiate the rescaler

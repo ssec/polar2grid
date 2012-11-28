@@ -379,8 +379,8 @@ def main():
     # Backend Specific
     parser.add_argument('--bits', dest="etype", default=None, type=_bits_to_etype,
             help="number of bits in the geotiff, usually unsigned")
-    parser.add_argument('--inc_by_one', dest="inc_by_one", default=False, action="store_true",
-            help="tell rescaler to increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
+    parser.add_argument('--dont_inc', dest="inc_by_one", default=True, action="store_false",
+            help="tell rescaler to not increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
 
     parser.add_argument('data_files', nargs="+",
             help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
