@@ -52,6 +52,10 @@ BKIND_LST   = "land_surface_temp"
 BKIND_SLST  = "summer_land_surface_temp"
 BKIND_SZA   = "solar_zenith_angle"
 BKIND_CTT   = "cloud_top_temperature"
+BKIND_IST   = "ice_surface_temperature"
+BKIND_INV   = "inversion_strength"
+BKIND_IND   = "inversion_depth"
+BKIND_ICON  = "ice_concentration"
 
 # Band Identifier
 BID_01 = "01"
@@ -85,6 +89,8 @@ DKIND_BTEMP       = "btemp"
 DKIND_FOG         = "fog"
 DKIND_CATEGORY    = "category"
 DKIND_ANGLE       = "angle"
+DKIND_DISTANCE    = "distance" # this is meant to be a distance in the sense of meters or miles
+DKIND_PERCENT     = "percent"
 
 # Grid Constants
 GRIDS_ANY = "any_grid"
