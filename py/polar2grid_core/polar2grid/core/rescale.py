@@ -554,13 +554,15 @@ class Rescaler(roles.RescalerRole):
         return os.path.split(os.path.realpath(__file__))[0]
 
     _known_rescale_kinds = {
-                'sqrt'   : sqrt_scale,
-                'linear' : linear_scale,
-                'raw'    : passive_scale,
-                'btemp'  : bt_scale,
-                'fog'    : fog_scale,
-                'btemp_c': bt_scale_c,
-                'lst':     lst_scale
+                'sqrt'   :  sqrt_scale,
+                'linear' :  linear_scale,
+                'raw'    :  passive_scale,
+                'btemp'  :  bt_scale,
+                'fog'    :  fog_scale,
+                'btemp_c':  bt_scale_c,
+                'lst':      lst_scale,
+                'distance': passive_scale, # TODO, this is wrong... but we'll sort it out later?
+                'percent' : passive_scale, # TODO, this is wrong, find out what it should be
                 }
     @property
     def known_rescale_kinds(self):
