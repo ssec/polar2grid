@@ -48,6 +48,15 @@ SEA_SURFACE_TEMP_IDX         = None
 LAND_SURFACE_TEMP_NAME       = "LST"
 LAND_SURFACE_TEMP_IDX        = None
 
+ICE_SURFACE_TEMP_NAME        = "Ice_Surface_Temperature"
+ICE_SURFACE_TEMP_IDX         = None
+INVERSION_STRENGTH_NAME      = "Inversion_Strength"
+INVERSION_STRENGTH_IDX       = None
+INVERSION_DEPTH_NAME         = "Inversion_Depth"
+INVERSION_DEPTH_IDX          = None
+ICE_CONCENTRATION_NAME       = "Ice_Concentration"
+ICE_CONCENTRATION_IDX        = None
+
 CLOUD_TOP_TEMP_NAME          = "Cloud_Top_Temperature"
 CLOUD_TOP_TEMP_IDX           = None
 
@@ -67,7 +76,7 @@ GEO_FILE_SUFFIX              = ".geo.hdf"
 # this is true for the 1km data, FUTURE: when we get to other kinds, this will need to be more sophisicated
 ROWS_PER_SCAN                = 10
 
-# TODO, this is not right, just a stand in until I get the right answer
+# the cloud values that correspond to areas we should clear; this came from William so it's probably more right than my guessing ;)
 CLOUDS_VALUES_TO_CLEAR       = [1, 2]
 
 # a regular expression that will match files containing the visible and infrared bands
@@ -82,6 +91,12 @@ LAND_SURFACE_TEMP_FILE_PATTERN = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.modlst\.hdf'
 GEO_FILE_PATTTERN              = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.geo\.hdf'
 # a regular expression that will match files that have some clouds related data in them
 CLOUDS_06_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mod06ct\.hdf'
+# a regular expression that will match files containing ice surface temperature
+ICE_SURFACE_TEMP_FILE_PATTERN  = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.ist\.hdf'
+# a regular expression that will match files containing several inversion products
+INVERSION_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.inversion\.hdf'
+# a regular expression that will match files containing ice concentration
+ICE_CONCENTRATION_FILE_PATTERN = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.icecon\.hdf'
 
 # a value representing the uid for the geo navigation group
 GEO_NAV_UID                    = "geo_nav"
@@ -92,7 +107,8 @@ BANDS_REQUIRED_TO_CALCULATE_FOG_BAND = [(BKIND_IR,  BID_20), (BKIND_IR,  BID_31)
 
 # a mapping between which navigation groups contain which files
 GEO_FILE_GROUPING = {
-                      GEO_NAV_UID:   [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN, SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN, GEO_FILE_PATTTERN],
+                      GEO_NAV_UID:   [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN, SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN, GEO_FILE_PATTTERN,
+                                      ICE_SURFACE_TEMP_FILE_PATTERN, INVERSION_FILE_PATTERN, ICE_CONCENTRATION_FILE_PATTERN],
                       MOD06_NAV_UID: [CLOUDS_06_FILE_PATTERN],
                     }
 # the reverse mapping between files are in which navigation groups
@@ -103,6 +119,9 @@ GEO_FILE_GROUPING_REV = \
                       SEA_SURFACE_TEMP_FILE_PATTERN:  GEO_NAV_UID,
                       LAND_SURFACE_TEMP_FILE_PATTERN: GEO_NAV_UID,
                       GEO_FILE_PATTTERN:              GEO_NAV_UID,
+                      ICE_SURFACE_TEMP_FILE_PATTERN:  GEO_NAV_UID,
+                      INVERSION_FILE_PATTERN:         GEO_NAV_UID,
+                      ICE_CONCENTRATION_FILE_PATTERN: GEO_NAV_UID,
                       
                       CLOUDS_06_FILE_PATTERN:         MOD06_NAV_UID,
                     }
@@ -134,6 +153,17 @@ FILE_CONTENTS_GUIDE = {
                         GEO_FILE_PATTTERN:                          {
                                                                      BKIND_SZA:   [NOT_APPLICABLE]
                                                                     },
+                        ICE_SURFACE_TEMP_FILE_PATTERN:              {
+                                                                     BKIND_IST:   [NOT_APPLICABLE]
+                                                                    },
+                        INVERSION_FILE_PATTERN:                     {
+                                                                     BKIND_INV:   [NOT_APPLICABLE],
+                                                                     BKIND_IND:   [NOT_APPLICABLE]
+                                                                    },
+                        ICE_CONCENTRATION_FILE_PATTERN:             {
+                                                                     BKIND_ICON:  [NOT_APPLICABLE]
+                                                                    },
+                        
                         
                         CLOUDS_06_FILE_PATTERN:                     {
                                                                      BKIND_CTT:   [NOT_APPLICABLE],
@@ -157,6 +187,11 @@ FILL_VALUE_ATTR_NAMES = \
               (BKIND_LST,   NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
               (BKIND_SLST,  NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
               
+              (BKIND_IST,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
+              (BKIND_INV,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
+              (BKIND_IND,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
+              (BKIND_ICON,  NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
+              
               (BKIND_CTT,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
             }
 
@@ -176,6 +211,11 @@ DATA_KINDS = {
               (BKIND_LST,   NOT_APPLICABLE): DKIND_BTEMP,
               (BKIND_SLST,  NOT_APPLICABLE): DKIND_BTEMP,
               
+              (BKIND_IST,   NOT_APPLICABLE): DKIND_BTEMP,
+              (BKIND_INV,   NOT_APPLICABLE): DKIND_BTEMP,
+              (BKIND_IND,   NOT_APPLICABLE): DKIND_DISTANCE,
+              (BKIND_ICON,  NOT_APPLICABLE): DKIND_PERCENT,
+              
               (BKIND_CTT,   NOT_APPLICABLE): DKIND_BTEMP,
              }
 
@@ -194,6 +234,11 @@ VAR_NAMES  = {
               (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_NAME,
               (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
               (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
+              
+              (BKIND_IST,   NOT_APPLICABLE): ICE_SURFACE_TEMP_NAME,
+              (BKIND_INV,   NOT_APPLICABLE): INVERSION_STRENGTH_NAME,
+              (BKIND_IND,   NOT_APPLICABLE): INVERSION_DEPTH_NAME,
+              (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_NAME,
               
               (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_NAME,
              }
@@ -215,6 +260,11 @@ VAR_IDX    = {
               (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
               (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
               
+              (BKIND_IST,   NOT_APPLICABLE): ICE_SURFACE_TEMP_IDX,
+              (BKIND_INV,   NOT_APPLICABLE): INVERSION_STRENGTH_IDX,
+              (BKIND_IND,   NOT_APPLICABLE): INVERSION_DEPTH_IDX,
+              (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_IDX,
+              
               (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_IDX,
         }
 
@@ -234,6 +284,11 @@ RESCALING_ATTRS = \
               (BKIND_SST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
               (BKIND_LST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
               (BKIND_SLST,  NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
+              
+              (BKIND_IST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
+              (BKIND_INV,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
+              (BKIND_IND,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
+              (BKIND_ICON,  NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
               
               (BKIND_CTT,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
              }
@@ -255,6 +310,11 @@ IS_CLOUD_CLEARED = \
               (BKIND_LST,   NOT_APPLICABLE): True,
               (BKIND_SLST,  NOT_APPLICABLE): True,
               
+              (BKIND_IST,   NOT_APPLICABLE): False,
+              (BKIND_INV,   NOT_APPLICABLE): False,
+              (BKIND_IND,   NOT_APPLICABLE): False,
+              (BKIND_ICON,  NOT_APPLICABLE): False,
+              
               (BKIND_CTT,   NOT_APPLICABLE): False,
              }
 
@@ -274,6 +334,11 @@ SHOULD_CONVERT_TO_BT = \
               (BKIND_SST,   NOT_APPLICABLE): False,
               (BKIND_LST,   NOT_APPLICABLE): False,
               (BKIND_SLST,  NOT_APPLICABLE): False,
+              
+              (BKIND_IST,   NOT_APPLICABLE): False,
+              (BKIND_INV,   NOT_APPLICABLE): False,
+              (BKIND_IND,   NOT_APPLICABLE): False,
+              (BKIND_ICON,  NOT_APPLICABLE): False,
               
               (BKIND_CTT,   NOT_APPLICABLE): False,
              }
@@ -336,6 +401,12 @@ def get_equivalent_geolocation_filename (data_file_name_string) :
         filename_to_return = data_file_name_string
     elif re.match(CLOUDS_06_FILE_PATTERN,         data_file_name_string) is not None :
         filename_to_return = data_file_name_string
+    elif re.match(ICE_SURFACE_TEMP_FILE_PATTERN,  data_file_name_string) is not None :
+        filename_to_return = data_file_name_string.split('.ist.hdf'       )[0] + GEO_FILE_SUFFIX
+    elif re.match(ICE_CONCENTRATION_FILE_PATTERN, data_file_name_string) is not None :
+        filename_to_return = data_file_name_string.split('.icecon.hdf'    )[0] + GEO_FILE_SUFFIX
+    elif re.match(INVERSION_FILE_PATTERN,         data_file_name_string) is not None :
+        filename_to_return = data_file_name_string.split('.inversion.hdf' )[0] + GEO_FILE_SUFFIX
     
     return filename_to_return
 
