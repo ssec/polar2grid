@@ -1,8 +1,7 @@
 """Abstract Base Classes for polar2grid components
 """
 
-from .constants import DKIND_REFLECTANCE,DKIND_RADIANCE,DKIND_BTEMP, \
-        DKIND_FOG,NOT_APPLICABLE, DEFAULT_FILL_VALUE
+from .constants import *
 
 import os
 import sys
@@ -71,11 +70,15 @@ class RescalerRole(object):
             'radiance'    : DKIND_RADIANCE,
             'btemp'       : DKIND_BTEMP,
             'fog'         : DKIND_FOG,
+            'distance'    : DKIND_DISTANCE,
+            'percent'     : DKIND_PERCENT,
             # if they copy the constants, like they should
             DKIND_REFLECTANCE : DKIND_REFLECTANCE,
             DKIND_RADIANCE    : DKIND_RADIANCE,
             DKIND_BTEMP       : DKIND_BTEMP,
-            DKIND_FOG         : DKIND_FOG
+            DKIND_FOG         : DKIND_FOG,
+            DKIND_DISTANCE    : DKIND_DISTANCE,
+            DKIND_PERCENT     : DKIND_PERCENT,
             }
 
     @property
