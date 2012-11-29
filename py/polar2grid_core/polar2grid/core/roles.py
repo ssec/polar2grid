@@ -66,12 +66,13 @@ class RescalerRole(object):
     # Define the dictionary once so it doesn't have to be
     # allocated/instantiated every time it's used
     _known_data_kinds = {
-            'reflectance' : DKIND_REFLECTANCE,
-            'radiance'    : DKIND_RADIANCE,
-            'btemp'       : DKIND_BTEMP,
-            'fog'         : DKIND_FOG,
-            'distance'    : DKIND_DISTANCE,
-            'percent'     : DKIND_PERCENT,
+            'reflectance'     : DKIND_REFLECTANCE,
+            'radiance'        : DKIND_RADIANCE,
+            'btemp'           : DKIND_BTEMP,
+            'fog'             : DKIND_FOG,
+            'distance'        : DKIND_DISTANCE,
+            'percent'         : DKIND_PERCENT,
+            'contiguous_index': DKIND_C_INDEX,
             # if they copy the constants, like they should
             DKIND_REFLECTANCE : DKIND_REFLECTANCE,
             DKIND_RADIANCE    : DKIND_RADIANCE,
@@ -79,6 +80,7 @@ class RescalerRole(object):
             DKIND_FOG         : DKIND_FOG,
             DKIND_DISTANCE    : DKIND_DISTANCE,
             DKIND_PERCENT     : DKIND_PERCENT,
+            DKIND_C_INDEX     : DKIND_C_INDEX,
             }
 
     @property
