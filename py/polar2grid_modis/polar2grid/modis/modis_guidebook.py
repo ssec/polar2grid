@@ -47,6 +47,8 @@ SEA_SURFACE_TEMP_NAME        = 'Sea_Surface_Temperature'
 SEA_SURFACE_TEMP_IDX         = None
 LAND_SURFACE_TEMP_NAME       = "LST"
 LAND_SURFACE_TEMP_IDX        = None
+NDVI_NAME                    = "NDVI"
+NDVI_IDX                     = None
 
 ICE_SURFACE_TEMP_NAME        = "Ice_Surface_Temperature"
 ICE_SURFACE_TEMP_IDX         = None
@@ -97,6 +99,8 @@ ICE_SURFACE_TEMP_FILE_PATTERN  = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.ist\.hdf'
 INVERSION_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.inversion\.hdf'
 # a regular expression that will match files containing ice concentration
 ICE_CONCENTRATION_FILE_PATTERN = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.icecon\.hdf'
+# a regular expression that will match files containing NDVI data
+NDVI_FILE_PATTERN              = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.ndvi\.1000m\.hdf'
 
 # a value representing the uid for the geo navigation group
 GEO_NAV_UID                    = "geo_nav"
@@ -107,7 +111,8 @@ BANDS_REQUIRED_TO_CALCULATE_FOG_BAND = [(BKIND_IR,  BID_20), (BKIND_IR,  BID_31)
 
 # a mapping between which navigation groups contain which files
 GEO_FILE_GROUPING = {
-                      GEO_NAV_UID:   [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN, SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN, GEO_FILE_PATTTERN,
+                      GEO_NAV_UID:   [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN, GEO_FILE_PATTTERN,
+                                      SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN, NDVI_FILE_PATTERN,
                                       ICE_SURFACE_TEMP_FILE_PATTERN, INVERSION_FILE_PATTERN, ICE_CONCENTRATION_FILE_PATTERN],
                       MOD06_NAV_UID: [CLOUDS_06_FILE_PATTERN],
                     }
@@ -118,6 +123,7 @@ GEO_FILE_GROUPING_REV = \
                       CLOUD_MASK_FILE_PATTERN:        GEO_NAV_UID,
                       SEA_SURFACE_TEMP_FILE_PATTERN:  GEO_NAV_UID,
                       LAND_SURFACE_TEMP_FILE_PATTERN: GEO_NAV_UID,
+                      NDVI_FILE_PATTERN:              GEO_NAV_UID,
                       GEO_FILE_PATTTERN:              GEO_NAV_UID,
                       ICE_SURFACE_TEMP_FILE_PATTERN:  GEO_NAV_UID,
                       INVERSION_FILE_PATTERN:         GEO_NAV_UID,
@@ -149,6 +155,9 @@ FILE_CONTENTS_GUIDE = {
                         LAND_SURFACE_TEMP_FILE_PATTERN:             {
                                                                      BKIND_LST:   [NOT_APPLICABLE],
                                                                      BKIND_SLST:  [NOT_APPLICABLE]
+                                                                    },
+                        NDVI_FILE_PATTERN:                          {
+                                                                     BKIND_NDVI:  [NOT_APPLICABLE]
                                                                     },
                         GEO_FILE_PATTTERN:                          {
                                                                      BKIND_SZA:   [NOT_APPLICABLE]
@@ -186,6 +195,7 @@ FILL_VALUE_ATTR_NAMES = \
               (BKIND_SST,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
               (BKIND_LST,   NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
               (BKIND_SLST,  NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
+              (BKIND_NDVI,  NOT_APPLICABLE): None,
               
               (BKIND_IST,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
               (BKIND_INV,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
@@ -210,6 +220,7 @@ DATA_KINDS = {
               (BKIND_SST,   NOT_APPLICABLE): DKIND_BTEMP,
               (BKIND_LST,   NOT_APPLICABLE): DKIND_BTEMP,
               (BKIND_SLST,  NOT_APPLICABLE): DKIND_BTEMP,
+              (BKIND_NDVI,  NOT_APPLICABLE): DKIND_C_INDEX,
               
               (BKIND_IST,   NOT_APPLICABLE): DKIND_BTEMP,
               (BKIND_INV,   NOT_APPLICABLE): DKIND_BTEMP,
@@ -234,6 +245,7 @@ VAR_NAMES  = {
               (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_NAME,
               (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
               (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
+              (BKIND_NDVI,  NOT_APPLICABLE): NDVI_NAME,
               
               (BKIND_IST,   NOT_APPLICABLE): ICE_SURFACE_TEMP_NAME,
               (BKIND_INV,   NOT_APPLICABLE): INVERSION_STRENGTH_NAME,
@@ -259,6 +271,7 @@ VAR_IDX    = {
               (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_IDX,
               (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
               (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
+              (BKIND_NDVI,  NOT_APPLICABLE): NDVI_IDX,
               
               (BKIND_IST,   NOT_APPLICABLE): ICE_SURFACE_TEMP_IDX,
               (BKIND_INV,   NOT_APPLICABLE): INVERSION_STRENGTH_IDX,
@@ -284,6 +297,7 @@ RESCALING_ATTRS = \
               (BKIND_SST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
               (BKIND_LST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
               (BKIND_SLST,  NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
+              (BKIND_NDVI,  NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
               
               (BKIND_IST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
               (BKIND_INV,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
@@ -309,6 +323,7 @@ IS_CLOUD_CLEARED = \
               (BKIND_SST,   NOT_APPLICABLE): True,
               (BKIND_LST,   NOT_APPLICABLE): True,
               (BKIND_SLST,  NOT_APPLICABLE): True,
+              (BKIND_NDVI,  NOT_APPLICABLE): True,
               
               (BKIND_IST,   NOT_APPLICABLE): False,
               (BKIND_INV,   NOT_APPLICABLE): False,
@@ -334,6 +349,7 @@ SHOULD_CONVERT_TO_BT = \
               (BKIND_SST,   NOT_APPLICABLE): False,
               (BKIND_LST,   NOT_APPLICABLE): False,
               (BKIND_SLST,  NOT_APPLICABLE): False,
+              (BKIND_NDVI,  NOT_APPLICABLE): False,
               
               (BKIND_IST,   NOT_APPLICABLE): False,
               (BKIND_INV,   NOT_APPLICABLE): False,
@@ -407,6 +423,8 @@ def get_equivalent_geolocation_filename (data_file_name_string) :
         filename_to_return = data_file_name_string.split('.icecon.hdf'    )[0] + GEO_FILE_SUFFIX
     elif re.match(INVERSION_FILE_PATTERN,         data_file_name_string) is not None :
         filename_to_return = data_file_name_string.split('.inversion.hdf' )[0] + GEO_FILE_SUFFIX
+    elif re.match(NDVI_FILE_PATTERN,              data_file_name_string) is not None :
+        filename_to_return = data_file_name_string.split('.ndvi.1000m.hdf')[0] + GEO_FILE_SUFFIX
     
     return filename_to_return
 
