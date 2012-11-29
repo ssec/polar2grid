@@ -491,12 +491,16 @@ def main():
     num_procs = int(args.num_procs)
     forced_grids = args.forced_grids
     if forced_grids == 'all': forced_grids = None
-    if args.forced_gpd is not None and not os.path.exists(args.forced_gpd):
-        log.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
-        return -1
-    if args.forced_nc is not None and not os.path.exists(args.forced_nc):
-        log.error("Specified nc file does not exist '%s'" % args.forced_nc)
-        return -1
+    if args.forced_gpd is not None:
+        args.forced_gpd = os.path.realpath(os.path.expanduser(args.forced_gpd))
+        if not os.path.exists(args.forced_gpd):
+            log.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
+            return -1
+    if args.forced_nc is not None:
+        args.forced_nc = os.path.realpath(os.path.expanduser(args.forced_nc))
+        if not os.path.exists(args.forced_nc):
+            log.error("Specified nc file does not exist '%s'" % args.forced_nc)
+            return -1
 
     if "help" in args.data_files:
         parser.print_help()
@@ -509,12 +513,14 @@ def main():
     if args.get_files:
         hdf_files = args.data_files[:]
     elif len(args.data_files) == 1:
-        base_dir = os.path.abspath(args.data_files[0])
+        base_dir = os.path.abspath(os.path.expanduser(args.data_files[0]))
         hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
     else:
         log.error("Wrong number of arguments")
         parser.print_help()
         return -1
+    # Handle the user using a '~' for their home directory
+    hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in hdf_files ]
 
     if args.remove_prev:
         log.debug("Removing any previous files")

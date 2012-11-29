@@ -394,12 +394,14 @@ def main():
     if args.get_files:
         hdf_files = args.data_files[:]
     elif len(args.data_files) == 1:
-        base_dir = os.path.abspath(args.data_files[0])
+        base_dir = os.path.abspath(os.path.expanduser(args.data_files[0]))
         hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
     else:
         log.error("Wrong number of arguments")
         parser.print_help()
         return -1
+    # Handle the user using a '~' for their home directory
+    hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in hdf_files ]
 
     if args.remove_prev:
         log.debug("Removing any previous files")
