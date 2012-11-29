@@ -56,6 +56,7 @@ BKIND_IST   = "ice_surface_temperature"
 BKIND_INV   = "inversion_strength"
 BKIND_IND   = "inversion_depth"
 BKIND_ICON  = "ice_concentration"
+BKIND_NDVI  = "ndvi"
 
 # Band Identifier
 BID_01 = "01"
@@ -91,6 +92,7 @@ DKIND_CATEGORY    = "category"
 DKIND_ANGLE       = "angle"
 DKIND_DISTANCE    = "distance" # this is meant to be a distance in the sense of meters or miles
 DKIND_PERCENT     = "percent"
+DKIND_C_INDEX     = "contiguous_index" # this represents some abstract ranging index with meaningfully contiguous values (not discrete categories)
 
 # Grid Constants
 GRIDS_ANY = "any_grid"
