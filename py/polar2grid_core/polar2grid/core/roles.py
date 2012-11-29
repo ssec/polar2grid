@@ -1,8 +1,7 @@
 """Abstract Base Classes for polar2grid components
 """
 
-from .constants import DKIND_REFLECTANCE,DKIND_RADIANCE,DKIND_BTEMP, \
-        DKIND_FOG,NOT_APPLICABLE
+from .constants import *
 
 import os
 import sys
@@ -71,11 +70,6 @@ class RescalerRole(object):
             'radiance'    : DKIND_RADIANCE,
             'btemp'       : DKIND_BTEMP,
             'fog'         : DKIND_FOG,
-            # if they copy the constants, like they should
-            DKIND_REFLECTANCE : DKIND_REFLECTANCE,
-            DKIND_RADIANCE    : DKIND_RADIANCE,
-            DKIND_BTEMP       : DKIND_BTEMP,
-            DKIND_FOG         : DKIND_FOG
             }
 
     @property
@@ -128,10 +122,12 @@ class RescalerRole(object):
                 if parts[3] == '' or parts[3] == "none":
                     parts[3] = NOT_APPLICABLE
                 # Make sure we know the data_kind
-                if parts[4] not in self.known_data_kinds:
-                    log.error("Rescaling doesn't know the data kind '%s'" % parts[4])
-                    raise ValueError("Rescaling doesn't know the data kind '%s'" % parts[4])
-                parts[4] = self.known_data_kinds[parts[4]]
+                if parts[4] not in SET_DKINDS:
+                    if parts[4] in self.known_data_kinds:
+                        parts[4] = self.known_data_kinds[parts[4]]
+                    else:
+                        log.warning("Rescaling doesn't know the data kind '%s'" % parts[4])
+
                 # Make sure we know the scale kind
                 if parts[5] not in self.known_rescale_kinds:
                     log.error("Rescaling doesn't know the rescaling kind '%s'" % parts[5])

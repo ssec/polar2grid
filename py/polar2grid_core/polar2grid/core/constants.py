@@ -65,6 +65,12 @@ DKIND_RADIANCE = "radiance"
 DKIND_REFLECTANCE = "reflectance"
 DKIND_BTEMP = "btemp"
 DKIND_FOG = "fog"
+SET_DKINDS = set([
+    DKIND_RADIANCE,
+    DKIND_REFLECTANCE,
+    DKIND_BTEMP,
+    DKIND_FOG
+    ])
 
 # Grid Constants
 GRIDS_ANY = "any_grid"
