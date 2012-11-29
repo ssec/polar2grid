@@ -537,7 +537,7 @@ RESCALE_FOR_KIND = {
         DKIND_REFLECTANCE : (sqrt_scale,   (100.0, 25.5)),
         DKIND_BTEMP       : (bt_scale,     (242.0,660.0,2,418.0,1)),
         DKIND_FOG         : (fog_scale,    (10.0,105.0,5,4,205,206))
-        # TODO, add defaults for btemp_c and lst_scale
+        # TODO, add defaults for category, angle, distance, percent, and contiguous index
         }
 
 class Rescaler(roles.RescalerRole):
