@@ -113,11 +113,14 @@ def remove_products(list_of_file_patterns_to_remove, log=logging.getLogger('')):
         for file_name in glob(file_pattern) :
             _safe_remove(file_name, log)
 
-# TODO, by default can_handle_inputs runs on awips, is there a more elegant way of doing this?
 def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend_object,
         forced_grids=None, log=logging.getLogger('')):
     """
-    TODO, documentation
+    Given information on the bands and their lon/lat ranges, use the backend
+    object to figure out which grids should be used for each band.
+    
+    Returns a grid_jobs dictionary describing the grid remapping jobs that
+    should be processed.
     """
     
     # Check what grids the backend can handle
