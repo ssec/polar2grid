@@ -61,6 +61,8 @@ ICE_CONCENTRATION_IDX        = None
 
 CLOUD_TOP_TEMP_NAME          = "Cloud_Top_Temperature"
 CLOUD_TOP_TEMP_IDX           = None
+TOTAL_PRECIP_WATER_NAME      = "Water_Vapor"
+TOTAL_PRECIP_WATER_IDX       = None
 
 VISIBLE_SCALE_ATTR_NAME      = "reflectance_scales"
 VISIBLE_OFFSET_ATTR_NAME     = "reflectance_offsets"
@@ -93,6 +95,8 @@ LAND_SURFACE_TEMP_FILE_PATTERN = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.modlst\.hdf'
 GEO_FILE_PATTTERN              = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.geo\.hdf'
 # a regular expression that will match files that have some clouds related data in them
 CLOUDS_06_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mod06ct\.hdf'
+# a regular file pattern that will match files taht contain total precipitable water
+CLOUDS_07_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mod07\.hdf'
 # a regular expression that will match files containing ice surface temperature
 ICE_SURFACE_TEMP_FILE_PATTERN  = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.ist\.hdf'
 # a regular expression that will match files containing several inversion products
@@ -106,6 +110,8 @@ NDVI_FILE_PATTERN              = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.ndvi\.1000m\.hdf
 GEO_NAV_UID                    = "geo_nav"
 # a value representing the uid for the mod06 navigation group
 MOD06_NAV_UID                  = "mod06_nav"
+# a value representing the uid for the mod07 navigation group
+MOD07_NAV_UID                  = "mod07_nav"
 
 BANDS_REQUIRED_TO_CALCULATE_FOG_BAND = [(BKIND_IR,  BID_20), (BKIND_IR,  BID_31), (BKIND_SZA, NOT_APPLICABLE)]
 
@@ -115,6 +121,7 @@ GEO_FILE_GROUPING = {
                                       SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN, NDVI_FILE_PATTERN,
                                       ICE_SURFACE_TEMP_FILE_PATTERN, INVERSION_FILE_PATTERN, ICE_CONCENTRATION_FILE_PATTERN],
                       MOD06_NAV_UID: [CLOUDS_06_FILE_PATTERN],
+                      MOD07_NAV_UID: [CLOUDS_07_FILE_PATTERN],
                     }
 # the reverse mapping between files are in which navigation groups
 GEO_FILE_GROUPING_REV = \
@@ -130,14 +137,16 @@ GEO_FILE_GROUPING_REV = \
                       ICE_CONCENTRATION_FILE_PATTERN: GEO_NAV_UID,
                       
                       CLOUDS_06_FILE_PATTERN:         MOD06_NAV_UID,
+                      CLOUDS_07_FILE_PATTERN:         MOD07_NAV_UID,
                     }
 
 # a mapping between the geo file group and the name of the fill value attribute for the longitude and latitude
 # FUTURE, if the lon/lat have different fill values in the future this may need to be more complex
 LON_LAT_FILL_VALUE_NAMES = \
                     {
-                      "geo_nav":   FILL_VALUE_ATTR_NAME,
-                      "mod06_nav": None,
+                      GEO_NAV_UID:   FILL_VALUE_ATTR_NAME,
+                      MOD06_NAV_UID: None,
+                      MOD07_NAV_UID: None,
                     }
 
 # a mapping between regular expressions to match files and their band_kind and band_id contents
@@ -177,6 +186,9 @@ FILE_CONTENTS_GUIDE = {
                         CLOUDS_06_FILE_PATTERN:                     {
                                                                      BKIND_CTT:   [NOT_APPLICABLE],
                                                                     },
+                        CLOUDS_07_FILE_PATTERN:                     {
+                                                                     BKIND_TPW:   [NOT_APPLICABLE],
+                                                                    },
                       }
 
 # a mapping between bands and their fill value attribute names
@@ -203,6 +215,7 @@ FILL_VALUE_ATTR_NAMES = \
               (BKIND_ICON,  NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
               
               (BKIND_CTT,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
+              (BKIND_TPW,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
             }
 
 # a mapping between the bands and their data kinds (in the file)
@@ -228,6 +241,7 @@ DATA_KINDS = {
               (BKIND_ICON,  NOT_APPLICABLE): DKIND_PERCENT,
               
               (BKIND_CTT,   NOT_APPLICABLE): DKIND_BTEMP,
+              (BKIND_TPW,   NOT_APPLICABLE): DKIND_DISTANCE,
              }
 
 # a mapping between the bands and the variable names used in the files to hold them
@@ -253,6 +267,7 @@ VAR_NAMES  = {
               (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_NAME,
               
               (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_NAME,
+              (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_NAME,
              }
 
 # a mapping between the bands and any index needed to access the data in the variable (for slicing)
@@ -279,6 +294,7 @@ VAR_IDX    = {
               (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_IDX,
               
               (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_IDX,
+              (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_IDX,
         }
 
 # a mapping between bands and the names of their scale and offset attributes
@@ -305,6 +321,7 @@ RESCALING_ATTRS = \
               (BKIND_ICON,  NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
               
               (BKIND_CTT,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
+              (BKIND_TPW,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
              }
 
 # whether or not each band should be cloud cleared
@@ -331,6 +348,7 @@ IS_CLOUD_CLEARED = \
               (BKIND_ICON,  NOT_APPLICABLE): False,
               
               (BKIND_CTT,   NOT_APPLICABLE): False,
+              (BKIND_TPW,   NOT_APPLICABLE): False,
              }
 
 # whether or not each band should be converted to brightness temperature
@@ -357,6 +375,7 @@ SHOULD_CONVERT_TO_BT = \
               (BKIND_ICON,  NOT_APPLICABLE): False,
               
               (BKIND_CTT,   NOT_APPLICABLE): False,
+              (BKIND_TPW,   NOT_APPLICABLE): False,
              }
 
 def parse_datetime_from_filename (file_name_string) :
@@ -415,6 +434,8 @@ def get_equivalent_geolocation_filename (data_file_name_string) :
     elif re.match(GEO_FILE_PATTTERN,              data_file_name_string) is not None :
         filename_to_return = data_file_name_string
     elif re.match(CLOUDS_06_FILE_PATTERN,         data_file_name_string) is not None :
+        filename_to_return = data_file_name_string
+    elif re.match(CLOUDS_07_FILE_PATTERN,         data_file_name_string) is not None :
         filename_to_return = data_file_name_string
     elif re.match(ICE_SURFACE_TEMP_FILE_PATTERN,  data_file_name_string) is not None :
         filename_to_return = data_file_name_string.split('.ist.hdf'       )[0] + GEO_FILE_SUFFIX
