@@ -171,19 +171,20 @@ def process_data_sets(filepaths,
     # the fog band must be calculated after the other bands are converted to brightness temperatures
     
     # if we have what we need, we want to build the fog band
-    have_bands_needed_for_fog = True
-    for band_kind, band_id in BANDS_REQUIRED_TO_CALCULATE_FOG_BAND :
-        have_bands_needed_for_fog = False if (band_kind, band_id) not in band_info else have_bands_needed_for_fog
-    if have_bands_needed_for_fog :
-        try :
-            fog_meta_data = create_fog_band (band_info[(BKIND_IR, BID_20)], band_info[(BKIND_IR, BID_31)],
-                                             sza_meta_data=band_info[(BKIND_SZA, NOT_APPLICABLE)],
-                                             fog_fill_value=band_info[(BKIND_IR, BID_20)]['fill_value']) # for now, use one of the fill values
-            band_info[(fog_meta_data["kind"], fog_meta_data["band"])] = fog_meta_data
-        except StandardError :
-            log.error("Error while creating fog band; fog will not be created...")
-            log.debug("Fog creation error:", exc_info=1)
-            status_to_return |= STATUS_FRONTEND_FAIL
+    if create_pseudo :
+        have_bands_needed_for_fog = True
+        for band_kind, band_id in BANDS_REQUIRED_TO_CALCULATE_FOG_BAND :
+            have_bands_needed_for_fog = False if (band_kind, band_id) not in band_info else have_bands_needed_for_fog
+        if have_bands_needed_for_fog :
+            try :
+                fog_meta_data = create_fog_band (band_info[(BKIND_IR, BID_20)], band_info[(BKIND_IR, BID_31)],
+                                                 sza_meta_data=band_info[(BKIND_SZA, NOT_APPLICABLE)],
+                                                 fog_fill_value=band_info[(BKIND_IR, BID_20)]['fill_value']) # for now, use one of the fill values
+                band_info[(fog_meta_data["kind"], fog_meta_data["band"])] = fog_meta_data
+            except StandardError :
+                log.error("Error while creating fog band; fog will not be created...")
+                log.debug("Fog creation error:", exc_info=1)
+                status_to_return |= STATUS_FRONTEND_FAIL
     
     log.debug("band_info after prescaling: " + str(band_info.keys()))
     
@@ -289,19 +290,21 @@ def _process_data_sets(*args, **kwargs):
     sys.exit(-1)
 
 def run_modis2awips(filepaths,
-                    multiprocess=False, # TODO, turn this on later
+                    multiprocess=True,
                     **kwargs):
     """Go through the motions of converting
     a MODIS hdf file into a AWIPS NetCDF file.
     
-    1. modis_guidebook.py       : Info on what's in the files
-    2. modis_to_swath.py        : Code to load the data
-    3. Convert BT               : (in to_swath) converts IR channels to brightness temps
-    4. create_grid_jobs         : Figure out what grids the data fits in
-    5. ll2cr
-    6. fornav
-    7. rescale.py
-    8. awips_netcdf.py
+    1.  modis_guidebook.py       : Info on what's in the files
+    2.  modis_to_swath.py        : Code to load the data
+    3.  Clear clouds             : if we have the cloud mask data, clear any cloud cleared bands
+    4.  Convert BT               : (in to_swath) converts IR channels to brightness temps
+    5.  Create Fog band          : if we have the appropriate bands, create the bt difference for fog
+    6.  create_grid_jobs         : Figure out what grids the data fits in
+    7.  ll2cr
+    8.  fornav
+    9.  rescale.py
+    10. awips_netcdf.py
     """
     # Rewrite/force parameters to specific format
     filepaths = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(filepaths) ]
@@ -362,49 +365,51 @@ def main():
     Create MODIS swaths, remap them to a grid, and place that remapped data
     into a AWIPS compatible netcdf file.
     """
-    description2 = """
-    For DB:
-    %prog [options] <event directory>
     
-    For testing (usable files are those of bands mentioned in templates.conf):
-    # Looks for all usable files in data directory
-    %prog [options] <data directory>
-    # Uses all usable files of the specfied
-    %prog [options] -f file1.hdf file2.hdf ...
-    """
     parser = argparse.ArgumentParser(description=description)
-
+    
+    # Logging related
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
-    parser.add_argument('-D', dest='fornav_D', default=40,
-            help="Specify the -D option for fornav")
-    parser.add_argument('-d', dest='fornav_d', default=2,
-            help="Specify the -d option for fornav")
-    parser.add_argument('-f', dest='get_files', default=False, action="store_true",
-            help="Specify that hdf files are listed, not a directory")
-    parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+",
-            help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
+    
+    # Multiprocessing related
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
             help="Processing is sequential instead of one process per navigation group")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
-    parser.add_argument('-k', '--keep', dest='remove_prev', default=True, action='store_true',
-            help="Don't delete any files that were previously made (WARNING: processing may not run successfully)")
-    #parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
-    #        help="Don't create pseudo bands")
-    parser.add_argument('--rescale-config', dest='rescale_config', default=None,
-            help="specify alternate rescale configuration file")
+    
+    # Input related
+    parser.add_argument('-f', dest='get_files', default=False, action="store_true",
+            help="Specify that hdf files are listed, not a directory")
+    parser.add_argument('data_files', nargs="+",
+            help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
+    
+    # Frontend and product filtering related
+    parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
+            help="Don't create pseudo bands")
+    
+    # Remapping and grid related
+    parser.add_argument('-D', dest='fornav_D', default=40,
+            help="Specify the -D option for fornav")
+    parser.add_argument('-d', dest='fornav_d', default=2,
+            help="Specify the -d option for fornav")
+    parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="all",
+            help="Force remapping to only some grids, defaults to 'all', use 'all' for determination")
     parser.add_argument('--gpd', dest='forced_gpd', default=None,
             help="Specify a different gpd file to use")
-    parser.add_argument('--nc', dest='forced_nc', default=None,
-            help="Specify a different nc file to use")
+    
+    # Backend related
+    parser.add_argument('--rescale-config', dest='rescale_config', default=None,
+            help="specify alternate rescale configuration file")
     parser.add_argument('--backend-config', dest='backend_config', default=None,
             help="specify alternate backend configuration file")
     
-    # TODO, compare the arguments here against those in viirs2awips
+    # Output file related
+    parser.add_argument('-k', '--keep', dest='remove_prev', default=True, action='store_true',
+            help="Don't delete any files that were previously made (WARNING: processing may not run successfully)")
+    parser.add_argument('--nc', dest='forced_nc', default=None,
+            help="Specify a different nc file to use")
     
-    parser.add_argument('data_files', nargs="+",
-            help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
     args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
@@ -417,6 +422,7 @@ def main():
     fornav_d = int(args.fornav_d)
     num_procs = int(args.num_procs)
     forced_grids = args.forced_grids
+    if forced_grids == 'all': forced_grids = None
     if args.forced_gpd is not None and not os.path.exists(args.forced_gpd):
         log.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
         return -1
@@ -436,7 +442,7 @@ def main():
         hdf_files = args.data_files[:]
     elif len(args.data_files) == 1:
         base_dir = os.path.abspath(os.path.expanduser(args[0]))
-        hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
+        hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.endswith(".hdf") ]
     else:
         log.error("Wrong number of arguments")
         parser.print_help()
@@ -447,8 +453,9 @@ def main():
         clean_up_files()
     
     stat = run_modis2awips(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
-                forced_gpd=args.forced_gpd, forced_nc=args.forced_nc, forced_grid=forced_grids,
-                create_pseudo=False, # TODO args.create_pseudo,
+                forced_gpd=args.forced_gpd, forced_nc=args.forced_nc,
+                forced_grid=forced_grids,
+                create_pseudo=args.create_pseudo,
                 rescale_config=args.rescale_config,
                 backend_config=args.backend_config,
                 multiprocess=not args.single_process, num_procs=num_procs)
