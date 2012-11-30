@@ -95,7 +95,6 @@ def convert_radiance_to_bt (img_filepath, satellite, band_number, fill_value=DEF
         satellite = "Terra"
     
     # calculate the brightness temperatures
-    # TODO, I don't know if there are any exceptions I need to catch here
     not_fill_mask           = data != fill_value
     new_data                = data.copy().astype(numpy.float64)
     new_data[not_fill_mask] = bright_shift(satellite, new_data[not_fill_mask], int(band_number))
