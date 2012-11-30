@@ -367,8 +367,7 @@ def parse_datetime_from_filename (file_name_string) :
     
     datetime_to_return = None
     
-    # TODO, there are at least two file name formats to parse here
-    
+    # there are at least two file name formats to parse here
     if (file_name_string.startswith('a1') or file_name_string.startswith('t1')) :
         temp = file_name_string.split('.')
         datetime_to_return = datetime.strptime(temp[1] + temp[2], "%y%j%H%M")
@@ -403,7 +402,7 @@ def get_equivalent_geolocation_filename (data_file_name_string) :
     
     filename_to_return = None
     
-    # TODO there are going to be other sources of geolocation besides the .geo.hdf file when we get to later products
+    # file correspondances are handled here, but clumbsily; FUTURE make a better reverse index to handle this
     
     if   re.match(VIS_INF_FILE_PATTERN,           data_file_name_string) is not None :
         filename_to_return = data_file_name_string.split('.1000m.hdf'     )[0] + GEO_FILE_SUFFIX
