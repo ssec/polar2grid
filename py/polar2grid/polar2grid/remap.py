@@ -258,8 +258,6 @@ def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     log_level = logging.getLogger('').handlers[0].level or 0
     
     # TODO, this is just a very rough check for now, in the long run handle this more gracefully
-    #print("lat_fill_value: " + str(lat_fill_value))
-    #print("lon_fill_value: " + str(lon_fill_value))
     assert (lat_fill_value == lon_fill_value)
     
     # Run ll2cr
