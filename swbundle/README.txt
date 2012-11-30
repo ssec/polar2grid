@@ -1,8 +1,8 @@
 polar2grid software bundle
 ==========================
-Author: David Hoese
+Author:       David Hoese
 Organization: University of Wisconsin - Space Science and Engineering Center
-Rev Id: $Id$
+Copyright:    December 2012
 
 Installation
 ============
@@ -12,7 +12,7 @@ Installation
 2. Add the following line to your .bash_profile or .bashrc:
     export POLAR2GRID_HOME=/path/to/untarred-swbundle-dir
 
-To Run A polar2grid Script
+To run a polar2grid glue script
 ==========================
 The polar2grid scripts are usually part of a larger system, but if you want
 to run a script manually:
