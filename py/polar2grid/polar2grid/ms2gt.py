@@ -26,7 +26,7 @@ CR_REG = r'.*_(\d+).img'
 cr_reg = re.compile(CR_REG)
 
 def _ll2cr_rows_info(fn):
-    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<num_rows>\d+).img'
+    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<ll2cr_rowsperscan>\d+).img'
     cr_reg = re.compile(CR_REG)
     row_match = cr_reg.match(fn)
     if row_match is None:
@@ -35,11 +35,11 @@ def _ll2cr_rows_info(fn):
     d = row_match.groupdict()
     d["scans_out"] = int(d["scans_out"])
     d["scan_first"] = int(d["scan_first"])
-    d["num_rows"] = int(d["num_rows"])
+    d["ll2cr_rowsperscan"] = int(d["ll2cr_rowsperscan"])
     return d
 
 def _ll2cr_cols_info(fn):
-    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<num_cols>\d+).img'
+    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<ll2cr_rowsperscan>\d+).img'
     cr_reg = re.compile(CR_REG)
     col_match = cr_reg.match(fn)
     if col_match is None:
@@ -48,7 +48,7 @@ def _ll2cr_cols_info(fn):
     d = col_match.groupdict()
     d["scans_out"] = int(d["scans_out"])
     d["scan_first"] = int(d["scan_first"])
-    d["num_cols"] = int(d["num_cols"])
+    d["ll2cr_rowsperscan"] = int(d["ll2cr_rowsperscan"])
     return d
 
 def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
@@ -98,8 +98,7 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
         # Log message was delivered before
         raise ValueError("Couldn't get information from ll2cr output")
 
-    d["num_cols"] = col_dict["num_cols"]
-    d["num_rows"] = row_dict["num_rows"]
+    d["ll2cr_rowsperscan"] = col_dict["ll2cr_rowsperscan"]
 
     if col_dict["scans_out"] != row_dict["scans_out"]:
         log.error("ll2cr didn't produce the same number of scans for cols and rows")
@@ -116,8 +115,7 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
 
     log.debug("Number of Scans Out = %d" % d["scans_out"])
     log.debug("Number for Scan First = %d" % d["scan_first"])
-    log.debug("Number of Columns = %d" % d["num_cols"])
-    log.debug("Number of Rows = %d" % d["num_rows"])
+    log.debug("Number of Rows Per Scan = %d" % d["ll2cr_rowsperscan"])
 
     return d
 

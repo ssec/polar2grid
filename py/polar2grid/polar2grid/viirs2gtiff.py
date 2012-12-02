@@ -135,7 +135,7 @@ def process_data_sets(filepaths,
                 filepaths,
                 scale_dnb=True,
                 new_dnb=new_dnb,
-                create_fog=True,
+                create_fog=create_pseudo,
                 cut_bad=True
                 )
 
@@ -353,12 +353,14 @@ def main():
 
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
-    parser.add_argument('-D', dest='fornav_D', default=40,
+    parser.add_argument('--fornav-D', dest='fornav_D', default=40,
             help="Specify the -D option for fornav")
-    parser.add_argument('-d', dest='fornav_d', default=2,
+    parser.add_argument('--fornav-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
-    parser.add_argument('-f', dest='get_files', default=False, action="store_true",
-            help="Specify that hdf files are listed, not a directory")
+    parser.add_argument('-f', dest='data_files', nargs="+",
+            help="List of one or more hdf files")
+    parser.add_argument('-d', dest='data_dir', nargs="?",
+            help="Data directory to look for input data files")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
             help="Processing is sequential instead of one process per kind of band")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
@@ -379,11 +381,8 @@ def main():
     # Backend Specific
     parser.add_argument('--bits', dest="etype", default=None, type=_bits_to_etype,
             help="number of bits in the geotiff, usually unsigned")
-    parser.add_argument('--inc_by_one', dest="inc_by_one", default=False, action="store_true",
-            help="tell rescaler to increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
-
-    parser.add_argument('data_files', nargs="+",
-            help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
+    parser.add_argument('--dont_inc', dest="inc_by_one", default=True, action="store_false",
+            help="tell rescaler to not increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
 
     args = parser.parse_args()
 
@@ -399,23 +398,17 @@ def main():
     forced_grids = args.forced_grids
     if forced_grids == 'all': forced_grids = None
 
-    if "help" in args.data_files:
-        parser.print_help()
-        sys.exit(0)
-    elif "remove" in args.data_files:
-        log.debug("Removing previous products")
-        remove_products()
-        sys.exit(0)
-
-    if args.get_files:
+    if args.data_files:
         hdf_files = args.data_files[:]
-    elif len(args.data_files) == 1:
-        base_dir = os.path.abspath(args.data_files[0])
+    elif args.data_dir:
+        base_dir = os.path.abspath(os.path.expanduser(args.data_dir))
         hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
     else:
         log.error("Wrong number of arguments")
         parser.print_help()
         return -1
+    # Handle the user using a '~' for their home directory
+    hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in hdf_files ]
 
     if args.remove_prev:
         log.debug("Removing any previous files")

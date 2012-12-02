@@ -201,7 +201,10 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
                         grid_fill_1=fornav_job["grid_fill_1"],
                         weight_delta_max=fornav_D,
                         weight_distance_max=fornav_d,
-                        start_scan=(0,ll2cr_output[grid_name]["scan_first"]),
+                        # We only specify start_scan for the 'image'/channel
+                        # data because ll2cr is not 'forced' so it only writes
+                        # useful data to the output cols/rows files
+                        start_scan=(ll2cr_output[grid_name]["scan_first"],0),
                         pool=proc_pool
                         )
 
