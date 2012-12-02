@@ -51,7 +51,7 @@ for polar2grid:
  - python and numpy programming
  - memory management in terms of how arrays are created/manipulated/copied
  - flat binary files and how data is stored and arranged
-   (`FBF Description <https://groups.ssec.wisc.edu/employee-info/for-programmers/scriptonomicon/flat-binary-format-fbf-files-and-utilities/FBF-file-format.pdf/view?searchterm=FBF>`_)
+   (`FBF Description <https://groups.ssec.wisc.edu/employee-info/for-programmers/scriptonomicon/flat-binary-format-fbf-files-and-utilities/FBF-file-format.pdf>`_)
  - remapping/regridding satellite imagery swaths (including types of projections)
  - python packaging, specifically `distribute <http://packages.python.org/distribute/>`_ (setuptools)
  - git source code management system and the 'forking' and 'pull request'
@@ -270,7 +270,7 @@ and put it into a common format that the rest of the polar2grid package can
 understand.  Frontends output two types of data, flat binary files of all
 necessary data and a python dictionary with metadata to be used in the rest
 of processing.  All flat binary file output should follow SSEC FBF naming conventions
-(`FBF Description <https://groups.ssec.wisc.edu/employee-info/for-programmers/scriptonomicon/flat-binary-format-fbf-files-and-utilities/FBF-file-format.pdf/view?searchterm=FBF>`_).
+(`FBF Description <https://groups.ssec.wisc.edu/employee-info/for-programmers/scriptonomicon/flat-binary-format-fbf-files-and-utilities/FBF-file-format.pdf>`_).
 Flat binary files should also follow the convention of having one
 invalid/missing value (-999.0) as described in the :ref:`formats_section` section
 above.

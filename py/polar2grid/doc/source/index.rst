@@ -6,12 +6,15 @@
 polar2grid
 ======================================
 
-polar2grid provides scripts, utilities, and library functions for converting,
-or remapping, polar-orbiting satellite data to a known map grid.  All
-polar2grid remapping scripts execute a series of function calls known as
+polar2grid provides scripts, utilities, and library functions for reading
+polar-orbitting satellite data, remapping or gridding that data, and writing
+it to a file format to be used by other software. All
+polar2grid "glue" scripts execute a series of function calls known as
 "The Chain".  These functions being called act as a toolbox for software
 developers to make their own scripts.  See :doc:`Advanced Topics <advanced>`
 for more details if the basic documentation doesn't answer your questions.
+If you are a developer wishing to add your own frontend or backend please
+see the :doc:`Developer's Guide <dev_guide>` for details on how to do so.
 
 Contents
 --------
@@ -22,12 +25,14 @@ Contents
 
     installation
     chain
-    backends
     scripts
+    frontends
+    backends
+    rescaling
     utilscripts
-    roadmap
     dev_guide
     advanced
+    release_notes
 
 Grids
 -----
@@ -35,7 +40,7 @@ Grids
 .. toctree::
     :maxdepth: 2
 
-    awips_grids
+    grids
 
 API
 ---

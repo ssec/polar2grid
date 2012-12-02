@@ -198,6 +198,7 @@ class BackendRole(object):
         a list of grid names (that must be defined in grids.conf) or it
         returns a constant defined in `polar2grid.core.constants` for grids.
         Possible constants are:
+
             - GRIDS_ANY: Any gpd or proj4 grid
             - GRIDS_ANY_GPD: Any gpd grid
             - GRIDS_ANY_PROJ4: Any proj4 grid

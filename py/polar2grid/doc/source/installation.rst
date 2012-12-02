@@ -4,7 +4,8 @@ Installation
 The polar2grid python package can be installed in 2 types of environments,
 as an individually installed python package or as part of the polar2grid
 software bundle.  The software bundle is the preferred, recommended,
-and intended method of installing the polar2grid software.
+and intended method of installing the polar2grid software for
+non-developmental use.
 
 polar2grid Software Bundle Install
 ----------------------------------
@@ -15,31 +16,38 @@ with the various packages required by the polar2grid python package. It is
 completely self-contained and does not have any outside dependencies.
 
 Once the software bundle tarball is on the destination system it can be
-installed first by untarring it:
+installed first by untarring it::
 
-    ``tar -xzf polar2grid_softwarebundle.tar.gz``
+    tar -xzf polar2grid_softwarebundle.tar.gz
 
-Next, add this line to your ``.bash_profile``:
+Next, add this line to your ``.bash_profile``::
 
-    ``export POLAR2GRID_HOME=/path/to/softwarebundle``
+    export POLAR2GRID_HOME=/path/to/softwarebundle
 
 Without any other work, polar2grid "companion" scripts (as opposed to the
 python package scripts) must be used to run any processing of
 satellite data to gridded data format. These "companion" scripts setup the
 rest of the environment and provide command line defaults.
 
-See :doc:`Scripts </scripts>` for more information on running polar2grid.
+See :doc:`Glue Scripts </scripts>` for more information on running polar2grid.
+The glue script documentation assumes the above for command line examples, but
+to reduce typing the following can also be added to your ``.bash_profile``::
 
-See :doc:`Advanced Topics </advanced>` for python package installing or other
-options for running polar2grid scripts.
+    export PATH=$POLAR2GRID_HOME/bin:$PATH
+
+which allows you to remove the ``$POLAR2GRID_HOME/bin/`` portion of the
+command line examples.
+
+See the :doc:`Developer's Guide </dev_guide>` for python package installing or
+other options for running polar2grid scripts.
 
 polar2grid Software Bundle Uninstall/Upgrade
 --------------------------------------------
 
 To uninstall the polar2grid software bundle, simply remove the software
-bundle directory that was originally created:
+bundle directory that was originally created::
 
-    ``rm -r /path/to/softwarebundle``
+    rm -r /path/to/softwarebundle
 
 If you are permanently removing polar2grid you should also remove the
 ``POLAR2GRID_HOME`` line from your ``.bash_profile`` file.
@@ -101,4 +109,9 @@ Test cases:
         :Fog Created: Yes
         :Forced Grid: 203
         :Orbit Number: 02315
+
+viirs2gtiff Alaska Basic
+########################
+
+TODO
 

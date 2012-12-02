@@ -42,13 +42,15 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
 
         Prerequisite - Make a ms2gt source package (from the development repository)::
 
-            cd /path/to/repos/checkout/trunk/ms2gt/
+            cd /path/to/repos/checkout/root/ms2gt/
             make tar
             mv ms2gt<ms2gt-version>.tar.gz /path/to/polar2grid-swbundle-<version>
-            cd /path/to/polar2grid-swbundle-<version>
 
             # To delete the temporary directory that was made:
-            rm -r ms2gt
+            rm -r ms2gt<ms2gt-version>
+
+            cd /path/to/polar2grid-swbundle-<version>
+
 
         Or you can download the .tar.gz file from here:
             http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/
@@ -63,42 +65,42 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
             ln -s ../ms2gt/bin/fornav bin/fornav
             ln -s ../ms2gt/bin/ll2cr bin/ll2cr
 
-    4. Download the polar2grid python package, uncompress it, and link to it:
-           
-        Prerequisite - Make the polar2gird python package::
-
-            cd /path/to/repos/checkout/trunk/py/polar2grid/
-            python setup.py sdist
-            mv dist/polar2grid-<py-package-version>.tar.gz /path/to/polar2grid-swbundle-<version>/
-            cd /path/to/polar2grid-swbundle-<version>/
-
-        Or you can download the .tar.gz file from here:
-            http://larch.ssec.wisc.edu/eggs/repos/polar2grid/
-
-        Link it::
-
-            tar -xzf polar2grid-<py-package-version>.tar.gz
-            ln -sf polar2grid-<py-package-version> polar2grid
-
-    5. Copy any companion scripts and environment scripts to software bundle directory::
-
-        cp /path/to/repos/checkout/trunk/py/viirs2awips/viirs2awips.sh /path/to/polar2grid-swbundle-<version>/bin/
-        cp /path/to/repos/checkout/trunk/py/viirs2awips/polar2grid_env.sh /path/to/polar2grid-swbundle-<version>/bin/
-
-    6. Copy/install precompiled ShellB3 package::
+    4. Copy/install precompiled ShellB3 package::
 
         tar -xzf ShellB3-<SB3-version>.tar.gz
 
        .. note:: Currently there aren't any publicly available ShellB3 tarball packages, contact us to get one.
 
-    7. Create any desired test/work directories and populate with test data.
+    5. Download the polar2grid python package, uncompress it, and link to it:
+           
+        Prerequisite - Make the polar2gird python package::
 
-    8. Create a README text file that describes the package and its author.
-       There is a copy of a README template in the subversion repository at::
+            cd /path/to/repos/checkout/root/py/
+            make all_sdist
+            mv dist/*.tar.gz /path/to/polar2grid-swbundle-<version>/
 
-        .../repos/checkout/trunk/py/viirs2awips/p2g_swbundle_readme.txt
+            # put the eggs on the repoistory if ready
+            scp *.tar.gz larch:/var/apache/larch/htdocs/eggs/repos/
 
-    9. Compress software bundle into a tarball::
+        Install the packages directly from the tarball files::
+
+            cd /path/to/polar2grid-swbundle-<version>
+
+            # All dependencies should be installed automatically with this command:
+            ShellB3/bin/python -m easy_install /path/to/repos/checkout/root/py/dist/*.tar.gz
+
+        Or install the packages from the egg repository::
+
+            cd /path/to/polar2grid-swbundle-<version>
+            # all dependencies should be automatically installed
+            ShellB3/bin/python -m easy_install -f http://larch.ssec.wisc.edu/cgi-bin/repos.cgi polar2grid
+
+    6. Copy any companion scripts and environment scripts to software bundle directory::
+
+        cp /path/to/repos/checkout/root/swbundle/* /path/to/polar2grid-swbundle-<version>/bin/
+
+
+    7. Compress software bundle into a tarball::
 
         tar -czf polar2grid-swbundle-<version>.tar.gz polar2grid-swbundle-<version>
 

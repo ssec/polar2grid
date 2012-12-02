@@ -15,7 +15,7 @@ Possible confusions:
 
 Exceptions:
     - Return status constants are not strings so that they can be or'ed and
-    can be interpreted by a command line shell.
+        can be interpreted by a command line shell.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu

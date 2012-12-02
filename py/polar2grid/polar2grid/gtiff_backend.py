@@ -156,6 +156,7 @@ class Backend(roles.BackendRole):
 
         Most arguments are keywords to fit the backend interface, but some
         of these keywords are required:
+
             - start_time (required if `output_filename` is not):
                 Parameter to make the output filename more specific
             - grid_name (required if `output_filename` is not):
@@ -182,6 +183,7 @@ class Backend(roles.BackendRole):
                 is required.
 
         Optional keywords:
+
             - end_time (used if `output_filename` is not):
                 Parameter to make the output filename more specific, added to
                 start_time to produce "YYYYMMDD_HHMMSS_YYYYMMDD_HHMMSS"

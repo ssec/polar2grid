@@ -1,12 +1,13 @@
-Scripts
-=======
+Glue Scripts
+============
 
 polar2grid uses specialized scripts to handle the high level processing of
-polar-orbiting satellite data to product generation.  Each script has
+polar-orbiting satellite data to product generation.  These scripts are
+programmed in python and called glue scripts.  Each glue script has
 a "companion" script that is located in the polar2grid software bundle's
 ``/bin`` directory.  These "companion" scripts are used to setup the
 environment needed by the python scripts, enter defaults into the python
-scripts, and ease the installation/use process of the user.  The "companion"
+scripts, and ease the installation/use process for the user.  The "companion"
 scripts are callable (once proper installation steps have been taken) by the
 name of the script.
 
@@ -21,31 +22,83 @@ viirs2awips
 :Python Script: ``polar2grid.viirs2awips``
 :Comp. Script: ``viirs2awips.sh``
 
-This script is used to process VIIRS imager data into AWIPS compatible NetCDF
-files.  It can be run using the following command:
+This script is used to process
+:ref:`VIIRS imager data <frontend_viirs>`
+into
+:ref:`AWIPS compatible NetCDF <backend_awips_netcdf>`
+files.  It can be run using the following command::
 
-    ``viirs2awips.sh /path/to/data/``
+    $POLAR2GRID_HOME/bin/viirs2awips.sh -d /path/to/data/
 
-or to force the grid that will be mapped too:
+or to force the gpd
+:doc:`grid <grids>` that will be mapped to::
 
-    ``viirs2awips.sh -g 203 /path/to/data/``
+    $POLAR2GRID_HOME/bin/viirs2awips.sh -g 203 -d /path/to/data/
 
-viirs2awips follows the basic chain sequence of:
+for more options run::
 
-    1. Swath Extraction
-    2. Prescaling
-    3. Grid Determination (if not forced)
-    4. Remapping
-    5. AWIPS NetCDF Backend
+    $POLAR2GRID_HOME/bin/viirs2awips.sh --help
 
-The prescaling step only scales the DNB data to a 0-1 range using histogram
-equalization.  It performs different equalization depending on if the data
-is determined to be at daytime, nighttime, or in between.
+`viirs2awips` does not have any special restrictions on the bands that can
+be provided.  However, `viirs2awips` creates the
+:ref:`SSEC Fog pseudoband <pseudo_viirs_ifog>` if the I05 and I04 bands are
+provided.  This glue script will also scale the DNB data using the method
+described :ref:`here <prescale_viirs_dnb>`.
 
-The grid determination for viirs2awips uses a bounding box algorithm with
-AWIPS grids' boxes determined from outer most latitudes and longitudes.
-
-See the :ref:`awips_netcdf_backend` for more
+See the :ref:`backend_awips_netcdf` for more
 information on what scaling it does to prepare the data for the
 AWIPS-compatible NetCDF file.
+
+.. versionchanged:: 1.0.0
+    The -d flag replaced the positional argument for the data directory.
+
+viirs2gtiff
+-----------
+
+:Python Script: ``polar2grid.viirs2gtiff``
+:Comp. Script: ``viirs2gtiff.sh``
+
+This is used to process
+:ref:`VIIRS imager data <frontend_viirs>`
+into
+:ref:`Geotiff images <backend_geotiff>`.
+It can be run using the following command::
+
+    $POLAR2GRID_HOME/bin/viirs2gtiff.sh -d /path/to/data
+
+or for a specific set of files and to force the PROJ.4
+:doc:`grid <grids>`::
+
+    $POLAR2GRID_HOME/bin/viirs2gtiff.sh -g lcc_fit -f /path/to/files*.h5
+
+for more options run::
+
+    $POLAR2GRID_HOME/bin/viirs2gtiff.sh --help
+
+.. versionadded:: 1.0.0
+
+viirs2binary
+------------
+
+:Python Script: ``polar2grid.viirs2binary``
+:Comp. Script: ``viirs2binary.sh``
+
+This is used to process
+:ref:`VIIRS imager data <frontend_viirs>`
+into
+:ref:`binary files <backend_binary>``.  It can be run using the following
+command::
+
+    $POLAR2GRID_HOME/bin/viirs2binary.sh -d /path/to/data
+
+or for a specific set of files and to force the PROJ.4
+:doc:`grid <grids>`::
+
+    $POLAR2GRID_HOME/bin/viirs2binary.sh -g wgs84_fit -f /path/to/files*.h5
+
+for more options run::
+
+    $POLAR2GRID_HOME/bin/viirs2binary.sh --help
+
+..versionadded:: 1.0.0
 
