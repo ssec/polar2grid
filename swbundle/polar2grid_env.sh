@@ -11,6 +11,8 @@ if [ -z "$POLAR2GRID_REV" ]; then
     export PATH=$POLAR2GRID_HOME/bin:$PATH
     # Add ShellB3 to PATH
     export PATH=$POLAR2GRID_HOME/ShellB3/bin:$PATH
+    # Don't let someone else's PYTHONPATH mess us up
+    unset PYTHONPATH
 
     export POLAR2GRID_REV="$Id$"
 fi
