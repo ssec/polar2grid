@@ -1,10 +1,21 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """Utilities and accessor functions to grids and projections used in
 polar2grid.
 
 Note: The term 'fit grid' corresponds to any grid that doesn't have all of
 its parameters specified in the grid configuration.  Meaning it is likely used
 to make a grid that "fits" the data.
+
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+:date:         Dec 2012
+:license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
+
 from polar2grid.core.constants import GRIDS_ANY,GRIDS_ANY_GPD,GRIDS_ANY_PROJ4,GRID_KIND_PROJ4,GRID_KIND_GPD
 from polar2grid.core import Workspace
 import pyproj

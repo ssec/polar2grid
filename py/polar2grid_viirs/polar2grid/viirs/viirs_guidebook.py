@@ -3,17 +3,13 @@
 """
 Provide information about ADL product files for a variety of uses.
 
-:group Data Kinds: K_*
-:group Guides: ROWS_PER_SCAN,COLS_PER_ROW,DATA_KINDS,*_GUIDE
-
 :author:       David Hoese (davidh)
 :author:       Ray Garcia (rayg)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 

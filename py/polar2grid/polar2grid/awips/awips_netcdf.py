@@ -8,9 +8,8 @@ the main AWIPS backend to the `polar2grid.viirs2awips` script.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 

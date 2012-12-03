@@ -1,7 +1,18 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """Interface to remapping polar2grid data.
 
 Main interface function `remap_bands`.
+
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+:date:         Dec 2012
+:license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
+
 from polar2grid.core.constants import GRID_KIND_PROJ4,GRID_KIND_GPD,DEFAULT_FILL_VALUE
 from .grids.grids import get_grid_info
 from . import ll2cr as gator # gridinator

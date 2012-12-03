@@ -12,9 +12,10 @@ returned values are up to the rest of the VIIRs frontend calling them.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
 
 import numpy
 from polar2grid.core.rescale import _local_histogram_equalization,_histogram_equalization

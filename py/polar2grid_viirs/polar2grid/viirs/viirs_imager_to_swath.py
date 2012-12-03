@@ -9,9 +9,8 @@ Write out Swath binary files used by ms2gt tools.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 

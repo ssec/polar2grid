@@ -9,7 +9,6 @@ NetCDF utilities.
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 :date:         June 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Functions and mappings for taking rempapped VIIRS data and
-rescaling it to a useable range from 0 to 255 to be compatible
-and "pretty" with AWIPS.
+"""Functions and mappings for taking rempapped polar-orbitting data and
+rescaling it to a useable range for the backend using the data, usually a
+0-255 8-bit range or a 0-65535 16-bit range.
 
 :attention:
     A scaling function is not guarenteed to not change the
@@ -14,9 +14,8 @@ and "pretty" with AWIPS.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 

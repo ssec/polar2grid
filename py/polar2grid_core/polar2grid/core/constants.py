@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """Module to store all constants.  Any constant needed in more than one
 component, or potentially more than one part, of polar2grid should be
 defined here.
@@ -21,7 +23,7 @@ Exceptions:
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Oct 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"
