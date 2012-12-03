@@ -86,7 +86,7 @@ viirs2binary
 This is used to process
 :ref:`VIIRS imager data <frontend_viirs>`
 into
-:ref:`binary files <backend_binary>``.  It can be run using the following
+:ref:`binary files <backend_binary>`.  It can be run using the following
 command::
 
     $POLAR2GRID_HOME/bin/viirs2binary.sh -d /path/to/data

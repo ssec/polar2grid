@@ -30,9 +30,20 @@ be something like a server that provides remapped data to a client.  Although
 polar2grid could provide this data to a server for storage, a polar2grid
 backend should not be doing the serving.
 
+If you are trying to decide whether or not your frontend idea should be
+implemented in polar2grid there are a few things to consider first.
+Polar2grid should be seen as a 'converter' of formats, not a calculator or
+creator of new products.  If you are planning to create a new product that
+doesn't exist in some other format, then polar2grid is not the software to
+use.  A solution may be to have another piece of software produce the input
+that polar2grid will remap or another piece of software that polar2grid
+provides the remapped input files for.
+
 Polar2grid is intended for polar-orbitting satellite data.  Geo-stationary
 data may work with the current tool-set, but is not guaranteed to always
 work.
+
+Code repository: https://github.com/davidh-ssec/polar2grid
 
 Prerequisites
 -------------
@@ -297,16 +308,24 @@ Metadata 'key (data type): description':
  - ``start_time`` (datetime object): First scanline measurement time for the entire swath
  - ``fbf_lat`` (str): Filename of the binary latitude file
  - ``fbf_lon`` (str): Filename of the binary longitude file
- - ``lat_min`` (float): Minimum valid latitude of the navigation data. This
-    value is optional, but may be used to remap to PROJ4 grids. It is often
+ - ``lat_south`` (float): Southern most valid latitude of the navigation
+    data. This
+    value is optional, but may be used to remap to PROJ.4 grids. It is often
     faster for the frontend to compute this value than to have the remapper
     load the entire swath array into memory and search for the minimum.
- - ``lat_max`` (float): Maximum valid latitude of the navigation data. This
-    value is optional, similar to ``lat_min``.
- - ``lon_min`` (float): Minimum valid longitude of the navigation data. This
-    value is optional, similar to ``lat_min``.
- - ``lon_max`` (float): Maximum valid longitude of the navigation data. This
-    value is optional, similar to ``lat_min``.
+ - ``lat_north`` (float): Northern most valid latitude of the navigation data.
+    This
+    value is optional, similar to ``lat_south``.
+ - ``lon_west`` (float): Western most valid longitude of the navigation data.
+    This
+    value is optional, similar to ``lat_south``.
+ - ``lon_east`` (float): Eastern most valid longitude of the navigation data.
+    This
+    value is optional, similar to ``lat_south``.
+ - ``lon_fill_value`` (float): Fill value for the longitude data. Glue scripts
+    assume -999.0 if not specified. This parameter is optional.
+ - ``lat_fill_value`` (float): Fill value for the latitude data. Glue scripts
+    assume -999.0 if not specified. This parameter is optional.
  - ``swath_rows`` (int): Number of rows in the entire swath
  - ``swath_cols`` (int): Number of columns in the entire swath
  - ``swath_scans`` (int): Number of scans in the entire swath.  ``swath_scans`` = ``swath_rows`` / ``rows_per_scan``
@@ -334,6 +353,8 @@ Metadata 'key (data type): description':
     - ``band`` (constant) : Same as the key's second element for this
       dictionary
     - ``fbf_img`` (str) : Filename of the binary swath file
+    - ``fill_value`` (float) : Data fill value. Glue scripts assume -999.0
+        if not specified. This parameter is optional.
     - ``swath_rows`` (int) : Copy of metadata dict entry
     - ``swath_cols`` (int) : Copy of metadata dict entry
     - ``swath_scans`` (int) : Copy of metadata dict entry

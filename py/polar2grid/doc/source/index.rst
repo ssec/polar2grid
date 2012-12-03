@@ -13,6 +13,9 @@ polar2grid "glue" scripts execute a series of function calls known as
 "The Chain".  These functions being called act as a toolbox for software
 developers to make their own scripts.  See :doc:`Advanced Topics <advanced>`
 for more details if the basic documentation doesn't answer your questions.
+
+Code repository: https://github.com/davidh-ssec/polar2grid
+
 If you are a developer wishing to add your own frontend or backend please
 see the :doc:`Developer's Guide <dev_guide>` for details on how to do so.
 
