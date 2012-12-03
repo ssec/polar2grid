@@ -13,7 +13,7 @@ The main documentation site is http://www.ssec.wisc.edu/software/polar2grid/
 Directory Structure
 -------------------
 
-..
+.. code-block::
 
     . git root
     ├── ms2gt
