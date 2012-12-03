@@ -16,6 +16,8 @@ __docformat__ = "restructuredtext en"
 
 import modis_guidebook
 from polar2grid.core.constants import *
+from polar2grid.core import roles
+from .modis_filters  import convert_radiance_to_bt, make_data_cloud_cleared, create_fog_band
 
 import numpy
 from pyhdf.SD import SD,SDC, SDS, HDF4Error
@@ -372,7 +374,7 @@ def _load_image_data (meta_data_to_update, cut_bad=False) :
             log.error(msg)
             raise ValueError(msg)
 
-def make_swaths(ifilepaths, cut_bad=False, nav_uid=None):
+def get_swaths(ifilepaths, cut_bad=False, nav_uid=None):
     """Takes MODIS hdf files and creates flat binary files for the information
     required to do further processing.
 
@@ -395,7 +397,7 @@ def make_swaths(ifilepaths, cut_bad=False, nav_uid=None):
     
     # TODO, for now this method only handles one file, eventually it will need to handle more
     if len(ifilepaths) != 1 :
-        raise ValueError("One file was expected for processing in make_swaths and more were given.")
+        raise ValueError("One file was expected for processing in get_swaths and more were given.")
     
     # make sure the file exists and get minimal info on it
     assert(os.path.exists(ifilepaths[0]))
@@ -414,6 +416,101 @@ def make_swaths(ifilepaths, cut_bad=False, nav_uid=None):
     _load_image_data (meta_data, cut_bad=cut_bad)
     
     return meta_data
+
+class Frontend(roles.FrontendRole):
+    def __init__(self):
+        pass
+
+    def make_swaths(self, filepaths, **kwargs):
+        
+        create_fog = kwargs.pop("create_fog", False)
+        
+        # load up all the meta data
+        meta_data = { }
+        for file_pattern_key in filepaths.keys() :
+            temp_filepaths = sorted(filepaths[file_pattern_key])
+            
+            if len(temp_filepaths) > 0 :
+                
+                try:
+                    temp_meta_data = get_swaths(temp_filepaths, **kwargs)
+                    temp_bands     = { } if "bands" not in meta_data else meta_data["bands"]
+                    meta_data.update(temp_meta_data)
+                    meta_data["bands"].update(temp_bands)
+                except StandardError:
+                    log.error("Swath creation failed")
+                    log.debug("Swath creation error:", exc_info=1)
+        
+        # if we weren't able to load any of the swaths... stop now
+        if len(meta_data.keys()) <= 0 :
+            log.error("Unable to load basic swaths, quitting...")
+            return meta_data
+        
+        # pull out some information for ease of use
+        band_info = meta_data["bands"]
+        sat       = meta_data["sat"]
+        
+        # cloud clear some of our bands if we have the cloud mask
+        for band_kind, band_id in band_info.keys() :
+            
+            # only do the clearing if it's appropriate for this band
+            if modis_guidebook.IS_CLOUD_CLEARED[(band_kind, band_id)] :
+                
+                # we can only cloud clear if we have a cloud mask
+                if (BKIND_CMASK, NOT_APPLICABLE) in band_info :
+                    
+                    file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
+                    try:
+                        new_path = make_data_cloud_cleared(file_to_use, band_info[(BKIND_CMASK, NOT_APPLICABLE)]["fbf_img"],
+                                                           modis_guidebook.CLOUDS_VALUES_TO_CLEAR,
+                                                           data_fill_value=band_info[band_kind, band_id]["fill_value"])
+                        band_info[band_kind, band_id]["fbf_swath"] = new_path
+                    except StandardError:
+                        log.error("Unexpected error while cloud clearing " + str(band_kind) + " " + str(band_id) + ", removing...")
+                        log.debug("Error:", exc_info=1)
+                        del band_info[(band_kind, band_id)]
+                
+                # if we don't have the cloud mask to clear this product, we can't produce it
+                else :
+                    log.error("Cloud mask unavailable to cloud clear " + str(band_kind) + " " + str(band_id) + ", removing...")
+                    del band_info[(band_kind, band_id)]
+        
+        # convert some of our bands to brightness temperature
+        for band_kind, band_id in band_info.keys() :
+            
+            # only do the conversion if it's appropriate for this band
+            if modis_guidebook.SHOULD_CONVERT_TO_BT[(band_kind, band_id)] :
+                
+                file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
+                
+                try :
+                    # convert the data and change the associated meta data to reflect the change
+                    new_path = convert_radiance_to_bt (file_to_use, sat, band_id, fill_value=band_info[band_kind, band_id]["fill_value"])
+                    band_info[band_kind, band_id]["fbf_swath"] = new_path
+                    band_info[band_kind, band_id]["data_kind"] = DKIND_BTEMP
+                except StandardError :
+                    log.error("Unexpected error prescaling " + str(band_kind) + " " + str(band_id) + ", removing...")
+                    log.debug("Prescaling error:", exc_info=1)
+                    del band_info[(band_kind, band_id)]
+        
+        # the fog band must be calculated after the other bands are converted to brightness temperatures
+        
+        # if we have what we need, we want to build the fog band
+        if create_fog :
+            have_bands_needed_for_fog = True
+            for band_kind, band_id in modis_guidebook.BANDS_REQUIRED_TO_CALCULATE_FOG_BAND :
+                have_bands_needed_for_fog = False if (band_kind, band_id) not in band_info else have_bands_needed_for_fog
+            if have_bands_needed_for_fog :
+                try :
+                    fog_meta_data = create_fog_band (band_info[(BKIND_IR, BID_20)], band_info[(BKIND_IR, BID_31)],
+                                                     sza_meta_data=band_info[(BKIND_SZA, NOT_APPLICABLE)],
+                                                     fog_fill_value=band_info[(BKIND_IR, BID_20)]['fill_value']) # for now, use one of the fill values
+                    band_info[(fog_meta_data["kind"], fog_meta_data["band"])] = fog_meta_data
+                except StandardError :
+                    log.error("Error while creating fog band; fog will not be created...")
+                    log.debug("Fog creation error:", exc_info=1)
+        
+        return meta_data
 
 def main():
     import optparse

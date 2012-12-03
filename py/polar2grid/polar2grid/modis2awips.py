@@ -15,8 +15,9 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.constants import *
-from polar2grid.modis import make_swaths, convert_radiance_to_bt, make_data_cloud_cleared, create_fog_band
-from polar2grid.modis import GEO_FILE_GROUPING, SHOULD_CONVERT_TO_BT, IS_CLOUD_CLEARED, CLOUDS_VALUES_TO_CLEAR, BANDS_REQUIRED_TO_CALCULATE_FOG_BAND
+from polar2grid.modis import GEO_FILE_GROUPING
+
+from polar2grid.modis import Frontend
 
 from .util_glue_functions import *
 from .remap import remap_bands
@@ -81,29 +82,24 @@ def process_data_sets(filepaths,
     
     status_to_return = STATUS_SUCCESS
     
-    # Load any configuration files needed
-    backend_object = Backend(rescale_config=rescale_config, backend_config=backend_config)
+    # create the front and backend objects
+    # these calls should load any configuration files needed
+    frontend_object = Frontend()
+    backend_object  = Backend(rescale_config=rescale_config, backend_config=backend_config)
     
     # Extract Swaths
     log.info("Extracting swaths...")
     meta_data = { }
-    for file_pattern_key in filepaths.keys() :
-        temp_filepaths = sorted(filepaths[file_pattern_key])
-        
-        if len(temp_filepaths) > 0 :
-            try:
-                temp_meta_data = make_swaths(temp_filepaths, cut_bad=True, nav_uid=nav_uid)
-                temp_bands     = { } if "bands" not in meta_data else meta_data["bands"]
-                meta_data.update(temp_meta_data)
-                meta_data["bands"].update(temp_bands)
-            except StandardError:
-                log.error("Swath creation failed")
-                log.debug("Swath creation error:", exc_info=1)
-                status_to_return |= STATUS_FRONTEND_FAIL
+    try:
+        meta_data = frontend_object.make_swaths(filepaths, cut_bad=True, nav_uid=nav_uid, create_fog=create_pseudo)
+    except StandardError:
+        log.error("Swath creation failed")
+        log.debug("Swath creation error:", exc_info=1)
+        status_to_return |= STATUS_FRONTEND_FAIL
     
     # if we weren't able to load any of the swaths... stop now
     if len(meta_data.keys()) <= 0 :
-        log.error("Unable to load swaths for the specified bands, quitting...")
+        log.error("Unable to load swaths for any of the bands, quitting...")
         return status_to_return or STATUS_UNKNOWN_FAIL
     
     # for convenience, pull some things out of the meta data
@@ -113,78 +109,6 @@ def process_data_sets(filepaths,
     band_info = meta_data["bands"]
     flatbinaryfilename_lat = meta_data["fbf_lat"]
     flatbinaryfilename_lon = meta_data["fbf_lon"]
-    
-    # cloud clear some of our bands if we have the cloud mask
-    for band_kind, band_id in band_info.keys() :
-        
-        # only do the clearing if it's appropriate for this band
-        if IS_CLOUD_CLEARED[(band_kind, band_id)] :
-            
-            # we can only cloud clear if we have a cloud mask
-            if (BKIND_CMASK, NOT_APPLICABLE) in band_info :
-                
-                file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
-                try:
-                    new_path = make_data_cloud_cleared(file_to_use, band_info[(BKIND_CMASK, NOT_APPLICABLE)]["fbf_img"],
-                                                       CLOUDS_VALUES_TO_CLEAR, data_fill_value=band_info[band_kind, band_id]["fill_value"])
-                    band_info[band_kind, band_id]["fbf_swath"] = new_path
-                except StandardError:
-                    log.error("Unexpected error while cloud clearing " + str(band_kind) + " " + str(band_id) + ", removing...")
-                    log.debug("Error:", exc_info=1)
-                    del band_info[(band_kind, band_id)]
-                    status_to_return |= STATUS_FRONTEND_FAIL
-                
-            # if we don't have the cloud mask to clear this product, we can't produce it
-            else :
-                
-                log.error("Cloud mask unavailable to cloud clear " + str(band_kind) + " " + str(band_id) + ", removing...")
-                del band_info[(band_kind, band_id)]
-                status_to_return |= STATUS_FRONTEND_FAIL
-    
-    if len(band_info) == 0:
-        log.error("No more bands to process, quitting...")
-        return status_to_return or STATUS_UNKNOWN_FAIL
-    
-    # convert some of our bands to brightness temperature
-    for band_kind, band_id in band_info.keys() :
-        
-        # only do the conversion if it's appropriate for this band
-        if SHOULD_CONVERT_TO_BT[(band_kind, band_id)] :
-            
-            file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
-            
-            try :
-                # TODO, there's meta data info encoded here that might belong elsewhere
-                new_path = convert_radiance_to_bt (file_to_use, sat, band_id, fill_value=band_info[band_kind, band_id]["fill_value"])
-                band_info[band_kind, band_id]["fbf_swath"] = new_path
-                band_info[band_kind, band_id]["data_kind"] = DKIND_BTEMP
-            except StandardError :
-                log.error("Unexpected error prescaling " + str(band_kind) + " " + str(band_id) + ", removing...")
-                log.debug("Prescaling error:", exc_info=1)
-                del band_info[(band_kind, band_id)]
-                status_to_return |= STATUS_FRONTEND_FAIL
-    
-    if len(band_info) == 0:
-        log.error("No more bands to process, quitting...")
-        return status_to_return or STATUS_UNKNOWN_FAIL
-    
-    # the fog band must be calculated after the other bands are converted to brightness temperatures
-    
-    # if we have what we need, we want to build the fog band
-    if create_pseudo :
-        have_bands_needed_for_fog = True
-        for band_kind, band_id in BANDS_REQUIRED_TO_CALCULATE_FOG_BAND :
-            have_bands_needed_for_fog = False if (band_kind, band_id) not in band_info else have_bands_needed_for_fog
-        if have_bands_needed_for_fog :
-            try :
-                fog_meta_data = create_fog_band (band_info[(BKIND_IR, BID_20)], band_info[(BKIND_IR, BID_31)],
-                                                 sza_meta_data=band_info[(BKIND_SZA, NOT_APPLICABLE)],
-                                                 fog_fill_value=band_info[(BKIND_IR, BID_20)]['fill_value']) # for now, use one of the fill values
-                band_info[(fog_meta_data["kind"], fog_meta_data["band"])] = fog_meta_data
-            except StandardError :
-                log.error("Error while creating fog band; fog will not be created...")
-                log.debug("Fog creation error:", exc_info=1)
-                status_to_return |= STATUS_FRONTEND_FAIL
     
     log.debug("band_info after prescaling: " + str(band_info.keys()))
     
@@ -204,11 +128,6 @@ def process_data_sets(filepaths,
         remapped_jobs = remap_bands(sat, instrument, nav_uid,
                 flatbinaryfilename_lon, flatbinaryfilename_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
-                # these have been changed to north, south, east, west
-                #lat_min       =meta_data.get("lat_min",        None),
-                #lat_max       =meta_data.get("lat_max",        None),
-                #lon_min       =meta_data.get("lon_min",        None),
-                #lon_max       =meta_data.get("lon_max",        None),
                 lat_fill_value=meta_data.get("lat_fill_value", None),
                 lon_fill_value=meta_data.get("lon_fill_value", None)
                 )
@@ -220,10 +139,10 @@ def process_data_sets(filepaths,
     
     ### BACKEND ###
     W = Workspace('.')
+    # for each grid
     for grid_name, grid_dict in remapped_jobs.items():
         
-        #print ("grid_dict: " + str(grid_dict))
-        
+        # process each band for this grid
         for band_kind, band_id in grid_dict.keys():
             
             band_dict = grid_dict[(band_kind, band_id)]
@@ -251,10 +170,12 @@ def process_data_sets(filepaths,
                 log.debug("AWIPS backend error:", exc_info=1)
                 del remapped_jobs[grid_name][(band_kind, band_id)]
         
-        if len(remapped_jobs[grid_name]) == 0:
+        # if all the jobs for a grid failed, warn the user and take that grid off the list
+        if len(remapped_jobs[grid_name]) == 0 :
             log.error("All backend jobs for grid %s failed" % (grid_name,))
             del remapped_jobs[grid_name]
     
+    # if remapping failed for all grids, warn the user
     if len(remapped_jobs) == 0:
         log.warning("AWIPS backend failed for all grids in this data set")
         status_to_return |= STATUS_BACKEND_FAIL

@@ -17,7 +17,7 @@ __docformat__ = "restructuredtext en"
 import modis_guidebook
 from polar2grid.core.constants import *
 from polar2grid.core.constants import DEFAULT_FILL_VALUE
-from polar2grid.modis.bt       import bright_shift
+from .bt                       import bright_shift
 from polar2grid.core           import Workspace
 
 import numpy
