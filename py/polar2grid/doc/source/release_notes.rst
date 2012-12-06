@@ -13,7 +13,7 @@ New in Version 1.0.0
 --------------------
 
  - Major Release
- - Updated ms2gt to version 0.24
+ - Updated ms2gt to version 0.24 (customized to 0.24a)
  - Major interface changes (too many to note)
  - Object oriented Frontend, Backend, and Rescaler
  - Python version of ll2cr
@@ -21,10 +21,10 @@ New in Version 1.0.0
  - Start of a developer's guide
  - Bug fixes
  - New Tests:
-    * p2g-v2g-ak-tests-1.0.2
+    * p2g-v2g-ak-tests-1.0.0
+    * p2g-v2g-econus-tests-1.0.0
  - Uses Tests:
-    * p2g-v2a-ak-tests-1.0.2
-    * p2g-v2g-ak-tests-1.0.2
+    * p2g-v2a-ak-tests-1.0.3
 
 New in Version 0.0.7
 --------------------

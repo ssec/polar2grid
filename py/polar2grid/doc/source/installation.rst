@@ -91,7 +91,7 @@ png images.  If it completes successfully is should print out
 You can visually compare the png images or you can run the verify
 script::
 
-    p2g-v2a-ak-tests-<version>/verify.sh <destination directory>``
+    p2g-v2a-ak-tests-<version>/verify.sh <destination directory>
 
 where ``destination directory`` is the same as for ``run.sh``.  This will
 compare the NetCDF files created to NetCDF files that are known to be
@@ -112,6 +112,9 @@ Test cases:
 
 .. versionchanged:: 1.0.2
     Updated verified data for ms2gt0.23a
+
+.. versionchanged:: 1.0.3
+    Updated verified data for ms2gt0.24a and new command-line syntax
 
 viirs2gtiff Alaska Basic
 ########################
@@ -154,7 +157,7 @@ Test cases:
         :End Time: April 8th, 2012 13:21 UTC
         :Bands: DNB,I04
         :Fog Created: No
-        :Forced Grid: `wgs84_fit <grids>`
+        :Forced Grid: :doc:`wgs84_fit <grids>`
         :Orbit Number: 02315
 
 viirs2gtiff East Conus Basic
@@ -198,7 +201,7 @@ Test cases:
         :End Time: September 28th, 2012 07:39 UTC
         :Bands: DNB,I04
         :Fog Created: No
-        :Forced Grid: `wgs84_fit <grids>`
+        :Forced Grid: :doc:`wgs84_fit <grids>`
         :Orbit Number: 00001
 
 
