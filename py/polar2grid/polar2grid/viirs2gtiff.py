@@ -385,8 +385,9 @@ def main():
     # Backend Specific
     parser.add_argument('--dtype', dest="data_type", type=str_to_dtype, default=None,
             help="specify the data type for the backend to output")
+    # pattern needs double formatting %% because argparse runs dict formatting on it
     parser.add_argument('-p', '--pattern', dest="output_pattern", default=None,
-            help="specify an alternative product filename pattern (ex. '%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s')")
+            help="specify an alternative product filename pattern (ex. '%%(sat)s_%%(instrument)s_%%(kind)s_%%(band)s_%%(start_time)s')")
     parser.add_argument('--dont_inc', dest="inc_by_one", default=True, action="store_false",
             help="tell rescaler to not increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
     parser.add_argument('--rescale-config', dest='rescale_config', default=None,
