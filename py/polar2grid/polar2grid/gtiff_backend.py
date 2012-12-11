@@ -16,8 +16,9 @@ from osgeo import gdal
 import osr
 
 from polar2grid.core.rescale import Rescaler,uint16_filter,ubyte_filter
-from polar2grid.core.constants import GRIDS_ANY_PROJ4,DEFAULT_FILL_VALUE,NOT_APPLICABLE
+from polar2grid.core.constants import *
 from polar2grid.core import roles
+from polar2grid.core.dtype import str_to_dtype
 
 import sys
 import logging
@@ -26,11 +27,11 @@ log = logging.getLogger(__name__)
 
 gtiff_driver = gdal.GetDriverByName("GTIFF")
 
-DEF_FN_FORMAT = "%(sat)s_%(instrument)s_%(kindband)s_%(timestamp)s_%(grid_name)s.tif"
-DEFAULT_8BIT_RCONFIG="rescale_configs/rescale.8bit.conf"
-DEFAULT_16BIT_RCONFIG="rescale_configs/rescale.16bit.conf"
-DEFAULT_INC_8BIT_RCONFIG="rescale_configs/rescale_inc.8bit.conf"
-DEFAULT_INC_16BIT_RCONFIG="rescale_configs/rescale_inc.16bit.conf"
+DEFAULT_8BIT_RCONFIG      = "rescale_configs/rescale.8bit.conf"
+DEFAULT_16BIT_RCONFIG     = "rescale_configs/rescale.16bit.conf"
+DEFAULT_INC_8BIT_RCONFIG  = "rescale_configs/rescale_inc.8bit.conf"
+DEFAULT_INC_16BIT_RCONFIG = "rescale_configs/rescale_inc.16bit.conf"
+DEFAULT_OUTPUT_PATTERN = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s_%(grid_name)s.tif"
 
 def _proj4_to_srs(proj4_str):
     """Helper function to convert a proj4 string
@@ -113,31 +114,41 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
             raise ValueError("Could not write band 1 data to geotiff '%s'" % (output_filename,))
     # Garbage collection/destructor should close the file properly
 
+dtype2etype = {
+        DTYPE_UINT16  : gdal.GDT_UInt16,
+        DTYPE_UINT8   : gdal.GDT_Byte
+        }
+
 class Backend(roles.BackendRole):
-    def __init__(self, etype=None, rescale_config=None, fill_value=DEFAULT_FILL_VALUE,
-        inc_by_one=False):
+    def __init__(self, output_pattern=None,
+            rescale_config=None, fill_value=DEFAULT_FILL_VALUE,
+            data_type=None, inc_by_one=False):
         """
-            - etype:
-                Specify the GDAL data type of the produced geotiff. Default 16bit
-                unsigned integers.
+            - data_type:
+                Specify the polar2grid data type, which will determine the
+                'etype' of the geotiff. Default 16bit unsigned integers.
             - rescale_config:
                 Rescaling configuration file to be used in scaling the data
             - inc_by_one:
                 Used by the Rescaler to add one to the scaled data.  See
                 `Rescaler` documentation for more information.
+            - output_pattern:
+                Specify the python output dictionary formatting string
+            - fill_value:
+                Specify the fill value of the incoming data.
         """
-        if etype is None:
-            etype = gdal.GDT_UInt16
-        self.etype = etype
+        self.output_pattern = output_pattern or DEFAULT_OUTPUT_PATTERN
+        self.data_type = data_type or DTYPE_UINT16
+        self.etype     = dtype2etype[self.data_type]
 
         # Use predefined rescaling configurations if we weren't told what to do
         if rescale_config is None:
-            if etype == gdal.GDT_UInt16:
+            if self.etype == gdal.GDT_UInt16:
                 if inc_by_one:
                     rescale_config = DEFAULT_INC_16BIT_RCONFIG
                 else:
                     rescale_config = DEFAULT_16BIT_RCONFIG
-            elif etype == gdal.GDT_Byte:
+            elif self.etype == gdal.GDT_Byte:
                 if inc_by_one:
                     rescale_config = DEFAULT_INC_8BIT_RCONFIG
                 else:
@@ -167,7 +178,7 @@ class Backend(roles.BackendRole):
             start_time=None, end_time=None, grid_name=None,
             proj4_str=None, grid_origin_x=None, grid_origin_y=None,
             pixel_size_x=None, pixel_size_y=None,
-            output_filename=None, etype=None, fill_value=None,
+            output_filename=None, data_type=None, fill_value=None,
             rotate_x=0, rotate_y=0, inc_by_one=None):
         """Function to be called from a connecting script to interpret the
         information provided and create a geotiff.
@@ -216,21 +227,20 @@ class Backend(roles.BackendRole):
             - inc_by_one:
                 See __init__ documentation or Rescaler documentation
         """
-        etype = self.etype
+        data_type = data_type or self.data_type
+        etype = dtype2etype[data_type] or self.etype
         fill_in = fill_value or self.fill_in
 
         # Create the filename if it wasn't provided
         if output_filename is None:
-            # don't include band if its not applicable
-            kindband = "%s%s" % (kind,band or "")
-            timestamp = start_time.strftime("%Y%m%d_%H%M%S")
-            if end_time: timestamp += "_" + end_time.strftime("%Y%m%d_%H%M%S")
-            output_filename = DEF_FN_FORMAT % dict(
-                    sat=sat,
-                    instrument=instrument,
-                    kindband=kindband,
-                    timestamp=timestamp,
-                    grid_name=grid_name
+            output_filename = self.create_output_filename(self.output_pattern,
+                    sat, instrument, kind, band, data_kind,
+                    start_time  = start_time,
+                    end_time    = end_time,
+                    grid_name   = grid_name,
+                    data_type   = data_type,
+                    cols        = data.shape[1],
+                    rows        = data.shape[0]
                     )
 
         # Rescale the data based on the configuration that was loaded earlier
@@ -316,7 +326,7 @@ custom name if proj4_str is provided""")
             help="Proj4 string of the data, empty if 'grid_name' in grids.conf")
     parser.add_argument('--output_filename', default=None, nargs='?', dest="output_filename",
             help="name of the output geotiff, uses default naming scheme if not entered")
-    parser.add_argument('--bits', type=_bits_to_etype, default=16, dest="etype",
+    parser.add_argument('--dtype', type=str_to_dtype, default="uint2", dest="data_type",
             help="number of bits in the geotiff, usually unsigned")
     parser.add_argument('--rescale-config', default=None, dest="rescale_config",
             help="alternative rescale configuration file")
@@ -369,7 +379,7 @@ custom name if proj4_str is provided""")
     arg_list.append(data)
     print "Output Filename: ",args.output_filename
 
-    backend = Backend(etype=args.etype, rescale_config=rescale_config)
+    backend = Backend(data_type=args.data_type, rescale_config=rescale_config)
     return backend.create_product(*arg_list, output_filename=args.output_filename, **kwargs)
 
 if __name__ == "__main__":

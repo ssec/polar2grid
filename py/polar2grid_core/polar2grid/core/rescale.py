@@ -19,8 +19,7 @@ rescaling it to a useable range for the backend using the data, usually a
 """
 __docformat__ = "restructuredtext en"
 
-from .constants import DKIND_REFLECTANCE,DKIND_RADIANCE, \
-        DKIND_BTEMP,DKIND_FOG,NOT_APPLICABLE
+from .constants import *
 from . import roles
 
 import os

@@ -12,6 +12,8 @@
 __docformat__ = "restructuredtext en"
 
 from .constants import *
+from .time_utils import utc_now
+from .fbf import data_type_to_fbf_type
 
 import os
 import sys
@@ -197,6 +199,128 @@ class RescalerRole(object):
 class BackendRole(object):
     __metaclass__ = ABCMeta
 
+    def create_output_filename(self, pattern, sat, instrument, kind, band,
+            data_kind, **kwargs):
+        """Helper function that will take common meta data and put it into
+        the output filename pattern provided.  The ``*args`` arguments are
+        the same as for `create_product`. If either of the keyword arguments
+        ``start_time`` or ``end_time`` are not specified the other is used
+        in its place.  If neither are specified the current time in UTC is
+        taken.
+
+        Some arguments are handled in special ways:
+            - start_time : start_time converted into 5 different strings
+            that can each be individually specified in the pattern:
+                * start_time     : YYYYMMDD_HHMMSS
+                * start_YYYYMMDD : YYYYMMDD
+                * start_YYMMDD   : YYMMDD
+                * start_HHMMSS   : HHMMSS
+                * start_HHMM     : HHMM
+            - end_time   : Same as start_time
+
+        If a keyword is provided that is not recognized it will be provided
+        to the pattern after running through a `str` filter.
+
+        Possible pattern keywords (*created internally in this function):
+            - sat             : identifier for the instrument's satellite
+            - instrument      : name of the instrument
+            - kind            : band kind
+            - band            : band identifier or number
+            - data_kind       : kind of data (brightness temperature, radiance, reflectance, etc.)
+            - data_type       : data type name of data in-memory, numpy naming(ex. uint8, int32, real32)
+            - fbf_dtype*      : data type name of data on-disk, fbf naming (ex. uint1, int4, real4)
+            - grid_name       : name of the grid the data was mapped to
+            - cols            : number of columns in the data
+            - rows            : number of rows in the data
+            - start_time      : start time of the first scan (YYYYMMDD_HHMMSS)
+            - start_YYYYMMDD* : start date of the first scan
+            - start_YYMMDD*   : start date of the first scan
+            - start_HHMMSS*   : start time of the first scan
+            - start_HHMM*     : start time of the first scan
+            - end_time        : end time of the first scan. Same keywords as start_time.
+
+        >>> from datetime import datetime
+        >>> pattern = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(data_kind)s_%(grid_name)s_%(start_time)s.%(data_type)s.%(cols)s.%(rows)s"
+        >>> class FakeBackend(BackendRole):
+        ...     def create_product(self, *args): pass
+        ...     def can_handle_inputs(self, *args): pass
+        >>> backend = FakeBackend()
+        >>> filename = backend.create_output_filename(pattern,
+        ...     "npp",
+        ...     "viirs",
+        ...     "i",
+        ...     "04",
+        ...     "btemp",
+        ...     grid_name = "wgs84_fit",
+        ...     data_type = "uint8",
+        ...     cols = 2500, rows=3000, start_time=datetime(2012, 11, 10, 9, 8, 7))
+        >>> print filename
+        npp_viirs_i_04_btemp_wgs84_fit_20121110_090807.uint8.2500.3000
+
+        """
+        # Keyword arguments
+        data_type      = kwargs.pop("data_type", None)
+        grid_name      = str(kwargs.pop("grid_name", None))
+        cols           = kwargs.pop("cols", None)
+        rows           = kwargs.pop("rows", None)
+        start_time_dt  = kwargs.pop("start_time", None)
+        end_time_dt    = kwargs.pop("end_time", None)
+
+        # Convert FBF data type
+        try:
+            fbf_dtype  = data_type_to_fbf_type(data_type) if data_type is not None else data_type
+        except ValueError:
+            fbf_dtype  = None
+
+        # Convert start time and end time
+        if start_time_dt is None and end_time_dt is None:
+            start_time_dt = end_time_dt = utc_now()
+        elif start_time_dt is None:
+            start_time_dt = end_time_dt
+        elif end_time_dt is None:
+            end_time_dt   = start_time_dt
+
+        start_time     = start_time_dt.strftime("%Y%m%d_%H%M%S")
+        start_YYYYMMDD = start_time_dt.strftime("%Y%m%d")
+        start_YYMMDD   = start_time_dt.strftime("%y%m%d")
+        start_HHMMSS   = start_time_dt.strftime("%H%M%S")
+        start_HHMM     = start_time_dt.strftime("%H%M")
+        end_time       = end_time_dt.strftime("%Y%m%d_%H%M%S")
+        end_YYYYMMDD   = end_time_dt.strftime("%Y%m%d")
+        end_YYMMDD     = end_time_dt.strftime("%y%m%d")
+        end_HHMMSS     = end_time_dt.strftime("%H%M%S")
+        end_HHMM       = end_time_dt.strftime("%H%M")
+
+        try:
+            output_filename = pattern % dict(
+                    sat            = sat,
+                    instrument     = instrument,
+                    kind           = kind,
+                    band           = band,
+                    data_kind      = data_kind,
+                    data_type      = data_type,
+                    fbf_dtype       = fbf_dtype,
+                    grid_name      = grid_name,
+                    cols           = cols,
+                    rows           = rows,
+                    start_time     = start_time,
+                    start_YYYYMMDD = start_YYYYMMDD,
+                    start_YYMMDD   = start_YYMMDD,
+                    start_HHMMSS   = start_HHMMSS,
+                    start_HHMM     = start_HHMM,
+                    end_time       = end_time,
+                    end_YYYYMMDD   = end_YYYYMMDD,
+                    end_YYMMDD     = end_YYMMDD,
+                    end_HHMMSS     = end_HHMMSS,
+                    end_HHMM       = end_HHMM,
+                    **kwargs
+                    )
+        except KeyError as e:
+            log.error("Unknown output pattern key: '%s'" % (e.message,))
+            raise
+
+        return output_filename
+
     @abstractmethod
     def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
         """Function that returns the grids that it will be able to handle
@@ -229,7 +353,9 @@ def main():
     """Run some tests on the interfaces/roles
     """
     # TODO
-    pass
+    import doctest
+    print "Running doctests"
+    return doctest.testmod()
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -74,6 +74,18 @@ SET_DKINDS = set([
     DKIND_FOG
     ])
 
+# Data types (int,float,#bits,etc.)
+DTYPE_UINT8   = "uint1"
+DTYPE_UINT16  = "uint2"
+DTYPE_UINT32  = "uint4"
+DTYPE_UINT64  = "uint8"
+DTYPE_INT8    = "int1"
+DTYPE_INT16   = "int2"
+DTYPE_INT32   = "int4"
+DTYPE_INT64   = "int8"
+DTYPE_FLOAT32 = "real4"
+DTYPE_FLOAT64 = "real8"
+
 # Grid Constants
 GRIDS_ANY = "any_grid"
 GRIDS_ANY_GPD = "any_gpd_grid"

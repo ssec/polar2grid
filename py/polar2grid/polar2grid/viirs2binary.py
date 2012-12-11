@@ -13,6 +13,7 @@ hdf5 (.h5) files and create a remapped binary file.
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
+from polar2grid.core.dtype import str_to_dtype
 from polar2grid.core.constants import *
 from polar2grid.viirs import Frontend
 from .viirs2awips import _safe_remove,create_grid_jobs
@@ -112,6 +113,10 @@ def process_data_sets(filepaths,
         forced_grid=None, etype=None,
         create_pseudo=True,
         num_procs=1,
+        data_type=None,
+        output_pattern=None,
+        rescale_config=None,
+        inc_by_one=False,
         new_dnb=False # XXX
         ):
     """Process all the files provided from start to finish,
@@ -121,7 +126,12 @@ def process_data_sets(filepaths,
 
     # Declare polar2grid components
     frontend = Frontend()
-    backend = Backend()
+    backend = Backend(
+            data_type      = data_type,
+            output_pattern = output_pattern,
+            rescale_config = rescale_config,
+            inc_by_one     = inc_by_one
+            )
 
     # Extract Swaths
     log.info("Extracting swaths...")
@@ -130,7 +140,7 @@ def process_data_sets(filepaths,
                 filepaths,
                 scale_dnb=True,
                 new_dnb=new_dnb,
-                create_fog=True,
+                create_fog=create_pseudo,
                 cut_bad=True
                 )
 
@@ -197,10 +207,11 @@ def process_data_sets(filepaths,
                         band_kind,
                         band_id,
                         band_dict["data_kind"],
-                        data
+                        data,
+                        start_time=start_time,
+                        grid_name=grid_name,
+                        fill_value=band_dict.get("fill_value", None)
                         )
-
-                log.info("Binary filename: '%s'" % (band_dict["fbf_remapped"]))
             except StandardError:
                 log.error("Error in the Binary backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
                 log.debug("Binary backend error:", exc_info=1)
@@ -358,14 +369,22 @@ def main():
             help="Don't delete any files that were previously made (WARNING: processing may not run successfully)")
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
-    parser.add_argument('--rescale-config', dest='rescale_config', default=None,
-            help="specify alternate rescale configuration file")
     parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
             help="run new DNB scaling if provided DNB data (temporary)") # XXX
 
     # Remapping/Grids
     parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="wgs84_fit",
             help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
+
+    # Backend Specific
+    parser.add_argument('--dtype', dest="data_type", type=str_to_dtype, default=None,
+            help="specify the data type for the backend to output")
+    parser.add_argument('-p', '--pattern', dest="output_pattern", default=None,
+            help="specify an alternative product filename pattern (ex. '%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s')")
+    parser.add_argument('--dont_inc', dest="inc_by_one", default=True, action="store_false",
+            help="tell rescaler to not increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
+    parser.add_argument('--rescale-config', dest='rescale_config', default=None,
+            help="specify alternate rescale configuration file")
 
     args = parser.parse_args()
 
@@ -399,8 +418,12 @@ def main():
 
     stat = run_glue(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
                 forced_grid=forced_grids,
+                data_type=args.data_type,
                 create_pseudo=args.create_pseudo,
                 multiprocess=not args.single_process, num_procs=num_procs,
+                rescale_config=args.rescale_config,
+                output_pattern=args.output_pattern,
+                inc_by_one=args.inc_by_one,
                 new_dnb=args.new_dnb # XXX
                 )
 

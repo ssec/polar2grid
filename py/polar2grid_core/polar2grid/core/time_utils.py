@@ -28,3 +28,5 @@ class UTC(datetime.tzinfo):
     def dst(self, dt):
         return self.ZERO
 
+def utc_now():
+    return datetime.datetime.utcnow().replace(tzinfo=UTC())
