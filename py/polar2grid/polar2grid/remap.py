@@ -21,9 +21,19 @@ from . import ms2gt
 import os
 import sys
 import logging
+import signal
 import multiprocessing
 
 log = logging.getLogger(__name__)
+
+def init_worker():
+    """Used in multiprocessing to initialize pool workers.
+
+    If this isn't done then the listening process will hang forever and
+    will have to be killed with the "kill" command even after the outer-most
+    process is Ctrl+C'd out of existence.
+    """
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 def run_ll2cr_c(*args, **kwargs):
     proc_pool = kwargs.pop("pool", None)
@@ -51,7 +61,7 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     """Run one of the ll2crs and return a dictionary mapping the
     `grid_name` to the cols and rows files.
     """
-    proc_pool = multiprocessing.Pool(num_procs)
+    proc_pool = multiprocessing.Pool(num_procs, init_worker)
     # Use the default fill value if the user didn't specify or forced None
     lon_fill_value = lon_fill_value or DEFAULT_FILL_VALUE
     lat_fill_value = lat_fill_value or DEFAULT_FILL_VALUE
@@ -59,72 +69,84 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     # Run ll2cr
     ll2cr_results = dict((grid_name,None) for grid_name in grid_jobs)
     ll2cr_output = dict((grid_name,None) for grid_name in grid_jobs)
-    for grid_name in grid_jobs.keys():
-        log.info("Running ll2cr for grid %s and bands %r" % (grid_name, grid_jobs[grid_name].keys()))
-        # Get grid info from the grids module
-        grid_info = get_grid_info(grid_name)
-        ll2cr_output[grid_name] = grid_info.copy()
-        ll2cr_tag = "ll2cr_%s_%s" % (nav_set_uid,grid_name)
+    # We use a big try block to catch a keyboard interrupt and properly
+    # terminate the process pool see:
+    # https://github.com/davidh-ssec/polar2grid/issues/33
+    try:
+        for grid_name in grid_jobs.keys():
+            log.info("Running ll2cr for grid %s and bands %r" % (grid_name, grid_jobs[grid_name].keys()))
+            # Get grid info from the grids module
+            grid_info = get_grid_info(grid_name)
+            ll2cr_output[grid_name] = grid_info.copy()
+            ll2cr_tag = "ll2cr_%s_%s" % (nav_set_uid,grid_name)
 
-        # Get information that is usually per band, but since we are already
-        # separated by 'similar' data, just pick one of the bands to pull the
-        # data from
-        band_representative = grid_jobs[grid_name].keys()[0]
-        swath_cols = grid_jobs[grid_name][band_representative]["swath_cols"]
-        ll2cr_output[grid_name]["swath_cols"] = swath_cols
-        swath_rows = grid_jobs[grid_name][band_representative]["swath_rows"]
-        ll2cr_output[grid_name]["swath_rows"] = swath_rows
-        rows_per_scan = grid_jobs[grid_name][band_representative]["rows_per_scan"]
-        ll2cr_output[grid_name]["rows_per_scan"] = rows_per_scan
+            # Get information that is usually per band, but since we are already
+            # separated by 'similar' data, just pick one of the bands to pull the
+            # data from
+            band_representative = grid_jobs[grid_name].keys()[0]
+            swath_cols = grid_jobs[grid_name][band_representative]["swath_cols"]
+            ll2cr_output[grid_name]["swath_cols"] = swath_cols
+            swath_rows = grid_jobs[grid_name][band_representative]["swath_rows"]
+            ll2cr_output[grid_name]["swath_rows"] = swath_rows
+            rows_per_scan = grid_jobs[grid_name][band_representative]["rows_per_scan"]
+            ll2cr_output[grid_name]["rows_per_scan"] = rows_per_scan
 
-        if grid_info["grid_kind"] == GRID_KIND_PROJ4:
-            # Stuff that fornav needs, but the python version doesn't provide
-            ll2cr_output[grid_name]["scans_out"] = swath_rows/rows_per_scan
-            ll2cr_output[grid_name]["scan_first"] = 0
-            ll2cr_results[grid_name] = run_ll2cr_py(
-                    lon_fbf,
-                    lat_fbf,
-                    grid_info["proj4_str"],
-                    pixel_size_x=grid_info["pixel_size_x"],
-                    pixel_size_y=grid_info["pixel_size_y"],
-                    grid_origin_x=grid_info["grid_origin_x"],
-                    grid_origin_y=grid_info["grid_origin_y"],
-                    grid_width=grid_info["grid_width"],
-                    grid_height=grid_info["grid_height"],
-                    lat_fill_in=lat_fill_value,
-                    lon_fill_in=lon_fill_value,
-                    fill_out=-1e30,
-                    prefix=ll2cr_tag,
-                    swath_lat_south=lat_south,
-                    swath_lat_north=lat_north,
-                    swath_lon_west=lon_west,
-                    swath_lon_east=lon_east,
-                    pool=proc_pool
-                    )
-        elif grid_info["grid_kind"] == GRID_KIND_GPD:
-            # C version of ll2cr can't handle different nav fill values
-            if lon_fill_value != lat_fill_value:
-                msg = "Navigation files must have the same fill value when using the C ll2cr (%f vs %f)" % (lon_fill_value, lat_fill_value)
-                log.warning(msg)
-                del grid_jobs[grid_name]
-                continue
+            if grid_info["grid_kind"] == GRID_KIND_PROJ4:
+                # Stuff that fornav needs, but the python version doesn't provide
+                ll2cr_output[grid_name]["scans_out"] = swath_rows/rows_per_scan
+                ll2cr_output[grid_name]["scan_first"] = 0
+                ll2cr_results[grid_name] = run_ll2cr_py(
+                        lon_fbf,
+                        lat_fbf,
+                        grid_info["proj4_str"],
+                        pixel_size_x=grid_info["pixel_size_x"],
+                        pixel_size_y=grid_info["pixel_size_y"],
+                        grid_origin_x=grid_info["grid_origin_x"],
+                        grid_origin_y=grid_info["grid_origin_y"],
+                        grid_width=grid_info["grid_width"],
+                        grid_height=grid_info["grid_height"],
+                        lat_fill_in=lat_fill_value,
+                        lon_fill_in=lon_fill_value,
+                        fill_out=-1e30,
+                        prefix=ll2cr_tag,
+                        swath_lat_south=lat_south,
+                        swath_lat_north=lat_north,
+                        swath_lon_west=lon_west,
+                        swath_lon_east=lon_east,
+                        pool=proc_pool
+                        )
+            elif grid_info["grid_kind"] == GRID_KIND_GPD:
+                # C version of ll2cr can't handle different nav fill values
+                if lon_fill_value != lat_fill_value:
+                    msg = "Navigation files must have the same fill value when using the C ll2cr (%f vs %f)" % (lon_fill_value, lat_fill_value)
+                    log.warning(msg)
+                    del grid_jobs[grid_name]
+                    continue
 
-            ll2cr_results[grid_name] = run_ll2cr_c(
-                    swath_cols,
-                    swath_rows/rows_per_scan, # swath_scans
-                    rows_per_scan,
-                    lat_fbf,
-                    lon_fbf,
-                    forced_gpd or grid_info["gpd_filepath"],
-                    verbose = verbose,
-                    fill_io = (lon_fill_value, -1e30),
-                    tag=ll2cr_tag,
-                    pool=proc_pool
-                    )
+                ll2cr_results[grid_name] = run_ll2cr_c(
+                        swath_cols,
+                        swath_rows/rows_per_scan, # swath_scans
+                        rows_per_scan,
+                        lat_fbf,
+                        lon_fbf,
+                        forced_gpd or grid_info["gpd_filepath"],
+                        verbose = verbose,
+                        fill_io = (lon_fill_value, -1e30),
+                        tag=ll2cr_tag,
+                        pool=proc_pool
+                        )
 
-    proc_pool.close()
-    proc_pool.join()
+        proc_pool.close()
+        proc_pool.join()
+    except KeyboardInterrupt:
+        # Catch keyboard interrupt during pool processing, see comment at
+        # top of try block
+        log.debug("Keyboard interrupt during ll2cr call")
+        proc_pool.terminate()
+        proc_pool.join()
+        raise
 
+    # Get the results of the ll2cr calls
     for grid_name in grid_jobs.keys():
         try:
             cr_dict = ll2cr_results[grid_name].get()
@@ -169,58 +191,69 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
     fornav_output = grid_jobs
     fill_value = fill_value or DEFAULT_FILL_VALUE
 
-    proc_pool = multiprocessing.Pool(num_procs)
+    proc_pool = multiprocessing.Pool(num_procs, init_worker)
 
-    # Add fornav calls to the process pool
-    fornav_jobs = {} # Store the information for each job
-    for grid_name in grid_jobs:
-        # Collect information for each "fornav job" (sorted by `remap_data_as`)
-        fornav_jobs[grid_name] = {}
-        fornav_group = fornav_jobs[grid_name]
-        for (band_kind, band_id),band_info in fornav_output[grid_name].items():
-            if band_info["remap_data_as"] not in fornav_group:
-                fornav_group[band_info["remap_data_as"]] = {
-                        "inputs" : [],
-                        "outputs" : [],
-                        "swath_fill_1" : [],
-                        "grid_fill_1" : [],
-                        "result" : None
-                        }
-            fornav_group[band_info["remap_data_as"]]["inputs"].append(band_info["fbf_swath"])
-            stem = "result_%s%s_%s" % (band_kind,band_id,grid_name)
-            output_name = "%s.real4.%d.%d" % (stem, band_info["grid_width"], band_info["grid_height"])
-            fornav_group[band_info["remap_data_as"]]["outputs"].append(output_name)
-            fornav_group[band_info["remap_data_as"]]["swath_fill_1"].append(band_info.get("fill_value", fill_value))
-            fornav_group[band_info["remap_data_as"]]["grid_fill_1"].append(band_info.get("fill_value", fill_value))
-            band_info["fbf_remapped"] = output_name
+    # We use a big try block to catch a keyboard interrupt and properly
+    # terminate the process pool see:
+    # https://github.com/davidh-ssec/polar2grid/issues/33
+    try:
+        # Add fornav calls to the process pool
+        fornav_jobs = {} # Store the information for each job
+        for grid_name in grid_jobs:
+            # Collect information for each "fornav job" (sorted by `remap_data_as`)
+            fornav_jobs[grid_name] = {}
+            fornav_group = fornav_jobs[grid_name]
+            for (band_kind, band_id),band_info in fornav_output[grid_name].items():
+                if band_info["remap_data_as"] not in fornav_group:
+                    fornav_group[band_info["remap_data_as"]] = {
+                            "inputs" : [],
+                            "outputs" : [],
+                            "swath_fill_1" : [],
+                            "grid_fill_1" : [],
+                            "result" : None
+                            }
+                fornav_group[band_info["remap_data_as"]]["inputs"].append(band_info["fbf_swath"])
+                stem = "result_%s%s_%s" % (band_kind,band_id,grid_name)
+                output_name = "%s.real4.%d.%d" % (stem, band_info["grid_width"], band_info["grid_height"])
+                fornav_group[band_info["remap_data_as"]]["outputs"].append(output_name)
+                fornav_group[band_info["remap_data_as"]]["swath_fill_1"].append(band_info.get("fill_value", fill_value))
+                fornav_group[band_info["remap_data_as"]]["grid_fill_1"].append(band_info.get("fill_value", fill_value))
+                band_info["fbf_remapped"] = output_name
 
-        for remap_data_as,fornav_job in fornav_group.items():
-            fornav_job["result"] = run_fornav_c(
-                        len(fornav_job["inputs"]),
-                        ll2cr_output[grid_name]["swath_cols"],
-                        ll2cr_output[grid_name]["scans_out"],
-                        ll2cr_output[grid_name]["rows_per_scan"],
-                        ll2cr_output[grid_name]["cols_filename"],
-                        ll2cr_output[grid_name]["rows_filename"],
-                        fornav_job["inputs"],
-                        ll2cr_output[grid_name]["grid_width"],
-                        ll2cr_output[grid_name]["grid_height"],
-                        fornav_job["outputs"],
-                        verbose=verbose,
-                        swath_data_type_1="f4",
-                        swath_fill_1=fornav_job["swath_fill_1"],
-                        grid_fill_1=fornav_job["grid_fill_1"],
-                        weight_delta_max=fornav_D,
-                        weight_distance_max=fornav_d,
-                        # We only specify start_scan for the 'image'/channel
-                        # data because ll2cr is not 'forced' so it only writes
-                        # useful data to the output cols/rows files
-                        start_scan=(ll2cr_output[grid_name]["scan_first"],0),
-                        pool=proc_pool
-                        )
+            for remap_data_as,fornav_job in fornav_group.items():
+                fornav_job["result"] = run_fornav_c(
+                            len(fornav_job["inputs"]),
+                            ll2cr_output[grid_name]["swath_cols"],
+                            ll2cr_output[grid_name]["scans_out"],
+                            ll2cr_output[grid_name]["rows_per_scan"],
+                            ll2cr_output[grid_name]["cols_filename"],
+                            ll2cr_output[grid_name]["rows_filename"],
+                            fornav_job["inputs"],
+                            ll2cr_output[grid_name]["grid_width"],
+                            ll2cr_output[grid_name]["grid_height"],
+                            fornav_job["outputs"],
+                            verbose=verbose,
+                            swath_data_type_1="f4",
+                            swath_fill_1=fornav_job["swath_fill_1"],
+                            grid_fill_1=fornav_job["grid_fill_1"],
+                            weight_delta_max=fornav_D,
+                            weight_distance_max=fornav_d,
+                            # We only specify start_scan for the 'image'/channel
+                            # data because ll2cr is not 'forced' so it only writes
+                            # useful data to the output cols/rows files
+                            start_scan=(ll2cr_output[grid_name]["scan_first"],0),
+                            pool=proc_pool
+                            )
 
-    proc_pool.close()
-    proc_pool.join()
+        proc_pool.close()
+        proc_pool.join()
+    except KeyboardInterrupt:
+        # Catch keyboard interrupt during pool processing, see comment at
+        # top of try block
+        log.debug("Keyboard interrupt during fornav call")
+        proc_pool.terminate()
+        proc_pool.join()
+        raise
 
     # Get all the results
     for grid_name,fornav_group in fornav_jobs.items():
