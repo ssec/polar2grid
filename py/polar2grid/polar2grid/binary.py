@@ -24,6 +24,19 @@ DEFAULT_INC_16BIT_RCONFIG = "rescale_configs/rescale_inc.16bit.conf"
 DEFAULT_OUTPUT_PATTERN = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s_%(grid_name)s.%(fbf_dtype)s.%(cols)s.%(rows)s"
 
 class Backend(roles.BackendRole):
+    removable_file_patterns = [
+            "*_*_*_*_????????_??????_*.real4.*.*",
+            "*_*_*_*_????????_??????_*.real8.*.*",
+            "*_*_*_*_????????_??????_*.uint1.*.*",
+            "*_*_*_*_????????_??????_*.uint2.*.*",
+            "*_*_*_*_????????_??????_*.uint4.*.*",
+            "*_*_*_*_????????_??????_*.uint8.*.*",
+            "*_*_*_*_????????_??????_*.int1.*.*",
+            "*_*_*_*_????????_??????_*.int2.*.*",
+            "*_*_*_*_????????_??????_*.int4.*.*",
+            "*_*_*_*_????????_??????_*.int8.*.*"
+            ]
+
     def __init__(self, output_pattern=None,
             rescale_config=None, fill_value=DEFAULT_FILL_VALUE,
             data_type=None, inc_by_one=False):
@@ -67,6 +80,8 @@ class Backend(roles.BackendRole):
         data_type = data_type or self.data_type
 
         # Create the output filename if its not provided
+        # We can't guarantee that the user is doing FBF naming so we can't
+        # fail on a file already existing with the same stem
         if output_filename is None:
             output_filename = self.create_output_filename(self.output_pattern,
                     sat, instrument, kind, band, data_kind,

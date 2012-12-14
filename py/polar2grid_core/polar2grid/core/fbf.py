@@ -67,6 +67,16 @@ def data_type_to_fbf_type(data_type):
 
     return dtype2fbf[data_type]
 
+def check_stem(stem_name):
+    """Helper function to tell a user if a stem name will conflict with
+    another file in the current working directory.
+    """
+    log.debug("Checking stem '%s'" % (stem_name,))
+    if len(glob(stem_name + ".*")) != 0:
+        msg = "Flat binary file with stem '%s' already exists, please remove and try again" % (stem_name,)
+        log.error(msg)
+        raise ValueError(msg)
+
 class Workspace(object):
     """Wrapper object around ``numpy.fromfile()`` method to treat a directory as a
     workspace of flat binary files.

@@ -13,105 +13,26 @@ hdf5 (.h5) files and create a properly scaled geotiff file.
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
-from polar2grid.core.dtype import str_to_dtype
+from polar2grid.core.glue_utils import setup_logging,create_exc_handler,remove_file_patterns
 from polar2grid.core.constants import *
 from polar2grid.viirs import Frontend
-from .viirs2awips import _safe_remove,create_grid_jobs
-from .remap import remap_bands
+from .grids.grids import create_grid_jobs
+import remap
 from .gtiff_backend import Backend
+from polar2grid.core.dtype import str_to_dtype
 
 import os
 import sys
 import logging
 from multiprocessing import Process
-from glob import glob
 
 log = logging.getLogger(__name__)
-LOG_FN = os.environ.get("VIIRS2GTIFF_LOG", "./viirs2gtiff.log")
-
-def setup_logging(console_level=logging.INFO):
-    """Setup the logger to the console to the logging level defined in the
-    command line (default INFO).  Sets up a file logging for everything,
-    regardless of command line level specified.  Adds extra logger for
-    tracebacks to go to the log file if the exception is caught.  See
-    `exc_handler` for more information.
-
-    :Keywords:
-        console_level : int
-            Python logging level integer (ex. logging.INFO).
-    """
-    root_logger = logging.getLogger('')
-    root_logger.setLevel(logging.DEBUG)
-
-    # Console output is minimal
-    console = logging.StreamHandler(sys.stderr)
-    console_format = "%(levelname)-8s : %(message)s"
-    console.setFormatter(logging.Formatter(console_format))
-    console.setLevel(console_level)
-    root_logger.addHandler(console)
-
-    # Log file messages have a lot more information
-    file_handler = logging.FileHandler(LOG_FN)
-    file_format = "[%(asctime)s] : %(levelname)-8s : %(name)s : %(funcName)s : %(message)s"
-    file_handler.setFormatter(logging.Formatter(file_format))
-    file_handler.setLevel(logging.DEBUG)
-    root_logger.addHandler(file_handler)
-
-    # Make a traceback logger specifically for adding tracebacks to log file
-    traceback_log = logging.getLogger('traceback')
-    traceback_log.propagate = False
-    traceback_log.setLevel(logging.ERROR)
-    traceback_log.addHandler(file_handler)
-
-def exc_handler(exc_type, exc_value, traceback):
-    """An execption handler/hook that will only be called if an exception
-    isn't called.  This will save us from print tracebacks or unrecognizable
-    errors to the user's console.
-
-    Note, however, that this doesn't effect code in a separate process as the
-    exception never gets raised in the parent.
-    """
-    logging.getLogger(__name__).error(exc_value)
-    logging.getLogger('traceback').error(exc_value, exc_info=(exc_type,exc_value,traceback))
-
-def remove_products():
-    """Remove as many of the possible files that were created from a previous
-    run of this script, including temporary files.
-
-    :note:
-        This does not remove the log file because it requires the log file
-        to report what's being removed.
-    """
-    for f in glob(".lat*"):
-        _safe_remove(f)
-    for f in glob(".lon*"):
-        _safe_remove(f)
-    for f in glob(".mode*"):
-        _safe_remove(f)
-    for f in glob(".image*"):
-        _safe_remove(f)
-    for f in glob("latitude*.real4.*"):
-        _safe_remove(f)
-    for f in glob("longitude*.real4.*"):
-        _safe_remove(f)
-    for f in glob("image*.real4.*"):
-        _safe_remove(f)
-    for f in glob("mode_*.real4.*"):
-        _safe_remove(f)
-    for f in glob("prescale_*.real4.*"):
-        _safe_remove(f)
-    for f in glob("ll2cr_*.real4.*"):
-        _safe_remove(f)
-
-    for f in glob("result*.real4.*"):
-        _safe_remove(f)
-
-    for f in glob("npp_viirs*.tif"):
-        _safe_remove(f)
+GLUE_NAME = "viirs2gtiff"
+LOG_FN = os.environ.get("VIIRS2GTIFF_LOG", "./%s.log" % (GLUE_NAME,))
 
 def process_data_sets(filepaths,
         fornav_D=None, fornav_d=None,
-        forced_grid=None, etype=None,
+        forced_grid=None,
         create_pseudo=True,
         num_procs=1,
         data_type=None,
@@ -176,7 +97,7 @@ def process_data_sets(filepaths,
 
     ### Remap the data
     try:
-        remapped_jobs = remap_bands(sat, instrument, nav_set_uid,
+        remapped_jobs = remap.remap_bands(sat, instrument, nav_set_uid,
                 fbf_lon, fbf_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
                 lat_fill_value=meta_data.get("lat_fill_value", None),
@@ -248,16 +169,16 @@ def _process_data_sets(*args, **kwargs):
         stat = process_data_sets(*args, **kwargs)
         sys.exit(stat)
     except MemoryError:
-        log.error("viirs2gtiff ran out of memory, check log file for more info")
+        log.error("%s ran out of memory, check log file for more info" % (GLUE_NAME,))
         log.debug("Memory error:", exc_info=1)
     except OSError:
-        log.error("viirs2gtiff had a OS error, check log file for more info")
+        log.error("%s had a OS error, check log file for more info" % (GLUE_NAME,))
         log.debug("OS error:", exc_info=1)
     except StandardError:
-        log.error("viirs2gtiff had an unexpected error, check log file for more info")
+        log.error("%s had an unexpected error, check log file for more info" % (GLUE_NAME,))
         log.debug("Unexpected/Uncaught error:", exc_info=1)
     except KeyboardInterrupt:
-        log.info("viirs2gtiff was cancelled by a keyboard interrupt")
+        log.info("%s was cancelled by a keyboard interrupt" % (GLUE_NAME,))
 
     sys.exit(-1)
 
@@ -371,8 +292,8 @@ def main():
             help="Processing is sequential instead of one process per kind of band")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
-    parser.add_argument('-k', '--keep', dest='remove_prev', default=True, action='store_true',
-            help="Don't delete any files that were previously made (WARNING: processing may not run successfully)")
+    parser.add_argument('-R', dest='remove_prev', default=False, action='store_true',
+            help="Delete any files that may conflict with future processing. Processing is not done with this flag.")
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
     parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
@@ -396,16 +317,25 @@ def main():
     args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)])
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=LOG_FN)
 
     # Don't set this up until after you have setup logging
-    sys.excepthook = exc_handler
+    sys.excepthook = create_exc_handler(GLUE_NAME)
 
     fornav_D = int(args.fornav_D)
     fornav_d = int(args.fornav_d)
     num_procs = int(args.num_procs)
     forced_grids = args.forced_grids
     if forced_grids == 'all': forced_grids = None
+
+    if args.remove_prev:
+        log.info("Removing any possible conflicting files")
+        remove_file_patterns(
+                Frontend.removable_file_patterns,
+                remap.removable_file_patterns,
+                Backend.removable_file_patterns
+                )
+        return 0
 
     if args.data_files:
         hdf_files = args.data_files[:]
@@ -418,10 +348,6 @@ def main():
         return -1
     # Handle the user using a '~' for their home directory
     hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in hdf_files ]
-
-    if args.remove_prev:
-        log.debug("Removing any previous files")
-        remove_products()
 
     stat = run_glue(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
                 forced_grid=forced_grids,

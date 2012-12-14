@@ -78,6 +78,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
     elif num_bands == 4:
         photometric = "PHOTOMETRIC=RGB"
 
+    # Creating the file will truncate any pre-existing file
     if num_bands == 1:
         gtiff = gtiff_driver.Create(output_filename,
                 data.shape[1], data.shape[0],
@@ -120,6 +121,10 @@ dtype2etype = {
         }
 
 class Backend(roles.BackendRole):
+    removable_file_patterns = [
+            "*_*_*_*_????????_??????_*.tif"
+            ]
+
     def __init__(self, output_pattern=None,
             rescale_config=None, fill_value=DEFAULT_FILL_VALUE,
             data_type=None, inc_by_one=False):

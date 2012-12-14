@@ -14,6 +14,7 @@ Main interface function `remap_bands`.
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.constants import GRID_KIND_PROJ4,GRID_KIND_GPD,DEFAULT_FILL_VALUE
+from polar2grid.core.fbf import check_stem
 from .grids.grids import get_grid_info
 from . import ll2cr as gator # gridinator
 from . import ms2gt
@@ -25,6 +26,14 @@ import signal
 import multiprocessing
 
 log = logging.getLogger(__name__)
+
+removable_file_patterns = [
+        "ll2cr_*_*_cols_*_*_*_*.img",
+        "ll2cr_*_*_rows_*_*_*_*.img",
+        "ll2cr_*_*_cols.real4.*.*",
+        "ll2cr_*_*_rows.real4.*.*",
+        "result_*_*.real4.*.*"
+        ]
 
 def init_worker():
     """Used in multiprocessing to initialize pool workers.
@@ -214,6 +223,7 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
                             }
                 fornav_group[band_info["remap_data_as"]]["inputs"].append(band_info["fbf_swath"])
                 stem = "result_%s%s_%s" % (band_kind,band_id,grid_name)
+                check_stem(stem)
                 output_name = "%s.real4.%d.%d" % (stem, band_info["grid_width"], band_info["grid_height"])
                 fornav_group[band_info["remap_data_as"]]["outputs"].append(output_name)
                 fornav_group[band_info["remap_data_as"]]["swath_fill_1"].append(band_info.get("fill_value", fill_value))

@@ -19,6 +19,7 @@ from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
 from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE
 from polar2grid.core import roles
+from polar2grid.core.fbf import check_stem
 import numpy
 
 import os
@@ -323,6 +324,11 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     fbf_lat_var = "latitude_%s" % meta_data["nav_set_uid"]
     fbf_lon_var = "longitude_%s" % meta_data["nav_set_uid"]
     fbf_mode_var = "mode_%s" % meta_data["nav_set_uid"]
+
+    check_stem(fbf_lat_var)
+    check_stem(fbf_lon_var)
+    check_stem(fbf_mode_var)
+
     fbf_lat = fbf_lat_var + suffix
     fbf_lon = fbf_lon_var + suffix
     fbf_mode = fbf_mode_var + suffix
@@ -354,6 +360,7 @@ def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
     spid = '%d' % os.getpid()
     band_name = _band_name(band_meta)
     imname = '.image_%s.%s' % (band_name, spid)
+
     imfo = file(imname, 'wb')
     imfa = file_appender(imfo, dtype=numpy.float32)
 
@@ -380,8 +387,10 @@ def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
         del finfo["scan_quality"]
         del finfo
 
-    suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
     img_base = "image_%s" % band_name
+    check_stem(img_base)
+
+    suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
     fbf_img = img_base + suffix
     os.rename(imname, fbf_img)
     band_meta["fbf_img"] = fbf_img
@@ -548,6 +557,18 @@ def make_swaths(ifilepaths, filter=None, cut_bad=False):
     return meta_data
 
 class Frontend(roles.FrontendRole):
+    removable_file_patterns = [
+            ".lat*",
+            ".lon*",
+            ".mode*",
+            ".image_*.*",
+            "image_*.real4.*.*",
+            "latitude_*.real4.*.*",
+            "longitude_*.real4.*.*",
+            "mode_*.real4.*.*",
+            "prescale_*.real4.*.*"
+            ]
+
     def __init__(self):
         pass
 
@@ -562,6 +583,8 @@ class Frontend(roles.FrontendRole):
         # These steps used to be part of the glue scripts
         # Due to laziness they are just called as separate functions here
         if create_fog:
+            log.info("Creating Fog band...")
+            check_stem("image_IFOG")
             try:
                 create_fog_band(bands)
             except StandardError:
@@ -577,6 +600,7 @@ class Frontend(roles.FrontendRole):
                 continue
 
             log.info("Prescaling DNB data...")
+            check_stem("prescale_dnb")
             try:
                 fbf_swath = run_dnb_scale(
                         band_job["fbf_img"],

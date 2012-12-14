@@ -109,9 +109,9 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
 
     # Memory map the output filenames
     # cols then rows in FBF filenames
-    rows_fn = prefix + "rows.real4.%d.%d" % lat_arr.shape[::-1]
+    rows_fn = prefix + "_rows.real4.%d.%d" % lat_arr.shape[::-1]
     rows_arr = numpy.memmap(rows_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
-    cols_fn = prefix + "cols.real4.%d.%d" % lat_arr.shape[::-1]
+    cols_fn = prefix + "_cols.real4.%d.%d" % lat_arr.shape[::-1]
     cols_arr = numpy.memmap(cols_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
 
     good_mask = (lon_arr != lon_fill_in) & (lat_arr != lat_fill_in)

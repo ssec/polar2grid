@@ -110,6 +110,10 @@ def create_netcdf(nc_name, image, template, start_dt,
     log.debug("Data transferred into NC file correctly")
 
 class Backend(roles.BackendRole):
+    removable_file_patterns = [
+            "SSEC_AWIPS_*"
+            ]
+
     config = {}
     def __init__(self, backend_config=None, rescale_config=None, fill_value=DEFAULT_FILL_VALUE):
         # Load AWIPS backend configuration
