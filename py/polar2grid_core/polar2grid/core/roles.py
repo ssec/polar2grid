@@ -210,33 +210,33 @@ class BackendRole(object):
 
         Some arguments are handled in special ways:
             - start_time : start_time converted into 5 different strings
-            that can each be individually specified in the pattern:
-                * start_time     : YYYYMMDD_HHMMSS
-                * start_YYYYMMDD : YYYYMMDD
-                * start_YYMMDD   : YYMMDD
-                * start_HHMMSS   : HHMMSS
-                * start_HHMM     : HHMM
+                that can each be individually specified in the pattern:
+                    * start_time     : YYYYMMDD_HHMMSS
+                    * start_YYYYMMDD : YYYYMMDD
+                    * start_YYMMDD   : YYMMDD
+                    * start_HHMMSS   : HHMMSS
+                    * start_HHMM     : HHMM
             - end_time   : Same as start_time
 
         If a keyword is provided that is not recognized it will be provided
         to the pattern after running through a `str` filter.
 
-        Possible pattern keywords (*created internally in this function):
+        Possible pattern keywords (\*created internally in this function):
             - sat             : identifier for the instrument's satellite
             - instrument      : name of the instrument
             - kind            : band kind
             - band            : band identifier or number
             - data_kind       : kind of data (brightness temperature, radiance, reflectance, etc.)
             - data_type       : data type name of data in-memory, numpy naming(ex. uint8, int32, real32)
-            - fbf_dtype*      : data type name of data on-disk, fbf naming (ex. uint1, int4, real4)
+            - fbf_dtype\*      : data type name of data on-disk, fbf naming (ex. uint1, int4, real4)
             - grid_name       : name of the grid the data was mapped to
             - cols            : number of columns in the data
             - rows            : number of rows in the data
             - start_time      : start time of the first scan (YYYYMMDD_HHMMSS)
-            - start_YYYYMMDD* : start date of the first scan
-            - start_YYMMDD*   : start date of the first scan
-            - start_HHMMSS*   : start time of the first scan
-            - start_HHMM*     : start time of the first scan
+            - start_YYYYMMDD\* : start date of the first scan
+            - start_YYMMDD\*   : start date of the first scan
+            - start_HHMMSS\*   : start time of the first scan
+            - start_HHMM\*     : start time of the first scan
             - end_time        : end time of the first scan. Same keywords as start_time.
 
         >>> from datetime import datetime
