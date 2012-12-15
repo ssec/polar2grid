@@ -8,7 +8,7 @@
 # Boulder, CO  80309-0449
 #==============================================================================
 #
-# $Header: /data/tharan/ms2gth/src/scripts/grid_convert.pl,v 1.4 2006/07/05 19:29:31 tharan Exp $
+# $Header: /disks/megadune/data/tharan/ms2gth/src/scripts/grid_convert.pl,v 1.4 2006/07/05 19:29:31 tharan Exp $
 #
 # forward: reads lat/lon pairs from stdin
 #          writes col/row pairs to stdout

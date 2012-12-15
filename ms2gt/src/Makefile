@@ -4,7 +4,7 @@
 # 13-Apr-2001 T.Haran 303-492-1847  tharan@colorado.edu
 # National Snow & Ice Data Center, University of Colorado, Boulder
 #========================================================================
-RCSID = $Header: /data/tharan/ms2gth/src/Makefile,v 1.14 2011/03/30 20:47:15 tharan Exp $
+RCSID = $Header: /disks/megadune/data/tharan/ms2gth/src/Makefile,v 1.14 2011/03/30 20:47:15 tharan Exp $
 
 #------------------------------------------------------------------------
 # configuration section
@@ -39,20 +39,20 @@ UTLDIR = $(IDLDIR)/modis_utils
 #
 #	commands
 #
-SHELL = /bin/sh
-CC = cc
-AR = ar
-RANLIB = touch
-CO = co
-MAKEDEPEND = makedepend
-INSTALL = cp
-CP = cp
-CD = cd
-RM = rm -f
-RMDIR = rm -fr
-MKDIR = mkdir -p
-TAR = tar
-COMPRESS = gzip
+SHELL ?= /bin/sh
+CC ?= cc
+AR ?= ar
+RANLIB ?= touch
+CO ?= co
+MAKEDEPEND ?= makedepend
+INSTALL ?= cp
+CP ?= cp
+CD ?= cd
+RM ?= rm -f
+RMDIR ?= rm -fr
+MKDIR ?= mkdir -p
+TAR ?= tar
+COMPRESS ?= gzip
 
 #
 #	debug or optimization settings

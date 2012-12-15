@@ -5,3 +5,5 @@ polar2grid
    :maxdepth: 4
 
    polar2grid
+   polar2grid.viirs
+   polar2grid.core

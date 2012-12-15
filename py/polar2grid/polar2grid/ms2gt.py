@@ -9,7 +9,6 @@ ms2gt utilities.
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 :date:         Jan 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 
@@ -26,7 +25,7 @@ CR_REG = r'.*_(\d+).img'
 cr_reg = re.compile(CR_REG)
 
 def _ll2cr_rows_info(fn):
-    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<num_rows>\d+).img'
+    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<ll2cr_rowsperscan>\d+).img'
     cr_reg = re.compile(CR_REG)
     row_match = cr_reg.match(fn)
     if row_match is None:
@@ -35,11 +34,11 @@ def _ll2cr_rows_info(fn):
     d = row_match.groupdict()
     d["scans_out"] = int(d["scans_out"])
     d["scan_first"] = int(d["scan_first"])
-    d["num_rows"] = int(d["num_rows"])
+    d["ll2cr_rowsperscan"] = int(d["ll2cr_rowsperscan"])
     return d
 
 def _ll2cr_cols_info(fn):
-    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<num_cols>\d+).img'
+    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<ll2cr_rowsperscan>\d+).img'
     cr_reg = re.compile(CR_REG)
     col_match = cr_reg.match(fn)
     if col_match is None:
@@ -48,7 +47,7 @@ def _ll2cr_cols_info(fn):
     d = col_match.groupdict()
     d["scans_out"] = int(d["scans_out"])
     d["scan_first"] = int(d["scan_first"])
-    d["num_cols"] = int(d["num_cols"])
+    d["ll2cr_rowsperscan"] = int(d["ll2cr_rowsperscan"])
     return d
 
 def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
@@ -80,31 +79,33 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
     d = {}
     tmp = glob("%s_cols_*.img" % tag)
     if len(tmp) != 1:
-        log.error("Couldn't find cols img file from ll2cr")
+        log.error("Couldn't find cols img file from ll2cr: '%s'" % tag)
         raise ValueError("Couldn't find cols img file from ll2cr")
-    d["colfile"] = tmp[0]
-    log.debug("Columns file is %s" % d["colfile"])
+    d["cols_filename"] = tmp[0]
+    log.debug("Columns file is %s" % d["cols_filename"])
 
     tmp = glob("%s_rows_*.img" % tag)
     if len(tmp) != 1:
-        log.error("Couldn't find rows img file from ll2cr")
+        log.error("Couldn't find rows img file from ll2cr: '%s'" % tag)
         raise ValueError("Couldn't find rows img file from ll2cr")
-    d["rowfile"] = tmp[0]
-    log.debug("Rows file is %s" % d["rowfile"])
+    d["rows_filename"] = tmp[0]
+    log.debug("Rows file is %s" % d["rows_filename"])
 
-    col_dict = _ll2cr_cols_info(d["colfile"])
-    row_dict = _ll2cr_rows_info(d["rowfile"])
+    col_dict = _ll2cr_cols_info(d["cols_filename"])
+    row_dict = _ll2cr_rows_info(d["rows_filename"])
     if col_dict is None or row_dict is None:
         # Log message was delivered before
         raise ValueError("Couldn't get information from ll2cr output")
 
-    d["num_cols"] = col_dict["num_cols"]
-    d["num_rows"] = row_dict["num_rows"]
+    d["ll2cr_rowsperscan"] = col_dict["ll2cr_rowsperscan"]
 
     if col_dict["scans_out"] != row_dict["scans_out"]:
         log.error("ll2cr didn't produce the same number of scans for cols and rows")
         raise ValueError("ll2cr didn't produce the same number of scans for cols and rows")
     d["scans_out"] = col_dict["scans_out"]
+    if d["scans_out"] == 0:
+        log.error("ll2cr did not map any data, 0 scans out")
+        raise ValueError("ll2cr did not map any data, 0 scans out")
 
     if col_dict["scan_first"] != row_dict["scan_first"]:
         log.error("ll2cr didn't produce the same number for scan first cols and rows")
@@ -113,8 +114,7 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
 
     log.debug("Number of Scans Out = %d" % d["scans_out"])
     log.debug("Number for Scan First = %d" % d["scan_first"])
-    log.debug("Number of Columns = %d" % d["num_cols"])
-    log.debug("Number of Rows = %d" % d["num_rows"])
+    log.debug("Number of Rows Per Scan = %d" % d["ll2cr_rowsperscan"])
 
     return d
 
@@ -159,6 +159,8 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
             args.extend(["%f" % swath_fill_1]*chan_count)
         elif chan_count > 1:
             args.extend(swath_fill_1)
+        elif isinstance(swath_fill_1, list):
+            args.append(swath_fill_1[0])
         else:
             args.append(swath_fill_1)
     if grid_fill_1 is not None:
@@ -167,6 +169,8 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
             args.extend(["%f" % grid_fill_1]*chan_count)
         elif chan_count > 1:
             args.extend(grid_fill_1)
+        elif isinstance(grid_fill_1, list):
+            args.append(grid_fill_1[0])
         else:
             args.append(grid_fill_1)
     if weight_delta_max is not None:
@@ -185,6 +189,12 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         args = [ str(a) for a in args ]
         log.debug("Running fornav with '%s'" % " ".join(args))
         check_call(args)
+
+        # Check to make sure fornav actually created the files
+        for o_fn in output_fn:
+            if not os.path.exists(o_fn):
+                log.error("Couldn't find fornav output file '%s'" % o_fn)
+                raise RuntimeError("Couldn't find fornav output file '%s'" % o_fn)
     except CalledProcessError:
         log.error("Error running fornav", exc_info=1)
         raise ValueError("Fornav failed")

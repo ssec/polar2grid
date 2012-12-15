@@ -4,7 +4,7 @@
 ;*
 ;* 15-Apr-2002  Terry Haran  tharan@colorado.edu  492-1847
 ;* National Snow & Ice Data Center, University of Colorado, Boulder
-;$Header: /data/tharan/ms2gth/src/idl/modis_utils/modis_adjust.pro,v 1.54 2005/01/11 22:23:46 haran Exp $
+;$Header: /disks/megadune/data/tharan/ms2gth/src/idl/modis_utils/modis_adjust.pro,v 1.54 2005/01/11 22:23:46 haran Exp $
 ;*========================================================================*/
 
 ;+
@@ -379,7 +379,7 @@ Pro modis_adjust, cols, scans, file_in, file_out, $
 
   time_start = systime(/seconds)
 
-  print, 'modis_adjust: $Header: /data/tharan/ms2gth/src/idl/modis_utils/modis_adjust.pro,v 1.54 2005/01/11 22:23:46 haran Exp $'
+  print, 'modis_adjust: $Header: /disks/megadune/data/tharan/ms2gth/src/idl/modis_utils/modis_adjust.pro,v 1.54 2005/01/11 22:23:46 haran Exp $'
   print, '  started:              ', systime(0, time_start)
   print, '  cols:                 ', cols
   print, '  scans:                ', scans

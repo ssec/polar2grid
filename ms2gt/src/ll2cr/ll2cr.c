@@ -4,7 +4,7 @@
  * 23-Oct-2000 Terry Haran tharan@colorado.edu 303-492-1847
  * National Snow & Ice Data Center, University of Colorado, Boulder
  *========================================================================*/
-static const char ll2cr_c_rcsid[] = "$Header: /data/tharan/ms2gth/src/ll2cr/ll2cr.c,v 1.14 2003/05/19 21:13:36 haran Exp $";
+static const char ll2cr_c_rcsid[] = "$Header: /disks/megadune/data/tharan/ms2gth/src/ll2cr/ll2cr.c,v 1.14 2003/05/19 21:13:36 haran Exp $";
 
 #include <stdio.h>
 #include <math.h>

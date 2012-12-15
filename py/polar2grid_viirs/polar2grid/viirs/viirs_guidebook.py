@@ -3,25 +3,18 @@
 """
 Provide information about ADL product files for a variety of uses.
 
-:group Data Kinds: K_*
-:group Guides: ROWS_PER_SCAN,COLS_PER_ROW,DATA_KINDS,*_GUIDE
-
 :author:       David Hoese (davidh)
 :author:       Ray Garcia (rayg)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import UTC
-from polar2grid.core import K_LATITUDE,K_LONGITUDE,K_ALTITUDE,K_RADIANCE, \
-        K_RADIANCE_FACTORS,K_REFLECTANCE,K_REFLECTANCE_FACTORS,K_BTEMP, \
-        K_BTEMP_FACTORS,K_SOLARZENITH,K_STARTTIME,K_QF3,K_NAVIGATION,K_GEO_REF, \
-        K_MODESCAN, K_MODEGRAN
+from polar2grid.core.constants import *
 import h5py as h5
 import numpy as np
 
@@ -30,15 +23,35 @@ import re
 import logging
 from datetime import datetime,timedelta
 
-LOG = logging.getLogger('adl_cdfcb')
+LOG = logging.getLogger(__name__)
 UTC= UTC()
 
-GEO_GUIDE = {'M' : 'GMODO', 'I': 'GIMGO'}
+K_LATITUDE = 'LatitudeVar'
+K_LONGITUDE = 'LongitudeVar'
+K_RADIANCE = 'RadianceVar'
+K_REFLECTANCE = 'ReflectanceVar'
+K_BTEMP = "BrightnessTemperatureVar"
+K_SOLARZENITH = "SolarZenithVar"
+K_ALTITUDE = 'AltitudeVar'
+K_RADIANCE_FACTORS = "RadianceFactorsVar"
+K_REFLECTANCE_FACTORS = "ReflectanceFactorsVar"
+K_BTEMP_FACTORS = "BrightnessTemperatureFactorsVar"
+K_STARTTIME = "StartTimeVar"
+K_MODESCAN = "ModeScanVar"
+K_MODEGRAN = "ModeGranVar"
+K_QF3 = "QF3Var"
+K_NAVIGATION = 'NavigationFilenameGlob'  # glob to search for to find navigation file that corresponds
+K_GEO_REF = 'CdfcbGeolocationFileGlob' # glob which would match the N_GEO_Ref attribute
+
+GEO_GUIDE = {
+        BKIND_M : 'GMODO',
+        BKIND_I : 'GIMGO'
+        }
 
 FACTORS_GUIDE = {
-        K_REFLECTANCE : K_REFLECTANCE_FACTORS,
-        K_RADIANCE    : K_RADIANCE_FACTORS,
-        K_BTEMP       : K_BTEMP_FACTORS
+        DKIND_REFLECTANCE : K_REFLECTANCE_FACTORS,
+        DKIND_RADIANCE    : K_RADIANCE_FACTORS,
+        DKIND_BTEMP       : K_BTEMP_FACTORS
         }
 
 # FIXME: add RadianceFactors/ReflectanceFactors
@@ -66,18 +79,18 @@ GEO_FILE_GUIDE = {
                             }
             }
 SV_FILE_GUIDE = {
-            r'SV(?P<kind>[IM])(?P<band>\d\d).*': { 
-                            K_RADIANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Radiance',
-                            K_REFLECTANCE: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/Reflectance',
-                            K_BTEMP: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/BrightnessTemperature',
-                            K_RADIANCE_FACTORS: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/RadianceFactors',
-                            K_REFLECTANCE_FACTORS: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/ReflectanceFactors',
-                            K_BTEMP_FACTORS: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/BrightnessTemperatureFactors',
-                            K_MODESCAN: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/ModeScan',
-                            K_MODEGRAN: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/ModeGran',
-                            K_QF3: '/All_Data/VIIRS-%(kind)s%(int(band))d-SDR_All/QF3_SCAN_RDR',
-                            K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-                            K_NAVIGATION: r'G%(kind)sTCO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
+            r'SV(?P<file_kind>[IM])(?P<file_band>\d\d).*': { 
+                            K_RADIANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Radiance',
+                            K_REFLECTANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Reflectance',
+                            K_BTEMP: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/BrightnessTemperature',
+                            K_RADIANCE_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/RadianceFactors',
+                            K_REFLECTANCE_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ReflectanceFactors',
+                            K_BTEMP_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/BrightnessTemperatureFactors',
+                            K_MODESCAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeScan',
+                            K_MODEGRAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeGran',
+                            K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
+                            K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+                            K_NAVIGATION: r'G%(file_kind)sTCO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
             r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
                             K_REFLECTANCE: None,
                             K_BTEMP: None,
@@ -87,56 +100,102 @@ SV_FILE_GUIDE = {
                             K_MODESCAN: '/All_Data/VIIRS-DNB-SDR_All/ModeScan',
                             K_MODEGRAN: '/All_Data/VIIRS-DNB-SDR_All/ModeGran',
                             K_QF3: '/All_Data/VIIRS-DNB-SDR_All/QF3_SCAN_RDR',
-                            K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-                            K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
+                            K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+                            K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
             }
 
 ROWS_PER_SCAN = {
-        "M"  : 16,
+        BKIND_M  : 16,
         "GMTCO" : 16,
-        "I"  : 32,
+        BKIND_I  : 32,
         "GITCO" : 32,
-        "DNB": 16,
+        BKIND_DNB : 16,
         "GDNBO" : 16
         }
 
 COLS_PER_ROW = {
-        "M"  : 3200,
-        "I"  : 6400,
-        "DNB": 4064
+        BKIND_M   : 3200,
+        BKIND_I   : 6400,
+        BKIND_DNB : 4064
         }
 
 DATA_KINDS = {
-        "M01" : K_REFLECTANCE,
-        "M02" : K_REFLECTANCE,
-        "M03" : K_REFLECTANCE,
-        "M04" : K_REFLECTANCE,
-        "M05" : K_REFLECTANCE,
-        "M06" : K_REFLECTANCE,
-        "M07" : K_REFLECTANCE,
-        "M08" : K_REFLECTANCE,
-        "M09" : K_REFLECTANCE,
-        "M10" : K_REFLECTANCE,
-        "M11" : K_REFLECTANCE,
-        "M12" : K_BTEMP,
-        "M13" : K_BTEMP,
-        "M14" : K_BTEMP,
-        "M15" : K_BTEMP,
-        "M16" : K_BTEMP,
-        "I01" : K_REFLECTANCE,
-        "I02" : K_REFLECTANCE,
-        "I03" : K_REFLECTANCE,
-        "I04" : K_BTEMP,
-        "I05" : K_BTEMP,
-        "I06" : K_REFLECTANCE,
-        "DNB00" : K_RADIANCE
+        (BKIND_M,BID_01) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_02) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_03) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_04) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_05) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_06) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_07) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_08) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_09) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_10) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_11) : DKIND_REFLECTANCE,
+        (BKIND_M,BID_12) : DKIND_BTEMP,
+        (BKIND_M,BID_13) : DKIND_BTEMP,
+        (BKIND_M,BID_14) : DKIND_BTEMP,
+        (BKIND_M,BID_15) : DKIND_BTEMP,
+        (BKIND_M,BID_16) : DKIND_BTEMP,
+        (BKIND_I,BID_01) : DKIND_REFLECTANCE,
+        (BKIND_I,BID_02) : DKIND_REFLECTANCE,
+        (BKIND_I,BID_03) : DKIND_REFLECTANCE,
+        (BKIND_I,BID_04) : DKIND_BTEMP,
+        (BKIND_I,BID_05) : DKIND_BTEMP,
+        (BKIND_I,BID_06) : DKIND_REFLECTANCE,
+        (BKIND_DNB,NOT_APPLICABLE) : DKIND_RADIANCE
+        }
+
+VAR_PATHS = {
+        (BKIND_M,BID_01) : K_REFLECTANCE,
+        (BKIND_M,BID_02) : K_REFLECTANCE,
+        (BKIND_M,BID_03) : K_REFLECTANCE,
+        (BKIND_M,BID_04) : K_REFLECTANCE,
+        (BKIND_M,BID_05) : K_REFLECTANCE,
+        (BKIND_M,BID_06) : K_REFLECTANCE,
+        (BKIND_M,BID_07) : K_REFLECTANCE,
+        (BKIND_M,BID_08) : K_REFLECTANCE,
+        (BKIND_M,BID_09) : K_REFLECTANCE,
+        (BKIND_M,BID_10) : K_REFLECTANCE,
+        (BKIND_M,BID_11) : K_REFLECTANCE,
+        (BKIND_M,BID_12) : K_BTEMP,
+        (BKIND_M,BID_13) : K_BTEMP,
+        (BKIND_M,BID_14) : K_BTEMP,
+        (BKIND_M,BID_15) : K_BTEMP,
+        (BKIND_M,BID_16) : K_BTEMP,
+        (BKIND_I,BID_01) : K_REFLECTANCE,
+        (BKIND_I,BID_02) : K_REFLECTANCE,
+        (BKIND_I,BID_03) : K_REFLECTANCE,
+        (BKIND_I,BID_04) : K_BTEMP,
+        (BKIND_I,BID_05) : K_BTEMP,
+        (BKIND_I,BID_06) : K_REFLECTANCE,
+        (BKIND_DNB,NOT_APPLICABLE) : K_RADIANCE
+        }
+
+band2const = {
+        "01" : BID_01,
+        "02" : BID_02,
+        "03" : BID_03,
+        "04" : BID_04,
+        "05" : BID_05,
+        "06" : BID_06,
+        "07" : BID_07,
+        "08" : BID_08,
+        "09" : BID_09,
+        "10" : BID_10,
+        "11" : BID_11,
+        "12" : BID_12,
+        "13" : BID_13,
+        "14" : BID_14,
+        "15" : BID_15,
+        "16" : BID_16
         }
 
 # missing value sentinels for different datasets
 # 0 if scaling exists, 1 if scaling is None
-MISSING_GUIDE = { K_REFLECTANCE: (lambda A: A>=65528, lambda A:A<0.0),
-                K_RADIANCE: (lambda A: A>=65528, lambda A: A<0.0),
-                K_BTEMP: (lambda A: A>=65528, lambda A: A<0.0),
+MISSING_GUIDE = {
+                DKIND_REFLECTANCE: (lambda A: A>=65528, lambda A:A<0.0),
+                DKIND_RADIANCE: (lambda A: A>=65528, lambda A: A<0.0),
+                DKIND_BTEMP: (lambda A: A>=65528, lambda A: A<0.0),
                 K_SOLARZENITH: (lambda A: A>=65528, lambda A: A<0.0),
                 K_MODESCAN: (lambda A: A>1, lambda A: A>1),
                 K_LATITUDE: (lambda A: A>=65528, lambda A: A<=-999),
@@ -145,10 +204,9 @@ MISSING_GUIDE = { K_REFLECTANCE: (lambda A: A>=65528, lambda A:A<0.0),
 
 
 # a regular expression to split up granule names into dictionaries
-RE_NPP = re.compile('(?P<kind>[A-Z0-9]+)_(?P<sat>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_e(?P<end_time>\d+)_b(?P<orbit>\d+)_c(?P<created_time>\d+)_(?P<site>[a-zA-Z0-9]+)_(?P<domain>[a-zA-Z0-9]+)\.h5')
+RE_NPP = re.compile('(?P<file_kindnband>[A-Z0-9]+)_(?P<sat>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<file_start_time_str>\d+)_e(?P<file_end_time_str>\d+)_b(?P<orbit>\d+)_c(?P<created_time>\d+)_(?P<site>[a-zA-Z0-9]+)_(?P<domain>[a-zA-Z0-9]+)\.h5')
 # format string to turn it back into a filename
-FMT_NPP = r'%(kind)s_%(sat)s_d%(date)s_t%(start_time)s_e%(end_time)s_b%(orbit)s_c%(created_time)s_%(site)s_%(domain)s.h5'
-
+FMT_NPP = r'%(file_kindnband)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_c%(created_time)s_%(site)s_%(domain)s.h5'
 
 class evaluator(object):
     """
@@ -166,14 +224,14 @@ def get_datetimes(finfo):
     start of the granule and the end of the granule.
     """
     d = finfo["date"]
-    st = finfo["start_time"]
+    st = finfo["file_start_time_str"]
     s_us = int(st[-1])*100000
-    et = finfo["end_time"]
+    et = finfo["file_end_time_str"]
     e_us = int(et[-1])*100000
     s_dt = datetime.strptime(d + st[:-1], "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=s_us)
     e_dt = datetime.strptime(d + et[:-1], "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=e_us)
-    finfo["start_dt"] = s_dt
-    finfo["end_dt"] = e_dt
+    finfo["file_start_time"] = s_dt
+    finfo["file_end_time"] = e_dt
 
 def h5path(hp, path, h5_path, required=False):
     "traverse an hdf5 path to return a nested data object"
@@ -250,33 +308,39 @@ def file_info(fn):
             raise ValueError("Filename matched initial pattern, but not full name pattern")
         pat_info = dict(pat_match.groupdict())
 
-        # For dnb
         minfo = m.groupdict()
-        if "kind" not in minfo:
-            minfo["kind"] = "DNB"
-            minfo["band"] = "00"
+        # Translate band info into constants for rest of polar2grid processing
+        if "file_kind" not in minfo:
+            # For dnb
+            minfo["kind"] = BKIND_DNB
+            minfo["band"] = NOT_APPLICABLE
+        elif minfo["file_kind"] == "M":
+            minfo["kind"] = BKIND_M
+        elif minfo["file_kind"] == "I":
+            minfo["kind"] = BKIND_I
+        else:
+            LOG.error("Band kind not known '%s'" % minfo["kind"])
+            raise ValueError("Band kind not known '%s'" % minfo["kind"])
+
+        # Translate band identifier/number into constants
+        if "file_band" in minfo:
+            if minfo["file_band"] not in band2const:
+                LOG.error("Band number not known '%s'" % (minfo["file_band"],))
+                raise ValueError("Band number not known '%s'" % (minfo["file_band"],))
+            minfo["band"] = band2const[minfo["file_band"]]
 
         # merge the guide info
         finfo.update(pat_info)
         finfo.update(minfo)
 
-        if finfo["kind"] not in ["M","I","DNB"]:
-            # For GEO files
-            LOG.warning("Band kind not known %s" % finfo["kind"])
-            finfo["data_kind"] = None
-            finfo["rows_per_scan"] = None
-            finfo["cols_per_row"] = None
-        else:
-            # Figure out what type of data we want to use
-            dkind = finfo["kind"] + finfo["band"]
-            if dkind not in DATA_KINDS:
-                LOG.info("Data kind key not known %s" % dkind)
-                finfo["data_kind"] = K_RADIANCE
-            else:
-                finfo["data_kind"] = DATA_KINDS[dkind]
-            finfo["rows_per_scan"] = ROWS_PER_SCAN[finfo["kind"]]
-            finfo["cols_per_row"] = COLS_PER_ROW[finfo["kind"]]
-
+        # Figure out what type of data we want to use
+        dkind = (finfo["kind"],finfo["band"])
+        if dkind not in DATA_KINDS:
+            LOG.error("Data kind not known (Kind: %s; Band: %s)" % dkind)
+            raise ValueError("Data kind not known (Kind: %s; Band: %s)" % dkind)
+        finfo["data_kind"] = DATA_KINDS[dkind]
+        finfo["rows_per_scan"] = ROWS_PER_SCAN[finfo["kind"]]
+        finfo["cols_per_row"] = COLS_PER_ROW[finfo["kind"]]
         finfo["factors"] = FACTORS_GUIDE[finfo["data_kind"]]
 
         # Convert time information to datetime objects
@@ -321,7 +385,7 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     hp = h5.File(finfo["img_path"], 'r')
 
     data_kind = finfo["data_kind"]
-    data_var_path = finfo[data_kind]
+    data_var_path = finfo[VAR_PATHS[(finfo["kind"],finfo["band"])]]
     factors_var_path = finfo[finfo["factors"]]
     qf3_var_path = finfo[K_QF3]
 
@@ -432,7 +496,7 @@ def geo_info(fn):
         finfo.update(minfo)
 
         # Get constant/known information from mappings
-        finfo["rows_per_scan"] = ROWS_PER_SCAN[finfo["kind"]]
+        finfo["rows_per_scan"] = ROWS_PER_SCAN[finfo["file_kindnband"]]
 
         # Fill any information if needed
         finfo.update(**nfo)
@@ -460,7 +524,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
             - lat_mask
             - lon_mask
             - mode_mask
-            - start_dt
+            - start_time
             - scan_quality
 
     :Parameters:
@@ -494,7 +558,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
 
     # Get start time
     h5v = h5path(hp, st_var_path, finfo["geo_path"], required=True)
-    start_dt = _st_to_datetime(h5v[0])
+    start_time = _st_to_datetime(h5v[0])
 
     # Get solar zenith angle
     h5v = h5path(hp, sza_var_path, finfo["geo_path"], required=True)
@@ -505,10 +569,10 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     lat_mask = MISSING_GUIDE[K_LATITUDE][1](lat_data) if K_LATITUDE in MISSING_GUIDE else None
 
     # Calculate longitude mask
-    lon_mask = MISSING_GUIDE[K_LONGITUDE][1](lat_data) if K_LONGITUDE in MISSING_GUIDE else None
+    lon_mask = MISSING_GUIDE[K_LONGITUDE][1](lon_data) if K_LONGITUDE in MISSING_GUIDE else None
 
     # Calculate solar zenith angle mask
-    sza_mask = MISSING_GUIDE[K_SOLARZENITH][1](lat_data) if K_SOLARZENITH in MISSING_GUIDE else None
+    sza_mask = MISSING_GUIDE[K_SOLARZENITH][1](sza_data) if K_SOLARZENITH in MISSING_GUIDE else None
 
     # Mask off bad data
     # NOTE: There could still be missing image data to account for
@@ -521,7 +585,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     finfo["lat_mask"] = lat_mask
     finfo["lon_mask"] = lon_mask
     finfo["mode_mask"] = sza_data
-    finfo["start_dt"] = start_dt
+    finfo["start_time"] = start_time
     # Rows only
     finfo["scan_quality"] = (np.unique(np.nonzero(lat_mask)[0]),)
     return finfo

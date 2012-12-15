@@ -4,7 +4,7 @@
 # 27-Dec-2000 T.Haran 303-492-1847  tharan@kryos.colorado.edu
 # National Snow & Ice Data Center, University of Colorado, Boulder
 #========================================================================
-RCSID = $Header: /data/tharan/ms2gth/src/fornav/Makefile,v 1.6 2007/05/07 18:09:57 tharan Exp $
+RCSID = $Header: /disks/megadune/data/tharan/ms2gth/src/fornav/Makefile,v 1.6 2007/05/07 18:09:57 tharan Exp $
 
 #------------------------------------------------------------------------
 # configuration section
@@ -18,17 +18,17 @@ BINDIR = $(TOPDIR)/bin
 #
 #	commands
 #
-SHELL = /bin/sh
-CC = cc
-AR = ar
-RANLIB = touch
-CO = co
-MAKEDEPEND = makedepend
-INSTALL = cp
-CP = cp
-RM = rm -f
-TAR = tar
-COMPRESS = gzip
+SHELL ?= /bin/sh
+CC ?= cc
+AR ?= ar
+RANLIB ?= touch
+CO ?= co
+MAKEDEPEND ?= makedepend
+INSTALL ?= cp
+CP ?= cp
+RM ?= rm -f
+TAR ?= tar
+COMPRESS ?= gzip
 
 #
 #	archive file name
@@ -54,7 +54,7 @@ SYSLIBS = -lm
 # end configuration section
 #------------------------------------------------------------------------
 
-CFLAGS = -I$(INCDIR) $(CONFIG_CFLAGS) -D_FILE_OFFSET_BITS=64
+CFLAGS = -I$(INCDIR) $(CONFIG_CFLAGS) $(getconf LFS_CFLAGS)
 LIBS = -L$(LIBDIR) -lmapx $(SYSLIBS)
 
 SRCS = fornav.c

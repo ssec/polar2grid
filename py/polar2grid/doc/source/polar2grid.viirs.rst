@@ -1,10 +1,26 @@
-viirs Package
-=============
+polar2grid.viirs Package
+========================
 
 :mod:`viirs` Package
 --------------------
 
 .. automodule:: polar2grid.viirs
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`prescale` Module
+----------------------
+
+.. automodule:: polar2grid.viirs.prescale
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`pseudo` Module
+--------------------
+
+.. automodule:: polar2grid.viirs.pseudo
     :members:
     :undoc-members:
     :show-inheritance:

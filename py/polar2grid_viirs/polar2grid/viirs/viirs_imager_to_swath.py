@@ -9,13 +9,17 @@ Write out Swath binary files used by ms2gt tools.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.viirs.viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info
+from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info
+from .prescale import run_dnb_scale
+from .pseudo import create_fog_band
+from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE
+from polar2grid.core import roles
+from polar2grid.core.fbf import check_stem
 import numpy
 
 import os
@@ -24,6 +28,8 @@ import logging
 from glob import glob
 
 log = logging.getLogger(__name__)
+
+FILL_VALUE=-999.0
 
 def _glob_file(pat):
     """Globs for a single file based on the provided pattern.
@@ -35,6 +41,9 @@ def _glob_file(pat):
         log.error("There were no files or more than one fitting the pattern %s" % pat)
         raise ValueError("There were no files or more than one fitting the pattern %s" % pat)
     return tmp[0]
+
+def _band_name(band_info):
+    return band_info["kind"] + (band_info["band"] or "")
 
 def get_meta_data(ifilepaths, filter=None):
     """Get all meta data for the provided data files.
@@ -50,15 +59,12 @@ def get_meta_data(ifilepaths, filter=None):
 
     :returns:
         meta_data : dict
-            - kind
-                kind of band
             - bands
                 dictionary per band of band info containing the following keys:
                     - kind
                     - band
-                    - band_name
                     - data_kind
-                    - src_kind
+                    - remap_data_as
                     - rows_per_scan
                     - fbf_swath
         image_data : dict
@@ -66,7 +72,8 @@ def get_meta_data(ifilepaths, filter=None):
             value is a list of finfo dictionaries.
 
     :raises ValueError:
-        if there is more than one kind of band in provided filenames
+        if there is more than one kind of band in provided filenames. We can
+        only operate on files that share navigation data
     :raises ValueError:
         if after attempting to process the provided image
         filenames there was no useful data found.
@@ -76,12 +83,8 @@ def get_meta_data(ifilepaths, filter=None):
     # Data structures
     meta_data = {
             "bands" : {},
-            "kind"   : None
             }
     image_data = {}
-
-    # Identify the kind of these files
-    kind = None
 
     # Get image and geonav file info
     bad_bands = []
@@ -97,7 +100,7 @@ def get_meta_data(ifilepaths, filter=None):
             log.error("Continuing without that image file...")
             continue
 
-        if not filter(finfo):
+        if filter and not filter(finfo):
             log.debug("File %s was filtered out" % fn)
             continue
 
@@ -116,36 +119,39 @@ def get_meta_data(ifilepaths, filter=None):
             bad_bands.append(finfo["band"])
             continue
 
-        # Make sure all files are of the same kind
-        if kind is None:
-            kind = finfo["kind"]
-        elif finfo["kind"] != kind:
-            log.error("Inconsistent band kinds in the files provided")
-            raise ValueError("Inconsistent band kinds in the files provided")
-
         # Create any locations that don't exist yet
-        if finfo["band"] not in image_data:
+        if (finfo["kind"],finfo["band"]) not in image_data:
             # Fill in data structure
-            image_data[finfo["band"]] = []
-            meta_data["bands"][finfo["band"]] = {
+            image_data[(finfo["kind"],finfo["band"])] = []
+            meta_data["bands"][(finfo["kind"], finfo["band"])] = {
                     "kind"          : finfo["kind"],
                     "band"          : finfo["band"],
-                    "band_name"     : finfo["kind"] + finfo["band"],
                     "data_kind"     : finfo["data_kind"],
-                    "src_kind"      : finfo["data_kind"],
+                    "remap_data_as" : finfo["data_kind"],
                     "rows_per_scan" : finfo["rows_per_scan"],
                     "fbf_swath"     : None
                     }
 
         # Add it to the proper locations for future use
-        image_data[finfo["band"]].append(finfo)
+        image_data[(finfo["kind"], finfo["band"])].append(finfo)
 
     # SANITY CHECK
     if len(image_data) == 0:
         log.error("There aren't any bands left to work on, quitting...")
         raise ValueError("There aren't any bands left to work on, quitting...")
 
-    meta_data["kind"] = kind
+    # Determine what navigation set we are using
+    # VIIRS shares navigation between kinds of bands
+    first_kind = meta_data["bands"].keys()[0][0]
+    for x in meta_data["bands"].keys():
+        if x[0] != first_kind:
+            msg = "VIIRS frontend requires all files to share navigation, found %s and %s kinds" % (first_kind, x[0])
+            log.error(msg)
+            raise ValueError(msg)
+
+    meta_data["sat"] = SAT_NPP
+    meta_data["instrument"] = INST_VIIRS
+    meta_data["nav_set_uid"] = first_kind
     return meta_data,image_data
 
 def get_geo_meta(gfilepaths):
@@ -160,7 +166,7 @@ def get_geo_meta(gfilepaths):
             Dictionary of meta data derived from the provided filepaths.
             Contains the following keys:
 
-                - start_dt
+                - start_time
                 - swath_rows
                 - swath_cols
                 - rows_per_scan
@@ -183,7 +189,7 @@ def get_geo_meta(gfilepaths):
     """
     geo_data = []
     meta_data = {
-            "start_dt"  : None,
+            "start_time"  : None,
             "swath_rows"  : None,
             "swath_cols"  : None,
             "rows_per_scan" : None,
@@ -197,8 +203,8 @@ def get_geo_meta(gfilepaths):
         try:
             ginfo = geo_info(gname)
         except StandardError:
-            log.error("Error analyzing geonav filename %s" % gname)
-            raise ValueError("Error analyzing geonav filename %s" % gname)
+            log.error("Error getting info from geonav filename %s" % gname)
+            raise
 
         # Add meta data to the meta_data dictionary
         if meta_data["rows_per_scan"] is None:
@@ -215,7 +221,7 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     Has the option of cutting out bad data scans, see ``cut_bad`` below.
 
     Will add/fill in the following information into the meta_data dictionary:
-        - start_dt
+        - start_time
             Datetime object of the first middle scan time of the
             first granule
         - fbf_lat
@@ -258,18 +264,23 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     lafa = file_appender(lafo, dtype=numpy.float32)
     lofa = file_appender(lofo, dtype=numpy.float32)
     modefa = file_appender(modefo, dtype=numpy.float32)
+    lat_south = 91.0
+    lat_north = -91.0
+    lon_west = 181.0
+    lon_east = -181.0
 
     for ginfo in geo_data:
         # Read in lat/lon data
         try:
-            read_geo_info(ginfo)
+            read_geo_info(ginfo, fill_value=FILL_VALUE)
             # Start datetime used in product backend for NC creation
-            if meta_data["start_dt"] is None:
-                meta_data["start_dt"] = ginfo["start_dt"]
+            if meta_data["start_time"] is None:
+                meta_data["start_time"] = ginfo["start_time"]
         except StandardError:
             # Can't continue without lat/lon data
-            log.error("Error reading data from %s for band kind %s" % (ginfo["geo_path"],meta_data["kind"]), exc_info=1)
-            raise ValueError("Error reading data from %s for band kind %s" % (ginfo["geo_path"],meta_data["kind"]))
+            msg = "Error reading data from %s for bands %r" % (ginfo["geo_path"],meta_data["bands"].keys())
+            log.error(msg, exc_info=1)
+            raise ValueError(msg)
 
         # ll2cr/fornav hate entire scans that are bad
         scan_quality = ginfo["scan_quality"]
@@ -277,6 +288,22 @@ def process_geo(meta_data, geo_data, cut_bad=False):
             ginfo["lat_data"] = numpy.delete(ginfo["lat_data"], scan_quality, axis=0)
             ginfo["lon_data"] = numpy.delete(ginfo["lon_data"], scan_quality, axis=0)
             ginfo["mode_mask"] = numpy.delete(ginfo["mode_mask"], scan_quality, axis=0)
+
+        # Calculate min and max lat/lon values for use in remapping
+        lat_south = min(lat_south,ginfo["lat_data"][ginfo["lat_data"] != FILL_VALUE].min())
+        lat_north = max(lat_north,ginfo["lat_data"][ginfo["lat_data"] != FILL_VALUE].max())
+        lon_west_tmp = min(lon_west,ginfo["lon_data"][ginfo["lon_data"] != FILL_VALUE].min())
+        lon_east_tmp = max(lon_east,ginfo["lon_data"][ginfo["lon_data"] != FILL_VALUE].max())
+        if lon_west_tmp <= -179.0 and lon_east_tmp >= 179.0:
+            # We hit the -180/180 boundary
+            lon_west_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] >= 0)].min()
+            lon_west_tmp = min(lon_west, ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] >= 0)].min())
+
+            lon_east_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] <= 0)].max()
+            lon_east_tmp = max(lon_east, ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] <= 0)].max())
+
+        lon_west = lon_west_tmp
+        lon_east = lon_east_tmp
 
         # Append the data to the swath
         lafa.append(ginfo["lat_data"])
@@ -294,9 +321,14 @@ def process_geo(meta_data, geo_data, cut_bad=False):
 
     # Rename files
     suffix = '.real4.' + '.'.join(str(x) for x in reversed(lafa.shape))
-    fbf_lat_var = "latitude_%s" % meta_data["kind"]
-    fbf_lon_var = "longitude_%s" % meta_data["kind"]
-    fbf_mode_var = "mode_%s" % meta_data["kind"]
+    fbf_lat_var = "latitude_%s" % meta_data["nav_set_uid"]
+    fbf_lon_var = "longitude_%s" % meta_data["nav_set_uid"]
+    fbf_mode_var = "mode_%s" % meta_data["nav_set_uid"]
+
+    check_stem(fbf_lat_var)
+    check_stem(fbf_lon_var)
+    check_stem(fbf_mode_var)
+
     fbf_lat = fbf_lat_var + suffix
     fbf_lon = fbf_lon_var + suffix
     fbf_mode = fbf_mode_var + suffix
@@ -311,6 +343,13 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     meta_data["swath_rows"] = swath_rows
     meta_data["swath_cols"] = swath_cols
     meta_data["swath_scans"] = swath_rows/meta_data["rows_per_scan"]
+    log.debug("Data West Lon: %f, North Lat: %f, East Lon: %f, South Lat: %f" % (lon_west,lat_north,lon_east,lat_south))
+    meta_data["lat_south"] = lat_south
+    meta_data["lat_north"] = lat_north
+    meta_data["lon_west"] = lon_west
+    meta_data["lon_east"] = lon_east
+    meta_data["lon_fill_value"] = FILL_VALUE
+    meta_data["lat_fill_value"] = FILL_VALUE
 
     return meta_data,geo_data
 
@@ -319,7 +358,9 @@ def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
 
     # Create fbf files and appenders
     spid = '%d' % os.getpid()
-    imname = '.image_%s.%s' % (band_meta["band_name"], spid)
+    band_name = _band_name(band_meta)
+    imname = '.image_%s.%s' % (band_name, spid)
+
     imfo = file(imname, 'wb')
     imfa = file_appender(imfo, dtype=numpy.float32)
 
@@ -327,10 +368,10 @@ def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
     for finfo,ginfo in zip(finfos,geo_data):
         try:
             # XXX: May need to pass the lat/lon masks
-            read_file_info(finfo)
+            read_file_info(finfo, fill_value=FILL_VALUE)
         except StandardError:
             log.error("Error reading data from %s" % finfo["img_path"])
-            raise ValueError("Error reading data from %s" % finfo["img_path"])
+            raise
 
         # Cut out bad data
         if cut_bad and len(ginfo["scan_quality"][0]) != 0:
@@ -346,8 +387,10 @@ def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
         del finfo["scan_quality"]
         del finfo
 
+    img_base = "image_%s" % band_name
+    check_stem(img_base)
+
     suffix = '.real4.' + '.'.join(str(x) for x in reversed(imfa.shape))
-    img_base = "image_%s" % band_meta["band_name"]
     fbf_img = img_base + suffix
     os.rename(imname, fbf_img)
     band_meta["fbf_img"] = fbf_img
@@ -356,10 +399,11 @@ def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
     band_meta["swath_cols"] = cols
     band_meta["swath_scans"] = swath_scans
     band_meta["fbf_mode"] = fbf_mode
+    band_meta["fill_value"] = FILL_VALUE
 
     if rows != swath_rows or cols != swath_cols:
-        log.error("Expected %d rows and %d cols, but band %s had %d rows and %d cols" % (swath_rows, swath_cols, band_meta["band_name"], rows, cols))
-        raise ValueError("Expected %d rows and %d cols, but band %s had %d rows and %d cols" % (swath_rows, swath_cols, band_meta["band_name"], rows, cols))
+        log.error("Expected %d rows and %d cols, but band %s had %d rows and %d cols" % (swath_rows, swath_cols, band_name, rows, cols))
+        raise ValueError("Expected %d rows and %d cols, but band %s had %d rows and %d cols" % (swath_rows, swath_cols, band_name, rows, cols))
 
     imfo.close()
     del imfa
@@ -398,25 +442,25 @@ def process_image(meta_data, image_data, geo_data, cut_bad=False):
             Filename of the flat binary file of mode data from `process_geo`
     """
     # Get image data and save it to an fbf file
-    for band,finfos in image_data.items():
+    for (band_kind,band_id),finfos in image_data.items():
         try:
             create_image_swath(
                     meta_data["swath_rows"],
                     meta_data["swath_cols"],
                     meta_data["swath_scans"],
                     meta_data["fbf_mode"],
-                    meta_data["bands"][band],
+                    meta_data["bands"][(band_kind, band_id)],
                     geo_data, finfos, cut_bad=cut_bad)
         except StandardError:
-            log.error("Error creating swath for %s, will continue without it..." % meta_data["bands"][band]["band_name"])
+            log.error("Error creating swath for %s, will continue without it..." % _band_name(meta_data["bands"][(band_kind, band_id)]))
             log.debug("Swath error:", exc_info=1)
-            del meta_data["bands"][band]
-            del image_data[band]
+            del meta_data["bands"][(band_kind, band_id)]
+            del image_data[(band_kind, band_id)]
         del finfos
 
     if len(image_data) == 0:
-        log.error("No more bands to process for %s bands provided" % meta_data["kind"])
-        raise ValueError("No more bands to process for %s bands provided" % meta_data["kind"])
+        log.error("No more bands to process for navigation set %s provided" % meta_data["nav_set_uid"])
+        raise ValueError("No more bands to process for navigation set %s provided" % meta_data["nav_set_uid"])
 
 class array_appender(object):
     """wrapper for a numpy array object which gives it a binary data append usable with "catenate"
@@ -486,13 +530,13 @@ def make_swaths(ifilepaths, filter=None, cut_bad=False):
 
     # SANITY CHECK
     g_len = len(gfilepaths)
-    for band,finfos in image_data.items():
+    for (band_kind, band_id),finfos in image_data.items():
         f_len = len(finfos)
         if f_len != g_len:
             log.error("Expected same number of image and navigation files for every band, removing band...")
             log.error("Got (num ifiles: %d, num gfiles: %d)" % (f_len,g_len))
-            del image_data[band]
-            del meta_data["bands"][band]
+            del image_data[(band_kind,band_id)]
+            del meta_data["bands"][(band_kind, band_id)]
 
     if len(image_data) == 0:
         log.error("There aren't any bands left to work on, quitting...")
@@ -511,6 +555,65 @@ def make_swaths(ifilepaths, filter=None, cut_bad=False):
     process_image(meta_data, image_data, geo_data, cut_bad=cut_bad)
 
     return meta_data
+
+class Frontend(roles.FrontendRole):
+    removable_file_patterns = [
+            ".lat*",
+            ".lon*",
+            ".mode*",
+            ".image_*.*",
+            "image_*.real4.*.*",
+            "latitude_*.real4.*.*",
+            "longitude_*.real4.*.*",
+            "mode_*.real4.*.*",
+            "prescale_*.real4.*.*"
+            ]
+
+    def __init__(self):
+        pass
+
+    def make_swaths(self, *args, **kwargs):
+        scale_dnb = kwargs.pop("scale_dnb", False)
+        new_dnb = kwargs.pop("new_dnb", False)
+        create_fog = kwargs.pop("create_fog", False)
+
+        meta_data = make_swaths(*args, **kwargs)
+        bands = meta_data["bands"]
+
+        # These steps used to be part of the glue scripts
+        # Due to laziness they are just called as separate functions here
+        if create_fog:
+            log.info("Creating Fog band...")
+            check_stem("image_IFOG")
+            try:
+                create_fog_band(bands)
+            except StandardError:
+                log.error("Fog band creation failed")
+                raise
+
+        # These steps used to be part of the glue scripts
+        # Due to laziness they are just called as separate functions here
+        for (band_kind, band_id),band_job in bands.items():
+            if band_kind != BKIND_DNB or not scale_dnb:
+                # We don't need to scale non-DNB data
+                band_job["fbf_swath"] = band_job["fbf_img"]
+                continue
+
+            log.info("Prescaling DNB data...")
+            check_stem("prescale_dnb")
+            try:
+                fbf_swath = run_dnb_scale(
+                        band_job["fbf_img"],
+                        band_job["fbf_mode"],
+                        new_dnb=new_dnb # XXX
+                        )
+                band_job["fbf_swath"] = fbf_swath
+            except StandardError:
+                log.error("Unexpected error DNB, removing job...")
+                log.debug("DNB scaling error:", exc_info=1)
+                del bands[(band_kind, band_id)]
+
+        return meta_data
 
 def main():
     import optparse
