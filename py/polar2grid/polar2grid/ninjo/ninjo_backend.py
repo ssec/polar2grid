@@ -416,15 +416,15 @@ def scale_data(image_data, data_kind, *args, **kwargs):
     if "fill" in kwargs:
         kwargs["fill_in"] = kwargs["fill"]
 
-    if data_kind == K_REFLECTANCE:
+    if data_kind == DKIND_REFLECTANCE:
         # Extra 100 to turn reflectance 0-1 into albedo
         return unlinear_scale(image_data, 0.490196/100.0, 0, *args, **kwargs)
-    elif data_kind == K_RADIANCE:
+    elif data_kind == DKIND_RADIANCE:
         return unlinear_scale(image_data, 1/255.0, 0, *args, **kwargs)
-    elif data_kind == K_BTEMP:
+    elif data_kind == DKIND_BTEMP:
         # Extra 273.15 to convert to C from K
         return unlinear_scale(image_data, -0.5, 40+273.15, *args, **kwargs)
-    elif data_kind == K_FOG:
+    elif data_kind == DKIND_FOG:
         # Extra 273.15 to convert to C from K
         return unlinear_scale(image_data, -0.5, 40+273.15, *args, **kwargs)
     else:

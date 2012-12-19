@@ -180,6 +180,7 @@ def run_glue(filepaths,
     Call the processing function in separate process or same process depending
     on value of `multiprocess` keyword.
     """
+    create_pseudo = False #XXX: This is a SSEC only product
     # Rewrite/force parameters to specific format
     filepaths = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(filepaths) ]
 
