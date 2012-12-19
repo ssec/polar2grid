@@ -193,13 +193,13 @@ band2const = {
 # missing value sentinels for different datasets
 # 0 if scaling exists, 1 if scaling is None
 MISSING_GUIDE = {
-                DKIND_REFLECTANCE: (lambda A: A>=65528, lambda A:A<0.0),
-                DKIND_RADIANCE: (lambda A: A>=65528, lambda A: A<0.0),
-                DKIND_BTEMP: (lambda A: A>=65528, lambda A: A<0.0),
-                K_SOLARZENITH: (lambda A: A>=65528, lambda A: A<0.0),
-                K_MODESCAN: (lambda A: A>1, lambda A: A>1),
-                K_LATITUDE: (lambda A: A>=65528, lambda A: A<=-999),
-                K_LONGITUDE: (lambda A: A>=65528, lambda A: A<=-999)
+                DKIND_REFLECTANCE : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                DKIND_RADIANCE    : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                DKIND_BTEMP       : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                K_SOLARZENITH     : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                K_MODESCAN        : ( lambda A: A>1,      lambda A: A >  1      ),
+                K_LATITUDE        : ( lambda A: A>=65528, lambda A: A <= -999   ),
+                K_LONGITUDE       : ( lambda A: A>=65528, lambda A: A <= -999   )
                 }
 
 
