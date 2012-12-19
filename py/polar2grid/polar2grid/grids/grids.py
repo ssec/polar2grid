@@ -36,7 +36,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 script_dir = os.path.split(os.path.realpath(__file__))[0]
-GRIDS_DIR = script_dir #os.path.split(script_dir)[0] # grids directory is in root pkg dir
+GRIDS_DIR = os.environ.get("POLAR2GRID_GRIDS_DIR", script_dir)
 SHAPES_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_SHAPES_CONFIG", "grid_shapes.conf")
 GRIDS_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
 
@@ -44,168 +44,6 @@ GRIDS_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
 SHAPES = None
 GPD_GRIDS = None
 PROJ4_GRIDS = None
-
-def _load_proj_string(proj_str):
-    """Wrapper to accept epsg strings or proj4 strings
-    """
-    if proj_str[:4].lower() == "epsg":
-        return pyproj.Proj(init=proj_str)
-    else:
-        return pyproj.Proj(proj_str)
-
-def read_shapes_config_str(config_str):
-    # NEW RECORD: Most illegible list comprehensions
-    shapes = dict(
-            (parts[0],tuple([float(x) for x in parts[1:6]])) for parts in
-                    [ [ part.strip() for part in line.split(",") ] for line in config_str.split("\n") if line and not line.startswith("#") ]
-            )
-    return shapes
-
-def read_shapes_config(config_filepath):
-    """Read the "grid_shapes.conf" file and create a dictionary mapping the
-    grid name to the bounding box information held in the configuration file.
-    """
-    full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
-    if not os.path.exists(full_config_filepath):
-        try:
-            config_str = get_resource_string(__name__, config_filepath)
-            return read_shapes_config_str(config_str)
-        except StandardError:
-            log.error("Shapes configuration file '%s' does not exist" % (config_filepath,))
-            raise ValueError("Shapes configuration file '%s' does not exist" % (config_filepath,))
-
-    config_str = open(full_config_filepath, 'r').read()
-    return read_shapes_config_str(config_str)
-
-def read_grids_config_str(config_str):
-    gpd_grids = {}
-    proj4_grids = {}
-
-    for line in config_str.split("\n"):
-        # Skip comments and empty lines
-        if not line or line.startswith("#") or line.startswith("\n"): continue
-
-        # Clean up the configuration line
-        line = line.strip("\n,")
-        parts = [ part.strip() for part in line.split(",") ]
-
-        if len(parts) != 5 and len(parts) != 9:
-            log.error("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
-            raise ValueError("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
-
-        grid_name = parts[0]
-        if (grid_name in gpd_grids) or (grid_name in proj4_grids):
-            log.error("Grid '%s' is in grid config more than once" % (grid_name,))
-            raise ValueError("Grid '%s' is in grid config more than once" % (grid_name,))
-
-        grid_type = parts[1].lower()
-        if grid_type == "gpd":
-            gpd_filepath = parts[2]
-            if not os.path.isabs(gpd_filepath):
-                # Its not an absolute path so it must be in the grids dir
-                gpd_filepath = os.path.join(GRIDS_DIR, gpd_filepath)
-            gpd_grids[grid_name] = {}
-            gpd_grids[grid_name]["grid_kind"] = GRID_KIND_GPD
-            gpd_grids[grid_name]["gpd_filepath"] = gpd_filepath
-
-            # Width,Height
-            try:
-                width = int(parts[3])
-                gpd_grids[grid_name]["grid_width"] = width
-                height = int(parts[4])
-                gpd_grids[grid_name]["grid_height"] = height
-            except StandardError:
-                log.error("Could not convert gpd grid width and height: '%s'" % (line,))
-                raise
-        elif grid_type == "proj4":
-            proj4_str = parts[2]
-            # Test to make sure the proj4_str is valid in pyproj's eyes
-            try:
-                p = _load_proj_string(proj4_str)
-                del p
-            except StandardError:
-                log.error("Invalid proj4 string in '%s'" % (line))
-                raise
-
-            # Some parts can be None, but not all
-            try:
-                if parts[3] == "None" or parts[3] == '': grid_width=None
-                else: grid_width = int(parts[3])
-                if parts[4] == "None" or parts[4] == '': grid_height=None
-                else: grid_height = int(parts[4])
-                if parts[5] == "None" or parts[5] == '': pixel_size_x=None
-                else: pixel_size_x = float(parts[5])
-                if parts[6] == "None" or parts[6] == '': pixel_size_y=None
-                else: pixel_size_y = float(parts[6])
-                if parts[7] == "None" or parts[7] == '': grid_origin_x=None
-                else: grid_origin_x = float(parts[7])
-                if parts[8] == "None" or parts[8] == '': grid_origin_y=None
-                else: grid_origin_y = float(parts[8])
-            except StandardError:
-                log.error("Could not parse proj4 grid configuration: '%s'" % (line))
-                raise
-
-            if (pixel_size_x is None and pixel_size_y is not None) or \
-                    (pixel_size_x is not None and pixel_size_y is None):
-                log.error("Both or neither pixel sizes must be specified for '%s'" % grid_name)
-                raise ValueError("Both or neither pixel sizes must be specified for '%s'" % grid_name)
-            if (grid_width is None and grid_height is not None) or \
-                    (grid_width is not None and grid_height is None):
-                log.error("Both or neither grid sizes must be specified for '%s'" % grid_name)
-                raise ValueError("Both or neither grid sizes must be specified for '%s'" % grid_name)
-            if (grid_origin_x is None and grid_origin_y is not None) or \
-                    (grid_origin_x is not None and grid_origin_y is None):
-                log.error("Both or neither grid origins must be specified for '%s'" % grid_name)
-                raise ValueError("Both or neither grid origins must be specified for '%s'" % grid_name)
-            if grid_width is None and pixel_size_x is None:
-                log.error("Either grid size or pixel size must be specified for '%s'" % grid_name)
-                raise ValueError("Either grid size or pixel size must be specified for '%s'" % grid_name)
-
-            proj4_grids[grid_name] = {}
-            proj4_grids[grid_name]["grid_kind"] = GRID_KIND_PROJ4
-            proj4_grids[grid_name]["proj4_str"]    = proj4_str
-            proj4_grids[grid_name]["pixel_size_x"] = pixel_size_x
-            proj4_grids[grid_name]["pixel_size_y"] = pixel_size_y
-            proj4_grids[grid_name]["grid_origin_x"]     = grid_origin_x
-            proj4_grids[grid_name]["grid_origin_y"]     = grid_origin_y
-            proj4_grids[grid_name]["grid_width"]        = grid_width
-            proj4_grids[grid_name]["grid_height"]       = grid_height
-        else:
-            log.error("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type,grid_name))
-            raise ValueError("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type,grid_name))
-
-    return gpd_grids,proj4_grids
-
-def read_grids_config(config_filepath):
-    """Read the "grids.conf" file and create dictionaries mapping the
-    grid name to the necessary information. There are two dictionaries
-    created, one for gpd file grids and one for proj4 grids.
-
-    Format for gpd grids:
-    grid_name,gpd,gpd_filename
-
-    where 'gpd' is the actual text 'gpd' to define the grid as a gpd grid.
-
-    Format for proj4 grids:
-    grid_name,proj4,proj4_str,pixel_size_x,pixel_size_y,origin_x,origin_y,width,height
-
-    where 'proj4' is the actual text 'proj4' to define the grid as a proj4
-    grid.
-
-    """
-    full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
-    if not os.path.exists(full_config_filepath):
-        try:
-            config_str = get_resource_string(__name__, config_filepath)
-            return read_grids_config_str(config_str)
-        except StandardError:
-            log.error("Grids configuration file '%s' does not exist" % (config_filepath,))
-            log.debug("Grid configuration error: ", exc_info=1)
-            raise
-
-    config_file = open(full_config_filepath, "r")
-    config_str = config_file.read()
-    return read_grids_config_str(config_str)
 
 def determine_grid_coverage(lon_data, lat_data, grids):
     """Take latitude and longitude arrays and a list of grids and determine
@@ -339,6 +177,344 @@ def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
         raise ValueError(msg)
 
     return grid_jobs
+
+
+# Projection tools
+def from_proj4(proj4_str):
+    proj4_elements = proj4_str.split(" ")
+    proj4_dict = dict([ y.split("=") for y in [ x.strip("+") for x in proj4_elements ] ])
+    return proj4_dict
+
+def to_proj4(proj4_dict):
+    """Convert a dictionary of proj4 parameters back into a proj4 string.
+
+    >>> proj4_str = "+proj=lcc +a=123456 +b=12345"
+    >>> proj4_dict = from_proj4(proj4_str)
+    >>> new_proj4_str = to_proj4(proj4_dict)
+    >>> assert(new_proj4_str == proj4_str)
+    """
+    # Make sure 'proj' is first, some proj4 parsers don't accept it otherwise
+    proj4_str = "+proj=%s" % proj4_dict.pop("proj")
+    proj4_str = proj4_str + " " + " ".join(["+%s=%s" % (k,str(v)) for k,v in proj4_dict.items()])
+    return proj4_str
+
+def clean_string(s):
+    s = s.replace("-", "")
+    s = s.replace("(", "")
+    s = s.replace(")", "")
+    s = s.replace(" ", "")
+    s = s.upper()
+    return s
+
+def remove_comments(s, comment=";"):
+    s = s.strip()
+    c_idx = s.find(comment)
+    if c_idx != -1:
+        return s[:c_idx].strip()
+    return s
+
+gpd_conv_funcs = {
+        # gpd file stuff:
+        "GRIDWIDTH" : int,
+        "GRIDHEIGHT" : int,
+        "GRIDMAPUNITSPERCELL" : float,
+        "GRIDCELLSPERMAPUNIT" : float,
+        # mpp file stuff:
+        "MAPPROJECTION" : clean_string,
+        "MAPREFERENCELATITUDE" : float,
+        "MAPSECONDREFERENCELATITUDE" : float,
+        "MAPREFERENCELONGITUDE" : float,
+        "MAPEQUATORIALRADIUS" : float,
+        "MAPPOLARRADIUS" : float,
+        "MAPORIGINLATITUDE" : float,
+        "MAPORIGINLONGITUDE" : float,
+        "MAPECCENTRICITY" : float,
+        "MAPECCENTRICITYSQUARED" : float,
+        "MAPFALSEEASTING" : float,
+        "MAPSCALE" : float
+        }
+
+def parse_gpd_str(gpd_file_str):
+    gpd_dict = {}
+    lines = gpd_file_str.split("\n")
+    for line in lines:
+        line_parts = line.split(":")
+        if len(line_parts) != 2:
+            log.error("Incorrect gpd syntax: more than one ':' ('%s')" % line)
+            continue
+
+        key = clean_string(line_parts[0])
+        val = remove_comments(line_parts[1])
+
+        if key not in gpd_conv_funcs:
+            log.error("Can't parse gpd file, don't know how to handle key '%s'" % key)
+            raise ValueError("Can't parse gpd file, don't know how to handle key '%s'" % key)
+        conv_func = gpd_conv_funcs[key]
+        val = conv_func(val)
+        gpd_dict[key] = val
+    return gpd_dict
+
+def parse_gpd(gpd_filepath):
+    full_gpd_filepath = os.path.realpath(os.path.expanduser(gpd_filepath))
+    if not os.path.exists(full_gpd_filepath):
+        try:
+            gpd_str = get_resource_string(__name__, gpd_filepath)
+        except StandardError:
+            log.error("GPD file '%s' does not exist" % (gpd_filepath,))
+            raise ValueError("GPD file '%s' does not exist" % (gpd_filepath,))
+    else:
+        gpd_str = open(full_gpd_filepath, 'r').read()
+
+    try:
+        gpd_dict = parse_gpd_str(gpd_str)
+    except StandardError:
+        log.error("GPD file '%s' could not be parsed." % (gpd_filepath,))
+        raise
+
+    return gpd_dict
+
+gpd_proj_to_proj4 = {
+        "ALBERSCONICEQUALAREA" : "aea",
+        "AZIMUTHALEQUALAREA" : None,
+        "AZIMUTHALEQUALAREAELLIPSOID" : None,
+        "CYLINDRICALEQUALAREA" : "cea",
+        "CYLINDRICALEQUALAREAELLIPSOID" : None,
+        "CYLINDRICALEQUIDISTANT" : "eqc",
+        "INTEGERIZEDSINUSOIDAL" : None,
+        "INTERRUPTEDHOMOLOSINEEQUALAREA" : "igh",
+        "LAMBERTCONICCONFORMALELLIPSOID" : "lcc",
+        "MERCATOR" : "merc",
+        "MOLLWEIDE" : "moll",
+        "ORTHOGRAPHIC" : "ortho",
+        "POLARSTEREOGRAPHIC" : "ups",
+        "POLARSTEREOGRAPHICELLIPSOID" : "ups",
+        "SINUSOIDAL" : None,
+        "TRANSVERSEMERCATOR" : "tmerc",
+        "TRANSVERSEMERCATORELLIPSOID" : None,
+        "UNIVERSALTRANSVERSEMERCATOR" : "utm"
+        }
+
+gpd2proj4 = {
+        # gpd file stuff:
+        "GRIDWIDTH" : None,
+        "GRIDHEIGHT" : None,
+        "GRIDMAPUNITSPERCELL" : None,
+        "GRIDCELLSPERMAPUNIT" : None,
+        # mpp file stuff:
+        "MAPPROJECTION" : "proj",
+        "MAPREFERENCELATITUDE" : ["lat_0","lat_1"],
+        "MAPSECONDREFERENCELATITUDE" : "lat_ts",
+        "MAPREFERENCELONGITUDE" : "lon_0",
+        "MAPEQUATORIALRADIUS" : "a",
+        "MAPPOLARRADIUS" : "b",
+        "MAPORIGINLATITUDE" : None,
+        "MAPORIGINLONGITUDE" : None,
+        "MAPECCENTRICITY" : "e",
+        "MAPECCENTRICITYSQUARED" : "es",
+        "MAPFALSEEASTING" : "x_0",
+        "MAPSCALE" : None # ?
+        }
+
+def _gpd2proj4(gpd_dict):
+    proj4_dict = {}
+    for k,v in gpd_dict.items():
+        if k not in gpd2proj4:
+            log.error("Don't know how to convert gpd %s to proj.4" % k)
+            raise ValueError("Don't know how to convert gpd %s to proj.4" % k)
+        if k == "MAPPROJECTION":
+            # Special case
+            proj4_dict[gpd2proj4[k]] = gpd_proj_to_proj4[v]
+            if proj4_dict[gpd2proj4[k]] is None:
+                log.warning("Could not find equivalent proj4 projection name for %s" % v)
+        elif k == "MAPREFERENCELATITUDE":
+            pkey = gpd2proj4[k]
+            pk1,pk2 = pkey
+            proj4_dict[pk1] = v
+            proj4_dict[pk2] = v
+        else:
+            pkey = gpd2proj4[k]
+            if pkey is not None:
+                proj4_dict[gpd2proj4[k]] = v
+
+    return proj4_dict
+
+
+def gpd_to_proj4(gpd_fn):
+    gpd_file = open(gpd_fn, "r")
+    gpd_dict = _parse_gpd(gpd_file)
+    proj4_dict = _gpd2proj4(gpd_dict)
+    return proj4_dict,gpd_dict
+
+### Configuration file functions ###
+
+def _load_proj_string(proj_str):
+    """Wrapper to accept epsg strings or proj4 strings
+    """
+    if proj_str[:4].lower() == "epsg":
+        return pyproj.Proj(init=proj_str)
+    else:
+        return pyproj.Proj(proj_str)
+
+def read_shapes_config_str(config_str):
+    # NEW RECORD: Most illegible list comprehensions
+    shapes = dict(
+            (parts[0],tuple([float(x) for x in parts[1:6]])) for parts in
+                    [ [ part.strip() for part in line.split(",") ] for line in config_str.split("\n") if line and not line.startswith("#") ]
+            )
+    return shapes
+
+def read_shapes_config(config_filepath):
+    """Read the "grid_shapes.conf" file and create a dictionary mapping the
+    grid name to the bounding box information held in the configuration file.
+    """
+    full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
+    if not os.path.exists(full_config_filepath):
+        try:
+            config_str = get_resource_string(__name__, config_filepath)
+            return read_shapes_config_str(config_str)
+        except StandardError:
+            log.error("Shapes configuration file '%s' does not exist" % (config_filepath,))
+            raise ValueError("Shapes configuration file '%s' does not exist" % (config_filepath,))
+
+    config_str = open(full_config_filepath, 'r').read()
+    return read_shapes_config_str(config_str)
+
+def read_grids_config_str(config_str):
+    gpd_grids = {}
+    proj4_grids = {}
+
+    for line in config_str.split("\n"):
+        # Skip comments and empty lines
+        if not line or line.startswith("#") or line.startswith("\n"): continue
+
+        # Clean up the configuration line
+        line = line.strip("\n,")
+        parts = [ part.strip() for part in line.split(",") ]
+
+        if len(parts) != 5 and len(parts) != 9:
+            log.error("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
+            raise ValueError("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
+
+        grid_name = parts[0]
+        if (grid_name in gpd_grids) or (grid_name in proj4_grids):
+            log.error("Grid '%s' is in grid config more than once" % (grid_name,))
+            raise ValueError("Grid '%s' is in grid config more than once" % (grid_name,))
+
+        grid_type = parts[1].lower()
+        if grid_type == "gpd":
+            gpd_filepath = parts[2]
+            if not os.path.isabs(gpd_filepath):
+                # Its not an absolute path so it must be in the grids dir
+                # XXX: This is only done because ll2cr requires an actual filepath
+                gpd_filepath = os.path.join(GRIDS_DIR, gpd_filepath)
+            gpd_grids[grid_name] = {}
+            gpd_grids[grid_name]["grid_kind"] = GRID_KIND_GPD
+            gpd_grids[grid_name]["gpd_filepath"] = gpd_filepath
+
+            # Width,Height
+            # This is an artifact of when we didn't read the actual file
+            try:
+                width = int(parts[3])
+                gpd_grids[grid_name]["grid_width"] = width
+                height = int(parts[4])
+                gpd_grids[grid_name]["grid_height"] = height
+            except StandardError:
+                log.error("Could not convert gpd grid width and height: '%s'" % (line,))
+                raise
+
+            # Read the file and get information about the grid
+            gpd_dict = parse_gpd(gpd_filepath)
+            gpd_grids[grid_name].update(**gpd_dict)
+
+        elif grid_type == "proj4":
+            proj4_str = parts[2]
+            # Test to make sure the proj4_str is valid in pyproj's eyes
+            try:
+                p = _load_proj_string(proj4_str)
+                del p
+            except StandardError:
+                log.error("Invalid proj4 string in '%s'" % (line))
+                raise
+
+            # Some parts can be None, but not all
+            try:
+                if parts[3] == "None" or parts[3] == '': grid_width=None
+                else: grid_width = int(parts[3])
+                if parts[4] == "None" or parts[4] == '': grid_height=None
+                else: grid_height = int(parts[4])
+                if parts[5] == "None" or parts[5] == '': pixel_size_x=None
+                else: pixel_size_x = float(parts[5])
+                if parts[6] == "None" or parts[6] == '': pixel_size_y=None
+                else: pixel_size_y = float(parts[6])
+                if parts[7] == "None" or parts[7] == '': grid_origin_x=None
+                else: grid_origin_x = float(parts[7])
+                if parts[8] == "None" or parts[8] == '': grid_origin_y=None
+                else: grid_origin_y = float(parts[8])
+            except StandardError:
+                log.error("Could not parse proj4 grid configuration: '%s'" % (line))
+                raise
+
+            if (pixel_size_x is None and pixel_size_y is not None) or \
+                    (pixel_size_x is not None and pixel_size_y is None):
+                log.error("Both or neither pixel sizes must be specified for '%s'" % grid_name)
+                raise ValueError("Both or neither pixel sizes must be specified for '%s'" % grid_name)
+            if (grid_width is None and grid_height is not None) or \
+                    (grid_width is not None and grid_height is None):
+                log.error("Both or neither grid sizes must be specified for '%s'" % grid_name)
+                raise ValueError("Both or neither grid sizes must be specified for '%s'" % grid_name)
+            if (grid_origin_x is None and grid_origin_y is not None) or \
+                    (grid_origin_x is not None and grid_origin_y is None):
+                log.error("Both or neither grid origins must be specified for '%s'" % grid_name)
+                raise ValueError("Both or neither grid origins must be specified for '%s'" % grid_name)
+            if grid_width is None and pixel_size_x is None:
+                log.error("Either grid size or pixel size must be specified for '%s'" % grid_name)
+                raise ValueError("Either grid size or pixel size must be specified for '%s'" % grid_name)
+
+            proj4_grids[grid_name] = {}
+            proj4_grids[grid_name]["grid_kind"] = GRID_KIND_PROJ4
+            proj4_grids[grid_name]["proj4_str"]    = proj4_str
+            proj4_grids[grid_name]["pixel_size_x"] = pixel_size_x
+            proj4_grids[grid_name]["pixel_size_y"] = pixel_size_y
+            proj4_grids[grid_name]["grid_origin_x"]     = grid_origin_x
+            proj4_grids[grid_name]["grid_origin_y"]     = grid_origin_y
+            proj4_grids[grid_name]["grid_width"]        = grid_width
+            proj4_grids[grid_name]["grid_height"]       = grid_height
+        else:
+            log.error("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type,grid_name))
+            raise ValueError("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type,grid_name))
+
+    return gpd_grids,proj4_grids
+
+def read_grids_config(config_filepath):
+    """Read the "grids.conf" file and create dictionaries mapping the
+    grid name to the necessary information. There are two dictionaries
+    created, one for gpd file grids and one for proj4 grids.
+
+    Format for gpd grids:
+    grid_name,gpd,gpd_filename
+
+    where 'gpd' is the actual text 'gpd' to define the grid as a gpd grid.
+
+    Format for proj4 grids:
+    grid_name,proj4,proj4_str,pixel_size_x,pixel_size_y,origin_x,origin_y,width,height
+
+    where 'proj4' is the actual text 'proj4' to define the grid as a proj4
+    grid.
+
+    """
+    full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
+    if not os.path.exists(full_config_filepath):
+        try:
+            config_str = get_resource_string(__name__, config_filepath)
+            return read_grids_config_str(config_str)
+        except StandardError:
+            log.error("Grids configuration file '%s' does not exist" % (config_filepath,))
+            log.debug("Grid configuration error: ", exc_info=1)
+            raise
+
+    config_file = open(full_config_filepath, "r")
+    config_str = config_file.read()
+    return read_grids_config_str(config_str)
 
 def validate_configs(shapes_dict, gpd_dict, proj4_dict):
     shapes_grid_names = set(shapes_dict.keys())

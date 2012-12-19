@@ -484,14 +484,6 @@ def _linear_normalization_from_0to1 (data, mask, theoretical_max, theoretical_mi
         theoretical_max = theoretical_max - theoretical_min
     data[mask] = data[mask] / theoretical_max
 
-# Needs to be declared after all of the scaling functions
-KNOWN_RESCALE_KINDS = {
-        'sqrt' : sqrt_scale,
-        'linear' : linear_scale,
-        'raw' : passive_scale,
-        'btemp' : bt_scale
-        }
-
 # DEFAULTS
 RESCALE_FOR_KIND = {
         DKIND_RADIANCE    : (linear_scale, (255.0,0)),
@@ -514,11 +506,12 @@ class Rescaler(roles.RescalerRole):
         return os.path.split(os.path.realpath(__file__))[0]
 
     _known_rescale_kinds = {
-                'sqrt'   : sqrt_scale,
-                'linear' : linear_scale,
-                'raw'    : passive_scale,
-                'btemp'  : bt_scale,
-                'fog'    : fog_scale
+                'sqrt'     : sqrt_scale,
+                'linear'   : linear_scale,
+                'raw'      : passive_scale,
+                'btemp'    : bt_scale,
+                'fog'      : fog_scale,
+                'unlinear' : unlinear_scale
                 }
     @property
     def known_rescale_kinds(self):

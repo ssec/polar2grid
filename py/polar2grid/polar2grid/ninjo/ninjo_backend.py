@@ -8,16 +8,20 @@ places them correctly in to the modified geotiff format accepted by NinJo.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         June 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import Workspace,utc_now,K_RADIANCE,K_REFLECTANCE,K_BTEMP,K_FOG
+from polar2grid.core import Workspace,roles
+from polar2grid.core.time_utils import utc_now
+from polar2grid.core.constants import *
+from polar2grid.core.rescale import Rescaler
+from polar2grid.core.dtype import clip_to_data_type
 from polar2grid import libtiff
 from polar2grid.libtiff import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
-from polar2grid.rescale import unlinear_scale,ubyte_filter
+from .ninjo_config import _create_config_id,load_grid_config,load_band_config,DEFAULT_GRID_CONFIG_FILE,DEFAULT_BAND_CONFIG_FILE
+from ..grids.grids import get_grid_info
 import numpy
 
 import os
@@ -26,6 +30,9 @@ import logging
 import calendar
 
 log = logging.getLogger(__name__)
+
+DEFAULT_8BIT_RCONFIG = "rescale_configs/rescale_ninjo.8bit.conf"
+DEFAULT_OUTPUT_PATTERN = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s_%(grid_name)s.tif"
 
 ninjo_tags = []
 ninjo_tags.append(TIFFFieldInfo(33922, 6, 6, TIFFDataType.TIFF_DOUBLE, FIELD_CUSTOM, True, False, "ModelTiePoint"))
@@ -85,17 +92,15 @@ ninjo_tags.append(TIFFFieldInfo(40044, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CU
 ninjo_extension = add_tags(ninjo_tags)
 
 dkind2physical = {
-        K_RADIANCE : ("\0", "\0"),
-        K_REFLECTANCE : ("ALBEDO", "%"),
-        K_BTEMP : ("T", "CELSIUS")
-        #K_FOG : ("T", "CELSIUS")
+        DKIND_RADIANCE    : ("\0", "\0"),
+        DKIND_REFLECTANCE : ("ALBEDO", "%"),
+        DKIND_BTEMP       : ("T", "CELSIUS")
         }
 
 dkind2grad = {
-        K_RADIANCE : (1.0, 0.0),
-        K_REFLECTANCE : (0.490196,0.0),
-        K_BTEMP : (-0.5, 0.0)
-        #K_FOG : (-0.5, 0.0)
+        DKIND_RADIANCE    : (1.0, 0.0),
+        DKIND_REFLECTANCE : (0.490196,0.0),
+        DKIND_BTEMP       : (-0.5, 0.0)
         }
 
 def get_default_lw_colortable():
@@ -138,7 +143,8 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     :Keywords:
         data_kind : int
             polar2grid constant describing the sensor type of the
-            image data, such as K_REFLECTANCE or K_BTEMP. This is optional,
+            image data, such as DKIND_REFLECTANCE or DKIND_BTEMP. This is
+            optional,
             but if not specified then certain keywords below are required. If
             it is specified then a default can be determined for some of the
             keywords (such as `physic_value`).
@@ -158,11 +164,11 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
             Width of tiles on disk (default 512)
         tile_length : int
             Length of tiles on disk (default 512)
-        data_type : str
-            NinJo specific data type
-                data_type[0] = P (polar) or G (geostat)
-                data_type[1] = O (original) or P (product)
-                data_type[2:4] = RN or RB or RA or RN or AN (Raster, Bufr, ASCII, NIL)
+        data_cat : str
+            NinJo specific data category
+                data_cat[0] = P (polar) or G (geostat)
+                data_cat[1] = O (original) or P (product)
+                data_cat[2:4] = RN or RB or RA or RN or AN (Raster, Bufr, ASCII, NIL)
             Example: 'PORN' or 'GORN' or 'GPRN' or 'PPRN'
             (default 'PORN')
         pixel_xres : float
@@ -238,9 +244,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     log.info("Creating output file '%s'" % (output_fn,))
     out_tiff = TIFF.open(output_fn, "w")
 
-    if image_data.dtype != numpy.uint8:
-        log.warning("NinJo image data must be uint8, converting...")
-        image_data = image_data.astype(numpy.uint8)
+    image_data = clip_to_data_type(image_data, DTYPE_UINT8)
 
     # Extract keyword arguments
     data_kind = kwargs.pop("data_kind", None) # called as a backend
@@ -254,7 +258,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     data_source = str(kwargs.pop("data_source"))
     tile_width = int(kwargs.pop("tile_width", 512))
     tile_length = int(kwargs.pop("tile_length", 512))
-    data_type = str(kwargs.pop("data_type", "PORN"))
+    data_cat = str(kwargs.pop("data_cat", "PORN"))
     pixel_xres = float(kwargs.pop("pixel_xres"))
     pixel_yres = float(kwargs.pop("pixel_yres"))
     origin_lat = float(kwargs.pop("origin_lat"))
@@ -292,25 +296,25 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
 
     # Keyword checks / verification
     if cmap is None:
-        if data_kind == K_BTEMP or data_kind == K_FOG:
+        if data_kind == DKIND_BTEMP:
             cmap = get_default_lw_colortable()
         else:
             cmap = get_default_sw_colortable()
     elif len(cmap) != 3:
         log.error("Colormap (cmap) must be a list of 3 lists (RGB), not %d" % len(cmap))
 
-    if len(data_type) != 4:
+    if len(data_cat) != 4:
         log.error("NinJo data type must be 4 characters")
         raise ValueError("NinJo data type must be 4 characters")
-    if data_type[0] not in ["P", "G"]:
-        log.error("NinJo data type's first character must be 'P' or 'G' not '%s'" % data_type[0])
-        raise ValueError("NinJo data type's first character must be 'P' or 'G' not '%s'" % data_type[0])
-    if data_type[1] not in ["O", "P"]:
-        log.error("NinJo data type's second character must be 'O' or 'P' not '%s'" % data_type[1])
-        raise ValueError("NinJo data type's second character must be 'O' or 'P' not '%s'" % data_type[1])
-    if data_type[2:4] not in ["RN","RB","RA","BN","AN"]:
-        log.error("NinJo data type's last 2 characters must be one of %s not '%s'" % ("['RN','RB','RA','BN','AN']", data_type[2:4]))
-        raise ValueError("NinJo data type's last 2 characters must be one of %s not '%s'" % ("['RN','RB','RA','BN','AN']", data_type[2:4]))
+    if data_cat[0] not in ["P", "G"]:
+        log.error("NinJo data type's first character must be 'P' or 'G' not '%s'" % data_cat[0])
+        raise ValueError("NinJo data type's first character must be 'P' or 'G' not '%s'" % data_cat[0])
+    if data_cat[1] not in ["O", "P"]:
+        log.error("NinJo data type's second character must be 'O' or 'P' not '%s'" % data_cat[1])
+        raise ValueError("NinJo data type's second character must be 'O' or 'P' not '%s'" % data_cat[1])
+    if data_cat[2:4] not in ["RN","RB","RA","BN","AN"]:
+        log.error("NinJo data type's last 2 characters must be one of %s not '%s'" % ("['RN','RB','RA','BN','AN']", data_cat[2:4]))
+        raise ValueError("NinJo data type's last 2 characters must be one of %s not '%s'" % ("['RN','RB','RA','BN','AN']", data_cat[2:4]))
 
     if description is not None and len(description) >= 1000:
         log.error("NinJo description must be less than 1000 characters")
@@ -353,7 +357,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
         out_tiff.SetField("ChannelID", chan_id)
         out_tiff.SetField("HeaderVersion", 2)
         out_tiff.SetField("FileName", output_fn)
-        out_tiff.SetField("DataType", data_type)
+        out_tiff.SetField("DataType", data_cat)
         out_tiff.SetField("SatelliteNumber", "\x00") # Hardcoded to 0
         out_tiff.SetField("ColorDepth", 8) # Hardcoded to 8
         out_tiff.SetField("DataSource", data_source)
@@ -427,37 +431,131 @@ def scale_data(image_data, data_kind, *args, **kwargs):
         log.error("NinJo backend does not know how to scale data of kind %d" % data_kind)
         raise ValueError("NinJo backend does not know how to scale data of kind %d" % data_kind)
 
-def ninjo_backend(input_fn, output_fn, **kwargs):
-    # Extract keyword arguments
-    try:
-        kind = kwargs["kind"]
-        band = kwargs["band"]
-        data_kind = kwargs["data_kind"]
-    except KeyError:
-        log.error("Couldn't get required keyword for ninjo backend")
-        raise
+class Backend(roles.BackendRole):
+    grid_config = {}
+    band_config = {}
 
-    try:
-        W = Workspace(".")
-        image_attr = os.path.split(input_fn)[1].split('.')[0]
-        image_data = getattr(W, image_attr)
-        image_data = image_data.copy()
-    except StandardError:
-        log.error("Could not open input file %s" % input_fn)
-        raise
+    removable_file_patterns = [
+            "*_*_*_*_????????_??????_*.tif"
+            ]
 
-    try:
-        rescaled_data = scale_data(image_data,
-                **kwargs)
-        log.debug("Data min: %f, Data max: %f" % (rescaled_data.min(), rescaled_data.max()))
-    except StandardError:
-        log.error("Unexpected error while rescaling data")
-        raise
+    def __init__(self,
+            rescale_config = None,
+            grid_config    = None,
+            band_config    = None,
+            fill_value     = DEFAULT_FILL_VALUE,
+            output_pattern = None
+            ):
+        self.output_pattern = output_pattern or DEFAULT_OUTPUT_PATTERN
 
-    log.info("Clipping the scaled data to a 0 - 255 range")
-    rescaled_data = ubyte_filter(rescaled_data)
+        if grid_config is None:
+            log.debug("Using default NinJo grid configuration: '%s'" % DEFAULT_GRID_CONFIG_FILE)
+            grid_config = DEFAULT_GRID_CONFIG_FILE
+        load_grid_config(self.grid_config, grid_config)
 
-    return create_ninjo_tiff(rescaled_data, output_fn, **kwargs)
+        if band_config is None:
+            log.debug("Using default NinJo band configuration: '%s'" % DEFAULT_BAND_CONFIG_FILE)
+            band_config = DEFAULT_BAND_CONFIG_FILE
+        load_band_config(self.band_config, band_config)
+
+        if rescale_config is None:
+            rescale_config = DEFAULT_8BIT_RCONFIG
+        self.rescale_config = rescale_config
+
+        # Instatiate the rescaler
+        self.fill_in  = fill_value
+        self.fill_out = DEFAULT_FILL_VALUE
+        self.rescaler = Rescaler(config=self.rescale_config,
+                fill_in=self.fill_in, fill_out=self.fill_out
+                )
+
+    def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
+        band_entry_id = _create_config_id(sat, instrument, kind, band, data_kind)
+        if band_entry_id in self.band_config:
+            return self.grid_config.keys()
+        else:
+            return []
+
+    def create_product(self, sat, instrument, kind, band, data_kind, data,
+            start_time=None, end_time=None, grid_name=None,
+            output_filename=None,
+            fill_value=None):
+        """Function to be called from a connecting script to interpret the
+        information provided and create a NinJo compatible tiff image.
+
+        Most arguments are keywords to fit the backend interface, but some
+        of these keywords are required:
+
+            - start_time (required if `output_filename` is not):
+                Parameter to make the output filename more specific
+            - grid_name (required if `output_filename` is not):
+                Parameter to make the output filename more specific.
+                Does not have to equal an actual grid_name in a configuration
+                file.
+
+        Optional keywords:
+
+            - end_time (used if `output_filename` is not):
+                Parameter to make the output filename more specific, added to
+                start_time to produce "YYYYMMDD_HHMMSS_YYYYMMDD_HHMMSS"
+            - output_filename:
+                Force the filename of the geotiff being produced
+        """
+        fill_in = fill_value or self.fill_in
+
+        # Create the filename if it wasn't provided
+        if output_filename is None:
+            output_filename = self.create_output_filename(self.output_pattern,
+                    sat, instrument, kind, band, data_kind,
+                    start_time  = start_time,
+                    end_time    = end_time,
+                    grid_name   = grid_name,
+                    data_type   = DTYPE_UINT8,
+                    cols        = data.shape[1],
+                    rows        = data.shape[0]
+                    )
+
+        # Get information about the grid
+        band_entry_id = _create_config_id(sat, instrument, kind, band, data_kind)
+        band_config_entry = self.band_config[band_entry_id]
+        sat_id            = band_config_entry["sat_id"]
+        band_id           = band_config_entry["band_id"]
+        data_source       = band_config_entry["data_source"]
+        data_cat          = band_config_entry["data_cat"]
+
+        gpd_grid_info = get_grid_info(grid_name)
+        nproj,xres,yres = self.grid_config[grid_name]
+        map_origin_lat    = gpd_grid_info["MAPORIGINLATITUDE"]
+        map_origin_lon    = gpd_grid_info["MAPORIGINLONGITUDE"]
+        equ_radius        = gpd_grid_info["MAPEQUATORIALRADIUS"]
+        pol_radius        = gpd_grid_info.get("MAPPOLARRADIUS", equ_radius)
+        central_meridian  = gpd_grid_info.get("MAPREFERENCELONGITUDE", None)
+        ref_lat1          = gpd_grid_info.get("MAPSECONDREFERENCELATITUDE", None)
+        #ref_lat2          = gpd_grid_info.get("", None)
+
+        # Rescale the data based on the configuration that was loaded earlier
+        data = self.rescaler(sat, instrument, kind, band, data_kind, data,
+                fill_in=fill_in, fill_out=self.fill_out)
+
+        # Create NinJo tiff
+        create_ninjo_tiff(data, output_filename,
+                pixel_xres       = xres,
+                pixel_yres       = yres,
+                projection       = nproj,
+                origin_lat       = map_origin_lat,
+                origin_lon       = map_origin_lon,
+                radius_a         = equ_radius,
+                radius_b         = pol_radius,
+                central_meridian = central_meridian,
+                ref_lat1         = ref_lat1,
+                is_calibrated    = 1,
+                sat_id           = sat_id,
+                chan_id          = band_id,
+                data_source      = data_source,
+                data_cat         = data_cat,
+                image_dt         = start_time,
+                data_kind        = data_kind
+                )
 
 def test_write_tags(*args):
     """Create a sample NinJo file that writes all ninjo tags and a fake data

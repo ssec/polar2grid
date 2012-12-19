@@ -199,6 +199,10 @@ class RescalerRole(object):
 class BackendRole(object):
     __metaclass__ = ABCMeta
 
+    # Glob patterns for files that a glue script should remove
+    # default is none
+    removable_file_patterns = []
+
     def create_output_filename(self, pattern, sat, instrument, kind, band,
             data_kind, **kwargs):
         """Helper function that will take common meta data and put it into
