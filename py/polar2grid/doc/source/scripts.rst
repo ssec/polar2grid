@@ -17,7 +17,8 @@ name of the script.
     calls and may fail if those files exist during processing. The two common
     methods for dealing with this are the ``-R`` command line option
     described below or creating a working directory for each new call to a
-    glue script and removing it after copying or using the product files.
+    glue script and removing the working directory after copying or using
+    the product files.
 
 .. note::
 
@@ -78,6 +79,8 @@ regardless of the frontend or backend.
 viirs2awips
 -----------
 
+.. |this_frontend| replace:: :ref:`VIIRS Frontend <frontend_viirs>`
+.. |this_backend| replace:: :ref:`AWIPS Backend <backend_awips_netcdf>`
 
 :Python Script: ``polar2grid.viirs2awips``
 :Comp. Script: ``viirs2awips.sh``
@@ -110,13 +113,77 @@ information on what scaling it does to prepare the data for the
 AWIPS-compatible NetCDF file.
 
 .. cmdoption:: -g <grid_name> [<grid_name> ...]
+               --grids <grid_name> [<grid_name> ...]
 
     Specify the gpd grids to be gridded to. Specifying this option will skip
     the grid determination step. More than one grid can be specified at a
     time.
 
+.. cmdoption:: --fornav-d <float>
+
+    Specify the '-d' option for the fornav command line. From the fornav
+    documentation::
+
+         weight_distance_max: distance in grid cell units at which to apply a
+         weight of weight_min. Default is 1.0. Must be greater than 0.
+
+    The default for this glue script is 2.
+
+.. cmdoption:: --fornav-D <float>
+
+    Specify the '-D' option for the fornav command line. From the fornav
+    documentation::
+
+        weight_delta_max: maximum distance in grid cells in each grid
+        dimension over which to distribute a single swath cell.
+        Default is 10.0.
+
+    The default for this glue script is 40.
+
+.. cmdoption:: --num-procs <int>
+
+    Specify the number of processes in the pool that ll2cr/fornav
+    jobs are assigned to. The default is 1, meaning if multiple ll2cr
+    jobs are to be run, they will be run 1 at a time. If this flag is
+    set to 4, for example, then up to 4 ll2cr jobs can be run at once (in
+    parallel), then 4 fornav jobs can be run at once.
+
+.. cmdoption:: --sp
+
+    Force processing of navigation sets to happen serially instead of in
+    parallel. This does not affect the `--num-procs` option described above.
+
+.. cmdoption:: --no-pseudo
+
+    Don't create any pseudo-bands possible by the frontend. See the
+    |this_frontend| documentation for more information on the
+    pseudo-bands it creates.
+
+.. cmdoption:: --nc <ncml template>
+
+    Force the NCML template that the AWIPS backend uses. See the
+    :ref:`AWIPS Backend Documentation <backend_awips_netcdf>` for more
+    information.
+
+.. cmdoption:: --backend-config <backend configuration>
+
+    Specify the backend configuration to use. The default is determined by the
+    backend. Backends can load pre-made configurations that are packaged with
+    polar2grid. Backends can also load properly formatted CSV files if an
+    absolute or relative path is specified. See the |this_backend| for more
+    information.
+
+.. cmdoption:: --rescale-config <rescale configuration>
+
+    Specify the rescaling configuration to be used by the |this_backend|. If
+    one is not specified the backend will decide which configuration is best
+    for the format and data type specified.
+
 viirs2gtiff
 -----------
+
+.. |this_frontend| replace:: :ref:`VIIRS Frontend <frontend_viirs>`
+.. |this_backend| replace:: :ref:`Geotiff Backend <backend_geotiff>`
 
 :Python Script: ``polar2grid.viirs2gtiff``
 :Comp. Script: ``viirs2gtiff.sh``
@@ -137,6 +204,12 @@ or for a specific set of files and to force the PROJ.4
 for more options run::
 
     $POLAR2GRID_HOME/bin/viirs2gtiff.sh --help
+
+.. cmdoption:: --rescale-config <rescale configuration>
+
+    Specify the rescaling configuration to be used by the |this_backend|. If
+    one is not specified the backend will decide which configuration is best
+    for the format and data type specified.
 
 .. versionadded:: 1.0.0
 

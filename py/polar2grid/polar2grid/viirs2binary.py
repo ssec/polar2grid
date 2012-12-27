@@ -265,7 +265,7 @@ def run_glue(filepaths,
 
     return exit_status
 
-def main():
+def main(argv = sys.argv[1:]):
     import argparse
     description = """
     Create VIIRS swaths, remap them to a grid, and place that remapped data
@@ -279,10 +279,6 @@ def main():
             help="Specify the -D option for fornav")
     parser.add_argument('--fornav-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
-    parser.add_argument('-f', dest='data_files', nargs="+",
-            help="List of one or more hdf files")
-    parser.add_argument('-d', dest='data_dir', nargs="?",
-            help="Data directory to look for input data files")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
             help="Processing is sequential instead of one process per kind of band")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
@@ -309,7 +305,13 @@ def main():
     parser.add_argument('--rescale-config', dest='rescale_config', default=None,
             help="specify alternate rescale configuration file")
 
-    args = parser.parse_args()
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-f', dest='data_files', nargs="+",
+            help="List of one or more hdf files")
+    group.add_argument('-d', dest='data_dir', nargs="?",
+            help="Data directory to look for input data files")
+
+    args = parser.parse_args(args=argv)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=LOG_FN)
