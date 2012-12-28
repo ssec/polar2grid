@@ -4,7 +4,7 @@ The Chain
 This page describes the basic steps involved in going from start to finish
 in the polar2grid series of steps, or "The Chain".  Some of the steps
 described below are optional depending on the "glue" script being used.  See
-the :doc:`Glue Scripts <scripts>` documentation for more information on what steps
+the :doc:`Glue Scripts <glue_scripts/index>` documentation for more information on what steps
 are being used in your script of interest.
 
 See the :doc:`Developer's Guide <dev_guide>` if you are planning on writing
@@ -54,7 +54,7 @@ masks required to make this decision can not be remapped and used after.
 Therefore, this type of scaling must happen before remapping.
 
 Again, see the :doc:`Frontends <frontends>` section for more details on your
-specific frontend being used and the `Scripts <scripts>` section for any
+specific frontend being used and the `Scripts <glue_scripts/index>` section for any
 possible differences your glue script of interest implements.
 
 Pseudoband Creation

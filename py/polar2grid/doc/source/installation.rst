@@ -29,7 +29,7 @@ python package scripts) must be used to run any processing of
 satellite data to gridded data format. These "companion" scripts setup the
 rest of the environment and provide command line defaults.
 
-See :doc:`Glue Scripts </scripts>` for more information on running polar2grid.
+See :doc:`Glue Scripts <glue_scripts/index>` for more information on running polar2grid.
 The glue script documentation assumes the above for command line examples, but
 to reduce typing the following can also be added to your ``.bash_profile``::
 

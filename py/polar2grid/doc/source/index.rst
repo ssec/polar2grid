@@ -28,7 +28,7 @@ Contents
 
     installation
     chain
-    scripts
+    glue_scripts/index
     frontends
     backends
     rescaling
@@ -41,7 +41,7 @@ Grids
 -----
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     grids
 

@@ -8,6 +8,8 @@ supported for your specific grid.  For more details on each grid see
 the main
 `Grids Configuration File <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/grids/grids.conf>`_.
 
+.. _gpd_grids:
+
 GPD Grids
 ---------
 
@@ -38,6 +40,8 @@ AWIPS Grid 204
 :Description: Hawaii Grid
 :GPD File:    `grid204.gpd <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/grids/grid204.gpd>`_
 
+.. _proj4_grids:
+
 PROJ.4 Grids
 ------------
 
@@ -51,6 +55,8 @@ for more information on what each parameter means.
     If the grid does not have a parameter specified it will be derived from the
     data during remapping.  This allows for grids that fit to the data.
 
+.. _wgs84_fit:
+
 WGS84 Dynamic Fit
 ^^^^^^^^^^^^^^^^^
 :Grid Name: wgs84_fit
@@ -62,7 +68,6 @@ WGS84 Dynamic Fit
 :Y Pixel Size: 0.0001 radians
 :X Origin: None
 :Y Origin: None
-
 
 Lambert Conic Conformal Dynamic Fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -76,7 +81,6 @@ Lambert Conic Conformal Dynamic Fit
 :X Origin: None
 :Y Origin: None
 
-
 High Resolution Lambert Conic Conformal Dynamic Fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :Grid Name: lcc_fit_hr
@@ -89,8 +93,8 @@ High Resolution Lambert Conic Conformal Dynamic Fit
 :X Origin: None
 :Y Origin: None
 
-Polar-Stereographic North Pacific (Untested)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Polar-Stereographic North Pacific
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :Grid Name: polar_north_pacific
 :Description: 400m Northern Pacific Grid
 :PROJ.4 String: +proj=stere +lat_0=90 +lat_ts=45.0 +lon_0=-170
@@ -101,8 +105,8 @@ Polar-Stereographic North Pacific (Untested)
 :X Origin: None
 :Y Origin: None
 
-Polar-Stereographic South Pacific (Untested)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Polar-Stereographic South Pacific
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :Grid Name: polar_south_pacific
 :Description: 400m Southern Pacific Grid
 :PROJ.4 String: +proj=stere +lat_0=-90 +lat_ts=-45.0 +lon_0=-170
