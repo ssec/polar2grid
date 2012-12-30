@@ -288,8 +288,6 @@ def main(argv = sys.argv[1:]):
             help="Processing is sequential instead of one process per kind of band")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
-    parser.add_argument('-R', dest='remove_prev', default=False, action='store_true',
-            help="Delete any files that may conflict with future processing. Processing is not done with this flag.")
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
     parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
@@ -315,6 +313,8 @@ def main(argv = sys.argv[1:]):
             help="List of one or more hdf files")
     group.add_argument('-d', dest='data_dir', nargs="?",
             help="Data directory to look for input data files")
+    group.add_argument('-R', dest='remove_prev', default=False, action='store_true',
+            help="Delete any files that may conflict with future processing. Processing is not done with this flag.")
 
     args = parser.parse_args(args=argv)
 
