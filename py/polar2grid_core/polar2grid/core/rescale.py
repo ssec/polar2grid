@@ -45,22 +45,6 @@ def _make_lin_scale(m, b):
         return img
     return linear_scale
 
-def ubyte_filter(img):
-    """Convert image data to a numpy array with dtype `numpy.uint8` and set
-    values below zero to zero and values above 255 to 255.
-    """
-    numpy.clip(img, 0, 255, out=img)
-    img = img.astype(numpy.uint8)
-    return img
-
-def uint16_filter(img):
-    """Convert image data to a numpy array with dtype `numpy.uint16` and set
-    values below zero to zero and values above 65535 to 65535.
-    """
-    numpy.clip(img, 0, 65535, out=img)
-    img = img.astype(numpy.uint16)
-    return img
-
 def linear_scale(img, m, b, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     log.debug("Running 'linear_scale' with (m: %f, b: %f)..." % (m,b))
 

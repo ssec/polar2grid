@@ -15,10 +15,10 @@ __docformat__ = "restructuredtext en"
 from osgeo import gdal
 import osr
 
-from polar2grid.core.rescale import Rescaler,uint16_filter,ubyte_filter
+from polar2grid.core.rescale import Rescaler
 from polar2grid.core.constants import *
 from polar2grid.core import roles
-from polar2grid.core.dtype import str_to_dtype
+from polar2grid.core.dtype import str_to_dtype,clip_to_data_type
 
 import sys
 import logging
@@ -103,9 +103,9 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
         # do a linear scaling. No one should be scaling data to outside these
         # ranges anyway
         if etype == gdal.GDT_UInt16:
-            band_data = uint16_filter(band_data)
+            band_data = clip_to_data_type(band_data, DTYPE_UINT16)
         elif etype == gdal.GDT_Byte:
-            band_data = ubyte_filter(band_data)
+            band_data = clip_to_data_type(band_data, DTYPE_UINT8)
         if log_level <= logging.DEBUG:
             log.debug("Data min: %f, max: %f" % (band_data.min(),band_data.max()))
 

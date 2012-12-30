@@ -48,9 +48,10 @@ variables:
 
 from polar2grid.core import Workspace
 from polar2grid.core import roles
-from polar2grid.core.constants import DEFAULT_FILL_VALUE
+from polar2grid.core.constants import *
 from polar2grid.nc import create_nc_from_ncml
-from polar2grid.core.rescale import Rescaler,ubyte_filter
+from polar2grid.core.rescale import Rescaler
+from polar2grid.core.dtype import clip_to_data_type
 from .awips_config import get_awips_info,load_config as load_awips_config,can_handle_inputs as config_can_handle_inputs
 
 import os, sys, logging, re
@@ -94,7 +95,7 @@ def create_netcdf(nc_name, image, template, start_dt,
         raise ValueError("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape),str(image.shape)))
 
     # Convert to signed byte keeping large values large
-    image = ubyte_filter(image)
+    image = clip_to_data_type(image, DTYPE_UINT8)
 
     image_var[:] = image
     time_var = nc.variables["validTime"]
