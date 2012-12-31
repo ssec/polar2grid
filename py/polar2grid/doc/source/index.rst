@@ -36,6 +36,7 @@ Contents
     dev_guide
     advanced
     release_notes
+    glossary
 
 Grids
 -----

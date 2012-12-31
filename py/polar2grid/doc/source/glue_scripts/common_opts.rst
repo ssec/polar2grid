@@ -1,5 +1,3 @@
-:orphan:
-
 Common Glue Script Options
 --------------------------
 

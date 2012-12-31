@@ -1,6 +1,8 @@
 Installation
 ============
 
+.. include:: global.rst
+
 The polar2grid python package can be installed in 2 types of environments,
 as an individually installed python package or as part of the polar2grid
 software bundle.  The software bundle is the preferred, recommended,

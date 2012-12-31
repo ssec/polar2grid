@@ -1,6 +1,8 @@
 Rescaling
 =========
 
+.. include:: global.rst
+
 Rescaling is a polar2grid component shared by most backends that rescales
 gridded image data in the common case.  The underlying code also holds
 scaling functions that may be useful to frontends or glue scripts to equalize

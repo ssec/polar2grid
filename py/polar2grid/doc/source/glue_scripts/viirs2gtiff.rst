@@ -1,6 +1,8 @@
 viirs2gtiff
 ===========
 
+.. include:: ../global.rst
+
 .. |this_frontend| replace:: :ref:`VIIRS Frontend <frontend_viirs>`
 .. |this_backend| replace:: :ref:`Geotiff Backend <backend_geotiff>`
 .. |this_glue| replace:: viirs2gtiff
@@ -28,7 +30,6 @@ for more options run::
     $POLAR2GRID_HOME/bin/viirs2gtiff.sh --help
 
 .. include:: common_opts.rst
-    :start-line: 1
 
 Command Line Options
 --------------------

@@ -1,6 +1,8 @@
 Frontends
 =========
 
+.. include:: global.rst
+
 TODO
 
 .. _frontend_viirs:

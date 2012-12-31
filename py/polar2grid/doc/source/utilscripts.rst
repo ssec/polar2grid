@@ -1,6 +1,8 @@
 Utility Scripts
 ===============
 
+.. include:: global.rst
+
 The following are scripts that can be used to help analyze and/or verify
 polar2grid operations.
 

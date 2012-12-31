@@ -1,6 +1,8 @@
 Grids
 =====
 
+.. include:: global.rst
+
 Polar2grid is capable of handling gpd files or PROJ.4 strings to describe
 the grids being mapped to.
 See the :doc:`Backend Documentation </backends>` to see what grids are

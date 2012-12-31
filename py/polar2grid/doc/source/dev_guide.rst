@@ -1,6 +1,8 @@
 Developer's Guide
 =================
 
+.. include:: global.rst
+
 This guide is intended to ease the development of additional frontends,
 backends, or other components to the polar2grid package. It provides the
 general interface for each "chain link" as well as a minimal description
@@ -67,23 +69,6 @@ for polar2grid:
  - python packaging, specifically `distribute <http://packages.python.org/distribute/>`_ (setuptools)
  - git source code management system and the 'forking' and 'pull request'
    features of http://github.com
-
-Definitions
------------
-
-Job
-    Loosely used term to mean an incremental step in polar2grid processing.
-Pseudoband
-    Band created by processing 'raw' data from satellite files.  For example,
-    ``polar2grid.viirs`` can create a Fog product from 'raw' .h5 data.
-Glue Script
-    The script connecting every component together.  A glue script connects
-    the frontend, grid determiner, remapper, and backend.  There is one
-    glue script per task, so one for every frontend to backend connection.
-Navigation Set (or nav set):
-    A set of data files or jobs that share the same navigation data.
-Data Set:
-    A set of data files for a specific product or data kind.
 
 .. _formats_section:
 
@@ -295,7 +280,8 @@ The required flat binary files that should be created are:
 Data files and navigation files must have the same shape.  It is also assumed
 that all data files have 1 pair of navigation files (latitude and longitude).
 Frontends should be called once per set of navigation sharing files.  If it
-is desired or more efficient to break these navigation sets into smaller sets
+is desired or more efficient to break these
+:term:`navigation sets <navigation set>` into smaller sets
 this is up to the glue script and must be made possible by the frontend.
 
 The pieces of information in the metadata dictionary are listed below. All

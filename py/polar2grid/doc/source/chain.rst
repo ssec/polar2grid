@@ -1,6 +1,8 @@
 The Chain
 =========
 
+.. include:: global.rst
+
 This page describes the basic steps involved in going from start to finish
 in the polar2grid series of steps, or "The Chain".  Some of the steps
 described below are optional depending on the "glue" script being used.  See

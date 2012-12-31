@@ -1,6 +1,8 @@
 viirs2awips
 ===========
 
+.. include:: ../global.rst
+
 .. |this_frontend| replace:: :ref:`VIIRS Frontend <frontend_viirs>`
 .. |this_backend| replace:: :ref:`AWIPS Backend <backend_awips_netcdf>`
 
@@ -35,7 +37,6 @@ information on what scaling it does to prepare the data for the
 AWIPS-compatible NetCDF file.
 
 .. include:: common_opts.rst
-    :start-line: 1
 
 Command Line Options
 --------------------

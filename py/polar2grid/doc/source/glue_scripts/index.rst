@@ -1,6 +1,8 @@
 Glue Scripts
 ============
 
+.. include:: ../global.rst
+
 polar2grid uses specialized scripts to handle the high level processing of
 polar-orbiting satellite data to product generation.  These scripts are
 programmed in python and called glue scripts.  Each glue script has
