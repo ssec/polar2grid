@@ -4,18 +4,18 @@ viirs2binary
 .. include:: ../global.rst
 
 .. |this_frontend| replace:: :ref:`VIIRS Frontend <frontend_viirs>`
-.. |this_backend| replace:: :ref:`Binary Backend <backend_binary>`
+.. |this_backend| replace:: :doc:`Binary Backend <../backends/binary>`
 .. |this_glue| replace:: viirs2binary
 
 ..versionadded:: 1.0.0
 
 :Python Script: ``polar2grid.viirs2binary``
-:Comp. Script: ``viirs2binary.sh``
+:Bundle Script: ``viirs2binary.sh``
 
 This is used to process
 :ref:`VIIRS imager data <frontend_viirs>`
 into
-:ref:`binary files <backend_binary>`.  It can be run using the following
+:doc:`binary files <../backends/binary>`.  It can be run using the following
 command::
 
     $POLAR2GRID_HOME/bin/viirs2binary.sh -d /path/to/data
@@ -28,6 +28,8 @@ or for a specific set of files and to force the PROJ.4
 for more options run::
 
     $POLAR2GRID_HOME/bin/viirs2binary.sh --help
+
+.. program:: |this_glue|
 
 .. include:: common_opts.rst
 

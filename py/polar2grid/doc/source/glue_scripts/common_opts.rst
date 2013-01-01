@@ -13,7 +13,7 @@ regardless of the frontend or backend.
                --verbose
 
     Print detailed log messages. Increases in level from
-    ERROR -> WARNING -> INFO -> DEBUG. The default for companion scripts
+    ERROR -> WARNING -> INFO -> DEBUG. The default for :term:`bundle scripts`
     is INFO and for the python script the default is ERROR. To increase the
     level of detail add more ``-v`` to the command line.
 

@@ -26,9 +26,9 @@ Next, add this line to your ``.bash_profile``::
 
     export POLAR2GRID_HOME=/path/to/softwarebundle
 
-Without any other work, polar2grid "companion" scripts (as opposed to the
+Without any other work, polar2grid :term:`bundle scripts` (as opposed to the
 python package scripts) must be used to run any processing of
-satellite data to gridded data format. These "companion" scripts setup the
+satellite data to gridded data format. These :term:`bundle scripts` setup the
 rest of the environment and provide command line defaults.
 
 See :doc:`Glue Scripts <glue_scripts/index>` for more information on running polar2grid.

@@ -3,22 +3,25 @@ The Chain
 
 .. include:: global.rst
 
+.. Do NOT reference the term 'the chain', this is the describing page
+
 This page describes the basic steps involved in going from start to finish
-in the polar2grid series of steps, or "The Chain".  Some of the steps
-described below are optional depending on the "glue" script being used.  See
-the :doc:`Glue Scripts <glue_scripts/index>` documentation for more information on what steps
-are being used in your script of interest.
+in the polar2grid series of library calls, or "The Chain".  Some of the steps
+described below are optional depending on the :term:`glue script` being used.
+See the :doc:`Glue Scripts <glue_scripts/index>` documentation for more
+information on what steps are being used in your script of interest.
 
 See the :doc:`Developer's Guide <dev_guide>` if you are planning on writing
-your own "glue" script.
+your own :term:`glue script` or polar2grid component and would like detailed
+information on the inner-workings of a specific piece.
 
-The Frontend
-------------
+Frontends
+---------
 
-The frontend is usually the first major component used in "The Chain" that
+The frontend is usually the first major component used in "The Chain". It
 takes in satellite data files and produces binary data files and meta data
 information to be used later in processing.  The swath extraction, prescaling,
-and pseudoband creation section below describe the frontend in more detail.
+and pseudoband creation sections below describe the frontend in more detail.
 
 Swath Extraction
 ^^^^^^^^^^^^^^^^
@@ -55,14 +58,15 @@ the scene is during the daytime or nighttime or a mix of both.  The day/night
 masks required to make this decision can not be remapped and used after.
 Therefore, this type of scaling must happen before remapping.
 
-Again, see the :doc:`Frontends <frontends>` section for more details on your
-specific frontend being used and the `Scripts <glue_scripts/index>` section for any
+Again, see the :doc:`Frontends <frontends>` documentation for more details on
+your specific frontend being used and the
+:doc:`Glue Scripts <glue_scripts/index>` documentation for any
 possible differences your glue script of interest implements.
 
 Pseudoband Creation
 ^^^^^^^^^^^^^^^^^^^
 
-Pseudoband creation is an optional step for a frontend to create bands that
+:term:`Pseudoband` creation is an optional step for a frontend to create bands that
 are not provided by the data files being read in.  Frontends only do this if
 the calculations involved are simple.  Complex calculations are usually done
 in another software package and then made available to polar2grid as another
@@ -79,19 +83,28 @@ Grid determination is used to find out what grids it would be useful to
 remap the data into.  If the data doesn't overlap a grid in a significant way
 there's no point in attempting to remap the data to that grid.  There are
 different algorithms used to make this determination including 'bounding box'
-or 'polygon intersection' algorithms. Some scripts may also allow for the grid
-to be forced, skipping this step and the calculations involved.  This step
-also usually checks with the backend first to see what grids it knows how to
-handle.
+or 'polygon intersection' algorithms, although 'bounding box' is the only one
+implemented at this time. Some scripts may also allow for the grid
+to be forced, skipping this step and the calculations involved. 
+
+The other major responsibility of grid determination is to organize
+:term:`navigation sets <navigation set>` and the determined grids into
+:term:`grid jobs <grid job>`. The
+grid jobs can be passed to remapping to determine what data should be mapped
+to each grid. This step also usually checks with the backend to see what
+grids it knows how to handle to save on remapping time.
 
 Remapping
 ---------
 
-Remapping or gridding is the process of putting data swaths into an
-equidistant grid.  Polar2grid currently uses a 2-step remapping process.
-The first step is called 'll2cr', the second 'fornav'.  There is a python
+Remapping or gridding is the process of putting satellite data pixels into an
+equidistant grid for easier viewing, manipulation, and storage. Polar2grid
+currently uses a 2-step remapping process.
+The first step is called 'll2cr' and map the pixel location (lon/lat space)
+into grid space. The second step is called 'fornav' which interpolates the
+image data into the grid locations. There is a python
 and a C version of ll2cr and currently only a C version of fornav.  The
-C versions of ll2cr and fornav come from the ms2gt utility package
+C versions of ll2cr and fornav come from the ms2gt utility package.
 You can read more about ms2gt
 `here <http://nsidc.org/data/modis/ms2gt/>`_. The ms2gt utilities
 were originally used for MODIS data, but have been found to fit
@@ -110,7 +123,8 @@ ll2cr (C)
 
 ll2cr is a ms2gt utility that converts latitude and longitude ('ll') data into
 columns and rows ('cr') which can then be used in fornav.  It uses 'gpd' files
-along with the mapx library to map lon/lat points to cols/rows.  See the
+along with the mapx library to map lon/lat points of the satellite data
+to cols/rows of the grid described by the 'gpd' file.  See the
 :doc:`Developer's Guide <dev_guide>` for more information on creating new
 gpd grids.
 
@@ -118,16 +132,16 @@ ll2cr (python)
 ^^^^^^^^^^^^^^
 
 The python version of ll2cr is meant to be a replacement of the C version,
-using the more common proj4 library for mapping instead of mapx.  The main
+using the more common PROJ.4 library for mapping instead of mapx. The main
 advantage of the python version of ll2cr is that it can create dynamically
-sized grids that fit the data.  See the :doc:`Developer's Guide <dev_guide>`
+sized grids that fit the data. See the :doc:`Developer's Guide <dev_guide>`
 for more information on creating new proj4 grids.
 
 fornav
 ^^^^^^
 
 fornav is a ms2gt utility that remaps imager data to the columns and rows file
-created by ll2cr.  fornav uses elliptical weighted averaging during forward
+created by ll2cr. fornav uses elliptical weighted averaging during forward
 navigation.
 
 Backends
@@ -135,11 +149,11 @@ Backends
 
 Backends are run using the output of the fornav calls with any meta data that
 may be required to finish producing remapped products.  See the
-:doc:`Backends <backends>` section for more information. Besides pushing the
+:doc:`Backends <backends/index>` section for more information. Besides pushing the
 remapped data into an output file format, the backend also prepares the data
 for that output format.  This usually includes rescaling the data to a certain
 value range to fit the output format.  For example, the AWIPS backend only
-supports byte-sized values then the backend will scale the data to a 0-255
+supports byte-sized values so the backend will scale the data to a 0-255
 range.
 
 

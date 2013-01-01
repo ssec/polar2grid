@@ -1,20 +1,7 @@
-Backends
-========
-
-.. include:: global.rst
-
-Backends are polar2grid components that, given remapped image data and meta data,
-produce a file that can be used in another piece of software optimized for
-viewing of that data.
-
-For developers, the main advantage of defining backends is that it is rather
-simple to swap backends to make new polar2grid glue scripts.  This should
-simplify and shorten the development cycle of imager to product scripts.
-
-.. _backend_awips_netcdf:
-
 AWIPS NetCDF
-------------
+============
+
+.. include:: ../global.rst
 
 The AWIPS NetCDF backend takes remapped binary image data and creates an
 AWIPS-compatible NetCDF file.  To accomplish this the backend must rescale
@@ -59,28 +46,4 @@ Grid Name NCML File
 203       `grid203.ncml <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/awips/ncml/grid203.ncml>`_
 204       `grid204.ncml <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/awips/ncml/grid204.ncml>`_
 ========= =========
-
-.. _backend_geotiff:
-
-Geotiff
--------
-
-The geotiff backend puts gridded image data into a standard geotiff file.  It
-uses the GDAL python API to create the geotiff files.  Currently it can handle
-8-bit and 16-bit data and will scale depending on the 'etype' provided.  See
-the :doc:`Glue Scripts <glue_scripts/index>` documentation for geotiff backend options
-made available to the user.
-
-The Geotiff backend can handle any PROJ.4 grid.
-
-.. versionadded:: 1.0.0
-
-.. _backend_binary:
-
-Binary
-------
-
-The binary backend is a very simple backend that outputs the gridded data in
-a flat binary file for each band of data.  The binary backend can handle any
-grid, gpd or PROJ.4.
 

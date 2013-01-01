@@ -4,18 +4,18 @@ viirs2gtiff
 .. include:: ../global.rst
 
 .. |this_frontend| replace:: :ref:`VIIRS Frontend <frontend_viirs>`
-.. |this_backend| replace:: :ref:`Geotiff Backend <backend_geotiff>`
+.. |this_backend| replace:: :doc:`Geotiff Backend <../backends/gtiff>`
 .. |this_glue| replace:: viirs2gtiff
 
 .. versionadded:: 1.0.0
 
 :Python Script: ``polar2grid.viirs2gtiff``
-:Comp. Script: ``viirs2gtiff.sh``
+:Bundle Script: ``viirs2gtiff.sh``
 
 This is used to process
 :ref:`VIIRS imager data <frontend_viirs>`
 into
-:ref:`Geotiff images <backend_geotiff>`.
+:doc:`Geotiff images <../backends/gtiff>`.
 It can be run using the following command::
 
     $POLAR2GRID_HOME/bin/viirs2gtiff.sh -d /path/to/data
@@ -28,6 +28,8 @@ or for a specific set of files and to force the PROJ.4
 for more options run::
 
     $POLAR2GRID_HOME/bin/viirs2gtiff.sh --help
+
+.. program:: |this_glue|
 
 .. include:: common_opts.rst
 

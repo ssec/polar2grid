@@ -97,7 +97,7 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
             # all dependencies should be automatically installed
             ShellB3/bin/python -m easy_install -f http://larch.ssec.wisc.edu/cgi-bin/repos.cgi polar2grid
 
-    6. Copy any companion scripts and environment scripts to software bundle directory::
+    6. Copy any bundle scripts and environment scripts to software bundle directory::
 
         cp /path/to/repos/checkout/root/swbundle/* /path/to/polar2grid-swbundle-<version>/bin/
 

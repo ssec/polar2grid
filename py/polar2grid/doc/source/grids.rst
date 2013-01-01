@@ -5,7 +5,7 @@ Grids
 
 Polar2grid is capable of handling gpd files or PROJ.4 strings to describe
 the grids being mapped to.
-See the :doc:`Backend Documentation </backends>` to see what grids are
+See the :doc:`Backend Documentation <backends/index>` to see what grids are
 supported for your specific grid.  For more details on each grid see
 the main
 `Grids Configuration File <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/grids/grids.conf>`_.

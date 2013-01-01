@@ -4,15 +4,16 @@ viirs2awips
 .. include:: ../global.rst
 
 .. |this_frontend| replace:: :ref:`VIIRS Frontend <frontend_viirs>`
-.. |this_backend| replace:: :ref:`AWIPS Backend <backend_awips_netcdf>`
+.. |this_backend| replace:: :doc:`AWIPS Backend <../backends/awips_netcdf>`
+.. |this_glue| replace:: viirs2awips
 
 :Python Script: ``polar2grid.viirs2awips``
-:Comp. Script: ``viirs2awips.sh``
+:Bundle Script: ``viirs2awips.sh``
 
 This script is used to process
 :ref:`VIIRS imager data <frontend_viirs>`
 into
-:ref:`AWIPS compatible NetCDF <backend_awips_netcdf>`
+:doc:`AWIPS compatible NetCDF <../backends/awips_netcdf>`
 files.  It can be run using the following command::
 
     $POLAR2GRID_HOME/bin/viirs2awips.sh -d /path/to/data/
@@ -32,9 +33,11 @@ be provided.  However, `viirs2awips` creates the
 provided.  This glue script will also scale the DNB data using the method
 described :ref:`here <prescale_viirs_dnb>`.
 
-See the :ref:`backend_awips_netcdf` for more
+See the :doc:`../backends/awips_netcdf` for more
 information on what scaling it does to prepare the data for the
 AWIPS-compatible NetCDF file.
+
+.. program:: |this_glue|
 
 .. include:: common_opts.rst
 
@@ -91,7 +94,7 @@ Command Line Options
 .. cmdoption:: --nc <ncml template>
 
     Force the NCML template that the AWIPS backend uses. See the
-    :ref:`AWIPS Backend Documentation <backend_awips_netcdf>` for more
+    :doc:`AWIPS Backend Documentation <../backends/awips_netcdf>` for more
     information.
 
 .. cmdoption:: --backend-config <backend configuration>
