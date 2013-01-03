@@ -23,7 +23,7 @@ Glossary
         brightness temperature, reflectance, or radiance. Polar2grid uses
         constant values for data kinds and any command line flags that accept
         a data kind should expect the value of the constant. See the
-        `constants <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid_core/polar2grid/core/constants.py>`_
+        :ref:`constants <constants_data_kinds>`
         module for their current values. Data kinds are different from
         :term:`data types`. Data kind constants are prefixed
         with ``DKIND_``.
@@ -39,7 +39,7 @@ Glossary
         an 8-bit unsigned integer versus a 32-bit float. Polar2grid uses
         constant values for data types and any command line flags that accept
         a data kind should expect the value of the constant. See the
-        `constants <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid_core/polar2grid/core/constants.py>`_
+        :ref:`constants <constants_data_types>`
         module for their current values. Data types are different from
         :term:`data kinds`. Data type constants are prefixed
         with ``DTYPE_``.

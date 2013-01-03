@@ -41,7 +41,7 @@ use.  A solution may be to have another piece of software produce the input
 that polar2grid will remap or another piece of software that polar2grid
 provides the remapped input files for.
 
-Polar2grid is intended for polar-orbitting satellite data.  Geo-stationary
+Polar2grid is intended for polar-orbiting satellite data.  Geo-stationary
 data may work with the current tool-set, but is not guaranteed to always
 work.
 
@@ -387,7 +387,7 @@ TODO
 Remapping
 ---------
 
-Remapping is the process of mapping polar-orbitting satellite data pixels to
+Remapping is the process of mapping polar-orbiting satellite data pixels to
 an evenly spaced grid.  This grid is either equal-area or equal-angle
 depending on the projection provided.
 Polar2grid's remapping step is actually 2 separate steps. The first step

@@ -6,7 +6,7 @@ polar2grid
 
 Polar2grid is a software package providing scripts, utilities, and a series
 of functions and classes for reading
-polar-orbitting satellite data, remapping or gridding that data, and writing
+polar-orbiting satellite data, remapping or gridding that data, and writing
 it to a file format to be used by other software. Polar2grid is mainly used
 through one or more :term:`glue scripts <glue script>` that execute a common
 sequence of
@@ -36,6 +36,7 @@ Contents
     dev_guide
     advanced
     release_notes
+    constants
     glossary
 
 Grids

@@ -109,7 +109,7 @@ Command Line Options
     value 0.
 
     If the rescaling configuration is not specified, most backends that
-    support the :option:`--dont_inc` will chose a correct default rescaling
+    support the :option:`--dont_inc` will choose a correct default rescaling
     configuration file to scale the data to the proper range.
 
 .. cmdoption:: -p <output_pattern>
