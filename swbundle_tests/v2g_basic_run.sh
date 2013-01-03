@@ -37,7 +37,7 @@ which viirs2gtiff.sh || oops "viirs2gtiff.sh is not in PATH"
 
 # Check if they specified a different working directory
 if [ $# -ne 1 ]; then
-    WORK_DIR=./p2g-v2g-econus-tests-$$
+    WORK_DIR=./p2g-v2g-basic-tests-$$
 else
     echo "Will use $1 directory, but won't delete it"
     WORK_DIR=$1

@@ -21,7 +21,7 @@ VERIFY_BASE=$TEST_BASE/verify
 
 # Check if they specified a different working directory
 if [ $# -ne 1 ]; then
-    WORK_DIR=./p2g-v2g-ak-tests
+    oops "Must specify a working directory"
 else
     echo "Will use $1 directory"
     WORK_DIR=$1
