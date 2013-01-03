@@ -32,15 +32,42 @@ if [ ! -d $WORK_DIR ]; then
 fi
 
 # Run tests for each test data directory in the base directory
+BAD_COUNT=0
 for VFILE in $VERIFY_BASE/*; do
     WFILE=$WORK_DIR/`basename $VFILE`
     if [ ! -f $WFILE ]; then
         oops "Could not find output file $WFILE"
     fi
     echo "Comparing $WFILE to known valid file"
-    diff $WFILE $VFILE || oops "$WFILE was different than expected"
+    $POLAR2GRID_HOME/ShellB3/bin/python <<EOF
+from osgeo import gdal
+import numpy
+
+work_gtiff  = gdal.Open("$WFILE", gdal.GA_ReadOnly)
+valid_gtiff = gdal.Open("$VFILE", gdal.GA_ReadOnly)
+
+work_data = work_gtiff.GetRasterBand(1).ReadAsArray()
+valid_data = valid_gtiff.GetRasterBand(1).ReadAsArray()
+
+if work_data.shape != valid_data.shape:
+    print "ERROR: Data shape for '$WFILE' is not the same as the valid '$VFILE'"
+    sys.exit(1)
+
+total_pixels = work_data.shape[0] * work_data.shape[1]
+equal_pixels = len(numpy.nonzero( work_data == valid_data )[0])
+if equal_pixels != total_pixels:
+    print "FAIL: %d pixels out of %d pixels are different" % (total_pixels-equal_pixels,total_pixels)
+    sys.exit(2)
+print "SUCCESS: %d pixels out of %d pixels are different" % (total_pixels-equal_pixels,total_pixels)
+EOF
+    [ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
 done
 
+if [ $BAD_COUNT -ne 0 ]; then
+    oops "$BAD_COUNT files were found to be unequal"
+fi
+
 # End of all tests
+echo "All files passed"
 echo "SUCCESS"
 

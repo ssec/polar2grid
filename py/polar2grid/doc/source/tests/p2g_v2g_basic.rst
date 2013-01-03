@@ -27,10 +27,11 @@ You can visually compare the geotiff images or you can run the verify script::
 
 where ``destination directory`` is the same as for ``run.sh``. This will
 compare the geotiff files created to geotiff files that are known to be
-correct (stored in the ``p2g-v2g-basic-tests-<version>/verify`` directory. The
-comparison uses the UNIX ``diff`` utility so the files must be exact. This may
-cause some machines to fail the comparison due to small differences with
-floating point operations.
+correct (stored in the ``p2g-v2g-basic-tests-<version>/verify`` directory.
+Each pixel is compared and a message is printed stating a ``SUCCESS`` or
+a ``FAIL`` and how many pixels differed. Small differences with floating
+point operations on some machines may cause a few pixels to differ, but
+this is unlikely.
 
 Test cases:
 
