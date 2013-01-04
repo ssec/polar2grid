@@ -238,6 +238,8 @@ def parse_gpd_str(gpd_file_str):
     gpd_dict = {}
     lines = gpd_file_str.split("\n")
     for line in lines:
+        if not line: continue
+
         line_parts = line.split(":")
         if len(line_parts) != 2:
             log.error("Incorrect gpd syntax: more than one ':' ('%s')" % line)
