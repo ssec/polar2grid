@@ -310,9 +310,9 @@ def main():
             help="Don't create pseudo bands")
     
     # Remapping and grid related
-    parser.add_argument('-D', dest='fornav_D', default=40,
+    parser.add_argument('-D', dest='fornav_D', default=5,
             help="Specify the -D option for fornav")
-    parser.add_argument('-d', dest='fornav_d', default=2,
+    parser.add_argument('-d', dest='fornav_d', default=1,
             help="Specify the -d option for fornav")
     parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="all",
             help="Force remapping to only some grids, defaults to 'all', use 'all' for determination")
