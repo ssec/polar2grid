@@ -18,7 +18,7 @@ returned values are up to the rest of the VIIRs frontend calling them.
 __docformat__ = "restructuredtext en"
 
 import numpy
-from polar2grid.core.rescale import _local_histogram_equalization,_histogram_equalization
+from polar2grid.core.histogram import _local_histogram_equalization,_histogram_equalization
 from polar2grid.core.constants import DEFAULT_FILL_VALUE
 from polar2grid.core import Workspace
 
