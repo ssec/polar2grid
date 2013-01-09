@@ -14,8 +14,12 @@ ALL_PKG_DIRS   = $(CORE_PKG_DIR) $(VIIRS_PKG_DIR) $(MAIN_PKG_DIR)
 ALL_PKG_SDIST  = $(ALL_PKG_DIRS:=_sdist)
 #ALL_PKG_SDIST  = polar2grid_core_sdist polar2grid_viirs_sdist polar2grid_sdist
 ALL_PKG_DEV    = polar2grid_core_dev polar2grid_viirs_dev polar2grid_dev
+#DOC_DIR        = /home/davidh/test_doc
+DOC_DIR        = /var/apache/www/htdocs/software/polar2grid
 
 all: all_sdist
+
+### PYTHON PACKAGING ###
 
 all_sdist: $(ALL_PKG_SDIST) clean_sdist_build
 
@@ -35,6 +39,21 @@ $(INSTALL_DIR):
 
 $(DIST_DIR):
 	mkdir -p $(DIST_DIR)
+
+### Documentation Stuff ###
+build_doc_html:
+	cd $(MAIN_PKG_DIR)/doc; \
+	make clean; \
+	make html
+
+FN = polar2grid_docs_$(shell date -u +%Y%m%d_%H%M%S).tar.gz
+# Remake documentation and then update the main doc site
+update_doc: build_doc_html
+	cd $(MAIN_PKG_DIR)/doc/build/html; \
+	echo $(FN); \
+	tar -czf $(FN) *; \
+	scp $(FN) birch:/tmp/; \
+	ssh birch "cd '$(DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
 
 ### Clean up what we've done ###
 clean_sdist:
