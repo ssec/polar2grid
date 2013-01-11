@@ -1,8 +1,6 @@
 Backends
 ========
 
-.. include:: ../global.rst
-
 Backends are polar2grid components that, given remapped image data and meta data,
 produce a file that can be used in another piece of software optimized for
 viewing of that data.

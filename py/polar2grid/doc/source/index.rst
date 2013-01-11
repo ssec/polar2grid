@@ -29,7 +29,7 @@ Contents
     installation
     How polar2grid works <chain>
     glue_scripts/index
-    frontends
+    frontends/index
     backends/index
     rescaling
     utilscripts

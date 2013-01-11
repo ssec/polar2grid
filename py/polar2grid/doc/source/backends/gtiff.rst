@@ -1,8 +1,6 @@
 Geotiff
 =======
 
-.. include:: ../global.rst
-
 The geotiff backend puts gridded image data into a standard geotiff file.  It
 uses the GDAL python API to create the geotiff files.  Currently it can handle
 8-bit and 16-bit data and will scale depending on the 'etype' provided.  See

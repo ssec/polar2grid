@@ -1,8 +1,6 @@
 Rescaling
 =========
 
-.. include:: global.rst
-
 Rescaling is a polar2grid component shared by most backends that rescales
 gridded image data in the common case.  The underlying code also holds
 scaling functions that may be useful to frontends or glue scripts to equalize
@@ -123,17 +121,4 @@ Passive
 ^^^^^^^
 
 A passive function to tell the rescaler "don't do anything".
-
-Miscellaneous Functions
------------------------
-
-The below functions are not intended for rescaling use, but are more likely to
-be used by polar2grid frontends or backends to clip/filter data to a specific
-range.
-
-Histogram Equalization
-^^^^^^^^^^^^^^^^^^^^^^
-
-Local Histogram Equalization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

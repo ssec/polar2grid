@@ -1,9 +1,7 @@
 viirs2awips
 ===========
 
-.. include:: ../global.rst
-
-.. |this_frontend| replace:: :ref:`VIIRS Frontend <frontend_viirs>`
+.. |this_frontend| replace:: :doc:`VIIRS Frontend <../frontends/viirs>`
 .. |this_backend| replace:: :doc:`AWIPS Backend <../backends/awips_netcdf>`
 .. |this_glue| replace:: viirs2awips
 
@@ -11,7 +9,7 @@ viirs2awips
 :Bundle Script: ``viirs2awips.sh``
 
 This script is used to process
-:ref:`VIIRS imager data <frontend_viirs>`
+:doc:`VIIRS imager data <../frontends/viirs>`
 into
 :doc:`AWIPS compatible NetCDF <../backends/awips_netcdf>`
 files.  It can be run using the following command::

@@ -1,9 +1,7 @@
 viirs2binary
 ============
 
-.. include:: ../global.rst
-
-.. |this_frontend| replace:: :ref:`VIIRS Frontend <frontend_viirs>`
+.. |this_frontend| replace:: :doc:`VIIRS Frontend <../frontends/viirs>`
 .. |this_backend| replace:: :doc:`Binary Backend <../backends/binary>`
 .. |this_glue| replace:: viirs2binary
 
@@ -13,7 +11,7 @@ viirs2binary
 :Bundle Script: ``viirs2binary.sh``
 
 This is used to process
-:ref:`VIIRS imager data <frontend_viirs>`
+:doc:`VIIRS imager data <../frontends/viirs>`
 into
 :doc:`binary files <../backends/binary>`.  It can be run using the following
 command::

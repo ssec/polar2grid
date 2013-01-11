@@ -1,8 +1,6 @@
 Release Notes
 =============
 
-.. include:: global.rst
-
 Release notes for polar2grid's releases.
 
 Future Plans

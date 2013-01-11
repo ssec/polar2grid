@@ -1,9 +1,7 @@
 viirs2gtiff
 ===========
 
-.. include:: ../global.rst
-
-.. |this_frontend| replace:: :ref:`VIIRS Frontend <frontend_viirs>`
+.. |this_frontend| replace:: :doc:`VIIRS Frontend <../frontends/viirs>`
 .. |this_backend| replace:: :doc:`Geotiff Backend <../backends/gtiff>`
 .. |this_glue| replace:: viirs2gtiff
 
@@ -13,7 +11,7 @@ viirs2gtiff
 :Bundle Script: ``viirs2gtiff.sh``
 
 This is used to process
-:ref:`VIIRS imager data <frontend_viirs>`
+:doc:`VIIRS imager data <../frontends/viirs>`
 into
 :doc:`Geotiff images <../backends/gtiff>`.
 It can be run using the following command::

@@ -1,8 +1,6 @@
 The Chain
 =========
 
-.. include:: global.rst
-
 .. Do NOT reference the term 'the chain', this is the describing page
 
 This page describes the basic steps involved in going from start to finish
@@ -39,6 +37,8 @@ As an example the VIIRS swath extractor takes these steps:
     4. Read in image data and append it to a flat binary file
     5. Return meta data to the caller
 
+.. _chain_prescaling:
+
 Prescaling
 ^^^^^^^^^^
 
@@ -52,16 +52,20 @@ another component, since the frontend deals with granules and swaths and can
 use memory more efficiently.  Most of the cases like this are configurable
 via an argument on the command line or in the function calls to the frontend.
 
-An example of prescaling can be seen in the DNB of the VIIRS instrument.  It
+An example of prescaling can be seen in the
+:ref:`Day/Night Band <prescale_viirs_dnb>` of the VIIRS instrument.  It
 has different scaling parameters depending on whether
 the scene is during the daytime or nighttime or a mix of both.  The day/night
 masks required to make this decision can not be remapped and used after.
 Therefore, this type of scaling must happen before remapping.
 
-Again, see the :doc:`Frontends <frontends>` documentation for more details on
+Again, see the :doc:`Frontends <frontends/index>` documentation for more
+details on
 your specific frontend being used and the
 :doc:`Glue Scripts <glue_scripts/index>` documentation for any
 possible differences your glue script of interest implements.
+
+.. _chain_pseudoband:
 
 Pseudoband Creation
 ^^^^^^^^^^^^^^^^^^^

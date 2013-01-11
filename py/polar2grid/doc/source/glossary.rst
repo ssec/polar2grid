@@ -1,8 +1,6 @@
 Glossary
 ========
 
-.. include:: global.rst
-
 .. glossary::
     :sorted:
 
@@ -60,8 +58,13 @@ Glossary
         Loosely used term to mean an incremental step in polar2grid processing.
 
     pseudoband
+    pseudobands
         Band created by processing 'raw' data from satellite files that is not
-        directly available from the 'raw' data and must be calculated.
+        directly available from the 'raw' data and must be calculated. See :ref:`chain_pseudoband` for a detailed explanation.
+
+    prescaling
+        The scaling of data done in a frontend before it provides it to any
+        other polar2grid components. See :ref:`chain_prescaling` for a detailed explanation.
 
     navigation set
     nav set

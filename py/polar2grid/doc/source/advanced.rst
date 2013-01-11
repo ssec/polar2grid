@@ -1,8 +1,6 @@
 Advanced Topics
 ===============
 
-.. include:: global.rst
-
 Python Package Install
 ----------------------
 

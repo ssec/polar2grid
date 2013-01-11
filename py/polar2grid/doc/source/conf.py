@@ -20,7 +20,16 @@ import sys, os
 sys.path.insert(0, os.path.abspath('../../'))
 sys.path.insert(0, os.path.abspath('../../polar2grid'))
 
+# -- Customize setup -----------------------------------------------------------
+
+def setup(app):
+    app.add_stylesheet('prettytables.css')
+
 # -- General configuration -----------------------------------------------------
+rst_epilog = """
+.. |ssec| replace:: :abbr:`SSEC (Space Science and Engineering Center)`
+.. |viirs| replace:: :abbr:`VIIRS (Visible/Infrared Imager Radiometer Suite)`
+"""
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
@@ -67,7 +76,6 @@ release = '1.0.0'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = [
-    "global.rst",
     "glue_scripts/common_opts.rst"
     ]
 

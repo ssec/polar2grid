@@ -1,10 +1,15 @@
 AWIPS NetCDF
 ============
 
-.. include:: ../global.rst
+The Advanced Weather Interactive Processing System (AWIPS) is a program used
+by the United States National Weather Service (NWS) and others to view
+different forms of weather imagery. Once AWIPS is configured for VIIRS data
+the AWIPS NetCDF backend can be used to provide compatible products to the
+system. The files created by this backend are compatible with both AWIPS and
+AWIPS II.
 
 The AWIPS NetCDF backend takes remapped binary image data and creates an
-AWIPS-compatible NetCDF file.  To accomplish this the backend must rescale
+AWIPS-compatible NetCDF 3 file.  To accomplish this the backend must rescale
 the image data to a 0-255 range, where 0 is a fill/invalid value.  AWIPS
 requires unsigned byte integers for its data which results in this range.
 It then fills in a NetCDF file template with the rescaled image data.
@@ -27,6 +32,7 @@ Data Kind              Rescaling Function
 Reflectance            :ref:`rescale_square_root_enhancement`
 Brightness Temperature :ref:`rescale_btemp`
 Radiance               :ref:`rescale_linear`
+Fog                    :ref:`rescale_fog`
 ====================== ==================
 
 Rescaling will attempt to fit the provided data in the best visual range for
@@ -46,4 +52,18 @@ Grid Name NCML File
 203       `grid203.ncml <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/awips/ncml/grid203.ncml>`_
 204       `grid204.ncml <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/awips/ncml/grid204.ncml>`_
 ========= =========
+
+More Text for testing
+
++----------+--------------------------------------------------------------------+
+|Grid Name | NCML File                                                          |
++==========+====================================================================+
+| 213e     | `grid213e.ncml <https://github.com/davidh-ssec/polar2grid/bloml>`_ |
++----------+--------------------------------------------------------------------+
+| 213w     | `grid213w.ncml <https://github.com/davidh-ssec/polar2grid/bloml>`_ |
++----------+--------------------------------------------------------------------+
+| 213      | `grid213.ncml <https://github.com/davidh-ssec/polar2grid/blob>`_   |
++----------+--------------------------------------------------------------------+
+| 214      | `grid214.ncml <https://github.com/davidh-ssec/polar2grid/blob>`_   |
++----------+--------------------------------------------------------------------+
 

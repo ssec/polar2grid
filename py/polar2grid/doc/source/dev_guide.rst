@@ -1,8 +1,6 @@
 Developer's Guide
 =================
 
-.. include:: global.rst
-
 This guide is intended to ease the development of additional frontends,
 backends, or other components to the polar2grid package. It provides the
 general interface for each "chain link" as well as a minimal description
