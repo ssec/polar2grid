@@ -19,6 +19,8 @@ matplotlib.use('agg')
 from matplotlib import pyplot as plt
 from polar2grid.core import Workspace
 
+import os
+
 def plot_binary(bf, workspace='.', fill_value=-999.0):
     W=Workspace(workspace)
 
