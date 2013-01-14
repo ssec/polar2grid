@@ -17,7 +17,7 @@ as a toolbox for software developers to make their own scripts if the provided
 Code repository: https://github.com/davidh-ssec/polar2grid
 
 If you are a developer wishing to add your own frontend or backend please
-see the :doc:`Developer's Guide <dev_guide>` for details on how to do so.
+see the :doc:`Developer's Guide <dev_guide/index>` for details on how to do so.
 
 Contents
 --------
@@ -33,7 +33,7 @@ Contents
     backends/index
     rescaling
     utilscripts
-    dev_guide
+    dev_guide/index
     advanced
     release_notes
     constants

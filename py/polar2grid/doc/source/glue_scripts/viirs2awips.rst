@@ -12,18 +12,7 @@ This script is used to process
 :doc:`VIIRS imager data <../frontends/viirs>`
 into
 :doc:`AWIPS compatible NetCDF <../backends/awips_netcdf>`
-files.  It can be run using the following command::
-
-    $POLAR2GRID_HOME/bin/viirs2awips.sh -d /path/to/data/
-
-or to force the gpd
-:doc:`grid <../grids>` that will be mapped to::
-
-    $POLAR2GRID_HOME/bin/viirs2awips.sh -g 203 -d /path/to/data/
-
-for more options run::
-
-    $POLAR2GRID_HOME/bin/viirs2awips.sh --help
+files.
 
 `viirs2awips` does not have any special restrictions on the bands that can
 be provided.  However, `viirs2awips` creates the

@@ -38,7 +38,7 @@ to reduce typing the following can also be added to your ``.bash_profile``::
 which allows you to remove the ``$POLAR2GRID_HOME/bin/`` portion of the
 command line examples.
 
-See the :doc:`Developer's Guide </dev_guide>` for python package installing or
+See the :doc:`Developer's Guide <dev_guide/index>` for python package installing or
 other options for running polar2grid scripts.
 
 polar2grid Software Bundle Uninstall/Upgrade

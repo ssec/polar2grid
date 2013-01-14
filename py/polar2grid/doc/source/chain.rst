@@ -9,7 +9,7 @@ described below are optional depending on the :term:`glue script` being used.
 See the :doc:`Glue Scripts <glue_scripts/index>` documentation for more
 information on what steps are being used in your script of interest.
 
-See the :doc:`Developer's Guide <dev_guide>` if you are planning on writing
+See the :doc:`Developer's Guide <dev_guide/index>` if you are planning on writing
 your own :term:`glue script` or polar2grid component and would like detailed
 information on the inner-workings of a specific piece.
 
@@ -129,7 +129,7 @@ ll2cr is a ms2gt utility that converts latitude and longitude ('ll') data into
 columns and rows ('cr') which can then be used in fornav.  It uses 'gpd' files
 along with the mapx library to map lon/lat points of the satellite data
 to cols/rows of the grid described by the 'gpd' file.  See the
-:doc:`Developer's Guide <dev_guide>` for more information on creating new
+:doc:`Developer's Guide <dev_guide/index>` for more information on creating new
 gpd grids.
 
 ll2cr (python)
@@ -138,7 +138,7 @@ ll2cr (python)
 The python version of ll2cr is meant to be a replacement of the C version,
 using the more common PROJ.4 library for mapping instead of mapx. The main
 advantage of the python version of ll2cr is that it can create dynamically
-sized grids that fit the data. See the :doc:`Developer's Guide <dev_guide>`
+sized grids that fit the data. See the :doc:`Developer's Guide <dev_guide/index>`
 for more information on creating new proj4 grids.
 
 fornav

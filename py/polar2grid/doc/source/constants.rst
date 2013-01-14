@@ -257,9 +257,11 @@ Glue Script Return Codes
 Fill Values
 -----------
 
+.. _default_fill_value:
+
 .. data:: DEFAULT_FILL_VALUE = -999.0
 
     Used by most, if not all, polar2grid components that deal with data to
     specify a fill value to use. Frontends are not required to use this
-    fill value, but must specify otherwise (see the :doc:`dev_guide` for
+    fill value, but must specify otherwise (see the :doc:`dev_guide/index` for
     more details).

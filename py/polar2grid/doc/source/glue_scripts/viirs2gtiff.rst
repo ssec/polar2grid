@@ -14,18 +14,6 @@ This is used to process
 :doc:`VIIRS imager data <../frontends/viirs>`
 into
 :doc:`Geotiff images <../backends/gtiff>`.
-It can be run using the following command::
-
-    $POLAR2GRID_HOME/bin/viirs2gtiff.sh -d /path/to/data
-
-or for a specific set of files and to force the PROJ.4
-:doc:`grid <../grids>`::
-
-    $POLAR2GRID_HOME/bin/viirs2gtiff.sh -g lcc_fit -f /path/to/files*.h5
-
-for more options run::
-
-    $POLAR2GRID_HOME/bin/viirs2gtiff.sh --help
 
 .. program:: |this_glue|
 

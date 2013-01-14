@@ -13,19 +13,7 @@ viirs2binary
 This is used to process
 :doc:`VIIRS imager data <../frontends/viirs>`
 into
-:doc:`binary files <../backends/binary>`.  It can be run using the following
-command::
-
-    $POLAR2GRID_HOME/bin/viirs2binary.sh -d /path/to/data
-
-or for a specific set of files and to force the PROJ.4
-:doc:`grid <../grids>`::
-
-    $POLAR2GRID_HOME/bin/viirs2binary.sh -g wgs84_fit -f /path/to/files*.h5
-
-for more options run::
-
-    $POLAR2GRID_HOME/bin/viirs2binary.sh --help
+:doc:`binary files <../backends/binary>`.
 
 .. program:: |this_glue|
 
