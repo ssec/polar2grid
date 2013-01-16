@@ -27,7 +27,9 @@ Command Line Options
 
     Specify the PROJ.4 grids to be gridded to. The default grid used by
     |this_glue| is ':ref:`wgs84_fit <wgs84_fit>`'. More than one grid can be specified at a
-    time. To have grid determination find all grids that can fit the data use the grid name 'all'.
+    time. To have grid determination find all grids that can fit the data use
+    the grid name 'all'. All possible grid names can be found
+    :doc:`here <../grids>`.
 
 .. cmdoption:: --fornav-d <float>
 

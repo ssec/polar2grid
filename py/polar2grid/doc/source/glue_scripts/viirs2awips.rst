@@ -36,7 +36,7 @@ Command Line Options
 
     Specify the gpd grids to be gridded to. Specifying this option will skip
     the grid determination step. More than one grid can be specified at a
-    time.
+    time. All possible grid names can be found :doc:`here <../grids>`.
 
 .. cmdoption:: --fornav-d <float>
 
