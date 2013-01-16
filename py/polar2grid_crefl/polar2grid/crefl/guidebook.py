@@ -15,15 +15,14 @@ Write out Swath binary files used by other polar2grid components.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_I,BKIND_M
+from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_I,BKIND_M,DEFAULT_FILL_VALUE
 from polar2grid.core.time_utils import UTC
-from pyhdf import SD
+from pyhdf import SD,error as hdf_error
 import numpy
 
 import os
 import sys
 import re
-import glob
 import logging
 from datetime import datetime
 
@@ -54,11 +53,34 @@ DKIND_CREFL_11="crefl_11"
 DKIND_CREFL_12="crefl_12"
 ### CONSTANTS TO BE PUT IN POLAR2GRID.CORE XXX ###
 
+# Dimension constants
+DIMNAME_LINES_750   = "lines_750m"
+DIMNAME_SAMPLES_750 = "samples_750m"
+DIMNAME_LINES_350   = "lines_350"
+DIMNAME_SAMPLES_350 = "samples_350"
+DIM_LINES_750   = 768
+DIM_SAMPLES_750 = 3200
+DIM_LINES_350   = 1536
+DIM_SAMPLES_350 = 6400
+
+# Pixel size constants to determine how to interpolate later
+PIXEL_SIZE_750  = 750
+PIXEL_SIZE_350  = 350
+
 # Constants for dataset names in crefl output files
+DS_CR_02 = "CorrRefl_02"
 DS_CR_03 = "CorrRefl_03"
 DS_CR_04 = "CorrRefl_04"
 DS_CR_05 = "CorrRefl_05"
+DS_CR_07 = "CorrRefl_07"
+DS_CR_08 = "CorrRefl_08"
+DS_CR_10 = "CorrRefl_10"
+DS_CR_11 = "CorrRefl_11"
 DS_CR_12 = "CorrRefl_12"
+
+# Constants for navigation dataset names in crefl output files
+DS_LONGITUDE = "Longitude"
+DS_LATITUDE  = "Latitude"
 
 # Keys in hdf4 attributes
 K_FILL_VALUE   = "FillValueKey"
@@ -66,6 +88,13 @@ K_SCALE_FACTOR = "ScaleFactorKey"
 K_SCALE_OFFSET = "ScaleOffsetKey"
 K_UNITS        = "UnitsKey"
 K_DATASETS     = "DatasetsKey"
+K_LONGITUDE    = "LongitudeKey"
+K_LATITUDE     = "LatitudeKey"
+K_COLUMNS_750  = "Columns750Key"
+K_COLUMNS_350  = "Columns350Key"
+K_ROWS_750     = "Rows750Key"
+K_ROWS_350     = "Rows350Key"
+
 
 """
 I1  | CorrRefl_12
@@ -183,15 +212,28 @@ FILE_REGEX = {
             K_SCALE_OFFSET : "add_offset",
             K_UNITS        : "units",
             K_DATASETS     : [ DS_CR_12, DS_CR_03, DS_CR_04, DS_CR_05 ],
+            K_LONGITUDE    : DS_LONGITUDE,
+            K_LATITUDE     : DS_LATITUDE,
+            K_COLUMNS_750  : DIM_SAMPLES_750, # not used
+            K_COLUMNS_350  : DIM_SAMPLES_350, # not used
+            K_ROWS_750     : DIM_LINES_750, # not used
+            K_ROWS_350     : DIM_LINES_350, # not used
             "band_kind"    : "svi",
             "instrument"   : "viirs"
             },
+
         r'crefl.(?P<sat>[A-Za-z0-9]+)_viirs_750_d(?P<date_str>\d+)_t(?P<start_str>\d+)_e(?P<end_str>\d+).hdf' : {
             K_FILL_VALUE   : "_FillValue",
             K_SCALE_FACTOR : "scale_factor",
             K_SCALE_OFFSET : "add_offset",
             K_UNITS        : "units",
             K_DATASETS     : [ DS_CR_03, DS_CR_04, DS_CR_05 ],
+            K_LONGITUDE    : DS_LONGITUDE,
+            K_LATITUDE     : DS_LATITUDE,
+            K_COLUMNS_750  : DIM_SAMPLES_750, # not used
+            K_COLUMNS_350  : DIM_SAMPLES_350, # not used
+            K_ROWS_750     : DIM_LINES_750, # not used
+            K_ROWS_350     : DIM_LINES_350, # not used
             "band_kind"    : "svm",
             "instrument"   : "viirs"
             },
@@ -237,11 +279,6 @@ DATASET2RPS = {
         DS_CR_12 : 32
         }
 
-BKIND2NAV = {
-        BKIND_I : ("GIMGO", "GITCO"),
-        BKIND_M : ("GMODO", "GMTCO")
-        }
-
 def _convert_datetimes(date_str, start_str, end_str):
     # the last digit in the 7 digit time is tenths of a second
     # we turn it into microseconds
@@ -254,24 +291,16 @@ def _convert_datetimes(date_str, start_str, end_str):
 
     return start_time,end_time
 
-def _get_nav_glob(data_dir, sat, inst, band_kind, date_str, start_str, end_str, terrain_corrected=True):
-    if sat == SAT_NPP and inst == INST_VIIRS:
-        prefix = BKIND2NAV[band_kind][terrain_corrected]
-        nav_glob = "%s_npp_d%s_t%s_e%s_*.h5" % (prefix, date_str, start_str, end_str)
-        return os.path.join(data_dir, nav_glob)
-    else:
-        log.error("Not sure how to get the navigation data for %s %s %s" % (sat, inst, band_kind))
-        raise ValueError("Not sure how to get the navigation data for %s %s %s" % (sat, inst, band_kind))
-
-
-def get_file_info(data_filepath, fill_value=-999.0):
-    """Return a dictionary of information about the file provided
-
+def get_file_info(data_filepath):
+    """Return a dictionary of information about the file provided.
+    This function will pull as much information as can be derived
+    from the filename provided. It will not read the file, but it
+    will check for it's existence.
     """
     file_info = {}
     if not os.path.exists(data_filepath):
-        log.error("crefl file '%s' does not exist" % (data_filepath))
-        raise ValueError("crefl file '%s' does not exist" % (data_filepath))
+        log.error("crefl file '%s' does not exist" % (data_filepath,))
+        raise ValueError("crefl file '%s' does not exist" % (data_filepath,))
 
     file_info["data_filepath"] = data_filepath
     data_dir,data_filename = os.path.split(data_filepath)
@@ -320,52 +349,151 @@ def get_file_info(data_filepath, fill_value=-999.0):
         file_info["start_time"] = start_time
         file_info["end_time"] = end_time
 
-        # Open the file to get additional information
-        h = SD.SD(file_info["data_filepath"], SD.SDC.READ)
-
-        # Pull band information
-        file_info["bands"] = {}
-        for ds_name in file_info[K_DATASETS]:
-            ds = h.select(ds_name)
-            ds_info = ds.attributes()
-
-            # fill value
-            data_fill_value = ds_info[file_info[K_FILL_VALUE]]
-
-            # scale factor
-            scale_factor = ds_info[file_info[K_SCALE_FACTOR]]
-
-            # scale offset
-            scale_offset = ds_info[file_info[K_SCALE_OFFSET]]
-
-            # units (not used)
-
-            # get data
-            data = ds.get().astype(numpy.float32)
-
-            # unscale data
-            fill_mask = data == data_fill_value
-            numpy.multiply(data, scale_factor, out=data)
-            numpy.add(data, scale_offset, out=data)
-            data[fill_mask] = fill_value
-
-            # write information to the file information
-            file_info["bands"][(file_info["kind"],DATASET2BID[ds_name])] = {
-                    "data"          : data,
-                    "data_kind"     : DATASET2DKIND[ds_name],
-                    "remap_data_as" : DATASET2DKIND[ds_name],
-                    "kind"          : file_info["kind"],
-                    "band"          : DATASET2BID[ds_name],
-                    "rows_per_scan" : DATASET2RPS[ds_name]
-                    }
-
-        # TODO: Get Navigation data
-
         return file_info
 
     # none of the filename patterns matched, we don't know how to handle this file
     log.error("Unrecognized filenaming scheme: '%s'" % data_filename)
     raise ValueError("Unrecognized filenaming scheme: '%s'" % data_filename)
+
+def get_data_from_dataset(ds,
+        data_fill_value,
+        scale_factor,
+        scale_offset,
+        fill_value=DEFAULT_FILL_VALUE):
+    # get data
+    data = ds.get().astype(numpy.float32)
+
+    # unscale data
+    fill_mask = data == data_fill_value
+    numpy.multiply(data, scale_factor, out=data)
+    numpy.add(data, scale_offset, out=data)
+    if fill_value is None: fill_value = data_fill_value
+    data[fill_mask] = fill_value
+
+    return data
+
+def get_attr_from_dataset(
+        ds, file_info):
+    ds_info = ds.attributes()
+
+    # fill value
+    data_fill_value = ds_info[file_info[K_FILL_VALUE]]
+
+    # scale factor
+    scale_factor = ds_info[file_info[K_SCALE_FACTOR]]
+
+    # scale offset
+    scale_offset = ds_info[file_info[K_SCALE_OFFSET]]
+
+    # units (not used)
+
+    return data_fill_value,scale_factor,scale_offset
+
+
+def read_data_file(file_info, fill_value=DEFAULT_FILL_VALUE):
+    """Read information from the HDF4 file specified by ``data_filepath``
+    in the ``file_info`` passed as the first argument.
+    
+    Any numeric data
+    returned will have the optional ``fill_value`` keyword for any invalid
+    data points or data that could not be found/calculated. The default is
+    the :ref:`DEFAULT_FILL_VALUE <default_fill_value>` constant value. If
+    ``fill_value`` is ``None``, the fill value will be the same as in the
+    crefl file.
+
+    The following keys are required in the ``file_info`` dictionary (all-caps
+    means a constant defined in this file):
+
+        - data_filepath:
+            The filepath of the crefl file to operate on
+        - K_DATASETS:
+            A list of dataset names to get info for (not include navigation)
+        - K_FILL_VALUE:
+            Attribute name in the datasets for the fill_value of the data
+        - K_SCALE_FACTOR:
+            Attribute name in the datasets for the scale_factor of the data
+        - K_SCALE_OFFSET:
+            Attribute name in the datasets for the scale_offset of the data
+        - kind:
+            The kind of the band in the data (I, M, etc.)
+
+    This function fills in file_info with more data, primarily the ``bands``
+    key whose value is a dictionary of dictionaries holding 'per dataset'
+    information that can be used by other polar2grid components.
+    """
+    # Open the file to get additional information
+    h = SD.SD(file_info["data_filepath"], SD.SDC.READ)
+
+    # Pull band information
+    file_info["bands"] = {}
+    for ds_name in file_info[K_DATASETS]:
+        try:
+            ds = h.select(ds_name)
+        except hdf_error.HDF4Error:
+            msg = "Data set '%s' does not exist in '%s'" % (ds_name,file_info["data_filepath"])
+            log.error(msg)
+            raise ValueError(msg)
+
+        # Get attributes
+        data_fill_value,scale_factor,scale_offset = get_attr_from_dataset(
+                ds, file_info
+                )
+
+        # Get the data
+        if fill_value is None:
+            fill_value = data_fill_value
+        data = get_data_from_dataset(ds,
+                data_fill_value,
+                scale_factor,
+                scale_offset,
+                fill_value=fill_value
+                )
+
+        # write information to the file information
+        if data.shape[0] == file_info[K_ROWS_750] and data.shape[1] == file_info[K_COLUMNS_750]:
+            res = PIXEL_SIZE_750
+        elif data.shape[0] == file_info[K_ROWS_350] and data.shape[1] == file_info[K_COLUMNS_350]:
+            res = PIXEL_SIZE_350
+        else:
+            log.error("Don't know how to handle data shape '%r'" % (data.shape,))
+            raise ValueError("Don't know how to handle data shape '%r'" % (data.shape,))
+
+        file_info["bands"][(file_info["kind"],DATASET2BID[ds_name])] = {
+                "data"          : data,
+                "data_kind"     : DATASET2DKIND[ds_name],
+                "remap_data_as" : DATASET2DKIND[ds_name],
+                "kind"          : file_info["kind"],
+                "band"          : DATASET2BID[ds_name],
+                "rows_per_scan" : DATASET2RPS[ds_name],
+                "fill_value"    : fill_value,
+                "pixel_size"    : res
+                }
+
+    # Get Navigation data
+    lat_ds = h.select(file_info[K_LATITUDE])
+    lat_fv,lat_factor,lat_offset = get_attr_from_dataset(lat_ds, file_info)
+    file_info["latitude"] = get_data_from_dataset(
+            lat_ds, lat_fv, lat_factor, lat_offset)
+    lat_shape = file_info["latitude"].shape
+
+    lon_ds = h.select(file_info[K_LATITUDE])
+    lon_fv,lon_factor,lon_offset = get_attr_from_dataset(lon_ds, file_info)
+    file_info["longitude"] = get_data_from_dataset(
+            lon_ds, lon_fv, lon_factor, lon_offset)
+    lon_shape = file_info["longitude"].shape
+    if lat_shape != lon_shape:
+        log.error("Latitude and longitude data are a different shape")
+        raise ValueError("Latitude and longitude data are a different shape")
+
+    if lat_shape[0] == DIM_LINES_750 and lat_shape[1] == DIM_SAMPLES_750:
+        file_info["pixel_size"] = PIXEL_SIZE_750
+    elif lat_shape[0] == DIM_LINES_350 and lat_shape[1] == DIM_SAMPLES_350:
+        file_info["pixel_size"] = PIXEL_SIZE_350
+    else:
+        log.error("Don't know how to handle nav shape '%r'" % (lat_shape,))
+        raise ValueError("Don't know how to handle nav shape '%r'" % (lat_shape,))
+
+    return file_info
 
 def main():
     from argparse import ArgumentParser
