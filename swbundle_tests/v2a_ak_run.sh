@@ -24,7 +24,11 @@ run_test() {
 if [ -z "$POLAR2GRID_HOME" ]; then
     oops "POLAR2GRID_HOME needs to be defined"
 fi
-source $POLAR2GRID_HOME/bin/polar2grid_env.sh
+if [ ! -d "$POLAR2GRID_HOME" ]; then
+    oops "POLAR2GRID_HOME does not exist: $POLAR2GRID_HOME"
+fi
+
+source $POLAR2GRID_HOME/bin/polar2grid_env.sh || oops "Could not find 'bin/polar2grid_env.sh' in POLAR2GRID_HOME"
 
 # Find out where the tests are relative to this script
 TEST_BASE="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
