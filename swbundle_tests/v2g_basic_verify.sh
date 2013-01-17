@@ -12,7 +12,11 @@ oops() {
 if [ -z "$POLAR2GRID_HOME" ]; then
     oops "POLAR2GRID_HOME needs to be defined"
 fi
-source $POLAR2GRID_HOME/bin/polar2grid_env.sh
+if [ ! -d "$POLAR2GRID_HOME" ]; then
+    oops "POLAR2GRID_HOME does not exist: $POLAR2GRID_HOME"
+fi
+
+source $POLAR2GRID_HOME/bin/polar2grid_env.sh || oops "Could not find 'bin/polar2grid_env.sh' in POLAR2GRID_HOME"
 
 # Find out where the tests are relative to this script
 TEST_BASE="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -36,7 +40,9 @@ BAD_COUNT=0
 for VFILE in $VERIFY_BASE/*; do
     WFILE=$WORK_DIR/`basename $VFILE`
     if [ ! -f $WFILE ]; then
-        oops "Could not find output file $WFILE"
+        oops "ERROR: Could not find output file $WFILE"
+        BAD_COUNT=$(($BAD_count + 1))
+        continue
     fi
     echo "Comparing $WFILE to known valid file"
     $POLAR2GRID_HOME/ShellB3/bin/python <<EOF

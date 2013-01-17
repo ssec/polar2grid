@@ -11,7 +11,7 @@ oops() {
 
 run_test() {
     echo "Running test for data in $2..."
-    viirs2awips.sh -g $1 $2
+    viirs2awips.sh -g $1 -d $2
     if [ $? -ne 0 ]; then
         echo "ERROR: viirs2awips.sh did not complete test $2 successfully"
         echo "ERROR: Won't remove test directory, check it for more information"
