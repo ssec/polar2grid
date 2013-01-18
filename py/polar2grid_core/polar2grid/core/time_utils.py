@@ -6,9 +6,8 @@
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 
@@ -29,3 +28,5 @@ class UTC(datetime.tzinfo):
     def dst(self, dt):
         return self.ZERO
 
+def utc_now():
+    return datetime.datetime.utcnow().replace(tzinfo=UTC())

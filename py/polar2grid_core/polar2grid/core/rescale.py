@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Functions and mappings for taking rempapped VIIRS data and
-rescaling it to a useable range from 0 to 255 to be compatible
-and "pretty" with AWIPS.
+"""Functions and mappings for taking rempapped polar-orbitting data and
+rescaling it to a useable range for the backend using the data, usually a
+0-255 8-bit range or a 0-65535 16-bit range.
 
 :attention:
     A scaling function is not guarenteed to not change the
@@ -14,14 +14,12 @@ and "pretty" with AWIPS.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 
-from .constants import DKIND_REFLECTANCE, DKIND_RADIANCE, \
-        DKIND_BTEMP, DKIND_FOG, NOT_APPLICABLE, DEFAULT_FILL_VALUE
+from .constants import *
 from . import roles
 
 import os
@@ -46,22 +44,6 @@ def _make_lin_scale(m, b):
         numpy.add(img, b, img)
         return img
     return linear_scale
-
-def ubyte_filter(img):
-    """Convert image data to a numpy array with dtype `numpy.uint8` and set
-    values below zero to zero and values above 255 to 255.
-    """
-    numpy.clip(img, 0, 255, out=img)
-    img = img.astype(numpy.uint8)
-    return img
-
-def uint16_filter(img):
-    """Convert image data to a numpy array with dtype `numpy.uint16` and set
-    values below zero to zero and values above 65535 to 65535.
-    """
-    numpy.clip(img, 0, 65535, out=img)
-    img = img.astype(numpy.uint16)
-    return img
 
 def linear_scale(img, m, b, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     log.debug("Running 'linear_scale' with (m: %f, b: %f)..." % (m,b))

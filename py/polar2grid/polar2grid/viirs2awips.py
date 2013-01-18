@@ -7,202 +7,27 @@ hdf5 (.h5) files and create a properly scaled AWIPS compatible NetCDF file.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
+from polar2grid.core.glue_utils import setup_logging,create_exc_handler,remove_file_patterns
 from polar2grid.core.constants import *
 from polar2grid.viirs import Frontend
-from .grids.grids import determine_grid_coverage_fbf,get_grid_info
-from .remap import remap_bands
+from .grids.grids import create_grid_jobs
+import remap
 from .awips import Backend
 
 import os
 import sys
 import logging
 from multiprocessing import Process
-from glob import glob
 
 log = logging.getLogger(__name__)
-LOG_FN = os.environ.get("VIIRS2AWIPS_LOG", "./viirs2awips.log")
-
-def setup_logging(console_level=logging.INFO):
-    """Setup the logger to the console to the logging level defined in the
-    command line (default INFO).  Sets up a file logging for everything,
-    regardless of command line level specified.  Adds extra logger for
-    tracebacks to go to the log file if the exception is caught.  See
-    `exc_handler` for more information.
-
-    :Keywords:
-        console_level : int
-            Python logging level integer (ex. logging.INFO).
-    """
-    root_logger = logging.getLogger('')
-    root_logger.setLevel(logging.DEBUG)
-
-    # Console output is minimal
-    console = logging.StreamHandler(sys.stderr)
-    console_format = "%(levelname)-8s : %(message)s"
-    console.setFormatter(logging.Formatter(console_format))
-    console.setLevel(console_level)
-    root_logger.addHandler(console)
-
-    # Log file messages have a lot more information
-    file_handler = logging.FileHandler(LOG_FN)
-    file_format = "[%(asctime)s] : %(levelname)-8s : %(name)s : %(funcName)s : %(message)s"
-    file_handler.setFormatter(logging.Formatter(file_format))
-    file_handler.setLevel(logging.DEBUG)
-    root_logger.addHandler(file_handler)
-
-    # Make a traceback logger specifically for adding tracebacks to log file
-    traceback_log = logging.getLogger('traceback')
-    traceback_log.propagate = False
-    traceback_log.setLevel(logging.ERROR)
-    traceback_log.addHandler(file_handler)
-
-def exc_handler(exc_type, exc_value, traceback):
-    """An execption handler/hook that will only be called if an exception
-    isn't called.  This will save us from print tracebacks or unrecognizable
-    errors to the user's console.
-
-    Note, however, that this doesn't effect code in a separate process as the
-    exception never gets raised in the parent.
-    """
-    logging.getLogger(__name__).error(exc_value)
-    logging.getLogger('traceback').error(exc_value, exc_info=(exc_type,exc_value,traceback))
-
-def _force_symlink(dst, linkname):
-    """Create a symbolic link named `linkname` pointing to `dst`.  If the
-    symbolic link already exists, remove it and create the new one.
-
-    :Parameters:
-        dst : str
-            Filename to be pointed to.
-        linkname : str
-            Filename of the symbolic link being created or overwritten.
-    """
-    if os.path.exists(linkname):
-        log.info("Removing old file %s" % linkname)
-        os.remove(linkname)
-    log.debug("Symlinking %s -> %s" % (linkname,dst))
-    os.symlink(dst, linkname)
-
-def _safe_remove(fn):
-    """Remove the file `fn` if you can, if not log an error message,
-    but continue on.
-
-    :Parameters:
-        fn : str
-            Filename of the file to be removed.
-    """
-    try:
-        log.info("Removing %s" % fn)
-        os.remove(fn)
-    except StandardError:
-        log.error("Could not remove %s" % fn)
-
-def remove_products():
-    """Remove as many of the possible files that were created from a previous
-    run of this script, including temporary files.
-
-    :note:
-        This does not remove the log file because it requires the log file
-        to report what's being removed.
-    """
-    for f in glob(".lat*"):
-        _safe_remove(f)
-    for f in glob(".lon*"):
-        _safe_remove(f)
-    for f in glob(".mode*"):
-        _safe_remove(f)
-    for f in glob(".image*"):
-        _safe_remove(f)
-    for f in glob("latitude*.real4.*"):
-        _safe_remove(f)
-    for f in glob("longitude*.real4.*"):
-        _safe_remove(f)
-    for f in glob("image*.real4.*"):
-        _safe_remove(f)
-    for f in glob("mode_*.real4.*"):
-        _safe_remove(f)
-    for f in glob("prescale_*.real4.*"):
-        _safe_remove(f)
-    for f in glob("ll2cr_*.real4.*"):
-        _safe_remove(f)
-    for f in glob("ll2cr_*.img"):
-        _safe_remove(f)
-
-    for f in glob("result*.real4.*"):
-        _safe_remove(f)
-
-    for f in glob("SSEC_AWIPS_VIIRS*"):
-        _safe_remove(f)
-
-def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
-        forced_grids=None):
-    """
-    TODO, documentation
-    """
-
-    # Check what grids the backend can handle
-    all_possible_grids = set()
-    for band_kind, band_id in bands.keys():
-        this_band_can_handle = backend.can_handle_inputs(sat, instrument, band_kind, band_id, bands[(band_kind, band_id)]["data_kind"])
-        bands[(band_kind, band_id)]["grids"] = this_band_can_handle
-        if isinstance(this_band_can_handle, str):
-            all_possible_grids.update([this_band_can_handle])
-        else:
-            all_possible_grids.update(this_band_can_handle)
-        log.debug("Kind %s Band %s can handle these grids: '%r'" % (band_kind, band_id, this_band_can_handle))
-
-    # Get the set of grids we will use
-    if forced_grids is not None:
-        if isinstance(forced_grids, list): grids = forced_grids
-        else: grids = [forced_grids]
-        grids = set(grids)
-    else:
-        # Check if the data fits in the grids
-        all_useful_grids = determine_grid_coverage_fbf(fbf_lon, fbf_lat, list(all_possible_grids))
-        grids = set(all_useful_grids)
-
-    # Figure out which grids are useful for data coverage (or forced grids) and the backend can support
-    grid_infos = dict((g,get_grid_info(g)) for g in grids)# if g not in [GRIDS_ANY,GRIDS_ANY_GPD,GRIDS_ANY_PROJ4])
-    for band_kind, band_id in bands.keys():
-        if bands [(band_kind, band_id)]["grids"] == GRIDS_ANY:
-            bands [(band_kind, band_id)]["grids"] = list(grids)
-        elif bands[(band_kind, band_id)]["grids"] == GRIDS_ANY_PROJ4:
-            bands [(band_kind, band_id)]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_PROJ4 ]
-        elif bands[(band_kind, band_id)]["grids"] == GRIDS_ANY_GPD:
-            bands [(band_kind, band_id)]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_GPD ]
-        elif len(bands[(band_kind, band_id)]["grids"]) == 0:
-            log.error("The backend does not support kind %s band %s, won't add to job list..." % (band_kind, band_id))
-            # Handled in the next for loop via the inner for loop not adding anything
-        else:
-            bands[(band_kind, band_id)]["grids"] = grids.intersection(bands[(band_kind, band_id)]["grids"])
-            bad_grids = grids - set(bands[(band_kind, band_id)]["grids"])
-            if len(bad_grids) != 0 and forced_grids is not None:
-                log.error("Backend does not know how to handle grids '%r'" % list(bad_grids))
-                raise ValueError("Backend does not know how to handle grids '%r'" % list(bad_grids))
-
-    # Create "grid" jobs to be run through remapping
-    # Jobs are per grid per band
-    grid_jobs = {}
-    for band_kind, band_id in bands.keys():
-        for grid_name in bands[(band_kind, band_id)]["grids"]:
-            if grid_name not in grid_jobs: grid_jobs[grid_name] = {}
-            if (band_kind, band_id) not in grid_jobs[grid_name]: grid_jobs[grid_name][(band_kind, band_id)] = {}
-            log.debug("Kind %s band %s will be remapped to grid %s" % (band_kind, band_id, grid_name))
-            grid_jobs[grid_name][(band_kind, band_id)] = bands[(band_kind, band_id)].copy()
-
-    if len(grid_jobs) == 0:
-        msg = "No backend compatible grids were found to fit the data set"
-        log.error(msg)
-        raise ValueError(msg)
-
-    return grid_jobs
+GLUE_NAME = "viirs2awips"
+LOG_FN = os.environ.get("VIIRS2AWIPS_LOG", "./%s.log" % (GLUE_NAME,))
 
 def process_data_sets(filepaths,
         fornav_D=None, fornav_d=None,
@@ -219,9 +44,12 @@ def process_data_sets(filepaths,
     """
     status_to_return = STATUS_SUCCESS
 
-    # Load any configuration files needed
+    # Declare polar2grid components
     frontend = Frontend()
-    backend = Backend(rescale_config=rescale_config, backend_config=backend_config)
+    backend = Backend(
+            rescale_config=rescale_config,
+            backend_config=backend_config
+            )
 
     # Extract Swaths
     log.info("Extracting swaths...")
@@ -230,7 +58,7 @@ def process_data_sets(filepaths,
                 filepaths,
                 scale_dnb=True,
                 new_dnb=new_dnb,
-                create_fog=True,
+                create_fog=create_pseudo,
                 cut_bad=True
                 )
 
@@ -265,7 +93,7 @@ def process_data_sets(filepaths,
 
     ### Remap the data
     try:
-        remapped_jobs = remap_bands(sat, instrument, nav_set_uid,
+        remapped_jobs = remap.remap_bands(sat, instrument, nav_set_uid,
                 fbf_lon, fbf_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
                 lat_fill_value=meta_data.get("lat_fill_value", None),
@@ -322,7 +150,7 @@ def process_data_sets(filepaths,
 
 def _process_data_sets(*args, **kwargs):
     """Wrapper function around `process_data_sets` so that it can called
-    properly from `run_viir2awips`, where the exitcode is the actual
+    properly from `run_glue`, where the exitcode is the actual
     returned value from `process_data_sets`.
 
     This function also checks for exceptions other than the ones already
@@ -333,16 +161,16 @@ def _process_data_sets(*args, **kwargs):
         stat = process_data_sets(*args, **kwargs)
         sys.exit(stat)
     except MemoryError:
-        log.error("viirs2awips ran out of memory, check log file for more info")
+        log.error("%s ran out of memory, check log file for more info" % (GLUE_NAME,))
         log.debug("Memory error:", exc_info=1)
     except OSError:
-        log.error("viirs2awips had a OS error, check log file for more info")
+        log.error("%s had a OS error, check log file for more info" % (GLUE_NAME,))
         log.debug("OS error:", exc_info=1)
     except StandardError:
-        log.error("viirs2awips had an unexpected error, check log file for more info")
+        log.error("%s had an unexpected error, check log file for more info" % (GLUE_NAME,))
         log.debug("Unexpected/Uncaught error:", exc_info=1)
     except KeyboardInterrupt:
-        log.info("viirs2awips was cancelled by a keyboard interrupt")
+        log.info("%s was cancelled by a keyboard interrupt" % (GLUE_NAME,))
 
     sys.exit(-1)
 
@@ -434,7 +262,7 @@ def run_glue(filepaths,
 
     return exit_status
 
-def main():
+def main(argv = sys.argv[1:]):
     import argparse
     description = """
     Create VIIRS swaths, remap them to a grid, and place that remapped data
@@ -444,22 +272,18 @@ def main():
 
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
-    parser.add_argument('-D', dest='fornav_D', default=40,
+    parser.add_argument('--fornav-D', dest='fornav_D', default=40,
             help="Specify the -D option for fornav")
-    parser.add_argument('-d', dest='fornav_d', default=2,
+    parser.add_argument('--fornav-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
-    parser.add_argument('-f', dest='get_files', default=False, action="store_true",
-            help="Specify that hdf files are listed, not a directory")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
             help="Processing is sequential instead of one process per kind of band")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
-    parser.add_argument('-k', '--keep', dest='remove_prev', default=True, action='store_true',
-            help="Don't delete any files that were previously made (WARNING: processing may not run successfully)")
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
-    parser.add_argument('--rescale-config', dest='rescale_config', default=None,
-            help="specify alternate rescale configuration file")
+    parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
+            help="run new DNB scaling if provided DNB data (temporary)") # XXX
 
     # Remapping/Grids
     parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="all",
@@ -472,53 +296,61 @@ def main():
             help="Specify a different ncml file to use")
     parser.add_argument('--backend-config', dest='backend_config', default=None,
             help="specify alternate backend configuration file")
-    parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
-            help="run new DNB scaling if provided DNB data (temporary)") # XXX
+    parser.add_argument('--rescale-config', dest='rescale_config', default=None,
+            help="specify alternate rescale configuration file")
 
-    parser.add_argument('data_files', nargs="+",
-            help="Data directory where satellite data is stored or list of data filenames if '-f' is specified")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-f', dest='data_files', nargs="+",
+            help="List of one or more hdf files")
+    group.add_argument('-d', dest='data_dir', nargs="?",
+            help="Data directory to look for input data files")
+    group.add_argument('-R', dest='remove_prev', default=False, action='store_true',
+            help="Delete any files that may conflict with future processing. Processing is not done with this flag.")
 
-    args = parser.parse_args()
+    args = parser.parse_args(args=argv)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)])
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=LOG_FN)
 
     # Don't set this up until after you have setup logging
-    sys.excepthook = exc_handler
+    sys.excepthook = create_exc_handler(GLUE_NAME)
 
     fornav_D = int(args.fornav_D)
     fornav_d = int(args.fornav_d)
     num_procs = int(args.num_procs)
     forced_grids = args.forced_grids
     if forced_grids == 'all': forced_grids = None
-    if args.forced_gpd is not None and not os.path.exists(args.forced_gpd):
-        log.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
-        return -1
-    if args.forced_nc is not None and not os.path.exists(args.forced_nc):
-        log.error("Specified nc file does not exist '%s'" % args.forced_nc)
-        return -1
+    if args.forced_gpd is not None:
+        args.forced_gpd = os.path.realpath(os.path.expanduser(args.forced_gpd))
+        if not os.path.exists(args.forced_gpd):
+            log.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
+            return -1
+    if args.forced_nc is not None:
+        args.forced_nc = os.path.realpath(os.path.expanduser(args.forced_nc))
+        if not os.path.exists(args.forced_nc):
+            log.error("Specified nc file does not exist '%s'" % args.forced_nc)
+            return -1
 
-    if "help" in args.data_files:
-        parser.print_help()
-        sys.exit(0)
-    elif "remove" in args.data_files:
-        log.debug("Removing previous products")
-        remove_products()
-        sys.exit(0)
+    if args.remove_prev:
+        log.info("Removing any possible conflicting files")
+        remove_file_patterns(
+                Frontend.removable_file_patterns,
+                remap.removable_file_patterns,
+                Backend.removable_file_patterns
+                )
+        return 0
 
-    if args.get_files:
+    if args.data_files:
         hdf_files = args.data_files[:]
-    elif len(args.data_files) == 1:
-        base_dir = os.path.abspath(args.data_files[0])
+    elif args.data_dir:
+        base_dir = os.path.abspath(os.path.expanduser(args.data_dir))
         hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
     else:
         log.error("Wrong number of arguments")
         parser.print_help()
         return -1
-
-    if args.remove_prev:
-        log.debug("Removing any previous files")
-        remove_products()
+    # Handle the user using a '~' for their home directory
+    hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in hdf_files ]
 
     stat = run_glue(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
                 forced_grid=forced_grids,

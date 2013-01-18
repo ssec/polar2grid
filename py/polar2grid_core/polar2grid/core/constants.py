@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """Module to store all constants.  Any constant needed in more than one
 component, or potentially more than one part, of polar2grid should be
 defined here.
@@ -15,13 +17,13 @@ Possible confusions:
 
 Exceptions:
     - Return status constants are not strings so that they can be or'ed and
-    can be interpreted by a command line shell.
+        can be interpreted by a command line shell.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Oct 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"
@@ -94,6 +96,25 @@ DKIND_ANGLE       = "angle"
 DKIND_DISTANCE    = "distance" # this is meant to be a distance in the sense of mm, cm, meters, km, or miles
 DKIND_PERCENT     = "percent"
 DKIND_C_INDEX     = "contiguous_index" # this represents some abstract ranging index with meaningfully contiguous values (not discrete categories)
+
+SET_DKINDS = set([
+    DKIND_RADIANCE,
+    DKIND_REFLECTANCE,
+    DKIND_BTEMP,
+    DKIND_FOG
+    ])
+
+# Data types (int,float,#bits,etc.)
+DTYPE_UINT8   = "uint1"
+DTYPE_UINT16  = "uint2"
+DTYPE_UINT32  = "uint4"
+DTYPE_UINT64  = "uint8"
+DTYPE_INT8    = "int1"
+DTYPE_INT16   = "int2"
+DTYPE_INT32   = "int4"
+DTYPE_INT64   = "int8"
+DTYPE_FLOAT32 = "real4"
+DTYPE_FLOAT64 = "real8"
 
 # Grid Constants
 GRIDS_ANY = "any_grid"

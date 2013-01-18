@@ -8,9 +8,8 @@ the main AWIPS backend to the `polar2grid.viirs2awips` script.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 
@@ -49,9 +48,10 @@ variables:
 
 from polar2grid.core import Workspace
 from polar2grid.core import roles
-from polar2grid.core.constants import DEFAULT_FILL_VALUE
+from polar2grid.core.constants import *
 from polar2grid.nc import create_nc_from_ncml
-from polar2grid.core.rescale import Rescaler,ubyte_filter
+from polar2grid.core.rescale import Rescaler
+from polar2grid.core.dtype import clip_to_data_type
 from .awips_config import get_awips_info,load_config as load_awips_config,can_handle_inputs as config_can_handle_inputs
 
 import os, sys, logging, re
@@ -95,7 +95,7 @@ def create_netcdf(nc_name, image, template, start_dt,
         raise ValueError("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape),str(image.shape)))
 
     # Convert to signed byte keeping large values large
-    image = ubyte_filter(image)
+    image = clip_to_data_type(image, DTYPE_UINT8)
 
     image_var[:] = image
     time_var = nc.variables["validTime"]
@@ -111,6 +111,10 @@ def create_netcdf(nc_name, image, template, start_dt,
     log.debug("Data transferred into NC file correctly")
 
 class Backend(roles.BackendRole):
+    removable_file_patterns = [
+            "SSEC_AWIPS_*"
+            ]
+
     config = {}
     def __init__(self, backend_config=None, rescale_config=None, fill_value=DEFAULT_FILL_VALUE):
         # Load AWIPS backend configuration

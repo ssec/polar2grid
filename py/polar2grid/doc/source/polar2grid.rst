@@ -4,15 +4,31 @@ polar2grid Package
 :mod:`polar2grid` Package
 -------------------------
 
-.. automodule:: polar2grid.__init__
+.. automodule:: polar2grid
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`core` Module
-------------------
+:mod:`binary` Module
+--------------------
 
-.. automodule:: polar2grid.core
+.. automodule:: polar2grid.binary
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`gtiff_backend` Module
+---------------------------
+
+.. automodule:: polar2grid.gtiff_backend
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`ll2cr` Module
+-------------------
+
+.. automodule:: polar2grid.ll2cr
     :members:
     :undoc-members:
     :show-inheritance:
@@ -41,18 +57,18 @@ polar2grid Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`plot_result` Module
+:mod:`plot_binary` Module
 -------------------------
 
-.. automodule:: polar2grid.plot_result
+.. automodule:: polar2grid.plot_binary
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`rescale` Module
----------------------
+:mod:`remap` Module
+-------------------
 
-.. automodule:: polar2grid.rescale
+.. automodule:: polar2grid.remap
     :members:
     :undoc-members:
     :show-inheritance:
@@ -65,11 +81,28 @@ polar2grid Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`viirs2binary` Module
+--------------------------
+
+.. automodule:: polar2grid.viirs2binary
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`viirs2gtiff` Module
+-------------------------
+
+.. automodule:: polar2grid.viirs2gtiff
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Subpackages
 -----------
 
 .. toctree::
 
     polar2grid.awips
-    polar2grid.viirs
+    polar2grid.grids
 

@@ -1,6 +1,17 @@
+#!/usr/bin/env python
+# encoding: utf-8
 """Python replacement for ms2gt's ll2cr using pyproj and
 proj4 strings.
+
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2012
+:license:      GNU GPLv3
 """
+__docformat__ = "restructuredtext en"
+
 from polar2grid.core import Workspace
 from polar2grid.core.constants import DEFAULT_FILL_VALUE
 import pyproj
@@ -98,9 +109,9 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
 
     # Memory map the output filenames
     # cols then rows in FBF filenames
-    rows_fn = prefix + "rows.real4.%d.%d" % lat_arr.shape[::-1]
+    rows_fn = prefix + "_rows.real4.%d.%d" % lat_arr.shape[::-1]
     rows_arr = numpy.memmap(rows_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
-    cols_fn = prefix + "cols.real4.%d.%d" % lat_arr.shape[::-1]
+    cols_fn = prefix + "_cols.real4.%d.%d" % lat_arr.shape[::-1]
     cols_arr = numpy.memmap(cols_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
 
     good_mask = (lon_arr != lon_fill_in) & (lat_arr != lat_fill_in)
@@ -168,17 +179,46 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     lon_range = numpy.linspace(swath_lon_west, normal_lon_east, 15)
     lat_range = numpy.linspace(swath_lat_north, swath_lat_south, 15)
 
+    # Test the left, right, ul2br diagonal, ur2bl diagonal, top, bottom
+    # If we are over the north pole then handle strong possibility of data in all longitudes
+    if swath_lat_north >= 89.5: bottom_lon_range = numpy.linspace(-180, 180, 15)
+    else: bottom_lon_range = lon_range
+    # If we are over the north pole then handle strong possibility of data in all longitudes
+    if swath_lat_south <= -89.5: top_lon_range = numpy.linspace(-180, 180, 15)
+    else: top_lon_range = lon_range
+
+    lon_test = numpy.array([ [swath_lon_west]*15, [swath_lon_east]*15, lon_range, lon_range,       top_lon_range, bottom_lon_range ])
+    lat_test = numpy.array([ lat_range,           lat_range,           lat_range, lat_range[::-1], [swath_lat_north]*15, [swath_lat_south]*15 ])
+    x_test,y_test = _transform_array(tformer, lon_test, lat_test, proj_circum, stradles_anti=stradles_anti)
+
     # Calculate the best corners of the data
     if grid_width is None or pixel_size_x is None or fine_tune_origin:
         # only used if calculate grid/pixel size
-        corner_x = _transform_array(tformer, numpy.array([swath_lon_east]*15), lat_range, proj_circum, stradles_anti=stradles_anti)[0].max()
-        corner_y = _transform_array(tformer, lon_range, numpy.array([swath_lat_south]*15), proj_circum, stradles_anti=stradles_anti)[1].min()
+        #corner_x = _transform_array(tformer, numpy.array([swath_lon_east]*15), lat_range, proj_circum, stradles_anti=stradles_anti)[0].max()
+        #corner_y = _transform_array(tformer, lon_range, numpy.array([swath_lat_south]*15), proj_circum, stradles_anti=stradles_anti)[1].min()
+        corner_x = x_test.max()
+        corner_y = y_test.min()
         log.debug("Grid Corners: %f,%f" % (corner_x,corner_y))
 
     if fine_tune_origin:
-        grid_origin_x = _transform_array(tformer, numpy.array([swath_lon_west]*15), lat_range, proj_circum, stradles_anti=stradles_anti)[0].min()
-        grid_origin_y = _transform_array(tformer, lon_range, numpy.array([swath_lat_north]*15), proj_circum, stradles_anti=stradles_anti)[1].max()
+        #grid_origin_x = _transform_array(tformer, numpy.array([swath_lon_west]*15), lat_range, proj_circum, stradles_anti=stradles_anti)[0].min()
+        #grid_origin_y = _transform_array(tformer, lon_range, numpy.array([swath_lat_north]*15), proj_circum, stradles_anti=stradles_anti)[1].max()
+        grid_origin_x = x_test.min()
+        grid_origin_y = y_test.max()
         log.debug("Grid Origin: %f,%f" % (grid_origin_x,grid_origin_y))
+
+    # Fix the rare event that the projection causes the upper-left lat/lon to
+    # not be the upper-left of the grid
+    x_tmp = grid_origin_x
+    if grid_origin_x > corner_x:
+        grid_origin_x = corner_x
+        corner_x = x_tmp
+        del x_tmp
+    y_tmp = grid_origin_y
+    if grid_origin_y < corner_y:
+        grid_origin_y = corner_y
+        corner_y = y_tmp
+        del y_tmp
 
     if grid_width is None or pixel_size_x is None:
         if grid_width is None:
@@ -186,6 +226,10 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
             grid_width = math.ceil((corner_x - grid_origin_x) / pixel_size_x)
             grid_height = math.ceil((corner_y - grid_origin_y) / pixel_size_y)
             log.debug("Grid width/height (%d, %d)" % (grid_width,grid_height))
+            if grid_width < 5 or grid_height < 5:
+                msg = "No data fit in the grid at origin (%f, %f)" % (grid_origin_x, grid_origin_y)
+                log.error(msg)
+                raise ValueError(msg)
         else:
             # Calculate pixel size
             pixel_size_x = (corner_x - grid_origin_x) / float(grid_width)

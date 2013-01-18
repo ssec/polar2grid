@@ -9,7 +9,7 @@ objects to polar2grid packages.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"

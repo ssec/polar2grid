@@ -3,17 +3,13 @@
 """
 Provide information about ADL product files for a variety of uses.
 
-:group Data Kinds: K_*
-:group Guides: ROWS_PER_SCAN,COLS_PER_ROW,DATA_KINDS,*_GUIDE
-
 :author:       David Hoese (davidh)
 :author:       Ray Garcia (rayg)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
-:revision:     $Id$
 """
 __docformat__ = "restructuredtext en"
 
@@ -197,13 +193,13 @@ band2const = {
 # missing value sentinels for different datasets
 # 0 if scaling exists, 1 if scaling is None
 MISSING_GUIDE = {
-                DKIND_REFLECTANCE: (lambda A: A>=65528, lambda A:A<0.0),
-                DKIND_RADIANCE: (lambda A: A>=65528, lambda A: A<0.0),
-                DKIND_BTEMP: (lambda A: A>=65528, lambda A: A<0.0),
-                K_SOLARZENITH: (lambda A: A>=65528, lambda A: A<0.0),
-                K_MODESCAN: (lambda A: A>1, lambda A: A>1),
-                K_LATITUDE: (lambda A: A>=65528, lambda A: A<=-999),
-                K_LONGITUDE: (lambda A: A>=65528, lambda A: A<=-999)
+                DKIND_REFLECTANCE : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                DKIND_RADIANCE    : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                DKIND_BTEMP       : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                K_SOLARZENITH     : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                K_MODESCAN        : ( lambda A: A>1,      lambda A: A >  1      ),
+                K_LATITUDE        : ( lambda A: A>=65528, lambda A: A <= -999   ),
+                K_LONGITUDE       : ( lambda A: A>=65528, lambda A: A <= -999   )
                 }
 
 

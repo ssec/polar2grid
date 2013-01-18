@@ -6,10 +6,12 @@
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2012
+:date:         Dec 2012
 :license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"
+
+from .constants import *
 
 import numpy
 
@@ -19,10 +21,61 @@ from glob import glob
 
 log = logging.getLogger(__name__)
 
+FBF_FLOAT32   = "real4"
+FBF_FLOAT64   = "real8"
+FBF_INT8      = "int1"
+FBF_INT16     = "int2"
+FBF_INT32     = "int4"
+FBF_INT64     = "int8"
+FBF_UINT8     = "uint1"
+FBF_UINT16    = "uint2"
+FBF_UINT32    = "uint4"
+FBF_UINT64    = "uint8"
+
 str_to_dtype = {
-        "real4" : numpy.float32,
-        "int1"  : numpy.int8
+        FBF_FLOAT32   : numpy.float32,
+        FBF_FLOAT64   : numpy.float64,
+        FBF_INT8      : numpy.int8,
+        FBF_INT16     : numpy.int16,
+        FBF_INT32     : numpy.int32,
+        FBF_INT64     : numpy.int64,
+        FBF_UINT8     : numpy.uint8,
+        FBF_UINT16    : numpy.uint16,
+        FBF_UINT32    : numpy.uint32,
+        FBF_UINT64    : numpy.uint64
         }
+
+# Map polar2grid data type to FBF data type
+dtype2fbf = {
+        DTYPE_FLOAT32 : FBF_FLOAT32,
+        DTYPE_FLOAT64 : FBF_FLOAT64,
+        DTYPE_INT8    : FBF_INT8,
+        DTYPE_INT16   : FBF_INT16,
+        DTYPE_INT32   : FBF_INT32,
+        DTYPE_INT64   : FBF_INT64,
+        DTYPE_UINT8   : FBF_UINT8,
+        DTYPE_UINT16  : FBF_UINT16,
+        DTYPE_UINT32  : FBF_UINT32,
+        DTYPE_UINT64  : FBF_UINT64
+        }
+
+def data_type_to_fbf_type(data_type):
+    if data_type not in dtype2fbf:
+        msg = "Can not convert data type '%s' to FBF data type" % (data_type,)
+        log.error(msg)
+        raise ValueError(msg)
+
+    return dtype2fbf[data_type]
+
+def check_stem(stem_name):
+    """Helper function to tell a user if a stem name will conflict with
+    another file in the current working directory.
+    """
+    log.debug("Checking stem '%s'" % (stem_name,))
+    if len(glob(stem_name + ".*")) != 0:
+        msg = "Flat binary file with stem '%s' already exists, please remove and try again" % (stem_name,)
+        log.error(msg)
+        raise ValueError(msg)
 
 class Workspace(object):
     """Wrapper object around ``numpy.fromfile()`` method to treat a directory as a

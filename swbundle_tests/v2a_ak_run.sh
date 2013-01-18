@@ -11,7 +11,7 @@ oops() {
 
 run_test() {
     echo "Running test for data in $2..."
-    viirs2awips.sh -g $1 $2
+    viirs2awips.sh -g $1 -d $2
     if [ $? -ne 0 ]; then
         echo "ERROR: viirs2awips.sh did not complete test $2 successfully"
         echo "ERROR: Won't remove test directory, check it for more information"
@@ -24,7 +24,11 @@ run_test() {
 if [ -z "$POLAR2GRID_HOME" ]; then
     oops "POLAR2GRID_HOME needs to be defined"
 fi
-source $POLAR2GRID_HOME/bin/polar2grid_env.sh
+if [ ! -d "$POLAR2GRID_HOME" ]; then
+    oops "POLAR2GRID_HOME does not exist: $POLAR2GRID_HOME"
+fi
+
+source $POLAR2GRID_HOME/bin/polar2grid_env.sh || oops "Could not find 'bin/polar2grid_env.sh' in POLAR2GRID_HOME"
 
 # Find out where the tests are relative to this script
 TEST_BASE="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
