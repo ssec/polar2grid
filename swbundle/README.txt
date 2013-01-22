@@ -29,6 +29,11 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     Madison, WI  53706
     david.hoese@ssec.wisc.edu
 
+Original scripts and automation included as part of this package are
+distributed under the GNU GENERAL PUBLIC LICENSE agreement version 3.
+Binary executable files included as part of this software package are
+copyrighted and licensed by their respective organizations, and
+distributed consistent with their licensing terms.
 
 Installation
 ============

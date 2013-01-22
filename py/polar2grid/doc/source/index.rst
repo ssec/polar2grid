@@ -19,6 +19,14 @@ Code repository: https://github.com/davidh-ssec/polar2grid
 If you are a developer wishing to add your own frontend or backend please
 see the :doc:`Developer's Guide <dev_guide/index>` for details on how to do so.
 
+Original scripts and automation included as part of this package are
+distributed under the
+:download:`GNU GENERAL PUBLIC LICENSE agreement version 3 <../../../../COPYING>`.
+Binary
+executable files included as part of this software package are copyrighted
+and licensed by their respective organizations, and distributed consistent
+with their licensing terms.
+
 Contents
 --------
 
