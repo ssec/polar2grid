@@ -18,7 +18,15 @@ setup(
     include_package_data=True,
     package_data={'polar2grid': ["grids/*.gpd","grids/*.nc","*.conf"]},
     zip_safe=False,
-    install_requires=['numpy', 'netCDF4', 'matplotlib', 'h5py', 'polar2grid.core', 'polar2grid.viirs'],
+    install_requires=[
+        'numpy',
+        'matplotlib',
+        'netCDF4',          # AWIPS backend
+        'pyproj',           # Python ll2cr, grids
+        'gdal',             # Geotiff backend
+        'polar2grid.core',
+        'polar2grid.viirs'
+        ],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points = {'console_scripts' : [
             'viirs2awips = polar2grid.viirs2awips:main',
