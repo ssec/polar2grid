@@ -73,7 +73,7 @@ Lambert Conic Conformal Dynamic Fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :Grid Name: lcc_fit
 :Description: 1km East CONUS centered lcc grid
-:PROJ.4 String: +proj=lcc +a=6378137 +b=6378137 +lat_0=25 +lon_0=-95
+:PROJ.4 String: +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=25 +lon_0=-95
 :Grid Width: None
 :Grid Height: None
 :X Pixel Size: 1000 meters
@@ -85,7 +85,7 @@ High Resolution Lambert Conic Conformal Dynamic Fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :Grid Name: lcc_fit_hr
 :Description: 400m East CONUS centered lcc grid
-:PROJ.4 String: +proj=lcc +a=6378137 +b=6378137 +lat_0=25 +lon_0=-95
+:PROJ.4 String: +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=25 +lon_0=-95
 :Grid Width: None
 :Grid Height: None
 :X Pixel Size: 400 meters
@@ -97,7 +97,7 @@ Polar-Stereographic North Pacific
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :Grid Name: polar_north_pacific
 :Description: 400m Northern Pacific Grid
-:PROJ.4 String: +proj=stere +lat_0=90 +lat_ts=45.0 +lon_0=-170
+:PROJ.4 String: +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=45.0 +lon_0=-170
 :Grid Width: None
 :Grid Height: None
 :X Pixel Size: 400 meters
@@ -109,7 +109,7 @@ Polar-Stereographic South Pacific
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 :Grid Name: polar_south_pacific
 :Description: 400m Southern Pacific Grid
-:PROJ.4 String: +proj=stere +lat_0=-90 +lat_ts=-45.0 +lon_0=-170
+:PROJ.4 String: +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=-90 +lat_ts=-45.0 +lon_0=-170
 :Grid Width: None
 :Grid Height: None
 :X Pixel Size: 400 meters
