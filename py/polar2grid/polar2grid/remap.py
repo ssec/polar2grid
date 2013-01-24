@@ -192,7 +192,8 @@ def run_fornav_py():
     pass
 
 def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
-        num_procs=1, verbose=False, fornav_d=None, fornav_D=None, fill_value=None):
+        num_procs=1, verbose=False, fornav_d=None, fornav_D=None,
+        fill_value=None, do_single_sample=False):
     """Run one of the fornavs and return a dictionary mapping grid_name
     to the fornav remapped image data, among other information.
     """
@@ -249,6 +250,7 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
                             grid_fill_1=fornav_job["grid_fill_1"],
                             weight_delta_max=fornav_D,
                             weight_distance_max=fornav_d,
+                            select_single_samples=do_single_sample,
                             # We only specify start_scan for the 'image'/channel
                             # data because ll2cr is not 'forced' so it only writes
                             # useful data to the output cols/rows files
@@ -295,7 +297,8 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
 def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
         grid_jobs, num_procs=1, fornav_d=None, fornav_D=None, forced_gpd=None,
         lat_south=None, lat_north=None, lon_west=None, lon_east=None,
-        lat_fill_value=None, lon_fill_value=None, fill_value=None):
+        lat_fill_value=None, lon_fill_value=None, fill_value=None,
+        do_single_sample=False):
     """Remap data using the C or python version of ll2cr and the
     C version of fornav.
 
@@ -323,7 +326,8 @@ def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     # Run fornav
     fornav_output = run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
             num_procs=num_procs, verbose=log_level <= logging.DEBUG,
-            fornav_d=fornav_d, fornav_D=fornav_D, fill_value=fill_value)
+            fornav_d=fornav_d, fornav_D=fornav_D, fill_value=fill_value,
+            do_single_sample=do_single_sample)
 
     return fornav_output
 

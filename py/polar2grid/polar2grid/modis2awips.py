@@ -67,6 +67,7 @@ def clean_up_files():
 def process_data_sets(filepaths,
                       nav_uid,
                       fornav_D=None, fornav_d=None,
+                      fornav_m=True,
                       forced_grid=None,
                       forced_gpd=None, forced_nc=None,
                       create_pseudo=True,
@@ -129,7 +130,8 @@ def process_data_sets(filepaths,
                 flatbinaryfilename_lon, flatbinaryfilename_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
                 lat_fill_value=meta_data.get("lat_fill_value", None),
-                lon_fill_value=meta_data.get("lon_fill_value", None)
+                lon_fill_value=meta_data.get("lon_fill_value", None),
+                do_single_sample=fornav_m, 
                 )
     except StandardError:
         log.debug("Remapping Error:", exc_info=1)
@@ -314,6 +316,8 @@ def main():
             help="Specify the -D option for fornav")
     parser.add_argument('-d', dest='fornav_d', default=1,
             help="Specify the -d option for fornav")
+    parser.add_argument('-m', dest='fornav_m', default=False, action='store_true',
+            help="Specify the -m option for fornav")
     parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="all",
             help="Force remapping to only some grids, defaults to 'all', use 'all' for determination")
     parser.add_argument('--gpd', dest='forced_gpd', default=None,
@@ -341,6 +345,7 @@ def main():
     
     fornav_D = int(args.fornav_D)
     fornav_d = int(args.fornav_d)
+    fornav_m = args.fornav_m
     num_procs = int(args.num_procs)
     forced_grids = args.forced_grids
     if forced_grids == 'all': forced_grids = None
@@ -373,7 +378,8 @@ def main():
         log.debug("Removing any previous files")
         clean_up_files()
     
-    stat = run_modis2awips(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
+    stat = run_modis2awips(hdf_files,
+                fornav_D=fornav_D, fornav_d=fornav_d, fornav_m=fornav_m,
                 forced_gpd=args.forced_gpd, forced_nc=args.forced_nc,
                 forced_grid=forced_grids,
                 create_pseudo=args.create_pseudo,
