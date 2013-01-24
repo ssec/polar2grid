@@ -50,7 +50,7 @@ from polar2grid.core import Workspace
 
 import os
 
-def plot_binary(bf, workspace='.', fill_value=-999.0):
+def plot_binary(bf, workspace='.', fill_value=-999.0, dpi_to_use=100):
     W=Workspace(workspace)
 
     plt.figure()
@@ -61,7 +61,7 @@ def plot_binary(bf, workspace='.', fill_value=-999.0):
     plt.imshow(result)
     plt.bone()
     plt.colorbar()
-    plt.savefig("plot_binary.%s.png" % fbf_attr)
+    plt.savefig("plot_binary.%s.png" % fbf_attr, dpi=dpi_to_use)
     plt.close()
 
 def main():
@@ -76,6 +76,8 @@ Plot binary files using matplotlib.
             help="filename pattern to search the current directory for")
     parser.add_argument("binary_files", nargs="*",
             help="list of flat binary files to be plotted in the current directory")
+    parser.add_argument('--dpi', dest="dpi",   default=100, type=float,
+            help="Specify the dpi for the resulting figure, higher dpi will result in larger figures and longer run times")
     args = parser.parse_args()
 
     workspace = '.'
@@ -89,7 +91,7 @@ Plot binary files using matplotlib.
     for bf in binary_files:
         print "Plotting '%s'" % (bf,)
         try:
-            plot_binary(bf, workspace='.', fill_value=args.fill_value)
+            plot_binary(bf, workspace='.', fill_value=args.fill_value, dpi_to_use=args.dpi)
         except StandardError as e:
             print "Could not plot '%s'" % (bf,)
             if hasattr(e, "msg"): print e,e.msg
