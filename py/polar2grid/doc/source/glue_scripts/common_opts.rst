@@ -22,8 +22,10 @@ regardless of the frontend or backend.
 
     Specify a log filename. Default is ``<glue script>_%Y%m%d_%H%M%S.log``
     where the date information comes from the earliest data input filename.
-    If the :option:`-R` is specified, the current date UTC is used since
-    no files are passed.
+    If the :option:`-R` is specified, the default log filename is 
+    ``<glue script>_removal.log``. If this flag is specified along with the
+    ``-R`` flag the current date UTC is used to fill in any date formatting
+    since no files are passed.
 
 .. cmdoption:: --debug
 
