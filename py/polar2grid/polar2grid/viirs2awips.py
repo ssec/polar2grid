@@ -43,6 +43,7 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.glue_utils import setup_logging,create_exc_handler,remove_file_patterns
+from polar2grid.core.time_utils import utc_now
 from polar2grid.core.constants import *
 from polar2grid.viirs import Frontend
 from .grids.grids import create_grid_jobs
@@ -53,10 +54,11 @@ import os
 import sys
 import logging
 from multiprocessing import Process
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 GLUE_NAME = "viirs2awips"
-LOG_FN = os.environ.get("VIIRS2AWIPS_LOG", "./%s.log" % (GLUE_NAME,))
+LOG_FN = os.environ.get("VIIRS2AWIPS_LOG", GLUE_NAME + "_%Y%m%d_%H%M%S.log")
 
 def process_data_sets(filepaths,
         fornav_D=None, fornav_d=None,
@@ -301,6 +303,13 @@ def main(argv = sys.argv[1:]):
 
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
+    parser.add_argument('-l', '--log', dest="log_fn", default=LOG_FN,
+            help="""specify the log filename, default
+<gluescript>_%Y%m%d_%H%M%S. Date information is provided from data filename
+through strftime. Current time if no files.""")
+    parser.add_argument('--debug', dest="debug_mode", default=False,
+            action='store_true',
+            help="Enter debug mode. Keeping intermediate files.")
     parser.add_argument('--fornav-D', dest='fornav_D', default=40,
             help="Specify the -D option for fornav")
     parser.add_argument('--fornav-d', dest='fornav_d', default=2,
@@ -338,11 +347,45 @@ def main(argv = sys.argv[1:]):
 
     args = parser.parse_args(args=argv)
 
+    # Get the date of the first file if provided
+    if args.remove_prev:
+        # They didn't need to specify a filename
+        file_start_time = utc_now()
+    else:
+        if args.data_files:
+            hdf_files = args.data_files[:]
+        elif args.data_dir:
+            base_dir = os.path.abspath(os.path.expanduser(args.data_dir))
+            hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
+        else:
+            log.error("Wrong number of arguments")
+            parser.print_help()
+            return -1
+
+        # Handle the user using a '~' for their home directory
+        hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in sorted(hdf_files) ]
+        first_file = os.path.split(hdf_files[0])[-1]
+        # SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
+        file_start_time = datetime.strptime(first_file[10:27], "d%Y%m%d_t%H%M%S")
+
+    # Determine the log filename
+    log_fn = datetime.strftime(file_start_time, args.log_fn)
+
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=LOG_FN)
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=log_fn)
 
     # Don't set this up until after you have setup logging
     sys.excepthook = create_exc_handler(GLUE_NAME)
+
+    # Remove previous intermediate and product files
+    if args.remove_prev:
+        log.info("Removing any possible conflicting files")
+        remove_file_patterns(
+                Frontend.removable_file_patterns,
+                remap.removable_file_patterns,
+                Backend.removable_file_patterns
+                )
+        return 0
 
     fornav_D = int(args.fornav_D)
     fornav_d = int(args.fornav_d)
@@ -360,27 +403,6 @@ def main(argv = sys.argv[1:]):
             log.error("Specified nc file does not exist '%s'" % args.forced_nc)
             return -1
 
-    if args.remove_prev:
-        log.info("Removing any possible conflicting files")
-        remove_file_patterns(
-                Frontend.removable_file_patterns,
-                remap.removable_file_patterns,
-                Backend.removable_file_patterns
-                )
-        return 0
-
-    if args.data_files:
-        hdf_files = args.data_files[:]
-    elif args.data_dir:
-        base_dir = os.path.abspath(os.path.expanduser(args.data_dir))
-        hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
-    else:
-        log.error("Wrong number of arguments")
-        parser.print_help()
-        return -1
-    # Handle the user using a '~' for their home directory
-    hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in hdf_files ]
-
     stat = run_glue(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
                 forced_grid=forced_grids,
                 forced_gpd=args.forced_gpd, forced_nc=args.forced_nc,
@@ -389,6 +411,15 @@ def main(argv = sys.argv[1:]):
                 rescale_config=args.rescale_config,
                 backend_config=args.backend_config,
                 new_dnb=args.new_dnb # XXX
+                )
+    log.debug("Processing returned status code: %d" % stat)
+
+    # Remove intermediate files (not the backend)
+    if not stat and not args.debug_mode:
+        log.info("Removing intermediate products")
+        remove_file_patterns(
+                Frontend.removable_file_patterns,
+                remap.removable_file_patterns
                 )
 
     return stat

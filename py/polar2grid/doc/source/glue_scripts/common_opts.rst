@@ -17,6 +17,20 @@ regardless of the frontend or backend.
     is INFO and for the python script the default is ERROR. To increase the
     level of detail add more ``-v`` to the command line.
 
+.. cmdoption:: -l
+               --log
+
+    Specify a log filename. Default is ``<glue script>_%Y%m%d_%H%M%S.log``
+    where the date information comes from the earliest data input filename.
+    If the :option:`-R` is specified, the current date UTC is used since
+    no files are passed.
+
+.. cmdoption:: --debug
+
+    Enter debug mode. This means that intermediate files will not be removed
+    on successful execution. Default behavior is to keep intermediate files
+    if an error occurred and to delete intermediate files if successful.
+
 .. cmdoption:: -d <data-directory>
 
     Specify the directory to search for data files. Glue scripts will use
