@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-### VIIRS2GTIFF WRAPPER ###
+### Run simple png creator to verify glue script products ###
 #
 # Copyright (C) 2013 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -29,13 +29,21 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
-if [ -z "$POLAR2GRID_HOME" ]; then 
-  export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
-fi
+oops() {
+    echo "OOPS: $*"
+    echo "FAILURE"
+    exit 1
+}
 
-# Setup necessary environments
+# Setup viirs2awips environment
+if [ -z "$POLAR2GRID_HOME" ]; then
+    oops "POLAR2GRID_HOME needs to be defined"
+fi
 source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
-# Call the python module to do the processing, passing all arguments
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.viirs2gtiff -vv $@
+# Generate NC product images
+$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.plot_binary $@ || oops "Could not generate png images from binary files."
+
+# End of all tests
+echo "SUCCESS"
 

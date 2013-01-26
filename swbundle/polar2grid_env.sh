@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-### VIIRS2AWIPS ENVIRONMENT SETUP ###
+### SWBUNDLE ENVIRONMENT SETUP ###
 #
 # Copyright (C) 2013 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.

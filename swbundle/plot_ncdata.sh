@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-### Run simple tests to verify viirs2awips will run properly ###
-# Should be renamed run.sh in the corresponding test tarball
+### Run simple png creator to verify glue script products ###
 #
 # Copyright (C) 2013 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-### VIIRS2GTIFF WRAPPER ###
+### VIIRS2BINARY WRAPPER ###
 #
 # Copyright (C) 2013 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -37,5 +37,5 @@ fi
 source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
 # Call the python module to do the processing, passing all arguments
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.viirs2gtiff -vv $@
+$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.viirs2binary -vv $@
 
