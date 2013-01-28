@@ -24,7 +24,7 @@ See the :doc:`../backends/awips_netcdf` for more
 information on what scaling it does to prepare the data for the
 AWIPS-compatible NetCDF file.
 
-.. program:: |this_glue|
+.. program:: viirs2awips
 
 .. include:: common_opts.rst
 

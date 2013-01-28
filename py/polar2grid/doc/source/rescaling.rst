@@ -16,6 +16,23 @@ for the default scaling configurations are listed.  See the
 in the source repository for exact values used. The function definitions
 below name the positional arguments in the configuration file.
 
+One thing to note about the default rescaling is that it will automatically
+increment the data after one of the below rescaling functions is called. This
+is to assist the user in the common case that fill values should be their own
+unique value (a valid value should not equal a fill value anywhere in the
+data). This incrementing is the default behavior in most glue scripts, but
+most provide a flag to turn this off (:option:`viirs2gtiff --dont_inc`).
+
+As an
+example, if the geotiff backend was given data and then it scaled that
+data to a 0-255 range, the default fill value of -999.0 would be set to 0
+due to clipping for a specific :term:`data type`.  This means that in
+the end product fill/error values would be indistinguishable from valid data
+values. Incrementing gets around this; by scaling data to 0-254 and then
+incrementing the data you get 0 as the fill value and valid data in the
+1-255 range. Of course, data ranges depend on the rescaling decisions of the
+backend where most depend on the :term:`data type` of the output.
+
 .. _rescale_square_root_enhancement:
 
 Square Root Enhancement

@@ -36,7 +36,7 @@ Glossary
         Size or format of the binary representation of the data. For example
         an 8-bit unsigned integer versus a 32-bit float. Polar2grid uses
         constant values for data types and any command line flags that accept
-        a data kind should expect the value of the constant. See the
+        a data type should expect the value of the constant. See the
         :ref:`constants <constants_data_types>`
         module for their current values. Data types are different from
         :term:`data kinds`. Data type constants are prefixed

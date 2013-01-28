@@ -15,7 +15,7 @@ This is used to process
 into
 :doc:`binary files <../backends/binary>`.
 
-.. program:: |this_glue|
+.. program:: viirs2binary
 
 .. include:: common_opts.rst
 
@@ -82,7 +82,7 @@ Command Line Options
     Specify the data type (size) for the output format. Not all data types are
     supported (see the |this_backend| documentation for more details). The
     acceptable values are stored in the
-    `constants <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid_core/polar2grid/core/constants.py>`_
+    :ref:`constants <constants_data_types>`
     file, prefixed with ``DTYPE_``. Use the value not the constant name.
 
     |this_glue| defaults to ``real4`` a 32-bit float.

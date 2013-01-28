@@ -15,7 +15,7 @@ This is used to process
 into
 :doc:`Geotiff images <../backends/gtiff>`.
 
-.. program:: |this_glue|
+.. program:: viirs2gtiff
 
 .. include:: common_opts.rst
 
@@ -82,7 +82,7 @@ Command Line Options
     Specify the data type (size) for the output format. Not all data types are
     supported (see the |this_backend| documentation for more details). The
     acceptable values are stored in the
-    `constants <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid_core/polar2grid/core/constants.py>`_
+    :ref:`constants <constants_data_types>`
     file, prefixed with ``DTYPE_``. Use the value not the constant name.
 
     |this_glue| defaults to ``uint2`` a 16-bit unsigned integer.
@@ -94,7 +94,8 @@ Command Line Options
     0 as a fill value in output data. So, if data is scaled from 0-254 and
     this flag is not specified, the data will be incremented so valid data is
     between 1 and 255. This allows the backend to clip any data below 0 to the
-    value 0.
+    value 0. See :doc:`../rescaling` for more details on how this option is
+    used.
 
     If the rescaling configuration is not specified, most backends that
     support the :option:`--dont_inc` will choose a correct default rescaling
