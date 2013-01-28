@@ -17,7 +17,7 @@ __docformat__ = "restructuredtext en"
 from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
-from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE
+from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE, BID_NEW
 from polar2grid.core import roles
 from polar2grid.core.fbf import check_stem
 import numpy
@@ -26,6 +26,7 @@ import os
 import sys
 import logging
 from glob import glob
+from copy import deepcopy
 
 log = logging.getLogger(__name__)
 
@@ -626,7 +627,28 @@ class Frontend(roles.FrontendRole):
                 # We don't need to scale non-DNB data
                 band_job["fbf_swath"] = band_job["fbf_img"]
                 continue
-
+            
+            if new_dnb :
+                log.info("Prescaling DNB data using adaptively sized tiles...")
+                check_stem("prescale_new_dnb")
+                new_band_job = deepcopy(band_job)
+                try:
+                    fbf_swath = run_dnb_scale(
+                            new_band_job["fbf_img"],
+                            new_band_job["fbf_mode"],
+                            moonIllumFraction=meta_data["moon_illum"],
+                            lunar_angle_filepath=meta_data['fbf_moon'],
+                            lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
+                            new_dnb=True,
+                            )
+                    new_band_job["fbf_swath"] = fbf_swath
+                    
+                    # if we got this far with no error add the new dnb band to our list
+                    bands[(band_kind, BID_NEW)] = new_band_job 
+                except StandardError:
+                    log.error("Unexpected error new DNB, will not calculate new DNB scaling...")
+                    log.debug("DNB scaling error:", exc_info=1)
+            
             log.info("Prescaling DNB data...")
             check_stem("prescale_dnb")
             try:
@@ -636,7 +658,7 @@ class Frontend(roles.FrontendRole):
                         moonIllumFraction=meta_data["moon_illum"],
                         lunar_angle_filepath=meta_data['fbf_moon'],
                         lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
-                        new_dnb=new_dnb # XXX
+                        new_dnb=False,
                         )
                 band_job["fbf_swath"] = fbf_swath
             except StandardError:

@@ -332,7 +332,7 @@ def run_dnb_scale(img_filepath, mode_filepath,
                 rescaled_data[ rescaled_data != fill_value ].max()
                 ))
         rows,cols = rescaled_data.shape
-        fbf_swath_var = "prescale_dnb"
+        fbf_swath_var = "prescale_dnb" if not new_dnb else "prescale_new_dnb"
         fbf_swath = "./%s.real4.%d.%d" % (fbf_swath_var, cols, rows)
         rescaled_data.tofile(fbf_swath)
     except StandardError:
