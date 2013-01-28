@@ -203,8 +203,10 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE,
                     #local_histogram_equalization(temp_image, night_mask, valid_data_mask=good_mask, local_radius_px=200)
                     histogram_equalization(temp_image, night_mask)
             else :
-                night_water = night_mask & waterMask
-                tmp_night_mask = night_mask & ~waterMask
+                # FUTURE, for now we're not using the water mask
+                #night_water = night_mask & waterMask
+                #tmp_night_mask = night_mask & ~waterMask
+                tmp_night_mask = night_mask
                 if weightedMoonIllumFract > 0.25 :
                     local_histogram_equalization(temp_image, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=200)
                 elif weightedMoonIllumFract > 0.10 :
@@ -310,9 +312,11 @@ def run_dnb_scale(img_filepath, mode_filepath,
         lon_data = getattr(W, lon_attr)
         
         if (lat_data.shape == data.shape) and (lon_data.shape == data.shape) :
-            log.debug("Creating water mask and adding it to rescaling arguments")
-            water_mask = _make_water_mask(lat_data, lon_data)
-            scale_kwargs["waterMask"] = water_mask
+            # FUTURE for now we won't be using the land sea information
+            #log.debug("Creating water mask and adding it to rescaling arguments")
+            #water_mask = _make_water_mask(lat_data, lon_data)
+            #scale_kwargs["waterMask"] = water_mask
+            pass
         else:
             log.error("Navigation data shape is different than the data's shape data (%s) vs lat (%s) vs lon (%s)" % (data.shape, lat_data.shape, lon_data.shape))
             raise ValueError("Navigation data shape is different than the data's shape data (%s) vs lat (%s) vs lon (%s)" % (data.shape, lat_data.shape, lon_data.shape))
