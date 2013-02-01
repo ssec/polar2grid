@@ -373,6 +373,10 @@ through strftime. Current time if no files.""")
 
         # Handle the user using a '~' for their home directory
         hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in sorted(hdf_files) ]
+        for hdf_file in hdf_files:
+            if not os.path.exists(hdf_file):
+                print "ERROR: File '%s' doesn't exist" % (hdf_file,)
+                return -1
         first_file = os.path.split(hdf_files[0])[-1]
 
         # Get the date of the first file if provided
