@@ -46,7 +46,7 @@ __docformat__ = "restructuredtext en"
 from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
-from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE
+from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE, BID_NEW
 from polar2grid.core import roles
 from polar2grid.core.fbf import check_stem
 import numpy
@@ -55,6 +55,7 @@ import os
 import sys
 import logging
 from glob import glob
+from copy import deepcopy
 
 log = logging.getLogger(__name__)
 
@@ -218,13 +219,15 @@ def get_geo_meta(gfilepaths):
     """
     geo_data = []
     meta_data = {
-            "start_time"  : None,
-            "swath_rows"  : None,
-            "swath_cols"  : None,
+            "start_time"    : None,
+            "swath_rows"    : None,
+            "swath_cols"    : None,
             "rows_per_scan" : None,
-            "fbf_lat"   : None,
-            "fbf_lon"   : None,
-            "fbf_mode"  : None
+            "fbf_lat"       : None,
+            "fbf_lon"       : None,
+            "fbf_mode"      : None,
+            "moon_illum"    : None,
+            "moon_angle"    : None,
             }
 
     for gname in gfilepaths:
@@ -284,19 +287,24 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     # Write lat/lon data to fbf files
     # Create fbf files
     spid = '%d' % os.getpid()
-    latname = '.lat' + spid
-    lonname = '.lon' + spid
+    latname  = '.lat'  + spid
+    lonname  = '.lon'  + spid
     modename = '.mode' + spid
-    lafo = file(latname, 'wb')
-    lofo = file(lonname, 'wb')
+    moonname = '.moon' + spid
+    lafo   = file(latname,  'wb')
+    lofo   = file(lonname,  'wb')
     modefo = file(modename, 'wb')
-    lafa = file_appender(lafo, dtype=numpy.float32)
-    lofa = file_appender(lofo, dtype=numpy.float32)
+    moonfo = file(moonname, 'wb')
+    lafa   = file_appender(lafo,   dtype=numpy.float32)
+    lofa   = file_appender(lofo,   dtype=numpy.float32)
     modefa = file_appender(modefo, dtype=numpy.float32)
+    moonfa = file_appender(moonfo, dtype=numpy.float32)
     lat_south = 91.0
     lat_north = -91.0
-    lon_west = 181.0
-    lon_east = -181.0
+    lon_west  = 181.0
+    lon_east  = -181.0
+    total_moon_illum_fraction     = 0.0
+    weight_of_moon_illum_fraction = 0.0
 
     for ginfo in geo_data:
         # Read in lat/lon data
@@ -314,9 +322,10 @@ def process_geo(meta_data, geo_data, cut_bad=False):
         # ll2cr/fornav hate entire scans that are bad
         scan_quality = ginfo["scan_quality"]
         if cut_bad and len(scan_quality[0]) != 0:
-            ginfo["lat_data"] = numpy.delete(ginfo["lat_data"], scan_quality, axis=0)
-            ginfo["lon_data"] = numpy.delete(ginfo["lon_data"], scan_quality, axis=0)
-            ginfo["mode_mask"] = numpy.delete(ginfo["mode_mask"], scan_quality, axis=0)
+            ginfo["lat_data"]   = numpy.delete(ginfo["lat_data"],   scan_quality, axis=0)
+            ginfo["lon_data"]   = numpy.delete(ginfo["lon_data"],   scan_quality, axis=0)
+            ginfo["mode_mask"]  = numpy.delete(ginfo["mode_mask"],  scan_quality, axis=0)
+            ginfo["moon_angle"] = numpy.delete(ginfo["moon_angle"], scan_quality, axis=0)
 
         # Calculate min and max lat/lon values for use in remapping
         lat_south = min(lat_south,ginfo["lat_data"][ginfo["lat_data"] != FILL_VALUE].min())
@@ -338,36 +347,54 @@ def process_geo(meta_data, geo_data, cut_bad=False):
         lafa.append(ginfo["lat_data"])
         lofa.append(ginfo["lon_data"])
         modefa.append(ginfo["mode_mask"])
+        moonfa.append(ginfo["moon_angle"])
         del ginfo["lat_data"]
         del ginfo["lon_data"]
         del ginfo["lat_mask"]
         del ginfo["lon_mask"]
         del ginfo["mode_mask"]
-
+        del ginfo["moon_angle"]
+        
+        # save moon illumination information for making an average later
+        # future, we may want to preserve the spatial placement of this info for large swaths
+        # or modify this by the per-pixel angle to represent whether the moon has risen or not
+        total_moon_illum_fraction     += ginfo["moon_illum"]
+        weight_of_moon_illum_fraction += 1.0
+    
     lafo.close()
     lofo.close()
     modefo.close()
-
+    moonfo.close()
+    
     # Rename files
     suffix = '.real4.' + '.'.join(str(x) for x in reversed(lafa.shape))
     fbf_lat_var = "latitude_%s" % meta_data["nav_set_uid"]
     fbf_lon_var = "longitude_%s" % meta_data["nav_set_uid"]
     fbf_mode_var = "mode_%s" % meta_data["nav_set_uid"]
+    fbf_moon_var = "moon_%s" % meta_data["nav_set_uid"]
 
     check_stem(fbf_lat_var)
     check_stem(fbf_lon_var)
     check_stem(fbf_mode_var)
+    check_stem(fbf_moon_var)
 
     fbf_lat = fbf_lat_var + suffix
     fbf_lon = fbf_lon_var + suffix
     fbf_mode = fbf_mode_var + suffix
+    fbf_moon = fbf_moon_var + suffix
+    
     os.rename(latname, fbf_lat)
     os.rename(lonname, fbf_lon)
     os.rename(modename, fbf_mode)
-
+    os.rename(moonname, fbf_moon)
+    
+    # set the moon illumination to be the average of the ones we saw
+    meta_data["moon_illum"] = total_moon_illum_fraction / weight_of_moon_illum_fraction
+    
     meta_data["fbf_lat"] = fbf_lat
     meta_data["fbf_lon"] = fbf_lon
     meta_data["fbf_mode"] = fbf_mode
+    meta_data["fbf_moon"] = fbf_moon
     swath_rows,swath_cols = lafa.shape
     meta_data["swath_rows"] = swath_rows
     meta_data["swath_cols"] = swath_cols
@@ -429,6 +456,7 @@ def create_image_swath(swath_rows, swath_cols, swath_scans, fbf_mode,
     band_meta["swath_scans"] = swath_scans
     band_meta["fbf_mode"] = fbf_mode
     band_meta["fill_value"] = FILL_VALUE
+    # TODO, maybe transfer the moon_illum and fbf_moon values here also so it will be in the band dictionary later
 
     if rows != swath_rows or cols != swath_cols:
         log.error("Expected %d rows and %d cols, but band %s had %d rows and %d cols" % (swath_rows, swath_cols, band_name, rows, cols))
@@ -595,6 +623,7 @@ class Frontend(roles.FrontendRole):
             "latitude_*.real4.*.*",
             "longitude_*.real4.*.*",
             "mode_*.real4.*.*",
+            "moon_*.real4.*.*",
             "prescale_*.real4.*.*"
             ]
 
@@ -627,14 +656,38 @@ class Frontend(roles.FrontendRole):
                 # We don't need to scale non-DNB data
                 band_job["fbf_swath"] = band_job["fbf_img"]
                 continue
-
+            
+            if new_dnb :
+                log.info("Prescaling DNB data using adaptively sized tiles...")
+                check_stem("prescale_new_dnb")
+                new_band_job = deepcopy(band_job)
+                try:
+                    fbf_swath = run_dnb_scale(
+                            new_band_job["fbf_img"],
+                            new_band_job["fbf_mode"],
+                            moonIllumFraction=meta_data["moon_illum"],
+                            lunar_angle_filepath=meta_data['fbf_moon'],
+                            lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
+                            new_dnb=True,
+                            )
+                    new_band_job["fbf_swath"] = fbf_swath
+                    
+                    # if we got this far with no error add the new dnb band to our list
+                    bands[(band_kind, BID_NEW)] = new_band_job 
+                except StandardError:
+                    log.error("Unexpected error new DNB, will not calculate new DNB scaling...")
+                    log.debug("DNB scaling error:", exc_info=1)
+            
             log.info("Prescaling DNB data...")
             check_stem("prescale_dnb")
             try:
                 fbf_swath = run_dnb_scale(
                         band_job["fbf_img"],
                         band_job["fbf_mode"],
-                        new_dnb=new_dnb # XXX
+                        moonIllumFraction=meta_data["moon_illum"],
+                        lunar_angle_filepath=meta_data['fbf_moon'],
+                        lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
+                        new_dnb=False,
                         )
                 band_job["fbf_swath"] = fbf_swath
             except StandardError:
