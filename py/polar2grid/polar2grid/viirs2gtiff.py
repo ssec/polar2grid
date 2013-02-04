@@ -329,7 +329,8 @@ through strftime. Current time if no files.""")
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
     parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
-            help="run new DNB scaling if provided DNB data (temporary)") # XXX
+            help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
+            "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
 
     # Remapping/Grids
     parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="wgs84_fit",
