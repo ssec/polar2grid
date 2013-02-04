@@ -13,7 +13,13 @@ polar2grid Software Bundle Install
 The polar2grid software bundle is a pre-compiled set of software required
 to run the polar2grid scripts.  It includes a minimal python 2.7 install,
 with the various packages required by the polar2grid python package. It is
-completely self-contained and does not have any outside dependencies.
+self-contained except for minimal system dependencies (system libraries that
+come with most Linux operating systems). Besides the python
+packages used with polar2grid and the libraries those depend on, the software
+bundle provides statically compiled ms2gt utilities. The ms2gt utilities will
+operate on a wider range of systems because they are statically compiled.
+The software bundle is only
+supported on x86_64 RHEL systems, but may work on other Linux systems as well.
 
 Once the software bundle tarball is on the destination system it can be
 installed first by untarring it::

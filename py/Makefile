@@ -44,6 +44,9 @@ ALL_PKG_DEV    = polar2grid_core_dev polar2grid_viirs_dev polar2grid_dev
 #DOC_DIR        = /home/davidh/test_doc
 DOC_DIR        = /var/apache/www/htdocs/software/polar2grid
 
+EGG_REPOS_MACHINE = birch
+EGG_REPOS_DIR = /var/apache/larch/htdocs/eggs/repos/polar2grid/
+
 all: all_sdist
 
 ### PYTHON PACKAGING ###
@@ -66,6 +69,9 @@ $(INSTALL_DIR):
 
 $(DIST_DIR):
 	mkdir -p $(DIST_DIR)
+
+torepos:
+	scp $(DIST_DIR)/*.tar.gz $(EGG_REPOS_MACHINE):$(EGG_REPOS_DIR)
 
 ### Documentation Stuff ###
 build_doc_html:

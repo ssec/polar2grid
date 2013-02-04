@@ -20,7 +20,8 @@ RELEASE = 24a
 #
 #	installation target directories
 #
-TARDIR = $(TOPDIR)/ms2gt$(VERSION).$(RELEASE)
+TARDIRNAME = ms2gt$(VERSION).$(RELEASE)
+TARDIR = $(TOPDIR)/$(TARDIRNAME)
 TBINDIR = $(TARDIR)/bin
 TDOCDIR = $(TARDIR)/doc
 TGRDDIR = $(TARDIR)/grids
@@ -91,6 +92,7 @@ SCTSRCS = $(SCTDIR)/*.pl
 UTSSRCS = $(UTSMAKE) $(UTSDIR)/*.c
 XY2SRCS = $(XY2MAKE) $(XY2DIR)/*.c
 
+BINS = $(TOPDIR)/bin/*
 TOPS = $(TOPDIR)/*.txt $(TOPDIR)/Makefile $(TOPDIR)/ms2gt_env.csh
 DOCS = $(DOCDIR)/*.html $(DOCDIR)/*usage $(DOCDIR)/*.gif
 HDRS = $(INCDIR)/*.h
@@ -123,6 +125,7 @@ tar:
 	$(MKDIR) $(TIDLDIR) $(TL1BDIR) $(TUTLDIR)
 	$(MKDIR) $(TTU1DIR) $(TTU2DIR) $(TTU3DIR) $(TTU4DIR)
 	$(CP) $(TOPS) $(TARDIR)
+	$(CP) $(BINS) $(TBINDIR)
 	$(CP) $(DOCS) $(TDOCDIR)
 	$(CP) $(HDRS) $(TINCDIR)
 	$(CP) $(GRDS) $(TGRDDIR)
@@ -144,7 +147,8 @@ tar:
 	$(CP) $(TU2S) $(TTU2DIR)
 	$(CP) $(TU3S) $(TTU3DIR)
 	$(CP) $(TU4S) $(TTU4DIR)
-	$(TAR) cvf $(TARFILE) $(TARDIR)
+	$(CD) $(TOPDIR); \
+	$(TAR) cvf $(TARFILE) $(TARDIRNAME);
 	$(RM) $(TARFILE).gz
 	$(COMPRESS) $(TARFILE)
 
