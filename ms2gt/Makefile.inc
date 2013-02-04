@@ -77,11 +77,6 @@ CONFIG_CFLAGS ?= -O -DLSB1ST
 #CONFIG_CFLAGS ?= -DDEBUG -g
 #CONFIG_CFLAGS ?= -DDEBUG -g -DLSB1ST
 #CONFIG_CFLAGS ?= -O -Wall -DLSB1ST
-ifeq ($(UNAME), Darwin)
-	LDFLAGS ?= 
-else
-	LDFLAGS ?= -static
-endif
 
 #
 #	system libraries
@@ -92,6 +87,7 @@ SYSLIBS = -lm
 #
 #	Compile and link flags
 #
+LDFLAGS ?= 
 CFLAGS = -I$(INCDIR) $(CONFIG_CFLAGS) $(LDFLAGS)
 LIBS = -L$(LIBDIR) $(LOCAL_LIBS) $(SYSLIBS)
 
