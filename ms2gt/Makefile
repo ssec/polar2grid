@@ -6,6 +6,8 @@
 #========================================================================
 RCSID = $Header: /disks/megadune/data/tharan/ms2gth/Makefile,v 1.40 2012/07/24 21:50:03 tharan Exp $
 
+include Makefile.inc
+
 #------------------------------------------------------------------------
 # configuration section
 
@@ -14,37 +16,6 @@ RCSID = $Header: /disks/megadune/data/tharan/ms2gth/Makefile,v 1.40 2012/07/24 2
 #
 VERSION = 0
 RELEASE = 24a
-
-#
-#	installation directories
-#
-TOPDIR = .
-BINDIR = $(TOPDIR)/bin
-DOCDIR = $(TOPDIR)/doc
-GRDDIR = $(TOPDIR)/grids
-INCDIR = $(TOPDIR)/include
-LIBDIR = $(TOPDIR)/lib
-SRCDIR = $(TOPDIR)/src
-TU1DIR = $(TOPDIR)/tutorial_1
-TU2DIR = $(TOPDIR)/tutorial_2
-TU3DIR = $(TOPDIR)/tutorial_3
-TU4DIR = $(TOPDIR)/tutorial_4
-
-NAVDIR = $(SRCDIR)/fornav
-GCNDIR = $(SRCDIR)/grid_convert
-GSZDIR = $(SRCDIR)/gridsize
-IDLDIR = $(SRCDIR)/idl
-LL2DIR = $(SRCDIR)/ll2cr
-LLXDIR = $(SRCDIR)/ll2xy
-LE2DIR = $(SRCDIR)/lle2cre
-MAPDIR = $(SRCDIR)/mapx/trunk
-PRJDIR = $(SRCDIR)/projection
-SCTDIR = $(SRCDIR)/scripts
-UTSDIR = $(SRCDIR)/utils
-XY2DIR = $(SRCDIR)/xy2ll
-
-L1BDIR = $(IDLDIR)/level1b_read
-UTLDIR = $(IDLDIR)/modis_utils
 
 #
 #	installation target directories
@@ -78,36 +49,9 @@ TL1BDIR = $(TIDLDIR)/level1b_read
 TUTLDIR = $(TIDLDIR)/modis_utils
 
 #
-#	commands
-#
-SHELL ?= /bin/sh
-CC ?= cc
-AR ?= ar
-RANLIB ?= touch
-CO ?= co
-MAKEDEPEND ?= makedepend
-INSTALL ?= cp
-CP ?= cp
-CD ?= cd
-RM ?= rm -f
-RMDIR ?= rm -fr
-MKDIR ?= mkdir -p
-TAR ?= tar
-COMPRESS ?= gzip
-
-#
 #	archive file name
 #
 TARFILE = $(TOPDIR)/ms2gt$(VERSION).$(RELEASE).tar
-
-#
-#	debug or optimization settings
-#
-#	on least significant byte first machines (Intel, Vax)
-#	add -DLSB1ST option to enable byteswapping of cdb files
-#
-CONFIG_CFLAGS = -O
-#CONFIG_CFLAGS = -DDEBUG -g
 
 #
 # end configuration section
