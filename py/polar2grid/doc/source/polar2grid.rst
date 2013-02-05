@@ -57,10 +57,10 @@ polar2grid Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`plot_result` Module
+:mod:`plot_binary` Module
 -------------------------
 
-.. automodule:: polar2grid.plot_result
+.. automodule:: polar2grid.plot_binary
     :members:
     :undoc-members:
     :show-inheritance:

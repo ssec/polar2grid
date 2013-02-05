@@ -6,19 +6,48 @@ and place it into a geotiff.
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2012
+:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2013
 :license:      GNU GPLv3
+
+Copyright (C) 2013 Space Science and Engineering Center (SSEC),
+ University of Wisconsin-Madison.
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This file is part of the polar2grid software package. Polar2grid takes
+satellite observation data, remaps it, and writes it to a file format for
+input into another program.
+Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+
+    Written by David Hoese    January 2013
+    University of Wisconsin-Madison 
+    Space Science and Engineering Center
+    1225 West Dayton Street
+    Madison, WI  53706
+    david.hoese@ssec.wisc.edu
+
 """
 __docformat__ = "restructuredtext en"
 
 from osgeo import gdal
 import osr
 
-from polar2grid.core.rescale import Rescaler,uint16_filter,ubyte_filter
+from polar2grid.core.rescale import Rescaler
 from polar2grid.core.constants import *
 from polar2grid.core import roles
-from polar2grid.core.dtype import str_to_dtype
+from polar2grid.core.dtype import str_to_dtype,clip_to_data_type
 
 import sys
 import logging
@@ -103,9 +132,9 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
         # do a linear scaling. No one should be scaling data to outside these
         # ranges anyway
         if etype == gdal.GDT_UInt16:
-            band_data = uint16_filter(band_data)
+            band_data = clip_to_data_type(band_data, DTYPE_UINT16)
         elif etype == gdal.GDT_Byte:
-            band_data = ubyte_filter(band_data)
+            band_data = clip_to_data_type(band_data, DTYPE_UINT8)
         if log_level <= logging.DEBUG:
             log.debug("Data min: %f, max: %f" % (band_data.min(),band_data.max()))
 

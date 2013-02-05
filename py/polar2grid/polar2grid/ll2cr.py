@@ -6,9 +6,38 @@ proj4 strings.
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2012
+:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2013
 :license:      GNU GPLv3
+
+Copyright (C) 2013 Space Science and Engineering Center (SSEC),
+ University of Wisconsin-Madison.
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This file is part of the polar2grid software package. Polar2grid takes
+satellite observation data, remaps it, and writes it to a file format for
+input into another program.
+Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+
+    Written by David Hoese    January 2013
+    University of Wisconsin-Madison 
+    Space Science and Engineering Center
+    1225 West Dayton Street
+    Madison, WI  53706
+    david.hoese@ssec.wisc.edu
+
 """
 __docformat__ = "restructuredtext en"
 
@@ -75,6 +104,8 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     lon_fill_in = lon_fill_in or fill_in or DEFAULT_FILL_VALUE
     lat_fill_in = lat_fill_in or lon_fill_in
 
+    ### Parameter check ###
+
     if lat_arr.shape != lon_arr.shape:
         log.error("Longitude and latitude arrays must be the same shape (%r vs %r)" % (lat_arr.shape, lon_arr.shape))
         raise ValueError("Longitude and latitude arrays must be the same shape (%r vs %r)" % (lat_arr.shape, lon_arr.shape))
@@ -117,6 +148,7 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     good_mask = (lon_arr != lon_fill_in) & (lat_arr != lat_fill_in)
 
     # Calculate west/east south/north boundaries
+    # These can be provided by the user to save time
     stradles_180 = False
     if grid_origin_x is None or grid_width is None or pixel_size_x is None:
         if swath_lon_west is None:
@@ -144,11 +176,9 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     ### Find out if we stradle the anti-meridian of the projection ###
     # Get the projections origin in lon/lat space
     proj_anti_lon,proj_anti_lat = tformer(0, 0, inverse=True)
-    # get the 'opposite' site of the globe
+    # get the 'opposite' side of the globe
     proj_anti_lon += 180 if proj_anti_lon < 0 else -180
-    # see if the grids bounds stadle the anti-meridian
-    stradles_anti = False
-    # Get projection units of the anti-meridian (positive only)
+    # Get projection units of the anti-meridian (positive only, it's a distance)
     proj_anti_x = abs(tformer(proj_anti_lon, proj_anti_lat)[0])
     # half the circumerence multiplied by 2 (full circumference in projection units)
     proj_circum = proj_anti_x * 2
@@ -165,20 +195,18 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     # Put data into positive domain
     data_grid_west += proj_circum if data_grid_west < 0 else 0
     data_grid_east += proj_circum if data_grid_east < 0 else 0
+
+    # see if the grids bounds stadle the anti-meridian
+    stradles_anti = False
     if (data_grid_west < proj_anti_x) and (data_grid_east > proj_anti_x):
         log.debug("Data crosses the projections anti-meridian")
         stradles_anti = True
-
-    # Get origin and corners of grid
-    fine_tune_origin = False
-    if grid_origin_x is None:
-        grid_origin_x,grid_origin_y = _transform_point(tformer, swath_lon_west, swath_lat_north, proj_circum, stradles_anti=stradles_anti)
-        fine_tune_origin = True
 
     normal_lon_east = swath_lon_east if swath_lon_east > swath_lon_west else swath_lon_east + 360
     lon_range = numpy.linspace(swath_lon_west, normal_lon_east, 15)
     lat_range = numpy.linspace(swath_lat_north, swath_lat_south, 15)
 
+    ### Create a matrix of projection points to find the bounding box of the grid ###
     # Test the left, right, ul2br diagonal, ur2bl diagonal, top, bottom
     # If we are over the north pole then handle strong possibility of data in all longitudes
     if swath_lat_north >= 89.5: bottom_lon_range = numpy.linspace(-180, 180, 15)
@@ -192,54 +220,40 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     x_test,y_test = _transform_array(tformer, lon_test, lat_test, proj_circum, stradles_anti=stradles_anti)
 
     # Calculate the best corners of the data
-    if grid_width is None or pixel_size_x is None or fine_tune_origin:
+    if grid_width is None or pixel_size_x is None:
         # only used if calculate grid/pixel size
-        #corner_x = _transform_array(tformer, numpy.array([swath_lon_east]*15), lat_range, proj_circum, stradles_anti=stradles_anti)[0].max()
-        #corner_y = _transform_array(tformer, lon_range, numpy.array([swath_lat_south]*15), proj_circum, stradles_anti=stradles_anti)[1].min()
         corner_x = x_test.max()
         corner_y = y_test.min()
         log.debug("Grid Corners: %f,%f" % (corner_x,corner_y))
 
-    if fine_tune_origin:
-        #grid_origin_x = _transform_array(tformer, numpy.array([swath_lon_west]*15), lat_range, proj_circum, stradles_anti=stradles_anti)[0].min()
-        #grid_origin_y = _transform_array(tformer, lon_range, numpy.array([swath_lat_north]*15), proj_circum, stradles_anti=stradles_anti)[1].max()
+    # Calculate the best origin of the data if they weren't already specified
+    if grid_origin_x is None:
+        # We already have 
         grid_origin_x = x_test.min()
         grid_origin_y = y_test.max()
         log.debug("Grid Origin: %f,%f" % (grid_origin_x,grid_origin_y))
 
-    # Fix the rare event that the projection causes the upper-left lat/lon to
-    # not be the upper-left of the grid
-    x_tmp = grid_origin_x
-    if grid_origin_x > corner_x:
-        grid_origin_x = corner_x
-        corner_x = x_tmp
-        del x_tmp
-    y_tmp = grid_origin_y
-    if grid_origin_y < corner_y:
-        grid_origin_y = corner_y
-        corner_y = y_tmp
-        del y_tmp
-
-    if grid_width is None or pixel_size_x is None:
-        if grid_width is None:
-            # Calculate grid size
-            grid_width = math.ceil((corner_x - grid_origin_x) / pixel_size_x)
-            grid_height = math.ceil((corner_y - grid_origin_y) / pixel_size_y)
-            log.debug("Grid width/height (%d, %d)" % (grid_width,grid_height))
-            if grid_width < 5 or grid_height < 5:
-                msg = "No data fit in the grid at origin (%f, %f)" % (grid_origin_x, grid_origin_y)
-                log.error(msg)
-                raise ValueError(msg)
-        else:
-            # Calculate pixel size
-            pixel_size_x = (corner_x - grid_origin_x) / float(grid_width)
-            pixel_size_y = (corner_y - grid_origin_y) / float(grid_height)
-            log.debug("Grid pixel size (%f, %f)" % (pixel_size_x,pixel_size_y))
+    # Calculate the rest of the grid specification (for dynamic grids)
+    if grid_width is None:
+        # Calculate grid size
+        grid_width = math.ceil((corner_x - grid_origin_x) / pixel_size_x)
+        grid_height = math.ceil((corner_y - grid_origin_y) / pixel_size_y)
+        log.debug("Grid width/height (%d, %d)" % (grid_width,grid_height))
+        if grid_width < 5 or grid_height < 5:
+            msg = "No data fit in the grid at origin (%f, %f)" % (grid_origin_x, grid_origin_y)
+            log.error(msg)
+            raise ValueError(msg)
+    elif pixel_size_x is None:
+        # Calculate pixel size
+        pixel_size_x = (corner_x - grid_origin_x) / float(grid_width)
+        pixel_size_y = (corner_y - grid_origin_y) / float(grid_height)
+        log.debug("Grid pixel size (%f, %f)" % (pixel_size_x,pixel_size_y))
         
     good_mask = numpy.zeros(lat_arr.shape[1], dtype=numpy.bool)
     log.debug("Real upper-left corner (%f,%f)" % tformer(grid_origin_x, grid_origin_y, inverse=True))
     log.debug("Real lower-right corner (%f,%f)" % tformer(grid_origin_x+pixel_size_x*grid_width, grid_origin_y+pixel_size_y*grid_height, inverse=True))
 
+    ### Handle special cases for certain projections ###
     ll2cr_info = {}
     if "latlong" in proj4_str:
         # Everyone else uses degrees, not radians
@@ -261,7 +275,7 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     ll2cr_info["cols_filename"] = cols_fn
 
     # Do calculations for each row in the source file
-    # Go per row to save on memory
+    # Go per row to save on memory, disk load
     for idx in range(lon_arr.shape[0]):
         x_tmp,y_tmp = _transform_array(tformer, lon_arr[idx], lat_arr[idx], proj_circum, stradles_anti=stradles_anti)
         numpy.subtract(x_tmp, grid_origin_x, x_tmp)

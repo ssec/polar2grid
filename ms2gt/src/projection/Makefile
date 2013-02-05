@@ -6,52 +6,18 @@
 #========================================================================
 RCSID = $Header: /data/tharan/ms2gth/src/projection/Makefile,v 1.1 2010/09/03 18:14:11 tharan Exp $
 
+include ../../Makefile.inc
+
 #------------------------------------------------------------------------
 # configuration section
-#
-#	installation directories
-#
-TOPDIR = ../..
-LIBDIR = $(TOPDIR)/lib
-INCDIR = $(TOPDIR)/include
-BINDIR = $(TOPDIR)/bin
-
-#
-#	commands
-#
-SHELL ?= /bin/sh
-CC ?= cc
-CO ?= co
-MAKEDEPEND ?= makedepend
-INSTALL ?= cp
-RM ?= rm -f
-TAR ?= tar
-COMPRESS ?= gzip
-
 #
 #	archive file name
 #
 TARFILE = projection.tar
 
 #
-#	debug or optimization settings
-#
-CONFIG_CFLAGS = -O
-#CONFIG_CFLAGS = -DDEBUG -g
-LOCAL_CFLAGS =
-
-#
-#	libraries
-#
-LOCAL_LIBS = -lmapx
-SYSTEM_LIBS = -lm 
-
-#
 # end configuration section
 #------------------------------------------------------------------------
-
-CFLAGS = -I$(INCDIR) $(LOCAL_CFLAGS) $(CONFIG_CFLAGS)
-LIBS = -L$(LIBDIR) $(LOCAL_LIBS) $(SYSTEM_LIBS)
 
 SRCS = projection.c
 OBJS = projection.o
@@ -60,7 +26,7 @@ HDRS =
 all: projection install
 
 projection: $(OBJS)
-	cc $(CFLAGS) -o projection $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o projection $(OBJS) $(LIBS)
 
 install: projection
 	$(INSTALL) projection $(BINDIR)

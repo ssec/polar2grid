@@ -6,66 +6,7 @@
 #========================================================================
 RCSID = $Header: /disks/megadune/data/tharan/ms2gth/src/Makefile,v 1.14 2011/03/30 20:47:15 tharan Exp $
 
-#------------------------------------------------------------------------
-# configuration section
-
-#
-#	installation directories
-#
-TOPDIR = ..
-BINDIR = $(TOPDIR)/bin
-DOCDIR = $(TOPDIR)/doc
-GRDDIR = $(TOPDIR)/grids
-INCDIR = $(TOPDIR)/include
-LIBDIR = $(TOPDIR)/lib
-SRCDIR = $(TOPDIR)/src
-
-NAVDIR = $(SRCDIR)/fornav
-GCNDIR = $(SRCDIR)/grid_convert
-GSZDIR = $(SRCDIR)/gridsize
-IDLDIR = $(SRCDIR)/idl
-LL2DIR = $(SRCDIR)/ll2cr
-LLXDIR = $(SRCDIR)/ll2xy
-LE2DIR = $(SRCDIR)/lle2cre
-MAPDIR = $(SRCDIR)/mapx/trunk
-MAPMAK = -f Makefile.ms2gt
-PRJDIR = $(SRCDIR)/projection
-SCTDIR = $(SRCDIR)/scripts
-UTSDIR = $(SRCDIR)/utils
-XY2DIR = $(SRCDIR)/xy2ll
-L1BDIR = $(IDLDIR)/level1b_read
-UTLDIR = $(IDLDIR)/modis_utils
-
-#
-#	commands
-#
-SHELL ?= /bin/sh
-CC ?= cc
-AR ?= ar
-RANLIB ?= touch
-CO ?= co
-MAKEDEPEND ?= makedepend
-INSTALL ?= cp
-CP ?= cp
-CD ?= cd
-RM ?= rm -f
-RMDIR ?= rm -fr
-MKDIR ?= mkdir -p
-TAR ?= tar
-COMPRESS ?= gzip
-
-#
-#	debug or optimization settings
-#
-#	on least significant byte first machines (Intel, Vax)
-#	add -DLSB1ST option to enable byteswapping of cdb files
-#
-CONFIG_CFLAGS = -O
-#CONFIG_CFLAGS = -DDEBUG -g
-
-#
-# end configuration section
-#------------------------------------------------------------------------
+include ../Makefile.inc
 
 all:	srcs
 

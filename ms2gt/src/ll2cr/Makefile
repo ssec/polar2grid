@@ -6,52 +6,20 @@
 #========================================================================
 RCSID = $Header: /disks/megadune/data/tharan/ms2gth/src/ll2cr/Makefile,v 1.7 2004/08/25 23:25:11 haran Exp $
 
+include ../../Makefile.inc
+
 #------------------------------------------------------------------------
 # configuration section
-#
-#	installation directories
-#
-TOPDIR = ../..
-LIBDIR = $(TOPDIR)/lib
-INCDIR = $(TOPDIR)/include
-BINDIR = $(TOPDIR)/bin
-
-#
-#	commands
-#
-SHELL ?= /bin/sh
-CC ?= cc
-CO ?= co
-MAKEDEPEND ?= makedepend
-INSTALL ?= cp
-RM ?= rm -f
-TAR ?= tar
-COMPRESS ?= gzip
-
 #
 #	archive file name
 #
 TARFILE = ll2cr.tar
 
 #
-#	debug or optimization settings
-#
-CONFIG_CFLAGS = -O
-#CONFIG_CFLAGS = -DDEBUG -g
-LOCAL_CFLAGS = $(getconf LFS_CFLAGS)
-
-#
-#	libraries
-#
-LOCAL_LIBS = -lmapx
-SYSTEM_LIBS = -lm 
-
-#
 # end configuration section
 #------------------------------------------------------------------------
 
-CFLAGS = -I$(INCDIR) $(LOCAL_CFLAGS) $(CONFIG_CFLAGS)
-LIBS = -L$(LIBDIR) $(LOCAL_LIBS) $(SYSTEM_LIBS)
+CFLAGS += $(getconf LFS_CFLAGS)
 
 SRCS = ll2cr.c
 OBJS = ll2cr.o
@@ -60,7 +28,7 @@ HDRS =
 all: ll2cr install
 
 ll2cr: $(OBJS)
-	cc $(CFLAGS) -o ll2cr $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o ll2cr $(OBJS) $(LIBS)
 
 install: ll2cr
 	$(INSTALL) ll2cr $(BINDIR)

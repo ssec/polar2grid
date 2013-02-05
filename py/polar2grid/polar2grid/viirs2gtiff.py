@@ -6,14 +6,44 @@ hdf5 (.h5) files and create a properly scaled geotiff file.
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2012
+:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2013
 :license:      GNU GPLv3
+
+Copyright (C) 2013 Space Science and Engineering Center (SSEC),
+ University of Wisconsin-Madison.
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This file is part of the polar2grid software package. Polar2grid takes
+satellite observation data, remaps it, and writes it to a file format for
+input into another program.
+Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+
+    Written by David Hoese    January 2013
+    University of Wisconsin-Madison 
+    Space Science and Engineering Center
+    1225 West Dayton Street
+    Madison, WI  53706
+    david.hoese@ssec.wisc.edu
+
 """
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.glue_utils import setup_logging,create_exc_handler,remove_file_patterns
+from polar2grid.core.time_utils import utc_now
 from polar2grid.core.constants import *
 from polar2grid.viirs import Frontend
 from .grids.grids import create_grid_jobs
@@ -25,10 +55,11 @@ import os
 import sys
 import logging
 from multiprocessing import Process
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 GLUE_NAME = "viirs2gtiff"
-LOG_FN = os.environ.get("VIIRS2GTIFF_LOG", "./%s.log" % (GLUE_NAME,))
+LOG_FN = os.environ.get("VIIRS2GTIFF_LOG", None) # None interpreted in main
 
 def process_data_sets(filepaths,
         fornav_D=None, fornav_d=None,
@@ -270,7 +301,7 @@ def run_glue(filepaths,
 
     return exit_status
 
-def main():
+def main(argv = sys.argv[1:]):
     import argparse
     description = """
     Create VIIRS swaths, remap them to a grid, and place that remapped data
@@ -280,24 +311,26 @@ def main():
 
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
+    parser.add_argument('-l', '--log', dest="log_fn", default=None,
+            help="""specify the log filename, default
+<gluescript>_%Y%m%d_%H%M%S. Date information is provided from data filename
+through strftime. Current time if no files.""")
+    parser.add_argument('--debug', dest="debug_mode", default=False,
+            action='store_true',
+            help="Enter debug mode. Keeping intermediate files.")
     parser.add_argument('--fornav-D', dest='fornav_D', default=40,
             help="Specify the -D option for fornav")
     parser.add_argument('--fornav-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
-    parser.add_argument('-f', dest='data_files', nargs="+",
-            help="List of one or more hdf files")
-    parser.add_argument('-d', dest='data_dir', nargs="?",
-            help="Data directory to look for input data files")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
             help="Processing is sequential instead of one process per kind of band")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
-    parser.add_argument('-R', dest='remove_prev', default=False, action='store_true',
-            help="Delete any files that may conflict with future processing. Processing is not done with this flag.")
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
     parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
-            help="run new DNB scaling if provided DNB data (temporary)") # XXX
+            help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
+            "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
 
     # Remapping/Grids
     parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="wgs84_fit",
@@ -314,20 +347,58 @@ def main():
     parser.add_argument('--rescale-config', dest='rescale_config', default=None,
             help="specify alternate rescale configuration file")
 
-    args = parser.parse_args()
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-f', dest='data_files', nargs="+",
+            help="List of one or more hdf files")
+    group.add_argument('-d', dest='data_dir', nargs="?",
+            help="Data directory to look for input data files")
+    group.add_argument('-R', dest='remove_prev', default=False, action='store_true',
+            help="Delete any files that may conflict with future processing. Processing is not done with this flag.")
+
+    args = parser.parse_args(args=argv)
+
+    # Figure out what the log should be named
+    log_fn = args.log_fn
+    if args.remove_prev:
+        # They didn't need to specify a filename
+        if log_fn is None: log_fn = GLUE_NAME + "_removal.log"
+        file_start_time = utc_now()
+    else:
+        # Get input files and the first filename for the logging datetime
+        if args.data_files:
+            hdf_files = args.data_files[:]
+        elif args.data_dir:
+            base_dir = os.path.abspath(os.path.expanduser(args.data_dir))
+            hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
+        else:
+            # Should never get here because argparse mexc group
+            log.error("Wrong number of arguments")
+            parser.print_help()
+            return -1
+
+        # Handle the user using a '~' for their home directory
+        hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in sorted(hdf_files) ]
+        for hdf_file in hdf_files:
+            if not os.path.exists(hdf_file):
+                print "ERROR: File '%s' doesn't exist" % (hdf_file,)
+                return -1
+        first_file = os.path.split(hdf_files[0])[-1]
+
+        # Get the date of the first file if provided
+        # SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
+        file_start_time = datetime.strptime(first_file[10:27], "d%Y%m%d_t%H%M%S")
+
+    # Determine the log filename
+    if log_fn is None: log_fn = GLUE_NAME + "_%Y%m%d_%H%M%S.log"
+    log_fn = datetime.strftime(file_start_time, log_fn)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=LOG_FN)
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=log_fn)
 
     # Don't set this up until after you have setup logging
     sys.excepthook = create_exc_handler(GLUE_NAME)
 
-    fornav_D = int(args.fornav_D)
-    fornav_d = int(args.fornav_d)
-    num_procs = int(args.num_procs)
-    forced_grids = args.forced_grids
-    if forced_grids == 'all': forced_grids = None
-
+    # Remove previous intermediate and product files
     if args.remove_prev:
         log.info("Removing any possible conflicting files")
         remove_file_patterns(
@@ -337,17 +408,11 @@ def main():
                 )
         return 0
 
-    if args.data_files:
-        hdf_files = args.data_files[:]
-    elif args.data_dir:
-        base_dir = os.path.abspath(os.path.expanduser(args.data_dir))
-        hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
-    else:
-        log.error("Wrong number of arguments")
-        parser.print_help()
-        return -1
-    # Handle the user using a '~' for their home directory
-    hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in hdf_files ]
+    fornav_D = int(args.fornav_D)
+    fornav_d = int(args.fornav_d)
+    num_procs = int(args.num_procs)
+    forced_grids = args.forced_grids
+    if forced_grids == 'all': forced_grids = None
 
     stat = run_glue(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
                 forced_grid=forced_grids,
@@ -358,6 +423,15 @@ def main():
                 output_pattern=args.output_pattern,
                 inc_by_one=args.inc_by_one,
                 new_dnb=args.new_dnb # XXX
+                )
+    log.debug("Processing returned status code: %d" % stat)
+
+    # Remove intermediate files (not the backend)
+    if not stat and not args.debug_mode:
+        log.info("Removing intermediate products")
+        remove_file_patterns(
+                Frontend.removable_file_patterns,
+                remap.removable_file_patterns
                 )
 
     return stat

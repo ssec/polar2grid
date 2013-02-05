@@ -7,9 +7,38 @@ Provide information about ADL product files for a variety of uses.
 :author:       Ray Garcia (rayg)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2012
+:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2013
 :license:      GNU GPLv3
+
+Copyright (C) 2013 Space Science and Engineering Center (SSEC),
+ University of Wisconsin-Madison.
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This file is part of the polar2grid software package. Polar2grid takes
+satellite observation data, remaps it, and writes it to a file format for
+input into another program.
+Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+
+    Written by David Hoese    January 2013
+    University of Wisconsin-Madison 
+    Space Science and Engineering Center
+    1225 West Dayton Street
+    Madison, WI  53706
+    david.hoese@ssec.wisc.edu
+
 """
 __docformat__ = "restructuredtext en"
 
@@ -32,6 +61,8 @@ K_RADIANCE = 'RadianceVar'
 K_REFLECTANCE = 'ReflectanceVar'
 K_BTEMP = "BrightnessTemperatureVar"
 K_SOLARZENITH = "SolarZenithVar"
+K_LUNARZENITH = "LunarZenithVar"
+K_MOONILLUM   = "LunarIllumination"
 K_ALTITUDE = 'AltitudeVar'
 K_RADIANCE_FACTORS = "RadianceFactorsVar"
 K_REFLECTANCE_FACTORS = "ReflectanceFactorsVar"
@@ -57,25 +88,31 @@ FACTORS_GUIDE = {
 # FIXME: add RadianceFactors/ReflectanceFactors
 GEO_FILE_GUIDE = {
             r'GITCO.*' : {
-                            K_LATITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Latitude',
-                            K_LONGITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Longitude',
-                            K_ALTITUDE: '/All_Data/VIIRS-IMG-GEO-TC_All/Height',
-                            K_STARTTIME: '/All_Data/VIIRS-IMG-GEO-TC_All/StartTime',
-                            K_SOLARZENITH: '/All_Data/VIIRS-IMG-GEO-TC_All/SolarZenithAngle'
+                            K_LATITUDE:    '/All_Data/VIIRS-IMG-GEO-TC_All/Latitude',
+                            K_LONGITUDE:   '/All_Data/VIIRS-IMG-GEO-TC_All/Longitude',
+                            K_ALTITUDE:    '/All_Data/VIIRS-IMG-GEO-TC_All/Height',
+                            K_STARTTIME:   '/All_Data/VIIRS-IMG-GEO-TC_All/StartTime',
+                            K_SOLARZENITH: '/All_Data/VIIRS-IMG-GEO-TC_All/SolarZenithAngle',
+                            K_LUNARZENITH: '/All_Data/VIIRS-IMG-GEO-TC_All/LunarZenithAngle',
+                            K_MOONILLUM:   '/All_Data/VIIRS-IMG-GEO-TC_All/MoonIllumFraction',
                             },
             r'GMTCO.*' : {
-                            K_LATITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Latitude',
-                            K_LONGITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Longitude',
-                            K_ALTITUDE: '/All_Data/VIIRS-MOD-GEO-TC_All/Height',
-                            K_STARTTIME: '/All_Data/VIIRS-MOD-GEO-TC_All/StartTime',
-                            K_SOLARZENITH: '/All_Data/VIIRS-MOD-GEO-TC_All/SolarZenithAngle'
+                            K_LATITUDE:    '/All_Data/VIIRS-MOD-GEO-TC_All/Latitude',
+                            K_LONGITUDE:   '/All_Data/VIIRS-MOD-GEO-TC_All/Longitude',
+                            K_ALTITUDE:    '/All_Data/VIIRS-MOD-GEO-TC_All/Height',
+                            K_STARTTIME:   '/All_Data/VIIRS-MOD-GEO-TC_All/StartTime',
+                            K_SOLARZENITH: '/All_Data/VIIRS-MOD-GEO-TC_All/SolarZenithAngle',
+                            K_LUNARZENITH: '/All_Data/VIIRS-MOD-GEO-TC_All/LunarZenithAngle',
+                            K_MOONILLUM:   '/All_Data/VIIRS-MOD-GEO-TC_All/MoonIllumFraction',
                             },
             r'GDNBO.*' : {
-                            K_LATITUDE: '/All_Data/VIIRS-DNB-GEO_All/Latitude',
-                            K_LONGITUDE: '/All_Data/VIIRS-DNB-GEO_All/Longitude',
-                            K_ALTITUDE: '/All_Data/VIIRS-DNB-GEO_All/Height',
-                            K_STARTTIME: '/All_Data/VIIRS-DNB-GEO_All/StartTime',
-                            K_SOLARZENITH: '/All_Data/VIIRS-DNB-GEO_All/SolarZenithAngle'
+                            K_LATITUDE:    '/All_Data/VIIRS-DNB-GEO_All/Latitude',
+                            K_LONGITUDE:   '/All_Data/VIIRS-DNB-GEO_All/Longitude',
+                            K_ALTITUDE:    '/All_Data/VIIRS-DNB-GEO_All/Height',
+                            K_STARTTIME:   '/All_Data/VIIRS-DNB-GEO_All/StartTime',
+                            K_SOLARZENITH: '/All_Data/VIIRS-DNB-GEO_All/SolarZenithAngle',
+                            K_LUNARZENITH: '/All_Data/VIIRS-DNB-GEO_All/LunarZenithAngle',
+                            K_MOONILLUM:   '/All_Data/VIIRS-DNB-GEO_All/MoonIllumFraction',
                             }
             }
 SV_FILE_GUIDE = {
@@ -193,13 +230,14 @@ band2const = {
 # missing value sentinels for different datasets
 # 0 if scaling exists, 1 if scaling is None
 MISSING_GUIDE = {
-                DKIND_REFLECTANCE: (lambda A: A>=65528, lambda A:A<0.0),
-                DKIND_RADIANCE: (lambda A: A>=65528, lambda A: A<0.0),
-                DKIND_BTEMP: (lambda A: A>=65528, lambda A: A<0.0),
-                K_SOLARZENITH: (lambda A: A>=65528, lambda A: A<0.0),
-                K_MODESCAN: (lambda A: A>1, lambda A: A>1),
-                K_LATITUDE: (lambda A: A>=65528, lambda A: A<=-999),
-                K_LONGITUDE: (lambda A: A>=65528, lambda A: A<=-999)
+                DKIND_REFLECTANCE : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                DKIND_RADIANCE    : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                DKIND_BTEMP       : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                K_SOLARZENITH     : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                K_LUNARZENITH     : ( lambda A: A>=65528, lambda A: A <  -999.0 ),
+                K_MODESCAN        : ( lambda A: A>1,      lambda A: A >  1      ),
+                K_LATITUDE        : ( lambda A: A>=65528, lambda A: A <= -999   ),
+                K_LONGITUDE       : ( lambda A: A>=65528, lambda A: A <= -999   )
                 }
 
 
@@ -541,8 +579,10 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
 
     lat_var_path = finfo[K_LATITUDE]
     lon_var_path = finfo[K_LONGITUDE]
-    st_var_path = finfo[K_STARTTIME]
+    st_var_path  = finfo[K_STARTTIME]
     sza_var_path = finfo[K_SOLARZENITH]
+    lza_var_path = finfo[K_LUNARZENITH]
+    mia_var_path = finfo[K_MOONILLUM]
 
     # Get latitude data
     h5v = h5path(hp, lat_var_path, finfo["geo_path"], required=True)
@@ -564,6 +604,16 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     h5v = h5path(hp, sza_var_path, finfo["geo_path"], required=True)
     sza_data = h5v[:,:]
     sza_data = sza_data.astype(dtype)
+    
+    # Get the lunar zenith angle
+    h5v = h5path(hp, lza_var_path, finfo["geo_path"], required=True)
+    lza_data = h5v[:,:]
+    lza_data = lza_data.astype(dtype)
+    
+    # Get the moon illumination information
+    h5v = h5path(hp, mia_var_path, finfo["geo_path"], required=True)
+    moon_illum = h5v[0] / 100.0
+    LOG.debug("moon illumination fraction: " + str(moon_illum))
 
     # Calculate latitude mask
     lat_mask = MISSING_GUIDE[K_LATITUDE][1](lat_data) if K_LATITUDE in MISSING_GUIDE else None
@@ -573,18 +623,24 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
 
     # Calculate solar zenith angle mask
     sza_mask = MISSING_GUIDE[K_SOLARZENITH][1](sza_data) if K_SOLARZENITH in MISSING_GUIDE else None
-
+    
+    # Calculate the lunar zenith angle mask
+    lza_mask = MISSING_GUIDE[K_LUNARZENITH][1](lza_data) if K_LUNARZENITH in MISSING_GUIDE else None
+    
     # Mask off bad data
     # NOTE: There could still be missing image data to account for
     sza_data[ lat_mask | lon_mask | sza_mask ] = fill_value
+    lza_data[ lat_mask | lon_mask | lza_mask ] = fill_value
     lat_data[ lat_mask ] = fill_value
     lon_data[ lon_mask ] = fill_value
 
-    finfo["lat_data"] = lat_data
-    finfo["lon_data"] = lon_data
-    finfo["lat_mask"] = lat_mask
-    finfo["lon_mask"] = lon_mask
-    finfo["mode_mask"] = sza_data
+    finfo["lat_data"]   = lat_data
+    finfo["lon_data"]   = lon_data
+    finfo["lat_mask"]   = lat_mask
+    finfo["lon_mask"]   = lon_mask
+    finfo["mode_mask"]  = sza_data
+    finfo["moon_angle"] = lza_data
+    finfo["moon_illum"] = moon_illum
     finfo["start_time"] = start_time
     # Rows only
     finfo["scan_quality"] = (np.unique(np.nonzero(lat_mask)[0]),)

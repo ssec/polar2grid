@@ -11,13 +11,12 @@ you can install the polar2grid python package like any basic python egg:
 
 Installing polar2grid in this way does require, however, that the ms2gt
 utilities ``ll2cr`` and ``fornav`` must be in your $PATH environment
-variable.  The polar2grid python package also has the following prerequisite
-packages:
-
-    - numpy
-    - h5py
-    - netCDF4
-    - matplotlib
+variable. The newest version of ms2gt used by polar2grid is available
+`here <http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/>`_. Once
+untarred (``tar -xzf <tar.gz file>``), the binaries are located in the
+``bin`` directory.
+The polar2grid python package also has python package dependencies, but those
+will be installed automatically.
 
 Creating Software Bundle from Subversion Repository
 ---------------------------------------------------
@@ -38,12 +37,19 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
 
         mkdir bin
 
-    3. Download ms2gt, compile it, and link to the used utilities:
+    3. Compile ms2gt, tar it, and link to the used utilities:
 
-        Prerequisite - Make a ms2gt source package (from the development repository)::
+        Prerequisite - Make a ms2gt source package
+        (from the development repository). This should only be done on a
+        special build RHEL 5 machine (MilliCentOS5m64 Virtual Machine) to
+        make the binaries compatible with more systems::
 
-            cd /path/to/repos/checkout/root/ms2gt/
+            cd /path/to/repos/root/ms2gt/
+            # Build ms2gt statically
+            LDFLAGS=-static make 
+            # Package it into a tarball
             make tar
+            # Move (or scp) to the bundle build directory
             mv ms2gt<ms2gt-version>.tar.gz /path/to/polar2grid-swbundle-<version>
 
             # To delete the temporary directory that was made:
@@ -55,13 +61,10 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
         Or you can download the .tar.gz file from here:
             http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/
 
-        Compile and link it::
+        Soft link it::
 
             tar -xzf ms2gt<ms2gt-version>.tar.gz
             mv ms2gt<version> ms2gt
-            cd ms2gt
-            make
-            cd ..
             ln -s ../ms2gt/bin/fornav bin/fornav
             ln -s ../ms2gt/bin/ll2cr bin/ll2cr
 
@@ -76,11 +79,11 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
         Prerequisite - Make the polar2gird python package::
 
             cd /path/to/repos/checkout/root/py/
+            # make clean (optional)
             make all_sdist
-            mv dist/*.tar.gz /path/to/polar2grid-swbundle-<version>/
 
-            # put the eggs on the repoistory if ready
-            scp *.tar.gz larch:/var/apache/larch/htdocs/eggs/repos/
+            # put the eggs in the repository if ready
+            make torepos
 
         Install the packages directly from the tarball files::
 
@@ -95,7 +98,7 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
             # all dependencies should be automatically installed
             ShellB3/bin/python -m easy_install -f http://larch.ssec.wisc.edu/cgi-bin/repos.cgi polar2grid
 
-    6. Copy any companion scripts and environment scripts to software bundle directory::
+    6. Copy any bundle scripts and environment scripts to software bundle directory::
 
         cp /path/to/repos/checkout/root/swbundle/* /path/to/polar2grid-swbundle-<version>/bin/
 

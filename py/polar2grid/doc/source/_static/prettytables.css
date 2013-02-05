@@ -1,0 +1,11 @@
+/* Customization so that all tables have a set width
+ *
+ * The default uses colgroup tags with percentages, but it doesn't set a
+ * definite size for the table so the table's size is an undefined behavior
+ */
+
+table.docutils {
+    border: 0;
+    border-collapse: collapse;
+    width: 50%;
+}

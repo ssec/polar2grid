@@ -5,9 +5,38 @@
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2012
+:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2013
 :license:      GNU GPLv3
+
+Copyright (C) 2013 Space Science and Engineering Center (SSEC),
+ University of Wisconsin-Madison.
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This file is part of the polar2grid software package. Polar2grid takes
+satellite observation data, remaps it, and writes it to a file format for
+input into another program.
+Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+
+    Written by David Hoese    January 2013
+    University of Wisconsin-Madison 
+    Space Science and Engineering Center
+    1225 West Dayton Street
+    Madison, WI  53706
+    david.hoese@ssec.wisc.edu
+
 """
 __docformat__ = "restructuredtext en"
 
@@ -214,33 +243,33 @@ class BackendRole(object):
 
         Some arguments are handled in special ways:
             - start_time : start_time converted into 5 different strings
-            that can each be individually specified in the pattern:
-                * start_time     : YYYYMMDD_HHMMSS
-                * start_YYYYMMDD : YYYYMMDD
-                * start_YYMMDD   : YYMMDD
-                * start_HHMMSS   : HHMMSS
-                * start_HHMM     : HHMM
+                that can each be individually specified in the pattern:
+                    * start_time     : YYYYMMDD_HHMMSS
+                    * start_YYYYMMDD : YYYYMMDD
+                    * start_YYMMDD   : YYMMDD
+                    * start_HHMMSS   : HHMMSS
+                    * start_HHMM     : HHMM
             - end_time   : Same as start_time
 
         If a keyword is provided that is not recognized it will be provided
         to the pattern after running through a `str` filter.
 
-        Possible pattern keywords (*created internally in this function):
+        Possible pattern keywords (\*created internally in this function):
             - sat             : identifier for the instrument's satellite
             - instrument      : name of the instrument
             - kind            : band kind
             - band            : band identifier or number
             - data_kind       : kind of data (brightness temperature, radiance, reflectance, etc.)
             - data_type       : data type name of data in-memory, numpy naming(ex. uint8, int32, real32)
-            - fbf_dtype*      : data type name of data on-disk, fbf naming (ex. uint1, int4, real4)
+            - fbf_dtype\*      : data type name of data on-disk, fbf naming (ex. uint1, int4, real4)
             - grid_name       : name of the grid the data was mapped to
             - cols            : number of columns in the data
             - rows            : number of rows in the data
             - start_time      : start time of the first scan (YYYYMMDD_HHMMSS)
-            - start_YYYYMMDD* : start date of the first scan
-            - start_YYMMDD*   : start date of the first scan
-            - start_HHMMSS*   : start time of the first scan
-            - start_HHMM*     : start time of the first scan
+            - start_YYYYMMDD\* : start date of the first scan
+            - start_YYMMDD\*   : start date of the first scan
+            - start_HHMMSS\*   : start time of the first scan
+            - start_HHMM\*     : start time of the first scan
             - end_time        : end time of the first scan. Same keywords as start_time.
 
         >>> from datetime import datetime
