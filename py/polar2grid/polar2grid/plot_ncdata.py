@@ -110,7 +110,7 @@ def main(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_t
         data = _open_file_and_get_var_data(nc_name, "image")
         
         # plot and save our figure
-        figure = _plt_basic_imshow_fig(data, vmin, vmax, title="nc_name")
+        figure = _plt_basic_imshow_fig(data, vmin, vmax, title=nc_name)
         figure.savefig("plot_ncdata.%s.png" % nc_name, dpi=dpi_to_use)
         plt.close()
 
