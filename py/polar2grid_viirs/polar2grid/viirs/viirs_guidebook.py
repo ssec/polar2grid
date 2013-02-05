@@ -606,14 +606,22 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     sza_data = sza_data.astype(dtype)
     
     # Get the lunar zenith angle
-    h5v = h5path(hp, lza_var_path, finfo["geo_path"], required=True)
-    lza_data = h5v[:,:]
-    lza_data = lza_data.astype(dtype)
+    h5v = h5path(hp, lza_var_path, finfo["geo_path"], required=False)
+    if h5v is None:
+        LOG.debug("Variable '%s' was not found in '%s'" % (lza_var_path, finfo["geo_path"]))
+        lza_data = None
+    else:
+        lza_data = h5v[:,:]
+        lza_data = lza_data.astype(dtype)
     
     # Get the moon illumination information
-    h5v = h5path(hp, mia_var_path, finfo["geo_path"], required=True)
-    moon_illum = h5v[0] / 100.0
-    LOG.debug("moon illumination fraction: " + str(moon_illum))
+    h5v = h5path(hp, mia_var_path, finfo["geo_path"], required=False)
+    if h5v is None:
+        LOG.debug("Variable '%s' was not found in '%s'" % (mia_var_path, finfo["geo_path"]))
+        moon_illum = None
+    else:
+        moon_illum = h5v[0] / 100.0
+        LOG.debug("moon illumination fraction: " + str(moon_illum))
 
     # Calculate latitude mask
     lat_mask = MISSING_GUIDE[K_LATITUDE][1](lat_data) if K_LATITUDE in MISSING_GUIDE else None
@@ -625,12 +633,14 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     sza_mask = MISSING_GUIDE[K_SOLARZENITH][1](sza_data) if K_SOLARZENITH in MISSING_GUIDE else None
     
     # Calculate the lunar zenith angle mask
-    lza_mask = MISSING_GUIDE[K_LUNARZENITH][1](lza_data) if K_LUNARZENITH in MISSING_GUIDE else None
+    if lza_data is not None:
+        lza_mask = MISSING_GUIDE[K_LUNARZENITH][1](lza_data) if K_LUNARZENITH in MISSING_GUIDE else None
     
     # Mask off bad data
     # NOTE: There could still be missing image data to account for
     sza_data[ lat_mask | lon_mask | sza_mask ] = fill_value
-    lza_data[ lat_mask | lon_mask | lza_mask ] = fill_value
+    if lza_data is not None:
+        lza_data[ lat_mask | lon_mask | lza_mask ] = fill_value
     lat_data[ lat_mask ] = fill_value
     lon_data[ lon_mask ] = fill_value
 

@@ -325,7 +325,8 @@ def process_geo(meta_data, geo_data, cut_bad=False):
             ginfo["lat_data"]   = numpy.delete(ginfo["lat_data"],   scan_quality, axis=0)
             ginfo["lon_data"]   = numpy.delete(ginfo["lon_data"],   scan_quality, axis=0)
             ginfo["mode_mask"]  = numpy.delete(ginfo["mode_mask"],  scan_quality, axis=0)
-            ginfo["moon_angle"] = numpy.delete(ginfo["moon_angle"], scan_quality, axis=0)
+            if ginfo["moon_angle"] is not None:
+                ginfo["moon_angle"] = numpy.delete(ginfo["moon_angle"], scan_quality, axis=0)
 
         # Calculate min and max lat/lon values for use in remapping
         lat_south = min(lat_south,ginfo["lat_data"][ginfo["lat_data"] != FILL_VALUE].min())
@@ -347,7 +348,8 @@ def process_geo(meta_data, geo_data, cut_bad=False):
         lafa.append(ginfo["lat_data"])
         lofa.append(ginfo["lon_data"])
         modefa.append(ginfo["mode_mask"])
-        moonfa.append(ginfo["moon_angle"])
+        if ginfo["moon_angle"] is not None:
+            moonfa.append(ginfo["moon_angle"])
         del ginfo["lat_data"]
         del ginfo["lon_data"]
         del ginfo["lat_mask"]
@@ -358,8 +360,9 @@ def process_geo(meta_data, geo_data, cut_bad=False):
         # save moon illumination information for making an average later
         # future, we may want to preserve the spatial placement of this info for large swaths
         # or modify this by the per-pixel angle to represent whether the moon has risen or not
-        total_moon_illum_fraction     += ginfo["moon_illum"]
-        weight_of_moon_illum_fraction += 1.0
+        if ginfo["moon_illum"] is not None:
+            total_moon_illum_fraction     += ginfo["moon_illum"]
+            weight_of_moon_illum_fraction += 1.0
     
     lafo.close()
     lofo.close()
@@ -386,10 +389,15 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     os.rename(latname, fbf_lat)
     os.rename(lonname, fbf_lon)
     os.rename(modename, fbf_mode)
-    os.rename(moonname, fbf_moon)
+    if moonfa.shape == (0, 0):
+        os.remove(moonname)
+        fbf_moon = None
+    else:
+        os.rename(moonname, fbf_moon)
     
     # set the moon illumination to be the average of the ones we saw
-    meta_data["moon_illum"] = total_moon_illum_fraction / weight_of_moon_illum_fraction
+    if weight_of_moon_illum_fraction != 0:
+        meta_data["moon_illum"] = total_moon_illum_fraction / weight_of_moon_illum_fraction
     
     meta_data["fbf_lat"] = fbf_lat
     meta_data["fbf_lon"] = fbf_lon
@@ -655,6 +663,10 @@ class Frontend(roles.FrontendRole):
             if band_kind != BKIND_DNB or not scale_dnb:
                 # We don't need to scale non-DNB data
                 band_job["fbf_swath"] = band_job["fbf_img"]
+                continue
+            elif meta_data['fbf_moon'] is None or meta_data['moon_illum'] is None:
+                log.error("LunarZenithAngle and MoonIllumFraction are required for DNB scaling but weren't found")
+                del bands[(band_kind, band_id)]
                 continue
             
             if new_dnb :
