@@ -54,6 +54,11 @@ Glossary
         be mapped to that grid. Usually created by a grid determination
         component and then passed to remapping for processing.
 
+    grid determination
+        Process of determining what grids intersect the data being processed.
+        This is normally done by describing the data area and grids as
+        polygons and computing the area of the intersection of the two.
+
     job
         Loosely used term to mean an incremental step in polar2grid processing.
 

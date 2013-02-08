@@ -44,7 +44,6 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core.constants import GRID_KIND_PROJ4,GRID_KIND_GPD,DEFAULT_FILL_VALUE
 from polar2grid.core.fbf import check_stem
-from .grids.grids import get_grid_info
 from . import ll2cr as gator # gridinator
 from . import ms2gt
 
@@ -105,29 +104,31 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     lat_fill_value = lat_fill_value or DEFAULT_FILL_VALUE
 
     # Run ll2cr
-    ll2cr_results = dict((grid_name,None) for grid_name in grid_jobs)
-    ll2cr_output = dict((grid_name,None) for grid_name in grid_jobs)
+    ll2cr_results = dict((grid_name, None) for grid_name in grid_jobs)
+    ll2cr_output  = dict((grid_name, None) for grid_name in grid_jobs)
     # We use a big try block to catch a keyboard interrupt and properly
     # terminate the process pool see:
     # https://github.com/davidh-ssec/polar2grid/issues/33
     try:
         for grid_name in grid_jobs.keys():
             log.info("Running ll2cr for grid %s and bands %r" % (grid_name, grid_jobs[grid_name].keys()))
-            # Get grid info from the grids module
-            grid_info = get_grid_info(grid_name)
-            ll2cr_output[grid_name] = grid_info.copy()
             ll2cr_tag = "ll2cr_%s_%s" % (nav_set_uid,grid_name)
 
             # Get information that is usually per band, but since we are already
             # separated by 'similar' data, just pick one of the bands to pull the
             # data from
             band_representative = grid_jobs[grid_name].keys()[0]
-            swath_cols = grid_jobs[grid_name][band_representative]["swath_cols"]
+            band_rep_dict = grid_jobs[grid_name][band_representative]
+            # Get grid info from the grids module
+            grid_info = band_rep_dict["grid_info"]
+            ll2cr_output[grid_name] = grid_info.copy()
+            swath_cols = band_rep_dict["swath_cols"]
             ll2cr_output[grid_name]["swath_cols"] = swath_cols
-            swath_rows = grid_jobs[grid_name][band_representative]["swath_rows"]
+            swath_rows = band_rep_dict["swath_rows"]
             ll2cr_output[grid_name]["swath_rows"] = swath_rows
-            rows_per_scan = grid_jobs[grid_name][band_representative]["rows_per_scan"]
+            rows_per_scan = band_rep_dict["rows_per_scan"]
             ll2cr_output[grid_name]["rows_per_scan"] = rows_per_scan
+
 
             if grid_info["grid_kind"] == GRID_KIND_PROJ4:
                 # Stuff that fornav needs, but the python version doesn't provide

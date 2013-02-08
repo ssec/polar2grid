@@ -117,11 +117,11 @@ DTYPE_FLOAT32 = "real4"
 DTYPE_FLOAT64 = "real8"
 
 # Grid Constants
-GRIDS_ANY = "any_grid"
-GRIDS_ANY_GPD = "any_gpd_grid"
-GRIDS_ANY_PROJ4 = "any_proj4_grid"
-GRID_KIND_GPD = "gpd"
-GRID_KIND_PROJ4 = "proj4"
+GRIDS_ANY         = "any_grid"
+GRIDS_ANY_GPD     = "any_gpd_grid"
+GRIDS_ANY_PROJ4   = "any_proj4_grid"
+GRID_KIND_GPD     = "gpd"
+GRID_KIND_PROJ4   = "proj4"
 
 ### Return Status Values ###
 STATUS_SUCCESS       = 0

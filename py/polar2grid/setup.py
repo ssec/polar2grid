@@ -37,7 +37,7 @@ __docformat__ = "restructuredtext en"
 from setuptools import setup, find_packages
 
 classifiers = ""
-version = '1.0.0'
+version = '1.1.0'
 
 setup(
     name='polar2grid',
@@ -60,6 +60,7 @@ setup(
         'netCDF4',          # AWIPS backend
         'pyproj',           # Python ll2cr, grids
         'gdal',             # Geotiff backend
+        'shapely',          # Grid determination
         'polar2grid.core',
         'polar2grid.viirs'
         ],

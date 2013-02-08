@@ -45,8 +45,8 @@ from polar2grid.core import Workspace
 from polar2grid.core.glue_utils import setup_logging,create_exc_handler,remove_file_patterns
 from polar2grid.core.time_utils import utc_now
 from polar2grid.core.constants import *
+from .grids.grids import create_grid_jobs, Cartographer
 from polar2grid.viirs import Frontend
-from .grids.grids import create_grid_jobs
 import remap
 from .awips import Backend
 
@@ -76,6 +76,7 @@ def process_data_sets(filepaths,
     status_to_return = STATUS_SUCCESS
 
     # Declare polar2grid components
+    cart = Cartographer()
     frontend = Frontend()
     backend = Backend(
             rescale_config=rescale_config,
@@ -112,10 +113,22 @@ def process_data_sets(filepaths,
         return status_to_return or STATUS_UNKNOWN_FAIL
 
     # Determine grid
+    bbox = None
+    fbf_lat_to_use = fbf_lat
+    fbf_lon_to_use = fbf_lon
+    if "lon_west" in meta_data:
+        bbox = (
+                meta_data["lon_west"], meta_data["lat_north"],
+                meta_data["lon_east"], meta_data["lat_south"]
+                )
+        fbf_lat_to_use = None
+        fbf_lon_to_use = None
     try:
         log.info("Determining what grids the data fits in...")
-        grid_jobs = create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
-                forced_grids=forced_grid)
+        grid_jobs = create_grid_jobs(sat, instrument, bands,
+                backend, cart,
+                forced_grids=forced_grid,
+                bbox = bbox, fbf_lat=fbf_lat_to_use, fbf_lon=fbf_lon_to_use)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")
@@ -325,7 +338,7 @@ through strftime. Current time if no files.""")
             "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
 
     # Remapping/Grids
-    parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="all",
+    parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default=["all"],
             help="Force remapping to only some grids, defaults to 'all', use 'all' for determination")
     parser.add_argument('--gpd', dest='forced_gpd', default=None,
             help="Specify a different gpd file to use")
@@ -403,7 +416,8 @@ through strftime. Current time if no files.""")
     fornav_d = int(args.fornav_d)
     num_procs = int(args.num_procs)
     forced_grids = args.forced_grids
-    if forced_grids == 'all': forced_grids = None
+    # Assumes 'all' doesn't appear in the list twice
+    if 'all' in forced_grids: forced_grids[forced_grids.index('all')] = None
     if args.forced_gpd is not None:
         args.forced_gpd = os.path.realpath(os.path.expanduser(args.forced_gpd))
         if not os.path.exists(args.forced_gpd):

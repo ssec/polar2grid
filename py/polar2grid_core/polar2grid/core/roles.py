@@ -372,11 +372,84 @@ class BackendRole(object):
         raise NotImplementedError("This function has not been implemented")
 
 class FrontendRole(object):
+    """Polar2grid role for data providing frontends. When provided satellite
+    observation data the frontend should create binary files for each of the
+    bands to be processed and their corresponding navigation data.
+    The ``make_swaths`` method will return a meta-data
+    dictionary of information about the data.
+    """
     __metaclass__ = ABCMeta
 
     @abstractmethod
     def make_swaths(self, filepaths, **kwargs):
         raise NotImplementedError("This function has not been implemented")
+
+class CartographerRole(object):
+    """Polar2grid role for managing grids. Grid information such as
+    the projection, the projection's parameters, pixel size, grid height,
+    grid width, and grid origin are stored in the Cartographer and can be
+    accessed via the ``CartographerRole.get_grid_info`` method.
+    """
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def get_all_grid_info(self):
+        """Return grid information for all grids (static and dynamic)
+        as a python dictionary, mapping ``grid_name`` to a dictionary
+        of grid information. Exact information returned depends on the
+        type of the grid and whether that grid dynamically fits the data
+        being mapped or is a static size, resolution, and location.
+        """
+        raise NotImplementedError("Child class must implement this method")
+
+    @abstractmethod
+    def get_static_grid_info(self):
+        """Like ``CartographerRole.get_all_grid_info`` but only returns
+        static grids.
+        """
+        raise NotImplementedError("Child class must implement this method")
+
+    @abstractmethod
+    def get_dynamic_grid_info(self):
+        """Like ``CartographerRole.get_all_grid_info`` but only returns
+        dynamic grids.
+        """
+        raise NotImplementedError("Child class must implement this method")
+
+    @abstractmethod
+    def get_grid_info(self, grid_name):
+        """Return grid information as a python dictionary for the
+        ``grid_name`` provided. Exact information returned depends on the
+        type of the grid and whether that grid dynamically fits the data
+        being mapped or is a static size, resolution, and location.
+
+        :raises ValueError: if ``grid_name`` does not exist
+        """
+        raise NotImplementedError("Child class must implement this method")
+
+    @abstractmethod
+    def add_grid_config(self, grid_config_filename):
+        """Add the grids and their information to this objects internal
+        store of grid information. The format of the grid configuration
+        ultimately depends on the Cartographer implementation. This method
+        should not erase previously added configuration files, but it will
+        overwrite a ``grid_name`` that was added earlier.
+        """
+        raise NotImplementedError("Child class must implement this method")
+
+    @abstractmethod
+    def remove_grid(self, grid_name):
+        """Remove ``grid_name`` from the internal grid information storage
+        of this object.
+        """
+        raise NotImplementedError("Child class must implement this method")
+
+    @abstractmethod
+    def remove_all(self):
+        """Remove all grids from the internal grid information storage of
+        this object.
+        """
+        raise NotImplementedError("Child class must implement this method")
 
 def main():
     """Run some tests on the interfaces/roles

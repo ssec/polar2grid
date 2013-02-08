@@ -46,7 +46,8 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.constants import GRIDS_ANY,GRIDS_ANY_GPD,GRIDS_ANY_PROJ4,GRID_KIND_PROJ4,GRID_KIND_GPD
-from polar2grid.core import Workspace
+from polar2grid.core import Workspace,roles
+from shapely import geometry
 import pyproj
 import numpy
 
@@ -66,13 +67,8 @@ log = logging.getLogger(__name__)
 
 script_dir = os.path.split(os.path.realpath(__file__))[0]
 GRIDS_DIR = script_dir #os.path.split(script_dir)[0] # grids directory is in root pkg dir
-SHAPES_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_SHAPES_CONFIG", "grid_shapes.conf")
-GRIDS_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
-
-# Filled in later
-SHAPES = None
-GPD_GRIDS = None
-PROJ4_GRIDS = None
+GRIDS_CONFIG_FILEPATH   = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
+GRID_COVERAGE_THRESHOLD = float(os.environ.get("POLAR2GRID_GRID_COVERAGE", "0.1")) # 10%
 
 def _load_proj_string(proj_str):
     """Wrapper to accept epsg strings or proj4 strings
@@ -106,9 +102,137 @@ def read_shapes_config(config_filepath):
     config_str = open(full_config_filepath, 'r').read()
     return read_shapes_config_str(config_str)
 
+def parse_gpd_config_line(grid_name, parts):
+    """Return a dictionary of information for a specific GPD grid from
+    a grid configuration line. ``parts`` should be every comma-separated
+    part of the line including the ``grid_name``.
+    """
+    info = {}
+
+    gpd_filepath = parts[2]
+    if not os.path.isabs(gpd_filepath):
+        # Its not an absolute path so it must be in the grids dir
+        gpd_filepath = os.path.join(GRIDS_DIR, gpd_filepath)
+    info["grid_kind"] = GRID_KIND_GPD
+    info["static"]    = True
+    info["gpd_filepath"] = gpd_filepath
+
+    # Width,Height
+    try:
+        width = int(parts[3])
+        info["grid_width"] = width
+        height = int(parts[4])
+        info["grid_height"] = height
+    except StandardError:
+        log.error("Could not convert gpd grid width and height: '%s'" % (grid_name,))
+        raise
+
+    # Get corners
+    corner_order = ["ul_corner", "ur_corner", "lr_corner", "ll_corner"]
+    for corner,(lon,lat) in zip(corner_order, zip(parts[5::2], parts[6::2])):
+        lon = float(lon)
+        lat = float(lat)
+        if lon > 180 or lon < -180:
+            msg = "Corner longitudes must be between -180 and 180, not '%f'" % (lon,)
+            log.error(msg)
+            raise ValueError(msg)
+        if lat > 90 or lat < -90:
+            msg = "Corner latitude must be between -90 and 90, not '%f'" % (lat,)
+            log.error(msg)
+            raise ValueError(msg)
+
+        info[corner] = (lon,lat)
+
+    return info
+
+def parse_proj4_config_line(grid_name, parts):
+    """Return a dictionary of information for a specific PROJ.4 grid from
+    a grid configuration line. ``parts`` should be every comma-separated
+    part of the line including the ``grid_name``.
+    """
+    info = {}
+
+    proj4_str = parts[2]
+    # Test to make sure the proj4_str is valid in pyproj's eyes
+    try:
+        p = _load_proj_string(proj4_str)
+        del p
+    except StandardError:
+        log.error("Invalid proj4 string in '%s' : '%s'" % (grid_name,proj4_str))
+        raise
+
+    # Some parts can be None, but not all
+    try:
+        static = True
+        if parts[3] == "None" or parts[3] == '':
+            static        = False
+            grid_width    = None
+        else:
+            grid_width    = int(parts[3])
+
+        if parts[4] == "None" or parts[4] == '':
+            static        = False
+            grid_height   = None
+        else:
+            grid_height   = int(parts[4])
+
+        if parts[5] == "None" or parts[5] == '':
+            static        = False
+            pixel_size_x  = None
+        else:
+            pixel_size_x  = float(parts[5])
+
+        if parts[6] == "None" or parts[6] == '':
+            static        = False
+            pixel_size_y  = None
+        else:
+            pixel_size_y  = float(parts[6])
+
+        if parts[7] == "None" or parts[7] == '':
+            static        = False
+            grid_origin_x = None
+        else:
+            grid_origin_x = float(parts[7])
+
+        if parts[8] == "None" or parts[8] == '':
+            static        = False
+            grid_origin_y = None
+        else:
+            grid_origin_y = float(parts[8])
+    except StandardError:
+        log.error("Could not parse proj4 grid configuration: '%s'" % (grid_name,))
+        raise
+
+    if (pixel_size_x is None and pixel_size_y is not None) or \
+            (pixel_size_x is not None and pixel_size_y is None):
+        log.error("Both or neither pixel sizes must be specified for '%s'" % grid_name)
+        raise ValueError("Both or neither pixel sizes must be specified for '%s'" % grid_name)
+    if (grid_width is None and grid_height is not None) or \
+            (grid_width is not None and grid_height is None):
+        log.error("Both or neither grid sizes must be specified for '%s'" % grid_name)
+        raise ValueError("Both or neither grid sizes must be specified for '%s'" % grid_name)
+    if (grid_origin_x is None and grid_origin_y is not None) or \
+            (grid_origin_x is not None and grid_origin_y is None):
+        log.error("Both or neither grid origins must be specified for '%s'" % grid_name)
+        raise ValueError("Both or neither grid origins must be specified for '%s'" % grid_name)
+    if grid_width is None and pixel_size_x is None:
+        log.error("Either grid size or pixel size must be specified for '%s'" % grid_name)
+        raise ValueError("Either grid size or pixel size must be specified for '%s'" % grid_name)
+
+    info["grid_kind"]         = GRID_KIND_PROJ4
+    info["static"]            = static
+    info["proj4_str"]         = proj4_str
+    info["pixel_size_x"]      = pixel_size_x
+    info["pixel_size_y"]      = pixel_size_y
+    info["grid_origin_x"]     = grid_origin_x
+    info["grid_origin_y"]     = grid_origin_y
+    info["grid_width"]        = grid_width
+    info["grid_height"]       = grid_height
+
+    return info
+
 def read_grids_config_str(config_str):
-    gpd_grids = {}
-    proj4_grids = {}
+    grid_information = {}
 
     for line in config_str.split("\n"):
         # Skip comments and empty lines
@@ -118,127 +242,29 @@ def read_grids_config_str(config_str):
         line = line.strip("\n,")
         parts = [ part.strip() for part in line.split(",") ]
 
-        if len(parts) != 5 and len(parts) != 9:
+        if len(parts) != 13 and len(parts) != 9:
             log.error("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
             raise ValueError("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
 
         grid_name = parts[0]
-        if (grid_name in gpd_grids) or (grid_name in proj4_grids):
+        if grid_name in grid_information:
             log.error("Grid '%s' is in grid config more than once" % (grid_name,))
             raise ValueError("Grid '%s' is in grid config more than once" % (grid_name,))
 
         grid_type = parts[1].lower()
         if grid_type == "gpd":
-            gpd_filepath = parts[2]
-            if not os.path.isabs(gpd_filepath):
-                # Its not an absolute path so it must be in the grids dir
-                gpd_filepath = os.path.join(GRIDS_DIR, gpd_filepath)
-            gpd_grids[grid_name] = {}
-            gpd_grids[grid_name]["grid_kind"] = GRID_KIND_GPD
-            gpd_grids[grid_name]["gpd_filepath"] = gpd_filepath
-
-            # Width,Height
-            try:
-                width = int(parts[3])
-                gpd_grids[grid_name]["grid_width"] = width
-                height = int(parts[4])
-                gpd_grids[grid_name]["grid_height"] = height
-            except StandardError:
-                log.error("Could not convert gpd grid width and height: '%s'" % (line,))
-                raise
+            grid_information[grid_name] = parse_gpd_config_line(grid_name, parts)
         elif grid_type == "proj4":
-            proj4_str = parts[2]
-            # Test to make sure the proj4_str is valid in pyproj's eyes
-            try:
-                p = _load_proj_string(proj4_str)
-                del p
-            except StandardError:
-                log.error("Invalid proj4 string in '%s'" % (line))
-                raise
-
-            # Some parts can be None, but not all
-            try:
-                if parts[3] == "None" or parts[3] == '': grid_width=None
-                else: grid_width = int(parts[3])
-                if parts[4] == "None" or parts[4] == '': grid_height=None
-                else: grid_height = int(parts[4])
-                if parts[5] == "None" or parts[5] == '': pixel_size_x=None
-                else: pixel_size_x = float(parts[5])
-                if parts[6] == "None" or parts[6] == '': pixel_size_y=None
-                else: pixel_size_y = float(parts[6])
-                if parts[7] == "None" or parts[7] == '': grid_origin_x=None
-                else: grid_origin_x = float(parts[7])
-                if parts[8] == "None" or parts[8] == '': grid_origin_y=None
-                else: grid_origin_y = float(parts[8])
-            except StandardError:
-                log.error("Could not parse proj4 grid configuration: '%s'" % (line))
-                raise
-
-            if (pixel_size_x is None and pixel_size_y is not None) or \
-                    (pixel_size_x is not None and pixel_size_y is None):
-                log.error("Both or neither pixel sizes must be specified for '%s'" % grid_name)
-                raise ValueError("Both or neither pixel sizes must be specified for '%s'" % grid_name)
-            if (grid_width is None and grid_height is not None) or \
-                    (grid_width is not None and grid_height is None):
-                log.error("Both or neither grid sizes must be specified for '%s'" % grid_name)
-                raise ValueError("Both or neither grid sizes must be specified for '%s'" % grid_name)
-            if (grid_origin_x is None and grid_origin_y is not None) or \
-                    (grid_origin_x is not None and grid_origin_y is None):
-                log.error("Both or neither grid origins must be specified for '%s'" % grid_name)
-                raise ValueError("Both or neither grid origins must be specified for '%s'" % grid_name)
-            if grid_width is None and pixel_size_x is None:
-                log.error("Either grid size or pixel size must be specified for '%s'" % grid_name)
-                raise ValueError("Either grid size or pixel size must be specified for '%s'" % grid_name)
-
-            proj4_grids[grid_name] = {}
-            proj4_grids[grid_name]["grid_kind"] = GRID_KIND_PROJ4
-            proj4_grids[grid_name]["proj4_str"]    = proj4_str
-            proj4_grids[grid_name]["pixel_size_x"] = pixel_size_x
-            proj4_grids[grid_name]["pixel_size_y"] = pixel_size_y
-            proj4_grids[grid_name]["grid_origin_x"]     = grid_origin_x
-            proj4_grids[grid_name]["grid_origin_y"]     = grid_origin_y
-            proj4_grids[grid_name]["grid_width"]        = grid_width
-            proj4_grids[grid_name]["grid_height"]       = grid_height
+            grid_information[grid_name] = parse_proj4_config_line(grid_name, parts)
         else:
             log.error("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type,grid_name))
             raise ValueError("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type,grid_name))
 
-    return gpd_grids,proj4_grids
+    return grid_information
 
-def read_grids_config(config_filepath):
-    """Read the "grids.conf" file and create dictionaries mapping the
-    grid name to the necessary information. There are two dictionaries
-    created, one for gpd file grids and one for proj4 grids.
-
-    Format for gpd grids:
-    grid_name,gpd,gpd_filename
-
-    where 'gpd' is the actual text 'gpd' to define the grid as a gpd grid.
-
-    Format for proj4 grids:
-    grid_name,proj4,proj4_str,pixel_size_x,pixel_size_y,origin_x,origin_y,width,height
-
-    where 'proj4' is the actual text 'proj4' to define the grid as a proj4
-    grid.
-
-    """
-    full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
-    if not os.path.exists(full_config_filepath):
-        try:
-            config_str = get_resource_string(__name__, config_filepath)
-            return read_grids_config_str(config_str)
-        except StandardError:
-            log.error("Grids configuration file '%s' does not exist" % (config_filepath,))
-            log.debug("Grid configuration error: ", exc_info=1)
-            raise
-
-    config_file = open(full_config_filepath, "r")
-    config_str = config_file.read()
-    return read_grids_config_str(config_str)
-
-def determine_grid_coverage(lon_data, lat_data, grids):
-    """Take latitude and longitude arrays and a list of grids and determine
-    if the data covers any of those grids enough to be "useful".
+def determine_grid_coverage(g_ring, grids, cart, coverage_percent_threshold=GRID_COVERAGE_THRESHOLD):
+    """Take a g_ring (polygon vertices of the data) and a list of grids and
+    determine if the data covers any of those grids enough to be "useful".
 
     The percentage considered useful and the grids shape is contained in
     "grid_shapes.conf".
@@ -246,48 +272,78 @@ def determine_grid_coverage(lon_data, lat_data, grids):
     `grids` can either be a list of grid names held in the "grids.conf" file,
     that must also be in the "grid_shapes.conf" file, or it can be one of a
     set of constants `GRIDS_ANY`, `GRIDS_ANY_GPD`, `GRIDS_ANY_PROJ4`.
+
+    .. warning::
+
+        This will not work with grids or data covering the poles.
+
     """
     # Interpret constants
     # Make sure to remove the constant from the list of valid grids
     if grids == GRIDS_ANY or GRIDS_ANY in grids:
-        grids = list(set(grids + GPD_GRIDS.keys() + PROJ4_GRIDS.keys()))
+        grids = list(set(grids + cart.get_all_grid_names(static=True)))
         grids.remove(GRIDS_ANY)
     if grids == GRIDS_ANY_PROJ4 or GRIDS_ANY_PROJ4 in grids:
-        grids = list(set(grids + PROJ4_GRIDS.keys()))
+        grids = list(set(grids + cart.get_kind_grid_names(GRID_KIND_PROJ4, static=True)))
         grids.remove(GRIDS_ANY_PROJ4)
     if grids == GRIDS_ANY_GPD or GRIDS_ANY_GPD in grids:
-        grids = list(set(grids + GPD_GRIDS.keys()))
+        grids = list(set(grids + cart.get_kind_grid_names(GRID_KIND_GPD, static=True)))
         grids.remove(GRIDS_ANY_GPD)
 
-    # Flatten the data for easier operations
-    lon_data = lon_data.flatten()
-    lat_data = lat_data.flatten()
+    def _correct_g_ring(g_ring, correct_dateline=False):
+        # We need to correct for if the polygon cross the dateline
+        ring_array = numpy.array(g_ring)
+        lat_array  = ring_array[:,1]
+        lon_array  = ring_array[:,0]
+        # we crossed the dataline if the difference is huge
+        # if the dateline we are comparing this with crossed the dateline
+        # then we need to go on the 0-360 range too
+        crosses_dateline = False
+        if correct_dateline or (lon_array.max() - lon_array.min() >= 180):
+            crosses_dateline = True
+            lon_array[lon_array < 0] += 360.0
+
+        return zip(lon_array, lat_array),crosses_dateline
 
     # Look through each grid to see the data coverage
     useful_grids = []
-    lon_data_flipped = None
+    g_ring,crosses_dateline = _correct_g_ring(g_ring)
+    data_poly = geometry.Polygon(g_ring)
     for grid_name in grids:
-        # If the grid isn't in shapes, then it must be a fit grid
-        if grid_name not in SHAPES:
-            log.debug("Including fit grid '%s' in processing" % grid_name)
-            useful_grids.append(grid_name)
-            continue
-        tbound,bbound,lbound,rbound,percent = SHAPES[grid_name]
-        lon_data_use = lon_data
-        if lbound > rbound:
-            rbound = rbound + 360.0
-            if lon_data_flipped is None:
-                lon_data_flipped = lon_data.copy()
-                lon_data_flipped[lon_data < 0] += 360
-                lon_data_use = lon_data_flipped
-        grid_mask = numpy.nonzero( (lat_data < tbound) & (lat_data > bbound) & (lon_data_use < rbound) & (lon_data_use > lbound) )[0]
-        grid_percent = (len(grid_mask) / float(len(lat_data)))
-        log.debug("Data had a %f coverage in grid %s" % (grid_percent,grid_name))
-        if grid_percent >= percent:
+        grid_info = cart.get_grid_info(grid_name, with_corners=True)
+        # We don't include dynamic grids this way
+        if not grid_info["static"]: continue
+
+        grid_g_ring,grid_crosses_dateline = _correct_g_ring( (
+            grid_info["ul_corner"],
+            grid_info["ur_corner"],
+            grid_info["lr_corner"],
+            grid_info["ll_corner"],
+            grid_info["ul_corner"]
+            ), correct_dateline=crosses_dateline )
+        grid_poly = geometry.Polygon( grid_g_ring )
+
+        if grid_crosses_dateline and not crosses_dateline:
+            # We need to do the data polygon again because
+            # it is in the -180-180 domain instead of 0-360
+            # like the grid
+            tmp_data_poly = geometry.Polygon( _correct_g_ring(g_ring, correct_dateline=True)[0] )
+            intersect_poly = grid_poly.intersection(tmp_data_poly)
+        else:
+            intersect_poly = grid_poly.intersection(data_poly)
+        percent_of_grid_covered = intersect_poly.area / grid_poly.area
+        log.debug("Data had a %f%% coverage in grid %s" % (percent_of_grid_covered * 100, grid_name))
+        if percent_of_grid_covered >= coverage_percent_threshold:
             useful_grids.append(grid_name)
     return useful_grids
 
-def determine_grid_coverage_fbf(fbf_lon, fbf_lat, grids):
+def determine_grid_coverage_bbox(bbox, grids, cart):
+    # We were given a bounding box so turn it into polygon coordinates
+    g_ring = ( bbox[:2], (bbox[2],bbox[1]), bbox[2:], (bbox[0],bbox[3]), bbox[:2] )
+    all_useful_grids = determine_grid_coverage(g_ring, grids, cart)
+    return all_useful_grids
+
+def determine_grid_coverage_fbf(fbf_lon, fbf_lat, grids, cart):
     lon_workspace,fbf_lon = os.path.split(os.path.realpath(fbf_lon))
     lat_workspace,fbf_lat = os.path.split(os.path.realpath(fbf_lat))
     W = Workspace(lon_workspace)
@@ -296,19 +352,19 @@ def determine_grid_coverage_fbf(fbf_lon, fbf_lat, grids):
     lat_data = getattr(W, fbf_lat.split(".")[0])
     del W
 
-    return determine_grid_coverage(lon_data, lat_data, grids)
+    south_lat,north_lat = lat_data.min(),lat_data.max()
+    west_lon,east_lon   = lon_data.min(),lon_data.max()
+    # Correct for dateline, if the difference is less than 1 degree we
+    # know that we crossed the dateline
+    if east_lon - (west_lon + 360) < 1.0:
+        west_lon,east_lon = lon_data[ lon_data > 0 ].min(),lon_data[ lon_data < 0 ].max()
 
-def get_grid_info(grid_name):
-    if grid_name in GPD_GRIDS:
-        return GPD_GRIDS[grid_name].copy()
-    elif grid_name in PROJ4_GRIDS:
-        return PROJ4_GRIDS[grid_name].copy()
-    else:
-        log.error("Unknown grid '%s'" % (grid_name,))
-        raise ValueError("Unknown grid '%s'" % (grid_name,))
+    bbox = (west_lon, north_lat, east_lon, south_lat)
+    return determine_grid_coverage_bbox(bbox, grids, cart)
 
-def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
-        forced_grids=None):
+def create_grid_jobs(sat, instrument, bands, backend, cart,
+        forced_grids=None, fbf_lat=None, fbf_lon=None,
+        bbox=None, g_ring=None):
     """Create a dictionary known as `grid_jobs` to be passed to remapping.
     """
 
@@ -324,17 +380,34 @@ def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
         log.debug("Kind %s Band %s can handle these grids: '%r'" % (band_kind, band_id, this_band_can_handle))
 
     # Get the set of grids we will use
+    do_grid_deter = False
+    grids = []
+    all_useful_grids = []
+    if None in forced_grids or forced_grids is None:
+        # The user wants grid determination
+        do_grid_deter = True
+        if None in forced_grids: forced_grids.remove(None)
+
     if forced_grids is not None:
         if isinstance(forced_grids, list): grids = forced_grids
         else: grids = [forced_grids]
-        grids = set(grids)
-    else:
+    if do_grid_deter:
         # Check if the data fits in the grids
-        all_useful_grids = determine_grid_coverage_fbf(fbf_lon, fbf_lat, list(all_possible_grids))
-        grids = set(all_useful_grids)
+        if g_ring is not None:
+            all_useful_grids = determine_grid_coverage(g_ring, list(all_possible_grids), cart)
+        elif bbox is not None:
+            all_useful_grids = determine_grid_coverage_bbox(bbox, list(all_possible_grids), cart)
+        elif fbf_lat is not None and fbf_lon is not None:
+            all_useful_grids = determine_grid_coverage_fbf(fbf_lon, fbf_lat, list(all_possible_grids), cart)
+        else:
+            msg = "Grid determination requires a g_ring, a bounding box, or latitude and longitude binary files"
+            log.error(msg)
+            raise ValueError(msg)
+    # Join any determined grids with any forced grids
+    grids = set(all_useful_grids + grids)
 
     # Figure out which grids are useful for data coverage (or forced grids) and the backend can support
-    grid_infos = dict((g,get_grid_info(g)) for g in grids)# if g not in [GRIDS_ANY,GRIDS_ANY_GPD,GRIDS_ANY_PROJ4])
+    grid_infos = dict((g,cart.get_grid_info(g)) for g in grids)# if g not in [GRIDS_ANY,GRIDS_ANY_GPD,GRIDS_ANY_PROJ4])
     for band_kind, band_id in bands.keys():
         if bands [(band_kind, band_id)]["grids"] == GRIDS_ANY:
             bands [(band_kind, band_id)]["grids"] = list(grids)
@@ -361,6 +434,7 @@ def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
             if (band_kind, band_id) not in grid_jobs[grid_name]: grid_jobs[grid_name][(band_kind, band_id)] = {}
             log.debug("Kind %s band %s will be remapped to grid %s" % (band_kind, band_id, grid_name))
             grid_jobs[grid_name][(band_kind, band_id)] = bands[(band_kind, band_id)].copy()
+            grid_jobs[grid_name][(band_kind, band_id)]["grid_info"] = cart.get_grid_info(grid_name)
 
     if len(grid_jobs) == 0:
         msg = "No backend compatible grids were found to fit the data set"
@@ -369,39 +443,180 @@ def create_grid_jobs(sat, instrument, bands, fbf_lat, fbf_lon, backend,
 
     return grid_jobs
 
-def validate_configs(shapes_dict, gpd_dict, proj4_dict):
-    shapes_grid_names = set(shapes_dict.keys())
+class Cartographer(roles.CartographerRole):
+    """Object that holds grid information about the grids added
+    to it. This Cartographer can handle PROJ4 and GPD grids.
+    """
 
-    gpd_grid_names = gpd_dict.keys()
-    proj4_grid_names = proj4_dict.keys()
-    grids_grid_names = set(gpd_grid_names + proj4_grid_names)
+    grid_information = {}
 
-    in_shapes = shapes_grid_names - grids_grid_names
-    if len(in_shapes) != 0:
-        log.error("These grids are in the shapes config, but not the grids config: \n%s" % "\n".join(in_shapes))
-        raise ValueError("There were grids in the shapes config, but not the grids config")
+    def __init__(self, *grid_configs, **kwargs):
+        if len(grid_configs) == 0:
+            log.info("Using default grid configuration: '%s' " % (GRIDS_CONFIG_FILEPATH,))
+            grid_configs = (GRIDS_CONFIG_FILEPATH,)
 
-    in_grids = grids_grid_names - shapes_grid_names
-    # make the set a list, in case we remove items, otherwise exception
-    for grid in list(in_grids):
-        # Remove grids that fit to the data
-        # Could use some more that as to "will the data actually fit this fit grid"
-        if grid in proj4_dict and (proj4_dict[grid]["grid_width"] is None or \
-                proj4_dict[grid]["pixel_size_x"] is None or \
-                proj4_dict[grid]["grid_origin_x"] is None):
-            in_grids.remove(grid)
-    if len(in_grids) != 0:
-        log.error("These grids are in the grids config, but not the shapes config: \n%s" % "\n".join(in_grids))
-        raise ValueError("There were grids in the grids config, but not the shapes config")
+        for grid_config in grid_configs:
+            log.info("Loading grid configuration '%s'" % (grid_config,))
+            self.add_grid_config(grid_config)
 
-# See bottom of file where default configuration files are loaded
-def load_global_config_files(shapes_config=SHAPES_CONFIG_FILEPATH,
-        grids_config=GRIDS_CONFIG_FILEPATH):
-    global SHAPES
-    global GPD_GRIDS,PROJ4_GRIDS
-    SHAPES = read_shapes_config(shapes_config)
-    GPD_GRIDS,PROJ4_GRIDS = read_grids_config(grids_config)
-    validate_configs(SHAPES, GPD_GRIDS, PROJ4_GRIDS)
+    def add_grid_config(self, grid_config_filename):
+        """Load a grid configuration file. If a ``grid_name`` was already
+        added its information is overwritten.
+        """
+        grid_information  = self.read_grids_config(grid_config_filename)
+        self.grid_information.update(**grid_information)
+
+    def add_grid_config_str(self, grid_config_line):
+        grid_information = read_grids_config_str(grid_config_line)
+        self.grid_information.update(**grid_information)
+
+    def add_gpd_grid_info(self, grid_name, gpd_filename,
+            ul_lon, ul_lat,
+            ur_lon, ur_lat,
+            lr_lon, lr_lat,
+            ll_lon, ll_lat
+            ):
+        # Trick the parse function to think this came from a config line
+        parts = (
+                grid_name, "gpd", gpd_filename,
+                ul_lon, ul_lat,
+                ur_lon, ur_lat,
+                lr_lon, lr_lat,
+                ll_lon, ll_lat
+                )
+        self.grid_information[grid_name] = parse_gpd_config_line(grid_name, parts)
+
+    def add_proj4_grid_info(self, grid_name,
+            proj4_str, width, height,
+            pixel_size_x, pixel_size_y,
+            origin_x, origin_y
+            ):
+        # Trick the parse function to think this came from a config line
+        parts = (
+                grid_name, "proj4", proj4_str,
+                width, height,
+                pixel_size_x, pixel_size_y,
+                origin_x, origin_y
+                )
+        self.grid_information[grid_name] = parse_proj4_config_line(grid_name, parts)
+
+    def get_all_grid_info(self):
+        # We need to make sure we copy the entire thing so the user can't
+        # change things
+        ret_ginfo = { grid_name : info.copy()
+                for grid_name,info in self.grid_information.items() }
+        return ret_ginfo
+
+    def get_static_grid_info(self):
+        ret_ginfo = { grid_name : info.copy()
+                for grid_name,info in self.grid_information.items() if info["static"] }
+        return ret_ginfo
+
+    def get_dynamic_grid_info(self):
+        ret_ginfo = { grid_name : info.copy()
+                for grid_name,info in self.grid_information.items() if not info["static"] }
+        return ret_ginfo
+
+    def get_kind_grid_info(self, grid_kind):
+        return { x : info.copy()
+                for x,info in self.grid_information.items() if info["grid_kind"] == grid_kind }
+
+    def get_all_grid_names(self, static=False):
+        return [ k for k in self.grid_information.keys() if not static or self.grid_information[k]["static"] ]
+
+    def get_kind_grid_names(self, grid_kind, static=False):
+        return [ x for x,info in self.grid_information.items() if info["grid_kind"] == grid_kind and (not static or self.grid_information[x]["static"]) ]
+
+    def calculate_grid_corners(self, grid_name):
+        log.debug("Calculating corners for '%s'" % (grid_name,))
+        grid_info = self.grid_information[grid_name]
+        if grid_info["grid_kind"] != GRID_KIND_PROJ4:
+            msg = "Don't know how to calculate corners for '%s' of kind '%s'" % (grid_name,grid_info["grid_kind"])
+            log.error(msg)
+            raise ValueError(msg)
+
+        if not grid_info["static"]:
+            log.debug("Won't calculate corners for a dynamic grid: '%s'" % (grid_name,))
+
+        p = pyproj.Proj(grid_info["proj4_str"])
+        right_x  = grid_info["grid_origin_x"] + grid_info["pixel_size_x"] * grid_info["grid_width"]
+        bottom_y = grid_info["grid_origin_y"] + grid_info["pixel_size_y"] * grid_info["grid_height"]
+        grid_info["ul_corner"] = p(grid_info["grid_origin_x"], grid_info["grid_origin_y"], inverse=True)
+        grid_info["ur_corner"] = p(right_x, grid_info["grid_origin_y"], inverse=True)
+        grid_info["lr_corner"] = p(right_x, bottom_y, inverse=True)
+        grid_info["ll_corner"] = p(grid_info["grid_origin_x"], bottom_y, inverse=True)
+
+    def get_grid_info(self, grid_name, with_corners=False):
+        """Return a grid information dictionary about the ``grid_name``
+        specified. If the ``with_corners`` keyword is specified and the
+        corners have not already been calculated they will be calculated
+        and stored in the information as (lon,lat) tuples with keys
+        ``ul_corner``, ``ur_corner``, ``ll_corner``, and ``lr_corner``.
+
+        The information returned will always be a copy of the information
+        stored internally in this object. So a change to the dictionary
+        returned does NOT affect the internal information.
+
+        :raises ValueError: if ``grid_name`` does not exist
+
+        """
+        if grid_name in self.grid_information:
+            if with_corners:
+                if "ul_corner" not in self.grid_information[grid_name]:
+                    # The grid doesn't have the corners calculated yet
+                    self.calculate_grid_corners(grid_name)
+            return self.grid_information[grid_name].copy()
+        else:
+            log.error("Unknown grid '%s'" % (grid_name,))
+            raise ValueError("Unknown grid '%s'" % (grid_name,))
+
+    def remove_grid(self, grid_name):
+        """Remove ``grid_name`` from the loaded grid information
+        for this object.
+
+        :raises ValueError: if ``grid_name`` does not exist
+        """
+        if grid_name in self.grid_information:
+            del self.grid_information[grid_name]
+        else:
+            log.error("Unknown grid '%s' can't be removed" % (grid_name,))
+            raise ValueError("Unknown grid '%s' can't be removed" % (grid_name,))
+
+    def remove_all(self):
+        """Remove any loaded grid information from this instance.
+        """
+        self.grid_information = {}
+
+    def read_grids_config(self, config_filepath):
+        """Read the "grids.conf" file and create dictionaries mapping the
+        grid name to the necessary information. There are two dictionaries
+        created, one for gpd file grids and one for proj4 grids.
+
+        Format for gpd grids:
+        grid_name,gpd,gpd_filename
+
+        where 'gpd' is the actual text 'gpd' to define the grid as a gpd grid.
+
+        Format for proj4 grids:
+        grid_name,proj4,proj4_str,pixel_size_x,pixel_size_y,origin_x,origin_y,width,height
+
+        where 'proj4' is the actual text 'proj4' to define the grid as a proj4
+        grid.
+
+        """
+        full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
+        if not os.path.exists(full_config_filepath):
+            try:
+                config_str = get_resource_string(__name__, config_filepath)
+                return read_grids_config_str(config_str)
+            except StandardError:
+                log.error("Grids configuration file '%s' does not exist" % (config_filepath,))
+                log.debug("Grid configuration error: ", exc_info=1)
+                raise
+
+        config_file = open(full_config_filepath, "r")
+        config_str = config_file.read()
+        return read_grids_config_str(config_str)
 
 def main():
     from argparse import ArgumentParser
@@ -410,8 +625,6 @@ def main():
 Test configuration files and see how polar2grid will read them.
 """
     parser = ArgumentParser(description=description)
-    parser.add_argument("--shapes", dest="shapes", default=SHAPES_CONFIG_FILEPATH,
-            help="specify a shapes configuration file to check")
     parser.add_argument("--grids", dest="grids", default=GRIDS_CONFIG_FILEPATH,
             help="specify a grids configuration file to check")
     parser.add_argument("--determine", dest="determine", nargs="*",
@@ -421,31 +634,16 @@ Test configuration files and see how polar2grid will read them.
     print "Running log command"
     logging.basicConfig(level=logging.DEBUG)
 
-    shapes_dict = read_shapes_config(args.shapes)
-    print "Shapes configuration file (%s):" % args.shapes
-    pprint(shapes_dict)
-    gpd_grids,proj4_grids = read_grids_config(args.grids)
-    print "GPD Grids from configuration file '%s':" % args.grids
-    pprint(gpd_grids)
-    print "PROJ4 Grids from configuration file '%s':" % args.grids
-    pprint(proj4_grids)
-
-    print "Validating these configuration files..."
-    validate_configs(shapes_dict, gpd_grids, proj4_grids)
+    cartographer = Cartographer(args.grids)
+    print "Grids from configuration file '%s':" % args.grids
+    pprint(cartographer.grid_information)
 
     if args.determine is not None and len(args.determine) != 0:
-        print "Loading the grids and shapes configurations to be used for determination"
-        load_global_config_files(args.shapes, args.grids)
         print "Determining if data fits in this grid"
-        determine_grid_coverage_fbf(args.determine[0], args.determine[1], args.determine[2:])
+        determine_grid_coverage_fbf(args.determine[0], args.determine[1], args.determine[2:], cartographer)
 
     print "DONE"
 
 if __name__ == "__main__":
     sys.exit(main())
-
-# Load the default configurations after the main method
-# this way if main shows more information it might be more useful to check the
-# configs with that
-load_global_config_files()
 

@@ -94,9 +94,8 @@ Table of Contents
     dev_env
     glue_scripts
     frontends
-    grid_deter
+    grids
     remapping
     backends
     rescaling
-    grids
 
