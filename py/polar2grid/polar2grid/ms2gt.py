@@ -149,9 +149,9 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
 
 def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, rowfile, swathfile, grid_cols, grid_rows, output_fn,
         verbose=False, swath_data_type_1=None, swath_fill_1=None, grid_fill_1=None, weight_delta_max=None, weight_distance_max=None,
-        start_scan=None):
+        start_scan=None, select_single_samples=False):
     args = ["fornav", "%d" % chan_count]
-
+    
     if chan_count == 1 and not isinstance(swathfile, list):
         swathfile = [swathfile]
     if chan_count == 1 and not isinstance(output_fn, list):
@@ -171,7 +171,11 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         else:
             log.error("Output files must be a list if channel count is more than 1")
             raise ValueError("Output files must be a list if channel count is more than 1")
-
+    
+    if select_single_samples:
+        # the -m argument tells fornav to select only the highest weighted
+        # sample point, rather than doing a weighted average
+        args.append("-m")
     if verbose:
         args.append("-v")
     if swath_data_type_1:

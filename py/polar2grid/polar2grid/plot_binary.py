@@ -50,7 +50,13 @@ from polar2grid.core import Workspace
 
 import os
 
-def plot_binary(bf, workspace='.', fill_value=-999.0, dpi_to_use=100):
+DEFAULT_FILE_PATTERN = "result_*.real4.*.*"
+DEFAULT_FILL_VALUE   = -999.0
+DEFAULT_DPI          = 150
+
+def plot_binary(bf, workspace='.',
+                fill_value=DEFAULT_FILL_VALUE,
+                dpi_to_use=DEFAULT_DPI):
     W=Workspace(workspace)
 
     plt.figure()
@@ -70,20 +76,20 @@ def main():
 Plot binary files using matplotlib.
     """
     parser = ArgumentParser(description=description)
-    parser.add_argument("-f", dest="fill_value", default=-999.0, type=float,
+    parser.add_argument("-f", dest="fill_value", default=DEFAULT_FILL_VALUE, type=float,
             help="Specify the fill_value of the input file(s)")
     parser.add_argument("-p", dest="pattern",
             help="filename pattern to search the current directory for")
     parser.add_argument("binary_files", nargs="*",
             help="list of flat binary files to be plotted in the current directory")
-    parser.add_argument('--dpi', dest="dpi",   default=100, type=float,
+    parser.add_argument('-d', '--dpi', dest="dpi", default=DEFAULT_DPI, type=float,
             help="Specify the dpi for the resulting figure, higher dpi will result in larger figures and longer run times")
     args = parser.parse_args()
 
     workspace = '.'
     binary_files = args.binary_files
     if not args.binary_files and not args.pattern:
-        args.pattern = "result_*.real4.*.*"
+        args.pattern = DEFAULT_FILE_PATTERN
     if args.pattern:
         workspace = os.path.split(args.pattern)[0]
         binary_files = [ os.path.split(x)[1] for x in glob(args.pattern) ]
@@ -91,7 +97,9 @@ Plot binary files using matplotlib.
     for bf in binary_files:
         print "Plotting '%s'" % (bf,)
         try:
-            plot_binary(bf, workspace='.', fill_value=args.fill_value, dpi_to_use=args.dpi)
+            plot_binary(bf, workspace='.',
+                        fill_value=args.fill_value,
+                        dpi_to_use=args.dpi)
         except StandardError as e:
             print "Could not plot '%s'" % (bf,)
             if hasattr(e, "msg"): print e,e.msg

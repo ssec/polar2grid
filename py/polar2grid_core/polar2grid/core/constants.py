@@ -59,16 +59,36 @@ __docformat__ = "restructuredtext en"
 
 NOT_APPLICABLE = None
 
+# default fill value
+DEFAULT_FILL_VALUE = -999.0
+
 # Satellites
-SAT_NPP = "npp"
+SAT_NPP   = "npp"
+SAT_TERRA = "terra"
+SAT_AQUA  = "aqua"
 
 # Instruments
 INST_VIIRS = "viirs"
+INST_MODIS = "modis"
 
 # Band Kinds
-BKIND_I = "i"
-BKIND_M = "m"
-BKIND_DNB = "dnb"
+BKIND_I     = "i"
+BKIND_M     = "m"
+BKIND_DNB   = "dnb"
+BKIND_VIS   = "visible"
+BKIND_IR    = "infrared"
+BKIND_CMASK = "cloud_mask"
+BKIND_SST   = "sea_surface_temp"
+BKIND_LST   = "land_surface_temp"
+BKIND_SLST  = "summer_land_surface_temp"
+BKIND_SZA   = "solar_zenith_angle"
+BKIND_CTT   = "cloud_top_temperature"
+BKIND_IST   = "ice_surface_temperature"
+BKIND_INV   = "inversion_strength"
+BKIND_IND   = "inversion_depth"
+BKIND_ICON  = "ice_concentration"
+BKIND_NDVI  = "ndvi"
+BKIND_TPW   = "total_precipitable_water"
 
 # Band Identifier
 BID_01 = "01"
@@ -89,14 +109,24 @@ BID_15 = "15"
 BID_16 = "16"
 BID_FOG = "fog"
 BID_NEW = "new"
+BID_20 = "20"
+BID_26 = "26"
+BID_27 = "27"
+BID_31 = "31"
 
 # Data kinds
-DKIND_LATITUDE = "latitude"
-DKIND_LONGITUDE = "longitude"
-DKIND_RADIANCE = "radiance"
+DKIND_LATITUDE    = "latitude"
+DKIND_LONGITUDE   = "longitude"
+DKIND_RADIANCE    = "radiance"
 DKIND_REFLECTANCE = "reflectance"
-DKIND_BTEMP = "btemp"
-DKIND_FOG = "fog"
+DKIND_BTEMP       = "btemp"
+DKIND_FOG         = "fog"
+DKIND_CATEGORY    = "category"
+DKIND_ANGLE       = "angle"
+DKIND_DISTANCE    = "distance" # this is meant to be a distance in the sense of mm, cm, meters, km, or miles
+DKIND_PERCENT     = "percent"
+DKIND_C_INDEX     = "contiguous_index" # this represents some abstract ranging index with meaningfully contiguous values (not discrete categories)
+
 SET_DKINDS = set([
     DKIND_RADIANCE,
     DKIND_REFLECTANCE,
@@ -140,6 +170,4 @@ STATUS_GDETER_FAIL   = 16
 # not sure why we failed, not an expected failure
 STATUS_UNKNOWN_FAIL  = -1
 
-# Other
-DEFAULT_FILL_VALUE=-999.0
 

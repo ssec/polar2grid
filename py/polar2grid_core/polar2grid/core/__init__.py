@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
+
 """ Core package of polar2grid holding constants, flat binary file utilities,
 time utilities, rescaling functions, abstract base classes, and other common
 objects to polar2grid packages.
@@ -42,7 +43,8 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .constants import *
+from .constants  import *
 from .time_utils import UTC
-from .fbf import Workspace
-
+from .fbf        import Workspace
+from .fbf        import array_appender
+from .fbf        import file_appender

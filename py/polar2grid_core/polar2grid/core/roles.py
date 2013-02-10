@@ -63,8 +63,8 @@ class RescalerRole(object):
     __metaclass__ = ABCMeta
 
     # Fill values in the input and to set in the output
-    DEFAULT_FILL_IN = -999.0
-    DEFAULT_FILL_OUT = -999.0
+    DEFAULT_FILL_IN  = DEFAULT_FILL_VALUE
+    DEFAULT_FILL_OUT = DEFAULT_FILL_VALUE
 
     # Dictionary mapping of data identifier to rescaling function and its
     # arguments
@@ -107,11 +107,8 @@ class RescalerRole(object):
     # Define the dictionary once so it doesn't have to be
     # allocated/instantiated every time it's used
     _known_data_kinds = {
-            'reflectance' : DKIND_REFLECTANCE,
-            'radiance'    : DKIND_RADIANCE,
-            'btemp'       : DKIND_BTEMP,
-            'fog'         : DKIND_FOG,
-            }
+                            'brightnesstemperature': DKIND_BTEMP,
+                        }
 
     @property
     def known_data_kinds(self):

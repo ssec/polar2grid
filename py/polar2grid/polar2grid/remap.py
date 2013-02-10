@@ -102,10 +102,11 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     # Use the default fill value if the user didn't specify or forced None
     lon_fill_value = lon_fill_value or DEFAULT_FILL_VALUE
     lat_fill_value = lat_fill_value or DEFAULT_FILL_VALUE
-
+    
     # Run ll2cr
     ll2cr_results = dict((grid_name, None) for grid_name in grid_jobs)
     ll2cr_output  = dict((grid_name, None) for grid_name in grid_jobs)
+
     # We use a big try block to catch a keyboard interrupt and properly
     # terminate the process pool see:
     # https://github.com/davidh-ssec/polar2grid/issues/33
@@ -174,7 +175,6 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
                         tag=ll2cr_tag,
                         pool=proc_pool
                         )
-
         proc_pool.close()
         proc_pool.join()
     except KeyboardInterrupt:
@@ -222,14 +222,15 @@ def run_fornav_py():
     pass
 
 def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
-        num_procs=1, verbose=False, fornav_d=None, fornav_D=None, fill_value=None):
+        num_procs=1, verbose=False, fornav_d=None, fornav_D=None,
+        fill_value=None, do_single_sample=False):
     """Run one of the fornavs and return a dictionary mapping grid_name
     to the fornav remapped image data, among other information.
     """
     # Copy the grid_jobs dict (shallow copy)
     fornav_output = grid_jobs
     fill_value = fill_value or DEFAULT_FILL_VALUE
-
+    
     proc_pool = multiprocessing.Pool(num_procs, init_worker)
 
     # We use a big try block to catch a keyboard interrupt and properly
@@ -251,7 +252,8 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
                             "grid_fill_1" : [],
                             "result" : None
                             }
-                fornav_group[band_info["remap_data_as"]]["inputs"].append(band_info["fbf_swath"])
+                fbf_swath_temp = band_info["fbf_swath"] if "fbf_swath" in band_info else band_info["fbf_img"]
+                fornav_group[band_info["remap_data_as"]]["inputs"].append(fbf_swath_temp)
                 stem = "result_%s%s_%s" % (band_kind,band_id,grid_name)
                 check_stem(stem)
                 output_name = "%s.real4.%d.%d" % (stem, band_info["grid_width"], band_info["grid_height"])
@@ -278,6 +280,7 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
                             grid_fill_1=fornav_job["grid_fill_1"],
                             weight_delta_max=fornav_D,
                             weight_distance_max=fornav_d,
+                            select_single_samples=do_single_sample,
                             # We only specify start_scan for the 'image'/channel
                             # data because ll2cr is not 'forced' so it only writes
                             # useful data to the output cols/rows files
@@ -294,7 +297,7 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
         proc_pool.terminate()
         proc_pool.join()
         raise
-
+    
     # Get all the results
     for grid_name,fornav_group in fornav_jobs.items():
         for remap_data_as,fornav_job in fornav_group.items():
@@ -324,7 +327,8 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
 def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
         grid_jobs, num_procs=1, fornav_d=None, fornav_D=None, forced_gpd=None,
         lat_south=None, lat_north=None, lon_west=None, lon_east=None,
-        lat_fill_value=None, lon_fill_value=None, fill_value=None):
+        lat_fill_value=None, lon_fill_value=None, fill_value=None,
+        do_single_sample=False):
     """Remap data using the C or python version of ll2cr and the
     C version of fornav.
 
@@ -338,7 +342,10 @@ def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     """
     # Used to determine verbosity
     log_level = logging.getLogger('').handlers[0].level or 0
-
+    
+    # TODO, this is just a very rough check for now, in the long run handle this more gracefully
+    assert (lat_fill_value == lon_fill_value)
+    
     # Run ll2cr
     ll2cr_output = run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
             grid_jobs,
@@ -349,7 +356,8 @@ def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     # Run fornav
     fornav_output = run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
             num_procs=num_procs, verbose=log_level <= logging.DEBUG,
-            fornav_d=fornav_d, fornav_D=fornav_D, fill_value=fill_value)
+            fornav_d=fornav_d, fornav_D=fornav_D, fill_value=fill_value,
+            do_single_sample=do_single_sample)
 
     return fornav_output
 

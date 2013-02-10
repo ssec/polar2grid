@@ -67,6 +67,7 @@ setup(
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points = {'console_scripts' : [
             'viirs2awips = polar2grid.viirs2awips:main',
+            'modis2awips = polar2grid.modis2awips:main'
             ]}
 )
 

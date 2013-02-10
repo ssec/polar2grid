@@ -116,6 +116,19 @@ def sqrt_scale(img, inner_mult, outer_mult, fill_in=DEFAULT_FILL_IN, fill_out=DE
     img[mask] = fill_out
     return img
 
+def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
+    """
+    this is a version of the brightness temperature scaling that is intended to work for data in celsius
+    """
+    log.debug("Converting image data to Kelvin...")
+    
+    not_fill_mask = img != fill_in
+    img[not_fill_mask] = img[not_fill_mask] + 273.15
+    
+    return bt_scale (img, threshold, high_max, high_mult, low_max, low_mult, fill_in=fill_in, fill_out=fill_out)
+    
+
+# this method is intended to work on brightness temperatures in Kelvin
 def bt_scale(img, threshold, high_max, high_mult, low_max, low_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     log.debug("Running 'bt_scale'...")
     high_idx = img >= threshold
@@ -125,6 +138,43 @@ def bt_scale(img, threshold, high_max, high_mult, low_max, low_mult, fill_in=DEF
     img[low_idx] = low_max - (low_mult*img[low_idx])
     img[z_idx] = fill_out
     return img
+
+# this method is intended to work on brightness temperatures in Kelvin
+def bt_scale_linear(image,
+                    max_in,      min_in,
+                    min_out=1.0, max_out=255.0,
+                    fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
+    """
+    This method scales the data, reversing range of values so that max_in becomes min_out and
+    min_in becomes max_out. The scaling is otherwise linear. Any data with a value of fill_in
+    in the original image will be set to fill_out in the final image.
+    """
+    log.debug("Running 'bt_scale_linear'...")
+    
+    # make a mask of where the fill values are for later
+    fill_mask = image == fill_in
+    
+    # set values beyond the bounds to the bounds
+    image[image < min_in] = min_in
+    image[image > max_in] = max_in
+    
+    # shift and scale the values
+    old_range = max_in  - min_in
+    new_range = max_out - min_out
+    # shift the bottom down to zero
+    image     -= min_in
+    # scale from the size of the old range to the new
+    image     *= (new_range / old_range)
+    # reverse the range
+    image     *= -1
+    image     += new_range
+    # shift the bottom back up to the new bottom
+    image     += min_out
+    
+    # set all the fill values to the outgoing fill value
+    image[fill_mask] = fill_out
+    
+    return image
 
 def fog_scale(img, m, b, floor, floor_val, ceil, ceil_val, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     """Scale data linearly. Then clip the data to `floor` and `ceil`,
@@ -141,20 +191,13 @@ def fog_scale(img, m, b, floor, floor_val, ceil, ceil_val, fill_in=DEFAULT_FILL_
     img[mask] = fill_out
     return img
 
-# Needs to be declared after all of the scaling functions
-KNOWN_RESCALE_KINDS = {
-        'sqrt' : sqrt_scale,
-        'linear' : linear_scale,
-        'raw' : passive_scale,
-        'btemp' : bt_scale
-        }
-
 # DEFAULTS
 RESCALE_FOR_KIND = {
         DKIND_RADIANCE    : (linear_scale, (255.0,0)),
         DKIND_REFLECTANCE : (sqrt_scale,   (100.0, 25.5)),
         DKIND_BTEMP       : (bt_scale,     (242.0,660.0,2,418.0,1)),
         DKIND_FOG         : (fog_scale,    (10.0,105.0,5,4,205,206))
+        # TODO, add defaults for category, angle, distance, percent, and contiguous index
         }
 
 class Rescaler(roles.RescalerRole):
@@ -171,11 +214,16 @@ class Rescaler(roles.RescalerRole):
         return os.path.split(os.path.realpath(__file__))[0]
 
     _known_rescale_kinds = {
-                'sqrt'   : sqrt_scale,
-                'linear' : linear_scale,
-                'raw'    : passive_scale,
-                'btemp'  : bt_scale,
-                'fog'    : fog_scale
+                'sqrt'     :  sqrt_scale,
+                'linear'   :  linear_scale,
+                'raw'      :  passive_scale,
+                'btemp'    :  bt_scale,
+                'fog'      :  fog_scale,
+                'btemp_c'  :  bt_scale_c,
+                'btemp_lin':  bt_scale_linear,
+                'lst'      :  lst_scale,
+                'distance' : passive_scale, # TODO, this is wrong... but we'll sort it out later?
+                'percent'  : passive_scale, # TODO, this is wrong, find out what it should be
                 }
     @property
     def known_rescale_kinds(self):
