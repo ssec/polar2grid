@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Script for installing a this polar2grid package.
+"""Script for installing the polar2grid package.
 
 See http://packages.python.org/distribute/ for use details.
 
@@ -62,7 +62,8 @@ setup(
         'gdal',             # Geotiff backend
         'shapely',          # Grid determination
         'polar2grid.core',
-        'polar2grid.viirs'
+        'polar2grid.viirs',
+        'polar2grid.modis'
         ],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points = {'console_scripts' : [

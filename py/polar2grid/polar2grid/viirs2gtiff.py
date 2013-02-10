@@ -78,9 +78,9 @@ def process_data_sets(filepaths,
     status_to_return = STATUS_SUCCESS
 
     # Declare polar2grid components
-    cart = Cartographer()
+    cart     = Cartographer()
     frontend = Frontend()
-    backend = Backend(
+    backend  = Backend(
             data_type      = data_type,
             output_pattern = output_pattern,
             rescale_config = rescale_config,
@@ -336,9 +336,11 @@ through strftime. Current time if no files.""")
     parser.add_argument('--fornav-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
-            help="Processing is sequential instead of one process per kind of band")
+            help="Processing is sequential instead of one process per navigation group")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
+    
+    # Frontend and product filtering related
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
     parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',

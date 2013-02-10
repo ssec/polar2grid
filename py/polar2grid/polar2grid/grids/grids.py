@@ -356,8 +356,9 @@ def determine_grid_coverage_fbf(fbf_lon, fbf_lat, grids, cart):
     west_lon,east_lon   = lon_data.min(),lon_data.max()
     # Correct for dateline, if the difference is less than 1 degree we
     # know that we crossed the dateline
-    if east_lon - (west_lon + 360) < 1.0:
+    if west_lon <= -179.0 and east_lon >= 179.0:
         west_lon,east_lon = lon_data[ lon_data > 0 ].min(),lon_data[ lon_data < 0 ].max()
+    print west_lon,east_lon
 
     bbox = (west_lon, north_lat, east_lon, south_lat)
     return determine_grid_coverage_bbox(bbox, grids, cart)

@@ -191,6 +191,38 @@ def fog_scale(img, m, b, floor, floor_val, ceil, ceil_val, fill_in=DEFAULT_FILL_
     img[mask] = fill_out
     return img
 
+# linear scale from a to b range to c to d range; if greater than b, set to d instead of scaling, if less than a, set to fill value x instead of scaling
+# for winter/normal (a, b) is (233.2K, 322.0K) and (c, d) is (5, 245)
+# for summer        (a, b) is (255.4K, 344.3K) and (c, d) is (5, 245)
+def lst_scale (data, min_before, max_before, min_after, max_after, fill_in=DEFAULT_FILL_VALUE, fill_out=DEFAULT_FILL_VALUE) :
+    """
+    Given LST data with valid values in the range min_before to max_before (the data may leave this range, but all you want to keep is that range),
+    linearly scale from min_before, max_before to min_after, max_after. Any values that fall below the minimum will be set to the fill value. Any values
+    that fall above the maximum will be set to max_after. Values that already equal the fill value will be left as fill data.
+    """
+    
+    # make a mask of our fill data
+    not_fill_data = data != fill_in
+    
+    # get rid of anything below the minimum
+    not_fill_data = not_fill_data & (data >= min_before)
+    data[~not_fill_data] = fill_in
+    
+    # linearly scale the non-fill data
+    data[not_fill_data] -= min_before
+    data[not_fill_data] /= (max_before - min_before)
+    data[not_fill_data] *= (max_after  - min_after)
+    data[not_fill_data] += min_after
+    
+    # set values that are greater than the max down to the max
+    too_high = not_fill_data & (data > max_after)
+    data[too_high] = max_after
+    
+    # swap out the fill value
+    data[data == fill_in] = fill_out
+    
+    return data
+
 # DEFAULTS
 RESCALE_FOR_KIND = {
         DKIND_RADIANCE    : (linear_scale, (255.0,0)),

@@ -150,43 +150,53 @@ def rough_compare (path1, path2, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DP
     
 
 if __name__ == "__main__":
-    import optparse
-    usage = "python %prog [options] [ base directory | '.' ]"
-    parser = optparse.OptionParser(usage=usage)
-    parser.add_option('--vmin', dest="vmin", default=None,
+    from argparse import ArgumentParser
+    description = "Plot AWIPS compatible NetCDF3 files using matplotlib."
+    parser = ArgumentParser(description=description)
+    parser.add_argument('--vmin', dest="vmin", default=None,
             help="Specify minimum brightness value. Defaults to minimum value of data.")
-    parser.add_option('--vmax', dest="vmax", default=None,
+    parser.add_argument('--vmax', dest="vmax", default=None,
             help="Specify maximum brightness value. Defaults to maximum value of data.")
-    parser.add_option('--pat', dest="base_pat", default=DEF_PAT,
+    parser.add_argument('-p', '--pat', dest="base_pat", default=DEF_PAT,
             help="Specify the glob pattern of NetCDF files to look for. Defaults to '%s'" % DEF_PAT)
-    parser.add_option('--dpi', dest="dpi",   default=100, type='float',
+    parser.add_argument('-d', '--dpi', dest="dpi", default=100, type=float,
             help="Specify the dpi for the resulting figure, higher dpi will result in larger figures and longer run times")
-    parser.add_option('-c', dest="do_compare", default=False, action="store_true",
+    parser.add_argument('-c', dest="do_compare", default=False, action="store_true",
             help="Include this flag if you wish to compare two specific files")
-    options,args = parser.parse_args()
+    parser.add_argument('search_dir', default=None, nargs="*",
+            help="Directory to search for NetCDF3 files")
+    args = parser.parse_args()
     sys.excepthook=exc_handler
     
     files_temp = None
-    if len(args) == 0:
+    if args.search_dir is None or len(args.search_dir) == 0:
         base_dir = DEF_DIR
-    elif len(args) == 1:
-        base_dir = args[0]
-    elif len(args) == 2 :
-        base_dir = DEF_DIR
-        files_temp = (args[0], args[1])
-    
-    if options.vmin is None:
+    elif len(args.search_dir) == 1:
+        base_dir = args.search_dir[0]
+    elif len(args.search_dir) == 2:
+        files_temp = (args.search_dir[0], args.search_dir[1])
+    else:
+        print "ERROR: 0, 1, or 2 arguments are allowed for 'search_dir', not %d" % len(args.search_dir)
+        sys.exit(-1)
+
+    if args.vmin is None:
         vmin = None
     else:
-        vmin = int(options.vmin)
+        vmin = int(args.vmin)
     
-    if options.vmax is None:
+    if args.vmax is None:
         vmax = None
     else:
-        vmax = int(options.vmax)
+        vmax = int(args.vmax)
     
     if files_temp is None :
-        sys.exit(main(base_dir=base_dir, base_pat=options.base_pat, vmin=vmin, vmax=vmax, dpi_to_use=options.dpi))
+        sys.exit(
+                main(base_dir=base_dir, base_pat=args.base_pat,
+                    vmin=vmin, vmax=vmax, dpi_to_use=args.dpi)
+            )
     else :
-        sys.exit(rough_compare(files_temp[0], files_temp[1], vmin=vmin, vmax=vmax, dpi_to_use=options.dpi))
+        sys.exit(
+                rough_compare(files_temp[0], files_temp[1],
+                    vmin=vmin, vmax=vmax, dpi_to_use=args.dpi)
+                )
 

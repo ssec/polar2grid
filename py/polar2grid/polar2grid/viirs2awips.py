@@ -76,11 +76,11 @@ def process_data_sets(filepaths,
     status_to_return = STATUS_SUCCESS
 
     # Declare polar2grid components
-    cart = Cartographer()
+    cart     = Cartographer()
     frontend = Frontend()
-    backend = Backend(
-            rescale_config=rescale_config,
-            backend_config=backend_config
+    backend  = Backend(
+            rescale_config = rescale_config,
+            backend_config = backend_config
             )
 
     # Extract Swaths
@@ -328,9 +328,11 @@ through strftime. Current time if no files.""")
     parser.add_argument('--fornav-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
-            help="Processing is sequential instead of one process per kind of band")
+            help="Processing is sequential instead of one process per navigation group")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
+    
+    # Frontend and product filtering related
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
     parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
@@ -351,6 +353,7 @@ through strftime. Current time if no files.""")
     parser.add_argument('--rescale-config', dest='rescale_config', default=None,
             help="specify alternate rescale configuration file")
 
+    # Input related
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-f', dest='data_files', nargs="+",
             help="List of one or more hdf files")
@@ -429,7 +432,8 @@ through strftime. Current time if no files.""")
             log.error("Specified nc file does not exist '%s'" % args.forced_nc)
             return -1
 
-    stat = run_glue(hdf_files, fornav_D=fornav_D, fornav_d=fornav_d,
+    stat = run_glue(hdf_files,
+                fornav_D=fornav_D, fornav_d=fornav_d,
                 forced_grid=forced_grids,
                 forced_gpd=args.forced_gpd, forced_nc=args.forced_nc,
                 create_pseudo=args.create_pseudo,
