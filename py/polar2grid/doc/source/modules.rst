@@ -6,4 +6,5 @@ polar2grid
 
    polar2grid
    polar2grid.viirs
+   polar2grid.modis
    polar2grid.core

@@ -6,8 +6,18 @@ Release notes for polar2grid's releases.
 Future Plans
 ------------
 
- - MODIS Frontend
  - NinJo Backend
+
+New in Version 1.1.0
+--------------------
+
+ - Added MODIS Frontend (limited number of bands)
+ - Updated ms2gt makefiles to work on more systems
+ - Made grids API object oriented (Cartographer)
+ - Grid determination now uses polygon math (much faster)
+ - :option:`viirs2gtiff -g` flag can now have 'all' specified and other forced grids
+ - Dynamic grids are not added during grid determination
+ - Various bug fixes
 
 New in Version 1.0.0
 --------------------

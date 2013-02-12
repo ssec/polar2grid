@@ -408,7 +408,7 @@ def get_swaths(ifilepaths, cut_bad=False, nav_uid=None):
 
     :Parameters:
         ifilepaths : list
-            List of image data filepaths ('*.hdf') of one kind of band that are
+            List of image data filepaths (`*.hdf`) of one kind of band that are
             to be concatenated into a swath. These paths should already be user
             expanded absolute paths.
             TODO, This code does not yet handle concatination of multiple files.

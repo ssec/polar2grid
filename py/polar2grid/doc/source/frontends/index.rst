@@ -20,4 +20,5 @@ Below is a list of currently available frontends for polar2grid.
     :maxdepth: 1
 
     viirs
+    modis
 

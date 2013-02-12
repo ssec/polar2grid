@@ -98,6 +98,7 @@ where components are installed.
    
     ::
 
+        # you can install one-by-one
         cd ~/polar2grid/polar2grid/py/
         cd polar2grid_core
         python setup.py develop -d ~/polar2grid/python
@@ -106,6 +107,10 @@ where components are installed.
         cd ../polar2grid
         python setup.py develop -d ~/polar2grid/python
         cd ~
+
+        # or all packages at once
+        cd ~/polar2grid/polar2grid/py/
+        INSTALL_DIR=~/polar2grid/python make all_dev
 
 7. Verify that you can import all of the polar2grid python packages:
    

@@ -363,14 +363,18 @@ def wnum_bt(v, r):
 
 def bright_shift(platform, rad, band, units="micron"):
     """compute brightness temperature for MODIS on Terra and Aqua
-    platform: "Terra" or "Aqua" 
-    rad: radiance spectra, arbitrary shape
-    band: band number
-    units: "micron" implying Watts per square meter per steradian per micron for radiance
-        or "wavenumber" implying milliWatts per square meter per steradian per wavenumber
+
+    :arg platform: "Terra" or "Aqua"
+    :arg rad: radiance spectra, arbitrary shape
+    :arg band: band number
+    :keyword units: "micron" implying Watts per square meter per steradian per micron for radiance
+            or "wavenumber" implying milliWatts per square meter per steradian per wavenumber
     
-    Note: the return array is in Kelvin and contains numpy.nan values where the inputs
-    could not be processed
+    .. note::
+    
+        the return array is in Kelvin and contains numpy.nan values where the inputs
+        could not be processed
+
     """    
     offset = (band - 20) if (band <= 25) else (band - 21)
     assert(offset >=0 and offset <16)
