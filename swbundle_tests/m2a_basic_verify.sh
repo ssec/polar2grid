@@ -80,7 +80,7 @@ import sys
 
 nc1_name  = "$VFILE"
 nc2_name  = "$WFILE"
-threshold = 1
+threshold = 1.1
 
 nc1 = Dataset(nc1_name, "r")
 nc2 = Dataset(nc2_name, "r")
@@ -96,7 +96,7 @@ if image1_data.shape != image2_data.shape:
     sys.exit(1)
 
 total_pixels = image1_data.shape[0] * image1_data.shape[1]
-equal_pixels = len(numpy.nonzero((image2_data - image1_data) < threshold)[0])
+equal_pixels = len(numpy.nonzero(numpy.abs(image2_data - image1_data) < threshold)[0])
 if equal_pixels != total_pixels:
     print "FAIL: %d pixels out of %d pixels are different" % (total_pixels-equal_pixels,total_pixels)
     sys.exit(2)

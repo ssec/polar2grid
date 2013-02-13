@@ -131,7 +131,12 @@ SET_DKINDS = set([
     DKIND_RADIANCE,
     DKIND_REFLECTANCE,
     DKIND_BTEMP,
-    DKIND_FOG
+    DKIND_FOG,
+    DKIND_CATEGORY,
+    DKIND_ANGLE,
+    DKIND_DISTANCE,
+    DKIND_PERCENT,
+    DKIND_C_INDEX
     ])
 
 # Data types (int,float,#bits,etc.)

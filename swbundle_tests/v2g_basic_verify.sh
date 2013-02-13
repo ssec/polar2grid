@@ -76,19 +76,21 @@ for VFILE in $VERIFY_BASE/*; do
     $POLAR2GRID_HOME/ShellB3/bin/python <<EOF
 from osgeo import gdal
 import numpy
+import sys
 
 work_gtiff  = gdal.Open("$WFILE", gdal.GA_ReadOnly)
 valid_gtiff = gdal.Open("$VFILE", gdal.GA_ReadOnly)
+threshold = 1.1
 
-work_data = work_gtiff.GetRasterBand(1).ReadAsArray()
-valid_data = valid_gtiff.GetRasterBand(1).ReadAsArray()
+work_data = work_gtiff.GetRasterBand(1).ReadAsArray().astype(numpy.float32)
+valid_data = valid_gtiff.GetRasterBand(1).ReadAsArray().astype(numpy.float32)
 
 if work_data.shape != valid_data.shape:
     print "ERROR: Data shape for '$WFILE' is not the same as the valid '$VFILE'"
     sys.exit(1)
 
 total_pixels = work_data.shape[0] * work_data.shape[1]
-equal_pixels = len(numpy.nonzero( work_data == valid_data )[0])
+equal_pixels = len(numpy.nonzero(numpy.abs(work_data - valid_data) < threshold )[0])
 if equal_pixels != total_pixels:
     print "FAIL: %d pixels out of %d pixels are different" % (total_pixels-equal_pixels,total_pixels)
     sys.exit(2)
