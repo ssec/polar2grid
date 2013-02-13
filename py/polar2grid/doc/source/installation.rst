@@ -75,4 +75,5 @@ and instructions on how to install and run them.
 
     tests/p2g_v2a_ak
     tests/p2g_v2g_basic
+    tests/p2g_m2a_basic
 
