@@ -18,6 +18,11 @@ New in Version 1.1.0
  - :option:`viirs2gtiff -g` flag can now have 'all' specified and other forced grids
  - Dynamic grids are not added during grid determination
  - Various bug fixes
+ - New Tests:
+    * p2g-m2a-basic-tests-1.0.0
+ - Updated Tests:
+    * p2g-v2g-basic-tests-1.0.1
+    * p2g-v2a-ak-tests-1.0.3
 
 New in Version 1.0.0
 --------------------

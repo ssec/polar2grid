@@ -50,3 +50,6 @@ Test cases:
 .. versionchanged:: 1.0.3
     Updated verified data for ms2gt0.24a and new command-line syntax
 
+.. versionchanged:: 1.0.4
+    Updated verified data for statically compiled ms2gt and fixed the
+    difference to being an absolute value

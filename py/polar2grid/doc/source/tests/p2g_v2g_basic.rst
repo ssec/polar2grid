@@ -51,3 +51,6 @@ Test cases:
         :Forced Grid: :ref:`wgs84_fit`
         :Orbit Number: 00001
 
+.. versionchanged:: 1.0.1
+    Updated verified data for statically compiled ms2gt and fixed the
+    difference to being an absolute value
