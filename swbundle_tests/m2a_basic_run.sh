@@ -66,7 +66,7 @@ which modis2awips.sh || oops "modis2awips.sh is not in PATH"
 
 # Check if they specified a different working directory
 if [ $# -ne 1 ]; then
-    WORK_DIR=./p2g-v2a-ak-tests-$$
+    WORK_DIR=./p2g-m2a-basic-tests-$$
 else
     echo "Will use $1 directory, but won't delete it"
     WORK_DIR=$1
@@ -87,7 +87,7 @@ for DDIR in $TEST_BASE/*; do
 
         run_test 211e $DDIR
         # Move all NetCDF files here
-        mv SSEC_AWIPS_MODIS-* ../ || oops "No NC files created for $DDIR in $TDIR"
+        mv SSEC_AWIPS_MODIS* ../ || oops "No NC files created for $DDIR in $TDIR"
 
         popd
         echo "Removing test dir $TDIR"

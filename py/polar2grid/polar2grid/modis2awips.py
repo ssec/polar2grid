@@ -46,7 +46,7 @@ from polar2grid.core.glue_utils import setup_logging,create_exc_handler,remove_f
 from polar2grid.core.time_utils import utc_now
 from polar2grid.core.constants import *
 from .grids.grids import create_grid_jobs, Cartographer
-from polar2grid.modis import Frontend
+from polar2grid.modis import Frontend,parse_datetime_from_filename
 import remap
 from .awips import Backend
 from polar2grid.modis import GEO_FILE_GROUPING
@@ -92,6 +92,7 @@ def process_data_sets(filepaths,
     
     # Extract Swaths
     log.info("Extracting swaths...")
+    meta_data = {}
     try:
         meta_data = frontend.make_swaths(
                 filepaths,
@@ -99,27 +100,26 @@ def process_data_sets(filepaths,
                 create_fog=create_pseudo,
                 cut_bad=True
                 )
-
-        # if we weren't able to load any of the swaths... stop now
-        if len(meta_data.keys()) <= 0 :
-            log.error("Unable to load swaths for any of the bands, quitting...")
-            return status_to_return or STATUS_UNKNOWN_FAIL
-        
-        # for convenience, pull some things out of the meta data
-        sat = meta_data["sat"]
-        instrument = meta_data["instrument"]
-        start_time = meta_data["start_time"]
-        band_info = meta_data["bands"]
-        flatbinaryfilename_lat = meta_data["fbf_lat"]
-        flatbinaryfilename_lon = meta_data["fbf_lon"]
-        
-        log.debug("band_info after prescaling: " + str(band_info.keys()))
     except StandardError:
         log.error("Swath creation failed")
         log.debug("Swath creation error:", exc_info=1)
         status_to_return |= STATUS_FRONTEND_FAIL
-        return status_to_return
     
+    # if we weren't able to load any of the swaths... stop now
+    if len(meta_data.keys()) <= 0 :
+        log.error("Unable to load swaths for any of the bands, quitting...")
+        return status_to_return or STATUS_UNKNOWN_FAIL
+    
+    # for convenience, pull some things out of the meta data
+    sat = meta_data["sat"]
+    instrument = meta_data["instrument"]
+    start_time = meta_data["start_time"]
+    band_info = meta_data["bands"]
+    flatbinaryfilename_lat = meta_data["fbf_lat"]
+    flatbinaryfilename_lon = meta_data["fbf_lon"]
+    
+    log.debug("band_info after prescaling: " + str(band_info.keys()))
+
     # Determine grids
     try:
         log.info("Determining what grids the data fits in...")
@@ -248,6 +248,18 @@ def run_glue(filepaths,
     if len(not_used):
         log.warning("Didn't know what to do with\n%s" % "\n".join(list(not_used)))
     
+    # removing empty nav patterns
+    for nav_group_key in nav_file_type_sets.keys() :
+        for file_pattern in nav_file_type_sets[nav_group_key].keys():
+            if not nav_file_type_sets[nav_group_key][file_pattern]:
+                log.debug("Removing empty file pattern '%s':'%s'" % (nav_group_key, file_pattern))
+                del nav_file_type_sets[nav_group_key][file_pattern]
+
+        # if the entire nav pattern has no matches
+        if not nav_file_type_sets[nav_group_key]:
+            log.debug("Removing empty nav file set '%s'" % (nav_group_key,))
+            del nav_file_type_sets[nav_group_key]
+
     # some things that we'll use later for clean up
     processes_to_wait_for = defaultdict(list)
     exit_status           = 0
@@ -369,8 +381,7 @@ through strftime. Current time if no files.""")
         first_file = os.path.split(hdf_files[0])[-1]
 
         # Get the date of the first file if provided
-        # FIXME: Comment that shows the filename example
-        file_start_time = utc_now() # FIXME: Get date from filename
+        file_start_time = parse_datetime_from_filename(first_file)
 
     # Determine the log filename
     if log_fn is None: log_fn = GLUE_NAME + "_%Y%m%d_%H%M%S.log"

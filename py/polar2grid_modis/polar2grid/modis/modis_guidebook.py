@@ -42,6 +42,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.constants import *
+from polar2grid.core.time_utils import UTC
 
 import sys
 import re
@@ -49,6 +50,7 @@ import logging
 from datetime import datetime
 
 LOG = logging.getLogger(__name__)
+UTC = UTC()
 
 LATITUDE_GEO_VARIABLE_NAME   = 'Latitude'
 LONGITUDE_GEO_VARIABLE_NAME  = 'Longitude'
@@ -417,8 +419,7 @@ def parse_datetime_from_filename (file_name_string) :
     # there are at least two file name formats to parse here
     if (file_name_string.startswith('a1') or file_name_string.startswith('t1')) :
         temp = file_name_string.split('.')
-        datetime_to_return = datetime.strptime(temp[1] + temp[2], "%y%j%H%M")
-        # TODO, the viirs guidebook is using .replace(tzinfo=UTC, microsecond=***) do I need to do this?
+        datetime_to_return = datetime.strptime(temp[1] + temp[2], "%y%j%H%M").replace(tzinfo=UTC)
     
     return datetime_to_return
 
