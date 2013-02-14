@@ -67,6 +67,9 @@ GRID_CONFIG_FILE = os.environ.get("NINJO_GRID_CONFIG_FILE", DEFAULT_GRID_CONFIG_
 BAND_CONFIG_FILE = os.environ.get("NINJO_BAND_CONFIG_FILE", DEFAULT_BAND_CONFIG_FILE)
 
 def _create_config_id(sat, instrument, kind, band, data_kind, grid_name=None):
+    # Handle the band identifier being none (VIIRS DNB for example)
+    if band is None or band.lower() == "none": band = None
+
     # copy-pastaed from awips config
     if grid_name is None:
         # This is used for searching the configs
@@ -97,7 +100,7 @@ def parse_parts_band_config(config_dict, parts):
     file.
     """
     if len(parts) < 9:
-        print "ERROR: Need at 9 columns in ninjo_bands.conf (%s)" % (parts.join(","),)
+        print "ERROR: Need 9 columns in ninjo_bands.conf (%s)" % (parts.join(","),)
         return False
 
     config_entry_id = _create_config_id(*parts[:5])

@@ -129,7 +129,7 @@ dkind2physical = {
 dkind2grad = {
         DKIND_RADIANCE    : (1.0, 0.0),
         DKIND_REFLECTANCE : (0.490196,0.0),
-        DKIND_BTEMP       : (-0.5, 0.0)
+        DKIND_BTEMP       : (-0.5, 40.0)
         }
 
 def get_default_lw_colortable():
