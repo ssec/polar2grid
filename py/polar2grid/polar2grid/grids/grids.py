@@ -107,6 +107,11 @@ gpd_conv_funcs = {
         "MAPSCALE" : float
         }
 
+gpd_key_alias = {
+        "GRIDWIDTH"     : "grid_width",
+        "GRIDHEIGHT"    : "grid_height",
+        }
+
 def parse_gpd_str(gpd_file_str):
     gpd_dict = {}
     lines = gpd_file_str.split("\n")
@@ -126,7 +131,11 @@ def parse_gpd_str(gpd_file_str):
             raise ValueError("Can't parse gpd file, don't know how to handle key '%s'" % key)
         conv_func = gpd_conv_funcs[key]
         val = conv_func(val)
-        gpd_dict[key] = val
+
+        if key in gpd_key_alias:
+            gpd_dict[gpd_key_alias[key]] = val
+        else:
+            gpd_dict[key] = val
     return gpd_dict
 
 def parse_gpd_file(gpd_filepath):
@@ -175,19 +184,9 @@ def parse_gpd_config_line(grid_name, parts):
     info["static"]    = True
     info["gpd_filepath"] = gpd_filepath
 
-    # Width,Height
-    try:
-        width = int(parts[3])
-        info["grid_width"] = width
-        height = int(parts[4])
-        info["grid_height"] = height
-    except StandardError:
-        log.error("Could not convert gpd grid width and height: '%s'" % (grid_name,))
-        raise
-
     # Get corners
     corner_order = ["ul_corner", "ur_corner", "lr_corner", "ll_corner"]
-    for corner,(lon,lat) in zip(corner_order, zip(parts[5::2], parts[6::2])):
+    for corner,(lon,lat) in zip(corner_order, zip(parts[3::2], parts[4::2])):
         lon = float(lon)
         lat = float(lat)
         if lon > 180 or lon < -180:
@@ -304,7 +303,7 @@ def read_grids_config_str(config_str):
         line = line.strip("\n,")
         parts = [ part.strip() for part in line.split(",") ]
 
-        if len(parts) != 13 and len(parts) != 9:
+        if len(parts) != 11 and len(parts) != 9:
             log.error("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
             raise ValueError("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
 
