@@ -248,6 +248,7 @@ class Rescaler(roles.RescalerRole):
     _known_rescale_kinds = {
                 'sqrt'     :  sqrt_scale,
                 'linear'   :  linear_scale,
+                'unlinear' :  unlinear_scale,
                 'raw'      :  passive_scale,
                 'btemp'    :  bt_scale,
                 'fog'      :  fog_scale,

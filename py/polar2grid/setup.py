@@ -52,7 +52,7 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     namespace_packages=["polar2grid"],
     include_package_data=True,
-    package_data={'polar2grid': ["grids/*.gpd","grids/*.nc","*.conf"]},
+    package_data={'polar2grid': ["grids/*.gpd","grids/*.ncml","*.conf"]},
     zip_safe=False,
     install_requires=[
         'numpy',

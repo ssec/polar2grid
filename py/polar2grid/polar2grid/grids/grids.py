@@ -70,6 +70,88 @@ GRIDS_DIR = script_dir #os.path.split(script_dir)[0] # grids directory is in roo
 GRIDS_CONFIG_FILEPATH   = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
 GRID_COVERAGE_THRESHOLD = float(os.environ.get("POLAR2GRID_GRID_COVERAGE", "0.1")) # 10%
 
+### GPD Reading Functions ###
+def clean_string(s):
+    s = s.replace("-", "")
+    s = s.replace("(", "")
+    s = s.replace(")", "")
+    s = s.replace(" ", "")
+    s = s.upper()
+    return s
+
+def remove_comments(s, comment=";"):
+    s = s.strip()
+    c_idx = s.find(comment)
+    if c_idx != -1:
+        return s[:c_idx].strip()
+    return s
+
+gpd_conv_funcs = {
+        # gpd file stuff:
+        "GRIDWIDTH" : int,
+        "GRIDHEIGHT" : int,
+        "GRIDMAPUNITSPERCELL" : float,
+        "GRIDCELLSPERMAPUNIT" : float,
+        # mpp file stuff:
+        "MAPPROJECTION" : clean_string,
+        "MAPREFERENCELATITUDE" : float,
+        "MAPSECONDREFERENCELATITUDE" : float,
+        "MAPREFERENCELONGITUDE" : float,
+        "MAPEQUATORIALRADIUS" : float,
+        "MAPPOLARRADIUS" : float,
+        "MAPORIGINLATITUDE" : float,
+        "MAPORIGINLONGITUDE" : float,
+        "MAPECCENTRICITY" : float,
+        "MAPECCENTRICITYSQUARED" : float,
+        "MAPFALSEEASTING" : float,
+        "MAPSCALE" : float
+        }
+
+def parse_gpd_str(gpd_file_str):
+    gpd_dict = {}
+    lines = gpd_file_str.split("\n")
+    for line in lines:
+        if not line: continue
+
+        line_parts = line.split(":")
+        if len(line_parts) != 2:
+            log.error("Incorrect gpd syntax: more than one ':' ('%s')" % line)
+            continue
+
+        key = clean_string(line_parts[0])
+        val = remove_comments(line_parts[1])
+
+        if key not in gpd_conv_funcs:
+            log.error("Can't parse gpd file, don't know how to handle key '%s'" % key)
+            raise ValueError("Can't parse gpd file, don't know how to handle key '%s'" % key)
+        conv_func = gpd_conv_funcs[key]
+        val = conv_func(val)
+        gpd_dict[key] = val
+    return gpd_dict
+
+def parse_gpd_file(gpd_filepath):
+    full_gpd_filepath = os.path.realpath(os.path.expanduser(gpd_filepath))
+    if not os.path.exists(full_gpd_filepath):
+        try:
+            gpd_str = get_resource_string(__name__, gpd_filepath)
+        except StandardError:
+            log.error("GPD file '%s' does not exist" % (gpd_filepath,))
+            raise ValueError("GPD file '%s' does not exist" % (gpd_filepath,))
+    else:
+        gpd_str = open(full_gpd_filepath, 'r').read()
+
+    try:
+        gpd_dict = parse_gpd_str(gpd_str)
+    except StandardError:
+        log.error("GPD file '%s' could not be parsed." % (gpd_filepath,))
+        raise
+
+    return gpd_dict
+
+### End of GPD Reading Functions ###
+
+### Configuration file functions ###
+
 def _load_proj_string(proj_str):
     """Wrapper to accept epsg strings or proj4 strings
     """
@@ -77,30 +159,6 @@ def _load_proj_string(proj_str):
         return pyproj.Proj(init=proj_str)
     else:
         return pyproj.Proj(proj_str)
-
-def read_shapes_config_str(config_str):
-    # NEW RECORD: Most illegible list comprehensions
-    shapes = dict(
-            (parts[0],tuple([float(x) for x in parts[1:6]])) for parts in
-                    [ [ part.strip() for part in line.split(",") ] for line in config_str.split("\n") if line and not line.startswith("#") ]
-            )
-    return shapes
-
-def read_shapes_config(config_filepath):
-    """Read the "grid_shapes.conf" file and create a dictionary mapping the
-    grid name to the bounding box information held in the configuration file.
-    """
-    full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
-    if not os.path.exists(full_config_filepath):
-        try:
-            config_str = get_resource_string(__name__, config_filepath)
-            return read_shapes_config_str(config_str)
-        except StandardError:
-            log.error("Shapes configuration file '%s' does not exist" % (config_filepath,))
-            raise ValueError("Shapes configuration file '%s' does not exist" % (config_filepath,))
-
-    config_str = open(full_config_filepath, 'r').read()
-    return read_shapes_config_str(config_str)
 
 def parse_gpd_config_line(grid_name, parts):
     """Return a dictionary of information for a specific GPD grid from
@@ -142,6 +200,10 @@ def parse_gpd_config_line(grid_name, parts):
             raise ValueError(msg)
 
         info[corner] = (lon,lat)
+
+    # Read the file and get information about the grid
+    gpd_dict = parse_gpd_file(gpd_filepath)
+    info.update(**gpd_dict)
 
     return info
 
@@ -291,15 +353,22 @@ def determine_grid_coverage(g_ring, grids, cart, coverage_percent_threshold=GRID
         grids.remove(GRIDS_ANY_GPD)
 
     def _correct_g_ring(g_ring, correct_dateline=False):
+        # FUTURE: Use PROJ4 grid space to get the bounding box/polygon ring
+        # FIXME: This probably doesn't work for polar cases
         # We need to correct for if the polygon cross the dateline
         ring_array = numpy.array(g_ring)
         lat_array  = ring_array[:,1]
         lon_array  = ring_array[:,0]
-        # we crossed the dataline if the difference is huge
+        # we crossed the dateline if the difference is huge
         # if the dateline we are comparing this with crossed the dateline
         # then we need to go on the 0-360 range too
-        crosses_dateline = False
-        if correct_dateline or (lon_array.max() - lon_array.min() >= 180):
+        # BUT don't correct if we cross the origin even if the previous
+        # polygon did cross the dateline
+        crosses_dateline = (lon_array.max() - lon_array.min() >= 180)
+        crosses_origin   = ( ( -90 <= lon_array.min() < 0 ) and \
+                ( 0 <= lon_array.max() < 90 ))
+        if ( correct_dateline and not crosses_origin ) or crosses_dateline:
+            # force this to true, so the caller knows it was corrected
             crosses_dateline = True
             lon_array[lon_array < 0] += 360.0
 
@@ -358,7 +427,6 @@ def determine_grid_coverage_fbf(fbf_lon, fbf_lat, grids, cart):
     # know that we crossed the dateline
     if west_lon <= -179.0 and east_lon >= 179.0:
         west_lon,east_lon = lon_data[ lon_data > 0 ].min(),lon_data[ lon_data < 0 ].max()
-    print west_lon,east_lon
 
     bbox = (west_lon, north_lat, east_lon, south_lat)
     return determine_grid_coverage_bbox(bbox, grids, cart)

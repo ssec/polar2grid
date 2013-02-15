@@ -48,7 +48,7 @@ from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
 from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE, BID_NEW
 from polar2grid.core import roles
-from polar2grid.core.fbf import check_stem
+from polar2grid.core.fbf import check_stem, file_appender
 import numpy
 
 import os
@@ -526,45 +526,6 @@ def process_image(meta_data, image_data, geo_data, cut_bad=False):
     if len(image_data) == 0:
         log.error("No more bands to process for navigation set %s provided" % meta_data["nav_set_uid"])
         raise ValueError("No more bands to process for navigation set %s provided" % meta_data["nav_set_uid"])
-
-class array_appender(object):
-    """wrapper for a numpy array object which gives it a binary data append usable with "catenate"
-    """
-    A = None
-    shape = (0,0)
-    def __init__(self, nparray = None):
-        if nparray:
-            self.A = nparray
-            self.shape = nparray.shape
-
-    def append(self, data):
-        # append new rows to the data
-        if self.A is None:
-            self.A = numpy.array(data)
-            self.shape = data.shape
-        else:
-            self.A = numpy.concatenate((self.A, data))
-            self.shape = self.A.shape
-        log.debug('array shape is now %s' % repr(self.A.shape))
-
-
-class file_appender(object):
-    """wrapper for a file object which gives it a binary data append usable with "catenate"
-    """
-    F = None
-    shape = (0,0)
-    def __init__(self, file_obj, dtype):
-        self.F = file_obj
-        self.dtype = dtype
-
-    def append(self, data):
-        # append new rows to the data
-        if data is None:
-            return
-        inform = data.astype(self.dtype) if self.dtype != data.dtype else data
-        inform.tofile(self.F)
-        self.shape = (self.shape[0] + inform.shape[0], ) + data.shape[1:]
-        log.debug('%d rows in output file' % self.shape[0])
 
 def make_swaths(ifilepaths, filter=None, cut_bad=False):
     """Takes SDR hdf files and creates flat binary files for the information

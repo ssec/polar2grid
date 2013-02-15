@@ -1,0 +1,12 @@
+Grid Width: 3000 
+Grid Height: 3000
+Grid Cells per Map Unit: 2.5
+Map Projection: Polar Stereographic (ellipsoid)
+Map Reference Latitude: 90.0
+Map Reference Longitude: 10.0
+Map Second Reference Latitude: 60.0 ; where the projection plane intersects the surface
+Map Origin Latitude: 56.0   ; upper left corner
+Map Origin Longitude: -2.0   ; upper left corner
+Map Equatorial Radius: 6370000.0 ; m
+Map Polar Radius: 6370000.0      ; m
+Map Scale: 1000.0 ; map scale factor (radisu units per map unit) here meter /map unit

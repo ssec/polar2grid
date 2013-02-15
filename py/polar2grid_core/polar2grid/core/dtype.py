@@ -46,6 +46,9 @@ from .constants import *
 import numpy
 
 import sys
+import logging
+
+log = logging.getLogger(__name__)
 
 # Map data type to numpy type for conversion
 dtype2np = {
@@ -111,6 +114,7 @@ def clip_to_data_type(data, data_type):
         raise ValueError("Unknown data_type '%s', don't know how to convert data" % (data_type,))
 
     min,max = dtype2range[data_type]
+    log.info("Clipping data to a %d - %d data range" % (min,max,))
     numpy.clip(data, min, max, out=data)
 
     return convert_to_data_type(data, data_type)
