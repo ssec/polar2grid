@@ -56,7 +56,8 @@ DEFAULT_DPI          = 150
 
 def plot_binary(bf, workspace='.',
                 fill_value=DEFAULT_FILL_VALUE,
-                dpi_to_use=DEFAULT_DPI):
+                dpi_to_use=DEFAULT_DPI,
+                vmin=None, vmax=None):
     W=Workspace(workspace)
 
     plt.figure()
@@ -64,7 +65,7 @@ def plot_binary(bf, workspace='.',
     result = getattr(W, fbf_attr)
     result = numpy.ma.masked_where(result == fill_value, result)
     print result.min(),result.max()
-    plt.imshow(result)
+    plt.imshow(result, vmin=vmin, vmax=vmax)
     plt.bone()
     plt.colorbar()
     plt.savefig("plot_binary.%s.png" % fbf_attr, dpi=dpi_to_use)
@@ -78,6 +79,10 @@ Plot binary files using matplotlib.
     parser = ArgumentParser(description=description)
     parser.add_argument("-f", dest="fill_value", default=DEFAULT_FILL_VALUE, type=float,
             help="Specify the fill_value of the input file(s)")
+    parser.add_argument('--vmin', dest="vmin", default=None, type=int,
+            help="Specify minimum brightness value. Defaults to minimum value of data.")
+    parser.add_argument('--vmax', dest="vmax", default=None, type=int,
+            help="Specify maximum brightness value. Defaults to maximum value of data.")
     parser.add_argument("-p", dest="pattern",
             help="filename pattern to search the current directory for")
     parser.add_argument("binary_files", nargs="*",
@@ -99,7 +104,8 @@ Plot binary files using matplotlib.
         try:
             plot_binary(bf, workspace='.',
                         fill_value=args.fill_value,
-                        dpi_to_use=args.dpi)
+                        dpi_to_use=args.dpi,
+                        vmin=args.vmin, vmax=args.vmax)
         except StandardError as e:
             print "Could not plot '%s'" % (bf,)
             if hasattr(e, "msg"): print e,e.msg

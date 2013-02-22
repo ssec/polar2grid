@@ -100,7 +100,7 @@ def exc_handler(exc_type, exc_value, traceback):
     print "Uncaught error creating png images"
     raise # this is wrong, but I need to see these errors, not silence them
 
-def main(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DPI):
+def plot_file_patterns(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DPI):
     glob_pat = os.path.join(base_dir, base_pat)
     for nc_name in glob(glob_pat):
         nc_name = os.path.split(nc_name)[1]
@@ -149,13 +149,13 @@ def rough_compare (path1, path2, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DP
     plt.close()
     
 
-if __name__ == "__main__":
+def main():
     from argparse import ArgumentParser
     description = "Plot AWIPS compatible NetCDF3 files using matplotlib."
     parser = ArgumentParser(description=description)
-    parser.add_argument('--vmin', dest="vmin", default=None,
+    parser.add_argument('--vmin', dest="vmin", default=None, type=int,
             help="Specify minimum brightness value. Defaults to minimum value of data.")
-    parser.add_argument('--vmax', dest="vmax", default=None,
+    parser.add_argument('--vmax', dest="vmax", default=None, type=int,
             help="Specify maximum brightness value. Defaults to maximum value of data.")
     parser.add_argument('-p', '--pat', dest="base_pat", default=DEF_PAT,
             help="Specify the glob pattern of NetCDF files to look for. Defaults to '%s'" % DEF_PAT)
@@ -177,26 +177,14 @@ if __name__ == "__main__":
         files_temp = (args.search_dir[0], args.search_dir[1])
     else:
         print "ERROR: 0, 1, or 2 arguments are allowed for 'search_dir', not %d" % len(args.search_dir)
-        sys.exit(-1)
+        return -1
 
-    if args.vmin is None:
-        vmin = None
-    else:
-        vmin = int(args.vmin)
-    
-    if args.vmax is None:
-        vmax = None
-    else:
-        vmax = int(args.vmax)
-    
     if files_temp is None :
-        sys.exit(
-                main(base_dir=base_dir, base_pat=args.base_pat,
-                    vmin=vmin, vmax=vmax, dpi_to_use=args.dpi)
-            )
+        return plot_file_patterns(base_dir=base_dir, base_pat=args.base_pat,
+                    vmin=args.vmin, vmax=args.vmax, dpi_to_use=args.dpi)
     else :
-        sys.exit(
-                rough_compare(files_temp[0], files_temp[1],
-                    vmin=vmin, vmax=vmax, dpi_to_use=args.dpi)
-                )
+        return rough_compare(files_temp[0], files_temp[1],
+                    vmin=args.vmin, vmax=args.vmax, dpi_to_use=args.dpi)
 
+if __name__ == "__main__":
+    sys.exit(main())
