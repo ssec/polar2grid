@@ -43,7 +43,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info
+from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
 from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE, BID_NEW
@@ -299,10 +299,10 @@ def process_geo(meta_data, geo_data, cut_bad=False):
     lofa   = file_appender(lofo,   dtype=numpy.float32)
     modefa = file_appender(modefo, dtype=numpy.float32)
     moonfa = file_appender(moonfo, dtype=numpy.float32)
-    lat_south = 91.0
-    lat_north = -91.0
-    lon_west  = 181.0
-    lon_east  = -181.0
+    wests  = []
+    easts  = []
+    norths = []
+    souths = []
     total_moon_illum_fraction     = 0.0
     weight_of_moon_illum_fraction = 0.0
 
@@ -329,20 +329,10 @@ def process_geo(meta_data, geo_data, cut_bad=False):
                 ginfo["moon_angle"] = numpy.delete(ginfo["moon_angle"], scan_quality, axis=0)
 
         # Calculate min and max lat/lon values for use in remapping
-        lat_south = min(lat_south,ginfo["lat_data"][ginfo["lat_data"] != FILL_VALUE].min())
-        lat_north = max(lat_north,ginfo["lat_data"][ginfo["lat_data"] != FILL_VALUE].max())
-        lon_west_tmp = min(lon_west,ginfo["lon_data"][ginfo["lon_data"] != FILL_VALUE].min())
-        lon_east_tmp = max(lon_east,ginfo["lon_data"][ginfo["lon_data"] != FILL_VALUE].max())
-        if lon_west_tmp <= -179.0 and lon_east_tmp >= 179.0:
-            # We hit the -180/180 boundary
-            lon_west_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] >= 0)].min()
-            lon_west_tmp = min(lon_west, ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] >= 0)].min())
-
-            lon_east_tmp2 = ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] <= 0)].max()
-            lon_east_tmp = max(lon_east, ginfo["lon_data"][(ginfo["lon_data"] != FILL_VALUE) & (ginfo["lon_data"] <= 0)].max())
-
-        lon_west = lon_west_tmp
-        lon_east = lon_east_tmp
+        wests.append(  ginfo["lon_west"]  )
+        easts.append(  ginfo["lon_east"]  )
+        norths.append( ginfo["lat_north"] )
+        souths.append( ginfo["lat_south"] )
 
         # Append the data to the swath
         lafa.append(ginfo["lat_data"])
@@ -394,6 +384,9 @@ def process_geo(meta_data, geo_data, cut_bad=False):
         fbf_moon = None
     else:
         os.rename(moonname, fbf_moon)
+
+    # Calculate the actual bounds of the entire swath
+    lon_west,lon_east,lat_north,lat_south = calculate_bbox_bounds(wests, easts, norths, souths)
     
     # set the moon illumination to be the average of the ones we saw
     if weight_of_moon_illum_fraction != 0:

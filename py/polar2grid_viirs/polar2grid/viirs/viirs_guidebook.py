@@ -55,24 +55,30 @@ from datetime import datetime,timedelta
 LOG = logging.getLogger(__name__)
 UTC= UTC()
 
-K_LATITUDE = 'LatitudeVar'
-K_LONGITUDE = 'LongitudeVar'
-K_RADIANCE = 'RadianceVar'
-K_REFLECTANCE = 'ReflectanceVar'
-K_BTEMP = "BrightnessTemperatureVar"
-K_SOLARZENITH = "SolarZenithVar"
-K_LUNARZENITH = "LunarZenithVar"
-K_MOONILLUM   = "LunarIllumination"
-K_ALTITUDE = 'AltitudeVar'
-K_RADIANCE_FACTORS = "RadianceFactorsVar"
-K_REFLECTANCE_FACTORS = "ReflectanceFactorsVar"
-K_BTEMP_FACTORS = "BrightnessTemperatureFactorsVar"
-K_STARTTIME = "StartTimeVar"
-K_MODESCAN = "ModeScanVar"
-K_MODEGRAN = "ModeGranVar"
-K_QF3 = "QF3Var"
-K_NAVIGATION = 'NavigationFilenameGlob'  # glob to search for to find navigation file that corresponds
-K_GEO_REF = 'CdfcbGeolocationFileGlob' # glob which would match the N_GEO_Ref attribute
+K_LATITUDE             = "LatitudeVar"
+K_LONGITUDE            = "LongitudeVar"
+K_RADIANCE             = "RadianceVar"
+K_REFLECTANCE          = "ReflectanceVar"
+K_BTEMP                = "BrightnessTemperatureVar"
+K_SOLARZENITH          = "SolarZenithVar"
+K_LUNARZENITH          = "LunarZenithVar"
+K_MOONILLUM            = "LunarIllumination"
+K_ALTITUDE             = "AltitudeVar"
+K_RADIANCE_FACTORS     = "RadianceFactorsVar"
+K_REFLECTANCE_FACTORS  = "ReflectanceFactorsVar"
+K_BTEMP_FACTORS        = "BrightnessTemperatureFactorsVar"
+K_STARTTIME            = "StartTimeVar"
+K_MODESCAN             = "ModeScanVar"
+K_MODEGRAN             = "ModeGranVar"
+K_QF3                  = "QF3Var"
+K_LAT_G_RING           = "LatGRingAttr"
+K_LON_G_RING           = "LonGRingAttr"
+K_WEST_COORD           = "WestCoordinateAttr"
+K_EAST_COORD           = "EastCoordinateAttr"
+K_NORTH_COORD          = "NorthCoordinateAttr"
+K_SOUTH_COORD          = "SouthCoordinateAttr"
+K_NAVIGATION           = "NavigationFilenameGlob"  # glob to search for to find navigation file that corresponds
+K_GEO_REF              = "CdfcbGeolocationFileGlob" # glob which would match the N_GEO_Ref attribute
 
 GEO_GUIDE = {
         BKIND_M : 'GMODO',
@@ -85,7 +91,6 @@ FACTORS_GUIDE = {
         DKIND_BTEMP       : K_BTEMP_FACTORS
         }
 
-# FIXME: add RadianceFactors/ReflectanceFactors
 GEO_FILE_GUIDE = {
             r'GITCO.*' : {
                             K_LATITUDE:    '/All_Data/VIIRS-IMG-GEO-TC_All/Latitude',
@@ -95,6 +100,12 @@ GEO_FILE_GUIDE = {
                             K_SOLARZENITH: '/All_Data/VIIRS-IMG-GEO-TC_All/SolarZenithAngle',
                             K_LUNARZENITH: '/All_Data/VIIRS-IMG-GEO-TC_All/LunarZenithAngle',
                             K_MOONILLUM:   '/All_Data/VIIRS-IMG-GEO-TC_All/MoonIllumFraction',
+                            K_LAT_G_RING:  '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Gran_0.G-Ring_Latitude',
+                            K_LON_G_RING:  '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Gran_0.G-Ring_Longitude',
+                            K_WEST_COORD:  '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Gran_0.West_Bounding_Coordinate',
+                            K_EAST_COORD:  '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Gran_0.East_Bounding_Coordinate',
+                            K_NORTH_COORD: '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Gran_0.North_Bounding_Coordinate',
+                            K_SOUTH_COORD: '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Gran_0.South_Bounding_Coordinate',
                             },
             r'GMTCO.*' : {
                             K_LATITUDE:    '/All_Data/VIIRS-MOD-GEO-TC_All/Latitude',
@@ -104,6 +115,8 @@ GEO_FILE_GUIDE = {
                             K_SOLARZENITH: '/All_Data/VIIRS-MOD-GEO-TC_All/SolarZenithAngle',
                             K_LUNARZENITH: '/All_Data/VIIRS-MOD-GEO-TC_All/LunarZenithAngle',
                             K_MOONILLUM:   '/All_Data/VIIRS-MOD-GEO-TC_All/MoonIllumFraction',
+                            K_LAT_G_RING:  '/Data_Products/VIIRS-MOD-GEO-TC/G-Ring_Latitude',
+                            K_LON_G_RING:  '/Data_Products/VIIRS-MOD-GEO-TC/G-Ring_Longitude',
                             },
             r'GDNBO.*' : {
                             K_LATITUDE:    '/All_Data/VIIRS-DNB-GEO_All/Latitude',
@@ -113,6 +126,8 @@ GEO_FILE_GUIDE = {
                             K_SOLARZENITH: '/All_Data/VIIRS-DNB-GEO_All/SolarZenithAngle',
                             K_LUNARZENITH: '/All_Data/VIIRS-DNB-GEO_All/LunarZenithAngle',
                             K_MOONILLUM:   '/All_Data/VIIRS-DNB-GEO_All/MoonIllumFraction',
+                            K_LAT_G_RING:  '/Data_Products/VIIRS-DNB-GEO/G-Ring_Latitude',
+                            K_LON_G_RING:  '/Data_Products/VIIRS-DNB-GEO/G-Ring_Longitude',
                             }
             }
 SV_FILE_GUIDE = {
@@ -256,6 +271,39 @@ class evaluator(object):
     def __getitem__(self, expr):
         return eval(expr, globals(), vars(self))
 
+def make_polygon_tuple(lon_ring, lat_ring):
+    return tuple(tuple(x) for x in zip(lon_ring,lat_ring))
+
+def calculate_bbox_bounds(wests, easts, norths, souths):
+    """Given a list of west most points, east-most, north-most, and
+    south-most points, calculate the bounds for the overall aggregate
+    granule. This is needed since we don't no if the last granule
+    or the first granule in an aggregate SDR file is south-most, east-most,
+    etc.
+    """
+    wests  = np.array(wests)
+    easts  = np.array(easts)
+    norths = np.array(norths)
+    souths = np.array(souths)
+
+    nbound = norths.max()
+    sbound = souths.min()
+
+    if (wests <= -170).any() and (wests >= 170).any():
+        # We are crossing the dateline
+        wbound = wests[ wests > 0 ].min()
+    else:
+        # We aren't crossing the dateline so simple calculation
+        wbound = min(wests)
+
+    if (easts <= -170).any() and (easts >= 170).any():
+        # We are crossing the dateline
+        ebound = easts[ easts < 0 ].max()
+    else:
+        ebound = max(easts)
+
+
+    return wbound,ebound,nbound,sbound
 
 def get_datetimes(finfo):
     """Takes a file info dictionary and creates a datetime object for the
@@ -271,23 +319,43 @@ def get_datetimes(finfo):
     finfo["file_start_time"] = s_dt
     finfo["file_end_time"] = e_dt
 
-def h5path(hp, path, h5_path, required=False):
-    "traverse an hdf5 path to return a nested data object"
-    LOG.debug('fetching %s from %s' % (path, h5_path))
+def h5path(hp, path, h5_path, required=False, quiet=False):
+    """traverse an hdf5 path to return a nested data object
+
+    Attributes can be retreived by using "/var/path.attr".
+
+    Quiet says to not log any messages (does not effect required check).
+    """
+    if not quiet: LOG.debug('fetching %s from %s' % (path, h5_path))
     x = hp
     for a in path.split('/'):
         if a:
+            # Check if they used a '.' to describe an attribute
+            parts = a.split(".")
+            attr_name = None
+            if len(parts) != 1:
+                a,attr_name = a.split(".")[:2]
+
             if a in x:
                 x = x[a]
+                if attr_name:
+                    if attr_name in x.attrs:
+                        x = x.attrs[attr_name]
+                        # We have the attribute so we're done
+                        break
+                    else:
+                        if not quiet: LOG.debug("Couldn't find attribute %s of path %s" % (attr_name,path))
+                        x = None
+                        break
             else:
-                LOG.debug("Couldn't find %s (or its parent) in %s" % (a,path))
+                if not quiet: LOG.debug("Couldn't find %s (or its parent) in %s" % (a,path))
                 x = None
                 break
         else:
             # If they put a / at the end of the var path
             continue
     if x is hp:
-        LOG.error("Could not get %s from h5 file" % path)
+        if not quiet: LOG.error("Could not get %s from h5 file" % path)
         x = None
 
     if x is None and required:
@@ -577,12 +645,18 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
 
     hp = h5.File(finfo["geo_path"], 'r')
 
-    lat_var_path = finfo[K_LATITUDE]
-    lon_var_path = finfo[K_LONGITUDE]
-    st_var_path  = finfo[K_STARTTIME]
-    sza_var_path = finfo[K_SOLARZENITH]
-    lza_var_path = finfo[K_LUNARZENITH]
-    mia_var_path = finfo[K_MOONILLUM]
+    lat_var_path   = finfo[K_LATITUDE]
+    lon_var_path   = finfo[K_LONGITUDE]
+    st_var_path    = finfo[K_STARTTIME]
+    sza_var_path   =  finfo[K_SOLARZENITH]
+    lza_var_path   = finfo[K_LUNARZENITH]
+    mia_var_path   = finfo[K_MOONILLUM]
+    lat_gring_path = finfo[K_LAT_G_RING]
+    lon_gring_path = finfo[K_LON_G_RING]
+    wbound_path    = finfo[K_WEST_COORD]
+    ebound_path    = finfo[K_EAST_COORD]
+    nbound_path    = finfo[K_NORTH_COORD]
+    sbound_path    = finfo[K_SOUTH_COORD]
 
     # Get latitude data
     h5v = h5path(hp, lat_var_path, finfo["geo_path"], required=True)
@@ -599,6 +673,46 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     # Get start time
     h5v = h5path(hp, st_var_path, finfo["geo_path"], required=True)
     start_time = _st_to_datetime(h5v[0])
+
+    # Get the G Ring information
+    h5v = h5path(hp, lon_gring_path, finfo["geo_path"], required=True)
+    lon_gring = h5v[:,:]
+    h5v = h5path(hp, lat_gring_path, finfo["geo_path"], required=True)
+    lat_gring = h5v[:,:]
+    swath_polygon = make_polygon_tuple(lon_gring, lat_gring)
+
+    # Get the bounding box coordinates (special cased for aggregate files)
+    wests,easts,norths,souths = [],[],[],[]
+    w_h5v = h5path(hp, wbound_path, finfo["geo_path"], required=False)
+    e_h5v = h5path(hp, ebound_path, finfo["geo_path"], required=False)
+    n_h5v = h5path(hp, nbound_path, finfo["geo_path"], required=False)
+    s_h5v = h5path(hp, sbound_path, finfo["geo_path"], required=False)
+    count = 0
+    while w_h5v is not None:
+        # Get the data and add it to the list of bounds
+        wests.append(  w_h5v[0] )
+        easts.append(  e_h5v[0] )
+        norths.append( n_h5v[0] )
+        souths.append( s_h5v[0] )
+
+        # Update the h5paths for other granules if they exist (aggregate files)
+        count += 1
+        wbound_path_tmp = wbound_path.replace("Gran_0", "Gran_%d" % count)
+        ebound_path_tmp = ebound_path.replace("Gran_0", "Gran_%d" % count)
+        nbound_path_tmp = nbound_path.replace("Gran_0", "Gran_%d" % count)
+        sbound_path_tmp = sbound_path.replace("Gran_0", "Gran_%d" % count)
+        w_h5v = h5path(hp, wbound_path_tmp, finfo["geo_path"], required=False)
+        e_h5v = h5path(hp, ebound_path_tmp, finfo["geo_path"], required=False)
+        n_h5v = h5path(hp, nbound_path_tmp, finfo["geo_path"], required=False)
+        s_h5v = h5path(hp, sbound_path_tmp, finfo["geo_path"], required=False)
+
+    # Check that we got some bounds information
+    if len(wests) == 0:
+        log.error("Could not find any bounding coordinates: '%s'" % (ebound_path,))
+        raise ValueError("Could not find any bounding coordinates: '%s'" % (ebound_path,))
+
+    # Find the actual bounding box of these values
+    wbound,ebound,nbound,sbound = calculate_bbox_bounds(wests, easts, norths, souths)
 
     # Get solar zenith angle
     h5v = h5path(hp, sza_var_path, finfo["geo_path"], required=True)
@@ -648,6 +762,11 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     finfo["lon_data"]   = lon_data
     finfo["lat_mask"]   = lat_mask
     finfo["lon_mask"]   = lon_mask
+    finfo["swath_polygon"] = swath_polygon # Not used yet
+    finfo["lon_west"]   = wbound
+    finfo["lon_east"]   = ebound
+    finfo["lat_north"]  = nbound
+    finfo["lat_south"]  = sbound
     finfo["mode_mask"]  = sza_data
     finfo["moon_angle"] = lza_data
     finfo["moon_illum"] = moon_illum
