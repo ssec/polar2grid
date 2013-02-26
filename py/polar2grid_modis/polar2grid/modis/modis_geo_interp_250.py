@@ -60,7 +60,6 @@ def interpolate_geolocation(nav_array):
         result_array[ k0 + 38, : ] = m * y[38,0] + b
         result_array[ k0 + 39, : ] = m * y[39,0] + b
 
-    print "Done processing"
     return result_array
 
 def main():
@@ -85,7 +84,9 @@ def main():
     #cProfile.runctx("lon_out = interpolate_geolocation(lon_in)", globals(), locals())
     #return 0
     lon_out = interpolate_geolocation(lon_in)
+    print "Done processing"
     lat_out = interpolate_geolocation(lat_in)
+    print "Done processing"
 
     lon_out_fn = args.lon_out % {"rows" : lon_out.shape[0], "cols" : lon_out.shape[1]}
     lat_out_fn = args.lat_out % {"rows" : lat_out.shape[0], "cols" : lat_out.shape[1]}

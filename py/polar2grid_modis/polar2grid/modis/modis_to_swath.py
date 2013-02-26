@@ -45,7 +45,9 @@ __docformat__ = "restructuredtext en"
 import modis_guidebook
 from polar2grid.core.constants import *
 from polar2grid.core import roles
+from polar2grid.core.fbf import file_appender
 from .modis_filters  import convert_radiance_to_bt, make_data_cloud_cleared, create_fog_band
+from .modis_geo_interp_250 import interpolate_geolocation
 
 import numpy
 from pyhdf.SD import SD,SDC, SDS, HDF4Error
@@ -56,45 +58,6 @@ import sys
 import logging
 
 log = logging.getLogger(__name__)
-
-class array_appender(object):
-    """wrapper for a numpy array object which gives it a binary data append usable with "catenate"
-    """
-    A = None
-    shape = (0,0)
-    def __init__(self, nparray = None):
-        if nparray:
-            self.A = nparray
-            self.shape = nparray.shape
-
-    def append(self, data):
-        # append new rows to the data
-        if self.A is None:
-            self.A = numpy.array(data)
-            self.shape = data.shape
-        else:
-            self.A = numpy.concatenate((self.A, data))
-            self.shape = self.A.shape
-        log.debug('array shape is now %s' % repr(self.A.shape))
-
-
-class file_appender(object):
-    """wrapper for a file object which gives it a binary data append usable with "catenate"
-    """
-    F = None
-    shape = (0,0)
-    def __init__(self, file_obj, dtype):
-        self.F = file_obj
-        self.dtype = dtype
-
-    def append(self, data):
-        # append new rows to the data
-        if data is None:
-            return
-        inform = data.astype(self.dtype) if self.dtype != data.dtype else data
-        inform.tofile(self.F)
-        self.shape = (self.shape[0] + inform.shape[0], ) + data.shape[1:]
-        log.debug('%d rows in output file' % self.shape[0])
 
 class FileInfoObject (object) :
     """
@@ -236,13 +199,23 @@ def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid=None, cut
     for file_info in file_info_objects :
         list_of_geo_files.append(file_info.get_geo_file())
     
+    # Check if the navigation will need to be interpolated to a better
+    # resolution
+    # FUTURE: 500m geo nav key will have to be added along with the proper
+    # interpolation function
+    interpolate_data = False
+    if nav_uid in modis_guidebook.NAV_SETS_TO_INTERPOLATE_GEO:
+        interpolate_data = True
+
     # FUTURE, if the longitude and latitude ever have different variable names, this will need refactoring
-    lat_temp_file_name, lat_stats = _load_data_to_flat_file (list_of_geo_files, "lat",
+    lat_temp_file_name, lat_stats = _load_data_to_flat_file (list_of_geo_files, "lat_" + nav_uid,
                                                              modis_guidebook.LATITUDE_GEO_VARIABLE_NAME,
-                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid])
-    lon_temp_file_name, lon_stats = _load_data_to_flat_file (list_of_geo_files, "lon",
+                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
+                                                             interpolate_data=interpolate_data)
+    lon_temp_file_name, lon_stats = _load_data_to_flat_file (list_of_geo_files, "lon_" + nav_uid,
                                                              modis_guidebook.LONGITUDE_GEO_VARIABLE_NAME,
-                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid])
+                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
+                                                             interpolate_data=interpolate_data)
     
     # rename the flat file to a more descriptive name
     shape_temp = lat_stats["shape"]
@@ -273,6 +246,7 @@ def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid=None, cut
 def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
                              missing_attribute_name=None, fill_value_default=DEFAULT_FILL_VALUE,
                              variable_idx=None, scale_name=None, offset_name=None,
+                             interpolate_data=False,
                              min_fn=numpy.min, max_fn=numpy.max) :
     """
     given a list of file info objects, load the requested variable and append it into a single flat
@@ -338,6 +312,12 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
         if scale_value  is not None :
             temp_var_data[not_fill_mask] *= scale_value
         
+        # Special case: if we are handling 250m or 500m data we need to interpolate
+        # the navigation lat/lon data only exists for 1km resolutions
+        if interpolate_data:
+            log.debug("Interpolating to higher resolution: %s" % (variable_name,))
+            temp_var_data = interpolate_geolocation(temp_var_data)
+
         # append the file data to the flat file
         temp_appender.append(temp_var_data)
         
@@ -362,7 +342,7 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
     
     return temp_file_name, stats
 
-def _load_image_data (meta_data_to_update, cut_bad=False) :
+def _load_image_data (meta_data_to_update, cut_bad=False, nav_uid=None) :
     """
     load image data into binary flat files based on the meta data provided
     """
@@ -372,11 +352,14 @@ def _load_image_data (meta_data_to_update, cut_bad=False) :
         
         # load the data into a flat file
         (scale_name, offset_name) = modis_guidebook.RESCALING_ATTRS[(band_kind, band_id)]
+        matching_file_pattern = meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"].matching_re
+        var_name = modis_guidebook.VAR_NAMES[matching_file_pattern][(band_kind,band_id)]
+        var_idx  = modis_guidebook.VAR_IDX[  matching_file_pattern][(band_kind,band_id)]
         temp_image_file_name, image_stats = _load_data_to_flat_file ([meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"].file_object],
-                                                                     str(band_kind) + str(band_id),
-                                                                     modis_guidebook.VAR_NAMES[(band_kind, band_id)],
+                                                                     "%s_%s_%s" % (str(nav_uid),str(band_kind),str(band_id)),
+                                                                     var_name,
                                                                      missing_attribute_name=modis_guidebook.FILL_VALUE_ATTR_NAMES[(band_kind, band_id)],
-                                                                     variable_idx=modis_guidebook.VAR_IDX[(band_kind, band_id)],
+                                                                     variable_idx=var_idx,
                                                                      scale_name=scale_name, offset_name=offset_name)
         
         # we don't need this entry with the file object anymore, so remove it
@@ -385,7 +368,8 @@ def _load_image_data (meta_data_to_update, cut_bad=False) :
         # rename the file with a more descriptive name
         shape_temp = image_stats["shape"]
         suffix = '.real4.' + '.'.join(str(x) for x in reversed(shape_temp))
-        new_img_file_name = "image_" + str(band_kind) + "_" + str(band_id) + suffix
+        new_img_file_stem = "image_%s_%s_%s" % (str(nav_uid),str(band_kind),str(band_id))
+        new_img_file_name = new_img_file_stem + suffix
         os.rename(temp_image_file_name, new_img_file_name)
         
         # based on our statistics, save some meta data to our meta data dictionary
@@ -441,18 +425,18 @@ def get_swaths(ifilepaths, cut_bad=False, nav_uid=None):
     
     # load the image data and put it in flat binary files
     log.info("Creating binary files for image data")
-    _load_image_data (meta_data, cut_bad=cut_bad)
+    _load_image_data (meta_data, cut_bad=cut_bad, nav_uid=nav_uid)
     
     return meta_data
 
 class Frontend(roles.FrontendRole):
     removable_file_patterns = [
-            "*.infrared20",
-            "*.infrared27",
-            "*.infrared31",
-            "*.visible01",
-            "*.visible07",
-            "*.visible26",
+            "*.*_infrared_20",
+            "*.*_infrared_27",
+            "*.*_infrared_31",
+            "*.*_visible_01",
+            "*.*_visible_07",
+            "*.*_visible_26",
             "image*.real4.*",
             "btimage*.real4.*",
             "bt_prescale*.real4.*",

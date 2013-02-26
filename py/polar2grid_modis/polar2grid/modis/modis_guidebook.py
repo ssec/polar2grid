@@ -55,6 +55,7 @@ UTC = UTC()
 LATITUDE_GEO_VARIABLE_NAME   = 'Latitude'
 LONGITUDE_GEO_VARIABLE_NAME  = 'Longitude'
 
+# 1KM products
 VISIBLE_CH_1_VARIABLE_NAME   = 'EV_250_Aggr1km_RefSB'
 VISIBLE_CH_1_VARIABLE_IDX    = 0
 VISIBLE_CH_7_VARIABLE_NAME   = 'EV_500_Aggr1km_RefSB'
@@ -67,6 +68,15 @@ INFRARED_CH_27_VARIABLE_NAME = 'EV_1KM_Emissive'
 INFRARED_CH_27_VARIABLE_IDX  = 6
 INFRARED_CH_31_VARIABLE_NAME = 'EV_1KM_Emissive'
 INFRARED_CH_31_VARIABLE_IDX  = 10
+
+# 500m products
+# FUTURE
+
+# 250m products
+VISIBLE_250_CH_1_VARIABLE_NAME    = 'EV_250_RefSB'
+VISIBLE_250_CH_1_VARIABLE_IDX     = 0
+VISIBLE_250_CH_2_VARIABLE_NAME    = 'EV_250_RefSB'
+VISIBLE_250_CH_2_VARIABLE_IDX     = 1
 
 CLOUD_MASK_NAME              = 'MODIS_Cloud_Mask'
 CLOUD_MASK_IDX               = None
@@ -115,6 +125,8 @@ CLOUDS_VALUES_TO_CLEAR       = [1, 2]
 
 # a regular expression that will match files containing the visible and infrared bands
 VIS_INF_FILE_PATTERN           = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.1000m\.hdf'
+# a regular expression that will match files containing the 250m visible bands
+VIS_250M_FILE_PATTERN          = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.250m\.hdf'
 # a regular expression that will match files containing the cloud mask
 CLOUD_MASK_FILE_PATTERN        = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mask_byte1\.hdf'
 # a regular expression that will match files containing sea surface temperature
@@ -122,7 +134,7 @@ SEA_SURFACE_TEMP_FILE_PATTERN  = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mod28\.hdf'
 # a regular expression that will match files containing land surface temperature
 LAND_SURFACE_TEMP_FILE_PATTERN = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.modlst\.hdf'
 # a regular expression that will match files containing the nav data (including lon/lat and solar zenith angle)
-GEO_FILE_PATTTERN              = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.geo\.hdf'
+GEO_FILE_PATTERN               = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.geo\.hdf'
 # a regular expression that will match files that have some clouds related data in them
 CLOUDS_06_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mod06ct\.hdf'
 # a regular file pattern that will match files taht contain total precipitable water
@@ -138,30 +150,36 @@ NDVI_FILE_PATTERN              = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.ndvi\.1000m\.hdf
 
 # a value representing the uid for the geo navigation group
 GEO_NAV_UID                    = "geo_nav"
+# a value representing the uid for the 250m navigation group
+GEO_250M_NAV_UID               = "geo_250m_nav"
 # a value representing the uid for the mod06 navigation group
 MOD06_NAV_UID                  = "mod06_nav"
 # a value representing the uid for the mod07 navigation group
 MOD07_NAV_UID                  = "mod07_nav"
 
+NAV_SETS_TO_INTERPOLATE_GEO          = [GEO_250M_NAV_UID]
 BANDS_REQUIRED_TO_CALCULATE_FOG_BAND = [(BKIND_IR,  BID_20), (BKIND_IR,  BID_31), (BKIND_SZA, NOT_APPLICABLE)]
 
 # a mapping between which navigation groups contain which files
 GEO_FILE_GROUPING = {
-                      GEO_NAV_UID:   [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN, GEO_FILE_PATTTERN,
-                                      SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN, NDVI_FILE_PATTERN,
-                                      ICE_SURFACE_TEMP_FILE_PATTERN, INVERSION_FILE_PATTERN, ICE_CONCENTRATION_FILE_PATTERN],
-                      MOD06_NAV_UID: [CLOUDS_06_FILE_PATTERN],
-                      MOD07_NAV_UID: [CLOUDS_07_FILE_PATTERN],
+                      GEO_NAV_UID:      [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN, GEO_FILE_PATTERN,
+                                         SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN, NDVI_FILE_PATTERN,
+                                         ICE_SURFACE_TEMP_FILE_PATTERN, INVERSION_FILE_PATTERN, ICE_CONCENTRATION_FILE_PATTERN],
+                      GEO_250M_NAV_UID: [VIS_250M_FILE_PATTERN, GEO_FILE_PATTERN],
+                      MOD06_NAV_UID:    [CLOUDS_06_FILE_PATTERN],
+                      MOD07_NAV_UID:    [CLOUDS_07_FILE_PATTERN],
                     }
 # the reverse mapping between files are in which navigation groups
+### XXX: This won't work now that GEO_FILE_PATTERN is used in two nav sets
 GEO_FILE_GROUPING_REV = \
                     {
                       VIS_INF_FILE_PATTERN:           GEO_NAV_UID,
+                      VIS_250M_FILE_PATTERN:          GEO_250M_NAV_UID,
                       CLOUD_MASK_FILE_PATTERN:        GEO_NAV_UID,
                       SEA_SURFACE_TEMP_FILE_PATTERN:  GEO_NAV_UID,
                       LAND_SURFACE_TEMP_FILE_PATTERN: GEO_NAV_UID,
                       NDVI_FILE_PATTERN:              GEO_NAV_UID,
-                      GEO_FILE_PATTTERN:              GEO_NAV_UID,
+                      GEO_FILE_PATTERN:              GEO_NAV_UID,
                       ICE_SURFACE_TEMP_FILE_PATTERN:  GEO_NAV_UID,
                       INVERSION_FILE_PATTERN:         GEO_NAV_UID,
                       ICE_CONCENTRATION_FILE_PATTERN: GEO_NAV_UID,
@@ -175,6 +193,7 @@ GEO_FILE_GROUPING_REV = \
 LON_LAT_FILL_VALUE_NAMES = \
                     {
                       GEO_NAV_UID:   FILL_VALUE_ATTR_NAME,
+                      GEO_250M_NAV_UID:   FILL_VALUE_ATTR_NAME,
                       MOD06_NAV_UID: None,
                       MOD07_NAV_UID: None,
                     }
@@ -184,6 +203,9 @@ FILE_CONTENTS_GUIDE = {
                         VIS_INF_FILE_PATTERN:                       {
                                                                      BKIND_VIS:   [BID_01, BID_07, BID_26],
                                                                      BKIND_IR:    [BID_20, BID_27, BID_31]
+                                                                    },
+                        VIS_250M_FILE_PATTERN:                      {
+                                                                     BKIND_VIS:   [BID_01, BID_02]
                                                                     },
                         CLOUD_MASK_FILE_PATTERN:                    {
                                                                      BKIND_CMASK: [NOT_APPLICABLE]
@@ -198,7 +220,7 @@ FILE_CONTENTS_GUIDE = {
                         NDVI_FILE_PATTERN:                          {
                                                                      BKIND_NDVI:  [NOT_APPLICABLE]
                                                                     },
-                        GEO_FILE_PATTTERN:                          {
+                        GEO_FILE_PATTERN:                           {
                                                                      BKIND_SZA:   [NOT_APPLICABLE]
                                                                     },
                         ICE_SURFACE_TEMP_FILE_PATTERN:              {
@@ -222,9 +244,12 @@ FILE_CONTENTS_GUIDE = {
                       }
 
 # a mapping between bands and their fill value attribute names
+# XXX: this may require finer grain keys, like including nav set id if things
+# get complicated
 FILL_VALUE_ATTR_NAMES = \
             {
               (BKIND_VIS, BID_01):           FILL_VALUE_ATTR_NAME,
+              (BKIND_VIS, BID_02):           FILL_VALUE_ATTR_NAME,
               (BKIND_VIS, BID_07):           FILL_VALUE_ATTR_NAME,
               (BKIND_VIS, BID_26):           FILL_VALUE_ATTR_NAME,
               (BKIND_IR,  BID_20):           FILL_VALUE_ATTR_NAME,
@@ -251,6 +276,7 @@ FILL_VALUE_ATTR_NAMES = \
 # a mapping between the bands and their data kinds (in the file)
 DATA_KINDS = {
               (BKIND_VIS, BID_01): DKIND_REFLECTANCE,
+              (BKIND_VIS, BID_02): DKIND_REFLECTANCE,
               (BKIND_VIS, BID_07): DKIND_REFLECTANCE,
               (BKIND_VIS, BID_26): DKIND_REFLECTANCE,
               (BKIND_IR,  BID_20): DKIND_RADIANCE,
@@ -276,61 +302,106 @@ DATA_KINDS = {
 
 # a mapping between the bands and the variable names used in the files to hold them
 VAR_NAMES  = {
-              (BKIND_VIS, BID_01): VISIBLE_CH_1_VARIABLE_NAME,
-              (BKIND_VIS, BID_07): VISIBLE_CH_7_VARIABLE_NAME,
-              (BKIND_VIS, BID_26): VISIBLE_CH_26_VARIABLE_NAME,
-              (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_NAME,
-              (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_NAME,
-              (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_NAME,
-              
-              (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_NAME,
-              (BKIND_SZA,   NOT_APPLICABLE): SOLAR_ZENITH_ANGLE_NAME,
-              
-              (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_NAME,
-              (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
-              (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
-              (BKIND_NDVI,  NOT_APPLICABLE): NDVI_NAME,
-              
-              (BKIND_IST,   NOT_APPLICABLE): ICE_SURFACE_TEMP_NAME,
-              (BKIND_INV,   NOT_APPLICABLE): INVERSION_STRENGTH_NAME,
-              (BKIND_IND,   NOT_APPLICABLE): INVERSION_DEPTH_NAME,
-              (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_NAME,
-              
-              (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_NAME,
-              (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_NAME,
+            VIS_INF_FILE_PATTERN:           {
+                                             (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_NAME,
+                                             (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_NAME,
+                                             (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_NAME,
+                                             (BKIND_VIS, BID_01): VISIBLE_CH_1_VARIABLE_NAME,
+                                             (BKIND_VIS, BID_07): VISIBLE_CH_7_VARIABLE_NAME,
+                                             (BKIND_VIS, BID_26): VISIBLE_CH_26_VARIABLE_NAME,
+                                            },
+            VIS_250M_FILE_PATTERN:          {
+                                             (BKIND_VIS, BID_01): VISIBLE_250_CH_1_VARIABLE_NAME,
+                                             (BKIND_VIS, BID_02): VISIBLE_250_CH_2_VARIABLE_NAME,
+                                            },
+            CLOUD_MASK_FILE_PATTERN:        {
+                                             (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_NAME,
+                                            },
+            SEA_SURFACE_TEMP_FILE_PATTERN:  {
+                                             (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_NAME,
+                                            },
+            LAND_SURFACE_TEMP_FILE_PATTERN: {
+                                             (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
+                                             (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
+                                            },
+            NDVI_FILE_PATTERN:              {
+                                             (BKIND_NDVI,  NOT_APPLICABLE): NDVI_NAME,
+                                            },
+            GEO_FILE_PATTERN:               {
+                                             (BKIND_SZA,   NOT_APPLICABLE): SOLAR_ZENITH_ANGLE_NAME,
+                                            },
+            ICE_SURFACE_TEMP_FILE_PATTERN:  {
+                                             (BKIND_IST,   NOT_APPLICABLE): ICE_SURFACE_TEMP_NAME,
+                                            },
+            INVERSION_FILE_PATTERN:         {
+                                             (BKIND_INV,   NOT_APPLICABLE): INVERSION_STRENGTH_NAME,
+                                             (BKIND_IND,   NOT_APPLICABLE): INVERSION_DEPTH_NAME,
+                                            },
+            ICE_CONCENTRATION_FILE_PATTERN: {
+                                             (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_NAME,
+                                            },
+            CLOUDS_06_FILE_PATTERN:         {
+                                             (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_NAME,
+                                            },
+            CLOUDS_07_FILE_PATTERN:         {
+                                             (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_NAME,
+                                            },
              }
 
 # a mapping between the bands and any index needed to access the data in the variable (for slicing)
 # if no slicing is needed the index will be None
 VAR_IDX    = {
-              (BKIND_VIS, BID_01): VISIBLE_CH_1_VARIABLE_IDX,
-              (BKIND_VIS, BID_07): VISIBLE_CH_7_VARIABLE_IDX,
-              (BKIND_VIS, BID_26): VISIBLE_CH_26_VARIABLE_IDX,
-              (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_IDX,
-              (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_IDX,
-              (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_IDX,
-              
-              (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_IDX,
-              (BKIND_SZA,   NOT_APPLICABLE): SOLAR_ZENITH_ANGLE_IDX,
-              
-              (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_IDX,
-              (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
-              (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
-              (BKIND_NDVI,  NOT_APPLICABLE): NDVI_IDX,
-              
-              (BKIND_IST,   NOT_APPLICABLE): ICE_SURFACE_TEMP_IDX,
-              (BKIND_INV,   NOT_APPLICABLE): INVERSION_STRENGTH_IDX,
-              (BKIND_IND,   NOT_APPLICABLE): INVERSION_DEPTH_IDX,
-              (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_IDX,
-              
-              (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_IDX,
-              (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_IDX,
+            VIS_INF_FILE_PATTERN:           {
+                                             (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_IDX,
+                                             (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_IDX,
+                                             (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_IDX,
+                                             (BKIND_VIS, BID_01): VISIBLE_CH_1_VARIABLE_IDX,
+                                             (BKIND_VIS, BID_07): VISIBLE_CH_7_VARIABLE_IDX,
+                                             (BKIND_VIS, BID_26): VISIBLE_CH_26_VARIABLE_IDX,
+                                            },
+            VIS_250M_FILE_PATTERN:          {
+                                             (BKIND_VIS, BID_01): VISIBLE_250_CH_1_VARIABLE_IDX,
+                                             (BKIND_VIS, BID_02): VISIBLE_250_CH_2_VARIABLE_IDX,
+                                            },
+            CLOUD_MASK_FILE_PATTERN:        {
+                                             (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_IDX,
+                                            },
+            SEA_SURFACE_TEMP_FILE_PATTERN:  {
+                                             (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_IDX,
+                                            },
+            LAND_SURFACE_TEMP_FILE_PATTERN: {
+                                             (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
+                                             (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
+                                            },
+            NDVI_FILE_PATTERN:              {
+                                             (BKIND_NDVI,  NOT_APPLICABLE): NDVI_IDX,
+                                            },
+            GEO_FILE_PATTERN:               {
+                                             (BKIND_SZA,   NOT_APPLICABLE): SOLAR_ZENITH_ANGLE_IDX,
+                                            },
+            ICE_SURFACE_TEMP_FILE_PATTERN:  {
+                                             (BKIND_IST,   NOT_APPLICABLE): ICE_SURFACE_TEMP_IDX,
+                                            },
+            INVERSION_FILE_PATTERN:         {
+                                             (BKIND_INV,   NOT_APPLICABLE): INVERSION_STRENGTH_IDX,
+                                             (BKIND_IND,   NOT_APPLICABLE): INVERSION_DEPTH_IDX,
+                                            },
+            ICE_CONCENTRATION_FILE_PATTERN: {
+                                             (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_IDX,
+                                            },
+            CLOUDS_06_FILE_PATTERN:         {
+                                             (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_IDX,
+                                            },
+            CLOUDS_07_FILE_PATTERN:         {
+                                             (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_IDX,
+                                            },
         }
 
 # a mapping between bands and the names of their scale and offset attributes
 RESCALING_ATTRS = \
              {
               (BKIND_VIS, BID_01): (VISIBLE_SCALE_ATTR_NAME,  VISIBLE_OFFSET_ATTR_NAME),
+              (BKIND_VIS, BID_02): (VISIBLE_SCALE_ATTR_NAME,  VISIBLE_OFFSET_ATTR_NAME),
               (BKIND_VIS, BID_07): (VISIBLE_SCALE_ATTR_NAME,  VISIBLE_OFFSET_ATTR_NAME),
               (BKIND_VIS, BID_26): (VISIBLE_SCALE_ATTR_NAME,  VISIBLE_OFFSET_ATTR_NAME),
               (BKIND_IR,  BID_20): (INFRARED_SCALE_ATTR_NAME, INFRARED_OFFSET_ATTR_NAME),
@@ -358,6 +429,7 @@ RESCALING_ATTRS = \
 IS_CLOUD_CLEARED = \
              {
               (BKIND_VIS, BID_01): False,
+              (BKIND_VIS, BID_02): False,
               (BKIND_VIS, BID_07): False,
               (BKIND_VIS, BID_26): False,
               (BKIND_IR,  BID_20): False,
@@ -385,6 +457,7 @@ IS_CLOUD_CLEARED = \
 SHOULD_CONVERT_TO_BT = \
              {
               (BKIND_VIS, BID_01): False,
+              (BKIND_VIS, BID_02): False,
               (BKIND_VIS, BID_07): False,
               (BKIND_VIS, BID_26): False,
               (BKIND_IR,  BID_20): True,
@@ -454,13 +527,15 @@ def get_equivalent_geolocation_filename (data_file_name_string) :
     
     if   re.match(VIS_INF_FILE_PATTERN,           data_file_name_string) is not None :
         filename_to_return = data_file_name_string.split('.1000m.hdf'     )[0] + GEO_FILE_SUFFIX
+    elif re.match(VIS_250M_FILE_PATTERN,           data_file_name_string) is not None :
+        filename_to_return = data_file_name_string.split('.250m.hdf'      )[0] + GEO_FILE_SUFFIX
     elif re.match(CLOUD_MASK_FILE_PATTERN,        data_file_name_string) is not None :
         filename_to_return = data_file_name_string.split('.mask_byte1.hdf')[0] + GEO_FILE_SUFFIX
     elif re.match(SEA_SURFACE_TEMP_FILE_PATTERN,  data_file_name_string) is not None :
         filename_to_return = data_file_name_string.split('.mod28.hdf'     )[0] + GEO_FILE_SUFFIX
     elif re.match(LAND_SURFACE_TEMP_FILE_PATTERN, data_file_name_string) is not None :
         filename_to_return = data_file_name_string.split('.modlst.hdf'    )[0] + GEO_FILE_SUFFIX
-    elif re.match(GEO_FILE_PATTTERN,              data_file_name_string) is not None :
+    elif re.match(GEO_FILE_PATTERN,               data_file_name_string) is not None :
         filename_to_return = data_file_name_string
     elif re.match(CLOUDS_06_FILE_PATTERN,         data_file_name_string) is not None :
         filename_to_return = data_file_name_string
