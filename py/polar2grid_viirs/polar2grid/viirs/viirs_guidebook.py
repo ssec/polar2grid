@@ -115,8 +115,12 @@ GEO_FILE_GUIDE = {
                             K_SOLARZENITH: '/All_Data/VIIRS-MOD-GEO-TC_All/SolarZenithAngle',
                             K_LUNARZENITH: '/All_Data/VIIRS-MOD-GEO-TC_All/LunarZenithAngle',
                             K_MOONILLUM:   '/All_Data/VIIRS-MOD-GEO-TC_All/MoonIllumFraction',
-                            K_LAT_G_RING:  '/Data_Products/VIIRS-MOD-GEO-TC/G-Ring_Latitude',
-                            K_LON_G_RING:  '/Data_Products/VIIRS-MOD-GEO-TC/G-Ring_Longitude',
+                            K_LAT_G_RING:  '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Gran_0.G-Ring_Latitude',
+                            K_LON_G_RING:  '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Gran_0.G-Ring_Longitude',
+                            K_WEST_COORD:  '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Gran_0.West_Bounding_Coordinate',
+                            K_EAST_COORD:  '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Gran_0.East_Bounding_Coordinate',
+                            K_NORTH_COORD: '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Gran_0.North_Bounding_Coordinate',
+                            K_SOUTH_COORD: '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Gran_0.South_Bounding_Coordinate',
                             },
             r'GDNBO.*' : {
                             K_LATITUDE:    '/All_Data/VIIRS-DNB-GEO_All/Latitude',
@@ -126,8 +130,12 @@ GEO_FILE_GUIDE = {
                             K_SOLARZENITH: '/All_Data/VIIRS-DNB-GEO_All/SolarZenithAngle',
                             K_LUNARZENITH: '/All_Data/VIIRS-DNB-GEO_All/LunarZenithAngle',
                             K_MOONILLUM:   '/All_Data/VIIRS-DNB-GEO_All/MoonIllumFraction',
-                            K_LAT_G_RING:  '/Data_Products/VIIRS-DNB-GEO/G-Ring_Latitude',
-                            K_LON_G_RING:  '/Data_Products/VIIRS-DNB-GEO/G-Ring_Longitude',
+                            K_LAT_G_RING:  '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Gran_0.G-Ring_Latitude',
+                            K_LON_G_RING:  '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Gran_0.G-Ring_Longitude',
+                            K_WEST_COORD:  '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Gran_0.West_Bounding_Coordinate',
+                            K_EAST_COORD:  '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Gran_0.East_Bounding_Coordinate',
+                            K_NORTH_COORD: '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Gran_0.North_Bounding_Coordinate',
+                            K_SOUTH_COORD: '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Gran_0.South_Bounding_Coordinate',
                             }
             }
 SV_FILE_GUIDE = {
