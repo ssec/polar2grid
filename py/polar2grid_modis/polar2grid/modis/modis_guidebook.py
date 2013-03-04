@@ -48,6 +48,7 @@ import sys
 import re
 import logging
 from datetime import datetime
+from collections import defaultdict
 
 LOG = logging.getLogger(__name__)
 UTC = UTC()
@@ -111,14 +112,34 @@ INFRARED_OFFSET_ATTR_NAME    = "radiance_offsets"
 
 GENERIC_SCALE_ATTR_NAME      = "scale_factor"
 GENERIC_OFFSET_ATTR_NAME     = "add_offset"
+GENERIC_VALID_RANGE_NAME     = "valid_range"
 
 FILL_VALUE_ATTR_NAME         = "_FillValue"
 MISSING_VALUE_ATTR_NAME      = "missing_value"
 
 GEO_FILE_SUFFIX              = ".geo.hdf"
 
+# a value representing the uid for the geo navigation group
+GEO_NAV_UID                    = "geo_nav"
+# a value representing the uid for the 250m navigation group
+GEO_250M_NAV_UID               = "geo_250m_nav"
+# a value representing the uid for the mod06 navigation group
+MOD06_NAV_UID                  = "mod06_nav"
+# a value representing the uid for the mod07 navigation group
+MOD07_NAV_UID                  = "mod07_nav"
+
+NAV_SETS_TO_INTERPOLATE_GEO          = [GEO_250M_NAV_UID]
+
 # this is true for the 1km data, FUTURE: when we get to other kinds, this will need to be more sophisicated
-ROWS_PER_SCAN                = 10
+ROWS_PER_SCAN = defaultdict(lambda: 10)
+ROWS_PER_SCAN[GEO_NAV_UID]      = 10
+ROWS_PER_SCAN[GEO_250M_NAV_UID] = 40
+
+# Special values (not verified, but this is what I was told)
+# these are used in reflectance band 1 and 2
+SATURATION_VALUE = 65535
+# if a value couldn't be aggregated from 250m/500m to 1km then we should clip those too
+CANT_AGGR_VALUE  = 65528
 
 # the cloud values that correspond to areas we should clear; this came from William so it's probably more right than my guessing ;)
 CLOUDS_VALUES_TO_CLEAR       = [1, 2]
@@ -148,16 +169,6 @@ ICE_CONCENTRATION_FILE_PATTERN = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.icecon\.hdf'
 # a regular expression that will match files containing NDVI data
 NDVI_FILE_PATTERN              = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.ndvi\.1000m\.hdf'
 
-# a value representing the uid for the geo navigation group
-GEO_NAV_UID                    = "geo_nav"
-# a value representing the uid for the 250m navigation group
-GEO_250M_NAV_UID               = "geo_250m_nav"
-# a value representing the uid for the mod06 navigation group
-MOD06_NAV_UID                  = "mod06_nav"
-# a value representing the uid for the mod07 navigation group
-MOD07_NAV_UID                  = "mod07_nav"
-
-NAV_SETS_TO_INTERPOLATE_GEO          = [GEO_250M_NAV_UID]
 BANDS_REQUIRED_TO_CALCULATE_FOG_BAND = [(BKIND_IR,  BID_20), (BKIND_IR,  BID_31), (BKIND_SZA, NOT_APPLICABLE)]
 
 # a mapping between which navigation groups contain which files
@@ -423,6 +434,35 @@ RESCALING_ATTRS = \
               
               (BKIND_CTT,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
               (BKIND_TPW,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
+             }
+
+# a mapping between bands and the names of their valid range attributes
+VALID_RANGE_ATTR_NAMES = \
+             {
+              (BKIND_VIS, BID_01): GENERIC_VALID_RANGE_NAME,
+              (BKIND_VIS, BID_02): GENERIC_VALID_RANGE_NAME,
+              (BKIND_VIS, BID_03): GENERIC_VALID_RANGE_NAME,
+              (BKIND_VIS, BID_07): GENERIC_VALID_RANGE_NAME,
+              (BKIND_VIS, BID_26): GENERIC_VALID_RANGE_NAME,
+              (BKIND_IR,  BID_20): GENERIC_VALID_RANGE_NAME,
+              (BKIND_IR,  BID_27): GENERIC_VALID_RANGE_NAME,
+              (BKIND_IR,  BID_31): GENERIC_VALID_RANGE_NAME,
+              
+              (BKIND_CMASK, NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              (BKIND_SZA,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              
+              (BKIND_SST,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              (BKIND_LST,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              (BKIND_SLST,  NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              (BKIND_NDVI,  NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              
+              (BKIND_IST,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              (BKIND_INV,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              (BKIND_IND,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              (BKIND_ICON,  NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              
+              (BKIND_CTT,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              (BKIND_TPW,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
              }
 
 # whether or not each band should be cloud cleared

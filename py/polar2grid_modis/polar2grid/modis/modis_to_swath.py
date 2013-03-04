@@ -138,9 +138,9 @@ def _load_meta_data (file_objects) :
                  "instrument": INST_MODIS,
                  "start_time": modis_guidebook.parse_datetime_from_filename(file_object.file_name),
                  "bands" : { },
-                 "rows_per_scan": modis_guidebook.ROWS_PER_SCAN,
                  
                  # TO FILL IN LATER
+                 "rows_per_scan": None,
                  "lon_fill_value": None,
                  "lat_fill_value": None,
                  "fbf_lat":        None,
@@ -171,9 +171,9 @@ def _load_meta_data (file_objects) :
                                                             "remap_data_as": data_kind_const,
                                                             "kind": band_kind,
                                                             "band": band_number,
-                                                            "rows_per_scan": modis_guidebook.ROWS_PER_SCAN,
                                                             
                                                             # TO FILL IN LATER
+                                                            "rows_per_scan": None,
                                                             "fill_value":    None,
                                                             "fbf_img":       None,
                                                             "swath_rows":    None,
@@ -231,10 +231,11 @@ def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid=None, cut
     meta_data_to_update["lat_fill_value"] = lat_stats["fill_value"]
     meta_data_to_update["fbf_lat"]        = new_lat_file_name
     meta_data_to_update["fbf_lon"]        = new_lon_file_name
+    meta_data_to_update["nav_set_uid"]    = nav_uid
     meta_data_to_update["swath_rows"]     = rows
     meta_data_to_update["swath_cols"]     = cols
-    meta_data_to_update["swath_scans"]    = rows / modis_guidebook.ROWS_PER_SCAN
-    meta_data_to_update["nav_set_uid"]    = nav_uid
+    meta_data_to_update["rows_per_scan"]  = modis_guidebook.ROWS_PER_SCAN[nav_uid]
+    meta_data_to_update["swath_scans"]    = rows / meta_data_to_update["rows_per_scan"]
     
     """ # these have been changed to north, south, east, west and the backend will calculate them anyway
     meta_data_to_update["lat_min"]        = lat_stats["min"]
@@ -247,7 +248,8 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
                              missing_attribute_name=None, fill_value_default=DEFAULT_FILL_VALUE,
                              variable_idx=None, scale_name=None, offset_name=None,
                              interpolate_data=False,
-                             min_fn=numpy.min, max_fn=numpy.max) :
+                             min_fn=numpy.min, max_fn=numpy.max,
+                             valid_range_attribute_name=None) :
     """
     given a list of file info objects, load the requested variable and append it into a single flat
     binary file with a temporary name based on the descriptive string
@@ -290,6 +292,20 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
         fill_value      = temp_fill_value
         not_fill_mask   = temp_var_data != fill_value
         
+        # some bands have a value that means saturation of the sensor or that they could not be aggregated
+        if valid_range_attribute_name is not None:
+            valid_min,valid_max = temp_var_object.attributes()[valid_range_attribute_name]
+        else:
+            valid_min,valid_max = None,None
+        # Mask out saturation or couldn't aggregate to 1km values
+        # XXX: I don't think there is a way to get these values from the hdf files
+        saturation_value = modis_guidebook.SATURATION_VALUE
+        cant_aggr_value  = modis_guidebook.CANT_AGGR_VALUE
+        if valid_max is not None:
+            # XXX: This may be a waste of time to perform on other bands, but I'm not sure
+            log.debug("Clipping saturation values")
+            temp_var_data[ (temp_var_data == saturation_value) | (temp_var_data == cant_aggr_value) ] = valid_max
+
         # if there's a scale and/or offset load them
         scale_value  = None
         if scale_name  is not None :
@@ -355,12 +371,14 @@ def _load_image_data (meta_data_to_update, cut_bad=False, nav_uid=None) :
         matching_file_pattern = meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"].matching_re
         var_name = modis_guidebook.VAR_NAMES[matching_file_pattern][(band_kind,band_id)]
         var_idx  = modis_guidebook.VAR_IDX[  matching_file_pattern][(band_kind,band_id)]
+        valid_range_attribute_name = modis_guidebook.VALID_RANGE_ATTR_NAMES[(band_kind, band_id)]
         temp_image_file_name, image_stats = _load_data_to_flat_file ([meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"].file_object],
                                                                      "%s_%s_%s" % (str(nav_uid),str(band_kind),str(band_id)),
                                                                      var_name,
                                                                      missing_attribute_name=modis_guidebook.FILL_VALUE_ATTR_NAMES[(band_kind, band_id)],
                                                                      variable_idx=var_idx,
-                                                                     scale_name=scale_name, offset_name=offset_name)
+                                                                     scale_name=scale_name, offset_name=offset_name,
+                                                                     valid_range_attribute_name=valid_range_attribute_name)
         
         # we don't need this entry with the file object anymore, so remove it
         del meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"]
@@ -378,7 +396,8 @@ def _load_image_data (meta_data_to_update, cut_bad=False, nav_uid=None) :
         meta_data_to_update["bands"][(band_kind, band_id)]["fbf_img"]     = new_img_file_name
         meta_data_to_update["bands"][(band_kind, band_id)]["swath_rows"]  = rows
         meta_data_to_update["bands"][(band_kind, band_id)]["swath_cols"]  = cols
-        meta_data_to_update["bands"][(band_kind, band_id)]["swath_scans"] = rows / modis_guidebook.ROWS_PER_SCAN
+        meta_data_to_update["bands"][(band_kind, band_id)]["rows_per_scan"] = rows_per_scan = meta_data_to_update["rows_per_scan"]
+        meta_data_to_update["bands"][(band_kind, band_id)]["swath_scans"] = rows / rows_per_scan
         
         if rows != meta_data_to_update["swath_rows"] or cols != meta_data_to_update["swath_cols"]:
             msg = ("Expected %d rows and %d cols, but band %s %s had %d rows and %d cols"
