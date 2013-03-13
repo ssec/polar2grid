@@ -1,15 +1,39 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-$Id: ql_cris_sdr.py 974 2012-09-17 19:52:16Z scottm $
+CrIS SDR front end for polar2grid, which extracts band-pass slices of brightness temperature data.
 
-based on ql_cris_sdr.py r974 2012-09-17
+:author:       Ray Garcia (rayg)
+:contact:      rayg@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
+:date:         Mar 2013
+:license:      GNU GPLv3
 
-Purpose: Extract CrIS Swath data
+Copyright (C) 2013 Space Science and Engineering Center (SSEC),
+ University of Wisconsin-Madison.
 
-Created by R.K.Garcia & G.D.Martin , July 2012.
-Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+This file is part of the polar2grid software package. Polar2grid takes
+satellite observation data, remaps it, and writes it to a file format for
+input into another program.
+Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+
 """
+
+__docformat__ = "restructuredtext en"
 
 import h5py, numpy as np, glob, os, sys, logging
 from collections import namedtuple
@@ -127,7 +151,7 @@ c1 = 2*h*c*c*1e11
 c2 = h*c/k*1e2
 
 def rad2bt(freq, radiance):
-    return c2 * freq / (np.log(1 + c1 * (freq ** 3) / radiance))
+    return c2 * freq / (np.log(1.0 + c1 * (freq ** 3) / radiance))
 
 # FUTURE: BTCHAN, BT_CHANNEL_NAMES, rad2bt, bt_slices_for_band
 # should be promoted to a common module between instrument systems.
@@ -189,6 +213,7 @@ def write_slices_to_fbf(info):
     raise NotImplementedError('write_slices_to_fbf not implemented')
 
 
+# FUTURE: add a way to configure which slices to produce, or all by default
 class CrisSdrFrontend(FrontendRole):
     """
     """
@@ -261,7 +286,7 @@ Example:
     swath =  cris_swath(*args)
     if swath == None :
         return 1
-    cris_quicklook(options.output, swath , options.format, options.label)
+    #cris_quicklook(options.output, swath , options.format, options.label)
 
     return 0
 
