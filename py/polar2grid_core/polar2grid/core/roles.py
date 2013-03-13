@@ -376,13 +376,29 @@ class FrontendRole(object):
     """Polar2grid role for data providing frontends. When provided satellite
     observation data the frontend should create binary files for each of the
     bands to be processed and their corresponding navigation data.
-    The ``make_swaths`` method will return a meta-data
-    dictionary of information about the data.
     """
     __metaclass__ = ABCMeta
 
     @abstractmethod
     def make_swaths(self, filepaths, **kwargs):
+        """Given satellite instrument data files, create flat binary files
+        for all image data and navigation data. This method should only be
+        called once per navigation set. Navigation filepaths will be derived
+        from the information in the data files and are expected to be in the
+        same directory as the files.
+
+        :param filepaths:
+            absolute paths to satellite instrument data files.
+        :type filepaths: list or tuple
+
+        :returns:
+            Information describing the data provided that will
+            be used by other polar2grid components. See the
+            :doc:`Developer's Guide <dev_guide/frontends>`
+            for information on what the meta data dictionary
+            should contain.
+        :rtype: dict
+        """
         raise NotImplementedError("This function has not been implemented")
 
 class CartographerRole(object):

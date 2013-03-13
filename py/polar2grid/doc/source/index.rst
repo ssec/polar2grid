@@ -41,11 +41,11 @@ Contents
     backends/index
     rescaling
     utilscripts
-    dev_guide/index
     advanced
     release_notes
     constants
     glossary
+    tests/index
 
 Grids
 -----
@@ -54,6 +54,22 @@ Grids
     :maxdepth: 3
 
     grids
+
+Developer's Guide
+-----------------
+
+.. toctree::
+    :maxdepth: 2
+    :numbered:
+
+    Introduction <dev_guide/index>
+    dev_guide/dev_env
+    dev_guide/glue_scripts
+    dev_guide/frontends
+    dev_guide/grids
+    dev_guide/remapping
+    dev_guide/backends
+    dev_guide/rescaling
 
 API
 ---

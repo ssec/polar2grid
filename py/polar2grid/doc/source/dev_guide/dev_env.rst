@@ -33,7 +33,8 @@ where components are installed.
         cd polar2grid
 
     If you are working on a specific branch, like 'ninjo' for example,
-    you should do the following in addition to the above:
+    you should do the following in addition to the above. If you don't know
+    what this is for, don't run it:
 
     ::
 

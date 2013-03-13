@@ -45,6 +45,19 @@ work.
 
 Code repository: https://github.com/davidh-ssec/polar2grid
 
+**Developer's Guide Components:**
+
+.. toctree::
+    :maxdepth: 2
+
+    dev_env
+    glue_scripts
+    frontends
+    grids
+    remapping
+    backends
+    rescaling
+
 Prerequisites
 -------------
 
@@ -81,21 +94,10 @@ requirement for the current remapping utilities to have file input.
 
 FBF conventions specific to polar2grid are that there is only one
 invalid/missing value (-999.0 is the :ref:`default <default_fill_value>`) and that all image and navigation
-data is stored as 32-bit floats (real4 in FBF terms).
+data is stored as 32-bit floats (real4 in FBF terms). In polar2grid, flat
+binary files should only be stored in the current working directory and should
+be referred to by their filename, not filepath.
 
 polar2grid does not require any other data format except for those required
 by a frontend or backend.
-
-Table of Contents
------------------
-
-.. toctree::
-
-    dev_env
-    glue_scripts
-    frontends
-    grids
-    remapping
-    backends
-    rescaling
 

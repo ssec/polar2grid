@@ -7,6 +7,11 @@ software bundle.  The software bundle is the preferred, recommended,
 and intended method of installing the polar2grid software for
 non-developmental use.
 
+Polar2grid provides unit tests for most of its components including sample
+datasets that can be run and verified against expected output. For more
+information on unit tests, verifying your installation, and running the
+tests see the :doc:`tests/index` page.
+
 polar2grid Software Bundle Install
 ----------------------------------
 
@@ -63,17 +68,39 @@ directory as above, then follow the installation instructions making sure
 to update the ``POLAR2GRID_HOME`` line in your ``.bash_profile`` to point to
 the new software bundle directory.
 
-polar2grid Test Bundles
------------------------
+Python Package Install
+----------------------
 
-Test scripts are available to test the installation of the polar2grid
-software bundle.  The following are descriptions of each test case bundle
-and instructions on how to install and run them.
+If you would like more control over your python/polar2grid environment
+you can install the polar2grid python package like any basic python egg:
 
-.. toctree::
-    :numbered:
+    ``easy_install -f http://larch.ssec.wisc.edu/cgi-bin/repos.cgi polar2grid``
 
-    tests/p2g_v2a_ak
-    tests/p2g_v2g_basic
-    tests/p2g_m2a_basic
+Installing polar2grid in this way does require, however, that the ms2gt
+utilities ``ll2cr`` and ``fornav`` must be in your $PATH environment
+variable. The newest version of ms2gt used by polar2grid is available
+`here <http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/>`_. Once
+untarred (``tar -xzf <tar.gz file>``), the binaries are located in the
+``bin`` directory.
+The polar2grid python package also has python package dependencies, but those
+will be installed automatically.
 
+Installing from Source
+----------------------
+
+To use the most recent changes and bug fixes of polar2grid you can install the
+packages directly from the source. This method allows you to customize your
+python and dependency locations to your preference. Installing from source
+code is the same method used by developers of polar2grid and as such the
+instructions mention contributing to the project, but this is entirely
+optional.
+
+This method is the only way to run polar2grid on non-Linux systems since the
+software bundle is only available for Linux. This means that there will be
+no wrapper shell scripts (`viirs2gtiff.sh`), but that python modules must
+be called directly,
+ex. :doc:`python -m polar2grid.viirs2gtiff <glue_scripts/index>`.
+This also means that dependencies will have to be installed by the user since
+ShellB3 is Linux only.
+
+Instruction can be found here: :doc:`dev_guide/dev_env`
