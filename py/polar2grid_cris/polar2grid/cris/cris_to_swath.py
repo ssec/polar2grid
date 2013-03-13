@@ -157,7 +157,6 @@ def rad2bt(freq, radiance):
 # should be promoted to a common module between instrument systems.
 # FUTURE: wn_W should be put in a common cris module
 
-
 # default channels for GlobalHawk - from ifg.rsh2dpl.bt_swath
 BTCHAN = (  (690.4, 699.6),
             (719.4, 720.8),
