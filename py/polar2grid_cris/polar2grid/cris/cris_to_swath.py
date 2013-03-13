@@ -129,7 +129,12 @@ c2 = h*c/k*1e2
 def rad2bt(freq, radiance):
     return c2 * freq / (np.log(1 + c1 * (freq ** 3) / radiance))
 
-# default channels for GlobalHawk
+# FUTURE: BTCHAN, BT_CHANNEL_NAMES, rad2bt, bt_slices_for_band
+# should be promoted to a common module between instrument systems.
+# FUTURE: wn_W should be put in a common cris module
+
+
+# default channels for GlobalHawk - from ifg.rsh2dpl.bt_swath
 BTCHAN = (  (690.4, 699.6),
             (719.4, 720.8),
             (730.5, 739.6),
@@ -159,7 +164,7 @@ ALL_CHANNEL_NAMES = tuple(BT_CHANNEL_NAMES) + VIIRS_BT_CHANNEL_NAMES
 
 
 # from poster_cris_sdr
-def cris_bt_slices_for_band(wn, rad, channels = ALL_CHANNELS, names=ALL_CHANNEL_NAMES):
+def bt_slices_for_band(wn, rad, channels = ALL_CHANNELS, names=ALL_CHANNEL_NAMES):
     "reduce channels to those available within a given band, return them as a dict"
     nsl, nfov, nwn = rad.shape
     bt = rad2bt(wn, rad.reshape((nsl*nfov, nwn)))
@@ -174,9 +179,9 @@ def cris_bt_slices_for_band(wn, rad, channels = ALL_CHANNELS, names=ALL_CHANNEL_
 
 def cris_bt_slices(rad_lw, rad_mw, rad_sw):
     zult = dict()
-    zult.update(cris_bt_slices_for_band(wnLW, rad_lw))
-    zult.update(cris_bt_slices_for_band(wnMW, rad_mw))
-    zult.update(cris_bt_slices_for_band(wnSW, rad_sw))
+    zult.update(bt_slices_for_band(wnLW, rad_lw))
+    zult.update(bt_slices_for_band(wnMW, rad_mw))
+    zult.update(bt_slices_for_band(wnSW, rad_sw))
     return zult
 
 
