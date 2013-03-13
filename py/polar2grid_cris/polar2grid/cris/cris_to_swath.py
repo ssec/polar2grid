@@ -14,7 +14,11 @@ Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 import h5py, numpy as np, glob, os, sys, logging
 from collections import namedtuple
 
+from polar2grid.core.roles import FrontendRole
+from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
+
 LOG = logging.getLogger(__name__)
+
 
 # reshape 4d array of rad into a 3d array by unpacking the FOV dimension (9 detectors)
 def reshape_rad(rad_4d):
@@ -86,6 +90,7 @@ def cris_swath(*sdr_filenames, **kwargs):
     return CrisSwath(lat=lat, lon=lon, rad_lw = rad_lw, rad_mw = rad_mw, rad_sw = rad_sw, paths=sdr_filenames)
 
 
+
 DEFAULT_PNG_FMT = 'cris_%(channel)s.png'
 DEFAULT_LABEL_FMT = 'CrIS BT %(channel)s %(date)s.%(start_time)s-%(end_time)s'
 
@@ -114,7 +119,6 @@ WN_TAB = {  'rad_lw' : wnLW,
             'rad_sw' : wnSW
             }
 
-
 h = 6.62606876E-34  # Planck constant in Js
 c = 2.99792458E8   # photon speed in m/s
 k = 1.3806503E-23   # Boltzmann constant in J/K
@@ -122,46 +126,79 @@ k = 1.3806503E-23   # Boltzmann constant in J/K
 c1 = 2*h*c*c*1e11
 c2 = h*c/k*1e2
 
-def _rad2bt(freq, radiance):
+def rad2bt(freq, radiance):
     return c2 * freq / (np.log(1 + c1 * (freq ** 3) / radiance))
 
+# default channels for GlobalHawk
+BTCHAN = (  (690.4, 699.6),
+            (719.4, 720.8),
+            (730.5, 739.6),
+            (750.2, 770),
+            (815.3, 849.5),
+            (895.3, 905.0),
+            (1050.1, 1059.8),
+            (1149.4, 1190.4),
+            (1324, 1326.4),
+            (1516.4, 1517.8),
+            (1579, 1612.8),
+            (2010.1, 2014.9),
+            (2220.3, 2224.6),
+            (2500.4, 2549.6)     )
+BT_CHANNEL_NAMES =  ['BT_%d_%d' % (int(np.floor(left_wn)), int(np.ceil(right_wn))) for (left_wn, right_wn) in BTCHAN]
 
-#def cris_quicklook(output_dir, swath,
-#            png_fmt=DEFAULT_PNG_FMT,
-#            label_fmt = DEFAULT_LABEL_FMT,
-#            channels = None,
-#            dpi=150, as_radiance=False, **kwargs):
-#
-#
-#    nfo = info(*swath.paths)
-#
-#
-#    if not os.path.isdir(output_dir):
-#        os.makedirs(output_dir)
-#
-#    if channels:
-#        groups = [x for x in CHANNEL_TAB if x[0] in channels]
-#    else:
-#        groups = CHANNEL_TAB
-#
-#    for channel, varname, start, end in groups:
-#        eva = evaluator(channel=channel, **nfo)
-#        filename = os.path.join(output_dir, png_fmt % eva)
-#        raw = getattr(swath,varname)
-#        rad = raw[:,:,start:end]
-#        if as_radiance:
-#            data = np.mean(rad, axis=2)
-#        else:
-#            wn = WN_TAB[varname][start:end]
-#            bt = _rad2bt(wn, rad)
-#            data = np.mean(bt, axis=2)
-#
-#        fig, bmap = map_contours(filename, data.squeeze(), swath.lon, swath.lat,
-#                                 label = label_fmt % eva, dpi=dpi)
-#        plt.colorbar()
-#        print "writing %s" % filename
-#        plt.savefig(filename, dpi=dpi)
-#
+# FUTURE: realistic spectral response functions are needed
+VIIRS_BTCHAN = ( (800.641, 866.551),  # M16 in LW
+                 (888.099, 974.659),  # M15 in LW
+                 (2421.308, 2518.892), # M13 in SW
+                 (806.452, 952.381)    # I05 in LW
+               )
+VIIRS_BT_CHANNEL_NAMES = ('M16', 'M15', 'M13', 'I05')
+
+ALL_CHANNELS = tuple(BTCHAN) + VIIRS_BTCHAN
+ALL_CHANNEL_NAMES = tuple(BT_CHANNEL_NAMES) + VIIRS_BT_CHANNEL_NAMES
+
+
+# from poster_cris_sdr
+def cris_bt_slices_for_band(wn, rad, channels = ALL_CHANNELS, names=ALL_CHANNEL_NAMES):
+    "reduce channels to those available within a given band, return them as a dict"
+    nsl, nfov, nwn = rad.shape
+    bt = rad2bt(wn, rad.reshape((nsl*nfov, nwn)))
+    snx = [(s,n,x) for (s,(n,x)) in zip(names,channels) if (n >= wn[0]) and (x < wn[-1])]
+    nam = [s for (s,_,_) in snx]
+    chn = [(n,x) for (_,n,x) in snx]
+    LOG.debug(repr(nam))
+    LOG.debug(repr(chn))
+    swaths = [x.reshape((nsl,nfov)) for (x,_) in bt_swaths(wn, bt, chn)]
+    return dict(zip(nam,swaths))
+
+
+def cris_bt_slices(rad_lw, rad_mw, rad_sw):
+    zult = dict()
+    zult.update(cris_bt_slices_for_band(wnLW, rad_lw))
+    zult.update(cris_bt_slices_for_band(wnMW, rad_mw))
+    zult.update(cris_bt_slices_for_band(wnSW, rad_sw))
+    return zult
+
+
+def write_slices_to_fbf(info):
+    raise NotImplementedError('write_slices_to_fbf not implemented')
+
+
+class CrisSdrFrontend(FrontendRole):
+    """
+    """
+    info = None
+
+    def __init__(self, **kwargs):
+        self.info = {}
+
+    @abstractmethod
+    def make_swaths(self, filepaths, **kwargs):
+        swath = cris_swath(*filepaths, **kwargs)
+        bands = cris_bt_slices(swath.rad_lw, swath.rad_mw, swath.rad_sw)
+        self.info = write_swath_to_fbf(bands)
+        return self.info
+
 
 
 def main():

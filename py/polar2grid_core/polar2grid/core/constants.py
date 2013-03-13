@@ -48,7 +48,7 @@ input into another program.
 Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
     Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
+    University of Wisconsin-Madison
     Space Science and Engineering Center
     1225 West Dayton Street
     Madison, WI  53706
@@ -70,6 +70,7 @@ SAT_AQUA  = "aqua"
 # Instruments
 INST_VIIRS = "viirs"
 INST_MODIS = "modis"
+INST_CRIS  = "cris"
 
 # Band Kinds
 BKIND_I     = "i"
@@ -191,5 +192,3 @@ STATUS_FORNAV_FAIL   = 8
 STATUS_GDETER_FAIL   = 16
 # not sure why we failed, not an expected failure
 STATUS_UNKNOWN_FAIL  = -1
-
-
