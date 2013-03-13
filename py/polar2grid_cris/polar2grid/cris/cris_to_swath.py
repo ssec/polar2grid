@@ -114,6 +114,7 @@ def cris_swath(*sdr_filenames, **kwargs):
     return CrisSwath(lat=lat, lon=lon, rad_lw = rad_lw, rad_mw = rad_mw, rad_sw = rad_sw, paths=sdr_filenames)
 
 
+
 DEFAULT_PNG_FMT = 'cris_%(channel)s.png'
 DEFAULT_LABEL_FMT = 'CrIS BT %(channel)s %(date)s.%(start_time)s-%(end_time)s'
 
@@ -217,6 +218,7 @@ class CrisSdrFrontend(FrontendRole):
     """
     """
     info = None
+
 
     def __init__(self, **kwargs):
         self.info = {}
