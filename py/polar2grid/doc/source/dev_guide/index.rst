@@ -47,16 +47,13 @@ Code repository: https://github.com/davidh-ssec/polar2grid
 
 **Developer's Guide Components:**
 
-.. toctree::
-    :maxdepth: 2
-
-    dev_env
-    glue_scripts
-    frontends
-    grids
-    remapping
-    backends
-    rescaling
+ - :doc:`dev_env`
+ - :doc:`glue_scripts`
+ - :doc:`frontends`
+ - :doc:`grids`
+ - :doc:`remapping`
+ - :doc:`backends`
+ - :doc:`rescaling`
 
 Prerequisites
 -------------
