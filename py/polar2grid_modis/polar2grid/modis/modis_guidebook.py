@@ -46,9 +46,12 @@ from polar2grid.core.time_utils import UTC
 
 import sys
 import re
+import os
 import logging
+
 from datetime import datetime
 from collections import defaultdict
+from polar2grid.core.constants import GEO_NAV_UID, GEO_250M_NAV_UID, MOD06_NAV_UID, MOD07_NAV_UID
 
 LOG = logging.getLogger(__name__)
 UTC = UTC()
@@ -119,15 +122,6 @@ MISSING_VALUE_ATTR_NAME      = "missing_value"
 
 GEO_FILE_SUFFIX              = ".geo.hdf"
 
-# a value representing the uid for the geo navigation group
-GEO_NAV_UID                    = "geo_nav"
-# a value representing the uid for the 250m navigation group
-GEO_250M_NAV_UID               = "geo_250m_nav"
-# a value representing the uid for the mod06 navigation group
-MOD06_NAV_UID                  = "mod06_nav"
-# a value representing the uid for the mod07 navigation group
-MOD07_NAV_UID                  = "mod07_nav"
-
 NAV_SETS_TO_INTERPOLATE_GEO          = [GEO_250M_NAV_UID]
 
 # this is true for the 1km data, FUTURE: when we get to other kinds, this will need to be more sophisicated
@@ -190,7 +184,7 @@ GEO_FILE_GROUPING_REV = \
                       SEA_SURFACE_TEMP_FILE_PATTERN:  GEO_NAV_UID,
                       LAND_SURFACE_TEMP_FILE_PATTERN: GEO_NAV_UID,
                       NDVI_FILE_PATTERN:              GEO_NAV_UID,
-                      GEO_FILE_PATTERN:              GEO_NAV_UID,
+                      GEO_FILE_PATTERN:               GEO_NAV_UID,
                       ICE_SURFACE_TEMP_FILE_PATTERN:  GEO_NAV_UID,
                       INVERSION_FILE_PATTERN:         GEO_NAV_UID,
                       ICE_CONCENTRATION_FILE_PATTERN: GEO_NAV_UID,
@@ -591,6 +585,48 @@ def get_equivalent_geolocation_filename (data_file_name_string) :
         filename_to_return = data_file_name_string.split('.ndvi.1000m.hdf')[0] + GEO_FILE_SUFFIX
     
     return filename_to_return
+
+def sort_files_by_nav_uid (filepaths) :
+    """
+    given a list of filepaths, sort them into a dictionary by the nav sets they belong to
+    """
+    
+    # some useful data structures
+    nav_file_type_sets = defaultdict(dict) # this will be our return sorted dictionary
+    all_used           = set([ ]) # this will hold all the files that were sorted
+    
+    # for each of the possible navigation sets
+    for nav_group_uid in GEO_FILE_GROUPING.keys() :
+        # for each file pattern that uses that navigation set
+        for file_pattern in GEO_FILE_GROUPING[nav_group_uid] :
+            # add the files matching that pattern to the appropriate set
+            nav_file_type_sets[nav_group_uid][file_pattern] = set([ ]) if file_pattern not in nav_file_type_sets[nav_group_uid] else nav_file_type_sets[nav_group_uid][file_pattern]
+            nav_file_type_sets[nav_group_uid][file_pattern].update(set([ x for x in filepaths if re.match(file_pattern, os.path.split(x)[-1]) ]))
+            all_used.update(nav_file_type_sets[nav_group_uid][file_pattern]) # keep a running set of all the files we've found matches for
+    
+    # do a little bookkeeping to figure out if there were filepaths we didn't use
+    all_provided = set(filepaths)
+    not_used = all_provided - all_used
+    if len(not_used):
+        LOG.warning("Could not match the following files with navigation\n%s" % "\n".join(list(not_used)))
+    
+    # removing empty nav patterns
+    for nav_group_uid in nav_file_type_sets.keys() :
+        for file_pattern in nav_file_type_sets[nav_group_uid].keys() :
+            if not nav_file_type_sets[nav_group_uid][file_pattern] :
+                LOG.debug("Removing empty file pattern '%s':'%s'" % (nav_group_uid, file_pattern))
+                del nav_file_type_sets[nav_group_uid][file_pattern]
+            else :
+                # if there is stuff in this nav group / file pattern, make it into a list instead of a set
+                nav_file_type_sets[nav_group_uid][file_pattern] = list(nav_file_type_sets[nav_group_uid][file_pattern])
+        
+        # if the entire nav pattern has no matches
+        if not nav_file_type_sets[nav_group_uid] :
+            LOG.debug("Removing empty nav file set '%s'" % (nav_group_uid,))
+            del nav_file_type_sets[nav_group_uid]
+    
+    return nav_file_type_sets
+
 
 def main():
     import optparse

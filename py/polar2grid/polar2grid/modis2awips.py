@@ -46,10 +46,9 @@ from polar2grid.core.glue_utils import setup_logging,create_exc_handler,remove_f
 from polar2grid.core.time_utils import utc_now
 from polar2grid.core.constants import *
 from .grids.grids import create_grid_jobs, Cartographer
-from polar2grid.modis import Frontend,parse_datetime_from_filename
+from polar2grid.modis import Frontend
 import remap
 from .awips import Backend
-from polar2grid.modis import GEO_FILE_GROUPING
 
 import os
 import sys
@@ -232,34 +231,9 @@ def run_glue(filepaths,
     # Rewrite/force parameters to specific format
     filepaths = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(filepaths) ]
     
-    # separate these by the MODIS types
-    nav_file_type_sets = defaultdict(dict)
-    all_used           = set([ ])
-    # for each of the possible navigation types
-    for nav_file_pattern_key in GEO_FILE_GROUPING.keys() :
-        # for each file pattern that uses that navigation type
-        for file_pattern in GEO_FILE_GROUPING[nav_file_pattern_key] :
-            # add the files matching that pattern to the appropriate set
-            nav_file_type_sets[nav_file_pattern_key][file_pattern] = set([ ]) if file_pattern not in nav_file_type_sets[nav_file_pattern_key] else nav_file_type_sets[nav_file_pattern_key][file_pattern]
-            nav_file_type_sets[nav_file_pattern_key][file_pattern].update(set([ x for x in filepaths if re.match(file_pattern, os.path.split(x)[1]) ]))
-            all_used.update(nav_file_type_sets[nav_file_pattern_key][file_pattern]) # keep a running set of all the files we've found matching nav files for
-    all_provided = set(filepaths)
-    not_used = all_provided - all_used
-    if len(not_used):
-        log.warning("Didn't know what to do with\n%s" % "\n".join(list(not_used)))
+    # sort our file paths based on their navigation
+    nav_file_type_sets = Frontend.sort_files_by_nav_uid(filepaths)
     
-    # removing empty nav patterns
-    for nav_group_key in nav_file_type_sets.keys() :
-        for file_pattern in nav_file_type_sets[nav_group_key].keys():
-            if not nav_file_type_sets[nav_group_key][file_pattern]:
-                log.debug("Removing empty file pattern '%s':'%s'" % (nav_group_key, file_pattern))
-                del nav_file_type_sets[nav_group_key][file_pattern]
-
-        # if the entire nav pattern has no matches
-        if not nav_file_type_sets[nav_group_key]:
-            log.debug("Removing empty nav file set '%s'" % (nav_group_key,))
-            del nav_file_type_sets[nav_group_key]
-
     # some things that we'll use later for clean up
     processes_to_wait_for = defaultdict(list)
     exit_status           = 0
@@ -378,11 +352,10 @@ through strftime. Current time if no files.""")
             if not os.path.exists(hdf_file):
                 print "ERROR: File '%s' doesn't exist" % (hdf_file,)
                 return -1
-        first_file = os.path.split(hdf_files[0])[-1]
-
+        
         # Get the date of the first file if provided
-        file_start_time = parse_datetime_from_filename(first_file)
-
+        file_start_time = sorted(Frontend.parse_datetimes_from_filepaths(hdf_files))[0]
+    
     # Determine the log filename
     if log_fn is None: log_fn = GLUE_NAME + "_%Y%m%d_%H%M%S.log"
     log_fn = datetime.strftime(file_start_time, log_fn)

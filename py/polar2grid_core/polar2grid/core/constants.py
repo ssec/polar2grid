@@ -151,6 +151,12 @@ DTYPE_INT64   = "int8"
 DTYPE_FLOAT32 = "real4"
 DTYPE_FLOAT64 = "real8"
 
+# Nav Set UIDs
+GEO_NAV_UID        = "geo_nav"      # the geo navigation group
+GEO_250M_NAV_UID   = "geo_250m_nav" # the 250m navigation group
+MOD06_NAV_UID      = "mod06_nav"    # the mod06 navigation group
+MOD07_NAV_UID      = "mod07_nav"    # the mod07 navigation group
+
 # Grid Constants
 GRIDS_ANY         = "any_grid"
 GRIDS_ANY_GPD     = "any_gpd_grid"
