@@ -94,8 +94,8 @@ def process_data_sets(filepaths,
     meta_data = {}
     try:
         meta_data = frontend.make_swaths(
+                nav_uid,
                 filepaths,
-                nav_uid=nav_uid,
                 create_fog=create_pseudo,
                 cut_bad=True
                 )

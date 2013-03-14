@@ -467,7 +467,7 @@ class Frontend(roles.FrontendRole):
     def __init__(self):
         pass
 
-    def make_swaths(self, filepaths, **kwargs):
+    def make_swaths(self, nav_set_uid, filepaths, **kwargs):
         
         create_fog = kwargs.pop("create_fog", False)
         
@@ -479,7 +479,7 @@ class Frontend(roles.FrontendRole):
             if len(temp_filepaths) > 0 :
                 
                 try:
-                    temp_meta_data = get_swaths(temp_filepaths, **kwargs)
+                    temp_meta_data = get_swaths(temp_filepaths, nav_uid=nav_set_uid, **kwargs)
                     temp_bands     = { } if "bands" not in meta_data else meta_data["bands"]
                     meta_data.update(temp_meta_data)
                     meta_data["bands"].update(temp_bands)
