@@ -70,7 +70,7 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log"):
 
     # Log file messages have a lot more information
     file_handler = logging.FileHandler(log_filename)
-    file_format = "[%(asctime)s] : %(levelname)-8s : %(name)s : %(funcName)s : %(message)s"
+    file_format = "[%(asctime)s] : PID %(process)6d : %(levelname)-8s : %(name)s : %(funcName)s : %(message)s"
     file_handler.setFormatter(logging.Formatter(file_format))
     file_handler.setLevel(logging.DEBUG)
     root_logger.addHandler(file_handler)
