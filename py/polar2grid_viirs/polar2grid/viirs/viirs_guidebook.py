@@ -313,6 +313,59 @@ def calculate_bbox_bounds(wests, easts, norths, souths):
 
     return wbound,ebound,nbound,sbound
 
+def sort_files_by_nav_uid(filepaths):
+    """Logic is duplicated from file_info-like method because it has less
+    overhead and this function was required a different way of accessing the
+    data.
+    """
+    # Create the dictionary structure to hold the filepaths
+    nav_dict = {}
+    for band_kind,band_id in DATA_KINDS.keys():
+        if band_kind not in nav_dict: nav_dict[band_kind] = {}
+        nav_dict[band_kind][band_id] = []
+
+    for fp in filepaths:
+        fn = os.path.split(fp)[-1]
+        if fn.startswith("SVI"):
+            if fn[3:5] in nav_dict[BKIND_I]:
+                nav_dict[BKIND_I][fn[3:5]].append(fp)
+                continue
+        if fn.startswith("SVM"):
+            if fn[3:5] in nav_dict[BKIND_M]:
+                nav_dict[BKIND_M][fn[3:5]].append(fp)
+                continue
+        if fn.startswith("SVDNB"):
+            nav_dict[BKIND_DNB][NOT_APPLICABLE].append(fp)
+            continue
+
+        LOG.warning("Unknown VIIRS SDR data file: %s" % (fp,))
+
+    # Make unique and sort
+    for nav_uid,nav_uid_dict in nav_dict.items():
+        num_files_for_set = 0
+        for file_id in nav_uid_dict.keys():
+            # If we don't have any files for this file set, remove the file set
+            if not nav_uid_dict[file_id]:
+                del nav_uid_dict[file_id]
+                continue
+
+            nav_uid_dict[file_id] = sorted(set(nav_uid_dict[file_id]), key=lambda f: os.path.split(f)[-1])
+
+            num_files = len(nav_uid_dict[file_id])
+            num_files_for_set = num_files_for_set or num_files # previous value or set it for the first time
+            if num_files != num_files_for_set:
+                # We weren't given the same number of files for this nav_set
+                LOG.error("Nav. set %s did not have the same number of files for every band" % (nav_uid,file_id))
+                raise ValueError("Nav. set %s did not have the same number of files for every band" % (nav_uid,file_id))
+
+        # If we don't have any files for this navigation set, remove the file set
+        if not nav_dict[nav_uid]:
+            del nav_dict[nav_uid]
+            continue
+
+    return nav_dict
+
+
 def get_datetimes(finfo):
     """Takes a file info dictionary and creates a datetime object for the
     start of the granule and the end of the granule.

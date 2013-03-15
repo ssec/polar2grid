@@ -43,7 +43,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds
+from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds,sort_files_by_nav_uid
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
 from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE, BID_NEW
@@ -56,6 +56,7 @@ import sys
 import logging
 from glob import glob
 from copy import deepcopy
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 
@@ -520,14 +521,18 @@ def process_image(meta_data, image_data, geo_data, cut_bad=False):
         log.error("No more bands to process for navigation set %s provided" % meta_data["nav_set_uid"])
         raise ValueError("No more bands to process for navigation set %s provided" % meta_data["nav_set_uid"])
 
-def make_swaths(ifilepaths, filter=None, cut_bad=False):
+def make_swaths(nav_set_uid, filepaths_dict, filter=None, cut_bad=False):
     """Takes SDR hdf files and creates flat binary files for the information
     required to do further processing.
 
     :Parameters:
-        ifilepaths : list
-            List of image data filepaths ('SV*') of one kind of band that are
-            to be concatenated into a swath.  For example, all of the data
+        nav_set_uid : str
+            Navigation set unique identifier. Provided by `Frontend.sort_files_by_nav_uid`.
+        filepaths_dict : dict of lists
+            Dictionary of lists of image data filepaths ('SV*'). Each key in
+            the dictionary identifies a band of the data files. Each list
+            is a sorted list of filepaths for that one kind of band that will
+            be concatenated into a swath.  For example, all of the data
             files for the I bands that are in the same time window.
     :Keywords:
         filter : function pointer
@@ -541,7 +546,8 @@ def make_swaths(ifilepaths, filter=None, cut_bad=False):
     """
     # Get meta information from the image data files
     log.info("Getting data file info...")
-    meta_data,image_data = get_meta_data(ifilepaths, filter=filter)
+    filepaths_list = [ fp_one_time for fp_one_band_list in filepaths_dict.values() for fp_one_time in fp_one_band_list ]
+    meta_data,image_data = get_meta_data(filepaths_list, filter=filter)
 
     # Extract gfilepaths from the ifilepath information
     # list comprehension here is the fastest way to flatten a list of lists
@@ -591,6 +597,24 @@ class Frontend(roles.FrontendRole):
 
     def __init__(self):
         pass
+
+    @classmethod
+    def parse_datetimes_from_filepaths(cls, filepaths):
+        """Return a list of datetimes for each filepath provided.
+
+        This logic is duplicated from the guidebook because it has less
+        overhead.
+        """
+        filenames = [ os.path.split(fp)[-1] for fp in filepaths ]
+        # SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
+        dt_list = [ datetime.strptime(fn[10:27], "d%Y%m%d_t%H%M%S") for
+                fn in filenames ]
+        return dt_list
+
+    @classmethod
+    def sort_files_by_nav_uid(cls, filepaths):
+        # Call the guidebook function
+        return sort_files_by_nav_uid(filepaths)
 
     def make_swaths(self, *args, **kwargs):
         scale_dnb = kwargs.pop("scale_dnb", False)

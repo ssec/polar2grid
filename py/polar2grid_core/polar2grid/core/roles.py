@@ -59,6 +59,47 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 
+### Copied and modified from patch to allow abstractclassmethods in Python 2.7 ###
+### URL: http://bugs.python.org/issue5867 ###
+class abstractclassmethod(classmethod):
+    """A decorator indicating abstract classmethods.
+
+    Similar to abstractmethod.
+
+    Usage:
+
+        class C(metaclass=ABCMeta):
+            @abstractclassmethod
+            def my_abstract_classmethod(cls, ...):
+                ...
+    """
+    __isabstractmethod__ = True
+
+    def __init__(self, callable):
+        callable.__isabstractmethod__ = True
+        super(abstractclassmethod, self).__init__(callable)
+
+
+class abstractstaticmethod(staticmethod):
+    """A decorator indicating abstract staticmethods.
+
+    Similar to abstractmethod.
+
+    Usage:
+
+        class C(metaclass=ABCMeta):
+            @abstractstaticmethod
+            def my_abstract_staticmethod(...):
+                ...
+    """
+    __isabstractmethod__ = True
+
+    def __init__(self, callable):
+        callable.__isabstractmethod__ = True
+        super(abstractstaticmethod, self).__init__(callable)
+
+### End of Copy ###
+
 class RescalerRole(object):
     __metaclass__ = ABCMeta
 
@@ -379,17 +420,47 @@ class FrontendRole(object):
     """
     __metaclass__ = ABCMeta
 
+    @abstractclassmethod
+    def parse_datetimes_from_filepaths(cls, filepaths):
+        """Class method for providing datetimes for each of the input filepaths.
+
+        This method is used by glue scripts to find the proper datetime to
+        timestamp logs with (usually the earliest).
+        """
+        raise NotImplementedError("This function has not been implemented")
+
+    @abstractclassmethod
+    def sort_files_by_nav_uid(cls, filepaths):
+        """Class method for sorting input filepaths.
+
+        This method is used by glue scripts to organize filepaths into
+        navigation sets that can be used by the `make_swaths` method.
+
+        :param filepaths: Absolute paths to input satellite instrument names
+        :type filepaths: list
+        :returns: dictionary of dictionaries. First key is the `nav_set_uid`
+            for that `navigation_set`. Second key is file identifier that
+            can be any arbitrary string. Some frontends use a file pattern
+            as the file identifier. Each file identifier maps to a list
+            of filepaths. Sorted and uniqueness is not guaranteed and is
+            up to the frontend.
+        :rtype: dict( dict( list ) )
+        """
+        raise NotImplementedError("This function has not been implemented")
+
     @abstractmethod
-    def make_swaths(self, filepaths, **kwargs):
+    def make_swaths(self, nav_set_uid, filepaths_dict, **kwargs):
         """Given satellite instrument data files, create flat binary files
         for all image data and navigation data. This method should only be
         called once per navigation set. Navigation filepaths will be derived
         from the information in the data files and are expected to be in the
         same directory as the files.
 
-        :param filepaths:
-            absolute paths to satellite instrument data files.
-        :type filepaths: list or tuple
+        :param filepaths_dict:
+            absolute paths to satellite instrument data files keyed by a file
+            identifier, where the file identifier is provided by the
+            `sort_files_by_nav_uid` class method of the same frontend.
+        :type filepaths: dict( list )
 
         :returns:
             Information describing the data provided that will

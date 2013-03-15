@@ -61,7 +61,7 @@ log = logging.getLogger(__name__)
 GLUE_NAME = "viirs2binary"
 LOG_FN = os.environ.get("VIIRS2BINARY_LOG", None) # None interpreted in main
 
-def process_data_sets(filepaths,
+def process_data_sets(nav_set_uid, filepaths,
         fornav_D=None, fornav_d=None,
         forced_grid=None,
         create_pseudo=True,
@@ -75,6 +75,7 @@ def process_data_sets(filepaths,
     """Process all the files provided from start to finish,
     from filename to binary file.
     """
+    log.debug("Processing %s navigation set" % (nav_set_uid,))
     status_to_return = STATUS_SUCCESS
 
     # Declare polar2grid components
@@ -91,6 +92,7 @@ def process_data_sets(filepaths,
     log.info("Extracting swaths...")
     try:
         meta_data = frontend.make_swaths(
+                nav_set_uid,
                 filepaths,
                 scale_dnb=True,
                 new_dnb=new_dnb,
@@ -105,7 +107,6 @@ def process_data_sets(filepaths,
         bands = meta_data["bands"]
         fbf_lat = meta_data["fbf_lat"]
         fbf_lon = meta_data["fbf_lon"]
-        nav_set_uid = meta_data["nav_set_uid"]
     except StandardError:
         log.error("Swath creation failed")
         log.debug("Swath creation error:", exc_info=1)
@@ -232,80 +233,32 @@ def run_glue(filepaths,
     # Rewrite/force parameters to specific format
     filepaths = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(filepaths) ]
 
-    M_files = sorted(set([ x for x in filepaths if os.path.split(x)[1].startswith("SVM") ]))
-    I_files = sorted(set([ x for x in filepaths if os.path.split(x)[1].startswith("SVI") ]))
-    DNB_files = sorted(set([ x for x in filepaths if os.path.split(x)[1].startswith("SVDNB") ]))
-    all_used = set(M_files + I_files + DNB_files)
-    all_provided = set(filepaths)
-    not_used = all_provided - all_used
-    if len(not_used):
-        log.warning("Didn't know what to do with\n%s" % "\n".join(list(not_used)))
+    nav_dict = Frontend.sort_files_by_nav_uid(filepaths)
+    process_to_wait_for = { k : None for k in nav_dict.keys() }
 
-    pM = None
-    pI = None
-    pDNB = None
     exit_status = 0
-    if len(M_files) != 0:
-        log.debug("Processing M files")
+    for nav_set_uid in nav_dict.keys():
+        log.debug("Calling %s navigation set" % (nav_set_uid,))
         try:
             if multiprocess:
-                pM = Process(target=_process_data_sets,
-                        args = (M_files,),
+                process_to_wait_for[nav_set_uid] = p = Process(target=_process_data_sets,
+                        args = (nav_set_uid, nav_dict[nav_set_uid],),
                         kwargs = kwargs
                         )
-                pM.start()
+                p.start()
             else:
-                stat = _process_data_sets(M_files, **kwargs)
+                stat = _process_data_sets(nav_set_uid, nav_dict[nav_set_uid], **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
-            log.error("Could not process M files")
-            exit_status = exit_status or len(M_files)
+            log.error("Could not process %s files" % nav_set_uid)
+            exit_status = exit_status or STATUS_UNKNOWN_FAIL
 
-    if len(I_files) != 0:
-        log.debug("Processing I files")
-        try:
-            if multiprocess:
-                pI = Process(target=_process_data_sets,
-                        args = (I_files,),
-                        kwargs = kwargs
-                        )
-                pI.start()
-            else:
-                stat = _process_data_sets(I_files, **kwargs)
-                exit_status = exit_status or stat
-        except StandardError:
-            log.error("Could not process I files")
-            exit_status = exit_status or len(I_files)
-
-    if len(DNB_files) != 0:
-        log.debug("Processing DNB files")
-        try:
-            if multiprocess:
-                pDNB = Process(target=_process_data_sets,
-                        args = (DNB_files,),
-                        kwargs = kwargs
-                        )
-                pDNB.start()
-            else:
-                stat = _process_data_sets(DNB_files, **kwargs)
-                exit_status = exit_status or stat
-        except StandardError:
-            log.error("Could not process DNB files")
-            exit_status = exit_status or len(DNB_files)
-
-    log.debug("Waiting for subprocesses")
-    if pM is not None:
-        pM.join()
-        stat = pM.exitcode
-        exit_status = exit_status or stat
-    if pI is not None:
-        pI.join()
-        stat = pI.exitcode
-        exit_status = exit_status or stat
-    if pDNB is not None:
-        pDNB.join()
-        stat = pDNB.exitcode
-        exit_status = exit_status or stat
+    for nav_set_uid,proc_obj in process_to_wait_for.items():
+        if proc_obj is not None:
+            log.debug("Waiting for %s subprocess" % (nav_set_uid,))
+            proc_obj.join()
+            stat = proc_obj.exitcode
+            exit_status = exit_status or stat
 
     return exit_status
 
@@ -357,6 +310,7 @@ through strftime. Current time if no files.""")
     parser.add_argument('--rescale-config', dest='rescale_config', default=None,
             help="specify alternate rescale configuration file")
 
+    # Input related
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-f', dest='data_files', nargs="+",
             help="List of one or more hdf files")
@@ -392,11 +346,9 @@ through strftime. Current time if no files.""")
             if not os.path.exists(hdf_file):
                 print "ERROR: File '%s' doesn't exist" % (hdf_file,)
                 return -1
-        first_file = os.path.split(hdf_files[0])[-1]
 
         # Get the date of the first file if provided
-        # SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
-        file_start_time = datetime.strptime(first_file[10:27], "d%Y%m%d_t%H%M%S")
+        file_start_time = sorted(Frontend.parse_datetimes_from_filepaths(hdf_files))[0]
 
     # Determine the log filename
     if log_fn is None: log_fn = GLUE_NAME + "_%Y%m%d_%H%M%S.log"
