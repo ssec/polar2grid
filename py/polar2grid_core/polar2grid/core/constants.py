@@ -152,6 +152,9 @@ DTYPE_FLOAT32 = "real4"
 DTYPE_FLOAT64 = "real8"
 
 # Nav Set UIDs
+MBAND_NAV_UID      = "m_nav"        # the M band navigation group
+IBAND_NAV_UID      = "i_nav"        # the I band navigation group
+DNB_NAV_UID        = "dnb_nav"      # the Day/Night band navigation group
 GEO_NAV_UID        = "geo_nav"      # the geo navigation group
 GEO_250M_NAV_UID   = "geo_250m_nav" # the 250m navigation group
 MOD06_NAV_UID      = "mod06_nav"    # the mod06 navigation group

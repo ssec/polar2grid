@@ -80,6 +80,12 @@ K_SOUTH_COORD          = "SouthCoordinateAttr"
 K_NAVIGATION           = "NavigationFilenameGlob"  # glob to search for to find navigation file that corresponds
 K_GEO_REF              = "CdfcbGeolocationFileGlob" # glob which would match the N_GEO_Ref attribute
 
+NAV_SET_GUIDE = {
+        BKIND_M   : MBAND_NAV_UID,
+        BKIND_I   : IBAND_NAV_UID,
+        BKIND_DNB : DNB_NAV_UID,
+        }
+
 GEO_GUIDE = {
         BKIND_M : 'GMODO',
         BKIND_I : 'GIMGO'
@@ -321,21 +327,25 @@ def sort_files_by_nav_uid(filepaths):
     # Create the dictionary structure to hold the filepaths
     nav_dict = {}
     for band_kind,band_id in DATA_KINDS.keys():
-        if band_kind not in nav_dict: nav_dict[band_kind] = {}
-        nav_dict[band_kind][band_id] = []
+        nav_uid = NAV_SET_GUIDE[band_kind]
+        if nav_uid not in nav_dict: nav_dict[nav_uid] = {}
+        nav_dict[nav_uid][band_id] = []
 
     for fp in filepaths:
         fn = os.path.split(fp)[-1]
         if fn.startswith("SVI"):
-            if fn[3:5] in nav_dict[BKIND_I]:
-                nav_dict[BKIND_I][fn[3:5]].append(fp)
+            nav_uid = NAV_SET_GUIDE[BKIND_I]
+            if fn[3:5] in nav_dict[nav_uid]:
+                nav_dict[nav_uid][fn[3:5]].append(fp)
                 continue
         if fn.startswith("SVM"):
-            if fn[3:5] in nav_dict[BKIND_M]:
-                nav_dict[BKIND_M][fn[3:5]].append(fp)
+            nav_uid = NAV_SET_GUIDE[BKIND_M]
+            if fn[3:5] in nav_dict[nav_uid]:
+                nav_dict[nav_uid][fn[3:5]].append(fp)
                 continue
         if fn.startswith("SVDNB"):
-            nav_dict[BKIND_DNB][NOT_APPLICABLE].append(fp)
+            nav_uid = NAV_SET_GUIDE[BKIND_DNB]
+            nav_dict[nav_uid][NOT_APPLICABLE].append(fp)
             continue
 
         LOG.warning("Unknown VIIRS SDR data file: %s" % (fp,))

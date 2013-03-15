@@ -43,7 +43,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds,sort_files_by_nav_uid
+from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds,sort_files_by_nav_uid,NAV_SET_GUIDE
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
 from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE, BID_NEW
@@ -76,7 +76,7 @@ def _glob_file(pat):
 def _band_name(band_info):
     return band_info["kind"] + (band_info["band"] or "")
 
-def get_meta_data(ifilepaths, filter=None):
+def get_meta_data(nav_set_uid, ifilepaths, filter=None):
     """Get all meta data for the provided data files.
 
     :Parameters:
@@ -109,6 +109,10 @@ def get_meta_data(ifilepaths, filter=None):
         if after attempting to process the provided image
         filenames there was no useful data found.
     """
+    if nav_set_uid not in NAV_SET_GUIDE.values():
+        log.error("Unknown navigation set unique identifier '%s'" % (nav_set_uid,))
+        raise ValueError("Unknown navigation set unique identifier '%s'" % (nav_set_uid,))
+
     ifilepaths = sorted(ifilepaths)
 
     # Data structures
@@ -182,7 +186,7 @@ def get_meta_data(ifilepaths, filter=None):
 
     meta_data["sat"] = SAT_NPP
     meta_data["instrument"] = INST_VIIRS
-    meta_data["nav_set_uid"] = first_kind
+    meta_data["nav_set_uid"] = nav_set_uid
     return meta_data,image_data
 
 def get_geo_meta(gfilepaths):
@@ -547,7 +551,7 @@ def make_swaths(nav_set_uid, filepaths_dict, filter=None, cut_bad=False):
     # Get meta information from the image data files
     log.info("Getting data file info...")
     filepaths_list = [ fp_one_time for fp_one_band_list in filepaths_dict.values() for fp_one_time in fp_one_band_list ]
-    meta_data,image_data = get_meta_data(filepaths_list, filter=filter)
+    meta_data,image_data = get_meta_data(nav_set_uid, filepaths_list, filter=filter)
 
     # Extract gfilepaths from the ifilepath information
     # list comprehension here is the fastest way to flatten a list of lists

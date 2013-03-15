@@ -238,29 +238,34 @@ def run_glue(filepaths,
     # Rewrite/force parameters to specific format
     filepaths = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(filepaths) ]
 
-    nav_dict = Frontend.sort_files_by_nav_uid(filepaths)
-    process_to_wait_for = { k : None for k in nav_dict.keys() }
+    # sort our file paths based on their navigation
+    nav_file_type_sets = Frontend.sort_files_by_nav_uid(filepaths)
 
-    exit_status = 0
-    for nav_set_uid in nav_dict.keys():
+    # some things that we'll use later for clean up
+    process_to_wait_for = { k : None for k in nav_file_type_sets.keys() }
+    exit_status         = 0
+
+    # go through and process each of our file sets by navigation type
+    for nav_set_uid in nav_file_type_sets.keys():
         log.debug("Calling %s navigation set" % (nav_set_uid,))
         try:
             if multiprocess:
                 process_to_wait_for[nav_set_uid] = p = Process(target=_process_data_sets,
-                        args = (nav_set_uid, nav_dict[nav_set_uid],),
-                        kwargs = kwargs
-                        )
+                                        args = (nav_set_uid, nav_file_type_sets[nav_set_uid],),
+                                        kwargs = kwargs
+                                        )
                 p.start()
             else:
-                stat = _process_data_sets(nav_set_uid, nav_dict[nav_set_uid], **kwargs)
+                stat = _process_data_sets(nav_set_uid, nav_file_type_sets[nav_set_uid], **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
-            log.error("Could not process %s files" % nav_set_uid)
+            log.error("Could not process files for %s navigation set" % nav_set_uid)
             exit_status = exit_status or STATUS_UNKNOWN_FAIL
 
+    # look through our processes and wait for any processes we saved to wait for
     for nav_set_uid,proc_obj in process_to_wait_for.items():
         if proc_obj is not None:
-            log.debug("Waiting for %s subprocess" % (nav_set_uid,))
+            log.debug("Waiting for subprocess for %s navigation set" % (nav_set_uid,))
             proc_obj.join()
             stat = proc_obj.exitcode
             exit_status = exit_status or stat

@@ -51,7 +51,6 @@ import logging
 
 from datetime import datetime
 from collections import defaultdict
-from polar2grid.core.constants import GEO_NAV_UID, GEO_250M_NAV_UID, MOD06_NAV_UID, MOD07_NAV_UID
 
 LOG = logging.getLogger(__name__)
 UTC = UTC()

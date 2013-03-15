@@ -55,15 +55,12 @@ import sys
 import logging
 from multiprocessing import Process
 from datetime import datetime
-import re
-from collections import defaultdict
 
 log = logging.getLogger(__name__)
 GLUE_NAME = "modis2awips"
 LOG_FN = os.environ.get("MODIS2AWIPS_LOG", None) # None interpreted in main
 
-def process_data_sets(filepaths,
-                      nav_uid,
+def process_data_sets(nav_set_uid, filepaths,
                       fornav_D=None, fornav_d=None,
                       fornav_m=True,
                       forced_grid=None,
@@ -78,7 +75,7 @@ def process_data_sets(filepaths,
     
     Note: all files provided are expected to share a navigation source.
     """
-    
+    log.debug("Processing %s navigation set" % (nav_set_uid,))
     status_to_return = STATUS_SUCCESS
     
     # Declare polar2grid components
@@ -94,7 +91,7 @@ def process_data_sets(filepaths,
     meta_data = {}
     try:
         meta_data = frontend.make_swaths(
-                nav_uid,
+                nav_set_uid,
                 filepaths,
                 create_fog=create_pseudo,
                 cut_bad=True
@@ -134,7 +131,7 @@ def process_data_sets(filepaths,
     
     ### Remap the data
     try:
-        remapped_jobs = remap.remap_bands(sat, instrument, nav_uid,
+        remapped_jobs = remap.remap_bands(sat, instrument, nav_set_uid,
                 flatbinaryfilename_lon, flatbinaryfilename_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
                 lat_fill_value=meta_data.get("lat_fill_value", None),
@@ -224,48 +221,45 @@ def run_glue(filepaths,
         multiprocess=True, **kwargs
         ):
     """Separate input files into groups that share navigation files data.
-    
+
     Call the processing function in separate process or same process depending
     on value of `multiprocess` keyword.
     """
     # Rewrite/force parameters to specific format
     filepaths = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(filepaths) ]
-    
+
     # sort our file paths based on their navigation
     nav_file_type_sets = Frontend.sort_files_by_nav_uid(filepaths)
-    
+
     # some things that we'll use later for clean up
-    processes_to_wait_for = defaultdict(list)
-    exit_status           = 0
-    
+    process_to_wait_for = { k : None for k in nav_file_type_sets.keys() }
+    exit_status         = 0
+
     # go through and process each of our file sets by navigation type
-    for geo_nav_key in nav_file_type_sets.keys() :
-        log.debug("Processing files for %s navigation" % geo_nav_key)
-        
-        temp_files_for_this_nav = nav_file_type_sets[geo_nav_key]
+    for nav_set_uid in nav_file_type_sets.keys():
+        log.debug("Calling %s navigation set" % (nav_set_uid,))
         try:
             if multiprocess:
-                temp_processes = Process(target=_process_data_sets,
-                                         args = (temp_files_for_this_nav, geo_nav_key),
-                                         kwargs = kwargs
-                                         )
-                temp_processes.start()
-                processes_to_wait_for[geo_nav_key].append(temp_processes)
+                process_to_wait_for[nav_set_uid] = p = Process(target=_process_data_sets,
+                                        args = (nav_set_uid, nav_file_type_sets[nav_set_uid],),
+                                        kwargs = kwargs
+                                        )
+                p.start()
             else:
-                stat = _process_data_sets(temp_files_for_this_nav, geo_nav_key **kwargs)
+                stat = _process_data_sets(nav_set_uid, nav_file_type_sets[nav_set_uid], **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
-            log.error("Could not process files for %s navigation" % geo_nav_key)
-            exit_status = exit_status or len(temp_files_for_this_nav)
-    
-    log.debug("Waiting for subprocesses")
+            log.error("Could not process files for %s navigation set" % nav_set_uid)
+            exit_status = exit_status or STATUS_UNKNOWN_FAIL
+
     # look through our processes and wait for any processes we saved to wait for
-    for geo_nav_key in processes_to_wait_for.keys() :
-        for each_process in processes_to_wait_for[geo_nav_key] :
-            each_process.join()
-            stat = each_process.exitcode
+    for nav_set_uid,proc_obj in process_to_wait_for.items():
+        if proc_obj is not None:
+            log.debug("Waiting for subprocess for %s navigation set" % (nav_set_uid,))
+            proc_obj.join()
+            stat = proc_obj.exitcode
             exit_status = exit_status or stat
-    
+
     return exit_status
 
 def main(argv = sys.argv[1:]):
