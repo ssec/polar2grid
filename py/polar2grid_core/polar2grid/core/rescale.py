@@ -267,7 +267,7 @@ class Rescaler(roles.RescalerRole):
         self.inc_by_one = kwargs.pop("inc_by_one", False)
         super(Rescaler, self).__init__(*args, **kwargs)
 
-    def __call__(self, sat, instrument, kind, band, data_kind, data,
+    def __call__(self, sat, instrument, nav_set_uid, kind, band, data_kind, data,
             fill_in=None, fill_out=None, inc_by_one=None):
         """Function that uses previously loaded configuration files to choose
         how to rescale the provided data.  If the `config` keyword is not provided
@@ -280,7 +280,7 @@ class Rescaler(roles.RescalerRole):
         add 1 to the scaled data excluding the invalid values.
         """
         log_level = logging.getLogger('').handlers[0].level or 0
-        band_id = self._create_config_id(sat, instrument, kind, band, data_kind)
+        band_id = self._create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind)
         fill_in = fill_in or self.fill_in
         fill_out = fill_out or self.fill_out
 

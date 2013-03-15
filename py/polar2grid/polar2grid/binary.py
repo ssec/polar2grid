@@ -97,10 +97,10 @@ class Backend(roles.BackendRole):
                     inc_by_one=inc_by_one
                     )
 
-    def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
+    def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
         return GRIDS_ANY
 
-    def create_product(self, sat, instrument,
+    def create_product(self, sat, instrument, nav_set_uid,
             kind, band, data_kind, data,
             output_filename=None, start_time=None, end_time=None,
             grid_name=None, data_type=None, inc_by_one=None,
@@ -113,7 +113,7 @@ class Backend(roles.BackendRole):
         # fail on a file already existing with the same stem
         if output_filename is None:
             output_filename = self.create_output_filename(self.output_pattern,
-                    sat, instrument, kind, band, data_kind,
+                    sat, instrument, nav_set_uid, kind, band, data_kind,
                     start_time  = start_time,
                     end_time    = end_time,
                     grid_name   = grid_name,
@@ -124,7 +124,7 @@ class Backend(roles.BackendRole):
 
         # Rescale the data based on the configuration that was loaded earlier
         if self.rescaler:
-            data = self.rescaler(sat, instrument, kind, band, data_kind, data,
+            data = self.rescaler(sat, instrument, nav_set_uid, kind, band, data_kind, data,
                     fill_in=fill_in, fill_out=self.fill_out,
                     inc_by_one=inc_by_one)
 

@@ -430,7 +430,7 @@ def determine_grid_coverage_fbf(fbf_lon, fbf_lat, grids, cart):
     bbox = (west_lon, north_lat, east_lon, south_lat)
     return determine_grid_coverage_bbox(bbox, grids, cart)
 
-def create_grid_jobs(sat, instrument, bands, backend, cart,
+def create_grid_jobs(sat, instrument, nav_set_uid, bands, backend, cart,
         forced_grids=None, fbf_lat=None, fbf_lon=None,
         bbox=None, g_ring=None):
     """Create a dictionary known as `grid_jobs` to be passed to remapping.
@@ -439,7 +439,7 @@ def create_grid_jobs(sat, instrument, bands, backend, cart,
     # Check what grids the backend can handle
     all_possible_grids = set()
     for band_kind, band_id in bands.keys():
-        this_band_can_handle = backend.can_handle_inputs(sat, instrument, band_kind, band_id, bands[(band_kind, band_id)]["data_kind"])
+        this_band_can_handle = backend.can_handle_inputs(sat, instrument, nav_set_uid, band_kind, band_id, bands[(band_kind, band_id)]["data_kind"])
         bands[(band_kind, band_id)]["grids"] = this_band_can_handle
         if isinstance(this_band_can_handle, str):
             all_possible_grids.update([this_band_can_handle])
@@ -484,7 +484,7 @@ def create_grid_jobs(sat, instrument, bands, backend, cart,
         elif bands[(band_kind, band_id)]["grids"] == GRIDS_ANY_GPD:
             bands [(band_kind, band_id)]["grids"] = [ g for g in grids if grid_infos[g]["grid_kind"] == GRID_KIND_GPD ]
         elif len(bands[(band_kind, band_id)]["grids"]) == 0:
-            log.error("The backend does not support kind %s band %s, won't add to job list..." % (band_kind, band_id))
+            log.warning("The backend does not support nav set '%s' kind '%s' band '%s', won't add to job list..." % (nav_set_uid, band_kind, band_id))
             # Handled in the next for loop via the inner for loop not adding anything
         else:
             bands[(band_kind, band_id)]["grids"] = grids.intersection(bands[(band_kind, band_id)]["grids"])

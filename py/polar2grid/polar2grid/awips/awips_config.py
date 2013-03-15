@@ -115,13 +115,13 @@ def get_shape_from_ncml(fn, var_name):
         cols = int(important_dims[0].get("length"))
     return rows,cols
 
-def _create_config_id(sat, instrument, kind, band, data_kind, grid_name=None):
+def _create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind, grid_name=None):
     if grid_name is None:
         # This is used for searching the configs
-        return "_".join([sat, instrument, kind, band or "", data_kind])
+        return "_".join([sat, instrument, nav_set_uid or "", kind, band or "", data_kind])
     else:
         # This is used for adding to the configs
-        return "_".join([sat, instrument, kind, band or "", data_kind, grid_name])
+        return "_".join([sat, instrument, nav_set_uid or "", kind, band or "", data_kind, grid_name])
 
 def _rel_to_abs(filename, default_base_path):
     """Function that checks if a filename provided is not an absolute
@@ -157,34 +157,38 @@ def load_config_str(config_dict, config_str):
         # Parse config lines
         for line in config_lines:
             parts = [ part.strip() for part in line.split(",") ]
-            if len(parts) != 12:
+            if len(parts) != 13:
                 log.error("AWIPS config line needs exactly 12 columns : '%s'" % (line,))
                 raise ValueError("AWIPS config line needs exactly 12 columns : '%s'" % (line,))
 
             # Verify that each identifying portion is valid
-            for i in range(6):
+            for i in range(7):
                 assert parts[i],"Field %d can not be empty" % i
                 # polar2grid demands lowercase fields
                 parts[i] = parts[i].lower()
 
-            # Convert band if none
-            if parts[3] == '' or parts[3] == "none":
-                parts[3] = NOT_APPLICABLE
+            # Convert nav_set_uid if none
+            if parts[2] == '' or parts[2] == "none":
+                parts[2] = NOT_APPLICABLE
 
-            line_id = _create_config_id(*parts[:6])
+            # Convert band if none
+            if parts[4] == '' or parts[4] == "none":
+                parts[4] = NOT_APPLICABLE
+
+            line_id = _create_config_id(*parts[:7])
             if line_id in config_dict:
                 log.error("AWIPS config has 2 entries for %s" % (line_id,))
                 raise ValueError("AWIPS config has 2 entries for %s" % (line_id,))
 
             # Parse out the awips specific elements
-            product_id = parts[6]
-            awips2_channel = parts[7]
-            awips2_source = parts[8]
-            awips2_satellitename = parts[9]
-            ncml_template = _rel_to_abs(parts[10], NCML_DIR)
-            nc_format = parts[11]
+            product_id = parts[7]
+            awips2_channel = parts[8]
+            awips2_source = parts[9]
+            awips2_satellitename = parts[10]
+            ncml_template = _rel_to_abs(parts[11], NCML_DIR)
+            nc_format = parts[12]
             config_entry = {
-                    "grid_name" : parts[5],
+                    "grid_name" : parts[6],
                     "product_id" : product_id,
                     "awips2_channel" : awips2_channel,
                     "awips2_source" : awips2_source,
@@ -199,32 +203,31 @@ def load_config_str(config_dict, config_str):
 
     return True
 
-def load_config(config_dict, config_filepath=None):
-    if config_filepath is None:
-        config_filepath = CONFIG_FILE
-
+def load_config(config_dict, config_filepath):
     # Load a configuration file, even if it's in the package
     full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
+    config_str = None
     if not os.path.exists(full_config_filepath):
         try:
             config_str = get_resource_string(__name__, config_filepath)
             log.debug("Using package provided AWIPS configuration '%s'" % (config_filepath,))
-            return load_config_str(config_dict, config_str)
         except StandardError:
             log.error("AWIPS file '%s' could not be found" % (config_filepath,))
             raise ValueError("AWIPS file '%s' could not be found" % (config_filepath,))
 
-    log.debug("Using AWIPS configuration '%s'" % (config_filepath,))
+    if config_str is not None:
+        return load_config_str(config_dict, config_str)
+    else:
+        log.debug("Using AWIPS configuration '%s'" % (config_filepath,))
+        config_file = open(config_filepath, 'r')
+        config_str = config_file.read()
+        return load_config_str(config_dict, config_str)
 
-    config_file = open(config_filepath, 'r')
-    config_str = config_file.read()
-    return load_config_str(config_dict, config_str)
-
-def can_handle_inputs(config_dict, sat, instrument, kind, band, data_kind):
+def can_handle_inputs(config_dict, sat, instrument, nav_set_uid, kind, band, data_kind):
     """Search through the configuration files and return all the grids for
     this band and data_kind
     """
-    band_id = _create_config_id(sat, instrument, kind, band, data_kind)
+    band_id = _create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind)
     log.debug("Searching AWIPS configs for '%s'" % (band_id,))
     grids = []
     for k in config_dict.keys():
@@ -232,8 +235,8 @@ def can_handle_inputs(config_dict, sat, instrument, kind, band, data_kind):
             grids.append(config_dict[k]["grid_name"])
     return grids
 
-def get_awips_info(config_dict, sat, instrument, kind, band, data_kind, grid_name):
-    config_id = _create_config_id(sat, instrument, kind, band, data_kind, grid_name)
+def get_awips_info(config_dict, sat, instrument, nav_set_uid, kind, band, data_kind, grid_name):
+    config_id = _create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind, grid_name)
     if config_id not in config_dict:
         log.error("'%s' could not be found in the loaded configuration, available '%r'" % (config_id,config_dict.keys()))
         raise ValueError("'%s' could not be found in the loaded configuration" % (config_id,))

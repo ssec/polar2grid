@@ -81,7 +81,7 @@ from polar2grid.core.constants import *
 from polar2grid.nc import create_nc_from_ncml
 from polar2grid.core.rescale import Rescaler
 from polar2grid.core.dtype import clip_to_data_type
-from .awips_config import get_awips_info,load_config as load_awips_config,can_handle_inputs as config_can_handle_inputs
+from .awips_config import get_awips_info,load_config as load_awips_config,can_handle_inputs as config_can_handle_inputs,CONFIG_FILE as DEFAULT_AWIPS_CONFIG
 
 import os, sys, logging, re
 import calendar
@@ -90,7 +90,6 @@ from datetime import datetime
 log = logging.getLogger(__name__)
 AWIPS_ATTRS = set(re.findall(r'\W:(\w+)', NCDUMP))
 DEFAULT_8BIT_RCONFIG = "rescale_configs/rescale.8bit.conf"
-DEFAULT_AWIPS_CONFIG = "awips_grids.conf"
 
 def create_netcdf(nc_name, image, template, start_dt,
         channel, source, sat_name):
@@ -163,7 +162,7 @@ class Backend(roles.BackendRole):
         self.fill_out = DEFAULT_FILL_VALUE
         self.rescaler = Rescaler(config=self.rescale_config, fill_in=self.fill_in, fill_out=self.fill_out)
 
-    def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
+    def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
         """Function for backend-calling script to ask if the backend will be
         able to handle the data that will be processed.  For the AWIPS backend
         it can handle any gpd grid that it is configured for in
@@ -172,9 +171,9 @@ class Backend(roles.BackendRole):
         It is also assumed that rescaling will be able to handle the `data_kind`
         provided.
         """
-        return config_can_handle_inputs(self.config, sat, instrument, kind, band, data_kind)
+        return config_can_handle_inputs(self.config, sat, instrument, nav_set_uid, kind, band, data_kind)
 
-    def create_product(self, sat, instrument, kind, band, data_kind, data,
+    def create_product(self, sat, instrument, nav_set_uid, kind, band, data_kind, data,
             start_time=None, end_time=None, grid_name=None,
             output_filename=None,
             ncml_template=None, fill_value=None):
@@ -187,10 +186,10 @@ class Backend(roles.BackendRole):
             raise ValueError("'start_time' is a required keyword for this backend if 'output_filename' is not specified")
 
         fill_in = fill_value or self.fill_in
-        data = self.rescaler(sat, instrument, kind, band, data_kind, data, fill_in=fill_in, fill_out=self.fill_out)
+        data = self.rescaler(sat, instrument, nav_set_uid, kind, band, data_kind, data, fill_in=fill_in, fill_out=self.fill_out)
 
         # Get information from the configuration files
-        awips_info = get_awips_info(self.config, sat, instrument, kind, band, data_kind, grid_name)
+        awips_info = get_awips_info(self.config, sat, instrument, nav_set_uid, kind, band, data_kind, grid_name)
         # Get the proper output name if it wasn't forced to something else
         if output_filename is None:
             output_filename = start_time.strftime(awips_info["nc_format"])

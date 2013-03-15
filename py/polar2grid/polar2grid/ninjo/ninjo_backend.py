@@ -442,26 +442,6 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
 
     return
 
-def scale_data(image_data, data_kind, *args, **kwargs):
-    kwargs["fill_out"] = 0
-    if "fill" in kwargs:
-        kwargs["fill_in"] = kwargs["fill"]
-
-    if data_kind == DKIND_REFLECTANCE:
-        # Extra 100 to turn reflectance 0-1 into albedo
-        return unlinear_scale(image_data, 0.490196/100.0, 0, *args, **kwargs)
-    elif data_kind == DKIND_RADIANCE:
-        return unlinear_scale(image_data, 1/255.0, 0, *args, **kwargs)
-    elif data_kind == DKIND_BTEMP:
-        # Extra 273.15 to convert to C from K
-        return unlinear_scale(image_data, -0.5, 40+273.15, *args, **kwargs)
-    elif data_kind == DKIND_FOG:
-        # Extra 273.15 to convert to C from K
-        return unlinear_scale(image_data, -0.5, 40+273.15, *args, **kwargs)
-    else:
-        log.error("NinJo backend does not know how to scale data of kind %d" % data_kind)
-        raise ValueError("NinJo backend does not know how to scale data of kind %d" % data_kind)
-
 class Backend(roles.BackendRole):
     grid_config = {}
     band_config = {}
@@ -500,14 +480,14 @@ class Backend(roles.BackendRole):
                 fill_in=self.fill_in, fill_out=self.fill_out
                 )
 
-    def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
-        band_entry_id = _create_config_id(sat, instrument, kind, band, data_kind)
+    def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
+        band_entry_id = _create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind)
         if band_entry_id in self.band_config:
             return self.grid_config.keys()
         else:
             return []
 
-    def create_product(self, sat, instrument, kind, band, data_kind, data,
+    def create_product(self, sat, instrument, nav_set_uid, kind, band, data_kind, data,
             start_time=None, end_time=None, grid_name=None,
             output_filename=None, gpd_grid_info=None,
             fill_value=None):
@@ -539,7 +519,7 @@ class Backend(roles.BackendRole):
         # Create the filename if it wasn't provided
         if output_filename is None:
             output_filename = self.create_output_filename(self.output_pattern,
-                    sat, instrument, kind, band, data_kind,
+                    sat, instrument, nav_set_uid, kind, band, data_kind,
                     start_time  = start_time,
                     end_time    = end_time,
                     grid_name   = grid_name,
@@ -549,7 +529,7 @@ class Backend(roles.BackendRole):
                     )
 
         # Get information about the grid
-        band_entry_id = _create_config_id(sat, instrument, kind, band, data_kind)
+        band_entry_id = _create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind)
         band_config_entry = self.band_config[band_entry_id]
         sat_id            = band_config_entry["sat_id"]
         band_id           = band_config_entry["band_id"]
@@ -566,7 +546,7 @@ class Backend(roles.BackendRole):
         #ref_lat2          = gpd_grid_info.get("", None)
 
         # Rescale the data based on the configuration that was loaded earlier
-        data = self.rescaler(sat, instrument, kind, band, data_kind, data,
+        data = self.rescaler(sat, instrument, nav_set_uid, kind, band, data_kind, data,
                 fill_in=fill_in, fill_out=self.fill_out)
 
         # Create NinJo tiff

@@ -166,8 +166,8 @@ class RescalerRole(object):
         self.fill_in = fill_in or self.DEFAULT_FILL_IN
         self.fill_out = fill_out or self.DEFAULT_FILL_OUT
 
-    def _create_config_id(self, sat, instrument, kind, band, data_kind):
-        return "_".join([sat.lower(), instrument.lower(), kind.lower(), (band or "").lower(), data_kind.lower()])
+    def _create_config_id(self, sat, instrument, nav_set_uid, kind, band, data_kind):
+        return "_".join([sat.lower(), instrument.lower(), (nav_set_uid or "").lower(), kind.lower(), (band or "").lower(), data_kind.lower()])
 
     def load_config_str(self, config_str):
         """Just in case I want to have a config file stored as a string in
@@ -187,36 +187,38 @@ class RescalerRole(object):
             # Parse config lines
             for line in config_lines:
                 parts = [ part.strip() for part in line.split(",") ]
-                if len(parts) < 6:
+                if len(parts) < 7:
                     log.error("Rescale config line needs at least 6 columns : '%s'" % (line))
                     raise ValueError("Rescale config line needs at least 6 columns : '%s'" % (line))
 
                 # Verify that each identifying portion is valid
-                for i in range(6):
+                for i in range(7):
                     assert parts[i],"Field %d can not be empty" % i
                     # polar2grid demands lowercase fields
                     parts[i] = parts[i].lower()
 
                 # Convert band if none
-                if parts[3] == '' or parts[3] == "none":
-                    parts[3] = NOT_APPLICABLE
+                if parts[2] == '' or parts[2] == "none":
+                    parts[2] = NOT_APPLICABLE
+                if parts[4] == '' or parts[4] == "none":
+                    parts[4] = NOT_APPLICABLE
                 # Make sure we know the data_kind
-                if parts[4] not in SET_DKINDS:
-                    if parts[4] in self.known_data_kinds:
-                        parts[4] = self.known_data_kinds[parts[4]]
+                if parts[5] not in SET_DKINDS:
+                    if parts[5] in self.known_data_kinds:
+                        parts[5] = self.known_data_kinds[parts[5]]
                     else:
-                        log.warning("Rescaling doesn't know the data kind '%s'" % parts[4])
+                        log.warning("Rescaling doesn't know the data kind '%s'" % parts[5])
 
                 # Make sure we know the scale kind
-                if parts[5] not in self.known_rescale_kinds:
-                    log.error("Rescaling doesn't know the rescaling kind '%s'" % parts[5])
-                    raise ValueError("Rescaling doesn't know the rescaling kind '%s'" % parts[5])
-                parts[5] = self.known_rescale_kinds[parts[5]]
+                if parts[6] not in self.known_rescale_kinds:
+                    log.error("Rescaling doesn't know the rescaling kind '%s'" % parts[6])
+                    raise ValueError("Rescaling doesn't know the rescaling kind '%s'" % parts[6])
+                parts[6] = self.known_rescale_kinds[parts[6]]
                 # TODO: Check argument lengths and maybe values per rescale kind 
 
                 # Enter the information into the configs dict
-                line_id = self._create_config_id(*parts[:5])
-                config_entry = (parts[5], tuple(float(x) for x in parts[6:]))
+                line_id = self._create_config_id(*parts[:6])
+                config_entry = (parts[6], tuple(float(x) for x in parts[7:]))
                 self.config[line_id] = config_entry
         except StandardError:
             # Clear out the bad config
@@ -260,7 +262,7 @@ class RescalerRole(object):
         return self.load_config_str(config_str)
 
     @abstractmethod
-    def __call__(self, sat, instrument, kind, band, data_kind, data):
+    def __call__(self, sat, instrument, nav_set_uid, kind, band, data_kind, data):
         raise NotImplementedError("This function has not been implemented")
 
 class BackendRole(object):
@@ -270,7 +272,7 @@ class BackendRole(object):
     # default is none
     removable_file_patterns = []
 
-    def create_output_filename(self, pattern, sat, instrument, kind, band,
+    def create_output_filename(self, pattern, sat, instrument, nav_set_uid, kind, band,
             data_kind, **kwargs):
         """Helper function that will take common meta data and put it into
         the output filename pattern provided.  The ``*args`` arguments are
@@ -295,6 +297,7 @@ class BackendRole(object):
         Possible pattern keywords (\*created internally in this function):
             - sat             : identifier for the instrument's satellite
             - instrument      : name of the instrument
+            - nav_set_uid     : navigation set unique identifier
             - kind            : band kind
             - band            : band identifier or number
             - data_kind       : kind of data (brightness temperature, radiance, reflectance, etc.)
@@ -319,6 +322,7 @@ class BackendRole(object):
         >>> filename = backend.create_output_filename(pattern,
         ...     "npp",
         ...     "viirs",
+        ...     "i_nav",
         ...     "i",
         ...     "04",
         ...     "btemp",
@@ -366,6 +370,7 @@ class BackendRole(object):
             output_filename = pattern % dict(
                     sat            = sat,
                     instrument     = instrument,
+                    nav_set_uid    = nav_set_uid,
                     kind           = kind,
                     band           = band,
                     data_kind      = data_kind,

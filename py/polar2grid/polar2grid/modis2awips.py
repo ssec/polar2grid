@@ -119,7 +119,8 @@ def process_data_sets(nav_set_uid, filepaths,
     # Determine grids
     try:
         log.info("Determining what grids the data fits in...")
-        grid_jobs = create_grid_jobs(sat, instrument, band_info,
+        grid_jobs = create_grid_jobs(sat, instrument, nav_set_uid,
+                band_info,
                 backend, cart,
                 forced_grids=forced_grid,
                 fbf_lat=flatbinaryfilename_lat, fbf_lon=flatbinaryfilename_lon)
@@ -163,6 +164,7 @@ def process_data_sets(nav_set_uid, filepaths,
                 backend.create_product(
                         sat,
                         instrument,
+                        nav_set_uid,
                         band_kind,
                         band_id,
                         band_dict["data_kind"],

@@ -197,7 +197,7 @@ class Backend(roles.BackendRole):
                 inc_by_one=inc_by_one
                 )
 
-    def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
+    def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
         """Function for backend-calling script to ask if the backend
         will be able to handle the data that will be processed.
         For the geotiff backend it can handle any kind or band with a proj4
@@ -208,7 +208,7 @@ class Backend(roles.BackendRole):
         """
         return GRIDS_ANY_PROJ4
 
-    def create_product(self, sat, instrument, kind, band, data_kind, data,
+    def create_product(self, sat, instrument, nav_set_uid, kind, band, data_kind, data,
             start_time=None, end_time=None, grid_name=None,
             proj4_str=None, grid_origin_x=None, grid_origin_y=None,
             pixel_size_x=None, pixel_size_y=None,
@@ -268,7 +268,7 @@ class Backend(roles.BackendRole):
         # Create the filename if it wasn't provided
         if output_filename is None:
             output_filename = self.create_output_filename(self.output_pattern,
-                    sat, instrument, kind, band, data_kind,
+                    sat, instrument, nav_set_uid, kind, band, data_kind,
                     start_time  = start_time,
                     end_time    = end_time,
                     grid_name   = grid_name,
@@ -278,7 +278,7 @@ class Backend(roles.BackendRole):
                     )
 
         # Rescale the data based on the configuration that was loaded earlier
-        data = self.rescaler(sat, instrument, kind, band, data_kind, data,
+        data = self.rescaler(sat, instrument, nav_set_uid, kind, band, data_kind, data,
                 fill_in=fill_in, fill_out=self.fill_out, inc_by_one=inc_by_one)
         # If the data is incremented by one the data filters in create_geotiff
         # will cause the fill value to be set to zero (so positive fills won't
