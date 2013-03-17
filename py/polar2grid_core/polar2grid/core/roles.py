@@ -398,7 +398,7 @@ class BackendRole(object):
         return output_filename
 
     @abstractmethod
-    def can_handle_inputs(self, sat, instrument, kind, band, data_kind):
+    def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
         """Function that returns the grids that it will be able to handle
         for the data described by the arguments passed.  It returns either
         a list of grid names (that must be defined in grids.conf) or it
@@ -413,7 +413,7 @@ class BackendRole(object):
         return []
 
     @abstractmethod
-    def create_product(self, sat, instrument, kind, band, data_kind,
+    def create_product(self, sat, instrument, nav_set_uid, kind, band, data_kind,
             start_time=None, end_time=None, grid_name=None,
             output_filename=None):
         raise NotImplementedError("This function has not been implemented")

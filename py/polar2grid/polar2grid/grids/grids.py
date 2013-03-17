@@ -451,10 +451,10 @@ def create_grid_jobs(sat, instrument, nav_set_uid, bands, backend, cart,
     do_grid_deter = False
     grids = []
     all_useful_grids = []
-    if None in forced_grids or forced_grids is None:
+    if forced_grids is None or None in forced_grids:
         # The user wants grid determination
         do_grid_deter = True
-        if None in forced_grids: forced_grids.remove(None)
+        if isinstance(forced_grids, list) and None in forced_grids: forced_grids.remove(None)
 
     if forced_grids is not None:
         if isinstance(forced_grids, list): grids = forced_grids
