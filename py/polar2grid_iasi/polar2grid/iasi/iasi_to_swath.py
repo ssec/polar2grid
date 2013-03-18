@@ -1,7 +1,21 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
-CrIS SDR front end for polar2grid, which extracts band-pass slices of brightness temperature data.
+Extract IASI data to flat binary files in a similar form to AIRS ROK MATLAB script.
+
+spectralFreq.real4.WWWW # wavenumbers
+radiances.real4.WWWW # radiance data
+time.real4       # time of day in decimal hours?
+latitude.real4   # latitude in northward degrees
+longitude.real4  # longitude in eastward degrees
+scanAng.real4
+landFrac.real4
+elevation.real4  # -optional elevation (units?)
+solar_zenith_angle # degrees
+satellite_zenith_angle # degrees
+solar_azimuth_angle # degrees
+satellite_azimuth_angle # degrees
+
 
 :author:       Ray Garcia (rayg)
 :contact:      rayg@ssec.wisc.edu
@@ -34,193 +48,377 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
 __docformat__ = "restructuredtext en"
 
+
+# Much of this is from metahoard.iasi.tools
+
 import h5py, numpy as np, glob, os, sys, logging
-from collections import namedtuple
+from collections import namedtuple, defaultdict
+import calendar, re
+from datetime import datetime
+from collections import defaultdict
+from pprint import pformat
+from numpy import exp,log,array,arange,empty,float32,float64,sin,linspace,concatenate,repeat,reshape,rollaxis
 
 from polar2grid.core.roles import FrontendRole
 from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
 
+
+
 LOG = logging.getLogger(__name__)
 
+import polar2grid.iasi.tools as iasi
 
-# reshape 4d array of rad into a 3d array by unpacking the FOV dimension (9 detectors)
-def reshape_rad(rad_4d):
-    shape_4d = rad_4d.shape
-    shape_3d = (shape_4d[0] * 3, shape_4d[1] * 3, shape_4d[3])  # same size
-    rad_3d = np.zeros(shape=shape_3d, dtype=rad_4d.dtype)
 
-    for j in range(0, shape_4d[0]):  # 0:4
-        for i in range(0, shape_4d[1]):  # 0:30
-            rad_3d[ j*3:j*3+3, i*3:i*3+3, : ] = rad_4d[j,i,:,:].reshape((3,3,shape_4d[3]))
+# conversion functions to get numpy arrays from iasi record fields
+def real4sfromarray(x): return numpy.array(x,numpy.float32)
+def int4sfromarray(x): return numpy.array(x,numpy.int32)
+def real8sfromarray(x): return numpy.array(x,numpy.float64)
+def real4fromvalue(x): return numpy.array([x],numpy.float32)
+def real4sfromdatetimes(L):
+    return numpy.array([x.hour + x.minute/60. + x.second/3600. + x.microsecond/3.6e9 for x in L],numpy.float32)
 
-    return rad_3d
-
-def reshape_geo(geo_3d):
-    shape_3d = geo_3d.shape
-    shape_2d = (shape_3d[0] * 3, shape_3d[1] * 3)  # same size
-    geo_2d = np.zeros(shape=shape_2d, dtype=geo_3d.dtype)
-
-    for j in range(0, shape_3d[0]):  # 0:4
-        for i in range(0, shape_3d[1]):  # 0:30
-            geo_2d[ j*3:j*3+3, i*3:i*3+3] = geo_3d[j,i,:].reshape((3,3))
-
-    return geo_2d
-
-CrisSwath = namedtuple('Swath', 'lat lon rad_lw rad_mw rad_sw paths')
-
-def cris_swath(*sdr_filenames, **kwargs):
-    """Load a swath from a series of input files.
-    If given a directory name, will load all files in the directory and sort them into lex order.
-    returns CrisSwath
+# FUTURE: make this into a generic fbf_writer that takes the table as a constructor parameter; add to fbf toolbox
+class fbf_writer(object):
+    """A class capable of writing a series of records to a flat binary directory
     """
-    # open a directory with a pass of CSPP SDR files in time order
-    if len(sdr_filenames)==1 and os.path.isdir(sdr_filenames[0]):
-        sdr_filenames = glob.glob(os.path.join(sdr_filenames[0], 'SCRIS*'))
-    sdr_filenames = list(sorted(sdr_filenames))
 
-    if len (sdr_filenames) == 0 :
-        LOG.warn( "No inputs")
-        return None
+    _base = None # directory name which we're writing
+    _ignore = [] # list/set of names which we don't want written
+    _files = { } # currently open file objects
+    _info = { }  # info on which fields go to which files
 
-    sdrs = [h5py.File(filename,'r') for filename in sdr_filenames]
+    def __init__(self,info,output_directory_name,comment='',ignore=[]):
+        if not os.path.isdir(output_directory_name): os.makedirs(output_directory_name)
+        self._info = info
+        self._base = output_directory_name
+        self._ignore = ignore
+        self._files = { }
+        self._create_metadata(comment)
 
-    imre = 'ES_Imag' if kwargs.get('imaginary',None) else 'ES_Real'
+    def _create_metadata(self,comment):
+        """ write version / tracking / log metadata to the output directory
+        """
+        if comment:
+            fp = file(os.path.join(self._base,'README.txt'),'wt')
+            print >>fp, CVSID
+            print >>fp, iasi.CVSID
+            print >>fp, comment
 
-    # read all unscaled BTs, and their scaling slope and intercept
-    rad_lw = np.concatenate([reshape_rad(f['All_Data']['CrIS-SDR_All'][imre+'LW'][:,:,:,:]) for f in sdrs])
-    rad_mw = np.concatenate([reshape_rad(f['All_Data']['CrIS-SDR_All'][imre+'MW'][:,:,:,:]) for f in sdrs])
-    rad_sw = np.concatenate([reshape_rad(f['All_Data']['CrIS-SDR_All'][imre+'SW'][:,:,:,:]) for f in sdrs])
+    @staticmethod
+    def endian(ext):
+        "change the case of the extension string based on system endianness"
+        return ext.lower() if sys.byteorder=='little' else ext.upper()
 
-    # FUTURE: handle masking off missing values
+    def _create(self, stem, ext, data):
+        "create a binary output file if it doesnt exist -- use array shape in filename if needed"
+        if hasattr(data,'shape') and getattr(data,'size',1)>1:
+            dimsum = ['.%d' % x for x in data.shape]
+            dimsum.reverse()
+            shape = ''.join(dimsum)
+        else:
+            shape = ''
+        filename = os.path.join(self._base, stem + self.endian(ext) + shape)
+        log.debug("creating %s..." % filename)
+        return file(filename, 'wb')
 
-    # load latitude and longitude arrays
-    def _(pn,hp):
-        dirname = os.path.split(pn)[0]
-        LOG.debug('reading N_GEO_Ref from %s' % pn)
-        return os.path.join(dirname, hp.attrs['N_GEO_Ref'][0][0])
-    geo_filenames = [_(pn,hp) for pn,hp in zip(sdr_filenames,sdrs)]
-    geos = [h5py.File(filename, 'r') for filename in list(geo_filenames)]
+    def _append(self,key,data):
+        "append a record to the named output key, creating files as needed"
+        stem, ext, cvt = self._info[key]
+        if not stem: stem = key
+        # see if we need to open the output file
+        if key not in self._files:
+            fp = self._create(stem, ext, data)
+            self._files[key] = fp
+        else:
+            fp = self._files[key]
+        # reformat the data as the intended type and write the next record
+        reform = cvt(data)
+        log.debug('writing a record of %s' % key)
+        reform.tofile(fp)
 
-    lat = np.concatenate([reshape_geo(f['All_Data']['CrIS-SDR-GEO_All']['Latitude'][:,:,:]) for f in geos])
-    lon = np.concatenate([reshape_geo(f['All_Data']['CrIS-SDR-GEO_All']['Longitude'][:,:,:]) for f in geos])
+    def write_image(self,stem,suffix,data):
+        "write a record which contains, for instance, an entire image block"
+        if stem not in self._files:
+            fp = self._create(stem,suffix,data)
+            self._files[stem] = fp
+        data.tofile( fp )
 
-    rad_lw[rad_lw <= -999] = np.nan
-    rad_mw[rad_mw <= -999] = np.nan
-    rad_sw[rad_sw <= -999] = np.nan
-    lat[lat <= -999] = np.nan
-    lon[lon <= -999] = np.nan
+    def write_ancillary(self,stem,suffix,data):
+        "write a single record to a file the first time the file is encountered"
+        if stem not in self._files:
+            fp = self._create(stem,suffix,data)
+            self._files[stem] = fp
+            data.tofile( fp )
 
-    return CrisSwath(lat=lat, lon=lon, rad_lw = rad_lw, rad_mw = rad_mw, rad_sw = rad_sw, paths=sdr_filenames)
+    def __call__(self,record):
+        for field_name in self._info.keys():
+            if field_name not in self._ignore:
+                self._append(field_name, getattr(record,field_name))
+
+
+# example dictionary in cloud_dict
+# (22,29,2):
+# {'clear_percent': 0.0,
+#  'cloudy_percent': 100.0,
+#  'day_time': 0,
+#  'detector_index': 2,
+#  'field_index': 29,
+#  'field_of_regard_time': 14216774,
+#  'layer_count': 6.0,
+#  'satellite_latitude': -69.090000000000003,
+#  'satellite_longitude': -38.310000000000002,
+#  'satellite_zenith_angle': 56.899999999999999,
+#  'scan_line': 22,
+#  'surface_pressure': 978.75999999999999,
+#  'surface_temp': 258.38,
+#  'surface_type': 0,
+#  'twometer_temp': 258.23000000000002,
+#  'when': datetime.datetime(2008, 6, 5, 3, 56, 56, 774000)},
+
+class iasi_record_fbf_writer(fbf_writer):
+
+    _detector_number = None # which detector we're writing out, if any (None implies all-detectors)
+
+    # filename and data type table, noting that keys are common between the iasi_record and this table
+    # we need the data types in order to use numpy to force the raw data into the right format
+    IASI_FBF_FILENAMES = {  'radiances':    (None, '.real4', real4sfromarray), # by default None implies key is used as stem
+                            'latitude':     (None, '.real4', real4fromvalue),
+                            'longitude':    (None, '.real4', real4fromvalue),
+                            'detector_number':    (None, '.real4', real4fromvalue),
+                            'scan_number':    (None, '.real4', real4fromvalue),
+                            'time':         (None, '.real4', real4sfromdatetimes),
+                            'epoch':        (None, '.real8', real8sfromarray),
+                            'metop_zenith_angle': (None, '.real4', real4sfromarray),
+                            'metop_azimuth_angle': (None, '.real4', real4sfromarray),
+                            'sun_zenith_angle': (None, '.real4', real4sfromarray),
+                            'sun_azimuth_angle': (None, '.real4', real4sfromarray),
+                            }
+    # data values only available when we merge in MAIA output dictionaries from secondary files
+    CLOUD_FBF_FILENAMES = { 'clear_percent': (None, '.real4', real4sfromarray),
+                            'cloudy_percent': (None, '.real4', real4sfromarray),
+                            'day_time': (None, '.real4', real4sfromarray),
+                            'surface_pressure': (None, '.real4', real4sfromarray),
+                            'surface_temp': (None, '.real4', real4sfromarray),
+                            'twometer_temp': (None, '.real4', real4sfromarray),
+                            'surface_type': (None, '.real4', real4sfromarray)
+                            }
+
+    # data values added Nov 2009 by Hong Zhang
+    # python -c "import re,sys; print '\n'.join(re.findall(r'self\.(\w+)', sys.stdin.read()))"
+    # python -c "import re,sys; print '\n'.join(['\'%s\': (None, \'.real4\', real4sfromarray)'%s for s in re.findall(r'self\.(\w+)', sys.stdin.read())])" </tmp/foo
+    PAR_MAIA_FBF_FILENAMES  = { 'cluster_ccsi_flag': (None, '.int4', int4sfromarray),
+                                'cluster_surface_temp': (None, '.real4', real4sfromarray),
+                                'cluster_skin_temp': (None, '.real4', real4sfromarray),
+                                'cluster_cwv': (None, '.real4', real4sfromarray),
+                                'cluster_surface_altitude': (None, '.real4', real4sfromarray),
+                                'cluster_surface_type': (None, '.int4', int4sfromarray),
+                                'cluster_cloud_type': (None, '.int4', int4sfromarray),
+                                'cluster_blackbody_flag': (None, '.int4', int4sfromarray),
+                                'cluster_blackbody_top_cloud_temp': (None, '.real4', real4sfromarray),
+                                'cluster_specular_reflection': (None, '.real4', real4sfromarray),
+                                'cluster_clear_cloudy_marine_flag': (None, '.int4', int4sfromarray),
+                                'cluster_ts_background': (None, '.int4', int4sfromarray),
+                                'cluster_wv_content': (None, '.int4', int4sfromarray),
+                                'cluster_day_time': (None, '.int4', int4sfromarray),
+                                'cluster_quality_flag': (None, '.int4', int4sfromarray)
+                                }
+
+    IASI_FBF_FILENAMES.update( dict( (s,(None,'.real4',real4sfromarray)) for s in iasi.CLOUD_MASK_PRODUCTS ) )
+
+    def __init__(self,output_directory_name,detector_number,comment='',ignore=[],use_cloud=False,use_clusters=False):
+        inventory = dict(self.IASI_FBF_FILENAMES)
+        if use_cloud: inventory.update(self.CLOUD_FBF_FILENAMES)
+        if use_clusters: inventory.update(self.PAR_MAIA_FBF_FILENAMES)
+        fbf_writer.__init__(self,inventory,output_directory_name,comment,ignore)
+        self._detector_number = detector_number
+
+    def write_iis(self,iis):
+        self.write_image('GIrcImage','.real4',real4sfromarray(iis.GIrcImage))
+
+    def write_wavenumbers(self,wnums):
+        self.write_ancillary('wavenumbers','.real8',wnums)
 
 
 
-DEFAULT_PNG_FMT = 'cris_%(channel)s.png'
-DEFAULT_LABEL_FMT = 'CrIS BT %(channel)s %(date)s.%(start_time)s-%(end_time)s'
 
-# name, lwrange, mwrange, swrange
-# LW, 900-905 cm-1:
-# wn_lw indices (403 thru 411)
-#
-# MW, 1598-1602 cm-1:
-# wn_mw indices (314 thru 316)
-#
-# SW, 2425-2430 cm-1:
-# wn_sw indices (111 thru 113)
+def cloud_mask_dict(cloud_list):
+    "convert MAIA cloud mask list of dictionaries to a dictionary of dictionaries keyed from (scanline,fieldofregard,detector) tuples"
+    keys = [(x['scan_line'], x['field_index'], x['detector_index']) for x in cloud_list]
+    return dict( zip(keys,cloud_list) )
 
-CHANNEL_TAB = [ ('lw_900_905', 'rad_lw', 402, 411),
-                ('mw_1598_1602', 'rad_mw', 313, 316),
-                ('sw_2425_2430', 'rad_sw', 110, 113)
-              ]
+def cloud_mask_load(pathname):
+    "return dictionary of cloud mask data for use in iasi_tools"
+    if pathname.endswith('.txt'):
+        from metahoard.iasi.cloud_extract import read_maia_file
+        return cloud_mask_dict( vars(x) for x in read_maia_file(pathname) )
+    else:
+        from cPickle import load
+        leest = load( file( pathname, 'rb' ) )
+        return cloud_mask_dict(leest)
 
-# from DCTobin, DHDeslover 20120614
-wnLW = np.linspace(650-0.625*2,1095+0.625*2,717);
-wnMW = np.linspace(1210-1.25*2,1750+1.25*2,437);
-wnSW = np.linspace(2155-2.50*2,2550+2.50*2,163);
+def _cloud_mask_has_clusters(cmdict):
+    "return whether cloud mask includes cluster_* fields"
+    for d in cmdict.values(): # FUTURE: is there a better way to do this?
+        if 'par_maia' in d: return True
+        return False
 
-WN_TAB = {  'rad_lw' : wnLW,
-            'rad_mw' : wnMW,
-            'rad_sw' : wnSW
+def extract_sounding(output_directory, detector_number=None, as_scan_lines=True, use_cloud=False, cloud_mask_pathname=None, lines=None, iis_images=False, ignore=[], *filenames):
+    """ iterate through all the records for a given detector for a series of files, writing them to flat binary
+    """
+    log.info("creating %s..." % output_directory)
+    rec_num = 0
+    if detector_number is None:
+        detector_info = "all detectors"
+    else:
+        detector_info = "detector %d" % detector_number
+    comment = """Data extraction from %s for %s""" % (`filenames`, detector_info)
+    write = None # delay creation until we have first file open
+
+    for filename in filenames:
+
+        filename = filename if not '*' in filename else glob.glob(filename)[0]
+        log.info("processing %s..." % filename)
+
+        cloud_dict = None
+        has_clusters = False
+        if use_cloud or cloud_mask_pathname:
+            if not cloud_mask_pathname:
+                dn,fn = os.path.split(filename)
+                cn = os.path.join(dn,'mask_%s.pickle' % fn)
+            else:
+                cn = cloud_mask_pathname
+                use_cloud = True
+            log.debug("reading cloud data from %s" % cn)
+            assert( os.path.exists(cn) )
+            cloud_dict = cloud_mask_load(cn)
+            has_clusters = _cloud_mask_has_clusters(cloud_dict) # check or extended information from par_maia
+
+        if write is None:
+            write = iasi_record_fbf_writer(output_directory, detector_number, comment, ignore=ignore, use_cloud=use_cloud, use_clusters=has_clusters)
+
+        prod = eugene.Product(filename)
+        if not as_scan_lines:
+            datagen = iasi.sounder_records(prod, detector_number, lines, cloud_dict = cloud_dict)
+        else:
+            datagen = iasi.sounder_scanlines(prod, detector_number, lines, cloud_dict = cloud_dict)
+        if iis_images:
+            tiles = iasi.imager_tiles(prod)
+            log.debug("writing IIS tiles %s as one record" % str(tiles.GIrcImage.shape))
+            write.write_iis(tiles)
+        for record in datagen:
+            log.debug(str(record))
+            write( record )
+            write.write_wavenumbers(record.wavenumbers) # only does it once
+            rec_num += 1
+            print 'wrote %5d records..   \r' % rec_num,
+            sys.stdout.flush()
+    print "\ndone!"
+
+
+
+
+# EUGENE KEY: ( fbf-stem, fbf-type, conversion-function, scaling-factor, units, is-single-level )
+FIELD_LIST={'ATMOSPHERIC_TEMPERATURE': ('T', '.real4', real4sfromarray, 2, 'K', False),
+            'ATMOSPHERIC_WATER_VAPOUR': ('wv', '.real4', real4sfromarray, 6, 'kg/kg', False),
+            'ATMOSPHERIC_OZONE': ('oz', '.real4', real4sfromarray, 7, 'kg m-2', False),
+            'INTEGRATED_OZONE': ('integrated_oz', '.real4', real4sfromarray, 7, "kg m-2", True),
+            'SURFACE_TEMPERATURE': ('surface_temp', '.real4', real4sfromarray, 2, "K", False),
+            'INEGRATED_N2O': ('integrated_N2O', '.real4', real4sfromarray, 7, "kg m-2", True),
+            'INTEGRATED_CO': ('integrated_CO', '.real4', real4sfromarray, 7, "kg m-2", True),
+            'INTEGRATED_CH4': ('integrated_CH4', '.real4', real4sfromarray, 5, "kg m-2", True),
+            'INTEGRATED_CO2': ('integrated_CO2', '.real4', real4sfromarray, 3, "kg m-2", True),
+            'SURFACE_EMISSIVITY': ('surface_emiss', '.real4', real4sfromarray, 4, "ratio", False),
+            'FRACTIONAL_CLOUD_COVER': ('cloud_cover_fraction', '.real4', real4sfromarray, 2, "%", False),
+            'CLOUD_TOP_TEMPERATURE': ('cloud_top_temp', '.real4', real4sfromarray, 2, "K", False),
+            'CLOUD_TOP_PRESSURE': ('cloud_top_press', '.real4', real4sfromarray, 0, "Pa", False),
+            'CLOUD_PHASE': ('cloud_phase', '.real4', real4sfromarray, 0, "0:none 1:liquid 2:ice 3:mixed", False),
+            'SURFACE_PRESSURE': ('surface_press', '.real4', real4sfromarray, 0, "Pa", True),
+            'FLG_IASICLD': ('is_cloud', '.int4', int4sfromarray, 0, "boolean", True),
+            'FLG_IASICLR': ('scene_type', '.int4', int4sfromarray, 0, "clear / partly cloudy / cloudy", True),
+            'FLG_ITCONV': ('is_retrieval_converged', '.int4', int4sfromarray, 0, "boolean", True),
+            'FLG_IASIBAD': ('is_bad_spectra', '.int4', int4sfromarray, 0, "boolean", True),
+            'FLG_CLDSUM': ('instruments_seeing_clouds', '.int4', int4sfromarray, 0, "enumeration", True),
+            'FLG_CLDFRM': ('cloud_formations_count', '.int4', int4sfromarray, 0, "count", True),
             }
 
-h = 6.62606876E-34  # Planck constant in Js
-c = 2.99792458E8   # photon speed in m/s
-k = 1.3806503E-23   # Boltzmann constant in J/K
-
-c1 = 2*h*c*c*1e11
-c2 = h*c/k*1e2
-
-def rad2bt(freq, radiance):
-    return c2 * freq / (np.log(1.0 + c1 * (freq ** 3) / radiance))
-
-# FUTURE: BTCHAN, BT_CHANNEL_NAMES, rad2bt, bt_slices_for_band
-# should be promoted to a common module between instrument systems.
-# FUTURE: wn_W should be put in a common cris module
 
 
-# default channels for GlobalHawk - from ifg.rsh2dpl.bt_swath
-BTCHAN = (  (690.4, 699.6),
-            (719.4, 720.8),
-            (730.5, 739.6),
-            (750.2, 770),
-            (815.3, 849.5),
-            (895.3, 905.0),
-            (1050.1, 1059.8),
-            (1149.4, 1190.4),
-            (1324, 1326.4),
-            (1516.4, 1517.8),
-            (1579, 1612.8),
-            (2010.1, 2014.9),
-            (2220.3, 2224.6),
-            (2500.4, 2549.6)     )
-BT_CHANNEL_NAMES =  ['BT_%d_%d' % (int(np.floor(left_wn)), int(np.ceil(right_wn))) for (left_wn, right_wn) in BTCHAN]
+class iasi_retrieval_fbf_writer(fbf_writer):
+    # FUTURE: move this information to iasi_tools - especially units and scaling factors!
 
-# FUTURE: realistic spectral response functions are needed
-VIIRS_BTCHAN = ( (800.641, 866.551),  # M16 in LW
-                 (888.099, 974.659),  # M15 in LW
-                 (2421.308, 2518.892), # M13 in SW
-                 (806.452, 952.381)    # I05 in LW
-               )
-VIIRS_BT_CHANNEL_NAMES = ('M16', 'M15', 'M13', 'I05')
+    def __init__(self, output_directory_name, comment='', ignore=[]):
+        NFO = dict( (x,y[0:3]) for x,y in FIELD_LIST.items() )
+        NFO['lat'] = ('latitude', '.real4', real4sfromarray)
+        NFO['lon'] = ('longitude', '.real4', real4sfromarray)
+        NFO['detector_number'] = ('detector_number', '.int4', int4sfromarray)
+        NFO['line_number'] = ('line_number', '.int4', int4sfromarray)
+        NFO['field_number']= ('field_number', '.int4', int4sfromarray)
 
-ALL_CHANNELS = tuple(BTCHAN) + VIIRS_BTCHAN
-ALL_CHANNEL_NAMES = tuple(BT_CHANNEL_NAMES) + VIIRS_BT_CHANNEL_NAMES
+        NFO['solzen'] = ('solar_zenith_angle', '.real4', real4sfromarray)
+        NFO['solaz'] = ('solar_azimuth_angle', '.real4', real4sfromarray)
+        NFO['satzen'] = ('satellite_zenith_angle', '.real4', real4sfromarray)
+        NFO['sataz'] = ('satellite_azimuth_angle', '.real4', real4sfromarray)
 
+        NFO['refTimeUsec'] = ('refTimeUsec', '.int4', int4sfromarray)
+        NFO['refTimeSec'] = ('refTimeSec', '.int4', int4sfromarray)
+        NFO['refTimeDay'] = ('refTimeDay', '.int4', int4sfromarray)
+        NFO['refTimeMonth'] = ('refTimeMonth', '.int4', int4sfromarray)
+        NFO['refTimeYear'] = ('refTimeYear', '.int4', int4sfromarray)
 
-def bt_slices_for_band(wn, rad, channels = ALL_CHANNELS, names=ALL_CHANNEL_NAMES):
-    "reduce channels to those available within a given band, return them as a dict"
-    nsl, nfov, nwn = rad.shape
-    bt = rad2bt(wn, rad.reshape((nsl*nfov, nwn)))
-    snx = [(s,n,x) for (s,(n,x)) in zip(names,channels) if (n >= wn[0]) and (x < wn[-1])]
-    nam = [s for (s,_,_) in snx]
-    chn = [(n,x) for (_,n,x) in snx]
-    LOG.debug(repr(nam))
-    LOG.debug(repr(chn))
-    swaths = [x.reshape((nsl,nfov)) for (x,_) in bt_swaths(wn, bt, chn)]
-    return dict(zip(nam,swaths))
+        fbf_writer.__init__(self,NFO,output_directory_name,comment,ignore)
+
+    def write_levels(self,ancil):
+        self.write_ancillary('T_pressure_levels','.real4',real4sfromarray(ancil['PRESSURE_LEVELS_TEMP']))
+        self.write_ancillary('wv_pressure_levels','.real4',real4sfromarray(ancil['PRESSURE_LEVELS_HUMIDITY']))
+        self.write_ancillary('oz_pressure_levels','.real4',real4sfromarray(ancil['PRESSURE_LEVELS_OZONE']))
+        self.write_ancillary('surface_emiss_wavelengths','.real8',real8sfromarray(ancil['SURFACE_EMISSIVITY_WAVELENGTHS']))
 
 
-def cris_bt_slices(rad_lw, rad_mw, rad_sw):
-    zult = dict()
-    zult.update(bt_slices_for_band(wnLW, rad_lw))
-    zult.update(bt_slices_for_band(wnMW, rad_mw))
-    zult.update(bt_slices_for_band(wnSW, rad_sw))
-    return zult
+def datetime_shatter( whens ):
+    "split an array of datetime objects into component arrays of microseconds, second-of-day, day, month, year"
+    whens = numpy.array(whens)
+    shape = whens.shape
+    count = whens.size
 
+    def emptor(*junk): return numpy.empty( (count,), dtype=numpy.int32 )
+    us,s,d,m,y = map( emptor, range(5) )
 
-def write_arrays_to_fbf(nditer):
-    """
-    write derived BT slices to CWD from an iterable yielding (name, data) pairs
-    """
-    for name,data in nditer:
-        rows,cols = data.shape
-        suffix = '.real4.%d.%d' % (cols, rows)
-        fn = name + suffix
-        LOG.debug('writing to %s...' % fn)
-        if data.dtype != np.float32:
-            data = data.astype(np.float32)
-        with file(fn, 'wb') as fp:
-            data.tofile(fp)
+    for dex,when in enumerate( whens.flatten() ):
+        us[dex] = when.microsecond
+        s[dex] = when.second + when.minute*60 + when.hour*3600
+        d[dex] = when.day
+        m[dex] = when.month
+        y[dex] = when.year
 
+    return us.reshape(shape), s.reshape(shape), d.reshape(shape), m.reshape(shape), y.reshape(shape)
+
+class retrieval_record(object):
+    pass
+
+def extract_retrieval(output_directory, ignore=[], *filenames):
+    comment = """Data extraction from %s\nPressure levels are in Pa\n""" % (`filenames`)
+    for (key,(stem,_,_,sf,units,_)) in FIELD_LIST.items():
+        comment += '%s (%s): from %s\n' % (stem,units,key)
+    write = iasi_retrieval_fbf_writer(output_directory, comment, ignore=ignore)
+    for filename in filenames:
+        log.info('processing %s...' % filename)
+        prod = iasi.open_product(filename)
+        ancil = iasi.retrieval_read_ancillary(prod)
+        write.write_levels(ancil) # only writes for first file
+        data = retrieval_record()
+        for (key,(stem,_,_,sf,units,onelevel)) in FIELD_LIST.items():
+            log.info("reading %s as %s..." % (key,stem))
+            # read that field in for the whole file, noting that integrated quantities are single-level
+            # note that INEGRATED_N2O is for real (dammit guys)
+            # apply scaling factor
+            field =  iasi.retrieval_read(prod, key, single_level=onelevel)
+            setattr(data, key, field.squeeze())
+        data.lat, data.lon = iasi.retrieval_read_location(prod)
+        data.line_number, data.field_number, data.detector_number = iasi.retrieval_sfd(prod)
+        data.solzen, data.satzen, data.solaz, data.sataz = iasi.retrieval_read_orientation(prod)
+        data.refTimeUsec, data.refTimeSec, data.refTimeDay, data.refTimeMonth, data.refTimeYear = datetime_shatter(list(iasi.retrieval_read_fov_times(prod)))
+        log.debug("writing record...")
+        write(data)
 
 
 def generate_metadata(swath, bands):
@@ -231,7 +429,7 @@ def generate_metadata(swath, bands):
 
 
 # FUTURE: add a way to configure which slices to produce, or all by default
-class CrisSdrFrontend(FrontendRole):
+class IasiSdrFrontend(FrontendRole):
     """
     """
     info = None
@@ -253,6 +451,97 @@ class CrisSdrFrontend(FrontendRole):
         write_arrays_to_fbf(bands.items())
         self.info = generate_metadata(swath, bands)
         return self.info
+
+
+def main():
+    import optparse
+    usage = """usage: %prog [options] list-of-input-files
+$Id: fbf.py 51 2011-05-27 20:06:46Z rayg $
+This program extracts IASI data to flat binary files using the EUGENE toolkit.
+It can output in two main geometries: record-by-record or scan-lines (-L option)
+In scan-line mode, data is presented geographically contiguously.
+If all detectors are requested, the detectors are geographically deinterleaved
+to create 'pseudo-scan-lines', each containing two of the four detectors.
+UNIX epoch time is included in the output, as well as detector number and scan number.
+Unless otherwise specified, output is zero-based instead of one-based.
+"""
+    logging.basicConfig()
+
+    parser = optparse.OptionParser(usage)
+    parser.add_option('-t', '--test', dest="self_test",
+                    action="store_true", default=False, help="run self-tests")
+    parser.add_option('-d', '--detector', dest="detector", type="int", default=None,
+                    help="optional: detector number, 0..3; default is all detectors")
+    parser.add_option('-L', '--lines', dest='lines', default=False, action='store_true',
+                    help="optional: enable extraction of a scan line at a time (three dimensional output)")
+    parser.add_option('-R', '--no-radiances', dest='no_radiances', default=False, action='store_true',
+                    help="optional: disable output of radiance data")
+    parser.add_option('-S', '--scans', dest='scans', default=None,
+                    help="optional: range of scan lines to export, starting from 0 e.g. -S 0-13")
+    parser.add_option('-T', '--retrieval', dest='retrieval', default=False, action='store_true',
+                    help='extract from a SND format retrieval file')
+    parser.add_option("-C", "--cloud", dest="read_cloud_mask_files", default=False, action='store_true',
+                    help="look for mask_*.pickle files with cloud mask data (see iasi_cloud_extract)")
+    parser.add_option("-M", "--iasimask", dest="cloud_mask_filename",
+                    help="cloud mask file to load e.g. iasimask_*.txt")
+    parser.add_option("-I", "--iis", dest="iis_tiles", default=False, action='store_true',
+                    help="include IIS 64x64 image tiles in output dimensioned as [scanline,field,x,y]")
+    parser.add_option("-o", "--output", dest="output",
+                    help="required: output directory name (will be created)")
+    parser.add_option('-v', '--verbose', dest="verbose",
+                    action="store_true", default=False, help="enable debug output")
+    parser.add_option('-q', '--quiet', dest="quiet",
+                    action="store_true", default=False, help="only warning and error output")
+    (options, args) = parser.parse_args()
+
+    lvl = logging.INFO
+    if options.verbose: lvl = logging.DEBUG
+    elif options.quiet: lvl = logging.WARNING
+    log.setLevel(lvl)
+
+    if options.self_test:
+        import doctest
+        doctest.testmod()
+        sys.exit(2)
+
+    if len(args) < 1 or not options.output:
+        parser.error("incorrect arguments. try --help or -h")
+    else:
+        if options.scans is not None:
+            lal = [int(x) for x in options.scans.split('-')]
+            first,last = lal[0], lal[-1]
+            scans = range(first,last+1)
+        else:
+            scans = None
+        ignore = set()
+        if options.no_radiances: ignore.add('radiances')  # prevents radiances files from being created in FBF writer
+
+        if not options.retrieval:
+            extract_sounding( options.output, options.detector, options.lines,
+                                options.read_cloud_mask_files, options.cloud_mask_filename,
+                                scans, options.iis_tiles, ignore, *args )
+        else:
+            assert( options.read_cloud_mask_files != True )
+            extract_retrieval( options.output, ignore, *args )
+
+
+
+def write_arrays_to_fbf(nditer):
+    """
+    write derived BT slices to CWD from an iterable yielding (name, data) pairs
+    """
+    for name,data in nditer:
+        rows,cols = data.shape
+        suffix = '.real4.%d.%d' % (cols, rows)
+        fn = name + suffix
+        LOG.debug('writing to %s...' % fn)
+        if data.dtype != np.float32:
+            data = data.astype(np.float32)
+        with file(fn, 'wb') as fp:
+            data.tofile(fp)
+
+
+
 
 
 def main():
