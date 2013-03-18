@@ -127,7 +127,7 @@ DEFAULT_LABEL_FMT = 'CrIS BT %(channel)s %(date)s.%(start_time)s-%(end_time)s'
 # SW, 2425-2430 cm-1:
 # wn_sw indices (111 thru 113)
 
-CHANNEL_TAB = [ ('lw_900_905', 'rad_lw', 402, 411),
+SLICE_TAB = [ ('lw_900_905', 'rad_lw', 402, 411),
                 ('mw_1598_1602', 'rad_mw', 313, 316),
                 ('sw_2425_2430', 'rad_sw', 110, 113)
               ]
@@ -146,50 +146,57 @@ h = 6.62606876E-34  # Planck constant in Js
 c = 2.99792458E8   # photon speed in m/s
 k = 1.3806503E-23   # Boltzmann constant in J/K
 
-c1 = 2*h*c*c*1e11
+c1 = 2.0*h*c*c*1e11
 c2 = h*c/k*1e2
 
 def rad2bt(freq, radiance):
     return c2 * freq / (np.log(1.0 + c1 * (freq ** 3) / radiance))
 
-# FUTURE: BTCHAN, BT_CHANNEL_NAMES, rad2bt, bt_slices_for_band
+# FUTURE: BT_SLICES, BT_SLICE_NAMES, rad2bt, bt_slices_for_band
 # should be promoted to a common module between instrument systems.
 # FUTURE: wn_W should be put in a common cris module
 
-# default channels for GlobalHawk - from ifg.rsh2dpl.bt_swath
-BTCHAN = (  (690.4, 699.6),
+# default slices for GlobalHawk - from ifg.rsh2dpl.bt_swath
+BT_SLICES =((690.4, 699.6),
             (719.4, 720.8),
             (730.5, 739.6),
-            (750.2, 770),
+            (750.2, 770.0),
             (815.3, 849.5),
             (895.3, 905.0),
             (1050.1, 1059.8),
             (1149.4, 1190.4),
-            (1324, 1326.4),
+            (1324.0, 1326.4),
             (1516.4, 1517.8),
-            (1579, 1612.8),
+            (1579.0, 1612.8),
             (2010.1, 2014.9),
             (2220.3, 2224.6),
             (2500.4, 2549.6)     )
-BT_CHANNEL_NAMES =  ['BT_%d_%d' % (int(np.floor(left_wn)), int(np.ceil(right_wn))) for (left_wn, right_wn) in BTCHAN]
+
+# generate names using floor-ceiling pairs, e.g. BT_690_700
+BT_SLICE_NAMES =  ['BT_%d_%d' % (int(np.floor(left_wn)), int(np.ceil(right_wn))) for (left_wn, right_wn) in BT_SLICES]
 
 # FUTURE: realistic spectral response functions are needed
-VIIRS_BTCHAN = ( (800.641, 866.551),  # M16 in LW
-                 (888.099, 974.659),  # M15 in LW
-                 (2421.308, 2518.892), # M13 in SW
-                 (806.452, 952.381)    # I05 in LW
-               )
-VIIRS_BT_CHANNEL_NAMES = ('M16', 'M15', 'M13', 'I05')
+VIIRS_BT_SLICES = ( (800.641, 866.551),  # M16 in LW
+                    (888.099, 974.659),  # M15 in LW
+                    (2421.308, 2518.892), # M13 in SW
+                    (806.452, 952.381)    # I05 in LW
+                    )
+VIIRS_BT_SLICE_NAMES = ('M16', 'M15', 'M13', 'I05')
 
-ALL_CHANNELS = tuple(BTCHAN) + VIIRS_BTCHAN
-ALL_CHANNEL_NAMES = tuple(BT_CHANNEL_NAMES) + VIIRS_BT_CHANNEL_NAMES
+ALL_SLICES = tuple(BT_SLICES) + VIIRS_BT_SLICES
+ALL_SLICE_NAMES = tuple(BT_SLICE_NAMES) + VIIRS_BT_SLICE_NAMES
 
 
-def bt_slices_for_band(wn, rad, channels = ALL_CHANNELS, names=ALL_CHANNEL_NAMES):
-    "reduce channels to those available within a given band, return them as a dict"
+def bt_slices_for_band(wn, rad, slices = ALL_SLICES, names=ALL_SLICE_NAMES):
+    """create all slices available within a given band. return them as a dict
+        :param wn: wavenumber numpy array
+        :param rad: radiance array
+        :param slices: list of slice tuples, for now these are (min-wn, max-wn)
+        :param names: list of slice names
+    """
     nsl, nfov, nwn = rad.shape
     bt = rad2bt(wn, rad.reshape((nsl*nfov, nwn)))
-    snx = [(s,n,x) for (s,(n,x)) in zip(names,channels) if (n >= wn[0]) and (x < wn[-1])]
+    snx = [(s,n,x) for (s,(n,x)) in zip(names,slices) if (n >= wn[0]) and (x < wn[-1])]
     nam = [s for (s,_,_) in snx]
     chn = [(n,x) for (_,n,x) in snx]
     LOG.debug(repr(nam))
@@ -199,6 +206,7 @@ def bt_slices_for_band(wn, rad, channels = ALL_CHANNELS, names=ALL_CHANNEL_NAMES
 
 
 def cris_bt_slices(rad_lw, rad_mw, rad_sw):
+
     zult = dict()
     zult.update(bt_slices_for_band(wnLW, rad_lw))
     zult.update(bt_slices_for_band(wnMW, rad_mw))
