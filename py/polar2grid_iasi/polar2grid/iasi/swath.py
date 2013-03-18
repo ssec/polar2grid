@@ -48,10 +48,12 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
 __docformat__ = "restructuredtext en"
 
+VCSID = '$Id$'
+
 
 # Much of this is from metahoard.iasi.tools
 
-import h5py, numpy as np, glob, os, sys, logging
+import numpy as np, glob, os, sys, logging
 from collections import namedtuple, defaultdict
 import calendar, re
 from datetime import datetime
@@ -60,22 +62,20 @@ from pprint import pformat
 from numpy import exp,log,array,arange,empty,float32,float64,sin,linspace,concatenate,repeat,reshape,rollaxis
 
 from polar2grid.core.roles import FrontendRole
-from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
-
-
+# from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
+import polar2grid.iasi.tools as iasi
 
 LOG = logging.getLogger(__name__)
 
-import polar2grid.iasi.tools as iasi
-
 
 # conversion functions to get numpy arrays from iasi record fields
-def real4sfromarray(x): return numpy.array(x,numpy.float32)
-def int4sfromarray(x): return numpy.array(x,numpy.int32)
-def real8sfromarray(x): return numpy.array(x,numpy.float64)
-def real4fromvalue(x): return numpy.array([x],numpy.float32)
+def real4sfromarray(x): return np.array(x,np.float32)
+def int4sfromarray(x): return np.array(x,np.int32)
+def real8sfromarray(x): return np.array(x,np.float64)
+def real4fromvalue(x): return np.array([x],np.float32)
 def real4sfromdatetimes(L):
-    return numpy.array([x.hour + x.minute/60. + x.second/3600. + x.microsecond/3.6e9 for x in L],numpy.float32)
+    return np.array([x.hour + x.minute/60. + x.second/3600. + x.microsecond/3.6e9 for x in L],np.float32)
+
 
 # FUTURE: make this into a generic fbf_writer that takes the table as a constructor parameter; add to fbf toolbox
 class fbf_writer(object):
@@ -100,8 +100,8 @@ class fbf_writer(object):
         """
         if comment:
             fp = file(os.path.join(self._base,'README.txt'),'wt')
-            print >>fp, CVSID
-            print >>fp, iasi.CVSID
+            print >>fp, VCSID
+            print >>fp, iasi.VCSID
             print >>fp, comment
 
     @staticmethod
@@ -118,7 +118,7 @@ class fbf_writer(object):
         else:
             shape = ''
         filename = os.path.join(self._base, stem + self.endian(ext) + shape)
-        log.debug("creating %s..." % filename)
+        LOG.debug("creating %s..." % filename)
         return file(filename, 'wb')
 
     def _append(self,key,data):
@@ -133,7 +133,7 @@ class fbf_writer(object):
             fp = self._files[key]
         # reformat the data as the intended type and write the next record
         reform = cvt(data)
-        log.debug('writing a record of %s' % key)
+        LOG.debug('writing a record of %s' % key)
         reform.tofile(fp)
 
     def write_image(self,stem,suffix,data):
@@ -265,7 +265,7 @@ def _cloud_mask_has_clusters(cmdict):
 def extract_sounding(output_directory, detector_number=None, as_scan_lines=True, use_cloud=False, cloud_mask_pathname=None, lines=None, iis_images=False, ignore=[], *filenames):
     """ iterate through all the records for a given detector for a series of files, writing them to flat binary
     """
-    log.info("creating %s..." % output_directory)
+    LOG.info("creating %s..." % output_directory)
     rec_num = 0
     if detector_number is None:
         detector_info = "all detectors"
@@ -277,7 +277,7 @@ def extract_sounding(output_directory, detector_number=None, as_scan_lines=True,
     for filename in filenames:
 
         filename = filename if not '*' in filename else glob.glob(filename)[0]
-        log.info("processing %s..." % filename)
+        LOG.info("processing %s..." % filename)
 
         cloud_dict = None
         has_clusters = False
@@ -288,7 +288,7 @@ def extract_sounding(output_directory, detector_number=None, as_scan_lines=True,
             else:
                 cn = cloud_mask_pathname
                 use_cloud = True
-            log.debug("reading cloud data from %s" % cn)
+            LOG.debug("reading cloud data from %s" % cn)
             assert( os.path.exists(cn) )
             cloud_dict = cloud_mask_load(cn)
             has_clusters = _cloud_mask_has_clusters(cloud_dict) # check or extended information from par_maia
@@ -296,17 +296,17 @@ def extract_sounding(output_directory, detector_number=None, as_scan_lines=True,
         if write is None:
             write = iasi_record_fbf_writer(output_directory, detector_number, comment, ignore=ignore, use_cloud=use_cloud, use_clusters=has_clusters)
 
-        prod = eugene.Product(filename)
+        prod = iasi.open_product(filename)
         if not as_scan_lines:
             datagen = iasi.sounder_records(prod, detector_number, lines, cloud_dict = cloud_dict)
         else:
             datagen = iasi.sounder_scanlines(prod, detector_number, lines, cloud_dict = cloud_dict)
         if iis_images:
             tiles = iasi.imager_tiles(prod)
-            log.debug("writing IIS tiles %s as one record" % str(tiles.GIrcImage.shape))
+            LOG.debug("writing IIS tiles %s as one record" % str(tiles.GIrcImage.shape))
             write.write_iis(tiles)
         for record in datagen:
-            log.debug(str(record))
+            LOG.debug(str(record))
             write( record )
             write.write_wavenumbers(record.wavenumbers) # only does it once
             rec_num += 1
@@ -376,11 +376,11 @@ class iasi_retrieval_fbf_writer(fbf_writer):
 
 def datetime_shatter( whens ):
     "split an array of datetime objects into component arrays of microseconds, second-of-day, day, month, year"
-    whens = numpy.array(whens)
+    whens = np.array(whens)
     shape = whens.shape
     count = whens.size
 
-    def emptor(*junk): return numpy.empty( (count,), dtype=numpy.int32 )
+    def emptor(*junk): return np.empty( (count,), dtype=np.int32 )
     us,s,d,m,y = map( emptor, range(5) )
 
     for dex,when in enumerate( whens.flatten() ):
@@ -401,13 +401,13 @@ def extract_retrieval(output_directory, ignore=[], *filenames):
         comment += '%s (%s): from %s\n' % (stem,units,key)
     write = iasi_retrieval_fbf_writer(output_directory, comment, ignore=ignore)
     for filename in filenames:
-        log.info('processing %s...' % filename)
+        LOG.info('processing %s...' % filename)
         prod = iasi.open_product(filename)
         ancil = iasi.retrieval_read_ancillary(prod)
         write.write_levels(ancil) # only writes for first file
         data = retrieval_record()
         for (key,(stem,_,_,sf,units,onelevel)) in FIELD_LIST.items():
-            log.info("reading %s as %s..." % (key,stem))
+            LOG.info("reading %s as %s..." % (key,stem))
             # read that field in for the whole file, noting that integrated quantities are single-level
             # note that INEGRATED_N2O is for real (dammit guys)
             # apply scaling factor
@@ -417,8 +417,16 @@ def extract_retrieval(output_directory, ignore=[], *filenames):
         data.line_number, data.field_number, data.detector_number = iasi.retrieval_sfd(prod)
         data.solzen, data.satzen, data.solaz, data.sataz = iasi.retrieval_read_orientation(prod)
         data.refTimeUsec, data.refTimeSec, data.refTimeDay, data.refTimeMonth, data.refTimeYear = datetime_shatter(list(iasi.retrieval_read_fov_times(prod)))
-        log.debug("writing record...")
+        LOG.debug("writing record...")
         write(data)
+
+
+
+#
+#
+# polar2grid frontend support
+#
+#
 
 
 def generate_metadata(swath, bands):
@@ -452,8 +460,14 @@ class IasiSdrFrontend(FrontendRole):
         self.info = generate_metadata(swath, bands)
         return self.info
 
+#
+#
+# iasi2fbf support
+#
+#
 
-def main():
+
+def iasi2fbf():
     import optparse
     usage = """usage: %prog [options] list-of-input-files
 $Id: fbf.py 51 2011-05-27 20:06:46Z rayg $
@@ -497,7 +511,7 @@ Unless otherwise specified, output is zero-based instead of one-based.
     lvl = logging.INFO
     if options.verbose: lvl = logging.DEBUG
     elif options.quiet: lvl = logging.WARNING
-    log.setLevel(lvl)
+    LOG.setLevel(lvl)
 
     if options.self_test:
         import doctest
@@ -525,24 +539,9 @@ Unless otherwise specified, output is zero-based instead of one-based.
             extract_retrieval( options.output, ignore, *args )
 
 
-
-def write_arrays_to_fbf(nditer):
-    """
-    write derived BT slices to CWD from an iterable yielding (name, data) pairs
-    """
-    for name,data in nditer:
-        rows,cols = data.shape
-        suffix = '.real4.%d.%d' % (cols, rows)
-        fn = name + suffix
-        LOG.debug('writing to %s...' % fn)
-        if data.dtype != np.float32:
-            data = data.astype(np.float32)
-        with file(fn, 'wb') as fp:
-            data.tofile(fp)
-
-
-
-
+#
+# default self-test main
+#
 
 def main():
     import optparse

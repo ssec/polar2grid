@@ -32,8 +32,13 @@ from setuptools import setup, find_packages
 classifiers = ""
 version = '0.1'
 
+try:
+    import eugene
+except ImportError as idunnoaboutthis:
+    raise RuntimeWarning('eugene module is not available, which will cripple polar2grid.iasi')
+
 setup(
-    name='polar2grid.cris',
+    name='polar2grid.iasi',
     version=version,
     description="Library and scripts to aggregate CrIS SDR data and get associated metadata",
     classifiers=filter(None, classifiers.split("\n")),
@@ -46,8 +51,8 @@ setup(
     namespace_packages=["polar2grid"],
     include_package_data=True,
     zip_safe=True,
-    install_requires=['numpy', 'h5py', 'polar2grid.core'],
+    install_requires=['numpy', 'polar2grid.core'],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
-    entry_points = {'console_scripts' : [ ]}
+    entry_points = {'console_scripts' : [ 'iasi2fbf = polar2grid.iasi.swath:iasi2fbf' ]}
 )
 

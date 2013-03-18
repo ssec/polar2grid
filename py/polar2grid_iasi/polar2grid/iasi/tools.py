@@ -34,10 +34,11 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
 __docformat__ = "restructuredtext en"
 
+VCSID = '$Id$'
 
 # Much of this is from metahoard.iasi.tools
 
-import h5py, numpy as np, glob, os, sys, logging
+import numpy as np, glob, os, sys, logging
 from collections import namedtuple, defaultdict
 import calendar, re
 from datetime import datetime
@@ -46,7 +47,7 @@ from pprint import pformat
 from numpy import exp,log,array,arange,empty,float32,float64,sin,linspace,concatenate,repeat,reshape,rollaxis
 
 from polar2grid.core.roles import FrontendRole
-from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
+#from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
 
 
 
