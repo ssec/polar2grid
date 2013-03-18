@@ -123,12 +123,86 @@ class GridJobsTestCase(unittest.TestCase):
 
         # Mimic a frontend's bands meta dictionary
         band_info = {
+                ( constants.BKIND_I, constants.BID_01 ) : {
+                    "data_kind"     : constants.DKIND_REFLECTANCE,
+                    "remap_data_as" : constants.DKIND_REFLECTANCE,
+                    "kind"          : constants.BKIND_I,
+                    "band"          : constants.BID_01,
+                    "fbf_img"       : None, # Invalid, but we don't have one so...
+                    "fill_value"    : constants.DEFAULT_FILL_VALUE,
+                    "swath_rows"    : 320,
+                    "swath_cols"    : 6400,
+                    "swath_scans"   : 10,
+                    "rows_per_scan" : 32,
+                    },
+                ( constants.BKIND_I, constants.BID_02 ) : {
+                    "data_kind"     : constants.DKIND_REFLECTANCE,
+                    "remap_data_as" : constants.DKIND_REFLECTANCE,
+                    "kind"          : constants.BKIND_I,
+                    "band"          : constants.BID_02,
+                    "fbf_img"       : None, # Invalid, but we don't have one so...
+                    "fill_value"    : constants.DEFAULT_FILL_VALUE,
+                    "swath_rows"    : 320,
+                    "swath_cols"    : 6400,
+                    "swath_scans"   : 10,
+                    "rows_per_scan" : 32,
+                    },
+                ( constants.BKIND_I, constants.BID_03 ) : {
+                    "data_kind"     : constants.DKIND_BTEMP,
+                    "remap_data_as" : constants.DKIND_BTEMP,
+                    "kind"          : constants.BKIND_I,
+                    "band"          : constants.BID_03,
+                    "fbf_img"       : None, # Invalid, but we don't have one so...
+                    "fill_value"    : constants.DEFAULT_FILL_VALUE,
+                    "swath_rows"    : 320,
+                    "swath_cols"    : 6400,
+                    "swath_scans"   : 10,
+                    "rows_per_scan" : 32,
+                    },
+                ( constants.BKIND_I, constants.BID_04 ) : {
+                    "data_kind"     : constants.DKIND_BTEMP,
+                    "remap_data_as" : constants.DKIND_BTEMP,
+                    "kind"          : constants.BKIND_I,
+                    "band"          : constants.BID_04,
+                    "fbf_img"       : None, # Invalid, but we don't have one so...
+                    "fill_value"    : constants.DEFAULT_FILL_VALUE,
+                    "swath_rows"    : 320,
+                    "swath_cols"    : 6400,
+                    "swath_scans"   : 10,
+                    "rows_per_scan" : 32,
+                    },
+                ( constants.BKIND_I, constants.BID_05 ) : {
+                    "data_kind"     : constants.DKIND_BTEMP,
+                    "remap_data_as" : constants.DKIND_BTEMP,
+                    "kind"          : constants.BKIND_I,
+                    "band"          : constants.BID_05,
+                    "fbf_img"       : None, # Invalid, but we don't have one so...
+                    "fill_value"    : constants.DEFAULT_FILL_VALUE,
+                    "swath_rows"    : 320,
+                    "swath_cols"    : 6400,
+                    "swath_scans"   : 10,
+                    "rows_per_scan" : 32,
+                    },
                 }
         cls._band_info = band_info
 
         # Make our own grid configuration file
-        grid_config_str = """# Comment
+        grid_config_str = """# Comment - Copy of grids.conf with spaces removed
+# GPD Grids
 211e,gpd,grid211e.gpd,0,0,0,0,0,0,0,0
+211e,gpd,grid211e.gpd,-123.044,59.844,-49.385,57.289,-65.091,14.335,-113.133,16.369
+211w,gpd,grid211w.gpd,-152.855,54.536,-91.444,61.257,-92.720,17.514,-133.459,12.190
+203,gpd,grid203.gpd,115.601,44.646,-53.660,57.635,-123.435,24.362,174.162,19.132
+204,gpd,grid204.gpd,110.000,60.644,-109.129,60.644,-109.129,25.000,110.000,25.000
+dwd_germany,gpd,griddwd_germany.gpd,-2.000,56.000,25.000,56.000,25.000,40.000,-2.000,40.000
+# PROJ.4 Grids
+p4_211e,proj4, +proj=lcc +datum=NAD83 +ellps=GRS80 +lat_1=25 +lon_0=-95 +no_defs,5120,5120,1015.9,-1015.9,-1956254.806724622,4364276.201489102
+lcc_fit,proj4, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=25 +lon_0=-95,None,None,1000,-1000,None,None
+lcc_fit_hr,proj4, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=25 +lon_0=-95,None,None,400,-400,None,None
+wgs84_fit,proj4, +proj=latlong +datum=WGS84 +ellps=WGS84 +no_defs,None,None,0.0001,-0.0001,None,None
+polar_canada,proj4, +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=45.0 +lon_0=-150,None,None,1000,-1000,None,None
+polar_north_pacific,proj4, +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=45.0 +lon_0=-170,None,None,400,-400,None,None
+polar_south_pacific,proj4, +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=-90 +lat_ts=-45.0 +lon_0=-170,None,None,400,-400,None,None
 """
         cls._grid_config_str = grid_config_str
 
@@ -136,15 +210,16 @@ class GridJobsTestCase(unittest.TestCase):
             can_handle=constants.GRIDS_ANY,
             forced_grids=["211e"]
             ):
-        """Test that create_grid_jobs reports a ValueError when it is
-        provided an empty band_info dictionary, the backend reports any grid
+        """Test that create_grid_jobs reports a ValueError when provided an empty band_info dictionary.
+        Also provided that the backend reports any grid
         can be provided, and a grid is forced (skipping grid determination).
         """
         def fake_handle_inputs(self, *args, **kwargs):
             return can_handle
         backend = FakeBackend()
         backend.can_handle_inputs = fake_handle_inputs
-        cart = grids.Cartographer() # TODO: Load fake config
+        cart = grids.Cartographer(no_defaults=True)
+        cart.add_grid_config_str(self._grid_config_str)
         self.assertRaises(ValueError, grids.create_grid_jobs,
                 constants.SAT_NPP,
                 constants.INST_VIIRS,
@@ -156,10 +231,122 @@ class GridJobsTestCase(unittest.TestCase):
                 )
 
     def test_except_grids_proj4_forced_0bands(self):
+        """Same as `test_except_grids_any_forced_0bands`, but backend supports any PROJ.4 grid.
+        """
         self.test_except_grids_any_forced_0bands(can_handle=constants.GRIDS_ANY_PROJ4)
 
     def test_except_grids_gpd_forced_0bands(self):
+        """Same as `test_except_grids_any_forced_0bands`, but backend supports any GPD grid.
+        """
         self.test_except_grids_any_forced_0bands(can_handle=constants.GRIDS_ANY_GPD)
+
+    def test_output_grids_any_forced(self):
+        """Test that create_grid_jobs returns the correct structure when any grid is supported.
+        """
+        def fake_handle_inputs(self, *args, **kwargs):
+            return constants.GRIDS_ANY
+        backend = FakeBackend()
+        backend.can_handle_inputs = fake_handle_inputs
+        cart = grids.Cartographer(no_defaults=True)
+        cart.add_grid_config_str(self._grid_config_str)
+        forced_grids = cart.grid_information.keys()[::2]
+        grid_jobs = grids.create_grid_jobs(
+                constants.SAT_NPP,
+                constants.INST_VIIRS,
+                constants.IBAND_NAV_UID,
+                self._band_info,
+                backend,
+                cart,
+                forced_grids=forced_grids
+                )
+
+        self.assertEqual(len(grid_jobs.keys()), len(forced_grids))
+        for grid_name in forced_grids:
+            self.assertIn(grid_name, grid_jobs.keys())
+
+    def test_output_grids_proj4_forced(self):
+        def fake_handle_inputs(self, *args, **kwargs):
+            return constants.GRIDS_ANY_PROJ4
+        backend = FakeBackend()
+        backend.can_handle_inputs = fake_handle_inputs
+        cart = grids.Cartographer(no_defaults=True)
+        cart.add_grid_config_str(self._grid_config_str)
+        forced_grids = ["wgs84_fit", "211e", "203", "dwd_germany", "p4_211e"]
+        grid_jobs = grids.create_grid_jobs(
+                constants.SAT_NPP,
+                constants.INST_VIIRS,
+                constants.IBAND_NAV_UID,
+                self._band_info,
+                backend,
+                cart,
+                forced_grids=forced_grids
+                )
+
+        self.assertEqual(len(grid_jobs.keys()), 2)
+        self.assertIn("wgs84_fit", grid_jobs.keys())
+        self.assertIn("p4_211e", grid_jobs.keys())
+
+    def test_output_grids_gpd_forced(self):
+        def fake_handle_inputs(self, *args, **kwargs):
+            return constants.GRIDS_ANY_GPD
+        backend = FakeBackend()
+        backend.can_handle_inputs = fake_handle_inputs
+        cart = grids.Cartographer(no_defaults=True)
+        cart.add_grid_config_str(self._grid_config_str)
+        forced_grids = ["wgs84_fit", "211e", "203", "dwd_germany", "p4_211e"]
+        grid_jobs = grids.create_grid_jobs(
+                constants.SAT_NPP,
+                constants.INST_VIIRS,
+                constants.IBAND_NAV_UID,
+                self._band_info,
+                backend,
+                cart,
+                forced_grids=forced_grids
+                )
+
+        self.assertEqual(len(grid_jobs.keys()), 3)
+        self.assertIn("211e", grid_jobs.keys())
+        self.assertIn("dwd_germany", grid_jobs.keys())
+        self.assertIn("203", grid_jobs.keys())
+        self.assertIn((constants.BKIND_I,constants.BID_01), grid_jobs["211e"])
+        self.assertIn((constants.BKIND_I,constants.BID_02), grid_jobs["211e"])
+        self.assertIn((constants.BKIND_I,constants.BID_03), grid_jobs["211e"])
+        self.assertIn((constants.BKIND_I,constants.BID_04), grid_jobs["211e"])
+        self.assertIn((constants.BKIND_I,constants.BID_05), grid_jobs["211e"])
+        self.assertIn((constants.BKIND_I,constants.BID_01), grid_jobs["203"])
+        self.assertIn((constants.BKIND_I,constants.BID_02), grid_jobs["203"])
+        self.assertIn((constants.BKIND_I,constants.BID_03), grid_jobs["203"])
+        self.assertIn((constants.BKIND_I,constants.BID_04), grid_jobs["203"])
+        self.assertIn((constants.BKIND_I,constants.BID_05), grid_jobs["203"])
+        self.assertIn((constants.BKIND_I,constants.BID_01), grid_jobs["dwd_germany"])
+        self.assertIn((constants.BKIND_I,constants.BID_02), grid_jobs["dwd_germany"])
+        self.assertIn((constants.BKIND_I,constants.BID_03), grid_jobs["dwd_germany"])
+        self.assertIn((constants.BKIND_I,constants.BID_04), grid_jobs["dwd_germany"])
+        self.assertIn((constants.BKIND_I,constants.BID_05), grid_jobs["dwd_germany"])
+
+    def test_output_grids_any_determined(self):
+        """Test that create_grid_jobs returns the correct structure when any grid is supported and determined.
+        """
+        def fake_handle_inputs(self, *args, **kwargs):
+            return constants.GRIDS_ANY
+        backend = FakeBackend()
+        backend.can_handle_inputs = fake_handle_inputs
+        cart = grids.Cartographer(no_defaults=True)
+        cart.add_grid_config_str(self._grid_config_str)
+        grid_jobs = grids.create_grid_jobs(
+                constants.SAT_NPP,
+                constants.INST_VIIRS,
+                constants.IBAND_NAV_UID,
+                self._band_info,
+                backend,
+                cart,
+                bbox=(-110,50,-80,10)
+                )
+
+        self.assertEqual(len(grid_jobs.keys()), 3)
+        self.assertIn("211e", grid_jobs.keys())
+        self.assertIn("211w", grid_jobs.keys())
+        self.assertIn("p4_211e", grid_jobs.keys())
 
 class GridDeterminationTestCase(unittest.TestCase):
     pass

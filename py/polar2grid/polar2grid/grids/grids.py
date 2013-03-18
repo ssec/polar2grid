@@ -294,6 +294,7 @@ def parse_proj4_config_line(grid_name, parts):
 
 def read_grids_config_str(config_str):
     grid_information = {}
+    this_configs_grids = []
 
     for line in config_str.split("\n"):
         # Skip comments and empty lines
@@ -308,9 +309,11 @@ def read_grids_config_str(config_str):
             raise ValueError("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
 
         grid_name = parts[0]
-        if grid_name in grid_information:
-            log.error("Grid '%s' is in grid config more than once" % (grid_name,))
-            raise ValueError("Grid '%s' is in grid config more than once" % (grid_name,))
+        # Help the user out by checking if they are adding a grid more than once
+        if grid_name not in this_configs_grids:
+            this_configs_grids.append(grid_name)
+        else:
+            log.warning("Grid '%s' is in grid config more than once" % (grid_name,))
 
         grid_type = parts[1].lower()
         if grid_type == "gpd":
@@ -519,13 +522,16 @@ class Cartographer(roles.CartographerRole):
     grid_information = {}
 
     def __init__(self, *grid_configs, **kwargs):
-        if len(grid_configs) == 0:
+        load_defaults = not kwargs.pop("no_defaults", False)
+
+        if len(grid_configs) == 0 and load_defaults:
             log.info("Using default grid configuration: '%s' " % (GRIDS_CONFIG_FILEPATH,))
             grid_configs = (GRIDS_CONFIG_FILEPATH,)
 
-        for grid_config in grid_configs:
-            log.info("Loading grid configuration '%s'" % (grid_config,))
-            self.add_grid_config(grid_config)
+        if len(grid_configs) != 0:
+            for grid_config in grid_configs:
+                log.info("Loading grid configuration '%s'" % (grid_config,))
+                self.add_grid_config(grid_config)
 
     def add_grid_config(self, grid_config_filename):
         """Load a grid configuration file. If a ``grid_name`` was already
