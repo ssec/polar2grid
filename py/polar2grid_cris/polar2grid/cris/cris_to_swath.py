@@ -30,7 +30,6 @@ This file is part of the polar2grid software package. Polar2grid takes
 satellite observation data, remaps it, and writes it to a file format for
 input into another program.
 Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
 """
 
 __docformat__ = "restructuredtext en"
@@ -186,7 +185,6 @@ ALL_CHANNELS = tuple(BTCHAN) + VIIRS_BTCHAN
 ALL_CHANNEL_NAMES = tuple(BT_CHANNEL_NAMES) + VIIRS_BT_CHANNEL_NAMES
 
 
-# from poster_cris_sdr
 def bt_slices_for_band(wn, rad, channels = ALL_CHANNELS, names=ALL_CHANNEL_NAMES):
     "reduce channels to those available within a given band, return them as a dict"
     nsl, nfov, nwn = rad.shape
@@ -208,8 +206,27 @@ def cris_bt_slices(rad_lw, rad_mw, rad_sw):
     return zult
 
 
-def write_slices_to_fbf(info):
-    raise NotImplementedError('write_slices_to_fbf not implemented')
+def write_arrays_to_fbf(nditer):
+    """
+    write derived BT slices to CWD from an iterable yielding (name, data) pairs
+    """
+    for name,data in nditer:
+        rows,cols = data.shape
+        suffix = '.real4.%d.%d' % (cols, rows)
+        fn = name + suffix
+        LOG.debug('writing to %s...' % fn)
+        if data.dtype != np.float32:
+            data = data.astype(np.float32)
+        with file(fn, 'wb') as fp:
+            data.tofile(fp)
+
+
+
+def generate_metadata(swath, bands):
+    """
+    return metadata dictionary summarizing the granule and generated bands, compatible with frontend output
+    """
+    raise NotImplementedError('generate_metadata not implemented')
 
 
 # FUTURE: add a way to configure which slices to produce, or all by default
@@ -222,13 +239,20 @@ class CrisSdrFrontend(FrontendRole):
     def __init__(self, **kwargs):
         self.info = {}
 
-    @abstractmethod
     def make_swaths(self, filepaths, **kwargs):
+        """
+        load the swath from the input dir/files
+        extract BT slices
+        write BT slices to flat files in cwd
+        write GEO arrays to flat files in cwd
+        """
         swath = cris_swath(*filepaths, **kwargs)
         bands = cris_bt_slices(swath.rad_lw, swath.rad_mw, swath.rad_sw)
-        self.info = write_swath_to_fbf(bands)
+        bands.update({ 'Latitude': swath.lat, 'Longitude': swath.lon })
+        write_arrays_to_fbf(latlon.items())
+        write_arrays_to_fbf(bands.items())
+        self.info = generate_metadata(swath, bands)
         return self.info
-
 
 
 def main():
@@ -281,7 +305,6 @@ Example:
     if not args:
         parser.error( 'incorrect arguments, try -h or --help.' )
         return 9
-
 
     swath =  cris_swath(*args)
     if swath == None :
