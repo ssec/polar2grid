@@ -44,7 +44,7 @@ import calendar, re
 from datetime import datetime
 from collections import defaultdict
 from pprint import pformat
-from numpy import exp,log,array,arange,empty,float32,float64,sin,linspace,concatenate,repeat,reshape,rollaxis
+from numpy import exp,log,array,arange,empty,float32,float64,int8,sin,linspace,concatenate,repeat,reshape,rollaxis
 
 from polar2grid.core.roles import FrontendRole
 #from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
@@ -224,6 +224,8 @@ def _sounder_scanlines_all(prod, line_indices = None, only_geotemporal = False, 
         GGeoSondLoc_lon = rearrange(prod.get('%s.GGeoSondLoc[][][0]' % (record_name)))
         GGeoSondLoc_lat = rearrange(prod.get('%s.GGeoSondLoc[][][1]' % (record_name)))
         scanline = None if only_geotemporal else ifov_pseudoscan(array(prod.get('%s.GS1cSpect[][][]' % (record_name)),float64))
+        GQisFlagQual = None if only_geotemporal else ifov_pseudoscan(array(prod.get('%s.GQisFlagQual[][]' % (record_name)),int8))
+        #GQisFlagQualDetailed = None if only_geotemporal else ifov_pseudoscan(array(prod.get('%s.GQisFlagQualDetailed[][]' % (record_name)),int8))
         OnboardUTC = array(prod.get( '%s.OnboardUTC' % record_name))
         CMP = {}
         if not only_geotemporal:
@@ -233,6 +235,8 @@ def _sounder_scanlines_all(prod, line_indices = None, only_geotemporal = False, 
             if not only_geotemporal:
                 pseudoscan = array(scanline[row])
                 crib = scale_scanline(prod,pseudoscan,crib)
+                #prGQisFlagQualDetailed = array(GQisFlagQualDetailed[row])
+                prGQisFlagQual = array(GQisFlagQual[row])
             R = iasi_record()
             R.wavenumbers = wnum
             R.record_index = int( *RE_RECORD_INDEX.findall(record_name) )
@@ -242,6 +246,8 @@ def _sounder_scanlines_all(prod, line_indices = None, only_geotemporal = False, 
             R.time = OnboardUTC.repeat(2)
             R.epoch = array(epoch_from_datetime(OnboardUTC)).repeat(2)
             R.radiances = None if only_geotemporal else pseudoscan
+            #R.quality_flag_detailed = None if only_geotemporal else prGQisFlagQualDetailed
+            R.quality_flag = None if only_geotemporal else prGQisFlagQual
             R.longitude = GGeoSondLoc_lon[row]
             R.latitude = GGeoSondLoc_lat[row]
             R.metop_zenith_angle = GGeoSondAnglesMETOP_zen[row]
@@ -276,7 +282,8 @@ def _sounder_scanlines_one(prod, detector_number, line_indices = None, only_geot
         GGeoSondAnglesSUN = array(prod.get('%s.GGeoSondAnglesSUN[][%d][]' % (record_name,detector_number)))
         OnboardUTC = array(prod.get( '%s.OnboardUTC' % record_name))
         GGeoSondLoc = array(prod.get('%s.GGeoSondLoc[][%d][]' % (record_name,detector_number)))
-
+        GQisFlagQual = None if only_geotemporal else array(prod.get('%s.GQisFlagQual[][]' % (record_name)),int8)
+        #GQisFlagQualDetailed = None if only_geotemporal else array(prod.get('%s.GQisFlagQualDetailed[][]' % (record_name)),int8)
         if not only_geotemporal:
             scanline = array(prod.get( '%s.GS1cSpect[][%d][]' % (record_name, detector_number)),float64)
             crib = scale_scanline(prod,scanline,crib)
@@ -288,6 +295,8 @@ def _sounder_scanlines_one(prod, detector_number, line_indices = None, only_geot
         R.detector_number = detector_number
         R.time = OnboardUTC
         R.radiances = None if only_geotemporal else scanline
+        #R.quality_flag_detailed = None if only_geotemporal else GQisFlagQualDetailed
+        R.quality_flag = None if only_geotemporal else GQisFlagQual
         R.longitude = GGeoSondLoc[:,0].squeeze()
         R.latitude = GGeoSondLoc[:,1].squeeze()
         R.metop_zenith_angle = GGeoSondAnglesMETOP[:,0].squeeze()

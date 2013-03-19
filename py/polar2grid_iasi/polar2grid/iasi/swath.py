@@ -192,7 +192,10 @@ class iasi_record_fbf_writer(fbf_writer):
                             'metop_azimuth_angle': (None, '.real4', real4sfromarray),
                             'sun_zenith_angle': (None, '.real4', real4sfromarray),
                             'sun_azimuth_angle': (None, '.real4', real4sfromarray),
+                            #'quality_flag_detailed': (None, '.int4', int4sfromarray),
+                            'quality_flag': (None, '.int4', int4sfromarray),
                             }
+
     # data values only available when we merge in MAIA output dictionaries from secondary files
     CLOUD_FBF_FILENAMES = { 'clear_percent': (None, '.real4', real4sfromarray),
                             'cloudy_percent': (None, '.real4', real4sfromarray),
