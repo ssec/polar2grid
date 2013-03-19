@@ -58,6 +58,7 @@ The following glue scripts are included with polar2grid:
     viirs2awips
     viirs2gtiff
     viirs2binary
+    viirs2ninjo
     modis2awips
 
 

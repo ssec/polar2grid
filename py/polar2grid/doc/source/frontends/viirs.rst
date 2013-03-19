@@ -69,8 +69,8 @@ Histogram Equalization
 
 TODO
 
-Local Histogram Equalization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Local Histogram Equalization (Adaptive)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 TODO
 

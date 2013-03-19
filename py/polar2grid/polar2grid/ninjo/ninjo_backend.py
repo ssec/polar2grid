@@ -197,9 +197,10 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
             Length of tiles on disk (default 512)
         data_cat : str
             NinJo specific data category
-                data_cat[0] = P (polar) or G (geostat)
-                data_cat[1] = O (original) or P (product)
-                data_cat[2:4] = RN or RB or RA or RN or AN (Raster, Bufr, ASCII, NIL)
+                - data_cat[0] = P (polar) or G (geostat)
+                - data_cat[1] = O (original) or P (product)
+                - data_cat[2:4] = RN or RB or RA or RN or AN (Raster, Bufr, ASCII, NIL)
+
             Example: 'PORN' or 'GORN' or 'GPRN' or 'PPRN'
             (default 'PORN')
         pixel_xres : float
@@ -233,6 +234,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
             Physical value type. Examples:
                 - Temperature = 'T'
                 - Albedo = 'ALBEDO'
+
             Defaults to appropriate value based on `data_kind`, see `itype2physical`
             Specifying this overrides the default of `itype2physical`. If `data_kind`
             is not specified then this keyword is required.
@@ -240,6 +242,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
             Physical value units. Examples:
                 - 'CELSIUS'
                 - '%'
+
             Defaults to appropriate value based on `data_kind`, see `itype2physical`
             Specifying this overrides the default of `itype2physical`. If `data_kind`
             is not specified then this keyword is required.

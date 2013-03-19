@@ -348,7 +348,7 @@ def sort_files_by_nav_uid(filepaths):
             nav_dict[nav_uid][NOT_APPLICABLE].append(fp)
             continue
 
-        LOG.warning("Unknown VIIRS SDR data file: %s" % (fp,))
+        # Ignore the file that we don't understand
 
     # Make unique and sort
     for nav_uid,nav_uid_dict in nav_dict.items():

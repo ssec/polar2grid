@@ -33,6 +33,14 @@ polar2grid Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`modis2awips` Module
+-------------------------
+
+.. automodule:: polar2grid.modis2awips
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`ms2gt` Module
 -------------------
 
@@ -45,6 +53,14 @@ polar2grid Package
 ----------------
 
 .. automodule:: polar2grid.nc
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`p2g_proj` Module
+----------------------
+
+.. automodule:: polar2grid.p2g_proj
     :members:
     :undoc-members:
     :show-inheritance:
@@ -73,6 +89,14 @@ polar2grid Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`test` Module
+------------------
+
+.. automodule:: polar2grid.test
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`viirs2awips` Module
 -------------------------
 
@@ -97,6 +121,13 @@ polar2grid Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`viirs2ninjo` Module
+-------------------------
+
+.. automodule:: polar2grid.viirs2ninjo
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Subpackages
 -----------
@@ -105,4 +136,5 @@ Subpackages
 
     polar2grid.awips
     polar2grid.grids
+    polar2grid.ninjo
 

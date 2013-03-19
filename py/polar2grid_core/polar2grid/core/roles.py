@@ -71,7 +71,7 @@ class abstractclassmethod(classmethod):
         class C(metaclass=ABCMeta):
             @abstractclassmethod
             def my_abstract_classmethod(cls, ...):
-                ...
+
     """
     __isabstractmethod__ = True
 
@@ -90,7 +90,7 @@ class abstractstaticmethod(staticmethod):
         class C(metaclass=ABCMeta):
             @abstractstaticmethod
             def my_abstract_staticmethod(...):
-                ...
+
     """
     __isabstractmethod__ = True
 
@@ -430,7 +430,10 @@ class FrontendRole(object):
         """Class method for providing datetimes for each of the input filepaths.
 
         This method is used by glue scripts to find the proper datetime to
-        timestamp logs with (usually the earliest).
+        timestamp logs with (usually the earliest). It must ignore (without
+        logging an error/warning) any file that it does not understand since
+        some glue scripts allow an entire directories listing to go to the
+        frontend.
         """
         raise NotImplementedError("This function has not been implemented")
 
@@ -439,7 +442,10 @@ class FrontendRole(object):
         """Class method for sorting input filepaths.
 
         This method is used by glue scripts to organize filepaths into
-        navigation sets that can be used by the `make_swaths` method.
+        navigation sets that can be used by the `make_swaths` method. It must
+        ignore (without logging an error/warning) any file that it does not
+        understand since some glue scripts
+        allow an entire directories listing to go to the frontend.
 
         :param filepaths: Absolute paths to input satellite instrument names
         :type filepaths: list

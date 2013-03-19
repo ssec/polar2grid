@@ -31,6 +31,16 @@ Command Line Options
     the grid name 'all'. All possible grid names can be found
     :doc:`here <../grids>`.
 
+.. cmdoption:: --grid-configs <grid_config.conf> [<grid_config.conf> ...]
+
+    Specify the grid configuration files to use. If the grids being
+    specified should be added to the built-in set of grids, the first
+    argument should be |default_grid_config|. Config. files are processed
+    in the order they are specified. If a grid is specified in more than
+    one config. file the most recently processed file's entry will be used.
+    See the :doc:`../dev_guide/grids` section for information on creating
+    and adding your own grids.
+
 .. cmdoption:: --fornav-d <float>
 
     Specify the '-d' option for the fornav command line. From the fornav

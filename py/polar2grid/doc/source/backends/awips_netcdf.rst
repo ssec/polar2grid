@@ -53,17 +53,3 @@ Grid Name NCML File
 204       `grid204.ncml <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/awips/ncml/grid204.ncml>`_
 ========= =========
 
-More Text for testing
-
-+----------+--------------------------------------------------------------------+
-|Grid Name | NCML File                                                          |
-+==========+====================================================================+
-| 213e     | `grid213e.ncml <https://github.com/davidh-ssec/polar2grid/bloml>`_ |
-+----------+--------------------------------------------------------------------+
-| 213w     | `grid213w.ncml <https://github.com/davidh-ssec/polar2grid/bloml>`_ |
-+----------+--------------------------------------------------------------------+
-| 213      | `grid213.ncml <https://github.com/davidh-ssec/polar2grid/blob>`_   |
-+----------+--------------------------------------------------------------------+
-| 214      | `grid214.ncml <https://github.com/davidh-ssec/polar2grid/blob>`_   |
-+----------+--------------------------------------------------------------------+
-

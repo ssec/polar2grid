@@ -14,4 +14,5 @@ simple to swap backends to make new polar2grid :term:`glue scripts`.
     awips_netcdf
     gtiff
     binary
+    ninjo
 

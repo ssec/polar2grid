@@ -62,6 +62,7 @@ LOG_FN = os.environ.get("VIIRS2NINJO_LOG", None) # None interpreted in main
 
 def process_data_sets(nav_set_uid, filepaths,
         fornav_D=None, fornav_d=None,
+        grid_configs=None,
         forced_grid=None,
         num_procs=1,
         rescale_config=None,
@@ -74,8 +75,11 @@ def process_data_sets(nav_set_uid, filepaths,
     log.debug("Processing %s navigation set" % (nav_set_uid,))
     status_to_return = STATUS_SUCCESS
 
+    # Handle parameters
+    grid_configs = grid_configs or tuple() # needs to be a tuple for use
+
     # Declare polar2grid components
-    cart     = Cartographer()
+    cart     = Cartographer(*grid_configs)
     frontend = Frontend()
     backend  = Backend(
             rescale_config = rescale_config,
@@ -293,6 +297,8 @@ through strftime. Current time if no files.""")
             "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
 
     # Remapping/Grids
+    parser.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
+            help="Specify additional grid configuration files ('grids.conf' for built-ins)")
     parser.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default="all",
             help="Force remapping to only some grids, defaults to 'all', use 'all' for determination")
 
@@ -326,7 +332,7 @@ through strftime. Current time if no files.""")
             hdf_files = args.data_files[:]
         elif args.data_dir:
             base_dir = os.path.abspath(os.path.expanduser(args.data_dir))
-            hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) if x.startswith("SV") and x.endswith(".h5") ]
+            hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) ]
         else:
             # Should never get here because argparse mexc group
             log.error("Wrong number of arguments")
@@ -372,6 +378,7 @@ through strftime. Current time if no files.""")
 
     stat = run_glue(hdf_files,
                 fornav_D=fornav_D, fornav_d=fornav_d,
+                grid_configs=args.grid_configs,
                 forced_grid=forced_grids,
                 multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config,

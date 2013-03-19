@@ -559,7 +559,7 @@ class Frontend(roles.FrontendRole):
         return meta_data
     
     @classmethod
-    def sort_files_by_nav_uid (cls, filepaths) :
+    def sort_files_by_nav_uid(cls, filepaths):
         """
         sort the filepaths by which navigation they use
         """
@@ -567,7 +567,7 @@ class Frontend(roles.FrontendRole):
         return modis_guidebook.sort_files_by_nav_uid(filepaths)
     
     @classmethod
-    def parse_datetimes_from_filepaths (cls, filepaths) :
+    def parse_datetimes_from_filepaths(cls, filepaths):
         """
         given a list of filepaths, return the associated datetimes
         """
@@ -576,6 +576,7 @@ class Frontend(roles.FrontendRole):
         
         # figure out each datetime
         for filepath in filepaths :
+            # Guidebook's function ignores bad files
             datetime_temp = modis_guidebook.parse_datetime_from_filename(os.path.split(filepath)[-1])
             all_datetimes.append(datetime_temp) if datetime_temp is not None else log.debug("Discarding None datetime.") # TODO, fix the datetime generator so this doesn't happen
         

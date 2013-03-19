@@ -25,6 +25,14 @@ polar2grid.modis Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`modis_geo_interp_250` Module
+----------------------------------
+
+.. automodule:: polar2grid.modis.modis_geo_interp_250
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`modis_guidebook` Module
 -----------------------------
 

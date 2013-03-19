@@ -1,30 +1,28 @@
-viirs2awips
+viirs2ninjo
 ===========
 
 .. |this_frontend| replace:: :doc:`VIIRS Frontend <../frontends/viirs>`
-.. |this_backend| replace:: :doc:`AWIPS Backend <../backends/awips_netcdf>`
-.. |this_glue| replace:: viirs2awips
+.. |this_backend| replace:: :doc:`NinJo Backend <../backends/ninjo>`
+.. |this_glue| replace:: viirs2ninjo
 
-:Python Script: ``polar2grid.viirs2awips``
-:Bundle Script: ``viirs2awips.sh``
+:Python Script: ``polar2grid.viirs2ninjo``
+:Bundle Script: ``viirs2ninjo.sh``
 
 This script is used to process
 :doc:`VIIRS imager data <../frontends/viirs>`
 into
-:doc:`AWIPS compatible NetCDF <../backends/awips_netcdf>`
+:doc:`NinJo compatible TIFF <../backends/ninjo>`
 files.
 
-`viirs2awips` does not have any special restrictions on the bands that can
-be provided.  However, `viirs2awips` creates the
-:ref:`SSEC Fog pseudoband <pseudo_viirs_ifog>` if the I05 and I04 bands are
-provided.  This glue script will also scale the DNB data using the method
+`viirs2ninjo` does not have any special restrictions on the bands that can
+be provided. This glue script will also scale the DNB data using the method
 described :ref:`here <prescale_viirs_dnb>`.
 
-See the :doc:`../backends/awips_netcdf` for more
+See the :doc:`../backends/ninjo` backend for more
 information on what scaling it does to prepare the data for the
-AWIPS-compatible NetCDF file.
+NinJo compatible TIFF file.
 
-.. program:: viirs2awips
+.. program:: viirs2ninjo
 
 .. include:: common_opts.rst
 
@@ -81,26 +79,6 @@ Command Line Options
 
     Force processing of navigation sets to happen serially instead of in
     parallel. This does not affect the `--num-procs` option described above.
-
-.. cmdoption:: --no-pseudo
-
-    Don't create any pseudo-bands possible by the frontend. See the
-    |this_frontend| documentation for more information on the
-    pseudo-bands it creates.
-
-.. cmdoption:: --nc <ncml template>
-
-    Force the NCML template that the AWIPS backend uses. See the
-    :doc:`AWIPS Backend Documentation <../backends/awips_netcdf>` for more
-    information.
-
-.. cmdoption:: --backend-config <backend configuration>
-
-    Specify the backend configuration to use. The default is determined by the
-    backend. Backends can load pre-made configurations that are packaged with
-    polar2grid. Backends can also load properly formatted CSV files if an
-    absolute or relative path is specified. See the |this_backend| for more
-    information.
 
 .. cmdoption:: --rescale-config <rescale configuration>
 

@@ -4,6 +4,33 @@ Utility Scripts
 The following are scripts that can be used to help analyze and/or verify
 polar2grid operations.
 
+.. _util_p2g_proj:
+
+Python Proj
+-----------
+
+:Bundle Script: p2g_proj.sh
+:Python Script: :py:mod:`polar2grid.p2g_proj`
+
+This script is a very simple wrapper around the pyproj library. It is
+similiar to the `proj` binary provided by the PROJ.4 C library, except
+this script handles `latlong` projections being converted to radians.
+
+Usage::
+
+    $POLAR2GRID_HOME/bin/p2g_proj.sh [-h] [-i] proj4_str lon_point lat_point
+
+    Convert lon/lat points to X/Y values
+
+    positional arguments:
+      proj4_str      PROJ.4 projection string (in quotes)
+      lon_point      Longitude of the point to be converted (single value only)
+      lat_point      Latitude of the point to be converted (single value only)
+
+    optional arguments:
+      -h, --help     show this help message and exit
+      -i, --inverse  Convert X/Y values to lon/lat
+
 Plot AWIPS NC Data
 ------------------
 
@@ -12,7 +39,9 @@ Plot AWIPS NC Data
 
 This script will read a series of NetCDF3 files created using the AWIPS
 backend and plot the data on a b/w color scale.  It searches for any NetCDF
-files with the prefix ``SSEC_AWIPS_``.  It has the following usage syntax::
+files with the prefix ``SSEC_AWIPS_``.
+
+Usage::
 
     $POLAR2GRID_HOME/bin/plot_ncdata.sh [options] [ base directory | '.' ]
 
@@ -40,6 +69,8 @@ This script will read one or more binary files fitting the flat binary file
 naming convention and plot the data with a bone color scale. It can search
 for files with any prefix via the ``-p`` flag, but will default to
 ``result_*.real4.*.*`` if no binary files are specified.
+
+Usage::
 
     python -m plot_binary.py [-h] [-f FILL_VALUE] [-p PATTERN]
                              [binary_files [binary_files ...]]

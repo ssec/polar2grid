@@ -18,21 +18,140 @@ version of ll2cr to calculate those values from the data it is gridding.
 Adding your own grid
 --------------------
 
-The grids module requires 1 configuration file to define the information about
-each grid. This file can be found in the source
+The grids module provides a configuration file to define the information about
+each grid that the user can specify. This file can be found in the source
 `here <https://github.com/davidh-ssec/polar2grid/tree/master/py/polar2grid/polar2grid/grids/grids.conf>`_.
+If you wish to add your own grids as a replacement for or in addition to the
+provided set you'll have to make your own grid configuration file. For the
+format of a grid configuration file see the :ref:`grid_configuration_format`
+section below.
 
-At the time of this writing the grids module's only way of receiving
-alternative configuration files is through environment variables. The API
-allows for grids to be added, but it is up to :term:`glue scripts` to provide
-that functionality to the user.
+Any glue script that provides the :option:`--grid-configs` command line option
+supports user-provided grids. Multiple files can be listed with this command
+line flag (space separated). If you would like to add your grids in addition
+to the package provided set of grids you must specify "grids.conf" as one of
+the files on the command line.
 
-.. envvar:: POLAR2GRID_GRIDS_CONFIG
+Configuration files are processed in the order they are specified. If more
+than one grid configuration file specifies the same grid the most recently
+processed file's entry is
+used. It is recommended that you don't reuse a package-provided grid's name
+so there is no confusion about the configuration of that grid when viewing
+polar2grid products.
 
-    The environment variable set to the path to the grid configuration file.
-    See `grids.conf <https://github.com/davidh-ssec/polar2grid/tree/master/py/polar2grid/polar2grid/grids/grids.conf>`_
-    for formatting details. The value of this should be an absolute path 
-    (starting with a '/').
+The following steps will add a configuration file to polar2grid in addition
+to the built-in grids:
+
+1. Create a text file named anything besides "grids.conf". Open it for editing.
+2. Add a line for each grid you would like to add to polar2grid. Follow the
+   :ref:`grid_configuration_format` section below. Optionally, add a header
+   comment listing what each column is (see :ref:`grid_configuration_format`
+   for header comments).
+3. Call any polar2grid glue script and add the command line option
+   ``--grid-configs grids.conf <your-file.conf>``. If you would like only
+   your grids and not the package provided grids don't include the
+   "grids.conf" in the command line option.
+
+If you are unsure which type of grid to make, it is recommended that you
+create a PROJ.4 grid as there is more online documentation for this format
+and also allows for dynamic parameters.
+
+.. _grid_configuration_format:
+
+Grid Configuration File Format
+------------------------------
+
+Grid configuration files are comma-separated text files with 2 possible types
+of entries, PROJ.4 grids and GPD grids. Comments can be added by prefixing lines
+with a ``#`` character. Spaces are allowed between values to make aligning columns
+easier. The following describes the 2 types of grids and each column that must
+be specified (in order). A sample header comment is also provided to add to your
+grid configuration file for better self-documentation.
+
+As discussed in the introduction of this section, PROJ.4 grids can be
+dynamic or static, but GPD grids can only be static. Of the 3 dynamic
+grid attributes (grid size, pixel size, grid origin) a maximum of 2 can
+be dynamic at a time for a single grid.
+
+PROJ.4 Grids:
+
+# grid_name,proj4,proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y
+
+ #. **grid_name**:
+     A unique grid name describing the behavior of the grid. Grid name's should not contain spaces.
+ #. **proj4**:
+     A constant value, "proj4" without the quotes. This tells the software
+     reading the configuration file that this grid is a PROJ.4 grid.
+ #. **proj4_str**:
+     A PROJ.4 projection definition string. Some examples can be found in the
+     :doc:`../grids` list, but for more information on possible parameters see
+     `PROJ.4 GenParams <http://trac.osgeo.org/proj/wiki/GenParms>`_. Note that
+     compatiblity with certain PROJ.4 string components may be dependent on the
+     version of the PROJ.4(pyproj) library that polar2grid uses, so testing
+     should be done to verify that your string works properly.
+ #. **width**:
+     Width of the grid in number of pixels. This value may be 'None' if it
+     should be dynamically determined. Width and height must both be specified
+     or both not specified.
+ #. **height**:
+     Height of the grid in number of pixels. This value may be 'None' if it
+     should be dynamically determined. Width and height must both be specified
+     or both not specified.
+ #. **pixel_size_x**:
+     Size of one pixel in the X direction in grid units. Most grids are in
+     metered units, except for ``+proj=latlong`` which expects radians.
+     This value may be 'None' if it should be dynamically determined.
+     X and Y pixel size must both be specified or both not specified.
+ #. **pixel_size_y**:
+     Size of one pixel in the Y direction in grid units. Most grids are in
+     metered units, except for ``+proj=latlong`` which expects radians.
+     This value may be 'None' if it should be dynamically determined.
+     X and Y pixel size must both be specified or both not specified.
+ #. **origin_x**:
+     The grid's top left corner's X coordinate in grid units. Most grids are in
+     metered units, except for ``+proj=latlong`` which expects radians.
+     This value may be 'None' if it should be dynamically determined.
+     X and Y origin coordinates must both be specified or both not specified.
+     For help with converting lon/lat values into X/Y values see the
+     documentation for the utility script :ref:`util_p2g_proj`.
+ #. **origin_y**:
+     The grid's top left corner's Y coordinate in grid units. Most grids are in
+     metered units, except for ``+proj=latlong`` which expects radians.
+     This value may be 'None' if it should be dynamically determined.
+     X and Y origin coordinates must both be specified or both not specified.
+     For help with converting lon/lat values into X/Y values see the
+     documentation for the utility script :ref:`util_p2g_proj`.
+
+GPD Grids:
+
+# grid_name,gpd,gpd_filename,ul_lon,ul_lat,ur_lon,ur_lat,lr_lon,lr_lat,ll_lon,ll_lat
+
+ #. **grid_name**:
+     A unique grid name describing the behavior of the grid. Grid name's should not contain spaces.
+ #. **gpd**:
+     A constant value, "gpd", without the quotes. This tells the software
+     reading the configuration file that this grid is a PROJ.4 grid.
+ #. **gpd_filename**:
+     Absolute path to a GPD file. See the
+     `ms2gt documentation <http://geospatialmethods.org/documents/ppgc/ppgc.html>`_
+     for syntax
+     and format of GPD files.
+ #. **ul_lon**:
+     Longitude of the upper left corner of the grid.
+ #. **ul_lat**:
+     Latitude of the upper left corner of the grid.
+ #. **ur_lon**:
+     Longitude of the upper right corner of the grid.
+ #. **ur_lat**:
+     Latitude of the upper right corner of the grid.
+ #. **lr_lon**:
+     Longitude of the lower right corner of the grid.
+ #. **lr_lat**:
+     Latitude of the lower right corner of the grid.
+ #. **ll_lon**:
+     Longitude of the lower left corner of the grid.
+ #. **ll_lat**:
+     Latitude of the lower left corner of the grid.
 
 Grid corners are used during :term:`grid determination` to define a polygon
 describing the grid. PROJ.4 grids' corners are calculated when needed, but
@@ -41,7 +160,7 @@ GPD grids must have their corners specified in the configuration file.
 Understanding the grids module
 ------------------------------
 
-The grids module's main points of access is the
+The grids module's main points of access are the
 :py:class:`polar2grid.grids.grids.Cartographer` class and the
 :py:func:`polar2grid.grids.grids.create_grid_jobs` function. The
 ``Cartographer`` class stores all information of the grids it knows and

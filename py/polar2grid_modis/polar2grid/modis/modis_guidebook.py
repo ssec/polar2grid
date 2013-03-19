@@ -592,22 +592,14 @@ def sort_files_by_nav_uid (filepaths) :
     
     # some useful data structures
     nav_file_type_sets = defaultdict(dict) # this will be our return sorted dictionary
-    all_used           = set([ ]) # this will hold all the files that were sorted
     
     # for each of the possible navigation sets
     for nav_group_uid in GEO_FILE_GROUPING.keys() :
         # for each file pattern that uses that navigation set
         for file_pattern in GEO_FILE_GROUPING[nav_group_uid] :
-            # add the files matching that pattern to the appropriate set
+            # add the files matching that pattern to the appropriate set (ignore any that don't match)
             nav_file_type_sets[nav_group_uid][file_pattern] = set([ ]) if file_pattern not in nav_file_type_sets[nav_group_uid] else nav_file_type_sets[nav_group_uid][file_pattern]
             nav_file_type_sets[nav_group_uid][file_pattern].update(set([ x for x in filepaths if re.match(file_pattern, os.path.split(x)[-1]) ]))
-            all_used.update(nav_file_type_sets[nav_group_uid][file_pattern]) # keep a running set of all the files we've found matches for
-    
-    # do a little bookkeeping to figure out if there were filepaths we didn't use
-    all_provided = set(filepaths)
-    not_used = all_provided - all_used
-    if len(not_used):
-        LOG.warning("Could not match the following files with navigation\n%s" % "\n".join(list(not_used)))
     
     # removing empty nav patterns
     for nav_group_uid in nav_file_type_sets.keys() :
