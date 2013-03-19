@@ -53,6 +53,6 @@ setup(
     zip_safe=True,
     install_requires=['numpy', 'polar2grid.core'],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
-    entry_points = {'console_scripts' : [ 'iasi2fbf = polar2grid.iasi.swath:iasi2fbf' ]}
+    entry_points = {'console_scripts' : [ 'iasi2fbf = polar2grid.iasi.iasi2fbf:main' ]}
 )
 

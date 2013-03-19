@@ -342,10 +342,11 @@ def sounder_records(prod, detector_number=None, line_indices = None, only_geotem
             R.scan_number = Q.scan_number[s]
             R.wavenumbers = Q.wavenumbers
             R.time = [ Q.time[s] ]
-            R.detector_number = Q.detector_number[s]
+            R.detector_number = detector_number if detector_number is not None else Q.detector_number[s]
             R.epoch = [epoch_from_datetime(Q.time[s])]
             if not only_geotemporal:
                 R.radiances = Q.radiances[s][:].squeeze()
+                R.quality_flag = Q.quality_flag[s].squeeze()
             R.longitude = Q.longitude[s]
             R.latitude = Q.latitude[s]
             R.metop_zenith_angle = Q.metop_zenith_angle[s]
