@@ -60,7 +60,7 @@ removable_file_patterns = [
         "ll2cr_*_*_rows_*_*_*_*.img",
         "ll2cr_*_*_cols.real4.*.*",
         "ll2cr_*_*_rows.real4.*.*",
-        "result_*_*.real4.*.*"
+        "result_*_*_*_*.real4.*.*"
         ]
 
 def init_worker():
@@ -254,7 +254,7 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
                             }
                 fbf_swath_temp = band_info["fbf_swath"] if "fbf_swath" in band_info else band_info["fbf_img"]
                 fornav_group[band_info["remap_data_as"]]["inputs"].append(fbf_swath_temp)
-                stem = "result_%s%s_%s" % (band_kind,band_id,grid_name)
+                stem = "result_%s_%s_%s_%s" % (nav_set_uid,band_kind,band_id,grid_name)
                 check_stem(stem)
                 output_name = "%s.real4.%d.%d" % (stem, band_info["grid_width"], band_info["grid_height"])
                 fornav_group[band_info["remap_data_as"]]["outputs"].append(output_name)

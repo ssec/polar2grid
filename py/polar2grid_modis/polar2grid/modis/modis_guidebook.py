@@ -164,32 +164,14 @@ NDVI_FILE_PATTERN              = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.ndvi\.1000m\.hdf
 
 BANDS_REQUIRED_TO_CALCULATE_FOG_BAND = [(BKIND_IR,  BID_20), (BKIND_IR,  BID_31), (BKIND_SZA, NOT_APPLICABLE)]
 
-# a mapping between which navigation groups contain which files
+# a mapping between which navigation groups contain which data files
 GEO_FILE_GROUPING = {
-                      GEO_NAV_UID:      [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN, GEO_FILE_PATTERN,
+                      GEO_NAV_UID:      [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN,
                                          SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN, NDVI_FILE_PATTERN,
                                          ICE_SURFACE_TEMP_FILE_PATTERN, INVERSION_FILE_PATTERN, ICE_CONCENTRATION_FILE_PATTERN],
-                      GEO_250M_NAV_UID: [VIS_250M_FILE_PATTERN, GEO_FILE_PATTERN],
+                      GEO_250M_NAV_UID: [VIS_250M_FILE_PATTERN],
                       MOD06_NAV_UID:    [CLOUDS_06_FILE_PATTERN],
                       MOD07_NAV_UID:    [CLOUDS_07_FILE_PATTERN],
-                    }
-# the reverse mapping between files are in which navigation groups
-### XXX: This won't work now that GEO_FILE_PATTERN is used in two nav sets
-GEO_FILE_GROUPING_REV = \
-                    {
-                      VIS_INF_FILE_PATTERN:           GEO_NAV_UID,
-                      VIS_250M_FILE_PATTERN:          GEO_250M_NAV_UID,
-                      CLOUD_MASK_FILE_PATTERN:        GEO_NAV_UID,
-                      SEA_SURFACE_TEMP_FILE_PATTERN:  GEO_NAV_UID,
-                      LAND_SURFACE_TEMP_FILE_PATTERN: GEO_NAV_UID,
-                      NDVI_FILE_PATTERN:              GEO_NAV_UID,
-                      GEO_FILE_PATTERN:               GEO_NAV_UID,
-                      ICE_SURFACE_TEMP_FILE_PATTERN:  GEO_NAV_UID,
-                      INVERSION_FILE_PATTERN:         GEO_NAV_UID,
-                      ICE_CONCENTRATION_FILE_PATTERN: GEO_NAV_UID,
-                      
-                      CLOUDS_06_FILE_PATTERN:         MOD06_NAV_UID,
-                      CLOUDS_07_FILE_PATTERN:         MOD07_NAV_UID,
                     }
 
 # a mapping between the geo file group and the name of the fill value attribute for the longitude and latitude
@@ -305,7 +287,7 @@ DATA_KINDS = {
              }
 
 # a mapping between the bands and the variable names used in the files to hold them
-VAR_NAMES  = {
+GEO_NAV_VAR_NAMES  = {
             VIS_INF_FILE_PATTERN:           {
                                              (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_NAME,
                                              (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_NAME,
@@ -313,10 +295,6 @@ VAR_NAMES  = {
                                              (BKIND_VIS, BID_01): VISIBLE_CH_1_VARIABLE_NAME,
                                              (BKIND_VIS, BID_07): VISIBLE_CH_7_VARIABLE_NAME,
                                              (BKIND_VIS, BID_26): VISIBLE_CH_26_VARIABLE_NAME,
-                                            },
-            VIS_250M_FILE_PATTERN:          {
-                                             (BKIND_VIS, BID_01): VISIBLE_250_CH_1_VARIABLE_NAME,
-                                             (BKIND_VIS, BID_02): VISIBLE_250_CH_2_VARIABLE_NAME,
                                             },
             CLOUD_MASK_FILE_PATTERN:        {
                                              (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_NAME,
@@ -344,17 +322,38 @@ VAR_NAMES  = {
             ICE_CONCENTRATION_FILE_PATTERN: {
                                              (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_NAME,
                                             },
+            }
+
+MOD06_VAR_NAMES = {
             CLOUDS_06_FILE_PATTERN:         {
                                              (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_NAME,
                                             },
+        }
+
+MOD07_VAR_NAMES = {
             CLOUDS_07_FILE_PATTERN:         {
                                              (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_NAME,
                                             },
-             }
+        }
+
+GEO_250M_NAV_VAR_NAMES = {
+            VIS_250M_FILE_PATTERN:          {
+                                             (BKIND_VIS, BID_01): VISIBLE_250_CH_1_VARIABLE_NAME,
+                                             (BKIND_VIS, BID_02): VISIBLE_250_CH_2_VARIABLE_NAME,
+                                            },
+            }
+
+# This is a lot of dictionaries, but it is needed to be well defined
+VAR_NAMES = {
+        GEO_NAV_UID      : GEO_NAV_VAR_NAMES,
+        GEO_250M_NAV_UID : GEO_250M_NAV_VAR_NAMES,
+        MOD06_NAV_UID    : MOD06_VAR_NAMES,
+        MOD07_NAV_UID    : MOD07_VAR_NAMES,
+        }
 
 # a mapping between the bands and any index needed to access the data in the variable (for slicing)
 # if no slicing is needed the index will be None
-VAR_IDX    = {
+GEO_NAV_VAR_IDX    = {
             VIS_INF_FILE_PATTERN:           {
                                              (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_IDX,
                                              (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_IDX,
@@ -362,10 +361,6 @@ VAR_IDX    = {
                                              (BKIND_VIS, BID_01): VISIBLE_CH_1_VARIABLE_IDX,
                                              (BKIND_VIS, BID_07): VISIBLE_CH_7_VARIABLE_IDX,
                                              (BKIND_VIS, BID_26): VISIBLE_CH_26_VARIABLE_IDX,
-                                            },
-            VIS_250M_FILE_PATTERN:          {
-                                             (BKIND_VIS, BID_01): VISIBLE_250_CH_1_VARIABLE_IDX,
-                                             (BKIND_VIS, BID_02): VISIBLE_250_CH_2_VARIABLE_IDX,
                                             },
             CLOUD_MASK_FILE_PATTERN:        {
                                              (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_IDX,
@@ -396,9 +391,32 @@ VAR_IDX    = {
             CLOUDS_06_FILE_PATTERN:         {
                                              (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_IDX,
                                             },
+        }
+
+MOD06_VAR_IDX = {
+            CLOUDS_06_FILE_PATTERN:         {
+                                             (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_IDX,
+                                            },
+        }
+
+MOD07_VAR_IDX = {
             CLOUDS_07_FILE_PATTERN:         {
                                              (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_IDX,
                                             },
+        }
+
+GEO_250M_NAV_VAR_IDX    = {
+            VIS_250M_FILE_PATTERN:          {
+                                             (BKIND_VIS, BID_01): VISIBLE_250_CH_1_VARIABLE_IDX,
+                                             (BKIND_VIS, BID_02): VISIBLE_250_CH_2_VARIABLE_IDX,
+                                            },
+        }
+
+VAR_IDX    = {
+        GEO_NAV_UID      : GEO_NAV_VAR_IDX,
+        GEO_250M_NAV_UID : GEO_250M_NAV_VAR_IDX,
+        MOD06_NAV_UID    : MOD06_VAR_IDX,
+        MOD07_NAV_UID    : MOD07_VAR_IDX,
         }
 
 # a mapping between bands and the names of their scale and offset attributes
@@ -430,6 +448,7 @@ RESCALING_ATTRS = \
              }
 
 # a mapping between bands and the names of their valid range attributes
+# None means there is no valid range attribute
 VALID_RANGE_ATTR_NAMES = \
              {
               (BKIND_VIS, BID_01): GENERIC_VALID_RANGE_NAME,
@@ -444,10 +463,10 @@ VALID_RANGE_ATTR_NAMES = \
               (BKIND_CMASK, NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
               (BKIND_SZA,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
               
-              (BKIND_SST,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              (BKIND_LST,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              (BKIND_SLST,  NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              (BKIND_NDVI,  NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              (BKIND_SST,   NOT_APPLICABLE): None,
+              (BKIND_LST,   NOT_APPLICABLE): None,
+              (BKIND_SLST,  NOT_APPLICABLE): None,
+              (BKIND_NDVI,  NOT_APPLICABLE): None,
               
               (BKIND_IST,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
               (BKIND_INV,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
