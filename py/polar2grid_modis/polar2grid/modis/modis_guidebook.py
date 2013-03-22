@@ -174,6 +174,12 @@ GEO_FILE_GROUPING = {
                       MOD07_NAV_UID:    [CLOUDS_07_FILE_PATTERN],
                     }
 
+# a mapping of what navigation groups required geolocation auxiliary data
+# the file pattern is used in the filepaths dictionary passed to the frontend
+NAV_SETS_REQUIRE_GEO = {
+                      GEO_NAV_UID      : GEO_FILE_PATTERN,
+                    }
+
 # a mapping between the geo file group and the name of the fill value attribute for the longitude and latitude
 # FUTURE, if the lon/lat have different fill values in the future this may need to be more complex
 LON_LAT_FILL_VALUE_NAMES = \
@@ -259,6 +265,12 @@ FILL_VALUE_ATTR_NAMES = \
               (BKIND_TPW,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
             }
 
+# a list of the bands that are auxiliary bands (non-image data)
+AUX_BANDS = [
+              (BKIND_CMASK, NOT_APPLICABLE),
+              (BKIND_SZA,   NOT_APPLICABLE),
+            ]
+
 # a mapping between the bands and their data kinds (in the file)
 DATA_KINDS = {
               (BKIND_VIS, BID_01): DKIND_REFLECTANCE,
@@ -287,7 +299,7 @@ DATA_KINDS = {
              }
 
 # a mapping between the bands and the variable names used in the files to hold them
-GEO_NAV_VAR_NAMES  = {
+VAR_NAMES  = {
             VIS_INF_FILE_PATTERN:           {
                                              (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_NAME,
                                              (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_NAME,
@@ -322,38 +334,22 @@ GEO_NAV_VAR_NAMES  = {
             ICE_CONCENTRATION_FILE_PATTERN: {
                                              (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_NAME,
                                             },
-            }
-
-MOD06_VAR_NAMES = {
             CLOUDS_06_FILE_PATTERN:         {
                                              (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_NAME,
                                             },
-        }
-
-MOD07_VAR_NAMES = {
             CLOUDS_07_FILE_PATTERN:         {
                                              (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_NAME,
                                             },
-        }
-
-GEO_250M_NAV_VAR_NAMES = {
             VIS_250M_FILE_PATTERN:          {
                                              (BKIND_VIS, BID_01): VISIBLE_250_CH_1_VARIABLE_NAME,
                                              (BKIND_VIS, BID_02): VISIBLE_250_CH_2_VARIABLE_NAME,
                                             },
             }
 
-# This is a lot of dictionaries, but it is needed to be well defined
-VAR_NAMES = {
-        GEO_NAV_UID      : GEO_NAV_VAR_NAMES,
-        GEO_250M_NAV_UID : GEO_250M_NAV_VAR_NAMES,
-        MOD06_NAV_UID    : MOD06_VAR_NAMES,
-        MOD07_NAV_UID    : MOD07_VAR_NAMES,
-        }
 
 # a mapping between the bands and any index needed to access the data in the variable (for slicing)
 # if no slicing is needed the index will be None
-GEO_NAV_VAR_IDX    = {
+VAR_IDX    = {
             VIS_INF_FILE_PATTERN:           {
                                              (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_IDX,
                                              (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_IDX,
@@ -391,32 +387,13 @@ GEO_NAV_VAR_IDX    = {
             CLOUDS_06_FILE_PATTERN:         {
                                              (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_IDX,
                                             },
-        }
-
-MOD06_VAR_IDX = {
-            CLOUDS_06_FILE_PATTERN:         {
-                                             (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_IDX,
-                                            },
-        }
-
-MOD07_VAR_IDX = {
             CLOUDS_07_FILE_PATTERN:         {
                                              (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_IDX,
                                             },
-        }
-
-GEO_250M_NAV_VAR_IDX    = {
             VIS_250M_FILE_PATTERN:          {
                                              (BKIND_VIS, BID_01): VISIBLE_250_CH_1_VARIABLE_IDX,
                                              (BKIND_VIS, BID_02): VISIBLE_250_CH_2_VARIABLE_IDX,
                                             },
-        }
-
-VAR_IDX    = {
-        GEO_NAV_UID      : GEO_NAV_VAR_IDX,
-        GEO_250M_NAV_UID : GEO_250M_NAV_VAR_IDX,
-        MOD06_NAV_UID    : MOD06_VAR_IDX,
-        MOD07_NAV_UID    : MOD07_VAR_IDX,
         }
 
 # a mapping between bands and the names of their scale and offset attributes
@@ -635,6 +612,29 @@ def sort_files_by_nav_uid (filepaths) :
             LOG.debug("Removing empty nav file set '%s'" % (nav_group_uid,))
             del nav_file_type_sets[nav_group_uid]
     
+    # add navigation file patterns (if needed)
+    for nav_group_uid in nav_file_type_sets.keys():
+        # does this nav set need geonavigation aux. data?
+        if nav_group_uid not in NAV_SETS_REQUIRE_GEO:
+            continue
+
+        # get a band representative to get the corresponding geo filename
+        file_pattern = nav_file_type_sets[nav_group_uid].keys()[0]
+        file_paths_for_pattern = nav_file_type_sets[nav_group_uid][file_pattern]
+        # add navigation file pattern to the dictionary
+        geo_file_pattern = NAV_SETS_REQUIRE_GEO[nav_group_uid]
+        nav_file_type_sets[nav_group_uid][geo_file_pattern] = set([ ])
+
+        # get the geolocation filepath for each data filepath
+        for fp in file_paths_for_pattern:
+            base_dir,fn = os.path.split(fp)
+            geo_path = os.path.join( base_dir, get_equivalent_geolocation_filename(fn) )
+            LOG.debug("Adding geolocation file '%s'" % (geo_path,))
+            nav_file_type_sets[nav_group_uid][geo_file_pattern].update([geo_path])
+
+        # turn the set into a list
+        nav_file_type_sets[nav_group_uid][geo_file_pattern] = list(nav_file_type_sets[nav_group_uid][geo_file_pattern])
+
     return nav_file_type_sets
 
 

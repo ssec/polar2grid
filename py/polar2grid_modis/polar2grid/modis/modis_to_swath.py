@@ -199,11 +199,8 @@ def _load_geonav_data(nav_uid, meta_data_to_update, file_info_objects, cut_bad=F
     FUTURE nav_uid will need to be passed once we are using more types of navigation
     """
     list_of_geo_files = [ ]
-    list_of_geo_file_objects = []
     for file_info in file_info_objects :
         list_of_geo_files.append(file_info.get_geo_file())
-        list_of_geo_file_objects.append(FileInfoObject(file_info.get_geo_path()))
-    list_of_geo_files = sorted(set(list_of_geo_files))
     
     # Check if the navigation will need to be interpolated to a better
     # resolution
@@ -212,15 +209,6 @@ def _load_geonav_data(nav_uid, meta_data_to_update, file_info_objects, cut_bad=F
     interpolate_data = False
     if nav_uid in modis_guidebook.NAV_SETS_TO_INTERPOLATE_GEO:
         interpolate_data = True
-
-    # Get certain data that will be used as a band later (other methods will load the actual data)
-    # we only want this data if this nav set has a variable name for it
-    if list_of_geo_file_objects[0].matching_re in modis_guidebook.VAR_NAMES[nav_uid]:
-        log.info("Getting extra meta data from navigation file for later processing...")
-        temp_meta_data = _load_meta_data (list_of_geo_file_objects)
-        temp_bands     = { } if "bands" not in meta_data_to_update else meta_data_to_update["bands"]
-        meta_data_to_update.update(temp_meta_data)
-        meta_data_to_update["bands"].update(temp_bands)
 
     # FUTURE, if the longitude and latitude ever have different variable names, this will need refactoring
     lat_temp_file_name, lat_stats = _load_data_to_flat_file (list_of_geo_files, "lat_" + nav_uid,
@@ -384,8 +372,8 @@ def _load_image_data (nav_uid, meta_data_to_update, cut_bad=False) :
         # load the data into a flat file
         (scale_name, offset_name) = modis_guidebook.RESCALING_ATTRS[(band_kind, band_id)]
         matching_file_pattern = meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"].matching_re
-        var_name = modis_guidebook.VAR_NAMES[nav_uid][matching_file_pattern][(band_kind,band_id)]
-        var_idx  = modis_guidebook.VAR_IDX[nav_uid][matching_file_pattern][(band_kind,band_id)]
+        var_name = modis_guidebook.VAR_NAMES[matching_file_pattern][(band_kind,band_id)]
+        var_idx  = modis_guidebook.VAR_IDX[matching_file_pattern][(band_kind,band_id)]
         valid_range_attribute_name = modis_guidebook.VALID_RANGE_ATTR_NAMES[(band_kind, band_id)]
         temp_image_file_name, image_stats = _load_data_to_flat_file ([meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"].file_object],
                                                                      "%s_%s_%s" % (str(nav_uid),str(band_kind),str(band_id)),
@@ -420,49 +408,6 @@ def _load_image_data (nav_uid, meta_data_to_update, cut_bad=False) :
             log.error(msg)
             raise ValueError(msg)
 
-def get_swaths(nav_uid, ifilepaths, cut_bad=False):
-    """Takes MODIS hdf files and creates flat binary files for the information
-    required to do further processing.
-
-    :Parameters:
-        ifilepaths : list
-            List of image data filepaths (`*.hdf`) of one kind of band that are
-            to be concatenated into a swath. These paths should already be user
-            expanded absolute paths.
-            TODO, This code does not yet handle concatination of multiple files.
-            TODO, For now only one file will be accepted.
-    :Keywords:
-        cut_bad : bool
-            Specify whether or not to delete/cut out entire scans of data
-            when navigation data is bad.  This is done because the ms2gt
-            utilities used for remapping can't handle incorrect navigation data
-            TODO, for now this doesn't do anything!
-    """
-    
-    #print("ifilepaths: " + str(ifilepaths))
-    
-    # TODO, for now this method only handles one file, eventually it will need to handle more
-    if len(ifilepaths) != 1 :
-        raise ValueError("One file was expected for processing in get_swaths and more were given.")
-    
-    # make sure the file exists and get minimal info on it
-    assert(os.path.exists(ifilepaths[0]))
-    file_info = FileInfoObject(ifilepaths[0])
-    
-    # get the initial meta data information and raw image data
-    log.info("Getting data file info...")
-    meta_data = _load_meta_data ([file_info])
-    
-    # load the geonav data and put it in flat binary files
-    log.info("Creating binary files for latitude and longitude data")
-    _load_geonav_data(nav_uid, meta_data, [file_info], cut_bad=cut_bad)
-    
-    # load the image data and put it in flat binary files
-    log.info("Creating binary files for image data")
-    _load_image_data(nav_uid, meta_data, cut_bad=cut_bad)
-    
-    return meta_data
-
 class Frontend(roles.FrontendRole):
     removable_file_patterns = [
             "*.*_infrared_20",
@@ -487,10 +432,10 @@ class Frontend(roles.FrontendRole):
         
         create_fog = kwargs.pop("create_fog", False)
         cut_bad    = kwargs.pop("cut_bad", False)
+        remove_aux = kwargs.pop("remove_aux", True)
         
         # load up all the meta data
         meta_data = { }
-        all_file_objects = []
         for file_pattern_key in filepaths.keys() :
             temp_filepaths = sorted(filepaths[file_pattern_key])
             
@@ -512,21 +457,13 @@ class Frontend(roles.FrontendRole):
                 meta_data.update(temp_meta_data)
                 meta_data["bands"].update(temp_bands)
 
-                # Add this file object to the list so we can get all of the necessary navigation files later
-                all_file_objects.append(file_info)
-
-                #try:
-                #    temp_meta_data = get_swaths(temp_filepaths, nav_uid=nav_set_uid, **kwargs)
-                #    temp_bands     = { } if "bands" not in meta_data else meta_data["bands"]
-                #    meta_data.update(temp_meta_data)
-                #    meta_data["bands"].update(temp_bands)
-                #except StandardError:
-                #    log.error("Swath creation failed")
-                #    log.debug("Swath creation error:", exc_info=1)
-        
+        # Load the actual data
         try:
+            # Get file objects for one file pattern
+            one_patterns_file_objects = [ FileInfoObject(fp) for fp in filepaths[ filepaths.keys()[0] ] ]
+
             log.info("Creating binary files for latitude and longitude data")
-            _load_geonav_data(nav_set_uid, meta_data, all_file_objects, cut_bad=cut_bad)
+            _load_geonav_data(nav_set_uid, meta_data, one_patterns_file_objects, cut_bad=cut_bad)
 
             # load up all the image data
             log.info("Creating binary files for image data")
@@ -605,8 +542,10 @@ class Frontend(roles.FrontendRole):
                     log.debug("Fog creation error:", exc_info=1)
         
         # We don't want to give solar zenith angle to the rest of polar2grid, so we'll remove it
-        if (BKIND_SZA, NOT_APPLICABLE) in band_info:
-            del band_info[(BKIND_SZA, NOT_APPLICABLE)]
+        if remove_aux:
+            for band_kind,band_id in modis_guidebook.AUX_BANDS:
+                if (band_kind,band_id) in band_info:
+                    del band_info[(band_kind, band_id)]
 
         return meta_data
     
