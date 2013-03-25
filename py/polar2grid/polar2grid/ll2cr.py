@@ -284,9 +284,7 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
         numpy.divide(y_tmp, pixel_size_y, y_tmp)
 
         # good_mask here is True for good values
-        good_mask[:] =  ~( ((lon_arr[idx] == lon_fill_in) | (lat_arr[idx] == lon_fill_in)) | \
-                ( (x_tmp < -0.5) | (x_tmp > (grid_width + 0.5)) ) | \
-                ( (y_tmp < -0.5) | (y_tmp > (grid_height + 0.5)) ) )
+        good_mask[:] =  ~( ((lon_arr[idx] == lon_fill_in) | (lat_arr[idx] == lon_fill_in)) )
         cols_arr[idx,good_mask] = x_tmp[good_mask]
         cols_arr[idx,~good_mask] = fill_out
         rows_arr[idx,good_mask] = y_tmp[good_mask]
