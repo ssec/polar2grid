@@ -71,13 +71,18 @@ def plot_binary(bf, workspace='.',
     plt.savefig("plot_binary.%s.png" % fbf_attr, dpi=dpi_to_use)
     plt.close()
 
+def sci_float(x):
+    x = x.replace("\"", "")
+    x = x.replace("\'", "")
+    return float(str(x))
+
 def main():
     from argparse import ArgumentParser
     description = """
 Plot binary files using matplotlib.
     """
     parser = ArgumentParser(description=description)
-    parser.add_argument("-f", dest="fill_value", default=DEFAULT_FILL_VALUE, type=float,
+    parser.add_argument("-f", dest="fill_value", default=DEFAULT_FILL_VALUE, type=sci_float,
             help="Specify the fill_value of the input file(s)")
     parser.add_argument('--vmin', dest="vmin", default=None, type=int,
             help="Specify minimum brightness value. Defaults to minimum value of data.")
