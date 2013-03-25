@@ -18,13 +18,13 @@ version of ll2cr to calculate those values from the data it is gridding.
 Adding your own grid
 --------------------
 
-The grids module provides a configuration file to define the information about
-each grid that the user can specify. This file can be found in the source
+Polar2Grid allows users to define and add their own grids for remapping in
+any glue script. The Polar2Grid package provides a default set of grids that
+can be specified on the command line with most :term:`glue scripts`.
+This built-in configuration file can be found in the source on github
 `here <https://github.com/davidh-ssec/polar2grid/tree/master/py/polar2grid/polar2grid/grids/grids.conf>`_.
 If you wish to add your own grids as a replacement for or in addition to the
-provided set you'll have to make your own grid configuration file. For the
-format of a grid configuration file see the :ref:`grid_configuration_format`
-section below.
+provided set you'll have to make your own grid configuration file.
 
 Any glue script that provides the :option:`--grid-configs` command line option
 supports user-provided grids. Multiple files can be listed with this command
@@ -43,10 +43,12 @@ The following steps will add a configuration file to polar2grid in addition
 to the built-in grids:
 
 1. Create a text file named anything besides "grids.conf". Open it for editing.
+   For software bundle users, there is a ``grid_configs`` directory in the
+   root of the software bundle where user configuration files can be stored.
 2. Add a line for each grid you would like to add to polar2grid. Follow the
-   :ref:`grid_configuration_format` section below. Optionally, add a header
-   comment listing what each column is (see :ref:`grid_configuration_format`
-   for header comments).
+   :ref:`grid_configuration_format` section below. This section also has
+   header comments specifying each column that can be added to your file
+   for clarity.
 3. Call any polar2grid glue script and add the command line option
    ``--grid-configs grids.conf <your-file.conf>``. If you would like only
    your grids and not the package provided grids don't include the
@@ -56,17 +58,34 @@ If you are unsure which type of grid to make, it is recommended that you
 create a PROJ.4 grid as there is more online documentation for this format
 and also allows for dynamic parameters.
 
+.. note::
+
+    The decision of whether a grid is supported or not is ultimately up to
+    :doc:`the backend <../backends/index>` used by a glue script. Some
+    backends support any grid (GPD or PROJ.4) and others only a handful.
+    Check the :doc:`../backends/index` section for your specific backend.
+
+.. warning::
+
+    Some glue scripts force a certain built-in grid by default. These type
+    of glue scripts will fail if no grid is forced (:option:`-g` flag) or
+    the built-in grid configuration file is not provided.
+
 .. _grid_configuration_format:
 
 Grid Configuration File Format
 ------------------------------
+
+Example Grid Configuration File: :download:`grid_example.conf <../../../../../swbundle/grid_configs/grid_example.conf>`
 
 Grid configuration files are comma-separated text files with 2 possible types
 of entries, PROJ.4 grids and GPD grids. Comments can be added by prefixing lines
 with a ``#`` character. Spaces are allowed between values to make aligning columns
 easier. The following describes the 2 types of grids and each column that must
 be specified (in order). A sample header comment is also provided to add to your
-grid configuration file for better self-documentation.
+grid configuration file for better self-documentation. The example grid
+configuration file linked to above can also be found in the software bundle in
+``swbundle/grid_configs/grid_example.conf``.
 
 As discussed in the introduction of this section, PROJ.4 grids can be
 dynamic or static, but GPD grids can only be static. Of the 3 dynamic
@@ -103,7 +122,8 @@ PROJ.4 Grids:
      This value may be 'None' if it should be dynamically determined.
      X and Y pixel size must both be specified or both not specified.
  #. **pixel_size_y**:
-     Size of one pixel in the Y direction in grid units. Most grids are in
+     Size of one pixel in the Y direction in grid units (**MUST** be negative).
+     Most grids are in
      metered units, except for ``+proj=latlong`` which expects radians.
      This value may be 'None' if it should be dynamically determined.
      X and Y pixel size must both be specified or both not specified.

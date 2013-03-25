@@ -17,3 +17,5 @@ from regular TIFF images in that they have a number of tags for describing
 the data and the location of that data to NinJo.
 
 TODO: Rescaling
+
+The NinJo backend can only support the DWD Germany GPD grid at the moment.
