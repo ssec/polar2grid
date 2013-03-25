@@ -31,6 +31,12 @@ Usage::
       -h, --help     show this help message and exit
       -i, --inverse  Convert X/Y values to lon/lat
 
+Example::
+
+    $POLAR2GRID_HOME/bin/p2g_proj.sh "+proj=lcc +datum=NAD83 +ellps=GRS80 +lat_1=25 +lon_0=-95" -105.23 38.5
+    # Will result in:
+    -878781.238459 4482504.91307
+
 Plot AWIPS NC Data
 ------------------
 

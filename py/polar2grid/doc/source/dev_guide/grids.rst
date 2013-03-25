@@ -142,6 +142,12 @@ PROJ.4 Grids:
      For help with converting lon/lat values into X/Y values see the
      documentation for the utility script :ref:`util_p2g_proj`.
 
+An example of running the :ref:`util_p2g_proj` utility::
+
+    $POLAR2GRID_HOME/bin/p2g_proj.sh "+proj=lcc +datum=NAD83 +ellps=GRS80 +lat_1=25 +lon_0=-95" -105.23 38.5
+    # Will result in:
+    -878781.238459 4482504.91307
+
 GPD Grids:
 
 # grid_name,gpd,gpd_filename,ul_lon,ul_lat,ur_lon,ur_lat,lr_lon,lr_lat,ll_lon,ll_lat
