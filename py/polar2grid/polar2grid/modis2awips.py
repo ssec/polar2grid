@@ -281,7 +281,7 @@ def main(argv = sys.argv[1:]):
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_argument('-l', '--log', dest="log_fn", default=None,
             help="""specify the log filename, default
-<gluescript>_%Y%m%d_%H%M%S. Date information is provided from data filename
+<gluescript>_%%Y%%m%%d_%%H%%M%%S. Date information is provided from data filename
 through strftime. Current time if no files.""")
     parser.add_argument('--debug', dest="debug_mode", default=False,
             action='store_true',
