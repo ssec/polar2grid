@@ -333,17 +333,17 @@ def sort_files_by_nav_uid(filepaths):
 
     for fp in filepaths:
         fn = os.path.split(fp)[-1]
-        if fn.startswith("SVI"):
+        if fn.startswith("SVI") and fn.endswith(".h5"):
             nav_uid = NAV_SET_GUIDE[BKIND_I]
             if fn[3:5] in nav_dict[nav_uid]:
                 nav_dict[nav_uid][fn[3:5]].append(fp)
                 continue
-        if fn.startswith("SVM"):
+        if fn.startswith("SVM") and fn.endswith(".h5"):
             nav_uid = NAV_SET_GUIDE[BKIND_M]
             if fn[3:5] in nav_dict[nav_uid]:
                 nav_dict[nav_uid][fn[3:5]].append(fp)
                 continue
-        if fn.startswith("SVDNB"):
+        if fn.startswith("SVDNB") and fn.endswith(".h5"):
             nav_uid = NAV_SET_GUIDE[BKIND_DNB]
             nav_dict[nav_uid][NOT_APPLICABLE].append(fp)
             continue
@@ -365,8 +365,8 @@ def sort_files_by_nav_uid(filepaths):
             num_files_for_set = num_files_for_set or num_files # previous value or set it for the first time
             if num_files != num_files_for_set:
                 # We weren't given the same number of files for this nav_set
-                LOG.error("Nav. set %s did not have the same number of files for every band" % (nav_uid,file_id))
-                raise ValueError("Nav. set %s did not have the same number of files for every band" % (nav_uid,file_id))
+                LOG.error("Nav. set %s did not have the same number of files for every band (%s), expected %d got %d files" % (nav_uid,file_id,num_files_for_set,num_files))
+                raise ValueError("Nav. set %s did not have the same number of files for every band (%s), expected %d got %d files" % (nav_uid,file_id,num_files_for_set,num_files))
 
         # If we don't have any files for this navigation set, remove the file set
         if not nav_dict[nav_uid]:
