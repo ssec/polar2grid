@@ -238,12 +238,13 @@ def run_glue(filepaths,
     nav_file_type_sets = Frontend.sort_files_by_nav_uid(filepaths)
 
     # some things that we'll use later for clean up
-    process_to_wait_for = { k : None for k in nav_file_type_sets.keys() }
+    process_to_wait_for = { }
     exit_status         = 0
 
     # go through and process each of our file sets by navigation type
     for nav_set_uid in nav_file_type_sets.keys():
         log.debug("Calling %s navigation set" % (nav_set_uid,))
+        process_to_wait_for[nav_set_uid] = None
         try:
             if multiprocess:
                 process_to_wait_for[nav_set_uid] = p = Process(target=_process_data_sets,
