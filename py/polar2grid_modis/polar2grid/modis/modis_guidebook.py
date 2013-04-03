@@ -83,6 +83,9 @@ VISIBLE_250_CH_2_VARIABLE_IDX     = 1
 
 CLOUD_MASK_NAME              = 'MODIS_Cloud_Mask'
 CLOUD_MASK_IDX               = None
+LAND_SEA_MASK_NAME           = 'MODIS_Simple_LandSea_Mask'
+LAND_SEA_MASK_IDX            = None
+
 SOLAR_ZENITH_ANGLE_NAME      = "SolarZenith"
 SOLAR_ZENITH_ANGLE_IDX       = None
 
@@ -200,7 +203,8 @@ FILE_CONTENTS_GUIDE = {
                                                                      BKIND_VIS:   [BID_01, BID_02]
                                                                     },
                         CLOUD_MASK_FILE_PATTERN:                    {
-                                                                     BKIND_CMASK: [NOT_APPLICABLE]
+                                                                     BKIND_CMASK: [NOT_APPLICABLE],
+                                                                     BKIND_LSMSK: [NOT_APPLICABLE],
                                                                     },
                         SEA_SURFACE_TEMP_FILE_PATTERN:              {
                                                                      BKIND_SST:   [NOT_APPLICABLE]
@@ -249,6 +253,7 @@ FILL_VALUE_ATTR_NAMES = \
               (BKIND_IR,  BID_31):           FILL_VALUE_ATTR_NAME,
               
               (BKIND_CMASK, NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
+              (BKIND_LSMSK, NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
               (BKIND_SZA,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
               
               (BKIND_SST,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
@@ -268,6 +273,7 @@ FILL_VALUE_ATTR_NAMES = \
 # a list of the bands that are auxiliary bands (non-image data)
 AUX_BANDS = [
               (BKIND_CMASK, NOT_APPLICABLE),
+              (BKIND_LSMSK, NOT_APPLICABLE),
               (BKIND_SZA,   NOT_APPLICABLE),
             ]
 
@@ -282,6 +288,7 @@ DATA_KINDS = {
               (BKIND_IR,  BID_31): DKIND_RADIANCE,
               
               (BKIND_CMASK, NOT_APPLICABLE): DKIND_CATEGORY,
+              (BKIND_LSMSK, NOT_APPLICABLE): DKIND_CATEGORY,
               (BKIND_SZA,   NOT_APPLICABLE): DKIND_ANGLE,
               
               (BKIND_SST,   NOT_APPLICABLE): DKIND_BTEMP,
@@ -310,6 +317,7 @@ VAR_NAMES  = {
                                             },
             CLOUD_MASK_FILE_PATTERN:        {
                                              (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_NAME,
+                                             (BKIND_LSMSK, NOT_APPLICABLE): LAND_SEA_MASK_NAME,
                                             },
             SEA_SURFACE_TEMP_FILE_PATTERN:  {
                                              (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_NAME,
@@ -360,6 +368,7 @@ VAR_IDX    = {
                                             },
             CLOUD_MASK_FILE_PATTERN:        {
                                              (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_IDX,
+                                             (BKIND_LSMSK, NOT_APPLICABLE): LAND_SEA_MASK_IDX,
                                             },
             SEA_SURFACE_TEMP_FILE_PATTERN:  {
                                              (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_IDX,
@@ -408,6 +417,7 @@ RESCALING_ATTRS = \
               (BKIND_IR,  BID_31): (INFRARED_SCALE_ATTR_NAME, INFRARED_OFFSET_ATTR_NAME),
               
               (BKIND_CMASK, NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
+              (BKIND_LSMSK, NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
               (BKIND_SZA,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
               
               (BKIND_SST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
@@ -438,6 +448,7 @@ VALID_RANGE_ATTR_NAMES = \
               (BKIND_IR,  BID_31): GENERIC_VALID_RANGE_NAME,
               
               (BKIND_CMASK, NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
+              (BKIND_LSMSK, NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
               (BKIND_SZA,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
               
               (BKIND_SST,   NOT_APPLICABLE): None,
@@ -466,6 +477,7 @@ IS_CLOUD_CLEARED = \
               (BKIND_IR,  BID_31): False,
               
               (BKIND_CMASK, NOT_APPLICABLE): False,
+              (BKIND_LSMSK, NOT_APPLICABLE): False,
               (BKIND_SZA,   NOT_APPLICABLE): False,
               
               (BKIND_SST,   NOT_APPLICABLE): True,
@@ -494,6 +506,7 @@ SHOULD_CONVERT_TO_BT = \
               (BKIND_IR,  BID_31): True,
               
               (BKIND_CMASK, NOT_APPLICABLE): False,
+              (BKIND_LSMSK, NOT_APPLICABLE): False,
               (BKIND_SZA,   NOT_APPLICABLE): False,
               
               (BKIND_SST,   NOT_APPLICABLE): False,
@@ -508,6 +521,36 @@ SHOULD_CONVERT_TO_BT = \
               
               (BKIND_CTT,   NOT_APPLICABLE): False,
               (BKIND_TPW,   NOT_APPLICABLE): False,
+             }
+
+# a list land sea mask values to keep when clearing or None if
+# that variable's data won't be cleared using this mask
+CLEAR_ALL_LANDSEA_VALUES_EXCEPT = \
+             {
+              (BKIND_VIS, BID_01): None,
+              (BKIND_VIS, BID_02): None,
+              (BKIND_VIS, BID_07): None,
+              (BKIND_VIS, BID_26): None,
+              (BKIND_IR,  BID_20): None,
+              (BKIND_IR,  BID_27): None,
+              (BKIND_IR,  BID_31): None,
+              
+              (BKIND_CMASK, NOT_APPLICABLE): None,
+              (BKIND_LSMSK, NOT_APPLICABLE): None,
+              (BKIND_SZA,   NOT_APPLICABLE): None,
+              
+              (BKIND_SST,   NOT_APPLICABLE): [1, 2],
+              (BKIND_LST,   NOT_APPLICABLE): [2, 3, 4],
+              (BKIND_SLST,  NOT_APPLICABLE): [2, 3, 4],
+              (BKIND_NDVI,  NOT_APPLICABLE): [2, 3, 4],
+              
+              (BKIND_IST,   NOT_APPLICABLE): None,
+              (BKIND_INV,   NOT_APPLICABLE): None,
+              (BKIND_IND,   NOT_APPLICABLE): None,
+              (BKIND_ICON,  NOT_APPLICABLE): None,
+              
+              (BKIND_CTT,   NOT_APPLICABLE): None,
+              (BKIND_TPW,   NOT_APPLICABLE): None,
              }
 
 def parse_datetime_from_filename (file_name_string) :

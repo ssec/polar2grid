@@ -47,7 +47,7 @@ import modis_guidebook
 from polar2grid.core.constants import *
 from polar2grid.core import roles
 from polar2grid.core.fbf import file_appender
-from .modis_filters  import convert_radiance_to_bt, make_data_cloud_cleared, create_fog_band
+from .modis_filters  import convert_radiance_to_bt, make_data_category_cleared, create_fog_band
 from .modis_geo_interp_250 import interpolate_geolocation
 
 import numpy
@@ -86,8 +86,6 @@ class FileInfoObject (object) :
         """
         get the geonavigation file as an opened file object, open it if needed
         """
-        
-        #print("geo file name: " + str(os.path.join(os.path.split(self.full_path)[0], self.geo_file_name)))
         
         if self.geo_file_obj is None :
             self.geo_file_obj = SD(os.path.join(os.path.split(self.full_path)[0], self.geo_file_name), SDC.READ)
@@ -319,7 +317,7 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
             offset_value = temp_var_object.attributes()[offset_name] if variable_idx is None else temp_var_object.attributes()[offset_name][variable_idx]
             offset_value = float(offset_value) if offset_value is not None else offset_value
         
-        log.debug("Using scale value " + str(scale_value) + " and offset value " + str(offset_value))
+        log.debug ("Variable " + str(variable_name) + " is using scale value " + str(scale_value) + " and offset value " + str(offset_value))
         
         # abstractly the formula for scaling is:
         #           data_to_return = (data_from_file - offset_value) * scale_value
@@ -346,7 +344,7 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
         to_use_temp   = numpy.append(temp_var_data[not_fill_mask], maximum_value) if maximum_value is not None else temp_var_data[not_fill_mask]
         maximum_value = max_fn(to_use_temp) if to_use_temp.size > 0 else maximum_value
         
-        #print ("variable " + str(variable_name) + " has fill value " + str(fill_value) + " and data range " + str(minimum_value) + " to " + str(maximum_value))
+        log.debug ("After loading, variable " + str(variable_name) + " has fill value " + str(fill_value) + " and data range " + str(minimum_value) + " to " + str(maximum_value))
     
     # save some statistics to a dictionary
     stats = {
@@ -492,9 +490,10 @@ class Frontend(roles.FrontendRole):
                     
                     file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
                     try:
-                        new_path = make_data_cloud_cleared(file_to_use, band_info[(BKIND_CMASK, NOT_APPLICABLE)]["fbf_img"],
-                                                           modis_guidebook.CLOUDS_VALUES_TO_CLEAR,
-                                                           data_fill_value=band_info[band_kind, band_id]["fill_value"])
+                        new_path = make_data_category_cleared (file_to_use, band_info[(BKIND_CMASK, NOT_APPLICABLE)]["fbf_img"],
+                                                               list_of_category_values_to_clear=modis_guidebook.CLOUDS_VALUES_TO_CLEAR,
+                                                               data_fill_value=band_info[band_kind, band_id]["fill_value"],
+                                                               prefix_for_file="cloud_cleared_%s")
                         band_info[band_kind, band_id]["fbf_swath"] = new_path
                     except StandardError:
                         log.error("Unexpected error while cloud clearing " + str(band_kind) + " " + str(band_id) + ", removing...")
@@ -504,6 +503,34 @@ class Frontend(roles.FrontendRole):
                 # if we don't have the cloud mask to clear this product, we can't produce it
                 else :
                     log.error("Cloud mask unavailable to cloud clear " + str(band_kind) + " " + str(band_id) + ", removing...")
+                    del band_info[(band_kind, band_id)]
+        
+        # clear some data based on the land sea mask
+        for band_kind, band_id in band_info.keys() :
+            
+            clearing_key = modis_guidebook.CLEAR_ALL_LANDSEA_VALUES_EXCEPT[(band_kind, band_id)]
+            
+            # only do the clearing if it's appropriate for this band
+            if clearing_key is not None :
+                
+                # we can only clear if we have a land sea mask
+                if (BKIND_LSMSK, NOT_APPLICABLE) in band_info :
+                    
+                    file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
+                    try:
+                        new_path = make_data_category_cleared (file_to_use, band_info[(BKIND_LSMSK, NOT_APPLICABLE)]["fbf_img"],
+                                                               list_of_category_values_to_preserve=clearing_key,
+                                                               data_fill_value=band_info[band_kind, band_id]["fill_value"],
+                                                               prefix_for_file="landsea_cleared_%s")
+                        band_info[band_kind, band_id]["fbf_swath"] = new_path
+                    except StandardError:
+                        log.error("Unexpected error while land sea clearing " + str(band_kind) + " " + str(band_id) + ", removing...")
+                        log.debug("Error:", exc_info=1)
+                        del band_info[(band_kind, band_id)]
+                
+                # if we don't have the cloud mask to clear this product, we can't produce it
+                else :
+                    log.error("Land sea mask unavailable to clear parts of " + str(band_kind) + " " + str(band_id) + ", removing...")
                     del band_info[(band_kind, band_id)]
         
         # convert some of our bands to brightness temperature

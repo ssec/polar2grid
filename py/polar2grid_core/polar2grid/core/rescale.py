@@ -76,14 +76,14 @@ def _make_lin_scale(m, b):
 
 def linear_scale(img, m, b, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     log.debug("Running 'linear_scale' with (m: %f, b: %f)..." % (m,b))
-
+    
     fill_mask = numpy.nonzero(img == fill_in)
-
+    
     numpy.multiply(img, m, img)
     numpy.add(img, b, img)
-
+    
     img[fill_mask] = fill_out
-
+    
     return img
 
 def unlinear_scale(img, m, b, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
