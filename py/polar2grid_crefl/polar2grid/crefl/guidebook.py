@@ -15,7 +15,7 @@ Write out Swath binary files used by other polar2grid components.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_I,BKIND_M,DEFAULT_FILL_VALUE
+from polar2grid.core.constants import *
 from polar2grid.core.time_utils import UTC
 from pyhdf import SD,error as hdf_error
 import numpy
@@ -25,6 +25,7 @@ import sys
 import re
 import logging
 from datetime import datetime
+from glob import glob
 
 log = logging.getLogger(__name__)
 
@@ -32,26 +33,23 @@ log = logging.getLogger(__name__)
 UTC = UTC()
 
 ### CONSTANTS TO BE PUT IN POLAR2GRID.CORE XXX ###
-BID_CREFL_02="crefl02"
-BID_CREFL_03="crefl03"
-BID_CREFL_04="crefl04"
-BID_CREFL_05="crefl05"
-BID_CREFL_07="crefl07"
-BID_CREFL_08="crefl08"
-BID_CREFL_10="crefl10"
-BID_CREFL_11="crefl11"
-BID_CREFL_12="crefl12"
 
-DKIND_CREFL_02="crefl_02"
-DKIND_CREFL_03="crefl_03"
-DKIND_CREFL_04="crefl_04"
-DKIND_CREFL_05="crefl_05"
-DKIND_CREFL_07="crefl_07"
-DKIND_CREFL_08="crefl_08"
-DKIND_CREFL_10="crefl_10"
-DKIND_CREFL_11="crefl_11"
-DKIND_CREFL_12="crefl_12"
-### CONSTANTS TO BE PUT IN POLAR2GRID.CORE XXX ###
+DKIND_CREFL = "corrected_reflectance"
+BKIND_CREFL = "crefl"
+#BKIND_CREFL_02="crefl_02"
+#BKIND_CREFL_03="crefl_03"
+#BKIND_CREFL_04="crefl_04"
+#BKIND_CREFL_05="crefl_05"
+#BKIND_CREFL_06="crefl_06"
+#BKIND_CREFL_07="crefl_07"
+#BKIND_CREFL_08="crefl_08"
+#BKIND_CREFL_09="crefl_09"
+#BKIND_CREFL_10="crefl_10"
+
+# Use the VIIRS M and I navigation sets
+# MBAND_NAV_UID, IBAND_NAV_UID
+
+### End of CONSTANTS TO BE PUT IN POLAR2GRID.CORE XXX ###
 
 # Dimension constants
 DIMNAME_LINES_750   = "lines_750m"
@@ -68,15 +66,16 @@ PIXEL_SIZE_750  = 750
 PIXEL_SIZE_350  = 350
 
 # Constants for dataset names in crefl output files
+DS_CR_01 = "CorrRefl_01"
 DS_CR_02 = "CorrRefl_02"
 DS_CR_03 = "CorrRefl_03"
 DS_CR_04 = "CorrRefl_04"
 DS_CR_05 = "CorrRefl_05"
+DS_CR_06 = "CorrRefl_06"
 DS_CR_07 = "CorrRefl_07"
 DS_CR_08 = "CorrRefl_08"
+DS_CR_09 = "CorrRefl_09"
 DS_CR_10 = "CorrRefl_10"
-DS_CR_11 = "CorrRefl_11"
-DS_CR_12 = "CorrRefl_12"
 
 # Constants for navigation dataset names in crefl output files
 DS_LONGITUDE = "Longitude"
@@ -88,196 +87,97 @@ K_SCALE_FACTOR = "ScaleFactorKey"
 K_SCALE_OFFSET = "ScaleOffsetKey"
 K_UNITS        = "UnitsKey"
 K_DATASETS     = "DatasetsKey"
+K_DATASET      = "DatasetKey"
 K_LONGITUDE    = "LongitudeKey"
 K_LATITUDE     = "LatitudeKey"
 K_COLUMNS_750  = "Columns750Key"
 K_COLUMNS_350  = "Columns350Key"
 K_ROWS_750     = "Rows750Key"
 K_ROWS_350     = "Rows350Key"
+K_GEO_PATTERN  = "GeoGlobPatternKey"
 
 
 """
-I1  | CorrRefl_12
-I2  | CorrRefl_7
-I3  | CorrRefl_10
-M2  | CorrRefl_2
-M3  | CorrRefl_3
-M4  | CorrRefl_4
-M5  | CorrRefl_5
-M7  | CorrRefl_7
-M8  | CorrRefl_8
-M10 | CorrRefl_10
-M11 | CorrRefl_11
+CorrRefl_01 | M5 Corrected reflectances
+CorrRefl_02 | M7 Corrected reflectances
+CorrRefl_03 | M3 Corrected reflectances
+CorrRefl_04 | M4 Corrected reflectances
+CorrRefl_05 | M8 Corrected reflectances
+CorrRefl_06 | M10 Corrected reflectances
+CorrRefl_07 | M11 Corrected reflectances
+CorrRefl_08 | I1 Corrected reflectances
+CorrRefl_09 | I2 Corrected reflectances
+CorrRefl_10 | I3 Corrected reflectances
 """
 
-""" Example of SVM file (lower resolution)
-[davidh@glados new_crefl]$ hdfdump -h test.hdf 
-netcdf test {
-dimensions:
-    lines_750m = 768 ;
-    samples_750m = 3200 ;
+# Regular expression file patterns used later
+IBAND_REGEX = r'CREFLI_(?P<sat>[A-Za-z0-9]+)_d(?P<date_str>\d+)_t(?P<start_str>\d+)_e(?P<end_str>\d+).hdf'
+MBAND_REGEX = r'CREFLM_(?P<sat>[A-Za-z0-9]+)_d(?P<date_str>\d+)_t(?P<start_str>\d+)_e(?P<end_str>\d+).hdf'
 
-variables:
-    short CorrRefl_03(lines_750m, samples_750m) ;
-        CorrRefl_03:_FillValue = 32767s ;
-        CorrRefl_03:scale_factor = 0.0001 ;
-        CorrRefl_03:add_offset = 0. ;
-        CorrRefl_03:units = "none" ;
-    short CorrRefl_04(lines_750m, samples_750m) ;
-        CorrRefl_04:_FillValue = 32767s ;
-        CorrRefl_04:scale_factor = 0.0001 ;
-        CorrRefl_04:add_offset = 0. ;
-        CorrRefl_04:units = "none" ;
-    short CorrRefl_05(lines_750m, samples_750m) ;
-        CorrRefl_05:_FillValue = 32767s ;
-        CorrRefl_05:scale_factor = 0.0001 ;
-        CorrRefl_05:add_offset = 0. ;
-        CorrRefl_05:units = "none" ;
-    float Longitude(lines_750m, samples_750m) ;
-        Longitude:_FillValue = -999.f ;
-        Longitude:scale_factor = 1. ;
-        Longitude:add_offset = 0. ;
-        Longitude:units = "none" ;
-    float Latitude(lines_750m, samples_750m) ;
-        Latitude:_FillValue = -999.f ;
-        Latitude:scale_factor = 1. ;
-        Latitude:add_offset = 0. ;
-        Latitude:units = "none" ;
-
-// global attributes:
-        :ProcessVersionNumber = "1.7.1" ;
-        :MaxSolarZenithAngle = 86.5f ;
-        :sealevel = '\0' ;
-        :toa = '\0' ;
-        :nearest = '\0' ;
-}
-"""
-
-""" Example of SVI (higher resolution)
-[davidh@glados crefl_conus_day]$ hdfdump -h test.hdf 
-netcdf test {
-dimensions:
-    lines_350m = 1536 ;
-    samples_350m = 6400 ;
-    lines_750m = 768 ;
-    samples_750m = 3200 ;
-
-variables:
-    short CorrRefl_12(lines_350m, samples_350m) ;
-        CorrRefl_12:_FillValue = 32767s ;
-        CorrRefl_12:scale_factor = 0.0001 ;
-        CorrRefl_12:add_offset = 0. ;
-        CorrRefl_12:units = "none" ;
-    short CorrRefl_03(lines_750m, samples_750m) ;
-        CorrRefl_03:_FillValue = 32767s ;
-        CorrRefl_03:scale_factor = 0.0001 ;
-        CorrRefl_03:add_offset = 0. ;
-        CorrRefl_03:units = "none" ;
-    short CorrRefl_04(lines_750m, samples_750m) ;
-        CorrRefl_04:_FillValue = 32767s ;
-        CorrRefl_04:scale_factor = 0.0001 ;
-        CorrRefl_04:add_offset = 0. ;
-        CorrRefl_04:units = "none" ;
-    short CorrRefl_05(lines_750m, samples_750m) ;
-        CorrRefl_05:_FillValue = 32767s ;
-        CorrRefl_05:scale_factor = 0.0001 ;
-        CorrRefl_05:add_offset = 0. ;
-        CorrRefl_05:units = "none" ;
-    float Longitude(lines_350m, samples_350m) ;
-        Longitude:_FillValue = -999.f ;
-        Longitude:scale_factor = 1. ;
-        Longitude:add_offset = 0. ;
-        Longitude:units = "none" ;
-    float Latitude(lines_350m, samples_350m) ;
-        Latitude:_FillValue = -999.f ;
-        Latitude:scale_factor = 1. ;
-        Latitude:add_offset = 0. ;
-        Latitude:units = "none" ;
-
-// global attributes:
-        :ProcessVersionNumber = "1.7.1" ;
-        :1km_input_file = "../../data/viirs/conus_day/SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5" ;
-        :MaxSolarZenithAngle = 86.5f ;
-        :sealevel = '\0' ;
-        :toa = '\0' ;
-        :nearest = '\0' ;
-}
-"""
+NAV_SET_USES = {
+        IBAND_NAV_UID : [ IBAND_REGEX ],
+        MBAND_NAV_UID : [ MBAND_REGEX ],
+        }
 
 # Regular expressions for files we understand and some information that we know based on which one matches
 FILE_REGEX = {
-        r'crefl.(?P<sat>[A-Za-z0-9]+)_viirs_350_d(?P<date_str>\d+)_t(?P<start_str>\d+)_e(?P<end_str>\d+).hdf' : {
+        IBAND_REGEX : {
             K_FILL_VALUE   : "_FillValue",
             K_SCALE_FACTOR : "scale_factor",
             K_SCALE_OFFSET : "add_offset",
             K_UNITS        : "units",
-            K_DATASETS     : [ DS_CR_12, DS_CR_03, DS_CR_04, DS_CR_05 ],
-            K_LONGITUDE    : DS_LONGITUDE,
-            K_LATITUDE     : DS_LATITUDE,
-            K_COLUMNS_750  : DIM_SAMPLES_750, # not used
-            K_COLUMNS_350  : DIM_SAMPLES_350, # not used
-            K_ROWS_750     : DIM_LINES_750, # not used
-            K_ROWS_350     : DIM_LINES_350, # not used
-            "band_kind"    : "svi",
-            "instrument"   : "viirs"
+            K_DATASETS     : [ DS_CR_08, DS_CR_09, DS_CR_10 ],
+            K_GEO_PATTERN  : "GITCO_%(sat)s_d%(date_str)s_t%(start_str)s_e%(end_str)s_b*_c*_*.h5",
+            "resolution"   : 500,
+            "instrument"   : INST_VIIRS,
+            "rows_per_scan" : 32,
             },
 
-        r'crefl.(?P<sat>[A-Za-z0-9]+)_viirs_750_d(?P<date_str>\d+)_t(?P<start_str>\d+)_e(?P<end_str>\d+).hdf' : {
+        MBAND_REGEX : {
             K_FILL_VALUE   : "_FillValue",
             K_SCALE_FACTOR : "scale_factor",
             K_SCALE_OFFSET : "add_offset",
             K_UNITS        : "units",
-            K_DATASETS     : [ DS_CR_03, DS_CR_04, DS_CR_05 ],
-            K_LONGITUDE    : DS_LONGITUDE,
-            K_LATITUDE     : DS_LATITUDE,
-            K_COLUMNS_750  : DIM_SAMPLES_750, # not used
-            K_COLUMNS_350  : DIM_SAMPLES_350, # not used
-            K_ROWS_750     : DIM_LINES_750, # not used
-            K_ROWS_350     : DIM_LINES_350, # not used
-            "band_kind"    : "svm",
-            "instrument"   : "viirs"
+            K_DATASETS     : [ DS_CR_01, DS_CR_02, DS_CR_03, DS_CR_04, DS_CR_05, DS_CR_06, DS_CR_07 ],
+            K_GEO_PATTERN  : "GMTCO_%(sat)s_d%(date_str)s_t%(start_str)s_e%(end_str)s_b*_c*_*.h5",
+            "resolution"   : 1000,
+            "instrument"   : INST_VIIRS,
+            "rows_per_scan" : 16,
             },
         }
 
 # Satellites that we know how to handle
+# XXX: JPSS satellites will need to be added to this
 SATELLITES = {
-        "npp"   : SAT_NPP#,
+        "npp"   : SAT_NPP,
         #"aqua"  : SAT_AQUA,
         #"terra" : SAT_TERRA
         }
 
-INSTRUMENTS = {
-        "viirs" : INST_VIIRS#,
-        #"modis" : INST_MODIS
-        }
-
-FILE_BKIND_CONSTANT = {
-        "svi"   : BKIND_I,
-        "i"     : BKIND_I,
-        "svm"   : BKIND_M,
-        "m"     : BKIND_M
-        }
-
-DATASET2DKIND = {
-        DS_CR_03 : DKIND_CREFL_03,
-        DS_CR_04 : DKIND_CREFL_04,
-        DS_CR_05 : DKIND_CREFL_05,
-        DS_CR_12 : DKIND_CREFL_12
-        }
-
 DATASET2BID = {
-        DS_CR_03 : BID_CREFL_03,
-        DS_CR_04 : BID_CREFL_04,
-        DS_CR_05 : BID_CREFL_05,
-        DS_CR_12 : BID_CREFL_12
+        DS_CR_01 : BID_01,
+        DS_CR_02 : BID_02,
+        DS_CR_03 : BID_03,
+        DS_CR_04 : BID_04,
+        DS_CR_05 : BID_05,
+        DS_CR_06 : BID_06,
+        DS_CR_07 : BID_07,
+        DS_CR_08 : BID_08,
+        DS_CR_09 : BID_09,
+        DS_CR_10 : BID_10,
         }
 
-DATASET2RPS = {
-        DS_CR_03 : 16,
-        DS_CR_04 : 16,
-        DS_CR_05 : 16,
-        DS_CR_12 : 32
-        }
+def _safe_glob(pat, num_allowed=1):
+    glob_results = glob(pat)
+    if len(glob_results) < num_allowed:
+        log.error("Could not find enough files matching file pattern: '%s'" % (pat,))
+        raise ValueError("Could not find enough files matching file pattern: '%s'" % (pat,))
+    if len(glob_results) > num_allowed:
+        log.error("Too many files found matching file pattern: '%s'" % (pat,))
+        raise ValueError("Too many files found matching file pattern: '%s'" % (pat,))
+
+    if num_allowed == 1: return glob_results[0]
+    return glob_results
 
 def _convert_datetimes(date_str, start_str, end_str):
     # the last digit in the 7 digit time is tenths of a second
@@ -291,69 +191,144 @@ def _convert_datetimes(date_str, start_str, end_str):
 
     return start_time,end_time
 
-def get_file_info(data_filepath):
-    """Return a dictionary of information about the file provided.
-    This function will pull as much information as can be derived
-    from the filename provided. It will not read the file, but it
-    will check for it's existence.
+def parse_datetimes_from_filepaths(filepaths):
+    """Provide a list of datetime objects for each understood file provided.
+
+    >>> assert( not parse_datetimes_from_filepaths([]) )
+    >>> assert( not parse_datetimes_from_filepaths([ "fake1.txt", "fake2.txt" ]) )
+    >>> dts = parse_datetimes_from_filepaths([
+    ...     "CREFLI_npp_d20130311_t1916582_e1918223.hdf",
+    ...     "CREFLI_npp_d20130311_t1918236_e1919477.hdf",
+    ...     "CREFLI_npp_d20130311_t1919490_e1921131.hdf",
+    ...     "CREFLI_npp_d20130311_t1921144_e1922385.hdf",
+    ...     "CREFLI_npp_d20130311_t1922398_e1924039.hdf",
+    ...     "CREFLI_npp_d20130311_t1924052_e1925294.hdf",
+    ...     "CREFLI_npp_d20130311_t1925306_e1926548.hdf",
+    ...     "CREFLI_npp_d20130311_t1926560_e1928202.hdf",
+    ...     "CREFLI_npp_d20130311_t1928214_e1929456.hdf",
+    ...     "fake3.txt",
+    ...     "CREFLM_npp_d20130311_t1916582_e1918223.hdf",
+    ...     "CREFLM_npp_d20130311_t1918236_e1919477.hdf",
+    ...     "CREFLM_npp_d20130311_t1919490_e1921131.hdf",
+    ...     "CREFLM_npp_d20130311_t1921144_e1922385.hdf",
+    ...     "CREFLM_npp_d20130311_t1922398_e1924039.hdf",
+    ...     "CREFLM_npp_d20130311_t1924052_e1925294.hdf",
+    ...     "CREFLM_npp_d20130311_t1925306_e1926548.hdf",
+    ...     "CREFLM_npp_d20130311_t1926560_e1928202.hdf",
+    ...     "CREFLM_npp_d20130311_t1928214_e1929456.hdf"
+    ...     ])
+    >>> assert( len(dts) == 18 )
     """
-    file_info = {}
-    if not os.path.exists(data_filepath):
-        log.error("crefl file '%s' does not exist" % (data_filepath,))
-        raise ValueError("crefl file '%s' does not exist" % (data_filepath,))
+    file_dates = []
+    for fn in [ os.path.split(fp)[1] for fp in filepaths ]:
+        matched_pattern_obj = None
+        for file_pattern in FILE_REGEX:
+            matched_pattern_obj = re.match(file_pattern, fn)
+            if not matched_pattern_obj:
+                continue
+            else:
+                break
 
-    file_info["data_filepath"] = data_filepath
-    data_dir,data_filename = os.path.split(data_filepath)
-    file_info["data_dir"] = data_dir
-    file_info["data_filename"] = data_filename
-
-    # Pull information from the filename
-    for pat,nfo in FILE_REGEX.items():
-        m = re.match(pat, data_filename)
-        if not m:
+        if not matched_pattern_obj:
+            # ignore any files we don't understand
             continue
 
-        # Get the information from the filename regex
-        filename_info = m.groupdict()
-        for k,v in filename_info.items():
-            # Make everything lower case
-            filename_info[k] = filename_info[k].lower()
+        filename_info = matched_pattern_obj.groupdict()
+        file_dates.append(_convert_datetimes(filename_info["date_str"], filename_info["start_str"], filename_info["end_str"])[0])
 
-        file_info.update(filename_info)
-        file_info.update(nfo)
+    return file_dates
 
-        # Convert the satellite name
-        if file_info["sat"] not in SATELLITES:
-            msg = "Don't know how to process satellite '%s'" % (file_info["sat"],)
-            log.error(msg)
-            raise ValueError(msg)
-        file_info["sat"] = SATELLITES[file_info["sat"]]
+def sort_files_by_nav_uid(filepaths):
+    """Sort the provided filepaths into a dictionary structure keyed by
+    `nav_set_uid` and file pattern.
 
-        # Convert the instrumen name
-        if file_info["instrument"] not in INSTRUMENTS:
-            msg = "Don't know how to process instrument '%s'" % (file_info["instrument"],)
-            log.error(msg)
-            raise ValueError(msg)
-        file_info["instrument"] = INSTRUMENTS[file_info["instrument"]]
+    >>> assert( not sort_files_by_nav_uid([]) )
+    >>> assert( not sort_files_by_nav_uid([ "fake1.txt", "fake2.txt" ]) )
+    >>> filepaths_dict = sort_files_by_nav_uid([
+    ...     "CREFLI_npp_d20130311_t1916582_e1918223.hdf",
+    ...     "CREFLI_npp_d20130311_t1918236_e1919477.hdf",
+    ...     "CREFLI_npp_d20130311_t1919490_e1921131.hdf",
+    ...     "CREFLI_npp_d20130311_t1921144_e1922385.hdf",
+    ...     "CREFLI_npp_d20130311_t1922398_e1924039.hdf",
+    ...     "CREFLI_npp_d20130311_t1924052_e1925294.hdf",
+    ...     "CREFLI_npp_d20130311_t1925306_e1926548.hdf",
+    ...     "CREFLI_npp_d20130311_t1926560_e1928202.hdf",
+    ...     "CREFLI_npp_d20130311_t1928214_e1929456.hdf",
+    ...     "fake3.txt",
+    ...     "CREFLM_npp_d20130311_t1916582_e1918223.hdf",
+    ...     "CREFLM_npp_d20130311_t1918236_e1919477.hdf",
+    ...     "CREFLM_npp_d20130311_t1919490_e1921131.hdf",
+    ...     "CREFLM_npp_d20130311_t1921144_e1922385.hdf",
+    ...     "CREFLM_npp_d20130311_t1922398_e1924039.hdf",
+    ...     "CREFLM_npp_d20130311_t1924052_e1925294.hdf",
+    ...     "CREFLM_npp_d20130311_t1925306_e1926548.hdf",
+    ...     "CREFLM_npp_d20130311_t1926560_e1928202.hdf",
+    ...     "CREFLM_npp_d20130311_t1928214_e1929456.hdf"
+    ...     ])
+    >>> assert( len(filepaths_dict) == 2 )
+    >>> assert( len( filepaths_dict[MBAND_NAV_UID][MBAND_REGEX]) == 9 )
+    >>> assert( len( filepaths_dict[IBAND_NAV_UID][IBAND_REGEX]) == 9 )
+    """
+    filepaths_dict = { nav_set : { file_pattern : [] for file_pattern in NAV_SET_USES[nav_set] } for nav_set in NAV_SET_USES }
 
-        # Convert the band kind
-        if file_info["band_kind"] not in FILE_BKIND_CONSTANT:
-            msg = "Don't know how to process band kind '%s'" % (file_info["band_kind"],)
-            log.error(msg)
-            raise ValueError(msg)
-        file_info["kind"] = FILE_BKIND_CONSTANT[file_info["band_kind"]]
-        del file_info["band_kind"] # reduce confusion
+    for nav_set,file_pattern_dict in filepaths_dict.items():
+        for file_pattern,file_pattern_match_list in file_pattern_dict.items():
+            for fp in filepaths:
+                fn = os.path.split(fp)[1]
+                if re.match(file_pattern, fn):
+                    file_pattern_match_list.append(fp)
 
-        # Convert date, start time, and end time
-        start_time,end_time = _convert_datetimes(file_info["date_str"], file_info["start_str"], file_info["end_str"])
-        file_info["start_time"] = start_time
-        file_info["end_time"] = end_time
+            if not file_pattern_match_list:
+                # remove any file patterns that aren't used
+                del file_pattern_dict[file_pattern]
 
-        return file_info
+        if not file_pattern_dict:
+            # remove any empty nav sets
+            del filepaths_dict[nav_set]
 
-    # none of the filename patterns matched, we don't know how to handle this file
-    log.error("Unrecognized filenaming scheme: '%s'" % data_filename)
-    raise ValueError("Unrecognized filenaming scheme: '%s'" % data_filename)
+    return filepaths_dict
+
+def get_file_meta(nav_set_uid, file_pattern, filepath):
+    """Gets all the meta data information for one specific
+    file. It is up to the user to separate a file's information into
+    separate bands.
+
+    Assumes the file exists.
+
+    >>> file_info = get_file_meta(IBAND_NAV_UID, IBAND_REGEX, "CREFLI_npp_d20130311_t1916582_e1918223.hdf")
+    Traceback (most recent call last):
+    ...
+    ValueError: Could not find enough files matching file pattern: 'GITCO_npp_d20130311_s1916582_e1918223_b*_c*_*.h5'
+    """
+    base_path,filename = os.path.split(filepath)
+    m = re.match(file_pattern, filename)
+    if not m:
+        log.error("Filename '%s' does not match the pattern provided '%s'" % (filename, file_pattern))
+        raise ValueError("Filename '%s' does not match the pattern provided '%s'" % (filename, file_pattern))
+
+    file_info = {}
+    file_info.update(m.groupdict())
+    file_info.update(FILE_REGEX[file_pattern])
+    file_info["data_dir"] = base_path
+    file_info["data_filepath"] = filepath
+
+    # Get start time
+    file_info["start_time"],file_info["end_time"] = _convert_datetimes(file_info["date_str"], file_info["start_str"], file_info["end_str"])
+
+    # Geo file information
+    # MUST do before satellite constant so we don't get the right entry in the glob
+    file_info["geo_filename_pat"] = file_info[K_GEO_PATTERN] % file_info
+    file_info["geo_filepath"] = _safe_glob(os.path.join(base_path, file_info["geo_filename_pat"]))
+
+    # Get the constant value for whatever satellite we have
+    file_info["sat"] = SATELLITES[file_info["sat"]]
+    # XXX: If band kind is different this will have to be taken from a dictionary
+    file_info["kind"] = BKIND_CREFL
+    file_info["data_kind"] = DKIND_CREFL
+
+    file_info["bands"] = [ DATASET2BID[ds] for ds in file_info[K_DATASETS] ]
+
+    return file_info
 
 def get_data_from_dataset(ds,
         data_fill_value,
@@ -503,12 +478,22 @@ def main():
     parser = ArgumentParser(description=description)
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
-    parser.add_argument("data_files", nargs="+",
+    parser.add_argument('--doctest', dest="run_doctests", action="store_true", default=False,
+            help="Run doctests")
+    parser.add_argument("data_files", nargs="*",
             help="1 or more crefl product files")
     args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level = levels[min(3, args.verbosity)])
+
+    if args.run_doctests:
+        import doctest
+        return doctest.testmod()
+
+    if not args.data_files:
+        print "No files were provided"
+        return 0
 
     from pprint import pprint
     for fn in args.data_files:
