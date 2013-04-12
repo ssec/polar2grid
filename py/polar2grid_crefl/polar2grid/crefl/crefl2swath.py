@@ -18,6 +18,7 @@ __docformat__ = "restructuredtext en"
 from polar2grid.core import roles
 from polar2grid.core.constants import *
 from polar2grid.core.fbf import file_appender,check_stem
+from polar2grid.viirs import viirs_guidebook
 from pyhdf import SD
 import h5py
 from . import guidebook
@@ -31,26 +32,38 @@ from pprint import pprint
 log = logging.getLogger(__name__)
 
 # XXX: Temporary - should be replaced with call to VIIRS Frontend when possible
-def load_geo_data(nav_set_uid, geo_filepath, fill_value=DEFAULT_FILL_VALUE):
+def load_geo_data(nav_set_uid, geo_filepath, fill_value=DEFAULT_FILL_VALUE, dtype=numpy.float32):
     """Place holder for when VIIRS frontend can be rewritten to support
     third-party users.
     """
-    h = h5py.File(geo_filepath, mode='r')
-    if nav_set_uid == IBAND_NAV_UID:
-        lon_array = h["All_Data"]["VIIRS-IMG-GEO-TC_All"]["Longitude"][:,:]
-        lon_array[ lon_array == -999.0 ] = fill_value
-        lat_array = h["All_Data"]["VIIRS-IMG-GEO-TC_All"]["Latitude"][:,:]
-        lat_array[ lat_array == -999.0 ] = fill_value
-    elif nav_set_uid == MBAND_NAV_UID:
-        lon_array = h["All_Data"]["VIIRS-MOD-GEO-TC_All"]["Longitude"][:,:]
-        lon_array[ lon_array == -999.0 ] = fill_value
-        lat_array = h["All_Data"]["VIIRS-MOD-GEO-TC_All"]["Latitude"][:,:]
-        lat_array[ lat_array == -999.0 ] = fill_value
+    if nav_set_uid == IBAND_NAV_UID or nav_set_uid == MBAND_NAV_UID:
+        file_info = viirs_guidebook.geo_info(geo_filepath)
+        h = h5py.File(file_info["geo_path"], mode='r')
+        lon_array = viirs_guidebook.load_geo_variable(h, file_info, viirs_guidebook.K_LONGITUDE, dtype=dtype, required=True)
+        lon_array[ viirs_guidebook.get_geo_variable_fill_mask(lon_array, viirs_guidebook.K_LONGITUDE) ] = fill_value
+        lat_array = viirs_guidebook.load_geo_variable(h, file_info, viirs_guidebook.K_LATITUDE, dtype=dtype, required=True)
+        lat_array[ viirs_guidebook.get_geo_variable_fill_mask(lat_array, viirs_guidebook.K_LATITUDE) ] = fill_value
     else:
         log.error("Don't know how to get navigation data for nav set: %s" % nav_set_uid)
         raise ValueError("Don't know how to get navigation data for nav set: %s" % nav_set_uid)
 
     return lon_array,lat_array
+
+def load_bbox_data(nav_set_uid, geo_filepath):
+    """Load any bounding box coordinates from the geonavigation file if present.
+    If not availabe return None so the caller can handle this.
+
+    :returns: lon_west,lon_east,lat_north,lat_south
+    """
+    if nav_set_uid == IBAND_NAV_UID or nav_set_uid == MBAND_NAV_UID:
+        file_info = viirs_guidebook.geo_info(geo_filepath)
+        h = h5py.File(file_info["geo_path"], mode='r')
+        west_bound,east_bound,north_bound,south_bound = viirs_guidebook.read_geo_bbox_coordinates(h, file_info)
+    else:
+        log.error("Don't know how to get navigation bounds for nav set: %s" % nav_set_uid)
+        raise ValueError("Don't know how to get navigation bounds for nav set: %s" % nav_set_uid)
+
+    return west_bound,east_bound,north_bound,south_bound
 
 class Frontend(roles.FrontendRole):
     removable_file_patterns = [
@@ -93,12 +106,13 @@ class Frontend(roles.FrontendRole):
 
         # Get the band data from the file
         ds_object = h.select(dataset_name)
-        band_data = ds_object.get()
+        band_data = ds_object.get().astype(numpy.float32)
 
         attrs = ds_object.attributes()
         if fill_attr_name:
             input_fill_value = attrs[fill_attr_name]
-            fill_mask = band_data == input_fill_value
+            input_fill_value = 14000 # FIXME
+            fill_mask = band_data >= input_fill_value
         else:
             fill_mask = numpy.zeros_like(band_data).astype(numpy.bool)
 
@@ -163,12 +177,28 @@ class Frontend(roles.FrontendRole):
         lon_fbf_appender = file_appender(lon_fbf_file, dtype=numpy.float32)
 
         # Iterate over each navigation file that makes up the swath
+        wests,easts,norths,souths = [],[],[],[]
         for geo_filepath in all_geo_filepaths:
             # Get longitude,latitude arrays from navigation files
             lon_array,lat_array = load_geo_data(nav_set_uid, geo_filepath, fill_value=fill_value)
             # Add the data to the FBFs
             lon_fbf_appender.append(lon_array)
             lat_fbf_appender.append(lat_array)
+            # Get the bounding coordinates
+            wbound,ebound,nbound,sbound = load_bbox_data(nav_set_uid, geo_filepath)
+            # Add it to a list of all of the bounds for every file
+            wests.append(wbound)
+            easts.append(ebound)
+            norths.append(nbound)
+            souths.append(sbound)
+
+        # Find the overall bounding box from the individual bounding box for each file
+        if nav_set_uid == IBAND_NAV_UID or nav_set_uid == MBAND_NAV_UID:
+            overall_wbound,overall_ebound,overall_nbound,overall_sbound = viirs_guidebook.calculate_bbox_bounds(wests, easts, norths, souths)
+            meta_data["lon_west"] = overall_wbound
+            meta_data["lon_east"] = overall_ebound
+            meta_data["lat_north"] = overall_nbound
+            meta_data["lat_south"] = overall_sbound
 
         # Rename flat binary files to proper fbf names
         suffix = '.real4.' + '.'.join(str(x) for x in reversed(lat_fbf_appender.shape))
@@ -226,7 +256,7 @@ class Frontend(roles.FrontendRole):
         band_info[guidebook.K_UNITS]        = file_info.get(guidebook.K_UNITS, None)
 
     def make_swaths(self, nav_set_uid, filepaths_dict, cut_bad=False, fill_value=DEFAULT_FILL_VALUE,
-            bands_desired=[ BID_08, BID_03, BID_04, BID_01 ]
+            bands_desired=[ BID_08, BID_01, BID_04, BID_03 ]
             ):
         """Create binary swath files and return a python dictionary
         of meta data.

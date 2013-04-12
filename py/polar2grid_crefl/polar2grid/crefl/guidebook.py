@@ -32,25 +32,6 @@ log = logging.getLogger(__name__)
 # Instance of the UTC timezone
 UTC = UTC()
 
-### CONSTANTS TO BE PUT IN POLAR2GRID.CORE XXX ###
-
-DKIND_CREFL = "corrected_reflectance"
-BKIND_CREFL = "crefl"
-#BKIND_CREFL_02="crefl_02"
-#BKIND_CREFL_03="crefl_03"
-#BKIND_CREFL_04="crefl_04"
-#BKIND_CREFL_05="crefl_05"
-#BKIND_CREFL_06="crefl_06"
-#BKIND_CREFL_07="crefl_07"
-#BKIND_CREFL_08="crefl_08"
-#BKIND_CREFL_09="crefl_09"
-#BKIND_CREFL_10="crefl_10"
-
-# Use the VIIRS M and I navigation sets
-# MBAND_NAV_UID, IBAND_NAV_UID
-
-### End of CONSTANTS TO BE PUT IN POLAR2GRID.CORE XXX ###
-
 # Dimension constants
 DIMNAME_LINES_750   = "lines_750m"
 DIMNAME_SAMPLES_750 = "samples_750m"
@@ -110,9 +91,25 @@ CorrRefl_09 | I2 Corrected reflectances
 CorrRefl_10 | I3 Corrected reflectances
 """
 
+def _convert_npp_datetimes(date_str, start_str):
+    # the last digit in the 7 digit time is tenths of a second
+    # we turn it into microseconds
+    start_us = int(start_str[-1]) * 100000
+
+    # Parse out the datetime, making sure to add the microseconds and set the timezone to UTC
+    start_time = datetime.strptime(date_str + "_" + start_str[:-1], "%Y%m%d_%H%M%S").replace(tzinfo=UTC, microsecond=start_us)
+
+    return start_time
+
+def _convert_modis_datetimes(date_str, start_str):
+    return datetime.strptime(date_str + "_" + start_str, "%y%j_%H%M")
+
 # Regular expression file patterns used later
 IBAND_REGEX = r'CREFLI_(?P<sat>[A-Za-z0-9]+)_d(?P<date_str>\d+)_t(?P<start_str>\d+)_e(?P<end_str>\d+).hdf'
 MBAND_REGEX = r'CREFLM_(?P<sat>[A-Za-z0-9]+)_d(?P<date_str>\d+)_t(?P<start_str>\d+)_e(?P<end_str>\d+).hdf'
+MODIS_1000M_REGEX = r'(?P<sat>[at])1.(?P<date_str>\d+).(?P<start_str>\d+).1000m.hdf'
+MODIS_500M_REGEX = r'(?P<sat>[at])1.(?P<date_str>\d+).(?P<start_str>\d+).500m.hdf'
+MODIS_250M_REGEX = r'(?P<sat>[at])1.(?P<date_str>\d+).(?P<start_str>\d+).250m.hdf'
 
 NAV_SET_USES = {
         IBAND_NAV_UID : [ IBAND_REGEX ],
@@ -131,6 +128,7 @@ FILE_REGEX = {
             "resolution"   : 500,
             "instrument"   : INST_VIIRS,
             "rows_per_scan" : 32,
+            "date_convert_func" : _convert_npp_datetimes,
             },
 
         MBAND_REGEX : {
@@ -143,6 +141,7 @@ FILE_REGEX = {
             "resolution"   : 1000,
             "instrument"   : INST_VIIRS,
             "rows_per_scan" : 16,
+            "date_convert_func" : _convert_npp_datetimes,
             },
         }
 
@@ -150,8 +149,8 @@ FILE_REGEX = {
 # XXX: JPSS satellites will need to be added to this
 SATELLITES = {
         "npp"   : SAT_NPP,
-        #"aqua"  : SAT_AQUA,
-        #"terra" : SAT_TERRA
+        "a"     : SAT_AQUA,
+        "t"     : SAT_TERRA,
         }
 
 DATASET2BID = {
@@ -178,18 +177,6 @@ def _safe_glob(pat, num_allowed=1):
 
     if num_allowed == 1: return glob_results[0]
     return glob_results
-
-def _convert_datetimes(date_str, start_str, end_str):
-    # the last digit in the 7 digit time is tenths of a second
-    # we turn it into microseconds
-    start_us = int(start_str[-1]) * 100000
-    end_us   = int(  end_str[-1]) * 100000
-
-    # Parse out the datetime, making sure to add the microseconds and set the timezone to UTC
-    start_time = datetime.strptime(date_str + "_" + start_str[:-1], "%Y%m%d_%H%M%S").replace(tzinfo=UTC, microsecond=start_us)
-    end_time   = datetime.strptime(date_str + "_" +   end_str[:-1], "%Y%m%d_%H%M%S").replace(tzinfo=UTC, microsecond=  end_us)
-
-    return start_time,end_time
 
 def parse_datetimes_from_filepaths(filepaths):
     """Provide a list of datetime objects for each understood file provided.
@@ -222,11 +209,13 @@ def parse_datetimes_from_filepaths(filepaths):
     file_dates = []
     for fn in [ os.path.split(fp)[1] for fp in filepaths ]:
         matched_pattern_obj = None
+        matched_pattern = None
         for file_pattern in FILE_REGEX:
             matched_pattern_obj = re.match(file_pattern, fn)
             if not matched_pattern_obj:
                 continue
             else:
+                matched_pattern = file_pattern
                 break
 
         if not matched_pattern_obj:
@@ -234,7 +223,7 @@ def parse_datetimes_from_filepaths(filepaths):
             continue
 
         filename_info = matched_pattern_obj.groupdict()
-        file_dates.append(_convert_datetimes(filename_info["date_str"], filename_info["start_str"], filename_info["end_str"])[0])
+        file_dates.append(FILE_REGEX[matched_pattern]["date_convert_func"](filename_info["date_str"], filename_info["start_str"]))
 
     return file_dates
 
@@ -313,7 +302,10 @@ def get_file_meta(nav_set_uid, file_pattern, filepath):
     file_info["data_filepath"] = filepath
 
     # Get start time
-    file_info["start_time"],file_info["end_time"] = _convert_datetimes(file_info["date_str"], file_info["start_str"], file_info["end_str"])
+    _convert_datetimes = file_info["date_convert_func"]
+    file_info["start_time"] = _convert_datetimes(file_info["date_str"], file_info["start_str"])
+    if "end_str" in file_info:
+        file_info["end_time"]   = _convert_datetimes(file_info["date_str"], file_info["end_str"])
 
     # Geo file information
     # MUST do before satellite constant so we don't get the right entry in the glob

@@ -685,72 +685,11 @@ def geo_info(fn):
     LOG.warning('unable to find %s in guidebook' % filename)
     return finfo
 
-def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
-    """Will fill in finfo with the data that is assumed to
-    be necessary for future processing.
-
-    :precondition:
-        ``finfo`` is allowed to be changed/updated/added to in place.
-    :precondition:
-        ``finfo`` cam from `geo_info` or at least meets the post
-        condition of `geo_info`.
-    :postcondition:
-        ``finfo`` will have the following keys added:
-            - lat_data
-            - lon_data
-            - lat_mask
-            - lon_mask
-            - mode_mask
-            - start_time
-            - scan_quality
-
-    :Parameters:
-        finfo : dict
-            Dictionary of information from `geo_info`.
-    :Keywords:
-        fill_value : int or float
-            Fill value for any bad data found.
-        dtype : ``numpy.dtype``
-            Data type that the returned data is forced to.
-    """
-
-    hp = h5.File(finfo["geo_path"], 'r')
-
-    lat_var_path   = finfo[K_LATITUDE]
-    lon_var_path   = finfo[K_LONGITUDE]
-    st_var_path    = finfo[K_STARTTIME]
-    sza_var_path   =  finfo[K_SOLARZENITH]
-    lza_var_path   = finfo[K_LUNARZENITH]
-    mia_var_path   = finfo[K_MOONILLUM]
-    lat_gring_path = finfo[K_LAT_G_RING]
-    lon_gring_path = finfo[K_LON_G_RING]
+def read_geo_bbox_coordinates(hp, finfo):
     wbound_path    = finfo[K_WEST_COORD]
     ebound_path    = finfo[K_EAST_COORD]
     nbound_path    = finfo[K_NORTH_COORD]
     sbound_path    = finfo[K_SOUTH_COORD]
-
-    # Get latitude data
-    h5v = h5path(hp, lat_var_path, finfo["geo_path"], required=True)
-    lat_data = h5v[:,:]
-    lat_data = lat_data.astype(dtype)
-    del h5v
-
-    # Get longitude data
-    h5v = h5path(hp, lon_var_path, finfo["geo_path"], required=True)
-    lon_data = h5v[:,:]
-    lon_data = lon_data.astype(dtype)
-    del h5v
-
-    # Get start time
-    h5v = h5path(hp, st_var_path, finfo["geo_path"], required=True)
-    start_time = _st_to_datetime(h5v[0])
-
-    # Get the G Ring information
-    h5v = h5path(hp, lon_gring_path, finfo["geo_path"], required=True)
-    lon_gring = h5v[:,:]
-    h5v = h5path(hp, lat_gring_path, finfo["geo_path"], required=True)
-    lat_gring = h5v[:,:]
-    swath_polygon = make_polygon_tuple(lon_gring, lat_gring)
 
     # Get the bounding box coordinates (special cased for aggregate files)
     wests,easts,norths,souths = [],[],[],[]
@@ -785,20 +724,85 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     # Find the actual bounding box of these values
     wbound,ebound,nbound,sbound = calculate_bbox_bounds(wests, easts, norths, souths)
 
+    return wbound,ebound,nbound,sbound
+
+def load_geo_variable(hp, finfo, variable_key, dtype=np.float32, required=False):
+    var_path = finfo[variable_key]
+    h5v = h5path(hp, var_path, finfo["geo_path"], required=required)
+    if h5v is None:
+        LOG.debug("Variable '%s' was not found in '%s'" % (var_path, finfo["geo_path"]))
+        data = None
+    else:
+        data = h5v[:,:]
+        data = data.astype(dtype)
+
+    return data
+
+def get_geo_variable_fill_mask(data_array, variable_key):
+    mask = MISSING_GUIDE[K_LATITUDE][1](data_array) if K_LATITUDE in MISSING_GUIDE else None
+    return mask
+
+def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
+    """Will fill in finfo with the data that is assumed to
+    be necessary for future processing.
+
+    :precondition:
+        ``finfo`` is allowed to be changed/updated/added to in place.
+    :precondition:
+        ``finfo`` cam from `geo_info` or at least meets the post
+        condition of `geo_info`.
+    :postcondition:
+        ``finfo`` will have the following keys added:
+            - lat_data
+            - lon_data
+            - lat_mask
+            - lon_mask
+            - mode_mask
+            - start_time
+            - scan_quality
+
+    :Parameters:
+        finfo : dict
+            Dictionary of information from `geo_info`.
+    :Keywords:
+        fill_value : int or float
+            Fill value for any bad data found.
+        dtype : ``numpy.dtype``
+            Data type that the returned data is forced to.
+    """
+
+    hp = h5.File(finfo["geo_path"], 'r')
+
+    st_var_path    = finfo[K_STARTTIME]
+    mia_var_path   = finfo[K_MOONILLUM]
+    lat_gring_path = finfo[K_LAT_G_RING]
+    lon_gring_path = finfo[K_LON_G_RING]
+
+    # Get latitude data
+    lat_data = load_geo_variable(hp, finfo, K_LATITUDE, dtype=dtype, required=True)
+
+    # Get longitude data
+    lon_data = load_geo_variable(hp, finfo, K_LONGITUDE, dtype=dtype, required=True)
+
     # Get solar zenith angle
-    h5v = h5path(hp, sza_var_path, finfo["geo_path"], required=True)
-    sza_data = h5v[:,:]
-    sza_data = sza_data.astype(dtype)
+    sza_data = load_geo_variable(hp, finfo, K_SOLARZENITH)
     
     # Get the lunar zenith angle
-    h5v = h5path(hp, lza_var_path, finfo["geo_path"], required=False)
-    if h5v is None:
-        LOG.debug("Variable '%s' was not found in '%s'" % (lza_var_path, finfo["geo_path"]))
-        lza_data = None
-    else:
-        lza_data = h5v[:,:]
-        lza_data = lza_data.astype(dtype)
+    lza_data = load_geo_variable(hp, finfo, K_LUNARZENITH)
     
+    # Get start time
+    h5v = h5path(hp, st_var_path, finfo["geo_path"], required=True)
+    start_time = _st_to_datetime(h5v[0])
+
+    # Get the G Ring information
+    h5v = h5path(hp, lon_gring_path, finfo["geo_path"], required=True)
+    lon_gring = h5v[:,:]
+    h5v = h5path(hp, lat_gring_path, finfo["geo_path"], required=True)
+    lat_gring = h5v[:,:]
+    swath_polygon = make_polygon_tuple(lon_gring, lat_gring)
+
+    wbound,ebound,nbound,sbound = read_geo_bbox_coordinates(hp, finfo)
+
     # Get the moon illumination information
     h5v = h5path(hp, mia_var_path, finfo["geo_path"], required=False)
     if h5v is None:
@@ -809,17 +813,17 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
         LOG.debug("moon illumination fraction: " + str(moon_illum))
 
     # Calculate latitude mask
-    lat_mask = MISSING_GUIDE[K_LATITUDE][1](lat_data) if K_LATITUDE in MISSING_GUIDE else None
+    lat_mask = get_geo_variable_fill_mask(lat_data, K_LATITUDE)
 
     # Calculate longitude mask
-    lon_mask = MISSING_GUIDE[K_LONGITUDE][1](lon_data) if K_LONGITUDE in MISSING_GUIDE else None
+    lon_mask = get_geo_variable_fill_mask(lon_data, K_LONGITUDE)
 
     # Calculate solar zenith angle mask
-    sza_mask = MISSING_GUIDE[K_SOLARZENITH][1](sza_data) if K_SOLARZENITH in MISSING_GUIDE else None
+    sza_mask = get_geo_variable_fill_mask(sza_data, K_SOLARZENITH)
     
     # Calculate the lunar zenith angle mask
     if lza_data is not None:
-        lza_mask = MISSING_GUIDE[K_LUNARZENITH][1](lza_data) if K_LUNARZENITH in MISSING_GUIDE else None
+        lza_mask = get_geo_variable_fill_mask(lza_data, K_LUNARZENITH)
     
     # Mask off bad data
     # NOTE: There could still be missing image data to account for
