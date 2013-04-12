@@ -171,7 +171,7 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
             log.debug("Data west longitude: %f" % swath_lon_west)
             swath_lon_east = lon_arr[ good_mask & (lon_arr > 0) ].min()
             log.debug("Data east longitude: %f" % swath_lon_east)
-            stadles_180 = True
+            stradles_180 = True
 
     ### Find out if we stradle the anti-meridian of the projection ###
     # Get the projections origin in lon/lat space
@@ -196,28 +196,30 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     data_grid_west += proj_circum if data_grid_west < 0 else 0
     data_grid_east += proj_circum if data_grid_east < 0 else 0
 
-    # see if the grids bounds stadle the anti-meridian
+    # see if the grids bounds stradle the anti-meridian
     stradles_anti = False
     if (data_grid_west < proj_anti_x) and (data_grid_east > proj_anti_x):
         log.debug("Data crosses the projections anti-meridian")
         stradles_anti = True
 
-    normal_lon_east = swath_lon_east if swath_lon_east > swath_lon_west else swath_lon_east + 360
-    lon_range = numpy.linspace(swath_lon_west, normal_lon_east, 15)
-    lat_range = numpy.linspace(swath_lat_north, swath_lat_south, 15)
+    # If we are doing anything dynamic, then we need to get the bounding box of the data in *grid* space
+    if grid_origin_x is None or grid_width is None or pixel_size_x is None:
+        normal_lon_east = swath_lon_east if swath_lon_east > swath_lon_west else swath_lon_east + 360
+        lon_range = numpy.linspace(swath_lon_west, normal_lon_east, 15)
+        lat_range = numpy.linspace(swath_lat_north, swath_lat_south, 15)
 
-    ### Create a matrix of projection points to find the bounding box of the grid ###
-    # Test the left, right, ul2br diagonal, ur2bl diagonal, top, bottom
-    # If we are over the north pole then handle strong possibility of data in all longitudes
-    if swath_lat_north >= 89.5: bottom_lon_range = numpy.linspace(-180, 180, 15)
-    else: bottom_lon_range = lon_range
-    # If we are over the north pole then handle strong possibility of data in all longitudes
-    if swath_lat_south <= -89.5: top_lon_range = numpy.linspace(-180, 180, 15)
-    else: top_lon_range = lon_range
+        ### Create a matrix of projection points to find the bounding box of the grid ###
+        # Test the left, right, ul2br diagonal, ur2bl diagonal, top, bottom
+        # If we are over the north pole then handle strong possibility of data in all longitudes
+        if swath_lat_north >= 89.5: bottom_lon_range = numpy.linspace(-180, 180, 15)
+        else: bottom_lon_range = lon_range
+        # If we are over the north pole then handle strong possibility of data in all longitudes
+        if swath_lat_south <= -89.5: top_lon_range = numpy.linspace(-180, 180, 15)
+        else: top_lon_range = lon_range
 
-    lon_test = numpy.array([ [swath_lon_west]*15, [swath_lon_east]*15, lon_range, lon_range,       top_lon_range, bottom_lon_range ])
-    lat_test = numpy.array([ lat_range,           lat_range,           lat_range, lat_range[::-1], [swath_lat_north]*15, [swath_lat_south]*15 ])
-    x_test,y_test = _transform_array(tformer, lon_test, lat_test, proj_circum, stradles_anti=stradles_anti)
+        lon_test = numpy.array([ [swath_lon_west]*15, [swath_lon_east]*15, lon_range, lon_range,       top_lon_range, bottom_lon_range ])
+        lat_test = numpy.array([ lat_range,           lat_range,           lat_range, lat_range[::-1], [swath_lat_north]*15, [swath_lat_south]*15 ])
+        x_test,y_test = _transform_array(tformer, lon_test, lat_test, proj_circum, stradles_anti=stradles_anti)
 
     # Calculate the best corners of the data
     if grid_width is None or pixel_size_x is None:
