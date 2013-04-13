@@ -107,13 +107,16 @@ def _convert_modis_datetimes(date_str, start_str):
 # Regular expression file patterns used later
 IBAND_REGEX = r'CREFLI_(?P<sat>[A-Za-z0-9]+)_d(?P<date_str>\d+)_t(?P<start_str>\d+)_e(?P<end_str>\d+).hdf'
 MBAND_REGEX = r'CREFLM_(?P<sat>[A-Za-z0-9]+)_d(?P<date_str>\d+)_t(?P<start_str>\d+)_e(?P<end_str>\d+).hdf'
-MODIS_1000M_REGEX = r'(?P<sat>[at])1.(?P<date_str>\d+).(?P<start_str>\d+).1000m.hdf'
-MODIS_500M_REGEX = r'(?P<sat>[at])1.(?P<date_str>\d+).(?P<start_str>\d+).500m.hdf'
-MODIS_250M_REGEX = r'(?P<sat>[at])1.(?P<date_str>\d+).(?P<start_str>\d+).250m.hdf'
+MODIS_1000M_REGEX = r'(?P<sat>[at])1.(?P<date_str>\d+).(?P<start_str>\d+).crefl.1000m.hdf'
+MODIS_500M_REGEX = r'(?P<sat>[at])1.(?P<date_str>\d+).(?P<start_str>\d+).crefl.500m.hdf'
+MODIS_250M_REGEX = r'(?P<sat>[at])1.(?P<date_str>\d+).(?P<start_str>\d+).crefl.250m.hdf'
 
 NAV_SET_USES = {
         IBAND_NAV_UID : [ IBAND_REGEX ],
         MBAND_NAV_UID : [ MBAND_REGEX ],
+        GEO_NAV_UID   : [ MODIS_1000M_REGEX ],
+        GEO_500M_NAV_UID   : [ MODIS_500M_REGEX ],
+        GEO_250M_NAV_UID   : [ MODIS_250M_REGEX ],
         }
 
 # Regular expressions for files we understand and some information that we know based on which one matches
@@ -130,7 +133,6 @@ FILE_REGEX = {
             "rows_per_scan" : 32,
             "date_convert_func" : _convert_npp_datetimes,
             },
-
         MBAND_REGEX : {
             K_FILL_VALUE   : "_FillValue",
             K_SCALE_FACTOR : "scale_factor",
@@ -142,6 +144,42 @@ FILE_REGEX = {
             "instrument"   : INST_VIIRS,
             "rows_per_scan" : 16,
             "date_convert_func" : _convert_npp_datetimes,
+            },
+        MODIS_1000M_REGEX : {
+            K_FILL_VALUE   : "_FillValue",
+            K_SCALE_FACTOR : 0.0001, # Floats are interpreted as constant scaling factors
+            K_SCALE_OFFSET : 0.0,
+            K_UNITS        : None,
+            K_DATASETS     : [ DS_CR_01, DS_CR_02, DS_CR_03, DS_CR_04, DS_CR_05, DS_CR_06, DS_CR_07 ],
+            K_GEO_PATTERN  : "%(sat)s1.%(date_str)s.%(start_str)s.geo.hdf",
+            "resolution"   : 1000,
+            "instrument"   : INST_MODIS,
+            "rows_per_scan" : 10,
+            "date_convert_func" : _convert_modis_datetimes,
+            },
+        MODIS_500M_REGEX : {
+            K_FILL_VALUE   : "_FillValue",
+            K_SCALE_FACTOR : 0.0001,
+            K_SCALE_OFFSET : 0.0,
+            K_UNITS        : None,
+            K_DATASETS     : [ DS_CR_01, DS_CR_02, DS_CR_03, DS_CR_04, DS_CR_05, DS_CR_06, DS_CR_07 ],
+            K_GEO_PATTERN  : "%(sat)s1.%(date_str)s.%(start_str)s.geo.hdf",
+            "resolution"   : 500,
+            "instrument"   : INST_MODIS,
+            "rows_per_scan" : 20,
+            "date_convert_func" : _convert_modis_datetimes,
+            },
+        MODIS_250M_REGEX : {
+            K_FILL_VALUE   : "_FillValue",
+            K_SCALE_FACTOR : 0.0001,
+            K_SCALE_OFFSET : 0.0,
+            K_UNITS        : None,
+            K_DATASETS     : [ DS_CR_01, DS_CR_02, DS_CR_03, DS_CR_04, DS_CR_05, DS_CR_06, DS_CR_07 ],
+            K_GEO_PATTERN  : "%(sat)s1.%(date_str)s.%(start_str)s.geo.hdf",
+            "resolution"   : 250,
+            "instrument"   : INST_MODIS,
+            "rows_per_scan" : 40,
+            "date_convert_func" : _convert_modis_datetimes,
             },
         }
 

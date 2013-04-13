@@ -163,34 +163,42 @@ def process_data_sets(nav_set_dict,
             status_to_return |= STATUS_REMAP_FAIL
             return status_to_return
 
+    ### Create combined bands ###
     # Sharpen any true color images (may overwrite remapped images)
     from polar2grid.core.sharpen import rgb_ratio_sharpen
     W = Workspace('.')
     if create_true_color and MBAND_NAV_UID in nav_set_jobs and IBAND_NAV_UID in nav_set_jobs:
         # We can only make true color images when bands are available in the same grid
-        true_color_grids = list(set(nav_set_jobs[MBAND_NAV_UID]["remapped_jobs"].keys() + nav_set_jobs[IBAND_NAV_UID]["remapped_jobs"].keys()))
+        true_color_grids = list(set(nav_set_jobs[MBAND_NAV_UID]["remapped_jobs"].keys()).intersection(nav_set_jobs[IBAND_NAV_UID]["remapped_jobs"].keys()))
         for grid_name in true_color_grids:
             mgrid_dict = nav_set_jobs[MBAND_NAV_UID]["remapped_jobs"][grid_name]
             igrid_dict = nav_set_jobs[IBAND_NAV_UID]["remapped_jobs"][grid_name]
             if (BKIND_CREFL,BID_01) not in mgrid_dict or \
                     (BKIND_CREFL,BID_04) not in mgrid_dict or \
-                    (BKIND_CREFL,BID_03) not in mgrid_dict or \
-                    (BKIND_CREFL,BID_08) not in igrid_dict:
-                log.debug("Some of the bands needed for true color images are not present")
+                    (BKIND_CREFL,BID_03) not in mgrid_dict:
+                log.info("Some of the bands needed for true color images are not present")
                 continue
 
-            log.debug("Creating true color image for grid %s" % (grid_name,))
+            log.info("Creating true color image for grid %s" % (grid_name,))
 
             # Get the data to sharpen
-            red_hi = getattr(W, igrid_dict[(BKIND_CREFL,BID_08)]["fbf_remapped"].split('.')[0])
+            red_hi = None
+            if (BKIND_CREFL,BID_08) in igrid_dict:
+                red_hi = getattr(W, igrid_dict[(BKIND_CREFL,BID_08)]["fbf_remapped"].split('.')[0])
+
             red_lo = getattr(W, mgrid_dict[(BKIND_CREFL,BID_01)]["fbf_remapped"].split('.')[0])
             green  = getattr(W, mgrid_dict[(BKIND_CREFL,BID_04)]["fbf_remapped"].split('.')[0])
             blue   = getattr(W, mgrid_dict[(BKIND_CREFL,BID_03)]["fbf_remapped"].split('.')[0])
 
             # Sharpen the data
-            sharp_red,sharp_green,sharp_blue = rgb_ratio_sharpen(red_hi, red_lo, green, blue)
+            if red_hi is not None:
+                log.info("Performing true color image sharpening")
+                sharp_red,sharp_green,sharp_blue = rgb_ratio_sharpen(red_hi, red_lo, green, blue)
+            else:
+                log.info("Can not perform true color image sharpening")
+                sharp_red,sharp_green,sharp_blue = red_lo,green,blue
 
-            # Add the true color band to 
+            # Add the true color band to jobs to process
             true_color_data = numpy.array([sharp_red,sharp_green,sharp_blue])
             true_color_stem = "result_%s_%s_%s_%s" % (nav_set_uid, BKIND_TCOLOR_CREFL, NOT_APPLICABLE, grid_name)
             true_color_fn   = true_color_stem + ".real4." + ".".join( str(x) for x in true_color_data.shape[::-1] )
@@ -201,6 +209,37 @@ def process_data_sets(nav_set_dict,
             true_color_info["band_id"] = NOT_APPLICABLE
             true_color_info["data_kind"] = DKIND_TCOLOR_CREFL
             mgrid_dict[(BKIND_TCOLOR_CREFL,NOT_APPLICABLE)] = true_color_info
+
+    if create_true_color and GEO_NAV_UID in nav_set_jobs:
+        # XXX: Need to incorporate sharpening if possible for MODIS
+        # We can only make true color images when bands are available in the same grid
+        true_color_grids = list(set(nav_set_jobs[GEO_NAV_UID]["remapped_jobs"].keys()))
+        for grid_name in true_color_grids:
+            dict_1000m = nav_set_jobs[GEO_NAV_UID]["remapped_jobs"][grid_name]
+            if (BKIND_CREFL,BID_01) not in dict_1000m or \
+                    (BKIND_CREFL,BID_04) not in dict_1000m or \
+                    (BKIND_CREFL,BID_03) not in dict_1000m:
+                log.info("Some of the bands needed for true color images are not present")
+                continue
+
+            log.info("Creating true color image for grid %s" % (grid_name,))
+
+            # Get the data
+            red   = getattr(W, dict_1000m[(BKIND_CREFL,BID_01)]["fbf_remapped"].split(".")[0])
+            green = getattr(W, dict_1000m[(BKIND_CREFL,BID_04)]["fbf_remapped"].split(".")[0])
+            blue  = getattr(W, dict_1000m[(BKIND_CREFL,BID_03)]["fbf_remapped"].split(".")[0])
+
+            # Add the true color band to jobs to process
+            true_color_data = numpy.array([red, green, blue])
+            true_color_stem = "result_%s_%s_%s_%s" % (nav_set_uid, BKIND_TCOLOR_CREFL, NOT_APPLICABLE, grid_name)
+            true_color_fn   = true_color_stem + ".real4." + ".".join( str(x) for x in true_color_data.shape[::-1] )
+            true_color_data.tofile(true_color_fn)
+            true_color_info= dict_1000m[(BKIND_CREFL,BID_01)].copy()
+            true_color_info["fbf_remapped"] = true_color_fn
+            true_color_info["kind"] = BKIND_TCOLOR_CREFL
+            true_color_info["band_id"] = NOT_APPLICABLE
+            true_color_info["data_kind"] = DKIND_TCOLOR_CREFL
+            dict_1000m[(BKIND_TCOLOR_CREFL,NOT_APPLICABLE)] = true_color_info
 
     ### BACKEND ###
     W = Workspace('.')

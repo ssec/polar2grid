@@ -43,27 +43,33 @@ def load_geo_data(nav_set_uid, geo_filepath, fill_value=DEFAULT_FILL_VALUE, dtyp
         lon_array[ viirs_guidebook.get_geo_variable_fill_mask(lon_array, viirs_guidebook.K_LONGITUDE) ] = fill_value
         lat_array = viirs_guidebook.load_geo_variable(h, file_info, viirs_guidebook.K_LATITUDE, dtype=dtype, required=True)
         lat_array[ viirs_guidebook.get_geo_variable_fill_mask(lat_array, viirs_guidebook.K_LATITUDE) ] = fill_value
+        west_bound,east_bound,north_bound,south_bound = viirs_guidebook.read_geo_bbox_coordinates(h, file_info)
+    elif nav_set_uid == GEO_NAV_UID or nav_set_uid == GEO_250M_NAV_UID:
+        # XXX: Interpolation does not handle 500M navigation yet
+        h = SD.SD(geo_filepath, SD.SDC.READ)
+        lon_ds = h.select("Longitude")
+        lon_array = lon_ds[:].astype(dtype)
+        lon_mask = lon_array == -999.0
+        lat_ds = h.select("Latitude")
+        lat_array = lat_ds[:].astype(dtype)
+        lat_mask = lat_array == -999.0
+
+        # Interpolate to the proper resolution
+        if nav_set_uid == GEO_250M_NAV_UID:
+            lon_array = interpolate_geolocation(lon_array)
+            lat_array = interpolate_geolocation(lat_array)
+
+        lon_array[ lon_mask ] = fill_value
+        lat_array[ lat_mask ] = fill_value
+        west_bound = 0
+        east_bound = 0
+        north_bound = 0
+        south_bound = 0
     else:
         log.error("Don't know how to get navigation data for nav set: %s" % nav_set_uid)
         raise ValueError("Don't know how to get navigation data for nav set: %s" % nav_set_uid)
 
-    return lon_array,lat_array
-
-def load_bbox_data(nav_set_uid, geo_filepath):
-    """Load any bounding box coordinates from the geonavigation file if present.
-    If not availabe return None so the caller can handle this.
-
-    :returns: lon_west,lon_east,lat_north,lat_south
-    """
-    if nav_set_uid == IBAND_NAV_UID or nav_set_uid == MBAND_NAV_UID:
-        file_info = viirs_guidebook.geo_info(geo_filepath)
-        h = h5py.File(file_info["geo_path"], mode='r')
-        west_bound,east_bound,north_bound,south_bound = viirs_guidebook.read_geo_bbox_coordinates(h, file_info)
-    else:
-        log.error("Don't know how to get navigation bounds for nav set: %s" % nav_set_uid)
-        raise ValueError("Don't know how to get navigation bounds for nav set: %s" % nav_set_uid)
-
-    return west_bound,east_bound,north_bound,south_bound
+    return lon_array,lat_array,west_bound,east_bound,north_bound,south_bound
 
 class Frontend(roles.FrontendRole):
     removable_file_patterns = [
@@ -116,12 +122,19 @@ class Frontend(roles.FrontendRole):
         else:
             fill_mask = numpy.zeros_like(band_data).astype(numpy.bool)
 
-        if scale_factor_attr_name and scale_offset_attr_name:
+        if isinstance(scale_factor_attr_name, float):
+            scale_factor = scale_factor_attr_name
+        elif scale_factor_attr_name is not None:
             scale_factor = attrs[scale_factor_attr_name]
+
+        if isinstance(scale_offset_attr_name, float):
+            scale_offset = scale_offset_attr_name
+        elif scale_offset_attr_name is not None:
             scale_offset = attrs[scale_offset_attr_name]
 
         # Scale the data
-        band_data = band_data * scale_factor + scale_offset
+        if scale_factor_attr_name is not None and scale_offset_attr_name is not None:
+            band_data = band_data * scale_factor + scale_offset
         band_data[fill_mask] = fill_value
 
         return band_data
@@ -180,12 +193,11 @@ class Frontend(roles.FrontendRole):
         wests,easts,norths,souths = [],[],[],[]
         for geo_filepath in all_geo_filepaths:
             # Get longitude,latitude arrays from navigation files
-            lon_array,lat_array = load_geo_data(nav_set_uid, geo_filepath, fill_value=fill_value)
+            # Get the bounding coordinates
+            lon_array,lat_array,wbound,ebound,nbound,sbound = load_geo_data(nav_set_uid, geo_filepath, fill_value=fill_value)
             # Add the data to the FBFs
             lon_fbf_appender.append(lon_array)
             lat_fbf_appender.append(lat_array)
-            # Get the bounding coordinates
-            wbound,ebound,nbound,sbound = load_bbox_data(nav_set_uid, geo_filepath)
             # Add it to a list of all of the bounds for every file
             wests.append(wbound)
             easts.append(ebound)
