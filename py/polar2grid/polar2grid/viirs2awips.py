@@ -134,7 +134,9 @@ def process_data_sets(nav_set_uid, filepaths,
                 bands,
                 backend, cart,
                 forced_grids=forced_grid,
-                bbox = bbox, fbf_lat=fbf_lat_to_use, fbf_lon=fbf_lon_to_use)
+                bbox = bbox, fbf_lat=fbf_lat_to_use, fbf_lon=fbf_lon_to_use,
+                lon_fill_value=meta_data.get("lon_fill_value", None),
+                lat_fill_value=meta_data.get("lat_fill_value", None))
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")

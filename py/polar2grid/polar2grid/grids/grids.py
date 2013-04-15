@@ -45,7 +45,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.constants import GRIDS_ANY,GRIDS_ANY_GPD,GRIDS_ANY_PROJ4,GRID_KIND_PROJ4,GRID_KIND_GPD
+from polar2grid.core.constants import *
 from polar2grid.core import Workspace,roles
 from shapely import geometry
 import pyproj
@@ -414,7 +414,10 @@ def determine_grid_coverage_bbox(bbox, grids, cart):
     all_useful_grids = determine_grid_coverage(g_ring, grids, cart)
     return all_useful_grids
 
-def determine_grid_coverage_fbf(fbf_lon, fbf_lat, grids, cart):
+def determine_grid_coverage_fbf(fbf_lon, fbf_lat, grids, cart,
+        lon_fill_value=None, lat_fill_value=None):
+    if lon_fill_value is None: lon_fill_value = DEFAULT_FILL_VALUE
+    if lat_fill_value is None: lat_fill_value = DEFAULT_FILL_VALUE
     lon_workspace,fbf_lon = os.path.split(os.path.realpath(fbf_lon))
     lat_workspace,fbf_lat = os.path.split(os.path.realpath(fbf_lat))
     W = Workspace(lon_workspace)
@@ -423,20 +426,33 @@ def determine_grid_coverage_fbf(fbf_lon, fbf_lat, grids, cart):
     lat_data = getattr(W, fbf_lat.split(".")[0])
     del W
 
-    south_lat,north_lat = lat_data.min(),lat_data.max()
-    west_lon,east_lon   = lon_data.min(),lon_data.max()
+    lon_mask = lon_data != lon_fill_value
+    lat_mask = lat_data != lat_fill_value
+    south_lat,north_lat = lat_data[lat_mask].min(),lat_data[lat_mask].max()
+    west_lon,east_lon   = lon_data[lon_mask].min(),lon_data[lon_mask].max()
     # Correct for dateline, if the difference is less than 1 degree we
     # know that we crossed the dateline
     if west_lon <= -179.0 and east_lon >= 179.0:
-        west_lon,east_lon = lon_data[ lon_data > 0 ].min(),lon_data[ lon_data < 0 ].max()
+        west_lon,east_lon = lon_data[ lon_mask & (lon_data > 0) ].min(),lon_data[ lon_mask & (lon_data < 0) ].max()
 
     bbox = (west_lon, north_lat, east_lon, south_lat)
     return determine_grid_coverage_bbox(bbox, grids, cart)
 
 def create_grid_jobs(sat, instrument, nav_set_uid, bands, backend, cart,
         forced_grids=None, fbf_lat=None, fbf_lon=None,
-        bbox=None, g_ring=None):
+        bbox=None, g_ring=None,
+        lon_fill_value=None, lat_fill_value=None):
     """Create a dictionary known as `grid_jobs` to be passed to remapping.
+
+    Grid determination requires the bounding box of the data involved. This
+    can be provided in 3 ways:
+        - Flat binary files for latitude and longitude (`fbf_lat` and `fbf_lon`)
+        - Bounding box with elements west_lon,north_lat,east_lon,south_lat (`bbox`)
+        - Geographic Ring, a series of lon/lat points describing the polygon around the data
+
+    A `lon_fill_value` keyword and `lat_fill_value` keyword are provided when
+    using binary files for grid determination so that fill values can be
+    properly ignored.
     """
 
     # Check what grids the backend can handle
@@ -469,7 +485,8 @@ def create_grid_jobs(sat, instrument, nav_set_uid, bands, backend, cart,
         elif bbox is not None:
             all_useful_grids = determine_grid_coverage_bbox(bbox, list(all_possible_grids), cart)
         elif fbf_lat is not None and fbf_lon is not None:
-            all_useful_grids = determine_grid_coverage_fbf(fbf_lon, fbf_lat, list(all_possible_grids), cart)
+            all_useful_grids = determine_grid_coverage_fbf(fbf_lon, fbf_lat, list(all_possible_grids), cart,
+                    lon_fill_value=lon_fill_value, lat_fill_value=lat_fill_value)
         else:
             msg = "Grid determination requires a g_ring, a bounding box, or latitude and longitude binary files"
             log.error(msg)
@@ -493,8 +510,7 @@ def create_grid_jobs(sat, instrument, nav_set_uid, bands, backend, cart,
             bands[(band_kind, band_id)]["grids"] = grids.intersection(bands[(band_kind, band_id)]["grids"])
             bad_grids = grids - set(bands[(band_kind, band_id)]["grids"])
             if len(bad_grids) != 0 and forced_grids is not None:
-                log.error("Backend does not know how to handle grids '%r'" % list(bad_grids))
-                raise ValueError("Backend does not know how to handle grids '%r'" % list(bad_grids))
+                log.warning("Backend does not know how to handle grids '%s', won't use for this band (%s,%s)" % (", ".join(list(bad_grids)), band_kind, band_id))
 
     # Create "grid" jobs to be run through remapping
     # Jobs are per grid per band
@@ -502,7 +518,6 @@ def create_grid_jobs(sat, instrument, nav_set_uid, bands, backend, cart,
     for band_kind, band_id in bands.keys():
         for grid_name in bands[(band_kind, band_id)]["grids"]:
             if grid_name not in grid_jobs: grid_jobs[grid_name] = {}
-            if (band_kind, band_id) not in grid_jobs[grid_name]: grid_jobs[grid_name][(band_kind, band_id)] = {}
             log.debug("Kind %s band %s will be remapped to grid %s" % (band_kind, band_id, grid_name))
             grid_jobs[grid_name][(band_kind, band_id)] = bands[(band_kind, band_id)].copy()
             grid_jobs[grid_name][(band_kind, band_id)]["grid_info"] = cart.get_grid_info(grid_name)

@@ -117,6 +117,8 @@ def process_data_sets(nav_set_uid, filepaths,
     band_info = meta_data["bands"]
     flatbinaryfilename_lat = meta_data["fbf_lat"]
     flatbinaryfilename_lon = meta_data["fbf_lon"]
+    lon_fill_value = meta_data["lon_fill_value"]
+    lat_fill_value = meta_data["lat_fill_value"]
     
     log.debug("band_info after prescaling: " + str(band_info.keys()))
 
@@ -127,7 +129,8 @@ def process_data_sets(nav_set_uid, filepaths,
                 band_info,
                 backend, cart,
                 forced_grids=forced_grid,
-                fbf_lat=flatbinaryfilename_lat, fbf_lon=flatbinaryfilename_lon)
+                fbf_lat=flatbinaryfilename_lat, fbf_lon=flatbinaryfilename_lon,
+                lon_fill_value=lon_fill_value, lat_fill_value=lat_fill_value)
     except StandardError:
         log.debug("Grid Determination error:", exc_info=1)
         log.error("Determining data's grids failed")
