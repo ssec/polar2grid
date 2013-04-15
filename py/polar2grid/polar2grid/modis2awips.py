@@ -236,11 +236,11 @@ def run_glue(filepaths,
 
     # sort our file paths based on their navigation
     nav_file_type_sets = Frontend.sort_files_by_nav_uid(filepaths)
-
+    
     # some things that we'll use later for clean up
     process_to_wait_for = { }
     exit_status         = 0
-
+    
     # go through and process each of our file sets by navigation type
     for nav_set_uid in nav_file_type_sets.keys():
         log.debug("Calling %s navigation set" % (nav_set_uid,))

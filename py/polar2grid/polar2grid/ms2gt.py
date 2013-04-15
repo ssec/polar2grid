@@ -80,12 +80,12 @@ def _ll2cr_cols_info(fn):
     return d
 
 def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
-        verbose=False, f_scansout=None, rind=None, fill_io=None, tag="ll2cr"):
+        verbose=False, f_scansout=True, rind=None, fill_io=None, tag="ll2cr"):
     args = ["ll2cr"]
     if verbose:
         args.append("-v")
-    if f_scansout is not None:
-        args.extend(["-f", "%d" % f_scansout])
+    if f_scansout:
+        args.append("-f")
     if rind is not None:
         args.extend(["-r", "%d" % rind])
     if fill_io is not None:

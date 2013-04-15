@@ -75,24 +75,33 @@ def _load_data_from_workspace (file_name, file_path='.') :
     
     return data
 
-def _cloud_clear (data, clouds, values_to_clear, data_fill_value=DEFAULT_FILL_VALUE) :
+def _category_clear (data, category_data,
+                     to_clear=None, to_preserve=None,
+                     data_fill_value=DEFAULT_FILL_VALUE) :
     """
-    Given data and associated cloud data, clear the parts of the data that correspond to the parts of
-    the cloud data with the values in values_to_clear. Cleared values will be filled
-    with data_fill_value.
+    Given data and associated category data, clear parts of the data associated
+    with values in the category data that are in to_clear or not in to_preserve.
+    Cleared values will be filled with data_fill_value.
     
-    A copy of data with the clouds cleared will be returned.
+    A copy of data with the appropriate areas cleared will be returned.
     
-    Note: data and clouds are expected to be numpy arrays.
+    Note: data and category_data are expected to be numpy arrays.
     """
     
     # make a new copy of the data so we don't mess up the original
     new_data = data.copy()
     
-    # where the values we what to clear for appear, clear our data
-    for cloud_val in values_to_clear :
-        where_mask = clouds == cloud_val
-        new_data[where_mask] = data_fill_value
+    if to_clear is not None :
+        # where the values we want to clear for appear, clear our data
+        for cat_value in to_clear :
+            where_mask = category_data == cat_value
+            new_data[where_mask] = data_fill_value
+    
+    if to_preserve is not None :
+        where_mask = numpy.zeros(category_data.shape, dtype=numpy.bool)
+        for cat_value in to_preserve:
+            where_mask |= category_data == cat_value
+        new_data[~where_mask] = data_fill_value
     
     return new_data
 
@@ -149,38 +158,48 @@ def convert_radiance_to_bt (img_filepath, satellite, band_number, fill_value=DEF
     
     return bt_file_path
 
-def make_data_cloud_cleared (data_fbf_path, clouds_fbf_path, list_of_cloud_values_to_clear,
-                             data_fill_value=DEFAULT_FILL_VALUE) :
+def make_data_category_cleared (data_fbf_path, category_fbf_path,
+                                list_of_category_values_to_clear=None,
+                                list_of_category_values_to_preserve=None,
+                                data_fill_value=DEFAULT_FILL_VALUE,
+                                prefix_for_file="cleared_%s") :
     """
-    Given data and associated cloud data, clear the parts of the data that correspond to the parts of
-    the cloud data with the values in list_of_cloud_values_to_clear. Cleared values will be filled
-    with data_fill_value.
+    Given data and associated category variable data, clear part of the data based on the
+    valuse in the category data.
+    If list_of_category_values_to_clear is given all data matching those values in the category
+    data will be cleared.
+    if list_of_category_values_to_preserve is given all data not matching those values in the
+    category data will be cleared. 
+    
+    Cleared values will be filled with data_fill_value.
     """
     
     # parse some file path info
     img_file_name = os.path.split(data_fbf_path)[1]
     img_attr      = img_file_name.split('.')[0]
-    cld_file_name = os.path.split(clouds_fbf_path)[1]
-    cld_attr      = cld_file_name.split('.')[0]
+    cat_file_name = os.path.split(category_fbf_path)[1]
+    cat_attr      = cat_file_name.split('.')[0]
     
     # load up the data file
-    data       = _load_data_from_workspace (img_attr)
+    data          = _load_data_from_workspace (img_attr)
     
-    # load up the cloud mask data
-    cloud_data = _load_data_from_workspace (cld_attr)
+    # load up the category data file
+    category_data = _load_data_from_workspace (cat_attr)
     
-    # cloud clear the data
-    new_data = _cloud_clear (data, cloud_data, list_of_cloud_values_to_clear,
-                             data_fill_value=data_fill_value)
+    # clear the data
+    new_data = _category_clear (data, category_data,
+                                to_clear=list_of_category_values_to_clear,
+                                to_preserve=list_of_category_values_to_preserve,
+                                data_fill_value=data_fill_value)
     
-    # save the cloud cleared data to a file
-    new_img_file_name = "cloud_cleared_%s" % (img_file_name)
+    # save the cleared data to a file
+    new_img_file_name = prefix_for_file % (img_file_name)
     new_file_path     = os.path.join(os.path.split(data_fbf_path)[0], new_img_file_name)
     try :
         new_data.tofile(new_img_file_name)
     except StandardError:
-        log.error("Unexpected error while saving cloud cleared data")
-        log.debug("Cloud clearing error:", exc_info=1)
+        log.error("Unexpected error while saving cleared data")
+        log.debug("Clearing error:", exc_info=1)
         raise
     
     return new_file_path
