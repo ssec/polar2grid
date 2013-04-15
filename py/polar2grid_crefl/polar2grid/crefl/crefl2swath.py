@@ -286,6 +286,7 @@ class Frontend(roles.FrontendRole):
             filepath_list.sort()
 
             for filepath in filepath_list:
+                log.info("Loading meta data from %s" % filepath)
                 # Get meta data for this filepath
                 file_info = guidebook.get_file_meta(nav_set_uid, file_pattern, filepath)
                 # Store the navigation information for later
@@ -304,8 +305,10 @@ class Frontend(roles.FrontendRole):
 
         # Create image data flat binary files
         for band_kind,band_id in meta_data["bands"].keys():
+            log.info("Writing swath binary files for band kind %s band %s" % (band_kind,band_id))
             self.write_band_fbf(meta_data, nav_set_uid, band_kind, band_id, fill_value=fill_value)
 
+        log.info("Writing navigation binary files for nav. set %s" % nav_set_uid)
         # Create navigation flat binary files
         self.write_geo_fbf(meta_data, nav_set_uid, all_nav_filepaths, fill_value=fill_value)
 
