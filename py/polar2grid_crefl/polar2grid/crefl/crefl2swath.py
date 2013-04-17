@@ -19,6 +19,7 @@ from polar2grid.core import roles
 from polar2grid.core.constants import *
 from polar2grid.core.fbf import file_appender,check_stem
 from polar2grid.viirs import viirs_guidebook
+from polar2grid.modis.modis_geo_interp_250 import interpolate_geolocation
 from pyhdf import SD
 import h5py
 from . import guidebook
@@ -49,13 +50,17 @@ def load_geo_data(nav_set_uid, geo_filepath, fill_value=DEFAULT_FILL_VALUE, dtyp
         h = SD.SD(geo_filepath, SD.SDC.READ)
         lon_ds = h.select("Longitude")
         lon_array = lon_ds[:].astype(dtype)
-        lon_mask = lon_array == -999.0
+        lon_fill_value = lon_ds.attributes()["_FillValue"]
+        lon_mask = lon_array == lon_fill_value
+
         lat_ds = h.select("Latitude")
         lat_array = lat_ds[:].astype(dtype)
-        lat_mask = lat_array == -999.0
+        lat_fill_value = lat_ds.attributes()["_FillValue"]
+        lat_mask = lat_array == lat_fill_value
 
         # Interpolate to the proper resolution
         if nav_set_uid == GEO_250M_NAV_UID:
+            log.info("Interpolating 250m navigation from 1km")
             lon_array = interpolate_geolocation(lon_array)
             lat_array = interpolate_geolocation(lat_array)
 
