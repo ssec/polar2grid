@@ -44,14 +44,15 @@ __docformat__ = "restructuredtext en"
 import os
 import sys
 import logging
+import numpy
 from xml.etree import cElementTree
 from netCDF4 import Dataset
 
 log = logging.getLogger(__name__)
 
 _types = {
-        "float" : float,
-        "int" : int,
+        "float" : numpy.float32,
+        "int" : numpy.int32,
         None : str
         }
 
