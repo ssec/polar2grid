@@ -33,9 +33,9 @@ classifiers = ""
 version = '0.1'
 
 setup(
-    name='polar2grid.cris',
+    name='polar2grid.drrtv',
     version=version,
-    description="Library and scripts to aggregate CrIS SDR data and get associated metadata",
+    description="Library and scripts to aggregate Dual Regression Retrieval data and get associated metadata",
     classifiers=filter(None, classifiers.split("\n")),
     keywords='',
     author='Ray Garcia, SSEC',
@@ -46,7 +46,7 @@ setup(
     namespace_packages=["polar2grid"],
     include_package_data=True,
     zip_safe=True,
-    install_requires=['numpy', 'h5py', 'polar2grid.core'],
+    install_requires=['numpy', 'netCDF4', 'polar2grid.core'],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points = {'console_scripts' : [ ]}
 )
