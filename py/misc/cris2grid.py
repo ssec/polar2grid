@@ -28,7 +28,8 @@ import numpy as np
 
 # import polar2grid.core.constants as pcc
 from ql_cris_sdr import cris_swath, wnLW, wnMW, wnSW   # from CSPP
-from ifg.rsh2dpl.bt_swath import BTCHAN, BT_CHANNEL_NAMES, bt_swaths   # from SHIS
+from .swath import *
+#from ifg.rsh2dpl.bt_swath import BTCHAN, BT_CHANNEL_NAMES, bt_swaths   # from SHIS
 from ifg.core.rad2bt import rad2bt # from SHIS
 
 
@@ -76,7 +77,7 @@ def fbf_filename(base, shape, dtype=np.float32):
 
 def write_fbf(base, data):
     """
-    write .real4 file with rows and columns from a 
+    write .real4 file with rows and columns from a
     """
     assert(2==len(data.shape))
     if data.dtype != np.float32:
@@ -90,7 +91,7 @@ def write_fbf(base, data):
 
 
 # KIND2DKIND = {  'bt': pcc.DKIND_BTEMP,
-#                 'rad': pcc.DKIND_RADIANCE, 
+#                 'rad': pcc.DKIND_RADIANCE,
 #                 'refl': pcc.DKIND_REFLECTANCE}
 
 # def _info(name, kind, data, filename):
@@ -102,7 +103,7 @@ def write_fbf(base, data):
 
 def swath_to_fbf(swath):
     """
-    write flat binary files of BT swaths and lat/lon to CWD 
+    write flat binary files of BT swaths and lat/lon to CWD
     """
     lat_filename = write_fbf('cris_lat', swath.lat)
     lon_filename = write_fbf('cris_lon', swath.lon)
@@ -135,10 +136,10 @@ def swath_to_fbf(swath):
 #             start_time = start_time,
 #             fbf_lat = lat_filename,
 #             fbf_lon = lon_filename,
-#             #lat_min = 
-#             #lon_min = 
-#             #lat_max = 
-#             #lon_max = 
+#             #lat_min =
+#             #lon_min =
+#             #lat_max =
+#             #lon_max =
 #             swath_rows = swath_rows,
 #             swath_cols = swath_cols,
 #             swath_scans = swath_rows / 3,  # 3x3 detector
@@ -166,7 +167,7 @@ def main():
     # parser.add_option('-o', '--output', dest='output',
     #                 help='location to store output')
     # parser.add_option('-I', '--include-path', dest="includes",
-    #                 action="append", help="include path")                           
+    #                 action="append", help="include path")
     (options, args) = parser.parse_args()
 
 
@@ -193,7 +194,7 @@ def main():
     swath = cris_swath(*args)
     swath_to_fbf(swath)
 
-      
+
     return 0
 
 

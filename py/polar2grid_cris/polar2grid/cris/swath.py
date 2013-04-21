@@ -38,6 +38,7 @@ import h5py, numpy as np, glob, os, sys, logging
 from collections import namedtuple
 
 from polar2grid.core.roles import FrontendRole
+from polar2grid.core.fbf import dtype2fbf
 from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
 
 LOG = logging.getLogger(__name__)
@@ -220,7 +221,8 @@ def write_arrays_to_fbf(nditer):
     """
     for name,data in nditer:
         rows,cols = data.shape
-        suffix = '.real4.%d.%d' % (cols, rows)
+        dts = dtype2fbf[data.dtype]
+        suffix = '.%s.%d.%d' % (dts, cols, rows)
         fn = name + suffix
         LOG.debug('writing to %s...' % fn)
         if data.dtype != np.float32:
