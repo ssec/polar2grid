@@ -37,6 +37,55 @@ Example::
     # Will result in:
     -878781.238459 4482504.91307
 
+Grid Config. Helper
+-------------------
+
+:Bundle Script: p2g_grid_helper.sh
+:Python Script: :py:mod:`polar2grid.grids.config_helper`
+
+This script is meant to help those unfamiliar with PROJ.4 and projections
+in general. By providing a few grid parameters this script will provide a
+grid configuration line that can be added to a user's custom grid
+configuration. Based on a center longitude and latitude, the script will
+choose an appropriate projection.
+
+Usage::
+
+    $POLAR2GRID_HOME/bin/p2g_grid_helper.sh [-h] [-p PROJ_STR]
+                            grid_name center_longitude center_latitude
+                            pixel_size_x pixel_size_y grid_width grid_height
+
+    Print out valid grid configuration line given grid parameters. A default
+    projection will be used based on the location of the grid. A different
+    projection can be specified if desired. The default projection is referenced
+    at the center lon/lat provided by the user.
+
+    positional arguments:
+      grid_name         Unique grid name
+      center_longitude  Decimal longitude value for center of grid (-180 to 180)
+      center_latitude   Decimal latitude value for center of grid (-90 to 90)
+      pixel_size_x      Size of each pixel in the X direction in grid units,
+                        usually meters.
+      pixel_size_y      Size of each pixel in the Y direction in grid units,
+                        meters by default.
+      grid_width        Grid width in number of pixels
+      grid_height       Grid height in number of pixels
+
+    optional arguments:
+      -h, --help        show this help message and exit
+      -p PROJ_STR       PROJ.4 projection string to override the default
+
+Example::
+
+    $POLAR2GRID_HOME/bin/p2g_grid_helper.sh my_grid_name -150.1 56.3 250 -250 1000 1000
+    # Will result in:
+    my_grid_name, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=56.300 +lat_1=56.300 +lon_0=-150.100 +units=m +no_defs, 1000, 1000, 250.000, -250.000, -125000.000, 125000.000
+
+The above example creates a grid named 'my_grid_name' at a 250m resolution,
+1000 pixels wide and heigh, and centered at -150.1 degrees longitude
+and 56.3 degrees latitude. The projection is a lambert conic conformal
+projection chosen based on the center longitude and latitude.
+
 Plot AWIPS NC Data
 ------------------
 
