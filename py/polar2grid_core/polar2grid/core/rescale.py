@@ -223,6 +223,47 @@ def lst_scale (data, min_before, max_before, min_after, max_after, fill_in=DEFAU
     
     return data
 
+def ndvi_scale (data,
+                low_section_multiplier, high_section_multiplier, high_section_offset,
+                min_before, max_before,
+                min_after, max_after,
+                fill_in=DEFAULT_FILL_VALUE, fill_out=DEFAULT_FILL_VALUE) :
+    """
+    Given NDVI data,
+    clip it to the range min_before to max_before,
+    then scale any negative values using the equation
+                        (1.0 - abs(value)) * low_section_multiplier
+    and scale anything from zero to max_before with the equation
+                        (value * high_section_multiplier) + high_section_offset
+    clip it to the range min_after to max_after
+    """
+    
+    # mask out fill data
+    not_fill_data = data != fill_in
+    
+    # clip to the min_before max_before range
+    data[(data < min_before) & not_fill_data] = min_before
+    data[(data > max_before) & not_fill_data] = max_before
+    
+    # make two section masks
+    negative_mask = (data <  0.0) & not_fill_data
+    pos_zero_mask = (data >= 0.0) & not_fill_data
+    
+    # scale the negative values
+    data[negative_mask] = (data[negative_mask] + 1.0) * low_section_multiplier
+    
+    # scale the rest of the values
+    data[pos_zero_mask] = (data[pos_zero_mask] * high_section_multiplier) + high_section_offset
+    
+    # clip to the min_after to max_after range
+    data[(data < min_after) & not_fill_data] = min_after
+    data[(data > max_after) & not_fill_data] = max_after
+    
+    # swap out the fill value
+    data[data == fill_in] = fill_out
+    
+    return data
+
 # DEFAULTS
 RESCALE_FOR_KIND = {
         DKIND_RADIANCE    : (linear_scale, (255.0,0)),
@@ -255,6 +296,7 @@ class Rescaler(roles.RescalerRole):
                 'btemp_c'  :  bt_scale_c,
                 'btemp_lin':  bt_scale_linear,
                 'lst'      :  lst_scale,
+                'ndvi'     :  ndvi_scale,
                 'distance' : passive_scale, # TODO, this is wrong... but we'll sort it out later?
                 'percent'  : passive_scale, # TODO, this is wrong, find out what it should be
                 }
