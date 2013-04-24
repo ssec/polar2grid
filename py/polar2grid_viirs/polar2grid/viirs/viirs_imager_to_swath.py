@@ -46,7 +46,7 @@ __docformat__ = "restructuredtext en"
 from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds,sort_files_by_nav_uid,NAV_SET_GUIDE
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
-from polar2grid.core.constants import SAT_NPP,INST_VIIRS,BKIND_DNB,NOT_APPLICABLE, BID_NEW
+from polar2grid.core.constants import *
 from polar2grid.core import roles
 from polar2grid.core.fbf import check_stem, file_appender
 import numpy
@@ -251,7 +251,7 @@ def get_geo_meta(gfilepaths):
 
     return meta_data,geo_data
 
-def process_geo(meta_data, geo_data, cut_bad=False):
+def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=False):
     """Read data from the geonav files and put them all
     into 3 concatenated swath files.  One for latitude data, one for
     longitude data, and one for mode (day/night masks) data.
@@ -392,6 +392,10 @@ def process_geo(meta_data, geo_data, cut_bad=False):
 
     # Calculate the actual bounds of the entire swath
     lon_west,lon_east,lat_north,lat_south = calculate_bbox_bounds(wests, easts, norths, souths)
+    if lon_west == fill_value or lon_east == fill_value or \
+            lat_north == fill_value or lat_south == fill_value:
+        log.error("No valid bounding coordinates could be found, not enough valid geolocation data")
+        raise ValueError("No valid bounding coordinates could be found, not enough valid geolocation data")
     
     # set the moon illumination to be the average of the ones we saw
     if weight_of_moon_illum_fraction != 0:

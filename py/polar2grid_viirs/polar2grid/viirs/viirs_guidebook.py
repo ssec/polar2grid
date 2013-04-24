@@ -288,7 +288,7 @@ class evaluator(object):
 def make_polygon_tuple(lon_ring, lat_ring):
     return tuple(tuple(x) for x in zip(lon_ring,lat_ring))
 
-def calculate_bbox_bounds(wests, easts, norths, souths):
+def calculate_bbox_bounds(wests, easts, norths, souths, fill_value=DEFAULT_FILL_VALUE):
     """Given a list of west most points, east-most, north-most, and
     south-most points, calculate the bounds for the overall aggregate
     granule. This is needed since we don't no if the last granule
@@ -296,21 +296,33 @@ def calculate_bbox_bounds(wests, easts, norths, souths):
     etc.
     """
     wests  = np.array(wests)
+    wests  = wests[ (wests >= -180) & (wests <= 180) ]
     easts  = np.array(easts)
+    easts  = easts[ (easts >= -180) & (easts <= 180) ]
     norths = np.array(norths)
+    norths = norths[ (norths >= -90) & (norths <= 90) ]
     souths = np.array(souths)
+    souths = souths[ (souths >= -90) & (souths <= 90) ]
 
-    nbound = norths.max()
-    sbound = souths.min()
+    if norths.shape[0] == 0: nbound = fill_value
+    else: nbound = norths.max()
+    if souths.shape[0] == 0: sbound = fill_value
+    else: sbound = souths.min()
 
-    if (wests <= -170).any() and (wests >= 170).any():
+    if wests.shape[0] == 0:
+        # If we didn't have any valid coordinates, its just a fill value
+        wbound = fill_value
+    elif (wests <= -170).any() and (wests >= 170).any():
         # We are crossing the dateline
         wbound = wests[ wests > 0 ].min()
     else:
         # We aren't crossing the dateline so simple calculation
         wbound = min(wests)
 
-    if (easts <= -170).any() and (easts >= 170).any():
+    if easts.shape[0] == 0:
+        # If we didn't have any valid coordinates, its just a fill value
+        ebound = fill_value
+    elif (easts <= -170).any() and (easts >= 170).any():
         # We are crossing the dateline
         ebound = easts[ easts < 0 ].max()
     else:
@@ -783,7 +795,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
         raise ValueError("Could not find any bounding coordinates: '%s'" % (ebound_path,))
 
     # Find the actual bounding box of these values
-    wbound,ebound,nbound,sbound = calculate_bbox_bounds(wests, easts, norths, souths)
+    wbound,ebound,nbound,sbound = calculate_bbox_bounds(wests, easts, norths, souths, fill_value=fill_value)
 
     # Get solar zenith angle
     h5v = h5path(hp, sza_var_path, finfo["geo_path"], required=True)
