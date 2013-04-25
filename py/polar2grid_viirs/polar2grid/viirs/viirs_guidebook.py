@@ -312,7 +312,7 @@ def calculate_bbox_bounds(wests, easts, norths, souths, fill_value=DEFAULT_FILL_
     if wests.shape[0] == 0:
         # If we didn't have any valid coordinates, its just a fill value
         wbound = fill_value
-    elif (wests <= -170).any() and (wests >= 170).any():
+    elif wests.max() - wests.min() > 180:
         # We are crossing the dateline
         wbound = wests[ wests > 0 ].min()
     else:
@@ -322,7 +322,7 @@ def calculate_bbox_bounds(wests, easts, norths, souths, fill_value=DEFAULT_FILL_
     if easts.shape[0] == 0:
         # If we didn't have any valid coordinates, its just a fill value
         ebound = fill_value
-    elif (easts <= -170).any() and (easts >= 170).any():
+    elif easts.max() - easts.min() > 180:
         # We are crossing the dateline
         ebound = easts[ easts < 0 ].max()
     else:
