@@ -61,6 +61,7 @@ setup(
         'pyproj',           # Python ll2cr, grids
         'gdal',             # Geotiff backend
         'shapely',          # Grid determination
+        'pylibtiff',
         'polar2grid.core',
         'polar2grid.viirs',
         'polar2grid.modis'

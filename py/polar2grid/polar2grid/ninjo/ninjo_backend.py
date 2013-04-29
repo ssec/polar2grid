@@ -47,8 +47,8 @@ from polar2grid.core.time_utils import utc_now
 from polar2grid.core.constants import *
 from polar2grid.core.rescale import Rescaler
 from polar2grid.core.dtype import clip_to_data_type
-from polar2grid import libtiff
-from polar2grid.libtiff import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
+from libtiff import libtiff_ctypes as libtiff
+from libtiff.libtiff_ctypes import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
 from .ninjo_config import _create_config_id,load_grid_config,load_band_config,DEFAULT_GRID_CONFIG_FILE,DEFAULT_BAND_CONFIG_FILE
 import numpy
 
