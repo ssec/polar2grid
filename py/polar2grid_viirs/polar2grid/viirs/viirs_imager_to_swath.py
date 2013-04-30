@@ -391,7 +391,7 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
         os.rename(moonname, fbf_moon)
 
     # Calculate the actual bounds of the entire swath
-    lon_west,lon_east,lat_north,lat_south = calculate_bbox_bounds(wests, easts, norths, souths)
+    lon_west,lon_east,lat_north,lat_south = calculate_bbox_bounds(wests, easts, norths, souths, fill_value=fill_value)
     if lon_west == fill_value or lon_east == fill_value or \
             lat_north == fill_value or lat_south == fill_value:
         log.error("No valid bounding coordinates could be found, not enough valid geolocation data")

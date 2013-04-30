@@ -90,6 +90,8 @@ BKIND_IND   = "inversion_depth"
 BKIND_ICON  = "ice_concentration"
 BKIND_NDVI  = "ndvi"
 BKIND_TPW   = "total_precipitable_water"
+BKIND_CREFL = "crefl"
+BKIND_TCOLOR_CREFL = "true_color_crefl"
 
 # Band Identifier
 BID_01 = "01"
@@ -127,6 +129,8 @@ DKIND_ANGLE       = "angle"
 DKIND_DISTANCE    = "distance" # this is meant to be a distance in the sense of mm, cm, meters, km, or miles
 DKIND_PERCENT     = "percent"
 DKIND_C_INDEX     = "contiguous_index" # this represents some abstract ranging index with meaningfully contiguous values (not discrete categories)
+DKIND_CREFL = "corrected_reflectance"
+DKIND_TCOLOR_CREFL = "true_color_crefl"
 
 SET_DKINDS = set([
     DKIND_RADIANCE,
@@ -137,7 +141,9 @@ SET_DKINDS = set([
     DKIND_ANGLE,
     DKIND_DISTANCE,
     DKIND_PERCENT,
-    DKIND_C_INDEX
+    DKIND_C_INDEX,
+    DKIND_CREFL,
+    DKIND_TCOLOR_CREFL
     ])
 
 # Data types (int,float,#bits,etc.)
@@ -156,7 +162,8 @@ DTYPE_FLOAT64 = "real8"
 MBAND_NAV_UID      = "m_nav"        # the M band navigation group
 IBAND_NAV_UID      = "i_nav"        # the I band navigation group
 DNB_NAV_UID        = "dnb_nav"      # the Day/Night band navigation group
-GEO_NAV_UID        = "geo_nav"      # the geo navigation group
+GEO_NAV_UID        = "geo_1000m_nav"# the geo navigation group
+GEO_500M_NAV_UID   = "geo_500m_nav" # the geo navigation group
 GEO_250M_NAV_UID   = "geo_250m_nav" # the 250m navigation group
 MOD06_NAV_UID      = "mod06_nav"    # the mod06 navigation group
 MOD07_NAV_UID      = "mod07_nav"    # the mod07 navigation group
