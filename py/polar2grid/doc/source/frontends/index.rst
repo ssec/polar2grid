@@ -21,4 +21,5 @@ Below is a list of currently available frontends for polar2grid.
 
     viirs
     modis
+    crefl
 

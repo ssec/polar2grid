@@ -446,6 +446,7 @@ def create_grid_jobs(sat, instrument, nav_set_uid, bands, backend, cart,
 
     Grid determination requires the bounding box of the data involved. This
     can be provided in 3 ways:
+
         - Flat binary files for latitude and longitude (`fbf_lat` and `fbf_lon`)
         - Bounding box with elements west_lon,north_lat,east_lon,south_lat (`bbox`)
         - Geographic Ring, a series of lon/lat points describing the polygon around the data

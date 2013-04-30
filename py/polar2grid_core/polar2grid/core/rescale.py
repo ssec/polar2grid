@@ -263,10 +263,14 @@ def ndvi_scale (data,
     """
     Given NDVI data,
     clip it to the range min_before to max_before,
-    then scale any negative values using the equation
+    then scale any negative values using the equation::
+
                         (1.0 - abs(value)) * low_section_multiplier
-    and scale anything from zero to max_before with the equation
+
+    and scale anything from zero to max_before with the equation::
+
                         (value * high_section_multiplier) + high_section_offset
+
     clip it to the range min_after to max_after
     """
     

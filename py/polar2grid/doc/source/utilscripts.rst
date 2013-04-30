@@ -37,6 +37,8 @@ Example::
     # Will result in:
     -878781.238459 4482504.91307
 
+.. _util_p2g_grid_helper:
+
 Grid Config. Helper
 -------------------
 

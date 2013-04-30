@@ -92,6 +92,11 @@ dynamic or static, but GPD grids can only be static. Of the 3 dynamic
 grid attributes (grid size, pixel size, grid origin) a maximum of 2 can
 be dynamic at a time for a single grid.
 
+If you are unfamiliar with
+projections, try the :ref:`util_p2g_grid_helper` script. You can provide
+the script a center longitude and latitude, along with other grid parameters,
+and it will choose the best projection.
+
 PROJ.4 Grids:
 
 # grid_name,proj4,proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y
