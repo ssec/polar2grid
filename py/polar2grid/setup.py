@@ -37,7 +37,7 @@ __docformat__ = "restructuredtext en"
 from setuptools import setup, find_packages
 
 classifiers = ""
-version = '1.1.0'
+version = '1.1.5'
 
 setup(
     name='polar2grid',
