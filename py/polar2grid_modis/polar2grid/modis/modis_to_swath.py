@@ -433,6 +433,7 @@ class Frontend(roles.FrontendRole):
             "btimage*.real4.*",
             "bt_prescale*.real4.*",
             "cloud_cleared*.real4.*",
+            "landsea_cleared*.real4.*",
             "latitude*.real4.*",
             "longitude*.real4.*"
             ]
