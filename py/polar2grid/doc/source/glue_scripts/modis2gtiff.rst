@@ -1,27 +1,26 @@
-modis2awips
+modis2gtiff
 ===========
 
 .. |this_frontend| replace:: :doc:`MODIS Frontend <../frontends/modis>`
-.. |this_backend| replace:: :doc:`AWIPS Backend <../backends/awips_netcdf>`
-.. |this_glue| replace:: modis2awips
+.. |this_backend| replace:: :doc:`Geotiff Backend <../backends/gtiff>`
+.. |this_glue| replace:: modis2gtiff
 
-:Python Script: ``polar2grid.modis2awips``
-:Bundle Script: ``modis2awips.sh``
+:Python Script: ``polar2grid.modis2gtiff``
+:Bundle Script: ``modis2gtiff.sh``
 
 This script is used to process
 :doc:`MODIS L1B data <../frontends/modis>`
 into
-:doc:`AWIPS compatible NetCDF <../backends/awips_netcdf>`
-files.
+:doc:`Geotiff images <../backends/awips_netcdf>`.
 
 See the :doc:`../frontends/modis` for details on bands that can
 be handled and any restrictions on inputs.
 
-See the :doc:`../backends/awips_netcdf` for more
+See the :doc:`../backends/gtiff` for more
 information on what scaling it does to prepare the data for the
-AWIPS-compatible NetCDF file.
+geotiff file.
 
-.. program:: modis2awips
+.. program:: modis2gtiff
 
 .. include:: common_opts.rst
 
@@ -31,12 +30,11 @@ Command Line Options
 .. cmdoption:: -g <grid_name> [<grid_name> ...]
                --grids <grid_name> [<grid_name> ...]
 
-    Specify the gpd grids to be gridded to. Specifying this option will skip
+    Specify the PROJ.4 grids to be gridded to. Specifying this option will skip
     the grid determination step. More than one grid can be specified at a
-    time. All possible grid names can be found :doc:`here <../grids>`. To have grid determination find all grids that can fit the data use
+    time.  To have grid determination find all grids that can fit the data use
     the grid name 'all'. All possible grid names can be found
     :doc:`here <../grids>`.
-
 
 .. cmdoption:: --grid-configs <grid_config.conf> [<grid_config.conf> ...]
 
@@ -87,12 +85,6 @@ Command Line Options
     Don't create any pseudo-bands possible by the frontend. See the
     |this_frontend| documentation for more information on the
     pseudo-bands it creates.
-
-.. cmdoption:: --nc <ncml template>
-
-    Force the NCML template that the AWIPS backend uses. See the
-    :doc:`AWIPS Backend Documentation <../backends/awips_netcdf>` for more
-    information.
 
 .. cmdoption:: --backend-config <backend configuration>
 

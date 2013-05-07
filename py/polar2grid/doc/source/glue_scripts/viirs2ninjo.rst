@@ -34,7 +34,9 @@ Command Line Options
 
     Specify the gpd grids to be gridded to. Specifying this option will skip
     the grid determination step. More than one grid can be specified at a
-    time. All possible grid names can be found :doc:`here <../grids>`.
+    time.  To have grid determination find all grids that can fit the data use
+    the grid name 'all'. All possible grid names can be found
+    :doc:`here <../grids>`.
 
 .. cmdoption:: --grid-configs <grid_config.conf> [<grid_config.conf> ...]
 
