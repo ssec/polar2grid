@@ -391,10 +391,23 @@ def swathbuckler(*h5_pathnames):
 class Frontend(FrontendRole):
     """
     """
+    removable_file_patterns = []
     info = None
 
     def __init__(self, **kwargs):
         self.info = {}
+
+    @classmethod
+    def parse_datetimes_from_filepaths(cls, filepaths):
+        zult = []
+        for pn in filepaths:
+            nfo = _filename_info(pn)
+            zult.append(nfo['start_time'])
+        return zult
+
+    @classmethod
+    def sort_files_by_nav_uid(cls, filepaths):
+        return {'i_nav': filepaths}  # FIXME faking viirs
 
     def make_swaths(self, filepaths, **kwargs):
         """

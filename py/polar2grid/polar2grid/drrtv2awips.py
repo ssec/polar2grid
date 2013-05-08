@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Script that uses the `polar2grid` toolbox of modules to take
-Dual-Regression Retrieval output and create a properly scaled AWIPS compatible NetCDF file.
+"""Script that uses the `polar2grid` toolbox of modules to take VIIRS
+hdf5 (.h5) files and create a properly scaled AWIPS compatible NetCDF file.
 
-:author:       Ray Garcia (rayg)
-:contact:      rayg@ssec.wisc.edu
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         May 2013
+:date:         Jan 2013
 :license:      GNU GPLv3
 
 Copyright (C) 2013 Space Science and Engineering Center (SSEC),
@@ -32,7 +32,7 @@ input into another program.
 Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
     Written by David Hoese    January 2013
-    University of Wisconsin-Madison
+    University of Wisconsin-Madison 
     Space Science and Engineering Center
     1225 West Dayton Street
     Madison, WI  53706
@@ -41,9 +41,8 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from glob import glob
 from polar2grid.core import Workspace
-from polar2grid.core.glue_utils import setup_logging, create_exc_handler, remove_file_patterns
+from polar2grid.core.glue_utils import setup_logging,create_exc_handler,remove_file_patterns
 from polar2grid.core.time_utils import utc_now
 from polar2grid.core.constants import *
 from .grids.grids import create_grid_jobs, Cartographer
@@ -57,106 +56,116 @@ import logging
 from multiprocessing import Process
 from datetime import datetime
 
-LOG = logging.getLogger(__name__)
-GLUE_NAME = "drrtv2awips"
-LOG_FN = os.environ.get("DRRTV2AWIPS_LOG", None) # None interpreted in main
+log = logging.getLogger(__name__)
+GLUE_NAME = "viirs2awips"
+LOG_FN = os.environ.get("VIIRS2AWIPS_LOG", None) # None interpreted in main
 
 def process_data_sets(nav_set_uid, filepaths,
         fornav_D=None, fornav_d=None,
         grid_configs=None,
-        fornav_m=True,
         forced_grid=None,
         forced_gpd=None, forced_nc=None,
         create_pseudo=True,
         num_procs=1,
         rescale_config=None,
-        backend_config=None
-        ) :
+        backend_config=None,
+        new_dnb=False # XXX
+        ):
     """Process all the files provided from start to finish,
     from filename to AWIPS NC file.
-
-    Note: all files provided are expected to share a navigation source.
     """
-    LOG.debug("Processing %s navigation set" % (nav_set_uid,))
+    log.debug("Processing %s navigation set" % (nav_set_uid,))
     status_to_return = STATUS_SUCCESS
 
     # Handle parameters
-    grid_configs = grid_configs or tuple()  # needs to be a tuple for use
+    grid_configs = grid_configs or tuple() # needs to be a tuple for use
 
     # Declare polar2grid components
-    cart = Cartographer(*grid_configs)
+    cart     = Cartographer(*grid_configs)
     frontend = Frontend()
-    backend = Backend(rescale_config=rescale_config,
-                      backend_config=backend_config)
+    backend  = Backend(
+            rescale_config = rescale_config,
+            backend_config = backend_config
+            )
 
     # Extract Swaths
-    LOG.info("Extracting swaths...")
-    meta_data = {}
+    log.info("Extracting swaths...")
     try:
         meta_data = frontend.make_swaths(filepaths)
-    except StandardError:
-        LOG.error("Swath creation failed")
-        LOG.debug("Swath creation error:", exc_info=1)
-        status_to_return |= STATUS_FRONTEND_FAIL
+                # nav_set_uid,
+                # filepaths,
+                # scale_dnb=True,
+                # new_dnb=new_dnb,
+                # create_fog=create_pseudo,
+                # cut_bad=True
+                # )
 
-    # if we weren't able to load any of the swaths... stop now
-    if len(meta_data.keys()) <= 0:
-        LOG.error("Unable to load swaths for any of the bands, quitting...")
+        # Let's be lazy and give names to the 'global' viirs info
+        sat = meta_data["sat"]
+        instrument = meta_data["instrument"]
+        start_time = meta_data["start_time"]
+        bands = meta_data["bands"]
+        fbf_lat = meta_data["fbf_lat"]
+        fbf_lon = meta_data["fbf_lon"]
+    except StandardError:
+        log.error("Swath creation failed")
+        log.debug("Swath creation error:", exc_info=1)
+        status_to_return |= STATUS_FRONTEND_FAIL
+        return status_to_return
+
+    if len(bands) == 0:
+        log.error("No more bands to process, quitting...")
         return status_to_return or STATUS_UNKNOWN_FAIL
 
-    # for convenience, pull some things out of the meta data
-    sat = meta_data["sat"]
-    instrument = meta_data["instrument"]
-    start_time = meta_data["start_time"]
-    band_info = meta_data["bands"]
-    flatbinaryfilename_lat = meta_data["fbf_lat"]
-    flatbinaryfilename_lon = meta_data["fbf_lon"]
-    # lon_fill_value = meta_data["lon_fill_value"]
-    # lat_fill_value = meta_data["lat_fill_value"]
-
-    LOG.debug("band_info after prescaling: " + str(band_info.keys()))
-
-    # Determine grids
+    # Determine grid
+    bbox = None
+    fbf_lat_to_use = fbf_lat
+    fbf_lon_to_use = fbf_lon
+    if "lon_west" in meta_data:
+        bbox = (
+                meta_data["lon_west"], meta_data["lat_north"],
+                meta_data["lon_east"], meta_data["lat_south"]
+                )
+        fbf_lat_to_use = None
+        fbf_lon_to_use = None
     try:
-        LOG.info("Determining what grids the data fits in...")
+        log.info("Determining what grids the data fits in...")
         grid_jobs = create_grid_jobs(sat, instrument, nav_set_uid,
-                                     band_info,
-                                     backend, cart,
-                                     forced_grids=forced_grid,
-                                     fbf_lat=flatbinaryfilename_lat,
-                                     fbf_lon=flatbinaryfilename_lon)
-    except StandardError as oops:
-        LOG.debug("Grid Determination error:", exc_info=1)
-        LOG.error("Determining data's grids failed")
+                bands,
+                backend, cart,
+                forced_grids=forced_grid,
+                bbox = bbox, fbf_lat=fbf_lat_to_use, fbf_lon=fbf_lon_to_use,
+                lon_fill_value=meta_data.get("lon_fill_value", None),
+                lat_fill_value=meta_data.get("lat_fill_value", None))
+    except StandardError:
+        log.debug("Grid Determination error:", exc_info=1)
+        log.error("Determining data's grids failed")
         status_to_return |= STATUS_GDETER_FAIL
         return status_to_return
 
     ### Remap the data
     try:
         remapped_jobs = remap.remap_bands(sat, instrument, nav_set_uid,
-                                          flatbinaryfilename_lon, flatbinaryfilename_lat, grid_jobs,
-                                          num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
-                                          lat_fill_value=meta_data.get("lat_fill_value", None),
-                                          lon_fill_value=meta_data.get("lon_fill_value", None),
-                                          do_single_sample=fornav_m,
-                                          )
+                fbf_lon, fbf_lat, grid_jobs,
+                num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
+                lat_fill_value=meta_data.get("lat_fill_value", None),
+                lon_fill_value=meta_data.get("lon_fill_value", None),
+                lat_south=meta_data.get("lat_south", None),
+                lat_north=meta_data.get("lat_north", None),
+                lon_west=meta_data.get("lon_west", None),
+                lon_east=meta_data.get("lon_east", None)
+                )
     except StandardError:
-        LOG.debug("Remapping Error:", exc_info=1)
-        LOG.error("Remapping data failed")
+        log.debug("Remapping Error:", exc_info=1)
+        log.error("Remapping data failed")
         status_to_return |= STATUS_REMAP_FAIL
         return status_to_return
 
     ### BACKEND ###
     W = Workspace('.')
-    # for each grid
-    for grid_name, grid_dict in remapped_jobs.items():
-
-        # process each band for this grid
-        for band_kind, band_id in grid_dict.keys():
-
-            band_dict = grid_dict[(band_kind, band_id)]
-
-            LOG.info("Running AWIPS backend for %s%s band grid %s" % (band_kind, band_id, grid_name))
+    for grid_name,grid_dict in remapped_jobs.items():
+        for (band_kind, band_id),band_dict in grid_dict.items():
+            log.info("Running AWIPS backend for %s%s band grid %s" % (band_kind, band_id, grid_name))
             try:
                 # Get the data from the flat binary file
                 data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
@@ -176,28 +185,25 @@ def process_data_sets(nav_set_uid, filepaths,
                         fill_value=band_dict.get("fill_value", None)
                         )
             except StandardError:
-                LOG.error("Error in the AWIPS backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
-                LOG.debug("AWIPS backend error:", exc_info=1)
+                log.error("Error in the AWIPS backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
+                log.debug("AWIPS backend error:", exc_info=1)
                 del remapped_jobs[grid_name][(band_kind, band_id)]
 
-        # if all the jobs for a grid failed, warn the user and take that grid off the list
-        if len(remapped_jobs[grid_name]) == 0 :
-            LOG.error("All backend jobs for grid %s failed" % (grid_name,))
+        if len(remapped_jobs[grid_name]) == 0:
+            log.error("All backend jobs for grid %s failed" % (grid_name,))
             del remapped_jobs[grid_name]
 
-    # if remapping failed for all grids, warn the user
     if len(remapped_jobs) == 0:
-        LOG.warning("AWIPS backend failed for all grids for bands %r" % (band_info.keys(),))
+        log.warning("AWIPS backend failed for all grids for bands %r" % (bands.keys(),))
         status_to_return |= STATUS_BACKEND_FAIL
 
-    LOG.info("Processing of bands %r is complete" % (band_info.keys(),))
+    log.info("Processing of bands %r is complete" % (bands.keys(),))
 
     return status_to_return
 
-
 def _process_data_sets(*args, **kwargs):
     """Wrapper function around `process_data_sets` so that it can called
-    properly from `run_modis2awips`, where the exitcode is the actual
+    properly from `run_glue`, where the exitcode is the actual
     returned value from `process_data_sets`.
 
     This function also checks for exceptions other than the ones already
@@ -208,16 +214,16 @@ def _process_data_sets(*args, **kwargs):
         stat = process_data_sets(*args, **kwargs)
         sys.exit(stat)
     except MemoryError:
-        LOG.error("%s ran out of memory, check log file for more info" % (GLUE_NAME,))
-        LOG.debug("Memory error:", exc_info=1)
+        log.error("%s ran out of memory, check log file for more info" % (GLUE_NAME,))
+        log.debug("Memory error:", exc_info=1)
     except OSError:
-        LOG.error("%s had a OS error, check log file for more info" % (GLUE_NAME,))
-        LOG.debug("OS error:", exc_info=1)
+        log.error("%s had a OS error, check log file for more info" % (GLUE_NAME,))
+        log.debug("OS error:", exc_info=1)
     except StandardError:
-        LOG.error("%s had an unexpected error, check log file for more info" % (GLUE_NAME,))
-        LOG.debug("Unexpected/Uncaught error:", exc_info=1)
+        log.error("%s had an unexpected error, check log file for more info" % (GLUE_NAME,))
+        log.debug("Unexpected/Uncaught error:", exc_info=1)
     except KeyboardInterrupt:
-        LOG.info("%s was cancelled by a keyboard interrupt" % (GLUE_NAME,))
+        log.info("%s was cancelled by a keyboard interrupt" % (GLUE_NAME,))
 
     sys.exit(-1)
 
@@ -241,7 +247,7 @@ def run_glue(filepaths,
 
     # go through and process each of our file sets by navigation type
     for nav_set_uid in nav_file_type_sets.keys():
-        LOG.debug("Calling %s navigation set" % (nav_set_uid,))
+        log.debug("Calling %s navigation set" % (nav_set_uid,))
         process_to_wait_for[nav_set_uid] = None
         try:
             if multiprocess:
@@ -254,13 +260,13 @@ def run_glue(filepaths,
                 stat = _process_data_sets(nav_set_uid, nav_file_type_sets[nav_set_uid], **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
-            LOG.error("Could not process files for %s navigation set" % nav_set_uid)
+            log.error("Could not process files for %s navigation set" % nav_set_uid)
             exit_status = exit_status or STATUS_UNKNOWN_FAIL
 
     # look through our processes and wait for any processes we saved to wait for
     for nav_set_uid,proc_obj in process_to_wait_for.items():
         if proc_obj is not None:
-            LOG.debug("Waiting for subprocess for %s navigation set" % (nav_set_uid,))
+            log.debug("Waiting for subprocess for %s navigation set" % (nav_set_uid,))
             proc_obj.join()
             stat = proc_obj.exitcode
             exit_status = exit_status or stat
@@ -270,14 +276,11 @@ def run_glue(filepaths,
 def main(argv = sys.argv[1:]):
     import argparse
     description = """
-    Extract swaths of Dual Regression Retrieval (DRRTV) output
-    for CrIS, AIRS, Iasi, etc
-    and write out AWIPS gridded imagery
-
+    Create VIIRS swaths, remap them to a grid, and place that remapped data
+    into a AWIPS compatible netcdf file.
     """
     parser = argparse.ArgumentParser(description=description)
 
-    # Logging related
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
             help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_argument('-l', '--log', dest="log_fn", default=None,
@@ -287,20 +290,21 @@ through strftime. Current time if no files.""")
     parser.add_argument('--debug', dest="debug_mode", default=False,
             action='store_true',
             help="Enter debug mode. Keeping intermediate files.")
-    parser.add_argument('--fornav-D', dest='fornav_D', default=10,
+    parser.add_argument('--fornav-D', dest='fornav_D', default=40,
             help="Specify the -D option for fornav")
-    parser.add_argument('--fornav-d', dest='fornav_d', default=1,
+    parser.add_argument('--fornav-d', dest='fornav_d', default=2,
             help="Specify the -d option for fornav")
-    parser.add_argument('--fornav-m', dest='fornav_m', default=False, action='store_true',
-            help="Specify the -m option for fornav")
     parser.add_argument('--sp', dest='single_process', default=False, action='store_true',
             help="Processing is sequential instead of one process per navigation group")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
-
-    # # Frontend and product filtering related
-    # parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
-    #         help="Don't create pseudo bands")
+    
+    # Frontend and product filtering related
+    parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
+            help="Don't create pseudo bands")
+    parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
+            help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
+            "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
 
     # Remapping/Grids
     parser.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
@@ -321,7 +325,7 @@ through strftime. Current time if no files.""")
     # Input related
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-f', dest='data_files', nargs="+",
-            help="List of one or more hdf5 files")
+            help="List of one or more hdf files")
     group.add_argument('-d', dest='data_dir', nargs="?",
             help="Data directory to look for input data files")
     group.add_argument('-R', dest='remove_prev', default=False, action='store_true',
@@ -330,47 +334,47 @@ through strftime. Current time if no files.""")
     args = parser.parse_args(args=argv)
 
     # Figure out what the log should be named
+    log_fn = args.log_fn
     if args.remove_prev:
         # They didn't need to specify a filename
         if log_fn is None: log_fn = GLUE_NAME + "_removal.log"
         file_start_time = utc_now()
     else:
-        log_fn = args.log_fn or (GLUE_NAME + '.log')
-
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=log_fn)
-
-    if not args.remove_prev:
         # Get input files and the first filename for the logging datetime
         if args.data_files:
-            h5_pathnames = args.data_files[:]
+            hdf_files = args.data_files[:]
         elif args.data_dir:
             base_dir = os.path.abspath(os.path.expanduser(args.data_dir))
-            h5_pathnames = list(glob(os.path.join(base_dir, '*.h5')))
+            hdf_files = [ os.path.join(base_dir,x) for x in os.listdir(base_dir) ]
         else:
             # Should never get here because argparse mexc group
-            LOG.error("Wrong number of arguments")
+            log.error("Wrong number of arguments")
             parser.print_help()
             return -1
 
         # Handle the user using a '~' for their home directory
-        h5_pathnames = [ os.path.realpath(os.path.expanduser(x)) for x in sorted(h5_pathnames) ]
-        for hdf_file in h5_pathnames:
+        hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in sorted(hdf_files) ]
+        for hdf_file in hdf_files:
             if not os.path.exists(hdf_file):
                 print "ERROR: File '%s' doesn't exist" % (hdf_file,)
                 return -1
+
+        # Get the date of the first file if provided
+        file_start_time = sorted(Frontend.parse_datetimes_from_filepaths(hdf_files))[0]
 
     # Determine the log filename
     if log_fn is None: log_fn = GLUE_NAME + "_%Y%m%d_%H%M%S.log"
     log_fn = datetime.strftime(file_start_time, log_fn)
 
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=log_fn)
 
     # Don't set this up until after you have setup logging
     sys.excepthook = create_exc_handler(GLUE_NAME)
 
     # Remove previous intermediate and product files
     if args.remove_prev:
-        LOG.info("Removing any possible conflicting files")
+        log.info("Removing any possible conflicting files")
         remove_file_patterns(
                 Frontend.removable_file_patterns,
                 remap.removable_file_patterns,
@@ -380,7 +384,6 @@ through strftime. Current time if no files.""")
 
     fornav_D = int(args.fornav_D)
     fornav_d = int(args.fornav_d)
-    fornav_m = args.fornav_m
     num_procs = int(args.num_procs)
     forced_grids = args.forced_grids
     # Assumes 'all' doesn't appear in the list twice
@@ -388,30 +391,30 @@ through strftime. Current time if no files.""")
     if args.forced_gpd is not None:
         args.forced_gpd = os.path.realpath(os.path.expanduser(args.forced_gpd))
         if not os.path.exists(args.forced_gpd):
-            LOG.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
+            log.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
             return -1
     if args.forced_nc is not None:
         args.forced_nc = os.path.realpath(os.path.expanduser(args.forced_nc))
         if not os.path.exists(args.forced_nc):
-            LOG.error("Specified nc file does not exist '%s'" % args.forced_nc)
+            log.error("Specified nc file does not exist '%s'" % args.forced_nc)
             return -1
 
-    stat = run_glue(h5_pathnames,
+    stat = run_glue(hdf_files,
                 fornav_D=fornav_D, fornav_d=fornav_d,
-                fornav_m=fornav_m,
                 grid_configs=args.grid_configs,
                 forced_grid=forced_grids,
                 forced_gpd=args.forced_gpd, forced_nc=args.forced_nc,
                 create_pseudo=args.create_pseudo,
                 multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config,
-                backend_config=args.backend_config
+                backend_config=args.backend_config,
+                new_dnb=args.new_dnb # XXX
                 )
-    LOG.debug("Processing returned status code: %d" % stat)
+    log.debug("Processing returned status code: %d" % stat)
 
     # Remove intermediate files (not the backend)
     if not stat and not args.debug_mode:
-        LOG.info("Removing intermediate products")
+        log.info("Removing intermediate products")
         remove_file_patterns(
                 Frontend.removable_file_patterns,
                 remap.removable_file_patterns
