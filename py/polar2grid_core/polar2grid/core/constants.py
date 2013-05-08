@@ -126,7 +126,7 @@ DKIND_LATITUDE    = "latitude"
 DKIND_LONGITUDE   = "longitude"
 DKIND_RADIANCE    = "radiance"
 DKIND_REFLECTANCE = "reflectance"
-DKIND_BTEMP       = "btemp"
+DKIND_BTEMP       = "btemp"   # FIXME: to be consistent this should be BTEMPERATURE
 DKIND_FOG         = "fog"
 DKIND_CATEGORY    = "category"
 DKIND_ANGLE       = "angle"
@@ -135,6 +135,14 @@ DKIND_PERCENT     = "percent"
 DKIND_C_INDEX     = "contiguous_index" # this represents some abstract ranging index with meaningfully contiguous values (not discrete categories)
 DKIND_CREFL = "corrected_reflectance"
 DKIND_TCOLOR_CREFL = "true_color_crefl"
+# Retrieval products (polar2grid.drrtv)
+DKIND_TEMPERATURE = "temperature"
+DKIND_PRESSURE = "pressure"
+DKIND_MIXING_RATIO = "mixing_ratio"
+DKIND_EMISSIVITY = "emissivity"
+DKIND_OPTICAL_THICKNESS = "optical_thickness"
+DKIND_LIFTED_INDEX = "lifted_index"
+DKIND_CAPE = "CAPE"
 
 SET_DKINDS = set([
     DKIND_RADIANCE,
@@ -147,7 +155,14 @@ SET_DKINDS = set([
     DKIND_PERCENT,
     DKIND_C_INDEX,
     DKIND_CREFL,
-    DKIND_TCOLOR_CREFL
+    DKIND_TCOLOR_CREFL,
+    DKIND_TEMPERATURE,
+    DKIND_PRESSURE,
+    DKIND_MIXING_RATIO,
+    DKIND_EMISSIVITY,
+    DKIND_OPTICAL_THICKNESS,
+    DKIND_LIFTED_INDEX,
+    DKIND_CAPE
     ])
 
 # Data types (int,float,#bits,etc.)

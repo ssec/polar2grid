@@ -78,12 +78,16 @@ import os
 import sys
 import logging
 import re
+import uuid
 from datetime import datetime
+from collections import namedtuple
 
 from polar2grid.core.roles import FrontendRole
 from polar2grid.core.fbf import dtype2fbf, str_to_dtype
 from polar2grid.core.dtype import dtype2np
 from polar2grid.core.constants import SAT_METOPA, SAT_METOPB, INST_IASI, \
+    DKIND_OPTICAL_THICKNESS, DKIND_PRESSURE, DKIND_LIFTED_INDEX, DKIND_LATITUDE, DKIND_LONGITUDE, \
+    DKIND_CAPE, DKIND_CATEGORY, DKIND_EMISSIVITY, DKIND_MIXING_RATIO, DKIND_PERCENT, DKIND_TEMPERATURE, \
     DEFAULT_FILL_VALUE, BKIND_IR, BKIND_I, \
     BKIND_M, \
     BID_13, BID_15, \
@@ -97,18 +101,55 @@ RE_DRRTV = re.compile('(?P<inst>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+
 
 # GUIDEBOOK
 # FUTURE: move this to another file when it grows large enough
-
+# (sat, inst) => (p2g_sat, p2g_inst, rows_per_swath)
 SAT_INST_TABLE = {
-    ('M02', 'IASI'): (SAT_METOPA, INST_IASI),
-    ('M01', 'IASI'): (SAT_METOPB, INST_IASI),
+    ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 2),
+    ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 2),
     ('g195', 'AIRS'): (None, None),  # FIXME this needs work
 }
 
+# pressure levels at which to extract swaths
+# Plev array is binsearched to make indices
+PRESSURE_LEVELS = ()
+
+VAR_TABLE = {
+     'CAPE': (DKIND_CAPE, ),
+     'CO2_Amount': (None, ),
+     'COT': (DKIND_TEMPERATURE, ),
+     'CTP': (DKIND_PRESSURE, ),
+     'CTT': (DKIND_TEMPERATURE, ),
+     'Channel_Index': (None, ),
+     'CldEmis': (DKIND_EMISSIVITY, ),
+     'Cmask': (DKIND_CATEGORY, ),
+     'Dewpnt': (None, ),
+     'GDAS_RelHum': (DKIND_PERCENT, ),
+     'GDAS_TAir': (DKIND_TEMPERATURE, ),
+     'H2OMMR': (DKIND_MIXING_RATIO, ),
+     'H2Ohigh': (None, ),
+     'H2Olow': (None, ),
+     'H2Omid': (None, ),
+     'Latitude': (DKIND_LATITUDE, ),
+     'Lifted_Index': (),
+     'Longitude': (DKIND_LONGITUDE, ),
+     'O3VMR': (DKIND_MIXING_RATIO, ),
+     'Plevs': (DKIND_PRESSURE, ),
+     'Qflag1': (None, ),
+     'Qflag2': (None, ),
+     'Qflag3': (None, ),
+     'RelHum': (DKIND_PERCENT, ),
+     'SurfEmis': (DKIND_EMISSIVITY, ),
+     'SurfEmis_Wavenumbers': (None, ),
+     'SurfPres': (DKIND_PRESSURE, ),
+     'TAir': (DKIND_TEMPERATURE, ),
+     'TSurf': (DKIND_TEMPERATURE, ),
+     'totH2O': (None, ),
+     'totO3': (None, ),
+}
 
 # END GUIDEBOOK
 
 
-def _filename_info(pathname, h5=None):
+def _filename_info(pathname):
     """
     return a dictionary of metadata found in the filename
     :param pathname: dual retrieval HDF output file path
@@ -117,12 +158,54 @@ def _filename_info(pathname, h5=None):
     m = RE_DRRTV.match(os.path.split(pathname)[-1])
     if not m:
         return {}
-    when = datetime.strptime('%(date)s %(start_time)s' % m.groupdict(), '%Y%m%d %H%M%S')
+    mgd = m.groupdict()
+    when = datetime.strptime('%(date)s %(start_time)s' % mgd, '%Y%m%d %H%M%S')
+    sat, inst, rps = SAT_INST_TABLE[(mgd['sat'], mgd['inst'])]
     return { 'start_time': when,
+             'nav_set_uid': str(uuid.uuid1()),
+             'sat': sat,
+             'instrument': inst,    # FIXME: sat, inst or satellite, instrument : sat, instrument is lame
+             'rows_per_scan': rps
              }
 
+def _swath_shape(*h5s):
+    """
+    determine the shape of the retrieval swath
+    :param h5s: list of hdf5 objects
+    :return: (layers, rows, cols)
+    """
+    layers, rows, cols = 0, 0, 0
+    for h5 in h5s:
+        rh = h5['RelHum']
+        l, r, c = rh.shape
+        if layers == 0:
+            layers = l
+        if cols == 0:
+            cols = c
+        rows += r
+    return layers, rows, cols
 
-def swath_from_var(var_name, h5_var):
+
+def _swath_info(*h5s):
+    """
+    return FrontEnd metadata found in attributes
+    :param h5: hdf5 object
+    :return: dictionary of metadata extracted from attributes, including extra '_plev' pressure variable
+    """
+    fn_info = _filename_info(h5s[0].filename)
+    layers, rows, cols = _swath_shape(*h5s)
+    rps = fn_info['rows_per_scan']
+    zult = {'swath_rows': rows,
+            'swath_cols': cols,
+            'swath_scans': rows / rps,
+            '_plev': h5s[0]['Plev'][:].squeeze()
+
+            }
+    zult.update(fn_info)
+    return zult
+
+
+def swath_from_var(var_name, h5_var, tool=None):
     """
     given a variable by name, and its hdf5 variable object,
     return a normalized numpy masked_array with corrected indexing order
@@ -131,8 +214,11 @@ def swath_from_var(var_name, h5_var):
     :return: numpy masked_array with missing data properly masked and dimensions corrected to
             [in-track, cross-track, layer] for 3D variables
     """
-    shape = h5_var.shape
-    data = h5_var[:]
+    if tool is not None:
+        data = tool(h5_var)
+    else:
+        data = h5_var[:]
+    shape = data.shape
 
     if len(shape) == 3:
         # roll the layer axis to the back, eg (101, 84, 60) -> (84, 60, 101)
@@ -149,29 +235,30 @@ def swath_from_var(var_name, h5_var):
     return data
 
 
-def swaths_from_h5s(h5_pathnames, var_names=None):
+def swaths_from_h5s(h5s, var_tools=None):
     """
     from a series of Dual Regression output files, return a series of (name, data) swaths concatenating the data
      Assumes all variables present in the first file is present in the rest of the files
+    :param h5s: sequence of hdf5 objects, order is preserved in output swaths; assumes valid HDF5 file
+    :param var_tools: list of (variable-name, data-extraction-tool)
     :param h5_pathnames: sequence of hdf5 pathnames, order is preserved in output swaths; assumes valid HDF5 files
     :return: sequence of (name, raw-swath-array) pairs
     """
-    h5s = [h5py.File(pn, 'r') for pn in h5_pathnames]
     if not h5s:
         return
     # get variable names
     first = h5s[0]
-    if var_names is None:
-        var_names = list(first.iterkeys())
-    else:
-        var_names = list(var_names)
-    LOG.info('variables found: %s' % repr(var_names))
-    for vn in var_names:
-        swath = np.concatenate([swath_from_var(vn, h5[vn]) for h5 in h5s], axis=0)
+    if var_tools is None:
+        var_tools = [(x, None) for x in first.iterkeys()]
+    LOG.info('variables desired: %r' % [x[0] for x in var_tools])
+    for vn, tool in var_tools:
+        swath = np.concatenate([swath_from_var(vn, h5[vn], tool) for h5 in h5s], axis=0)
         yield vn, swath
+
 
 def _dict_reverse(D):
     return dict((v,k) for (k,v) in D.items())
+
 
 nptype_to_suffix = _dict_reverse(str_to_dtype)
 
@@ -198,11 +285,50 @@ def write_arrays_to_fbf(nditer):
             data = data.astype(np.float32)
         with file(fn, 'wb') as fp:
             data.tofile(fp)
+        yield name, fn
 
-def test_swath2fbf(*pathnames):
-    pathnames = list(pathnames)
+
+def _layer(layer_num):
+    return lambda h5v: h5v[layer_num,:,:].squeeze()
+
+
+manifest_entry = namedtuple("manifest_entry", 'tool bkind bid')
+
+
+def _var_manifest(sat, inst, plev):
+    """
+    return set of variable extraction info given satellite, instrument pair, its manifest destiny
+    :param sat: const SAT_NPP, SAT_METOPA, etc
+    :param inst: INST_IASI, INST_CRIS
+    :param plev: pressure level array assumed consistent between files
+    :return: yields sequence of (variable-name, (extraction-tool, DKIND, BID))
+    """
+    return
+
+
+def swathbuckler(*h5_pathnames):
+    """
+    return swath metadata after reading all the files in and writing out fbf files
+    :param h5_pathnames:
+    :return:
+    """
+    h5s = [h5py.File(pn, 'r') for pn in h5_pathnames]
+    if not h5s:
+        return {}
+    nfo = _swath_info(*h5s)
+    bands = {}
+    manifest = dict(_var_manifest(nfo['sat'], nfo['inst'], nfo['_plev']))
+    LOG.debug('manifest to extract: %r' % manifest)
+    for name, fbf in write_arrays_to_fbf(swaths_from_h5s(h5s, manifest.items())):
+        bnfo = {}
+
+
+
+
+
+
+def test_swath2fbf(pathnames = ['test/input/case1/IASI_d20130310_t152624_M02.atm_prof_rtv.h5']):
     write_arrays_to_fbf(swaths_from_h5s(pathnames))
-
 
 
 def _load_meta_data (file_objects) :
