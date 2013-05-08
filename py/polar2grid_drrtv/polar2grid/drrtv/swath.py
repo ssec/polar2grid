@@ -81,8 +81,13 @@ import re
 from datetime import datetime
 
 from polar2grid.core.roles import FrontendRole
-from polar2grid.core.fbf import dtype2fbf
-from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
+from polar2grid.core.fbf import dtype2fbf, str_to_dtype
+from polar2grid.core.dtype import dtype2np
+from polar2grid.core.constants import SAT_METOPA, SAT_METOPB, INST_IASI, \
+    DEFAULT_FILL_VALUE, BKIND_IR, BKIND_I, \
+    BKIND_M, \
+    BID_13, BID_15, \
+    BID_16, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
 
 LOG = logging.getLogger(__name__)
 
@@ -97,13 +102,13 @@ SAT_INST_TABLE = {
     ('M02', 'IASI'): (SAT_METOPA, INST_IASI),
     ('M01', 'IASI'): (SAT_METOPB, INST_IASI),
     ('g195', 'AIRS'): (None, None),  # FIXME this needs work
-    ('')
 }
 
 
 # END GUIDEBOOK
 
-def _filename_info(pathname):
+
+def _filename_info(pathname, h5=None):
     """
     return a dictionary of metadata found in the filename
     :param pathname: dual retrieval HDF output file path
@@ -151,7 +156,7 @@ def swaths_from_h5s(h5_pathnames, var_names=None):
     :param h5_pathnames: sequence of hdf5 pathnames, order is preserved in output swaths; assumes valid HDF5 files
     :return: sequence of (name, raw-swath-array) pairs
     """
-    h5s = [h5py.File(pn) for pn in h5_pathnames]
+    h5s = [h5py.File(pn, 'r') for pn in h5_pathnames]
     if not h5s:
         return
     # get variable names
@@ -165,16 +170,27 @@ def swaths_from_h5s(h5_pathnames, var_names=None):
         swath = np.concatenate([swath_from_var(vn, h5[vn]) for h5 in h5s], axis=0)
         yield vn, swath
 
+def _dict_reverse(D):
+    return dict((v,k) for (k,v) in D.items())
+
+nptype_to_suffix = _dict_reverse(str_to_dtype)
+
 
 def write_arrays_to_fbf(nditer):
     """
-    write derived BT slices to CWD from an iterable yielding (name, data) pairs
+    write derived swaths to CWD from an iterable yielding (name, data) pairs
     FIXME: promote this upstream??
-    FIXME: handle masked arrays properly
     """
     for name,data in nditer:
+        if len(data.shape) != 2:
+            LOG.warning('data %r shape is %r, ignoring' % (name, data.shape))
+            continue
+        if hasattr(data, 'mask'):
+            mask = data.mask
+            data = np.array(data, dtype=data.dtype)
+            data[mask] = DEFAULT_FILL_VALUE
         rows,cols = data.shape
-        dts = dtype2fbf[data.dtype]
+        dts = nptype_to_suffix[data.dtype.type]
         suffix = '.%s.%d.%d' % (dts, cols, rows)
         fn = name + suffix
         LOG.debug('writing to %s...' % fn)
@@ -182,6 +198,11 @@ def write_arrays_to_fbf(nditer):
             data = data.astype(np.float32)
         with file(fn, 'wb') as fp:
             data.tofile(fp)
+
+def test_swath2fbf(*pathnames):
+    pathnames = list(pathnames)
+    write_arrays_to_fbf(swaths_from_h5s(pathnames))
+
 
 
 def _load_meta_data (file_objects) :
@@ -197,11 +218,13 @@ def _load_meta_data (file_objects) :
         raise ValueError("One file was expected for processing in _load_meta_data_and_image_data and more were given.")
     file_object = file_objects[0]
 
+    nfo = _filename_info(file_object.file_name)
+
     # set up the base dictionaries
     meta_data = {
-                 "sat": SAT_NPP,
-                 "instrument": INST_CRIS,
-                 "start_time": modis_guidebook.parse_datetime_from_filename(file_object.file_name),
+                 "sat": SAT_METOPA,
+                 "instrument": INST_IASI,
+                 "start_time": nfo['start_date'],
                  "bands" : { },
 
                  # TO FILL IN LATER
@@ -220,94 +243,93 @@ def _load_meta_data (file_objects) :
                  "swath_scans":    None,
                 }
 
-    # pull information on the data that should be in this file
-    file_contents_guide = modis_guidebook.FILE_CONTENTS_GUIDE[file_object.matching_re]
+    # # pull information on the data that should be in this file
+    # file_contents_guide = modis_guidebook.FILE_CONTENTS_GUIDE[file_object.matching_re]
+    #
+    # # based on the list of bands/band IDs that should be in the file, load up the meta data and image data
+    # for band_kind in file_contents_guide.keys() :
+    #
+    #     for band_number in file_contents_guide[band_kind] :
+    #
+    #         data_kind_const = modis_guidebook.DATA_KINDS[(band_kind, band_number)]
+    #
+    #         # TODO, when there are multiple files, this will algorithm will need to change
+    #         meta_data["bands"][(band_kind, band_number)] = {
+    #                                                         "data_kind": data_kind_const,
+    #                                                         "remap_data_as": data_kind_const,
+    #                                                         "kind": band_kind,
+    #                                                         "band": band_number,
+    #
+    #                                                         # TO FILL IN LATER
+    #                                                         "rows_per_scan": None,
+    #                                                         "fill_value":    None,
+    #                                                         "fbf_img":       None,
+    #                                                         "swath_rows":    None,
+    #                                                         "swath_cols":    None,
+    #                                                         "swath_scans":   None,
+    #
+    #                                                         # this is temporary so it will be easier to load the data later
+    #                                                         "file_obj":      file_object # TODO, strategy won't work with multiple files!
+    #                                                        }
 
-    # based on the list of bands/band IDs that should be in the file, load up the meta data and image data
-    for band_kind in file_contents_guide.keys() :
 
-        for band_number in file_contents_guide[band_kind] :
-
-            data_kind_const = modis_guidebook.DATA_KINDS[(band_kind, band_number)]
-
-            # TODO, when there are multiple files, this will algorithm will need to change
-            meta_data["bands"][(band_kind, band_number)] = {
-                                                            "data_kind": data_kind_const,
-                                                            "remap_data_as": data_kind_const,
-                                                            "kind": band_kind,
-                                                            "band": band_number,
-
-                                                            # TO FILL IN LATER
-                                                            "rows_per_scan": None,
-                                                            "fill_value":    None,
-                                                            "fbf_img":       None,
-                                                            "swath_rows":    None,
-                                                            "swath_cols":    None,
-                                                            "swath_scans":   None,
-
-                                                            # this is temporary so it will be easier to load the data later
-                                                            "file_obj":      file_object # TODO, strategy won't work with multiple files!
-                                                           }
-
-
-
-def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid=None, cut_bad=False) :
-    """
-    load the geonav data and save it in flat binary files; update the given meta_data_to_update
-    with information on where the files are and what the shape and range of the nav data are
-
-    TODO, cut_bad currently does nothing
-    FUTURE nav_uid will need to be passed once we are using more types of navigation
-    """
-
-    list_of_geo_files = [ ]
-    for file_info in file_info_objects :
-        list_of_geo_files.append(file_info.get_geo_file())
-
-    # Check if the navigation will need to be interpolated to a better
-    # resolution
-    # FUTURE: 500m geo nav key will have to be added along with the proper
-    # interpolation function
-    interpolate_data = False
-    if nav_uid in modis_guidebook.NAV_SETS_TO_INTERPOLATE_GEO:
-        interpolate_data = True
-
-    # FUTURE, if the longitude and latitude ever have different variable names, this will need refactoring
-    lat_temp_file_name, lat_stats = _load_data_to_flat_file (list_of_geo_files, "lat_" + nav_uid,
-                                                             modis_guidebook.LATITUDE_GEO_VARIABLE_NAME,
-                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
-                                                             interpolate_data=interpolate_data)
-    lon_temp_file_name, lon_stats = _load_data_to_flat_file (list_of_geo_files, "lon_" + nav_uid,
-                                                             modis_guidebook.LONGITUDE_GEO_VARIABLE_NAME,
-                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
-                                                             interpolate_data=interpolate_data)
-
-    # rename the flat file to a more descriptive name
-    shape_temp = lat_stats["shape"]
-    suffix = '.real4.' + '.'.join(str(x) for x in reversed(shape_temp))
-    new_lat_file_name = "latitude_"  + str(nav_uid) + suffix
-    new_lon_file_name = "longitude_" + str(nav_uid) + suffix
-    os.rename(lat_temp_file_name, new_lat_file_name)
-    os.rename(lon_temp_file_name, new_lon_file_name)
-
-    # based on our statistics, save some meta data to our meta data dictionary
-    rows, cols = shape_temp
-    meta_data_to_update["lon_fill_value"] = lon_stats["fill_value"]
-    meta_data_to_update["lat_fill_value"] = lat_stats["fill_value"]
-    meta_data_to_update["fbf_lat"]        = new_lat_file_name
-    meta_data_to_update["fbf_lon"]        = new_lon_file_name
-    meta_data_to_update["nav_set_uid"]    = nav_uid
-    meta_data_to_update["swath_rows"]     = rows
-    meta_data_to_update["swath_cols"]     = cols
-    meta_data_to_update["rows_per_scan"]  = modis_guidebook.ROWS_PER_SCAN[nav_uid]
-    meta_data_to_update["swath_scans"]    = rows / meta_data_to_update["rows_per_scan"]
-
-    """ # these have been changed to north, south, east, west and the backend will calculate them anyway
-    meta_data_to_update["lat_min"]        = lat_stats["min"]
-    meta_data_to_update["lat_max"]        = lat_stats["max"]
-    meta_data_to_update["lon_min"]        = lon_stats["min"]
-    meta_data_to_update["lon_max"]        = lon_stats["max"]
-    """
+# def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid=None, cut_bad=False) :
+#     """
+#     load the geonav data and save it in flat binary files; update the given meta_data_to_update
+#     with information on where the files are and what the shape and range of the nav data are
+#
+#     TODO, cut_bad currently does nothing
+#     FUTURE nav_uid will need to be passed once we are using more types of navigation
+#     """
+#
+#     list_of_geo_files = [ ]
+#     for file_info in file_info_objects :
+#         list_of_geo_files.append(file_info.get_geo_file())
+#
+#     # Check if the navigation will need to be interpolated to a better
+#     # resolution
+#     # FUTURE: 500m geo nav key will have to be added along with the proper
+#     # interpolation function
+#     interpolate_data = False
+#     if nav_uid in modis_guidebook.NAV_SETS_TO_INTERPOLATE_GEO:
+#         interpolate_data = True
+#
+#     # FUTURE, if the longitude and latitude ever have different variable names, this will need refactoring
+#     lat_temp_file_name, lat_stats = _load_data_to_flat_file (list_of_geo_files, "lat_" + nav_uid,
+#                                                              modis_guidebook.LATITUDE_GEO_VARIABLE_NAME,
+#                                                              missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
+#                                                              interpolate_data=interpolate_data)
+#     lon_temp_file_name, lon_stats = _load_data_to_flat_file (list_of_geo_files, "lon_" + nav_uid,
+#                                                              modis_guidebook.LONGITUDE_GEO_VARIABLE_NAME,
+#                                                              missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
+#                                                              interpolate_data=interpolate_data)
+#
+#     # rename the flat file to a more descriptive name
+#     shape_temp = lat_stats["shape"]
+#     suffix = '.real4.' + '.'.join(str(x) for x in reversed(shape_temp))
+#     new_lat_file_name = "latitude_"  + str(nav_uid) + suffix
+#     new_lon_file_name = "longitude_" + str(nav_uid) + suffix
+#     os.rename(lat_temp_file_name, new_lat_file_name)
+#     os.rename(lon_temp_file_name, new_lon_file_name)
+#
+#     # based on our statistics, save some meta data to our meta data dictionary
+#     rows, cols = shape_temp
+#     meta_data_to_update["lon_fill_value"] = lon_stats["fill_value"]
+#     meta_data_to_update["lat_fill_value"] = lat_stats["fill_value"]
+#     meta_data_to_update["fbf_lat"]        = new_lat_file_name
+#     meta_data_to_update["fbf_lon"]        = new_lon_file_name
+#     meta_data_to_update["nav_set_uid"]    = nav_uid
+#     meta_data_to_update["swath_rows"]     = rows
+#     meta_data_to_update["swath_cols"]     = cols
+#     meta_data_to_update["rows_per_scan"]  = modis_guidebook.ROWS_PER_SCAN[nav_uid]
+#     meta_data_to_update["swath_scans"]    = rows / meta_data_to_update["rows_per_scan"]
+#
+#     """ # these have been changed to north, south, east, west and the backend will calculate them anyway
+#     meta_data_to_update["lat_min"]        = lat_stats["min"]
+#     meta_data_to_update["lat_max"]        = lat_stats["max"]
+#     meta_data_to_update["lon_min"]        = lon_stats["min"]
+#     meta_data_to_update["lon_max"]        = lon_stats["max"]
+#     """
 
 
 def generate_metadata(swath, bands):
@@ -333,30 +355,30 @@ class CrisSdrFrontend(FrontendRole):
         write BT slices to flat files in cwd
         write GEO arrays to flat files in cwd
         """
-        swath = cris_swath(*filepaths, **kwargs)
-        bands = cris_bt_slices(swath.rad_lw, swath.rad_mw, swath.rad_sw)
-        bands.update({ 'Latitude': swath.lat, 'Longitude': swath.lon })
-        write_arrays_to_fbf(latlon.items())
-        write_arrays_to_fbf(bands.items())
-        self.info = generate_metadata(swath, bands)
-        return self.info
+        # swath = cris_swath(*filepaths, **kwargs)
+        # bands = cris_bt_slices(swath.rad_lw, swath.rad_mw, swath.rad_sw)
+        # bands.update({ 'Latitude': swath.lat, 'Longitude': swath.lon })
+        # write_arrays_to_fbf(latlon.items())
+        # write_arrays_to_fbf(bands.items())
+        # self.info = generate_metadata(swath, bands)
+        # return self.info
+
+
+def test_swath(test_data='test/input/case1/IASI_d20130310_t152624_M02.atm_prof_rtv.h5'):
+    swath = swaths_from_h5s([test_data])
+    return swath
+
+
+# def test_frontend(test_data='test/input/case1/IASI_d20130310_t152624_M02.atm_prof_rtv.h5'):
+#     fe = CrisSdrFrontend()
+#     fe.make_swaths([test_data])
+
 
 
 def main():
     import optparse
     usage = """
 %prog [options] ...
-This program creates PNG files of instrument quick-look data, given one or more SCRIS files.
-It requires that the GCRSO file referred to in the N_GEO_Ref attribute be present in
-the same directory as its SCRIS file.
-
-If given a directory instead of filenames, it will find all input files in the directory
-and order them by time.
-
-The output directory will be created if it does not exist.
-
-Example:
-%prog -o /tmp/atms-quicklooks /path/to/cspp-output
 
 """
     parser = optparse.OptionParser(usage)
@@ -364,13 +386,12 @@ Example:
                     action="store_true", default=False, help="run self-tests")
     parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
                     help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
-
     parser.add_option('-o', '--output', dest='output', default='.',
                      help='directory in which to store output')
-    parser.add_option('-F', '--format', dest='format', default=DEFAULT_PNG_FMT,
-                     help='format string for output filenames')
-    parser.add_option('-L', '--label', dest='label', default=DEFAULT_LABEL_FMT,
-                     help='format string for labels')
+    # parser.add_option('-F', '--format', dest='format', default=DEFAULT_PNG_FMT,
+    #                  help='format string for output filenames')
+    # parser.add_option('-L', '--label', dest='label', default=DEFAULT_LABEL_FMT,
+    #                  help='format string for labels')
 
     (options, args) = parser.parse_args()
 
@@ -381,22 +402,18 @@ Example:
     OPTS = options
 
     if options.self_test:
-        # FIXME - run any self-tests
         # import doctest
         # doctest.testmod()
+        import nose
+        nose.run()
         sys.exit(2)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level = levels[min(3,options.verbosity)])
+    logging.basicConfig(level=levels[min(3, options.verbosity)])
 
     if not args:
-        parser.error( 'incorrect arguments, try -h or --help.' )
+        parser.error('incorrect arguments, try -h or --help.')
         return 9
-
-    swath =  cris_swath(*args)
-    if swath == None :
-        return 1
-    #cris_quicklook(options.output, swath , options.format, options.label)
 
     return 0
 

@@ -66,11 +66,14 @@ DEFAULT_FILL_VALUE = -999.0
 SAT_NPP   = "npp"
 SAT_TERRA = "terra"
 SAT_AQUA  = "aqua"
+SAT_METOPA= "metopa"
+SAT_METOPB= "metopb"
 
 # Instruments
 INST_VIIRS = "viirs"
 INST_MODIS = "modis"
 INST_CRIS  = "cris"
+INST_IASI  = "iasi"
 
 # Band Kinds
 BKIND_I     = "i"

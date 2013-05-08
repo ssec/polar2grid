@@ -88,6 +88,7 @@ dtype2fbf = {
         DTYPE_UINT64  : FBF_UINT64
         }
 
+
 def data_type_to_fbf_type(data_type):
     if data_type not in dtype2fbf:
         msg = "Can not convert data type '%s' to FBF data type" % (data_type,)
