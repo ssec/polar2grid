@@ -81,23 +81,21 @@ import re
 import uuid
 from datetime import datetime
 from collections import namedtuple
+from functools import partial
 
 from polar2grid.core.roles import FrontendRole
 from polar2grid.core.fbf import dtype2fbf, str_to_dtype
 from polar2grid.core.dtype import dtype2np
-from polar2grid.core.constants import SAT_METOPA, SAT_METOPB, INST_IASI, \
+from polar2grid.core.constants import SAT_METOPA, SAT_METOPB, INST_IASI, NOT_APPLICABLE, \
     DKIND_OPTICAL_THICKNESS, DKIND_PRESSURE, DKIND_LIFTED_INDEX, DKIND_LATITUDE, DKIND_LONGITUDE, \
     DKIND_CAPE, DKIND_CATEGORY, DKIND_EMISSIVITY, DKIND_MIXING_RATIO, DKIND_PERCENT, DKIND_TEMPERATURE, \
-    DEFAULT_FILL_VALUE, BKIND_IR, BKIND_I, \
-    BKIND_M, \
-    BID_13, BID_15, \
-    BID_16, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
+    DEFAULT_FILL_VALUE, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
 
 LOG = logging.getLogger(__name__)
 
 # from adl_geo_ref.py in CSPP
 # e.g. IASI_d20130310_t152624_M02.atm_prof_rtv.h5
-RE_DRRTV = re.compile('(?P<inst>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_(?P<sat>[A-Za-z0-9]+)\.h5')
+RE_DRRTV = re.compile(r'(?P<inst>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_(?P<sat>[A-Za-z0-9]+).*?\.h5')
 
 # GUIDEBOOK
 # FUTURE: move this to another file when it grows large enough
@@ -129,7 +127,7 @@ VAR_TABLE = {
      'H2Olow': (None, ),
      'H2Omid': (None, ),
      'Latitude': (DKIND_LATITUDE, ),
-     'Lifted_Index': (),
+     'Lifted_Index': (None, ),
      'Longitude': (DKIND_LONGITUDE, ),
      'O3VMR': (DKIND_MIXING_RATIO, ),
      'Plevs': (DKIND_PRESSURE, ),
@@ -144,7 +142,8 @@ VAR_TABLE = {
      'TSurf': (DKIND_TEMPERATURE, ),
      'totH2O': (None, ),
      'totO3': (None, ),
-}
+     }
+
 
 # END GUIDEBOOK
 
@@ -157,14 +156,14 @@ def _filename_info(pathname):
     """
     m = RE_DRRTV.match(os.path.split(pathname)[-1])
     if not m:
-        return {}
+        raise ValueError('%s does not parse' % pathname)
     mgd = m.groupdict()
     when = datetime.strptime('%(date)s %(start_time)s' % mgd, '%Y%m%d %H%M%S')
     sat, inst, rps = SAT_INST_TABLE[(mgd['sat'], mgd['inst'])]
     return { 'start_time': when,
-             'nav_set_uid': str(uuid.uuid1()),
+             'nav_set_uid': "%s_%s" % (sat, inst),
              'sat': sat,
-             'instrument': inst,    # FIXME: sat, inst or satellite, instrument : sat, instrument is lame
+             'instrument': inst,    # why is this not 'inst'? or 'sat' 'satellite'?
              'rows_per_scan': rps
              }
 
@@ -193,12 +192,13 @@ def _swath_info(*h5s):
     :return: dictionary of metadata extracted from attributes, including extra '_plev' pressure variable
     """
     fn_info = _filename_info(h5s[0].filename)
+    LOG.debug(repr(fn_info))
     layers, rows, cols = _swath_shape(*h5s)
     rps = fn_info['rows_per_scan']
     zult = {'swath_rows': rows,
             'swath_cols': cols,
             'swath_scans': rows / rps,
-            '_plev': h5s[0]['Plev'][:].squeeze()
+            '_plev': h5s[0]['Plevs'][:].squeeze()
 
             }
     zult.update(fn_info)
@@ -263,36 +263,65 @@ def _dict_reverse(D):
 nptype_to_suffix = _dict_reverse(str_to_dtype)
 
 
+def write_array_to_fbf(name, data):
+    """
+    write a swath to a flat binary file, including mapping missing values to DEFAULT_FILL_VALUE
+    :param name: variable name
+    :param data: data array, typically a numpy.masked_array
+    :return:
+    """
+    if len(data.shape) != 2:
+        LOG.warning('data %r shape is %r, ignoring' % (name, data.shape))
+        return None
+    if hasattr(data, 'mask'):
+        mask = data.mask
+        data = np.array(data, dtype=data.dtype)
+        data[mask] = DEFAULT_FILL_VALUE
+    rows, cols = data.shape
+    dts = nptype_to_suffix[data.dtype.type]
+    suffix = '.%s.%d.%d' % (dts, cols, rows)
+    fn = name + suffix
+    LOG.debug('writing to %s...' % fn)
+    if data.dtype != np.float32:
+        data = data.astype(np.float32)
+    with file(fn, 'wb') as fp:
+        data.tofile(fp)
+    return fn
+
+
 def write_arrays_to_fbf(nditer):
     """
     write derived swaths to CWD from an iterable yielding (name, data) pairs
-    FIXME: promote this upstream??
     """
     for name,data in nditer:
-        if len(data.shape) != 2:
-            LOG.warning('data %r shape is %r, ignoring' % (name, data.shape))
-            continue
-        if hasattr(data, 'mask'):
-            mask = data.mask
-            data = np.array(data, dtype=data.dtype)
-            data[mask] = DEFAULT_FILL_VALUE
-        rows,cols = data.shape
-        dts = nptype_to_suffix[data.dtype.type]
-        suffix = '.%s.%d.%d' % (dts, cols, rows)
-        fn = name + suffix
-        LOG.debug('writing to %s...' % fn)
-        if data.dtype != np.float32:
-            data = data.astype(np.float32)
-        with file(fn, 'wb') as fp:
-            data.tofile(fp)
-        yield name, fn
+        fn = write_array_to_fbf(name, data)
+        if fn is not None:
+            yield name, fn
 
 
-def _layer(layer_num):
-    return lambda h5v: h5v[layer_num,:,:].squeeze()
+# def _layer(layer_num):
+#     return lambda h5v: h5v[layer_num,:,:].squeeze()
+
+def _layer_at_pressure(h5v, plev=None, p=None):
+    """
+    extract a layer of a variable assuming (layer, rows, cols) indexing and plev lists layer pressures
+    this is used to construct slicing tools that are built into the manifest list
+    :param h5v: hdf5 variable object
+    :param plev: pressure array corresponding to layer dimension
+    :param p: pressure level value to find
+    :return: data slice from h5v
+    """
+    # dex = np.searchsorted(plev, p)
+    dex = np.abs(plev - p).argmin()
+
+    try:
+        LOG.debug('using level %d=%f near %r as %f' % (dex, plev[dex], plev[dex-1:dex+2], p))
+    except IndexError:
+        pass
+    return h5v[dex,:]
 
 
-manifest_entry = namedtuple("manifest_entry", 'tool bkind bid')
+manifest_entry = namedtuple("manifest_entry", 'h5_var_name tool bkind dkind bid')
 
 
 def _var_manifest(sat, inst, plev):
@@ -301,27 +330,53 @@ def _var_manifest(sat, inst, plev):
     :param sat: const SAT_NPP, SAT_METOPA, etc
     :param inst: INST_IASI, INST_CRIS
     :param plev: pressure level array assumed consistent between files
-    :return: yields sequence of (variable-name, (extraction-tool, DKIND, BID))
+    :return: yields sequence of (variable-name, (h5_var_name, extraction-tool, DKIND, BID))
     """
-    return
+    yield "RelHum_500mb", manifest_entry(h5_var_name='RelHum',
+                                  tool = partial(_layer_at_pressure, plev=plev, p=500.0),
+                                  bkind = NOT_APPLICABLE,
+                                  dkind = DKIND_PERCENT,
+                                  bid = NOT_APPLICABLE)
 
 
 def swathbuckler(*h5_pathnames):
     """
     return swath metadata after reading all the files in and writing out fbf files
     :param h5_pathnames:
-    :return:
+    :return: fully formed metadata describing swath written to current working directory
     """
     h5s = [h5py.File(pn, 'r') for pn in h5_pathnames]
     if not h5s:
         return {}
     nfo = _swath_info(*h5s)
-    bands = {}
-    manifest = dict(_var_manifest(nfo['sat'], nfo['inst'], nfo['_plev']))
+    bands = nfo['bands'] = {}
+    # get list of output "bands", their characteristics, and an extraction tool
+    manifest = dict(_var_manifest(nfo['sat'], nfo['instrument'], nfo['_plev']))
     LOG.debug('manifest to extract: %r' % manifest)
-    for name, fbf in write_arrays_to_fbf(swaths_from_h5s(h5s, manifest.items())):
-        bnfo = {}
 
+    def _gobble(name, h5_var_name, tool, h5s=h5s):
+        sections = [swath_from_var(h5_var_name, h5[h5_var_name], tool) for h5 in h5s]
+        swath = np.concatenate(sections, axis=0)
+        return write_array_to_fbf(name, swath)
+
+    nfo['fbf_lat'] = _gobble('swath_latitude', 'Latitude', None)
+    nfo['fbf_lon'] = _gobble('swath_longitude', 'Longitude', None)
+
+    for name, guide in manifest.items():
+        LOG.debug("extracting %s from variable %s" % (name, guide.h5_var_name))
+        filename = _gobble(name, guide.h5_var_name, guide.tool)
+        band = {
+            "data_kind": guide.dkind,
+            "remap_data_as": guide.dkind,
+            "kind": guide.bkind,
+            "fbf_img": filename,
+            "swath_rows": nfo['swath_rows'],
+            "swath_cols": nfo['swath_cols'],
+            "swath_scans": nfo['swath_scans'],
+            "rows_per_scan": nfo['rows_per_scan']
+        }
+        bands[name] = band
+    return nfo
 
 
 
@@ -500,6 +555,27 @@ def test_swath(test_data='test/input/case1/IASI_d20130310_t152624_M02.atm_prof_r
 #     fe.make_swaths([test_data])
 
 
+def console(banner="enjoy delicious python"):
+    from IPython.config.loader import Config
+    cfg = Config()
+    prompt_config = cfg.PromptManager
+    prompt_config.in_template = 'In <\\#>: '
+    prompt_config.in2_template = '   .\\D.: '
+    prompt_config.out_template = 'Out<\\#>: '
+
+    # First import the embeddable shell class
+    from IPython.frontend.terminal.embed import InteractiveShellEmbed
+
+    # Now create an instance of the embeddable shell. The first argument is a
+    # string with options exactly as you would type them if you were starting
+    # IPython at the system command line. Any parameters you want to define for
+    # configuration can thus be specified here.
+    ipshell = InteractiveShellEmbed(config=cfg,
+                           banner1 = 'Welcome to IPython\n%s\n' % banner,
+                           exit_msg = 'Leaving Interpreter, buh-bye.')
+    ipshell()
+
+
 
 def main():
     import optparse
@@ -510,11 +586,13 @@ def main():
     parser = optparse.OptionParser(usage)
     parser.add_option('-t', '--test', dest="self_test",
                     action="store_true", default=False, help="run self-tests")
+    parser.add_option('-I', '--interactive', dest="interactive",
+                    action="store_true", default=False, help="create swaths and interact with metadata")
     parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
                     help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
-    parser.add_option('-o', '--output', dest='output', default='.',
-                     help='directory in which to store output')
-    # parser.add_option('-F', '--format', dest='format', default=DEFAULT_PNG_FMT,
+    # parser.add_option('-o', '--output', dest='output', default='.',
+    #                  help='directory in which to store output')
+    # # parser.add_option('-F', '--format', dest='format', default=DEFAULT_PNG_FMT,
     #                  help='format string for output filenames')
     # parser.add_option('-L', '--label', dest='label', default=DEFAULT_LABEL_FMT,
     #                  help='format string for labels')
@@ -540,6 +618,14 @@ def main():
     if not args:
         parser.error('incorrect arguments, try -h or --help.')
         return 9
+
+    m = swathbuckler(*args)
+    if options.interactive:
+        console("'m' is metadata")
+    else:
+        from pprint import pprint
+        pprint(m)
+
 
     return 0
 
