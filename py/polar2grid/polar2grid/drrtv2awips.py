@@ -57,7 +57,7 @@ import logging
 from multiprocessing import Process
 from datetime import datetime
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 GLUE_NAME = "drrtv2awips"
 LOG_FN = os.environ.get("DRRTV2AWIPS_LOG", None) # None interpreted in main
 
@@ -77,33 +77,31 @@ def process_data_sets(nav_set_uid, filepaths,
 
     Note: all files provided are expected to share a navigation source.
     """
-    log.debug("Processing %s navigation set" % (nav_set_uid,))
+    LOG.debug("Processing %s navigation set" % (nav_set_uid,))
     status_to_return = STATUS_SUCCESS
 
     # Handle parameters
-    grid_configs = grid_configs or tuple() # needs to be a tuple for use
+    grid_configs = grid_configs or tuple()  # needs to be a tuple for use
 
     # Declare polar2grid components
-    cart     = Cartographer(*grid_configs)
+    cart = Cartographer(*grid_configs)
     frontend = Frontend()
-    backend  = Backend(
-            rescale_config = rescale_config,
-            backend_config = backend_config
-            )
+    backend = Backend(rescale_config=rescale_config,
+                      backend_config=backend_config)
 
     # Extract Swaths
-    log.info("Extracting swaths...")
+    LOG.info("Extracting swaths...")
     meta_data = {}
     try:
         meta_data = frontend.make_swaths(filepaths)
     except StandardError:
-        log.error("Swath creation failed")
-        log.debug("Swath creation error:", exc_info=1)
+        LOG.error("Swath creation failed")
+        LOG.debug("Swath creation error:", exc_info=1)
         status_to_return |= STATUS_FRONTEND_FAIL
 
     # if we weren't able to load any of the swaths... stop now
-    if len(meta_data.keys()) <= 0 :
-        log.error("Unable to load swaths for any of the bands, quitting...")
+    if len(meta_data.keys()) <= 0:
+        LOG.error("Unable to load swaths for any of the bands, quitting...")
         return status_to_return or STATUS_UNKNOWN_FAIL
 
     # for convenience, pull some things out of the meta data
@@ -116,11 +114,11 @@ def process_data_sets(nav_set_uid, filepaths,
     # lon_fill_value = meta_data["lon_fill_value"]
     # lat_fill_value = meta_data["lat_fill_value"]
 
-    log.debug("band_info after prescaling: " + str(band_info.keys()))
+    LOG.debug("band_info after prescaling: " + str(band_info.keys()))
 
     # Determine grids
     try:
-        log.info("Determining what grids the data fits in...")
+        LOG.info("Determining what grids the data fits in...")
         grid_jobs = create_grid_jobs(sat, instrument, nav_set_uid,
                                      band_info,
                                      backend, cart,
@@ -128,8 +126,8 @@ def process_data_sets(nav_set_uid, filepaths,
                                      fbf_lat=flatbinaryfilename_lat,
                                      fbf_lon=flatbinaryfilename_lon)
     except StandardError as oops:
-        log.debug("Grid Determination error:", exc_info=1)
-        log.error("Determining data's grids failed")
+        LOG.debug("Grid Determination error:", exc_info=1)
+        LOG.error("Determining data's grids failed")
         status_to_return |= STATUS_GDETER_FAIL
         return status_to_return
 
@@ -143,8 +141,8 @@ def process_data_sets(nav_set_uid, filepaths,
                                           do_single_sample=fornav_m,
                                           )
     except StandardError:
-        log.debug("Remapping Error:", exc_info=1)
-        log.error("Remapping data failed")
+        LOG.debug("Remapping Error:", exc_info=1)
+        LOG.error("Remapping data failed")
         status_to_return |= STATUS_REMAP_FAIL
         return status_to_return
 
@@ -158,7 +156,7 @@ def process_data_sets(nav_set_uid, filepaths,
 
             band_dict = grid_dict[(band_kind, band_id)]
 
-            log.info("Running AWIPS backend for %s%s band grid %s" % (band_kind, band_id, grid_name))
+            LOG.info("Running AWIPS backend for %s%s band grid %s" % (band_kind, band_id, grid_name))
             try:
                 # Get the data from the flat binary file
                 data = getattr(W, band_dict["fbf_remapped"].split(".")[0]).copy()
@@ -178,21 +176,21 @@ def process_data_sets(nav_set_uid, filepaths,
                         fill_value=band_dict.get("fill_value", None)
                         )
             except StandardError:
-                log.error("Error in the AWIPS backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
-                log.debug("AWIPS backend error:", exc_info=1)
+                LOG.error("Error in the AWIPS backend for %s%s in grid %s" % (band_kind, band_id, grid_name))
+                LOG.debug("AWIPS backend error:", exc_info=1)
                 del remapped_jobs[grid_name][(band_kind, band_id)]
 
         # if all the jobs for a grid failed, warn the user and take that grid off the list
         if len(remapped_jobs[grid_name]) == 0 :
-            log.error("All backend jobs for grid %s failed" % (grid_name,))
+            LOG.error("All backend jobs for grid %s failed" % (grid_name,))
             del remapped_jobs[grid_name]
 
     # if remapping failed for all grids, warn the user
     if len(remapped_jobs) == 0:
-        log.warning("AWIPS backend failed for all grids for bands %r" % (band_info.keys(),))
+        LOG.warning("AWIPS backend failed for all grids for bands %r" % (band_info.keys(),))
         status_to_return |= STATUS_BACKEND_FAIL
 
-    log.info("Processing of bands %r is complete" % (band_info.keys(),))
+    LOG.info("Processing of bands %r is complete" % (band_info.keys(),))
 
     return status_to_return
 
@@ -210,16 +208,16 @@ def _process_data_sets(*args, **kwargs):
         stat = process_data_sets(*args, **kwargs)
         sys.exit(stat)
     except MemoryError:
-        log.error("%s ran out of memory, check log file for more info" % (GLUE_NAME,))
-        log.debug("Memory error:", exc_info=1)
+        LOG.error("%s ran out of memory, check log file for more info" % (GLUE_NAME,))
+        LOG.debug("Memory error:", exc_info=1)
     except OSError:
-        log.error("%s had a OS error, check log file for more info" % (GLUE_NAME,))
-        log.debug("OS error:", exc_info=1)
+        LOG.error("%s had a OS error, check log file for more info" % (GLUE_NAME,))
+        LOG.debug("OS error:", exc_info=1)
     except StandardError:
-        log.error("%s had an unexpected error, check log file for more info" % (GLUE_NAME,))
-        log.debug("Unexpected/Uncaught error:", exc_info=1)
+        LOG.error("%s had an unexpected error, check log file for more info" % (GLUE_NAME,))
+        LOG.debug("Unexpected/Uncaught error:", exc_info=1)
     except KeyboardInterrupt:
-        log.info("%s was cancelled by a keyboard interrupt" % (GLUE_NAME,))
+        LOG.info("%s was cancelled by a keyboard interrupt" % (GLUE_NAME,))
 
     sys.exit(-1)
 
@@ -243,7 +241,7 @@ def run_glue(filepaths,
 
     # go through and process each of our file sets by navigation type
     for nav_set_uid in nav_file_type_sets.keys():
-        log.debug("Calling %s navigation set" % (nav_set_uid,))
+        LOG.debug("Calling %s navigation set" % (nav_set_uid,))
         process_to_wait_for[nav_set_uid] = None
         try:
             if multiprocess:
@@ -256,13 +254,13 @@ def run_glue(filepaths,
                 stat = _process_data_sets(nav_set_uid, nav_file_type_sets[nav_set_uid], **kwargs)
                 exit_status = exit_status or stat
         except StandardError:
-            log.error("Could not process files for %s navigation set" % nav_set_uid)
+            LOG.error("Could not process files for %s navigation set" % nav_set_uid)
             exit_status = exit_status or STATUS_UNKNOWN_FAIL
 
     # look through our processes and wait for any processes we saved to wait for
     for nav_set_uid,proc_obj in process_to_wait_for.items():
         if proc_obj is not None:
-            log.debug("Waiting for subprocess for %s navigation set" % (nav_set_uid,))
+            LOG.debug("Waiting for subprocess for %s navigation set" % (nav_set_uid,))
             proc_obj.join()
             stat = proc_obj.exitcode
             exit_status = exit_status or stat
@@ -351,7 +349,7 @@ through strftime. Current time if no files.""")
             h5_pathnames = list(glob(os.path.join(base_dir, '*.h5')))
         else:
             # Should never get here because argparse mexc group
-            log.error("Wrong number of arguments")
+            LOG.error("Wrong number of arguments")
             parser.print_help()
             return -1
 
@@ -372,7 +370,7 @@ through strftime. Current time if no files.""")
 
     # Remove previous intermediate and product files
     if args.remove_prev:
-        log.info("Removing any possible conflicting files")
+        LOG.info("Removing any possible conflicting files")
         remove_file_patterns(
                 Frontend.removable_file_patterns,
                 remap.removable_file_patterns,
@@ -390,12 +388,12 @@ through strftime. Current time if no files.""")
     if args.forced_gpd is not None:
         args.forced_gpd = os.path.realpath(os.path.expanduser(args.forced_gpd))
         if not os.path.exists(args.forced_gpd):
-            log.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
+            LOG.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
             return -1
     if args.forced_nc is not None:
         args.forced_nc = os.path.realpath(os.path.expanduser(args.forced_nc))
         if not os.path.exists(args.forced_nc):
-            log.error("Specified nc file does not exist '%s'" % args.forced_nc)
+            LOG.error("Specified nc file does not exist '%s'" % args.forced_nc)
             return -1
 
     stat = run_glue(h5_pathnames,
@@ -409,11 +407,11 @@ through strftime. Current time if no files.""")
                 rescale_config=args.rescale_config,
                 backend_config=args.backend_config
                 )
-    log.debug("Processing returned status code: %d" % stat)
+    LOG.debug("Processing returned status code: %d" % stat)
 
     # Remove intermediate files (not the backend)
     if not stat and not args.debug_mode:
-        log.info("Removing intermediate products")
+        LOG.info("Removing intermediate products")
         remove_file_patterns(
                 Frontend.removable_file_patterns,
                 remap.removable_file_patterns
