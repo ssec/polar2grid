@@ -72,14 +72,49 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
 __docformat__ = "restructuredtext en"
 
-import h5py, numpy as np, glob, os, sys, logging
-from collections import namedtuple
+import h5py
+import numpy as np
+import os
+import sys
+import logging
+import re
+from datetime import datetime
 
 from polar2grid.core.roles import FrontendRole
 from polar2grid.core.fbf import dtype2fbf
 from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
 
 LOG = logging.getLogger(__name__)
+
+# from adl_geo_ref.py in CSPP
+# e.g. IASI_d20130310_t152624_M02.atm_prof_rtv.h5
+RE_DRRTV = re.compile('(?P<inst>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_(?P<sat>[A-Za-z0-9]+)\.h5')
+
+# GUIDEBOOK
+# FUTURE: move this to another file when it grows large enough
+
+SAT_INST_TABLE = {
+    ('M02', 'IASI'): (SAT_METOPA, INST_IASI),
+    ('M01', 'IASI'): (SAT_METOPB, INST_IASI),
+    ('g195', 'AIRS'): (None, None),  # FIXME this needs work
+    ('')
+}
+
+
+# END GUIDEBOOK
+
+def _filename_info(pathname):
+    """
+    return a dictionary of metadata found in the filename
+    :param pathname: dual retrieval HDF output file path
+    :return: dictionary of polar2grid information found in the filename
+    """
+    m = RE_DRRTV.match(os.path.split(pathname)[-1])
+    if not m:
+        return {}
+    when = datetime.strptime('%(date)s %(start_time)s' % m.groupdict(), '%Y%m%d %H%M%S')
+    return { 'start_time': when,
+             }
 
 
 def swath_from_var(var_name, h5_var):
@@ -94,8 +129,9 @@ def swath_from_var(var_name, h5_var):
     shape = h5_var.shape
     data = h5_var[:]
 
-    if len(shape)==3:
+    if len(shape) == 3:
         # roll the layer axis to the back, eg (101, 84, 60) -> (84, 60, 101)
+        LOG.debug('rolling %s layer axis to last position' % var_name)
         data = np.rollaxis(data, 0, 3)
 
     if 'missing_value' in h5_var.attrs:
@@ -103,11 +139,12 @@ def swath_from_var(var_name, h5_var):
         data = np.ma.masked_array(data, data==mv)
     else:
         LOG.warning('no missing_value attribute in %s' % var_name)
+        data = np.ma.masked_array(data)
     
     return data
 
 
-def swaths_from_h5s(h5_pathnames):
+def swaths_from_h5s(h5_pathnames, var_names=None):
     """
     from a series of Dual Regression output files, return a series of (name, data) swaths concatenating the data
      Assumes all variables present in the first file is present in the rest of the files
@@ -119,18 +156,21 @@ def swaths_from_h5s(h5_pathnames):
         return
     # get variable names
     first = h5s[0]
-    var_names = list(first.iterkeys())
+    if var_names is None:
+        var_names = list(first.iterkeys())
+    else:
+        var_names = list(var_names)
     LOG.info('variables found: %s' % repr(var_names))
     for vn in var_names:
         swath = np.concatenate([swath_from_var(vn, h5[vn]) for h5 in h5s], axis=0)
-
-
+        yield vn, swath
 
 
 def write_arrays_to_fbf(nditer):
     """
     write derived BT slices to CWD from an iterable yielding (name, data) pairs
     FIXME: promote this upstream??
+    FIXME: handle masked arrays properly
     """
     for name,data in nditer:
         rows,cols = data.shape
@@ -143,6 +183,131 @@ def write_arrays_to_fbf(nditer):
         with file(fn, 'wb') as fp:
             data.tofile(fp)
 
+
+def _load_meta_data (file_objects) :
+    """
+    load meta-data from the given list of FileInfoObject's
+
+    Note: this method will eventually support concatinating multiple files,
+    for now it only supports processing one file at a time! TODO FUTURE
+    """
+
+    # TODO, this is only temporary
+    if len(file_objects) != 1 :
+        raise ValueError("One file was expected for processing in _load_meta_data_and_image_data and more were given.")
+    file_object = file_objects[0]
+
+    # set up the base dictionaries
+    meta_data = {
+                 "sat": SAT_NPP,
+                 "instrument": INST_CRIS,
+                 "start_time": modis_guidebook.parse_datetime_from_filename(file_object.file_name),
+                 "bands" : { },
+
+                 # TO FILL IN LATER
+                 "rows_per_scan": None,
+                 "lon_fill_value": None,
+                 "lat_fill_value": None,
+                 "fbf_lat":        None,
+                 "fbf_lon":        None,
+                 # these have been changed to north, south, east, west
+                 #"lat_min":        None,
+                 #"lon_min":        None,
+                 #"lat_max":        None,
+                 #"lon_max":        None,
+                 "swath_rows":     None,
+                 "swath_cols":     None,
+                 "swath_scans":    None,
+                }
+
+    # pull information on the data that should be in this file
+    file_contents_guide = modis_guidebook.FILE_CONTENTS_GUIDE[file_object.matching_re]
+
+    # based on the list of bands/band IDs that should be in the file, load up the meta data and image data
+    for band_kind in file_contents_guide.keys() :
+
+        for band_number in file_contents_guide[band_kind] :
+
+            data_kind_const = modis_guidebook.DATA_KINDS[(band_kind, band_number)]
+
+            # TODO, when there are multiple files, this will algorithm will need to change
+            meta_data["bands"][(band_kind, band_number)] = {
+                                                            "data_kind": data_kind_const,
+                                                            "remap_data_as": data_kind_const,
+                                                            "kind": band_kind,
+                                                            "band": band_number,
+
+                                                            # TO FILL IN LATER
+                                                            "rows_per_scan": None,
+                                                            "fill_value":    None,
+                                                            "fbf_img":       None,
+                                                            "swath_rows":    None,
+                                                            "swath_cols":    None,
+                                                            "swath_scans":   None,
+
+                                                            # this is temporary so it will be easier to load the data later
+                                                            "file_obj":      file_object # TODO, strategy won't work with multiple files!
+                                                           }
+
+
+
+def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid=None, cut_bad=False) :
+    """
+    load the geonav data and save it in flat binary files; update the given meta_data_to_update
+    with information on where the files are and what the shape and range of the nav data are
+
+    TODO, cut_bad currently does nothing
+    FUTURE nav_uid will need to be passed once we are using more types of navigation
+    """
+
+    list_of_geo_files = [ ]
+    for file_info in file_info_objects :
+        list_of_geo_files.append(file_info.get_geo_file())
+
+    # Check if the navigation will need to be interpolated to a better
+    # resolution
+    # FUTURE: 500m geo nav key will have to be added along with the proper
+    # interpolation function
+    interpolate_data = False
+    if nav_uid in modis_guidebook.NAV_SETS_TO_INTERPOLATE_GEO:
+        interpolate_data = True
+
+    # FUTURE, if the longitude and latitude ever have different variable names, this will need refactoring
+    lat_temp_file_name, lat_stats = _load_data_to_flat_file (list_of_geo_files, "lat_" + nav_uid,
+                                                             modis_guidebook.LATITUDE_GEO_VARIABLE_NAME,
+                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
+                                                             interpolate_data=interpolate_data)
+    lon_temp_file_name, lon_stats = _load_data_to_flat_file (list_of_geo_files, "lon_" + nav_uid,
+                                                             modis_guidebook.LONGITUDE_GEO_VARIABLE_NAME,
+                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
+                                                             interpolate_data=interpolate_data)
+
+    # rename the flat file to a more descriptive name
+    shape_temp = lat_stats["shape"]
+    suffix = '.real4.' + '.'.join(str(x) for x in reversed(shape_temp))
+    new_lat_file_name = "latitude_"  + str(nav_uid) + suffix
+    new_lon_file_name = "longitude_" + str(nav_uid) + suffix
+    os.rename(lat_temp_file_name, new_lat_file_name)
+    os.rename(lon_temp_file_name, new_lon_file_name)
+
+    # based on our statistics, save some meta data to our meta data dictionary
+    rows, cols = shape_temp
+    meta_data_to_update["lon_fill_value"] = lon_stats["fill_value"]
+    meta_data_to_update["lat_fill_value"] = lat_stats["fill_value"]
+    meta_data_to_update["fbf_lat"]        = new_lat_file_name
+    meta_data_to_update["fbf_lon"]        = new_lon_file_name
+    meta_data_to_update["nav_set_uid"]    = nav_uid
+    meta_data_to_update["swath_rows"]     = rows
+    meta_data_to_update["swath_cols"]     = cols
+    meta_data_to_update["rows_per_scan"]  = modis_guidebook.ROWS_PER_SCAN[nav_uid]
+    meta_data_to_update["swath_scans"]    = rows / meta_data_to_update["rows_per_scan"]
+
+    """ # these have been changed to north, south, east, west and the backend will calculate them anyway
+    meta_data_to_update["lat_min"]        = lat_stats["min"]
+    meta_data_to_update["lat_max"]        = lat_stats["max"]
+    meta_data_to_update["lon_min"]        = lon_stats["min"]
+    meta_data_to_update["lon_max"]        = lon_stats["max"]
+    """
 
 
 def generate_metadata(swath, bands):
