@@ -84,12 +84,8 @@ from collections import namedtuple
 from functools import partial
 
 from polar2grid.core.roles import FrontendRole
-from polar2grid.core.fbf import dtype2fbf, str_to_dtype
-from polar2grid.core.dtype import dtype2np
-from polar2grid.core.constants import SAT_METOPA, SAT_METOPB, INST_IASI, NOT_APPLICABLE, \
-    DKIND_OPTICAL_THICKNESS, DKIND_PRESSURE, DKIND_LIFTED_INDEX, DKIND_LATITUDE, DKIND_LONGITUDE, \
-    DKIND_CAPE, DKIND_CATEGORY, DKIND_EMISSIVITY, DKIND_MIXING_RATIO, DKIND_PERCENT, DKIND_TEMPERATURE, \
-    DEFAULT_FILL_VALUE, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
+from polar2grid.core.fbf import str_to_dtype
+from polar2grid.core.constants import *
 
 LOG = logging.getLogger(__name__)
 
@@ -106,42 +102,39 @@ SAT_INST_TABLE = {
     ('g195', 'AIRS'): (None, None),  # FIXME this needs work
 }
 
-# pressure levels at which to extract swaths
-# Plev array is binsearched to make indices
-PRESSURE_LEVELS = ()
 
 VAR_TABLE = {
-     'CAPE': (DKIND_CAPE, ),
-     'CO2_Amount': (None, ),
-     'COT': (DKIND_TEMPERATURE, ),
-     'CTP': (DKIND_PRESSURE, ),
-     'CTT': (DKIND_TEMPERATURE, ),
-     'Channel_Index': (None, ),
-     'CldEmis': (DKIND_EMISSIVITY, ),
-     'Cmask': (DKIND_CATEGORY, ),
-     'Dewpnt': (None, ),
-     'GDAS_RelHum': (DKIND_PERCENT, ),
-     'GDAS_TAir': (DKIND_TEMPERATURE, ),
-     'H2OMMR': (DKIND_MIXING_RATIO, ),
-     'H2Ohigh': (None, ),
-     'H2Olow': (None, ),
-     'H2Omid': (None, ),
-     'Latitude': (DKIND_LATITUDE, ),
-     'Lifted_Index': (None, ),
-     'Longitude': (DKIND_LONGITUDE, ),
-     'O3VMR': (DKIND_MIXING_RATIO, ),
-     'Plevs': (DKIND_PRESSURE, ),
-     'Qflag1': (None, ),
-     'Qflag2': (None, ),
-     'Qflag3': (None, ),
-     'RelHum': (DKIND_PERCENT, ),
-     'SurfEmis': (DKIND_EMISSIVITY, ),
-     'SurfEmis_Wavenumbers': (None, ),
-     'SurfPres': (DKIND_PRESSURE, ),
-     'TAir': (DKIND_TEMPERATURE, ),
-     'TSurf': (DKIND_TEMPERATURE, ),
-     'totH2O': (None, ),
-     'totO3': (None, ),
+     'CAPE': (DKIND_CAPE, BKIND_CAPE),
+     'CO2_Amount': (None, BKIND_CO2_AMT),
+     'COT': (DKIND_OPTICAL_THICKNESS, BKIND_COT),
+     'CTP': (DKIND_PRESSURE, BKIND_CTP),
+     'CTT': (DKIND_TEMPERATURE, BKIND_CTT),
+     # 'Channel_Index': (None, ),
+     'CldEmis': (DKIND_EMISSIVITY, BKIND_CLD_EMIS),
+     'Cmask': (DKIND_CATEGORY, BKIND_CMASK),
+     'Dewpnt': (None, BKIND_DEWPT),
+     'GDAS_RelHum': (DKIND_PERCENT, BKIND_RH),
+     'GDAS_TAir': (DKIND_TEMPERATURE, BKIND_AIR_T),
+     'H2OMMR': (DKIND_MIXING_RATIO, BKIND_H2O_MMR),
+     'H2Ohigh': (None, None),
+     'H2Olow': (None, None),
+     'H2Omid': (None, None),
+     'Latitude': (DKIND_LATITUDE, None),
+     'Lifted_Index': (None, BKIND_LI),
+     'Longitude': (DKIND_LONGITUDE, None),
+     'O3VMR': (DKIND_MIXING_RATIO, BKIND_O3_VMR),
+     'Plevs': (DKIND_PRESSURE, None),
+     'Qflag1': (None, None),
+     'Qflag2': (None, None),
+     'Qflag3': (None, None),
+     'RelHum': (DKIND_PERCENT, BKIND_RH),
+     'SurfEmis': (DKIND_EMISSIVITY, BKIND_SRF_EMIS),
+     'SurfEmis_Wavenumbers': (None, None),
+     'SurfPres': (DKIND_PRESSURE, BKIND_SRF_P),
+     'TAir': (DKIND_TEMPERATURE, BKIND_AIR_T),
+     'TSurf': (DKIND_TEMPERATURE, BKIND_SRF_T),
+     'totH2O': (None, BKIND_H2O_TOT),
+     'totO3': (None, BKIND_O3_TOT),
      }
 
 
@@ -188,7 +181,7 @@ def _swath_shape(*h5s):
 def _swath_info(*h5s):
     """
     return FrontEnd metadata found in attributes
-    :param h5: hdf5 object
+    :param h5s: hdf5 object list
     :return: dictionary of metadata extracted from attributes, including extra '_plev' pressure variable
     """
     fn_info = _filename_info(h5s[0].filename)
@@ -205,7 +198,7 @@ def _swath_info(*h5s):
     return zult
 
 
-def swath_from_var(var_name, h5_var, tool=None):
+def _swath_from_var(var_name, h5_var, tool=None):
     """
     given a variable by name, and its hdf5 variable object,
     return a normalized numpy masked_array with corrected indexing order
@@ -235,25 +228,25 @@ def swath_from_var(var_name, h5_var, tool=None):
     return data
 
 
-def swaths_from_h5s(h5s, var_tools=None):
-    """
-    from a series of Dual Regression output files, return a series of (name, data) swaths concatenating the data
-     Assumes all variables present in the first file is present in the rest of the files
-    :param h5s: sequence of hdf5 objects, order is preserved in output swaths; assumes valid HDF5 file
-    :param var_tools: list of (variable-name, data-extraction-tool)
-    :param h5_pathnames: sequence of hdf5 pathnames, order is preserved in output swaths; assumes valid HDF5 files
-    :return: sequence of (name, raw-swath-array) pairs
-    """
-    if not h5s:
-        return
-    # get variable names
-    first = h5s[0]
-    if var_tools is None:
-        var_tools = [(x, None) for x in first.iterkeys()]
-    LOG.info('variables desired: %r' % [x[0] for x in var_tools])
-    for vn, tool in var_tools:
-        swath = np.concatenate([swath_from_var(vn, h5[vn], tool) for h5 in h5s], axis=0)
-        yield vn, swath
+# def swaths_from_h5s(h5s, var_tools=None):
+#     """
+#     from a series of Dual Regression output files, return a series of (name, data) swaths concatenating the data
+#      Assumes all variables present in the first file is present in the rest of the files
+#     :param h5s: sequence of hdf5 objects, order is preserved in output swaths; assumes valid HDF5 file
+#     :param var_tools: list of (variable-name, data-extraction-tool)
+#     :param h5_pathnames: sequence of hdf5 pathnames, order is preserved in output swaths; assumes valid HDF5 files
+#     :return: sequence of (name, raw-swath-array) pairs
+#     """
+#     if not h5s:
+#         return
+#     # get variable names
+#     first = h5s[0]
+#     if var_tools is None:
+#         var_tools = [(x, None) for x in first.iterkeys()]
+#     LOG.info('variables desired: %r' % [x[0] for x in var_tools])
+#     for vn, tool in var_tools:
+#         swath = np.concatenate([_swath_from_var(vn, h5[vn], tool) for h5 in h5s], axis=0)
+#         yield vn, swath
 
 
 def _dict_reverse(D):
@@ -263,7 +256,7 @@ def _dict_reverse(D):
 nptype_to_suffix = _dict_reverse(str_to_dtype)
 
 
-def write_array_to_fbf(name, data):
+def _write_array_to_fbf(name, data):
     """
     write a swath to a flat binary file, including mapping missing values to DEFAULT_FILL_VALUE
     :param name: variable name
@@ -289,18 +282,15 @@ def write_array_to_fbf(name, data):
     return fn
 
 
-def write_arrays_to_fbf(nditer):
-    """
-    write derived swaths to CWD from an iterable yielding (name, data) pairs
-    """
-    for name,data in nditer:
-        fn = write_array_to_fbf(name, data)
-        if fn is not None:
-            yield name, fn
+# def write_arrays_to_fbf(nditer):
+#     """
+#     write derived swaths to CWD from an iterable yielding (name, data) pairs
+#     """
+#     for name,data in nditer:
+#         fn = _write_array_to_fbf(name, data)
+#         if fn is not None:
+#             yield name, fn
 
-
-# def _layer(layer_num):
-#     return lambda h5v: h5v[layer_num,:,:].squeeze()
 
 def _layer_at_pressure(h5v, plev=None, p=None):
     """
@@ -330,13 +320,13 @@ def _var_manifest(sat, inst, plev):
     :param sat: const SAT_NPP, SAT_METOPA, etc
     :param inst: INST_IASI, INST_CRIS
     :param plev: pressure level array assumed consistent between files
-    :return: yields sequence of (variable-name, (h5_var_name, extraction-tool, DKIND, BID))
+    :return: yields sequence of (variable-name, manifest-entry-tuple)
     """
     yield "RelHum_500mb", manifest_entry(h5_var_name='RelHum',
-                                  tool = partial(_layer_at_pressure, plev=plev, p=500.0),
-                                  bkind = NOT_APPLICABLE,
-                                  dkind = DKIND_PERCENT,
-                                  bid = NOT_APPLICABLE)
+                                         tool = partial(_layer_at_pressure, plev=plev, p=500.0),
+                                         bkind = NOT_APPLICABLE,
+                                         dkind = DKIND_PERCENT,
+                                         bid = NOT_APPLICABLE)
 
 
 def swathbuckler(*h5_pathnames):
@@ -345,8 +335,19 @@ def swathbuckler(*h5_pathnames):
     :param h5_pathnames:
     :return: fully formed metadata describing swath written to current working directory
     """
+    h5_pathnames = list(h5_pathnames)
+
+    bad_files = set()
+    for pn in h5_pathnames:
+        if not h5py.is_hdf5(pn):
+            bad_files.add(pn)
+    if bad_files:
+        LOG.warning('These files are not HDF5 and will be ignored: %s' % ', '.join(list(bad_files)))
+        h5_pathnames = [x for x in h5_pathnames if x not in bad_files]
+
     h5s = [h5py.File(pn, 'r') for pn in h5_pathnames]
     if not h5s:
+        LOG.error('no input was available to process!')
         return {}
     nfo = _swath_info(*h5s)
     bands = nfo['bands'] = {}
@@ -355,9 +356,9 @@ def swathbuckler(*h5_pathnames):
     LOG.debug('manifest to extract: %r' % manifest)
 
     def _gobble(name, h5_var_name, tool, h5s=h5s):
-        sections = [swath_from_var(h5_var_name, h5[h5_var_name], tool) for h5 in h5s]
+        sections = [_swath_from_var(h5_var_name, h5[h5_var_name], tool) for h5 in h5s]
         swath = np.concatenate(sections, axis=0)
-        return write_array_to_fbf(name, swath)
+        return _write_array_to_fbf(name, swath)
 
     nfo['fbf_lat'] = _gobble('swath_latitude', 'Latitude', None)
     nfo['fbf_lon'] = _gobble('swath_longitude', 'Longitude', None)
@@ -376,152 +377,11 @@ def swathbuckler(*h5_pathnames):
             "rows_per_scan": nfo['rows_per_scan']
         }
         bands[name] = band
+    LOG.debug('metadata: %s' % repr(nfo))
     return nfo
 
 
-
-
-
-def test_swath2fbf(pathnames = ['test/input/case1/IASI_d20130310_t152624_M02.atm_prof_rtv.h5']):
-    write_arrays_to_fbf(swaths_from_h5s(pathnames))
-
-
-def _load_meta_data (file_objects) :
-    """
-    load meta-data from the given list of FileInfoObject's
-
-    Note: this method will eventually support concatinating multiple files,
-    for now it only supports processing one file at a time! TODO FUTURE
-    """
-
-    # TODO, this is only temporary
-    if len(file_objects) != 1 :
-        raise ValueError("One file was expected for processing in _load_meta_data_and_image_data and more were given.")
-    file_object = file_objects[0]
-
-    nfo = _filename_info(file_object.file_name)
-
-    # set up the base dictionaries
-    meta_data = {
-                 "sat": SAT_METOPA,
-                 "instrument": INST_IASI,
-                 "start_time": nfo['start_date'],
-                 "bands" : { },
-
-                 # TO FILL IN LATER
-                 "rows_per_scan": None,
-                 "lon_fill_value": None,
-                 "lat_fill_value": None,
-                 "fbf_lat":        None,
-                 "fbf_lon":        None,
-                 # these have been changed to north, south, east, west
-                 #"lat_min":        None,
-                 #"lon_min":        None,
-                 #"lat_max":        None,
-                 #"lon_max":        None,
-                 "swath_rows":     None,
-                 "swath_cols":     None,
-                 "swath_scans":    None,
-                }
-
-    # # pull information on the data that should be in this file
-    # file_contents_guide = modis_guidebook.FILE_CONTENTS_GUIDE[file_object.matching_re]
-    #
-    # # based on the list of bands/band IDs that should be in the file, load up the meta data and image data
-    # for band_kind in file_contents_guide.keys() :
-    #
-    #     for band_number in file_contents_guide[band_kind] :
-    #
-    #         data_kind_const = modis_guidebook.DATA_KINDS[(band_kind, band_number)]
-    #
-    #         # TODO, when there are multiple files, this will algorithm will need to change
-    #         meta_data["bands"][(band_kind, band_number)] = {
-    #                                                         "data_kind": data_kind_const,
-    #                                                         "remap_data_as": data_kind_const,
-    #                                                         "kind": band_kind,
-    #                                                         "band": band_number,
-    #
-    #                                                         # TO FILL IN LATER
-    #                                                         "rows_per_scan": None,
-    #                                                         "fill_value":    None,
-    #                                                         "fbf_img":       None,
-    #                                                         "swath_rows":    None,
-    #                                                         "swath_cols":    None,
-    #                                                         "swath_scans":   None,
-    #
-    #                                                         # this is temporary so it will be easier to load the data later
-    #                                                         "file_obj":      file_object # TODO, strategy won't work with multiple files!
-    #                                                        }
-
-
-# def _load_geonav_data (meta_data_to_update, file_info_objects, nav_uid=None, cut_bad=False) :
-#     """
-#     load the geonav data and save it in flat binary files; update the given meta_data_to_update
-#     with information on where the files are and what the shape and range of the nav data are
-#
-#     TODO, cut_bad currently does nothing
-#     FUTURE nav_uid will need to be passed once we are using more types of navigation
-#     """
-#
-#     list_of_geo_files = [ ]
-#     for file_info in file_info_objects :
-#         list_of_geo_files.append(file_info.get_geo_file())
-#
-#     # Check if the navigation will need to be interpolated to a better
-#     # resolution
-#     # FUTURE: 500m geo nav key will have to be added along with the proper
-#     # interpolation function
-#     interpolate_data = False
-#     if nav_uid in modis_guidebook.NAV_SETS_TO_INTERPOLATE_GEO:
-#         interpolate_data = True
-#
-#     # FUTURE, if the longitude and latitude ever have different variable names, this will need refactoring
-#     lat_temp_file_name, lat_stats = _load_data_to_flat_file (list_of_geo_files, "lat_" + nav_uid,
-#                                                              modis_guidebook.LATITUDE_GEO_VARIABLE_NAME,
-#                                                              missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
-#                                                              interpolate_data=interpolate_data)
-#     lon_temp_file_name, lon_stats = _load_data_to_flat_file (list_of_geo_files, "lon_" + nav_uid,
-#                                                              modis_guidebook.LONGITUDE_GEO_VARIABLE_NAME,
-#                                                              missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
-#                                                              interpolate_data=interpolate_data)
-#
-#     # rename the flat file to a more descriptive name
-#     shape_temp = lat_stats["shape"]
-#     suffix = '.real4.' + '.'.join(str(x) for x in reversed(shape_temp))
-#     new_lat_file_name = "latitude_"  + str(nav_uid) + suffix
-#     new_lon_file_name = "longitude_" + str(nav_uid) + suffix
-#     os.rename(lat_temp_file_name, new_lat_file_name)
-#     os.rename(lon_temp_file_name, new_lon_file_name)
-#
-#     # based on our statistics, save some meta data to our meta data dictionary
-#     rows, cols = shape_temp
-#     meta_data_to_update["lon_fill_value"] = lon_stats["fill_value"]
-#     meta_data_to_update["lat_fill_value"] = lat_stats["fill_value"]
-#     meta_data_to_update["fbf_lat"]        = new_lat_file_name
-#     meta_data_to_update["fbf_lon"]        = new_lon_file_name
-#     meta_data_to_update["nav_set_uid"]    = nav_uid
-#     meta_data_to_update["swath_rows"]     = rows
-#     meta_data_to_update["swath_cols"]     = cols
-#     meta_data_to_update["rows_per_scan"]  = modis_guidebook.ROWS_PER_SCAN[nav_uid]
-#     meta_data_to_update["swath_scans"]    = rows / meta_data_to_update["rows_per_scan"]
-#
-#     """ # these have been changed to north, south, east, west and the backend will calculate them anyway
-#     meta_data_to_update["lat_min"]        = lat_stats["min"]
-#     meta_data_to_update["lat_max"]        = lat_stats["max"]
-#     meta_data_to_update["lon_min"]        = lon_stats["min"]
-#     meta_data_to_update["lon_max"]        = lon_stats["max"]
-#     """
-
-
-def generate_metadata(swath, bands):
-    """
-    return metadata dictionary summarizing the granule and generated bands, compatible with frontend output
-    """
-    raise NotImplementedError('generate_metadata not implemented')
-
-
-# FUTURE: add a way to configure which slices to produce, or all by default
-class CrisSdrFrontend(FrontendRole):
+class Frontend(FrontendRole):
     """
     """
     info = None
@@ -536,18 +396,13 @@ class CrisSdrFrontend(FrontendRole):
         write BT slices to flat files in cwd
         write GEO arrays to flat files in cwd
         """
-        # swath = cris_swath(*filepaths, **kwargs)
-        # bands = cris_bt_slices(swath.rad_lw, swath.rad_mw, swath.rad_sw)
-        # bands.update({ 'Latitude': swath.lat, 'Longitude': swath.lon })
-        # write_arrays_to_fbf(latlon.items())
-        # write_arrays_to_fbf(bands.items())
-        # self.info = generate_metadata(swath, bands)
-        # return self.info
+        self.info = swathbuckler(*filepaths)
+        return self.info
 
 
-def test_swath(test_data='test/input/case1/IASI_d20130310_t152624_M02.atm_prof_rtv.h5'):
-    swath = swaths_from_h5s([test_data])
-    return swath
+# def test_swath(test_data='test/input/case1/IASI_d20130310_t152624_M02.atm_prof_rtv.h5'):
+#     swath = swaths_from_h5s([test_data])
+#     return swath
 
 
 # def test_frontend(test_data='test/input/case1/IASI_d20130310_t152624_M02.atm_prof_rtv.h5'):
@@ -619,12 +474,14 @@ def main():
         parser.error('incorrect arguments, try -h or --help.')
         return 9
 
-    m = swathbuckler(*args)
+    meta = swathbuckler(*args)
     if options.interactive:
+        global m
+        m = meta
         console("'m' is metadata")
     else:
         from pprint import pprint
-        pprint(m)
+        pprint(meta)
 
 
     return 0

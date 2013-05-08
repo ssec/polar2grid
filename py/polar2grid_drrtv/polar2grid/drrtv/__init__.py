@@ -45,3 +45,4 @@ __docformat__ = "restructuredtext en"
 # from .cris_to_swath  import Frontend
 # from .cris_guidebook import GEO_FILE_GROUPING,parse_datetime_from_filename
 
+from .swath import Frontend

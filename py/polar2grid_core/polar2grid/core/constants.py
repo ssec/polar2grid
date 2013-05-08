@@ -96,6 +96,27 @@ BKIND_NDVI  = "ndvi"
 BKIND_TPW   = "total_precipitable_water"
 BKIND_CREFL = "crefl"
 BKIND_TCOLOR_CREFL = "true_color_crefl"
+BKIND_CAPE = "cape"
+BKIND_CO2_AMT = "co2_amount"
+BKIND_COT = "cloud_optical_thickness"
+BKIND_CTP = "cloud_top_pressure"
+# BKIND_CTT already present
+BKIND_CLD_EMIS = "cloud_emissivity"
+# BKIND_CMASK already present
+BKIND_DEWPT = "dewpoint_temp"
+BKIND_RH = "relative_humidity"
+BKIND_AIR_T = "air_temp"
+BKIND_H2O_MMR = "water_molecular_mixing_ratio"
+# BKIND_H2O_HIGH =
+# BKIND_H2O_LOW =
+# BKIND_H2O_MID =
+BKIND_LI = "lifted_index"
+BKIND_O3_VMR = "ozone_vapor_mixing_ratio"
+BKIND_SRF_EMIS = "surface_emissivity"
+BKIND_SRF_P = "surface_pressure"
+BKIND_SRF_T = "surface_temperature"
+BKIND_H2O_TOT = "total_water"
+BKIND_O3_TOT = "total_ozone"
 
 # Band Identifier
 BID_01 = "01"
