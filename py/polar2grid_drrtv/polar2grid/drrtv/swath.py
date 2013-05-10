@@ -82,6 +82,7 @@ import uuid
 from datetime import datetime
 from collections import namedtuple
 from functools import partial
+from pprint import pformat
 
 from polar2grid.core.roles import FrontendRole
 from polar2grid.core.fbf import str_to_dtype
@@ -103,39 +104,42 @@ SAT_INST_TABLE = {
     ('g195', 'AIRS'): (None, None),  # FIXME this needs work
 }
 
+# pressure layers to obtain data from
+DEFAULT_LAYER_PRESSURES = (50.0, 100.0, 250.0, 500.0, 750.0, 900.0)
 
+# h5_var_name => dkind, bkind, pressure-layers-or-None
 VAR_TABLE = {
-     'CAPE': (DKIND_CAPE, BKIND_CAPE),
-     'CO2_Amount': (None, BKIND_CO2_AMT),
-     'COT': (DKIND_OPTICAL_THICKNESS, BKIND_COT),
-     'CTP': (DKIND_PRESSURE, BKIND_CTP),
-     'CTT': (DKIND_TEMPERATURE, BKIND_CTT),
+     'CAPE': (DKIND_CAPE, BKIND_CAPE, None),
+     'CO2_Amount': (None, BKIND_CO2_AMT, None),
+     'COT': (DKIND_OPTICAL_THICKNESS, BKIND_COT, None),
+     'CTP': (DKIND_PRESSURE, BKIND_CTP, None),
+     'CTT': (DKIND_TEMPERATURE, BKIND_CTT, None),
      # 'Channel_Index': (None, ),
-     'CldEmis': (DKIND_EMISSIVITY, BKIND_CLD_EMIS),
-     'Cmask': (DKIND_CATEGORY, BKIND_CMASK),
-     'Dewpnt': (None, BKIND_DEWPT),
-     'GDAS_RelHum': (DKIND_PERCENT, BKIND_RH),
-     'GDAS_TAir': (DKIND_TEMPERATURE, BKIND_AIR_T),
-     'H2OMMR': (DKIND_MIXING_RATIO, BKIND_H2O_MMR),
-     'H2Ohigh': (None, None),
-     'H2Olow': (None, None),
-     'H2Omid': (None, None),
-     'Latitude': (DKIND_LATITUDE, None),
-     'Lifted_Index': (None, BKIND_LI),
-     'Longitude': (DKIND_LONGITUDE, None),
-     'O3VMR': (DKIND_MIXING_RATIO, BKIND_O3_VMR),
-     'Plevs': (DKIND_PRESSURE, None),
-     'Qflag1': (None, None),
-     'Qflag2': (None, None),
-     'Qflag3': (None, None),
-     'RelHum': (DKIND_PERCENT, BKIND_RH),
-     'SurfEmis': (DKIND_EMISSIVITY, BKIND_SRF_EMIS),
-     'SurfEmis_Wavenumbers': (None, None),
-     'SurfPres': (DKIND_PRESSURE, BKIND_SRF_P),
-     'TAir': (DKIND_TEMPERATURE, BKIND_AIR_T),
-     'TSurf': (DKIND_TEMPERATURE, BKIND_SRF_T),
-     'totH2O': (None, BKIND_H2O_TOT),
-     'totO3': (None, BKIND_O3_TOT),
+     'CldEmis': (DKIND_EMISSIVITY, BKIND_CLD_EMIS, None),
+     'Cmask': (DKIND_CATEGORY, BKIND_CMASK, None),
+     'Dewpnt': (DKIND_TEMPERATURE, BKIND_DEWPT, DEFAULT_LAYER_PRESSURES),
+     # 'GDAS_RelHum': (DKIND_PERCENT, BKIND_RH),
+     # 'GDAS_TAir': (DKIND_TEMPERATURE, BKIND_AIR_T),
+     'H2OMMR': (DKIND_MIXING_RATIO, BKIND_H2O_MMR, DEFAULT_LAYER_PRESSURES),
+     # 'H2Ohigh': (None, None, None),
+     # 'H2Olow': (None, None, None),
+     # 'H2Omid': (None, None, None),
+     # 'Latitude': (DKIND_LATITUDE, None),
+     # 'Lifted_Index': (None, BKIND_LI, None),
+     # 'Longitude': (DKIND_LONGITUDE, None),
+     'O3VMR': (DKIND_MIXING_RATIO, BKIND_O3_VMR, DEFAULT_LAYER_PRESSURES),
+     # 'Plevs': (DKIND_PRESSURE, None),
+     # 'Qflag1': (None, None),
+     # 'Qflag2': (None, None),
+     # 'Qflag3': (None, None),
+     'RelHum': (DKIND_PERCENT, BKIND_RH, DEFAULT_LAYER_PRESSURES),
+     # 'SurfEmis': (DKIND_EMISSIVITY, BKIND_SRF_EMIS, None),
+     # 'SurfEmis_Wavenumbers': (None, None),
+     'SurfPres': (DKIND_PRESSURE, BKIND_SRF_P, None),
+     'TAir': (DKIND_TEMPERATURE, BKIND_AIR_T, DEFAULT_LAYER_PRESSURES),
+     'TSurf': (DKIND_TEMPERATURE, BKIND_SRF_T, None),
+     'totH2O': (None, BKIND_H2O_TOT, None),
+     'totO3': (None, BKIND_O3_TOT, None),
      }
 
 
@@ -325,12 +329,31 @@ def _var_manifest(sat, inst, plev):
     """
     # FIXME: this is not fully implemented and needs to use the guidebook as well as generate layer extraction tools
 
-    yield "TAir_500mb", manifest_entry(h5_var_name='TAir',
-                                         tool = partial(_layer_at_pressure, plev=plev, p=500.0),
-                                         dkind=DKIND_BTEMP,  # FIXME should be DKIND_TEMPERATURE
-                                         bkind = BKIND_I,   # FIXME faking this should be BKIND_????
-                                         bid = BID_04  # FIXME faking this since I04 is a BT, should be layer id
-                                         )
+    yield "test_TAir_500mb", manifest_entry(h5_var_name='TAir',
+                                            tool = partial(_layer_at_pressure, plev=plev, p=500.0),
+                                            dkind=DKIND_BTEMP,  # FIXME should be DKIND_TEMPERATURE
+                                            bkind = BKIND_I,   # FIXME faking this should be BKIND_????
+                                            bid = BID_04  # FIXME faking this since I04 is a BT, should be layer id
+                                            )
+
+    for h5_var_name, info in VAR_TABLE.items():
+        dk, bk, ps = info
+        if not ps:
+            if dk is None or bk is None:
+                continue
+            yield h5_var_name, manifest_entry(h5_var_name=h5_var_name,
+                                              tool=None,
+                                              dkind=dk,
+                                              bkind=bk,
+                                              bid=None)
+        else:
+            for p in ps:
+                yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
+                                                                   tool=partial(_layer_at_pressure, plev=plev, p=p),
+                                                                   dkind=dk,
+                                                                   bkind=bk,
+                                                                   bid=None)
+
 
 
 def swathbuckler(*h5_pathnames):
@@ -357,7 +380,7 @@ def swathbuckler(*h5_pathnames):
     bands = nfo['bands'] = {}
     # get list of output "bands", their characteristics, and an extraction tool
     manifest = dict(_var_manifest(nfo['sat'], nfo['instrument'], nfo['_plev']))
-    LOG.debug('manifest to extract: %r' % manifest)
+    LOG.debug('manifest to extract: %s' % pformat(manifest))
 
     def _gobble(name, h5_var_name, tool, h5s=h5s):
         sections = [_swath_from_var(h5_var_name, h5[h5_var_name], tool) for h5 in h5s]
@@ -371,7 +394,7 @@ def swathbuckler(*h5_pathnames):
         LOG.debug("extracting %s from variable %s" % (name, guide.h5_var_name))
         filename = _gobble(name, guide.h5_var_name, guide.tool)
         band = {
-            "band": '04', # FIXME faking as VIIRS
+            "band": guide.bid,
             "data_kind": guide.dkind,
             "remap_data_as": guide.dkind,
             "kind": guide.bkind,
