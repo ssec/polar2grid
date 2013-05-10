@@ -321,6 +321,7 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
 
     if len(fornav_output) == 0:
         log.error("Fornav was not able to complete any remapping for navigation set %s" % (nav_set_uid,))
+        raise RuntimeError("Fornav was not able to complete any remapping for navigation set %s" % (nav_set_uid,))
 
     return fornav_output
 
