@@ -342,17 +342,17 @@ def _var_manifest(sat, inst, plev):
             if dk is None or bk is None:
                 continue
             yield h5_var_name, manifest_entry(h5_var_name=h5_var_name,
-                                              tool=None,
+                                              tool=None,  # 2D variable, take the whole variable
                                               dkind=dk,
                                               bkind=bk,
-                                              bid=None)
+                                              bid=None)  # FIXME this should be based on level
         else:
             for p in ps:
                 yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
                                                                    tool=partial(_layer_at_pressure, plev=plev, p=p),
                                                                    dkind=dk,
                                                                    bkind=bk,
-                                                                   bid=None)
+                                                                   bid=None)  # FIXME this should be based on level
 
 
 
