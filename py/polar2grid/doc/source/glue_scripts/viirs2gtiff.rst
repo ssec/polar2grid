@@ -95,7 +95,7 @@ Command Line Options
     :ref:`constants <constants_data_types>`
     file, prefixed with ``DTYPE_``. Use the value not the constant name.
 
-    |this_glue| defaults to ``uint2`` a 16-bit unsigned integer.
+    |this_glue| defaults to ``uint1`` an 8-bit unsigned integer.
 
 .. cmdoption:: --dont_inc
 
