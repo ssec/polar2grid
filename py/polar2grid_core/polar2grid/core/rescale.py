@@ -303,6 +303,7 @@ def ndvi_scale (data,
 # DEFAULTS
 RESCALE_FOR_KIND = {
         DKIND_RADIANCE    : (linear_scale, (255.0,0)),
+        DKIND_TEMPERATURE : (bt_scale_linear, (355.0,100.0)),
         DKIND_REFLECTANCE : (sqrt_scale,   (100.0, 25.5)),
         DKIND_BTEMP       : (bt_scale,     (242.0,660.0,2,418.0,1)),
         DKIND_FOG         : (fog_scale,    (10.0,105.0,5,4,205,206))
