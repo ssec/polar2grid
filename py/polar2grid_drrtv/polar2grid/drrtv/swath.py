@@ -105,14 +105,14 @@ SAT_INST_TABLE = {
 }
 
 # pressure layers to obtain data from
-DEFAULT_LAYER_PRESSURES = (50.0, 100.0, 250.0, 500.0, 750.0, 900.0)
+DEFAULT_LAYER_PRESSURES = (500.0, 900.0)
 
 # h5_var_name => dkind, bkind, pressure-layers-or-None
 VAR_TABLE = {
      'CAPE': (DKIND_CAPE, BKIND_CAPE, None),
      'CO2_Amount': (None, BKIND_CO2_AMT, None),
      'COT': (DKIND_OPTICAL_THICKNESS, BKIND_COT, None),
-     'CTP': (DKIND_PRESSURE, BKIND_CTP, None),
+     'CTP': (DKIND_PRESSURE, BKIND_CTP, None),  # !
      'CTT': (DKIND_TEMPERATURE, BKIND_CTT, None),
      # 'Channel_Index': (None, ),
      'CldEmis': (DKIND_EMISSIVITY, BKIND_CLD_EMIS, None),
@@ -132,11 +132,11 @@ VAR_TABLE = {
      # 'Qflag1': (None, None),
      # 'Qflag2': (None, None),
      # 'Qflag3': (None, None),
-     'RelHum': (DKIND_PERCENT, BKIND_RH, DEFAULT_LAYER_PRESSURES),
+     'RelHum': (DKIND_PERCENT, BKIND_RH, DEFAULT_LAYER_PRESSURES),  # !
      # 'SurfEmis': (DKIND_EMISSIVITY, BKIND_SRF_EMIS, None),
      # 'SurfEmis_Wavenumbers': (None, None),
      'SurfPres': (DKIND_PRESSURE, BKIND_SRF_P, None),
-     'TAir': (DKIND_TEMPERATURE, BKIND_AIR_T, DEFAULT_LAYER_PRESSURES),
+     'TAir': (DKIND_TEMPERATURE, BKIND_AIR_T, DEFAULT_LAYER_PRESSURES),  # !
      'TSurf': (DKIND_TEMPERATURE, BKIND_SRF_T, None),
      'totH2O': (None, BKIND_H2O_TOT, None),
      'totO3': (None, BKIND_O3_TOT, None),
