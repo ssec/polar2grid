@@ -228,9 +228,11 @@ def can_handle_inputs(config_dict, sat, instrument, nav_set_uid, kind, band, dat
     this band and data_kind
     """
     band_id = _create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind)
+    assert(kind!=data_kind)
     log.debug("Searching AWIPS configs for '%s'" % (band_id,))
     grids = []
     for k in config_dict.keys():
+        log.debug('checking key %s' % k)
         if k.startswith(band_id):
             grids.append(config_dict[k]["grid_name"])
     return grids

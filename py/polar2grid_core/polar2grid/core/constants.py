@@ -103,9 +103,9 @@ BKIND_CTP = "cloud_top_pressure"
 # BKIND_CTT already present
 BKIND_CLD_EMIS = "cloud_emissivity"
 # BKIND_CMASK already present
-BKIND_DEWPT = "dewpoint_temp"
+BKIND_DEWPT = "dewpoint_temperature"
 BKIND_RH = "relative_humidity"
-BKIND_AIR_T = "air_temp"
+BKIND_AIR_T = "air_temperature"
 BKIND_H2O_MMR = "water_molecular_mixing_ratio"
 # BKIND_H2O_HIGH =
 # BKIND_H2O_LOW =

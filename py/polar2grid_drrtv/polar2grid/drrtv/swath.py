@@ -100,7 +100,7 @@ RE_DRRTV = re.compile(r'(?P<inst>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d
 SAT_INST_TABLE = {
     ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 2),
     ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 2),
-    (None, 'CRIS'): (SAT_NPP, INST_VIIRS, 3),  # FIXME this should be INST_CRIS but we're faking VIIRS to get output
+    (None, 'CRIS'): (SAT_NPP, INST_CRIS, 3),
     ('g195', 'AIRS'): (None, None),  # FIXME this needs work
 }
 
@@ -159,7 +159,7 @@ def _filename_info(pathname):
     when = datetime.strptime('%(date)s %(start_time)s' % mgd, '%Y%m%d %H%M%S')
     sat, inst, rps = SAT_INST_TABLE[(mgd['sat'], mgd['inst'])]
     return { 'start_time': when,
-             'nav_set_uid': "%s_%s" % (sat, inst),
+             'nav_set_uid': "cris_nav",  # FIXME  % (sat, inst),
              'sat': sat,
              'instrument': inst,    # why is this not 'inst'? or 'sat' 'satellite'?
              'rows_per_scan': rps
@@ -329,30 +329,33 @@ def _var_manifest(sat, inst, plev):
     """
     # FIXME: this is not fully implemented and needs to use the guidebook as well as generate layer extraction tools
 
-    yield "test_TAir_500mb", manifest_entry(h5_var_name='TAir',
-                                            tool = partial(_layer_at_pressure, plev=plev, p=500.0),
-                                            dkind=DKIND_BTEMP,  # FIXME should be DKIND_TEMPERATURE
-                                            bkind = BKIND_I,   # FIXME faking this should be BKIND_????
-                                            bid = BID_04  # FIXME faking this since I04 is a BT, should be layer id
-                                            )
+    h5_var_name = 'TAir'
+    dk, bk, ps = VAR_TABLE[h5_var_name]
+    for p in ps:
+        yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
+                                                           tool=partial(_layer_at_pressure, plev=plev, p=p),
+                                                           dkind=dk,
+                                                           bkind=bk,
+                                                           bid='lvl%d' % int(p))
 
-    for h5_var_name, info in VAR_TABLE.items():
-        dk, bk, ps = info
-        if not ps:
-            if dk is None or bk is None:
-                continue
-            yield h5_var_name, manifest_entry(h5_var_name=h5_var_name,
-                                              tool=None,  # 2D variable, take the whole variable
-                                              dkind=dk,
-                                              bkind=bk,
-                                              bid=None)  # FIXME this should be based on level
-        else:
-            for p in ps:
-                yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
-                                                                   tool=partial(_layer_at_pressure, plev=plev, p=p),
-                                                                   dkind=dk,
-                                                                   bkind=bk,
-                                                                   bid=None)  # FIXME this should be based on level
+    # FIXME: final code should look something like this:
+    # for h5_var_name, info in VAR_TABLE.items():
+    #     dk, bk, ps = info
+    #     if not ps:
+    #         if dk is None or bk is None:
+    #             continue
+    #         yield h5_var_name, manifest_entry(h5_var_name=h5_var_name,
+    #                                           tool=None,  # 2D variable, take the whole variable
+    #                                           dkind=dk,
+    #                                           bkind=bk,
+    #                                           bid=None)  # FIXME this should be based on level
+    #     else:
+    #         for p in ps:
+    #             yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
+    #                                                                tool=partial(_layer_at_pressure, plev=plev, p=p),
+    #                                                                dkind=dk,
+    #                                                                bkind=bk,
+    #                                                                bid=None)  # FIXME this should be based on level
 
 
 
@@ -402,12 +405,13 @@ def swathbuckler(*h5_pathnames):
             "swath_rows": nfo['swath_rows'],
             "swath_cols": nfo['swath_cols'],
             "swath_scans": nfo['swath_scans'],
-            "rows_per_scan": nfo['rows_per_scan']
+            "rows_per_scan": nfo['rows_per_scan'],
+            "grids": GRIDS_ANY
         }
         # bands[name] = band
-        bands[(BKIND_I, BID_04)] = band
-    nfo['nav_set_uid'] = 'i_nav'   # FIXME faking as viirs
-    LOG.debug('metadata: %s' % repr(nfo))
+        bands[(guide.bkind, guide.bid)] = band
+    nfo['nav_set_uid'] = 'cris_nav'   # FIXME move nav_set to the guidebook
+    LOG.debug('metadata: %s' % pformat(nfo))
     return nfo
 
 
@@ -430,7 +434,7 @@ class Frontend(FrontendRole):
 
     @classmethod
     def sort_files_by_nav_uid(cls, filepaths):
-        return {'i_nav': filepaths}  # FIXME faking viirs
+        return {'cris_nav': filepaths}  # FIXME this should identify nav grouping from filenames and sort it up
 
     def make_swaths(self, filepaths, **kwargs):
         """
