@@ -224,8 +224,12 @@ def _swath_from_var(var_name, h5_var, tool=None):
         data = np.rollaxis(data, 0, 3)
 
     if 'missing_value' in h5_var.attrs:
-        mv = h5_var.attrs['missing_value']
-        data = np.ma.masked_array(data, data==mv)
+        mv = float(h5_var.attrs['missing_value'][0])
+        LOG.debug('missing value for %s is %s' % (var_name, mv))
+        mask = np.abs(data - mv) < 0.5
+        data[mask] = DEFAULT_FILL_VALUE # FUTURE: we'd rather just deal with masked_array properly in output layer
+        data = np.ma.masked_array(data, mask)  # FUTURE: convince scientists to use NaN. also world peace
+        LOG.debug('min, max = %s, %s' % (np.min(data.flatten()), np.max(data.flatten())))
     else:
         LOG.warning('no missing_value attribute in %s' % var_name)
         data = np.ma.masked_array(data)
@@ -273,7 +277,8 @@ def _write_array_to_fbf(name, data):
         return None
     if hasattr(data, 'mask'):
         mask = data.mask
-        data = np.array(data, dtype=data.dtype)
+        LOG.debug('found mask for %s' % name)
+        data = np.array(data, dtype=np.float32)
         data[mask] = DEFAULT_FILL_VALUE
     rows, cols = data.shape
     dts = nptype_to_suffix[data.dtype.type]
