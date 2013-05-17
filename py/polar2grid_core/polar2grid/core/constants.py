@@ -119,6 +119,7 @@ BKIND_H2O_TOT = "total_water"
 BKIND_O3_TOT = "total_ozone"
 
 # Band Identifier
+BID_NONE = "na"
 BID_01 = "01"
 BID_02 = "02"
 BID_03 = "03"

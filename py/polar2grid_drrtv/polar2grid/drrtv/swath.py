@@ -105,7 +105,7 @@ SAT_INST_TABLE = {
 }
 
 # pressure layers to obtain data from
-DEFAULT_LAYER_PRESSURES = (500.0, 900.0)
+DEFAULT_LAYER_PRESSURES = (100.0, 500.0, 900.0)
 
 # h5_var_name => dkind, bkind, pressure-layers-or-None
 VAR_TABLE = {
@@ -125,7 +125,7 @@ VAR_TABLE = {
      # 'H2Olow': (None, None, None),
      # 'H2Omid': (None, None, None),
      # 'Latitude': (DKIND_LATITUDE, None),
-     # 'Lifted_Index': (None, BKIND_LI, None),
+     # 'Lifted_Index': (None, BKIND_LI, None), is in centigrade
      # 'Longitude': (DKIND_LONGITUDE, None),
      'O3VMR': (DKIND_MIXING_RATIO, BKIND_O3_VMR, DEFAULT_LAYER_PRESSURES),
      # 'Plevs': (DKIND_PRESSURE, None),
@@ -334,14 +334,22 @@ def _var_manifest(sat, inst, plev):
     """
     # FIXME: this is not fully implemented and needs to use the guidebook as well as generate layer extraction tools
 
-    h5_var_name = 'TAir'
-    dk, bk, ps = VAR_TABLE[h5_var_name]
-    for p in ps:
-        yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
-                                                           tool=partial(_layer_at_pressure, plev=plev, p=p),
-                                                           dkind=dk,
-                                                           bkind=bk,
-                                                           bid='lvl%d' % int(p))
+    for h5_var_name in ('TAir', 'RelHum', 'CTP'):
+        dk, bk, ps = VAR_TABLE[h5_var_name]
+        if ps:
+            for p in ps:
+                yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
+                                                                   tool=partial(_layer_at_pressure, plev=plev, p=p),
+                                                                   dkind=dk,
+                                                                   bkind=bk,
+                                                                   bid='lvl%d' % int(p))
+        else:
+            yield h5_var_name, manifest_entry(h5_var_name=h5_var_name,
+                                              tool=None,
+                                              dkind=dk,
+                                              bkind=bk,
+                                              bid=BID_NONE)
+
 
     # FIXME: final code should look something like this:
     # for h5_var_name, info in VAR_TABLE.items():
@@ -353,7 +361,7 @@ def _var_manifest(sat, inst, plev):
     #                                           tool=None,  # 2D variable, take the whole variable
     #                                           dkind=dk,
     #                                           bkind=bk,
-    #                                           bid=None)  # FIXME this should be based on level
+    #                                           bid=BID_NONE)  # FIXME this should be based on level
     #     else:
     #         for p in ps:
     #             yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
