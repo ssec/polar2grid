@@ -101,6 +101,7 @@ SAT_INST_TABLE = {
     ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 2),
     ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 2),
     (None, 'CRIS'): (SAT_NPP, INST_CRIS, 3),
+    (None, 'CrIS'): (SAT_NPP, INST_CRIS, 3),
     ('g195', 'AIRS'): (None, None),  # FIXME this needs work
 }
 
