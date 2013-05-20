@@ -348,7 +348,7 @@ def _var_manifest(sat, inst, plev):
                                               tool=None,
                                               dkind=dk,
                                               bkind=bk,
-                                              bid=BID_NONE)
+                                              bid=None)
 
 
     # FIXME: final code should look something like this:

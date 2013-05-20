@@ -168,6 +168,18 @@ SV_FILE_GUIDE = {
                             K_QF3: '/All_Data/VIIRS-DNB-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
+            # r'VI(?P<file_band>\d\d).*': {
+            #                 K_RADIANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Radiance',
+            #                 K_REFLECTANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Reflectance',
+            #                 K_BTEMP: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/BrightnessTemperature',
+            #                 K_RADIANCE_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/RadianceFactors',
+            #                 K_REFLECTANCE_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ReflectanceFactors',
+            #                 K_BTEMP_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/BrightnessTemperatureFactors',
+            #                 K_MODESCAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeScan',
+            #                 K_MODEGRAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeGran',
+            #                 K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
+            #                 K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+            #                 K_NAVIGATION: r'G%(file_kind)sTCO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
             }
 
 ROWS_PER_SCAN = {
