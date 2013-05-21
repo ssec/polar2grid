@@ -97,6 +97,111 @@ FACTORS_GUIDE = {
         DKIND_BTEMP       : K_BTEMP_FACTORS
         }
 
+
+# modified from pprint of list(_geo_guide()) in adl_viirs_gtm_edr.py
+# change Data_Products/([-A-Z0-9]+)/.*?' => $1
+
+VIIRS_GTM_EDR_GUIDE = [('VM01O',
+                        'GMGTO',
+                        'VIIRS-M1ST-EDR',
+                        'BrightnessTemperatureOrReflectance'),
+                       ('VM02O',
+                        'GMGTO',
+                        'VIIRS-M2ND-EDR',
+                        'BrightnessTemperatureOrReflectance'
+                       ),
+                       ('VM03O',
+                        'GMGTO',
+                        'VIIRS-M3RD-EDR',
+                        'BrightnessTemperatureOrReflectance'
+                       ),
+                       ('VM04O',
+                        'GMGTO',
+                        'VIIRS-M4TH-EDR',
+                        'BrightnessTemperatureOrReflectance'
+                       ),
+                       ('VM05O',
+                        'GMGTO',
+                        'VIIRS-M5TH-EDR',
+                        'BrightnessTemperatureOrReflectance'
+                       ),
+                       ('VM06O',
+                        'GMGTO',
+                        'VIIRS-M6TH-EDR',
+                        'BrightnessTemperatureOrReflectance'
+                       ),
+                       ('GMGTO',
+                        None,
+                        'VIIRS-MOD-GTM-EDR-GEO', None),
+                       ('VI1BO',
+                        'GIGTO',
+                        'VIIRS-I1-IMG-EDR',
+                        'Radiance'),
+                       ('VI2BO',
+                        'GIGTO',
+                        'VIIRS-I2-IMG-EDR',
+                        'Radiance'
+                       ),
+                       ('VI3BO',
+                        'GIGTO',
+                        'VIIRS-I3-IMG-EDR',
+                        'Radiance'
+                       ),
+                       ('VI4BO',
+                        'GIGTO',
+                        'VIIRS-I4-IMG-EDR',
+                        'BrightnessTemperature'
+                       ),
+                       ('VI5BO',
+                        'GIGTO',
+                        'VIIRS-I5-IMG-EDR',
+                        'BrightnessTemperature'
+                       ),
+                       ('GIGTO',
+                        None,
+                        'VIIRS-IMG-GTM-EDR-GEO',
+                        None),
+                       ('VNCCO',
+                        'GNCCO',
+                        'VIIRS-NCC-EDR',
+                        'Albedo'),
+                       ('GNCCO',
+                        None,
+                        'VIIRS-NCC-EDR-GEO',
+                        None)]
+
+def _gtm_munge_geo():
+    guide = GEO_FILE_GUIDE[r'GITCO.*']
+    key = 'VIIRS-IMG-GEO-TC'
+    for pfx,geo_pfx,cn,vn in VIIRS_GTM_EDR_GUIDE:
+        if geo_pfx is None:
+            continue
+        yield (geo_pfx + '.*',
+               dict((k,v.replace('VIIRS-IMG-GEO-TC', cn)) for (k,v) in guide.items()))
+
+def _gtm_info(key):
+    nfo, = [x for x in VIIRS_GTM_EDR_GUIDE if x[0]==key]
+    pfx, geo_pfx, cn, vn = nfo
+    rad = '/All_Data/%(cn)s_All/%(vn)s' % locals() if 'Radiance' in vn else None
+    refl = '/All_Data/%(cn)s_All/%(vn)s' % locals() if 'Reflectance' in vn else None
+    bt = '/All_Data/%(cn)s_All/%(vn)s' % locals() if 'BrightnessTemp' in vn else None
+    factors_for = lambda x: x + 'Factors' if x is not None else None
+    return {
+        K_RADIANCE: rad,
+        K_REFLECTANCE: refl,
+        K_BTEMP: bt,
+        K_RADIANCE_FACTORS: factors_of(rad),
+        K_REFLECTANCE_FACTORS: factors_of(refl),
+        K_BTEMP_FACTORS: factors_of(bt),
+        K_MODESCAN: '/All_Data/%(cn)s_All/ModeScan' % locals(),
+        K_MODEGRAN: '/All_Data/%(cn)s_All/ModeGran',
+        K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
+        K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+        K_NAVIGATION: r'G%(file_kind)sTCO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'
+    }
+
+
+
 GEO_FILE_GUIDE = {
             r'GITCO.*' : {
                             K_LATITUDE:    '/All_Data/VIIRS-IMG-GEO-TC_All/Latitude',
@@ -143,7 +248,9 @@ GEO_FILE_GUIDE = {
                             K_NORTH_COORD: '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Gran_0.North_Bounding_Coordinate',
                             K_SOUTH_COORD: '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Gran_0.South_Bounding_Coordinate',
                             }
-            }
+            }.update(dict(_gtm_munge_geo()))
+
+
 SV_FILE_GUIDE = {
             r'SV(?P<file_kind>[IM])(?P<file_band>\d\d).*': { 
                             K_RADIANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Radiance',
@@ -168,18 +275,18 @@ SV_FILE_GUIDE = {
                             K_QF3: '/All_Data/VIIRS-DNB-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
-            # r'VI(?P<file_band>\d\d).*': {
-            #                 K_RADIANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Radiance',
-            #                 K_REFLECTANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Reflectance',
-            #                 K_BTEMP: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/BrightnessTemperature',
-            #                 K_RADIANCE_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/RadianceFactors',
-            #                 K_REFLECTANCE_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ReflectanceFactors',
-            #                 K_BTEMP_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/BrightnessTemperatureFactors',
-            #                 K_MODESCAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeScan',
-            #                 K_MODEGRAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeGran',
-            #                 K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
-            #                 K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-            #                 K_NAVIGATION: r'G%(file_kind)sTCO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
+            r'VI(?P<file_band>\d)BO.*': {
+                            K_RADIANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Radiance',
+                            K_REFLECTANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Reflectance',
+                            K_BTEMP: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/BrightnessTemperature',
+                            K_RADIANCE_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/RadianceFactors',
+                            K_REFLECTANCE_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ReflectanceFactors',
+                            K_BTEMP_FACTORS: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/BrightnessTemperatureFactors',
+                            K_MODESCAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeScan',
+                            K_MODEGRAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeGran',
+                            K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
+                            K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+                            K_NAVIGATION: r'G%(file_kind)sTCO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
             }
 
 ROWS_PER_SCAN = {
@@ -188,7 +295,10 @@ ROWS_PER_SCAN = {
         BKIND_I  : 32,
         "GITCO" : 32,
         BKIND_DNB : 16,
-        "GDNBO" : 16
+        "GDNBO" : 16,
+        "GIGTO" : 32,
+        "GMGTO" : 16,
+        "GNCCO" : 16
         }
 
 COLS_PER_ROW = {

@@ -94,6 +94,8 @@ LOG = logging.getLogger(__name__)
 # e.g. IASI_d20130310_t152624_M02.atm_prof_rtv.h5
 RE_DRRTV = re.compile(r'(?P<inst>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)(?:_(?P<sat>[A-Za-z0-9]+))?.*?\.h5')
 
+EXPLODE_FACTOR = 64
+
 # GUIDEBOOK
 # FUTURE: move this to another file when it grows large enough
 # (sat, inst) => (p2g_sat, p2g_inst, rows_per_swath)
@@ -203,6 +205,16 @@ def _swath_info(*h5s):
     zult.update(fn_info)
     return zult
 
+def _explode(data, factor):
+    from scipy import interpolate
+    rows,cols = data.shape
+    r = np.arange(rows, dtype=np.float64)
+    c = np.arange(cols, dtype=np.float64)
+    rr = np.linspace(0.0, float(rows-1), rows*factor)
+    cc = np.linspace(0.0, float(cols-1), cols*factor)
+    spl = interpolate.RectBivariateSpline(r, c, data, kx=1, ky=1)
+    return spl(rr,cc).astype(np.float32)
+
 
 def _swath_from_var(var_name, h5_var, tool=None):
     """
@@ -234,8 +246,9 @@ def _swath_from_var(var_name, h5_var, tool=None):
     else:
         LOG.warning('no missing_value attribute in %s' % var_name)
         data = np.ma.masked_array(data)
-    
-    return data
+
+    # FIXME exploding whale guts
+    return _explode(data, EXPLODE_FACTOR)
 
 
 # def swaths_from_h5s(h5s, var_tools=None):
@@ -372,6 +385,18 @@ def _var_manifest(sat, inst, plev):
     #                                                                bid=None)  # FIXME this should be based on level
 
 
+# def explode(data, lat, lon, factor=50):
+#     """
+#     Explode data dimensionality to approach VIIRS sizes, since MS2GT interpolation is better for high-resolution input
+#     :param data:
+#     :param lat:
+#     :param lon:
+#     :param factor:
+#     :return: data, lat, lon
+#     """
+
+
+
 
 def swathbuckler(*h5_pathnames):
     """
@@ -416,10 +441,10 @@ def swathbuckler(*h5_pathnames):
             "remap_data_as": guide.dkind,
             "kind": guide.bkind,
             "fbf_img": filename,
-            "swath_rows": nfo['swath_rows'],
-            "swath_cols": nfo['swath_cols'],
-            "swath_scans": nfo['swath_scans'],
-            "rows_per_scan": nfo['rows_per_scan'],
+            "swath_rows": nfo['swath_rows'] * EXPLODE_FACTOR,
+            "swath_cols": nfo['swath_cols'] * EXPLODE_FACTOR,
+            "swath_scans": nfo['swath_scans'] * EXPLODE_FACTOR,
+            "rows_per_scan": nfo['rows_per_scan'] * EXPLODE_FACTOR,
             "grids": GRIDS_ANY
         }
         # bands[name] = band
