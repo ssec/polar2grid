@@ -432,6 +432,10 @@ def swathbuckler(*h5_pathnames):
     nfo['fbf_lat'] = _gobble('swath_latitude', 'Latitude', None)
     nfo['fbf_lon'] = _gobble('swath_longitude', 'Longitude', None)
 
+    nfo['rows_per_scan'] *= EXPLODE_FACTOR
+    nfo['swath_rows'] *= EXPLODE_FACTOR
+    nfo['swath_cols'] *= EXPLODE_FACTOR
+
     for name, guide in manifest.items():
         LOG.debug("extracting %s from variable %s" % (name, guide.h5_var_name))
         filename = _gobble(name, guide.h5_var_name, guide.tool)
@@ -441,10 +445,10 @@ def swathbuckler(*h5_pathnames):
             "remap_data_as": guide.dkind,
             "kind": guide.bkind,
             "fbf_img": filename,
-            "swath_rows": nfo['swath_rows'] * EXPLODE_FACTOR,
-            "swath_cols": nfo['swath_cols'] * EXPLODE_FACTOR,
-            "swath_scans": nfo['swath_scans'] * EXPLODE_FACTOR,
-            "rows_per_scan": nfo['rows_per_scan'] * EXPLODE_FACTOR,
+            "swath_rows": nfo['swath_rows'],
+            "swath_cols": nfo['swath_cols'],
+            "swath_scans": nfo['swath_scans'],
+            "rows_per_scan": nfo['rows_per_scan'],
             "grids": GRIDS_ANY
         }
         # bands[name] = band
