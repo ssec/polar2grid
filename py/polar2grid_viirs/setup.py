@@ -56,7 +56,9 @@ setup(
     install_requires=[
         'numpy',
         'h5py',
-        'polar2grid.core'
+        'polar2grid.core',
+        'matplotlib',
+        'basemap'
         ],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points = {'console_scripts' : [ ]}
