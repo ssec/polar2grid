@@ -343,7 +343,7 @@ through strftime. Current time if no files.""")
             return -1
 
         # Handle the user using a '~' for their home directory
-        hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in sorted(hdf_files) ]
+        hdf_files = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(hdf_files) ]
         for hdf_file in hdf_files:
             if not os.path.exists(hdf_file):
                 print "ERROR: File '%s' doesn't exist" % (hdf_file,)
