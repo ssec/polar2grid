@@ -83,6 +83,7 @@ from datetime import datetime
 from collections import namedtuple
 from functools import partial
 from pprint import pformat
+from scipy import interpolate
 
 from polar2grid.core.roles import FrontendRole
 from polar2grid.core.fbf import str_to_dtype
@@ -90,7 +91,7 @@ from polar2grid.core.constants import *
 
 LOG = logging.getLogger(__name__)
 
-# from adl_geo_ref.py in CSPP
+# Reliably chop filenames into identifying pieces
 # e.g. IASI_d20130310_t152624_M02.atm_prof_rtv.h5
 RE_DRRTV = re.compile(r'(?P<inst>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)(?:_(?P<sat>[A-Za-z0-9]+))?.*?\.h5')
 
@@ -98,6 +99,8 @@ EXPLODE_FACTOR = 64
 
 # GUIDEBOOK
 # FUTURE: move this to another file when it grows large enough
+# this table converts filename components to polar2grid identifiers (satellite, instrument, scan-line-grouping)
+# scan-line grouping is significant to MS2GT components
 # (sat, inst) => (p2g_sat, p2g_inst, rows_per_swath)
 SAT_INST_TABLE = {
     ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 2),
@@ -108,7 +111,7 @@ SAT_INST_TABLE = {
 }
 
 # pressure layers to obtain data from
-DEFAULT_LAYER_PRESSURES = (100.0, 500.0, 900.0)
+DEFAULT_LAYER_PRESSURES = (500.0, 900.0)
 
 # h5_var_name => dkind, bkind, pressure-layers-or-None
 VAR_TABLE = {
@@ -200,13 +203,11 @@ def _swath_info(*h5s):
             'swath_cols': cols,
             'swath_scans': rows / rps,
             '_plev': h5s[0]['Plevs'][:].squeeze()
-
             }
     zult.update(fn_info)
     return zult
 
 def _explode(data, factor):
-    from scipy import interpolate
     rows,cols = data.shape
     r = np.arange(rows, dtype=np.float64)
     c = np.arange(cols, dtype=np.float64)
@@ -251,27 +252,6 @@ def _swath_from_var(var_name, h5_var, tool=None):
     return _explode(data, EXPLODE_FACTOR)
 
 
-# def swaths_from_h5s(h5s, var_tools=None):
-#     """
-#     from a series of Dual Regression output files, return a series of (name, data) swaths concatenating the data
-#      Assumes all variables present in the first file is present in the rest of the files
-#     :param h5s: sequence of hdf5 objects, order is preserved in output swaths; assumes valid HDF5 file
-#     :param var_tools: list of (variable-name, data-extraction-tool)
-#     :param h5_pathnames: sequence of hdf5 pathnames, order is preserved in output swaths; assumes valid HDF5 files
-#     :return: sequence of (name, raw-swath-array) pairs
-#     """
-#     if not h5s:
-#         return
-#     # get variable names
-#     first = h5s[0]
-#     if var_tools is None:
-#         var_tools = [(x, None) for x in first.iterkeys()]
-#     LOG.info('variables desired: %r' % [x[0] for x in var_tools])
-#     for vn, tool in var_tools:
-#         swath = np.concatenate([_swath_from_var(vn, h5[vn], tool) for h5 in h5s], axis=0)
-#         yield vn, swath
-
-
 def _dict_reverse(D):
     return dict((v,k) for (k,v) in D.items())
 
@@ -306,16 +286,6 @@ def _write_array_to_fbf(name, data):
     return fn
 
 
-# def write_arrays_to_fbf(nditer):
-#     """
-#     write derived swaths to CWD from an iterable yielding (name, data) pairs
-#     """
-#     for name,data in nditer:
-#         fn = _write_array_to_fbf(name, data)
-#         if fn is not None:
-#             yield name, fn
-
-
 def _layer_at_pressure(h5v, plev=None, p=None):
     """
     extract a layer of a variable assuming (layer, rows, cols) indexing and plev lists layer pressures
@@ -326,7 +296,7 @@ def _layer_at_pressure(h5v, plev=None, p=None):
     :return: data slice from h5v
     """
     # dex = np.searchsorted(plev, p)
-    dex = np.abs(plev - p).argmin()
+    dex = np.abs(plev - p).argmin()   # FUTURE: memoize this value since it shouldn't vary for DR-RTV files
 
     try:
         LOG.debug('using level %d=%f near %r as %f' % (dex, plev[dex], plev[dex-1:dex+2], p))
@@ -335,6 +305,7 @@ def _layer_at_pressure(h5v, plev=None, p=None):
     return h5v[dex,:]
 
 
+# tuple describing what swath data we want from a given input series
 manifest_entry = namedtuple("manifest_entry", 'h5_var_name tool bkind dkind bid')
 
 
@@ -385,18 +356,6 @@ def _var_manifest(sat, inst, plev):
     #                                                                bid=None)  # FIXME this should be based on level
 
 
-# def explode(data, lat, lon, factor=50):
-#     """
-#     Explode data dimensionality to approach VIIRS sizes, since MS2GT interpolation is better for high-resolution input
-#     :param data:
-#     :param lat:
-#     :param lon:
-#     :param factor:
-#     :return: data, lat, lon
-#     """
-
-
-
 
 def swathbuckler(*h5_pathnames):
     """
@@ -425,6 +384,7 @@ def swathbuckler(*h5_pathnames):
     LOG.debug('manifest to extract: %s' % pformat(manifest))
 
     def _gobble(name, h5_var_name, tool, h5s=h5s):
+        "extract a swath to a FBF file and return the path"
         sections = [_swath_from_var(h5_var_name, h5[h5_var_name], tool) for h5 in h5s]
         swath = np.concatenate(sections, axis=0)
         return _write_array_to_fbf(name, swath)
@@ -436,6 +396,7 @@ def swathbuckler(*h5_pathnames):
     nfo['swath_rows'] *= EXPLODE_FACTOR
     nfo['swath_cols'] *= EXPLODE_FACTOR
 
+    # extract swaths and generate downstream metadata
     for name, guide in manifest.items():
         LOG.debug("extracting %s from variable %s" % (name, guide.h5_var_name))
         filename = _gobble(name, guide.h5_var_name, guide.tool)
@@ -500,7 +461,7 @@ class Frontend(FrontendRole):
 #     fe.make_swaths([test_data])
 
 
-def console(banner="enjoy delicious python"):
+def console(banner="enjoy delicious ipython"):
     from IPython.config.loader import Config
     cfg = Config()
     prompt_config = cfg.PromptManager
@@ -573,11 +534,9 @@ def main():
         from pprint import pprint
         pprint(meta)
 
-
     return 0
 
 
-
-if __name__=='__main__':
+if __name__ == '__main__':
     sys.exit(main())
 
