@@ -116,7 +116,7 @@ DEFAULT_LAYER_PRESSURES = (500.0, 900.0)
 # h5_var_name => dkind, bkind, pressure-layers-or-None
 VAR_TABLE = {
      'CAPE': (DKIND_CAPE, BKIND_CAPE, None),
-     'CO2_Amount': (None, BKIND_CO2_AMT, None),
+     'CO2_Amount': (DKIND_CO2_AMOUNT, BKIND_CO2_AMT, None),
      'COT': (DKIND_OPTICAL_THICKNESS, BKIND_COT, None),
      'CTP': (DKIND_PRESSURE, BKIND_CTP, None),  # !
      'CTT': (DKIND_TEMPERATURE, BKIND_CTT, None),
@@ -131,7 +131,7 @@ VAR_TABLE = {
      # 'H2Olow': (None, None, None),
      # 'H2Omid': (None, None, None),
      # 'Latitude': (DKIND_LATITUDE, None),
-     # 'Lifted_Index': (None, BKIND_LI, None), is in centigrade
+     'Lifted_Index': (DKIND_TEMPERATURE, BKIND_LI, None),# is in centigrade
      # 'Longitude': (DKIND_LONGITUDE, None),
      'O3VMR': (DKIND_MIXING_RATIO, BKIND_O3_VMR, DEFAULT_LAYER_PRESSURES),
      # 'Plevs': (DKIND_PRESSURE, None),
@@ -144,8 +144,8 @@ VAR_TABLE = {
      'SurfPres': (DKIND_PRESSURE, BKIND_SRF_P, None),
      'TAir': (DKIND_TEMPERATURE, BKIND_AIR_T, DEFAULT_LAYER_PRESSURES),  # !
      'TSurf': (DKIND_TEMPERATURE, BKIND_SRF_T, None),
-     'totH2O': (None, BKIND_H2O_TOT, None),
-     'totO3': (None, BKIND_O3_TOT, None),
+     'totH2O': (DKIND_TOTAL_WATER, BKIND_H2O_TOT, None),
+     'totO3': (DKIND_TOTAL_OZONE, BKIND_O3_TOT, None),
      }
 
 

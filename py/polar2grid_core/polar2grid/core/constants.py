@@ -165,6 +165,9 @@ DKIND_EMISSIVITY = "emissivity"
 DKIND_OPTICAL_THICKNESS = "optical_thickness"
 DKIND_LIFTED_INDEX = "lifted_index"
 DKIND_CAPE = "CAPE"
+DKIND_CO2_AMOUNT = "CO2_amount"
+DKIND_TOTAL_WATER = "total_water"
+DKIND_TOTAL_OZONE = "total_ozone"
 
 SET_DKINDS = set([
     DKIND_RADIANCE,
@@ -184,7 +187,10 @@ SET_DKINDS = set([
     DKIND_EMISSIVITY,
     DKIND_OPTICAL_THICKNESS,
     DKIND_LIFTED_INDEX,
-    DKIND_CAPE
+    DKIND_CAPE,
+    DKIND_CO2_AMOUNT,
+    DKIND_TOTAL_WATER,
+    DKIND_TOTAL_OZONE
     ])
 
 # Data types (int,float,#bits,etc.)
