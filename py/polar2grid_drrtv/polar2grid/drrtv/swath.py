@@ -248,8 +248,7 @@ def _swath_from_var(var_name, h5_var, tool=None):
         LOG.warning('no missing_value attribute in %s' % var_name)
         data = np.ma.masked_array(data)
 
-    # FIXME exploding whale guts
-    return _explode(data, EXPLODE_FACTOR)
+    return data
 
 
 def _dict_reverse(D):
@@ -383,11 +382,12 @@ def swathbuckler(*h5_pathnames):
     manifest = dict(_var_manifest(nfo['sat'], nfo['instrument'], nfo['_plev']))
     LOG.debug('manifest to extract: %s' % pformat(manifest))
 
-    def _gobble(name, h5_var_name, tool, h5s=h5s):
+    def _gobble(name, h5_var_name, tool, h5s=h5s, explode=True):
         "extract a swath to a FBF file and return the path"
         sections = [_swath_from_var(h5_var_name, h5[h5_var_name], tool) for h5 in h5s]
         swath = np.concatenate(sections, axis=0)
-        return _write_array_to_fbf(name, swath)
+        exploded_whale_guts = _explode(swath, EXPLODE_FACTOR) if explode else swath
+        return _write_array_to_fbf(name, exploded_whale_guts)
 
     nfo['fbf_lat'] = _gobble('swath_latitude', 'Latitude', None)
     nfo['fbf_lon'] = _gobble('swath_longitude', 'Longitude', None)
