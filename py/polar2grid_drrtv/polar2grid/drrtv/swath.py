@@ -319,8 +319,8 @@ def _var_manifest(sat, inst, plev):
     """
     # FIXME: this is not fully implemented and needs to use the guidebook as well as generate layer extraction tools
 
-    for h5_var_name in ('TAir', 'RelHum', 'CTP'):
-        dk, bk, ps = VAR_TABLE[h5_var_name]
+    for h5_var_name, info in VAR_TABLE.items():
+        dk, bk, ps = info
         if ps:
             for p in ps:
                 yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
