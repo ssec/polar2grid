@@ -54,24 +54,12 @@ import numpy
 import os
 import sys
 import logging
-from glob import glob
 from copy import deepcopy
 from datetime import datetime
 
 log = logging.getLogger(__name__)
 
 FILL_VALUE=-999.0
-
-def _glob_file(pat):
-    """Globs for a single file based on the provided pattern.
-
-    :raises ValueError: if more than one file matches pattern
-    """
-    tmp = glob(pat)
-    if len(tmp) != 1:
-        log.error("There were no files or more than one fitting the pattern %s" % pat)
-        raise ValueError("There were no files or more than one fitting the pattern %s" % pat)
-    return tmp[0]
 
 def _band_name(band_info):
     return band_info["kind"] + (band_info["band"] or "")
@@ -142,16 +130,6 @@ def get_meta_data(nav_set_uid, ifilepaths, filter=None):
         # Verify some information before adding any jobs
         if finfo["band"] in bad_bands:
             log.info("Couldn't add %s because a previous file of that band was bad" % fn)
-            continue
-
-        # Geonav file exists
-        geo_glob = finfo["geo_glob"]
-        try:
-            finfo["geo_path"] = _glob_file(geo_glob)
-        except ValueError:
-            log.error("Couldn't identify geonav file for %s" % fn)
-            log.error("Continuing without that band...")
-            bad_bands.append(finfo["band"])
             continue
 
         # Create any locations that don't exist yet
