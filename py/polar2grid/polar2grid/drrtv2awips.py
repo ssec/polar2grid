@@ -360,7 +360,7 @@ through strftime. Current time if no files.""")
                 return -1
 
         # Get the date of the first file if provided
-        file_start_time = sorted(x for x in Frontend.parse_datetimes_from_filepaths(hdf_files) if x is not None)[0]
+        file_start_time = list(sorted(x for x in Frontend.parse_datetimes_from_filepaths(hdf_files) if x is not None))[0]
 
     # Determine the log filename
     if log_fn is None: log_fn = GLUE_NAME + "_%Y%m%d_%H%M%S.log"
