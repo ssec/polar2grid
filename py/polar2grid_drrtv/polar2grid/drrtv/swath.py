@@ -442,7 +442,7 @@ class Frontend(FrontendRole):
 
     @classmethod
     def sort_files_by_nav_uid(cls, filepaths):
-        return {'cris_nav': filepaths}  # FIXME this should identify nav grouping from filenames and sort it up
+        return {'cris_nav': pn for pn in filepaths if _filename_info(pn)}  # FIXME this should identify nav grouping from filenames and sort it up
 
     def make_swaths(self, filepaths, **kwargs):
         """
