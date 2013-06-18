@@ -161,7 +161,7 @@ def _filename_info(pathname):
     m = RE_DRRTV.match(os.path.split(pathname)[-1])
     if not m:
         LOG.debug('%s does match DR-RTV file naming convention' % pathname)
-        raise ValueError('%s does not parse' % pathname)
+        return None
     mgd = m.groupdict()
     when = datetime.strptime('%(date)s %(start_time)s' % mgd, '%Y%m%d %H%M%S')
     sat, inst, rps = SAT_INST_TABLE[(mgd['sat'], mgd['inst'])]
