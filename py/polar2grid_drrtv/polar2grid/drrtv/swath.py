@@ -367,12 +367,15 @@ def swathbuckler(*h5_pathnames):
     bad_files = set()
     for pn in h5_pathnames:
         if not h5py.is_hdf5(pn):
+            LOG.warning('%s is not a proper HDF5 file' % pn)
+            bad_files.add(pn)
+        if not RE_DRRTV.match(os.path.split(pn)[-1]):
             bad_files.add(pn)
     if bad_files:
-        LOG.warning('These files are not HDF5 and will be ignored: %s' % ', '.join(list(bad_files)))
+        LOG.warning('These files are not usable and will be ignored: %s' % ', '.join(list(bad_files)))
         h5_pathnames = [x for x in h5_pathnames if x not in bad_files]
 
-    h5s = [h5py.File(pn, 'r') for pn in h5_pathnames]
+    h5s = [h5py.File(pn, 'r') for pn in h5_pathnames if pn not in bad_files]
     if not h5s:
         LOG.error('no input was available to process!')
         return {}
