@@ -156,10 +156,11 @@ def _filename_info(pathname):
     """
     return a dictionary of metadata found in the filename
     :param pathname: dual retrieval HDF output file path
-    :return: dictionary of polar2grid information found in the filename
+    :return: dictionary of polar2grid information found in the filename, or None if the file cannot be used
     """
     m = RE_DRRTV.match(os.path.split(pathname)[-1])
     if not m:
+        LOG.debug('%s does match DR-RTV file naming convention' % pathname)
         raise ValueError('%s does not parse' % pathname)
     mgd = m.groupdict()
     when = datetime.strptime('%(date)s %(start_time)s' % mgd, '%Y%m%d %H%M%S')
@@ -436,7 +437,7 @@ class Frontend(FrontendRole):
         zult = []
         for pn in filepaths:
             nfo = _filename_info(pn)
-            zult.append(nfo['start_time'])
+            zult.append(nfo['start_time'] if nfo is not None else None)
         return zult
 
     @classmethod
