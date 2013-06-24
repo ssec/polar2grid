@@ -89,7 +89,7 @@ def process_data_sets(nav_set_uid, filepaths,
             )
 
     # Extract Swaths
-    log.info("Extracting swaths...")
+    log.info("Extracting swaths from %s..." % repr(filepaths))
     try:
         meta_data = frontend.make_swaths(filepaths)
                 # nav_set_uid,

@@ -208,6 +208,7 @@ def _swath_info(*h5s):
     zult.update(fn_info)
     return zult
 
+
 def _explode(data, factor):
     rows,cols = data.shape
     r = np.arange(rows, dtype=np.float64)
@@ -216,6 +217,24 @@ def _explode(data, factor):
     cc = np.linspace(0.0, float(cols-1), cols*factor)
     spl = interpolate.RectBivariateSpline(r, c, data, kx=1, ky=1)
     return spl(rr,cc).astype(np.float32)
+
+
+def _make_longitude_monotonic(lon_swath):
+    """
+    Modify longitude in place to be monotonic -180..180 or 0..360
+    :param lon_swath: 2D numpy masked_array of longitude data
+    :return: modified array
+    """
+    rows,cols = lon_swath.shape
+    shift = False
+    for r in range(rows):
+        dif = np.abs(np.diff(lon_swath[r,:].squeeze()))
+        if np.max(dif) > 180.0:
+            shift = True
+            break
+    if shift:
+        lon_swath[lon_swath < 0] += 360.0
+    return lon_swath
 
 
 def _swath_from_var(var_name, h5_var, tool=None):
@@ -386,15 +405,16 @@ def swathbuckler(*h5_pathnames):
     manifest = dict(_var_manifest(nfo['sat'], nfo['instrument'], nfo['_plev']))
     LOG.debug('manifest to extract: %s' % pformat(manifest))
 
-    def _gobble(name, h5_var_name, tool, h5s=h5s, explode=True):
+    def _gobble(name, h5_var_name, tool, h5s=h5s, explode=True, filter=None):
         "extract a swath to a FBF file and return the path"
         sections = [_swath_from_var(h5_var_name, h5[h5_var_name], tool) for h5 in h5s]
         swath = np.concatenate(sections, axis=0)
-        exploded_whale_guts = _explode(swath, EXPLODE_FACTOR) if explode else swath
-        return _write_array_to_fbf(name, exploded_whale_guts)
+        swarthy = swath if filter is None else filter(swath)
+        arr_a_pirate = _explode(swarthy, EXPLODE_FACTOR) if explode else swath
+        return _write_array_to_fbf(name, arr_a_pirate)
 
     nfo['fbf_lat'] = _gobble('swath_latitude', 'Latitude', None)
-    nfo['fbf_lon'] = _gobble('swath_longitude', 'Longitude', None)
+    nfo['fbf_lon'] = _gobble('swath_longitude', 'Longitude', None, filter=_make_longitude_monotonic)
 
     nfo['rows_per_scan'] *= EXPLODE_FACTOR
     nfo['swath_rows'] *= EXPLODE_FACTOR
