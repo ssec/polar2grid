@@ -95,6 +95,8 @@ LOG = logging.getLogger(__name__)
 # e.g. IASI_d20130310_t152624_M02.atm_prof_rtv.h5
 RE_DRRTV = re.compile(r'(?P<inst>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)(?:_(?P<sat>[A-Za-z0-9]+))?.*?\.h5')
 
+# whether or not to interpolate data to an exploded swath
+DEFAULT_EXPLODE_SAMPLING = False
 EXPLODE_FACTOR = 64
 
 # GUIDEBOOK
@@ -405,7 +407,7 @@ def swathbuckler(*h5_pathnames):
     manifest = dict(_var_manifest(nfo['sat'], nfo['instrument'], nfo['_plev']))
     LOG.debug('manifest to extract: %s' % pformat(manifest))
 
-    def _gobble(name, h5_var_name, tool, h5s=h5s, explode=True, filter=None):
+    def _gobble(name, h5_var_name, tool, h5s=h5s, explode=DEFAULT_EXPLODE_SAMPLING, filter=None):
         "extract a swath to a FBF file and return the path"
         sections = [_swath_from_var(h5_var_name, h5[h5_var_name], tool) for h5 in h5s]
         swath = np.concatenate(sections, axis=0)
