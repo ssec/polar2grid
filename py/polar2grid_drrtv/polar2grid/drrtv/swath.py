@@ -416,7 +416,7 @@ def swathbuckler(*h5_pathnames):
         return _write_array_to_fbf(name, arr_a_pirate)
 
     nfo['fbf_lat'] = _gobble('swath_latitude', 'Latitude', None)
-    nfo['fbf_lon'] = _gobble('swath_longitude', 'Longitude', None, filter=_make_longitude_monotonic)
+    nfo['fbf_lon'] = _gobble('swath_longitude', 'Longitude', None) #, filter=_make_longitude_monotonic)
 
     nfo['rows_per_scan'] *= EXPLODE_FACTOR
     nfo['swath_rows'] *= EXPLODE_FACTOR
