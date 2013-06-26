@@ -418,9 +418,10 @@ def swathbuckler(*h5_pathnames):
     nfo['fbf_lat'] = _gobble('swath_latitude', 'Latitude', None)
     nfo['fbf_lon'] = _gobble('swath_longitude', 'Longitude', None) #, filter=_make_longitude_monotonic)
 
-    nfo['rows_per_scan'] *= EXPLODE_FACTOR
-    nfo['swath_rows'] *= EXPLODE_FACTOR
-    nfo['swath_cols'] *= EXPLODE_FACTOR
+    if DEFAULT_EXPLODE_SAMPLING:
+        nfo['rows_per_scan'] *= EXPLODE_FACTOR
+        nfo['swath_rows'] *= EXPLODE_FACTOR
+        nfo['swath_cols'] *= EXPLODE_FACTOR
 
     # extract swaths and generate downstream metadata
     for name, guide in manifest.items():
