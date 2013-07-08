@@ -151,9 +151,30 @@ def process_data_sets(nav_set_dict,
             return status_to_return
 
     ### Remap the data
-    for nav_set_uid,nav_set_job in nav_set_jobs.items():
+    remap_order = [ x for x in [ MBAND_NAV_UID,IBAND_NAV_UID,GEO_NAV_UID,GEO_250M_NAV_UID ] if x in nav_set_jobs ]
+    for nav_set_uid in remap_order:
+        nav_set_job = nav_set_jobs[nav_set_uid]
         meta_data = nav_set_job["meta_data"]
+
         try:
+            # Take dynamic grid information from the lower-resolution navigation set
+            if nav_set_uid == IBAND_NAV_UID and MBAND_NAV_UID in remap_order or \
+                    nav_set_uid == GEO_250M_NAV_UID and GEO_NAV_UID in remap_order:
+                for grid_name,grid_job in nav_set_job["grid_jobs"].items():
+                    for band_info in grid_job.values():
+                        if band_info["grid_info"]["grid_kind"] == GRID_KIND_PROJ4 and not band_info["grid_info"]["static"]:
+                            log.debug("Inheriting grid %s's information from lower-resolution navigation" % (grid_name,))
+                            if nav_set_uid == IBAND_NAV_UID:
+                                band_rep = nav_set_jobs[MBAND_NAV_UID]["remapped_jobs"][grid_name].values()[0]
+                            else:
+                                band_rep = nav_set_jobs[GEO_NAV_UID]["remapped_jobs"][grid_name].values()[0]
+                            band_info["grid_info"]["pixel_size_x"] = band_rep["pixel_size_x_grid_units"]
+                            band_info["grid_info"]["pixel_size_y"] = band_rep["pixel_size_y_grid_units"]
+                            band_info["grid_info"]["grid_origin_x"] = band_rep["grid_origin_x_grid_units"]
+                            band_info["grid_info"]["grid_origin_y"] = band_rep["grid_origin_y_grid_units"]
+                            band_info["grid_info"]["grid_width"] = band_rep["grid_width"]
+                            band_info["grid_info"]["grid_height"] = band_rep["grid_height"]
+
             remapped_jobs = remap.remap_bands(meta_data["sat"], meta_data["instrument"], nav_set_uid,
                     meta_data["fbf_lon"], meta_data["fbf_lat"], nav_set_job["grid_jobs"],
                     num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,

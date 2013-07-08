@@ -260,9 +260,13 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     if "latlong" in proj4_str:
         # Everyone else uses degrees, not radians
         ll2cr_info["grid_origin_x"],ll2cr_info["grid_origin_y"] = tformer(grid_origin_x,grid_origin_y, inverse=True)
+        ll2cr_info["grid_origin_x_grid_units"] = grid_origin_x
+        ll2cr_info["grid_origin_y_grid_units"] = grid_origin_y
     else:
         ll2cr_info["grid_origin_x"] = grid_origin_x
         ll2cr_info["grid_origin_y"] = grid_origin_y
+        ll2cr_info["grid_origin_x_grid_units"] = grid_origin_x
+        ll2cr_info["grid_origin_y_grid_units"] = grid_origin_y
     ll2cr_info["grid_width"] = grid_width
     ll2cr_info["grid_height"] = grid_height
     if "latlong" in proj4_str:
@@ -270,9 +274,13 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
         x,y = tformer(pixel_size_x, pixel_size_y, inverse=True)
         ll2cr_info["pixel_size_x"] = x
         ll2cr_info["pixel_size_y"] = y
+        ll2cr_info["pixel_size_x_grid_units"] = pixel_size_x
+        ll2cr_info["pixel_size_y_grid_units"] = pixel_size_y
     else:
         ll2cr_info["pixel_size_x"] = pixel_size_x
         ll2cr_info["pixel_size_y"] = pixel_size_y
+        ll2cr_info["pixel_size_x_grid_units"] = pixel_size_y
+        ll2cr_info["pixel_size_y_grid_units"] = pixel_size_y
     ll2cr_info["rows_filename"] = rows_fn
     ll2cr_info["cols_filename"] = cols_fn
 
