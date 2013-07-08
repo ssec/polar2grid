@@ -105,11 +105,11 @@ EXPLODE_FACTOR = 64
 # scan-line grouping is significant to MS2GT components
 # (sat, inst) => (p2g_sat, p2g_inst, rows_per_swath)
 SAT_INST_TABLE = {
-    ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 2),
-    ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 2),
+    ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 1),
+    ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 1),
     (None, 'CRIS'): (SAT_NPP, INST_CRIS, 3),
     (None, 'CrIS'): (SAT_NPP, INST_CRIS, 3),
-    ('g195', 'AIRS'): (None, None),  # FIXME this needs work
+    ('g195', 'AIRS'): (None, None, 0),  # FIXME this needs work
 }
 
 # pressure layers to obtain data from
@@ -202,6 +202,7 @@ def _swath_info(*h5s):
     LOG.debug(repr(fn_info))
     layers, rows, cols = _swath_shape(*h5s)
     rps = fn_info['rows_per_scan']
+    # fn_info['rows_per_scan'] = rows
     zult = {'swath_rows': rows,
             'swath_cols': cols,
             'swath_scans': rows / rps,
