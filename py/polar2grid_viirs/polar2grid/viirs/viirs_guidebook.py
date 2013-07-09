@@ -281,7 +281,8 @@ GEO_FILE_GUIDE = {
                             K_NORTH_COORD: '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Gran_0.North_Bounding_Coordinate',
                             K_SOUTH_COORD: '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Gran_0.South_Bounding_Coordinate',
                             }
-            }.update(dict(_gtm_munge_geo()))
+            }
+GEO_FILE_GUIDE.update(dict(_gtm_munge_geo()))
 
 
 SV_FILE_GUIDE = {
@@ -307,7 +308,7 @@ SV_FILE_GUIDE = {
                             K_MODEGRAN: '/All_Data/VIIRS-DNB-SDR_All/ModeGran',
                             K_QF3: '/All_Data/VIIRS-DNB-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-                            K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
+                            K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'},
             r'VI(?P<file_band>\d)BO.*': {
                             K_RADIANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Radiance',
                             K_REFLECTANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Reflectance',
