@@ -30,9 +30,9 @@ Command Line Options
 .. cmdoption:: -g <grid_name> [<grid_name> ...]
                --grids <grid_name> [<grid_name> ...]
 
-    Specify the PROJ.4 grids to be gridded to. Specifying this option will skip
-    the grid determination step. More than one grid can be specified at a
-    time.  To have grid determination find all grids that can fit the data use
+    Specify the PROJ.4 grids to be gridded to. The default grid used by
+    |this_glue| is ':ref:`wgs84_fit <wgs84_fit>`'. More than one grid can be specified at a
+    time. To have grid determination find all grids that can fit the data use
     the grid name 'all'. All possible grid names can be found
     :doc:`here <../grids>`.
 
@@ -86,16 +86,46 @@ Command Line Options
     |this_frontend| documentation for more information on the
     pseudo-bands it creates.
 
-.. cmdoption:: --backend-config <backend configuration>
-
-    Specify the backend configuration to use. The default is determined by the
-    backend. Backends can load pre-made configurations that are packaged with
-    polar2grid. Backends can also load properly formatted CSV files if an
-    absolute or relative path is specified. See the |this_backend| for more
-    information.
-
 .. cmdoption:: --rescale-config <rescale configuration>
 
     Specify the rescaling configuration to be used by the |this_backend|. If
     one is not specified the backend will decide which configuration is best
     for the format and data type specified.
+
+.. cmdoption:: --dtype <data_type>
+
+    Specify the data type (size) for the output format. Not all data types are
+    supported (see the |this_backend| documentation for more details). The
+    acceptable values are stored in the
+    :ref:`constants <constants_data_types>`
+    file, prefixed with ``DTYPE_``. Use the value not the constant name.
+
+    |this_glue| defaults to ``uint1`` an 8-bit unsigned integer.
+
+.. cmdoption:: --dont_inc
+
+    Tell the backend to tell the rescaler to not increment the rescaled data
+    by 1. Incrementing the data is done automatically for the common case of
+    0 as a fill value in output data. So, if data is scaled from 0-254 and
+    this flag is not specified, the data will be incremented so valid data is
+    between 1 and 255. This allows the backend to clip any data below 0 to the
+    value 0. See :doc:`../rescaling` for more details on how this option is
+    used.
+
+    If the rescaling configuration is not specified, most backends that
+    support the :option:`--dont_inc` will choose a correct default rescaling
+    configuration file to scale the data to the proper range.
+
+.. cmdoption:: -p <output_pattern>
+               --pattern <output_pattern>
+
+    Specify the python formatting string for the output filename of produced
+    files. For more information on the default available keywords see the
+    :py:func:`create_output_filename <polar2grid.core.roles.BackendRole.create_output_filename>`
+    method. See the
+    |this_backend| documentation for any possible keywords added by the
+    backend filename formatting. The output pattern specified should be
+    contained in double quotes to avoid conflicts with the command line
+    shell trying to interpret keywords. Pattern keywords are specified using
+    the python formatting syntax ``%(sat)s`` to specify the ``sat`` keyword.
+

@@ -118,6 +118,17 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, threshold=1.0):
 
     return compare_array(array1, array2, threshold=threshold)
 
+def compare_ninjo_tiff(tiff_fn1, tiff_fn2, threshold=1.0):
+    from .ninjo.ninjo_backend import libtiff
+
+    tiff1 = libtiff.TIFF.open(tiff_fn1)
+    tiff2 = libtiff.TIFF.open(tiff_fn2)
+
+    array1 = tiff1.read_tiles().astype(numpy.float32)
+    array2 = tiff2.read_tiles().astype(numpy.float32)
+    
+    return compare_array(array1, array2, threshold=threshold)
+
 def compare_awips_netcdf(nc1_name, nc2_name, threshold=1.0):
     """Compare 2 8-bit AWIPS-compatible NetCDF3 files
 
@@ -142,6 +153,7 @@ def compare_awips_netcdf(nc1_name, nc2_name, threshold=1.0):
 type_name_to_compare_func = {
         "gtiff"    : compare_geotiff,
         "geotiff"  : compare_geotiff,
+        "ninjo"    : compare_ninjo_tiff,
         "awips"    : compare_awips_netcdf,
         "binary"   : compare_binary,
         }

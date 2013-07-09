@@ -10,9 +10,9 @@ made available to the user.
 
 The geotiff backend can perform 4 different types of rescaling depending on
 how it is configured. One of the determining factors is the :term:`data type`
-specified by the user. The backend defaults to a 16-bit unsigned integer
-(:data:`uint2 <DTYPE_UINT16 = uint2>`), but can also do
-8-bit unsigned integer geotiffs (:data:`uint1 <DTYPE_UINT8 = uint1>`). The
+specified by the user. The backend defaults to 8-bit unsigned integers
+(:data:`uint1 <DTYPE_UINT8 = uint1>`), but can also do
+16-bit unsigned integer geotiffs (:data:`uint2 <DTYPE_UINT16 = uint2>`). The
 second determining factor is whether or not rescaling should increment the
 data by 1 (:doc:`../rescaling`). The geotiff backend defaults to NOT
 incrementing the data, but may be set differently depending on the

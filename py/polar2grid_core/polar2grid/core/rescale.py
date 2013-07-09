@@ -135,18 +135,19 @@ pw_255_lookup_table = numpy.array([  0,   3,   7,  10,  14,  18,  21,  25,  28, 
        230, 231, 231, 232, 232, 233, 233, 234, 234, 235, 235, 236, 236,
        237, 237, 238, 239, 239, 240, 240, 241, 241, 242, 242, 243, 243,
        244, 244, 245, 245, 246, 246, 247, 247, 248, 248, 249, 249, 250,
-       250, 251, 251, 252, 252, 253, 253, 254, 255], dtype=numpy.int32)
+       250, 251, 251, 252, 252, 253, 253, 254, 255], dtype=numpy.float32)
 
 lookup_tables = [pw_255_lookup_table]
 
 def lookup_scale(img, m, b, table_idx=0, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     log.debug("Running 'lookup_scale'...")
     lut = lookup_tables[table_idx]
+    mask = img == fill_in
     img = linear_scale(img, m, b, fill_in=fill_in, fill_out=fill_out)
     numpy.clip(img, 0, lut.shape[0]-1, out=img)
-    img = img.astype(numpy.uint32)
-    return lut[img]
-
+    img[mask] = fill_out
+    img[~mask] = lut[img[~mask].astype(numpy.uint32)]
+    return img
 
 def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     """

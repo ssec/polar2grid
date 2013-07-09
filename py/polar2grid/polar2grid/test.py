@@ -1,26 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """Python module for running unit tests.
-Includes full glue script tests that expect a base directory as input. This
-directory is searched for all known test case directories. A test case
-directory contains the output of a specific test. This test case directory
-maps to one input directory that is searched for before testing is started.
-If the input directory does not exist an exception will be raised and the test.
-Technically speaking, the glue script tests and any other tests requiring
-outside information are not unit tests, but rather
-integration tests. We still use the unittest module to organize these tests.
-
-Some of the unit tests also require input files so a base directory argument
-is also used. In cases where test data is required, directories are known by
-three names:
-
-    - input directories:
-        Satellite instrument input data
-    - expect or expected directories:
-        Output of running tests that is known to be correct
-    - output directories:
-        Output of running tests on the current system and that should be
-        verified against the expected directories.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -60,11 +40,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-# VIIRS Glue Scripts
-from . import viirs2awips,viirs2gtiff,viirs2binary,viirs2ninjo
-# MODIS Glue Scripts
-from . import modis2awips
-# Other components
+# Polar2Grid components
 from polar2grid.core import roles,constants
 from .grids import grids
 # Utilities
@@ -358,87 +334,6 @@ class VIIRSFrontendTestCase(unittest.TestCase):
 class MODISFrontendTestCase(unittest.TestCase):
     pass
 
-### Integration Tests ###
-#     Glue Scripts      #
-#########################
-
-class viirs2awipsTestCase(unittest.TestCase):
-    pass
-
-class viirs2gtiffTestCase(unittest.TestCase):
-    pass
-
-class viirs2binaryTestCase(unittest.TestCase):
-    pass
-
-class viirs2ninjoTestCase(unittest.TestCase):
-    pass
-
-glue_script_expected_to_input = {
-        "expect_viirs2awips_ak_20120408" : "input_viirs_20120408",
-        }
-
-### End of Integration Tests ###
-
-def discover_glue_script_test_cases(base_dir):
-    """Search a directory for any known test inputs and expected directories.
-    Expected directories are the known-to-be-good output of running the test
-    cases.
-
-    :param base_dir: Absolute path of a directory containing input and
-        expected directories.
-    :type base_dir: str
-    :returns: List of 2-element tuples representing test cases. The first
-        element is the input directory containing satellite instrument data,
-        the second is the expected directory containing known valid test case
-        results.
-    """
-    input_dirs  = [ x for x in os.listdir(base_dir) if x.startswith("input_")  ]
-    expect_dirs = [ x for x in os.listdir(base_dir) if x.startswith("expect_") ]
-    list_of_cases = []
-    for e_dir in expect_dirs:
-        i_dir = glue_script_expected_to_input.get(e_dir, None)
-        if i_dir is None:
-            log.warning("Expected output directory %s is unknown to this test module" % (e_dir,i_dir))
-            continue
-
-        if i_dir not in input_dirs:
-            log.warning("Could not find required input directory (%s) for expected output directory %s" % (i_dir,e_dir))
-            continue
-
-        list_of_cases.append((i_dir,e_dir))
-
-    return list_of_cases
-
-def get_glue_script_test_suite(list_of_cases):
-    """Return a `unittest.TestSuite` object for the available test
-    cases discovered by `discover_glue_script_test_cases`.
-
-    :param list_of_cases: Output from `discover_glue_script_test_cases`.
-    :returns: Single `unittest.TestSuite` object to run all available tests.
-    """
-    test_case_names = [ "test_" + i_dir + "_" + e_dir for i_dir,e_dir in list_of_cases ]
-    suite = unittest.TestSuite()
-    #for test_case_name in test_case_names:
-    #    suite.addTest()
-
-def main():
-    from argparse import ArgumentParser
-    parser = ArgumentParser(description="Run polar2grid tests")
-    parser.add_argument("--awips-png", action="store_true", default=False,
-            help="Create PNG images whenever an AWIPS NetCDF was successfully created")
-
-    parser.add_argument("-s", "--src-dir", nargs="?",
-            help="Base directory of test case input and expected directories")
-    parser.add_argument("-d", "--dst-dir", nargs="?",
-            help="Base directory for output of running the tests")
-    args = parser.parse_args()
-
-    args.src_dir = os.path.abspath(os.path.expanduser(args.src_dir))
-    args.dst_dir = os.path.abspath(os.path.expanduser(args.dst_dir))
-    list_of_cases = discover_glue_script_test_cases(args.src_dir)
-    test_suite = get_glue_script_test_suite(list_of_cases)
-
 if __name__ == "__main__":
-    sys.exit(main())
+    unittest.main()
 

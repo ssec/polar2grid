@@ -160,7 +160,7 @@ class Backend(roles.BackendRole):
         """
             - data_type:
                 Specify the polar2grid data type, which will determine the
-                'etype' of the geotiff. Default 16bit unsigned integers.
+                'etype' of the geotiff. Default 8bit unsigned integers.
             - rescale_config:
                 Rescaling configuration file to be used in scaling the data
             - inc_by_one:
@@ -172,7 +172,7 @@ class Backend(roles.BackendRole):
                 Specify the fill value of the incoming data.
         """
         self.output_pattern = output_pattern or DEFAULT_OUTPUT_PATTERN
-        self.data_type = data_type or DTYPE_UINT16
+        self.data_type = data_type or DTYPE_UINT8
         self.etype     = dtype2etype[self.data_type]
 
         # Use predefined rescaling configurations if we weren't told what to do

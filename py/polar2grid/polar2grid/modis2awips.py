@@ -353,7 +353,7 @@ through strftime. Current time if no files.""")
             return -1
     
         # Handle the user using a '~' for their home directory
-        hdf_files = [ os.path.realpath(os.path.expanduser(x)) for x in sorted(hdf_files) ]
+        hdf_files = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(hdf_files) ]
         for hdf_file in hdf_files:
             if not os.path.exists(hdf_file):
                 print "ERROR: File '%s' doesn't exist" % (hdf_file,)
@@ -390,12 +390,12 @@ through strftime. Current time if no files.""")
     # Assumes 'all' doesn't appear in the list twice
     if 'all' in forced_grids: forced_grids[forced_grids.index('all')] = None
     if args.forced_gpd is not None:
-        args.forced_gpd = os.path.realpath(os.path.expanduser(args.forced_gpd))
+        args.forced_gpd = os.path.abspath(os.path.expanduser(args.forced_gpd))
         if not os.path.exists(args.forced_gpd):
             log.error("Specified gpd file does not exist '%s'" % args.forced_gpd)
             return -1
     if args.forced_nc is not None:
-        args.forced_nc = os.path.realpath(os.path.expanduser(args.forced_nc))
+        args.forced_nc = os.path.abspath(os.path.expanduser(args.forced_nc))
         if not os.path.exists(args.forced_nc):
             log.error("Specified nc file does not exist '%s'" % args.forced_nc)
             return -1

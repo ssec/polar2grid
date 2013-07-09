@@ -50,9 +50,10 @@ import numpy as np
 import sys, os
 import re
 import logging
+from glob import glob
 from datetime import datetime,timedelta
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 UTC= UTC()
 
 K_LATITUDE             = "LatitudeVar"
@@ -86,9 +87,11 @@ NAV_SET_GUIDE = {
         BKIND_DNB : DNB_NAV_UID,
         }
 
+# Non-TC vs Terrain Corrected
 GEO_GUIDE = {
-        BKIND_M : 'GMODO',
-        BKIND_I : 'GIMGO'
+        BKIND_M : ('GMODO','GMTCO'),
+        BKIND_I : ('GIMGO','GITCO'),
+        BKIND_DNB : ('GDNBO','GDNBO'),
         }
 
 FACTORS_GUIDE = {
@@ -197,7 +200,7 @@ def _gtm_info(key):
         K_MODEGRAN: '/All_Data/%(cn)s_All/ModeGran',
         K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
         K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-        K_NAVIGATION: r'G%(file_kind)sTCO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'
+        K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'
     }
 
 
@@ -218,6 +221,21 @@ GEO_FILE_GUIDE = {
                             K_NORTH_COORD: '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Gran_0.North_Bounding_Coordinate',
                             K_SOUTH_COORD: '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Gran_0.South_Bounding_Coordinate',
                             },
+            r'GIMGO.*' : {
+                            K_LATITUDE:    '/All_Data/VIIRS-IMG-GEO_All/Latitude',
+                            K_LONGITUDE:   '/All_Data/VIIRS-IMG-GEO_All/Longitude',
+                            K_ALTITUDE:    '/All_Data/VIIRS-IMG-GEO_All/Height',
+                            K_STARTTIME:   '/All_Data/VIIRS-IMG-GEO_All/StartTime',
+                            K_SOLARZENITH: '/All_Data/VIIRS-IMG-GEO_All/SolarZenithAngle',
+                            K_LUNARZENITH: '/All_Data/VIIRS-IMG-GEO_All/LunarZenithAngle',
+                            K_MOONILLUM:   '/All_Data/VIIRS-IMG-GEO_All/MoonIllumFraction',
+                            K_LAT_G_RING:  '/Data_Products/VIIRS-IMG-GEO/VIIRS-IMG-GEO_Gran_0.G-Ring_Latitude',
+                            K_LON_G_RING:  '/Data_Products/VIIRS-IMG-GEO/VIIRS-IMG-GEO_Gran_0.G-Ring_Longitude',
+                            K_WEST_COORD:  '/Data_Products/VIIRS-IMG-GEO/VIIRS-IMG-GEO_Gran_0.West_Bounding_Coordinate',
+                            K_EAST_COORD:  '/Data_Products/VIIRS-IMG-GEO/VIIRS-IMG-GEO_Gran_0.East_Bounding_Coordinate',
+                            K_NORTH_COORD: '/Data_Products/VIIRS-IMG-GEO/VIIRS-IMG-GEO_Gran_0.North_Bounding_Coordinate',
+                            K_SOUTH_COORD: '/Data_Products/VIIRS-IMG-GEO/VIIRS-IMG-GEO_Gran_0.South_Bounding_Coordinate',
+                            },
             r'GMTCO.*' : {
                             K_LATITUDE:    '/All_Data/VIIRS-MOD-GEO-TC_All/Latitude',
                             K_LONGITUDE:   '/All_Data/VIIRS-MOD-GEO-TC_All/Longitude',
@@ -232,6 +250,21 @@ GEO_FILE_GUIDE = {
                             K_EAST_COORD:  '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Gran_0.East_Bounding_Coordinate',
                             K_NORTH_COORD: '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Gran_0.North_Bounding_Coordinate',
                             K_SOUTH_COORD: '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Gran_0.South_Bounding_Coordinate',
+                            },
+            r'GMODO.*' : {
+                            K_LATITUDE:    '/All_Data/VIIRS-MOD-GEO_All/Latitude',
+                            K_LONGITUDE:   '/All_Data/VIIRS-MOD-GEO_All/Longitude',
+                            K_ALTITUDE:    '/All_Data/VIIRS-MOD-GEO_All/Height',
+                            K_STARTTIME:   '/All_Data/VIIRS-MOD-GEO_All/StartTime',
+                            K_SOLARZENITH: '/All_Data/VIIRS-MOD-GEO_All/SolarZenithAngle',
+                            K_LUNARZENITH: '/All_Data/VIIRS-MOD-GEO_All/LunarZenithAngle',
+                            K_MOONILLUM:   '/All_Data/VIIRS-MOD-GEO_All/MoonIllumFraction',
+                            K_LAT_G_RING:  '/Data_Products/VIIRS-MOD-GEO/VIIRS-MOD-GEO_Gran_0.G-Ring_Latitude',
+                            K_LON_G_RING:  '/Data_Products/VIIRS-MOD-GEO/VIIRS-MOD-GEO_Gran_0.G-Ring_Longitude',
+                            K_WEST_COORD:  '/Data_Products/VIIRS-MOD-GEO/VIIRS-MOD-GEO_Gran_0.West_Bounding_Coordinate',
+                            K_EAST_COORD:  '/Data_Products/VIIRS-MOD-GEO/VIIRS-MOD-GEO_Gran_0.East_Bounding_Coordinate',
+                            K_NORTH_COORD: '/Data_Products/VIIRS-MOD-GEO/VIIRS-MOD-GEO_Gran_0.North_Bounding_Coordinate',
+                            K_SOUTH_COORD: '/Data_Products/VIIRS-MOD-GEO/VIIRS-MOD-GEO_Gran_0.South_Bounding_Coordinate',
                             },
             r'GDNBO.*' : {
                             K_LATITUDE:    '/All_Data/VIIRS-DNB-GEO_All/Latitude',
@@ -263,7 +296,7 @@ SV_FILE_GUIDE = {
                             K_MODEGRAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeGran',
                             K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-                            K_NAVIGATION: r'G%(file_kind)sTCO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
+                            K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
             r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
                             K_REFLECTANCE: None,
                             K_BTEMP: None,
@@ -274,7 +307,7 @@ SV_FILE_GUIDE = {
                             K_MODEGRAN: '/All_Data/VIIRS-DNB-SDR_All/ModeGran',
                             K_QF3: '/All_Data/VIIRS-DNB-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-                            K_NAVIGATION: r'GDNBO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
+                            K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5'}
             r'VI(?P<file_band>\d)BO.*': {
                             K_RADIANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Radiance',
                             K_REFLECTANCE: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/Reflectance',
@@ -286,14 +319,16 @@ SV_FILE_GUIDE = {
                             K_MODEGRAN: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/ModeGran',
                             K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
-                            K_NAVIGATION: r'G%(file_kind)sTCO_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
+                            K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
             }
 
 ROWS_PER_SCAN = {
         BKIND_M  : 16,
         "GMTCO" : 16,
+        "GMODO" : 16,
         BKIND_I  : 32,
         "GITCO" : 32,
+        "GIMGO" : 32,
         BKIND_DNB : 16,
         "GDNBO" : 16,
         "GIGTO" : 32,
@@ -410,6 +445,17 @@ class evaluator(object):
 def make_polygon_tuple(lon_ring, lat_ring):
     return tuple(tuple(x) for x in zip(lon_ring,lat_ring))
 
+def _glob_file(pat):
+    """Globs for a single file based on the provided pattern.
+
+    :raises ValueError: if more than one file matches pattern
+    """
+    tmp = glob(pat)
+    if len(tmp) != 1:
+        log.error("There were no files or more than one fitting the pattern %s" % pat)
+        raise ValueError("There were no files or more than one fitting the pattern %s" % pat)
+    return tmp[0]
+
 def calculate_bbox_bounds(wests, easts, norths, souths, fill_value=DEFAULT_FILL_VALUE):
     """Given a list of west most points, east-most, north-most, and
     south-most points, calculate the bounds for the overall aggregate
@@ -499,7 +545,7 @@ def sort_files_by_nav_uid(filepaths):
             num_files_for_set = num_files_for_set or num_files # previous value or set it for the first time
             if num_files != num_files_for_set:
                 # We weren't given the same number of files for this nav_set
-                LOG.error("Nav. set %s did not have the same number of files for every band (%s), expected %d got %d files" % (nav_uid,file_id,num_files_for_set,num_files))
+                log.error("Nav. set %s did not have the same number of files for every band (%s), expected %d got %d files" % (nav_uid,file_id,num_files_for_set,num_files))
                 raise ValueError("Nav. set %s did not have the same number of files for every band (%s), expected %d got %d files" % (nav_uid,file_id,num_files_for_set,num_files))
 
         # If we don't have any files for this navigation set, remove the file set
@@ -531,7 +577,7 @@ def h5path(hp, path, h5_path, required=False, quiet=False):
 
     Quiet says to not log any messages (does not effect required check).
     """
-    if not quiet: LOG.debug('fetching %s from %s' % (path, h5_path))
+    if not quiet: log.debug('fetching %s from %s' % (path, h5_path))
     x = hp
     for a in path.split('/'):
         if a:
@@ -549,22 +595,22 @@ def h5path(hp, path, h5_path, required=False, quiet=False):
                         # We have the attribute so we're done
                         break
                     else:
-                        if not quiet: LOG.debug("Couldn't find attribute %s of path %s" % (attr_name,path))
+                        if not quiet: log.debug("Couldn't find attribute %s of path %s" % (attr_name,path))
                         x = None
                         break
             else:
-                if not quiet: LOG.debug("Couldn't find %s (or its parent) in %s" % (a,path))
+                if not quiet: log.debug("Couldn't find %s (or its parent) in %s" % (a,path))
                 x = None
                 break
         else:
             # If they put a / at the end of the var path
             continue
     if x is hp:
-        if not quiet: LOG.error("Could not get %s from h5 file" % path)
+        if not quiet: log.error("Could not get %s from h5 file" % path)
         x = None
 
     if x is None and required:
-        LOG.error("Couldn't get data %s from %s" % (path, h5_path))
+        log.error("Couldn't get data %s from %s" % (path, h5_path))
         raise ValueError("Couldn't get data %s from %s" % (path, h5_path))
 
     return x
@@ -615,7 +661,7 @@ def file_info(fn):
         # collect info from filename
         pat_match = RE_NPP.match(filename)
         if not pat_match:
-            LOG.error("Filename matched initial pattern, but not full name pattern")
+            log.error("Filename matched initial pattern, but not full name pattern")
             raise ValueError("Filename matched initial pattern, but not full name pattern")
         pat_info = dict(pat_match.groupdict())
 
@@ -630,13 +676,13 @@ def file_info(fn):
         elif minfo["file_kind"] == "I":
             minfo["kind"] = BKIND_I
         else:
-            LOG.error("Band kind not known '%s'" % minfo["kind"])
+            log.error("Band kind not known '%s'" % minfo["kind"])
             raise ValueError("Band kind not known '%s'" % minfo["kind"])
 
         # Translate band identifier/number into constants
         if "file_band" in minfo:
             if minfo["file_band"] not in band2const:
-                LOG.error("Band number not known '%s'" % (minfo["file_band"],))
+                log.error("Band number not known '%s'" % (minfo["file_band"],))
                 raise ValueError("Band number not known '%s'" % (minfo["file_band"],))
             minfo["band"] = band2const[minfo["file_band"]]
 
@@ -647,7 +693,7 @@ def file_info(fn):
         # Figure out what type of data we want to use
         dkind = (finfo["kind"],finfo["band"])
         if dkind not in DATA_KINDS:
-            LOG.error("Data kind not known (Kind: %s; Band: %s)" % dkind)
+            log.error("Data kind not known (Kind: %s; Band: %s)" % dkind)
             raise ValueError("Data kind not known (Kind: %s; Band: %s)" % dkind)
         finfo["data_kind"] = DATA_KINDS[dkind]
         finfo["rows_per_scan"] = ROWS_PER_SCAN[finfo["kind"]]
@@ -661,9 +707,29 @@ def file_info(fn):
         for k,v in finfo.items():
             if isinstance(v,str):
                 finfo[k] = v % eva
-        finfo["geo_glob"] = os.path.join(base_path, finfo[K_NAVIGATION])
+
+        # Geonav file exists
+        file_glob = finfo[K_NAVIGATION] % {"geo_kind":GEO_GUIDE[finfo["kind"]][1]}
+        geo_glob = os.path.join(base_path, file_glob)
+        try:
+            # First try terrain corrected
+            finfo["geo_path"] = _glob_file(geo_glob)
+            log.info("Using terrain corrected navigation %s " % (finfo["geo_path"],))
+        except ValueError:
+            log.debug("Couldn't identify terrain corrected geonav file for file %s" % (fn,))
+            # Try the non-terrain corrected
+            file_glob = finfo[K_NAVIGATION] % {"geo_kind":GEO_GUIDE[finfo["kind"]][0]}
+            geo_glob = os.path.join(base_path, file_glob)
+            try:
+                # First try terrain corrected
+                finfo["geo_path"] = _glob_file(geo_glob)
+                log.info("Using non-TC navigation %s " % (finfo["geo_path"],))
+            except ValueError:
+                log.error("Could not find TC or non-TC navigation files for %s" % (fn,))
+                raise ValueError("Could not find TC or non-TC navigation files for %s" % (fn,))
+
         return finfo
-    LOG.warning('unable to find %s in guidebook' % filename)
+    log.warning('unable to find %s in guidebook' % filename)
     return finfo
 
 def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
@@ -714,15 +780,15 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     # Get scaling function (also reads scaling factors from hdf)
     factvar = h5path(hp, factors_var_path, finfo["img_path"], required=False)   # FUTURE: make this more elegant please
     if factvar is None:
-        LOG.debug("No scaling factors found for %s at %s (this is OK)" % (data_var_path, factors_var_path))
+        log.debug("No scaling factors found for %s at %s (this is OK)" % (data_var_path, factors_var_path))
         def scaler(image_data):
             return image_data,np.zeros(image_data.shape).astype(np.bool)
         needs_scaling = False
     else:
         factor_list = list(factvar[:])
-        LOG.debug("scaling factors for %s are %s" % (data_var_path, str(factor_list)))
+        log.debug("scaling factors for %s are %s" % (data_var_path, str(factor_list)))
         if len(factor_list) % 2 != 0:
-            LOG.error("There are an odd number of scaling factors for %s" % (data_var_path,))
+            log.error("There are an odd number of scaling factors for %s" % (data_var_path,))
             raise ValueError("There are an odd number of scaling factors for %s" % (data_var_path,))
 
         # Figure out how data should be scaled
@@ -797,7 +863,7 @@ def geo_info(fn):
         # collect info from filename
         pat_match = RE_NPP.match(filename)
         if not pat_match:
-            LOG.error("Filename matched initial pattern, but not full name pattern")
+            log.error("Filename matched initial pattern, but not full name pattern")
             raise ValueError("Filename matched initial pattern, but not full name pattern")
         pat_info = dict(pat_match.groupdict())
         minfo = m.groupdict()
@@ -816,7 +882,7 @@ def geo_info(fn):
             if isinstance(v,str):
                 finfo[k] = v % eva
         return finfo
-    LOG.warning('unable to find %s in guidebook' % filename)
+    log.warning('unable to find %s in guidebook' % filename)
     return finfo
 
 def read_geo_bbox_coordinates(hp, finfo, fill_value=DEFAULT_FILL_VALUE):
@@ -864,7 +930,7 @@ def load_geo_variable(hp, finfo, variable_key, dtype=np.float32, required=False)
     var_path = finfo[variable_key]
     h5v = h5path(hp, var_path, finfo["geo_path"], required=required)
     if h5v is None:
-        LOG.debug("Variable '%s' was not found in '%s'" % (var_path, finfo["geo_path"]))
+        log.debug("Variable '%s' was not found in '%s'" % (var_path, finfo["geo_path"]))
         data = None
     else:
         data = h5v[:,:]
@@ -941,11 +1007,11 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     # Get the moon illumination information
     h5v = h5path(hp, mia_var_path, finfo["geo_path"], required=False)
     if h5v is None:
-        LOG.debug("Variable '%s' was not found in '%s'" % (mia_var_path, finfo["geo_path"]))
+        log.debug("Variable '%s' was not found in '%s'" % (mia_var_path, finfo["geo_path"]))
         moon_illum = None
     else:
         moon_illum = h5v[0] / 100.0
-        LOG.debug("moon illumination fraction: " + str(moon_illum))
+        log.debug("moon illumination fraction: " + str(moon_illum))
 
     # Calculate latitude mask
     lat_mask = get_geo_variable_fill_mask(lat_data, K_LATITUDE)
@@ -998,7 +1064,7 @@ def generic_info(fn):
     elif os.path.split(fn)[1].startswith("G"):
         return geo_info(fn)
     else:
-        LOG.error("Unknown file type for %s" % fn)
+        log.error("Unknown file type for %s" % fn)
         raise ValueError("Unknown file type for %s" % fn)
 
 def generic_read(fn, finfo):
@@ -1014,7 +1080,7 @@ def generic_read(fn, finfo):
     elif os.path.split(fn)[1].startswith("G"):
         return read_geo_info(finfo)
     else:
-        LOG.error("Unknown file type for %s" % fn)
+        log.error("Unknown file type for %s" % fn)
         raise ValueError("Unknown file type for %s" % fn)
 
 def main():
@@ -1042,7 +1108,7 @@ def main():
         try:
             finfo = generic_info(fn)
         except:
-            LOG.error("Failed to get info from filename '%s'" % fn, exc_info=1)
+            log.error("Failed to get info from filename '%s'" % fn, exc_info=1)
             continue
 
         if options.read_h5:

@@ -22,11 +22,13 @@ New in Version 1.1.0
  - Grid determination now uses polygon math (much faster)
  - Added command line option to add user created grid configuration files
  - :option:`viirs2gtiff -g` flag can now have 'all' specified and other forced grids
+ - Default geotiff datatype is set to 8-bit unsigned value.
  - Changed behavior of forced grids, they are now preferred but not required to complete without error
  - Dynamic grids are not added during grid determination anymore
  - Simple unit tests added.
  - Fixed bug where AWIPS NetCDF files had doubles (64-bits) instead of 32-bit floats
  - Various other bug fixes
+ - Removed distributed test packages (unit tests are available and internal test cases are maintained)
 
 New in Version 1.0.0
 --------------------
