@@ -35,14 +35,15 @@ CORE_PKG_DIR   = polar2grid_core
 VIIRS_PKG_DIR  = polar2grid_viirs
 MODIS_PKG_DIR  = polar2grid_modis
 CREFL_PKG_DIR  = polar2grid_crefl
+DRRTV_PKG_DIR  = polar2grid_drrtv
 MAIN_PKG_DIR   = polar2grid
 
 # Make sure target names are just the dir name with a suffix
 # See targets for substitution
-ALL_PKG_DIRS   = $(CORE_PKG_DIR) $(VIIRS_PKG_DIR) $(MODIS_PKG_DIR) $(CREFL_PKG_DIR) $(MAIN_PKG_DIR)
+ALL_PKG_DIRS   = $(CORE_PKG_DIR) $(VIIRS_PKG_DIR) $(MODIS_PKG_DIR) $(CREFL_PKG_DIR) $(DRRTV_PKG_DIR) $(MAIN_PKG_DIR)
 ALL_PKG_SDIST  = $(ALL_PKG_DIRS:=_sdist)
 #ALL_PKG_SDIST  = polar2grid_core_sdist polar2grid_viirs_sdist polar2grid_sdist
-ALL_PKG_DEV    = polar2grid_core_dev polar2grid_viirs_dev polar2grid_modis_dev polar2grid_crefl_dev polar2grid_dev
+ALL_PKG_DEV    = polar2grid_core_dev polar2grid_viirs_dev polar2grid_modis_dev polar2grid_crefl_dev polar2grid_drrtv_dev polar2grid_dev
 #DOC_DIR        = /home/davidh/test_doc
 DOC_DIR        = /var/apache/www/htdocs/software/polar2grid
 
