@@ -302,7 +302,7 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
         # XXX: I don't think there is a way to get these values from the hdf files
         saturation_value = modis_guidebook.SATURATION_VALUE
         cant_aggr_value  = modis_guidebook.CANT_AGGR_VALUE
-        if valid_max is not None:
+        if valid_max is not None and variable_name in modis_guidebook.CLIP_SATURATION_VARIABLES:
             # XXX: This may be a waste of time to perform on other bands, but I'm not sure
             log.debug("Clipping saturation values")
             temp_var_data[ (temp_var_data == saturation_value) | (temp_var_data == cant_aggr_value) ] = valid_max
