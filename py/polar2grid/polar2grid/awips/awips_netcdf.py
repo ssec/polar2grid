@@ -160,7 +160,7 @@ class Backend(roles.BackendRole):
         self.rescale_config = rescale_config
         self.fill_in = fill_value
         self.fill_out = DEFAULT_FILL_VALUE
-        self.rescaler = Rescaler(config=self.rescale_config, fill_in=self.fill_in, fill_out=self.fill_out)
+        self.rescaler = Rescaler(self.rescale_config, fill_in=self.fill_in, fill_out=self.fill_out)
 
     def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
         """Function for backend-calling script to ask if the backend will be

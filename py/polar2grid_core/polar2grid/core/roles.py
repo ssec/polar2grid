@@ -48,6 +48,7 @@ import os
 import sys
 import logging
 import re
+from StringIO import StringIO
 from abc import ABCMeta,abstractmethod,abstractproperty
 
 try:
@@ -141,10 +142,30 @@ class CSVConfigReader(object):
 
     def load_config_file(self, config_file):
         """Load one configuration file into internal storage.
+
+        If the config_file is a relative path string and can't be found it
+        will be loaded from a package relative location. If it can't be found
+        in the package an exception is raised.
         """
         # If we were provided a string filepath then open the file
         if isinstance(config_file, str):
-            config_file = open(config_file, 'r')
+            if not os.path.isabs(config_file):
+                # Its not an absolute path, lets see if its relative path
+                cwd_config = os.path.join(os.path.curdir, config_file)
+                if os.path.exists(cwd_config):
+                    config_file = cwd_config
+                    config_file = open(config_file, 'r')
+                else:
+                    # they have specified a package provided file
+                    log.info("Loading package provided rescale config: '%s'" % (config_file,))
+                    try:
+                        config_str = get_resource_string(self.__module__, config_file)
+                    except StandardError:
+                        log.error("Rescale config '%s' was not found" % (config_file,))
+                        raise
+                    config_file = StringIO(config_str)
+            else:
+                config_file = open(config_file, 'r')
 
         # Read in each line
         for line in config_file:
@@ -174,7 +195,8 @@ class CSVConfigReader(object):
             entry_info = self.parse_entry_parts(entry_parts)
         except StandardError:
             if self.ignore_bad_lines: return
-            raise ValueError("Bad configuration line: '%s'" % (str(parts),))
+            log.error("Bad configuration line: '%s'" % (str(parts),))
+            raise
 
         self.config_storage.append((id_regex_obj,entry_info))
 
@@ -234,7 +256,7 @@ class CSVConfigReader(object):
             log.error("Incorrect number of identifying elements when searching configuration")
             raise ValueError("Incorrect number of identifying elements when searching configuration")
 
-        search_id = "_".join(args)
+        search_id = "_".join([ (x is not None and x) or "" for x in args ])
         for regex_pattern,entry_info in self.config_storage:
             m = regex_pattern.match(search_id)
             if m is None: continue
@@ -243,16 +265,14 @@ class CSVConfigReader(object):
 
         raise ValueError("No config entry found matching: '%s'" % (search_id,))
 
-class RescalerRole(object):
+class RescalerRole(CSVConfigReader):
     __metaclass__ = ABCMeta
 
     # Fill values in the input and to set in the output
     DEFAULT_FILL_IN  = DEFAULT_FILL_VALUE
     DEFAULT_FILL_OUT = DEFAULT_FILL_VALUE
 
-    # Dictionary mapping of data identifier to rescaling function and its
-    # arguments
-    config = {}
+    NUM_ID_ELEMENTS = 6
 
     @abstractproperty
     def default_config_dir(self):
@@ -299,110 +319,40 @@ class RescalerRole(object):
         # Used in configuration reader
         return self._known_data_kinds
 
-    def __init__(self, config=None, fill_in=None, fill_out=None):
+    def __init__(self, *config_files, **kwargs):
         """Load the initial configuration file and any other information
         needed for later rescaling.
         """
-        if config is not None:
-            self.load_config(config)
+        self.fill_in = kwargs.pop("fill_in", self.DEFAULT_FILL_IN)
+        self.fill_out = kwargs.pop("fill_out", self.DEFAULT_FILL_OUT)
+        kwargs["min_num_elements"] = kwargs.get("min_num_elements", self.NUM_ID_ELEMENTS+1) # ID + scaling func
+        super(RescalerRole, self).__init__(*config_files, **kwargs)
 
-        self.fill_in = fill_in or self.DEFAULT_FILL_IN
-        self.fill_out = fill_out or self.DEFAULT_FILL_OUT
-
-    def _create_config_id(self, sat, instrument, nav_set_uid, kind, band, data_kind):
-        return "_".join([sat.lower(), instrument.lower(), (nav_set_uid or "").lower(), kind.lower(), (band or "").lower(), data_kind.lower()])
-
-    def load_config_str(self, config_str):
-        """Just in case I want to have a config file stored as a string in
-        the future.
-
-        """
-        # Get rid of trailing new lines and commas
-        config_lines = [ line.strip(",\n") for line in config_str.split("\n") ]
-        # Get rid of comment lines and blank lines
-        config_lines = [ line for line in config_lines if line and not line.startswith("#") and not line.startswith("\n") ]
-        # Check if we have any useful lines
-        if not config_lines:
-            log.warning("No non-comment lines were found in rescaling configuration")
-            return False
-
-        try:
-            # Parse config lines
-            for line in config_lines:
-                parts = [ part.strip() for part in line.split(",") ]
-                if len(parts) < 7:
-                    log.error("Rescale config line needs at least 6 columns : '%s'" % (line))
-                    raise ValueError("Rescale config line needs at least 6 columns : '%s'" % (line))
-
-                # Verify that each identifying portion is valid
-                for i in range(7):
-                    assert parts[i],"Field %d can not be empty" % i
-                    # polar2grid demands lowercase fields
-                    parts[i] = parts[i].lower()
-
-                # Convert band if none
-                if parts[2] == '' or parts[2] == "none":
-                    parts[2] = NOT_APPLICABLE
-                if parts[4] == '' or parts[4] == "none":
-                    parts[4] = NOT_APPLICABLE
-                # Make sure we know the data_kind
-                if parts[5] not in SET_DKINDS:
-                    if parts[5] in self.known_data_kinds:
-                        parts[5] = self.known_data_kinds[parts[5]]
-                    else:
-                        log.warning("Rescaling doesn't know the data kind '%s'" % parts[5])
-
-                # Make sure we know the scale kind
-                if parts[6] not in self.known_rescale_kinds:
-                    log.error("Rescaling doesn't know the rescaling kind '%s'" % parts[6])
-                    raise ValueError("Rescaling doesn't know the rescaling kind '%s'" % parts[6])
-                parts[6] = self.known_rescale_kinds[parts[6]]
-                # TODO: Check argument lengths and maybe values per rescale kind 
-
-                # Enter the information into the configs dict
-                line_id = self._create_config_id(*parts[:6])
-                config_entry = (parts[6], tuple(float(x) for x in parts[7:]))
-                self.config[line_id] = config_entry
-        except StandardError:
-            # Clear out the bad config
-            log.warning("Rescaling configuration file could be in a corrupt state")
-            raise
-
-        return True
-
-    def load_config(self, config_filename):
-        """
-        Load a rescaling configuration file for later use by the `__call__`
-        function.
-
-        If the config isn't an absolute path, it checks the current directory,
-        and if the config can't be found there it is assumed to be relative to
-        the package structure. So entering just the filename will look in the
-        default rescaling configuration location (the package root) for the
-        filename provided.
-        """
-        if not os.path.isabs(config_filename):
-            # Its not an absolute path, lets see if its relative path
-            cwd_config = os.path.join(os.path.curdir, config_filename)
-            if os.path.exists(cwd_config):
-                config_filename = cwd_config
+    def parse_id_parts(self, parts):
+        # Make sure we know the data_kind
+        if parts[5] not in SET_DKINDS:
+            if parts[5] in self.known_data_kinds:
+                parts[5] = self.known_data_kinds[parts[5]]
             else:
-                # they have specified a package provided file
-                log.info("Loading package provided rescale config: '%s'" % (config_filename,))
-                try:
-                    config_str = get_resource_string(self.__module__, config_filename)
-                except StandardError:
-                    log.error("Rescale config '%s' was not found" % (config_filename,))
-                    raise
-                return self.load_config_str(config_str)
+                log.warning("Rescaling doesn't know the data kind '%s'" % parts[5])
+        parts = super(RescalerRole, self).parse_id_parts(parts)
+        return parts
 
-        config = os.path.realpath(config_filename)
+    def parse_entry_parts(self, parts):
+        # Make sure we know the scale kind
+        if parts[0] not in self.known_rescale_kinds:
+            log.error("Rescaling doesn't know the rescaling kind '%s'" % parts[0])
+            if self.ignore_bad_lines:
+                return
+            raise ValueError("Rescaling doesn't know the rescaling kind '%s'" % parts[0])
+        parts = list(parts)
+        parts[0] = self.known_rescale_kinds[parts[0]]
 
-        log.debug("Using rescaling configuration '%s'" % (config,))
+        # FUTURE: Check argument lengths and maybe values per rescale kind 
 
-        config_file = open(config, 'r')
-        config_str = config_file.read()
-        return self.load_config_str(config_str)
+        parts = super(RescalerRole, self).parse_entry_parts(parts)
+
+        return (parts[0], tuple(float(x) for x in parts[1:]))
 
     @abstractmethod
     def __call__(self, sat, instrument, nav_set_uid, kind, band, data_kind, data):

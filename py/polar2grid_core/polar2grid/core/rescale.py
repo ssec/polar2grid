@@ -360,22 +360,15 @@ class Rescaler(roles.RescalerRole):
         add 1 to the scaled data excluding the invalid values.
         """
         log_level = logging.getLogger('').handlers[0].level or 0
-        band_id = self._create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind)
         fill_in = fill_in or self.fill_in
         fill_out = fill_out or self.fill_out
 
-        if self.config is None or band_id not in self.config:
-            # Run the default scaling functions
-            log.debug("Config ID '%s' was not found in '%r'" % (band_id,self.config.keys()))
-            log.info("Running default rescaling method for kind: %s, band: %s" % (kind,band))
-            if data_kind not in RESCALE_FOR_KIND:
-                log.error("No default rescaling is set for data of kind %s" % data_kind)
-                raise ValueError("No default rescaling is set for data of kind %s" % data_kind)
-            rescale_func,rescale_args = RESCALE_FOR_KIND[data_kind]
-        else:
-            # We know how to rescale using the onfiguration file
-            log.info("'%s' was found in the rescaling configuration" % (band_id))
-            rescale_func,rescale_args = self.config[band_id]
+        try:
+            rescale_func,rescale_args = self.get_config_entry(sat, instrument, nav_set_uid, kind, band, data_kind)
+            log.info("'%r' was found in the rescaling configuration" % ((sat, instrument, nav_set_uid, kind, band, data_kind),))
+        except StandardError:
+            log.error("'%r' was not found in rescaling configuration file" % ((sat, instrument, nav_set_uid, kind, band, data_kind),))
+            raise
 
         # Only perform this calculation if it will be shown, its very time consuming
         if log_level <= logging.DEBUG:
