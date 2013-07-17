@@ -47,6 +47,7 @@ from .fbf import data_type_to_fbf_type
 import os
 import sys
 import logging
+import re
 from abc import ABCMeta,abstractmethod,abstractproperty
 
 try:
@@ -99,6 +100,148 @@ class abstractstaticmethod(staticmethod):
         super(abstractstaticmethod, self).__init__(callable)
 
 ### End of Copy ###
+
+class CSVConfigReader(object):
+    """Base class for CSV configuration file readers.
+    The format of the file is 1 configuration entry per line. Where the first
+    N elements 'identify' the line in the internal storage of this object.
+
+    Configuration files can be passed into the ``__init__`` method. One or more
+    configuration files can be passed at a time. Individual configuration
+    files can be added via the ``load_config_file`` method. Provided
+    configuration files can be filepaths as strings or a file-like object.
+
+    Wildcard identifying entries are supported by the '*' character. When
+    requesting an entry, the loaded configuration files are searched in the
+    order they were entered and in top-down line order. It is recommended
+    that wildcards go near the bottom of files to avoid conflict.
+
+    Class attributes:
+        NUM_ID_ELEMENTS (default 6): Number of elements (starting from the
+            first) that 'identify' the configuration entry.
+        COMMENT_CHARACTER (default '#'): First character in a line
+            representing a comment. Inline comments are not supported.
+    """
+    __metaclass__ = ABCMeta
+    NUM_ID_ELEMENTS = 6
+    COMMENT_CHARACTER = '#'
+
+    def __init__(self, *config_files, **kwargs):
+        """Initialize configuration reader.
+        Provided configuration files can be filepaths or file-like objects.
+
+        :keyword ignore_bad_lines: Ignore bad configuration lines if encountered
+        :keyword min_num_elements: Minimum number of elements allowed in a config line
+        """
+        self.config_storage = []
+        self.ignore_bad_lines = kwargs.get("ignore_bad_lines", False)
+        self.min_num_elements = kwargs.get("min_num_elements", self.NUM_ID_ELEMENTS)
+        for config_file in config_files:
+            self.load_config_file(config_file)
+
+    def load_config_file(self, config_file):
+        """Load one configuration file into internal storage.
+        """
+        # If we were provided a string filepath then open the file
+        if isinstance(config_file, str):
+            config_file = open(config_file, 'r')
+
+        # Read in each line
+        for line in config_file:
+            # Clean the line
+            line = line.strip()
+            # Ignore comments and blank lines
+            if line.startswith(self.COMMENT_CHARACTER) or line == "":
+                continue
+            # Get each element
+            parts = tuple( x.strip() for x in line.split(",") )
+            # Parse the line
+            self.parse_config_parts(parts)
+
+    def parse_config_parts(self, parts):
+        if len(parts) < self.min_num_elements:
+            log.error("Line does not have correct number of elements: '%s'" % (str(parts),))
+            if self.ignore_bad_lines: return
+            raise ValueError("Line does not have correct number of elements: '%s'" % (str(parts),))
+
+        # Separate the parts into identifying vs configuration parts
+        id_parts = parts[:self.NUM_ID_ELEMENTS]
+        entry_parts = parts[self.NUM_ID_ELEMENTS:]
+
+        # Handle each part separately
+        try:
+            id_regex_obj = self.parse_id_parts(id_parts)
+            entry_info = self.parse_entry_parts(entry_parts)
+        except StandardError:
+            if self.ignore_bad_lines: return
+            raise ValueError("Bad configuration line: '%s'" % (str(parts),))
+
+        self.config_storage.append((id_regex_obj,entry_info))
+
+    def parse_id_parts(self, id_parts):
+        parsed_parts = []
+        for part in id_parts:
+            if part == "None" or part == "none" or part == "":
+                part = ''
+            # If there is a '*' anywhere in the entry, make it a wildcard
+            part = part.replace("*", r'.*')
+            parsed_parts.append(part)
+
+        this_regex = "_".join(parsed_parts)
+
+        try:
+            this_regex_obj = re.compile(this_regex)
+        except re.error:
+            log.error("Invalid configuration identifying information (not valid regular expression): '%s'" % (str(id_parts),))
+            raise ValueError("Invalid configuration identifying information (not valid regular expression): '%s'" % (str(id_parts),))
+
+        return this_regex_obj
+
+    def parse_entry_parts(self, entry_parts):
+        """Method called when loading a configuration entry.
+        The argument passed is a tuple of each configuration entries
+        information loaded from the file.
+
+        This is where a user could convert a tuple to a dictionary with
+        specific key names.
+        """
+        return entry_parts
+
+    def prepare_config_entry(self, entry_info, id_info):
+        """Method called when retrieving a configuration entry to prepare
+        configuration information for the use.
+        The second argument is a tuple of the identifying elements provided
+        during the search. The first argument is whatever object was returned
+        by ``parse_entry_parts`` during configuration loading.
+        
+        This method is used during the retrieval process in
+        case the structure of the entry is based on the specifics of the
+        match. For example, if a wildcard is matched, the configuration
+        information might take on a different meaning based on what matched.
+
+        This is where a user could convert a tuple to a dictionary with
+        specific key names.
+        """
+        return entry_info
+
+    def get_config_entry(self, *args, **kwargs):
+        """Retrieve configuration information.
+        Passed arguments will be matched against loaded configuration
+        entry identities, therefore there must be the same number of elements
+        as ``NUM_ID_ELEMENTS``.
+        """
+        if len(args) != self.NUM_ID_ELEMENTS:
+            log.error("Incorrect number of identifying elements when searching configuration")
+            raise ValueError("Incorrect number of identifying elements when searching configuration")
+
+        search_id = "_".join(args)
+        for regex_pattern,entry_info in self.config_storage:
+            m = regex_pattern.match(search_id)
+            if m is None: continue
+
+            return self.prepare_config_entry(entry_info, args)
+
+        raise ValueError("No config entry found matching: '%s'" % (search_id,))
 
 class RescalerRole(object):
     __metaclass__ = ABCMeta
@@ -553,9 +696,7 @@ class CartographerRole(object):
 def main():
     """Run some tests on the interfaces/roles
     """
-    # TODO
     import doctest
-    print "Running doctests"
     return doctest.testmod()
 
 if __name__ == "__main__":
