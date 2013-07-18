@@ -289,17 +289,9 @@ class RescalerRole(CSVConfigReader):
 
     @abstractproperty
     def known_rescale_kinds(self):
-        """Return a dictionary mapping data_kind constants to scaling
-        function.  This will be used by the configuration file parser
-        to decide what scaling function goes with each data_kind.
-
-        The dictionary should at least have a key for each data_kind constant,
-        but it may also have some common data_kind equivalents that may appear
-        in a configuration file.  For instance, brightness temperatures may be
-        written in the configuration file as 'btemp', 'brightness temperature',
-        'btemperature', etc.  So the dictionary could have one key for each of
-        these variations as well as the constant DKIND_BTEMP, all mapping to
-        the same scaling function.
+        """Return a dictionary mapping rescaling kind to scaling
+        function.  This will be used during configuration file parsing
+        to decide if the line is valid.
 
         A good strategy is to define the dictionary outside this
         function/property and return a pointer to that class attribute.
@@ -307,17 +299,6 @@ class RescalerRole(CSVConfigReader):
         the property is still read only.
         """
         return {}
-
-    # Define the dictionary once so it doesn't have to be
-    # allocated/instantiated every time it's used
-    _known_data_kinds = {
-                            'brightnesstemperature': DKIND_BTEMP,
-                        }
-
-    @property
-    def known_data_kinds(self):
-        # Used in configuration reader
-        return self._known_data_kinds
 
     def __init__(self, *config_files, **kwargs):
         """Load the initial configuration file and any other information
@@ -330,11 +311,6 @@ class RescalerRole(CSVConfigReader):
 
     def parse_id_parts(self, parts):
         # Make sure we know the data_kind
-        if parts[5] not in SET_DKINDS:
-            if parts[5] in self.known_data_kinds:
-                parts[5] = self.known_data_kinds[parts[5]]
-            else:
-                log.warning("Rescaling doesn't know the data kind '%s'" % parts[5])
         parts = super(RescalerRole, self).parse_id_parts(parts)
         return parts
 
@@ -351,8 +327,14 @@ class RescalerRole(CSVConfigReader):
         # FUTURE: Check argument lengths and maybe values per rescale kind 
 
         parts = super(RescalerRole, self).parse_entry_parts(parts)
+        args = []
+        for x in parts[1:]:
+            if x == "none" or x == "None":
+                args.append(None)
+            else:
+                args.append(float(x))
 
-        return (parts[0], tuple(float(x) for x in parts[1:]))
+        return (parts[0], args)
 
     @abstractmethod
     def __call__(self, sat, instrument, nav_set_uid, kind, band, data_kind, data):
