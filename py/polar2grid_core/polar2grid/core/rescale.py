@@ -150,9 +150,13 @@ def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, clip=
     return img
 
 def sqrt_scale(img, inner_mult, outer_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
+    """Square root enhancement
+
+    Note that any values below zero are clipped to zero before calculations.
+    """
     log.debug("Running 'sqrt_scale'...")
     mask = img == fill_in
-    img[mask] = 0 # For invalids because < 0 cant be sqrted
+    img[ img < 0 ] = 0 # because < 0 cant be sqrted
     numpy.multiply(img, inner_mult, img)
     numpy.sqrt(img, out=img)
     numpy.multiply(img, outer_mult, img)
