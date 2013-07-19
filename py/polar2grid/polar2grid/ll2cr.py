@@ -279,7 +279,7 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     else:
         ll2cr_info["pixel_size_x"] = pixel_size_x
         ll2cr_info["pixel_size_y"] = pixel_size_y
-        ll2cr_info["pixel_size_x_grid_units"] = pixel_size_y
+        ll2cr_info["pixel_size_x_grid_units"] = pixel_size_x
         ll2cr_info["pixel_size_y_grid_units"] = pixel_size_y
     ll2cr_info["rows_filename"] = rows_fn
     ll2cr_info["cols_filename"] = cols_fn
