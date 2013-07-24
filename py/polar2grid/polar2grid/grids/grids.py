@@ -660,23 +660,6 @@ class Cartographer(roles.CartographerRole):
             log.error("Unknown grid '%s'" % (grid_name,))
             raise ValueError("Unknown grid '%s'" % (grid_name,))
 
-    def remove_grid(self, grid_name):
-        """Remove ``grid_name`` from the loaded grid information
-        for this object.
-
-        :raises ValueError: if ``grid_name`` does not exist
-        """
-        if grid_name in self.grid_information:
-            del self.grid_information[grid_name]
-        else:
-            log.error("Unknown grid '%s' can't be removed" % (grid_name,))
-            raise ValueError("Unknown grid '%s' can't be removed" % (grid_name,))
-
-    def remove_all(self):
-        """Remove any loaded grid information from this instance.
-        """
-        self.grid_information = {}
-
     def read_grids_config(self, config_filepath):
         """Read the "grids.conf" file and create dictionaries mapping the
         grid name to the necessary information. There are two dictionaries

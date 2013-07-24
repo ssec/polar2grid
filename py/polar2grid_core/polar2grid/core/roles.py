@@ -240,11 +240,18 @@ class CSVConfigReader(object):
         case the structure of the entry is based on the specifics of the
         match. For example, if a wildcard is matched, the configuration
         information might take on a different meaning based on what matched.
+        It is best practice to copy any information that is being provided
+        so it can't be changed by the user.
 
         This is where a user could convert a tuple to a dictionary with
         specific key names.
         """
-        return entry_info
+        if hasattr(entry_info, "copy"):
+            return entry_info.copy()
+        elif isinstance(entry_info, list) or isinstance(entry_info, tuple):
+            return entry_info[:]
+        else:
+            return entry_info
 
     def get_config_entry(self, *args, **kwargs):
         """Retrieve configuration information.
@@ -261,9 +268,33 @@ class CSVConfigReader(object):
             m = regex_pattern.match(search_id)
             if m is None: continue
 
-            return self.prepare_config_entry(entry_info, args)
+            entry_info = self.prepare_config_entry(entry_info, args)
+            return entry_info
 
         raise ValueError("No config entry found matching: '%s'" % (search_id,))
+
+    def get_all_matching_entries(self, *args, **kwargs):
+        """Retrieve configuration information.
+        Passed arguments will be matched against loaded configuration
+        entry identities, therefore there must be the same number of elements
+        as ``NUM_ID_ELEMENTS``.
+        """
+        if len(args) != self.NUM_ID_ELEMENTS:
+            log.error("Incorrect number of identifying elements when searching configuration")
+            raise ValueError("Incorrect number of identifying elements when searching configuration")
+
+        search_id = "_".join([ (x is not None and x) or "" for x in args ])
+        matching_entries = []
+        for regex_pattern,entry_info in self.config_storage:
+            m = regex_pattern.match(search_id)
+            if m is None: continue
+
+            matching_entries.append(self.prepare_config_entry(entry_info, args))
+
+        if len(matching_entries) != 0:
+            return matching_entries
+        else:
+            raise ValueError("No config entry found matching: '%s'" % (search_id,))
 
 class RescalerRole(CSVConfigReader):
     __metaclass__ = ABCMeta
@@ -608,20 +639,6 @@ class CartographerRole(object):
         ultimately depends on the Cartographer implementation. This method
         should not erase previously added configuration files, but it will
         overwrite a ``grid_name`` that was added earlier.
-        """
-        raise NotImplementedError("Child class must implement this method")
-
-    @abstractmethod
-    def remove_grid(self, grid_name):
-        """Remove ``grid_name`` from the internal grid information storage
-        of this object.
-        """
-        raise NotImplementedError("Child class must implement this method")
-
-    @abstractmethod
-    def remove_all(self):
-        """Remove all grids from the internal grid information storage of
-        this object.
         """
         raise NotImplementedError("Child class must implement this method")
 
