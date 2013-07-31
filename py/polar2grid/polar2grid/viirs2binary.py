@@ -67,6 +67,7 @@ def process_data_sets(nav_set_uid, filepaths,
         forced_grid=None,
         create_pseudo=True,
         scale_dnb=True,
+        create_enhanced_ir=False,
         num_procs=1,
         data_type=None,
         output_pattern=None,
@@ -102,6 +103,7 @@ def process_data_sets(nav_set_uid, filepaths,
                 scale_dnb=scale_dnb,
                 new_dnb=new_dnb,
                 create_fog=create_pseudo,
+                create_enhanced_ir=create_enhanced_ir,
                 cut_bad=True
                 )
 
@@ -311,6 +313,8 @@ through strftime. Current time if no files.""")
             "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
     parser.add_argument('--no-dnb-scale', dest='scale_dnb', default=True, action='store_false',
                         help="Turn off all DNB scaling (overrides --new-dnb)")
+    parser.add_argument('--create-enh-ir', dest='create_enhanced_ir', default=False, action='store_true',
+                        help="Create adaptively scaled IR bands")
 
     # Remapping/Grids
     parser.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
@@ -403,6 +407,7 @@ through strftime. Current time if no files.""")
                 data_type=args.data_type,
                 create_pseudo=args.create_pseudo,
                 scale_dnb=args.scale_dnb,
+                create_enhanced_ir=args.create_enhanced_ir,
                 multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config,
                 output_pattern=args.output_pattern,
