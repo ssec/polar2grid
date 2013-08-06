@@ -540,10 +540,8 @@ def main():
     OPTS = options
 
     if options.self_test:
-        # import doctest
-        # doctest.testmod()
-        import nose
-        nose.run()
+        import doctest
+        doctest.testmod()
         sys.exit(2)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
