@@ -153,7 +153,7 @@ def lookup_scale(img, m, b, table_idx=0, fill_in=DEFAULT_FILL_IN, fill_out=DEFAU
     img[~mask] = lut[img[~mask].astype(numpy.uint32)]
     return img
 
-def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
+def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=None, clip_max=None, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     """
     this is a version of the brightness temperature scaling that is intended to work for data in celsius
     """
@@ -162,17 +162,20 @@ def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, fill_in=D
     not_fill_mask = img != fill_in
     img[not_fill_mask] = img[not_fill_mask] + 273.15
     
-    return bt_scale (img, threshold, high_max, high_mult, low_max, low_mult, fill_in=fill_in, fill_out=fill_out)
+    return bt_scale (img, threshold, high_max, high_mult, low_max, low_mult, clip_min=None, clip_max=None, fill_in=fill_in, fill_out=fill_out)
     
 
 # this method is intended to work on brightness temperatures in Kelvin
-def bt_scale(img, threshold, high_max, high_mult, low_max, low_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
+def bt_scale(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=None, clip_max=None, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     log.debug("Running 'bt_scale'...")
     high_idx = img >= threshold
     low_idx = img < threshold
     z_idx = img == fill_in
     img[high_idx] = high_max - (high_mult*img[high_idx])
     img[low_idx] = low_max - (low_mult*img[low_idx])
+    if clip_min is not None and clip_max is not None:
+        log.debug("Clipping data in 'bt_scale' to '%f' and '%f'" % (clip_min, clip_max))
+        numpy.clip(img, clip_min, clip_max, out=img)
     img[z_idx] = fill_out
     return img
 
