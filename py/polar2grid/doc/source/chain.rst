@@ -119,7 +119,7 @@ polar2grid's needs.  The original purpose of ms2gt (from the website above):
     input files corresponding to successively acquired, 5-minute MODIS scenes.
 
 polar2grid uses its own version of ms2gt that is not available through NSIDC.
-See :doc:`Advanced Topics <advanced>` for more on the bugs fixed, changes made,
+See :ref:`ms2gt changes <ms2gt_changes>` for more on the bugs fixed, changes made,
 and where a copy of this ms2gt version can be found.
 
 ll2cr (C)

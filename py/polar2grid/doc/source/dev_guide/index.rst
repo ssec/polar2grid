@@ -54,6 +54,7 @@ Code repository: https://github.com/davidh-ssec/polar2grid
  - :doc:`remapping`
  - :doc:`backends`
  - :doc:`rescaling`
+ - :doc:`swbundle`
 
 Prerequisites
 -------------

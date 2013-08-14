@@ -1,8 +1,12 @@
-Advanced Topics
+Software Bundle
 ===============
 
+Software bundles are the preferred method of distributing polar2grid by
+the |ssec|. Software bundles are gzipped tarballs with a binary installation
+of polar2grid and all of its dependencies. Software bundles distributed by
+the |ssec| are built for RHEL6 x86_64 systems.
 
-Creating Software Bundle from Subversion Repository
+Creating Software Bundle from Github Repository
 ---------------------------------------------------
 
 .. warning::
@@ -21,42 +25,28 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
 
         mkdir bin
 
-    3. Compile ms2gt, tar it, and link to the used utilities:
+    3. Download polar2grid's version of ms2gt into the bundle directory, untar it, and link to the used utilities:
 
-        Prerequisite - Make a ms2gt source package
-        (from the development repository). This should only be done on a
-        special build RHEL 5 machine (MilliCentOS5m64 Virtual Machine) to
-        make the binaries compatible with more systems::
-
-            cd /path/to/repos/root/ms2gt/
-            # Build ms2gt statically
-            LDFLAGS=-static make 
-            # Package it into a tarball
-            make tar
-            # Move (or scp) to the bundle build directory
-            mv ms2gt<ms2gt-version>.tar.gz /path/to/polar2grid-swbundle-<version>
-
-            # To delete the temporary directory that was made:
-            rm -r ms2gt<ms2gt-version>
-
-            cd /path/to/polar2grid-swbundle-<version>
-
-
-        Or you can download the .tar.gz file from here:
-            http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/
+        http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/
 
         Soft link it::
 
             tar -xzf ms2gt<ms2gt-version>.tar.gz
+            # if needed, rename ms2gt directory:
             mv ms2gt<version> ms2gt
             ln -s ../ms2gt/bin/fornav bin/fornav
             ln -s ../ms2gt/bin/ll2cr bin/ll2cr
 
-    4. Copy/install precompiled ShellB3 package::
+        .. note:: If you need a new/patched version of ms2gt, see :ref:`building_ms2gt`.
 
-        tar -xzf ShellB3-<SB3-version>.tar.gz
+    4. Copy/install precompiled ShellB3 (core-cspp) package:
 
-       .. note:: Currently there aren't any publicly available ShellB3 tarball packages, contact us to get one.
+        ftp://ftp.ssec.wisc.edu/pub/shellb3/
+
+        Extract it::
+
+            tar -xzf ShellB3-<SB3-version>.tar.gz
+
 
     5. Download the polar2grid python package, uncompress it, and link to it:
            
@@ -66,7 +56,7 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
             # make clean (optional)
             make all_sdist
 
-            # put the eggs in the repository if ready
+            # put the eggs in the repository if ready (SSEC internal only)
             make torepos
 
         Install the packages directly from the tarball files::
@@ -74,66 +64,43 @@ Follow these steps to recreate the software bundle ``*.tar.gz`` file.
             cd /path/to/polar2grid-swbundle-<version>
 
             # All dependencies should be installed automatically with this command:
-            ShellB3/bin/python -m easy_install /path/to/repos/checkout/root/py/dist/*.tar.gz
-
-        Or install the packages from the egg repository::
-
-            cd /path/to/polar2grid-swbundle-<version>
-            # all dependencies should be automatically installed
-            ShellB3/bin/python -m easy_install -f http://larch.ssec.wisc.edu/cgi-bin/repos.cgi polar2grid
+            ShellB3/bin/python -m easy_install -U /path/to/repos/checkout/root/py/dist/*.tar.gz
 
     6. Copy any bundle scripts and environment scripts to software bundle directory::
 
-        cp /path/to/repos/checkout/root/swbundle/* /path/to/polar2grid-swbundle-<version>/bin/
+        cp /path/to/repos/checkout/root/swbundle/*.{sh,txt} /path/to/polar2grid-swbundle-<version>/bin/
 
+    7. Copy the grid config example directory:
 
-    7. Compress software bundle into a tarball::
+        cp -r /path/to/repos/checkout/root/swbundle/grid_configs /path/to/polar2grid-swbundle-version/
+
+    8. Compress software bundle into a tarball::
 
         tar -czf polar2grid-swbundle-<version>.tar.gz polar2grid-swbundle-<version>
 
-Creating A Test Bundle
-----------------------
+.. _building_ms2gt:
 
-Most polar2grid test bundles should follow this same sequence of creation
-for consistency.
+Building ms2gt
+--------------
 
-    1. Make the directory and change into it::
+The following steps say how to build ms2gt on a Linux machine. To be
+completely compatible with the Software Bundle and ShellB3, it should be
+built on a RHEL 5 "clean room" (MilliCentOS5m64 Virtual Machine).
 
-        mkdir p2g-v2a-ak-tests
-        cd p2g-v2a-ak-tests
+::
 
-       where ``p2g`` stands for 'polar2grid'. The ``v2a`` stands for
-       'viirs2awips' or whatever polar2grid script this bundle will be
-       testing.  The ``ak`` is a descriptive identifier, in this case
-       it stands for Alaska meaning that this test bundle has only
-       Alaska (or grid 203) test cases.
+    cd /path/to/repos/root/ms2gt/
+    # Build ms2gt
+    make
+    # Package it into a tarball
+    make tar
+    # Move (or scp) to the bundle build directory
+    mv ms2gt<ms2gt-version>.tar.gz /path/to/polar2grid-swbundle-<version>
 
-    2. Make test case directories::
+    # To delete the temporary directory that was made:
+    rm -r ms2gt<ms2gt-version>
 
-        mkdir ak_20120408
-
-       where test case input data files are put.
-
-    3. Make a verify directory::
-
-        mkdir verify
-
-       where you put the known valid output files of all the test cases.
-
-    4. Create a ``run.sh`` script that looks at all test case directories
-       running the script being tested.  It will likely need to source the
-       polar2grid_env.sh file to properly use the script.  It should also
-       print "SUCCESS" as the last line of output.  In the product directory
-       created should be all of the product files that were created for all
-       test cases.
-
-    5. Create a ``verify.sh`` script that looks at all the known good
-       output files in the ``verify`` directory and compares them to the
-       test produced files in the product directory.  It should print
-       "SUCCESS" as the last line of output.
-
-    6. Package the bundle directory into a .tar.gz file and distribute to
-       users.
+.. _ms2gt_changes:
 
 ms2gt Changes or Known issues
 -----------------------------
@@ -183,5 +150,4 @@ changes were made:
             ``make`` passes these flags automatically in the background.
             Those 2 make files also redeclared the MAKE variable as ``make``.
             The ``make`` utility already does this for you.
-
 

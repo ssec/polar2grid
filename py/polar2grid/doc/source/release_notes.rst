@@ -7,6 +7,8 @@ Future Plans
 ------------
 
  - More unit and integration tests
+ - DNB stray light correction (until CSPP/IDPS correction)
+ - Enhanced IR bands for VIIRS and MODIS (using Adaptive histogram equalization)
 
 New in Version 1.1.0
 --------------------
@@ -23,6 +25,7 @@ New in Version 1.1.0
  - Added command line option to add user created grid configuration files
  - :option:`viirs2gtiff -g` flag can now have 'all' specified and other forced grids
  - Default geotiff datatype is set to 8-bit unsigned value.
+ - Non-TC navigation files are now used as a backup if terrain corrected files are not available (VIIRS only)
  - Changed behavior of forced grids, they are now preferred but not required to complete without error
  - Dynamic grids are not added during grid determination anymore
  - Simple unit tests added.

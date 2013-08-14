@@ -41,7 +41,6 @@ Contents
     backends/index
     rescaling
     utilscripts
-    advanced
     release_notes
     constants
     glossary
@@ -70,6 +69,7 @@ Developer's Guide
     dev_guide/remapping
     dev_guide/backends
     dev_guide/rescaling
+    dev_guide/swbundle
 
 API
 ---
