@@ -105,11 +105,16 @@ EXPLODE_FACTOR = 64
 # scan-line grouping is significant to MS2GT components
 # (sat, inst) => (p2g_sat, p2g_inst, rows_per_swath)
 SAT_INST_TABLE = {
-    ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 1),
-    ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 1),
     (None, 'CRIS'): (SAT_NPP, INST_CRIS, 3),
     (None, 'CrIS'): (SAT_NPP, INST_CRIS, 3),
-    ('g195', 'AIRS'): (None, None, 0),  # FIXME this needs work
+    # FIXME: this should be reviewed; consider how to fold instrument attributes into back-ends
+    #        then figure out best way to handle conf tables referring to instrument name
+    # ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 1),
+    # ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 1),
+    # ('g195', 'AIRS'): (None, None, 0),  # FIXME this needs work
+    ('M02', 'IASI'): (SAT_NPP, INST_CRIS, 2), # FIXME
+    ('M01', 'IASI'): (SAT_NPP, INST_CRIS, 2), # FIXME
+    ('g195', 'AIRS'): (SAT_NPP, INST_CRIS, 2),  # FIXME
 }
 
 # pressure layers to obtain data from
