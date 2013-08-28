@@ -306,7 +306,9 @@ RESCALE_FOR_KIND = {
         DKIND_RADIANCE    : (linear_scale, (255.0,0)),
         DKIND_REFLECTANCE : (sqrt_scale,   (100.0, 25.5)),
         DKIND_BTEMP       : (bt_scale,     (242.0,660.0,2,418.0,1)),
-        DKIND_FOG         : (fog_scale,    (10.0,105.0,5,4,205,206))
+        DKIND_FOG         : (fog_scale,    (10.0,105.0,5,4,205,206)),
+        
+        DKIND_BTEMP_ENHANCED : (linear_scale, (255.0,0)), # TODO, this is probably in the wrong place
         # TODO, add defaults for category, angle, distance, percent, and contiguous index
         }
 
@@ -329,6 +331,7 @@ class Rescaler(roles.RescalerRole):
                 'unlinear' :  unlinear_scale,
                 'raw'      :  passive_scale,
                 'btemp'    :  bt_scale,
+                'btemp_enh':  linear_scale, # TODO, this probably shouldn't go here?
                 'fog'      :  fog_scale,
                 'btemp_c'  :  bt_scale_c,
                 'btemp_lin':  bt_scale_linear,
