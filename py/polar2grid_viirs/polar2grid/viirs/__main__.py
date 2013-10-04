@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Script for installing a this polar2grid package.
+"""
+Wrapper around the main VIIRS command line components.
 
-See http://packages.python.org/distribute/ for use details.
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
+:date:         Oct 2013
+:license:      GNU GPLv3
 
 Copyright (C) 2013 Space Science and Engineering Center (SSEC),
  University of Wisconsin-Madison.
@@ -25,7 +31,7 @@ satellite observation data, remaps it, and writes it to a file format for
 input into another program.
 Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
-    Written by David Hoese    January 2013
+    Written by David Hoese    October 2013
     University of Wisconsin-Madison 
     Space Science and Engineering Center
     1225 West Dayton Street
@@ -34,33 +40,9 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
 """
 __docformat__ = "restructuredtext en"
-from setuptools import setup, find_packages
 
-classifiers = ""
-version = '1.1.1'
+from .viirs_imager_to_swath import main
+import sys
 
-setup(
-    name='polar2grid.viirs',
-    version=version,
-    description="Library and scripts to aggregate VIIRS data and get associated metadata",
-    classifiers=filter(None, classifiers.split("\n")),
-    keywords='',
-    author='David Hoese, SSEC',
-    author_email='david.hoese@ssec.wisc.edu',
-    license='GPLv3',
-    url='http://www.ssec.wisc.edu/software/polar2grid/',
-    packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-    namespace_packages=["polar2grid"],
-    include_package_data=True,
-    zip_safe=True,
-    install_requires=[
-        'numpy',
-        'h5py',
-        'polar2grid.core',
-        'matplotlib',
-        'basemap'
-        ],
-    dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
-    entry_points = {'console_scripts' : [ ]}
-)
-
+if __name__ == "__main__":
+    sys.exit(main())

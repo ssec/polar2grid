@@ -680,7 +680,7 @@ class Frontend(roles.FrontendRole):
 def main():
     import optparse
     usage = """
-%prog [options] filename1.h,filename2.h,filename3.h,... struct1,struct2,struct3,...
+%prog [options] filename1.h5,filename2.h5,filename3.h5,...
 
 """
     parser = optparse.OptionParser(usage)
@@ -711,9 +711,19 @@ def main():
         return 9
 
     import json
-    meta_data = make_swaths(args[:])
-    print json.dumps(meta_data)
-    return 0
+    all_meta_data = []
+    nav_uid_dict = Frontend.sort_files_by_nav_uid(args[:])
+    ret_status = 0
+    for (nav_uid,filepaths_dict) in nav_uid_dict.items():
+        try:
+            meta_data = make_swaths(nav_uid, filepaths_dict)
+            all_meta_data.append(meta_data)
+        except StandardError:
+            log.error("Could not create swaths for '%s' bands" % (nav_uid,), exc_info=True)
+            ret_status = 1
+
+    #print json.dumps(all_meta_data) # TODO: Need to remove arrays and other stuff that can't be serialized
+    return ret_status
 
 if __name__=='__main__':
     sys.exit(main())
