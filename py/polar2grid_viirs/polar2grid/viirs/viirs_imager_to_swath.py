@@ -295,7 +295,7 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
     weight_of_moon_illum_fraction = 0.0
     orbit_scans = []
     orbit_start_scan_line = 0
-    orbit_start_time = None
+    orbit_end_time = None
 
     for ginfo in geo_data:
         # Read in lat/lon data
@@ -304,11 +304,11 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
             # Start datetime used in product backend for NC creation
             if meta_data["start_time"] is None:
                 meta_data["start_time"] = ginfo["start_time"]
-                orbit_start_time = ginfo["start_time"]
-            elif orbit_start_time - ginfo["start_time"] > ORBIT_TRANSITION_THRESHOLD:
+                orbit_end_time = ginfo["end_time"]
+            elif (ginfo["start_time"] - orbit_end_time) > ORBIT_TRANSITION_THRESHOLD:
                 # We've seen one granule already and this new granule seems to be in another orbit
                 orbit_scans.append(lafa.shape[0] - orbit_start_scan_line)
-                orbit_start_time = ginfo["start_time"]
+                orbit_end_time = ginfo["end_time"]
                 orbit_start_scan_line = lafa.shape[0]
         except StandardError:
             # Can't continue without lat/lon data
@@ -556,7 +556,7 @@ def make_swaths(nav_set_uid, filepaths_dict, filter=None, cut_bad=False):
 
     # Extract gfilepaths from the ifilepath information
     # list comprehension here is the fastest way to flatten a list of lists
-    gfilepaths = sorted(set( finfo["geo_path"] for band_data in image_data.values() for finfo in band_data ))
+    gfilepaths = sorted(set( finfo["geo_path"] for band_data in image_data.values() for finfo in band_data ), key=lambda f: os.path.split(f)[-1])
 
     # SANITY CHECK
     g_len = len(gfilepaths)
@@ -728,6 +728,8 @@ def main():
     import json
     all_meta_data = []
     nav_uid_dict = Frontend.sort_files_by_nav_uid(args[:])
+    from pprint import pprint
+    pprint(nav_uid_dict)
     ret_status = 0
     for (nav_uid,filepaths_dict) in nav_uid_dict.items():
         try:
@@ -739,7 +741,7 @@ def main():
 
     # JSON-ify the meta data dictionary
     for meta_data_dict in all_meta_data:
-        for band_tuple in meta_data_dict["bands"]:
+        for band_tuple in meta_data_dict["bands"].keys():
             meta_data_dict["bands"][str(band_tuple)] = meta_data_dict["bands"][band_tuple]
             del meta_data_dict["bands"][band_tuple]
         meta_data_dict["start_time"] = meta_data_dict["start_time"].isoformat()
