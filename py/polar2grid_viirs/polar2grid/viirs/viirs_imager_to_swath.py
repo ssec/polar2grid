@@ -397,6 +397,7 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
     # Update any multiple orbit stuff
     orbit_scans.append(lafa.shape[0] - orbit_start_scan_line)
     meta_data["orbit_scans"] = orbit_scans
+    meta_data["end_time"] = ginfo["end_time"]
 
     meta_data["fbf_lat"] = fbf_lat
     meta_data["fbf_lon"] = fbf_lon
@@ -743,6 +744,7 @@ def main():
             meta_data_dict["bands"][str(band_tuple)] = meta_data_dict["bands"][band_tuple]
             del meta_data_dict["bands"][band_tuple]
         meta_data_dict["start_time"] = meta_data_dict["start_time"].isoformat()
+        meta_data_dict["end_time"] = meta_data_dict["end_time"].isoformat()
     print json.dumps(all_meta_data)
     return ret_status
 
