@@ -871,6 +871,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     # Get start time
     h5v = h5path(hp, st_var_path, finfo["geo_path"], required=True)
     start_time = _st_to_datetime(h5v[0])
+    end_time = _st_to_datetime(h5v[-1])
 
     # Get the G Ring information
     h5v = h5path(hp, lon_gring_path, finfo["geo_path"], required=True)
@@ -925,6 +926,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     finfo["moon_angle"] = lza_data
     finfo["moon_illum"] = moon_illum
     finfo["start_time"] = start_time
+    finfo["end_time"] = end_time
     # Rows only
     finfo["scan_quality"] = (np.unique(np.nonzero(lat_mask)[0]),)
     return finfo
