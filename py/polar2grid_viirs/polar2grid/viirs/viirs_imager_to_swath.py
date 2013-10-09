@@ -295,7 +295,7 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
     weight_of_moon_illum_fraction = 0.0
     orbit_scans = []
     orbit_start_scan_line = 0
-    orbit_end_time = None
+    prev_end_time = None
 
     for ginfo in geo_data:
         # Read in lat/lon data
@@ -304,12 +304,11 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
             # Start datetime used in product backend for NC creation
             if meta_data["start_time"] is None:
                 meta_data["start_time"] = ginfo["start_time"]
-                orbit_end_time = ginfo["end_time"]
-            elif (ginfo["start_time"] - orbit_end_time) > ORBIT_TRANSITION_THRESHOLD:
+            elif (ginfo["start_time"] - prev_end_time) > ORBIT_TRANSITION_THRESHOLD:
                 # We've seen one granule already and this new granule seems to be in another orbit
                 orbit_scans.append(lafa.shape[0] - orbit_start_scan_line)
-                orbit_end_time = ginfo["end_time"]
                 orbit_start_scan_line = lafa.shape[0]
+            prev_end_time = ginfo["end_time"]
         except StandardError:
             # Can't continue without lat/lon data
             msg = "Error reading data from %s for bands %r" % (ginfo["geo_path"],meta_data["bands"].keys())
