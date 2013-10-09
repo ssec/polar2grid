@@ -146,10 +146,12 @@ class Workspace(object):
 
         return attr_name,dtype,shape
 
-    def var(self, name, wildcard='.*', mode='r'):
+    def var(self, name, wildcard='.*', mode='c'):
         """Return a memory map from the current workspace directory
 
         Does the heavy lifting for `__getattr__` and `__getitem__`.
+
+        The default mode for the created memory map is copy-on-write ('c').
         """
         g = glob(os.path.join(self._dir, name+wildcard))
         if len(g)==1:
