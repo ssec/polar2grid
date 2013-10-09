@@ -375,7 +375,7 @@ def calculate_bbox_bounds(wests, easts, norths, souths, fill_value=DEFAULT_FILL_
         ebound = max(easts)
 
 
-    return wbound,ebound,nbound,sbound
+    return float(wbound),float(ebound),float(nbound),float(sbound)
 
 def sort_files_by_nav_uid(filepaths):
     """Logic is duplicated from file_info-like method because it has less

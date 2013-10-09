@@ -55,11 +55,13 @@ import os
 import sys
 import logging
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime,timedelta
 
 log = logging.getLogger(__name__)
 
 FILL_VALUE=-999.0
+# if the end time of one granule is 10 seconds before the next granule then the next granule must be a new orbit
+ORBIT_TRANSITION_THRESHOLD=timedelta(seconds=10)
 
 def _band_name(band_info):
     return band_info["kind"] + (band_info["band"] or "")
@@ -252,6 +254,9 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
         - swath_scans
             Number of scans in the concatenated swath, which is
             equal to ``swath_rows / rows_per_scan``
+        - orbit_scans
+            List of number of scanlines in each separate orbit being process
+            (if granules have more than ORBIT_TRANSITION_THRESHOLD seconds separation)
 
     :Parameters:
         meta_data : dict
@@ -288,6 +293,9 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
     souths = []
     total_moon_illum_fraction     = 0.0
     weight_of_moon_illum_fraction = 0.0
+    orbit_scans = []
+    orbit_start_scan_line = 0
+    orbit_start_time = None
 
     for ginfo in geo_data:
         # Read in lat/lon data
@@ -296,6 +304,12 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
             # Start datetime used in product backend for NC creation
             if meta_data["start_time"] is None:
                 meta_data["start_time"] = ginfo["start_time"]
+                orbit_start_time = ginfo["start_time"]
+            elif orbit_start_time - ginfo["start_time"] > ORBIT_TRANSITION_THRESHOLD:
+                # We've seen one granule already and this new granule seems to be in another orbit
+                orbit_scans.append(lafa.shape[0] - orbit_start_scan_line)
+                orbit_start_time = ginfo["start_time"]
+                orbit_start_scan_line = lafa.shape[0]
         except StandardError:
             # Can't continue without lat/lon data
             msg = "Error reading data from %s for bands %r" % (ginfo["geo_path"],meta_data["bands"].keys())
@@ -336,7 +350,8 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
         if ginfo["moon_illum"] is not None:
             total_moon_illum_fraction     += ginfo["moon_illum"]
             weight_of_moon_illum_fraction += 1.0
-    
+
+
     lafo.close()
     lofo.close()
     modefo.close()
@@ -378,7 +393,11 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
     # set the moon illumination to be the average of the ones we saw
     if weight_of_moon_illum_fraction != 0:
         meta_data["moon_illum"] = total_moon_illum_fraction / weight_of_moon_illum_fraction
-    
+
+    # Update any multiple orbit stuff
+    orbit_scans.append(lafa.shape[0] - orbit_start_scan_line)
+    meta_data["orbit_scans"] = orbit_scans
+
     meta_data["fbf_lat"] = fbf_lat
     meta_data["fbf_lon"] = fbf_lon
     meta_data["fbf_mode"] = fbf_mode
@@ -694,10 +713,6 @@ def main():
     #                 action="append", help="include path to append to GCCXML call")
     (options, args) = parser.parse_args()
 
-    # make options a globally accessible structure, e.g. OPTS.
-    global OPTS
-    OPTS = options
-
     if options.self_test:
         import doctest
         doctest.testmod()
@@ -722,7 +737,13 @@ def main():
             log.error("Could not create swaths for '%s' bands" % (nav_uid,), exc_info=True)
             ret_status = 1
 
-    #print json.dumps(all_meta_data) # TODO: Need to remove arrays and other stuff that can't be serialized
+    # JSON-ify the meta data dictionary
+    for meta_data_dict in all_meta_data:
+        for band_tuple in meta_data_dict["bands"]:
+            meta_data_dict["bands"][str(band_tuple)] = meta_data_dict["bands"][band_tuple]
+            del meta_data_dict["bands"][band_tuple]
+        meta_data_dict["start_time"] = meta_data_dict["start_time"].isoformat()
+    print json.dumps(all_meta_data)
     return ret_status
 
 if __name__=='__main__':
