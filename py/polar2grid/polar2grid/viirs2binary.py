@@ -66,6 +66,7 @@ def process_data_sets(nav_set_uid, filepaths,
         grid_configs=None,
         forced_grid=None,
         create_pseudo=True,
+        scale_dnb=True,
         num_procs=1,
         data_type=None,
         output_pattern=None,
@@ -98,7 +99,7 @@ def process_data_sets(nav_set_uid, filepaths,
         meta_data = frontend.make_swaths(
                 nav_set_uid,
                 filepaths,
-                scale_dnb=True,
+                scale_dnb=scale_dnb,
                 new_dnb=new_dnb,
                 create_fog=create_pseudo,
                 cut_bad=True
@@ -308,6 +309,8 @@ through strftime. Current time if no files.""")
     parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
             help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
             "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
+    parser.add_argument('--no-dnb-scale', dest='scale_dnb', default=True, action='store_false',
+                        help="Turn off all DNB scaling (overrides --new-dnb)")
 
     # Remapping/Grids
     parser.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
@@ -399,6 +402,7 @@ through strftime. Current time if no files.""")
                 forced_grid=forced_grids,
                 data_type=args.data_type,
                 create_pseudo=args.create_pseudo,
+                scale_dnb=args.scale_dnb,
                 multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config,
                 output_pattern=args.output_pattern,
