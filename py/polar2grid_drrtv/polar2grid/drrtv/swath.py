@@ -114,7 +114,7 @@ SAT_INST_TABLE = {
     # ('g195', 'AIRS'): (None, None, 0),  # FIXME this needs work
     ('M02', 'IASI'): (SAT_NPP, INST_CRIS, 2), # FIXME
     ('M01', 'IASI'): (SAT_NPP, INST_CRIS, 2), # FIXME
-    ('g195', 'AIRS'): (SAT_NPP, INST_CRIS, 2),  # FIXME
+    (None, 'AIRS'): (SAT_NPP, INST_CRIS, 2),  # FIXME
 }
 
 # pressure layers to obtain data from
@@ -171,7 +171,9 @@ def _filename_info(pathname):
         return None
     mgd = m.groupdict()
     when = datetime.strptime('%(date)s %(start_time)s' % mgd, '%Y%m%d %H%M%S')
-    sat, inst, rps = SAT_INST_TABLE[(mgd['sat'], mgd['inst'])]
+    # fetch with preference toward satellite matching - failing that, check with sat=None case
+    sat, inst, rps = SAT_INST_TABLE.get((mgd['sat'], mgd['inst']),
+                                        SAT_INST_TABLE.get((None, mgd['inst'])))
     return { 'start_time': when,
              'nav_set_uid': "cris_nav",  # FIXME  % (sat, inst),
              'sat': sat,
@@ -323,7 +325,7 @@ def _layer_at_pressure(h5v, plev=None, p=None):
     :return: data slice from h5v
     """
     # dex = np.searchsorted(plev, p)
-    dex = np.abs(plev - p).argmin()   # FUTURE: memoize this value since it shouldn't vary for DR-RTV files
+    dex = np.abs(plev - p).argmin()   # FUTURE: memo-ize this value since it shouldn't vary for DR-RTV files
 
     try:
         LOG.debug('using level %d=%f near %r as %f' % (dex, plev[dex], plev[dex-1:dex+2], p))
