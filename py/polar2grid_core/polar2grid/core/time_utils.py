@@ -41,6 +41,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 __docformat__ = "restructuredtext en"
 
 import os
+import re
 import logging
 import datetime
 
@@ -59,3 +60,20 @@ class UTC(datetime.tzinfo):
 
 def utc_now():
     return datetime.datetime.utcnow().replace(tzinfo=UTC())
+
+### Parse ISO8601 Times ###
+ISO8601_REGEX = r'^(?P<year>-?(?:[1-9][0-9]*)?[0-9]{4})-?(?P<month>1[0-2]|0[1-9])-?(?P<day>3[0-1]|0[1-9]|[1-2][0-9])T(?P<hour>2[0-3]|[0-1][0-9]):?(?P<minute>[0-5][0-9]):?(?P<second>[0-5][0-9])(?P<ms>\.[0-9]+)??(?P<timezone>Z|[+-](?:2[0-3]|[0-1][0-9]):?[0-5][0-9])?$'
+iso8601_re = re.compile(ISO8601_REGEX)
+
+def iso8601(s):
+    "convert ISO8601 string to datetime object"
+    match = iso8601_re.match(s)
+    if match is None:
+        raise ValueError("Invalid timestamp format '%s'" % (s,))
+
+    d = match.groupdict()
+    if 'ms' in d and d['ms'] is not None:
+        ms = int(d['ms'][1:4])*1000
+    else:
+        ms = 0
+    return datetime.datetime(int(d['year']), int(d['month']), int(d['day']), int(d['hour']), int(d['minute']), int(d['second']), ms)

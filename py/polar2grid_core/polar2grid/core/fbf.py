@@ -74,6 +74,19 @@ str_to_dtype = {
         FBF_UINT64    : numpy.uint64
         }
 
+dtype_to_fbf_type = {
+    numpy.float32: FBF_FLOAT32,
+    numpy.float64: FBF_FLOAT64,
+    numpy.int8: FBF_INT8,
+    numpy.int16: FBF_INT16,
+    numpy.int32: FBF_INT32,
+    numpy.int64: FBF_INT64,
+    numpy.uint8: FBF_UINT8,
+    numpy.uint16: FBF_UINT16,
+    numpy.uint32: FBF_UINT32,
+    numpy.uint64: FBF_UINT64
+}
+
 # Map polar2grid data type to FBF data type
 dtype2fbf = {
         DTYPE_FLOAT32 : FBF_FLOAT32,
@@ -197,13 +210,13 @@ class array_appender(object):
         log.debug('array shape is now %s' % repr(self.A.shape))
 
 
-class file_appender(object):
+class GenericFileAppender(object):
     """wrapper for a file object which gives it a binary data append usable with "catenate"
     """
-    F = None
+    file_obj = None
     shape = (0,0)
     def __init__(self, file_obj, dtype):
-        self.F = file_obj
+        self.file_obj = file_obj
         self.dtype = dtype
 
     def append(self, data):
@@ -211,7 +224,57 @@ class file_appender(object):
         if data is None:
             return
         inform = data.astype(self.dtype) if self.dtype != data.dtype else data
-        inform.tofile(self.F)
+        inform.tofile(self.file_obj)
         self.shape = (self.shape[0] + inform.shape[0], ) + data.shape[1:]
         log.debug('%d rows in output file' % self.shape[0])
+file_appender = GenericFileAppender # backwards compatibility
+
+class FBFAppender(object):
+    __temp_ext = "fbftemp"
+    file_obj = None
+    shape = (0, 0)
+
+    def __init__(self, stem):
+        check_stem(stem)
+        self.stem = stem
+        self.tmp_filename = self.stem + "." + self.__temp_ext
+        self.filename = None
+        self.dtype = None
+        self.file_obj = file(self.tmp_filename, 'wb')
+
+    def append(self, data):
+        if self.dtype is None:
+            self.dtype = data.dtype
+
+        inform = data.astype(self.dtype) if self.dtype != data.dtype else data
+        inform.tofile(self.file_obj)
+        self.shape = (self.shape[0] + inform.shape[0], ) + data.shape[1:]
+        log.debug('%d rows in output file' % self.shape[0])
+
+    def close(self):
+        return self.save()
+
+    def save(self):
+        """Rename the internal filename to a final filename meeting the FBF scheme.
+
+        Example: <stem>.<dtype>.<cols>.<rows>
+        """
+        if self.filename is None:
+            # We haven't saved it yet
+            filename = self.stem + '.' + dtype_to_fbf_type[self.dtype.type] + '.' + '.'.join(str(x) for x in reversed(self.shape))
+            log.info("Saving FBF with stem '%s' to filename '%s'", self.stem, filename)
+            os.rename(self.tmp_filename, filename)
+            self.filename = filename
+
+        return self.filename
+
+    def __del__(self):
+        """Clean up any temporary files that weren't saved.
+        """
+        if self.filename is None:
+            # We haven't saved the file to a final name
+            try:
+                os.remove(self.tmp_filename)
+            except OSError:
+                log.warning("Could not remove temporary flat binary file for stem '%s': '%s'", self.stem, self.tmp_filename)
 

@@ -45,17 +45,18 @@ __docformat__ = "restructuredtext en"
 
 from .guidebook import *
 from .io import VIIRSSDRMultiReader, VIIRSSDRGeoMultiReader
+from polar2grid.core.time_utils import iso8601
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
-from polar2grid.core.constants import *
 from polar2grid.core import roles
-from polar2grid.core.fbf import check_stem, file_appender
 import numpy
 
 import os
 import sys
 import logging
-from copy import deepcopy
+import re
+import json
+import importlib
 from datetime import datetime
 from collections import namedtuple
 
@@ -119,8 +120,9 @@ PRODUCT_DNB_LON = "dnb_longitude"
 # All configuration information for a product goes in this named tuple
 #NavigationTuple = namedtuple("NavigationTuple",
                              #['tc_file_pattern', 'nontc_file_pattern', 'longitude_product', 'latitude_product'])
-NavigationTuple = namedtuple("NavigationTuple", ['longitude_product', 'latitude_product'])
-ProductInfo = namedtuple("ProductInfo", ['dependencies', 'geolocation'])
+NavigationTuple = namedtuple("NavigationTuple", ['scene_name', 'longitude_product', 'latitude_product'])
+# XXX: Does 'cols_per_row' needed to be included?
+ProductInfo = namedtuple("ProductInfo", ['dependencies', 'geolocation', 'rows_per_scan', 'data_kind', 'description'])
 
 # dependencies: Product keys mapped to product dependencies
 #   (the products needed to produce the specified product)
@@ -128,53 +130,53 @@ ProductInfo = namedtuple("ProductInfo", ['dependencies', 'geolocation'])
 #   For VIIRS that means Longitude and Latitude
 #   If navigation file pattern is None the h5 file will be searched for navigation
 # shortcuts:
-i_nav_tuple = NavigationTuple(PRODUCT_I_LON, PRODUCT_I_LAT)
+i_nav_tuple = NavigationTuple("i_nav", PRODUCT_I_LON, PRODUCT_I_LAT)
 #i_nav_tuple = NavigationTuple(I_GEO_TC_REGEX, I_GEO_REGEX, PRODUCT_I_LON, PRODUCT_I_LAT)
-m_nav_tuple = NavigationTuple(PRODUCT_M_LON, PRODUCT_M_LAT)
+m_nav_tuple = NavigationTuple("m_nav", PRODUCT_M_LON, PRODUCT_M_LAT)
 #m_nav_tuple = NavigationTuple(M_GEO_TC_REGEX, M_GEO_REGEX, PRODUCT_M_LON, PRODUCT_M_LAT)
-dnb_nav_tuple = NavigationTuple(PRODUCT_DNB_LON, PRODUCT_DNB_LAT)
+dnb_nav_tuple = NavigationTuple("dnb_nav", PRODUCT_DNB_LON, PRODUCT_DNB_LAT)
 #dnb_nav_tuple = NavigationTuple(DNB_GEO_TC_REGEX, DNB_GEO_REGEX, PRODUCT_DNB_LON, PRODUCT_DNB_LAT)
 PRODUCT_INFO = {
-    PRODUCT_I01: ProductInfo(tuple(), i_nav_tuple),
-    PRODUCT_I02: ProductInfo(tuple(), i_nav_tuple),
-    PRODUCT_I03: ProductInfo(tuple(), i_nav_tuple),
-    PRODUCT_I04: ProductInfo(tuple(), i_nav_tuple),
-    PRODUCT_I05: ProductInfo(tuple(), i_nav_tuple),
-    PRODUCT_M01: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M02: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M03: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M04: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M05: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M06: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M07: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M08: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M09: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M10: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M11: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M12: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M13: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M14: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M15: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M16: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_DNB: ProductInfo(tuple(), dnb_nav_tuple),
-    PRODUCT_IFOG: ProductInfo((PRODUCT_I05, PRODUCT_I04), i_nav_tuple),
-    PRODUCT_HISTOGRAM_DNB: ProductInfo((PRODUCT_DNB,), i_nav_tuple),
-    PRODUCT_ADAPTIVE_DNB: ProductInfo((PRODUCT_DNB,), dnb_nav_tuple),
+    PRODUCT_I01: ProductInfo(tuple(), i_nav_tuple, 32, "reflectance", ""),
+    PRODUCT_I02: ProductInfo(tuple(), i_nav_tuple, 32, "reflectance", ""),
+    PRODUCT_I03: ProductInfo(tuple(), i_nav_tuple, 32, "reflectance", ""),
+    PRODUCT_I04: ProductInfo(tuple(), i_nav_tuple, 32, "btemp", ""),
+    PRODUCT_I05: ProductInfo(tuple(), i_nav_tuple, 32, "btemp", ""),
+    PRODUCT_M01: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M02: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M03: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M04: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M05: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M06: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M07: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M08: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M09: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M10: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M11: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
+    PRODUCT_M12: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
+    PRODUCT_M13: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
+    PRODUCT_M14: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
+    PRODUCT_M15: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
+    PRODUCT_M16: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
+    PRODUCT_DNB: ProductInfo(tuple(), dnb_nav_tuple, 16, "radiance", ""),
+    PRODUCT_IFOG: ProductInfo((PRODUCT_I05, PRODUCT_I04), i_nav_tuple, 32, "temperature_difference", ""),
+    PRODUCT_HISTOGRAM_DNB: ProductInfo((PRODUCT_DNB,), i_nav_tuple, 32, "equalized_radiance", ""),
+    PRODUCT_ADAPTIVE_DNB: ProductInfo((PRODUCT_DNB,), dnb_nav_tuple, 16, "equalized_radiance", ""),
     # adaptive IR
-    PRODUCT_ADAPTIVE_I04: ProductInfo((PRODUCT_I04,), i_nav_tuple),
-    PRODUCT_ADAPTIVE_I05: ProductInfo((PRODUCT_I05,), i_nav_tuple),
-    PRODUCT_ADAPTIVE_M12: ProductInfo((PRODUCT_M12,), m_nav_tuple),
-    PRODUCT_ADAPTIVE_M13: ProductInfo((PRODUCT_M13,), m_nav_tuple),
-    PRODUCT_ADAPTIVE_M14: ProductInfo((PRODUCT_M14,), m_nav_tuple),
-    PRODUCT_ADAPTIVE_M15: ProductInfo((PRODUCT_M15,), m_nav_tuple),
-    PRODUCT_ADAPTIVE_M16: ProductInfo((PRODUCT_M16,), m_nav_tuple),
+    PRODUCT_ADAPTIVE_I04: ProductInfo((PRODUCT_I04,), i_nav_tuple, 32, "equalized_btemp", ""),
+    PRODUCT_ADAPTIVE_I05: ProductInfo((PRODUCT_I05,), i_nav_tuple, 32, "equalized_btemp", ""),
+    PRODUCT_ADAPTIVE_M12: ProductInfo((PRODUCT_M12,), m_nav_tuple, 16, "equalized_btemp", ""),
+    PRODUCT_ADAPTIVE_M13: ProductInfo((PRODUCT_M13,), m_nav_tuple, 16, "equalized_btemp", ""),
+    PRODUCT_ADAPTIVE_M14: ProductInfo((PRODUCT_M14,), m_nav_tuple, 16, "equalized_btemp", ""),
+    PRODUCT_ADAPTIVE_M15: ProductInfo((PRODUCT_M15,), m_nav_tuple, 16, "equalized_btemp", ""),
+    PRODUCT_ADAPTIVE_M16: ProductInfo((PRODUCT_M16,), m_nav_tuple, 16, "equalized_btemp", ""),
     # Navigation (doing this here we can mimic normal products if people want them remapped for some reason)
-    PRODUCT_I_LON: ProductInfo(tuple(), i_nav_tuple),
-    PRODUCT_I_LAT: ProductInfo(tuple(), i_nav_tuple),
-    PRODUCT_M_LON: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_M_LAT: ProductInfo(tuple(), m_nav_tuple),
-    PRODUCT_DNB_LON: ProductInfo(tuple(), dnb_nav_tuple),
-    PRODUCT_DNB_LAT: ProductInfo(tuple(), dnb_nav_tuple),
+    PRODUCT_I_LON: ProductInfo(tuple(), i_nav_tuple, 32, "longitude", ""),
+    PRODUCT_I_LAT: ProductInfo(tuple(), i_nav_tuple, 32, "latitude", ""),
+    PRODUCT_M_LON: ProductInfo(tuple(), m_nav_tuple, 16, "longitude", ""),
+    PRODUCT_M_LAT: ProductInfo(tuple(), m_nav_tuple, 16, "latitude", ""),
+    PRODUCT_DNB_LON: ProductInfo(tuple(), dnb_nav_tuple, 16, "longitude", ""),
+    PRODUCT_DNB_LAT: ProductInfo(tuple(), dnb_nav_tuple, 16, "latitude", ""),
 }
 
 # What file regex do I need to get the 'raw' products
@@ -249,9 +251,273 @@ def get_product_dependencies(product_name):
     return _dependencies
 
 
+### Secondary Product Functions
+def create_adaptive_dnb():
+    pass
+
+
+def create_ifog(meta_data, files_loaded, nav_files_loaded, products_created, nav_products_created):
+    pass
+
+
+def _jsonclass_to_pyclass(json_class_name):
+    cls_name = json_class_name.split(".")[-1]
+    mod_name = ".".join(json_class_name.split(".")[:-1])
+    cls = getattr(importlib.import_module(mod_name), cls_name)
+    return cls
+
+
+def open_p2g_object(json_obj):
+    """Open a Polar2Grid object either from a filename or an already loaded dict.
+    """
+    if isinstance(json_obj, (str, unicode)):
+        d = json.load(open(json_obj, "r"))
+    else:
+        d = json_obj
+
+    if "__class__" not in d:
+        log.error("Missing '__class__' key in JSON file")
+        raise ValueError("Missing '__class__' key in JSON file")
+
+    cls = _jsonclass_to_pyclass(d["__class__"])
+    return cls.create_from_dict(d)
+
+
+def remove_p2g_object(obj):
+    """Recursively remove a Polar2Grid object from disk.
+
+    By default objects persist once saved to disk. This function should be used to
+    recursively remove them by filename or dict. Currently P2G objects can not be deleted via this function.
+    """
+    if isinstance(obj, (str, unicode)):
+        json_dict = json.load(open(obj, "r"))
+        fn = obj
+    else:
+        json_dict = obj
+        fn = None
+
+    # XXX: Would this look cleaner if we loaded the object and forced persist to 'False'?
+    for k, v in json_dict.items():
+        if k == "swath_data":
+            try:
+                log.info("Removing flat binary file: '%s'", v)
+                os.remove(v)
+            except StandardError:
+                log.error("Could not remove: '%s'", v, exc_info=True)
+        elif isinstance(v, dict):
+            remove_p2g_object(v)
+
+    if fn:
+        try:
+            log.info("Removing JSON on-disk file: '%s'", fn)
+            os.remove(fn)
+        except StandardError:
+            log.error("Could not remove JSON file: '%s'", v, exc_info=True)
+
+
+class BaseP2GObject(dict):
+    def __init__(self, *args, **kwargs):
+        super(BaseP2GObject, self).__init__(*args, **kwargs)
+        self.persist = False
+
+    @classmethod
+    def create_from_dict(cls, d):
+        # Remove the class name if it's still in the dict
+        d.pop("__class__", None)
+        # Can be overridden in subclasses if arguments are needed
+        inst = cls()
+        # If we are being created from a dictionary then we don't have the "right" to delete on-disk content
+        inst.persist = True
+        # Load extra data (including sub-elements) from the dictionary
+        inst.load_from_dict(d)
+        return inst
+
+    def load_from_dict(self, d):
+        for k, v in d.items():
+            # Handle any special keys that need converting
+            if isinstance(v, dict) and "__class__" in v:
+                d[k] = open_p2g_object(v)
+            elif isinstance(v, datetime):
+                d[k] = iso8601(v)
+
+        self.update(**d)
+
+    @classmethod
+    def _json_class_name(cls):
+        """Get the polar2grid string name for this class.
+        """
+        return str(cls.__module__) + "." + str(cls.__name__)
+
+    @classmethod
+    def open(cls, filename):
+        """Open a JSON file representing a Polar2Grid object.
+        """
+        d = json.load(open(filename, "r"))
+        if "__class__" not in d:
+            log.error("Missing '__class__' key in JSON file")
+            raise ValueError("Missing '__class__' key in JSON file")
+
+        json_class_name = d.pop("__class__")
+        if json_class_name != cls._json_class_name():
+            log.error("Incorrect class in JSON file. Got %s, expected %s" % (json_class_name, cls._json_class_name()))
+            raise ValueError("Incorrect class in JSON file. Got %s, expected %s" % (json_class_name, cls._json_class_name()))
+
+        inst = cls.create_from_dict(d)
+        return inst
+
+    def jsonify(self):
+        """Create a JSON-serializable python dictionary.
+        """
+        # Make sure none of the on-disk information gets deleted on garbage collection
+        self.persist = True
+
+        d = self.copy()
+        for k, v in d.items():
+            # Handle any special keys that need converting
+            if isinstance(v, dict) and hasattr(v, "jsonify"):
+                d[k] = v.jsonify()
+            elif isinstance(v, datetime):
+                d[k] = v.isoformat()
+
+        d["__class__"] = self._json_class_name()
+        return d
+
+    def save(self, filename):
+        """Write the JSON representation of this class to a file.
+        """
+        # Get the JSON-able representation
+        json_dict = self.jsonify()
+
+        f = open(filename, "w")
+        try:
+            json.dump(json_dict, f, indent=4, sort_keys=True)
+        except TypeError:
+            log.error("Could not write P2G object to JSON file: '%s'", filename, exc_info=True)
+            f.close()
+            os.remove(filename)
+            raise
+
+
+class BaseMetaData(BaseP2GObject):
+    pass
+
+
+class BaseScene(BaseP2GObject):
+    def __init__(self, geo_swath, **kwargs):
+        super(BaseScene, self).__init__(**kwargs)
+        self.geolocation = geo_swath
+
+    def jsonify(self):
+        self["geolocation"] = self.geolocation
+        json_dict = super(BaseScene, self).jsonify()
+        del self["geolocation"]
+        return json_dict
+
+    @classmethod
+    def create_from_dict(cls, d):
+        # Remove the class name if it's still in the dict
+        d.pop("__class__", None)
+        # Can be overridden in subclasses if arguments are needed
+        geoloc_inst = open_p2g_object(d.pop("geolocation"))
+        inst = cls(geoloc_inst)
+        # If we are being created from a dictionary then we don't have the "right" to delete on-disk content
+        inst.persist = True
+        # Load extra data (including sub-elements) from the dictionary
+        inst.load_from_dict(d)
+        return inst
+
+
+class BaseSwath(BaseP2GObject):
+    def __del__(self):
+        # Do we have swath data that is in an flat binary file
+        if "swath_data" in self and isinstance(self["swath_data"], (str, unicode)):
+            # Do we not want to delete this file because someone tried to save the state of this object
+            if hasattr(self, "persist") and not self.persist:
+                try:
+                    log.info("Removing FBF that is no longer needed: '%s'", self["swath_data"])
+                    os.remove(self["swath_data"])
+                except StandardError:
+                    log.warning("Unable to remove FBF: '%s'", self["swath_data"])
+                    log.debug("Unable to remove FBF traceback:", exc_info=True)
+
+
+class BaseGeoSwath(BaseSwath):
+    def __init__(self, scene_name, longitude_swath, latitude_swath, **kwargs):
+        """Base swath class for navigation products.
+
+        :param scene_name: Scene name for the longitude and latitude swaths
+        :param longitude_swath: Swath object for the longitude data
+        :param latitude_swath: Swath object for the latitude data
+        """
+        super(BaseGeoSwath, self).__init__(**kwargs)
+        self["scene_name"] = scene_name
+        self["longitude"] = longitude_swath
+        self["latitude"] = latitude_swath
+
+    @classmethod
+    def create_from_dict(cls, d):
+        # Remove the class name if it's still in the dict
+        d.pop("__class__", None)
+        # Can be overridden in subclasses if arguments are needed
+        lon_inst = open_p2g_object(d.pop("longitude"))
+        lat_inst = open_p2g_object(d.pop("latitude"))
+        inst = cls(d.pop("scene_name"), lon_inst, lat_inst)
+        # If we are being created from a dictionary then we don't have the "right" to delete on-disk content
+        inst.persist = True
+        # Load extra data (including sub-elements) from the dictionary
+        inst.load_from_dict(d)
+        return inst
+
+
+class VIIRSScene(BaseScene):
+    """Collection of VIIRS Swaths.
+
+    A Scene is defined as having one defining set of navigation and zero or more data swaths mapped to that navigation.
+    """
+    pass
+
+
+class VIIRSDataSwath(BaseSwath):
+    """Swath Data Class for VIIRS Data.
+
+    Required Information:
+        - product_name: Publically known name of the product this swath represents
+        - filenames: Unordered list of source files that made up this product
+        - satellite: Name of the satellite the data came from
+        - instrument: Name of the instrument on the satellite from which the data was observed
+        - data_kind (optional): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
+        - scene_name: Name of the navigation "set" or scene to which this swath belongs.
+        - swath_rows: Number of rows in the main 2D data array
+        - swath_cols: Number of columns in the main 2D data array
+        - start_time: Datetime object representing the best known start of observation for this product's data
+        - end_time: Datetime object represnting the best known end of observation for this product's data
+        - description (optional): Basic description of the product
+        - rows_per_scan: Number of swath rows making up one scan of the sensor (1 if not applicable)
+        - swath_scans: Number of scans in the main 2D data array (swath_rows / rows_per_scan)
+        - swath_data: Flat binary filename or numpy array for the main data array
+
+    This information should be set via the bracket/setitem dictionary method (ex. swath["product_name"] = "p1").
+    It is up to the creator to fill in these fields at the most convenient time based on the source file structure.
+    """
+    pass
+
+
+class VIIRSGeoSwath(BaseGeoSwath):
+    """Swath data for VIIRS Geolocation Data.
+
+    VIIRS Geolocation is defined as being a minimum of a longitude and latitude array.
+    """
+    pass
+
+
 #class Frontend(roles.FrontendRole):
 class Frontend(object):
-    def __init__(self, search_paths=['.'], use_terrain_correction=True):
+    SECONDARY_PRODUCT_FUNCTIONS = {
+        PRODUCT_ADAPTIVE_DNB: create_adaptive_dnb,
+        PRODUCT_IFOG: create_ifog,
+    }
+
+    def __init__(self, search_paths=['.']):
         """Initialize the frontend.
 
         For each search path, check if it exists and that it is
@@ -273,6 +539,11 @@ class Frontend(object):
                 log.warning("Search path '%s' does not exist or is not a directory" % (sp_real,))
                 continue
             search_paths_set.add(sp_real)
+
+        # Check if we have any valid directories to look through
+        if not search_paths_set:
+            log.error("No valid paths were found to search for data files")
+            raise ValueError("No valid paths were found to search for data files")
 
         self.search_paths = tuple(search_paths_set)
         file_paths = self.find_all_files(self.search_paths)
@@ -301,8 +572,10 @@ class Frontend(object):
         """
         matched_files = {}
         for filepath in filepaths:
+            #log.debug("Checking file '%s' for usefulness...", filepath)
             fn = os.path.split(filepath)[1]
             for fn_regex in ALL_FILE_REGEXES:
+                #log.debug("Checking '%s' '%s'", fn, fn_regex)
                 # FIXME: There has to be a faster way to do this
                 # FIXME: Besides filling in the dictionary and then looking for duplicates
                 if re.match(fn_regex, fn) is not None:
@@ -357,17 +630,41 @@ class Frontend(object):
 
         if file_pattern not in self.recognized_files:
             log.error("Could not find any files to create product '%s', looked through the following patterns: %r", product_name, file_pattern)
-            raise ValueError("Could not find any files to create product '%s', looked through the following patterns: %r", product_name, file_pattern)
+            log.debug("Recognized file patterns:\n%s", "\n\t".join(self.recognized_files.keys()))
+            raise ValueError("Could not find any files to create product '%s', looked through the following patterns: %r" % (product_name, file_pattern))
 
         return file_pattern
 
-    def create_scenes(self, products, use_terrain_corrected=True):
+    def _create_raw_swath_object(self, product_name, variable_key, reader):
+        product_info = PRODUCT_INFO[product_name]
+        one_swath = VIIRSDataSwath()
+        log.info("Writing product data to FBF for '%s'", product_name)
+        fbf_filename, fbf_shape = reader.write_var_to_flat_binary(variable_key, stem=product_name)
+        one_swath["product_name"] = product_name
+        one_swath["filenames"] = reader.get_filenames()
+        one_swath["start_time"] = reader.start_time
+        one_swath["end_time"] = reader.end_time
+        one_swath["satellite"] = reader.get_satellite()
+        one_swath["instrument"] = reader.get_instrument()
+        one_swath["swath_data"] = fbf_filename
+        one_swath["swath_rows"] = fbf_shape[0]
+        one_swath["swath_cols"] = fbf_shape[1]
+        one_swath["data_kind"] = product_info.data_kind
+        one_swath["description"] = product_info.description
+        one_swath["scene_name"] = product_info.geolocation.scene_name
+        one_swath["rows_per_scan"] = product_info.rows_per_scan
+        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
+
+        return one_swath
+
+    def create_scenes(self, products=None, use_terrain_corrected=True):
         log.info("Loading scene data...")
         # FUTURE: products will be a keyword and when None the frontend will figure out what products it can create
-        meta_data = {}
+        meta_data = BaseMetaData()
         # List of all products we will be creating (what was asked for and what's needed to create them)
         products_needed = set()
         raw_products_needed = set()
+        secondary_products_needed = set()
         nav_products_needed = set()
         # Hold on to all of the file sets we've loaded
         files_loaded = {}
@@ -391,28 +688,12 @@ class Frontend(object):
             if not product_info.dependencies:
                 # if there are no dependencies then it's a raw product
                 raw_products_needed.add(product_name)
+            else:
+                secondary_products_needed.add(product_name)
 
             # For each product look what navigation product it connects with
             nav_products_needed.add(product_info.geolocation.longitude_product)
             nav_products_needed.add(product_info.geolocation.latitude_product)
-
-        # Load each of the raw products (products that are loaded directly from the file0
-        for product_name in raw_products_needed:
-            log.info("Opening data files to process: %s", product_name)
-            product_info = PRODUCT_INFO[product_name]
-            product_file_info = PRODUCT_FILE_REGEXES[product_name]
-
-            file_pattern = self._get_file_pattern(product_name)
-            log.debug("Using file pattern '%s' for product '%s'", file_pattern, file_pattern)
-
-            if file_pattern not in files_loaded:
-                reader = files_loaded[file_pattern] = VIIRSSDRMultiReader(self.recognized_files[file_pattern])
-            else:
-                reader = files_loaded[file_pattern]
-
-            # FUTURE: Should probably include satellite and instrument information
-            log.info("Writing product data to FBF for '%s'", product_name)
-            products_created[product_name] = reader.write_var_to_flat_binary(product_file_info.variable, stem=product_name)
 
         # Load geolocation files
         for nav_product_name in nav_products_needed:
@@ -428,9 +709,46 @@ class Frontend(object):
 
             # Write the geolocation information to a file
             log.info("Writing navigation product data to FBF for '%s'", product_name)
-            nav_products_created[nav_product_name] = reader.write_var_to_flat_binary(product_file_info.variable, stem=nav_product_name)
+            products_created[nav_product_name] = self._create_raw_swath_object(nav_product_name, product_file_info.variable, reader)
+
+            # TODO Need to add nav products to the scene as normal products if they were requested that way
+
+        # Load each of the raw products (products that are loaded directly from the file)
+        for product_name in raw_products_needed:
+            log.info("Opening data files to process: %s", product_name)
+            product_info = PRODUCT_INFO[product_name]
+            product_file_info = PRODUCT_FILE_REGEXES[product_name]
+
+            file_pattern = self._get_file_pattern(product_name)
+            log.debug("Using file pattern '%s' for product '%s'", file_pattern, file_pattern)
+
+            if file_pattern not in files_loaded:
+                reader = files_loaded[file_pattern] = VIIRSSDRMultiReader(self.recognized_files[file_pattern])
+            else:
+                reader = files_loaded[file_pattern]
+
+            one_swath = products_created[product_name] = self._create_raw_swath_object(product_name, product_file_info.variable, reader)
+
+            # Create a scene (if needed) and add the product to it
+            if one_swath["scene_name"] not in meta_data:
+                scene_name = one_swath["scene_name"]
+                longitude_swath = products_created[product_info.geolocation.longitude_product]
+                latitude_swath = products_created[product_info.geolocation.latitude_product]
+                one_scene = meta_data[scene_name] = VIIRSScene(VIIRSGeoSwath(scene_name, longitude_swath, latitude_swath))
+            else:
+                one_scene = meta_data[scene_name]
+
+            one_scene[product_name] = one_swath
 
         # Special cases (i.e. non-raw products that need further processing)
+        # FUTURE: Move each of these into their own function
+        # FIXME: Need to do these in a way that secondary products that depend on other secondary products
+        #self.create_secondary_products(meta_data, files_loaded, nav_files_loaded, products_created, nav_products_created)
+        # Create the IFOG product (I5 - I4)
+        #i5_data
+        # Get the other products we need
+        # Do the math
+        # Save this to a new FBF
         # TODO
 
         return meta_data
