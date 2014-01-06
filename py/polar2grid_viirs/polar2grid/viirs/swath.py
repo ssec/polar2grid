@@ -229,7 +229,7 @@ def get_product_dependencies(product_name):
     Traceback (most recent call last):
     ...
     ValueError: Unknown product was requested from frontend: 'blahdkjlwkjdoisdlfkjlk2j3lk4j'
-    >>> PRODUCT_INFO["fake_dnb"] = ProductInfo((PRODUCT_ADAPTIVE_DNB, PRODUCT_DNB), dnb_nav_tuple)
+    >>> PRODUCT_INFO["fake_dnb"] = ProductInfo((PRODUCT_ADAPTIVE_DNB, PRODUCT_DNB), dnb_nav_tuple, 16, "fake_dnb", "")
     >>> assert(get_product_dependencies("fake_dnb") == set((PRODUCT_ADAPTIVE_DNB, PRODUCT_DNB)))
     """
     _dependencies = set()
@@ -249,6 +249,40 @@ def get_product_dependencies(product_name):
         raise RuntimeError("Circular dependency found in frontend, '%s' requires itself", product_name)
 
     return _dependencies
+
+
+def get_product_descendents(starting_products, remaining_dependencies=None, dependency_required=False):
+    """Recursively determine what products (secondary) can be made from the products provided.
+
+    >>> available_products = get_product_descendents([PRODUCT_I04])
+    >>> assert(PRODUCT_ADAPTIVE_I04 in available_products)
+    >>> available_products = get_product_descendents([PRODUCT_I04, PRODUCT_DNB, PRODUCT_I05])
+    >>> assert(PRODUCT_ADAPTIVE_I04 in available_products)
+    >>> assert(PRODUCT_ADAPTIVE_I05 in available_products)
+    >>> assert(PRODUCT_HISTOGRAM_DNB in available_products)
+    >>> assert(PRODUCT_IFOG in available_products)
+    >>> print available_products
+    """
+    if remaining_dependencies is None:
+        # Need to remove raw products we aren't starting with and remove navigation products
+        remaining_dependencies = [k for k in PRODUCT_INFO.keys() if (PRODUCT_INFO[k].data_kind not in ["longitude", "latitude"]) and PRODUCT_INFO[k].dependencies]
+
+    for product_name in remaining_dependencies:
+        if product_name in starting_products:
+            continue
+        elif not PRODUCT_INFO[product_name].dependencies or \
+            not get_product_descendents(starting_products, PRODUCT_INFO[product_name].dependencies, True):
+            # This dependency is a raw product that we don't already have...so we can't make this product
+            # Or this is a secondary product that we don't have all of the dependencies for
+            if dependency_required:
+                return []
+            else:
+                continue
+
+        starting_products.append(product_name)
+
+    # We went through every dependency and found that it could be made so we are done.
+    return starting_products
 
 
 ### Secondary Product Functions
@@ -657,9 +691,15 @@ class Frontend(object):
 
         return one_swath
 
+    def get_possible_products(self):
+        raw_products = [k for k, v in PRODUCT_FILE_REGEXES.iteritems() if v.file_pattern in self.recognized_files]
+        return get_product_descendents(raw_products)
+
     def create_scenes(self, products=None, use_terrain_corrected=True):
         log.info("Loading scene data...")
-        # FUTURE: products will be a keyword and when None the frontend will figure out what products it can create
+        # If the user didn't provide the products they want, figure out which ones we can create
+        if products is None:
+            products = self.get_possible_products()
         meta_data = BaseMetaData()
         # List of all products we will be creating (what was asked for and what's needed to create them)
         products_needed = set()
