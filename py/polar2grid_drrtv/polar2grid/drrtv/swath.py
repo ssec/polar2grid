@@ -457,7 +457,24 @@ def swathbuckler(*h5_pathnames):
 class Frontend(FrontendRole):
     """
     """
-    removable_file_patterns = []
+    removable_file_patterns = [
+        'CAPE.real4.*',
+        'CO*.real4.*',
+        'CT*.real4.*',
+        'CldEmis.real4.*',
+        'Cmask.real4.*',
+        'Dewpnt_*.real4.*',
+        'H2OMMR_*.real4.*',
+        'Lifted_Index.real4.*',
+        'O3VMR_*.real4.*',
+        'RelHum_*.real4.*',
+        'SurfPres.real4.*',
+        'TAir_*.real4.*',
+        'TSurf.real4.*',
+        'tot*.real4.*',
+        'swath_longitude.real4.*',
+        'swath_latitude.real4.*'
+    ]
     info = None
 
     def __init__(self, **kwargs):

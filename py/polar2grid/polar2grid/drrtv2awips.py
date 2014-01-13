@@ -145,6 +145,8 @@ def process_data_sets(nav_set_uid, filepaths,
 
     ### Remap the data
     try:
+        # FIXME: This needs to be determined somewhere else or always be 'nearest' for DR-RTV
+        method = 'nearest' if (len(grid_jobs.keys()) == 1 and "p4_203_10km" in grid_jobs) else 'ewa'
         remapped_jobs = remap.remap_bands(sat, instrument, nav_set_uid,
                 fbf_lon, fbf_lat, grid_jobs,
                 num_procs=num_procs, fornav_d=fornav_d, fornav_D=fornav_D,
@@ -153,7 +155,8 @@ def process_data_sets(nav_set_uid, filepaths,
                 lat_south=meta_data.get("lat_south", None),
                 lat_north=meta_data.get("lat_north", None),
                 lon_west=meta_data.get("lon_west", None),
-                lon_east=meta_data.get("lon_east", None)
+                lon_east=meta_data.get("lon_east", None),
+                method=method
                 )
     except StandardError:
         log.debug("Remapping Error:", exc_info=1)
