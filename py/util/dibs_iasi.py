@@ -23,24 +23,19 @@ from datetime import date, timedelta, datetime
 LOG = logging.getLogger(__name__)
 
 # FUTURE: generate FLO_FMT using PRODUCT_LIST
-PRODUCT_LIST = 'GITCO GDNBO SVDNB SVI01 SVI02 SVI03 SVI04 SVI05'.split(' ')
+PRODUCT_LIST = None 
 
 FLO_FMT = """http://peate.ssec.wisc.edu/flo/api/find?
 			start=%(start)s&end=%(end)s
-			&file_type=GITCO
-			&file_type=GDNBO
-                        &file_type=SVDNB
-                        &file_type=SVI01
-			&file_type=SVI02
-                        &file_type=SVI03
-			&file_type=SVI04
-                        &file_type=SVI05
+			&file_type=IASI_L1C
 			&loc=%(lat)s,%(lon)s
 			&radius=%(radius)s
 			&output=txt
 """
 
-RE_NPP = re.compile('(?P<kind>[A-Z]+)(?P<band>[0-9]*)_(?P<sat>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_e(?P<end_time>\d+)_b(?P<orbit>\d+)_c(?P<created_time>\d+)_(?P<site>[a-zA-Z0-9]+)_(?P<domain>[a-zA-Z0-9]+)\.h5')
+#RE_NPP = re.compile('(?P<kind>[A-Z]+)(?P<band>[0-9]*)_(?P<sat>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_e(?P<end_time>\d+)_b(?P<orbit>\d+)_c(?P<created_time>\d+)_(?P<site>[a-zA-Z0-9]+)_(?P<domain>[a-zA-Z0-9]+)\.h5')
+#RE_NPP = re.compile('IASI_xxx_1C_M02_(?P<date>\d+)(?P<start_time>\d+)_(?P<date_end>\d+)(?P<end_time>\d+)_N_O_(?P<orbit>\d+)_(?P<created_time>\d+)')
+RE_NPP = re.compile(r'IASI_xxx_(?P<kind>[^_]+)_(?P<sat>[^_]+)_(?P<date>\d{8})(?P<start_time>\d{6})Z_(?P<end_date>\d{8})(?P<end_time>\d{6})Z_N_O_(?P<orbit>\d+)Z__(?P<created_time>\d+)')
 
 
 FLO_FMT = re.sub(r'\n\s+', '', FLO_FMT)
@@ -75,9 +70,12 @@ def _test_flo_find():
         print nfo.group(0), url # print filename and url
 
 def _all_products_present(key, file_nfos, products = PRODUCT_LIST):
+    if products is None: # then products don't have groups IASI
+        return True 
     needs = set(products)
     for nfo in file_nfos:
-        product = '%(kind)s%(band)s' % nfo.groupdict()
+#        product = '%(kind)s%(band)s' % nfo.groupdict()
+        product = '%(kind)s' % nfo.groupdict()
         if product in needs:
             needs.remove(product)
         else:
@@ -93,14 +91,14 @@ def curl(filename, url):
 
 def _key(nfo):
     nfo = nfo.groupdict()
-    return (nfo['date'], nfo['start_time'], nfo['end_time'])
+    return (nfo['date'], nfo['start_time'], nfo['end_date'], nfo['end_time'])
 
 def sync(lat, lon, radius, start=None, end=None):
     "synchronize current working directory to include all the files available"
     if end is None:
         end = date.today() + ONE_DAY
     if start is None:
-        start = end - THREE_DAY
+        start = end - TWO_DAY
     bad = list()
     good = list()
     new_files = defaultdict(list)
@@ -143,31 +141,33 @@ def mainsync(name, lat, lon, radius, start=None, end=None):
     fp = file(name+'.nfo', 'at')
     for key in sync(lat, lon, radius, start, end).keys():
         LOG.info('%s is ready' % repr(key))
-        print >>fp, '%s %s %s' % key
+        print >>fp, '%s %s %s %s' % key
         fp.flush()
     fp.close()
 
 
 
 
-hmst = lambda s: tuple(map(int, [s[0:2], s[2:4], s[4:6], s[6]+'00000']))
+hmst = lambda s: tuple(map(int, [s[0:2], s[2:4], s[4:6]]))
 ymd = lambda s: tuple(map(int, [s[0:4], s[4:6], s[6:8]]))
 
 def _key2dts(k):
     "convert (yyyymmdd, hhmmsst, hhmmsst) string key tuple into start and end datetime objects"
-    d,s,e = k
+    d,s,ed, e = k
     d = ymd(d)
     s = hmst(s)
+    ed = ymd(ed)
     e = hmst(e)
     ds = datetime(*(d+s))
-    de = datetime(*(d+e))
+    de = datetime(*(ed+e))
+        
     if de < ds:
         de += timedelta(days=1)
     return ds,de
 
 def _dts2key(s,e):
     "convert datetime object into key tuple"
-    horus = lambda x: '%02d%02d%02d%d' % (x.hour, x.minute, x.second, x.microsecond/100000)
+    horus = lambda x: '%02d%02d%02d' % (x.hour, x.minute, x.second)
     return s.strftime('%Y%m%d'), horus(s), horus(e)
 
 def _outcome_cg(seq):
@@ -203,24 +203,26 @@ def read_nfo(filename=None, fobj=None):
         fobj = file(filename, 'rt')
     for line in fobj:
         k = map(str.strip, line.split(' '))
-        if len(k)==3:
+        if len(k)==4:
             yield k
 
-STAMP_FMT = 'd%s_t%s_e%s'
+STAMP_FMT = '%s%s_%s'
+FILE_FMT = '%s%sZ_*%s'
 
 def pass_build(key, subkeys):
     "link all files belonging to subkeys to an pass directory"
     name = STAMP_FMT % key
+    name_tmp = FILE_FMT % key
     final_name = name + '.pass'
     if os.path.isdir(name) or os.path.isdir(final_name):
         LOG.warning('%s already has been processed' % name)
         return None
     os.mkdir(name)
     for piece in subkeys:
-        pat = '*' + STAMP_FMT % piece + '*.h5'
+        pat = '*' + FILE_FMT % piece + '*'
         LOG.debug('looking for %s' % pat)
         for filename in glob(pat):
-            LOG.debug('linking %s to %s' % (filename, name))
+            LOG.debug('linking %s to %s' % (filename, name_tmp))
             os.symlink(os.path.join('..', filename), os.path.join(name, filename))
     os.rename(name, final_name)
     LOG.info('created %s' % final_name)
