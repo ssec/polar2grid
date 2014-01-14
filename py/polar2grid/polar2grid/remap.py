@@ -243,14 +243,14 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
         """
         # DJH: Added kwargs and passed them to self.tree.query
+        fill_value = kwargs.pop("fill_value", numpy.nan)
         xi = _ndim_coords_from_arrays(args)
         xi = self._check_call_shape(xi)
         dist, i = self.tree.query(xi, **kwargs)
-        max_idx = max(self.values.shape)
-        i[i >= max_idx] = max_idx - 1
-        return self.values[i]
+        values = numpy.append(self.values, self.values.dtype.type(fill_value))
+        return values[i]
 
-def griddata(points, values, xi, method='linear', fill_value=numpy.nan, distance_upper_bound=2.0):
+def griddata(points, values, xi, method='linear', fill_value=numpy.nan, distance_upper_bound=3.0):
     # DJH: Added distance_upper_bound keyword
     # FIXME: The distance_upper_bound keyword should default to what the KDTree defaults to (inf) and this functionality should probably be put in scipy itself
     points = _ndim_coords_from_arrays(points)
@@ -276,7 +276,7 @@ def griddata(points, values, xi, method='linear', fill_value=numpy.nan, distance
         return ip(xi)
     elif method == 'nearest':
         ip = NearestNDInterpolator(points, values)
-        return ip(xi, distance_upper_bound=distance_upper_bound)
+        return ip(xi, distance_upper_bound=distance_upper_bound, fill_value=fill_value)
     elif method == 'linear':
         ip = LinearNDInterpolator(points, values, fill_value=fill_value)
         return ip(xi)
