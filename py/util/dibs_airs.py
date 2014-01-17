@@ -33,7 +33,10 @@ FLO_FMT = """http://peate.ssec.wisc.edu/flo/api/find?
 			&output=txt
 """
 #AIRS.2013.11.13.240.L1B.AIRS_Rad.v5.0.22.0.G13318125859.hdf
-RE_NPP = re.compile(r'AIRS.')
+# http://asl.umbc.edu/pub/airs/jpldocs/tds/AIRS_Filename.htm
+RE_AIRS = re.compile(r'AIRS\.(?P<date>\d+\.\d+\.\d+)\.(?P<granule>\d+)\.L1B\.AIRS_Rad.v[.\d]+G\d+.hdf')
+SECONDS_PER_GRANULE=360
+DELTA_PER_GRANULE = timedelta(seconds=SECONDS_PER_GRANULE)  # 1..240 -> 24h 
 
 
 FLO_FMT = re.sub(r'\n\s+', '', FLO_FMT)
@@ -54,7 +57,7 @@ def flo_find(lat, lon, radius, start, end):
         url = url.strip()
         if not url:
             continue
-        match = RE_NPP.search(url)
+        match = RE_AIRS.search(url)
         if not match:
             continue
         LOG.debug('found %s @ %s' % (match.group(0), url))
@@ -89,7 +92,8 @@ def curl(filename, url):
 
 def _key(nfo):
     nfo = nfo.groupdict()
-    return (nfo['date'], nfo['start_time'], nfo['end_date'], nfo['end_time'])
+    return (nfo['date'], nfo['granule'])
+
 
 def sync(lat, lon, radius, start=None, end=None):
     "synchronize current working directory to include all the files available"
@@ -139,34 +143,28 @@ def mainsync(name, lat, lon, radius, start=None, end=None):
     fp = file(name+'.nfo', 'at')
     for key in sync(lat, lon, radius, start, end).keys():
         LOG.info('%s is ready' % repr(key))
-        print >>fp, '%s %s %s %s' % key
+        print >>fp, '%s %s' % key
         fp.flush()
     fp.close()
 
 
 
 
-hmst = lambda s: tuple(map(int, [s[0:2], s[2:4], s[4:6]]))
-ymd = lambda s: tuple(map(int, [s[0:4], s[4:6], s[6:8]]))
-
 def _key2dts(k):
     "convert (yyyymmdd, hhmmsst, hhmmsst) string key tuple into start and end datetime objects"
-    d,s,ed, e = k
-    d = ymd(d)
-    s = hmst(s)
-    ed = ymd(ed)
-    e = hmst(e)
-    ds = datetime(*(d+s))
-    de = datetime(*(ed+e))
-        
+    date, granule = k
+    d = datetime.strptime(date, '%Y.%m.%d')
+    goff = int(granule)-1
+    ds,de = d + DELTA_PER_GRANULE*goff, d + DELTA_PER_GRANULE*(goff+1)
     if de < ds:
         de += timedelta(days=1)
     return ds,de
 
 def _dts2key(s,e):
     "convert datetime object into key tuple"
-    horus = lambda x: '%02d%02d%02d' % (x.hour, x.minute, x.second)
-    return s.strftime('%Y%m%d'), horus(s), horus(e)
+    delta = timedelta(hours=s.hour, minutes=s.minute, seconds=s.second)
+    goff = int(delta.total_seconds() / SECONDS_PER_GRANULE)
+    return s.strftime('%Y.%m.%d'), '%03d' % (goff+1)
 
 def _outcome_cg(seq):
     "given a sequence of (start,end) ordered datetime objects representing contiguous granules, return new outer key and list of granules"
@@ -177,7 +175,7 @@ def _outcome_cg(seq):
     e = grans[-1][1]
     return (_dts2key(s,e), [_dts2key(*x) for x in grans])
 
-def contiguous_groups(keyset, tolerance=timedelta(seconds=5)):
+def contiguous_groups(keyset, tolerance=timedelta(seconds=700)):
     "sort a set of keys into contiguous groups; yield (newkey, list-of-subkeys) sequence"
     granlist = list(sorted(map(_key2dts, keyset)))
 
@@ -201,11 +199,11 @@ def read_nfo(filename=None, fobj=None):
         fobj = file(filename, 'rt')
     for line in fobj:
         k = map(str.strip, line.split(' '))
-        if len(k)==4:
-            yield k
+        if len(k)==2:
+            yield tuple(k)
 
-STAMP_FMT = '%s%s_%s'
-FILE_FMT = '%s%sZ_*%s'
+STAMP_FMT = '%s_%s'  # date with starting granule number
+FILE_FMT = '%s.%s'
 
 def pass_build(key, subkeys):
     "link all files belonging to subkeys to an pass directory"
