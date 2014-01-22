@@ -43,7 +43,7 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.constants import DEFAULT_FILL_VALUE
-import pyproj
+from .grids.grids import P2GProj
 import numpy
 
 import os
@@ -130,10 +130,7 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
         raise ValueError("Either pixel size or grid width/height must be specified")
 
     # Handle EPSG codes
-    if proj4_str[:4].lower() == "epsg":
-        tformer = pyproj.Proj(init=proj4_str)
-    else:
-        tformer = pyproj.Proj(proj4_str)
+    tformer = P2GProj(proj4_str)
 
     if dtype is None:
         dtype = lat_arr.dtype
@@ -257,30 +254,12 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
 
     ### Handle special cases for certain projections ###
     ll2cr_info = {}
-    if "latlong" in proj4_str:
-        # Everyone else uses degrees, not radians
-        ll2cr_info["grid_origin_x"],ll2cr_info["grid_origin_y"] = tformer(grid_origin_x,grid_origin_y, inverse=True)
-        ll2cr_info["grid_origin_x_grid_units"] = grid_origin_x
-        ll2cr_info["grid_origin_y_grid_units"] = grid_origin_y
-    else:
-        ll2cr_info["grid_origin_x"] = grid_origin_x
-        ll2cr_info["grid_origin_y"] = grid_origin_y
-        ll2cr_info["grid_origin_x_grid_units"] = grid_origin_x
-        ll2cr_info["grid_origin_y_grid_units"] = grid_origin_y
+    ll2cr_info["grid_origin_x"] = grid_origin_x
+    ll2cr_info["grid_origin_y"] = grid_origin_y
     ll2cr_info["grid_width"] = grid_width
     ll2cr_info["grid_height"] = grid_height
-    if "latlong" in proj4_str:
-        # Everyone else uses degrees, not radians
-        x,y = tformer(pixel_size_x, pixel_size_y, inverse=True)
-        ll2cr_info["pixel_size_x"] = x
-        ll2cr_info["pixel_size_y"] = y
-        ll2cr_info["pixel_size_x_grid_units"] = pixel_size_x
-        ll2cr_info["pixel_size_y_grid_units"] = pixel_size_y
-    else:
-        ll2cr_info["pixel_size_x"] = pixel_size_x
-        ll2cr_info["pixel_size_y"] = pixel_size_y
-        ll2cr_info["pixel_size_x_grid_units"] = pixel_size_y
-        ll2cr_info["pixel_size_y_grid_units"] = pixel_size_y
+    ll2cr_info["pixel_size_x"] = pixel_size_x
+    ll2cr_info["pixel_size_y"] = pixel_size_y
     ll2cr_info["rows_filename"] = rows_fn
     ll2cr_info["cols_filename"] = cols_fn
 
@@ -288,6 +267,8 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     # Go per row to save on memory, disk load
     for idx in range(lon_arr.shape[0]):
         x_tmp,y_tmp = _transform_array(tformer, lon_arr[idx], lat_arr[idx], proj_circum, stradles_anti=stradles_anti)
+        x_tmp = x_tmp.copy()
+        y_tmp = y_tmp.copy()
         numpy.subtract(x_tmp, grid_origin_x, x_tmp)
         numpy.divide(x_tmp, pixel_size_x, x_tmp)
         numpy.subtract(y_tmp, grid_origin_y, y_tmp)

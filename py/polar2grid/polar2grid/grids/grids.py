@@ -70,6 +70,14 @@ GRIDS_DIR = script_dir #os.path.split(script_dir)[0] # grids directory is in roo
 GRIDS_CONFIG_FILEPATH   = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
 GRID_COVERAGE_THRESHOLD = float(os.environ.get("POLAR2GRID_GRID_COVERAGE", "0.1")) # 10%
 
+
+class P2GProj(pyproj.Proj):
+    def __call__(self, data1, data2, **kwargs):
+        if self.is_latlong():
+            return data1, data2
+
+        return super(P2GProj, self).__call__(data1, data2, **kwargs)
+
 ### GPD Reading Functions ###
 def clean_string(s):
     s = s.replace("-", "")
@@ -161,14 +169,6 @@ def parse_gpd_file(gpd_filepath):
 
 ### Configuration file functions ###
 
-def _load_proj_string(proj_str):
-    """Wrapper to accept epsg strings or proj4 strings
-    """
-    if proj_str[:4].lower() == "epsg":
-        return pyproj.Proj(init=proj_str)
-    else:
-        return pyproj.Proj(proj_str)
-
 def parse_gpd_config_line(grid_name, parts):
     """Return a dictionary of information for a specific GPD grid from
     a grid configuration line. ``parts`` should be every comma-separated
@@ -206,6 +206,23 @@ def parse_gpd_config_line(grid_name, parts):
 
     return info
 
+def _parse_meter_degree_param(param):
+    """Parse a configuration parameter that could be meters or degrees.
+
+    Degrees are denoted with a suffix of 'deg'. Meters are denoted with a suffix of either 'm' or no suffix at all.
+
+    :returns: (float param, True if degrees/False if meters)
+    """
+    convert_to_meters = False
+    if param.endswith("deg"):
+        # Parameter is in degrees
+        convert_to_meters = True
+        param = param[:-3]
+    elif param.endswith("m"):
+        # Parameter is in meters
+        param = param[:-1]
+    return float(param), convert_to_meters
+
 def parse_proj4_config_line(grid_name, parts):
     """Return a dictionary of information for a specific PROJ.4 grid from
     a grid configuration line. ``parts`` should be every comma-separated
@@ -216,7 +233,7 @@ def parse_proj4_config_line(grid_name, parts):
     proj4_str = parts[2]
     # Test to make sure the proj4_str is valid in pyproj's eyes
     try:
-        p = _load_proj_string(proj4_str)
+        p = P2GProj(proj4_str)
         del p
     except StandardError:
         log.error("Invalid proj4 string in '%s' : '%s'" % (grid_name,proj4_str))
@@ -249,17 +266,19 @@ def parse_proj4_config_line(grid_name, parts):
         else:
             pixel_size_y  = float(parts[6])
 
+        convert_xorigin_to_meters = False
         if parts[7] == "None" or parts[7] == '':
             static        = False
             grid_origin_x = None
         else:
-            grid_origin_x = float(parts[7])
+            grid_origin_x, convert_xorigin_to_meters = _parse_meter_degree_param(parts[7])
 
+        convert_yorigin_to_meters = False
         if parts[8] == "None" or parts[8] == '':
             static        = False
             grid_origin_y = None
         else:
-            grid_origin_y = float(parts[8])
+            grid_origin_y, convert_yorigin_to_meters = _parse_meter_degree_param(parts[8])
     except StandardError:
         log.error("Could not parse proj4 grid configuration: '%s'" % (grid_name,))
         raise
@@ -279,6 +298,21 @@ def parse_proj4_config_line(grid_name, parts):
     if grid_width is None and pixel_size_x is None:
         log.error("Either grid size or pixel size must be specified for '%s'" % grid_name)
         raise ValueError("Either grid size or pixel size must be specified for '%s'" % grid_name)
+    if convert_xorigin_to_meters != convert_yorigin_to_meters:
+        log.error("Grid origin parameters must be in the same units (meters vs degrees)")
+        raise ValueError("Grid origin parameters must be in the same units (meters vs degrees)")
+
+    # Convert any parameters from degrees to meters (we already made sure both need to be converted above)
+    p = P2GProj(proj4_str)
+    if convert_xorigin_to_meters and not p.is_latlong():
+        meters_x, meters_y = p(grid_origin_x, grid_origin_y)
+        log.info("Converted grid '%s' origin from (lon: %f, lat: %f) to (x: %f, y: %f)",
+                 grid_name, grid_origin_x, grid_origin_y, meters_x, meters_y)
+        grid_origin_x, grid_origin_y = meters_x, meters_y
+    elif not convert_xorigin_to_meters and (grid_origin_x is not None and p.is_latlong()):
+        log.error("Lat/Lon grid '%s' must have its origin in degrees", grid_name)
+        raise ValueError("Lat/Lon grid '%s' must have its origin in degrees" % (grid_name,))
+
 
     info["grid_kind"]         = GRID_KIND_PROJ4
     info["static"]            = static
@@ -628,7 +662,7 @@ class Cartographer(roles.CartographerRole):
         if not grid_info["static"]:
             log.debug("Won't calculate corners for a dynamic grid: '%s'" % (grid_name,))
 
-        p = pyproj.Proj(grid_info["proj4_str"])
+        p = P2GProj(grid_info["proj4_str"])
         right_x  = grid_info["grid_origin_x"] + grid_info["pixel_size_x"] * grid_info["grid_width"]
         bottom_y = grid_info["grid_origin_y"] + grid_info["pixel_size_y"] * grid_info["grid_height"]
         grid_info["ul_corner"] = p(grid_info["grid_origin_x"], grid_info["grid_origin_y"], inverse=True)

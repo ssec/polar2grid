@@ -43,7 +43,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from pyproj import Proj
+from .grids.grids import P2GProj
 
 import os
 import sys
@@ -61,7 +61,7 @@ def main():
             help="Latitude of the point to be converted (single value only)")
     args = parser.parse_args()
 
-    p = Proj(args.proj4_str)
+    p = P2GProj(args.proj4_str)
     x,y = p(args.lon_point, args.lat_point, inverse=args.inv)
     print x,y
 

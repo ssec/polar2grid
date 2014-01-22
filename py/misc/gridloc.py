@@ -11,7 +11,7 @@
 """
 __docformat__ = "restructuredtext en"
 
-from pyproj import Proj
+from polar2grid.grids.grids import P2GProj
 from polar2grid.core import Workspace
 import numpy
 
@@ -42,12 +42,7 @@ def create_nav_binaries(lon_fn, lat_fn, proj4_str, width, height,
     """Create longitude and latitude binaries from the projection definition
     provided.
     """
-    # Handle EPSG codes properly
-    if "EPSG" in proj4_str:
-        p = Proj(init=proj4_str)
-    else:
-        p = Proj(proj4_str)
-
+    p = Proj(proj4_str)
 
     # Open the files and a memory mapped array
     lon_file = numpy.memmap(lon_fn, dtype=numpy.float32, mode="w+", shape=(abs(height),abs(width)))
