@@ -74,6 +74,7 @@ INST_VIIRS = "viirs"
 INST_MODIS = "modis"
 INST_CRIS  = "cris"
 INST_IASI  = "iasi"
+INST_AIRS  = "airs"
 
 # Band Kinds
 BKIND_I     = "i"
@@ -214,6 +215,9 @@ GEO_500M_NAV_UID   = "geo_500m_nav" # the geo navigation group
 GEO_250M_NAV_UID   = "geo_250m_nav" # the 250m navigation group
 MOD06_NAV_UID      = "mod06_nav"    # the mod06 navigation group
 MOD07_NAV_UID      = "mod07_nav"    # the mod07 navigation group
+CRIS_NAV_UID = "cris_nav"
+IASI_NAV_UID = "iasi_nav"
+AIRS_NAV_UID = "airs_nav"
 
 # Grid Constants
 GRIDS_ANY         = "any_grid"

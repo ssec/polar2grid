@@ -105,16 +105,14 @@ EXPLODE_FACTOR = 64
 # scan-line grouping is significant to MS2GT components
 # (sat, inst) => (p2g_sat, p2g_inst, rows_per_swath)
 SAT_INST_TABLE = {
-    (None, 'CRIS'): (SAT_NPP, INST_CRIS, 3),
-    (None, 'CrIS'): (SAT_NPP, INST_CRIS, 3),
+    (None, 'CRIS'): (SAT_NPP, INST_CRIS, 3, CRIS_NAV_UID),
+    (None, 'CrIS'): (SAT_NPP, INST_CRIS, 3, CRIS_NAV_UID),
     # FIXME: this should be reviewed; consider how to fold instrument attributes into back-ends
     #        then figure out best way to handle conf tables referring to instrument name
-    # ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 1),
-    # ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 1),
+    ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 2, IASI_NAV_UID),
+    ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 2, IASI_NAV_UID),
     # ('g195', 'AIRS'): (None, None, 0),  # FIXME this needs work
-    ('M02', 'IASI'): (SAT_NPP, INST_CRIS, 2), # FIXME
-    ('M01', 'IASI'): (SAT_NPP, INST_CRIS, 2), # FIXME
-    (None, 'AIRS'): (SAT_NPP, INST_CRIS, 2),  # FIXME
+    (None, 'AIRS'): (SAT_AQUA, INST_AIRS, 2, AIRS_NAV_UID),  # FIXME
 }
 
 # pressure layers to obtain data from
@@ -172,10 +170,10 @@ def _filename_info(pathname):
     mgd = m.groupdict()
     when = datetime.strptime('%(date)s %(start_time)s' % mgd, '%Y%m%d %H%M%S')
     # fetch with preference toward satellite matching - failing that, check with sat=None case
-    sat, inst, rps = SAT_INST_TABLE.get((mgd['sat'], mgd['inst']),
+    sat, inst, rps, nav_set_uid = SAT_INST_TABLE.get((mgd['sat'], mgd['inst']),
                                         SAT_INST_TABLE.get((None, mgd['inst'])))
     return { 'start_time': when,
-             'nav_set_uid': "cris_nav",  # FIXME  % (sat, inst),
+             'nav_set_uid': nav_set_uid,
              'sat': sat,
              'instrument': inst,    # why is this not 'inst'? or 'sat' 'satellite'?
              'rows_per_scan': rps
@@ -449,7 +447,7 @@ def swathbuckler(*h5_pathnames):
         }
         # bands[name] = band
         bands[(guide.bkind, guide.bid)] = band
-    nfo['nav_set_uid'] = 'cris_nav'   # FIXME move nav_set to the guidebook
+    #nfo['nav_set_uid'] = 'cris_nav'   # FIXME move nav_set to the guidebook
     LOG.debug('metadata: %s' % pformat(nfo))
     return nfo
 
@@ -490,7 +488,14 @@ class Frontend(FrontendRole):
 
     @classmethod
     def sort_files_by_nav_uid(cls, filepaths):
-        return {'cris_nav': [pn for pn in filepaths if _filename_info(pn)]}  # FIXME this is too CrIS-specific; should identify nav grouping from filenames and sort it up
+        ret = {}
+        for pn in filepaths:
+            file_info = _filename_info(pn)
+            if file_info["nav_set_uid"] not in ret:
+                ret[file_info["nav_set_uid"]] = []
+            ret[file_info["nav_set_uid"]].append(pn)
+
+        return ret
 
     def make_swaths(self, filepaths, **kwargs):
         """

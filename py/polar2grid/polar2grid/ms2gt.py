@@ -141,6 +141,20 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
         raise ValueError("ll2cr didn't produce the same number for scan first cols and rows")
     d["scan_first"] = col_dict["scan_first"]
 
+    stem = os.path.splitext(d["cols_filename"])[0]
+    stem = stem[:stem.find("cols")] + "cols"
+    new_col_fn = stem + ".real4.%d.%d" % (colsin, d["scans_out"] * d["ll2cr_rowsperscan"])
+    log.debug("Moving ll2cr cols file '%s' to '%s'", d["cols_filename"], new_col_fn)
+    os.rename(d["cols_filename"], new_col_fn)
+    d["cols_filename"] = new_col_fn
+
+    stem = os.path.splitext(d["rows_filename"])[0]
+    stem = stem[:stem.find("rows")] + "rows"
+    new_row_fn = stem + ".real4.%d.%d" % (colsin, d["scans_out"] * d["ll2cr_rowsperscan"])
+    log.debug("Moving ll2cr rows file '%s' to '%s'", d["rows_filename"], new_row_fn)
+    os.rename(d["rows_filename"], new_row_fn)
+    d["rows_filename"] = new_row_fn
+
     log.debug("Number of Scans Out = %d" % d["scans_out"])
     log.debug("Number for Scan First = %d" % d["scan_first"])
     log.debug("Number of Rows Per Scan = %d" % d["ll2cr_rowsperscan"])
