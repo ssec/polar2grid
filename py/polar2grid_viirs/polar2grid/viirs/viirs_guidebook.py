@@ -68,6 +68,7 @@ K_ALTITUDE             = "AltitudeVar"
 K_RADIANCE_FACTORS     = "RadianceFactorsVar"
 K_REFLECTANCE_FACTORS  = "ReflectanceFactorsVar"
 K_BTEMP_FACTORS        = "BrightnessTemperatureFactorsVar"
+K_SST_FACTORS          = "SeaSurfaceTemperatureFactorsVar"
 K_STARTTIME            = "StartTimeVar"
 K_MODESCAN             = "ModeScanVar"
 K_MODEGRAN             = "ModeGranVar"
@@ -85,6 +86,7 @@ NAV_SET_GUIDE = {
         BKIND_M   : MBAND_NAV_UID,
         BKIND_I   : IBAND_NAV_UID,
         BKIND_DNB : DNB_NAV_UID,
+        BKIND_SST : MBAND_NAV_UID,
         }
 
 # Non-TC vs Terrain Corrected
@@ -92,13 +94,17 @@ GEO_GUIDE = {
         BKIND_M : ('GMODO','GMTCO'),
         BKIND_I : ('GIMGO','GITCO'),
         BKIND_DNB : ('GDNBO','GDNBO'),
+        BKIND_SST : ('GMODO','GMTCO'),
         }
 
 FACTORS_GUIDE = {
-        DKIND_REFLECTANCE : K_REFLECTANCE_FACTORS,
-        DKIND_RADIANCE    : K_RADIANCE_FACTORS,
-        DKIND_BTEMP       : K_BTEMP_FACTORS
-        }
+    (BKIND_M, DKIND_REFLECTANCE) : K_REFLECTANCE_FACTORS,
+    (BKIND_I, DKIND_REFLECTANCE) : K_REFLECTANCE_FACTORS,
+    (BKIND_DNB, DKIND_RADIANCE)  : K_RADIANCE_FACTORS,
+    (BKIND_M, DKIND_BTEMP)       : K_BTEMP_FACTORS,
+    (BKIND_I, DKIND_BTEMP)       : K_BTEMP_FACTORS,
+    (BKIND_SST, DKIND_BTEMP)     : K_SST_FACTORS,
+}
 
 GEO_FILE_GUIDE = {
             r'GITCO.*' : {
@@ -190,6 +196,19 @@ SV_FILE_GUIDE = {
                             K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
+            r'V(?P<file_kind>SST)O.*': {
+                K_RADIANCE: None,
+                K_REFLECTANCE: None,
+                K_BTEMP: '/All_Data/VIIRS-SST-EDR_All/SkinSST',
+                K_SST_FACTORS: '/All_Data/VIIRS-SST-EDR_All/SkinSSTFactors',
+                K_RADIANCE_FACTORS: None,
+                K_REFLECTANCE_FACTORS: None,
+                K_BTEMP_FACTORS: None,
+                K_MODESCAN: None,
+                K_MODEGRAN: None,
+                K_QF3: '/All_Data/VIIRS-SST-EDR_All/QF3_VIIRSSSTEDR',
+                K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+                K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
             r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
                             K_REFLECTANCE: None,
                             K_BTEMP: None,
@@ -211,13 +230,15 @@ ROWS_PER_SCAN = {
         "GITCO" : 32,
         "GIMGO" : 32,
         BKIND_DNB : 16,
-        "GDNBO" : 16
+        "GDNBO" : 16,
+        BKIND_SST : 16,
         }
 
 COLS_PER_ROW = {
         BKIND_M   : 3200,
         BKIND_I   : 6400,
-        BKIND_DNB : 4064
+        BKIND_DNB : 4064,
+        BKIND_SST : 3200,
         }
 
 DATA_KINDS = {
@@ -243,7 +264,8 @@ DATA_KINDS = {
         (BKIND_I,BID_04) : DKIND_BTEMP,
         (BKIND_I,BID_05) : DKIND_BTEMP,
         (BKIND_I,BID_06) : DKIND_REFLECTANCE,
-        (BKIND_DNB,NOT_APPLICABLE) : DKIND_RADIANCE
+        (BKIND_DNB,NOT_APPLICABLE) : DKIND_RADIANCE,
+        (BKIND_SST,NOT_APPLICABLE) : DKIND_BTEMP,
         }
 
 VAR_PATHS = {
@@ -269,7 +291,8 @@ VAR_PATHS = {
         (BKIND_I,BID_04) : K_BTEMP,
         (BKIND_I,BID_05) : K_BTEMP,
         (BKIND_I,BID_06) : K_REFLECTANCE,
-        (BKIND_DNB,NOT_APPLICABLE) : K_RADIANCE
+        (BKIND_DNB,NOT_APPLICABLE) : K_RADIANCE,
+        (BKIND_SST,NOT_APPLICABLE) : K_BTEMP,
         }
 
 band2const = {
@@ -391,6 +414,7 @@ def sort_files_by_nav_uid(filepaths):
 
     for fp in filepaths:
         fn = os.path.split(fp)[-1]
+        # FIXME: This sucks:
         if fn.startswith("SVI") and fn.endswith(".h5"):
             nav_uid = NAV_SET_GUIDE[BKIND_I]
             if fn[3:5] in nav_dict[nav_uid]:
@@ -405,6 +429,9 @@ def sort_files_by_nav_uid(filepaths):
             nav_uid = NAV_SET_GUIDE[BKIND_DNB]
             nav_dict[nav_uid][NOT_APPLICABLE].append(fp)
             continue
+        if fn.startswith("VSSTO") and fn.endswith(".h5"):
+            nav_uid = NAV_SET_GUIDE[BKIND_SST]
+            nav_dict[nav_uid][NOT_APPLICABLE].append(fp)
 
         # Ignore the file that we don't understand
 
@@ -431,6 +458,7 @@ def sort_files_by_nav_uid(filepaths):
             del nav_dict[nav_uid]
             continue
 
+    print nav_dict
     return nav_dict
 
 
@@ -553,6 +581,9 @@ def file_info(fn):
             minfo["kind"] = BKIND_M
         elif minfo["file_kind"] == "I":
             minfo["kind"] = BKIND_I
+        elif minfo["file_kind"] == "SST":
+            minfo["kind"] = BKIND_SST
+            minfo["band"] = NOT_APPLICABLE
         else:
             log.error("Band kind not known '%s'" % minfo["kind"])
             raise ValueError("Band kind not known '%s'" % minfo["kind"])
@@ -576,7 +607,7 @@ def file_info(fn):
         finfo["data_kind"] = DATA_KINDS[dkind]
         finfo["rows_per_scan"] = ROWS_PER_SCAN[finfo["kind"]]
         finfo["cols_per_row"] = COLS_PER_ROW[finfo["kind"]]
-        finfo["factors"] = FACTORS_GUIDE[finfo["data_kind"]]
+        finfo["factors"] = FACTORS_GUIDE[(finfo["kind"], finfo["data_kind"])]
 
         # Convert time information to datetime objects
         get_datetimes(finfo)
@@ -588,6 +619,7 @@ def file_info(fn):
 
         # Geonav file exists
         file_glob = finfo[K_NAVIGATION] % {"geo_kind":GEO_GUIDE[finfo["kind"]][1]}
+        print finfo["kind"], GEO_GUIDE[finfo["kind"]], file_glob, fn
         geo_glob = os.path.join(base_path, file_glob)
         try:
             # First try terrain corrected
