@@ -165,7 +165,7 @@ def _filename_info(pathname):
     """
     m = RE_DRRTV.match(os.path.split(pathname)[-1])
     if not m:
-        LOG.debug('%s does match DR-RTV file naming convention' % pathname)
+        LOG.debug('%s doesn\'t match DR-RTV file naming convention' % pathname)
         return None
     mgd = m.groupdict()
     when = datetime.strptime('%(date)s %(start_time)s' % mgd, '%Y%m%d %H%M%S')
@@ -483,6 +483,8 @@ class Frontend(FrontendRole):
         zult = []
         for pn in filepaths:
             nfo = _filename_info(pn)
+            if not nfo:
+                continue
             zult.append(nfo['start_time'] if nfo is not None else None)
         return zult
 
@@ -491,6 +493,8 @@ class Frontend(FrontendRole):
         ret = {}
         for pn in filepaths:
             file_info = _filename_info(pn)
+            if not file_info:
+                continue
             if file_info["nav_set_uid"] not in ret:
                 ret[file_info["nav_set_uid"]] = []
             ret[file_info["nav_set_uid"]].append(pn)
