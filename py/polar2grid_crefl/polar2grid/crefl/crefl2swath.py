@@ -122,7 +122,8 @@ class Frontend(roles.FrontendRole):
         attrs = ds_object.attributes()
         if fill_attr_name:
             input_fill_value = attrs[fill_attr_name]
-            input_fill_value = 14000 # FIXME
+            log.debug("Using fill value attribute '%s' (%s) to filter bad data", fill_attr_name, str(input_fill_value))
+            input_fill_value = 16000
             fill_mask = band_data >= input_fill_value
         else:
             fill_mask = numpy.zeros_like(band_data).astype(numpy.bool)
