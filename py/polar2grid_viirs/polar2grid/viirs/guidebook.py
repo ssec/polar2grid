@@ -49,40 +49,40 @@ import numpy as np
 import os
 import sys
 import logging
+from collections import namedtuple
 
 log = logging.getLogger(__name__)
 UTC = UTC()
 
-K_LATITUDE             = "LatitudeVar"
-K_LONGITUDE            = "LongitudeVar"
-K_RADIANCE             = "RadianceVar"
-K_REFLECTANCE          = "ReflectanceVar"
-K_BTEMP                = "BrightnessTemperatureVar"
-K_SOLARZENITH          = "SolarZenithVar"
-K_LUNARZENITH          = "LunarZenithVar"
-K_MOONILLUM            = "LunarIlluminationVar"
-K_ALTITUDE             = "AltitudeVar"
-K_RADIANCE_FACTORS     = "RadianceFactorsVar"
-K_REFLECTANCE_FACTORS  = "ReflectanceFactorsVar"
-K_BTEMP_FACTORS        = "BrightnessTemperatureFactorsVar"
-K_STARTTIME            = "StartTimeVar"
-K_AGGR_STARTTIME       = "AggrStartTimeVar"
-K_AGGR_STARTDATE       = "AggrStartDateVar"
-K_AGGR_ENDTIME         = "AggrEndTimeVar"
-K_AGGR_ENDDATE         = "AggrEndDateVar"
-K_NUMSCANS             = "NumberOfScansVar"
-K_ROWSPERSCAN          = "RowsPerScanVar"
-K_MODESCAN             = "ModeScanVar"
-K_MODEGRAN             = "ModeGranVar"
-K_QF3                  = "QF3Var"
-K_LAT_G_RING           = "LatGRingAttr"
-K_LON_G_RING           = "LonGRingAttr"
-K_WEST_COORD           = "WestCoordinateAttr"
-K_EAST_COORD           = "EastCoordinateAttr"
-K_NORTH_COORD          = "NorthCoordinateAttr"
-K_SOUTH_COORD          = "SouthCoordinateAttr"
-K_NAVIGATION           = "NavigationFilenameGlob"  # glob to search for to find navigation file that corresponds
-K_GEO_REF              = "CdfcbGeolocationFileGlob" # glob which would match the N_GEO_Ref attribute
+K_LATITUDE = "LatitudeVar"
+K_LONGITUDE = "LongitudeVar"
+K_RADIANCE = "RadianceVar"
+K_REFLECTANCE = "ReflectanceVar"
+K_BTEMP = "BrightnessTemperatureVar"
+K_SOLARZENITH = "SolarZenithVar"
+K_LUNARZENITH = "LunarZenithVar"
+K_MOONILLUM = "LunarIlluminationVar"
+K_ALTITUDE = "AltitudeVar"
+K_RADIANCE_FACTORS = "RadianceFactorsVar"
+K_REFLECTANCE_FACTORS = "ReflectanceFactorsVar"
+K_BTEMP_FACTORS = "BrightnessTemperatureFactorsVar"
+K_SST_FACTORS = "SeaSurfaceTemperatureFactorsVar"
+K_STARTTIME = "StartTimeVar"
+K_AGGR_STARTTIME = "AggrStartTimeVar"
+K_AGGR_STARTDATE = "AggrStartDateVar"
+K_AGGR_ENDTIME = "AggrEndTimeVar"
+K_AGGR_ENDDATE = "AggrEndDateVar"
+K_NUMSCANS = "NumberOfScansVar"
+K_ROWSPERSCAN = "RowsPerScanVar"
+K_MODESCAN = "ModeScanVar"
+K_MODEGRAN = "ModeGranVar"
+K_QF3 = "QF3Var"
+K_LAT_G_RING = "LatGRingAttr"
+K_LON_G_RING = "LonGRingAttr"
+K_WEST_COORD = "WestCoordinateAttr"
+K_EAST_COORD = "EastCoordinateAttr"
+K_NORTH_COORD = "NorthCoordinateAttr"
+K_SOUTH_COORD = "SouthCoordinateAttr"
 
 # File Regexes
 # FUTURE: Put in a config file
@@ -108,44 +108,22 @@ M14_REGEX = r'SVM14_(?P<satellite>[^_]*)_.*\.h5'
 M15_REGEX = r'SVM15_(?P<satellite>[^_]*)_.*\.h5'
 M16_REGEX = r'SVM16_(?P<satellite>[^_]*)_.*\.h5'
 DNB_REGEX = r'SVDNB_(?P<satellite>[^_]*)_.*\.h5'
+SST_REGEX = r'VSSTO_(?P<satellite>[^_]*)_.*\.h5'
 # Geolocation regexes
 I_GEO_REGEX = r'GIMGO_(?P<satellite>[^_]*)_.*\.h5'
 I_GEO_TC_REGEX = r'GITCO_(?P<satellite>[^_]*)_.*\.h5'
 M_GEO_REGEX = r'GMODO_(?P<satellite>[^_]*)_.*\.h5'
 M_GEO_TC_REGEX = r'GMTCO_(?P<satellite>[^_]*)_.*\.h5'
 DNB_GEO_REGEX = r'GDNBO_(?P<satellite>[^_]*)_.*\.h5'
-DNB_GEO_TC_REGEX = r'GDNBO_(?P<satellite>[^_]*)_.*\.h5' # FUTURE: Fix when TC DNB geolocation is available
-# Regex organization/grouping
-ALL_FILE_REGEXES = [
-    I01_REGEX,
-    I02_REGEX,
-    I03_REGEX,
-    I04_REGEX,
-    I05_REGEX,
-    M01_REGEX,
-    M02_REGEX,
-    M03_REGEX,
-    M04_REGEX,
-    M05_REGEX,
-    M06_REGEX,
-    M07_REGEX,
-    M08_REGEX,
-    M09_REGEX,
-    M10_REGEX,
-    M11_REGEX,
-    M12_REGEX,
-    M13_REGEX,
-    M14_REGEX,
-    M15_REGEX,
-    M16_REGEX,
-    DNB_REGEX,
-    I_GEO_REGEX,
-    I_GEO_TC_REGEX,
-    M_GEO_REGEX,
-    M_GEO_TC_REGEX,
-    DNB_GEO_REGEX
-    # FUTURE: DNB_GEO_TC_REGEX
-]
+DNB_GEO_TC_REGEX = r'GDNBO_(?P<satellite>[^_]*)_.*\.h5'  # FUTURE: Fix when TC DNB geolocation is available
+
+
+# Structure to help with complex variables that require more than just a variable path
+class FileVar(namedtuple("FileVar", ["var_path", "scaling_path", "scaling_mask_func", "nonscaling_mask_func"])):
+    def __new__(cls, var_path, scaling_path=None,
+                scaling_mask_func=lambda a: a >= 65528, nonscaling_mask_func=lambda a: a <= -999.0):
+        # add default values
+        return super(FileVar, cls).__new__(cls, var_path, scaling_path, scaling_mask_func, nonscaling_mask_func)
 
 
 def create_geo_file_info(file_kind, file_band, **kwargs):
@@ -154,21 +132,21 @@ def create_geo_file_info(file_kind, file_band, **kwargs):
     Since all of the keys are mostly the same, no need in repeating them.
     """
     d = {
-        K_LATITUDE:    '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Latitude',
-        K_LONGITUDE:   '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Longitude',
-        K_ALTITUDE:    '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Height',
-        K_STARTTIME:   '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/StartTime',
+        K_LATITUDE: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Latitude'),
+        K_LONGITUDE: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Longitude'),
+        K_ALTITUDE: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Height',
+        K_STARTTIME: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/StartTime',
         K_AGGR_STARTTIME: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Aggr.AggregateBeginningTime',
         K_AGGR_STARTDATE: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Aggr.AggregateBeginningDate',
         K_AGGR_ENDTIME: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Aggr.AggregateEndingTime',
         K_AGGR_ENDDATE: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Aggr.AggregateEndingDate',
-        K_SOLARZENITH: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/SolarZenithAngle',
-        K_LUNARZENITH: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/LunarZenithAngle',
-        K_MOONILLUM:   '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/MoonIllumFraction',
-        K_LAT_G_RING:  '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.G-Ring_Latitude',
-        K_LON_G_RING:  '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.G-Ring_Longitude',
-        K_WEST_COORD:  '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.West_Bounding_Coordinate',
-        K_EAST_COORD:  '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.East_Bounding_Coordinate',
+        K_SOLARZENITH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/SolarZenithAngle'),
+        K_LUNARZENITH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/LunarZenithAngle'),
+        K_MOONILLUM: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/MoonIllumFraction',
+        K_LAT_G_RING: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.G-Ring_Latitude',
+        K_LON_G_RING: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.G-Ring_Longitude',
+        K_WEST_COORD: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.West_Bounding_Coordinate',
+        K_EAST_COORD: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.East_Bounding_Coordinate',
         K_NORTH_COORD: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.North_Bounding_Coordinate',
         K_SOUTH_COORD: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.South_Bounding_Coordinate',
     }
@@ -183,6 +161,7 @@ def create_geo_file_info(file_kind, file_band, **kwargs):
 
     return d
 
+
 GEO_FILE_GUIDE = {
     I_GEO_TC_REGEX: create_geo_file_info("IMG", "-TC"),
     I_GEO_REGEX: create_geo_file_info("IMG", ""),
@@ -193,19 +172,20 @@ GEO_FILE_GUIDE = {
 
 
 def create_im_file_info(file_kind, file_band, **kwargs):
-    """Return a standard dictionary for an SVI or SVM file.
+    """Return a standard dictionary for a SVI or SVM file.
 
     Since all of the keys are mostly the same, no need in repeating them.
     """
     d = {
-        K_RADIANCE: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/Radiance',
-        K_REFLECTANCE: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/Reflectance',
-        K_BTEMP: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/BrightnessTemperature',
-        K_RADIANCE_FACTORS: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/RadianceFactors',
-        K_REFLECTANCE_FACTORS: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/ReflectanceFactors',
-        K_BTEMP_FACTORS: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/BrightnessTemperatureFactors',
+        K_RADIANCE: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/Radiance',
+                            '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/RadianceFactors'),
+        K_REFLECTANCE: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/Reflectance',
+                               '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/ReflectanceFactors'),
+        K_BTEMP: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/BrightnessTemperature',
+                         '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/BrightnessTemperatureFactors'),
         K_NUMSCANS: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/NumberOfScans',
-        K_MODESCAN: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/ModeScan',
+        K_MODESCAN: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/ModeScan', None,
+                            lambda a: a > 1, lambda a: a > 1),
         K_MODEGRAN: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/ModeGran',
         K_QF3: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/QF3_SCAN_RDR',
         K_AGGR_STARTTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-SDR/VIIRS-{file_kind}{file_band}-SDR_Aggr.AggregateBeginningTime',
@@ -216,6 +196,25 @@ def create_im_file_info(file_kind, file_band, **kwargs):
     for k, v in d.items():
         d[k] = d[k].format(file_kind=file_kind, file_band=file_band, **kwargs)
     return d
+
+
+def create_edr_file_info(file_kind, file_band, **kwargs):
+    """Return a standard dictionary for an EDR file.
+    """
+    # FUTURE: We only have SST for now so this will probably need to be more generic in the future.
+    d = {
+        K_BTEMP: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/SkinSST',
+                         '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/SkinSSTFactors'),
+        K_QF3: '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/QF3_VIIRSSSTEDR',
+        K_AGGR_STARTTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateBeginningTime',
+        K_AGGR_STARTDATE: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateBeginningDate',
+        K_AGGR_ENDTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateEndingTime',
+        K_AGGR_ENDDATE: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateEndingDate',
+    }
+    for k, v in d.items():
+        d[k] = d[k].format(file_kind=file_kind, file_band=file_band, **kwargs)
+    return d
+
 
 SV_FILE_GUIDE = {
     I01_REGEX: create_im_file_info("I", "1"),
@@ -240,30 +239,13 @@ SV_FILE_GUIDE = {
     M15_REGEX: create_im_file_info("M", "15"),
     M16_REGEX: create_im_file_info("M", "16"),
     DNB_REGEX: create_im_file_info("DNB", ""),
+    SST_REGEX: create_edr_file_info("SST", ""),
 }
-
-SCALING_FACTORS = {
-    K_REFLECTANCE: K_REFLECTANCE_FACTORS,
-    K_RADIANCE: K_RADIANCE_FACTORS,
-    K_BTEMP: K_BTEMP_FACTORS,
-}
-
-# missing value sentinels for different datasets
-# 0 if scaling exists, 1 if scaling is None
-MASKING_GUIDE = {
-    K_REFLECTANCE: (lambda a: a >= 65528, lambda a: a < -999.0),
-    K_RADIANCE: (lambda a: a >= 65528, lambda a: a < -999.0),
-    K_BTEMP: (lambda a: a >= 65528, lambda a: a < -999.0),
-    K_SOLARZENITH: (lambda a: a >= 65528, lambda a: a < -999.0),
-    K_LUNARZENITH: (lambda a: a >= 65528, lambda a: a < -999.0),
-    K_MODESCAN: (lambda a: a > 1, lambda a: a > 1),
-    K_LATITUDE: (lambda a: a >= 65528, lambda a: a <= -999),
-    K_LONGITUDE: (lambda a: a >= 65528, lambda a: a <= -999)
-}
+ALL_FILE_REGEXES = SV_FILE_GUIDE.keys() + GEO_FILE_GUIDE.keys()
 
 
 def make_polygon_tuple(lon_ring, lat_ring):
-    return tuple(tuple(x) for x in zip(lon_ring,lat_ring))
+    return tuple(tuple(x) for x in zip(lon_ring, lat_ring))
 
 
 def calculate_bbox_bounds(wests, easts, norths, souths, fill_value=DEFAULT_FILL_VALUE):
@@ -273,26 +255,30 @@ def calculate_bbox_bounds(wests, easts, norths, souths, fill_value=DEFAULT_FILL_
     or the first granule in an aggregate SDR file is south-most, east-most,
     etc.
     """
-    wests  = np.array(wests)
-    wests  = wests[ (wests >= -180) & (wests <= 180) ]
-    easts  = np.array(easts)
-    easts  = easts[ (easts >= -180) & (easts <= 180) ]
+    wests = np.array(wests)
+    wests = wests[(wests >= -180) & (wests <= 180)]
+    easts = np.array(easts)
+    easts = easts[(easts >= -180) & (easts <= 180)]
     norths = np.array(norths)
-    norths = norths[ (norths >= -90) & (norths <= 90) ]
+    norths = norths[(norths >= -90) & (norths <= 90)]
     souths = np.array(souths)
-    souths = souths[ (souths >= -90) & (souths <= 90) ]
+    souths = souths[(souths >= -90) & (souths <= 90)]
 
-    if norths.shape[0] == 0: nbound = fill_value
-    else: nbound = norths.max()
-    if souths.shape[0] == 0: sbound = fill_value
-    else: sbound = souths.min()
+    if norths.shape[0] == 0:
+        nbound = fill_value
+    else:
+        nbound = norths.max()
+    if souths.shape[0] == 0:
+        sbound = fill_value
+    else:
+        sbound = souths.min()
 
     if wests.shape[0] == 0:
         # If we didn't have any valid coordinates, its just a fill value
         wbound = fill_value
     elif wests.max() - wests.min() > 180:
         # We are crossing the dateline
-        wbound = wests[ wests > 0 ].min()
+        wbound = wests[wests > 0].min()
     else:
         # We aren't crossing the dateline so simple calculation
         wbound = min(wests)
@@ -302,82 +288,26 @@ def calculate_bbox_bounds(wests, easts, norths, souths, fill_value=DEFAULT_FILL_
         ebound = fill_value
     elif easts.max() - easts.min() > 180:
         # We are crossing the dateline
-        ebound = easts[ easts < 0 ].max()
+        ebound = easts[easts < 0].max()
     else:
         ebound = max(easts)
 
-
-    return wbound,ebound,nbound,sbound
-
-def sort_files_by_nav_uid(filepaths):
-    """Logic is duplicated from file_info-like method because it has less
-    overhead and this function was required a different way of accessing the
-    data.
-    """
-    # FIXME: Uses old BKIND_* keying in NAV_SET_GUIDE
-    # Create the dictionary structure to hold the filepaths
-    nav_dict = {}
-    for band_kind,band_id in DATA_KINDS.keys():
-        nav_uid = NAV_SET_GUIDE[band_kind]
-        if nav_uid not in nav_dict: nav_dict[nav_uid] = {}
-        nav_dict[nav_uid][band_id] = []
-
-    for fp in filepaths:
-        fn = os.path.split(fp)[-1]
-        if fn.startswith("SVI") and fn.endswith(".h5"):
-            nav_uid = NAV_SET_GUIDE[BKIND_I]
-            if fn[3:5] in nav_dict[nav_uid]:
-                nav_dict[nav_uid][fn[3:5]].append(fp)
-                continue
-        if fn.startswith("SVM") and fn.endswith(".h5"):
-            nav_uid = NAV_SET_GUIDE[BKIND_M]
-            if fn[3:5] in nav_dict[nav_uid]:
-                nav_dict[nav_uid][fn[3:5]].append(fp)
-                continue
-        if fn.startswith("SVDNB") and fn.endswith(".h5"):
-            nav_uid = NAV_SET_GUIDE[BKIND_DNB]
-            nav_dict[nav_uid][NOT_APPLICABLE].append(fp)
-            continue
-
-        # Ignore the file that we don't understand
-
-    # Make unique and sort
-    for nav_uid,nav_uid_dict in nav_dict.items():
-        num_files_for_set = 0
-        for file_id in nav_uid_dict.keys():
-            # If we don't have any files for this file set, remove the file set
-            if not nav_uid_dict[file_id]:
-                del nav_uid_dict[file_id]
-                continue
-
-            nav_uid_dict[file_id] = sorted(set(nav_uid_dict[file_id]), key=lambda f: os.path.split(f)[-1])
-
-            num_files = len(nav_uid_dict[file_id])
-            num_files_for_set = num_files_for_set or num_files # previous value or set it for the first time
-            if num_files != num_files_for_set:
-                # We weren't given the same number of files for this nav_set
-                log.error("Nav. set %s did not have the same number of files for every band (%s), expected %d got %d files" % (nav_uid,file_id,num_files_for_set,num_files))
-                raise ValueError("Nav. set %s did not have the same number of files for every band (%s), expected %d got %d files" % (nav_uid,file_id,num_files_for_set,num_files))
-
-        # If we don't have any files for this navigation set, remove the file set
-        if not nav_dict[nav_uid]:
-            del nav_dict[nav_uid]
-            continue
-
-    return nav_dict
+    return wbound, ebound, nbound, sbound
 
 
 def main():
     from argparse import ArgumentParser
+
     parser = ArgumentParser()
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
-            help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
+                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
     args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
 
     # TODO
+
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -145,9 +145,9 @@ class VIIRSSDRReader(HDF5Reader):
 
     def __getitem__(self, item):
         known_item = self.known_file_info.get(item, item)
-        if not isinstance(known_item, str):
-            log.debug("Loading known file information: '%s' : %r", item, known_item)
-            return known_item
+        if not isinstance(known_item, (str, unicode)):
+            # Using FileVar class
+            known_item = known_item.var_path
         log.debug("Loading %s from %s", known_item, self.filename)
         return super(VIIRSSDRReader, self).__getitem__(known_item)
 
@@ -163,7 +163,7 @@ class VIIRSSDRReader(HDF5Reader):
             if m <= -999 or b <= -999:
                 scaling_mask[start_idx:end_idx] = 1
             else:
-                data[start_idx:end_idx] = m * data[start_idx : end_idx] + b
+                data[start_idx:end_idx] = m * data[start_idx:end_idx] + b
 
         scaling_mask = scaling_mask.astype(numpy.bool)
         return data, scaling_mask
@@ -171,20 +171,22 @@ class VIIRSSDRReader(HDF5Reader):
     def get_swath_data(self, item, dtype=numpy.float32, fill=numpy.nan):
         """Retrieve the item asked for then set it to the specified data type, scale it, and mask it.
         """
-        data = self[item].value.astype(dtype)
+        var_info = self.known_file_info.get(item)
+        data = self[var_info.var_path].value.astype(dtype)
 
         # Get the scaling factors
         scaling_factors = None
-        if item in guidebook.SCALING_FACTORS:
-            try:
-                scaling_factors = list(self[guidebook.SCALING_FACTORS[item]][:])
-            except KeyError:
-                log.info("No scaling factors for %s", item)
+        try:
+            scaling_factors = list(self[var_info.scaling_path][:])
+        except KeyError:
+            log.info("No scaling factors for %s", item)
 
         # Get the mask for the data (based on unscaled data)
         mask = None
-        if item in guidebook.MASKING_GUIDE:
-            mask = guidebook.MASKING_GUIDE[item][scaling_factors is not None](data)
+        if scaling_factors is not None and var_info.scaling_mask_func is not None:
+            mask = var_info.scaling_mask_func(data)
+        elif scaling_factors is None and var_info.nonscaling_mask_func is not None:
+            mask = var_info.nonscaling_mask_func(data)
 
         # Scale the data
         scaling_mask = None

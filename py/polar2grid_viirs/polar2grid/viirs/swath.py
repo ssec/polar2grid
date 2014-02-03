@@ -58,7 +58,7 @@ import re
 import json
 import importlib
 from datetime import datetime
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 log = logging.getLogger(__name__)
 
@@ -105,6 +105,8 @@ PRODUCT_ADAPTIVE_M16 = "adaptive_m16"
 # if the below were their own products
 #PRODUCT_CORRECTED_DNB = "corrected_dnb"
 #PRODUCT_CORRECTED_ADAPTIVE_DNB = "corrected_adaptive_dnb"
+# FIXME: How do future config files handle this product ID since MODIS would have a similar product?
+PRODUCT_SST = "sst"
 
 # Geolocation "Products"
 # These products aren't really products at the moment and should only be used as navigation for the above products
@@ -170,6 +172,7 @@ PRODUCT_INFO = {
     PRODUCT_ADAPTIVE_M14: ProductInfo((PRODUCT_M14,), m_nav_tuple, 16, "equalized_btemp", ""),
     PRODUCT_ADAPTIVE_M15: ProductInfo((PRODUCT_M15,), m_nav_tuple, 16, "equalized_btemp", ""),
     PRODUCT_ADAPTIVE_M16: ProductInfo((PRODUCT_M16,), m_nav_tuple, 16, "equalized_btemp", ""),
+    PRODUCT_SST: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
     # Navigation (doing this here we can mimic normal products if people want them remapped for some reason)
     PRODUCT_I_LON: ProductInfo(tuple(), i_nav_tuple, 32, "longitude", ""),
     PRODUCT_I_LAT: ProductInfo(tuple(), i_nav_tuple, 32, "latitude", ""),
@@ -205,6 +208,7 @@ PRODUCT_FILE_REGEXES = {
     PRODUCT_M15: RawProductFileInfo(M15_REGEX, K_BTEMP),
     PRODUCT_M16: RawProductFileInfo(M16_REGEX, K_BTEMP),
     PRODUCT_DNB: RawProductFileInfo(DNB_REGEX, K_RADIANCE),
+    PRODUCT_SST: RawProductFileInfo(SST_REGEX, K_BTEMP),
     # FIXME: How do I handle TC vs non-TC here:
     # FIXME: Major flaw is that the latitude and longitude are treated as separate products in the product_info when really they should be forced to be a pair
     # Geolocation products (products from a geolocation file) must be None for the VIIRS frontend because we could have
@@ -294,137 +298,101 @@ def create_ifog(meta_data, files_loaded, nav_files_loaded, products_created, nav
     pass
 
 
-def _jsonclass_to_pyclass(json_class_name):
-    cls_name = json_class_name.split(".")[-1]
-    mod_name = ".".join(json_class_name.split(".")[:-1])
-    cls = getattr(importlib.import_module(mod_name), cls_name)
-    return cls
-
-
-def open_p2g_object(json_obj):
-    """Open a Polar2Grid object either from a filename or an already loaded dict.
+def open_p2g_object(json_filename):
+    """Open a Polar2Grid object either from a JSON filename.
     """
-    if isinstance(json_obj, (str, unicode)):
-        d = json.load(open(json_obj, "r"))
-    else:
-        d = json_obj
-
-    if "__class__" not in d:
-        log.error("Missing '__class__' key in JSON file")
-        raise ValueError("Missing '__class__' key in JSON file")
-
-    cls = _jsonclass_to_pyclass(d["__class__"])
-    return cls.create_from_dict(d)
+    inst = json.load(open(json_filename, "r"), cls=P2GJSONDecoder)
+    return inst
 
 
 def remove_p2g_object(obj):
     """Recursively remove a Polar2Grid object from disk.
 
     By default objects persist once saved to disk. This function should be used to
-    recursively remove them by filename or dict. Currently P2G objects can not be deleted via this function.
+    recursively remove them by filename or P2G object.
     """
     if isinstance(obj, (str, unicode)):
-        json_dict = json.load(open(obj, "r"))
+        p2g_obj = json.load(open(obj, "r"), obj=P2GJSONDecoder)
         fn = obj
     else:
-        json_dict = obj
+        p2g_dict = obj
         fn = None
 
-    # XXX: Would this look cleaner if we loaded the object and forced persist to 'False'?
-    for k, v in json_dict.items():
-        if k == "swath_data":
-            try:
-                log.info("Removing flat binary file: '%s'", v)
-                os.remove(v)
-            except StandardError:
-                log.error("Could not remove: '%s'", v, exc_info=True)
-        elif isinstance(v, dict):
-            remove_p2g_object(v)
+    # Tell the object to clean itself up
+    p2g_dict.persist = False
+    # Garbage collection will get this eventually (as long as the caller removes their pointer to the object
+    del p2g_obj
 
     if fn:
         try:
             log.info("Removing JSON on-disk file: '%s'", fn)
             os.remove(fn)
         except StandardError:
-            log.error("Could not remove JSON file: '%s'", v, exc_info=True)
+            log.error("Could not remove JSON file: '%s'", fn, exc_info=True)
+
+
+class P2GJSONDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kargs):
+        super(P2GJSONDecoder, self).__init__(object_hook=self.dict_to_object, *args, **kargs)
+
+    def _jsonclass_to_pyclass(self, json_class_name):
+        cls_name = json_class_name.split(".")[-1]
+        mod_name = ".".join(json_class_name.split(".")[:-1])
+        cls = getattr(importlib.import_module(mod_name), cls_name)
+        return cls
+
+    def dict_to_object(self, obj):
+        if "__class__" not in obj:
+            return obj
+
+        cls = self._jsonclass_to_pyclass(obj["__class__"])
+
+        for k, v in obj.items():
+            if isinstance(v, (str, unicode)):
+                try:
+                    obj[k] = iso8601(v)
+                except ValueError:
+                    pass
+
+        inst = cls(**obj)
+        return inst
+
+
+class P2GJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, BaseP2GObject):
+            obj = obj.copy()
+            obj["__class__"] = str(obj.__class__.__module__) + "." + str(obj.__class__.__name__)
+            return super(P2GJSONEncoder, self).default(obj)
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        else:
+            return super(P2GJSONEncoder, self).default(obj)
 
 
 class BaseP2GObject(dict):
     def __init__(self, *args, **kwargs):
+        if kwargs.pop("__class__", None):
+            # this is being loaded from a serialized version
+            # we don't have the 'right' to delete any FBF files associated with it
+            self.persist = True
+        else:
+            self.persist = False
         super(BaseP2GObject, self).__init__(*args, **kwargs)
-        self.persist = False
-
-    @classmethod
-    def create_from_dict(cls, d):
-        # Remove the class name if it's still in the dict
-        d.pop("__class__", None)
-        # Can be overridden in subclasses if arguments are needed
-        inst = cls()
-        # If we are being created from a dictionary then we don't have the "right" to delete on-disk content
-        inst.persist = True
-        # Load extra data (including sub-elements) from the dictionary
-        inst.load_from_dict(d)
-        return inst
-
-    def load_from_dict(self, d):
-        for k, v in d.items():
-            # Handle any special keys that need converting
-            if isinstance(v, dict) and "__class__" in v:
-                d[k] = open_p2g_object(v)
-            elif isinstance(v, datetime):
-                d[k] = iso8601(v)
-
-        self.update(**d)
-
-    @classmethod
-    def _json_class_name(cls):
-        """Get the polar2grid string name for this class.
-        """
-        return str(cls.__module__) + "." + str(cls.__name__)
 
     @classmethod
     def open(cls, filename):
         """Open a JSON file representing a Polar2Grid object.
         """
-        d = json.load(open(filename, "r"))
-        if "__class__" not in d:
-            log.error("Missing '__class__' key in JSON file")
-            raise ValueError("Missing '__class__' key in JSON file")
-
-        json_class_name = d.pop("__class__")
-        if json_class_name != cls._json_class_name():
-            log.error("Incorrect class in JSON file. Got %s, expected %s" % (json_class_name, cls._json_class_name()))
-            raise ValueError("Incorrect class in JSON file. Got %s, expected %s" % (json_class_name, cls._json_class_name()))
-
-        inst = cls.create_from_dict(d)
+        inst = json.load(open(filename, "r"), cls=P2GJSONDecoder)
         return inst
-
-    def jsonify(self):
-        """Create a JSON-serializable python dictionary.
-        """
-        # Make sure none of the on-disk information gets deleted on garbage collection
-        self.persist = True
-
-        d = self.copy()
-        for k, v in d.items():
-            # Handle any special keys that need converting
-            if isinstance(v, dict) and hasattr(v, "jsonify"):
-                d[k] = v.jsonify()
-            elif isinstance(v, datetime):
-                d[k] = v.isoformat()
-
-        d["__class__"] = self._json_class_name()
-        return d
 
     def save(self, filename):
         """Write the JSON representation of this class to a file.
         """
-        # Get the JSON-able representation
-        json_dict = self.jsonify()
-
         f = open(filename, "w")
         try:
-            json.dump(json_dict, f, indent=4, sort_keys=True)
+            json.dump(self, f, cls=P2GJSONEncoder, indent=4, sort_keys=True)
         except TypeError:
             log.error("Could not write P2G object to JSON file: '%s'", filename, exc_info=True)
             f.close()
@@ -437,28 +405,15 @@ class BaseMetaData(BaseP2GObject):
 
 
 class BaseScene(BaseP2GObject):
-    def __init__(self, geo_swath, **kwargs):
+    def __init__(self, **kwargs):
+        """Create a basic Polar2Grid scene.
+
+        `geolocation` is a required keyword.
+        """
         super(BaseScene, self).__init__(**kwargs)
-        self.geolocation = geo_swath
 
-    def jsonify(self):
-        self["geolocation"] = self.geolocation
-        json_dict = super(BaseScene, self).jsonify()
-        del self["geolocation"]
-        return json_dict
-
-    @classmethod
-    def create_from_dict(cls, d):
-        # Remove the class name if it's still in the dict
-        d.pop("__class__", None)
-        # Can be overridden in subclasses if arguments are needed
-        geoloc_inst = open_p2g_object(d.pop("geolocation"))
-        inst = cls(geoloc_inst)
-        # If we are being created from a dictionary then we don't have the "right" to delete on-disk content
-        inst.persist = True
-        # Load extra data (including sub-elements) from the dictionary
-        inst.load_from_dict(d)
-        return inst
+        if "geolocation" not in self:
+            raise ValueError("Missing required keyword 'geolocation'")
 
 
 class BaseSwath(BaseP2GObject):
@@ -484,23 +439,9 @@ class BaseGeoSwath(BaseSwath):
         :param latitude_swath: Swath object for the latitude data
         """
         super(BaseGeoSwath, self).__init__(**kwargs)
-        self["scene_name"] = scene_name
-        self["longitude"] = longitude_swath
-        self["latitude"] = latitude_swath
-
-    @classmethod
-    def create_from_dict(cls, d):
-        # Remove the class name if it's still in the dict
-        d.pop("__class__", None)
-        # Can be overridden in subclasses if arguments are needed
-        lon_inst = open_p2g_object(d.pop("longitude"))
-        lat_inst = open_p2g_object(d.pop("latitude"))
-        inst = cls(d.pop("scene_name"), lon_inst, lat_inst)
-        # If we are being created from a dictionary then we don't have the "right" to delete on-disk content
-        inst.persist = True
-        # Load extra data (including sub-elements) from the dictionary
-        inst.load_from_dict(d)
-        return inst
+        for k in ["scene_name", "longitude", "latitude"]:
+            if k not in self:
+                raise ValueError("Missing required keyword '%s'" % (k,))
 
 
 class VIIRSScene(BaseScene):
@@ -516,7 +457,7 @@ class VIIRSDataSwath(BaseSwath):
 
     Required Information:
         - product_name: Publically known name of the product this swath represents
-        - filenames: Unordered list of source files that made up this product
+        - source_filenames: Unordered list of source files that made up this product
         - satellite: Name of the satellite the data came from
         - instrument: Name of the instrument on the satellite from which the data was observed
         - data_kind (optional): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
@@ -539,7 +480,7 @@ class VIIRSDataSwath(BaseSwath):
 class VIIRSGeoSwath(BaseGeoSwath):
     """Swath data for VIIRS Geolocation Data.
 
-    VIIRS Geolocation is defined as being a minimum of a longitude and latitude array.
+    VIIRS Geolocation is defined as being a minimum of a longitude and latitude data.
     """
     pass
 
@@ -604,7 +545,7 @@ class Frontend(object):
         same filename is found in 2 different directories, both will be processed and
         will likely produce unexpected results in future processing.
         """
-        matched_files = {}
+        matched_files = defaultdict(set)
         for filepath in filepaths:
             #log.debug("Checking file '%s' for usefulness...", filepath)
             fn = os.path.split(filepath)[1]
@@ -615,9 +556,6 @@ class Frontend(object):
                 if re.match(fn_regex, fn) is not None:
                     # we found a match
                     log.debug("Found useful file: '%s'", fn)
-                    if fn_regex not in matched_files:
-                        # Add the regular expression to the dictionary
-                        matched_files[fn_regex] = set()
                     matched_files[fn_regex].add(filepath)
                     break
 
@@ -626,28 +564,6 @@ class Frontend(object):
             matched_files[fn_regex] = sorted(matched_files[fn_regex], key=lambda f: os.path.split(f)[-1])
 
         return matched_files
-
-    @classmethod
-    def parse_datetimes_from_filepaths(cls, filepaths):
-        """Return a list of datetimes for each filepath provided.
-
-        This logic is duplicated from the guidebook because it has less
-        overhead.
-        """
-        filenames = [os.path.split(fp)[-1] for fp in filepaths]
-
-        # Clear out files we don't understand
-        filenames = [fn for fn in filenames if fn.startswith("SV") and fn.endswith(".h5")]
-
-        # SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
-        dt_list = [datetime.strptime(fn[10:27], "d%Y%m%d_t%H%M%S") for
-                   fn in filenames]
-        return dt_list
-
-    @classmethod
-    def sort_files_by_nav_uid(cls, filepaths):
-        # Call the guidebook function
-        return sort_files_by_nav_uid(filepaths)
 
     def _get_file_pattern(self, product_name):
         """Get the file pattern to load the specifed raw products data.
@@ -675,7 +591,7 @@ class Frontend(object):
         log.info("Writing product data to FBF for '%s'", product_name)
         fbf_filename, fbf_shape = reader.write_var_to_flat_binary(variable_key, stem=product_name)
         one_swath["product_name"] = product_name
-        one_swath["filenames"] = reader.get_filenames()
+        one_swath["source_filenames"] = reader.get_filenames()
         one_swath["start_time"] = reader.start_time
         one_swath["end_time"] = reader.end_time
         one_swath["satellite"] = reader.get_satellite()
@@ -774,7 +690,8 @@ class Frontend(object):
                 scene_name = one_swath["scene_name"]
                 longitude_swath = products_created[product_info.geolocation.longitude_product]
                 latitude_swath = products_created[product_info.geolocation.latitude_product]
-                one_scene = meta_data[scene_name] = VIIRSScene(VIIRSGeoSwath(scene_name, longitude_swath, latitude_swath))
+                one_scene = meta_data[scene_name] = VIIRSScene(
+                    VIIRSGeoSwath(scene_name=scene_name, longitude=longitude_swath, latitude=latitude_swath))
             else:
                 one_scene = meta_data[scene_name]
 
