@@ -27,14 +27,7 @@ PRODUCT_LIST = 'GITCO GDNBO SVDNB SVI01 SVI02 SVI03 SVI04 SVI05'.split(' ')
 
 FLO_FMT = """http://peate.ssec.wisc.edu/flo/api/find?
 			start=%(start)s&end=%(end)s
-			&file_type=GITCO
-			&file_type=GDNBO
-                        &file_type=SVDNB
-                        &file_type=SVI01
-			&file_type=SVI02
-                        &file_type=SVI03
-			&file_type=SVI04
-                        &file_type=SVI05
+			%(file_types)s
 			&loc=%(lat)s,%(lon)s
 			&radius=%(radius)s
 			&output=txt
@@ -51,12 +44,14 @@ THREE_DAY = timedelta(days=3)
 FOUR_DAY = timedelta(days=4)
 FIVE_DAY = timedelta(days=5)
 
-def flo_find(lat, lon, radius, start, end):
+def flo_find(lat, lon, radius, start, end, file_types):
     "return shell script and filename list"
     start = start.strftime('%Y-%m-%d')
     end = end.strftime('%Y-%m-%d')
-    LOG.debug('accessing %s' % (FLO_FMT % locals()))
-    wp = urlopen(FLO_FMT % locals())
+    file_types=''.join(('&file_type=%s' % ft) for ft in file_types)
+    req_url = FLO_FMT % locals()
+    LOG.debug('accessing %s' % req_url)
+    wp = urlopen(req_url)
     for url in wp:
         url = url.strip()
         if not url:
@@ -68,13 +63,13 @@ def flo_find(lat, lon, radius, start, end):
         yield match, url
     wp.close()
 
-def _test_flo_find():
+def _test_flo_find(args):
     start = date(2011, 12, 13)
     end = date(2011, 12, 14)
-    for nfo, url in flo_find(43, -89, 1000, start, end):
+    for nfo, url in flo_find(43.07, -89.41, 1000, start, end, file_types=args or PRODUCT_LIST):
         print nfo.group(0), url # print filename and url
 
-def _all_products_present(key, file_nfos, products = PRODUCT_LIST):
+def _all_products_present(key, file_nfos, products):
     needs = set(products)
     for nfo in file_nfos:
         product = '%(kind)s%(band)s' % nfo.groupdict()
@@ -91,20 +86,23 @@ def _all_products_present(key, file_nfos, products = PRODUCT_LIST):
 def curl(filename, url):
     return call(['curl', '-s', '-o', filename, url])
 
+
 def _key(nfo):
     nfo = nfo.groupdict()
     return (nfo['date'], nfo['start_time'], nfo['end_time'])
 
-def sync(lat, lon, radius, start=None, end=None):
+
+def sync(lat, lon, radius, start=None, end=None, file_types=None):
     "synchronize current working directory to include all the files available"
     if end is None:
         end = date.today() + ONE_DAY
     if start is None:
         start = end - THREE_DAY
+    file_types = file_types or PRODUCT_LIST
     bad = list()
     good = list()
     new_files = defaultdict(list)
-    inventory = list(flo_find(lat, lon, radius, start, end))
+    inventory = list(flo_find(lat, lon, radius, start, end, file_types))
     for n, (nfo, url) in enumerate(inventory):
         filename = nfo.group(0)
         LOG.debug('checking %s @ %s' % (filename, url))
@@ -127,10 +125,11 @@ def sync(lat, lon, radius, start=None, end=None):
         if key not in badset:
             LOG.debug('adding %s to %s' % (nfo.group(0), key))
             new_files[key].append(nfo)
-    fully_intact_sets = dict((k,v) for k,v in new_files.items() if _all_products_present(k,v))
+    fully_intact_sets = dict((k,v) for k,v in new_files.items() if _all_products_present(k, v, file_types))
     return fully_intact_sets
 
-def mainsync(name, lat, lon, radius, start=None, end=None):
+
+def mainsync(name, lat, lon, radius, start=None, end=None, file_types = None):
     "write a .nfo file with 'date start_time end_time when we complete a transfer"
     lat = int(lat)
     lon = int(lon)
@@ -141,7 +140,7 @@ def mainsync(name, lat, lon, radius, start=None, end=None):
         end = datetime.strptime(end, '%Y-%m-%d').date()
 
     fp = file(name+'.nfo', 'at')
-    for key in sync(lat, lon, radius, start, end).keys():
+    for key in sync(lat, lon, radius, start, end, file_types).keys():
         LOG.info('%s is ready' % repr(key))
         print >>fp, '%s %s %s' % key
         fp.flush()
@@ -250,9 +249,12 @@ appends domain.nfo with "day start end" lines as complete sets of VIIRS files ar
 files are downloaded to current directory
 files which have already been downloaded will not be re-downloaded
 default start and end is yesterday~today
+default file types can be overridden by giving prefixes (SVDNB, GITCO) as a list of arguments
+Note that file type arguments should be the same between download (non-pass) run and pass generation run.
 example:
 %prog madison --lat=43 --lon=-89 --radius=1000
-%prog madison --pass
+%prog madison --lat=43.07 --lon=-89.41 --radius=1000 GMTCO SVM02 SVM04 SVM05
+%prog madison --pass GMTCO SVM02 SVM04 SVM05
 
 """
     parser = optparse.OptionParser(usage)
@@ -260,8 +262,8 @@ example:
                     action="store_true", default=False, help="run self-tests")
     parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
                     help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
-    parser.add_option('-a', '--lat', dest='lat', help='central latitude', type='int')
-    parser.add_option('-o', '--lon', dest='lon', help='central longitude', type='int')
+    parser.add_option('-a', '--lat', dest='lat', help='central latitude', type='float')
+    parser.add_option('-o', '--lon', dest='lon', help='central longitude', type='float')
     parser.add_option('-r', '--radius', dest='radius', help='radius in km', type='int', default=0)
     parser.add_option('-s', '--start', dest='start', help='yyyy-mm-dd start dateoptional', default=None)
     parser.add_option('-e', '--end', dest='end', help='yyyy-mm-dd end date optional', default=None)
@@ -277,6 +279,9 @@ example:
     OPTS = options
 
     if options.self_test:
+        from pprint import pprint
+        logging.basicConfig(level=logging.DEBUG)
+        pprint(_test_flo_find(args))
         # FIXME - run any self-tests
         # import doctest
         # doctest.testmod()
@@ -290,7 +295,7 @@ example:
         return 9
 
     if options.radius:
-        mainsync(args[0], options.lat, options.lon, options.radius, options.start, options.end)
+        mainsync(args[0], options.lat, options.lon, options.radius, options.start, options.end, args[1:] or PRODUCT_LIST)
 
     if options.passes:
         mainpass(args[0]+'.nfo')
