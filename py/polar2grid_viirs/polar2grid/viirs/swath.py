@@ -91,7 +91,6 @@ PRODUCT_M15 = "m15"
 PRODUCT_M16 = "m16"
 PRODUCT_DNB = "dnb"
 PRODUCT_IFOG = "ifog"
-PRODUCT_DNB_SZA = "dnb_sza"
 PRODUCT_HISTOGRAM_DNB = "histogram_dnb"
 PRODUCT_ADAPTIVE_DNB = "adaptive_dnb"
 #   adaptive IR
@@ -110,8 +109,6 @@ PRODUCT_SST = "sst"
 
 # Geolocation "Products"
 # These products aren't really products at the moment and should only be used as navigation for the above products
-# XXX: These may need to be set as possible products for the CREFL frontend so that it can ask the frontend for
-#      geolocation files.
 PRODUCT_I_LAT = "i_latitude"
 PRODUCT_I_LON = "i_longitude"
 PRODUCT_M_LAT = "m_latitude"
@@ -121,9 +118,8 @@ PRODUCT_DNB_LON = "dnb_longitude"
 
 # All configuration information for a product goes in this named tuple
 #NavigationTuple = namedtuple("NavigationTuple",
-                             #['tc_file_pattern', 'nontc_file_pattern', 'longitude_product', 'latitude_product'])
+#['tc_file_pattern', 'nontc_file_pattern', 'longitude_product', 'latitude_product'])
 NavigationTuple = namedtuple("NavigationTuple", ['scene_name', 'longitude_product', 'latitude_product'])
-# XXX: Does 'cols_per_row' needed to be included?
 ProductInfo = namedtuple("ProductInfo", ['dependencies', 'geolocation', 'rows_per_scan', 'data_kind', 'description'])
 
 # dependencies: Product keys mapped to product dependencies
@@ -209,10 +205,7 @@ PRODUCT_FILE_REGEXES = {
     PRODUCT_M16: RawProductFileInfo(M16_REGEX, K_BTEMP),
     PRODUCT_DNB: RawProductFileInfo(DNB_REGEX, K_RADIANCE),
     PRODUCT_SST: RawProductFileInfo(SST_REGEX, K_BTEMP),
-    # FIXME: How do I handle TC vs non-TC here:
-    # FIXME: Major flaw is that the latitude and longitude are treated as separate products in the product_info when really they should be forced to be a pair
-    # Geolocation products (products from a geolocation file) must be None for the VIIRS frontend because we could have
-    # TC or non-TC
+    # Geolocation products (products from a geolocation file)
     PRODUCT_I_LON: RawProductFileInfo((I_GEO_TC_REGEX, I_GEO_REGEX), K_LONGITUDE),
     PRODUCT_I_LAT: RawProductFileInfo((I_GEO_TC_REGEX, I_GEO_REGEX), K_LATITUDE),
     PRODUCT_M_LON: RawProductFileInfo((M_GEO_TC_REGEX, M_GEO_REGEX), K_LONGITUDE),
@@ -234,7 +227,7 @@ def get_product_dependencies(product_name):
     ...
     ValueError: Unknown product was requested from frontend: 'blahdkjlwkjdoisdlfkjlk2j3lk4j'
     >>> PRODUCT_INFO["fake_dnb"] = ProductInfo((PRODUCT_ADAPTIVE_DNB, PRODUCT_DNB), dnb_nav_tuple, 16, "fake_dnb", "")
-    >>> assert(get_product_dependencies("fake_dnb") == set((PRODUCT_ADAPTIVE_DNB, PRODUCT_DNB)))
+    >>> assert(get_product_dependencies("fake_dnb") == {PRODUCT_ADAPTIVE_DNB, PRODUCT_DNB})
     """
     _dependencies = set()
 
@@ -255,27 +248,28 @@ def get_product_dependencies(product_name):
     return _dependencies
 
 
-def get_product_descendents(starting_products, remaining_dependencies=None, dependency_required=False):
+def get_product_descendants(starting_products, remaining_dependencies=None, dependency_required=False):
     """Recursively determine what products (secondary) can be made from the products provided.
 
-    >>> available_products = get_product_descendents([PRODUCT_I04])
+    >>> available_products = get_product_descendants([PRODUCT_I04])
     >>> assert(PRODUCT_ADAPTIVE_I04 in available_products)
-    >>> available_products = get_product_descendents([PRODUCT_I04, PRODUCT_DNB, PRODUCT_I05])
+    >>> available_products = get_product_descendants([PRODUCT_I04, PRODUCT_DNB, PRODUCT_I05])
     >>> assert(PRODUCT_ADAPTIVE_I04 in available_products)
     >>> assert(PRODUCT_ADAPTIVE_I05 in available_products)
     >>> assert(PRODUCT_HISTOGRAM_DNB in available_products)
     >>> assert(PRODUCT_IFOG in available_products)
-    >>> print available_products
     """
     if remaining_dependencies is None:
         # Need to remove raw products we aren't starting with and remove navigation products
-        remaining_dependencies = [k for k in PRODUCT_INFO.keys() if (PRODUCT_INFO[k].data_kind not in ["longitude", "latitude"]) and PRODUCT_INFO[k].dependencies]
+        remaining_dependencies = [k for k in PRODUCT_INFO.keys() if
+                                  (PRODUCT_INFO[k].data_kind not in ["longitude", "latitude"])
+                                  and PRODUCT_INFO[k].dependencies]
 
     for product_name in remaining_dependencies:
         if product_name in starting_products:
             continue
         elif not PRODUCT_INFO[product_name].dependencies or \
-            not get_product_descendents(starting_products, PRODUCT_INFO[product_name].dependencies, True):
+                not get_product_descendants(starting_products, PRODUCT_INFO[product_name].dependencies, True):
             # This dependency is a raw product that we don't already have...so we can't make this product
             # Or this is a secondary product that we don't have all of the dependencies for
             if dependency_required:
@@ -311,15 +305,14 @@ def remove_p2g_object(obj):
     By default objects persist once saved to disk. This function should be used to
     recursively remove them by filename or P2G object.
     """
+    p2g_obj = obj
+    fn = None
     if isinstance(obj, (str, unicode)):
         p2g_obj = json.load(open(obj, "r"), obj=P2GJSONDecoder)
         fn = obj
-    else:
-        p2g_dict = obj
-        fn = None
 
     # Tell the object to clean itself up
-    p2g_dict.persist = False
+    p2g_obj.persist = False
     # Garbage collection will get this eventually (as long as the caller removes their pointer to the object
     del p2g_obj
 
@@ -335,7 +328,8 @@ class P2GJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kargs):
         super(P2GJSONDecoder, self).__init__(object_hook=self.dict_to_object, *args, **kargs)
 
-    def _jsonclass_to_pyclass(self, json_class_name):
+    @staticmethod
+    def _jsonclass_to_pyclass(json_class_name):
         cls_name = json_class_name.split(".")[-1]
         mod_name = ".".join(json_class_name.split(".")[:-1])
         cls = getattr(importlib.import_module(mod_name), cls_name)
@@ -380,6 +374,11 @@ class BaseP2GObject(dict):
             self.persist = False
         super(BaseP2GObject, self).__init__(*args, **kwargs)
 
+        required_kwargs = kwargs.pop("_required_kwargs", [])
+        for k in required_kwargs:
+            if k not in self:
+                raise ValueError("Missing required keyword '%s'" % (k,))
+
     @classmethod
     def open(cls, filename):
         """Open a JSON file representing a Polar2Grid object.
@@ -408,52 +407,14 @@ class BaseScene(BaseP2GObject):
     def __init__(self, **kwargs):
         """Create a basic Polar2Grid scene.
 
-        `geolocation` is a required keyword.
+        :param geolocation: BaseGeoSwath instance object describing the navigation data for this scene (required)
         """
-        super(BaseScene, self).__init__(**kwargs)
-
-        if "geolocation" not in self:
-            raise ValueError("Missing required keyword 'geolocation'")
+        required_kwargs = kwargs.pop("_required_kwargs", []) + ["geolocation"]
+        super(BaseScene, self).__init__(_required_kwargs=required_kwargs, **kwargs)
 
 
 class BaseSwath(BaseP2GObject):
-    def __del__(self):
-        # Do we have swath data that is in an flat binary file
-        if "swath_data" in self and isinstance(self["swath_data"], (str, unicode)):
-            # Do we not want to delete this file because someone tried to save the state of this object
-            if hasattr(self, "persist") and not self.persist:
-                try:
-                    log.info("Removing FBF that is no longer needed: '%s'", self["swath_data"])
-                    os.remove(self["swath_data"])
-                except StandardError:
-                    log.warning("Unable to remove FBF: '%s'", self["swath_data"])
-                    log.debug("Unable to remove FBF traceback:", exc_info=True)
-
-
-class BaseGeoSwath(BaseSwath):
-    def __init__(self, scene_name, longitude_swath, latitude_swath, **kwargs):
-        """Base swath class for navigation products.
-
-        :param scene_name: Scene name for the longitude and latitude swaths
-        :param longitude_swath: Swath object for the longitude data
-        :param latitude_swath: Swath object for the latitude data
-        """
-        super(BaseGeoSwath, self).__init__(**kwargs)
-        for k in ["scene_name", "longitude", "latitude"]:
-            if k not in self:
-                raise ValueError("Missing required keyword '%s'" % (k,))
-
-
-class VIIRSScene(BaseScene):
-    """Collection of VIIRS Swaths.
-
-    A Scene is defined as having one defining set of navigation and zero or more data swaths mapped to that navigation.
-    """
-    pass
-
-
-class VIIRSDataSwath(BaseSwath):
-    """Swath Data Class for VIIRS Data.
+    """Base swath class for image products.
 
     Required Information:
         - product_name: Publically known name of the product this swath represents
@@ -474,13 +435,46 @@ class VIIRSDataSwath(BaseSwath):
     This information should be set via the bracket/setitem dictionary method (ex. swath["product_name"] = "p1").
     It is up to the creator to fill in these fields at the most convenient time based on the source file structure.
     """
+
+    def __del__(self):
+        # Do we have swath data that is in an flat binary file
+        if "swath_data" in self and isinstance(self["swath_data"], (str, unicode)):
+            # Do we not want to delete this file because someone tried to save the state of this object
+            if hasattr(self, "persist") and not self.persist:
+                try:
+                    log.info("Removing FBF that is no longer needed: '%s'", self["swath_data"])
+                    os.remove(self["swath_data"])
+                except StandardError:
+                    log.warning("Unable to remove FBF: '%s'", self["swath_data"])
+                    log.debug("Unable to remove FBF traceback:", exc_info=True)
+
+
+class BaseGeoSwath(BaseSwath):
+    def __init__(self, **kwargs):
+        """Base swath class for navigation products.
+
+        :param scene_name: Scene name for the longitude and latitude swaths (required)
+        :param longitude: Swath object for the longitude data (required)
+        :param latitude: Swath object for the latitude data (required)
+        """
+        required_kwargs = kwargs.pop("_required_kwargs", []) + ["scene_name", "longitude", "latitude"]
+        super(BaseGeoSwath, self).__init__(_required_kwargs=required_kwargs, **kwargs)
+
+
+class VIIRSScene(BaseScene):
+    """Collection of VIIRS Swaths.
+    """
+    pass
+
+
+class VIIRSDataSwath(BaseSwath):
+    """Swath Data Class for VIIRS Data.
+    """
     pass
 
 
 class VIIRSGeoSwath(BaseGeoSwath):
     """Swath data for VIIRS Geolocation Data.
-
-    VIIRS Geolocation is defined as being a minimum of a longitude and latitude data.
     """
     pass
 
@@ -492,7 +486,7 @@ class Frontend(object):
         PRODUCT_IFOG: create_ifog,
     }
 
-    def __init__(self, search_paths=['.']):
+    def __init__(self, search_paths=None):
         """Initialize the frontend.
 
         For each search path, check if it exists and that it is
@@ -505,6 +499,7 @@ class Frontend(object):
 
         :param search_paths: A list of paths to search for usable files
         """
+        search_paths = search_paths or ['.']
         search_paths_set = set()
         for sp in search_paths:
             # Take the realpath because we don't want duplicates
@@ -526,16 +521,17 @@ class Frontend(object):
         # Find all files for each path
         self.recognized_files = self.filter_filenames(file_paths)
 
-    def find_all_files(self, search_paths):
+    @staticmethod
+    def find_all_files(search_paths):
         for sp in search_paths:
             log.info("Searching '%s' for useful files...", sp)
             for fn in os.listdir(sp):
                 full_path = os.path.join(sp, fn)
                 if os.path.isfile(full_path):
-                    # XXX: Is this check really worth the separation we end up having to do in `filter_filenames`
                     yield full_path
 
-    def filter_filenames(self, filepaths):
+    @staticmethod
+    def filter_filenames(filepaths):
         """Filter out unrecognized file patterns from a list of filepaths.
 
         Returns a dictionary mapping regular expressions to an
@@ -565,27 +561,43 @@ class Frontend(object):
 
         return matched_files
 
-    def _get_file_pattern(self, product_name):
+    def _get_file_pattern(self, product_name, alt_pattern_index=0):
         """Get the file pattern to load the specifed raw products data.
         """
         product_file_info = PRODUCT_FILE_REGEXES[product_name]
         file_pattern = product_file_info.file_pattern
         # Load the file objects
         if not isinstance(file_pattern, str):
-            # There is more than one possible pattern
-            for fp_tmp in file_pattern:
-                if fp_tmp in self.recognized_files:
-                    file_pattern = fp_tmp
-                    break
+            # There is more than one possible pattern and the caller prefers a certain one
+            if alt_pattern_index:
+                if len(file_pattern) > alt_pattern_index:
+                    fp_tmp = file_pattern[alt_pattern_index]
+                    if fp_tmp in self.recognized_files:
+                        file_pattern = fp_tmp
+                    else:
+                        log.warning("Product %s: Could not find preferred file pattern '%s'", product_name, fp_tmp)
+                else:
+                    log.error("Product %s: Preferred file pattern index is too large (not enough patterns)",
+                              product_name)
+                    raise ValueError("Preferred file pattern index is too large (not enough patterns)")
+            else:
+                for fp_tmp in file_pattern:
+                    if fp_tmp in self.recognized_files:
+                        file_pattern = fp_tmp
+                        break
 
         if file_pattern not in self.recognized_files:
-            log.error("Could not find any files to create product '%s', looked through the following patterns: %r", product_name, file_pattern)
+            log.error("Could not find any files to create product '%s', looked through the following patterns: %r",
+                      product_name, file_pattern)
             log.debug("Recognized file patterns:\n%s", "\n\t".join(self.recognized_files.keys()))
-            raise ValueError("Could not find any files to create product '%s', looked through the following patterns: %r" % (product_name, file_pattern))
+            raise ValueError(
+                "Could not find any files to create product '%s', looked through the following patterns: %r" % (
+                    product_name, file_pattern))
 
         return file_pattern
 
-    def _create_raw_swath_object(self, product_name, variable_key, reader):
+    @staticmethod
+    def _create_raw_swath_object(product_name, variable_key, reader):
         product_info = PRODUCT_INFO[product_name]
         one_swath = VIIRSDataSwath()
         log.info("Writing product data to FBF for '%s'", product_name)
@@ -609,7 +621,7 @@ class Frontend(object):
 
     def get_possible_products(self):
         raw_products = [k for k, v in PRODUCT_FILE_REGEXES.iteritems() if v.file_pattern in self.recognized_files]
-        return get_product_descendents(raw_products)
+        return get_product_descendants(raw_products)
 
     def create_scenes(self, products=None, use_terrain_corrected=True):
         log.info("Loading scene data...")
@@ -628,8 +640,6 @@ class Frontend(object):
         nav_files_loaded = {}
         # Dictionary of all products created so far
         products_created = {}
-        # Navigation products created
-        nav_products_created = {}
 
         # Check what products they asked for and see what we need to be able to create them
         for product_name in products:
@@ -654,40 +664,50 @@ class Frontend(object):
         # Load geolocation files
         for nav_product_name in nav_products_needed:
             product_file_info = PRODUCT_FILE_REGEXES[nav_product_name]
-            nav_file_pattern = self._get_file_pattern(nav_product_name)
+            # the first file pattern for geolocation products is terrain corrected, the second is non-TC
+            alt_pattern_index = 0 if use_terrain_corrected else 1
+            nav_file_pattern = self._get_file_pattern(nav_product_name, alt_pattern_index=alt_pattern_index)
             log.debug("Using navigation file pattern '%s' for product '%s'", nav_file_pattern, nav_product_name)
 
             # Load navigation files
             if nav_file_pattern not in nav_files_loaded:
-                reader = nav_files_loaded[nav_file_pattern] = VIIRSSDRGeoMultiReader(self.recognized_files[nav_file_pattern])
+                reader = nav_files_loaded[nav_file_pattern] = VIIRSSDRGeoMultiReader(
+                    self.recognized_files[nav_file_pattern])
             else:
                 reader = nav_files_loaded[nav_file_pattern]
 
             # Write the geolocation information to a file
-            log.info("Writing navigation product data to FBF for '%s'", product_name)
-            products_created[nav_product_name] = self._create_raw_swath_object(nav_product_name, product_file_info.variable, reader)
+            log.info("Writing navigation product data to FBF for '%s'", nav_product_name)
+            products_created[nav_product_name] = self._create_raw_swath_object(nav_product_name,
+                                                                               product_file_info.variable, reader)
 
             # TODO Need to add nav products to the scene as normal products if they were requested that way
 
         # Load each of the raw products (products that are loaded directly from the file)
         for product_name in raw_products_needed:
-            log.info("Opening data files to process: %s", product_name)
-            product_info = PRODUCT_INFO[product_name]
-            product_file_info = PRODUCT_FILE_REGEXES[product_name]
-
-            file_pattern = self._get_file_pattern(product_name)
-            log.debug("Using file pattern '%s' for product '%s'", file_pattern, file_pattern)
-
-            if file_pattern not in files_loaded:
-                reader = files_loaded[file_pattern] = VIIRSSDRMultiReader(self.recognized_files[file_pattern])
+            if product_name in products_created:
+                # if the product was already loaded (ex. navigaton)
+                one_swath = products_created[product_name]
             else:
-                reader = files_loaded[file_pattern]
+                log.info("Opening data files to process: %s", product_name)
+                product_info = PRODUCT_INFO[product_name]
+                product_file_info = PRODUCT_FILE_REGEXES[product_name]
 
-            one_swath = products_created[product_name] = self._create_raw_swath_object(product_name, product_file_info.variable, reader)
+                file_pattern = self._get_file_pattern(product_name)
+                log.debug("Using file pattern '%s' for product '%s'", file_pattern, file_pattern)
+
+                if file_pattern not in files_loaded:
+                    reader = files_loaded[file_pattern] = VIIRSSDRMultiReader(self.recognized_files[file_pattern])
+                else:
+                    reader = files_loaded[file_pattern]
+
+                one_swath = products_created[product_name] = self._create_raw_swath_object(product_name,
+                                                                                           product_file_info.variable,
+                                                                                           reader)
 
             # Create a scene (if needed) and add the product to it
+            scene_name = one_swath["scene_name"]
             if one_swath["scene_name"] not in meta_data:
-                scene_name = one_swath["scene_name"]
                 longitude_swath = products_created[product_info.geolocation.longitude_product]
                 latitude_swath = products_created[product_info.geolocation.latitude_product]
                 one_scene = meta_data[scene_name] = VIIRSScene(

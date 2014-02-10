@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Script for installing a this polar2grid package.
+"""
+Test the polar2grid.viirs package.
 
-See http://packages.python.org/distribute/ for use details.
+:author:       David Hoese (davidh)
+:author:       Ray Garcia (rayg)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2014
+:license:      GNU GPLv3
 
 Copyright (C) 2013 Space Science and Engineering Center (SSEC),
  University of Wisconsin-Madison.
@@ -25,8 +32,8 @@ satellite observation data, remaps it, and writes it to a file format for
 input into another program.
 Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
+    Written by David Hoese    January 2014
+    University of Wisconsin-Madison
     Space Science and Engineering Center
     1225 West Dayton Street
     Madison, WI  53706
@@ -34,36 +41,21 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
 """
 __docformat__ = "restructuredtext en"
-from setuptools import setup, find_packages
 
-classifiers = ""
-version = '1.2.0'
+from polar2grid.viirs import swath, io, guidebook
+from polar2grid.viirs.tests import test_swath
 
-setup(
-    name='polar2grid.viirs',
-    version=version,
-    description="Library and scripts to aggregate VIIRS data and get associated metadata",
-    classifiers=filter(None, classifiers.split("\n")),
-    keywords='',
-    author='David Hoese, SSEC',
-    author_email='david.hoese@ssec.wisc.edu',
-    license='GPLv3',
-    url='http://www.ssec.wisc.edu/software/polar2grid/',
-    packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-    namespace_packages=["polar2grid"],
-    include_package_data=True,
-    zip_safe=True,
-    install_requires=[
-        'numpy',
-        'h5py',
-        'polar2grid.core',
-        'matplotlib',
-        'basemap'
-    ],
-    test_requires=[
-        'mock'
-    ],
-    dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
-    entry_points = {'console_scripts' : [ ]}
-)
+import doctest
+import unittest
 
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTests(doctest.DocTestSuite(swath))
+    suite.addTests(doctest.DocTestSuite(io))
+    suite.addTests(doctest.DocTestSuite(guidebook))
+    suite.addTests(test_swath.suite())
+    return suite
+
+if __name__ == "__main__":
+    unittest.TextTestRunner(verbosity=2).run(suite())

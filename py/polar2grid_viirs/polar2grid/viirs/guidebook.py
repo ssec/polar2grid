@@ -121,8 +121,11 @@ DNB_GEO_TC_REGEX = r'GDNBO_(?P<satellite>[^_]*)_.*\.h5'  # FUTURE: Fix when TC D
 # Structure to help with complex variables that require more than just a variable path
 class FileVar(namedtuple("FileVar", ["var_path", "scaling_path", "scaling_mask_func", "nonscaling_mask_func"])):
     def __new__(cls, var_path, scaling_path=None,
-                scaling_mask_func=lambda a: a >= 65528, nonscaling_mask_func=lambda a: a <= -999.0):
+                scaling_mask_func=lambda a: a >= 65528, nonscaling_mask_func=lambda a: a <= -999.0, **kwargs):
         # add default values
+        var_path = var_path.format(**kwargs)
+        if scaling_path:
+            scaling_path = scaling_path.format(**kwargs)
         return super(FileVar, cls).__new__(cls, var_path, scaling_path, scaling_mask_func, nonscaling_mask_func)
 
 
@@ -131,17 +134,19 @@ def create_geo_file_info(file_kind, file_band, **kwargs):
 
     Since all of the keys are mostly the same, no need in repeating them.
     """
+    kwargs["file_kind"] = file_kind
+    kwargs["file_band"] = file_band
     d = {
-        K_LATITUDE: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Latitude'),
-        K_LONGITUDE: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Longitude'),
+        K_LATITUDE: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Latitude', **kwargs),
+        K_LONGITUDE: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Longitude', **kwargs),
         K_ALTITUDE: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Height',
         K_STARTTIME: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/StartTime',
         K_AGGR_STARTTIME: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Aggr.AggregateBeginningTime',
         K_AGGR_STARTDATE: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Aggr.AggregateBeginningDate',
         K_AGGR_ENDTIME: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Aggr.AggregateEndingTime',
         K_AGGR_ENDDATE: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Aggr.AggregateEndingDate',
-        K_SOLARZENITH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/SolarZenithAngle'),
-        K_LUNARZENITH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/LunarZenithAngle'),
+        K_SOLARZENITH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/SolarZenithAngle', **kwargs),
+        K_LUNARZENITH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/LunarZenithAngle', **kwargs),
         K_MOONILLUM: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/MoonIllumFraction',
         K_LAT_G_RING: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.G-Ring_Latitude',
         K_LON_G_RING: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.G-Ring_Longitude',
@@ -152,12 +157,9 @@ def create_geo_file_info(file_kind, file_band, **kwargs):
     }
 
     for k, v in d.items():
-        d[k] = d[k].format(file_kind=file_kind, file_band=file_band, **kwargs)
-
-    if K_NUMSCANS in kwargs:
-        d[K_NUMSCANS] = kwargs.pop(K_NUMSCANS)
-    if K_ROWSPERSCAN in kwargs:
-        d[K_ROWSPERSCAN] = kwargs.pop(K_ROWSPERSCAN)
+        if not isinstance(v, (str, unicode)):
+            continue
+        d[k] = d[k].format(**kwargs)
 
     return d
 
@@ -176,16 +178,18 @@ def create_im_file_info(file_kind, file_band, **kwargs):
 
     Since all of the keys are mostly the same, no need in repeating them.
     """
+    kwargs["file_kind"] = file_kind
+    kwargs["file_band"] = file_band
     d = {
         K_RADIANCE: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/Radiance',
-                            '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/RadianceFactors'),
+                            '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/RadianceFactors', **kwargs),
         K_REFLECTANCE: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/Reflectance',
-                               '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/ReflectanceFactors'),
+                               '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/ReflectanceFactors', **kwargs),
         K_BTEMP: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/BrightnessTemperature',
-                         '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/BrightnessTemperatureFactors'),
+                         '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/BrightnessTemperatureFactors', **kwargs),
         K_NUMSCANS: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/NumberOfScans',
         K_MODESCAN: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/ModeScan', None,
-                            lambda a: a > 1, lambda a: a > 1),
+                            lambda a: a > 1, lambda a: a > 1, **kwargs),
         K_MODEGRAN: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/ModeGran',
         K_QF3: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All/QF3_SCAN_RDR',
         K_AGGR_STARTTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-SDR/VIIRS-{file_kind}{file_band}-SDR_Aggr.AggregateBeginningTime',
@@ -194,7 +198,9 @@ def create_im_file_info(file_kind, file_band, **kwargs):
         K_AGGR_ENDDATE: '/Data_Products/VIIRS-{file_kind}{file_band}-SDR/VIIRS-{file_kind}{file_band}-SDR_Aggr.AggregateEndingDate',
     }
     for k, v in d.items():
-        d[k] = d[k].format(file_kind=file_kind, file_band=file_band, **kwargs)
+        if not isinstance(v, (str, unicode)):
+            continue
+        d[k] = d[k].format(**kwargs)
     return d
 
 
@@ -202,9 +208,11 @@ def create_edr_file_info(file_kind, file_band, **kwargs):
     """Return a standard dictionary for an EDR file.
     """
     # FUTURE: We only have SST for now so this will probably need to be more generic in the future.
+    kwargs["file_kind"] = file_kind
+    kwargs["file_band"] = file_band
     d = {
         K_BTEMP: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/SkinSST',
-                         '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/SkinSSTFactors'),
+                         '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/SkinSSTFactors', **kwargs),
         K_QF3: '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/QF3_VIIRSSSTEDR',
         K_AGGR_STARTTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateBeginningTime',
         K_AGGR_STARTDATE: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateBeginningDate',
@@ -212,7 +220,9 @@ def create_edr_file_info(file_kind, file_band, **kwargs):
         K_AGGR_ENDDATE: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateEndingDate',
     }
     for k, v in d.items():
-        d[k] = d[k].format(file_kind=file_kind, file_band=file_band, **kwargs)
+        if not isinstance(v, (str, unicode)):
+            continue
+        d[k] = d[k].format(**kwargs)
     return d
 
 
