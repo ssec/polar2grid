@@ -26,11 +26,11 @@ LOG = logging.getLogger(__name__)
 PRODUCT_LIST = 'GITCO GDNBO SVDNB SVI01 SVI02 SVI03 SVI04 SVI05'.split(' ')
 
 FLO_FMT = """http://peate.ssec.wisc.edu/flo/api/find?
-			start=%(start)s&end=%(end)s
-			%(file_types)s
-			&loc=%(lat)s,%(lon)s
-			&radius=%(radius)s
-			&output=txt
+            start=%(start)s&end=%(end)s
+            %(file_types)s
+            &loc=%(lat)s,%(lon)s
+            &radius=%(radius)s
+            &output=txt
 """
 
 RE_NPP = re.compile('(?P<kind>[A-Z]+)(?P<band>[0-9]*)_(?P<sat>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_e(?P<end_time>\d+)_b(?P<orbit>\d+)_c(?P<created_time>\d+)_(?P<site>[a-zA-Z0-9]+)_(?P<domain>[a-zA-Z0-9]+)\.h5')
@@ -70,13 +70,30 @@ def _test_flo_find(args):
         print nfo.group(0), url # print filename and url
 
 def _all_products_present(key, file_nfos, products):
+    "given the set of files we downloaded, and the work-directory waiting room of files, see if all products are present"
     needs = set(products)
+    # go through the files we just downloaded
     for nfo in file_nfos:
         product = '%(kind)s%(band)s' % nfo.groupdict()
         if product in needs:
             needs.remove(product)
         else:
             LOG.error('unknown product type %s was downloaded, how?' % product)
+
+    # check for other products in the directory. alternately file_nfos could be augmented with current directory contents
+    hunt_for_these = set(needs)
+    date, start_time, end_time = key
+    for subtype in hunt_for_these:
+        globby = '%(subtype)s*%(date)s*%(start_time)s*%(end_time)s*.h5' % locals()
+        LOG.debug('checking current directory for %s' % globby)
+        filenames = tuple(glob(globby))
+        howmany = len(filenames)
+        if howmany>0:
+            if howmany>1:
+                LOG.warning('found %d files! (%r) huh??' % (howmany, filenames))
+            LOG.debug('found %s' % repr(filenames))
+            needs.remove(subtype)
+
     if needs:
         LOG.info('%s is missing %s, skipping for now' % (repr(key), repr(needs)))
         return False
