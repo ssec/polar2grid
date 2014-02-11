@@ -145,6 +145,9 @@ class VIIRSSDRReader(HDF5Reader):
 
     def __getitem__(self, item):
         known_item = self.known_file_info.get(item, item)
+        if known_item is None:
+            raise KeyError("Key 'None' was not found")
+
         if not isinstance(known_item, (str, unicode)):
             # Using FileVar class
             known_item = known_item.var_path
@@ -306,7 +309,7 @@ class VIIRSSDRMultiReader(object):
             # Get the data element from the file and get the actual value out of the h5py object
             individual_items = [f[item].value for f in self.files]
         except KeyError:
-            log.error("Could not get '%s' from source files", exc_info=True)
+            log.error("Could not get '%s' from source files", item, exc_info=True)
             raise
 
         # This all assumes we are dealing with numpy arrays

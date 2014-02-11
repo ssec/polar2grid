@@ -46,6 +46,7 @@ __docformat__ = "restructuredtext en"
 from .guidebook import *
 from .io import VIIRSSDRMultiReader, VIIRSSDRGeoMultiReader
 from polar2grid.core.time_utils import iso8601
+from polar2grid.core.fbf import Workspace, create_fbf_filename
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
 from polar2grid.core import roles
@@ -90,6 +91,12 @@ PRODUCT_M14 = "m14"
 PRODUCT_M15 = "m15"
 PRODUCT_M16 = "m16"
 PRODUCT_DNB = "dnb"
+PRODUCT_DNB_SZA = "dnb_solar_zenith_angle"
+PRODUCT_DNB_LZA = "dnb_lunar_zenith_angle"
+PRODUCT_M_SZA = "m_solar_zenith_angle"
+PRODUCT_M_LZA = "m_lunar_zenith_angle"
+PRODUCT_I_SZA = "i_solar_zenith_angle"
+PRODUCT_I_LZA = "i_lunar_zenith_angle"
 PRODUCT_IFOG = "ifog"
 PRODUCT_HISTOGRAM_DNB = "histogram_dnb"
 PRODUCT_ADAPTIVE_DNB = "adaptive_dnb"
@@ -157,9 +164,15 @@ PRODUCT_INFO = {
     PRODUCT_M15: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
     PRODUCT_M16: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
     PRODUCT_DNB: ProductInfo(tuple(), dnb_nav_tuple, 16, "radiance", ""),
-    PRODUCT_IFOG: ProductInfo((PRODUCT_I05, PRODUCT_I04), i_nav_tuple, 32, "temperature_difference", ""),
-    PRODUCT_HISTOGRAM_DNB: ProductInfo((PRODUCT_DNB,), i_nav_tuple, 32, "equalized_radiance", ""),
-    PRODUCT_ADAPTIVE_DNB: ProductInfo((PRODUCT_DNB,), dnb_nav_tuple, 16, "equalized_radiance", ""),
+    PRODUCT_DNB_SZA: ProductInfo(tuple(), dnb_nav_tuple, 16, "solar_zenith_angle", ""),
+    PRODUCT_M_SZA: ProductInfo(tuple(), m_nav_tuple, 16, "solar_zenith_angle", ""),
+    PRODUCT_I_SZA: ProductInfo(tuple(), i_nav_tuple, 32, "solar_zenith_angle", ""),
+    PRODUCT_DNB_LZA: ProductInfo(tuple(), dnb_nav_tuple, 16, "lunar_zenith_angle", ""),
+    PRODUCT_M_LZA: ProductInfo(tuple(), m_nav_tuple, 16, "lunar_zenith_angle", ""),
+    PRODUCT_I_LZA: ProductInfo(tuple(), i_nav_tuple, 32, "lunar_zenith_angle", ""),
+    PRODUCT_IFOG: ProductInfo((PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA), i_nav_tuple, 32, "temperature_difference", ""),
+    PRODUCT_HISTOGRAM_DNB: ProductInfo((PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), i_nav_tuple, 32, "equalized_radiance", ""),
+    PRODUCT_ADAPTIVE_DNB: ProductInfo((PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), dnb_nav_tuple, 16, "equalized_radiance", ""),
     # adaptive IR
     PRODUCT_ADAPTIVE_I04: ProductInfo((PRODUCT_I04,), i_nav_tuple, 32, "equalized_btemp", ""),
     PRODUCT_ADAPTIVE_I05: ProductInfo((PRODUCT_I05,), i_nav_tuple, 32, "equalized_btemp", ""),
@@ -204,6 +217,14 @@ PRODUCT_FILE_REGEXES = {
     PRODUCT_M15: RawProductFileInfo(M15_REGEX, K_BTEMP),
     PRODUCT_M16: RawProductFileInfo(M16_REGEX, K_BTEMP),
     PRODUCT_DNB: RawProductFileInfo(DNB_REGEX, K_RADIANCE),
+    # Solar Zenith Angle
+    PRODUCT_DNB_SZA: RawProductFileInfo((DNB_GEO_TC_REGEX, DNB_GEO_REGEX), K_SOLARZENITH),
+    PRODUCT_M_SZA: RawProductFileInfo((M_GEO_TC_REGEX, M_GEO_REGEX), K_SOLARZENITH),
+    PRODUCT_I_SZA: RawProductFileInfo((I_GEO_TC_REGEX, I_GEO_REGEX), K_SOLARZENITH),
+    # Lunar Zenith Angle
+    PRODUCT_DNB_LZA: RawProductFileInfo((DNB_GEO_TC_REGEX, DNB_GEO_REGEX), K_LUNARZENITH),
+    PRODUCT_M_LZA: RawProductFileInfo((M_GEO_TC_REGEX, M_GEO_REGEX), K_LUNARZENITH),
+    PRODUCT_I_LZA: RawProductFileInfo((I_GEO_TC_REGEX, I_GEO_REGEX), K_LUNARZENITH),
     PRODUCT_SST: RawProductFileInfo(SST_REGEX, K_BTEMP),
     # Geolocation products (products from a geolocation file)
     PRODUCT_I_LON: RawProductFileInfo((I_GEO_TC_REGEX, I_GEO_REGEX), K_LONGITUDE),
@@ -219,6 +240,7 @@ def get_product_dependencies(product_name):
     """Recursive function to get all dependencies to create a single product.
 
     :param product_name: Valid product name for this frontend
+    :returns: Stack-like list where the last element is the most depended (duplicates possible)
 
     >>> for k in PRODUCT_INFO.keys():
     ...     assert(isinstance(get_product_dependencies(k), set))
@@ -229,7 +251,8 @@ def get_product_dependencies(product_name):
     >>> PRODUCT_INFO["fake_dnb"] = ProductInfo((PRODUCT_ADAPTIVE_DNB, PRODUCT_DNB), dnb_nav_tuple, 16, "fake_dnb", "")
     >>> assert(get_product_dependencies("fake_dnb") == {PRODUCT_ADAPTIVE_DNB, PRODUCT_DNB})
     """
-    _dependencies = set()
+    #
+    _dependencies = []
 
     if product_name not in PRODUCT_INFO:
         log.error("Unknown product was requested from frontend: '%s'" % (product_name,))
@@ -237,8 +260,8 @@ def get_product_dependencies(product_name):
 
     for dependency_product in PRODUCT_INFO[product_name].dependencies:
         log.info("Product Dependency: To create '%s', '%s' must be created first", product_name, dependency_product)
-        _dependencies.update(get_product_dependencies(dependency_product))
-        _dependencies.add(dependency_product)
+        _dependencies.append(dependency_product)
+        _dependencies.extend(get_product_dependencies(dependency_product))
 
     # Check if the product_name is already in the set, if it is then we have a circular dependency
     if product_name in _dependencies:
@@ -281,15 +304,6 @@ def get_product_descendants(starting_products, remaining_dependencies=None, depe
 
     # We went through every dependency and found that it could be made so we are done.
     return starting_products
-
-
-### Secondary Product Functions
-def create_adaptive_dnb():
-    pass
-
-
-def create_ifog(meta_data, files_loaded, nav_files_loaded, products_created, nav_products_created):
-    pass
 
 
 def open_p2g_object(json_filename):
@@ -372,9 +386,10 @@ class BaseP2GObject(dict):
             self.persist = True
         else:
             self.persist = False
-        super(BaseP2GObject, self).__init__(*args, **kwargs)
 
         required_kwargs = kwargs.pop("_required_kwargs", [])
+        super(BaseP2GObject, self).__init__(*args, **kwargs)
+
         for k in required_kwargs:
             if k not in self:
                 raise ValueError("Missing required keyword '%s'" % (k,))
@@ -404,7 +419,7 @@ class BaseMetaData(BaseP2GObject):
 
 
 class BaseScene(BaseP2GObject):
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Create a basic Polar2Grid scene.
 
         :param geolocation: BaseGeoSwath instance object describing the navigation data for this scene (required)
@@ -448,6 +463,27 @@ class BaseSwath(BaseP2GObject):
                     log.warning("Unable to remove FBF: '%s'", self["swath_data"])
                     log.debug("Unable to remove FBF traceback:", exc_info=True)
 
+    def get_array(self, item):
+        """Get FBF item as a numpy array.
+
+        File is loaded from disk as a memory mapped file if needed.
+        """
+        data = super(BaseSwath, self).__getitem__(item)
+        if isinstance(data, (str, unicode)):
+            # load FBF data from a file if needed
+            data = getattr(Workspace('.'), data.split('.')[0])
+
+        return data
+
+    def get_mask(self, item, fill=DEFAULT_FILL_VALUE):
+        """Return a boolean mask where the data for `item` is invalid/bad.
+        """
+        data = self.get_array(item)
+
+        if numpy.isnan(fill):
+            return numpy.isnan(data)
+        else:
+            return data == fill
 
 class BaseGeoSwath(BaseSwath):
     def __init__(self, **kwargs):
@@ -481,11 +517,6 @@ class VIIRSGeoSwath(BaseGeoSwath):
 
 #class Frontend(roles.FrontendRole):
 class Frontend(object):
-    SECONDARY_PRODUCT_FUNCTIONS = {
-        PRODUCT_ADAPTIVE_DNB: create_adaptive_dnb,
-        PRODUCT_IFOG: create_ifog,
-    }
-
     def __init__(self, search_paths=None):
         """Initialize the frontend.
 
@@ -623,39 +654,66 @@ class Frontend(object):
         raw_products = [k for k, v in PRODUCT_FILE_REGEXES.iteritems() if v.file_pattern in self.recognized_files]
         return get_product_descendants(raw_products)
 
+    def add_swath_to_scene(self, meta_data, one_swath, products_created):
+        product_info = PRODUCT_INFO[one_swath["product_name"]]
+        scene_name = one_swath["scene_name"]
+
+        if one_swath["scene_name"] not in meta_data:
+            longitude_swath = products_created[product_info.geolocation.longitude_product]
+            latitude_swath = products_created[product_info.geolocation.latitude_product]
+            one_scene = meta_data[scene_name] = VIIRSScene(geolocation=
+                VIIRSGeoSwath(scene_name=scene_name, longitude=longitude_swath, latitude=latitude_swath))
+        else:
+            one_scene = meta_data[scene_name]
+
+        one_scene[one_swath["product_name"]] = one_swath
+
     def create_scenes(self, products=None, use_terrain_corrected=True):
         log.info("Loading scene data...")
         # If the user didn't provide the products they want, figure out which ones we can create
         if products is None:
             products = self.get_possible_products()
+        products = list(set(products))
         meta_data = BaseMetaData()
         # List of all products we will be creating (what was asked for and what's needed to create them)
-        products_needed = set()
+        # Needs to be ordered (least-depended product -> most-depended product)
+        products_needed = []
         raw_products_needed = set()
-        secondary_products_needed = set()
+        secondary_products_needed = []
         nav_products_needed = set()
         # Hold on to all of the file sets we've loaded
         files_loaded = {}
-        # Hold on to all of the navigation files we've loaded
-        nav_files_loaded = {}
         # Dictionary of all products created so far
         products_created = {}
+        # the first file pattern for geolocation products is terrain corrected, the second is non-TC
+        alt_pattern_index = 0 if use_terrain_corrected else 1
 
         # Check what products they asked for and see what we need to be able to create them
         for product_name in products:
             log.debug("Searching for dependencies for '%s'", product_name)
-            products_needed.update(get_product_dependencies(product_name))
-            products_needed.add(product_name)
+            products_needed.append(product_name)
+            other_deps = get_product_dependencies(product_name)
+            # only add products that aren't already account for
+            for dep in other_deps:
+                if dep in products_needed:
+                    # put in least-depended product -> most-depended product order
+                    products_needed.remove(dep)
+                products_needed.append(dep)
 
         # Go through each product we are going to have to create and figure out which raw ones need to be loaded
-        for product_name in products_needed:
+        while products_needed:
+            product_name = products_needed.pop()
             product_info = PRODUCT_INFO[product_name]
             # Looked up the raw products we need
             if not product_info.dependencies:
                 # if there are no dependencies then it's a raw product
                 raw_products_needed.add(product_name)
-            else:
-                secondary_products_needed.add(product_name)
+            elif product_name not in secondary_products_needed:
+                if product_name not in self.SECONDARY_PRODUCT_FUNCTIONS:
+                    log.error("Secondary product required, but not sure how to make it: '%s'", product_name)
+                    raise ValueError("Secondary product required, but not sure how to make it: '%s'" % (product_name,))
+                # ordered from least-depended product -> most-depended product
+                secondary_products_needed.append(product_name)
 
             # For each product look what navigation product it connects with
             nav_products_needed.add(product_info.geolocation.longitude_product)
@@ -664,24 +722,20 @@ class Frontend(object):
         # Load geolocation files
         for nav_product_name in nav_products_needed:
             product_file_info = PRODUCT_FILE_REGEXES[nav_product_name]
-            # the first file pattern for geolocation products is terrain corrected, the second is non-TC
-            alt_pattern_index = 0 if use_terrain_corrected else 1
             nav_file_pattern = self._get_file_pattern(nav_product_name, alt_pattern_index=alt_pattern_index)
             log.debug("Using navigation file pattern '%s' for product '%s'", nav_file_pattern, nav_product_name)
 
             # Load navigation files
-            if nav_file_pattern not in nav_files_loaded:
-                reader = nav_files_loaded[nav_file_pattern] = VIIRSSDRGeoMultiReader(
+            if nav_file_pattern not in files_loaded:
+                reader = files_loaded[nav_file_pattern] = VIIRSSDRGeoMultiReader(
                     self.recognized_files[nav_file_pattern])
             else:
-                reader = nav_files_loaded[nav_file_pattern]
+                reader = files_loaded[nav_file_pattern]
 
             # Write the geolocation information to a file
             log.info("Writing navigation product data to FBF for '%s'", nav_product_name)
             products_created[nav_product_name] = self._create_raw_swath_object(nav_product_name,
                                                                                product_file_info.variable, reader)
-
-            # TODO Need to add nav products to the scene as normal products if they were requested that way
 
         # Load each of the raw products (products that are loaded directly from the file)
         for product_name in raw_products_needed:
@@ -690,10 +744,9 @@ class Frontend(object):
                 one_swath = products_created[product_name]
             else:
                 log.info("Opening data files to process: %s", product_name)
-                product_info = PRODUCT_INFO[product_name]
                 product_file_info = PRODUCT_FILE_REGEXES[product_name]
 
-                file_pattern = self._get_file_pattern(product_name)
+                file_pattern = self._get_file_pattern(product_name, alt_pattern_index=alt_pattern_index)
                 log.debug("Using file pattern '%s' for product '%s'", file_pattern, file_pattern)
 
                 if file_pattern not in files_loaded:
@@ -705,30 +758,84 @@ class Frontend(object):
                                                                                            product_file_info.variable,
                                                                                            reader)
 
-            # Create a scene (if needed) and add the product to it
-            scene_name = one_swath["scene_name"]
-            if one_swath["scene_name"] not in meta_data:
-                longitude_swath = products_created[product_info.geolocation.longitude_product]
-                latitude_swath = products_created[product_info.geolocation.latitude_product]
-                one_scene = meta_data[scene_name] = VIIRSScene(
-                    VIIRSGeoSwath(scene_name=scene_name, longitude=longitude_swath, latitude=latitude_swath))
-            else:
-                one_scene = meta_data[scene_name]
-
-            one_scene[product_name] = one_swath
+            if product_name in products:
+                # the user wants this product
+                self.add_swath_to_scene(meta_data, one_swath, products_created)
 
         # Special cases (i.e. non-raw products that need further processing)
-        # FUTURE: Move each of these into their own function
-        # FIXME: Need to do these in a way that secondary products that depend on other secondary products
-        #self.create_secondary_products(meta_data, files_loaded, nav_files_loaded, products_created, nav_products_created)
-        # Create the IFOG product (I5 - I4)
-        #i5_data
-        # Get the other products we need
-        # Do the math
-        # Save this to a new FBF
-        # TODO
+        for product_name in reversed(secondary_products_needed):
+            product_func = self.SECONDARY_PRODUCT_FUNCTIONS[product_name]
+            if product_name in products_created:
+                # product was in stack multiple times
+                log.warning("Sanity check failure. Secondary product was going to be processed twice.")
+                continue
+
+            try:
+                log.info("Creating secondary product '%s'", product_name)
+                one_swath = product_func(self, product_name, files_loaded, products_created)
+            except StandardError:
+                log.error("Could not create product (unexpected error): '%s'", product_name)
+                log.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
+                raise
+
+            products_created[product_name] = one_swath
+            if product_name in products:
+                # the user wants this product
+                self.add_swath_to_scene(meta_data, one_swath, products_created)
 
         return meta_data
+
+    ### Secondary Product Functions
+    def create_adaptive_dnb(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
+        pass
+
+    def create_ifog(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
+        product_info = PRODUCT_INFO[product_name]
+        deps = product_info.dependencies
+        if len(deps) != 3:
+            log.error("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
+            raise ValueError("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
+
+        left_term_name = deps[0]
+        right_term_name = deps[1]
+        sza_product_name = deps[2]
+        left_data = products_created[left_term_name].get_array("swath_data")
+        left_mask = products_created[left_term_name].get_mask("swath_data")
+        right_data = products_created[right_term_name].get_array("swath_data")
+        right_mask = products_created[right_term_name].get_mask("swath_data")
+        sza_data = products_created[sza_product_name].get_array("swath_data")
+        sza_mask = products_created[sza_product_name].get_mask("swath_data")
+        night_mask = sza_data >= 100  # where is it night
+
+        fbf_filename = create_fbf_filename(product_name, data=left_data)
+        fog_data = numpy.memmap(fbf_filename, dtype=left_data.dtype, mode="w+", shape=left_data.shape)
+        numpy.subtract(left_data, right_data, fog_data)
+        fog_data[left_mask | right_mask | sza_mask | ~night_mask] = fill
+
+        one_swath = VIIRSDataSwath()
+        left_product = products_created[left_term_name]
+        log.info("Writing product data to FBF for '%s'", product_name)
+        one_swath["product_name"] = product_name
+        one_swath["source_filenames"] = zip([products_created[dep_name]["source_filenames"] for dep_name in deps])
+        one_swath["start_time"] = left_product["start_time"]
+        one_swath["end_time"] = left_product["end_time"]
+        one_swath["satellite"] = left_product["satellite"]
+        one_swath["instrument"] = left_product["instrument"]
+        one_swath["swath_data"] = fbf_filename
+        one_swath["swath_rows"] = fog_data.shape[0]
+        one_swath["swath_cols"] = fog_data.shape[1]
+        one_swath["data_kind"] = product_info.data_kind
+        one_swath["description"] = product_info.description
+        one_swath["scene_name"] = product_info.geolocation.scene_name
+        one_swath["rows_per_scan"] = product_info.rows_per_scan
+        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
+
+        return one_swath
+
+    SECONDARY_PRODUCT_FUNCTIONS = {
+        PRODUCT_ADAPTIVE_DNB: create_adaptive_dnb,
+        PRODUCT_IFOG: create_ifog,
+        }
 
 
 def main():

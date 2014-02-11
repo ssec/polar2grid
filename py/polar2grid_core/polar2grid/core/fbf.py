@@ -119,6 +119,17 @@ def check_stem(stem_name):
         log.error(msg)
         raise ValueError(msg)
 
+def create_fbf_filename(stem, data=None, data_type=None, shape=None):
+    if data is not None:
+        data_type = data.dtype.type
+        shape = data.shape
+    elif data_type not in dtype_to_fbf_type:
+        # probably provided the numpy data type, need the actual type of that type
+        data_type = data_type.type if hasattr(data_type, "type") else data_type
+    filename = stem + '.' + dtype_to_fbf_type[data_type] + '.' + '.'.join(str(x) for x in reversed(shape))
+    return filename
+
+
 class Workspace(object):
     """Wrapper object around ``numpy.fromfile()`` method to treat a directory as a
     workspace of flat binary files.
@@ -261,7 +272,7 @@ class FBFAppender(object):
         """
         if self.filename is None:
             # We haven't saved it yet
-            filename = self.stem + '.' + dtype_to_fbf_type[self.dtype.type] + '.' + '.'.join(str(x) for x in reversed(self.shape))
+            filename = create_fbf_filename(self.stem, data=self)
             log.info("Saving FBF with stem '%s' to filename '%s'", self.stem, filename)
             os.rename(self.tmp_filename, filename)
             self.filename = filename
