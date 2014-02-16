@@ -152,28 +152,99 @@ def _make_water_mask (latData, lonData, alsoMaskLakes=True) :
     
     return temp.mask
 
-def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE,
-              solarZenithAngle=None, lunarZenithAngle=None,
-              moonIllumFraction=None,
-              highAngleCutoff=None, lowAngleCutoff=None,
-              waterMask=None,
-              new_dnb=False):
-    """
-    This scaling method uses histogram equalization to flatten the image
+def adaptive_dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None, lunarZenithAngle=None,
+                       moonIllumFraction=None, highAngleCutoff=None, lowAngleCutoff=None, waterMask=None, out=None):
+    """This scaling method uses histogram equalization to flatten the image
     levels across the day and night regions.
-    
+
     The img data will be separated into day, night, and mixed regions using the
     solarZenithAngle data. The highAngleCutoff and lowAngleCutoff define the
     points between the regions. If data points do not have a corresponding
     solarZenithAngle, they will be considered to be invalid data and set to
     fill values.
-    
-    TODO
+
     The night region will be equalized using settings determined by the amount
-    of moonlight in the scene (as determined by the moonIllumFraction and the
-    lunarZenithAngle).
+    of moonlight in the scene (as determined by the moonIllumFraction and the lunarZenithAngle).
+
+    FIXME: The below shouldn't need to be true
+    If `out` is provided it must be a writable copy of the original DNB data.
     """
-    
+    if out is None:
+        out = numpy.zeros_like(img)
+
+    # build the day and night area masks
+    log.debug("Generating day, night, and mixed region masks...")
+    day_mask, mixed_mask, night_mask, good_mask = \
+        _make_day_night_masks(img, solarZenithAngle,
+                              fillValue,
+                              highAngleCutoff=highAngleCutoff,
+                              lowAngleCutoff=lowAngleCutoff)
+    has_multi_times = (mixed_mask is not None) and (len(mixed_mask) > 0)
+    night_water = None # a mask of water at night
+
+    if day_mask is not None and (numpy.sum(day_mask)   > 0) :
+        log.debug("  scaling DNB in day mask")
+        if has_multi_times:
+            local_histogram_equalization(img, day_mask, valid_data_mask=good_mask, local_radius_px=400, out=out)
+        else:
+            histogram_equalization(img, day_mask, out=out)
+
+    if mixed_mask is not None and (len(mixed_mask)     > 0) :
+        log.debug("  scaling DNB in twilight mask")
+        for mask in mixed_mask:
+            local_histogram_equalization(img, mask, valid_data_mask=good_mask, local_radius_px=100, out=out)
+
+    if night_mask is not None and (numpy.sum(night_mask) > 0):
+        log.debug("  scaling DNB in night mask")
+        log.debug("Moon Illumination, before angle weighting: " + str(moonIllumFraction))
+        weightedMoonIllumFract = _calculate_average_moon_illumination (moonIllumFraction,
+                                                                       lunarZenithAngle,
+                                                                       good_mask)
+        log.debug("Moon Illumination, after  angle weighting: " + str(weightedMoonIllumFract))
+
+        # TODO, this should probably also be affected by whether or not there is a day mask
+        if weightedMoonIllumFract > 0.90 :
+            if has_multi_times :
+                local_histogram_equalization(img, night_mask, valid_data_mask=good_mask, local_radius_px=100, out=out)
+            else :
+                histogram_equalization(img, night_mask, out=out)
+        else :
+            # FUTURE, for now we're not using the water mask
+            #night_water = night_mask & waterMask
+            #tmp_night_mask = night_mask & ~waterMask
+            tmp_night_mask = night_mask
+            if weightedMoonIllumFract > 0.25 :
+                local_histogram_equalization(img, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=200, out=out)
+            elif weightedMoonIllumFract > 0.10 :
+                local_histogram_equalization(img, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=100, out=out)
+            else :
+                local_histogram_equalization(img, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=50, out=out)
+
+    if night_water is not None and (numpy.any(night_water)):
+        log.debug ("  scaling DNB in night water mask")
+
+        local_histogram_equalization(img, night_water, valid_data_mask=good_mask, local_radius_px=500, out=out)
+
+    # set any data that's not in the good areas to fill
+    out[~good_mask] = fillValue
+
+    return out
+
+def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
+              highAngleCutoff=None, lowAngleCutoff=None, out=None):
+    """
+    This scaling method uses histogram equalization to flatten the image
+    levels across the day and night regions.
+
+    The img data will be separated into day, night, and mixed regions using the
+    solarZenithAngle data. The highAngleCutoff and lowAngleCutoff define the
+    points between the regions. If data points do not have a corresponding
+    solarZenithAngle, they will be considered to be invalid data and set to
+    fill values.
+    """
+    if out is None:
+        out = numpy.zeros_like(img)
+
     # build the day and night area masks
     log.debug("Generating day, night, and mixed region masks...")
     day_mask, mixed_mask, night_mask, good_mask = \
@@ -182,84 +253,24 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE,
                                                              highAngleCutoff=highAngleCutoff,
                                                              lowAngleCutoff=lowAngleCutoff)
     has_multi_times = (mixed_mask is not None) and (len(mixed_mask) > 0)
-    night_water = None # a mask of water at night
-    
-    log.debug("Moon Illumination, before angle weighting: " + str(moonIllumFraction))
-    weightedMoonIllumFract = _calculate_average_moon_illumination (moonIllumFraction,
-                                                                   lunarZenithAngle,
-                                                                   good_mask)
-    log.debug("Moon Illumination, after  angle weighting: " + str(weightedMoonIllumFract))
-    
-    #log.debug("Running 'dnb_scale'...")
-    if new_dnb:
-        log.debug("Running NEW DNB scaling...")
-    else:
-        log.debug("Running OLD DNB scaling...")
-    
-    # a way to hang onto our result
-    # because the equalization is done in place, this is needed so the input data isn't corrupted
-    img_result = img.copy()
-    
+
     if day_mask is not None and (numpy.sum(day_mask)   > 0) :
         log.debug("  scaling DNB in day mask")
-        temp_image = img.copy()
-        if new_dnb and has_multi_times:
-            local_histogram_equalization(temp_image, day_mask, valid_data_mask=good_mask, local_radius_px=400)
-        else:
-            histogram_equalization(temp_image, day_mask)
-        img_result[day_mask] = temp_image[day_mask]
-    
+        histogram_equalization(img, day_mask, out=out)
+
     if mixed_mask is not None and (len(mixed_mask)     > 0) :
         log.debug("  scaling DNB in twilight mask")
         for mask in mixed_mask:
-            temp_image = img.copy()
-            if new_dnb:
-                local_histogram_equalization(temp_image, mask, valid_data_mask=good_mask, local_radius_px=100)
-            else:
-                histogram_equalization(temp_image, mask)
-            img_result[mask] = temp_image[mask]
-    
+            histogram_equalization(img, mask, out=out)
+
     if night_mask is not None and (numpy.sum(night_mask) > 0) :
         log.debug("  scaling DNB in night mask")
-        temp_image = img.copy()
-        if new_dnb:
-            
-            # TODO, this should probably also be affected by whether or not there is a day mask
-            if weightedMoonIllumFract > 0.90 :
-                if has_multi_times :
-                    local_histogram_equalization(temp_image, night_mask, valid_data_mask=good_mask, local_radius_px=100)
-                else :
-                    #local_histogram_equalization(temp_image, night_mask, valid_data_mask=good_mask, local_radius_px=200)
-                    histogram_equalization(temp_image, night_mask)
-            else :
-                # FUTURE, for now we're not using the water mask
-                #night_water = night_mask & waterMask
-                #tmp_night_mask = night_mask & ~waterMask
-                tmp_night_mask = night_mask
-                if weightedMoonIllumFract > 0.25 :
-                    local_histogram_equalization(temp_image, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=200)
-                elif weightedMoonIllumFract > 0.10 :
-                    local_histogram_equalization(temp_image, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=100)
-                else :
-                    local_histogram_equalization(temp_image, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=50)
-            
-        else:
-            histogram_equalization(temp_image, night_mask)
-        img_result[night_mask] = temp_image[night_mask]
-    
-    if night_water is not None and (numpy.any(night_water)) :
-        log.debug ("  scaling DNB in night water mask")
-        temp_image = img.copy()
-        
-        local_histogram_equalization(temp_image, night_water, valid_data_mask=good_mask, local_radius_px=500)
-        #histogram_equalization(temp_image, night_water, valid_data_mask=night_mask)
-        
-        img_result[night_water] = temp_image[night_water]
-    
+        histogram_equalization(img, night_mask, out=out)
+
     # set any data that's not in the good areas to fill
-    img_result[~good_mask] = fillValue
+    out[~good_mask] = fillValue
     
-    return img_result
+    return out
 
 # XXX: Remove new_dnb when a method has been decided on
 # XXX: It is just temporary
