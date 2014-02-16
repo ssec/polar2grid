@@ -182,7 +182,7 @@ class VIIRSSDRReader(HDF5Reader):
         try:
             scaling_factors = list(self[var_info.scaling_path][:])
         except KeyError:
-            log.info("No scaling factors for %s", item)
+            log.debug("No scaling factors for %s", item)
 
         # Get the mask for the data (based on unscaled data)
         mask = None

@@ -47,8 +47,8 @@ from .guidebook import *
 from .io import VIIRSSDRMultiReader, VIIRSSDRGeoMultiReader
 from polar2grid.core.time_utils import iso8601
 from polar2grid.core.fbf import Workspace, create_fbf_filename
-from .prescale import run_dnb_scale
-from .pseudo import create_fog_band
+from polar2grid.core import histogram
+from .prescale import adaptive_dnb_scale, dnb_scale
 from polar2grid.core import roles
 import numpy
 
@@ -57,7 +57,7 @@ import sys
 import logging
 import re
 import json
-import importlib
+import shutil
 from datetime import datetime
 from collections import namedtuple, defaultdict
 
@@ -171,7 +171,7 @@ PRODUCT_INFO = {
     PRODUCT_M_LZA: ProductInfo(tuple(), m_nav_tuple, 16, "lunar_zenith_angle", ""),
     PRODUCT_I_LZA: ProductInfo(tuple(), i_nav_tuple, 32, "lunar_zenith_angle", ""),
     PRODUCT_IFOG: ProductInfo((PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA), i_nav_tuple, 32, "temperature_difference", ""),
-    PRODUCT_HISTOGRAM_DNB: ProductInfo((PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), i_nav_tuple, 32, "equalized_radiance", ""),
+    PRODUCT_HISTOGRAM_DNB: ProductInfo((PRODUCT_DNB, PRODUCT_DNB_SZA), dnb_nav_tuple, 16, "equalized_radiance", ""),
     PRODUCT_ADAPTIVE_DNB: ProductInfo((PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), dnb_nav_tuple, 16, "equalized_radiance", ""),
     # adaptive IR
     PRODUCT_ADAPTIVE_I04: ProductInfo((PRODUCT_I04,), i_nav_tuple, 32, "equalized_btemp", ""),
@@ -344,6 +344,7 @@ class P2GJSONDecoder(json.JSONDecoder):
 
     @staticmethod
     def _jsonclass_to_pyclass(json_class_name):
+        import importlib
         cls_name = json_class_name.split(".")[-1]
         mod_name = ".".join(json_class_name.split(".")[:-1])
         cls = getattr(importlib.import_module(mod_name), cls_name)
@@ -407,6 +408,7 @@ class BaseP2GObject(dict):
         f = open(filename, "w")
         try:
             json.dump(self, f, cls=P2GJSONEncoder, indent=4, sort_keys=True)
+            self.persist = True
         except TypeError:
             log.error("Could not write P2G object to JSON file: '%s'", filename, exc_info=True)
             f.close()
@@ -484,6 +486,30 @@ class BaseSwath(BaseP2GObject):
             return numpy.isnan(data)
         else:
             return data == fill
+
+    def copy_array(self, item, fbf_filename=None, read_only=True):
+        """Copy the array item of this swath.
+
+        If the `fbf_filename` keyword is passed the data will be put in the FBF filename provided. The copy returned
+        will be a memory map. If `read_only` is False, the memory map will be opened with "w+" privileges.
+
+        The 'read_only' keyword is ignored if `fbf_filename` is None.
+        """
+        mode = 'r' if read_only else 'r+'
+        data = super(BaseSwath, self).__getitem__(item)
+        if isinstance(data, (str, unicode)):
+            # we have an FBF
+            if fbf_filename:
+                # the user wants to copy the FBF
+                shutil.copyfile(data, fbf_filename)
+                data = fbf_filename
+                return Workspace('.').var(data.split('.')[0], mode=mode)
+            return Workspace('.').var(data.split('.')[0]).copy()
+        else:
+            if fbf_filename:
+                data.tofile(fbf_filename)
+                return Workspace('.').var(fbf_filename('.')[0], mode=mode)
+            return data.copy()
 
 class BaseGeoSwath(BaseSwath):
     def __init__(self, **kwargs):
@@ -628,13 +654,14 @@ class Frontend(object):
         return file_pattern
 
     @staticmethod
-    def _create_raw_swath_object(product_name, variable_key, reader):
+    def _create_raw_swath_object(product_name, variable_key, reader, file_pattern):
         product_info = PRODUCT_INFO[product_name]
         one_swath = VIIRSDataSwath()
         log.info("Writing product data to FBF for '%s'", product_name)
         fbf_filename, fbf_shape = reader.write_var_to_flat_binary(variable_key, stem=product_name)
         one_swath["product_name"] = product_name
         one_swath["source_filenames"] = reader.get_filenames()
+        one_swath["source_file_pattern"] = file_pattern
         one_swath["start_time"] = reader.start_time
         one_swath["end_time"] = reader.end_time
         one_swath["satellite"] = reader.get_satellite()
@@ -735,7 +762,8 @@ class Frontend(object):
             # Write the geolocation information to a file
             log.info("Writing navigation product data to FBF for '%s'", nav_product_name)
             products_created[nav_product_name] = self._create_raw_swath_object(nav_product_name,
-                                                                               product_file_info.variable, reader)
+                                                                               product_file_info.variable,
+                                                                               reader, nav_file_pattern)
 
         # Load each of the raw products (products that are loaded directly from the file)
         for product_name in raw_products_needed:
@@ -756,7 +784,7 @@ class Frontend(object):
 
                 one_swath = products_created[product_name] = self._create_raw_swath_object(product_name,
                                                                                            product_file_info.variable,
-                                                                                           reader)
+                                                                                           reader, file_pattern)
 
             if product_name in products:
                 # the user wants this product
@@ -786,8 +814,119 @@ class Frontend(object):
         return meta_data
 
     ### Secondary Product Functions
+    def create_histogram_dnb(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
+        product_info = PRODUCT_INFO[product_name]
+        deps = product_info.dependencies
+        if len(deps) != 2:
+            log.error("Expected 2 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+            raise ValueError("Expected 2 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+
+        dnb_product_name = deps[0]
+        sza_product_name = deps[1]
+        dnb_product = products_created[dnb_product_name]
+        dnb_data = dnb_product.get_array("swath_data")
+        sza_data = products_created[sza_product_name].get_array("swath_data")
+        fbf_filename = create_fbf_filename(product_name, data=dnb_data)
+        output_data = dnb_product.copy_array("swath_data", fbf_filename=fbf_filename, read_only=False)
+
+        dnb_scale(dnb_data, solarZenithAngle=sza_data, fillValue=fill, out=output_data)
+
+        one_swath = VIIRSDataSwath()
+        log.info("Writing product data to FBF for '%s'", product_name)
+        one_swath["product_name"] = product_name
+        one_swath["source_filenames"] = zip([products_created[dep_name]["source_filenames"] for dep_name in deps])
+        one_swath["start_time"] = dnb_product["start_time"]
+        one_swath["end_time"] = dnb_product["end_time"]
+        one_swath["satellite"] = dnb_product["satellite"]
+        one_swath["instrument"] = dnb_product["instrument"]
+        one_swath["swath_data"] = fbf_filename
+        one_swath["swath_rows"] = output_data.shape[0]
+        one_swath["swath_cols"] = output_data.shape[1]
+        one_swath["data_kind"] = product_info.data_kind
+        one_swath["description"] = product_info.description
+        one_swath["scene_name"] = product_info.geolocation.scene_name
+        one_swath["rows_per_scan"] = product_info.rows_per_scan
+        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
+
+        return one_swath
+
     def create_adaptive_dnb(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
-        pass
+        product_info = PRODUCT_INFO[product_name]
+        deps = product_info.dependencies
+        if len(deps) != 3:
+            log.error("Expected 3 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+            raise ValueError("Expected 3 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+
+        dnb_product_name = deps[0]
+        sza_product_name = deps[1]
+        lza_product_name = deps[2]
+        geo_file_reader = files_loaded[products_created[product_info.geolocation.longitude_product]["source_file_pattern"]]
+        moon_illum_fraction = geo_file_reader[K_MOONILLUM] / (100.0 * len(geo_file_reader))
+        dnb_product = products_created[dnb_product_name]
+        dnb_data = dnb_product.get_array("swath_data")
+        sza_data = products_created[sza_product_name].get_array("swath_data")
+        lza_data = products_created[lza_product_name].get_array("swath_data")
+        fbf_filename = create_fbf_filename(product_name, data=dnb_data)
+        output_data = dnb_product.copy_array("swath_data", fbf_filename=fbf_filename, read_only=False)
+
+        adaptive_dnb_scale(dnb_data,
+                           solarZenithAngle=sza_data, lunarZenithAngle=lza_data, moonIllumFraction=moon_illum_fraction,
+                           fillValue=fill, out=output_data)
+
+        one_swath = VIIRSDataSwath()
+        log.info("Writing product data to FBF for '%s'", product_name)
+        one_swath["product_name"] = product_name
+        one_swath["source_filenames"] = zip([products_created[dep_name]["source_filenames"] for dep_name in deps])
+        one_swath["start_time"] = dnb_product["start_time"]
+        one_swath["end_time"] = dnb_product["end_time"]
+        one_swath["satellite"] = dnb_product["satellite"]
+        one_swath["instrument"] = dnb_product["instrument"]
+        one_swath["swath_data"] = fbf_filename
+        one_swath["swath_rows"] = output_data.shape[0]
+        one_swath["swath_cols"] = output_data.shape[1]
+        one_swath["data_kind"] = product_info.data_kind
+        one_swath["description"] = product_info.description
+        one_swath["scene_name"] = product_info.geolocation.scene_name
+        one_swath["rows_per_scan"] = product_info.rows_per_scan
+        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
+
+        return one_swath
+
+    def create_adaptive_btemp(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
+        product_info = PRODUCT_INFO[product_name]
+        deps = product_info.dependencies
+        if len(deps) != 1:
+            log.error("Expected 1 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+            raise ValueError("Expected 1 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+
+        bt_product_name = deps[0]
+        bt_product = products_created[bt_product_name]
+        bt_data = bt_product.get_array("swath_data")
+        bt_mask = bt_product.get_mask("swath_data")
+        fbf_filename = create_fbf_filename(product_name, data=bt_data)
+        output_data = bt_product.copy_array("swath_data", fbf_filename=fbf_filename, read_only=False)
+
+        histogram.local_histogram_equalization(bt_data, ~bt_mask, do_log_scale=False, out=output_data)
+
+        one_swath = VIIRSDataSwath()
+        log.info("Writing product data to FBF for '%s'", product_name)
+        one_swath["product_name"] = product_name
+        one_swath["source_filenames"] = zip([products_created[dep_name]["source_filenames"] for dep_name in deps])
+        one_swath["start_time"] = bt_product["start_time"]
+        one_swath["end_time"] = bt_product["end_time"]
+        one_swath["satellite"] = bt_product["satellite"]
+        one_swath["instrument"] = bt_product["instrument"]
+        one_swath["swath_data"] = fbf_filename
+        one_swath["swath_rows"] = output_data.shape[0]
+        one_swath["swath_cols"] = output_data.shape[1]
+        one_swath["data_kind"] = product_info.data_kind
+        one_swath["description"] = product_info.description
+        one_swath["scene_name"] = product_info.geolocation.scene_name
+        one_swath["rows_per_scan"] = product_info.rows_per_scan
+        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
+
+        return one_swath
+
 
     def create_ifog(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
         product_info = PRODUCT_INFO[product_name]
@@ -833,8 +972,16 @@ class Frontend(object):
         return one_swath
 
     SECONDARY_PRODUCT_FUNCTIONS = {
+        PRODUCT_HISTOGRAM_DNB: create_histogram_dnb,
         PRODUCT_ADAPTIVE_DNB: create_adaptive_dnb,
         PRODUCT_IFOG: create_ifog,
+        PRODUCT_ADAPTIVE_I04: create_adaptive_btemp,
+        PRODUCT_ADAPTIVE_I05: create_adaptive_btemp,
+        PRODUCT_ADAPTIVE_M12: create_adaptive_btemp,
+        PRODUCT_ADAPTIVE_M13: create_adaptive_btemp,
+        PRODUCT_ADAPTIVE_M14: create_adaptive_btemp,
+        PRODUCT_ADAPTIVE_M15: create_adaptive_btemp,
+        PRODUCT_ADAPTIVE_M16: create_adaptive_btemp,
         }
 
 

@@ -170,7 +170,10 @@ class Workspace(object):
 
         return attr_name,dtype,shape
 
-    def __getattr__(self, name, mode='r'):
+    def __getattr__(self, name):
+        return self.var(name)
+
+    def var(self, name, mode='r'):
         g = glob( os.path.join(self._dir,name+'.*') )
         if len(g)==1:
             attr_name,dtype,shape = self._parse_attr_name(g[0])
@@ -181,16 +184,13 @@ class Workspace(object):
             raise AttributeError("Found too many instances for %s in workspace" % name)
         else:
             raise AttributeError("%s not in workspace" % name)
-        
-    def var(self,name):
-        return getattr(self, name)
-    
-    def vars(self):
+
+    def vars(self, mode='r'):
         for path in os.listdir(self._dir):
             try:
                 fullpath = os.path.join(self._dir, path)
                 stemname,_,_ = self._parse_attr_name(fullpath)
-                yield stemname, self.__getattr__(stemname)
+                yield stemname, self.var(stemname, mode=mode)
             except:
                 pass
             
