@@ -55,6 +55,19 @@ FAKE_PRODUCT_INFO1 = {
     "lat1": swath.ProductInfo(tuple(), FAKE_NAV1, 32, "latitude", "This is a fake product (lat #1)"),
 }
 
+FAKE_I01_REGEX = r'SVI01_.*\.h5'
+FAKE_PRODUCT_FILE_REGEXES1 = {
+    "prod1": swath.RawProductFileInfo(FAKE_I01_REGEX, "reflectance"),
+    # TODO: Add other stuff
+}
+
+
+def find_all_files_side_effect_factory(patterns, **pass_kwargs):
+    def find_all_files_side_effect(*args, **kwargs):
+        return [(p % pass_kwargs) for p in patterns]
+
+    return find_all_files_side_effect
+
 
 class ProductInfoTestCase(unittest.TestCase):
     """Test functions having to do with product definition/information.
@@ -85,15 +98,25 @@ class ProductInfoTestCase(unittest.TestCase):
         self.assertItemsEqual(["prod2"], deps)
 
 
-class FrontendTestCase(unittest.TestCase):
-    pass
+class SwathExtractorTestCase(unittest.TestCase):
+    """Test features of the SwathExtractor class.
+    """
+    @mock.patch.object(swath.SwathExtractor, "find_all_files", spec=swath.SwathExtractor, side_effect=find_all_files_side_effect_factory(["SVI01_npp_d20120928.h5"]))
+    @mock.patch("polar2grid.viirs.swath.ALL_FILE_REGEXES", new=[FAKE_I01_REGEX])
+    @mock.patch.dict("polar2grid.viirs.swath.PRODUCT_INFO", values=FAKE_PRODUCT_INFO1, clear=True)
+    @mock.patch.dict("polar2grid.viirs.swath.PRODUCT_FILE_REGEXES", values=FAKE_PRODUCT_FILE_REGEXES1, clear=True)
+    def test_all_products_property(self, find_mock):
+        f = swath.SwathExtractor(['.'])
+        find_mock.assert_called_with(['.'])
+        self.assertItemsEqual(FAKE_PRODUCT_INFO1.keys(), f.all_product_names, msg="Unexpected list for all_product_names")
+        self.assertIn("prod1", f.available_product_names)
 
 
 def suite():
     loader = unittest.TestLoader()
     test_suite = unittest.TestSuite()
     test_suite.addTest(loader.loadTestsFromTestCase(ProductInfoTestCase))
-    test_suite.addTest(loader.loadTestsFromTestCase(FrontendTestCase))
+    test_suite.addTest(loader.loadTestsFromTestCase(SwathExtractorTestCase))
     return test_suite
 
 if __name__ == '__main__':

@@ -63,8 +63,6 @@ from collections import namedtuple, defaultdict
 
 log = logging.getLogger(__name__)
 
-FILL_VALUE = -999.0
-
 # XXX: For now anything having to do directly with products is kept in the swath module
 # XXX: Stuff about the actual files and what keys are what are kept in the guidebook
 ### PRODUCT KEYS ###
@@ -234,7 +232,12 @@ PRODUCT_FILE_REGEXES = {
     PRODUCT_DNB_LON: RawProductFileInfo((DNB_GEO_TC_REGEX, DNB_GEO_REGEX), K_LONGITUDE),
     PRODUCT_DNB_LAT: RawProductFileInfo((DNB_GEO_TC_REGEX, DNB_GEO_REGEX), K_LATITUDE),
 }
-
+ALL_FILE_REGEXES = []
+for k, v in PRODUCT_FILE_REGEXES.iteritems():
+    if isinstance(v.file_pattern, str):
+        ALL_FILE_REGEXES.append(v.file_pattern)
+    else:
+        ALL_FILE_REGEXES.extend(v.file_pattern)
 
 def get_product_dependencies(product_name):
     """Recursive function to get all dependencies to create a single product.
@@ -415,19 +418,23 @@ class BaseP2GObject(dict):
             os.remove(filename)
             raise
 
+    def __repr__(self):
+        # TODO
+        pass
+
 
 class BaseMetaData(BaseP2GObject):
     pass
 
 
-class BaseScene(BaseP2GObject):
-    def __init__(self, *args, **kwargs):
-        """Create a basic Polar2Grid scene.
-
-        :param geolocation: BaseGeoSwath instance object describing the navigation data for this scene (required)
-        """
-        required_kwargs = kwargs.pop("_required_kwargs", []) + ["geolocation"]
-        super(BaseScene, self).__init__(_required_kwargs=required_kwargs, **kwargs)
+# class BaseScene(BaseP2GObject):
+#     def __init__(self, *args, **kwargs):
+#         """Create a basic Polar2Grid scene.
+#
+#         :param geolocation: BaseGeoSwath instance object describing the navigation data for this scene (required)
+#         """
+#         required_kwargs = kwargs.pop("_required_kwargs", []) + ["geolocation"]
+#         super(BaseScene, self).__init__(_required_kwargs=required_kwargs, **kwargs)
 
 
 class BaseSwath(BaseP2GObject):
@@ -440,6 +447,8 @@ class BaseSwath(BaseP2GObject):
         - instrument: Name of the instrument on the satellite from which the data was observed
         - data_kind (optional): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
         - scene_name: Name of the navigation "set" or scene to which this swath belongs.
+        - longitude: Longitude Swath Object
+        - latitude: Latitude Swath Object
         - swath_rows: Number of rows in the main 2D data array
         - swath_cols: Number of columns in the main 2D data array
         - start_time: Datetime object representing the best known start of observation for this product's data
@@ -465,7 +474,7 @@ class BaseSwath(BaseP2GObject):
                     log.warning("Unable to remove FBF: '%s'", self["swath_data"])
                     log.debug("Unable to remove FBF traceback:", exc_info=True)
 
-    def get_array(self, item):
+    def get_data_array(self, item):
         """Get FBF item as a numpy array.
 
         File is loaded from disk as a memory mapped file if needed.
@@ -477,10 +486,10 @@ class BaseSwath(BaseP2GObject):
 
         return data
 
-    def get_mask(self, item, fill=DEFAULT_FILL_VALUE):
+    def get_data_mask(self, item, fill=DEFAULT_FILL_VALUE):
         """Return a boolean mask where the data for `item` is invalid/bad.
         """
-        data = self.get_array(item)
+        data = self.get_data_array(item)
 
         if numpy.isnan(fill):
             return numpy.isnan(data)
@@ -511,22 +520,22 @@ class BaseSwath(BaseP2GObject):
                 return Workspace('.').var(fbf_filename('.')[0], mode=mode)
             return data.copy()
 
-class BaseGeoSwath(BaseSwath):
-    def __init__(self, **kwargs):
-        """Base swath class for navigation products.
+# class BaseGeoSwath(BaseSwath):
+#     def __init__(self, **kwargs):
+#         """Base swath class for navigation products.
+#
+#         :param scene_name: Scene name for the longitude and latitude swaths (required)
+#         :param longitude: Swath object for the longitude data (required)
+#         :param latitude: Swath object for the latitude data (required)
+#         """
+#         required_kwargs = kwargs.pop("_required_kwargs", []) + ["scene_name", "longitude", "latitude"]
+#         super(BaseGeoSwath, self).__init__(_required_kwargs=required_kwargs, **kwargs)
 
-        :param scene_name: Scene name for the longitude and latitude swaths (required)
-        :param longitude: Swath object for the longitude data (required)
-        :param latitude: Swath object for the latitude data (required)
-        """
-        required_kwargs = kwargs.pop("_required_kwargs", []) + ["scene_name", "longitude", "latitude"]
-        super(BaseGeoSwath, self).__init__(_required_kwargs=required_kwargs, **kwargs)
 
-
-class VIIRSScene(BaseScene):
-    """Collection of VIIRS Swaths.
-    """
-    pass
+# class VIIRSScene(BaseScene):
+#     """Collection of VIIRS Swaths.
+#     """
+#     pass
 
 
 class VIIRSDataSwath(BaseSwath):
@@ -535,14 +544,14 @@ class VIIRSDataSwath(BaseSwath):
     pass
 
 
-class VIIRSGeoSwath(BaseGeoSwath):
-    """Swath data for VIIRS Geolocation Data.
-    """
-    pass
+# class VIIRSGeoSwath(BaseGeoSwath):
+#     """Swath data for VIIRS Geolocation Data.
+#     """
+#     pass
 
 
 #class Frontend(roles.FrontendRole):
-class Frontend(object):
+class SwathExtractor(object):
     def __init__(self, search_paths=None):
         """Initialize the frontend.
 
@@ -557,35 +566,29 @@ class Frontend(object):
         :param search_paths: A list of paths to search for usable files
         """
         search_paths = search_paths or ['.']
-        search_paths_set = set()
-        for sp in search_paths:
-            # Take the realpath because we don't want duplicates
-            #   (two links that point to the same directory)
-            sp_real = os.path.realpath(sp)
-            if not os.path.isdir(sp_real):
-                log.warning("Search path '%s' does not exist or is not a directory" % (sp_real,))
-                continue
-            search_paths_set.add(sp_real)
-
-        # Check if we have any valid directories to look through
-        if not search_paths_set:
-            log.error("No valid paths were found to search for data files")
-            raise ValueError("No valid paths were found to search for data files")
-
-        self.search_paths = tuple(search_paths_set)
-        file_paths = self.find_all_files(self.search_paths)
+        file_paths = self.find_all_files(search_paths)
 
         # Find all files for each path
         self.recognized_files = self.filter_filenames(file_paths)
 
     @staticmethod
     def find_all_files(search_paths):
+        print "find_all_files"
         for sp in search_paths:
-            log.info("Searching '%s' for useful files...", sp)
-            for fn in os.listdir(sp):
-                full_path = os.path.join(sp, fn)
-                if os.path.isfile(full_path):
-                    yield full_path
+            # Take the realpath because we don't want duplicates
+            #   (two links that point to the same directory)
+            sp_real = os.path.realpath(sp)
+            if os.path.isfile(sp_real):
+                log.debug("Adding file '%s' to search list", sp_real)
+                yield sp_real
+            elif os.path.isdir(sp_real):
+                log.info("Searching '%s' for useful files...", sp)
+                for fn in os.listdir(sp):
+                    full_path = os.path.join(sp, fn)
+                    if os.path.isfile(full_path):
+                        yield full_path
+            else:
+                log.warning("Search path '%s' does not exist or is not a directory" % (sp_real,))
 
     @staticmethod
     def filter_filenames(filepaths):
@@ -611,6 +614,11 @@ class Frontend(object):
                     log.debug("Found useful file: '%s'", fn)
                     matched_files[fn_regex].add(filepath)
                     break
+
+        # Check if we have any valid directories to look through
+        if not matched_files:
+            log.error("No valid data files were found")
+            raise ValueError("No valid data files were found")
 
         # Sort the filenames
         for fn_regex in matched_files.keys():
@@ -646,7 +654,7 @@ class Frontend(object):
         if file_pattern not in self.recognized_files:
             log.error("Could not find any files to create product '%s', looked through the following patterns: %r",
                       product_name, file_pattern)
-            log.debug("Recognized file patterns:\n%s", "\n\t".join(self.recognized_files.keys()))
+            log.debug("Recognized file patterns:\n\t%s", "\n\t".join(self.recognized_files.keys()))
             raise ValueError(
                 "Could not find any files to create product '%s', looked through the following patterns: %r" % (
                     product_name, file_pattern))
@@ -654,7 +662,7 @@ class Frontend(object):
         return file_pattern
 
     @staticmethod
-    def _create_raw_swath_object(product_name, variable_key, reader, file_pattern):
+    def _create_raw_swath_object(product_name, variable_key, reader, file_pattern, products_created):
         product_info = PRODUCT_INFO[product_name]
         one_swath = VIIRSDataSwath()
         log.info("Writing product data to FBF for '%s'", product_name)
@@ -672,34 +680,68 @@ class Frontend(object):
         one_swath["data_kind"] = product_info.data_kind
         one_swath["description"] = product_info.description
         one_swath["scene_name"] = product_info.geolocation.scene_name
+        if products_created is None:
+            # Geolocation products themselves just have 'None' for this value
+            one_swath["longitude"] = None
+            one_swath["latitude"] = None
+        else:
+            # Have to be OK with the geolocation not being available
+            one_swath["longitude"] = products_created.get(product_info.geolocation.longitude_product, None)
+            one_swath["latitude"] = products_created.get(product_info.geolocation.latitude_product, None)
         one_swath["rows_per_scan"] = product_info.rows_per_scan
         one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
 
         return one_swath
 
-    def get_possible_products(self):
-        raw_products = [k for k, v in PRODUCT_FILE_REGEXES.iteritems() if v.file_pattern in self.recognized_files]
-        return get_product_descendants(raw_products)
+    @staticmethod
+    def _create_secondary_swath_object(product_name, fbf_filename, rows, cols, dep_names, products_created):
+        product_info = PRODUCT_INFO[product_name]
+        dep_objects = [products_created[dep_name] for dep_name in dep_names]
+
+        one_swath = VIIRSDataSwath()
+        log.info("Writing product data to FBF for '%s'", product_name)
+        one_swath["product_name"] = product_name
+        one_swath["source_filenames"] = zip([dep_obj["source_filenames"] for dep_obj in dep_objects])
+        one_swath["start_time"] = dep_objects[0]["start_time"]
+        one_swath["end_time"] = dep_objects[0]["end_time"]
+        one_swath["satellite"] = dep_objects[0]["satellite"]
+        one_swath["instrument"] = dep_objects[0]["instrument"]
+        one_swath["swath_data"] = fbf_filename
+        one_swath["swath_rows"] = rows
+        one_swath["swath_cols"] = cols
+        one_swath["data_kind"] = product_info.data_kind
+        one_swath["description"] = product_info.description
+        one_swath["scene_name"] = product_info.geolocation.scene_name
+        # Have to be OK with geolocation not being available (although unlikely)
+        one_swath["longitude"] = products_created.get(product_info.geolocation.longitude_product, None)
+        one_swath["latitude"] = products_created.get(product_info.geolocation.latitude_product, None)
+        one_swath["rows_per_scan"] = product_info.rows_per_scan
+        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
+        return one_swath
+
+    @property
+    def available_product_names(self):
+        raw_products = []
+        for k, v in PRODUCT_FILE_REGEXES.iteritems():
+            if isinstance(v.file_pattern, tuple) and any([(f_pattern in self.recognized_files) for f_pattern in v.file_pattern]):
+                raw_products.append(k)
+            elif v.file_pattern in self.recognized_files:
+                raw_products.append(k)
+
+        return sorted(get_product_descendants(raw_products))
+
+    @property
+    def all_product_names(self):
+        return sorted(PRODUCT_INFO.keys())
 
     def add_swath_to_scene(self, meta_data, one_swath, products_created):
-        product_info = PRODUCT_INFO[one_swath["product_name"]]
-        scene_name = one_swath["scene_name"]
-
-        if one_swath["scene_name"] not in meta_data:
-            longitude_swath = products_created[product_info.geolocation.longitude_product]
-            latitude_swath = products_created[product_info.geolocation.latitude_product]
-            one_scene = meta_data[scene_name] = VIIRSScene(geolocation=
-                VIIRSGeoSwath(scene_name=scene_name, longitude=longitude_swath, latitude=latitude_swath))
-        else:
-            one_scene = meta_data[scene_name]
-
-        one_scene[one_swath["product_name"]] = one_swath
+        meta_data[one_swath["product_name"]] = one_swath
 
     def create_scenes(self, products=None, use_terrain_corrected=True):
         log.info("Loading scene data...")
         # If the user didn't provide the products they want, figure out which ones we can create
         if products is None:
-            products = self.get_possible_products()
+            products = self.available_product_names
         products = list(set(products))
         meta_data = BaseMetaData()
         # List of all products we will be creating (what was asked for and what's needed to create them)
@@ -763,7 +805,7 @@ class Frontend(object):
             log.info("Writing navigation product data to FBF for '%s'", nav_product_name)
             products_created[nav_product_name] = self._create_raw_swath_object(nav_product_name,
                                                                                product_file_info.variable,
-                                                                               reader, nav_file_pattern)
+                                                                               reader, nav_file_pattern, None)
 
         # Load each of the raw products (products that are loaded directly from the file)
         for product_name in raw_products_needed:
@@ -784,7 +826,8 @@ class Frontend(object):
 
                 one_swath = products_created[product_name] = self._create_raw_swath_object(product_name,
                                                                                            product_file_info.variable,
-                                                                                           reader, file_pattern)
+                                                                                           reader, file_pattern,
+                                                                                           products_created)
 
             if product_name in products:
                 # the user wants this product
@@ -824,29 +867,16 @@ class Frontend(object):
         dnb_product_name = deps[0]
         sza_product_name = deps[1]
         dnb_product = products_created[dnb_product_name]
-        dnb_data = dnb_product.get_array("swath_data")
-        sza_data = products_created[sza_product_name].get_array("swath_data")
+        dnb_data = dnb_product.get_data_array("swath_data")
+        sza_data = products_created[sza_product_name].get_data_array("swath_data")
         fbf_filename = create_fbf_filename(product_name, data=dnb_data)
         output_data = dnb_product.copy_array("swath_data", fbf_filename=fbf_filename, read_only=False)
 
         dnb_scale(dnb_data, solarZenithAngle=sza_data, fillValue=fill, out=output_data)
 
-        one_swath = VIIRSDataSwath()
-        log.info("Writing product data to FBF for '%s'", product_name)
-        one_swath["product_name"] = product_name
-        one_swath["source_filenames"] = zip([products_created[dep_name]["source_filenames"] for dep_name in deps])
-        one_swath["start_time"] = dnb_product["start_time"]
-        one_swath["end_time"] = dnb_product["end_time"]
-        one_swath["satellite"] = dnb_product["satellite"]
-        one_swath["instrument"] = dnb_product["instrument"]
-        one_swath["swath_data"] = fbf_filename
-        one_swath["swath_rows"] = output_data.shape[0]
-        one_swath["swath_cols"] = output_data.shape[1]
-        one_swath["data_kind"] = product_info.data_kind
-        one_swath["description"] = product_info.description
-        one_swath["scene_name"] = product_info.geolocation.scene_name
-        one_swath["rows_per_scan"] = product_info.rows_per_scan
-        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
+        one_swath = self._create_secondary_swath_object(product_name, fbf_filename,
+                                                        output_data.shape[0], output_data.shape[1],
+                                                        deps, products_created)
 
         return one_swath
 
@@ -863,9 +893,9 @@ class Frontend(object):
         geo_file_reader = files_loaded[products_created[product_info.geolocation.longitude_product]["source_file_pattern"]]
         moon_illum_fraction = geo_file_reader[K_MOONILLUM] / (100.0 * len(geo_file_reader))
         dnb_product = products_created[dnb_product_name]
-        dnb_data = dnb_product.get_array("swath_data")
-        sza_data = products_created[sza_product_name].get_array("swath_data")
-        lza_data = products_created[lza_product_name].get_array("swath_data")
+        dnb_data = dnb_product.get_data_array("swath_data")
+        sza_data = products_created[sza_product_name].get_data_array("swath_data")
+        lza_data = products_created[lza_product_name].get_data_array("swath_data")
         fbf_filename = create_fbf_filename(product_name, data=dnb_data)
         output_data = dnb_product.copy_array("swath_data", fbf_filename=fbf_filename, read_only=False)
 
@@ -873,22 +903,9 @@ class Frontend(object):
                            solarZenithAngle=sza_data, lunarZenithAngle=lza_data, moonIllumFraction=moon_illum_fraction,
                            fillValue=fill, out=output_data)
 
-        one_swath = VIIRSDataSwath()
-        log.info("Writing product data to FBF for '%s'", product_name)
-        one_swath["product_name"] = product_name
-        one_swath["source_filenames"] = zip([products_created[dep_name]["source_filenames"] for dep_name in deps])
-        one_swath["start_time"] = dnb_product["start_time"]
-        one_swath["end_time"] = dnb_product["end_time"]
-        one_swath["satellite"] = dnb_product["satellite"]
-        one_swath["instrument"] = dnb_product["instrument"]
-        one_swath["swath_data"] = fbf_filename
-        one_swath["swath_rows"] = output_data.shape[0]
-        one_swath["swath_cols"] = output_data.shape[1]
-        one_swath["data_kind"] = product_info.data_kind
-        one_swath["description"] = product_info.description
-        one_swath["scene_name"] = product_info.geolocation.scene_name
-        one_swath["rows_per_scan"] = product_info.rows_per_scan
-        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
+        one_swath = self._create_secondary_swath_object(product_name, fbf_filename,
+                                                        output_data.shape[0], output_data.shape[1],
+                                                        deps, products_created)
 
         return one_swath
 
@@ -901,29 +918,16 @@ class Frontend(object):
 
         bt_product_name = deps[0]
         bt_product = products_created[bt_product_name]
-        bt_data = bt_product.get_array("swath_data")
-        bt_mask = bt_product.get_mask("swath_data")
+        bt_data = bt_product.get_data_array("swath_data")
+        bt_mask = bt_product.get_data_mask("swath_data")
         fbf_filename = create_fbf_filename(product_name, data=bt_data)
         output_data = bt_product.copy_array("swath_data", fbf_filename=fbf_filename, read_only=False)
 
         histogram.local_histogram_equalization(bt_data, ~bt_mask, do_log_scale=False, out=output_data)
 
-        one_swath = VIIRSDataSwath()
-        log.info("Writing product data to FBF for '%s'", product_name)
-        one_swath["product_name"] = product_name
-        one_swath["source_filenames"] = zip([products_created[dep_name]["source_filenames"] for dep_name in deps])
-        one_swath["start_time"] = bt_product["start_time"]
-        one_swath["end_time"] = bt_product["end_time"]
-        one_swath["satellite"] = bt_product["satellite"]
-        one_swath["instrument"] = bt_product["instrument"]
-        one_swath["swath_data"] = fbf_filename
-        one_swath["swath_rows"] = output_data.shape[0]
-        one_swath["swath_cols"] = output_data.shape[1]
-        one_swath["data_kind"] = product_info.data_kind
-        one_swath["description"] = product_info.description
-        one_swath["scene_name"] = product_info.geolocation.scene_name
-        one_swath["rows_per_scan"] = product_info.rows_per_scan
-        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
+        one_swath = self._create_secondary_swath_object(product_name, fbf_filename,
+                                                        output_data.shape[0], output_data.shape[1],
+                                                        deps, products_created)
 
         return one_swath
 
@@ -938,12 +942,12 @@ class Frontend(object):
         left_term_name = deps[0]
         right_term_name = deps[1]
         sza_product_name = deps[2]
-        left_data = products_created[left_term_name].get_array("swath_data")
-        left_mask = products_created[left_term_name].get_mask("swath_data")
-        right_data = products_created[right_term_name].get_array("swath_data")
-        right_mask = products_created[right_term_name].get_mask("swath_data")
-        sza_data = products_created[sza_product_name].get_array("swath_data")
-        sza_mask = products_created[sza_product_name].get_mask("swath_data")
+        left_data = products_created[left_term_name].get_data_array("swath_data")
+        left_mask = products_created[left_term_name].get_data_mask("swath_data")
+        right_data = products_created[right_term_name].get_data_array("swath_data")
+        right_mask = products_created[right_term_name].get_data_mask("swath_data")
+        sza_data = products_created[sza_product_name].get_data_array("swath_data")
+        sza_mask = products_created[sza_product_name].get_data_mask("swath_data")
         night_mask = sza_data >= 100  # where is it night
 
         fbf_filename = create_fbf_filename(product_name, data=left_data)
