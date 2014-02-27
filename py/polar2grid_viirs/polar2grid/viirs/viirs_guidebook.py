@@ -72,6 +72,7 @@ K_SST_FACTORS          = "SeaSurfaceTemperatureFactorsVar"
 K_STARTTIME            = "StartTimeVar"
 K_MODESCAN             = "ModeScanVar"
 K_MODEGRAN             = "ModeGranVar"
+K_QF1                  = "QF1Var"
 K_QF3                  = "QF3Var"
 K_LAT_G_RING           = "LatGRingAttr"
 K_LON_G_RING           = "LonGRingAttr"
@@ -207,6 +208,7 @@ SV_FILE_GUIDE = {
                 K_MODESCAN: None,
                 K_MODEGRAN: None,
                 K_QF3: '/All_Data/VIIRS-SST-EDR_All/QF3_VIIRSSSTEDR',
+                K_QF1: '/All_Data/VIIRS-SST-EDR_All/QF1_VIIRSSSTEDR',
                 K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                 K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
             r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
@@ -687,6 +689,23 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     qf3_data = h5v[:]
     del h5v
 
+    # Get QF1 data for VIIRS SST
+    # qf1_mask is True if the data is poor quality
+    qf1_mask = None
+    if K_QF1 in finfo:
+        log.info("Extracting QF1 flag for data quality checks...")
+        qf1_var_path = finfo[K_QF1]
+        h5v = h5path(hp, qf1_var_path, finfo["img_path"], required=False)
+        if h5v is None:
+            log.info("QF1 data not found in file")
+        else:
+            # 00 = Not retrieved
+            # 01 = Excluded
+            # 10 = Degraded
+            # 11 = High Quality
+            qf1_mask = (h5v[:, :] & 3) < 2
+        del h5v
+
     # Get scaling function (also reads scaling factors from hdf)
     factvar = h5path(hp, factors_var_path, finfo["img_path"], required=False)   # FUTURE: make this more elegant please
     if factvar is None:
@@ -724,11 +743,13 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     # Calculate mask
     mask = MISSING_GUIDE[data_kind][not needs_scaling](image_data) if data_kind in MISSING_GUIDE else None
     if extra_mask is not None:
-        mask = mask | extra_mask
+        mask |= extra_mask
+    if qf1_mask is not None:
+        mask |= qf1_mask
 
     # Scale image data
     image_data,scaling_mask = scaler(image_data)
-    mask = mask | scaling_mask
+    mask |= scaling_mask
 
     # Create scan_quality array
     scan_quality = np.nonzero(np.repeat(qf3_data > 0, finfo["rows_per_scan"]))
