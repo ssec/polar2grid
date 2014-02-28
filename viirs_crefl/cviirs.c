@@ -554,7 +554,7 @@ commented that too Eric*/
 
     sds[ib].factor = 1;
     if (ib < 5 ) sds[ib].factor = 2.441742e-05;
-    attr_name = "Scale";
+    attr_name = "scale_factor";
     printf("band %d \n",ib);
     if ( (attr_index = SDfindattr(sds[ib].id, attr_name)) != -1  &&
          SDattrinfo(sds[ib].id, attr_index, dummy, &num_type, &count) != -1  &&
