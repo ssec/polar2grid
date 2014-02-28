@@ -822,11 +822,9 @@ commented that too Eric*/
 					idx = irow * outsds[ib].Np + jcol;
 					crsidx = (int)(irow / aggfactor) * sds[REFSDS].Np + (int)(jcol / aggfactor);
 					if ( solz[crsidx] == *solzfill  ||	/* Bad geolocation or night pixel */
-						l1bdata[ib][idx] < 0 ) {	/* L1B is read as int16, not uint16, so faulty is negative */
-						if (l1bdata[ib][idx] == MISSING)
+						l1bdata[ib][idx] >= 65528 ) {	/* VIIRS SDR is read as uint16, fills start at 65528 */
+						if (l1bdata[ib][idx] == (65536 + MISSING))
 							((int16 *)outsds[ib].data)[idx] = 32768 + MISSING;
-						else if (l1bdata[ib][idx] == SATURATED)
-							((int16 *)outsds[ib].data)[idx] = 32768 + SATURATED;
 						else
 							((int16 *)outsds[ib].data)[idx] = *(int16 *)outsds[ib].fillvalue;
 
