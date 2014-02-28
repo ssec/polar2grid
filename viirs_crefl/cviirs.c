@@ -1,6 +1,6 @@
 /*
 Linux
-  cc -O crefl.c -o crefl -I$HDFINC -L$HDFLIB -lmfhdf -ldf -lz -lm -ljpeg
+  cc -O cviirsv1.0.c -o cviirsv1.0 -I/usr/local/opt/TOOLKIT/hdf/linux/HDF4.2r0/include -L/usr/local/opt/TOOLKIT/hdf/linux/HDF4.2r0/lib -lmfhdf -ldf -lz -lm -ljpeg
 */
 
 /*************************************************************************
@@ -147,26 +147,26 @@ int main(int argc, char *argv[])
 		"SensorZenith", "SolarAzimuth", "SensorAzimuth", "Longitude",
 		"Latitude"};
 
-	char *SDSlocatorHKM[Nitems] = {"EV_250_Aggr500_RefSB",
-		"EV_250_Aggr500_RefSB", "EV_500_RefSB", "EV_500_RefSB",
+	char *SDSlocatorHKM[Nitems] = {"EV_500_RefSB",
 		"EV_500_RefSB", "EV_500_RefSB", "EV_500_RefSB",
-		"EV_1KM_RefSB","EV_1KM_RefSB","EV_1KM_RefSB",
+		"EV_500_RefSB", "EV_500_RefSB", "EV_500_RefSB",
+		"Reflectance_Img_I1","Reflectance_Img_I2","Reflectance_Img_I3",
 		"EV_1KM_RefSB","EV_1KM_RefSB","EV_1KM_RefSB", "EV_1KM_RefSB",
-		"EV_1KM_RefSB", "EV_1KM_RefSB", "SolarZenith",
-		"SensorZenith", "SolarAzimuth", "SensorAzimuth", "Longitude",
-		"Latitude"};
+		"EV_1KM_RefSB", "EV_1KM_RefSB","SolZenAng_Mod",
+		"SenZenAng_Mod", "SolAziAng_Mod", "SenAziAng_Mod", "Longitude",
+		"Latitude" };
 
 	char *SDSlocator1KM[Nitems] = {"Reflectance_Mod_M5",
-		"EV_250_Aggr1km_RefSB", "Reflectance_Mod_M3",
-		"Reflectance_Mod_M4", "EV_500_Aggr1km_RefSB",
-		"EV_500_Aggr1km_RefSB",  "EV_500_Aggr1km_RefSB",
+		"Reflectance_Mod_M7", "Reflectance_Mod_M3",
+		"Reflectance_Mod_M4", "Reflectance_Mod_M8",
+		"Reflectance_Mod_M10",  "Reflectance_Mod_M11",
 		"EV_1KM_RefSB", "EV_1KM_RefSB", "EV_1KM_RefSB", "EV_1KM_RefSB",
 		"EV_1KM_RefSB", "EV_1KM_RefSB",
 		"EV_1KM_RefSB", "EV_1KM_RefSB", "EV_1KM_RefSB", "SolZenAng_Mod",
 		"SenZenAng_Mod", "SolAziAng_Mod", "SenAziAng_Mod", "Longitude",
 		"Latitude"};
 
-	char indexlocator[Nitems] = {0, 1, 0, 0, 0, 3, 4, 0, 1, 2, 3, 4, 5, 7,
+	char indexlocator[Nitems] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 5, 7,
 		9, 10, 0, 0, 0, 0, 0, 0};
 
 	char numtypelocator[Nitems] = {DFNT_UINT16, DFNT_UINT16, DFNT_UINT16,
@@ -462,8 +462,8 @@ commented that too Eric*/
 		}
 
 	if (output500m) {
-		sds[BAND1].file_id = sds[BAND2].file_id = MOD02HKMfile_id;
-		sds[BAND1].filename = sds[BAND2].filename = MOD02HKMfile;
+		sds[BAND10].file_id =sds[BAND8].file_id = sds[BAND9].file_id = MOD02HKMfile_id;
+		sds[BAND10].filename =sds[BAND8].filename = sds[BAND9].filename = MOD02HKMfile;
 		}
 	else {
 		if (output1km) {
@@ -493,18 +493,18 @@ commented that too Eric*/
 			sds[BAND7].filename = MOD02HKMfile;
 		}
 
-	sds[BAND8].file_id = sds[SOLZ].file_id = sds[SOLA].file_id =
+	 sds[SOLZ].file_id = sds[SOLA].file_id =
 		sds[SENZ].file_id = sds[SENA].file_id = sds[LON].file_id =
 		sds[LAT].file_id = MOD021KMfile_id;
-	sds[BAND8].filename = sds[SOLZ].filename = sds[SOLA].filename =
+	 sds[SOLZ].filename = sds[SOLA].filename =
 		sds[SENZ].filename = sds[SENA].filename = sds[LON].filename =
 		sds[LAT].filename = MOD021KMfile;
 
-	sds[BAND9].file_id = sds[BAND10].file_id = sds[BAND11].file_id =
+	 sds[BAND11].file_id =
 		sds[BAND12].file_id = sds[BAND13].file_id =
 		sds[BAND14].file_id = sds[BAND15].file_id =
 		sds[BAND16].file_id = MOD021KMfile_id;
-	sds[BAND9].filename = sds[BAND10].filename = sds[BAND11].filename =
+	  sds[BAND11].filename =
 		sds[BAND12].filename = sds[BAND13].filename =
 		sds[BAND14].filename = sds[BAND15].filename =
 		sds[BAND16].filename = MOD021KMfile;
@@ -992,12 +992,12 @@ int input_file_type(char *filename)
 
 
 	/* all prefixes we'll recognize have this length */
-	maxlen = strlen("M?D0????.");
+	maxlen = strlen("NPP_V?AE_L1.");
 
-	if (strncmp(ptr, "MOD021KM.", maxlen) == 0) return INPUT_1KM;
+	if (strncmp(ptr, "NPP_VMAE_L1.", maxlen) == 0) return INPUT_1KM;
 	if (strncmp(ptr, "MYD021KM.", maxlen) == 0) return INPUT_1KM;
 
-	if (strncmp(ptr, "MOD02HKM.", maxlen) == 0) return INPUT_500M;
+	if (strncmp(ptr, "NPP_VIAE_L1.", maxlen) == 0) return INPUT_500M;
 	if (strncmp(ptr, "MYD02HKM.", maxlen) == 0) return INPUT_500M;
 
 	if (strncmp(ptr, "MOD02QKM.", maxlen) == 0) return INPUT_250M;
@@ -1052,7 +1052,7 @@ void set_dimnames(int samples, char **dimname1, char **dimname2)
 			*dimname2 = "samples_1km";
 			break;
 
-		case 2708:
+		case 6400:
 			*dimname1 = "lines_500m";
 			*dimname2 = "samples_500m";
 			break;
@@ -1270,12 +1270,12 @@ IMaRS, obtained from SEADAS.
 For the moment I've retained the Jacques values for 1-8 but show the differing
 SEADAS values in the commented out line.
 */
-const float aH2O[Nbands]={ -5.60723, -5.25251, 0, 0, -6.29824, -7.70944, -3.91877, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-const float bH2O[Nbands]={ 0.820175, 0.725159, 0, 0, 0.865732, 0.966947, 0.745342, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+const float aH2O[Nbands]={0.000406601 ,0.0015933 , 0,1.78644e-05 ,0.00296457 ,0.000617252 , 0.000996563,0.00222253 ,0.00094005 , 0.000563288, 0, 0, 0, 0, 0, 0 };
+const float bH2O[Nbands]={ 0.812659,0.832931 , 1., 0.8677850, 0.806816 , 0.944958 ,0.78812 ,0.791204 ,0.900564 ,0.942907 , 0, 0, 0, 0, 0, 0 };
 /*const float aO3[Nbands]={ 0.0711,    0.00313, 0.0104,     0.0930,   0, 0, 0, 0.00244, 0.00383, 0.0225, 0.0663, 0.0836, 0.0485, 0.0395, 0.0119, 0.00263};*/
-  const float aO3[Nbands]={ 0.0715289, 0,       0.00743232, 0.089691, 0, 0, 0, 0.001,   0.00383, 0.0225, 0.0663, 0.0836, 0.0485, 0.0395, 0.0119, 0.00263};
+  const float aO3[Nbands]={ 0.0433461, 0.0,    0.0178299   ,0.0853012 , 0, 0, 0, 0.0813531,   0, 0, 0.0663, 0.0836, 0.0485, 0.0395, 0.0119, 0.00263};
 /*const float taur0[Nbands] = { 0.0507,  0.0164,  0.1915,  0.0948,  0.0036,  0.0012,  0.0004,  0.3109, 0.2375, 0.1596, 0.1131, 0.0994, 0.0446, 0.0416, 0.0286, 0.0155};*/
-  const float taur0[Nbands] = { 0.05100, 0.01631, 0.19325, 0.09536, 0.00366, 0.00123, 0.00043, 0.3139, 0.2375, 0.1596, 0.1131, 0.0994, 0.0446, 0.0416, 0.0286, 0.0155};
+  const float taur0[Nbands] = { 0.04350, 0.01582, 0.16176, 0.09740,0.00369 ,0.00132 ,0.00033 ,0.05373 ,0.01561 ,0.00129, 0.1131, 0.0994, 0.0446, 0.0416, 0.0286, 0.0155};
 
 	float taur[Nbands], trup[Nbands], trdown[Nbands];
 	static float sphalb0[MAXNUMSPHALBVALUES];
@@ -1312,7 +1312,7 @@ const float bH2O[Nbands]={ 0.820175, 0.725159, 0, 0, 0.865732, 0.966947, 0.74534
 		Ttotrayd = ((2 / 3. + mus) + (2 / 3. - mus) * trdown[ib]) / (4 / 3. + taur[ib]);
 		tO3 = tO2 = tH2O = 1.0;
 		if (aO3[ib] != 0) tO3 = exp(-m * UO3 * aO3[ib]);
-		if (bH2O[ib] != 0) tH2O = exp(-exp(aH2O[ib] + bH2O[ib] * log(m * UH2O)));
+		if (bH2O[ib] != 0) tH2O = exp(-(aH2O[ib]*(pow((m * UH2O),bH2O[ib]))));
 /*
       t02 = exp(-m * aO2);
 */
