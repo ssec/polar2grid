@@ -1,6 +1,6 @@
 /*
 Linux
-  cc -O cviirsv1.0.c -o cviirsv1.0 -I/usr/local/opt/TOOLKIT/hdf/linux/HDF4.2r0/include -L/usr/local/opt/TOOLKIT/hdf/linux/HDF4.2r0/lib -lmfhdf -ldf -lz -lm -ljpeg
+  cc -O cviirsv3.1.c -o cviirsv3.1 -I/usr/local/opt/TOOLKIT/hdf/linux/HDF4.2r0/include -L/usr/local/opt/TOOLKIT/hdf/linux/HDF4.2r0/lib -lmfhdf -ldf -lz -lm -ljpeg
 */
 
 /*************************************************************************
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 		DFNT_UINT16,DFNT_FLOAT32 ,DFNT_FLOAT32 ,DFNT_FLOAT32 ,DFNT_FLOAT32 ,
 		DFNT_FLOAT32, DFNT_FLOAT32};
 
-	int16 *l1bdata[Nbands];
+	uint16 *l1bdata[Nbands];
 	float32 *sola, *solz, *sena, *senz, *solzfill;
 	float32 *lon, *lat, *lonfill, *latfill;
 	char *attr_name;
@@ -855,13 +855,19 @@ commented that too Eric*/
 						crsidx12 = crsrow1 * sds[REFSDS].Np + crscol2;
 						crsidx21 = crsrow2 * sds[REFSDS].Np + crscol1;
 						crsidx22 = crsrow2 * sds[REFSDS].Np + crscol2;
-						mus0 = t * u * mus[crsidx22] + (1.0F - t) * u * mus[crsidx12] + t * (1.0F - u) * mus[crsidx21] + (1.0F - t) * (1.0F - u) * mus[crsidx11];
+/*						mus0 = t * u * mus[crsidx22] + (1.0F - t) * u * mus[crsidx12] + t * (1.0F - u) * mus[crsidx21] + (1.0F - t) * (1.0F - u) * mus[crsidx11];
 
 						bad = (solz[crsidx11] == *solzfill) ||
 							(solz[crsidx12] == *solzfill) ||
 							(solz[crsidx21] == *solzfill) ||
 							(solz[crsidx22] == *solzfill);
+commented by eric to handle the viirs fill value hardcoding */ 
 
+						bad = (solz[crsidx11] <-900.) ||
+							(solz[crsidx12] <-900.) ||
+							(solz[crsidx21] <-900.) ||
+							(solz[crsidx22] <-900.);
+ 
 						if (bad) {
 							((int16 *)outsds[ib].data)[idx] = *(int16 *)outsds[ib].fillvalue;
 							continue;
