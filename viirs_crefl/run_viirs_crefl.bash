@@ -2,6 +2,7 @@
 
 # Run cviirs corrected reflectance code on VIIRS M-band and I-band SDR data
 # Liam.Gumley@ssec.wisc.edu 2013-02-28
+# Modified by David Hoese, david.hoese@ssec.wisc.edu
 
 # Check arguments
 if [ $# -ne 1 ]; then
@@ -22,8 +23,12 @@ fi
 path=$(dirname $input_file)
 date=$(basename $input_file | cut -d_ -f2-5)
 
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Set up preprocessing code
-export PATH=/no_backup/tmp/viirs_crefl/crefl_sw/preprocess:$PATH
+export PATH=$script_dir/bin:$PATH
+# Set up corrected reflectance code
+export ANCPATH=$script_dir/bin
+
 
 # Convert geolocation data to HDF4
 gmtco_file=$(find $path -name GMTCO_${date}\*)
@@ -52,19 +57,15 @@ for band in $band_list; do
   h5SDS_transfer_rename $file $svi_file Reflectance Reflectance_Img_I$(echo $band | bc)
 done
 
-# Set up corrected reflectance code
-export PATH=/no_backup/tmp/viirs_crefl/crefl_sw/cviirs:$PATH
-export ANCPATH=/no_backup/tmp/viirs_crefl/crefl_sw/cviirs
-
 # Run crefl for M-bands
-cviirsv3.1 --overwrite --verbose --1km --bands='1,2,3,4,5,6,7' --of=CREFLM_$date.hdf $svm_file
+cviirs --overwrite --verbose --1km --bands='1,2,3,4,5,6,7' --of=CREFLM_$date.hdf $svm_file
 if [ $? -ne 0 ]; then
   echo "Error running VIIRS M-band corrected reflectance on input file "$svm_file
   exit 1
 fi
 
 # Run crefl for I-bands
-cviirsv3.1 --overwrite --verbose --500m  --bands='8,9,10' --of=CREFLI_$date.hdf $svm_file $svi_file
+cviirs --overwrite --verbose --500m  --bands='8,9,10' --of=CREFLI_$date.hdf $svm_file $svi_file
 if [ $? -ne 0 ]; then
   echo "Error running VIIRS I-band corrected reflectance on input file "$svi_file
   exit 1

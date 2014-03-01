@@ -1,4 +1,4 @@
-# Simplify compiling CREFL. Compile commands were copied from original files and modified to fit Makefile.
+# Simplify compiling CREFL. Compile commands were copied from original files and modified to fit Makefile (see readme).
 #
 # Example Compile Usage (where static dependencies headers and libaries are in ~/opt/):
 #       LDFLAGS="-I ~/opt/include -L ~/opt/lib" make
@@ -6,7 +6,7 @@
 # Example Install Usage (where files will be installed in ~/bin):
 #       PREFIX="~" make install
 #
-# Copyright (C) 2013 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@ CFLAGS = -O -static
 LDFLAGS ?=
 PREFIX ?= .
 
-all: h5SDS_transfer_rename cviirs
+all: h5SDS_transfer_rename cviirs GMGDEM.hdf
 
 h5SDS_transfer_rename: h5SDS_transfer_rename.c
 	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS) -lhdf5 -lmfhdf -ldf -ljpeg -lz -lm -ldl
@@ -49,14 +49,21 @@ cviirs: cviirs.c
 CMGDEM.hdf:
 	wget http://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/CMGDEM.hdf
 
-.PHONY: install prebuilt clean
-install: CMGDEM.hdf h5SDS_transfer_rename cviirs
+.PHONY: install prebuilt_h5SDS_transfer_rename prebuilt_cviirs prebuilt clean
+install: CMGDEM.hdf h5SDS_transfer_rename cviirs run_viirs_crefl.sh
 	mkdir -p $(PREFIX)/bin; \
-	mv $^ $(PREFIX)/bin
+	mv $^ $(PREFIX)/bin; \
+	chmod u+x $(PREFIX)/bin/cviirs; \
+	chmod u+x $(PREFIX)/bin/h5SDS_transfer_rename; \
+	chmod u+x $(PREFIX)/bin/run_viirs_crefl.sh
 
-prebuilt:
+prebuilt_h5SDS_transfer_rename:
 	wget  http://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/h5SDS_transfer_rename
+
+prebuilt_cviirs:
 	wget  http://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/cviirs
+
+prebuilt: prebuilt_h5SDS_transfer_rename prebuilt_cviirs
 
 clean:
 	rm -f CMGDEM.hdf

@@ -1,3 +1,53 @@
+This is a modified version of the original "00readme.txt" that came with the VIIRS CREFL software. The original readme
+text is included at the bottom of this file for reference. The code has been patched and helper files/scripts added for
+easier compiling and installation of the software.
+
+COMPILE
+-------
+
+Note: On RHEL5/6 x86_64 systems prebuilt static binaries can be retrieved by running:
+    make prebuilt
+
+The VIIRS CREFL software consists of two programs, h5SDS_transfer_rename and cviirs. These files have the following
+static library dependencies:
+ - HDF5 (with zlib)
+ - HDF4 (with zlib and libjpeg)
+ - libjpeg
+ - zlib
+
+To compile the code statically run (assuming the dependencies are already installed on the system):
+
+    make
+
+To specify the locations of libraries and header files the "LDFLAGS" environment variable can be used:
+
+    LDFLAGS="-I ~/opt/include -L ~/opt/lib" make
+
+
+INSTALL
+-------
+
+To install the compiled binaries run in "/home/me":
+
+    PREFIX="/home/me" make install
+
+
+RUN
+---
+
+To run VIIRS CREFL run the following command:
+
+    run_viirs_crefl.sh <SVM05 file>
+
+Note that this requires "CMGDEM.hdf", "cviirs", and "h5SDS_tranfer_rename" to be in the
+same directory as the run script.
+
+
+
+###########################
+##### Original README #####
+###########################
+
 This short tutorial describes how to install and run the VIIRS Corrected Reflectance code on VIIRS SDR files created by CSPP.
 The script files and data described in this tutorial are available at
 
