@@ -125,6 +125,7 @@ PRODUCT_DNB_LON = "dnb_longitude"
 #NavigationTuple = namedtuple("NavigationTuple",
 #['tc_file_pattern', 'nontc_file_pattern', 'longitude_product', 'latitude_product'])
 NavigationTuple = namedtuple("NavigationTuple", ['scene_name', 'longitude_product', 'latitude_product'])
+# A dependency of None in the tuple of dependencies means that further processing/masking is required
 ProductInfo = namedtuple("ProductInfo", ['dependencies', 'geolocation', 'rows_per_scan', 'data_kind', 'description'])
 
 # dependencies: Product keys mapped to product dependencies
@@ -179,7 +180,7 @@ PRODUCT_INFO = {
     PRODUCT_ADAPTIVE_M14: ProductInfo((PRODUCT_M14,), m_nav_tuple, 16, "equalized_btemp", ""),
     PRODUCT_ADAPTIVE_M15: ProductInfo((PRODUCT_M15,), m_nav_tuple, 16, "equalized_btemp", ""),
     PRODUCT_ADAPTIVE_M16: ProductInfo((PRODUCT_M16,), m_nav_tuple, 16, "equalized_btemp", ""),
-    PRODUCT_SST: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
+    PRODUCT_SST: ProductInfo((None,), m_nav_tuple, 16, "btemp", ""),
     # Navigation (doing this here we can mimic normal products if people want them remapped for some reason)
     PRODUCT_I_LON: ProductInfo(tuple(), i_nav_tuple, 32, "longitude", ""),
     PRODUCT_I_LAT: ProductInfo(tuple(), i_nav_tuple, 32, "latitude", ""),
@@ -232,12 +233,32 @@ PRODUCT_FILE_REGEXES = {
     PRODUCT_DNB_LON: RawProductFileInfo((DNB_GEO_TC_REGEX, DNB_GEO_REGEX), K_LONGITUDE),
     PRODUCT_DNB_LAT: RawProductFileInfo((DNB_GEO_TC_REGEX, DNB_GEO_REGEX), K_LATITUDE),
 }
-ALL_FILE_REGEXES = []
+
+ALL_FILE_REGEXES = set()
 for k, v in PRODUCT_FILE_REGEXES.iteritems():
     if isinstance(v.file_pattern, str):
-        ALL_FILE_REGEXES.append(v.file_pattern)
+        ALL_FILE_REGEXES.add(v.file_pattern)
     else:
-        ALL_FILE_REGEXES.extend(v.file_pattern)
+        ALL_FILE_REGEXES.update(v.file_pattern)
+ALL_FILE_REGEXES = list(ALL_FILE_REGEXES)
+
+
+def all_product_names():
+    return sorted(PRODUCT_INFO.keys())
+
+
+def product_is_raw(product_name):
+    deps = PRODUCT_INFO[product_name].dependencies
+    return not deps or deps == (None,)
+
+
+def product_needs_processing(product_name):
+    """Does this product require additional processing beyond being loaded (and scaled) from the data files.
+
+    This includes "secondary" products and raw products that require extra masking.
+    """
+    return bool(PRODUCT_INFO[product_name].dependencies)
+
 
 def get_product_dependencies(product_name):
     """Recursive function to get all dependencies to create a single product.
@@ -262,6 +283,10 @@ def get_product_dependencies(product_name):
         raise ValueError("Unknown product was requested from frontend: '%s'" % (product_name,))
 
     for dependency_product in PRODUCT_INFO[product_name].dependencies:
+        if dependency_product is None:
+            log.debug("Product Dependency: Some additional processing will be required for product '%s'", product_name)
+            continue
+
         log.info("Product Dependency: To create '%s', '%s' must be created first", product_name, dependency_product)
         _dependencies.append(dependency_product)
         _dependencies.extend(get_product_dependencies(dependency_product))
@@ -289,12 +314,12 @@ def get_product_descendants(starting_products, remaining_dependencies=None, depe
         # Need to remove raw products we aren't starting with and remove navigation products
         remaining_dependencies = [k for k in PRODUCT_INFO.keys() if
                                   (PRODUCT_INFO[k].data_kind not in ["longitude", "latitude"])
-                                  and PRODUCT_INFO[k].dependencies]
+                                  and not product_is_raw(k)]
 
     for product_name in remaining_dependencies:
-        if product_name in starting_products:
+        if product_name is None or product_name in starting_products:
             continue
-        elif not PRODUCT_INFO[product_name].dependencies or \
+        elif product_is_raw(product_name) or \
                 not get_product_descendants(starting_products, PRODUCT_INFO[product_name].dependencies, True):
             # This dependency is a raw product that we don't already have...so we can't make this product
             # Or this is a secondary product that we don't have all of the dependencies for
@@ -417,10 +442,6 @@ class BaseP2GObject(dict):
             f.close()
             os.remove(filename)
             raise
-
-    def __repr__(self):
-        # TODO
-        pass
 
 
 class BaseMetaData(BaseP2GObject):
@@ -732,7 +753,7 @@ class SwathExtractor(object):
 
     @property
     def all_product_names(self):
-        return sorted(PRODUCT_INFO.keys())
+        return all_product_names()
 
     def add_swath_to_scene(self, meta_data, one_swath, products_created):
         meta_data[one_swath["product_name"]] = one_swath
@@ -760,7 +781,11 @@ class SwathExtractor(object):
         # Check what products they asked for and see what we need to be able to create them
         for product_name in products:
             log.debug("Searching for dependencies for '%s'", product_name)
+            if product_name in products_needed:
+                # put in least-depended product -> most-depended product order
+                products_needed.remove(product_name)
             products_needed.append(product_name)
+
             other_deps = get_product_dependencies(product_name)
             # only add products that aren't already account for
             for dep in other_deps:
@@ -774,22 +799,24 @@ class SwathExtractor(object):
             product_name = products_needed.pop()
             product_info = PRODUCT_INFO[product_name]
             # Looked up the raw products we need
-            if not product_info.dependencies:
-                # if there are no dependencies then it's a raw product
-                raw_products_needed.add(product_name)
-            elif product_name not in secondary_products_needed:
+            if product_needs_processing(product_name):
                 if product_name not in self.SECONDARY_PRODUCT_FUNCTIONS:
-                    log.error("Secondary product required, but not sure how to make it: '%s'", product_name)
-                    raise ValueError("Secondary product required, but not sure how to make it: '%s'" % (product_name,))
+                    log.error("Product (secondary or extra processing) required, but not sure how to make it: '%s'", product_name)
+                    raise ValueError("Product (secondary or extra processing) required, but not sure how to make it: '%s'" % (product_name,))
                 # ordered from least-depended product -> most-depended product
                 secondary_products_needed.append(product_name)
+            if product_is_raw(product_name):
+                # if there are no dependencies then it's a raw product
+                raw_products_needed.add(product_name)
 
             # For each product look what navigation product it connects with
-            nav_products_needed.add(product_info.geolocation.longitude_product)
-            nav_products_needed.add(product_info.geolocation.latitude_product)
+            if product_name in products:
+                nav_products_needed.add(product_info.geolocation.longitude_product)
+                nav_products_needed.add(product_info.geolocation.latitude_product)
 
         # Load geolocation files
         for nav_product_name in nav_products_needed:
+            log.info("Creating navigation product '%s'", nav_product_name)
             product_file_info = PRODUCT_FILE_REGEXES[nav_product_name]
             nav_file_pattern = self._get_file_pattern(nav_product_name, alt_pattern_index=alt_pattern_index)
             log.debug("Using navigation file pattern '%s' for product '%s'", nav_file_pattern, nav_product_name)
@@ -813,13 +840,14 @@ class SwathExtractor(object):
                 # if the product was already loaded (ex. navigaton)
                 one_swath = products_created[product_name]
             else:
-                log.info("Opening data files to process: %s", product_name)
+                log.info("Creating data product '%s'", product_name)
                 product_file_info = PRODUCT_FILE_REGEXES[product_name]
 
                 file_pattern = self._get_file_pattern(product_name, alt_pattern_index=alt_pattern_index)
                 log.debug("Using file pattern '%s' for product '%s'", file_pattern, file_pattern)
 
                 if file_pattern not in files_loaded:
+                    # Can't do .get(X, default) because the default has to actually be processed
                     reader = files_loaded[file_pattern] = VIIRSSDRMultiReader(self.recognized_files[file_pattern])
                 else:
                     reader = files_loaded[file_pattern]
@@ -836,10 +864,6 @@ class SwathExtractor(object):
         # Special cases (i.e. non-raw products that need further processing)
         for product_name in reversed(secondary_products_needed):
             product_func = self.SECONDARY_PRODUCT_FUNCTIONS[product_name]
-            if product_name in products_created:
-                # product was in stack multiple times
-                log.warning("Sanity check failure. Secondary product was going to be processed twice.")
-                continue
 
             try:
                 log.info("Creating secondary product '%s'", product_name)
@@ -975,6 +999,21 @@ class SwathExtractor(object):
 
         return one_swath
 
+    def process_sst(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
+        sst_file_pattern = products_created[product_name]["source_file_pattern"]
+        sst_reader = files_loaded[sst_file_pattern]
+        # TODO: Open as read/write
+        sst_swath = products_created[product_name]
+        sst_data = Workspace('.').var(product_name, mode='r+')
+        # Create a quality mask where bad data is masked
+        # 11 = High Quality
+        # 10 = Degraded
+        # 01 = Excluded
+        # 00 = Not retrieved
+        sst_data[(numpy.concatenate(sst_reader[K_QF1]) & 3) < 2] = fill
+        sst_data.flush()
+        return sst_swath
+
     SECONDARY_PRODUCT_FUNCTIONS = {
         PRODUCT_HISTOGRAM_DNB: create_histogram_dnb,
         PRODUCT_ADAPTIVE_DNB: create_adaptive_dnb,
@@ -986,6 +1025,7 @@ class SwathExtractor(object):
         PRODUCT_ADAPTIVE_M14: create_adaptive_btemp,
         PRODUCT_ADAPTIVE_M15: create_adaptive_btemp,
         PRODUCT_ADAPTIVE_M16: create_adaptive_btemp,
+        PRODUCT_SST: process_sst,
         }
 
 

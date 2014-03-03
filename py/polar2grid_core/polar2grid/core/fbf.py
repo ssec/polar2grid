@@ -240,6 +240,7 @@ class GenericFileAppender(object):
         log.debug('%d rows in output file' % self.shape[0])
 file_appender = GenericFileAppender # backwards compatibility
 
+
 class FBFAppender(object):
     __temp_ext = "fbftemp"
     file_obj = None
@@ -282,7 +283,7 @@ class FBFAppender(object):
     def __del__(self):
         """Clean up any temporary files that weren't saved.
         """
-        if self.filename is None:
+        if hasattr(self, "filename") and self.filename is None:
             # We haven't saved the file to a final name
             try:
                 os.remove(self.tmp_filename)

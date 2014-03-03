@@ -76,6 +76,7 @@ K_NUMSCANS = "NumberOfScansVar"
 K_ROWSPERSCAN = "RowsPerScanVar"
 K_MODESCAN = "ModeScanVar"
 K_MODEGRAN = "ModeGranVar"
+K_QF1 = "QF1Var"
 K_QF3 = "QF3Var"
 K_LAT_G_RING = "LatGRingAttr"
 K_LON_G_RING = "LonGRingAttr"
@@ -214,6 +215,7 @@ def create_edr_file_info(file_kind, file_band, **kwargs):
         K_BTEMP: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/SkinSST',
                          '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/SkinSSTFactors', **kwargs),
         K_QF3: '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/QF3_VIIRSSSTEDR',
+        K_QF1: '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/QF1_VIIRSSSTEDR',
         K_AGGR_STARTTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateBeginningTime',
         K_AGGR_STARTDATE: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateBeginningDate',
         K_AGGR_ENDTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateEndingTime',
