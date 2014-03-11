@@ -119,6 +119,11 @@ NAV_SET_USES = {
         GEO_250M_NAV_UID   : [ MODIS_250M_REGEX ],
         }
 
+GEO_GUIDE = {
+    MBAND_NAV_UID: ('GMODO','GMTCO'),
+    IBAND_NAV_UID: ('GIMGO','GITCO'),
+    }
+
 # Regular expressions for files we understand and some information that we know based on which one matches
 FILE_REGEX = {
         IBAND_REGEX : {
@@ -127,7 +132,7 @@ FILE_REGEX = {
             K_SCALE_OFFSET : "add_offset",
             K_UNITS        : "units",
             K_DATASETS     : [ DS_CR_08, DS_CR_09, DS_CR_10 ],
-            K_GEO_PATTERN  : "GITCO_%(sat)s_d%(date_str)s_t%(start_str)s_e%(end_str)s_b*_c*_*.h5",
+            K_GEO_PATTERN  : "%%(geo_kind)s_%(sat)s_d%(date_str)s_t%(start_str)s_e%(end_str)s_b*_c*_*.h5",
             "resolution"   : 500,
             "instrument"   : INST_VIIRS,
             "rows_per_scan" : 32,
@@ -139,7 +144,7 @@ FILE_REGEX = {
             K_SCALE_OFFSET : "add_offset",
             K_UNITS        : "units",
             K_DATASETS     : [ DS_CR_01, DS_CR_02, DS_CR_03, DS_CR_04, DS_CR_05, DS_CR_06, DS_CR_07 ],
-            K_GEO_PATTERN  : "GMTCO_%(sat)s_d%(date_str)s_t%(start_str)s_e%(end_str)s_b*_c*_*.h5",
+            K_GEO_PATTERN  : "%%(geo_kind)s_%(sat)s_d%(date_str)s_t%(start_str)s_e%(end_str)s_b*_c*_*.h5",
             "resolution"   : 1000,
             "instrument"   : INST_VIIRS,
             "rows_per_scan" : 16,
@@ -347,8 +352,23 @@ def get_file_meta(nav_set_uid, file_pattern, filepath):
 
     # Geo file information
     # MUST do before satellite constant so we don't get the right entry in the glob
-    file_info["geo_filename_pat"] = file_info[K_GEO_PATTERN] % file_info
-    file_info["geo_filepath"] = _safe_glob(os.path.join(base_path, file_info["geo_filename_pat"]))
+    file_glob_base = file_info[K_GEO_PATTERN] % file_info
+    file_info["geo_filename_pat"] = file_glob_base % {"geo_kind": GEO_GUIDE[nav_set_uid][1]}
+    try:
+        # First try terrain corrected
+        file_info["geo_filepath"] = _safe_glob(os.path.join(base_path, file_info["geo_filename_pat"]))
+        log.info("Using terrain corrected navigation %s " % (file_info["geo_filepath"],))
+    except ValueError:
+        log.debug("Couldn't identify terrain corrected geonav file for file %s" % (filepath,))
+        # Try the non-terrain corrected
+        file_info["geo_filename_pat"] = file_glob_base % {"geo_kind": GEO_GUIDE[nav_set_uid][0]}
+        try:
+            # First try terrain corrected
+            file_info["geo_filepath"] = _safe_glob(os.path.join(base_path, file_info["geo_filename_pat"]))
+            log.info("Using non-TC navigation %s " % (file_info["geo_filepath"],))
+        except ValueError:
+            log.error("Could not find TC or non-TC navigation files for %s" % (filepath,))
+            raise ValueError("Could not find TC or non-TC navigation files for %s" % (filepath,))
 
     # Get the constant value for whatever satellite we have
     file_info["sat"] = SATELLITES[file_info["sat"]]
