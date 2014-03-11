@@ -146,20 +146,33 @@ class Workspace(object):
 
         return attr_name,dtype,shape
 
-    def __getattr__(self, name, mode='r'):
-        g = glob( os.path.join(self._dir,name+'.*') )
+    def var(self, name, wildcard='.*', mode='c'):
+        """Return a memory map from the current workspace directory
+
+        Does the heavy lifting for `__getattr__` and `__getitem__`.
+
+        The default mode for the created memory map is copy-on-write ('c').
+        """
+        g = glob(os.path.join(self._dir, name+wildcard))
         if len(g)==1:
-            attr_name,dtype,shape = self._parse_attr_name(g[0])
-            mmap_arr = numpy.memmap(g[0], dtype=dtype, mode=mode, shape=shape)
-            setattr(self,name,mmap_arr)
-            return mmap_arr
+            stem,dtype,shape = self._parse_attr_name(g[0])
+            
+            # See if we have the stem already
+            try:
+                return self.__getattribute__(stem)
+            except AttributeError:
+                mmap_arr = numpy.memmap(g[0], dtype=dtype, mode=mode, shape=shape)
+                setattr(self, stem, mmap_arr)
+                return mmap_arr
         elif len(g) > 1:
             raise AttributeError("Found too many instances for %s in workspace" % name)
         else:
             raise AttributeError("%s not in workspace" % name)
-        
-    def var(self,name):
-        return getattr(self, name)
+
+    def __getattr__(self, name):
+        """Get a workspace memory map from a stem name
+        """
+        return self.var(name)
     
     def vars(self):
         for path in os.listdir(self._dir):
@@ -173,8 +186,17 @@ class Workspace(object):
     def variables(self):
         return dict(self.vars())
 
-    def __getitem__(self,name):
-        return getattr(self,name)
+    def __getitem__(self, name):
+        """Get a workspace memory map from a filename or a stem name
+
+        Using the bracket/getitem syntax you can get a specific filename or
+        stem. Stem names can not contain periods.
+        """
+        if '.' in name:
+            wildcard = ''
+        else:
+            wildcard = '.*'
+        return self.var(name, wildcard=wildcard)
 
 class array_appender(object):
     """wrapper for a numpy array object which gives it a binary data append usable with "catenate"
