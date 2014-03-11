@@ -613,7 +613,7 @@ class Frontend(roles.FrontendRole):
         filenames = [ os.path.split(fp)[-1] for fp in filepaths ]
 
         # Clear out files we don't understand
-        filenames = [ fn for fn in filenames if fn.startswith("SV") and fn.endswith(".h5") ]
+        filenames = [ fn for fn in filenames if (fn.startswith("SV") or fn.startswith("VSST")) and fn.endswith(".h5") ]
 
         # SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
         dt_list = [ datetime.strptime(fn[10:27], "d%Y%m%d_t%H%M%S") for
