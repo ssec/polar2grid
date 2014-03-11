@@ -149,6 +149,7 @@ class RescalerRole(object):
     # allocated/instantiated every time it's used
     _known_data_kinds = {
                             'brightnesstemperature': DKIND_BTEMP,
+                            'enhanced_brightnesstemperature': DKIND_BTEMP_ENHANCED,
                         }
 
     @property

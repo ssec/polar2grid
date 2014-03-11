@@ -45,13 +45,14 @@ __docformat__ = "restructuredtext en"
 
 import modis_guidebook
 from polar2grid.core.constants import *
-from polar2grid.core import roles
-from polar2grid.core.fbf import file_appender
+from polar2grid.core import roles, histogram, Workspace
+from polar2grid.core.fbf import file_appender, check_stem
 from .modis_filters  import convert_radiance_to_bt, make_data_category_cleared, create_fog_band
 from .modis_geo_interp_250 import interpolate_geolocation
 
 import numpy
 from pyhdf.SD import SD,SDC, SDS, HDF4Error
+from copy import deepcopy
 
 import os
 import re
@@ -446,6 +447,7 @@ class Frontend(roles.FrontendRole):
         create_fog = kwargs.pop("create_fog", False)
         cut_bad    = kwargs.pop("cut_bad", False)
         remove_aux = kwargs.pop("remove_aux", True)
+        create_enhanced_ir = kwargs.pop("create_enhanced_ir", False)
         
         # load up all the meta data
         meta_data = { }
@@ -566,7 +568,7 @@ class Frontend(roles.FrontendRole):
                     log.debug("Prescaling error:", exc_info=1)
                     del band_info[(band_kind, band_id)]
         
-        # the fog band must be calculated after the other bands are converted to brightness temperatures
+        # the fog band and enhanced IR must be calculated after the other bands are converted to brightness temperatures
         
         # if we have what we need, we want to build the fog band
         if create_fog :
@@ -582,6 +584,32 @@ class Frontend(roles.FrontendRole):
                 except StandardError :
                     log.warning("Error while creating fog band; fog will not be created...")
                     log.debug("Fog creation error:", exc_info=1)
+        
+        # if we have IR bands, and we were told to create enhanced versions, do so now
+        if create_enhanced_ir :
+            for band_kind, band_id in band_info.keys() :
+                
+                if band_kind == BKIND_IR :
+                    try :
+                        log.info("Creating enhanced IR version of %s %s" % (band_kind, band_id,))
+                        new_band_job = deepcopy(band_info[(band_kind, band_id)])
+                        new_band_kind = BKIND_IR_ENHANCED
+                        fbf_swath_stem = "image_%s_%s" % (band_kind, band_id)
+                        check_stem(fbf_swath_stem)
+                        W = Workspace('.')
+                        fbf_swath_data = getattr(W, new_band_job["fbf_img"].split('.')[0]).copy()
+                        histogram.local_histogram_equalization(
+                                fbf_swath_data,
+                                fbf_swath_data != new_band_job["fill_value"],
+                                do_log_scale=False)
+                        fbf_swath = fbf_swath_stem + ".real4.%d.%d" % (fbf_swath_data.shape[1], fbf_swath_data.shape[0],)
+                        fbf_swath_data.tofile(fbf_swath)
+                        new_band_job["fbf_swath"] = fbf_swath
+                        new_band_job["data_kind"] = DKIND_BTEMP_ENHANCED
+                        band_info[(new_band_kind, band_id)] = new_band_job
+                    except StandardError:
+                        log.error("Could not create enhanced IR image for band %s %s" % (band_kind,band_id))
+                        log.debug("Enhanced IR error:", exc_info=True)
         
         # We don't want to give solar zenith angle to the rest of polar2grid, so we'll remove it
         if remove_aux:

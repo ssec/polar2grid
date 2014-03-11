@@ -381,7 +381,8 @@ def _calculate_weights (tile_size) :
     # return the weights for an ideal center tile
     return template_tile
 
-def _linear_normalization_from_0to1 (data, mask, theoretical_max, theoretical_min=0, message="    normalizing DNB data into 0 to 1 range") :
+def _linear_normalization_from_0to1 (data, mask, theoretical_max, theoretical_min=0, message="    normalizing equalized data to fit in 0 to 1 range") :
+                                                                                            #"    normalizing DNB data into 0 to 1 range") :
     """
     do a linear normalization so all data is in the 0 to 1 range. This is a sloppy but fast calculation that relies on parameters
     giving it the correct theoretical current max and min so it can scale the data accordingly.

@@ -43,11 +43,11 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds,sort_files_by_nav_uid,NAV_SET_GUIDE
+from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds,sort_files_by_nav_uid,NAV_SET_GUIDE,ENHANCED_IR_BAND_KIND
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
 from polar2grid.core.constants import *
-from polar2grid.core import roles
+from polar2grid.core import roles,histogram,Workspace
 from polar2grid.core.fbf import check_stem, file_appender
 import numpy
 
@@ -629,6 +629,7 @@ class Frontend(roles.FrontendRole):
         scale_dnb = kwargs.pop("scale_dnb", False)
         new_dnb = kwargs.pop("new_dnb", False)
         create_fog = kwargs.pop("create_fog", False)
+        create_enhanced_ir = kwargs.pop("create_enhanced_ir", False)
 
         meta_data = make_swaths(*args, **kwargs)
         bands = meta_data["bands"]
@@ -647,52 +648,77 @@ class Frontend(roles.FrontendRole):
         # These steps used to be part of the glue scripts
         # Due to laziness they are just called as separate functions here
         for (band_kind, band_id),band_job in bands.items():
-            if band_kind != BKIND_DNB or not scale_dnb:
-                # We don't need to scale non-DNB data
-                band_job["fbf_swath"] = band_job["fbf_img"]
-                continue
-            elif meta_data['fbf_moon'] is None or meta_data['moon_illum'] is None:
-                log.error("LunarZenithAngle and MoonIllumFraction are required for DNB scaling but weren't found")
-                del bands[(band_kind, band_id)]
-                continue
+            if band_job["data_kind"] == DKIND_BTEMP and create_enhanced_ir:
+                try:
+                    log.info("Creating enhanced IR for %s %s" % (band_kind, band_id,))
+                    new_band_job = deepcopy(band_job)
+                    new_band_kind = ENHANCED_IR_BAND_KIND[(band_kind, band_id)]
+                    fbf_swath_stem = "image_%s_%s" % (band_kind, band_id)
+                    check_stem(fbf_swath_stem)
+                    W = Workspace('.')
+                    fbf_swath_data = getattr(W, band_job["fbf_img"].split('.')[0]).copy()
+                    histogram.local_histogram_equalization(
+                            fbf_swath_data,
+                            fbf_swath_data != band_job["fill_value"],
+                            do_log_scale=False)
+                    fbf_swath = fbf_swath_stem + ".real4.%d.%d" % (fbf_swath_data.shape[1], fbf_swath_data.shape[0],)
+                    fbf_swath_data.tofile(fbf_swath)
+                    new_band_job["fbf_swath"] = fbf_swath
+                    new_band_job["data_kind"] = DKIND_BTEMP_ENHANCED
+                    bands[(new_band_kind, new_band_job["band"])] = new_band_job
+                except StandardError:
+                    log.error("Could not create enhanced IR image for band %s %s" % (band_kind,band_id))
+                    log.debug("Enhanced IR error:", exc_info=True)
+
+            if band_kind == BKIND_DNB and scale_dnb:
+                # DNB Scaling
+                if meta_data['fbf_moon'] is None or meta_data['moon_illum'] is None:
+                    log.error("LunarZenithAngle and MoonIllumFraction are required for DNB scaling but weren't found")
+                    del bands[(band_kind, band_id)]
+                    continue
             
-            if new_dnb :
-                log.info("Prescaling DNB data using adaptively sized tiles...")
-                check_stem("prescale_new_dnb")
-                new_band_job = deepcopy(band_job)
+                if new_dnb :
+                    log.info("Prescaling DNB data using adaptively sized tiles...")
+                    check_stem("prescale_new_dnb")
+                    new_band_job = deepcopy(band_job)
+                    try:
+                        fbf_swath = run_dnb_scale(
+                                new_band_job["fbf_img"],
+                                new_band_job["fbf_mode"],
+                                moonIllumFraction=meta_data["moon_illum"],
+                                lunar_angle_filepath=meta_data['fbf_moon'],
+                                lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
+                                new_dnb=True,
+                                )
+                        new_band_job["fbf_swath"] = fbf_swath
+                        
+                        # if we got this far with no error add the new dnb band to our list
+                        bands[(band_kind, BID_NEW)] = new_band_job 
+                    except StandardError:
+                        log.error("Unexpected error new DNB, will not calculate new DNB scaling...")
+                        log.debug("DNB scaling error:", exc_info=1)
+                
+                log.info("Prescaling DNB data...")
+                check_stem("prescale_dnb")
                 try:
                     fbf_swath = run_dnb_scale(
-                            new_band_job["fbf_img"],
-                            new_band_job["fbf_mode"],
+                            band_job["fbf_img"],
+                            band_job["fbf_mode"],
                             moonIllumFraction=meta_data["moon_illum"],
                             lunar_angle_filepath=meta_data['fbf_moon'],
                             lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
-                            new_dnb=True,
+                            new_dnb=False,
                             )
-                    new_band_job["fbf_swath"] = fbf_swath
-                    
-                    # if we got this far with no error add the new dnb band to our list
-                    bands[(band_kind, BID_NEW)] = new_band_job 
+                    band_job["fbf_swath"] = fbf_swath
                 except StandardError:
-                    log.error("Unexpected error new DNB, will not calculate new DNB scaling...")
+                    log.error("Unexpected error DNB, removing job...")
                     log.debug("DNB scaling error:", exc_info=1)
-            
-            log.info("Prescaling DNB data...")
-            check_stem("prescale_dnb")
-            try:
-                fbf_swath = run_dnb_scale(
-                        band_job["fbf_img"],
-                        band_job["fbf_mode"],
-                        moonIllumFraction=meta_data["moon_illum"],
-                        lunar_angle_filepath=meta_data['fbf_moon'],
-                        lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
-                        new_dnb=False,
-                        )
-                band_job["fbf_swath"] = fbf_swath
-            except StandardError:
-                log.error("Unexpected error DNB, removing job...")
-                log.debug("DNB scaling error:", exc_info=1)
-                del bands[(band_kind, band_id)]
+                    del bands[(band_kind, band_id)]
+
+            if "fbf_swath" not in band_job or band_job["fbf_swath"] is None:
+                # We don't need to scale any data
+                band_job["fbf_swath"] = band_job["fbf_img"]
+                continue
 
         return meta_data
 
