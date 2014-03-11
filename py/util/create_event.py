@@ -14,7 +14,11 @@ EVENT_SCRIPT_KEY = "{start}_{end}_{creation}_{user}"
 EVENT_SCRIPT_DIR = "/home/davidh/event2grid_jobs"
 EVENT2GRID_SCRIPT = "/data/users/davidh/event2grid_env/polar2grid/py/util/event2grid.sh"
 EVENT2GRID_SCRIPT_TEXT = """#!/usr/bin/env bash
-{event2grid_script} {event_key} {dl_dir} {work_dir} "{dibs_flags}" "{p2g_flags}"
+LOCK_FN={event_key}.lock
+flock -n $LOCK_FN -c "{event2grid_script} {event_key} {dl_dir} {work_dir} \\"{dibs_flags}\\" \\"{p2g_flags}\\""
+if [ $? -eq 0 ]; then
+    echo "Script {event_key} is locked by $LOCK_FN. Will not run." 1>&2
+fi
 """
 DATA_DL_DIR = "/data1/tmp/event2grid_download"
 P2G_WORK_DIR = "/data1/tmp/event2grid_work"
@@ -100,6 +104,8 @@ def main():
     os.chmod(event_script_fp, 0o555)
 
     LOG.info("Done")
+
+    print event_script_fp
 
 
 if __name__ == "__main__":

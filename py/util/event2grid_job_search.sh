@@ -5,6 +5,8 @@ EVENT_SCRIPT_DIR=/home/davidh/event2grid_jobs
 BASE_DOWNLOAD_DIR=/data1/tmp/event2grid_download
 BASE_WORK_DIR=/data1/tmp/event2grid_work
 CRON_RATE=3600
+# We wait 12 hours extra for the PEATE to catch up with the newest data before a job is 'expired'
+PEATE_DELAY=$((12 * 60 * 60))
 
 function file_dt_to_epoch() {
     str=$1
@@ -28,20 +30,20 @@ function get_creation_time() {
 
 now=`date -u +%s`
 echo "Starting event2grid job search `date -u`"
-for script_fp in `ls $EVENT_SCRIPT_DIR/*.sh`; do
+for script_fp in `ls $EVENT_SCRIPT_DIR/????????_??????_????????_??????_????????_??????_*.sh`; do
     script_fn=`basename $script_fp`
     start_time=`get_start_time $script_fn`
     end_time=`get_end_time $script_fn`
     creation_time=`get_creation_time $script_fn`
     event_id=`expr "$script_fn" : '\([^\.]*\)'`
-    event_log=$BASE_WORK_DIR/$event_id/$event_id.log
+    event_log=$BASE_WORK_DIR/$event_id.log
 
     echo "Found $event_id; Start=$start_time; End=$end_time; Creation=$creation_time"
     echo "Read log file for more info: $event_log"
     set -x
 
     # Is this event 'old'?
-    if [ $(($now - $CRON_RATE)) -gt $end_time ]; then
+    if [ $(($now - $CRON_RATE)) -gt $(($end_time + $PEATE_DELAY)) ]; then
         # Has this event ever been processed, if not let's run it
         if [ ! -d $BASE_WORK_DIR/$event_id ]; then
             echo "Processing one time event $event_id..."
