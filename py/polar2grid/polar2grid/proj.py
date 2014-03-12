@@ -43,10 +43,17 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from pyproj import Proj
-
-import os
+import pyproj
 import sys
+
+
+class Proj(pyproj.Proj):
+    def __call__(self, data1, data2, **kwargs):
+        if self.is_latlong():
+            return data1, data2
+
+        return super(Proj, self).__call__(data1, data2, **kwargs)
+
 
 def main():
     from argparse import ArgumentParser
@@ -62,8 +69,8 @@ def main():
     args = parser.parse_args()
 
     p = Proj(args.proj4_str)
-    x,y = p(args.lon_point, args.lat_point, inverse=args.inv)
-    print x,y
+    x, y = p(args.lon_point, args.lat_point, inverse=args.inv)
+    print(x, y)
 
 if __name__ == "__main__":
     sys.exit(main())

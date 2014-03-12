@@ -43,18 +43,11 @@ __docformat__ = "restructuredtext en"
 from xml.etree import cElementTree
 from polar2grid.nc import ncml_tag
 from polar2grid.core.constants import NOT_APPLICABLE
+from polar2grid.core import roles
 
 import os
 import sys
 import logging
-
-try:
-    # try getting setuptools/distribute's version of resource retrieval first
-    import pkg_resources
-    get_resource_string = pkg_resources.resource_string
-except ImportError:
-    import pkgutil
-    get_resource_string = pkgutil.get_data
 
 log = logging.getLogger(__name__)
 
@@ -71,49 +64,6 @@ DEFAULT_NCML_DIR = os.path.join(script_dir, "ncml")
 CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", DEFAULT_CONFIG_FILE)
 CONFIG_DIR  = os.environ.get("AWIPS_CONFIG_DIR", DEFAULT_CONFIG_DIR)
 NCML_DIR    = os.environ.get("AWIPS_NCML_DIR", DEFAULT_NCML_DIR)
-
-# This isn't used anymore, but its a handy function to hold on to
-# This was replaced by the grids/grids.py API which requires grid size to be
-# in the grids.conf file
-def get_shape_from_ncml(fn, var_name):
-    """Returns (rows,cols) of the variable with name
-    `var_name` in the ncml file with filename `fn`.
-    """
-    xml_parser = cElementTree.parse(fn)
-    all_vars = xml_parser.findall(ncml_tag("variable"))
-    important_var = [ elem for elem in all_vars if elem.get("name") == var_name]
-    if len(important_var) != 1:
-        log.error("Couldn't find a variable with name %s in the ncml file %s" % (var_name,fn))
-        raise ValueError("Couldn't find a variable with name %s in the ncml file %s" % (var_name,fn))
-    important_var = important_var[0]
-
-    # Get the shape out
-    shape = important_var.get("shape")
-    if shape is None:
-        log.error("NCML variable %s does not have the required shape attribute" % (var_name,))
-        raise ValueError("NCML variable %s does not have the required shape attribute" % (var_name,))
-
-    # Get dimension names from shape attribute
-    shape_dims = shape.split(" ")
-    if len(shape_dims) != 2:
-        log.error("2 dimensions are required for variable %s" % (var_name,))
-        raise ValueError("2 dimensions are required for variable %s" % (var_name,))
-    rows_name,cols_name = shape_dims
-
-    # Get the dimensions by their names
-    all_dims = xml_parser.findall(ncml_tag("dimension"))
-    important_dims = [ elem for elem in all_dims if elem.get("name") == rows_name or elem.get("name") == cols_name ]
-    if len(important_dims) != 2:
-        log.error("Corrupt NCML file %s, can't find both of %s's dimensions" % (fn, var_name))
-        raise ValueError("Corrupt NCML file %s, can't find both of %s's dimensions" % (fn, var_name))
-
-    if important_dims[0].get("name") == rows_name:
-        rows = int(important_dims[0].get("length"))
-        cols = int(important_dims[1].get("length"))
-    else:
-        rows = int(important_dims[1].get("length"))
-        cols = int(important_dims[0].get("length"))
-    return rows,cols
 
 def _create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind, grid_name=None):
     if grid_name is None:
@@ -242,6 +192,48 @@ def get_awips_info(config_dict, sat, instrument, nav_set_uid, kind, band, data_k
         raise ValueError("'%s' could not be found in the loaded configuration" % (config_id,))
 
     return config_dict[config_id]
+
+class AWIPSConfigReader(roles.CSVConfigReader):
+    """Read an AWIPS Backend Configuration file
+
+    Example:
+    npp,viirs,i_nav,i,01,reflectance,211w,55779608,0.64 um,SSEC,NPP-VIIRS,grid211w.ncml,SSEC_AWIPS_VIIRS-WCONUS_1KM_SVI01_%Y%m%d_%H%M.55779608
+    """
+    NUM_ID_ELEMENTS = 6
+
+    def parse_entry_parts(self, entry_parts):
+        # Parse out the awips specific elements
+        grid_name = entry_parts[0]
+        product_id = entry_parts[1]
+        awips2_channel = entry_parts[2]
+        awips2_source = entry_parts[3]
+        awips2_satellitename = entry_parts[4]
+        ncml_template = _rel_to_abs(entry_parts[5], NCML_DIR)
+        nc_format = entry_parts[6]
+        config_entry = {
+                "grid_name" : grid_name,
+                "product_id" : product_id,
+                "awips2_channel" : awips2_channel,
+                "awips2_source" : awips2_source,
+                "awips2_satellitename" : awips2_satellitename,
+                "ncml_template" : ncml_template,
+                "nc_format" : nc_format
+                }
+        return config_entry
+
+    def get_config_entry(self, *args, **kwargs):
+        if len(args) == self.NUM_ID_ELEMENTS:
+            try:
+                return super(AWIPSConfigReader, self).get_config_entry(*args, **kwargs)
+            except ValueError:
+                log.error("'%s' could not be found in the loaded configuration" % (args,))
+                raise ValueError("'%s' could not be found in the loaded configuration" % (args,))
+        else:
+            for config_info in self.get_all_matching_entries(*args[:-1]):
+                if config_info["grid_name"] == args[-1]:
+                    return config_info
+            log.error("'%s' could not be found in the loaded configuration" % (args,))
+            raise ValueError("'%s' could not be found in the loaded configuration" % (args,))
 
 if __name__ == "__main__":
     sys.exit(0)

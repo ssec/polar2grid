@@ -41,9 +41,9 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     david.hoese@ssec.wisc.edu
 
 """
-__docformat__ = "restructuredtext en"
+from polar2grid.proj import Proj
 
-from pyproj import Proj
+__docformat__ = "restructuredtext en"
 
 import os
 import sys

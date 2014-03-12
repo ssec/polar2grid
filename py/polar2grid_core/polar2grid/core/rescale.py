@@ -105,6 +105,50 @@ def passive_scale(img, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     log.debug("Running 'passive_scale'...")
     return img
 
+def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, clip=0, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
+    """Flexible linear scaling by specifying what you want output, not the parameters of the linear equation.
+
+    This scaling function stops humans from doing math...let the computers do it.
+
+    - If you aren't sure what the valid limits of your data are, only specify 
+        the min and max output values. The input minimum and maximum will be
+        computed. Note that this could add a considerable amount of time to
+        the calculation.
+    - If you know the limits, specify the output and input ranges.
+    - If you want to flip the data range (ex. -16 to 40 data becomes 237 to 0
+        data) then specify the ranges as needed (ex. min_out=237, max_out=0,
+        min_in=-16, max_in=40). The flip happens automatically.
+    - If the data needs to be clipped to the output range, specify 1 or 0 for
+        the "clip" keyword. Note that most backends will do this to fit the
+        data type of the output format.
+    """
+    log.debug("Running 'linear_flexible_scale' with (min_out: %f, max_out: %f..." % (min_out,max_out))
+    fill_mask = img == fill_in
+
+    min_in = numpy.nanmin(img[~fill_mask]) if min_in is None else min_in
+    max_in = numpy.nanmax(img[~fill_mask]) if max_in is None else max_in
+    if min_in == max_in:
+        # Data doesn't differ...at all
+        log.warning("Data does not differ (min/max are the same), can not scale properly")
+        max_in = min_in + 1.0
+    log.debug("Input minimum: %f, Input maximum: %f" % (min_in,max_in))
+
+    m = (max_out - min_out) / (max_in - min_in)
+    b = min_out - m * min_in
+
+    numpy.multiply(img, m, img)
+    numpy.add(img, b, img)
+
+    if clip:
+        if min_out < max_out:
+            numpy.clip(img, min_out, max_out, out=img)
+        else:
+            numpy.clip(img, max_out, min_out, out=img)
+
+    img[fill_mask] = fill_out
+
+    return img
+
 def sqrt_scale(img, inner_mult, outer_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     """Square root enhancement
 
@@ -180,6 +224,7 @@ def bt_scale(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=No
     return img
 
 # this method is intended to work on brightness temperatures in Kelvin
+### DEPRECATED ###
 def bt_scale_linear(image,
                     max_in,      min_in,
                     min_out=1.0, max_out=255.0,
@@ -190,31 +235,10 @@ def bt_scale_linear(image,
     in the original image will be set to fill_out in the final image.
     """
     log.debug("Running 'bt_scale_linear'...")
-    
-    # make a mask of where the fill values are for later
-    fill_mask = image == fill_in
-    
-    # set values beyond the bounds to the bounds
-    image[image < min_in] = min_in
-    image[image > max_in] = max_in
-    
-    # shift and scale the values
-    old_range = max_in  - min_in
-    new_range = max_out - min_out
-    # shift the bottom down to zero
-    image     -= min_in
-    # scale from the size of the old range to the new
-    image     *= (new_range / old_range)
-    # reverse the range
-    image     *= -1
-    image     += new_range
-    # shift the bottom back up to the new bottom
-    image     += min_out
-    
-    # set all the fill values to the outgoing fill value
-    image[fill_mask] = fill_out
-    
-    return image
+    log.warning("DEPRECATION: Please use 'linear_flex' instead of 'bt_linear' for rescaling")
+    log.warning("Arguments for bt_linear (A,B,C,D) become (C,D,A,B) for linear_flex")
+
+    return linear_flexible_scale(min_out, max_out, max_in, min_in, clip=1)
 
 def fog_scale(img, m, b, floor, floor_val, ceil, ceil_val, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT):
     """Scale data linearly. Then clip the data to `floor` and `ceil`,
@@ -308,17 +332,6 @@ def ndvi_scale (data,
     
     return data
 
-# DEFAULTS
-RESCALE_FOR_KIND = {
-        DKIND_RADIANCE    : (linear_scale, (255.0,0)),
-        DKIND_REFLECTANCE : (sqrt_scale,   (100.0, 25.5)),
-        DKIND_BTEMP       : (bt_scale,     (242.0,660.0,2,418.0,1)),
-        DKIND_FOG         : (fog_scale,    (10.0,105.0,5,4,205,206)),
-        
-        DKIND_BTEMP_ENHANCED : (linear_scale, (255.0,0)), # TODO, this is probably in the wrong place
-        # TODO, add defaults for category, angle, distance, percent, and contiguous index
-        }
-
 class Rescaler(roles.RescalerRole):
     DEFAULT_FILL_IN = DEFAULT_FILL_IN
     DEFAULT_FILL_OUT = DEFAULT_FILL_OUT
@@ -341,12 +354,13 @@ class Rescaler(roles.RescalerRole):
                 'btemp_enh':  linear_scale, # TODO, this probably shouldn't go here?
                 'fog'      :  fog_scale,
                 'btemp_c'  :  bt_scale_c,
-                'btemp_lin':  bt_scale_linear,
+                'btemp_lin':  bt_scale_linear, # DEPRECATED: Use 'linear_flex'
                 'lst'      :  lst_scale,
                 'ndvi'     :  ndvi_scale,
                 'distance' : passive_scale, # TODO, this is wrong... but we'll sort it out later?
                 'percent'  : passive_scale, # TODO, this is wrong, find out what it should be
                 'lookup'   : lookup_scale,
+                'linear_flex' : linear_flexible_scale,
                 }
     @property
     def known_rescale_kinds(self):
@@ -370,22 +384,15 @@ class Rescaler(roles.RescalerRole):
         add 1 to the scaled data excluding the invalid values.
         """
         log_level = logging.getLogger('').handlers[0].level or 0
-        band_id = self._create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind)
         fill_in = fill_in or self.fill_in
         fill_out = fill_out or self.fill_out
 
-        if self.config is None or band_id not in self.config:
-            # Run the default scaling functions
-            log.debug("Config ID '%s' was not found in '%r'" % (band_id,self.config.keys()))
-            log.info("Running default rescaling method for kind: %s, band: %s" % (kind,band))
-            if data_kind not in RESCALE_FOR_KIND:
-                log.error("No default rescaling is set for data of kind %s" % data_kind)
-                raise ValueError("No default rescaling is set for data of kind %s" % data_kind)
-            rescale_func,rescale_args = RESCALE_FOR_KIND[data_kind]
-        else:
-            # We know how to rescale using the onfiguration file
-            log.info("'%s' was found in the rescaling configuration" % (band_id))
-            rescale_func,rescale_args = self.config[band_id]
+        try:
+            rescale_func,rescale_args = self.get_config_entry(sat, instrument, nav_set_uid, kind, band, data_kind)
+            log.info("'%r' was found in the rescaling configuration" % ((sat, instrument, nav_set_uid, kind, band, data_kind),))
+        except StandardError:
+            log.error("'%r' was not found in rescaling configuration file" % ((sat, instrument, nav_set_uid, kind, band, data_kind),))
+            raise
 
         # Only perform this calculation if it will be shown, its very time consuming
         if log_level <= logging.DEBUG:

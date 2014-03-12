@@ -168,10 +168,10 @@ def process_data_sets(nav_set_dict,
                                 band_rep = nav_set_jobs[MBAND_NAV_UID]["remapped_jobs"][grid_name].values()[0]
                             else:
                                 band_rep = nav_set_jobs[GEO_NAV_UID]["remapped_jobs"][grid_name].values()[0]
-                            band_info["grid_info"]["pixel_size_x"] = band_rep["pixel_size_x_grid_units"]
-                            band_info["grid_info"]["pixel_size_y"] = band_rep["pixel_size_y_grid_units"]
-                            band_info["grid_info"]["grid_origin_x"] = band_rep["grid_origin_x_grid_units"]
-                            band_info["grid_info"]["grid_origin_y"] = band_rep["grid_origin_y_grid_units"]
+                            band_info["grid_info"]["pixel_size_x"] = band_rep["pixel_size_x"]
+                            band_info["grid_info"]["pixel_size_y"] = band_rep["pixel_size_y"]
+                            band_info["grid_info"]["grid_origin_x"] = band_rep["grid_origin_x"]
+                            band_info["grid_info"]["grid_origin_y"] = band_rep["grid_origin_y"]
                             band_info["grid_info"]["grid_width"] = band_rep["grid_width"]
                             band_info["grid_info"]["grid_height"] = band_rep["grid_height"]
 

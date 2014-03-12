@@ -479,7 +479,7 @@ class Backend(roles.BackendRole):
         # Instatiate the rescaler
         self.fill_in  = fill_value
         self.fill_out = DEFAULT_FILL_VALUE
-        self.rescaler = Rescaler(config=self.rescale_config,
+        self.rescaler = Rescaler(self.rescale_config,
                 fill_in=self.fill_in, fill_out=self.fill_out
                 )
 
