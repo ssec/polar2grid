@@ -9,9 +9,10 @@
 :date:         Dec 2012
 :license:      GNU GPLv3
 """
+from polar2grid.proj import Proj
+
 __docformat__ = "restructuredtext en"
 
-from polar2grid.grids.grids import P2GProj
 from polar2grid.core import Workspace
 import numpy
 

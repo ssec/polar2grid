@@ -43,12 +43,13 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     david.hoese@ssec.wisc.edu
 
 """
+from polar2grid.proj import Proj
+
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.constants import *
 from polar2grid.core import Workspace,roles
 from shapely import geometry
-import pyproj
 import numpy
 
 import os
@@ -70,13 +71,6 @@ GRIDS_DIR = script_dir #os.path.split(script_dir)[0] # grids directory is in roo
 GRIDS_CONFIG_FILEPATH   = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
 GRID_COVERAGE_THRESHOLD = float(os.environ.get("POLAR2GRID_GRID_COVERAGE", "0.1")) # 10%
 
-
-class P2GProj(pyproj.Proj):
-    def __call__(self, data1, data2, **kwargs):
-        if self.is_latlong():
-            return data1, data2
-
-        return super(P2GProj, self).__call__(data1, data2, **kwargs)
 
 ### GPD Reading Functions ###
 def clean_string(s):
@@ -233,7 +227,7 @@ def parse_proj4_config_line(grid_name, parts):
     proj4_str = parts[2]
     # Test to make sure the proj4_str is valid in pyproj's eyes
     try:
-        p = P2GProj(proj4_str)
+        p = Proj(proj4_str)
         del p
     except StandardError:
         log.error("Invalid proj4 string in '%s' : '%s'" % (grid_name,proj4_str))
@@ -303,7 +297,7 @@ def parse_proj4_config_line(grid_name, parts):
         raise ValueError("Grid origin parameters must be in the same units (meters vs degrees)")
 
     # Convert any parameters from degrees to meters (we already made sure both need to be converted above)
-    p = P2GProj(proj4_str)
+    p = Proj(proj4_str)
     if convert_xorigin_to_meters and not p.is_latlong():
         meters_x, meters_y = p(grid_origin_x, grid_origin_y)
         log.info("Converted grid '%s' origin from (lon: %f, lat: %f) to (x: %f, y: %f)",
@@ -662,7 +656,7 @@ class Cartographer(roles.CartographerRole):
         if not grid_info["static"]:
             log.debug("Won't calculate corners for a dynamic grid: '%s'" % (grid_name,))
 
-        p = P2GProj(grid_info["proj4_str"])
+        p = Proj(grid_info["proj4_str"])
         right_x  = grid_info["grid_origin_x"] + grid_info["pixel_size_x"] * grid_info["grid_width"]
         bottom_y = grid_info["grid_origin_y"] + grid_info["pixel_size_y"] * grid_info["grid_height"]
         grid_info["ul_corner"] = p(grid_info["grid_origin_x"], grid_info["grid_origin_y"], inverse=True)

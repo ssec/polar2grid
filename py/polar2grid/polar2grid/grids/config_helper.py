@@ -41,9 +41,9 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     david.hoese@ssec.wisc.edu
 
 """
-__docformat__ = "restructuredtext en"
+from polar2grid.proj import Proj
 
-from .grids import P2GProj
+__docformat__ = "restructuredtext en"
 
 import os
 import sys
@@ -112,7 +112,7 @@ meters by default.""")
 
     proj_str = args.proj_str or determine_projection(clon, clat)
     proj_str = proj_str % {"center_lon":clon, "center_lat":clat}
-    p = P2GProj(proj_str)
+    p = Proj(proj_str)
     origin_x = grid_width / 2.0 * pixel_size_x * -1
     origin_y = grid_height / 2.0 * pixel_size_y * -1
 

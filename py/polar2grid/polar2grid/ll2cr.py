@@ -39,11 +39,12 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     david.hoese@ssec.wisc.edu
 
 """
+from polar2grid.proj import Proj
+
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.constants import DEFAULT_FILL_VALUE
-from .grids.grids import P2GProj
 import numpy
 
 import os
@@ -130,7 +131,7 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
         raise ValueError("Either pixel size or grid width/height must be specified")
 
     # Handle EPSG codes
-    tformer = P2GProj(proj4_str)
+    tformer = Proj(proj4_str)
 
     if dtype is None:
         dtype = lat_arr.dtype
