@@ -55,6 +55,7 @@ for pass_dir in `ls -d $EVENT_DL_DIR/*.pass`; do
     # Process the CREFL files
     # FIXME: This will need to be determined by whether or not CREFL is desired (maybe rewrite it in python to polar2grid wink,wink)
     echo "Creating CREFL output..."
+    NO_DAY_DATA=1
     for m05_file in `ls $data_dir/SVM05*.h5`; do
         #Is this a Day Granule?
         attr="/Data_Products/VIIRS-M5-SDR/VIIRS-M5-SDR_Gran_0/N_Day_Night_Flag"
@@ -65,9 +66,16 @@ for pass_dir in `ls -d $EVENT_DL_DIR/*.pass`; do
             $CREFL_RUN $m05_file
         else
             echo "No day data in $m05_file, won't create CREFL output"
-            exit 1
+            NO_DAY_DATA=0
         fi
     done
+
+    # Check if we have any day data
+    if [ $NO_DAY_DATA -eq 0 ]; then
+        echo "Pass included night data, will not process"
+        continue
+    fi
+
     echo "Linking navigation files to work directory..."
     # This has to be done so polar2grid has access to both data and geolocation files
     for gl_file in `ls $data_dir/G*TCO*.h5`; do
