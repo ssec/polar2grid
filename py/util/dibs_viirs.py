@@ -32,6 +32,9 @@ FLO_FMT = """http://peate.ssec.wisc.edu/flo/api/find?
             &radius=%(radius)s
             &output=txt
 """
+FLO_HOSTNAME = "peate.ssec.wisc.edu"
+# if we are in the building, use this instead for faster download
+FLO_INSIDE_HOSTNAME = "peate02.ssec.wisc.edu"
 
 RE_NPP = re.compile('(?P<kind>[A-Z]+)(?P<band>[0-9]*)_(?P<sat>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_e(?P<end_time>\d+)_b(?P<orbit>\d+)_c(?P<created_time>\d+)_(?P<site>[a-zA-Z0-9]+)_(?P<domain>[a-zA-Z0-9]+)\.h5')
 
@@ -44,7 +47,7 @@ THREE_DAY = timedelta(days=3)
 FOUR_DAY = timedelta(days=4)
 FIVE_DAY = timedelta(days=5)
 
-def flo_find(lat, lon, radius, start, end, file_types):
+def flo_find(lat, lon, radius, start, end, file_types, use_inside_hostname=True):
     "return shell script and filename list"
     start = start.strftime('%Y-%m-%d')
     end = end.strftime('%Y-%m-%d')
@@ -59,14 +62,17 @@ def flo_find(lat, lon, radius, start, end, file_types):
         match = RE_NPP.search(url)
         if not match:
             continue
+        if use_inside_hostname:
+            LOG.debug("replacing flo hostname (%s) with direct hostname (%s)", FLO_HOSTNAME, FLO_INSIDE_HOSTNAME)
+            url = url.replace(FLO_HOSTNAME, FLO_INSIDE_HOSTNAME)
         LOG.debug('found %s @ %s' % (match.group(0), url))
         yield match, url
     wp.close()
 
-def _test_flo_find(args):
+def _test_flo_find(args, use_inside_hostname=True):
     start = date(2011, 12, 13)
     end = date(2011, 12, 14)
-    for nfo, url in flo_find(43.07, -89.41, 1000, start, end, file_types=args or PRODUCT_LIST):
+    for nfo, url in flo_find(43.07, -89.41, 1000, start, end, file_types=args or PRODUCT_LIST, use_inside_hostname=use_inside_hostname):
         print nfo.group(0), url # print filename and url
 
 def _all_products_present(key, file_nfos, products):
@@ -109,7 +115,7 @@ def _key(nfo):
     return (nfo['date'], nfo['start_time'], nfo['end_time'])
 
 
-def sync(lat, lon, radius, start=None, end=None, file_types=None):
+def sync(lat, lon, radius, start=None, end=None, file_types=None, use_inside_hostname=True):
     "synchronize current working directory to include all the files available"
     if end is None:
         end = date.today() + ONE_DAY
@@ -119,7 +125,7 @@ def sync(lat, lon, radius, start=None, end=None, file_types=None):
     bad = list()
     good = list()
     new_files = defaultdict(list)
-    inventory = list(flo_find(lat, lon, radius, start, end, file_types))
+    inventory = list(flo_find(lat, lon, radius, start, end, file_types, use_inside_hostname=use_inside_hostname))
     for n, (nfo, url) in enumerate(inventory):
         filename = nfo.group(0)
         LOG.debug('checking %s @ %s' % (filename, url))
@@ -146,7 +152,7 @@ def sync(lat, lon, radius, start=None, end=None, file_types=None):
     return fully_intact_sets
 
 
-def mainsync(name, lat, lon, radius, start=None, end=None, file_types = None):
+def mainsync(name, lat, lon, radius, start=None, end=None, file_types=None, use_inside_hostname=True):
     "write a .nfo file with 'date start_time end_time when we complete a transfer"
     lat = int(lat)
     lon = int(lon)
@@ -157,7 +163,7 @@ def mainsync(name, lat, lon, radius, start=None, end=None, file_types = None):
         end = datetime.strptime(end, '%Y-%m-%d').date()
 
     fp = file(name+'.nfo', 'at')
-    for key in sync(lat, lon, radius, start, end, file_types).keys():
+    for key in sync(lat, lon, radius, start, end, file_types, use_inside_hostname=use_inside_hostname).keys():
         LOG.info('%s is ready' % repr(key))
         print >>fp, '%s %s %s' % key
         fp.flush()
@@ -285,6 +291,8 @@ example:
     parser.add_option('-s', '--start', dest='start', help='yyyy-mm-dd start dateoptional', default=None)
     parser.add_option('-e', '--end', dest='end', help='yyyy-mm-dd end date optional', default=None)
     parser.add_option('-p', '--pass', dest='passes', help='post-process .nfo file (consuming it) and create .pass directories', default=False, action="store_true")
+    parser.add_option('--outside-host', dest='use_inside_hostname', action='store_false', default=True,
+                      help='Download data from %s instead of %s' % (FLO_HOSTNAME, FLO_INSIDE_HOSTNAME))
     # parser.add_option('-o', '--output', dest='output',
     #                 help='location to store output')
     # parser.add_option('-I', '--include-path', dest="includes",
@@ -298,7 +306,7 @@ example:
     if options.self_test:
         from pprint import pprint
         logging.basicConfig(level=logging.DEBUG)
-        pprint(_test_flo_find(args))
+        pprint(_test_flo_find(args, use_inside_hostname=options.use_inside_hostname))
         # FIXME - run any self-tests
         # import doctest
         # doctest.testmod()
@@ -312,7 +320,8 @@ example:
         return 9
 
     if options.radius:
-        mainsync(args[0], options.lat, options.lon, options.radius, options.start, options.end, args[1:] or PRODUCT_LIST)
+        mainsync(args[0], options.lat, options.lon, options.radius, options.start, options.end,
+                 args[1:] or PRODUCT_LIST, use_inside_hostname=options.use_inside_hostname)
 
     if options.passes:
         mainpass(args[0]+'.nfo')

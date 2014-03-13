@@ -26,12 +26,15 @@ LOG = logging.getLogger(__name__)
 PRODUCT_LIST = None 
 
 FLO_FMT = """http://peate.ssec.wisc.edu/flo/api/find?
-			start=%(start)s&end=%(end)s
-			&file_type=IASI_L1C
-			&loc=%(lat)s,%(lon)s
-			&radius=%(radius)s
-			&output=txt
+            start=%(start)s&end=%(end)s
+            &file_type=IASI_L1C
+            &loc=%(lat)s,%(lon)s
+            &radius=%(radius)s
+            &output=txt
 """
+FLO_HOSTNAME = "peate.ssec.wisc.edu"
+# if we are in the building, use this instead for faster download
+FLO_INSIDE_HOSTNAME = "peate02.ssec.wisc.edu"
 
 #RE_NPP = re.compile('(?P<kind>[A-Z]+)(?P<band>[0-9]*)_(?P<sat>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_e(?P<end_time>\d+)_b(?P<orbit>\d+)_c(?P<created_time>\d+)_(?P<site>[a-zA-Z0-9]+)_(?P<domain>[a-zA-Z0-9]+)\.h5')
 #RE_NPP = re.compile('IASI_xxx_1C_M02_(?P<date>\d+)(?P<start_time>\d+)_(?P<date_end>\d+)(?P<end_time>\d+)_N_O_(?P<orbit>\d+)_(?P<created_time>\d+)')
@@ -46,7 +49,7 @@ THREE_DAY = timedelta(days=3)
 FOUR_DAY = timedelta(days=4)
 FIVE_DAY = timedelta(days=5)
 
-def flo_find(lat, lon, radius, start, end):
+def flo_find(lat, lon, radius, start, end, use_inside_hostname=True):
     "return shell script and filename list"
     start = start.strftime('%Y-%m-%d')
     end = end.strftime('%Y-%m-%d')
@@ -59,14 +62,17 @@ def flo_find(lat, lon, radius, start, end):
         match = RE_NPP.search(url)
         if not match:
             continue
+        if use_inside_hostname:
+            LOG.debug("replacing flo hostname (%s) with direct hostname (%s)", FLO_HOSTNAME, FLO_INSIDE_HOSTNAME)
+            url = url.replace(FLO_HOSTNAME, FLO_INSIDE_HOSTNAME)
         LOG.debug('found %s @ %s' % (match.group(0), url))
         yield match, url
     wp.close()
 
-def _test_flo_find():
+def _test_flo_find(args, use_inside_hostname=True):
     start = date(2011, 12, 13)
     end = date(2011, 12, 14)
-    for nfo, url in flo_find(43, -89, 1000, start, end):
+    for nfo, url in flo_find(43, -89, 1000, start, end, use_inside_hostname=use_inside_hostname):
         print nfo.group(0), url # print filename and url
 
 def _all_products_present(key, file_nfos, products = PRODUCT_LIST):
@@ -93,7 +99,7 @@ def _key(nfo):
     nfo = nfo.groupdict()
     return (nfo['date'], nfo['start_time'], nfo['end_date'], nfo['end_time'])
 
-def sync(lat, lon, radius, start=None, end=None):
+def sync(lat, lon, radius, start=None, end=None, use_inside_hostname=True):
     "synchronize current working directory to include all the files available"
     if end is None:
         end = date.today() + ONE_DAY
@@ -102,7 +108,7 @@ def sync(lat, lon, radius, start=None, end=None):
     bad = list()
     good = list()
     new_files = defaultdict(list)
-    inventory = list(flo_find(lat, lon, radius, start, end))
+    inventory = list(flo_find(lat, lon, radius, start, end, use_inside_hostname=use_inside_hostname))
     for n, (nfo, url) in enumerate(inventory):
         filename = nfo.group(0)
         LOG.debug('checking %s @ %s' % (filename, url))
@@ -128,7 +134,7 @@ def sync(lat, lon, radius, start=None, end=None):
     fully_intact_sets = dict((k,v) for k,v in new_files.items() if _all_products_present(k,v))
     return fully_intact_sets
 
-def mainsync(name, lat, lon, radius, start=None, end=None):
+def mainsync(name, lat, lon, radius, start=None, end=None, use_inside_hostname=True):
     "write a .nfo file with 'date start_time end_time when we complete a transfer"
     lat = int(lat)
     lon = int(lon)
@@ -139,7 +145,7 @@ def mainsync(name, lat, lon, radius, start=None, end=None):
         end = datetime.strptime(end, '%Y-%m-%d').date()
 
     fp = file(name+'.nfo', 'at')
-    for key in sync(lat, lon, radius, start, end).keys():
+    for key in sync(lat, lon, radius, start, end, use_inside_hostname=use_inside_hostname).keys():
         LOG.info('%s is ready' % repr(key))
         print >>fp, '%s %s %s %s' % key
         fp.flush()
@@ -268,6 +274,8 @@ example:
     parser.add_option('-s', '--start', dest='start', help='yyyy-mm-dd start dateoptional', default=None)
     parser.add_option('-e', '--end', dest='end', help='yyyy-mm-dd end date optional', default=None)
     parser.add_option('-p', '--pass', dest='passes', help='post-process .nfo file (consuming it) and create .pass directories', default=False, action="store_true")
+    parser.add_option('--outside-host', dest='use_inside_hostname', action='store_false', default=True,
+                      help='Download data from %s instead of %s' % (FLO_HOSTNAME, FLO_INSIDE_HOSTNAME))
     # parser.add_option('-o', '--output', dest='output',
     #                 help='location to store output')
     # parser.add_option('-I', '--include-path', dest="includes",
@@ -279,6 +287,9 @@ example:
     OPTS = options
 
     if options.self_test:
+        from pprint import pprint
+        logging.basicConfig(level=logging.DEBUG)
+        pprint(_test_flo_find(args, use_inside_hostname=options.use_inside_hostname))
         # FIXME - run any self-tests
         # import doctest
         # doctest.testmod()
@@ -292,7 +303,8 @@ example:
         return 9
 
     if options.radius:
-        mainsync(args[0], options.lat, options.lon, options.radius, options.start, options.end)
+        mainsync(args[0], options.lat, options.lon, options.radius, options.start, options.end,
+                 options.use_inside_hostname)
 
     if options.passes:
         mainpass(args[0]+'.nfo')
