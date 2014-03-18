@@ -178,7 +178,7 @@ def process_data_sets(nav_set_uid, filepaths,
                         data,
                         start_time=start_time,
                         grid_name=grid_name,
-                        gpd_grid_info=band_dict,
+                        grid_info=band_dict,
                         fill_value=band_dict.get("fill_value", None)
                         )
             except StandardError:

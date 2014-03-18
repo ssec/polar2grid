@@ -84,9 +84,9 @@ Plot binary files using matplotlib.
     parser = ArgumentParser(description=description)
     parser.add_argument("-f", dest="fill_value", default=DEFAULT_FILL_VALUE, type=sci_float,
             help="Specify the fill_value of the input file(s)")
-    parser.add_argument('--vmin', dest="vmin", default=None, type=int,
+    parser.add_argument('--vmin', dest="vmin", default=None, type=float,
             help="Specify minimum brightness value. Defaults to minimum value of data.")
-    parser.add_argument('--vmax', dest="vmax", default=None, type=int,
+    parser.add_argument('--vmax', dest="vmax", default=None, type=float,
             help="Specify maximum brightness value. Defaults to maximum value of data.")
     parser.add_argument("-p", dest="pattern",
             help="filename pattern to search the current directory for")

@@ -44,6 +44,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
 """
 from polar2grid.proj import Proj
+from pyproj import pj_ellps
 
 __docformat__ = "restructuredtext en"
 
@@ -217,6 +218,60 @@ def _parse_meter_degree_param(param):
         param = param[:-1]
     return float(param), convert_to_meters
 
+
+def _calc_a_from_pj_ellps(proj4_dict, ellps_name):
+    return pj_ellps[ellps_name].get("a", None)
+
+
+def _calc_b_from_pj_ellps(proj4_dict, ellps_name):
+    a = _calc_a_from_pj_ellps(ellps_name) if "a" not in proj4_dict else proj4_dict["a"]
+    b = pj_ellps[ellps_name].get("b", None)
+    if b is None:
+        rf = pj_ellps[ellps_name]["rf"]
+        f = 1.0 / rf
+        b = a * (1.0 - f)
+    return b
+
+
+def _calc_es_from_pj_ellps(proj4_dict, ellps_name):
+    a = _calc_a_from_pj_ellps(ellps_name) if "a" not in proj4_dict else proj4_dict["a"]
+    b = _calc_b_from_pj_ellps(ellps_name) if "b" not in proj4_dict else proj4_dict["b"]
+    if a is None or b is None:
+        return None
+    es = 1.0 - (b * b) / (a * a)
+    return es
+
+
+def get_proj4_info(proj4_str):
+    parts = [x.replace("+", "") for x in proj4_str.split(" ")]
+    if "no_defs" in parts:
+        parts.remove("no_defs")
+
+    proj4_dict = dict(p.split("=") for p in parts)
+    # Convert numeric parameters to floats
+    for k in ["lat_0", "lat_1", "lat_2", "lat_ts", "lon_0", "lonc", "a", "b"]:
+        if k in proj4_dict:
+            proj4_dict[k] = float(proj4_dict[k])
+
+    ellps_name = None
+    if "ellps" in proj4_dict or "datum" in proj4_dict:
+        ellps_name = proj4_dict.get("ellps", proj4_dict.get("datum", None))
+
+    if "a" not in proj4_dict:
+        proj4_dict["a"] = _calc_a_from_pj_ellps(proj4_dict, ellps_name)
+        if proj4_dict["a"] is None:
+            log.warning("Can not calculate equatorial radius from PROJ.4 String")
+    if "b" not in proj4_dict:
+        proj4_dict["b"] = _calc_b_from_pj_ellps(proj4_dict, ellps_name)
+        if proj4_dict["b"] is None:
+            log.warning("Can not calculate polar radius from PROJ.4 String")
+    if "es" not in proj4_dict:
+        proj4_dict["es"] = _calc_es_from_pj_ellps(proj4_dict, ellps_name)
+        if proj4_dict["es"] is None:
+            log.warning("Can not calculate eccentricity squared from PROJ.4 String")
+
+    return proj4_dict
+
 def parse_proj4_config_line(grid_name, parts):
     """Return a dictionary of information for a specific PROJ.4 grid from
     a grid configuration line. ``parts`` should be every comma-separated
@@ -307,7 +362,9 @@ def parse_proj4_config_line(grid_name, parts):
         log.error("Lat/Lon grid '%s' must have its origin in degrees", grid_name)
         raise ValueError("Lat/Lon grid '%s' must have its origin in degrees" % (grid_name,))
 
+    proj4_dict = get_proj4_info(proj4_str)
 
+    info.update(**proj4_dict)
     info["grid_kind"]         = GRID_KIND_PROJ4
     info["static"]            = static
     info["proj4_str"]         = proj4_str

@@ -493,7 +493,6 @@ def sort_files_by_nav_uid(filepaths):
             del nav_dict[nav_uid]
             continue
 
-    print nav_dict
     return nav_dict
 
 
@@ -663,7 +662,6 @@ def file_info(fn):
 
         # Geonav file exists
         file_glob = finfo[K_NAVIGATION] % {"geo_kind":GEO_GUIDE[finfo["kind"]][1]}
-        print finfo["kind"], GEO_GUIDE[finfo["kind"]], file_glob, fn
         geo_glob = os.path.join(base_path, file_glob)
         try:
             # First try terrain corrected
