@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Create a software bundle
 # Usage: ./create_software_bundle.sh <bundle directory> [ShellB3 URL]
+# Creates a software bundle directory and a tarball of that directory
 
 SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3-Linux-x86_64-20140212-r840-core-cspp.tar.gz"
 MS2GT_DOWNLOAD="http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/ms2gt0.24a.tar.gz"
@@ -74,6 +75,8 @@ echo "Extracting ms2gt binaries..."
 tar -xzf "$(basename "$MS2GT_DOWNLOAD")"
 echo "Removing downloaded ms2gt tarball"
 rm -r "$(basename "$MS2GT_DOWNLOAD")"
+echo "Moving extracted ms2gt directory to 'ms2gt'"
+mv ms2gt* ms2gt || oops "Could not move extracted ms2gt directory to proper name"
 
 # Create the 'bin' directory
 echo "Copying bash scripts to software bundle bin"
@@ -94,7 +97,9 @@ echo "Installing python packages into ShellB3 environment..."
 $SB_NAME/ShellB3/bin/python -m easy_install dist/*.tar.gz || oops "Could not install python packages"
 
 # Tar up the software bundle
+echo "Creating software bundle tarball..."
 cd "$SB_NAME"
 cd ..
 tar -czf "$(basename "$SB_NAME").tar.gz" "$SB_NAME"
 
+echo "SUCCESS"
