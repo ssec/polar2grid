@@ -27,7 +27,7 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Set up preprocessing code
 export PATH=$script_dir/bin:$PATH
 # Set up corrected reflectance code
-export ANCPATH=$script_dir/bin
+export ANCPATH=$script_dir
 
 
 # Convert geolocation data to HDF4

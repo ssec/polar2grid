@@ -8,6 +8,7 @@ MS2GT_DOWNLOAD="http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/ms2gt0.24a.tar
 BASE_P2G_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 PY_DIR="$BASE_P2G_DIR"/py
 BUNDLE_SCRIPTS_DIR="$BASE_P2G_DIR"/swbundle
+VCREFL_DIR="$BASE_P2G_DIR"/viirs_crefl
 
 oops() {
     echo "OOPS: $*"
@@ -54,7 +55,7 @@ if [ "${SHELLB3_URL:0:3}" == "ftp" ] || [ "${SHELLB3_URL:0:4}" == "http" ]; then
 elif [ ${SHELLB3_URL:(-6)} == ".tar.gz" ]; then
     echo "Extracting ShellB3 tarball from filesystem..."
     # FIXME: Test that this goes to the correct directory
-    tar -xzf "$(basename "$SHELLB3_URL")" || oops "Could not extract ShellB3"
+    tar -xzf "$SHELLB3_URL" || oops "Could not extract ShellB3"
 else
     echo "Copying ShellB3 directory from filesystem..."
     # FIXME: Test that this goes to the correct directory
@@ -78,10 +79,26 @@ rm -r "$(basename "$MS2GT_DOWNLOAD")"
 echo "Moving extracted ms2gt directory to 'ms2gt'"
 mv ms2gt* ms2gt || oops "Could not move extracted ms2gt directory to proper name"
 
+# Create the VIIRS CREFL utilities
+echo "Creating software bundle bin directory..."
+cd "$SB_NAME"
+mkdir bin
+echo "Getting prebuilt VIIRS CREFL binaries..."
+cd "$VCREFL_DIR"
+make clean
+make prebuilt || oops "Couldn't get prebuilt VIIRS CREFL binaries"
+chmod a+x cviirs
+chmod a+x h5SDS_transfer_rename
+mv cviirs "$SB_NAME"/bin/
+mv h5SDS_transfer_rename "$SB_NAME"/bin/
+mv CMGDEM.hdf "$SB_NAME"/bin/
+cp run_viirs_crefl.sh "$SB_NAME"/bin/
+chmod a+x "$SB_NAME"/bin/run_viirs_crefl.sh
+
 # Create the 'bin' directory
 echo "Copying bash scripts to software bundle bin"
-mkdir bin
-cp $BUNDLE_SCRIPTS_DIR/* bin/
+cd "$SB_NAME"
+cp $BUNDLE_SCRIPTS_DIR/*.sh $BUNDLE_SCRIPTS_DIR/*.txt bin/
 echo "Linking to ms2gt binaries..."
 ln -s ../ms2gt/bin/ll2cr bin/ll2cr
 ln -s ../ms2gt/bin/fornav bin/fornav
@@ -91,15 +108,13 @@ echo "Creating python packages..."
 cd "$PY_DIR"
 make clean_sdist
 make all_sdist
-#FIXME: Can this be done with pip? Let's get into this century of software development
-# FIXME: Check exit status codes
+# XXX: Pip is probably better, but ShellB3 doesn't use it yet
 echo "Installing python packages into ShellB3 environment..."
 $SB_NAME/ShellB3/bin/python -m easy_install dist/*.tar.gz || oops "Could not install python packages"
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
-cd "$SB_NAME"
-cd ..
-tar -czf "$(basename "$SB_NAME").tar.gz" "$SB_NAME"
+cd "$SB_NAME"/..
+tar -czf "$(basename "$SB_NAME").tar.gz" "$(basename "$SB_NAME")"
 
 echo "SUCCESS"
