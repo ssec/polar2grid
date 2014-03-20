@@ -61,6 +61,7 @@ source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 PROCESS_FILE=0
 PROCESS_DIR=0
 PROCESS_DONE=0
+echo "Searching parameters for VIIRS SDR files for CREFL processing (if needed)"
 for param in $@; do
     if [ $PROCESS_DONE -eq 1 ]; then
         # We have seen all of the files or directories that we need to preprocess so just read the rest of the parameters
@@ -68,10 +69,17 @@ for param in $@; do
     elif [ $PROCESS_FILE -eq 1 ]; then
         # Process a SVM05 file through VIIRS CREFL C binary
         if [ ${param:0:1} == "-" ]; then
+            echo "Done processing files with CREFL"
             # We are seeing the next flag we are done
             PASSED_PARAMS=(${PASSED_PARAMS[@]} $param)
             PROCESS_DONE=1
-        elif [ ${param:0:5} == "SVM05" ]; then
+            continue
+        fi
+        # can't do this in one line in bash
+        param_fn="$(basename "$param")"
+        if [ ${param_fn:0:5} == "SVM05" ]; then
+            echo "Running CREFL on file $param"
+            # we only care about SVM05 files
             $POLAR2GRID_HOME/bin/run_viirs_crefl.sh $param || oops "Could not create CREFL output for file $param"
             softlink_navigation_file $param
             continue
@@ -84,7 +92,7 @@ for param in $@; do
             oops "Directory $param does not exist, can't create CREFL output"
         fi
         # Directory exists, let's process each SVM05 file
-        echo "Searching $param for files to process..."
+        echo "Searching directory $param for files to process..."
         for fn in "$param/SVM05"*; do
             echo "Running CREFL on $fn"
             $POLAR2GRID_HOME/bin/run_viirs_crefl.sh $fn || oops "Could not create CREFL output for file $fn"
@@ -92,10 +100,10 @@ for param in $@; do
         done
         PROCESS_DONE=1
     elif [ $param == "-f" ]; then
-        #echo "Found -f flag"
+        echo "Found -f flag"
         PROCESS_FILE=1
     elif [ $param == "-d" ]; then
-        #echo "Found -d flag"
+        echo "Found -d flag"
         PROCESS_DIR=1
     else
         PASSED_PARAMS=(${PASSED_PARAMS[@]} $param)
