@@ -61,6 +61,7 @@ source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 PROCESS_FILE=0
 PROCESS_DIR=0
 PROCESS_DONE=0
+PROCESSED_ANY=0
 echo "Searching parameters for VIIRS SDR files for CREFL processing (if needed)"
 for param in $@; do
     if [ $PROCESS_DONE -eq 1 ]; then
@@ -82,6 +83,7 @@ for param in $@; do
             # we only care about SVM05 files
             $POLAR2GRID_HOME/bin/run_viirs_crefl.sh $param || oops "Could not create CREFL output for file $param"
             softlink_navigation_file $param
+            PROCESSED_ANY=1
             continue
         fi
         # Else ignore any non-SVM05 files
@@ -94,9 +96,13 @@ for param in $@; do
         # Directory exists, let's process each SVM05 file
         echo "Searching directory $param for files to process..."
         for fn in "$param/SVM05"*; do
-            echo "Running CREFL on $fn"
-            $POLAR2GRID_HOME/bin/run_viirs_crefl.sh $fn || oops "Could not create CREFL output for file $fn"
-            softlink_navigation_file $fn
+            # if we just got the pattern back that means we didn't find any SVM05 files
+            if [ -f $fn ]; then
+                echo "Running CREFL on $fn"
+                $POLAR2GRID_HOME/bin/run_viirs_crefl.sh $fn || oops "Could not create CREFL output for file $fn"
+                softlink_navigation_file $fn
+                PROCESSED_ANY=1
+            fi
         done
         PROCESS_DONE=1
     elif [ $param == "-f" ]; then
@@ -110,6 +116,10 @@ for param in $@; do
     fi
 done
 
-# Call the python module to do the processing, passing all arguments
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.crefl2gtiff -vv ${PASSED_PARAMS[@]} -f ./CREFL*
-
+if [ $PROCESSED_ANY -eq 1 ]; then
+    # Call the python module to do the processing, passing remaining arguments, but point it to the new crefl files
+    $POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.crefl2gtiff -vv ${PASSED_PARAMS[@]} -f ./CREFL*
+else
+    # Call the python module to do the processing, passing all arguments
+    $POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.crefl2gtiff -vv $@
+fi
