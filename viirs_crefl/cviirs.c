@@ -54,6 +54,17 @@ Revision history:
 #include <getopt.h>
 #include  "mfhdf.h"
 
+// Copied from hdf4compat.h from GDAL formats (https://trac.osgeo.org/gdal/browser/trunk/gdal/frmts/hdf4/hdf4compat.h)
+#ifndef H4_MAX_VAR_DIMS
+#define H4_MAX_VAR_DIMS MAX_VAR_DIMS
+#endif
+#ifndef H4_MAX_NC_DIMS
+#define H4_MAX_NC_DIMS MAX_NC_DIMS
+#endif
+#ifndef H4_MAX_NC_NAME
+#define H4_MAX_NC_NAME MAX_NC_NAME
+#endif
+
 #define MAXNAMELENGTH 200
 #define Nbands 16
 #define DEG2RAD	0.0174532925199		/* PI/180 */
@@ -80,7 +91,7 @@ Revision history:
 typedef struct {
   char *name, *filename;
   int32 file_id, id, index, num_type, rank, n_attr, Nl, Np, *plane, Nplanes, rowsperscan;
-  int32 start[MAX_VAR_DIMS], edges[MAX_VAR_DIMS], dim_sizes[MAX_VAR_DIMS];
+  int32 start[H4_MAX_VAR_DIMS], edges[H4_MAX_VAR_DIMS], dim_sizes[H4_MAX_VAR_DIMS];
   void *data, *fillvalue;
   float64 factor, offset;
 } SDS;
@@ -213,7 +224,7 @@ int main(int argc, char *argv[])
 	static int output500m, output1km;
 	static int sealevel, TOA, nearest;
 
-	char dummy[MAX_NC_NAME];
+	char dummy[H4_MAX_NC_NAME];
 
 	enum{OPT_BANDS = 1, OPT_RANGE, OPT_OUTFILE, OPT_MAXSOLZ};
 

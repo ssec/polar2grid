@@ -52,7 +52,7 @@ if [ "${SHELLB3_URL:0:3}" == "ftp" ] || [ "${SHELLB3_URL:0:4}" == "http" ]; then
     tar -xzf "$(basename "$SHELLB3_URL")" || oops "Could not extract ShellB3"
     echo "Removing downloaded ShellB3 tarball"
     rm -r "$(basename "$SHELLB3_URL")"
-elif [ ${SHELLB3_URL:(-6)} == ".tar.gz" ]; then
+elif [ "${SHELLB3_URL:(-7)}" == ".tar.gz" ]; then
     echo "Extracting ShellB3 tarball from filesystem..."
     # FIXME: Test that this goes to the correct directory
     tar -xzf "$SHELLB3_URL" || oops "Could not extract ShellB3"

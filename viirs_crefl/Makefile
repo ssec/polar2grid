@@ -34,11 +34,11 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
-CFLAGS = -O -static
+CFLAGS ?= -O -static
 LDFLAGS ?=
 PREFIX ?= .
 
-all: h5SDS_transfer_rename cviirs GMGDEM.hdf
+all: h5SDS_transfer_rename cviirs CMGDEM.hdf
 
 h5SDS_transfer_rename: h5SDS_transfer_rename.c
 	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS) -lhdf5 -lmfhdf -ldf -ljpeg -lz -lm -ldl
@@ -52,7 +52,7 @@ CMGDEM.hdf:
 .PHONY: install prebuilt_h5SDS_transfer_rename prebuilt_cviirs prebuilt clean
 install: CMGDEM.hdf h5SDS_transfer_rename cviirs run_viirs_crefl.sh
 	mkdir -p $(PREFIX)/bin; \
-	mv $^ $(PREFIX)/bin; \
+	cp $^ $(PREFIX)/bin; \
 	chmod u+x $(PREFIX)/bin/cviirs; \
 	chmod u+x $(PREFIX)/bin/h5SDS_transfer_rename; \
 	chmod u+x $(PREFIX)/bin/run_viirs_crefl.sh
