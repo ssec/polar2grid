@@ -6,7 +6,7 @@
 # NOTE: ShellB3 is only x86_64 RHEL5+ compatible
 
 SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3-Linux-x86_64-20140212-r840-core-cspp.tar.gz"
-BASE_REPOS_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+BASE_REPOS_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PY_DIR="$BASE_REPOS_DIR"/py
 VCREFL_DIR="$BASE_REPOS_DIR"/viirs_crefl
 MS2GT_DIR="$BASE_REPOS_DIR"/ms2gt
@@ -19,7 +19,7 @@ oops() {
 }
 
 debug() {
-    if $DEBUG; then
+    if ${DEBUG}; then
         echo "DEBUG: $*"
     fi
 }
@@ -34,26 +34,26 @@ else
 fi
 
 echo "Creating development environment directory: $1"
-mkdir -p $DEV_DIR
-cd $DEV_DIR
+mkdir -p ${DEV_DIR}
+cd ${DEV_DIR}
 
 echo "###################################################################################################"
 USE_SHELLB3=false
 SHELLB3_URL="$SHELLB3_DEFAULT"
 echo "Do you want to use ShellB3 (RHEL5+ only) as your python environment (enter choice number)?"
 select yn in "Yes" "No"; do
-    case $yn in
+    case ${yn} in
         Yes ) USE_SHELLB3=true; break;;
         No ) break;;
     esac
 done
 
 
-if $USE_SHELLB3; then
+if ${USE_SHELLB3}; then
     echo "###################################################################################################"
-    echo "Use default ShellB3 (`basename $SHELLB3_DEFAULT`)?"
+    echo "Use default ShellB3 (`basename ${SHELLB3_DEFAULT}`)?"
     select yn in "Yes" "No"; do
-        case $yn in
+        case ${yn} in
             Yes ) break;;
             No ) read -p "Alternate ShellB3 URL/Location: " SHELLB3_URL; break;;
         esac
@@ -64,7 +64,7 @@ if $USE_SHELLB3; then
         DOWNLOADED=false
         if [ "${SHELLB3_URL:0:3}" == "ftp" ] || [ "${SHELLB3_URL:0:4}" == "http" ]; then
             echo "Downloading ShellB3: $SHELLB3_URL"
-            wget $SHELLB3_URL || oops "Could not download ShellB3"
+            wget ${SHELLB3_URL} || oops "Could not download ShellB3"
             SHELLB3_URL="$DEV_DIR/$(basename "$SHELLB3_URL")"
             echo "Downloaded ShellB3 tarball to $SHELLB3_URL"
             DOWNLOADED=true
@@ -74,7 +74,7 @@ if $USE_SHELLB3; then
         echo "Extracting ShellB3 tarball..."
         tar -xzf "$SHELLB3_URL" || oops "Could not extract ShellB3"
 
-        if $DOWNLOADED; then
+        if ${DOWNLOADED}; then
             echo "Removing downloaded ShellB3 tarball"
             rm -r "$(basename "$SHELLB3_URL")"
         fi
@@ -108,7 +108,7 @@ BUILD_CREFL=false
 echo "###################################################################################################"
 echo "Attempt to build and install VIIRS CREFL (required for creating true color images from VIIRS SDRs)?"
 select yn in "Yes" "No"; do
-    case $yn in
+    case ${yn} in
         Yes ) BUILD_CREFL=true; break;;
         No ) break;;
     esac
@@ -144,7 +144,7 @@ echo "Simple import test passed"
 
 # Compile VIIRS CREFL code
 CREFL_MSG=""
-if $BUILD_CREFL; then
+if ${BUILD_CREFL}; then
     echo "Building VIIRS CREFL"
     cd "$VCREFL_DIR"
     debug "LDFLAGS: $LDFLAGS"
