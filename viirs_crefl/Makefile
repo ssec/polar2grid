@@ -34,17 +34,23 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
-CFLAGS ?= -O -static
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+	CFLAGS ?= -O
+else
+	CFLAGS ?= -O -static
+endif
 LDFLAGS ?=
+LDLIBS ?= -lsz
 PREFIX ?= .
 
 all: h5SDS_transfer_rename cviirs CMGDEM.hdf
 
 h5SDS_transfer_rename: h5SDS_transfer_rename.c
-	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS) -lhdf5 -lmfhdf -ldf -ljpeg -lz -lm -ldl
+	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS) -lhdf5 -lmfhdf -ldf -ljpeg $(LDLIBS) -lz -lm -ldl
 
 cviirs: cviirs.c
-	$(CC) -o $@ -m64 $(CFLAGS) $< $(LDFLAGS) -lmfhdf -ldf -ljpeg -lz -lm
+	$(CC) -o $@ -m64 $(CFLAGS) $< $(LDFLAGS) -lmfhdf -ldf -ljpeg $(LDLIBS) -lz -lm
 
 CMGDEM.hdf:
 	wget http://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/CMGDEM.hdf

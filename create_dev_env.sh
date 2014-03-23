@@ -147,6 +147,15 @@ CREFL_MSG=""
 if ${BUILD_CREFL}; then
     echo "Building VIIRS CREFL"
     cd "$VCREFL_DIR"
+
+    if [ -z "$LDFLAGS" ] && ${USE_SHELLB3}; then
+        echo "Will use libaries from ShellB3 for linking VIIRS CREFL"
+        export LDFLAGS="-I${SHELLB3_URL}/include -L${SHELLB3_URL}/lib"
+        export LD_RUN_PATH="${SHELLB3_URL}/lib:${LD_RUN_PATH}"
+        if [ -z "$CFLAGS" ]; then
+            export CFLAGS="-O"
+        fi
+    fi
     debug "LDFLAGS: $LDFLAGS"
     debug "CFLAGS: $CFLAGS"
     make
