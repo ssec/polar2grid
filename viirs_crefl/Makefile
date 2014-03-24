@@ -6,6 +6,12 @@
 # Example Install Usage (where files will be installed in ~/bin):
 #       PREFIX="~" make install
 #
+# Example Dynamic Compile/Link Usage:
+#		make all_dynamic
+#
+# Example Dynamic Compile/Link Usage (with specialized library locations)
+# 		LD_RUN_PATH=/home/user/opt/lib LDFLAGS="-I ~opt/include -L ~/opt/lib" make all_dynamic
+#
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -46,6 +52,9 @@ PREFIX ?= .
 
 all: h5SDS_transfer_rename cviirs CMGDEM.hdf
 
+all_dynamic: CFLAGS := -O
+all_dynamic: all
+
 h5SDS_transfer_rename: h5SDS_transfer_rename.c
 	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS) -lhdf5 -lmfhdf -ldf -ljpeg $(LDLIBS) -lz -lm -ldl
 
@@ -55,7 +64,7 @@ cviirs: cviirs.c
 CMGDEM.hdf:
 	wget http://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/CMGDEM.hdf
 
-.PHONY: install prebuilt_h5SDS_transfer_rename prebuilt_cviirs prebuilt clean
+.PHONY: install prebuilt_h5SDS_transfer_rename prebuilt_cviirs prebuilt all_dynamic clean clean_all
 install: CMGDEM.hdf h5SDS_transfer_rename cviirs run_viirs_crefl.sh
 	mkdir -p $(PREFIX)/bin; \
 	cp $^ $(PREFIX)/bin; \
@@ -74,6 +83,8 @@ prebuilt_cviirs:
 prebuilt: prebuilt_h5SDS_transfer_rename prebuilt_cviirs CMGDEM.hdf
 
 clean:
-	rm -f CMGDEM.hdf
 	rm -f h5SDS_transfer_rename
 	rm -f cviirs
+
+clean_all: clean
+	rm -f CMGDEM.hdf

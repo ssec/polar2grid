@@ -48,7 +48,6 @@ select yn in "Yes" "No"; do
     esac
 done
 
-
 if ${USE_SHELLB3}; then
     echo "###################################################################################################"
     echo "Use default ShellB3 (`basename ${SHELLB3_DEFAULT}`)?"
@@ -58,6 +57,21 @@ if ${USE_SHELLB3}; then
             No ) read -p "Alternate ShellB3 URL/Location: " SHELLB3_URL; break;;
         esac
     done
+fi
+
+# Ask if they want the optional VIIRS CREFL software
+BUILD_CREFL=false
+echo "###################################################################################################"
+echo "Attempt to build and install VIIRS CREFL (required for creating true color images from VIIRS SDRs)?"
+select yn in "Yes" "No"; do
+    case ${yn} in
+        Yes ) BUILD_CREFL=true; break;;
+        No ) break;;
+    esac
+done
+
+if ${USE_SHELLB3}; then
+    echo "###################################################################################################"
 
     debug "ShellB3 URL is: $SHELLB3_URL"
     if [ "${SHELLB3_URL:(-7)}" == ".tar.gz" ]; then
@@ -103,17 +117,6 @@ fi
 
 echo "Will use this python executable for package installation: `which python`"
 
-# Ask if they want the optional VIIRS CREFL software
-BUILD_CREFL=false
-echo "###################################################################################################"
-echo "Attempt to build and install VIIRS CREFL (required for creating true color images from VIIRS SDRs)?"
-select yn in "Yes" "No"; do
-    case ${yn} in
-        Yes ) BUILD_CREFL=true; break;;
-        No ) break;;
-    esac
-done
-
 # Create a bin directory and start putting stuff in it
 echo "###################################################################################################"
 echo "Creating development 'bin' directory"
@@ -152,19 +155,18 @@ if ${BUILD_CREFL}; then
         echo "Will use libaries from ShellB3 for linking VIIRS CREFL"
         export LDFLAGS="-I${SHELLB3_URL}/include -L${SHELLB3_URL}/lib"
         export LD_RUN_PATH="${SHELLB3_URL}/lib:${LD_RUN_PATH}"
-        if [ -z "$CFLAGS" ]; then
-            export CFLAGS="-O"
-        fi
     fi
     debug "LDFLAGS: $LDFLAGS"
     debug "CFLAGS: $CFLAGS"
-    make
+    make clean
+    make all_dynamic
     if [ $? -ne 0 ]; then
         echo "Could not compile VIIRS CREFL (CFLAGS and LDFLAGS should propagate to build commands if needed)"
         # don't fail here, this is an optional component anyway. Continue with the script even though this failed
         CREFL_MSG=" (except VIIRS CREFL)"
     else
         # fail if the install fails since that is the "simple" part, if this doesn't pass then something is wrong
+        echo "CREFL compiled successfully, now installing"
         PREFIX="$DEV_DIR" make install || oops "Could not install VIIRS CREFL files into development environment"
     fi
 fi
@@ -172,5 +174,9 @@ fi
 echo "###################################################################################################"
 echo "Polar2Grid development environment was successfully installed$CREFL_MSG"
 echo "Add the following lines to your .bash_profile or .bashrc file to use it:"
-echo "    export PYTHONPATH=$DEV_DIR/python:"'$PYTHONPATH'
-echo "    export PATH=$DEV_DIR/bin:"'$PATH'
+echo "    export PYTHONPATH=${DEV_DIR}/python:"'$PYTHONPATH'
+if ${USE_SHELLB3}; then
+    echo "    export PATH=${DEV_DIR}/bin:${SHELLB3_URL}/bin:"'$PATH'
+else
+    echo "    export PATH=${DEV_DIR}/bin:"'$PATH'
+fi
