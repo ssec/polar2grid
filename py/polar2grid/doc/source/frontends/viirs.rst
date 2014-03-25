@@ -1,7 +1,7 @@
 VIIRS Frontend
 ==============
 
-The VIIRS Frontend operates on Science Data Record (SDR) files from
+The VIIRS Frontend operates on Science Data Record (SDR) and Environmental Data Record (EDR) files from
 the Suomi National Polar-orbiting Partnership's (NPP) Visible/Infrared
 Imager Radiometer Suite (VIIRS) instrument. These SDR files are hdf5
 files with filenames as below. This filenaming scheme is required to be
@@ -13,9 +13,9 @@ The corresponding navigation files name::
 
     GITCO_npp_d20120225_t1801245_e1802487_b01708_c20120226001734123892_noaa_ops.h5
 
-The VIIRS frontend supports all bands created by the instrument (listed
-below). It requires terrain corrected navigation files for the bands that
-have them to be in the same directory as the data files::
+The VIIRS frontend supports all SDR bands created by the instrument and the VIIRS Sea Surface Temperature product
+(listed below). It supports terrain corrected or non-terrain corrected navigation files and requires that these
+files be in the same directory as the data files::
 
     I01 (GITCO)
     I02 (GITCO)
@@ -39,12 +39,10 @@ have them to be in the same directory as the data files::
     M15 (GMTCO)
     M16 (GMTCO)
     DNB (GDNBO)
+    SST (GMTCO)
 
 When specifying the data files on the command line, or providing them to the
 frontend in another way, only the data (``SV*``) files should be provided.
-This frontend also expects that only one :term:`navigation set` be provided
-at a time. Although, most glue scripts will separate out navigation sets
-automatically for the user.
 
 .. _pseudo_viirs_ifog:
 

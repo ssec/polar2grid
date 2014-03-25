@@ -6,99 +6,25 @@ the |ssec|. Software bundles are gzipped tarballs with a binary installation
 of polar2grid and all of its dependencies. Software bundles distributed by
 the |ssec| are built for RHEL6 x86_64 systems.
 
-Creating Software Bundle from Github Repository
----------------------------------------------------
+Creating a Software Bundle
+--------------------------
 
-.. warning::
+To create a software bundle tarball run the software bundle creation script from a clone of the github repository::
 
-    When using the ``tar`` command make sure the version used properly
-    handles symbolic links (the fornav, ll2cr, and polar2grid symlinks).
+    cd /path/to/repos/polar2grid/
+    ./create_software_bundle.sh /path/to/swbundle
 
-Follow these steps to recreate the software bundle ``*.tar.gz`` file.
+Optionally you can provide a specific version of ShellB3 (local/remote tarball or path)::
 
-    1. Create the software bundle directory and change to it::
+    ./create_software_bundle.sh /path/to/swbundle ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3.tar.gz
 
-        mkdir polar2grid-swbundle-<version>
-        cd polar2grid-swbundle-<version>
+When this script has completed there will be a ``/path/to/swbundle`` directory and a ``/path/to/swbundle.tar.gz``
+file.
 
-    2. Create binary directory::
+.. note::
 
-        mkdir bin
-
-    3. Download polar2grid's version of ms2gt into the bundle directory, untar it, and link to the used utilities:
-
-        http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/
-
-        Soft link it::
-
-            tar -xzf ms2gt<ms2gt-version>.tar.gz
-            # if needed, rename ms2gt directory:
-            mv ms2gt<version> ms2gt
-            ln -s ../ms2gt/bin/fornav bin/fornav
-            ln -s ../ms2gt/bin/ll2cr bin/ll2cr
-
-        .. note:: If you need a new/patched version of ms2gt, see :ref:`building_ms2gt`.
-
-    4. Copy/install precompiled ShellB3 (core-cspp) package:
-
-        ftp://ftp.ssec.wisc.edu/pub/shellb3/
-
-        Extract it::
-
-            tar -xzf ShellB3-<SB3-version>.tar.gz
-
-
-    5. Download the polar2grid python package, uncompress it, and link to it:
-           
-        Prerequisite - Make the polar2gird python package::
-
-            cd /path/to/repos/checkout/root/py/
-            # make clean (optional)
-            make all_sdist
-
-            # put the eggs in the repository if ready (SSEC internal only)
-            make torepos
-
-        Install the packages directly from the tarball files::
-
-            cd /path/to/polar2grid-swbundle-<version>
-
-            # All dependencies should be installed automatically with this command:
-            ShellB3/bin/python -m easy_install -U /path/to/repos/checkout/root/py/dist/*.tar.gz
-
-    6. Copy any bundle scripts and environment scripts to software bundle directory::
-
-        cp /path/to/repos/checkout/root/swbundle/*.{sh,txt} /path/to/polar2grid-swbundle-<version>/bin/
-
-    7. Copy the grid config example directory:
-
-        cp -r /path/to/repos/checkout/root/swbundle/grid_configs /path/to/polar2grid-swbundle-version/
-
-    8. Compress software bundle into a tarball::
-
-        tar -czf polar2grid-swbundle-<version>.tar.gz polar2grid-swbundle-<version>
-
-.. _building_ms2gt:
-
-Building ms2gt
---------------
-
-The following steps say how to build ms2gt on a Linux machine. To be
-completely compatible with the Software Bundle and ShellB3, it should be
-built on a RHEL 5 "clean room" (MilliCentOS5m64 Virtual Machine).
-
-::
-
-    cd /path/to/repos/root/ms2gt/
-    # Build ms2gt
-    make
-    # Package it into a tarball
-    make tar
-    # Move (or scp) to the bundle build directory
-    mv ms2gt<ms2gt-version>.tar.gz /path/to/polar2grid-swbundle-<version>
-
-    # To delete the temporary directory that was made:
-    rm -r ms2gt<ms2gt-version>
+    The software bundle creation script uses various Makefiles throughout the source tree. If these Makefiles are not
+    up-to-date then the software bundle may not build correctly or with the correct version of software.
 
 .. _ms2gt_changes:
 
@@ -137,13 +63,11 @@ changes were made:
 
         * Makefiles did not compile on Enterprise Linux 5 (at least):
             The root Makefile and the src Makefile had incorrect usage of the
-            MAKEFLAGS variable.  They did this
-            ::
+            MAKEFLAGS variable.  The previous usage was::
 
                 $(MAKE) $(MAKEFLAGS) ...
 
-            when all you need to do is
-            ::
+            The current usage is::
 
                 $(MAKE) ...
 

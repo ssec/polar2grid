@@ -12,7 +12,7 @@ Glossary
 
     the chain
         The common set of library calls making up glue scripts. These include
-        frontend, grid determining, remapping, and backend functions. See
+        frontend, remapping, and backend functions. See
         :doc:`chain` for more detailed information.
 
     data kind

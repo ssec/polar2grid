@@ -1,5 +1,5 @@
-Frontend to Backend Scripts (Glue Scripts)
-==========================================
+Glue Scripts
+============
 
 As mentioned above, the scripts that connect frontend to backend have a lot
 of freedom and should be considered the dumping ground for any special case

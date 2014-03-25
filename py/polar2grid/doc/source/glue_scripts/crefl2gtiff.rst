@@ -14,10 +14,15 @@ This is used to process
 :doc:`corrected reflectance files <../frontends/crefl>`
 into
 :doc:`Geotiff images <../backends/gtiff>`. This glue script creates true
-color images whenever possible. The corrected reflectance bands 1,4,3 will
+color images whenever possible. The corrected reflectance bands 1, 4, 3 will
 be used as RGB bands in the created true color image. If the high resolution
 VIIRS band 8 or high resolution MODIS band 1 bands are available the true
 color bands will be sharpened before being put in the true color geotiff.
+
+.. note::
+
+    The :term:`bundle script` ``crefl2gtiff.sh`` has special functionality that will run the CREFL processing if it
+    is provided any ``SVM05`` SDR files. This is not available via python execution.
 
 .. program:: viirs2gtiff
 
