@@ -109,10 +109,10 @@ SAT_INST_TABLE = {
     (None, 'CrIS'): (SAT_NPP, INST_CRIS, 3, CRIS_NAV_UID),
     # FIXME: this should be reviewed; consider how to fold instrument attributes into back-ends
     #        then figure out best way to handle conf tables referring to instrument name
-    ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 2, IASI_NAV_UID),
-    ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 2, IASI_NAV_UID),
+    ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 1, IASI_NAV_UID),
+    ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 1, IASI_NAV_UID),
     # ('g195', 'AIRS'): (None, None, 0),  # FIXME this needs work
-    (None, 'AIRS'): (SAT_AQUA, INST_AIRS, 2, AIRS_NAV_UID),  # FIXME
+    (None, 'AIRS'): (SAT_AQUA, INST_AIRS, 1, AIRS_NAV_UID),  # FIXME
 }
 
 # pressure layers to obtain data from
