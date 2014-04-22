@@ -149,24 +149,24 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     stradles_180 = False
     if grid_origin_x is None or grid_width is None or pixel_size_x is None:
         if swath_lon_west is None:
-            swath_lon_west = lon_arr[good_mask].min()
+            swath_lon_west = float(lon_arr[good_mask].min())
             log.debug("Data west longitude: %f" % swath_lon_west)
         if swath_lon_east is None:
-            swath_lon_east = lon_arr[good_mask].max()
+            swath_lon_east = float(lon_arr[good_mask].max())
             log.debug("Data east longitude: %f" % swath_lon_east)
         if swath_lat_south is None:
-            swath_lat_south = lat_arr[good_mask].min()
+            swath_lat_south = float(lat_arr[good_mask].min())
             log.debug("Data south latitude: %f" % swath_lat_south)
         if swath_lat_north is None:
-            swath_lat_north = lat_arr[good_mask].max()
+            swath_lat_north = float(lat_arr[good_mask].max())
             log.debug("Data upper latitude: %f" % swath_lat_north)
 
         # Are we on the -180/180 boundary
         if swath_lon_west <= -179.0 and swath_lon_east >= 179.0:
             # Obviously assumes data is not smaller than 1 degree longitude wide
-            swath_lon_west = lon_arr[ good_mask & (lon_arr < 0) ].max()
+            swath_lon_west = float(lon_arr[ good_mask & (lon_arr < 0) ].max())
             log.debug("Data west longitude: %f" % swath_lon_west)
-            swath_lon_east = lon_arr[ good_mask & (lon_arr > 0) ].min()
+            swath_lon_east = float(lon_arr[ good_mask & (lon_arr > 0) ].min())
             log.debug("Data east longitude: %f" % swath_lon_east)
             stradles_180 = True
 
