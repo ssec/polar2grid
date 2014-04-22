@@ -334,7 +334,9 @@ def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
         # the navigation lat/lon data only exists for 1km resolutions
         if interpolate_data:
             log.debug("Interpolating to higher resolution: %s" % (variable_name,))
+            temp_var_data[~not_fill_mask] = numpy.nan
             temp_var_data = interpolate_geolocation(temp_var_data)
+            temp_var_data[numpy.isnan(temp_var_data)] = fill_value
 
         # append the file data to the flat file
         temp_appender.append(temp_var_data)
