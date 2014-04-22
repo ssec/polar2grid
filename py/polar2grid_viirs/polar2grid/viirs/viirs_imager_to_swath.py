@@ -43,7 +43,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds,sort_files_by_nav_uid,NAV_SET_GUIDE,ENHANCED_IR_BAND_KIND
+from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds,sort_files_by_nav_uid,NAV_SET_GUIDE,ADAPTIVE_IR_BAND_KIND
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
 from polar2grid.core.constants import *
@@ -629,7 +629,7 @@ class Frontend(roles.FrontendRole):
         scale_dnb = kwargs.pop("scale_dnb", False)
         new_dnb = kwargs.pop("new_dnb", False)
         create_fog = kwargs.pop("create_fog", False)
-        create_enhanced_ir = kwargs.pop("create_enhanced_ir", False)
+        create_adaptive_ir = kwargs.pop("create_adaptive_ir", False)
 
         meta_data = make_swaths(*args, **kwargs)
         bands = meta_data["bands"]
@@ -648,12 +648,12 @@ class Frontend(roles.FrontendRole):
         # These steps used to be part of the glue scripts
         # Due to laziness they are just called as separate functions here
         for (band_kind, band_id),band_job in bands.items():
-            if band_job["data_kind"] == DKIND_BTEMP and create_enhanced_ir:
+            if band_job["data_kind"] == DKIND_BTEMP and create_adaptive_ir:
                 try:
-                    log.info("Creating enhanced IR for %s %s" % (band_kind, band_id,))
+                    log.info("Creating adaptive IR for %s %s" % (band_kind, band_id,))
                     new_band_job = deepcopy(band_job)
-                    new_band_kind = ENHANCED_IR_BAND_KIND[(band_kind, band_id)]
-                    fbf_swath_stem = "image_%s_%s" % (band_kind, band_id)
+                    new_band_kind = ADAPTIVE_IR_BAND_KIND[(band_kind, band_id)]
+                    fbf_swath_stem = "image_%s_%s" % (new_band_kind, band_id)
                     check_stem(fbf_swath_stem)
                     W = Workspace('.')
                     fbf_swath_data = getattr(W, band_job["fbf_img"].split('.')[0]).copy()
@@ -664,11 +664,11 @@ class Frontend(roles.FrontendRole):
                     fbf_swath = fbf_swath_stem + ".real4.%d.%d" % (fbf_swath_data.shape[1], fbf_swath_data.shape[0],)
                     fbf_swath_data.tofile(fbf_swath)
                     new_band_job["fbf_swath"] = fbf_swath
-                    new_band_job["data_kind"] = DKIND_BTEMP_ENHANCED
+                    new_band_job["data_kind"] = DKIND_IR_ADAPTIVE
                     bands[(new_band_kind, new_band_job["band"])] = new_band_job
                 except StandardError:
-                    log.error("Could not create enhanced IR image for band %s %s" % (band_kind,band_id))
-                    log.debug("Enhanced IR error:", exc_info=True)
+                    log.error("Could not create adaptive IR image for band %s %s" % (band_kind, band_id))
+                    log.debug("Adaptive IR error:", exc_info=True)
 
             if band_kind == BKIND_DNB and scale_dnb:
                 # DNB Scaling

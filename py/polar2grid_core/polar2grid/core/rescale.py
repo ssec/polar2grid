@@ -206,7 +206,7 @@ def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=
     not_fill_mask = img != fill_in
     img[not_fill_mask] = img[not_fill_mask] + 273.15
     
-    return bt_scale (img, threshold, high_max, high_mult, low_max, low_mult, clip_min=None, clip_max=None, fill_in=fill_in, fill_out=fill_out)
+    return bt_scale(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=None, clip_max=None, fill_in=fill_in, fill_out=fill_out)
     
 
 # this method is intended to work on brightness temperatures in Kelvin

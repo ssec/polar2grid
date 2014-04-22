@@ -67,7 +67,7 @@ def process_data_sets(nav_set_uid, filepaths,
         forced_grid=None,
         forced_gpd=None, forced_nc=None,
         create_pseudo=True,
-        create_enhanced_ir=False,
+        create_adaptive_ir=False,
         num_procs=1,
         rescale_config=None,
         backend_config=None
@@ -99,7 +99,7 @@ def process_data_sets(nav_set_uid, filepaths,
                 nav_set_uid,
                 filepaths,
                 create_fog=create_pseudo,
-                create_enhanced_ir=create_enhanced_ir,
+                create_adaptive_ir=create_adaptive_ir,
                 cut_bad=True
                 )
     except StandardError:
@@ -306,8 +306,8 @@ through strftime. Current time if no files.""")
     # Frontend and product filtering related
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
-    parser.add_argument('--create-enh-ir', dest='create_enhanced_ir', default=False, action='store_true',
-            help="Create enhanced IR bands using adaptive scaling")
+    parser.add_argument('--create-enh-ir', dest='create_adaptive_ir', default=False, action='store_true',
+            help="Create adaptive equalized IR bands using adaptive scaling")
     
     # Remapping/Grids
     parser.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
@@ -411,7 +411,7 @@ through strftime. Current time if no files.""")
                 forced_grid=forced_grids,
                 forced_gpd=args.forced_gpd, forced_nc=args.forced_nc,
                 create_pseudo=args.create_pseudo,
-                create_enhanced_ir=args.create_enhanced_ir,
+                create_adaptive_ir=args.create_adaptive_ir,
                 multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config,
                 backend_config=args.backend_config
