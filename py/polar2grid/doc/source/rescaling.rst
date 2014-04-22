@@ -90,6 +90,18 @@ Example (0-255 from brightness temperature data):
         660 - (2 * \text{temp}) & \text{temp}\ge 242.0
      \end{cases}
 
+Brightness Temperature (Celsius)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:rescale_kind: btemp_c
+:argument 1: threshold
+:argument 2: high_max
+:argument 3: high_mult
+:argument 4: low_max
+:argument 5: low_mult
+
+Equivalent to `rescale_btemp`_, but 273.15 is added to the data before any calculations are performed.
+
 .. _rescale_fog:
 
 Fog (Temperature Difference)
@@ -146,8 +158,43 @@ Example (0-255 from 0-1 data):
 
     \text{rescaled\_data} = 255.0 * \text{data} + 0.0
 
-Unlinear
-^^^^^^^^
+.. _linear_flex:
+
+Linear Min/Max
+^^^^^^^^^^^^^^
+
+:rescale_kind: linear_flex
+:argument 1: min_out
+:argument 2: max_out
+:argument 3: min_in
+:argument 4: max_in
+:argument 5: clip
+
+.. note::
+
+    If ``min_in`` and ``max_in`` aren't specified they are calculated on the fly from the provided data. If ``clip``
+    is nonzero then the output data is clipped to the output range.
+
+.. math::
+
+    \text{m} = (max\_out - min\_out) / (max\_in - min\_in)
+
+    \text{b} = min\_out - \text{m} * min\_in
+
+    \text{rescale\_data} = \text{m} * \text{data} + \text{b}
+
+Example (10-255 from 173-300):
+
+.. math::
+
+    \text{m} = (250.0 - 10.0) / (300.0 - 173.0) = 1.90
+
+    \text{b} = 10.0 - 1.90 * 300.0 = -560.0
+
+    \text{rescale\_data} = 1.90 * \text{data} + -560.0
+
+Inverse Linear
+^^^^^^^^^^^^^^
 
 :rescale_kind: unlinear
 :argument 1: m
@@ -185,70 +232,6 @@ Example (0-255 from 0-1 data):
 .. math::
 
     \text{rescaled\_data} = \text{available\_lookup\_tables}[0][ \operatorname{round}(229.83 * \text{data} + 2.2983) ]
-
-Brightness Temperature (Celsius)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-:rescale_kind: btemp_c
-:argument 1: threshold
-:argument 2: high_max
-:argument 3: high_mult
-:argument 4: low_max
-:argument 5: low_mult
-
-.. math::
-
-    \text{temp} = \text{temp} + 273.15
-
-    \text{rescaled\_data} = 
-    \begin{cases} 
-        low\_max - (low\_mult * \text{temp}) & \text{temp} < threshold \\
-        high\_max - (high\_mult * \text{temp}) & \text{temp}\ge threshold
-     \end{cases}
-
-Example (0-255 from brightness temperature data):
-
-.. math::
-
-    \text{temp} = \text{temp} + 273.15
-
-    \text{rescaled\_data} = 
-    \begin{cases} 
-        418 - (1 * \text{temp}) & \text{temp} < 242.0 \\
-        660 - (2 * \text{temp}) & \text{temp}\ge 242.0
-     \end{cases}
-
-Linear Brightness Temperature
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-:rescale_kind: btemp_lin
-:argument 1: max_in
-:argument 2: min_in
-:argument 3: min_out
-:argument 4: max_out
-
-.. note::
-
-    ``min_out`` is optional and defaults to 1.0. ``max_out`` is optional and
-    defaults to 255.0
-
-.. math::
-
-    \text{old\_range} = max\_in - min\_in
-
-    \text{new\_range} = max\_out - min\_out
-
-    \text{rescaled\_data} = \text{temp} * -(new\_range / old\_range) + new\_range + min\_out
-
-Example (0-255 from brightness temperature data):
-
-.. math::
-
-    \text{old\_range} = 330 - 260
-
-    \text{new\_range} = 255 - 0
-
-    \text{rescaled\_data} = \text{temp} * -(new\_range / old\_range) + new\_range + 0
 
 Land Surface Temperature
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -323,4 +306,22 @@ Passive
 :rescale_kind: raw
 
 A passive function to tell the rescaler "don't do anything".
+
+Linear Brightness Temperature
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. warning::
+
+    This rescaling method is deprecated. Please use `linear_flex`_.
+
+:rescale_kind: btemp_lin
+:argument 1: max_in
+:argument 2: min_in
+:argument 3: min_out
+:argument 4: max_out
+
+.. note::
+
+    ``min_out`` is optional and defaults to 1.0. ``max_out`` is optional and
+    defaults to 255.0
 

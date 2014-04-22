@@ -582,7 +582,7 @@ class FrontendRole(object):
         :returns:
             Information describing the data provided that will
             be used by other polar2grid components. See the
-            :doc:`Developer's Guide <dev_guide/frontends>`
+            Developer's Guide in the official documentation
             for information on what the meta data dictionary
             should contain.
         :rtype: dict

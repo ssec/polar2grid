@@ -7,8 +7,19 @@ Future Plans
 ------------
 
  - More unit and integration tests
- - DNB stray light correction (until CSPP/IDPS correction)
- - Enhanced IR bands for VIIRS and MODIS (using Adaptive histogram equalization)
+ - Cleaner interfaces and better API access
+
+New in Version 1.2.0
+--------------------
+
+ - Included bug-fixed CREFL C code in software bundle
+ - Fixed polar2grid CREFL bug to work with new C code output
+ - Fixed polar2grid CREFL masking (all RGB bands share the same mask in true color images)
+ - Updated crefl2gtiff.sh to accept SVM05 or CREFL output
+ - Can now specify grid origins as degrees ("deg" suffix) or meters (default or "m" suffix)
+ - Latlong grid's pixel size is specified in degrees now instead of radians (no more radians)
+ - Added ``wgs84_fit_250`` grid for 250m resolution (at equator) output
+ - Added VIIRS adaptive histogram equalized IR products (--adaptive-ir flag in glue scripts if available)
 
 New in Version 1.1.0
 --------------------
