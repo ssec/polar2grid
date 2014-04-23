@@ -94,6 +94,8 @@ gpd_conv_funcs = {
         "GRIDWIDTH" : int,
         "GRIDHEIGHT" : int,
         "GRIDMAPUNITSPERCELL" : float,
+        "GRIDMAPUNITSPERCOLUMN" : float,
+        "GRIDMAPUNITSPERROW" : float,
         "GRIDCELLSPERMAPUNIT" : float,
         # mpp file stuff:
         "MAPPROJECTION" : clean_string,
@@ -119,7 +121,8 @@ def parse_gpd_str(gpd_file_str):
     gpd_dict = {}
     lines = gpd_file_str.split("\n")
     for line in lines:
-        if not line: continue
+        if not line or line.startswith("#"):
+            continue
 
         line_parts = line.split(":")
         if len(line_parts) != 2:
