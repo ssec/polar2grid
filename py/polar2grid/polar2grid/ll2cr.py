@@ -328,6 +328,10 @@ def main():
             help="Specify the longitude of the grid's origin (upper-left corner)")
     parser.add_option("--olat", dest="origin_lat", default=None,
             help="Specify the latitude of the grid's origin (upper-left corner)")
+    parser.add_option("--width", dest="grid_width", default=None,
+            help="Number of pixels wide")
+    parser.add_option("--height", dest="grid_height", default=None,
+            help="Number of pixels high")
     parser.add_option("--fill-in", dest="fill_in", default=-999.0,
             help="Specify the fill value that incoming latitude and" + \
                     "longitude arrays use to mark invalid data points")
@@ -343,9 +347,13 @@ def main():
     pixel_size_x = options.pixel_size_x and float(options.pixel_size_x)
     pixel_size_y = options.pixel_size_y and float(options.pixel_size_y)
     origin_lon = options.origin_lon
-    if origin_lon is not None: origin_lon = float(origin_lon)
+    if origin_lon is not None:
+        origin_lon = float(origin_lon)
     origin_lat = options.origin_lat
-    if origin_lat is not None: origin_lat = float(origin_lat)
+    if origin_lat is not None:
+        origin_lat = float(origin_lat)
+    grid_width = options.grid_width and int(options.grid_width)
+    grid_height = options.grid_height and int(options.grid_height)
 
     if len(args) != 3:
         log.error("Expected 3 arguments, got %d" % (len(args),))
@@ -354,6 +362,12 @@ def main():
     lon_fn = os.path.realpath(args[0])
     lat_fn = os.path.realpath(args[1])
     proj4_str = args[2]
+
+    origin_x = None
+    origin_y = None
+    if origin_lon is not None and origin_lat is not None:
+        p = Proj(proj4_str)
+        origin_x, origin_y = p(origin_lon, origin_lat)
 
     w_dir,lat_var = os.path.split(lat_fn)
     lat_var = lat_var.split(".")[0]
@@ -367,7 +381,8 @@ def main():
     from pprint import pprint
     ll2cr_dict = ll2cr(lon_arr, lat_arr, proj4_str,
             pixel_size_x=pixel_size_x, pixel_size_y=pixel_size_y,
-            swath_origin_lon=origin_lon, swath_origin_lat=origin_lat,
+            grid_origin_x=origin_x, grid_origin_y=origin_y,
+            grid_width=grid_width, grid_height=grid_height,
             fill_in=fill_in, fill_out=fill_out)
     pprint(ll2cr_dict)
 

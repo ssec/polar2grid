@@ -169,7 +169,8 @@ class Backend(roles.BackendRole):
             log.error("Error while filling in NC file with data")
             raise
 
-def go(img_name, template, nc_name=None):
+
+def go(img_name, template, nc_name, channel, source, satname):
     from polar2grid.core import UTC
     UTC = UTC()
 
@@ -198,13 +199,14 @@ def go(img_name, template, nc_name=None):
         return False
 
     # Create the NC file
-    fill(nc_path, data, template, datetime.utcnow().replace(tzinfo=UTC))
+    create_netcdf(nc_path, data, template, datetime.utcnow().replace(tzinfo=UTC), channel, source, satname)
     return True
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.WARNING)
-    if len(sys.argv) != 4 and len(sys.argv) != 3:
-        log.error("Need at least 2 arguments: <image> <template> [<output>]")
+    if len(sys.argv) == 6:
+        log.error("Need 6 arguments: <image> <template> <output> <channel> <source> <satname>")
+        log.error("Got %d", len(sys.argv) - 1)
         sys.exit(-1)
 
     go(*sys.argv[1:])
