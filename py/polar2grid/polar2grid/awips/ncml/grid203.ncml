@@ -5,10 +5,10 @@
   <attribute name="depictorName" value="grid203" />
   <attribute name="projName" value="STEREOGRAPHIC" />
   <attribute name="projIndex" type="int" value="1" />
-  <attribute name="lat00" type="float" value="64.61976" />
-  <attribute name="lon00" type="float" value="134.0415" />
-  <attribute name="latNxNy" type="float" value="34.3437" />
-  <attribute name="lonNxNy" type="float" value="-125.6151" />
+  <attribute name="lat00" type="float" value="19.132" />
+  <attribute name="lon00" type="float" value="174.162994" />
+  <attribute name="latNxNy" type="float" value="57.633995" />
+  <attribute name="lonNxNy" type="float" value="-53.660004" />
   <attribute name="centralLat" type="float" value="90." />
   <attribute name="centralLon" type="float" value="-150." />
   <attribute name="latDxDy" type="float" value="60." />
@@ -16,10 +16,10 @@
   <attribute name="dyKm" type="float" value="1.001128" />
   <attribute name="dxKm" type="float" value="1.001128" />
   <attribute name="rotation" type="float" value="0." />
-  <attribute name="xMin" type="float" value="-0.2556496" />
-  <attribute name="xMax" type="float" value="0.01474848" />
-  <attribute name="yMin" type="float" value="-0.8768771" />
-  <attribute name="yMax" type="float" value="-0.5622397" />
+  <attribute name="xMin" type="float" value="-0.416603" />
+  <attribute name="xMax" type="float" value="0.288430" />
+  <attribute name="yMin" type="float" value="-0.576849" />
+  <attribute name="yMax" type="float" value="0.032047" />
   <variable name="validTime" type="double">
     <attribute name="units" value="seconds since 1970-1-1 00:00:00.00 0:00" />
   </variable>
