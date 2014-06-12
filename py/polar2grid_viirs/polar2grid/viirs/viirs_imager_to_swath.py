@@ -627,7 +627,7 @@ class Frontend(roles.FrontendRole):
 
     def make_swaths(self, *args, **kwargs):
         scale_dnb = kwargs.pop("scale_dnb", False)
-        new_dnb = kwargs.pop("new_dnb", False)
+        adaptive_dnb = kwargs.pop("adaptive_dnb", False)
         create_fog = kwargs.pop("create_fog", False)
         create_adaptive_ir = kwargs.pop("create_adaptive_ir", False)
 
@@ -677,9 +677,9 @@ class Frontend(roles.FrontendRole):
                     del bands[(band_kind, band_id)]
                     continue
             
-                if new_dnb :
+                if adaptive_dnb:
                     log.info("Prescaling DNB data using adaptively sized tiles...")
-                    check_stem("prescale_new_dnb")
+                    check_stem("prescale_adaptive_dnb")
                     new_band_job = deepcopy(band_job)
                     try:
                         fbf_swath = run_dnb_scale(
@@ -688,14 +688,14 @@ class Frontend(roles.FrontendRole):
                                 moonIllumFraction=meta_data["moon_illum"],
                                 lunar_angle_filepath=meta_data['fbf_moon'],
                                 lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
-                                new_dnb=True,
+                                adaptive_dnb=True,
                                 )
                         new_band_job["fbf_swath"] = fbf_swath
                         
-                        # if we got this far with no error add the new dnb band to our list
-                        bands[(band_kind, BID_NEW)] = new_band_job 
+                        # if we got this far with no error add the adaptive dnb band to our list
+                        bands[(band_kind, BID_ADAPTIVE)] = new_band_job
                     except StandardError:
-                        log.error("Unexpected error new DNB, will not calculate new DNB scaling...")
+                        log.error("Unexpected error adaptive DNB, will not calculate new DNB scaling...")
                         log.debug("DNB scaling error:", exc_info=1)
                 
                 log.info("Prescaling DNB data...")
@@ -707,7 +707,7 @@ class Frontend(roles.FrontendRole):
                             moonIllumFraction=meta_data["moon_illum"],
                             lunar_angle_filepath=meta_data['fbf_moon'],
                             lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
-                            new_dnb=False,
+                            adaptive_dnb=False,
                             )
                     band_job["fbf_swath"] = fbf_swath
                 except StandardError:

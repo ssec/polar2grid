@@ -157,7 +157,7 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE,
               moonIllumFraction=None,
               highAngleCutoff=None, lowAngleCutoff=None,
               waterMask=None,
-              new_dnb=False):
+              adaptive_dnb=False):
     """
     This scaling method uses histogram equalization to flatten the image
     levels across the day and night regions.
@@ -191,7 +191,7 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE,
     log.debug("Moon Illumination, after  angle weighting: " + str(weightedMoonIllumFract))
     
     #log.debug("Running 'dnb_scale'...")
-    if new_dnb:
+    if adaptive_dnb:
         log.debug("Running NEW DNB scaling...")
     else:
         log.debug("Running OLD DNB scaling...")
@@ -203,7 +203,7 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE,
     if day_mask is not None and (numpy.sum(day_mask)   > 0) :
         log.debug("  scaling DNB in day mask")
         temp_image = img.copy()
-        if new_dnb and has_multi_times:
+        if adaptive_dnb and has_multi_times:
             local_histogram_equalization(temp_image, day_mask, valid_data_mask=good_mask, local_radius_px=400)
         else:
             histogram_equalization(temp_image, day_mask)
@@ -213,7 +213,7 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE,
         log.debug("  scaling DNB in twilight mask")
         for mask in mixed_mask:
             temp_image = img.copy()
-            if new_dnb:
+            if adaptive_dnb:
                 local_histogram_equalization(temp_image, mask, valid_data_mask=good_mask, local_radius_px=100)
             else:
                 histogram_equalization(temp_image, mask)
@@ -222,51 +222,53 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE,
     if night_mask is not None and (numpy.sum(night_mask) > 0) :
         log.debug("  scaling DNB in night mask")
         temp_image = img.copy()
-        if new_dnb:
-            
+        if adaptive_dnb:
+            # Always do basic histogram equalization at night time
+            histogram_equalization(temp_image, night_mask)
+
             # TODO, this should probably also be affected by whether or not there is a day mask
-            if weightedMoonIllumFract > 0.90 :
-                if has_multi_times :
-                    local_histogram_equalization(temp_image, night_mask, valid_data_mask=good_mask, local_radius_px=100)
-                else :
-                    #local_histogram_equalization(temp_image, night_mask, valid_data_mask=good_mask, local_radius_px=200)
-                    histogram_equalization(temp_image, night_mask)
-            else :
-                # FUTURE, for now we're not using the water mask
-                #night_water = night_mask & waterMask
-                #tmp_night_mask = night_mask & ~waterMask
-                tmp_night_mask = night_mask
-                if weightedMoonIllumFract > 0.25 :
-                    local_histogram_equalization(temp_image, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=200)
-                elif weightedMoonIllumFract > 0.10 :
-                    local_histogram_equalization(temp_image, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=100)
-                else :
-                    local_histogram_equalization(temp_image, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=50)
+            # if weightedMoonIllumFract > 0.90 :
+            #     if has_multi_times :
+            #         local_histogram_equalization(temp_image, night_mask, valid_data_mask=good_mask, local_radius_px=100)
+            #     else :
+            #         #local_histogram_equalization(temp_image, night_mask, valid_data_mask=good_mask, local_radius_px=200)
+            #         histogram_equalization(temp_image, night_mask)
+            # else :
+            #     # FUTURE, for now we're not using the water mask
+            #     #night_water = night_mask & waterMask
+            #     #tmp_night_mask = night_mask & ~waterMask
+            #     tmp_night_mask = night_mask
+            #     if weightedMoonIllumFract > 0.25 :
+            #         local_histogram_equalization(temp_image, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=200)
+            #     elif weightedMoonIllumFract > 0.10 :
+            #         local_histogram_equalization(temp_image, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=100)
+            #     else :
+            #         local_histogram_equalization(temp_image, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=50)
             
         else:
             histogram_equalization(temp_image, night_mask)
         img_result[night_mask] = temp_image[night_mask]
     
-    if night_water is not None and (numpy.any(night_water)) :
-        log.debug ("  scaling DNB in night water mask")
-        temp_image = img.copy()
-        
-        local_histogram_equalization(temp_image, night_water, valid_data_mask=good_mask, local_radius_px=500)
-        #histogram_equalization(temp_image, night_water, valid_data_mask=night_mask)
-        
-        img_result[night_water] = temp_image[night_water]
+    # if night_water is not None and (numpy.any(night_water)) :
+    #     log.debug ("  scaling DNB in night water mask")
+    #     temp_image = img.copy()
+    #
+    #     local_histogram_equalization(temp_image, night_water, valid_data_mask=good_mask, local_radius_px=500)
+    #     #histogram_equalization(temp_image, night_water, valid_data_mask=night_mask)
+    #
+    #     img_result[night_water] = temp_image[night_water]
     
     # set any data that's not in the good areas to fill
     img_result[~good_mask] = fillValue
     
     return img_result
 
-# XXX: Remove new_dnb when a method has been decided on
+# XXX: Remove adaptive_dnb when a method has been decided on
 # XXX: It is just temporary
 def run_dnb_scale(img_filepath, mode_filepath,
         lunar_angle_filepath=None, moonIllumFraction=None,
         lat_filepath=None, lon_filepath=None,
-        new_dnb=False, fill_value=DEFAULT_FILL_VALUE):
+        adaptive_dnb=False, fill_value=DEFAULT_FILL_VALUE):
     """A wrapper function for calling the prescaling function for dnb.
     This function will read the binary image data from ``img_filepath``
     as well as any other data that may be required to prescale the data
@@ -300,7 +302,7 @@ def run_dnb_scale(img_filepath, mode_filepath,
     
     # set up the kwargs with the parameters we already have
     scale_kwargs = {
-            'new_dnb':           new_dnb, # XXX
+            'adaptive_dnb':           adaptive_dnb, # XXX
             'moonIllumFraction': moonIllumFraction,
             "fillValue":         fill_value,
             }
@@ -361,7 +363,7 @@ def run_dnb_scale(img_filepath, mode_filepath,
                 rescaled_data[ rescaled_data != fill_value ].max()
                 ))
         rows,cols = rescaled_data.shape
-        fbf_swath_var = "prescale_dnb" if not new_dnb else "prescale_new_dnb"
+        fbf_swath_var = "prescale_dnb" if not adaptive_dnb else "prescale_adaptive_dnb"
         fbf_swath = "./%s.real4.%d.%d" % (fbf_swath_var, cols, rows)
         rescaled_data.tofile(fbf_swath)
     except StandardError:

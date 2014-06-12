@@ -71,7 +71,7 @@ def process_data_sets(nav_set_uid, filepaths,
         num_procs=1,
         rescale_config=None,
         backend_config=None,
-        new_dnb=False # XXX
+        adaptive_dnb=False
         ):
     """Process all the files provided from start to finish,
     from filename to AWIPS NC file.
@@ -97,7 +97,7 @@ def process_data_sets(nav_set_uid, filepaths,
                 nav_set_uid,
                 filepaths,
                 scale_dnb=scale_dnb,
-                new_dnb=new_dnb,
+                adaptive_dnb=adaptive_dnb,
                 create_fog=create_pseudo,
                 create_adaptive_ir=create_adaptive_ir,
                 cut_bad=True
@@ -305,13 +305,13 @@ through strftime. Current time if no files.""")
     # Frontend and product filtering related
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
-    parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
+    parser.add_argument('--adaptive-dnb', dest='adaptive_dnb', default=False, action='store_true',
             help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
             "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
     parser.add_argument('--adaptive-ir', dest='create_adaptive_ir', default=False, action='store_true',
             help="Create adaptively scaled IR bands")
     parser.add_argument('--no-dnb-scale', dest='scale_dnb', default=True, action='store_false',
-            help="Turn off all DNB scaling (overrides --new-dnb)")
+            help="Turn off all DNB scaling (overrides --adaptive-dnb)")
 
     # Remapping/Grids
     parser.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
@@ -417,7 +417,7 @@ through strftime. Current time if no files.""")
                 multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config,
                 backend_config=args.backend_config,
-                new_dnb=args.new_dnb # XXX
+                adaptive_dnb=args.adaptive_dnb
                 )
     log.debug("Processing returned status code: %d" % stat)
 

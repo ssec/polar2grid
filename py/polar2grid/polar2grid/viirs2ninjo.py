@@ -67,7 +67,7 @@ def process_data_sets(nav_set_uid, filepaths,
         num_procs=1,
         rescale_config=None,
         output_pattern=None,
-        new_dnb=False # XXX
+        adaptive_dnb=False
         ):
     """Process all the files provided from start to finish,
     from filename to NinJo tiff file.
@@ -93,7 +93,7 @@ def process_data_sets(nav_set_uid, filepaths,
                 nav_set_uid,
                 filepaths,
                 scale_dnb=True,
-                new_dnb=new_dnb,
+                adaptive_dnb=adaptive_dnb,
                 cut_bad=True
                 )
 
@@ -295,7 +295,7 @@ through strftime. Current time if no files.""")
             help="Processing is sequential instead of one process per kind of band")
     parser.add_argument('--num-procs', dest="num_procs", default=1,
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
-    parser.add_argument('--new-dnb', dest='new_dnb', default=False, action='store_true',
+    parser.add_argument('--adaptive-dnb', dest='adaptive_dnb', default=False, action='store_true',
             help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
             "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
 
@@ -386,7 +386,7 @@ through strftime. Current time if no files.""")
                 multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config,
                 output_pattern=args.output_pattern,
-                new_dnb=args.new_dnb # XXX
+                adaptive_dnb=args.adaptive_dnb
                 )
     log.debug("Processing returned status code: %d" % stat)
 

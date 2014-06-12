@@ -118,7 +118,7 @@ BID_26 = "26"
 BID_27 = "27"
 BID_31 = "31"
 BID_FOG = "fog"
-BID_NEW = "new"
+BID_ADAPTIVE = "adaptive"
 
 # Data kinds
 DKIND_LATITUDE    = "latitude"
