@@ -122,7 +122,10 @@ NAV_SET_USES = {
 GEO_GUIDE = {
     MBAND_NAV_UID: ('GMODO','GMTCO'),
     IBAND_NAV_UID: ('GIMGO','GITCO'),
-    }
+    GEO_NAV_UID: ('', ''),
+    GEO_500M_NAV_UID: ('', ''),
+    GEO_250M_NAV_UID: ('', ''),
+}
 
 # Regular expressions for files we understand and some information that we know based on which one matches
 FILE_REGEX = {
