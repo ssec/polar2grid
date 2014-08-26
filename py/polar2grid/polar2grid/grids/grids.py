@@ -222,29 +222,6 @@ def _parse_meter_degree_param(param):
     return float(param), convert_to_meters
 
 
-def _calc_a_from_pj_ellps(proj4_dict, ellps_name):
-    return pj_ellps[ellps_name].get("a", None)
-
-
-def _calc_b_from_pj_ellps(proj4_dict, ellps_name):
-    a = _calc_a_from_pj_ellps(ellps_name) if "a" not in proj4_dict else proj4_dict["a"]
-    b = pj_ellps[ellps_name].get("b", None)
-    if b is None:
-        rf = pj_ellps[ellps_name]["rf"]
-        f = 1.0 / rf
-        b = a * (1.0 - f)
-    return b
-
-
-def _calc_es_from_pj_ellps(proj4_dict, ellps_name):
-    a = _calc_a_from_pj_ellps(ellps_name) if "a" not in proj4_dict else proj4_dict["a"]
-    b = _calc_b_from_pj_ellps(ellps_name) if "b" not in proj4_dict else proj4_dict["b"]
-    if a is None or b is None:
-        return None
-    es = 1.0 - (b * b) / (a * a)
-    return es
-
-
 def get_proj4_info(proj4_str):
     parts = [x.replace("+", "") for x in proj4_str.split(" ")]
     if "no_defs" in parts:
@@ -252,26 +229,39 @@ def get_proj4_info(proj4_str):
 
     proj4_dict = dict(p.split("=") for p in parts)
     # Convert numeric parameters to floats
-    for k in ["lat_0", "lat_1", "lat_2", "lat_ts", "lon_0", "lonc", "a", "b"]:
+    for k in ["lat_0", "lat_1", "lat_2", "lat_ts", "lat_b", "lat_t", "lon_0", "lon_1", "lon_2", "lonc", "a", "b", "es"]:
         if k in proj4_dict:
             proj4_dict[k] = float(proj4_dict[k])
 
-    ellps_name = None
-    if "ellps" in proj4_dict or "datum" in proj4_dict:
-        ellps_name = proj4_dict.get("ellps", proj4_dict.get("datum", None))
+    ellps_name = proj4_dict.get("ellps", proj4_dict.get("datum", None))
+    a = proj4_dict.get("a", None)
+    b = proj4_dict.get("b", None)
+    es = proj4_dict.get("es", None)
+    rf = None
 
-    if "a" not in proj4_dict:
-        proj4_dict["a"] = _calc_a_from_pj_ellps(proj4_dict, ellps_name)
-        if proj4_dict["a"] is None:
-            log.warning("Can not calculate equatorial radius from PROJ.4 String")
-    if "b" not in proj4_dict:
-        proj4_dict["b"] = _calc_b_from_pj_ellps(proj4_dict, ellps_name)
-        if proj4_dict["b"] is None:
-            log.warning("Can not calculate polar radius from PROJ.4 String")
-    if "es" not in proj4_dict:
-        proj4_dict["es"] = _calc_es_from_pj_ellps(proj4_dict, ellps_name)
-        if proj4_dict["es"] is None:
-            log.warning("Can not calculate eccentricity squared from PROJ.4 String")
+    if ellps_name is not None:
+        rf = pj_ellps[ellps_name].get("rf", None)
+        a = a or pj_ellps[ellps_name].get("a", None)
+        b = b or pj_ellps[ellps_name].get("b", None)
+
+    if a is None and b is not None and es is not None:
+        a = b / numpy.sqrt(1.0 - es)
+    if b is None and a is not None:
+        if es is not None:
+            b = a * numpy.sqrt(1.0 - es)
+        elif rf is not None:
+            f = 1.0 / rf
+            b = a * (1.0 - f)
+    if es is None and a is not None and b is not None:
+        es = 1.0 - (b * b) / (a * a)
+
+    if a is None or b is None or es is None:
+        log.error("Could not calculate radii a and b and the eccentricity squared from the PROJ.4 definition")
+        raise ValueError("Could not calculate radii a and b and the eccentricity squared from the PROJ.4 definition")
+
+    proj4_dict["a"] = a
+    proj4_dict["b"] = b
+    proj4_dict["es"] = es
 
     return proj4_dict
 

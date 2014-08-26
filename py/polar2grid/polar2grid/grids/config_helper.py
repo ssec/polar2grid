@@ -117,8 +117,8 @@ meters for default projections.""")
 
     proj_str = determine_projection(clon, clat, args.proj_str)
     p = Proj(proj_str)
-    origin_x = grid_width / 2.0 * pixel_size_x * -1
-    origin_y = grid_height / 2.0 * pixel_size_y * -1
+    origin_x = p(clon, clat)[0] + (grid_width / 2.0 * pixel_size_x * -1)
+    origin_y = p(clon, clat)[1] + (grid_height / 2.0 * pixel_size_y * -1)
     if p.is_latlong():
         # Origin is in degrees so we need to add a unit string to it
         origin_x = "%0.3fdeg" % origin_x
