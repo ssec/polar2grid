@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Polar2grid frontend for corrected reflectance (crefl) products created
-for VIIRS and MODIS data.
+"""polar2grid is a python package that provides utilities and scripts to
+convert polar orbiting satellite data and remap it into a known grid.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -12,5 +12,4 @@ for VIIRS and MODIS data.
 :revision: $Id$
 """
 __docformat__ = "restructuredtext en"
-
-from .crefl2swath import Frontend
+__import__('pkg_resources').declare_namespace(__name__)
