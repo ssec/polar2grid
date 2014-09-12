@@ -51,37 +51,61 @@ from polar2grid.core import roles
 
 LOG = logging.getLogger(__name__)
 
-### PRODUCT DEFINITIONS ###
-PRODUCTS = []
-
-
-class ProductDefinition(object):
-    def __init__(self, name, dependencies=None):
-        self.name = name
-        self.dependencies = dependencies or []
-
-
-def init_product_list():
-    """Initialize the list of product definitions.
-
-    This function is not necessarily needed, but helps with future changes where the available products are dynamic
-    based on the system or location (just trying something out).
-    """
-    pass
-
-### I/O Operations ###
-
-# Constant keys mapping "what I want" to "what is actually in the file"
+# File types (only one for now)
+FT_IMG = "MIRS_IMG"
+# File variables
 RR_VAR = "rr"
-BT_VAR = "bt"
-BT_VAR_88 = "bt_88"
+BT_88_VAR = "bt_88"
 FREQ_VAR = "freq"
 LAT_VAR = "latitude"
 LON_VAR = "longitude"
+BT_VARS = [BT_88_VAR]
 
-BT_VARS = [
-    BT_VAR_88,
-]
+### PRODUCT DEFINITIONS ###
+# FIXME: Move ProductDefiniton to polar2grid.core
+# FUTURE: Register products with a central database (not really useful right now)
+class ProductDefinition(object):
+    def __init__(self, name, data_kind, dependencies=None, description=None, units=None):
+        self.name = name
+        self.data_kind = data_kind
+        self.dependencies = dependencies or []
+        self.description = description or ""
+        self.units = units
+
+
+class MIRSProductDefiniton(ProductDefinition):
+    def __init__(self, name, data_kind, file_type, file_key, dependencies=None, description=None, units=None):
+        self.file_type = file_type
+        self.file_key = file_key
+        super(MIRSProductDefiniton, self).__init__(name, data_kind,
+                                                   dependencies=dependencies, description=description, units=units)
+
+
+class ProductList(dict):
+    def __init__(self, base_class=ProductDefinition):
+        self.base_class = base_class
+        super(ProductList, self).__init__()
+
+    def add_product(self, *args, **kwargs):
+        pd = self.base_class(*args, **kwargs)
+        self[pd.name] = pd
+
+PRODUCT_RAIN_RATE = "rain_rate"
+PRODUCT_BT_88 = "btemp_88"
+PRODUCT_LATITUDE = "latitude"
+PRODUCT_LONGITUDE = "longitude"
+
+PRODUCTS = ProductList(base_class=MIRSProductDefiniton)
+PRODUCTS.add_product(PRODUCT_RAIN_RATE, "rain_rate", FT_IMG, RR_VAR,
+                     description="Rain Rate", units="mm/hr")
+PRODUCTS.add_product(PRODUCT_BT_88, "btemp", FT_IMG, BT_88_VAR,
+                     description="Channel Brightness Temperature at 88.2GHz", units="K")
+PRODUCTS.add_product(PRODUCT_LATITUDE, "latitude", FT_IMG, LAT_VAR,
+                     description="Latitude", units="degrees")
+PRODUCTS.add_product(PRODUCT_LONGITUDE, "longitude", FT_IMG, LON_VAR,
+                     description="Longitude", units="degrees")
+
+### I/O Operations ###
 
 
 class MIRSFileReader(object):
@@ -89,39 +113,48 @@ class MIRSFileReader(object):
 
     If there are alternate formats/structures for MIRS files then new classes should be made.
     """
+    FILE_TYPE = FT_IMG
+
     GLOBAL_FILL_ATTR_NAME = "missing_value"
     # Constant -> (var_name, scale_attr_name, fill_attr_name, frequency)
     FILE_STRUCTURE = {
         RR_VAR: ("RR", "scale", None, None),
-        BT_VAR_88: ("BT", "scale", None, 88.2),
+        BT_88_VAR: ("BT", "scale", None, 88.2),
         FREQ_VAR: ("Freq", None, None, None),
         LAT_VAR: ("Latitude", None, None, None),
         LON_VAR: ("Longitude", None, None, None),
     }
 
-    def __init__(self, filepath, validate=True):
+    def __init__(self, filepath):
         self.filename = os.path.basename(filepath)
         self.filepath = os.path.realpath(filepath)
         self.nc_obj = Dataset(self.filepath, "r")
-        if validate:
-            self._validate()
+        if not self.handles_file(self.nc_obj):
+            LOG.error("Unknown file format for file %s" % (self.filename,))
+            raise ValueError("Unknown file format for file %s" % (self.filename,))
 
         self.satellite = self.nc_obj.satellite_name
         self.instrument = self.nc_obj.instrument_name
         self.start_time = datetime.strptime(self.nc_obj.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
         self.end_time = datetime.strptime(self.nc_obj.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
 
-    def _validate(self):
+    @classmethod
+    def handles_file(cls, fn_or_nc_obj):
         """Validate that the file this object represents is something that we actually know how to read.
         """
         try:
-            assert(self.nc_obj.project == "Microwave Integrated Retrieval System")
-            assert(self.nc_obj.title == "MIRS IMG")
-            assert(self.nc_obj.data_model == "NETCDF4")
+            if isinstance(fn_or_nc_obj, str):
+                nc_obj = Dataset(fn_or_nc_obj, "r")
+            else:
+                nc_obj = fn_or_nc_obj
+
+            assert(nc_obj.project == "Microwave Integrated Retrieval System")
+            assert(nc_obj.title == "MIRS IMG")
+            assert(nc_obj.data_model == "NETCDF4")
+            return True
         except AssertionError:
-            LOG.debug("Debug Exception Information: ", exc_info=True)
-            LOG.error("Unknown file format for file %s" % (self.filename,))
-            raise ValueError("Unknown file format for file %s" % (self.filename,))
+            LOG.debug("File Validation Exception Information: ", exc_info=True)
+            return False
 
     def __getitem__(self, item):
         if item in self.FILE_STRUCTURE:
@@ -209,21 +242,167 @@ class MIRSFileReader(object):
     def __ne__(self, other):
         return self._compare(other, lambda s, o: s != o)
 
+
+class MIRSMultiReader(object):
+    SINGLE_FILE_CLASS = MIRSFileReader
+    FILE_TYPE = SINGLE_FILE_CLASS.FILE_TYPE
+
+    def __init__(self, filenames=None):
+        self.file_readers = []
+        self._files_finalized = False
+        if filenames:
+            self.add_files(filenames)
+            self.finalize_files()
+
+    def __len__(self):
+        return len(self.file_readers)
+
+    @classmethod
+    def handles_file(cls, fn_or_nc_obj):
+        return cls.SINGLE_FILE_CLASS.handles_file(fn_or_nc_obj)
+
+    def add_file(self, fn):
+        if self._files_finalized:
+            LOG.error("File reader has been finalized and no more files can be added")
+            raise RuntimeError("File reader has been finalized and no more files can be added")
+        self.file_readers.append(self.SINGLE_FILE_CLASS(fn))
+
+    def add_files(self, filenames):
+        for fn in filenames:
+            self.add_file(fn)
+
+    def finalize_files(self):
+        self.file_readers = sorted(self.file_readers)
+        self._files_finalized = True
+
+    def write_var_to_flat_binary(self, item, stem):
+        """Write the data from multiple files to one flat binary file.
+
+        :param var: Variable name to retrieve
+        :param stem: Filename stem if the file should follow traditional FBF naming conventions
+        """
+        pass
+
+    def get_satellite(self):
+        pass
+
+    def get_instrument(self):
+        pass
+
+
+FILE_CLASSES = {
+    FT_IMG: MIRSMultiReader,
+}
+
+
+def get_file_type(filepath):
+    LOG.debug("Checking file type for %s", filepath)
+    if not filepath.endswith(".nc"):
+        return None
+
+    nc_obj = Dataset(filepath, "r")
+    for file_kind, file_class in FILE_CLASSES.items():
+        if file_class.handles_file(nc_obj):
+            return file_kind
+
+    LOG.info("File doesn't match any known file types: %s", filepath)
+    return None
+
 ### Frontend Objects###
 
 
-class NewStyleFrontend(object):
+class Frontend(object):
     """Polar2Grid Frontend object for handling MIRS files.
 
     FUTURE: Currently uses an undefined interface that is still in development
     """
+    def __init__(self, search_paths=None):
+        search_paths = search_paths or ['.']
+        self.recognized_files = {}
+        for file_kind, filepath in self.find_all_files(search_paths):
+            if file_kind not in self.recognized_files:
+                self.recognized_files[file_kind] = []
+            self.recognized_files[file_kind].append(filepath)
+
+    def find_all_files(self, search_paths):
+        for p in search_paths:
+            if os.path.isdir(p):
+                LOG.debug("Searching '%s' for useful files", p)
+                for fn in os.listdir(p):
+                    fp = os.path.join(p, fn)
+                    file_type = get_file_type(fp)
+                    if file_type is not None:
+                        LOG.debug("Recognize file %s as file type %s", fp, file_type)
+                        yield (file_type, os.path.realpath(fp))
+            elif os.path.isfile(p):
+                file_type = get_file_type(p)
+                if file_type is not None:
+                    LOG.debug("Recognize file %s as file type %s", p, file_type)
+                    yield (file_type, os.path.realpath(p))
+                else:
+                    LOG.error("File is not a valid MIRS file: %s", p)
+            else:
+                LOG.error("File or directory does not exist: %s", p)
+
+    @property
+    def available_product_names(self):
+        # Right now there is only one type of file that has all products in it, so all products are available
+        # in the future this might have to change
+        return [k for k, v in PRODUCTS.items() if not v.dependencies]
+
+    @property
+    def all_product_names(self):
+        return PRODUCTS.keys()
+
+    def _create_raw_swath_object(self, product_name, file_readers, products_created):
+        product_def = PRODUCTS[product_name]
+        file_reader = file_readers[product_def.file_type]
+        fbf_name, fbf_shape = file_reader.write_var_to_flat_binary(product_def.file_key)
+        # TODO
+        # return one_swath
+
     def create_scenes(self, products=None):
-        pass
+        if products is None:
+            products = self.available_product_names
+        products = list(set(products))
 
+        # FIXME: Use the actual class created in the viirs_frontend branch
+        meta_data = {}
 
-# FUTURE: Can we make the new style frontend and all of its glue scripts use the new object, but slowly update the other code?
-class Frontend(roles.FrontendRole):
-    pass
+        # Figure out any dependencies
+        raw_products = []
+        for product_name in products:
+            if PRODUCTS[product_name].dependencies:
+                raise NotImplementedError("Don't know how to handle products dependent on other products")
+            raw_products.append(product_name)
+
+        # Load files
+        file_readers = {}
+        for file_type, filepaths in self.recognized_files.items():
+            file_reader_class = FILE_CLASSES[file_type]
+            file_reader = file_reader_class(filenames=filepaths)
+            if len(file_reader):
+                file_readers[file_reader.FILE_TYPE] = file_reader
+
+        # FIXME:
+        return file_readers
+
+        # Load geographic products - every product needs a geo-product
+        products_created = {}
+        for geo_product in [PRODUCT_LATITUDE, PRODUCT_LONGITUDE]:
+            one_swath = self._create_raw_swath_object(geo_product, file_readers, products_created)
+            products_created[geo_product] = one_swath
+            if geo_product in raw_products:
+                meta_data[geo_product] = one_swath
+
+        # Load raw products
+        for raw_product in raw_products:
+            if raw_product not in products_created:
+                one_swath = self._create_raw_swath_object(raw_product, file_readers, products_created)
+                products_created[raw_product] = one_swath
+                meta_data[raw_product] = one_swath
+
+        return meta_data
 
 
 def add_base_args(parser):
@@ -243,7 +422,7 @@ def main():
     parser = add_frontend_args(parser)
     args = parser.parse_args()
 
-    f = NewStyleFrontend(args.filenames)
+    f = Frontend(args.filenames)
     f.create_scenes(products=args.product_names)
 
 if __name__ == "__main__":
