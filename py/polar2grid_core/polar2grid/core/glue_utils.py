@@ -1,41 +1,41 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Functions used by multiple glue scripts.
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    September 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
+"""Helper functions and classes used by multiple polar2grid scripts.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
+:date:         Sept 2014
 :license:      GNU GPLv3
 
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
 
 """
 __docformat__ = "restructuredtext en"
@@ -43,9 +43,11 @@ __docformat__ = "restructuredtext en"
 import os
 import sys
 import logging
+import argparse
 from glob import glob
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
+
 
 def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log"):
     """Setup the logger to the console to the logging level defined in the
@@ -68,18 +70,20 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log"):
     console.setLevel(console_level)
     root_logger.addHandler(console)
 
-    # Log file messages have a lot more information
-    file_handler = logging.FileHandler(log_filename)
-    file_format = "[%(asctime)s] : PID %(process)6d : %(levelname)-8s : %(name)s : %(funcName)s : %(message)s"
-    file_handler.setFormatter(logging.Formatter(file_format))
-    file_handler.setLevel(logging.DEBUG)
-    root_logger.addHandler(file_handler)
-
     # Make a traceback logger specifically for adding tracebacks to log file
     traceback_log = logging.getLogger('traceback')
     traceback_log.propagate = False
     traceback_log.setLevel(logging.ERROR)
-    traceback_log.addHandler(file_handler)
+
+    # Log file messages have a lot more information
+    if log_filename:
+        file_handler = logging.FileHandler(log_filename)
+        file_format = "[%(asctime)s] : PID %(process)6d : %(levelname)-8s : %(name)s : %(funcName)s : %(message)s"
+        file_handler.setFormatter(logging.Formatter(file_format))
+        file_handler.setLevel(logging.DEBUG)
+        root_logger.addHandler(file_handler)
+        traceback_log.addHandler(file_handler)
+
 
 def create_exc_handler(glue_name):
     def exc_handler(exc_type, exc_value, traceback):
@@ -91,8 +95,9 @@ def create_exc_handler(glue_name):
         exception never gets raised in the parent.
         """
         logging.getLogger(glue_name).error(exc_value)
-        logging.getLogger('traceback').error(exc_value, exc_info=(exc_type,exc_value,traceback))
+        logging.getLogger('traceback').error(exc_value, exc_info=(exc_type, exc_value, traceback))
     return exc_handler
+
 
 def _force_symlink(dst, linkname):
     """Create a symbolic link named `linkname` pointing to `dst`.  If the
@@ -105,10 +110,11 @@ def _force_symlink(dst, linkname):
             Filename of the symbolic link being created or overwritten.
     """
     if os.path.exists(linkname):
-        log.info("Removing old file %s" % linkname)
+        LOG.info("Removing old file %s" % linkname)
         os.remove(linkname)
-    log.debug("Symlinking %s -> %s" % (linkname,dst))
+    LOG.debug("Symlinking %s -> %s" % (linkname, dst))
     os.symlink(dst, linkname)
+
 
 def _safe_remove(fn):
     """Remove the file `fn` if you can, if not log an error message,
@@ -119,10 +125,10 @@ def _safe_remove(fn):
             Filename of the file to be removed.
     """
     try:
-        log.info("Removing %s" % fn)
+        LOG.info("Removing %s" % fn)
         os.remove(fn)
     except StandardError:
-        log.error("Could not remove %s" % fn)
+        LOG.error("Could not remove %s" % fn)
 
 
 def remove_file_patterns(*args):
@@ -135,3 +141,39 @@ def remove_file_patterns(*args):
         for pat in pat_list:
             for f in glob(pat):
                 _safe_remove(f)
+
+
+class ArgumentParser(argparse.ArgumentParser):
+    def parse_args(self, *args, **kwargs):
+        subgroup_titles = kwargs.pop("subgroup_titles", [])
+        args = super(ArgumentParser, self).parse_args(*args, **kwargs)
+        for subgroup_title in subgroup_titles:
+            try:
+                subgroup = [x for x in self._action_groups if x.title == subgroup_title][0]
+            except IndexError:
+                LOG.warning("Couldn't find argument group '%s' in configured parser" % (subgroup_title,))
+                continue
+
+            subgroup_args = {}
+            for action in subgroup._group_actions:
+                if hasattr(args, action.dest):
+                    subgroup_args[action.dest] = getattr(args, action.dest)
+                    delattr(args, action.dest)
+            setattr(args, subgroup_title, subgroup_args)
+
+        return args
+
+
+def create_basic_parser(*args, **kwargs):
+    parser = ArgumentParser(*args, **kwargs)
+    parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
+                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
+    parser.add_argument('-l', '--log', dest="log_fn", default=None,
+                        help="specify the log filename")
+    parser.add_argument('--keep-intermediate', dest="keep_intermediate", default=False,
+                        action='store_true',
+                        help="Keep intermediate files for future use.")
+    # parser.add_argument('--debug', dest="debug_mode", default=False,
+    #                     action='store_true',
+    #                     help="Enter debug mode. Keeping intermediate files.")
+    return parser

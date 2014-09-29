@@ -1,8 +1,34 @@
-#!/usr/bin/env pythpn
+#!/usr/bin/env python
+# encoding: utf-8
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    September 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
 """Polar2Grid frontend for extracting data and metadata from files processed by the
 Microwave Integrated Retrieval System (MIRS).
-
-FUTURE: Right now this frontend uses a new structure (coding and metadata provided) that isn't supported by the rest P2G. In the future it will not need the wrapper code.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -11,34 +37,8 @@ FUTURE: Right now this frontend uses a new structure (coding and metadata provid
 :date:         Sept 2014
 :license:      GNU GPLv3
 
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    September 2014
-    University of Wisconsin-Madison
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
 """
+__docformat__ = "restructuredtext en"
 
 import os
 import sys
@@ -48,6 +48,9 @@ import numpy
 from netCDF4 import Dataset
 
 from polar2grid.core import roles
+from polar2grid.core.fbf import FileAppender
+from polar2grid.core.dtype import numpy_to_dtype
+from polar2grid.core import meta
 
 LOG = logging.getLogger(__name__)
 
@@ -63,20 +66,21 @@ BT_VARS = [BT_88_VAR]
 
 ### PRODUCT DEFINITIONS ###
 # FIXME: Move ProductDefiniton to polar2grid.core
-# FUTURE: Register products with a central database (not really useful right now)
 class ProductDefinition(object):
     def __init__(self, name, data_kind, dependencies=None, description=None, units=None):
         self.name = name
         self.data_kind = data_kind
         self.dependencies = dependencies or []
         self.description = description or ""
-        self.units = units
+        self.units = units or ""
 
 
 class MIRSProductDefiniton(ProductDefinition):
-    def __init__(self, name, data_kind, file_type, file_key, dependencies=None, description=None, units=None):
+    def __init__(self, name, data_kind, file_type, file_key, dependencies=None, description=None, units=None,
+                 is_geoproduct=False):
         self.file_type = file_type
         self.file_key = file_key
+        self.is_geoproduct = is_geoproduct
         super(MIRSProductDefiniton, self).__init__(name, data_kind,
                                                    dependencies=dependencies, description=description, units=units)
 
@@ -101,9 +105,10 @@ PRODUCTS.add_product(PRODUCT_RAIN_RATE, "rain_rate", FT_IMG, RR_VAR,
 PRODUCTS.add_product(PRODUCT_BT_88, "btemp", FT_IMG, BT_88_VAR,
                      description="Channel Brightness Temperature at 88.2GHz", units="K")
 PRODUCTS.add_product(PRODUCT_LATITUDE, "latitude", FT_IMG, LAT_VAR,
-                     description="Latitude", units="degrees")
+                     description="Latitude", units="degrees", is_geoproduct=True)
 PRODUCTS.add_product(PRODUCT_LONGITUDE, "longitude", FT_IMG, LON_VAR,
-                     description="Longitude", units="degrees")
+                     description="Longitude", units="degrees", is_geoproduct=True)
+GEO_PRODUCTS = [PRODUCT_LONGITUDE, PRODUCT_LATITUDE]
 
 ### I/O Operations ###
 
@@ -135,7 +140,7 @@ class MIRSFileReader(object):
 
         self.satellite = self.nc_obj.satellite_name
         self.instrument = self.nc_obj.instrument_name
-        self.start_time = datetime.strptime(self.nc_obj.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
+        self.begin_time = datetime.strptime(self.nc_obj.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
         self.end_time = datetime.strptime(self.nc_obj.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
 
     @classmethod
@@ -212,7 +217,7 @@ class MIRSFileReader(object):
         file_scale = self.get_scale_value(item)
 
         if file_scale:
-            var_data = var_data.astype(numpy.float32) / file_scale
+            var_data = var_data.astype(dtype) / file_scale
         if file_fill:
             var_data[var_data == file_fill] = fill
 
@@ -220,7 +225,7 @@ class MIRSFileReader(object):
 
     def _compare(self, other, method):
         try:
-            return method(self.start_time, other.start_time)
+            return method(self.begin_time, other.start_time)
         except AttributeError:
             raise NotImplemented
 
@@ -275,19 +280,35 @@ class MIRSMultiReader(object):
         self.file_readers = sorted(self.file_readers)
         self._files_finalized = True
 
-    def write_var_to_flat_binary(self, item, stem):
+    def write_var_to_flat_binary(self, item, filename, dtype=numpy.float32):
         """Write the data from multiple files to one flat binary file.
 
-        :param var: Variable name to retrieve
-        :param stem: Filename stem if the file should follow traditional FBF naming conventions
+        :param item: Variable name to retrieve
+        :param filename: Filename filename if the file should follow traditional FBF naming conventions
         """
-        pass
+        LOG.info("Writing binary data for %s to file %s", item, filename)
+        with open(filename, "w") as file_obj:
+            file_appender = FileAppender(file_obj, dtype)
+            for file_reader in self.file_readers:
+                single_array = file_reader.get_swath_data(item)
+                file_appender.append(single_array)
+
+        return file_appender.shape
 
     def get_satellite(self):
-        pass
+        return self.file_readers[0].satellite
 
     def get_instrument(self):
-        pass
+        return self.file_readers[0].instrument
+
+    def get_begin_time(self):
+        return self.file_readers[0].begin_time
+
+    def get_end_time(self):
+        return self.file_readers[-1].end_time
+
+    def get_filepaths(self):
+        return [fr.filepath for fr in self.file_readers]
 
 
 FILE_CLASSES = {
@@ -308,13 +329,9 @@ def get_file_type(filepath):
     LOG.info("File doesn't match any known file types: %s", filepath)
     return None
 
-### Frontend Objects###
-
 
 class Frontend(object):
     """Polar2Grid Frontend object for handling MIRS files.
-
-    FUTURE: Currently uses an undefined interface that is still in development
     """
     def __init__(self, search_paths=None):
         search_paths = search_paths or ['.']
@@ -348,7 +365,7 @@ class Frontend(object):
     def available_product_names(self):
         # Right now there is only one type of file that has all products in it, so all products are available
         # in the future this might have to change
-        return [k for k, v in PRODUCTS.items() if not v.dependencies]
+        return [k for k, v in PRODUCTS.items() if not v.dependencies and not v.is_geoproduct]
 
     @property
     def all_product_names(self):
@@ -357,17 +374,34 @@ class Frontend(object):
     def _create_raw_swath_object(self, product_name, file_readers, products_created):
         product_def = PRODUCTS[product_name]
         file_reader = file_readers[product_def.file_type]
-        fbf_name, fbf_shape = file_reader.write_var_to_flat_binary(product_def.file_key)
-        # TODO
-        # return one_swath
+        filename = product_name + ".dat"
+        # TODO: Use dtype somehow
+        shape = file_reader.write_var_to_flat_binary(product_def.file_key, filename)
+        lat_product = products_created.get(PRODUCT_LATITUDE, None)
+        lon_product = products_created.get(PRODUCT_LONGITUDE, None)
+        dtype_str = numpy_to_dtype(numpy.float32)
+        if product_name in [PRODUCT_LATITUDE, PRODUCT_LONGITUDE]:
+            lat_product = None
+            lon_product = None
+        one_swath = meta.SwathProduct(
+            product_name=product_name, description=product_def.description, units=product_def.units,
+            satellite=file_reader.get_satellite(), instrument=file_reader.get_instrument(),
+            begin_time=file_reader.get_begin_time(), end_time=file_reader.get_end_time(),
+            longitude=lon_product, latitude=lat_product,
+            swath_rows=shape[0], swath_cols=shape[1], data_type=dtype_str, swath_data=filename,
+            source_filenames=file_reader.get_filepaths(), data_kind=product_def.data_kind, rows_per_scan=0
+        )
+        return one_swath
 
-    def create_scenes(self, products=None):
+    def create_scene(self, products=None, nprocs=1):
+        if nprocs != 1:
+            raise NotImplementedError("The MIRS frontend does not support multiple processes yet")
         if products is None:
             products = self.available_product_names
         products = list(set(products))
+        LOG.debug("Extracting data to create the following products:\n\t%s", "\n\t".join(products))
 
-        # FIXME: Use the actual class created in the viirs_frontend branch
-        meta_data = {}
+        scene = meta.SwathScene()
 
         # Figure out any dependencies
         raw_products = []
@@ -384,46 +418,57 @@ class Frontend(object):
             if len(file_reader):
                 file_readers[file_reader.FILE_TYPE] = file_reader
 
-        # FIXME:
-        return file_readers
-
         # Load geographic products - every product needs a geo-product
         products_created = {}
         for geo_product in [PRODUCT_LATITUDE, PRODUCT_LONGITUDE]:
             one_swath = self._create_raw_swath_object(geo_product, file_readers, products_created)
             products_created[geo_product] = one_swath
             if geo_product in raw_products:
-                meta_data[geo_product] = one_swath
+                # only process the geolocation product if the user requested it that way
+                scene[geo_product] = one_swath
 
         # Load raw products
         for raw_product in raw_products:
             if raw_product not in products_created:
                 one_swath = self._create_raw_swath_object(raw_product, file_readers, products_created)
                 products_created[raw_product] = one_swath
-                meta_data[raw_product] = one_swath
+                scene[raw_product] = one_swath
 
-        return meta_data
+        return scene
 
 
-def add_base_args(parser):
-    """Add arguments that all polar2grid scripts should have
+def add_frontend_argument_group(parser):
+    """Return a command line argument parser to determine keyword arguments that should be passed to the frontend.
     """
-    # FUTURE: Move to polar2grid.core or at least polar2grid
-
-
-def add_frontend_args(parser):
-    parser.add_argument("")
-    return parser
+    group = parser.add_argument_group(title="mirs_frontend", description="swath extraction options")
+    group.add_argument("-p", "--products", dest="products", nargs="*", default=None,
+                       help="Specify frontend products to process")
 
 
 def main():
-    from argparse import ArgumentParser
-    parser = ArgumentParser(description="Extract swath data from MIRS data files")
-    parser = add_frontend_args(parser)
-    args = parser.parse_args()
+    from polar2grid.core.glue_utils import create_basic_parser, setup_logging
+    parser = create_basic_parser(description="Extract image data from MIRS files and print JSON scene dictionary")
+    add_frontend_argument_group(parser)
+    parser.add_argument('-f', dest='data_files', nargs="+", default=[],
+                        help="List of one or more data files")
+    parser.add_argument('-d', dest='data_dirs', nargs="+", default=[],
+                        help="Data directories to look for input data files")
+    parser.add_argument("--list-products", dest="list_products", action="store_true",
+                        help="List available frontend products")
+    args = parser.parse_args(subgroup_titles=["mirs_frontend"])
 
-    f = Frontend(args.filenames)
-    f.create_scenes(products=args.product_names)
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+
+    f = Frontend(args.data_files + args.data_dirs)
+
+    if args.list_products:
+        print("\n".join(f.available_product_names))
+        return 0
+
+    scene = f.create_scene(**args.mirs_frontend)
+    print(scene.dumps(persist=True))
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())
