@@ -43,12 +43,14 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     david.hoese@ssec.wisc.edu
 
 """
+from polar2grid.proj import Proj
+from pyproj import pj_ellps
+
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.constants import *
 from polar2grid.core import Workspace,roles
 from shapely import geometry
-import pyproj
 import numpy
 
 import os
@@ -69,6 +71,7 @@ script_dir = os.path.split(os.path.realpath(__file__))[0]
 GRIDS_DIR = script_dir #os.path.split(script_dir)[0] # grids directory is in root pkg dir
 GRIDS_CONFIG_FILEPATH   = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
 GRID_COVERAGE_THRESHOLD = float(os.environ.get("POLAR2GRID_GRID_COVERAGE", "0.1")) # 10%
+
 
 ### GPD Reading Functions ###
 def clean_string(s):
@@ -91,6 +94,8 @@ gpd_conv_funcs = {
         "GRIDWIDTH" : int,
         "GRIDHEIGHT" : int,
         "GRIDMAPUNITSPERCELL" : float,
+        "GRIDMAPUNITSPERCOLUMN" : float,
+        "GRIDMAPUNITSPERROW" : float,
         "GRIDCELLSPERMAPUNIT" : float,
         # mpp file stuff:
         "MAPPROJECTION" : clean_string,
@@ -116,7 +121,8 @@ def parse_gpd_str(gpd_file_str):
     gpd_dict = {}
     lines = gpd_file_str.split("\n")
     for line in lines:
-        if not line: continue
+        if not line or line.startswith("#"):
+            continue
 
         line_parts = line.split(":")
         if len(line_parts) != 2:
@@ -161,14 +167,6 @@ def parse_gpd_file(gpd_filepath):
 
 ### Configuration file functions ###
 
-def _load_proj_string(proj_str):
-    """Wrapper to accept epsg strings or proj4 strings
-    """
-    if proj_str[:4].lower() == "epsg":
-        return pyproj.Proj(init=proj_str)
-    else:
-        return pyproj.Proj(proj_str)
-
 def parse_gpd_config_line(grid_name, parts):
     """Return a dictionary of information for a specific GPD grid from
     a grid configuration line. ``parts`` should be every comma-separated
@@ -206,6 +204,67 @@ def parse_gpd_config_line(grid_name, parts):
 
     return info
 
+def _parse_meter_degree_param(param):
+    """Parse a configuration parameter that could be meters or degrees.
+
+    Degrees are denoted with a suffix of 'deg'. Meters are denoted with a suffix of either 'm' or no suffix at all.
+
+    :returns: (float param, True if degrees/False if meters)
+    """
+    convert_to_meters = False
+    if param.endswith("deg"):
+        # Parameter is in degrees
+        convert_to_meters = True
+        param = param[:-3]
+    elif param.endswith("m"):
+        # Parameter is in meters
+        param = param[:-1]
+    return float(param), convert_to_meters
+
+
+def get_proj4_info(proj4_str):
+    parts = [x.replace("+", "") for x in proj4_str.split(" ")]
+    if "no_defs" in parts:
+        parts.remove("no_defs")
+
+    proj4_dict = dict(p.split("=") for p in parts)
+    # Convert numeric parameters to floats
+    for k in ["lat_0", "lat_1", "lat_2", "lat_ts", "lat_b", "lat_t", "lon_0", "lon_1", "lon_2", "lonc", "a", "b", "es"]:
+        if k in proj4_dict:
+            proj4_dict[k] = float(proj4_dict[k])
+
+    ellps_name = proj4_dict.get("ellps", proj4_dict.get("datum", None))
+    a = proj4_dict.get("a", None)
+    b = proj4_dict.get("b", None)
+    es = proj4_dict.get("es", None)
+    rf = None
+
+    if ellps_name is not None:
+        rf = pj_ellps[ellps_name].get("rf", None)
+        a = a or pj_ellps[ellps_name].get("a", None)
+        b = b or pj_ellps[ellps_name].get("b", None)
+
+    if a is None and b is not None and es is not None:
+        a = b / numpy.sqrt(1.0 - es)
+    if b is None and a is not None:
+        if es is not None:
+            b = a * numpy.sqrt(1.0 - es)
+        elif rf is not None:
+            f = 1.0 / rf
+            b = a * (1.0 - f)
+    if es is None and a is not None and b is not None:
+        es = 1.0 - (b * b) / (a * a)
+
+    if a is None or b is None or es is None:
+        log.error("Could not calculate radii a and b and the eccentricity squared from the PROJ.4 definition")
+        raise ValueError("Could not calculate radii a and b and the eccentricity squared from the PROJ.4 definition")
+
+    proj4_dict["a"] = a
+    proj4_dict["b"] = b
+    proj4_dict["es"] = es
+
+    return proj4_dict
+
 def parse_proj4_config_line(grid_name, parts):
     """Return a dictionary of information for a specific PROJ.4 grid from
     a grid configuration line. ``parts`` should be every comma-separated
@@ -216,7 +275,7 @@ def parse_proj4_config_line(grid_name, parts):
     proj4_str = parts[2]
     # Test to make sure the proj4_str is valid in pyproj's eyes
     try:
-        p = _load_proj_string(proj4_str)
+        p = Proj(proj4_str)
         del p
     except StandardError:
         log.error("Invalid proj4 string in '%s' : '%s'" % (grid_name,proj4_str))
@@ -249,17 +308,19 @@ def parse_proj4_config_line(grid_name, parts):
         else:
             pixel_size_y  = float(parts[6])
 
+        convert_xorigin_to_meters = False
         if parts[7] == "None" or parts[7] == '':
             static        = False
             grid_origin_x = None
         else:
-            grid_origin_x = float(parts[7])
+            grid_origin_x, convert_xorigin_to_meters = _parse_meter_degree_param(parts[7])
 
+        convert_yorigin_to_meters = False
         if parts[8] == "None" or parts[8] == '':
             static        = False
             grid_origin_y = None
         else:
-            grid_origin_y = float(parts[8])
+            grid_origin_y, convert_yorigin_to_meters = _parse_meter_degree_param(parts[8])
     except StandardError:
         log.error("Could not parse proj4 grid configuration: '%s'" % (grid_name,))
         raise
@@ -279,7 +340,24 @@ def parse_proj4_config_line(grid_name, parts):
     if grid_width is None and pixel_size_x is None:
         log.error("Either grid size or pixel size must be specified for '%s'" % grid_name)
         raise ValueError("Either grid size or pixel size must be specified for '%s'" % grid_name)
+    if convert_xorigin_to_meters != convert_yorigin_to_meters:
+        log.error("Grid origin parameters must be in the same units (meters vs degrees)")
+        raise ValueError("Grid origin parameters must be in the same units (meters vs degrees)")
 
+    # Convert any parameters from degrees to meters (we already made sure both need to be converted above)
+    p = Proj(proj4_str)
+    if convert_xorigin_to_meters and not p.is_latlong():
+        meters_x, meters_y = p(grid_origin_x, grid_origin_y)
+        log.info("Converted grid '%s' origin from (lon: %f, lat: %f) to (x: %f, y: %f)",
+                 grid_name, grid_origin_x, grid_origin_y, meters_x, meters_y)
+        grid_origin_x, grid_origin_y = meters_x, meters_y
+    elif not convert_xorigin_to_meters and (grid_origin_x is not None and p.is_latlong()):
+        log.error("Lat/Lon grid '%s' must have its origin in degrees", grid_name)
+        raise ValueError("Lat/Lon grid '%s' must have its origin in degrees" % (grid_name,))
+
+    proj4_dict = get_proj4_info(proj4_str)
+
+    info.update(**proj4_dict)
     info["grid_kind"]         = GRID_KIND_PROJ4
     info["static"]            = static
     info["proj4_str"]         = proj4_str
@@ -629,7 +707,7 @@ class Cartographer(roles.CartographerRole):
         if not grid_info["static"]:
             log.debug("Won't calculate corners for a dynamic grid: '%s'" % (grid_name,))
 
-        p = pyproj.Proj(grid_info["proj4_str"])
+        p = Proj(grid_info["proj4_str"])
         right_x  = grid_info["grid_origin_x"] + grid_info["pixel_size_x"] * grid_info["grid_width"]
         bottom_y = grid_info["grid_origin_y"] + grid_info["pixel_size_y"] * grid_info["grid_height"]
         grid_info["ul_corner"] = p(grid_info["grid_origin_x"], grid_info["grid_origin_y"], inverse=True)
@@ -660,23 +738,6 @@ class Cartographer(roles.CartographerRole):
         else:
             log.error("Unknown grid '%s'" % (grid_name,))
             raise ValueError("Unknown grid '%s'" % (grid_name,))
-
-    def remove_grid(self, grid_name):
-        """Remove ``grid_name`` from the loaded grid information
-        for this object.
-
-        :raises ValueError: if ``grid_name`` does not exist
-        """
-        if grid_name in self.grid_information:
-            del self.grid_information[grid_name]
-        else:
-            log.error("Unknown grid '%s' can't be removed" % (grid_name,))
-            raise ValueError("Unknown grid '%s' can't be removed" % (grid_name,))
-
-    def remove_all(self):
-        """Remove any loaded grid information from this instance.
-        """
-        self.grid_information = {}
 
     def read_grids_config(self, config_filepath):
         """Read the "grids.conf" file and create dictionaries mapping the

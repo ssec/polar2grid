@@ -17,9 +17,3 @@ Only certain files and product kinds are supported at the moment::
     mod06ct
     mod07
 
-.. warning::
-
-    250m and 1000m files should not be provided in the same call to a
-    :term:`glue script`. From the point-of-view of backends there is no
-    difference between the 250m and 1000m reflectance bands. Backend product
-    files will probably be overwritten.

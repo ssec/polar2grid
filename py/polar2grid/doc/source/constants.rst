@@ -35,6 +35,14 @@ Constants identifying the satellite the data came from.
 
     Suomi National Polar-orbiting (NPP) satellite
 
+.. data:: SAT_TERRA = "terra"
+
+    NASA Earth Observing System's flagship satellite Terra (launched December 18, 1999)
+
+.. data:: SAT_AQUA = "aqua"
+
+    NASA Earch Science Satellite Aqua (launched May 4, 2002)
+
 Instruments
 -----------
 
@@ -43,6 +51,10 @@ Constants identifying the instrument that measured the data being used.
 .. data:: INST_VIIRS = "viirs"
 
     Visible Infrared Imager Radiometer Suite
+
+.. data:: INST_MODIS = "modis"
+
+    Moderate-Resolution Imaging Spectroradiometer
 
 Band Kinds
 ----------
@@ -62,6 +74,74 @@ For other frontends this means the detector type used to record the data.
 .. data:: BKIND_DNB = "dnb"
 
     NPP VIIRS Day/Night Band
+
+.. data:: BKIND_VIS = "visible"
+
+    Visible Band
+
+.. data:: BKIND_IR = "infrared"
+
+    Infrared Band
+
+.. data:: BKIND_CMASK = "cloud_mask"
+
+    Cloud Mask
+
+.. data:: BKIND_LSMSK = "land_sea_mask"
+
+    Land Sea Mask
+
+.. data:: BKIND_SST  = "sea_surface_temp"
+
+    Sea Surface Temperature
+
+.. data:: BKIND_LST = "land_surface_temp"
+
+    Land Surface Temperature
+
+.. data:: BKIND_SLST = "summer_land_surface_temp"
+
+    Summer Land Surface Temperature
+
+.. data:: BKIND_SZA = "solar_zenith_angle"
+
+    Solar Zenith Angle
+
+.. data:: BKIND_CTT = "cloud_top_temperature"
+
+    Cloud Top Temperature
+
+.. data:: BKIND_IST = "ice_surface_temperature"
+
+    Ice Surface Temperature
+
+.. data:: BKIND_INV = "inversion_strength"
+
+    Inversion Strength
+
+.. data:: BKIND_IND = "inversion_depth"
+
+    Inversion Depth
+
+.. data:: BKIND_ICON = "ice_concentration"
+
+    Ice Concentration
+
+.. data:: BKIND_NDVI = "ndvi"
+
+    Normalized Difference Vegetation Index
+
+.. data:: BKIND_TPW = "total_precipitable_water"
+
+    Total Precipitable Water
+
+.. data:: BKIND_CREFL = "crefl"
+
+    Corrected Reflectance Product
+
+.. data:: BKIND_TCOLOR_CREFL = "true_color_crefl"
+
+    True Color Corrected Reflectance Product (3-2D bands, RGB)
 
 Band Identifiers
 ----------------
@@ -104,7 +184,17 @@ constant can and should be used.
 
 .. data:: BID_01 = "16"
 
+.. data:: BID_20 = "20"
+
+.. data:: BID_26 = "26"
+
+.. data:: BID_27 = "27"
+
+.. data:: BID_31 = "31"
+
 .. data:: BID_FOG = "fog"
+
+.. data:: BID_NEW = "new"
 
 .. _constants_data_kinds:
 
@@ -135,6 +225,34 @@ Data Kinds
 .. data:: DKIND_LONGITUDE = "longitude"
 
     Longitude data. Not used often since it is not processed as image data.
+
+.. data:: DKIND_CATEGORY    = "category"
+
+    Discrete category data, where each category is represented by an integer in the data.
+
+.. data:: DKIND_ANGLE       = "angle"
+
+    Data represented as angles.
+
+.. data:: DKIND_DISTANCE    = "distance"
+
+    Distance (meters, miles, etc.)
+
+.. data:: DKIND_PERCENT     = "percent"
+
+    Data represented as a percentage.
+
+.. data:: DKIND_C_INDEX     = "contiguous_index"
+
+    Abstract ranging index with meaningful contiguous values (not discrete categories)
+
+.. data:: DKIND_CREFL = "corrected_reflectance"
+
+    Corrected Reflectance data.
+
+.. data:: DKIND_TCOLOR_CREFL = "true_color_crefl"
+
+    True Color Corrected Reflectance data (RGB - 3 bands)
 
 Special Set:
 
@@ -174,6 +292,45 @@ where the integer suffix represents the number of bits in the format.
 .. data:: DTYPE_FLOAT32 = "real4"
 
 .. data:: DTYPE_FLOAT64 = "real8"
+
+Navigation Identifiers
+----------------------
+
+Constants that describe the type of navigation the data is using. For example,
+what resolution at which the data was measured (250 meters, 750 meters, 1km, etc).
+These naming of these values is determined by the frontend.
+
+.. data:: MBAND_NAV_UID = "m_nav"
+
+    VIIRS M band navigation group
+
+.. data:: IBAND_NAV_UID = "i_nav"
+
+    VIIRS I band navigation group
+
+.. data:: DNB_NAV_UID = "dnb_nav"
+
+    VIIRS Day/Night band navigation group
+
+.. data:: GEO_NAV_UID = "geo_1000m_nav"
+
+    MODIS 1000 meter navigation group
+
+.. data:: GEO_500M_NAV_UID = "geo_500m_nav"
+
+    MODIS 500 meter navigation navigation group
+
+.. data:: GEO_250M_NAV_UID = "geo_250m_nav"
+
+    MODIS 250 meter navigation group
+
+.. data:: MOD06_NAV_UID = "mod06_nav"
+
+    MODIS mod06 navigation group
+
+.. data:: MOD07_NAV_UID = "mod07_nav"
+
+    MODIS mod07 navigation group
 
 Grid Constants
 --------------

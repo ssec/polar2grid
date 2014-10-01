@@ -43,7 +43,7 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
 from polar2grid.core.constants import DEFAULT_FILL_VALUE
-import pyproj
+from polar2grid.proj import Proj
 import numpy
 
 import os
@@ -130,10 +130,7 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
         raise ValueError("Either pixel size or grid width/height must be specified")
 
     # Handle EPSG codes
-    if proj4_str[:4].lower() == "epsg":
-        tformer = pyproj.Proj(init=proj4_str)
-    else:
-        tformer = pyproj.Proj(proj4_str)
+    tformer = Proj(proj4_str)
 
     if dtype is None:
         dtype = lat_arr.dtype
@@ -152,24 +149,24 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     stradles_180 = False
     if grid_origin_x is None or grid_width is None or pixel_size_x is None:
         if swath_lon_west is None:
-            swath_lon_west = lon_arr[good_mask].min()
+            swath_lon_west = float(lon_arr[good_mask].min())
             log.debug("Data west longitude: %f" % swath_lon_west)
         if swath_lon_east is None:
-            swath_lon_east = lon_arr[good_mask].max()
+            swath_lon_east = float(lon_arr[good_mask].max())
             log.debug("Data east longitude: %f" % swath_lon_east)
         if swath_lat_south is None:
-            swath_lat_south = lat_arr[good_mask].min()
+            swath_lat_south = float(lat_arr[good_mask].min())
             log.debug("Data south latitude: %f" % swath_lat_south)
         if swath_lat_north is None:
-            swath_lat_north = lat_arr[good_mask].max()
+            swath_lat_north = float(lat_arr[good_mask].max())
             log.debug("Data upper latitude: %f" % swath_lat_north)
 
         # Are we on the -180/180 boundary
         if swath_lon_west <= -179.0 and swath_lon_east >= 179.0:
             # Obviously assumes data is not smaller than 1 degree longitude wide
-            swath_lon_west = lon_arr[ good_mask & (lon_arr < 0) ].max()
+            swath_lon_west = float(lon_arr[ good_mask & (lon_arr < 0) ].max())
             log.debug("Data west longitude: %f" % swath_lon_west)
-            swath_lon_east = lon_arr[ good_mask & (lon_arr > 0) ].min()
+            swath_lon_east = float(lon_arr[ good_mask & (lon_arr > 0) ].min())
             log.debug("Data east longitude: %f" % swath_lon_east)
             stradles_180 = True
 
@@ -257,30 +254,12 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
 
     ### Handle special cases for certain projections ###
     ll2cr_info = {}
-    if "latlong" in proj4_str:
-        # Everyone else uses degrees, not radians
-        ll2cr_info["grid_origin_x"],ll2cr_info["grid_origin_y"] = tformer(grid_origin_x,grid_origin_y, inverse=True)
-        ll2cr_info["grid_origin_x_grid_units"] = grid_origin_x
-        ll2cr_info["grid_origin_y_grid_units"] = grid_origin_y
-    else:
-        ll2cr_info["grid_origin_x"] = grid_origin_x
-        ll2cr_info["grid_origin_y"] = grid_origin_y
-        ll2cr_info["grid_origin_x_grid_units"] = grid_origin_x
-        ll2cr_info["grid_origin_y_grid_units"] = grid_origin_y
+    ll2cr_info["grid_origin_x"] = grid_origin_x
+    ll2cr_info["grid_origin_y"] = grid_origin_y
     ll2cr_info["grid_width"] = grid_width
     ll2cr_info["grid_height"] = grid_height
-    if "latlong" in proj4_str:
-        # Everyone else uses degrees, not radians
-        x,y = tformer(pixel_size_x, pixel_size_y, inverse=True)
-        ll2cr_info["pixel_size_x"] = x
-        ll2cr_info["pixel_size_y"] = y
-        ll2cr_info["pixel_size_x_grid_units"] = pixel_size_x
-        ll2cr_info["pixel_size_y_grid_units"] = pixel_size_y
-    else:
-        ll2cr_info["pixel_size_x"] = pixel_size_x
-        ll2cr_info["pixel_size_y"] = pixel_size_y
-        ll2cr_info["pixel_size_x_grid_units"] = pixel_size_y
-        ll2cr_info["pixel_size_y_grid_units"] = pixel_size_y
+    ll2cr_info["pixel_size_x"] = pixel_size_x
+    ll2cr_info["pixel_size_y"] = pixel_size_y
     ll2cr_info["rows_filename"] = rows_fn
     ll2cr_info["cols_filename"] = cols_fn
 
@@ -288,6 +267,8 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     # Go per row to save on memory, disk load
     for idx in range(lon_arr.shape[0]):
         x_tmp,y_tmp = _transform_array(tformer, lon_arr[idx], lat_arr[idx], proj_circum, stradles_anti=stradles_anti)
+        x_tmp = x_tmp.copy()
+        y_tmp = y_tmp.copy()
         numpy.subtract(x_tmp, grid_origin_x, x_tmp)
         numpy.divide(x_tmp, pixel_size_x, x_tmp)
         numpy.subtract(y_tmp, grid_origin_y, y_tmp)
@@ -347,6 +328,10 @@ def main():
             help="Specify the longitude of the grid's origin (upper-left corner)")
     parser.add_option("--olat", dest="origin_lat", default=None,
             help="Specify the latitude of the grid's origin (upper-left corner)")
+    parser.add_option("--width", dest="grid_width", default=None,
+            help="Number of pixels wide")
+    parser.add_option("--height", dest="grid_height", default=None,
+            help="Number of pixels high")
     parser.add_option("--fill-in", dest="fill_in", default=-999.0,
             help="Specify the fill value that incoming latitude and" + \
                     "longitude arrays use to mark invalid data points")
@@ -362,9 +347,13 @@ def main():
     pixel_size_x = options.pixel_size_x and float(options.pixel_size_x)
     pixel_size_y = options.pixel_size_y and float(options.pixel_size_y)
     origin_lon = options.origin_lon
-    if origin_lon is not None: origin_lon = float(origin_lon)
+    if origin_lon is not None:
+        origin_lon = float(origin_lon)
     origin_lat = options.origin_lat
-    if origin_lat is not None: origin_lat = float(origin_lat)
+    if origin_lat is not None:
+        origin_lat = float(origin_lat)
+    grid_width = options.grid_width and int(options.grid_width)
+    grid_height = options.grid_height and int(options.grid_height)
 
     if len(args) != 3:
         log.error("Expected 3 arguments, got %d" % (len(args),))
@@ -373,6 +362,12 @@ def main():
     lon_fn = os.path.realpath(args[0])
     lat_fn = os.path.realpath(args[1])
     proj4_str = args[2]
+
+    origin_x = None
+    origin_y = None
+    if origin_lon is not None and origin_lat is not None:
+        p = Proj(proj4_str)
+        origin_x, origin_y = p(origin_lon, origin_lat)
 
     w_dir,lat_var = os.path.split(lat_fn)
     lat_var = lat_var.split(".")[0]
@@ -386,7 +381,8 @@ def main():
     from pprint import pprint
     ll2cr_dict = ll2cr(lon_arr, lat_arr, proj4_str,
             pixel_size_x=pixel_size_x, pixel_size_y=pixel_size_y,
-            swath_origin_lon=origin_lon, swath_origin_lat=origin_lat,
+            grid_origin_x=origin_x, grid_origin_y=origin_y,
+            grid_width=grid_width, grid_height=grid_height,
             fill_in=fill_in, fill_out=fill_out)
     pprint(ll2cr_dict)
 

@@ -42,53 +42,19 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-NCDUMP = """# /data/fxa/modis/7380/20111127_0352
-netcdf \20111127_0352 {
-dimensions:
-	y = 1280 ;
-	x = 1100 ;
-variables:
-	double validTime ;
-		validTime:units = "seconds since 1970-1-1 00:00:00.00 0:00" ;
-	byte image(y, x) ;
-		image:long_name = "image" ;
-
-// global attributes:
-		:depictorName = "westConus" ;
-		:projName = "LAMBERT_CONFORMAL" ;
-		:projIndex = 3 ;
-		:lat00 = 54.53548f ;
-		:lon00 = -152.8565f ;
-		:latNxNy = 17.51429f ;
-		:lonNxNy = -92.71996f ;
-		:centralLat = 25.f ;
-		:centralLon = -95.f ;
-		:latDxDy = 39.25658f ;
-		:lonDxDy = -117.4858f ;
-		:dyKm = 3.931511f ;
-		:dxKm = 3.932111f ;
-		:rotation = 25.f ;
-		:xMin = -0.2556496f ;
-		:xMax = 0.01474848f ;
-		:yMin = -0.8768771f ;
-		:yMax = -0.5622397f ;
-}
-"""
-
 from polar2grid.core import Workspace
 from polar2grid.core import roles
 from polar2grid.core.constants import *
 from polar2grid.nc import create_nc_from_ncml
 from polar2grid.core.rescale import Rescaler
 from polar2grid.core.dtype import clip_to_data_type
-from .awips_config import get_awips_info,load_config as load_awips_config,can_handle_inputs as config_can_handle_inputs,CONFIG_FILE as DEFAULT_AWIPS_CONFIG
+from .awips_config import AWIPSConfigReader,CONFIG_FILE as DEFAULT_AWIPS_CONFIG
 
-import os, sys, logging, re
+import os, sys, logging
 import calendar
 from datetime import datetime
 
 log = logging.getLogger(__name__)
-AWIPS_ATTRS = set(re.findall(r'\W:(\w+)', NCDUMP))
 DEFAULT_8BIT_RCONFIG = "rescale_configs/rescale.8bit.conf"
 
 def create_netcdf(nc_name, image, template, start_dt,
@@ -143,24 +109,20 @@ class Backend(roles.BackendRole):
             "SSEC_AWIPS_*"
             ]
 
-    config = {}
     def __init__(self, backend_config=None, rescale_config=None, fill_value=DEFAULT_FILL_VALUE):
         # Load AWIPS backend configuration
         if backend_config is None:
             log.debug("Using default AWIPS configuration: '%s'" % DEFAULT_AWIPS_CONFIG)
             backend_config = DEFAULT_AWIPS_CONFIG
-
-        self.backend_config = backend_config
-        load_awips_config(self.config, self.backend_config)
+        self.awips_config_reader = AWIPSConfigReader(backend_config)
 
         # Load rescaling configuration
         if rescale_config is None:
             log.debug("Using default 8bit rescaling '%s'" % DEFAULT_8BIT_RCONFIG)
             rescale_config = DEFAULT_8BIT_RCONFIG
-        self.rescale_config = rescale_config
         self.fill_in = fill_value
         self.fill_out = DEFAULT_FILL_VALUE
-        self.rescaler = Rescaler(config=self.rescale_config, fill_in=self.fill_in, fill_out=self.fill_out)
+        self.rescaler = Rescaler(rescale_config, fill_in=self.fill_in, fill_out=self.fill_out)
 
     def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
         """Function for backend-calling script to ask if the backend will be
@@ -171,7 +133,7 @@ class Backend(roles.BackendRole):
         It is also assumed that rescaling will be able to handle the `data_kind`
         provided.
         """
-        return config_can_handle_inputs(self.config, sat, instrument, nav_set_uid, kind, band, data_kind)
+        return [ config_info["grid_name"] for config_info in self.awips_config_reader.get_all_matching_entries(sat, instrument, nav_set_uid, kind, band, data_kind) ]
 
     def create_product(self, sat, instrument, nav_set_uid, kind, band, data_kind, data,
             start_time=None, end_time=None, grid_name=None,
@@ -189,7 +151,7 @@ class Backend(roles.BackendRole):
         data = self.rescaler(sat, instrument, nav_set_uid, kind, band, data_kind, data, fill_in=fill_in, fill_out=self.fill_out)
 
         # Get information from the configuration files
-        awips_info = get_awips_info(self.config, sat, instrument, nav_set_uid, kind, band, data_kind, grid_name)
+        awips_info = self.awips_config_reader.get_config_entry(sat, instrument, nav_set_uid, kind, band, data_kind, grid_name)
         # Get the proper output name if it wasn't forced to something else
         if output_filename is None:
             output_filename = start_time.strftime(awips_info["nc_format"])
@@ -207,7 +169,8 @@ class Backend(roles.BackendRole):
             log.error("Error while filling in NC file with data")
             raise
 
-def go(img_name, template, nc_name=None):
+
+def go(img_name, template, nc_name, channel, source, satname):
     from polar2grid.core import UTC
     UTC = UTC()
 
@@ -236,13 +199,14 @@ def go(img_name, template, nc_name=None):
         return False
 
     # Create the NC file
-    fill(nc_path, data, template, datetime.utcnow().replace(tzinfo=UTC))
+    create_netcdf(nc_path, data, template, datetime.utcnow().replace(tzinfo=UTC), channel, source, satname)
     return True
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.WARNING)
-    if len(sys.argv) != 4 and len(sys.argv) != 3:
-        log.error("Need at least 2 arguments: <image> <template> [<output>]")
+    if len(sys.argv) == 6:
+        log.error("Need 6 arguments: <image> <template> <output> <channel> <source> <satname>")
+        log.error("Got %d", len(sys.argv) - 1)
         sys.exit(-1)
 
     go(*sys.argv[1:])

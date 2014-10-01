@@ -136,6 +136,8 @@ ROWS_PER_SCAN[GEO_250M_NAV_UID] = 40
 SATURATION_VALUE = 65535
 # if a value couldn't be aggregated from 250m/500m to 1km then we should clip those too
 CANT_AGGR_VALUE  = 65528
+# we only want to clip the saturation fill values for certain bands, otherwise night time becomes max valid
+CLIP_SATURATION_VARIABLES = [VISIBLE_250_CH_2_VARIABLE_NAME]
 
 # the cloud values that correspond to areas we should clear; this came from William so it's probably more right than my guessing ;)
 CLOUDS_VALUES_TO_CLEAR       = [1, 2]

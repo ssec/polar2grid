@@ -2,22 +2,27 @@ Rescaling
 =========
 
 Rescaling is a polar2grid component shared by most backends that rescales
-gridded image data in the common case.  The underlying code also holds
-scaling functions that may be useful to frontends or glue scripts to equalize
-or scale data for other purposes.  The following sections describe each scaling function in the rescaling code.
+gridded image data via the ``Rescaler`` object. The underlying code also
+holds scaling functions that may be useful to frontends or glue scripts
+to equalize or scale data for other purposes.
+The following sections describe each scaling function in the rescaling code.
 
 Backend Scaling Functions
 -------------------------
 
-The functions described below are intended for use by polar2grid backends.
-These functions ignore any fill/invalid values in the data.  Common values
-for the default scaling configurations are listed.  See the
-`configuration files <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid_core/polar2grid/core/rescale_configs/>`_
-in the source repository for exact values used. The function definitions
+The functions described below are intended for use by polar2grid backends via
+the ``Rescaler`` object, but can be used elsewhere if needed.
+These functions ignore any fill/invalid values in the data. Common values
+for an 8-bit (0-255) output are shown as an example. The ``Rescaler``
+object uses `configuration files <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid_core/polar2grid/core/rescale_configs/>`_
+to set how bands are scaled. The function definitions
 below name the positional arguments in the configuration file.
 
-One thing to note about the default rescaling is that it will automatically
-increment the data after one of the below rescaling functions is called. This
+**Special Note On Auto-Incrementing:**
+
+One thing to note about the default behavior of rescaling in polar2grid is
+that it will automatically increment the data after one of the below
+rescaling functions is called. This
 is to assist the user in the common case that fill values should be their own
 unique value (a valid value should not equal a fill value anywhere in the
 data). This incrementing is the default behavior in most glue scripts, but
@@ -59,6 +64,13 @@ Brightness Temperature
 :argument 3: high_mult
 :argument 4: low_max
 :argument 5: low_mult
+:argument 6: clip_min
+:argument 7: clip_max
+
+.. note::
+
+    If ``clip_min`` and ``clip_max`` are provided the data is clipped before
+    being returned.
 
 .. math::
 
@@ -77,6 +89,18 @@ Example (0-255 from brightness temperature data):
         418 - (1 * \text{temp}) & \text{temp} < 242.0 \\
         660 - (2 * \text{temp}) & \text{temp}\ge 242.0
      \end{cases}
+
+Brightness Temperature (Celsius)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:rescale_kind: btemp_c
+:argument 1: threshold
+:argument 2: high_max
+:argument 3: high_mult
+:argument 4: low_max
+:argument 5: low_mult
+
+Equivalent to `rescale_btemp`_, but 273.15 is added to the data before any calculations are performed.
 
 .. _rescale_fog:
 
@@ -134,8 +158,170 @@ Example (0-255 from 0-1 data):
 
     \text{rescaled\_data} = 255.0 * \text{data} + 0.0
 
+.. _linear_flex:
+
+Linear Min/Max
+^^^^^^^^^^^^^^
+
+:rescale_kind: linear_flex
+:argument 1: min_out
+:argument 2: max_out
+:argument 3: min_in
+:argument 4: max_in
+:argument 5: clip
+
+.. note::
+
+    If ``min_in`` and ``max_in`` aren't specified they are calculated on the fly from the provided data. If ``clip``
+    is nonzero then the output data is clipped to the output range.
+
+.. math::
+
+    \text{m} = (max\_out - min\_out) / (max\_in - min\_in)
+
+    \text{b} = min\_out - \text{m} * min\_in
+
+    \text{rescale\_data} = \text{m} * \text{data} + \text{b}
+
+Example (10-255 from 173-300):
+
+.. math::
+
+    \text{m} = (250.0 - 10.0) / (300.0 - 173.0) = 1.90
+
+    \text{b} = 10.0 - 1.90 * 300.0 = -560.0
+
+    \text{rescale\_data} = 1.90 * \text{data} + -560.0
+
+Inverse Linear
+^^^^^^^^^^^^^^
+
+:rescale_kind: unlinear
+:argument 1: m
+:argument 2: b
+
+.. math::
+
+    \text{rescaled\_data} = (\text{data} - b) / m
+
+Example (0-255 from 0-1 data):
+
+.. math::
+
+    \text{rescaled\_data} = (\text{data} - 0.0) / 0.00392
+
+Lookup
+^^^^^^
+
+:rescale_kind: lookup
+:argument 1: m
+:argument 2: b
+:argument 3: table_idx
+                        
+.. note::
+
+    The ``table_idx`` argument is optional. The options for ``table_idx`` are
+    hardcoded in the software. Currently, only ``0`` (default) is an option.
+
+.. math::
+
+    \text{rescaled\_data} = \text{available\_lookup\_tables}[table\_idx][ \operatorname{round}(m * \text{data} + b) ]
+
+Example (0-255 from 0-1 data):
+
+.. math::
+
+    \text{rescaled\_data} = \text{available\_lookup\_tables}[0][ \operatorname{round}(229.83 * \text{data} + 2.2983) ]
+
+Land Surface Temperature
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+:rescale_kind: lst
+:argument 1: min_before
+:argument 2: max_before
+:argument 3: min_after
+:argument 4: max_after
+
+.. note::
+
+    Values outside of ``min_after`` and ``max_after`` are replaced with fill
+    values.
+
+.. math::
+
+    \text{old\_range} = max\_in - min\_in
+
+    \text{new\_range} = max\_out - min\_out
+
+    \text{rescaled\_data} = \text{temp} * -(new\_range / old\_range) + new\_range + min\_out
+
+Example (0-255 from temperature data):
+
+.. math::
+
+    \text{old\_range} = 330 - 260
+
+    \text{new\_range} = 255 - 0
+
+    \text{rescaled\_data} = \text{temp} * -(new\_range / old\_range) + new\_range + 0
+
+NDVI
+^^^^
+
+:rescale_kind: ndvi
+:argument 1: low_section_multiplier
+:argument 2: high_section_multiplier
+:argument 3: high_section_offset
+:argument 4: min_before
+:argument 5: max_before
+:argument 6: min_after
+:argument 7: max_after
+
+.. note::
+
+    Input data is clipped to ``min_before`` and ``max_before``
+
+.. math::
+
+    \text{rescaled\_data} = 
+    \begin{cases} 
+        (1 - \operatorname{abs}(\text{data})) * low\_section\_multiplier & \text{data} < 0 \\
+        \text{data} * high\_section\_multiplier + high\_section\_offset & \text{data}\ge 0
+     \end{cases}
+
+Example (0-255 from NDVI data):
+
+.. math::
+
+    \text{rescaled\_data} = 
+    \begin{cases} 
+        (1 - \operatorname{abs}(\text{data})) * 49.0 & \text{data} < 0 \\
+        \text{data} * 200.0 + 50.0 & \text{data}\ge 0
+     \end{cases}
+
+
 Passive
 ^^^^^^^
 
+:rescale_kind: raw
+
 A passive function to tell the rescaler "don't do anything".
+
+Linear Brightness Temperature
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. warning::
+
+    This rescaling method is deprecated. Please use `linear_flex`_.
+
+:rescale_kind: btemp_lin
+:argument 1: max_in
+:argument 2: min_in
+:argument 3: min_out
+:argument 4: max_out
+
+.. note::
+
+    ``min_out`` is optional and defaults to 1.0. ``max_out`` is optional and
+    defaults to 255.0
 

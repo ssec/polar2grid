@@ -77,6 +77,17 @@ Directory Structure
     └── swbundle_tests
         └── # Bash scripts (run/verify) for the test bundles
 
+Branching Model
+---------------
+
+The branching model used by the Polar2Grid team follows a basic ``feature-branch`` -> ``develop`` -> ``master``
+structure.
+New features still in development should get their own branches. Once these features are complete they are merged
+into the ``develop`` branch. Once all features for a particular release have been tested and are considered
+"release ready" they are merged into the ``master`` branch. If a master merge is for a new minor version a
+maintenance branch is also created for future bug fixes. This branching model was inspired from the discussion
+`here <http://nvie.com/posts/a-successful-git-branching-model/>`_.
+
 SVN Conversion Notes
 --------------------
 

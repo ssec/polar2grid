@@ -68,9 +68,15 @@ K_ALTITUDE             = "AltitudeVar"
 K_RADIANCE_FACTORS     = "RadianceFactorsVar"
 K_REFLECTANCE_FACTORS  = "ReflectanceFactorsVar"
 K_BTEMP_FACTORS        = "BrightnessTemperatureFactorsVar"
+K_SST_FACTORS          = "SeaSurfaceTemperatureFactorsVar"
 K_STARTTIME            = "StartTimeVar"
+K_AGGR_STARTTIME       = "AggrStartTimeVar"
+K_AGGR_STARTDATE       = "AggrStartDateVar"
+K_AGGR_ENDTIME         = "AggrEndTimeVar"
+K_AGGR_ENDDATE         = "AggrEndDateVar"
 K_MODESCAN             = "ModeScanVar"
 K_MODEGRAN             = "ModeGranVar"
+K_QF1                  = "QF1Var"
 K_QF3                  = "QF3Var"
 K_LAT_G_RING           = "LatGRingAttr"
 K_LON_G_RING           = "LonGRingAttr"
@@ -85,6 +91,7 @@ NAV_SET_GUIDE = {
         BKIND_M   : MBAND_NAV_UID,
         BKIND_I   : IBAND_NAV_UID,
         BKIND_DNB : DNB_NAV_UID,
+        BKIND_SST : MBAND_NAV_UID,
         }
 
 # Non-TC vs Terrain Corrected
@@ -92,13 +99,17 @@ GEO_GUIDE = {
         BKIND_M : ('GMODO','GMTCO'),
         BKIND_I : ('GIMGO','GITCO'),
         BKIND_DNB : ('GDNBO','GDNBO'),
+        BKIND_SST : ('GMODO','GMTCO'),
         }
 
 FACTORS_GUIDE = {
-        DKIND_REFLECTANCE : K_REFLECTANCE_FACTORS,
-        DKIND_RADIANCE    : K_RADIANCE_FACTORS,
-        DKIND_BTEMP       : K_BTEMP_FACTORS
-        }
+    (BKIND_M, DKIND_REFLECTANCE) : K_REFLECTANCE_FACTORS,
+    (BKIND_I, DKIND_REFLECTANCE) : K_REFLECTANCE_FACTORS,
+    (BKIND_DNB, DKIND_RADIANCE)  : K_RADIANCE_FACTORS,
+    (BKIND_M, DKIND_BTEMP)       : K_BTEMP_FACTORS,
+    (BKIND_I, DKIND_BTEMP)       : K_BTEMP_FACTORS,
+    (BKIND_SST, DKIND_BTEMP)     : K_SST_FACTORS,
+}
 
 
 # modified from pprint of list(_geo_guide()) in adl_viirs_gtm_edr.py
@@ -211,6 +222,10 @@ GEO_FILE_GUIDE = {
                             K_LONGITUDE:   '/All_Data/VIIRS-IMG-GEO-TC_All/Longitude',
                             K_ALTITUDE:    '/All_Data/VIIRS-IMG-GEO-TC_All/Height',
                             K_STARTTIME:   '/All_Data/VIIRS-IMG-GEO-TC_All/StartTime',
+                            K_AGGR_STARTTIME: '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Aggr.AggregateBeginningTime',
+                            K_AGGR_STARTDATE: '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Aggr.AggregateBeginningDate',
+                            K_AGGR_ENDTIME: '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Aggr.AggregateEndingTime',
+                            K_AGGR_ENDDATE: '/Data_Products/VIIRS-IMG-GEO-TC/VIIRS-IMG-GEO-TC_Aggr.AggregateEndingDate',
                             K_SOLARZENITH: '/All_Data/VIIRS-IMG-GEO-TC_All/SolarZenithAngle',
                             K_LUNARZENITH: '/All_Data/VIIRS-IMG-GEO-TC_All/LunarZenithAngle',
                             K_MOONILLUM:   '/All_Data/VIIRS-IMG-GEO-TC_All/MoonIllumFraction',
@@ -226,6 +241,10 @@ GEO_FILE_GUIDE = {
                             K_LONGITUDE:   '/All_Data/VIIRS-IMG-GEO_All/Longitude',
                             K_ALTITUDE:    '/All_Data/VIIRS-IMG-GEO_All/Height',
                             K_STARTTIME:   '/All_Data/VIIRS-IMG-GEO_All/StartTime',
+                            K_AGGR_STARTTIME: '/Data_Products/VIIRS-IMG-GEO/VIIRS-IMG-GEO_Aggr.AggregateBeginningTime',
+                            K_AGGR_STARTDATE: '/Data_Products/VIIRS-IMG-GEO/VIIRS-IMG-GEO_Aggr.AggregateBeginningDate',
+                            K_AGGR_ENDTIME: '/Data_Products/VIIRS-IMG-GEO/VIIRS-IMG-GEO_Aggr.AggregateEndingTime',
+                            K_AGGR_ENDDATE: '/Data_Products/VIIRS-IMG-GEO/VIIRS-IMG-GEO_Aggr.AggregateEndingDate',
                             K_SOLARZENITH: '/All_Data/VIIRS-IMG-GEO_All/SolarZenithAngle',
                             K_LUNARZENITH: '/All_Data/VIIRS-IMG-GEO_All/LunarZenithAngle',
                             K_MOONILLUM:   '/All_Data/VIIRS-IMG-GEO_All/MoonIllumFraction',
@@ -241,6 +260,10 @@ GEO_FILE_GUIDE = {
                             K_LONGITUDE:   '/All_Data/VIIRS-MOD-GEO-TC_All/Longitude',
                             K_ALTITUDE:    '/All_Data/VIIRS-MOD-GEO-TC_All/Height',
                             K_STARTTIME:   '/All_Data/VIIRS-MOD-GEO-TC_All/StartTime',
+                            K_AGGR_STARTTIME: '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Aggr.AggregateBeginningTime',
+                            K_AGGR_STARTDATE: '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Aggr.AggregateBeginningDate',
+                            K_AGGR_ENDTIME: '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Aggr.AggregateEndingTime',
+                            K_AGGR_ENDDATE: '/Data_Products/VIIRS-MOD-GEO-TC/VIIRS-MOD-GEO-TC_Aggr.AggregateEndingDate',
                             K_SOLARZENITH: '/All_Data/VIIRS-MOD-GEO-TC_All/SolarZenithAngle',
                             K_LUNARZENITH: '/All_Data/VIIRS-MOD-GEO-TC_All/LunarZenithAngle',
                             K_MOONILLUM:   '/All_Data/VIIRS-MOD-GEO-TC_All/MoonIllumFraction',
@@ -256,6 +279,10 @@ GEO_FILE_GUIDE = {
                             K_LONGITUDE:   '/All_Data/VIIRS-MOD-GEO_All/Longitude',
                             K_ALTITUDE:    '/All_Data/VIIRS-MOD-GEO_All/Height',
                             K_STARTTIME:   '/All_Data/VIIRS-MOD-GEO_All/StartTime',
+                            K_AGGR_STARTTIME: '/Data_Products/VIIRS-MOD-GEO/VIIRS-MOD-GEO_Aggr.AggregateBeginningTime',
+                            K_AGGR_STARTDATE: '/Data_Products/VIIRS-MOD-GEO/VIIRS-MOD-GEO_Aggr.AggregateBeginningDate',
+                            K_AGGR_ENDTIME: '/Data_Products/VIIRS-MOD-GEO/VIIRS-MOD-GEO_Aggr.AggregateEndingTime',
+                            K_AGGR_ENDDATE: '/Data_Products/VIIRS-MOD-GEO/VIIRS-MOD-GEO_Aggr.AggregateEndingDate',
                             K_SOLARZENITH: '/All_Data/VIIRS-MOD-GEO_All/SolarZenithAngle',
                             K_LUNARZENITH: '/All_Data/VIIRS-MOD-GEO_All/LunarZenithAngle',
                             K_MOONILLUM:   '/All_Data/VIIRS-MOD-GEO_All/MoonIllumFraction',
@@ -271,6 +298,10 @@ GEO_FILE_GUIDE = {
                             K_LONGITUDE:   '/All_Data/VIIRS-DNB-GEO_All/Longitude',
                             K_ALTITUDE:    '/All_Data/VIIRS-DNB-GEO_All/Height',
                             K_STARTTIME:   '/All_Data/VIIRS-DNB-GEO_All/StartTime',
+                            K_AGGR_STARTTIME: '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Aggr.AggregateBeginningTime',
+                            K_AGGR_STARTDATE: '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Aggr.AggregateBeginningDate',
+                            K_AGGR_ENDTIME: '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Aggr.AggregateEndingTime',
+                            K_AGGR_ENDDATE: '/Data_Products/VIIRS-DNB-GEO/VIIRS-DNB-GEO_Aggr.AggregateEndingDate',
                             K_SOLARZENITH: '/All_Data/VIIRS-DNB-GEO_All/SolarZenithAngle',
                             K_LUNARZENITH: '/All_Data/VIIRS-DNB-GEO_All/LunarZenithAngle',
                             K_MOONILLUM:   '/All_Data/VIIRS-DNB-GEO_All/MoonIllumFraction',
@@ -298,6 +329,20 @@ SV_FILE_GUIDE = {
                             K_QF3: '/All_Data/VIIRS-%(file_kind)s%(int(file_band))d-SDR_All/QF3_SCAN_RDR',
                             K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
                             K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
+            r'V(?P<file_kind>SST)O.*': {
+                K_RADIANCE: None,
+                K_REFLECTANCE: None,
+                K_BTEMP: '/All_Data/VIIRS-SST-EDR_All/SkinSST',
+                K_SST_FACTORS: '/All_Data/VIIRS-SST-EDR_All/SkinSSTFactors',
+                K_RADIANCE_FACTORS: None,
+                K_REFLECTANCE_FACTORS: None,
+                K_BTEMP_FACTORS: None,
+                K_MODESCAN: None,
+                K_MODEGRAN: None,
+                K_QF3: '/All_Data/VIIRS-SST-EDR_All/QF3_VIIRSSSTEDR',
+                K_QF1: '/All_Data/VIIRS-SST-EDR_All/QF1_VIIRSSSTEDR',
+                K_GEO_REF: r'%(GEO_GUIDE[kind])s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5',
+                K_NAVIGATION: r'%%(geo_kind)s_%(sat)s_d%(date)s_t%(file_start_time_str)s_e%(file_end_time_str)s_b%(orbit)s_*_%(site)s_%(domain)s.h5' },
             r'SVDNB.*': { K_RADIANCE: '/All_Data/VIIRS-DNB-SDR_All/Radiance',
                             K_REFLECTANCE: None,
                             K_BTEMP: None,
@@ -332,6 +377,7 @@ ROWS_PER_SCAN = {
         "GIMGO" : 32,
         BKIND_DNB : 16,
         "GDNBO" : 16,
+        BKIND_SST : 16,
         "GIGTO" : 32,
         "GMGTO" : 16,
         "GNCCO" : 16
@@ -340,7 +386,8 @@ ROWS_PER_SCAN = {
 COLS_PER_ROW = {
         BKIND_M   : 3200,
         BKIND_I   : 6400,
-        BKIND_DNB : 4064
+        BKIND_DNB : 4064,
+        BKIND_SST : 3200,
         }
 
 DATA_KINDS = {
@@ -366,7 +413,17 @@ DATA_KINDS = {
         (BKIND_I,BID_04) : DKIND_BTEMP,
         (BKIND_I,BID_05) : DKIND_BTEMP,
         (BKIND_I,BID_06) : DKIND_REFLECTANCE,
-        (BKIND_DNB,NOT_APPLICABLE) : DKIND_RADIANCE
+        (BKIND_DNB,NOT_APPLICABLE) : DKIND_RADIANCE,
+        (BKIND_SST,NOT_APPLICABLE) : DKIND_BTEMP,
+        }
+
+ADAPTIVE_IR_BAND_KIND = {
+        (BKIND_M,BID_12) : BKIND_M_ADAPTIVE,
+        (BKIND_M,BID_13) : BKIND_M_ADAPTIVE,
+        (BKIND_M,BID_14) : BKIND_M_ADAPTIVE,
+        (BKIND_M,BID_15) : BKIND_M_ADAPTIVE,
+        (BKIND_I,BID_04) : BKIND_I_ADAPTIVE,
+        (BKIND_I,BID_05) : BKIND_I_ADAPTIVE,
         }
 
 VAR_PATHS = {
@@ -392,7 +449,8 @@ VAR_PATHS = {
         (BKIND_I,BID_04) : K_BTEMP,
         (BKIND_I,BID_05) : K_BTEMP,
         (BKIND_I,BID_06) : K_REFLECTANCE,
-        (BKIND_DNB,NOT_APPLICABLE) : K_RADIANCE
+        (BKIND_DNB,NOT_APPLICABLE) : K_RADIANCE,
+        (BKIND_SST,NOT_APPLICABLE) : K_BTEMP,
         }
 
 band2const = {
@@ -498,7 +556,7 @@ def calculate_bbox_bounds(wests, easts, norths, souths, fill_value=DEFAULT_FILL_
         ebound = max(easts)
 
 
-    return wbound,ebound,nbound,sbound
+    return float(wbound),float(ebound),float(nbound),float(sbound)
 
 def sort_files_by_nav_uid(filepaths):
     """Logic is duplicated from file_info-like method because it has less
@@ -514,6 +572,7 @@ def sort_files_by_nav_uid(filepaths):
 
     for fp in filepaths:
         fn = os.path.split(fp)[-1]
+        # FIXME: This sucks:
         if fn.startswith("SVI") and fn.endswith(".h5"):
             nav_uid = NAV_SET_GUIDE[BKIND_I]
             if fn[3:5] in nav_dict[nav_uid]:
@@ -528,6 +587,9 @@ def sort_files_by_nav_uid(filepaths):
             nav_uid = NAV_SET_GUIDE[BKIND_DNB]
             nav_dict[nav_uid][NOT_APPLICABLE].append(fp)
             continue
+        if fn.startswith("VSSTO") and fn.endswith(".h5"):
+            nav_uid = NAV_SET_GUIDE[BKIND_SST]
+            nav_dict[nav_uid][NOT_APPLICABLE].append(fp)
 
         # Ignore the file that we don't understand
 
@@ -557,19 +619,28 @@ def sort_files_by_nav_uid(filepaths):
     return nav_dict
 
 
+def _time_string_to_datetime(d, st):
+    s_us = int(st[-1])*100000
+    s_dt = datetime.strptime(d + st[:-1], "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=s_us)
+    return s_dt
+
+def _time_attr_to_datetime(d, st):
+    # The last character is a Z (as in Zulu/UTC)
+    whole_sec,s_us = st[:-1].split(".")
+    s_us = int(s_us)
+    s_dt = datetime.strptime(d + whole_sec, "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=s_us)
+    return s_dt
+
 def get_datetimes(finfo):
     """Takes a file info dictionary and creates a datetime object for the
     start of the granule and the end of the granule.
     """
     d = finfo["date"]
     st = finfo["file_start_time_str"]
-    s_us = int(st[-1])*100000
     et = finfo["file_end_time_str"]
-    e_us = int(et[-1])*100000
-    s_dt = datetime.strptime(d + st[:-1], "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=s_us)
-    e_dt = datetime.strptime(d + et[:-1], "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=e_us)
-    finfo["file_start_time"] = s_dt
-    finfo["file_end_time"] = e_dt
+    finfo["file_start_time"] = _time_string_to_datetime(d, st)
+    finfo["file_end_time"] = _time_string_to_datetime(d, et)
+
 
 def h5path(hp, path, h5_path, required=False, quiet=False):
     """traverse an hdf5 path to return a nested data object
@@ -676,6 +747,9 @@ def file_info(fn):
             minfo["kind"] = BKIND_M
         elif minfo["file_kind"] == "I":
             minfo["kind"] = BKIND_I
+        elif minfo["file_kind"] == "SST":
+            minfo["kind"] = BKIND_SST
+            minfo["band"] = NOT_APPLICABLE
         else:
             log.error("Band kind not known '%s'" % minfo["kind"])
             raise ValueError("Band kind not known '%s'" % minfo["kind"])
@@ -699,7 +773,7 @@ def file_info(fn):
         finfo["data_kind"] = DATA_KINDS[dkind]
         finfo["rows_per_scan"] = ROWS_PER_SCAN[finfo["kind"]]
         finfo["cols_per_row"] = COLS_PER_ROW[finfo["kind"]]
-        finfo["factors"] = FACTORS_GUIDE[finfo["data_kind"]]
+        finfo["factors"] = FACTORS_GUIDE[(finfo["kind"], finfo["data_kind"])]
 
         # Convert time information to datetime objects
         get_datetimes(finfo)
@@ -778,6 +852,23 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     qf3_data = h5v[:]
     del h5v
 
+    # Get QF1 data for VIIRS SST
+    # qf1_mask is True if the data is poor quality
+    qf1_mask = None
+    if K_QF1 in finfo:
+        log.info("Extracting QF1 flag for data quality checks...")
+        qf1_var_path = finfo[K_QF1]
+        h5v = h5path(hp, qf1_var_path, finfo["img_path"], required=False)
+        if h5v is None:
+            log.info("QF1 data not found in file")
+        else:
+            # 00 = Not retrieved
+            # 01 = Excluded
+            # 10 = Degraded
+            # 11 = High Quality
+            qf1_mask = (h5v[:, :] & 3) < 2
+        del h5v
+
     # Get scaling function (also reads scaling factors from hdf)
     factvar = h5path(hp, factors_var_path, finfo["img_path"], required=False)   # FUTURE: make this more elegant please
     if factvar is None:
@@ -815,11 +906,13 @@ def read_file_info(finfo, extra_mask=None, fill_value=-999, dtype=np.float32):
     # Calculate mask
     mask = MISSING_GUIDE[data_kind][not needs_scaling](image_data) if data_kind in MISSING_GUIDE else None
     if extra_mask is not None:
-        mask = mask | extra_mask
+        mask |= extra_mask
+    if qf1_mask is not None:
+        mask |= qf1_mask
 
     # Scale image data
     image_data,scaling_mask = scaler(image_data)
-    mask = mask | scaling_mask
+    mask |= scaling_mask
 
     # Create scan_quality array
     scan_quality = np.nonzero(np.repeat(qf3_data > 0, finfo["rows_per_scan"]))
@@ -975,6 +1068,10 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     hp = h5.File(finfo["geo_path"], 'r')
 
     st_var_path    = finfo[K_STARTTIME]
+    iet_st_var_path = finfo[K_AGGR_STARTTIME]
+    iet_sd_var_path = finfo[K_AGGR_STARTDATE]
+    iet_et_var_path = finfo[K_AGGR_ENDTIME]
+    iet_ed_var_path = finfo[K_AGGR_ENDDATE]
     mia_var_path   = finfo[K_MOONILLUM]
     lat_gring_path = finfo[K_LAT_G_RING]
     lon_gring_path = finfo[K_LON_G_RING]
@@ -994,6 +1091,15 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     # Get start time
     h5v = h5path(hp, st_var_path, finfo["geo_path"], required=True)
     start_time = _st_to_datetime(h5v[0])
+    st = h5path(hp, iet_st_var_path, finfo["geo_path"], required=True)[0][0]
+    sd = h5path(hp, iet_sd_var_path, finfo["geo_path"], required=True)[0][0]
+    iet_start_time = _time_attr_to_datetime(sd, st)
+
+    # Get end time
+    et = h5path(hp, iet_et_var_path, finfo["geo_path"], required=True)[0][0]
+    ed = h5path(hp, iet_ed_var_path, finfo["geo_path"], required=True)[0][0]
+    iet_end_time = _time_attr_to_datetime(ed, et)
+    end_time = start_time + (iet_end_time - iet_start_time)
 
     # Get the G Ring information
     h5v = h5path(hp, lon_gring_path, finfo["geo_path"], required=True)
@@ -1048,6 +1154,7 @@ def read_geo_info(finfo, fill_value=-999, dtype=np.float32):
     finfo["moon_angle"] = lza_data
     finfo["moon_illum"] = moon_illum
     finfo["start_time"] = start_time
+    finfo["end_time"] = end_time
     # Rows only
     finfo["scan_quality"] = (np.unique(np.nonzero(lat_mask)[0]),)
     return finfo

@@ -43,11 +43,11 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds,sort_files_by_nav_uid,NAV_SET_GUIDE
+from .viirs_guidebook import file_info,geo_info,read_file_info,read_geo_info,calculate_bbox_bounds,sort_files_by_nav_uid,NAV_SET_GUIDE,ADAPTIVE_IR_BAND_KIND
 from .prescale import run_dnb_scale
 from .pseudo import create_fog_band
 from polar2grid.core.constants import *
-from polar2grid.core import roles
+from polar2grid.core import roles,histogram,Workspace
 from polar2grid.core.fbf import check_stem, file_appender
 import numpy
 
@@ -55,11 +55,13 @@ import os
 import sys
 import logging
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime,timedelta
 
 log = logging.getLogger(__name__)
 
 FILL_VALUE=-999.0
+# if the end time of one granule is 10 seconds before the next granule then the next granule must be a new orbit
+ORBIT_TRANSITION_THRESHOLD=timedelta(seconds=10)
 
 def _band_name(band_info):
     return band_info["kind"] + (band_info["band"] or "")
@@ -252,6 +254,9 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
         - swath_scans
             Number of scans in the concatenated swath, which is
             equal to ``swath_rows / rows_per_scan``
+        - orbit_scans
+            List of number of scanlines in each separate orbit being process
+            (if granules have more than ORBIT_TRANSITION_THRESHOLD seconds separation)
 
     :Parameters:
         meta_data : dict
@@ -288,6 +293,9 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
     souths = []
     total_moon_illum_fraction     = 0.0
     weight_of_moon_illum_fraction = 0.0
+    orbit_scans = []
+    orbit_start_scan_line = 0
+    prev_end_time = None
 
     for ginfo in geo_data:
         # Read in lat/lon data
@@ -296,6 +304,11 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
             # Start datetime used in product backend for NC creation
             if meta_data["start_time"] is None:
                 meta_data["start_time"] = ginfo["start_time"]
+            elif (ginfo["start_time"] - prev_end_time) > ORBIT_TRANSITION_THRESHOLD:
+                # We've seen one granule already and this new granule seems to be in another orbit
+                orbit_scans.append(lafa.shape[0] - orbit_start_scan_line)
+                orbit_start_scan_line = lafa.shape[0]
+            prev_end_time = ginfo["end_time"]
         except StandardError:
             # Can't continue without lat/lon data
             msg = "Error reading data from %s for bands %r" % (ginfo["geo_path"],meta_data["bands"].keys())
@@ -336,7 +349,8 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
         if ginfo["moon_illum"] is not None:
             total_moon_illum_fraction     += ginfo["moon_illum"]
             weight_of_moon_illum_fraction += 1.0
-    
+
+
     lafo.close()
     lofo.close()
     modefo.close()
@@ -378,7 +392,12 @@ def process_geo(meta_data, geo_data, fill_value=DEFAULT_FILL_VALUE, cut_bad=Fals
     # set the moon illumination to be the average of the ones we saw
     if weight_of_moon_illum_fraction != 0:
         meta_data["moon_illum"] = total_moon_illum_fraction / weight_of_moon_illum_fraction
-    
+
+    # Update any multiple orbit stuff
+    orbit_scans.append(lafa.shape[0] - orbit_start_scan_line)
+    meta_data["orbit_scans"] = orbit_scans
+    meta_data["end_time"] = ginfo["end_time"]
+
     meta_data["fbf_lat"] = fbf_lat
     meta_data["fbf_lon"] = fbf_lon
     meta_data["fbf_mode"] = fbf_mode
@@ -537,7 +556,7 @@ def make_swaths(nav_set_uid, filepaths_dict, filter=None, cut_bad=False):
 
     # Extract gfilepaths from the ifilepath information
     # list comprehension here is the fastest way to flatten a list of lists
-    gfilepaths = sorted(set( finfo["geo_path"] for band_data in image_data.values() for finfo in band_data ))
+    gfilepaths = sorted(set( finfo["geo_path"] for band_data in image_data.values() for finfo in band_data ), key=lambda f: os.path.split(f)[-1])
 
     # SANITY CHECK
     g_len = len(gfilepaths)
@@ -594,7 +613,7 @@ class Frontend(roles.FrontendRole):
         filenames = [ os.path.split(fp)[-1] for fp in filepaths ]
 
         # Clear out files we don't understand
-        filenames = [ fn for fn in filenames if fn.startswith("SV") and fn.endswith(".h5") ]
+        filenames = [ fn for fn in filenames if (fn.startswith("SV") or fn.startswith("VSST")) and fn.endswith(".h5") ]
 
         # SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
         dt_list = [ datetime.strptime(fn[10:27], "d%Y%m%d_t%H%M%S") for
@@ -608,8 +627,9 @@ class Frontend(roles.FrontendRole):
 
     def make_swaths(self, *args, **kwargs):
         scale_dnb = kwargs.pop("scale_dnb", False)
-        new_dnb = kwargs.pop("new_dnb", False)
+        adaptive_dnb = kwargs.pop("adaptive_dnb", False)
         create_fog = kwargs.pop("create_fog", False)
+        create_adaptive_ir = kwargs.pop("create_adaptive_ir", False)
 
         meta_data = make_swaths(*args, **kwargs)
         bands = meta_data["bands"]
@@ -628,59 +648,84 @@ class Frontend(roles.FrontendRole):
         # These steps used to be part of the glue scripts
         # Due to laziness they are just called as separate functions here
         for (band_kind, band_id),band_job in bands.items():
-            if band_kind != BKIND_DNB or not scale_dnb:
-                # We don't need to scale non-DNB data
-                band_job["fbf_swath"] = band_job["fbf_img"]
-                continue
-            elif meta_data['fbf_moon'] is None or meta_data['moon_illum'] is None:
-                log.error("LunarZenithAngle and MoonIllumFraction are required for DNB scaling but weren't found")
-                del bands[(band_kind, band_id)]
-                continue
+            if band_job["data_kind"] == DKIND_BTEMP and create_adaptive_ir:
+                try:
+                    log.info("Creating adaptive IR for %s %s" % (band_kind, band_id,))
+                    new_band_job = deepcopy(band_job)
+                    new_band_kind = ADAPTIVE_IR_BAND_KIND[(band_kind, band_id)]
+                    fbf_swath_stem = "image_%s_%s" % (new_band_kind, band_id)
+                    check_stem(fbf_swath_stem)
+                    W = Workspace('.')
+                    fbf_swath_data = getattr(W, band_job["fbf_img"].split('.')[0]).copy()
+                    histogram.local_histogram_equalization(
+                            fbf_swath_data,
+                            fbf_swath_data != band_job["fill_value"],
+                            do_log_scale=False)
+                    fbf_swath = fbf_swath_stem + ".real4.%d.%d" % (fbf_swath_data.shape[1], fbf_swath_data.shape[0],)
+                    fbf_swath_data.tofile(fbf_swath)
+                    new_band_job["fbf_swath"] = fbf_swath
+                    new_band_job["data_kind"] = DKIND_IR_ADAPTIVE
+                    bands[(new_band_kind, new_band_job["band"])] = new_band_job
+                except StandardError:
+                    log.error("Could not create adaptive IR image for band %s %s" % (band_kind, band_id))
+                    log.debug("Adaptive IR error:", exc_info=True)
+
+            if band_kind == BKIND_DNB and scale_dnb:
+                # DNB Scaling
+                if meta_data['fbf_moon'] is None or meta_data['moon_illum'] is None:
+                    log.error("LunarZenithAngle and MoonIllumFraction are required for DNB scaling but weren't found")
+                    del bands[(band_kind, band_id)]
+                    continue
             
-            if new_dnb :
-                log.info("Prescaling DNB data using adaptively sized tiles...")
-                check_stem("prescale_new_dnb")
-                new_band_job = deepcopy(band_job)
+                if adaptive_dnb:
+                    log.info("Prescaling DNB data using adaptively sized tiles...")
+                    check_stem("prescale_adaptive_dnb")
+                    new_band_job = deepcopy(band_job)
+                    try:
+                        fbf_swath = run_dnb_scale(
+                                new_band_job["fbf_img"],
+                                new_band_job["fbf_mode"],
+                                moonIllumFraction=meta_data["moon_illum"],
+                                lunar_angle_filepath=meta_data['fbf_moon'],
+                                lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
+                                adaptive_dnb=True,
+                                )
+                        new_band_job["fbf_swath"] = fbf_swath
+                        
+                        # if we got this far with no error add the adaptive dnb band to our list
+                        bands[(band_kind, BID_ADAPTIVE)] = new_band_job
+                    except StandardError:
+                        log.error("Unexpected error adaptive DNB, will not calculate new DNB scaling...")
+                        log.debug("DNB scaling error:", exc_info=1)
+                
+                log.info("Prescaling DNB data...")
+                check_stem("prescale_dnb")
                 try:
                     fbf_swath = run_dnb_scale(
-                            new_band_job["fbf_img"],
-                            new_band_job["fbf_mode"],
+                            band_job["fbf_img"],
+                            band_job["fbf_mode"],
                             moonIllumFraction=meta_data["moon_illum"],
                             lunar_angle_filepath=meta_data['fbf_moon'],
                             lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
-                            new_dnb=True,
+                            adaptive_dnb=False,
                             )
-                    new_band_job["fbf_swath"] = fbf_swath
-                    
-                    # if we got this far with no error add the new dnb band to our list
-                    bands[(band_kind, BID_NEW)] = new_band_job 
+                    band_job["fbf_swath"] = fbf_swath
                 except StandardError:
-                    log.error("Unexpected error new DNB, will not calculate new DNB scaling...")
+                    log.error("Unexpected error DNB, removing job...")
                     log.debug("DNB scaling error:", exc_info=1)
-            
-            log.info("Prescaling DNB data...")
-            check_stem("prescale_dnb")
-            try:
-                fbf_swath = run_dnb_scale(
-                        band_job["fbf_img"],
-                        band_job["fbf_mode"],
-                        moonIllumFraction=meta_data["moon_illum"],
-                        lunar_angle_filepath=meta_data['fbf_moon'],
-                        lat_filepath=meta_data['fbf_lat'], lon_filepath=meta_data['fbf_lon'],
-                        new_dnb=False,
-                        )
-                band_job["fbf_swath"] = fbf_swath
-            except StandardError:
-                log.error("Unexpected error DNB, removing job...")
-                log.debug("DNB scaling error:", exc_info=1)
-                del bands[(band_kind, band_id)]
+                    del bands[(band_kind, band_id)]
+
+            if "fbf_swath" not in band_job or band_job["fbf_swath"] is None:
+                # We don't need to scale any data
+                band_job["fbf_swath"] = band_job["fbf_img"]
+                continue
 
         return meta_data
 
 def main():
     import optparse
     usage = """
-%prog [options] filename1.h,filename2.h,filename3.h,... struct1,struct2,struct3,...
+%prog [options] filename1.h5,filename2.h5,filename3.h5,...
 
 """
     parser = optparse.OptionParser(usage)
@@ -693,10 +738,6 @@ def main():
     # parser.add_option('-I', '--include-path', dest="includes",
     #                 action="append", help="include path to append to GCCXML call")
     (options, args) = parser.parse_args()
-
-    # make options a globally accessible structure, e.g. OPTS.
-    global OPTS
-    OPTS = options
 
     if options.self_test:
         import doctest
@@ -711,9 +752,26 @@ def main():
         return 9
 
     import json
-    meta_data = make_swaths(args[:])
-    print json.dumps(meta_data)
-    return 0
+    all_meta_data = []
+    nav_uid_dict = Frontend.sort_files_by_nav_uid(args[:])
+    ret_status = 0
+    for (nav_uid,filepaths_dict) in nav_uid_dict.items():
+        try:
+            meta_data = make_swaths(nav_uid, filepaths_dict)
+            all_meta_data.append(meta_data)
+        except StandardError:
+            log.error("Could not create swaths for '%s' bands" % (nav_uid,), exc_info=True)
+            ret_status = 1
+
+    # JSON-ify the meta data dictionary
+    for meta_data_dict in all_meta_data:
+        for band_tuple in meta_data_dict["bands"].keys():
+            meta_data_dict["bands"][str(band_tuple)] = meta_data_dict["bands"][band_tuple]
+            del meta_data_dict["bands"][band_tuple]
+        meta_data_dict["start_time"] = meta_data_dict["start_time"].isoformat()
+        meta_data_dict["end_time"] = meta_data_dict["end_time"].isoformat()
+    print json.dumps(all_meta_data)
+    return ret_status
 
 if __name__=='__main__':
     sys.exit(main())

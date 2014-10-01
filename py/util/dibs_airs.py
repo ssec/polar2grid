@@ -1,7 +1,7 @@
 #!/usr/bin/env python# encoding: utf-8
 """
 dibs.py
-$Id$
+$Id: dibs.py 85 2012-04-25 21:11:09Z rayg $
 
 Purpose: Emulate direct broadcast using IDPS ops data stored in the PEATE
 
@@ -11,6 +11,9 @@ http://peate.ssec.wisc.edu/flo/api#api_find
 Created by rayg on 23 Apr 2012.
 Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 """
+FLO_HOSTNAME = "peate.ssec.wisc.edu"
+# if we are in the building, use this instead for faster download
+FLO_INSIDE_HOSTNAME = "peate02.ssec.wisc.edu"
 
 import logging
 import os, sys, re
@@ -23,40 +26,20 @@ from datetime import date, timedelta, datetime
 LOG = logging.getLogger(__name__)
 
 # FUTURE: generate FLO_FMT using PRODUCT_LIST
-PRODUCT_LIST = 'GITCO GDNBO SVDNB SVI01 SVI02 SVI03 SVI04 SVI05 SVM01 SVM02 SVM03 SVM04 SVM05 SVM06 SVM07 SVM08 SVM09 SVM10 SVM11 SVM12 SVM13 SVM14 SVM15 SVM16'.split(' ')
+PRODUCT_LIST = None 
 
 FLO_FMT = """http://peate.ssec.wisc.edu/flo/api/find?
-			start=%(start)s&end=%(end)s
-			&file_type=GITCO
-			&file_type=GDNBO
-                        &file_type=SVDNB
-                        &file_type=SVI01
-			&file_type=SVI02
-                        &file_type=SVI03
-			&file_type=SVI04
-                        &file_type=SVI05
-                        &file_type=SVM01
-                        &file_type=SVM02
-                        &file_type=SVM03
-                        &file_type=SVM04
-                        &file_type=SVM05
-                        &file_type=SVM06
-                        &file_type=SVM07
-                        &file_type=SVM08
-                        &file_type=SVM09
-                        &file_type=SVM10
-                        &file_type=SVM11
-                        &file_type=SVM12
-                        &file_type=SVM13
-                        &file_type=SVM14
-                        &file_type=SVM15
-                        &file_type=SVM16
-			&loc=%(lat)s,%(lon)s
-			&radius=%(radius)s
-			&output=txt
+            start=%(start)s&end=%(end)s
+            &file_type=AIRS_L1B
+            &loc=%(lat)s,%(lon)s
+            &radius=%(radius)s
+            &output=txt
 """
-
-RE_NPP = re.compile('(?P<kind>[A-Z]+)(?P<band>[0-9]*)_(?P<sat>[A-Za-z0-9]+)_d(?P<date>\d+)_t(?P<start_time>\d+)_e(?P<end_time>\d+)_b(?P<orbit>\d+)_c(?P<created_time>\d+)_(?P<site>[a-zA-Z0-9]+)_(?P<domain>[a-zA-Z0-9]+)\.h5')
+#AIRS.2013.11.13.240.L1B.AIRS_Rad.v5.0.22.0.G13318125859.hdf
+# http://asl.umbc.edu/pub/airs/jpldocs/tds/AIRS_Filename.htm
+RE_AIRS = re.compile(r'AIRS\.(?P<date>\d+\.\d+\.\d+)\.(?P<granule>\d+)\.L1B\.AIRS_Rad.v[.\d]+G\d+.hdf')
+SECONDS_PER_GRANULE=360
+DELTA_PER_GRANULE = timedelta(seconds=SECONDS_PER_GRANULE)  # 1..240 -> 24h 
 
 
 FLO_FMT = re.sub(r'\n\s+', '', FLO_FMT)
@@ -64,8 +47,10 @@ FLO_FMT = re.sub(r'\n\s+', '', FLO_FMT)
 ONE_DAY = timedelta(days=1)
 TWO_DAY = timedelta(days=2)
 THREE_DAY = timedelta(days=3)
+FOUR_DAY = timedelta(days=4)
+FIVE_DAY = timedelta(days=5)
 
-def flo_find(lat, lon, radius, start, end):
+def flo_find(lat, lon, radius, start, end, use_inside_hostname=True):
     "return shell script and filename list"
     start = start.strftime('%Y-%m-%d')
     end = end.strftime('%Y-%m-%d')
@@ -75,23 +60,29 @@ def flo_find(lat, lon, radius, start, end):
         url = url.strip()
         if not url:
             continue
-        match = RE_NPP.search(url)
+        match = RE_AIRS.search(url)
         if not match:
             continue
+        if use_inside_hostname:
+            LOG.debug("replacing flo hostname (%s) with direct hostname (%s)", FLO_HOSTNAME, FLO_INSIDE_HOSTNAME)
+            url = url.replace(FLO_HOSTNAME, FLO_INSIDE_HOSTNAME)
         LOG.debug('found %s @ %s' % (match.group(0), url))
         yield match, url
     wp.close()
 
-def _test_flo_find():
+def _test_flo_find(args, use_inside_hostname=True):
     start = date(2011, 12, 13)
     end = date(2011, 12, 14)
-    for nfo, url in flo_find(43, -89, 1000, start, end):
+    for nfo, url in flo_find(43, -89, 1000, start, end, use_inside_hostname=use_inside_hostname):
         print nfo.group(0), url # print filename and url
 
 def _all_products_present(key, file_nfos, products = PRODUCT_LIST):
+    if products is None: # then products don't have groups IASI
+        return True 
     needs = set(products)
     for nfo in file_nfos:
-        product = '%(kind)s%(band)s' % nfo.groupdict()
+#        product = '%(kind)s%(band)s' % nfo.groupdict()
+        product = '%(kind)s' % nfo.groupdict()
         if product in needs:
             needs.remove(product)
         else:
@@ -107,18 +98,19 @@ def curl(filename, url):
 
 def _key(nfo):
     nfo = nfo.groupdict()
-    return (nfo['date'], nfo['start_time'], nfo['end_time'])
+    return (nfo['date'], nfo['granule'])
 
-def sync(lat, lon, radius, start=None, end=None):
+
+def sync(lat, lon, radius, start=None, end=None, use_inside_hostname=True):
     "synchronize current working directory to include all the files available"
     if end is None:
         end = date.today() + ONE_DAY
     if start is None:
-        start = end - THREE_DAY
+        start = end - TWO_DAY
     bad = list()
     good = list()
     new_files = defaultdict(list)
-    inventory = list(flo_find(lat, lon, radius, start, end))
+    inventory = list(flo_find(lat, lon, radius, start, end, use_inside_hostname=use_inside_hostname))
     for n, (nfo, url) in enumerate(inventory):
         filename = nfo.group(0)
         LOG.debug('checking %s @ %s' % (filename, url))
@@ -144,7 +136,7 @@ def sync(lat, lon, radius, start=None, end=None):
     fully_intact_sets = dict((k,v) for k,v in new_files.items() if _all_products_present(k,v))
     return fully_intact_sets
 
-def mainsync(name, lat, lon, radius, start=None, end=None):
+def mainsync(name, lat, lon, radius, start=None, end=None, use_inside_hostname=True):
     "write a .nfo file with 'date start_time end_time when we complete a transfer"
     lat = int(lat)
     lon = int(lon)
@@ -155,34 +147,30 @@ def mainsync(name, lat, lon, radius, start=None, end=None):
         end = datetime.strptime(end, '%Y-%m-%d').date()
 
     fp = file(name+'.nfo', 'at')
-    for key in sync(lat, lon, radius, start, end).keys():
+    for key in sync(lat, lon, radius, start, end, use_inside_hostname=use_inside_hostname).keys():
         LOG.info('%s is ready' % repr(key))
-        print >>fp, '%s %s %s' % key
+        print >>fp, '%s %s' % key
         fp.flush()
     fp.close()
 
 
 
 
-hmst = lambda s: tuple(map(int, [s[0:2], s[2:4], s[4:6], s[6]+'00000']))
-ymd = lambda s: tuple(map(int, [s[0:4], s[4:6], s[6:8]]))
-
 def _key2dts(k):
     "convert (yyyymmdd, hhmmsst, hhmmsst) string key tuple into start and end datetime objects"
-    d,s,e = k
-    d = ymd(d)
-    s = hmst(s)
-    e = hmst(e)
-    ds = datetime(*(d+s))
-    de = datetime(*(d+e))
+    date, granule = k
+    d = datetime.strptime(date, '%Y.%m.%d')
+    goff = int(granule)-1
+    ds,de = d + DELTA_PER_GRANULE*goff, d + DELTA_PER_GRANULE*(goff+1)
     if de < ds:
         de += timedelta(days=1)
     return ds,de
 
 def _dts2key(s,e):
     "convert datetime object into key tuple"
-    horus = lambda x: '%02d%02d%02d%d' % (x.hour, x.minute, x.second, x.microsecond/100000)
-    return s.strftime('%Y%m%d'), horus(s), horus(e)
+    delta = timedelta(hours=s.hour, minutes=s.minute, seconds=s.second)
+    goff = int(delta.total_seconds() / SECONDS_PER_GRANULE)
+    return s.strftime('%Y.%m.%d'), '%03d' % (goff+1)
 
 def _outcome_cg(seq):
     "given a sequence of (start,end) ordered datetime objects representing contiguous granules, return new outer key and list of granules"
@@ -193,7 +181,7 @@ def _outcome_cg(seq):
     e = grans[-1][1]
     return (_dts2key(s,e), [_dts2key(*x) for x in grans])
 
-def contiguous_groups(keyset, tolerance=timedelta(seconds=5)):
+def contiguous_groups(keyset, tolerance=timedelta(seconds=700)):
     "sort a set of keys into contiguous groups; yield (newkey, list-of-subkeys) sequence"
     granlist = list(sorted(map(_key2dts, keyset)))
 
@@ -217,24 +205,26 @@ def read_nfo(filename=None, fobj=None):
         fobj = file(filename, 'rt')
     for line in fobj:
         k = map(str.strip, line.split(' '))
-        if len(k)==3:
-            yield k
+        if len(k)==2:
+            yield tuple(k)
 
-STAMP_FMT = 'd%s_t%s_e%s'
+STAMP_FMT = '%s_%s'  # date with starting granule number
+FILE_FMT = '%s.%s'
 
 def pass_build(key, subkeys):
     "link all files belonging to subkeys to an pass directory"
     name = STAMP_FMT % key
+    name_tmp = FILE_FMT % key
     final_name = name + '.pass'
     if os.path.isdir(name) or os.path.isdir(final_name):
         LOG.warning('%s already has been processed' % name)
         return None
     os.mkdir(name)
     for piece in subkeys:
-        pat = '*' + STAMP_FMT % piece + '*.h5'
+        pat = '*' + FILE_FMT % piece + '*'
         LOG.debug('looking for %s' % pat)
         for filename in glob(pat):
-            LOG.debug('linking %s to %s' % (filename, name))
+            LOG.debug('linking %s to %s' % (filename, name_tmp))
             os.symlink(os.path.join('..', filename), os.path.join(name, filename))
     os.rename(name, final_name)
     LOG.info('created %s' % final_name)
@@ -280,6 +270,8 @@ example:
     parser.add_option('-s', '--start', dest='start', help='yyyy-mm-dd start dateoptional', default=None)
     parser.add_option('-e', '--end', dest='end', help='yyyy-mm-dd end date optional', default=None)
     parser.add_option('-p', '--pass', dest='passes', help='post-process .nfo file (consuming it) and create .pass directories', default=False, action="store_true")
+    parser.add_option('--outside-host', dest='use_inside_hostname', action='store_false', default=True,
+                      help='Download data from %s instead of %s' % (FLO_HOSTNAME, FLO_INSIDE_HOSTNAME))
     # parser.add_option('-o', '--output', dest='output',
     #                 help='location to store output')
     # parser.add_option('-I', '--include-path', dest="includes",
@@ -291,6 +283,9 @@ example:
     OPTS = options
 
     if options.self_test:
+        from pprint import pprint
+        logging.basicConfig(level=logging.DEBUG)
+        pprint(_test_flo_find(args, use_inside_hostname=options.use_inside_hostname))
         # FIXME - run any self-tests
         # import doctest
         # doctest.testmod()
@@ -304,7 +299,8 @@ example:
         return 9
 
     if options.radius:
-        mainsync(args[0], options.lat, options.lon, options.radius, options.start, options.end)
+        mainsync(args[0], options.lat, options.lon, options.radius, options.start, options.end,
+                 options.use_inside_hostname)
 
     if options.passes:
         mainpass(args[0]+'.nfo')

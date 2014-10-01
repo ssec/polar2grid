@@ -41,27 +41,32 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     david.hoese@ssec.wisc.edu
 
 """
-__docformat__ = "restructuredtext en"
+from polar2grid.proj import Proj
 
-from pyproj import Proj
+__docformat__ = "restructuredtext en"
 
 import os
 import sys
 
 #grid_name,proj4, proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y
-CONFIG_LINE_FORMAT = "%(grid_name)s, proj4, %(proj4_str)s, %(width)d, %(height)d, %(pixel_size_x)0.3f, %(pixel_size_y)0.3f, %(origin_x)0.3f, %(origin_y)0.3f"
+CONFIG_LINE_FORMAT = "%(grid_name)s, proj4, %(proj4_str)s, %(width)d, %(height)d, %(pixel_size_x)0.3f, %(pixel_size_y)0.3f, %(origin_x)s, %(origin_y)s"
 
-def determine_projection(center_lon, center_lat):
+
+def determine_projection(center_lon, center_lat, proj4_str=None):
     """Return the 'best' projection to be used based on the center
     longitude and latitude provided.
     """
     abs_lat = abs(center_lat)
-    if abs_lat < 15:
-        return "+proj=eqc +datum=WGS84 +ellps=WGS84 +lat_ts=%(center_lat)0.3f +lon_0=%(center_lon)0.3f +units=m +no_defs"
-    elif abs_lat < 70:
-        return "+proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=%(center_lat)0.3f +lat_1=%(center_lat)0.3f +lon_0=%(center_lon)0.3f +units=m +no_defs"
-    else:
-        return "+proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=%(center_lat)0.3f +lat_1=%(center_lat)0.3f +lon_0=%(center_lon)0.3f +units=m +no_defs"
+    if proj4_str is None:
+        if abs_lat < 15:
+            proj4_str = "+proj=eqc +datum=WGS84 +ellps=WGS84 +lat_ts=%(center_lat)0.3f +lon_0=%(center_lon)0.3f +units=m +no_defs"
+        elif abs_lat < 70:
+            proj4_str =  "+proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=%(center_lat)0.3f +lat_1=%(center_lat)0.3f +lon_0=%(center_lon)0.3f +units=m +no_defs"
+        else:
+            proj4_str = "+proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=%(center_lat)0.3f +lon_0=%(center_lon)0.3f +units=m"
+
+    proj4_str = proj4_str % dict(center_lon=center_lon, center_lat=center_lat)
+    return proj4_str
 
 
 def main():
@@ -79,10 +84,10 @@ projection is referenced at the center lon/lat provided by the user."""
             help="Decimal latitude value for center of grid (-90 to 90)")
     parser.add_argument('pixel_size_x', type=float,
             help="""Size of each pixel in the X direction in grid units,
-usually meters.""")
+meters for default projections.""")
     parser.add_argument('pixel_size_y', type=float,
             help="""Size of each pixel in the Y direction in grid units,
-meters by default.""")
+meters for default projections.""")
     parser.add_argument('grid_width', type=int,
             help="Grid width in number of pixels")
     parser.add_argument('grid_height', type=int,
@@ -110,11 +115,18 @@ meters by default.""")
         print "ERROR: Center latitude must be between -90 and 90 degrees"
         return -1
 
-    proj_str = args.proj_str or determine_projection(clon, clat)
-    proj_str = proj_str % {"center_lon":clon, "center_lat":clat}
+    proj_str = determine_projection(clon, clat, args.proj_str)
     p = Proj(proj_str)
-    origin_x = grid_width / 2.0 * pixel_size_x * -1
-    origin_y = grid_height / 2.0 * pixel_size_y * -1
+    origin_x = p(clon, clat)[0] + (grid_width / 2.0 * pixel_size_x * -1)
+    origin_y = p(clon, clat)[1] + (grid_height / 2.0 * pixel_size_y * -1)
+    if p.is_latlong():
+        # Origin is in degrees so we need to add a unit string to it
+        origin_x = "%0.3fdeg" % origin_x
+        origin_y = "%0.3fdeg" % origin_y
+    else:
+        origin_lon, origin_lat = p(origin_x, origin_y, inverse=True)
+        origin_x = "%0.3fdeg" % origin_lon
+        origin_y = "%0.3fdeg" % origin_lat
 
     valid_config_line = CONFIG_LINE_FORMAT % {
             "grid_name" : grid_name,

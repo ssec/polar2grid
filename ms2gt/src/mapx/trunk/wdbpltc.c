@@ -679,7 +679,7 @@ int ufree(char *m)
 {
 
   free(m);
-  return;
+  return (0);
 }
 /**************************************************************************/
 /* UABORT- tests for operator abort                                       */

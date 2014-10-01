@@ -50,6 +50,7 @@ from polar2grid.core.dtype import clip_to_data_type
 from libtiff import libtiff_ctypes as libtiff
 from libtiff.libtiff_ctypes import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
 from .ninjo_config import _create_config_id,load_grid_config,load_band_config,DEFAULT_GRID_CONFIG_FILE,DEFAULT_BAND_CONFIG_FILE
+from polar2grid.proj import Proj
 import numpy
 
 import os
@@ -479,7 +480,7 @@ class Backend(roles.BackendRole):
         # Instatiate the rescaler
         self.fill_in  = fill_value
         self.fill_out = DEFAULT_FILL_VALUE
-        self.rescaler = Rescaler(config=self.rescale_config,
+        self.rescaler = Rescaler(self.rescale_config,
                 fill_in=self.fill_in, fill_out=self.fill_out
                 )
 
@@ -492,7 +493,7 @@ class Backend(roles.BackendRole):
 
     def create_product(self, sat, instrument, nav_set_uid, kind, band, data_kind, data,
             start_time=None, end_time=None, grid_name=None,
-            output_filename=None, gpd_grid_info=None,
+            output_filename=None, grid_info=None,
             fill_value=None):
         """Function to be called from a connecting script to interpret the
         information provided and create a NinJo compatible tiff image.
@@ -539,14 +540,26 @@ class Backend(roles.BackendRole):
         data_source       = band_config_entry["data_source"]
         data_cat          = band_config_entry["data_cat"]
 
-        nproj,xres,yres   = self.grid_config[grid_name]
-        map_origin_lat    = gpd_grid_info["MAPORIGINLATITUDE"]
-        map_origin_lon    = gpd_grid_info["MAPORIGINLONGITUDE"]
-        equ_radius        = gpd_grid_info["MAPEQUATORIALRADIUS"]
-        pol_radius        = gpd_grid_info.get("MAPPOLARRADIUS", equ_radius)
-        central_meridian  = gpd_grid_info.get("MAPREFERENCELONGITUDE", None)
-        ref_lat1          = gpd_grid_info.get("MAPSECONDREFERENCELATITUDE", None)
-        #ref_lat2          = gpd_grid_info.get("", None)
+        if "MAPORIGINLATITUDE" in grid_info:
+            nproj,xres,yres   = self.grid_config[grid_name]
+            map_origin_lat    = grid_info["MAPORIGINLATITUDE"]
+            map_origin_lon    = grid_info["MAPORIGINLONGITUDE"]
+            equ_radius        = grid_info["MAPEQUATORIALRADIUS"]
+            pol_radius        = grid_info.get("MAPPOLARRADIUS", equ_radius)
+            central_meridian  = grid_info.get("MAPREFERENCELONGITUDE", None)
+            ref_lat1          = grid_info.get("MAPSECONDREFERENCELATITUDE", None)
+            #ref_lat2          = gpd_grid_info.get("", None)
+        else:
+            # PROJ.4 Grid
+            nproj,xres,yres = self.grid_config[grid_name]
+            p = Proj(grid_info["proj4_str"])
+            map_origin_lon, map_origin_lat = p(grid_info["grid_origin_x"], grid_info["grid_origin_y"], inverse=True)
+            equ_radius = grid_info["a"]
+            pol_radius = grid_info["b"]
+            central_meridian = grid_info.get("lon_0", None)
+            ref_lat1 = grid_info.get("lat_ts", None)
+
+
 
         # Rescale the data based on the configuration that was loaded earlier
         data = self.rescaler(sat, instrument, nav_set_uid, kind, band, data_kind, data,

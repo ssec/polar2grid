@@ -51,6 +51,7 @@ DOC_DIR        = /var/apache/www/htdocs/software/polar2grid
 
 EGG_REPOS_MACHINE = birch
 EGG_REPOS_DIR = /var/apache/larch/htdocs/eggs/repos/polar2grid/
+DEV_FLAGS = -d $(INSTALL_DIR)
 
 all: all_sdist
 
@@ -67,7 +68,7 @@ $(ALL_PKG_SDIST): $(DIST_DIR)
 
 $(ALL_PKG_DEV): $(INSTALL_DIR)
 	cd $(@:_dev=); \
-	python setup.py develop -d $(INSTALL_DIR)
+	python setup.py develop $(DEV_FLAGS)
 
 $(INSTALL_DIR):
 	mkdir -p $(INSTALL_DIR)

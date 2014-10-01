@@ -1,16 +1,16 @@
 .. polar2grid documentation master file, created by
    sphinx-quickstart on Thu Apr 19 23:17:38 2012.
 
-polar2grid
-======================================
+Polar2Grid
+==========
 
-Polar2grid is a software package providing scripts, utilities, and a series
+Polar2Grid is a software package providing scripts, utilities, and a series
 of functions and classes for reading
 polar-orbiting satellite data, remapping or gridding that data, and writing
 it to a file format to be used by other software. Polar2grid is mainly used
 through one or more :term:`glue scripts <glue script>` that execute a common
 sequence of
-function calls known as ":term:`The Chain`". These functions being called act
+functions known as ":term:`The Chain`". These functions being called act
 as a toolbox for software developers to make their own scripts if the provided
 :term:`glue scripts <glue script>` don't fit their needs.
 
@@ -35,13 +35,12 @@ Contents
     :numbered:
 
     installation
-    How polar2grid works <chain>
+    Overview <chain>
     glue_scripts/index
     frontends/index
     backends/index
     rescaling
     utilscripts
-    advanced
     release_notes
     constants
     glossary
@@ -70,6 +69,7 @@ Developer's Guide
     dev_guide/remapping
     dev_guide/backends
     dev_guide/rescaling
+    dev_guide/swbundle
 
 API
 ---
@@ -77,7 +77,11 @@ API
 .. toctree::
     :maxdepth: 3
    
-    modules
+    api/polar2grid
+    api/polar2grid.viirs
+    api/polar2grid.modis
+    api/polar2grid.crefl
+    api/polar2grid.core
 
 
 Indices and tables

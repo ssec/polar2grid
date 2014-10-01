@@ -67,6 +67,7 @@ def process_data_sets(nav_set_uid, filepaths,
         fornav_m=True,
         forced_grid=None,
         create_pseudo=True,
+        create_adaptive_ir=False,
         num_procs=1,
         data_type=None,
         output_pattern=None,
@@ -102,6 +103,7 @@ def process_data_sets(nav_set_uid, filepaths,
                 nav_set_uid,
                 filepaths,
                 create_fog=create_pseudo,
+                create_adaptive_ir=create_adaptive_ir,
                 cut_bad=True
                 )
     except StandardError:
@@ -310,6 +312,8 @@ through strftime. Current time if no files.""")
             help="Specify number of processes that can be used to run ll2cr/fornav calls in parallel")
     
     # Frontend and product filtering related
+    parser.add_argument('--adaptive-ir', dest='create_adaptive_ir', default=False, action='store_true',
+                        help="Create adaptive equalized IR bands using adaptive scaling")
     parser.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
             help="Don't create pseudo bands")
     
@@ -405,6 +409,7 @@ through strftime. Current time if no files.""")
                 forced_grid=forced_grids,
                 data_type=args.data_type,
                 create_pseudo=args.create_pseudo,
+                create_adaptive_ir=args.create_adaptive_ir,
                 multiprocess=not args.single_process, num_procs=num_procs,
                 rescale_config=args.rescale_config,
                 output_pattern=args.output_pattern,

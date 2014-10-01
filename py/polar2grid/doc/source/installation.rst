@@ -12,8 +12,8 @@ datasets that can be run and verified against expected output. For more
 information on unit tests, verifying your installation, and running the
 tests see the :doc:`tests/index` page.
 
-polar2grid Software Bundle Install
-----------------------------------
+Software Bundle Install
+-----------------------
 
 The polar2grid software bundle is a pre-compiled set of software required
 to run the polar2grid scripts.  It includes a minimal python 2.7 install,
@@ -52,8 +52,8 @@ command line examples.
 See the :doc:`Developer's Guide <dev_guide/index>` for python package installing or
 other options for running polar2grid scripts.
 
-polar2grid Software Bundle Uninstall/Upgrade
---------------------------------------------
+Software Bundle Uninstall/Upgrade
+---------------------------------
 
 To uninstall the polar2grid software bundle, simply remove the software
 bundle directory that was originally created::
@@ -77,7 +77,7 @@ you can install the polar2grid python package like any basic python egg:
     ``easy_install -f http://larch.ssec.wisc.edu/cgi-bin/repos.cgi polar2grid``
 
 Installing polar2grid in this way does require, however, that the ms2gt
-utilities ``ll2cr`` and ``fornav`` must be in your $PATH environment
+utilities ``ll2cr`` and ``fornav`` must be in your ``$PATH`` environment
 variable. The newest version of ms2gt used by polar2grid is available
 `here <http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/>`_. Once
 untarred (``tar -xzf <tar.gz file>``), the binaries are located in the

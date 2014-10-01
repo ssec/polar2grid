@@ -54,6 +54,7 @@ Code repository: https://github.com/davidh-ssec/polar2grid
  - :doc:`remapping`
  - :doc:`backends`
  - :doc:`rescaling`
+ - :doc:`swbundle`
 
 Prerequisites
 -------------
@@ -86,15 +87,19 @@ File Formats
 polar2grid uses flat binary files
 (`FBF <https://groups.ssec.wisc.edu/employee-info/for-programmers/scriptonomicon/flat-binary-format-fbf-files-and-utilities/FBF-file-format.pdf>`_)
 for all of its intermediate file
-storage.  Data is primarily stored as files due its large size and the
+storage.  Data is primarily stored as files due to its large size and the
 requirement for the current remapping utilities to have file input.
-
-FBF conventions specific to polar2grid are that there is only one
-invalid/missing value (-999.0 is the :ref:`default <default_fill_value>`) and that all image and navigation
-data is stored as 32-bit floats (real4 in FBF terms). In polar2grid, flat
-binary files should only be stored in the current working directory and should
-be referred to by their filename, not filepath.
 
 polar2grid does not require any other data format except for those required
 by a frontend or backend.
 
+Branching Model
+---------------
+
+The branching model used by the Polar2Grid team follows a basic ``feature-branch`` -> ``develop`` -> ``master``
+structure.
+New features still in development should get their own branches. Once these features are complete they are merged
+into the ``develop`` branch. Once all features for a particular release have been tested and are considered
+"release ready" they are merged into the ``master`` branch. If a master merge is for a new minor version a
+maintenance branch is also created for future bug fixes. This branching model was inspired from the discussion
+`here <http://nvie.com/posts/a-successful-git-branching-model/>`_.

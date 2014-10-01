@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""Script for converting lon/lat decimal values to X/Y values of the grid provided.
-This script mimics the `proj` binary that comes with the PROJ.4 library, but
-handles any projection string that `pyproj` can handle (like 'latlong' which the
-`proj` binary does not handle).
+"""
+Wrapper around the main VIIRS command line components.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Mar 2013
+:date:         Oct 2013
 :license:      GNU GPLv3
 
 Copyright (C) 2013 Space Science and Engineering Center (SSEC),
@@ -33,7 +31,7 @@ satellite observation data, remaps it, and writes it to a file format for
 input into another program.
 Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
-    Written by David Hoese    March 2013
+    Written by David Hoese    October 2013
     University of Wisconsin-Madison 
     Space Science and Engineering Center
     1225 West Dayton Street
@@ -43,28 +41,8 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from pyproj import Proj
-
-import os
+from .viirs_imager_to_swath import main
 import sys
-
-def main():
-    from argparse import ArgumentParser
-    parser = ArgumentParser(description="Convert lon/lat points to X/Y values")
-    parser.add_argument("-i", "--inverse", dest="inv", action="store_true", default=False,
-            help="Convert X/Y values to lon/lat")
-    parser.add_argument("proj4_str",
-            help="PROJ.4 projection string (in quotes)")
-    parser.add_argument("lon_point", type=float,
-            help="Longitude of the point to be converted (single value only)")
-    parser.add_argument("lat_point", type=float,
-            help="Latitude of the point to be converted (single value only)")
-    args = parser.parse_args()
-
-    p = Proj(args.proj4_str)
-    x,y = p(args.lon_point, args.lat_point, inverse=args.inv)
-    print x,y
 
 if __name__ == "__main__":
     sys.exit(main())
-

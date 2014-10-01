@@ -79,9 +79,12 @@ INST_AIRS  = "airs"
 # Band Kinds
 BKIND_I     = "i"
 BKIND_M     = "m"
+BKIND_I_ADAPTIVE = "iadapt"
+BKIND_M_ADAPTIVE = "madapt"
 BKIND_DNB   = "dnb"
 BKIND_VIS   = "visible"
 BKIND_IR    = "infrared"
+BKIND_IR_ADAPTIVE = "iradapt"
 BKIND_CMASK = "cloud_mask"
 BKIND_LSMSK = "land_sea_mask"
 BKIND_SST   = "sea_surface_temp"
@@ -120,7 +123,6 @@ BKIND_H2O_TOT = "total_water"
 BKIND_O3_TOT = "total_ozone"
 
 # Band Identifier
-# BID_NONE = "none"
 BID_01 = "01"
 BID_02 = "02"
 BID_03 = "03"
@@ -137,19 +139,20 @@ BID_13 = "13"
 BID_14 = "14"
 BID_15 = "15"
 BID_16 = "16"
-BID_FOG = "fog"
-BID_NEW = "new"
 BID_20 = "20"
 BID_26 = "26"
 BID_27 = "27"
 BID_31 = "31"
+BID_FOG = "fog"
+BID_ADAPTIVE = "adaptive"
 
 # Data kinds
 DKIND_LATITUDE    = "latitude"
 DKIND_LONGITUDE   = "longitude"
 DKIND_RADIANCE    = "radiance"
 DKIND_REFLECTANCE = "reflectance"
-DKIND_BTEMP       = "btemp"   # FIXME: to be consistent this should be BTEMPERATURE
+DKIND_BTEMP       = "btemp"
+DKIND_IR_ADAPTIVE = "ir_adapt"
 DKIND_FOG         = "fog"
 DKIND_CATEGORY    = "category"
 DKIND_ANGLE       = "angle"
@@ -242,3 +245,5 @@ STATUS_FORNAV_FAIL   = 8
 STATUS_GDETER_FAIL   = 16
 # not sure why we failed, not an expected failure
 STATUS_UNKNOWN_FAIL  = -1
+
+

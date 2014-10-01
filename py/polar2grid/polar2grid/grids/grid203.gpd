@@ -1,13 +1,11 @@
 Grid Width: 8384
 Grid Height: 7239
-Grid Map Units per Cell: 1001.128
-Map Projection: Polar Stereographic (ellipsoid)
+Grid Map Units per Cell: 1000.0
+Map Projection: Polar Stereographic
 Map Reference Latitude:90.0
 Map Second Reference Latitude:60.0
 Map Reference Longitude:-150.0
-Map Equatorial Radius:6378137
-Map Polar Radius:6356752.314
-Map Origin Latitude:44.73
-Map Origin Longitude:115.7
-Map Eccentricity:0.0818191910435
-Map Eccentricity Squared:0.006785161574
+Map Equatorial Radius:6371200
+Map Polar Radius:6371200
+Map Origin Latitude:44.646
+Map Origin Longitude:115.601

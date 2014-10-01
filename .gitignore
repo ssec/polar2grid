@@ -52,5 +52,32 @@ nosetests.xml
 *.out
 *.app
 
-
+# various built ms2gt files
+ms2gt/src/fornav/fornav
+ms2gt/src/grid_convert/grid_convert
+ms2gt/src/gridsize/gridsize
+ms2gt/src/ll2cr/ll2cr
+ms2gt/src/ll2xy/ll2xy
+ms2gt/src/lle2cre/lle2cre
+ms2gt/src/mapx/trunk/cdb_edit
+ms2gt/src/mapx/trunk/cdb_list
+ms2gt/src/mapx/trunk/crtest
+ms2gt/src/mapx/trunk/gacct
+ms2gt/src/mapx/trunk/gridloc
+ms2gt/src/mapx/trunk/gtest
+ms2gt/src/mapx/trunk/irregrid
+ms2gt/src/mapx/trunk/macct
+ms2gt/src/mapx/trunk/mapenum
+ms2gt/src/mapx/trunk/mtest
+ms2gt/src/mapx/trunk/regrid
+ms2gt/src/mapx/trunk/resamp
+ms2gt/src/mapx/trunk/ungrid
+ms2gt/src/mapx/trunk/wdbtocdb
+ms2gt/src/mapx/trunk/xytest
+ms2gt/src/projection/projection
+ms2gt/src/utils/apply_mask
+ms2gt/src/utils/extract_region
+ms2gt/src/utils/insert_region
+ms2gt/src/utils/make_mask
+ms2gt/src/xy2ll/xy2ll
 

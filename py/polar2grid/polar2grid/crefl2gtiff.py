@@ -168,10 +168,10 @@ def process_data_sets(nav_set_dict,
                                 band_rep = nav_set_jobs[MBAND_NAV_UID]["remapped_jobs"][grid_name].values()[0]
                             else:
                                 band_rep = nav_set_jobs[GEO_NAV_UID]["remapped_jobs"][grid_name].values()[0]
-                            band_info["grid_info"]["pixel_size_x"] = band_rep["pixel_size_x_grid_units"]
-                            band_info["grid_info"]["pixel_size_y"] = band_rep["pixel_size_y_grid_units"]
-                            band_info["grid_info"]["grid_origin_x"] = band_rep["grid_origin_x_grid_units"]
-                            band_info["grid_info"]["grid_origin_y"] = band_rep["grid_origin_y_grid_units"]
+                            band_info["grid_info"]["pixel_size_x"] = band_rep["pixel_size_x"]
+                            band_info["grid_info"]["pixel_size_y"] = band_rep["pixel_size_y"]
+                            band_info["grid_info"]["grid_origin_x"] = band_rep["grid_origin_x"]
+                            band_info["grid_info"]["grid_origin_y"] = band_rep["grid_origin_y"]
                             band_info["grid_info"]["grid_width"] = band_rep["grid_width"]
                             band_info["grid_info"]["grid_height"] = band_rep["grid_height"]
 
@@ -240,6 +240,9 @@ def process_data_sets(nav_set_dict,
             # Add the true color band to jobs to process
             try:
                 true_color_data = numpy.array([sharp_red,sharp_green,sharp_blue])
+                fill_value = mgrid_dict[(BKIND_CREFL,BID_01)]["fill_value"] # Assumes all RGB bands have same fill
+                true_color_mask = (red_lo == fill_value) | (sharp_red == fill_value) | (sharp_green == fill_value) | (sharp_blue == fill_value)
+                true_color_data[ :, true_color_mask ] = fill_value
                 true_color_stem = "result_%s_%s_%s_%s" % (nav_set_uid, BKIND_TCOLOR_CREFL, NOT_APPLICABLE, grid_name)
                 true_color_fn   = true_color_stem + ".real4." + ".".join( str(x) for x in true_color_data.shape[::-1] )
                 true_color_data.tofile(true_color_fn)
@@ -299,6 +302,9 @@ def process_data_sets(nav_set_dict,
             # Add the true color band to jobs to process
             try:
                 true_color_data = numpy.array([sharp_red, sharp_green, sharp_blue])
+                fill_value = dict_1000m[(BKIND_CREFL,BID_01)]["fill_value"] # Assumes all RGB bands have same fill
+                true_color_mask = (red == fill_value) | (sharp_red == fill_value) | (sharp_green == fill_value) | (sharp_blue == fill_value)
+                true_color_data[ :, true_color_mask ] = fill_value
                 true_color_stem = "result_%s_%s_%s_%s" % (nav_set_uid, BKIND_TCOLOR_CREFL, NOT_APPLICABLE, grid_name)
                 true_color_fn   = true_color_stem + ".real4." + ".".join( str(x) for x in true_color_data.shape[::-1] )
                 true_color_data.tofile(true_color_fn)

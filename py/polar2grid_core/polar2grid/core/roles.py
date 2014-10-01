@@ -47,6 +47,8 @@ from .fbf import data_type_to_fbf_type
 import os
 import sys
 import logging
+import re
+from StringIO import StringIO
 from abc import ABCMeta,abstractmethod,abstractproperty
 
 try:
@@ -100,16 +102,208 @@ class abstractstaticmethod(staticmethod):
 
 ### End of Copy ###
 
-class RescalerRole(object):
+class CSVConfigReader(object):
+    """Base class for CSV configuration file readers.
+    The format of the file is 1 configuration entry per line. Where the first
+    N elements 'identify' the line in the internal storage of this object.
+
+    Configuration files can be passed into the ``__init__`` method. One or more
+    configuration files can be passed at a time. Individual configuration
+    files can be added via the ``load_config_file`` method. Provided
+    configuration files can be filepaths as strings or a file-like object.
+
+    Wildcard identifying entries are supported by the '*' character. When
+    requesting an entry, the loaded configuration files are searched in the
+    order they were entered and in top-down line order. It is recommended
+    that wildcards go near the bottom of files to avoid conflict.
+
+    Class attributes:
+        NUM_ID_ELEMENTS (default 6): Number of elements (starting from the
+            first) that 'identify' the configuration entry.
+        COMMENT_CHARACTER (default '#'): First character in a line
+            representing a comment. Inline comments are not supported.
+    """
+    __metaclass__ = ABCMeta
+    NUM_ID_ELEMENTS = 6
+    COMMENT_CHARACTER = '#'
+
+    def __init__(self, *config_files, **kwargs):
+        """Initialize configuration reader.
+        Provided configuration files can be filepaths or file-like objects.
+
+        :keyword ignore_bad_lines: Ignore bad configuration lines if encountered
+        :keyword min_num_elements: Minimum number of elements allowed in a config line
+        """
+        self.config_storage = []
+        self.ignore_bad_lines = kwargs.get("ignore_bad_lines", False)
+        self.min_num_elements = kwargs.get("min_num_elements", self.NUM_ID_ELEMENTS)
+        for config_file in config_files:
+            self.load_config_file(config_file)
+
+    def load_config_file(self, config_file):
+        """Load one configuration file into internal storage.
+
+        If the config_file is a relative path string and can't be found it
+        will be loaded from a package relative location. If it can't be found
+        in the package an exception is raised.
+        """
+        # If we were provided a string filepath then open the file
+        if isinstance(config_file, str):
+            if not os.path.isabs(config_file):
+                # Its not an absolute path, lets see if its relative path
+                cwd_config = os.path.join(os.path.curdir, config_file)
+                if os.path.exists(cwd_config):
+                    config_file = cwd_config
+                    config_file = open(config_file, 'r')
+                else:
+                    # they have specified a package provided file
+                    log.info("Loading package provided rescale config: '%s'" % (config_file,))
+                    try:
+                        config_str = get_resource_string(self.__module__, config_file)
+                    except StandardError:
+                        log.error("Rescale config '%s' was not found" % (config_file,))
+                        raise
+                    config_file = StringIO(config_str)
+            else:
+                config_file = open(config_file, 'r')
+
+        # Read in each line
+        for line in config_file:
+            # Clean the line
+            line = line.strip()
+            # Ignore comments and blank lines
+            if line.startswith(self.COMMENT_CHARACTER) or line == "":
+                continue
+            # Get each element
+            parts = tuple( x.strip() for x in line.split(",") )
+            # Parse the line
+            self.parse_config_parts(parts)
+
+    def parse_config_parts(self, parts):
+        if len(parts) < self.min_num_elements:
+            log.error("Line does not have correct number of elements: '%s'" % (str(parts),))
+            if self.ignore_bad_lines: return
+            raise ValueError("Line does not have correct number of elements: '%s'" % (str(parts),))
+
+        # Separate the parts into identifying vs configuration parts
+        id_parts = parts[:self.NUM_ID_ELEMENTS]
+        entry_parts = parts[self.NUM_ID_ELEMENTS:]
+
+        # Handle each part separately
+        try:
+            id_regex_obj = self.parse_id_parts(id_parts)
+            entry_info = self.parse_entry_parts(entry_parts)
+        except StandardError:
+            if self.ignore_bad_lines: return
+            log.error("Bad configuration line: '%s'" % (str(parts),))
+            raise
+
+        self.config_storage.append((id_regex_obj,entry_info))
+
+    def parse_id_parts(self, id_parts):
+        parsed_parts = []
+        for part in id_parts:
+            if part == "None" or part == "none" or part == "":
+                part = ''
+            # If there is a '*' anywhere in the entry, make it a wildcard
+            part = part.replace("*", r'.*')
+            parsed_parts.append(part)
+
+        this_regex = "_".join(parsed_parts)
+
+        try:
+            this_regex_obj = re.compile(this_regex)
+        except re.error:
+            log.error("Invalid configuration identifying information (not valid regular expression): '%s'" % (str(id_parts),))
+            raise ValueError("Invalid configuration identifying information (not valid regular expression): '%s'" % (str(id_parts),))
+
+        return this_regex_obj
+
+    def parse_entry_parts(self, entry_parts):
+        """Method called when loading a configuration entry.
+        The argument passed is a tuple of each configuration entries
+        information loaded from the file.
+
+        This is where a user could convert a tuple to a dictionary with
+        specific key names.
+        """
+        return entry_parts
+
+    def prepare_config_entry(self, entry_info, id_info):
+        """Method called when retrieving a configuration entry to prepare
+        configuration information for the use.
+        The second argument is a tuple of the identifying elements provided
+        during the search. The first argument is whatever object was returned
+        by ``parse_entry_parts`` during configuration loading.
+        
+        This method is used during the retrieval process in
+        case the structure of the entry is based on the specifics of the
+        match. For example, if a wildcard is matched, the configuration
+        information might take on a different meaning based on what matched.
+        It is best practice to copy any information that is being provided
+        so it can't be changed by the user.
+
+        This is where a user could convert a tuple to a dictionary with
+        specific key names.
+        """
+        if hasattr(entry_info, "copy"):
+            return entry_info.copy()
+        elif isinstance(entry_info, list) or isinstance(entry_info, tuple):
+            return entry_info[:]
+        else:
+            return entry_info
+
+    def get_config_entry(self, *args, **kwargs):
+        """Retrieve configuration information.
+        Passed arguments will be matched against loaded configuration
+        entry identities, therefore there must be the same number of elements
+        as ``NUM_ID_ELEMENTS``.
+        """
+        if len(args) != self.NUM_ID_ELEMENTS:
+            log.error("Incorrect number of identifying elements when searching configuration")
+            raise ValueError("Incorrect number of identifying elements when searching configuration")
+
+        search_id = "_".join([ (x is not None and x) or "" for x in args ])
+        for regex_pattern,entry_info in self.config_storage:
+            m = regex_pattern.match(search_id)
+            if m is None: continue
+
+            entry_info = self.prepare_config_entry(entry_info, args)
+            return entry_info
+
+        raise ValueError("No config entry found matching: '%s'" % (search_id,))
+
+    def get_all_matching_entries(self, *args, **kwargs):
+        """Retrieve configuration information.
+        Passed arguments will be matched against loaded configuration
+        entry identities, therefore there must be the same number of elements
+        as ``NUM_ID_ELEMENTS``.
+        """
+        if len(args) != self.NUM_ID_ELEMENTS:
+            log.error("Incorrect number of identifying elements when searching configuration")
+            raise ValueError("Incorrect number of identifying elements when searching configuration")
+
+        search_id = "_".join([ (x is not None and x) or "" for x in args ])
+        matching_entries = []
+        for regex_pattern,entry_info in self.config_storage:
+            m = regex_pattern.match(search_id)
+            if m is None: continue
+
+            matching_entries.append(self.prepare_config_entry(entry_info, args))
+
+        if len(matching_entries) != 0:
+            return matching_entries
+        else:
+            raise ValueError("No config entry found matching: '%s'" % (search_id,))
+
+class RescalerRole(CSVConfigReader):
     __metaclass__ = ABCMeta
 
     # Fill values in the input and to set in the output
     DEFAULT_FILL_IN  = DEFAULT_FILL_VALUE
     DEFAULT_FILL_OUT = DEFAULT_FILL_VALUE
 
-    # Dictionary mapping of data identifier to rescaling function and its
-    # arguments
-    config = {}
+    NUM_ID_ELEMENTS = 6
 
     @abstractproperty
     def default_config_dir(self):
@@ -126,17 +320,9 @@ class RescalerRole(object):
 
     @abstractproperty
     def known_rescale_kinds(self):
-        """Return a dictionary mapping data_kind constants to scaling
-        function.  This will be used by the configuration file parser
-        to decide what scaling function goes with each data_kind.
-
-        The dictionary should at least have a key for each data_kind constant,
-        but it may also have some common data_kind equivalents that may appear
-        in a configuration file.  For instance, brightness temperatures may be
-        written in the configuration file as 'btemp', 'brightness temperature',
-        'btemperature', etc.  So the dictionary could have one key for each of
-        these variations as well as the constant DKIND_BTEMP, all mapping to
-        the same scaling function.
+        """Return a dictionary mapping rescaling kind to scaling
+        function.  This will be used during configuration file parsing
+        to decide if the line is valid.
 
         A good strategy is to define the dictionary outside this
         function/property and return a pointer to that class attribute.
@@ -145,121 +331,41 @@ class RescalerRole(object):
         """
         return {}
 
-    # Define the dictionary once so it doesn't have to be
-    # allocated/instantiated every time it's used
-    _known_data_kinds = {
-                            'brightnesstemperature': DKIND_BTEMP,
-                        }
-
-    @property
-    def known_data_kinds(self):
-        # Used in configuration reader
-        return self._known_data_kinds
-
-    def __init__(self, config=None, fill_in=None, fill_out=None):
+    def __init__(self, *config_files, **kwargs):
         """Load the initial configuration file and any other information
         needed for later rescaling.
         """
-        if config is not None:
-            self.load_config(config)
+        self.fill_in = kwargs.pop("fill_in", self.DEFAULT_FILL_IN)
+        self.fill_out = kwargs.pop("fill_out", self.DEFAULT_FILL_OUT)
+        kwargs["min_num_elements"] = kwargs.get("min_num_elements", self.NUM_ID_ELEMENTS+1) # ID + scaling func
+        super(RescalerRole, self).__init__(*config_files, **kwargs)
 
-        self.fill_in = fill_in or self.DEFAULT_FILL_IN
-        self.fill_out = fill_out or self.DEFAULT_FILL_OUT
+    def parse_id_parts(self, parts):
+        # Make sure we know the data_kind
+        parts = super(RescalerRole, self).parse_id_parts(parts)
+        return parts
 
-    def _create_config_id(self, sat, instrument, nav_set_uid, kind, band, data_kind):
-        return "_".join([sat.lower(), instrument.lower(), (nav_set_uid or "").lower(), kind.lower(), (band or "").lower(), data_kind.lower()])
+    def parse_entry_parts(self, parts):
+        # Make sure we know the scale kind
+        if parts[0] not in self.known_rescale_kinds:
+            log.error("Rescaling doesn't know the rescaling kind '%s'" % parts[0])
+            if self.ignore_bad_lines:
+                return
+            raise ValueError("Rescaling doesn't know the rescaling kind '%s'" % parts[0])
+        parts = list(parts)
+        parts[0] = self.known_rescale_kinds[parts[0]]
 
-    def load_config_str(self, config_str):
-        """Just in case I want to have a config file stored as a string in
-        the future.
+        # FUTURE: Check argument lengths and maybe values per rescale kind 
 
-        """
-        # Get rid of trailing new lines and commas
-        config_lines = [ line.strip(",\n") for line in config_str.split("\n") ]
-        # Get rid of comment lines and blank lines
-        config_lines = [ line for line in config_lines if line and not line.startswith("#") and not line.startswith("\n") ]
-        # Check if we have any useful lines
-        if not config_lines:
-            log.warning("No non-comment lines were found in rescaling configuration")
-            return False
-
-        try:
-            # Parse config lines
-            for line in config_lines:
-                parts = [ part.strip() for part in line.split(",") ]
-                if len(parts) < 7:
-                    log.error("Rescale config line needs at least 6 columns : '%s'" % (line))
-                    raise ValueError("Rescale config line needs at least 6 columns : '%s'" % (line))
-
-                # Verify that each identifying portion is valid
-                for i in range(7):
-                    assert parts[i],"Field %d can not be empty" % i
-                    # polar2grid demands lowercase fields
-                    parts[i] = parts[i].lower()
-
-                # Convert band if none
-                if parts[2] == '' or parts[2] == "none":
-                    parts[2] = NOT_APPLICABLE
-                if parts[4] == '' or parts[4] == "none":
-                    parts[4] = NOT_APPLICABLE
-                # Make sure we know the data_kind
-                if parts[5] not in SET_DKINDS:
-                    if parts[5] in self.known_data_kinds:
-                        parts[5] = self.known_data_kinds[parts[5]]
-                    else:
-                        log.warning("Rescaling doesn't know the data kind '%s'" % parts[5])
-
-                # Make sure we know the scale kind
-                if parts[6] not in self.known_rescale_kinds:
-                    log.error("Rescaling doesn't know the rescaling kind '%s'" % parts[6])
-                    raise ValueError("Rescaling doesn't know the rescaling kind '%s'" % parts[6])
-                parts[6] = self.known_rescale_kinds[parts[6]]
-                # TODO: Check argument lengths and maybe values per rescale kind 
-
-                # Enter the information into the configs dict
-                line_id = self._create_config_id(*parts[:6])
-                config_entry = (parts[6], tuple(float(x) for x in parts[7:]))
-                self.config[line_id] = config_entry
-        except StandardError:
-            # Clear out the bad config
-            log.warning("Rescaling configuration file could be in a corrupt state")
-            raise
-
-        return True
-
-    def load_config(self, config_filename):
-        """
-        Load a rescaling configuration file for later use by the `__call__`
-        function.
-
-        If the config isn't an absolute path, it checks the current directory,
-        and if the config can't be found there it is assumed to be relative to
-        the package structure. So entering just the filename will look in the
-        default rescaling configuration location (the package root) for the
-        filename provided.
-        """
-        if not os.path.isabs(config_filename):
-            # Its not an absolute path, lets see if its relative path
-            cwd_config = os.path.join(os.path.curdir, config_filename)
-            if os.path.exists(cwd_config):
-                config_filename = cwd_config
+        parts = super(RescalerRole, self).parse_entry_parts(parts)
+        args = []
+        for x in parts[1:]:
+            if x == "none" or x == "None":
+                args.append(None)
             else:
-                # they have specified a package provided file
-                log.info("Loading package provided rescale config: '%s'" % (config_filename,))
-                try:
-                    config_str = get_resource_string(self.__module__, config_filename)
-                except StandardError:
-                    log.error("Rescale config '%s' was not found" % (config_filename,))
-                    raise
-                return self.load_config_str(config_str)
+                args.append(float(x))
 
-        config = os.path.realpath(config_filename)
-
-        log.debug("Using rescaling configuration '%s'" % (config,))
-
-        config_file = open(config, 'r')
-        config_str = config_file.read()
-        return self.load_config_str(config_str)
+        return (parts[0], args)
 
     @abstractmethod
     def __call__(self, sat, instrument, nav_set_uid, kind, band, data_kind, data):
@@ -476,7 +582,7 @@ class FrontendRole(object):
         :returns:
             Information describing the data provided that will
             be used by other polar2grid components. See the
-            :doc:`Developer's Guide <dev_guide/frontends>`
+            Developer's Guide in the official documentation
             for information on what the meta data dictionary
             should contain.
         :rtype: dict
@@ -536,26 +642,10 @@ class CartographerRole(object):
         """
         raise NotImplementedError("Child class must implement this method")
 
-    @abstractmethod
-    def remove_grid(self, grid_name):
-        """Remove ``grid_name`` from the internal grid information storage
-        of this object.
-        """
-        raise NotImplementedError("Child class must implement this method")
-
-    @abstractmethod
-    def remove_all(self):
-        """Remove all grids from the internal grid information storage of
-        this object.
-        """
-        raise NotImplementedError("Child class must implement this method")
-
 def main():
     """Run some tests on the interfaces/roles
     """
-    # TODO
     import doctest
-    print "Running doctests"
     return doctest.testmod()
 
 if __name__ == "__main__":
