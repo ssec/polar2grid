@@ -142,6 +142,8 @@ class MIRSFileReader(object):
         self.instrument = self.nc_obj.instrument_name
         self.begin_time = datetime.strptime(self.nc_obj.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
         self.end_time = datetime.strptime(self.nc_obj.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
+        self.x_res = float(self.nc_obj.geospatial_lon_resolution)
+        self.y_res = float(self.nc_obj.geospatial_lat_resolution)
 
     @classmethod
     def handles_file(cls, fn_or_nc_obj):
@@ -295,19 +297,32 @@ class MIRSMultiReader(object):
 
         return file_appender.shape
 
-    def get_satellite(self):
+    @property
+    def satellite(self):
         return self.file_readers[0].satellite
 
-    def get_instrument(self):
+    @property
+    def instrument(self):
         return self.file_readers[0].instrument
 
-    def get_begin_time(self):
+    @property
+    def begin_time(self):
         return self.file_readers[0].begin_time
 
-    def get_end_time(self):
+    @property
+    def end_time(self):
         return self.file_readers[-1].end_time
 
-    def get_filepaths(self):
+    @property
+    def x_res(self):
+        return self.file_readers[0].x_res
+
+    @property
+    def y_res(self):
+        return self.file_readers[0].y_res
+
+    @property
+    def filepaths(self):
         return [fr.filepath for fr in self.file_readers]
 
 
@@ -333,13 +348,19 @@ def get_file_type(filepath):
 class Frontend(object):
     """Polar2Grid Frontend object for handling MIRS files.
     """
-    def __init__(self, search_paths=None):
-        search_paths = search_paths or ['.']
+    def __init__(self, search_paths=None, **kwargs):
+        super(Frontend, self).__init__(**kwargs)
+        if not search_paths:
+            LOG.info("No files or paths provided as input, will search the current directory...")
+            search_paths = ['.']
         self.recognized_files = {}
         for file_kind, filepath in self.find_all_files(search_paths):
             if file_kind not in self.recognized_files:
                 self.recognized_files[file_kind] = []
             self.recognized_files[file_kind].append(filepath)
+        if not self.recognized_files:
+            LOG.error("No useable files provided or found")
+            raise RuntimeError("No useable files provided or found")
 
     def find_all_files(self, search_paths):
         for p in search_paths:
@@ -385,11 +406,12 @@ class Frontend(object):
             lon_product = None
         one_swath = meta.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
-            satellite=file_reader.get_satellite(), instrument=file_reader.get_instrument(),
-            begin_time=file_reader.get_begin_time(), end_time=file_reader.get_end_time(),
-            longitude=lon_product, latitude=lat_product,
+            satellite=file_reader.satellite, instrument=file_reader.instrument,
+            begin_time=file_reader.begin_time, end_time=file_reader.end_time,
+            longitude=lon_product, latitude=lat_product, fill_value=numpy.nan,
             swath_rows=shape[0], swath_cols=shape[1], data_type=dtype_str, swath_data=filename,
-            source_filenames=file_reader.get_filepaths(), data_kind=product_def.data_kind, rows_per_scan=0
+            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=0,
+            x_res=file_reader.x_res, y_res=file_reader.y_res,
         )
         return one_swath
 
@@ -437,36 +459,45 @@ class Frontend(object):
         return scene
 
 
-def add_frontend_argument_group(parser):
-    """Return a command line argument parser to determine keyword arguments that should be passed to the frontend.
+def add_frontend_argument_groups(parser):
+    """Add command line arguments to an existing parser.
+
+    :returns: list of group titles added
     """
-    group = parser.add_argument_group(title="mirs_frontend", description="swath extraction options")
+    group_title = "frontend_init"
+    group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
+    group.add_argument("--list-products", dest="list_products", action="store_true",
+                        help="List available frontend products")
+    group_title = "frontend_create_scene"
+    group = parser.add_argument_group(title=group_title, description="swath extraction options")
     group.add_argument("-p", "--products", dest="products", nargs="*", default=None,
                        help="Specify frontend products to process")
+    return ["frontend_init", "frontend_create_scene"]
 
 
 def main():
-    from polar2grid.core.glue_utils import create_basic_parser, setup_logging
+    from polar2grid.core.glue_utils import create_basic_parser, setup_logging, create_exc_handler
     parser = create_basic_parser(description="Extract image data from MIRS files and print JSON scene dictionary")
-    add_frontend_argument_group(parser)
+    subgroup_titles = add_frontend_argument_groups(parser)
     parser.add_argument('-f', dest='data_files', nargs="+", default=[],
                         help="List of one or more data files")
     parser.add_argument('-d', dest='data_dirs', nargs="+", default=[],
                         help="Data directories to look for input data files")
-    parser.add_argument("--list-products", dest="list_products", action="store_true",
-                        help="List available frontend products")
-    args = parser.parse_args(subgroup_titles=["mirs_frontend"])
+    args = parser.parse_args(subgroup_titles=subgroup_titles)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
+    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
-    f = Frontend(args.data_files + args.data_dirs)
+    list_products = args.subgroup_args["frontend_init"].pop("list_products")
+    f = Frontend(args.data_files + args.data_dirs, **args.subgroup_args["frontend_init"])
 
-    if args.list_products:
+    if list_products:
         print("\n".join(f.available_product_names))
         return 0
 
-    scene = f.create_scene(**args.mirs_frontend)
+    scene = f.create_scene(**args.subgroup_args["frontend_create_scene"])
     print(scene.dumps(persist=True))
     return 0
 

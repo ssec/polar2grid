@@ -46,16 +46,13 @@ import sys
 import logging
 import re
 from glob import glob
-from subprocess import check_call,CalledProcessError
+from subprocess import check_output, CalledProcessError, STDOUT
 
 log = logging.getLogger(__name__)
 
-CR_REG = r'.*_(\d+).img'
-cr_reg = re.compile(CR_REG)
 
 def _ll2cr_rows_info(fn):
-    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<ll2cr_rowsperscan>\d+).img'
-    cr_reg = re.compile(CR_REG)
+    cr_reg = re.compile(r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<ll2cr_rowsperscan>\d+).img')
     row_match = cr_reg.match(fn)
     if row_match is None:
         log.error("Couldn't get row information from ll2cr file")
@@ -66,9 +63,9 @@ def _ll2cr_rows_info(fn):
     d["ll2cr_rowsperscan"] = int(d["ll2cr_rowsperscan"])
     return d
 
+
 def _ll2cr_cols_info(fn):
-    CR_REG = r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<ll2cr_rowsperscan>\d+).img'
-    cr_reg = re.compile(CR_REG)
+    cr_reg = re.compile(r'.*_(?P<scans_out>\d+)_(?P<scan_first>\d+)_(?P<ll2cr_rowsperscan>\d+).img')
     col_match = cr_reg.match(fn)
     if col_match is None:
         log.error("Couldn't get col information from ll2cr file")
@@ -79,8 +76,9 @@ def _ll2cr_cols_info(fn):
     d["ll2cr_rowsperscan"] = int(d["ll2cr_rowsperscan"])
     return d
 
+
 def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
-        verbose=False, f_scansout=True, rind=None, fill_io=None, tag="ll2cr"):
+          verbose=False, f_scansout=True, rind=None, fill_io=None, tag="ll2cr"):
     args = ["ll2cr"]
     if verbose:
         args.append("-v")
@@ -95,10 +93,12 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
         args.append(tag)
 
     try:
-        args = [ str(a) for a in args ]
+        args = [str(a) for a in args]
         log.debug("Running ll2cr with '%s'" % " ".join(args))
-        check_call(args)
-    except CalledProcessError:
+        ll2cr_output = check_output(args, stderr=STDOUT)
+        log.info("ll2cr output:\n%s", ll2cr_output)
+    except CalledProcessError as e:
+        log.info("ll2cr output:\n%s", e.output)
         log.error("Error running ll2cr", exc_info=1)
         raise ValueError("Error running ll2cr")
     except OSError:
@@ -147,9 +147,10 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
 
     return d
 
+
 def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, rowfile, swathfile, grid_cols, grid_rows, output_fn,
-        verbose=False, swath_data_type_1=None, swath_fill_1=None, grid_fill_1=None, weight_delta_max=None, weight_distance_max=None,
-        start_scan=None, select_single_samples=False):
+           verbose=False, swath_data_type_1=None, swath_fill_1=None, grid_fill_1=None, weight_delta_max=None, weight_distance_max=None,
+           start_scan=None, select_single_samples=False):
     args = ["fornav", "%d" % chan_count]
     
     if chan_count == 1 and not isinstance(swathfile, list):
@@ -219,16 +220,18 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
     args.extend(output_fn)
 
     try:
-        args = [ str(a) for a in args ]
+        args = [str(a) for a in args]
         log.debug("Running fornav with '%s'" % " ".join(args))
-        check_call(args)
+        fornav_output = check_output(args, stderr=STDOUT)
+        log.info("fornav output:\n%s", fornav_output)
 
         # Check to make sure fornav actually created the files
         for o_fn in output_fn:
             if not os.path.exists(o_fn):
                 log.error("Couldn't find fornav output file '%s'" % o_fn)
                 raise RuntimeError("Couldn't find fornav output file '%s'" % o_fn)
-    except CalledProcessError:
+    except CalledProcessError as e:
+        log.info("fornav output:\n%s", e.output)
         log.error("Error running fornav", exc_info=1)
         raise ValueError("Fornav failed")
     except OSError:

@@ -1,51 +1,50 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    October 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
 """Interface to remapping polar2grid data.
-
-Main interface function `remap_bands`.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
+:date:         Oct 2014
 :license:      GNU GPLv3
-
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
 
 """
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.constants import GRID_KIND_PROJ4,GRID_KIND_GPD,DEFAULT_FILL_VALUE
 from polar2grid.core.fbf import check_stem
-from . import ll2cr as gator # gridinator
-from . import ms2gt
+from polar2grid.core.meta import GriddedProduct, GriddedScene
+from polar2grid import ll2cr as gator # gridinator
+from polar2grid import ms2gt
+import numpy
 
 import os
 import sys
@@ -53,7 +52,7 @@ import logging
 import signal
 import multiprocessing
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 removable_file_patterns = [
         "ll2cr_*_*_cols_*_*_*_*.img",
@@ -112,7 +111,7 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     # https://github.com/davidh-ssec/polar2grid/issues/33
     try:
         for grid_name in grid_jobs.keys():
-            log.info("Running ll2cr for grid %s and bands %r" % (grid_name, grid_jobs[grid_name].keys()))
+            LOG.info("Running ll2cr for grid %s and bands %r" % (grid_name, grid_jobs[grid_name].keys()))
             ll2cr_tag = "ll2cr_%s_%s" % (nav_set_uid,grid_name)
 
             # Get information that is usually per band, but since we are already
@@ -159,7 +158,7 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
                 # C version of ll2cr can't handle different nav fill values
                 if lon_fill_value != lat_fill_value:
                     msg = "Navigation files must have the same fill value when using the C ll2cr (%f vs %f)" % (lon_fill_value, lat_fill_value)
-                    log.warning(msg)
+                    LOG.warning(msg)
                     del grid_jobs[grid_name]
                     continue
 
@@ -180,7 +179,7 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     except KeyboardInterrupt:
         # Catch keyboard interrupt during pool processing, see comment at
         # top of try block
-        log.debug("Keyboard interrupt during ll2cr call")
+        LOG.debug("Keyboard interrupt during ll2cr call")
         proc_pool.terminate()
         proc_pool.join()
         raise
@@ -193,16 +192,16 @@ def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
             for band_dict in grid_jobs[grid_name].values():
                 band_dict.update(ll2cr_output[grid_name])
         except StandardError:
-            log.warning("ll2cr failed for grid %s for bands %r" % (grid_name,grid_jobs[grid_name].keys()))
-            log.warning("Won't process for this grid...")
-            log.debug("ll2cr error:", exc_info=1)
+            LOG.warning("ll2cr failed for grid %s for bands %r" % (grid_name,grid_jobs[grid_name].keys()))
+            LOG.warning("Won't process for this grid...")
+            LOG.debug("ll2cr error:", exc_info=1)
             for (band_kind, band_id) in grid_jobs[grid_name]:
-                log.error("Removing processing for kind %s band %s because of bad ll2cr execution on grid %s" % (band_kind, band_id, grid_name))
+                LOG.error("Removing processing for kind %s band %s because of bad ll2cr execution on grid %s" % (band_kind, band_id, grid_name))
             del grid_jobs[grid_name]
             del ll2cr_output[grid_name]
 
     if len(grid_jobs) == 0:
-        log.error("All grids failed during ll2cr processing for %s" % (nav_set_uid,))
+        LOG.error("All grids failed during ll2cr processing for %s" % (nav_set_uid,))
         raise ValueError("All grids failed during ll2cr processing for %s" % (nav_set_uid,))
 
     return ll2cr_output
@@ -293,7 +292,7 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
     except KeyboardInterrupt:
         # Catch keyboard interrupt during pool processing, see comment at
         # top of try block
-        log.debug("Keyboard interrupt during fornav call")
+        LOG.debug("Keyboard interrupt during fornav call")
         proc_pool.terminate()
         proc_pool.join()
         raise
@@ -305,22 +304,22 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
                 fornav_dict = fornav_job["result"].get()
                 for (band_kind, band_id),band_dict in fornav_output[grid_name].items():
                     band_dict.update(fornav_dict)
-                log.debug("Fornav successfully completed for grid %s, %s data" % (grid_name,remap_data_as))
+                LOG.debug("Fornav successfully completed for grid %s, %s data" % (grid_name,remap_data_as))
             except StandardError:
-                log.warning("fornav failed for %s band, grid %s, remapping as %s" % (nav_set_uid,grid_name,remap_data_as))
-                log.debug("Exception was:", exc_info=1)
-                log.warning("Cleaning up for this job...")
+                LOG.warning("fornav failed for %s band, grid %s, remapping as %s" % (nav_set_uid,grid_name,remap_data_as))
+                LOG.debug("Exception was:", exc_info=1)
+                LOG.warning("Cleaning up for this job...")
                 for (band_kind, band_id) in fornav_output[grid_name].keys():
                     if fornav_output[grid_name][(band_kind, band_id)]["remap_data_as"] == remap_data_as:
-                        log.error("Removing %s%s because of bad fornav execution" % (band_kind,band_id))
+                        LOG.error("Removing %s%s because of bad fornav execution" % (band_kind,band_id))
                         del fornav_output[grid_name][(band_kind, band_id)]
 
         if len(fornav_output[grid_name]) == 0:
-            log.error("The last grid job for grid %s was removed" % (grid_name,))
+            LOG.error("The last grid job for grid %s was removed" % (grid_name,))
             del fornav_output[grid_name]
 
     if len(fornav_output) == 0:
-        log.error("Fornav was not able to complete any remapping for navigation set %s" % (nav_set_uid,))
+        LOG.error("Fornav was not able to complete any remapping for navigation set %s" % (nav_set_uid,))
         raise RuntimeError("Fornav was not able to complete any remapping for navigation set %s" % (nav_set_uid,))
 
     return fornav_output
@@ -362,8 +361,165 @@ def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
 
     return fornav_output
 
+
+# FUTURE: Create a role for this in polar2grid.core.roles
+class Remapper(object):
+    def __init__(self, grid_configs=[]):
+        from .grids.grids import Cartographer
+        self.cart = Cartographer(*grid_configs)
+
+    def remap_scene(self, scene, grid_name, **kwargs):
+        method = kwargs.pop("method", "ewa")
+        if method != "ewa":
+            raise NotImplementedError("Remapping methods other than 'ewa' are not supported at this time")
+
+        return self._remap_scene_ewa(scene, grid_name, **kwargs)
+
+    def _remap_scene_ewa(self, scene, grid_name, **kwargs):
+        # TODO: Make methods more flexible than just a function call
+        gridded_scene = GriddedScene()
+
+        # Group products together that shared the same geolocation
+        from collections import defaultdict
+        product_groups = defaultdict(list)
+        for product_name, swath_product in scene.items():
+            geo_id = (swath_product["longitude"]["product_name"], swath_product["latitude"]["product_name"])
+            product_groups[geo_id].append(product_name)
+
+        geo_id_numbers = dict((k, idx) for idx, k in enumerate(product_groups.keys()))
+        for geo_id, product_names in product_groups.items():
+            LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
+            # an identifying number
+            geo_id_number = str(geo_id_numbers[geo_id])
+            LOG.debug("Product group index: %s", geo_id_number)
+
+            # TODO: Move into it's own function if this gets complicated
+            # TODO: Add some multiprocessing
+            # TODO: Allow ll2cr to return arrays
+            grid_def = self.cart.get_grid_definition(grid_name)
+            lon_product = scene[product_names[0]]["longitude"]
+            lat_product = scene[product_names[0]]["latitude"]
+            lon_arr = lon_product.get_data_array("swath_data")
+            lat_arr = lat_product.get_data_array("swath_data")
+            rows_fn = "ll2cr_rows_%s_%s.dat" % (grid_name, geo_id_number)
+            cols_fn = "ll2cr_cols_%s_%s.dat" % (grid_name, geo_id_number)
+            ll2cr_output = gator.ll2cr(lon_arr, lat_arr, grid_def["proj4_def"],
+                                     pixel_size_x=grid_def["cell_width"], pixel_size_y=grid_def["cell_height"],
+                                     grid_origin_x=grid_def["origin_x"], grid_origin_y=grid_def["origin_y"],
+                                     grid_width=grid_def["width"], grid_height=grid_def["height"],
+                                     rows_fn=rows_fn, cols_fn=cols_fn,
+                                     fill_in=numpy.nan
+            )
+
+            # Update our definition of the grid with what was found by ll2cr
+            # FIXME: Obvious that this should be its own helper function along with the ll2cr call
+            grid_def["height"] = ll2cr_output["grid_height"]
+            grid_def["width"] = ll2cr_output["grid_width"]
+            grid_def["cell_height"] = ll2cr_output["pixel_size_y"]
+            grid_def["cell_width"] = ll2cr_output["pixel_size_x"]
+            grid_def["origin_x"] = ll2cr_output["grid_origin_x"]
+            grid_def["origin_y"] = ll2cr_output["grid_origin_y"]
+
+            # Prepare the products
+            for product_name in product_names:
+                swath_product = scene[product_name]
+                gridded_product = GriddedProduct()
+                gridded_product.from_swath_product(swath_product)
+                gridded_product["grid_def"] = grid_def
+                gridded_product["fill_value"] = numpy.nan
+                gridded_scene[product_name] = gridded_product
+
+            # Run fornav for all of the products at once
+            # XXX: May have to do something smarter if there are float products and integer products together
+            product_filepaths = [scene[product_name]["swath_data"] for product_name in product_names]
+            fornav_prefix = "grid_%s_" % (grid_name,)
+            fornav_filepaths = [os.path.join(os.path.dirname(x), fornav_prefix + os.path.basename(x)) for x in product_filepaths]
+            log_level = logging.getLogger('').handlers[0].level or 0
+            rows_per_scan = lon_product.get("rows_per_scan", 0) or 2
+            fornav_output = run_fornav_c(
+                len(product_filepaths),
+                lon_product["swath_cols"],
+                lon_product["swath_rows"]/rows_per_scan,
+                rows_per_scan,
+                cols_fn,
+                rows_fn,
+                product_filepaths,
+                grid_def["width"],
+                grid_def["height"],
+                fornav_filepaths,
+                verbose=log_level <= logging.DEBUG,
+                swath_data_type_1="f4",
+                swath_fill_1=scene.get_fill_value(product_names),
+                grid_fill_1=numpy.nan,
+                weight_delta_max=kwargs.get("fornav_D", None),
+                weight_distance_max=kwargs.get("fornav_d", None),
+                select_single_samples=kwargs.get("do_single_sample", None),
+                # We only specify start_scan for the 'image'/channel
+                # data because ll2cr is not 'forced' so it only writes
+                # useful data to the output cols/rows files
+                start_scan=(0, 0),
+            )
+
+            # Give the gridded product ownership of the remapped data
+            for product_name, fornav_fp in zip(product_names, fornav_filepaths):
+                gridded_scene[product_name]["grid_data"] = fornav_fp
+
+            # Remove ll2cr files now that we are done with them
+            try:
+                os.remove(rows_fn)
+                os.remove(cols_fn)
+            except OSError:
+                LOG.warning("Could not remove ll2cr output files that aren't needed anymore.")
+                LOG.debug("ll2cr output file remove exception:", exc_info=True)
+
+        return gridded_scene
+
+    def remap_product(self, product, grid_name):
+        raise NotImplementedError("Single product remapping is not implemented yet")
+
+
+def add_remap_argument_groups(parser, default_grids=None, default_fornav_d=2, default_fornav_D=40):
+    default_grids = default_grids or ["wgs84_fit"]
+    group = parser.add_argument_group(title="remap_init", description="Remapping initialization options")
+    group.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
+                       help="Specify additional grid configuration files ('grids.conf' for built-ins)")
+    group = parser.add_argument_group(title="remap", description="Remapping main options")
+    group.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default=default_grids,
+                       help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
+    group.add_argument("--method", dest="remap_method", default="ewa", choices=["ewa"],
+                       help="Remapping algorithm to use")
+    group.add_argument('--fornav-D', dest='fornav_D', default=default_fornav_D,
+                       help="Specify the -D option for fornav")
+    group.add_argument('--fornav-d', dest='fornav_d', default=default_fornav_d,
+                       help="Specify the -d option for fornav")
+    return ["remap_init", "remap"]
+
+
 def main():
-    pass
+    from polar2grid.core.glue_utils import create_basic_parser, create_exc_handler, setup_logging
+    parser = create_basic_parser(description="Remap a SwathScene to the provided grids")
+    subgroup_titles = add_remap_argument_groups(parser)
+    parser.add_argument("--scene", required=True,
+                        help="JSON SwathScene filename to be remapped")
+    args = parser.parse_args(subgroup_titles=subgroup_titles)
+
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
+    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
+
+    from polar2grid.core.meta import SwathScene
+    scene = SwathScene.load(args.scene)
+
+    remapper = Remapper(**args.subgroup_args["remap_init"])
+    remap_kwargs = args.subgroup_args["remap"]
+    for grid_name in remap_kwargs.pop("forced_grids"):
+        gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
+        # FIXME: Either allow only 1 grid or find a nice way to output multiple gridded scenes as JSON to stdout
+        fn = "gridded_scene_%s.json" % (grid_name,)
+        gridded_scene.save(fn)
+
+
 
 if __name__ == "__main__":
     sys.exit(main())

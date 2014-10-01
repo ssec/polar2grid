@@ -348,8 +348,8 @@ def parse_proj4_config_line(grid_name, parts):
     p = Proj(proj4_str)
     if convert_xorigin_to_meters and not p.is_latlong():
         meters_x, meters_y = p(grid_origin_x, grid_origin_y)
-        log.info("Converted grid '%s' origin from (lon: %f, lat: %f) to (x: %f, y: %f)",
-                 grid_name, grid_origin_x, grid_origin_y, meters_x, meters_y)
+        log.debug("Converted grid '%s' origin from (lon: %f, lat: %f) to (x: %f, y: %f)",
+                  grid_name, grid_origin_x, grid_origin_y, meters_x, meters_y)
         grid_origin_x, grid_origin_y = meters_x, meters_y
     elif not convert_xorigin_to_meters and (grid_origin_x is not None and p.is_latlong()):
         log.error("Lat/Lon grid '%s' must have its origin in degrees", grid_name)
@@ -713,6 +713,25 @@ class Cartographer(roles.CartographerRole):
         grid_info["ur_corner"] = p(right_x, grid_info["grid_origin_y"], inverse=True)
         grid_info["lr_corner"] = p(right_x, bottom_y, inverse=True)
         grid_info["ll_corner"] = p(grid_info["grid_origin_x"], bottom_y, inverse=True)
+
+    def get_grid_definition(self, grid_name):
+        """Return a standard `GridDefinition` object for the specified grid.
+
+        :returns: `GridDefinition` object, updates to this object do not affect information internal to the `Cartographer`
+
+        """
+        from polar2grid.core.meta import GridDefinition
+        grid_info = self.get_grid_info(grid_name)
+        return GridDefinition(
+            grid_name=grid_name,
+            proj4_def=grid_info["proj4_str"],
+            height=grid_info["grid_height"],
+            width=grid_info["grid_width"],
+            cell_width=grid_info["pixel_size_x"],
+            cell_height=grid_info["pixel_size_y"],
+            origin_x=grid_info["grid_origin_x"],
+            origin_y=grid_info["grid_origin_y"]
+        )
 
     def get_grid_info(self, grid_name, with_corners=False):
         """Return a grid information dictionary about the ``grid_name``

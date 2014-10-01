@@ -64,7 +64,7 @@ def plot_binary(bf, workspace='.',
     fbf_attr = bf.split(".")[0]
     result = getattr(W, fbf_attr)
     result = numpy.ma.masked_where(result == fill_value, result)
-    print result.min(),result.max()
+    print numpy.nanmin(result), numpy.nanmax(result)
     plt.imshow(result, vmin=vmin, vmax=vmax)
     plt.bone()
     plt.colorbar()

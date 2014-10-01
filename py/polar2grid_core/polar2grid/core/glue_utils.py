@@ -44,6 +44,7 @@ import os
 import sys
 import logging
 import argparse
+from collections import defaultdict
 from glob import glob
 
 LOG = logging.getLogger(__name__)
@@ -70,11 +71,6 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log"):
     console.setLevel(console_level)
     root_logger.addHandler(console)
 
-    # Make a traceback logger specifically for adding tracebacks to log file
-    traceback_log = logging.getLogger('traceback')
-    traceback_log.propagate = False
-    traceback_log.setLevel(logging.ERROR)
-
     # Log file messages have a lot more information
     if log_filename:
         file_handler = logging.FileHandler(log_filename)
@@ -82,7 +78,46 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log"):
         file_handler.setFormatter(logging.Formatter(file_format))
         file_handler.setLevel(logging.DEBUG)
         root_logger.addHandler(file_handler)
+
+        # Make a traceback logger specifically for adding tracebacks to log file
+        traceback_log = logging.getLogger('traceback')
+        traceback_log.propagate = False
+        traceback_log.setLevel(logging.ERROR)
         traceback_log.addHandler(file_handler)
+
+
+def rename_log_file(new_filename):
+    """Rename the file handler for the root logger and the traceback logger.
+    """
+    # the traceback logger only has 1 handler so let's get that
+    traceback_log = logging.getLogger('traceback')
+    if not traceback_log.handlers:
+        LOG.error("Tried to change the log filename, but no log file was configured")
+        raise RuntimeError("Tried to change the log filename, but no log file was configured")
+
+    h = traceback_log.handlers[0]
+    fn = h.baseFilename
+    h.stream.close()
+    root_logger = logging.getLogger('')
+    root_logger.removeHandler(h)
+    traceback_log.removeHandler(h)
+
+    # move the old file
+    if os.path.isfile(new_filename):
+        with open(new_filename, 'a') as new_file:
+            with open(fn, 'r') as old_file:
+                new_file.write(old_file.read())
+        os.remove(fn)
+    else:
+        os.rename(fn, new_filename)
+
+    # create the new handler
+    file_handler = logging.FileHandler(new_filename)
+    file_format = "[%(asctime)s] : PID %(process)6d : %(levelname)-8s : %(name)s : %(funcName)s : %(message)s"
+    file_handler.setFormatter(logging.Formatter(file_format))
+    file_handler.setLevel(logging.DEBUG)
+    root_logger.addHandler(file_handler)
+    traceback_log.addHandler(file_handler)
 
 
 def create_exc_handler(glue_name):
@@ -95,7 +130,9 @@ def create_exc_handler(glue_name):
         exception never gets raised in the parent.
         """
         logging.getLogger(glue_name).error(exc_value)
-        logging.getLogger('traceback').error(exc_value, exc_info=(exc_type, exc_value, traceback))
+        tb_log = logging.getLogger('traceback')
+        if tb_log.handlers:
+            tb_log.error(exc_value, exc_info=(exc_type, exc_value, traceback))
     return exc_handler
 
 
@@ -147,6 +184,8 @@ class ArgumentParser(argparse.ArgumentParser):
     def parse_args(self, *args, **kwargs):
         subgroup_titles = kwargs.pop("subgroup_titles", [])
         args = super(ArgumentParser, self).parse_args(*args, **kwargs)
+        # a dictionary that holds arguments from the specified subgroups (defaultdict for easier user by caller)
+        args.subgroup_args = defaultdict(dict)
         for subgroup_title in subgroup_titles:
             try:
                 subgroup = [x for x in self._action_groups if x.title == subgroup_title][0]
@@ -159,7 +198,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 if hasattr(args, action.dest):
                     subgroup_args[action.dest] = getattr(args, action.dest)
                     delattr(args, action.dest)
-            setattr(args, subgroup_title, subgroup_args)
+            args.subgroup_args[subgroup_title] = subgroup_args
 
         return args
 
@@ -170,7 +209,8 @@ def create_basic_parser(*args, **kwargs):
                         help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_argument('-l', '--log', dest="log_fn", default=None,
                         help="specify the log filename")
-    parser.add_argument('--keep-intermediate', dest="keep_intermediate", default=False,
+    #parser.add_argument('--keep-intermediate', dest="keep_intermediate", default=False,
+    parser.add_argument('--debug', dest="keep_intermediate", default=False,
                         action='store_true',
                         help="Keep intermediate files for future use.")
     # parser.add_argument('--debug', dest="debug_mode", default=False,

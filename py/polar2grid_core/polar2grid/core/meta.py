@@ -225,7 +225,7 @@ class BaseP2GObject(dict):
                 if hasattr(self, "persist") and not self.persist:
                     try:
                         LOG.info("Removing associated file that is no longer needed: '%s'", self[kw])
-                        os.remove(self["swath_data"])
+                        os.remove(self[kw])
                     except StandardError as e:
                         if hasattr(e, "errno") and e.errno == 2:
                             LOG.debug("Unable to remove file because it doesn't exist: '%s'", self[kw])
@@ -291,7 +291,30 @@ class BaseP2GObject(dict):
 class BaseScene(BaseP2GObject):
     """Base scene class mapping product name to product metadata object.
     """
-    pass
+    def get_fill_value(self, products=None):
+        """Get the fill value shared by the products specified (all products by default).
+        """
+        products = products or self.keys()
+        fills = [self[product].get("fill_value", numpy.nan) for product in products]
+        if numpy.isnan(fills[0]):
+            fills_same = numpy.isnan(fills).all()
+        else:
+            fills_same = [f == fills[0] for f in fills].all()
+        if not fills_same:
+            raise RuntimeError("Scene's products don't all share the same fill value")
+        return fills[0]
+
+    def get_begin_time(self):
+        """Get the begin time shared by all products in the scene.
+        """
+        products = self.keys()
+        return self[products[0]]["begin_time"]
+
+    def get_end_time(self):
+        """Get the end time shared by all products in the scene.
+        """
+        products = self.keys()
+        return self[products[0]]["end_time"]
 
 
 class SwathScene(BaseScene):
@@ -336,8 +359,55 @@ class GriddedScene(BaseScene):
 class BaseProduct(BaseP2GObject):
     """Base product class for storing metadata.
     """
-    pass
+    def get_data_array(self, item, rows, cols, dtype):
+        """Get FBF item as a numpy array.
 
+        File is loaded from disk as a memory mapped file if needed.
+        """
+        data = self[item]
+        if isinstance(data, (str, unicode)):
+            # load FBF data from a file if needed
+            data = numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode="r")
+
+        return data
+
+    def get_data_mask(self, item, fill=numpy.nan, fill_key=None):
+        """Return a boolean mask where the data for `item` is invalid/bad.
+        """
+        data = self.get_data_array(item)
+
+        if fill_key is not None:
+            fill = self[fill_key]
+
+        if numpy.isnan(fill):
+            return numpy.isnan(data)
+        else:
+            return data == fill
+
+    def copy_array(self, item, rows, cols, dtype, filename=None, read_only=True):
+        """Copy the array item of this swath.
+
+        If the `filename` keyword is passed the data will be written to that file. The copy returned
+        will be a memory map. If `read_only` is False, the memory map will be opened with mode "r+".
+
+        The 'read_only' keyword is ignored if `filename` is None.
+        """
+        mode = "r" if read_only else "r+"
+        data = self[item]
+
+        if isinstance(data, (str, unicode)):
+            # we have a binary filename
+            if filename:
+                # the user wants to copy the FBF
+                shutil.copyfile(data, filename)
+                data = filename
+                return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode=mode)
+            return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode="r")
+        else:
+            if filename:
+                data.tofile(filename)
+                return numpy.memmap(filename, dtype=dtype, shape=(rows, cols), mode=mode)
+            return data.copy()
 
 class SwathProduct(BaseProduct):
     """Swath product class for image products geolocated using longitude and latitude points.
@@ -361,6 +431,10 @@ class SwathProduct(BaseProduct):
         - data_kind (string): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
         - rows_per_scan (int): Number of swath rows making up one scan of the sensor (0 if not applicable or not specified)
         - units (string): Image data units (empty string by default)
+        - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
+        # FIXME: better name
+        - x_res: Size in meters of instrument footprint/pixel in the X direction
+        - y_res: Size in meters of instrument footprint/pixel in the Y direction
 
     .. note::
 
@@ -403,25 +477,10 @@ class SwathProduct(BaseProduct):
 
         File is loaded from disk as a memory mapped file if needed.
         """
-        data = self[item]
-        if isinstance(data, (str, unicode)):
-            dtype = self["data_type"]
-            rows = self["swath_rows"]
-            cols = self["swath_cols"]
-            # load FBF data from a file if needed
-            data = numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode="r")
-
-        return data
-
-    def get_data_mask(self, item, fill=numpy.nan):
-        """Return a boolean mask where the data for `item` is invalid/bad.
-        """
-        data = self.get_data_array(item)
-
-        if numpy.isnan(fill):
-            return numpy.isnan(data)
-        else:
-            return data == fill
+        dtype = dtype_to_numpy(self["data_type"])
+        rows = self["swath_rows"]
+        cols = self["swath_cols"]
+        return super(SwathProduct, self).get_data_array(item, rows, cols, dtype)
 
     def copy_array(self, item, filename=None, read_only=True):
         """Copy the array item of this swath.
@@ -431,54 +490,37 @@ class SwathProduct(BaseProduct):
 
         The 'read_only' keyword is ignored if `filename` is None.
         """
-        mode = "r" if read_only else "r+"
-        data = self[item]
-        dtype = self["data_type"]
+        dtype = dtype_to_numpy(self["data_type"])
         rows = self["swath_rows"]
         cols = self["swath_cols"]
-
-        if isinstance(data, (str, unicode)):
-            # we have a binary filename
-            if filename:
-                # the user wants to copy the FBF
-                shutil.copyfile(data, filename)
-                data = filename
-                return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode=mode)
-            return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode="r")
-        else:
-            if filename:
-                data.tofile(filename)
-                return numpy.memmap(filename, dtype=dtype, shape=(rows, cols), mode=mode)
-            return data.copy()
+        return super(SwathProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
 
 
 class GriddedProduct(BaseProduct):
     """Gridded product class for image products on a uniform, projected grid.
 
     Required Information:
-    - product_name: Name of the product this swath represents
-    - satellite: Name of the satellite the data came from
-    - instrument: Name of the instrument on the satellite from which the data was observed
-    - begin_time: Datetime object representing the best known start of observation for this product's data
-    - end_time: Datetime object represnting the best known end of observation for this product's data
-    - grid_height: Number of rows in the main 2D data array
-    - grid_width: Number of columns in the main 2D data array
-    - grid_origin_x: Origin of the grid in the x direction specified in grid space units (typically meters or degrees)
-    - grid_origin_y: Origin of the grid in the y direction specified in grid space units (typically meters or degrees)
-    - data_type (string): Data type of image data (real4, uint1, int1, etc)
-    - grid_data: Binary filename or numpy array for the main data array
+        - product_name: Name of the product this swath represents
+        - satellite: Name of the satellite the data came from
+        - instrument: Name of the instrument on the satellite from which the data was observed
+        - begin_time: Datetime object representing the best known start of observation for this product's data
+        - end_time: Datetime object represnting the best known end of observation for this product's data
+        - data_type (string): Data type of image data (real4, uint1, int1, etc)
+        - grid_data: Binary filename or numpy array for the main data array
 
     Optional Information:
-    - description (string): Basic description of the product (empty string by default)
-    - source_filenames (list of strings): Unordered list of source files that made up this product ([] by default)
-    - data_kind (string): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
-    - rows_per_scan (int): Number of swath rows making up one scan of the sensor (0 if not applicable or not specified)
+        - description (string): Basic description of the product (empty string by default)
+        - source_filenames (list of strings): Unordered list of source files that made up this product ([] by default)
+        - data_kind (string): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
+        - rows_per_scan (int): Number of swath rows making up one scan of the sensor (0 if not applicable or not specified)
+        - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
 
     .. seealso::
 
         `SwathProduct`: Product object for products using longitude and latitude for geolocation.
 
     """
+    # XXX: One "grid_def" key or multiple/separate grid parameters
     # Validate required keys when loaded from disk
     _required_kwargs = (
         "product_name",
@@ -486,11 +528,7 @@ class GriddedProduct(BaseProduct):
         "instrument",
         "begin_time",
         "end_time",
-        "grid_height",
-        "grid_width",
-        "grid_origin_x",
-        "grid_origin_y",
-        "data_type",
+        "grid_def",
         "grid_data",
     )
 
@@ -498,4 +536,70 @@ class GriddedProduct(BaseProduct):
         "grid_data",
     )
 
+    def __getitem__(self, item):
+        try:
+            return super(GriddedProduct, self).__getitem__(item)
+        except KeyError:
+            grid_def = super(GriddedProduct, self).__getitem__("grid_def")
+            if item not in grid_def:
+                raise
+            return grid_def[item]
 
+
+    def from_swath_product(self, swath_product):
+        for k in ["product_name", "satellite", "instrument", "begin_time", "end_time"]:
+            self[k] = swath_product[k]
+
+    def get_data_array(self, item):
+        """Get FBF item as a numpy array.
+
+        File is loaded from disk as a memory mapped file if needed.
+        """
+        dtype = dtype_to_numpy(self["data_type"])
+        rows = self["grid_def"]["height"]
+        cols = self["grid_def"]["width"]
+        return super(GriddedProduct, self).get_data_array(item, rows, cols, dtype)
+
+    def copy_array(self, item, filename=None, read_only=True):
+        """Copy the array item of this swath.
+
+        If the `filename` keyword is passed the data will be written to that file. The copy returned
+        will be a memory map. If `read_only` is False, the memory map will be opened with mode "r+".
+
+        The 'read_only' keyword is ignored if `filename` is None.
+        """
+        dtype = dtype_to_numpy(self["data_type"])
+        rows = self["grid_def"]["height"]
+        cols = self["grid_def"]["width"]
+        return super(GriddedProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
+
+
+class GridDefinition(BaseP2GObject):
+    """Projected grid defined by a PROJ.4 projection string and other grid parameters.
+
+    Required Information:
+        - name: Identifying name for the grid
+        - proj4_def (string): PROJ.4 projection definition
+        - height: Height of the grid in number of pixels
+        - width: Width of the grid in number of pixels
+        - cell_height: Grid cell height in the projection domain (usually in meters or degrees)
+        - cell_width: Grid cell width in the projection domain (usually in meters or degrees)
+        - origin_x: X-coordinate of the upper-left corner of the grid in the projection domain
+        - origin_y: Y-coordinate of the upper-left corner of the grid in the projection domain
+    """
+    _required_kwargs = (
+        "grid_name",
+        "proj4_def",
+        "height",
+        "width",
+        "cell_height",
+        "cell_width",
+        "origin_x",
+        "origin_y",
+    )
+
+    @property
+    def is_static(self):
+        return all([self[x] is not None for x in [
+            "height", "width", "cell_height", "cell_width", "origin_x", "origin_y"
+        ]])

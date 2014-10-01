@@ -95,6 +95,8 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
         lon_fill_in=None,
         lat_fill_in=None,
         fill_out=-1e30,
+        rows_fn=None,
+        cols_fn=None,
         prefix="ll2cr_"):
     """Similar to GDAL, y pixel resolution should be negative for downward
     images.
@@ -137,9 +139,11 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
 
     # Memory map the output filenames
     # cols then rows in FBF filenames
-    rows_fn = prefix + "_rows.real4.%d.%d" % lat_arr.shape[::-1]
+    if rows_fn is None:
+        rows_fn = prefix + "_rows.real4.%d.%d" % lat_arr.shape[::-1]
     rows_arr = numpy.memmap(rows_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
-    cols_fn = prefix + "_cols.real4.%d.%d" % lat_arr.shape[::-1]
+    if cols_fn is None:
+        cols_fn = prefix + "_cols.real4.%d.%d" % lat_arr.shape[::-1]
     cols_arr = numpy.memmap(cols_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
 
     good_mask = (lon_arr != lon_fill_in) & (lat_arr != lat_fill_in)
