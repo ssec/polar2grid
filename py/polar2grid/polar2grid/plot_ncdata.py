@@ -46,6 +46,7 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
+import numpy as np
 from netCDF4 import Dataset
 from glob import glob
 import sys
@@ -71,6 +72,7 @@ def _open_file_and_get_var_data (file_name, var_name, var_type=uint8) :
     data_var.set_auto_maskandscale(False)
     data = data_var[:]
     data = data.astype(var_type)
+    data = np.ma.masked_array(data, data==0)
     
     return data
 

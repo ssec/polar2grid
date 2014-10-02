@@ -133,7 +133,11 @@ class Backend(roles.BackendRole):
         It is also assumed that rescaling will be able to handle the `data_kind`
         provided.
         """
-        return [ config_info["grid_name"] for config_info in self.awips_config_reader.get_all_matching_entries(sat, instrument, nav_set_uid, kind, band, data_kind) ]
+        try:
+            matching_entries = self.awips_config_reader.get_all_matching_entries(sat, instrument, nav_set_uid, kind, band, data_kind)
+            return [config_info["grid_name"] for config_info in matching_entries]
+        except ValueError:
+            return []
 
     def create_product(self, sat, instrument, nav_set_uid, kind, band, data_kind, data,
             start_time=None, end_time=None, grid_name=None,

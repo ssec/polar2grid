@@ -48,7 +48,7 @@ input into another program.
 Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
     Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
+    University of Wisconsin-Madison
     Space Science and Engineering Center
     1225 West Dayton Street
     Madison, WI  53706
@@ -66,10 +66,15 @@ DEFAULT_FILL_VALUE = -999.0
 SAT_NPP   = "npp"
 SAT_TERRA = "terra"
 SAT_AQUA  = "aqua"
+SAT_METOPA= "metopa"
+SAT_METOPB= "metopb"
 
 # Instruments
 INST_VIIRS = "viirs"
 INST_MODIS = "modis"
+INST_CRIS  = "cris"
+INST_IASI  = "iasi"
+INST_AIRS  = "airs"
 
 # Band Kinds
 BKIND_I     = "i"
@@ -95,6 +100,27 @@ BKIND_NDVI  = "ndvi"
 BKIND_TPW   = "total_precipitable_water"
 BKIND_CREFL = "crefl"
 BKIND_TCOLOR_CREFL = "true_color_crefl"
+BKIND_CAPE = "cape"
+BKIND_CO2_AMT = "co2_amount"
+BKIND_COT = "cloud_optical_thickness"
+BKIND_CTP = "cloud_top_pressure"
+# BKIND_CTT already present
+BKIND_CLD_EMIS = "cloud_emissivity"
+# BKIND_CMASK already present
+BKIND_DEWPT = "dewpoint_temperature"
+BKIND_RH = "relative_humidity"
+BKIND_AIR_T = "air_temperature"
+BKIND_H2O_MMR = "water_molecular_mixing_ratio"
+# BKIND_H2O_HIGH =
+# BKIND_H2O_LOW =
+# BKIND_H2O_MID =
+BKIND_LI = "lifted_index"
+BKIND_O3_VMR = "ozone_vapor_mixing_ratio"
+BKIND_SRF_EMIS = "surface_emissivity"
+BKIND_SRF_P = "surface_pressure"
+BKIND_SRF_T = "surface_temperature"
+BKIND_H2O_TOT = "total_water"
+BKIND_O3_TOT = "total_ozone"
 
 # Band Identifier
 BID_01 = "01"
@@ -135,6 +161,17 @@ DKIND_PERCENT     = "percent"
 DKIND_C_INDEX     = "contiguous_index" # this represents some abstract ranging index with meaningfully contiguous values (not discrete categories)
 DKIND_CREFL = "corrected_reflectance"
 DKIND_TCOLOR_CREFL = "true_color_crefl"
+# Retrieval products (polar2grid.drrtv)
+DKIND_TEMPERATURE = "temperature"
+DKIND_PRESSURE = "pressure"
+DKIND_MIXING_RATIO = "mixing_ratio"
+DKIND_EMISSIVITY = "emissivity"
+DKIND_OPTICAL_THICKNESS = "optical_thickness"
+DKIND_LIFTED_INDEX = "lifted_index"
+DKIND_CAPE = "CAPE"
+DKIND_CO2_AMOUNT = "CO2_amount"
+DKIND_TOTAL_WATER = "total_water"
+DKIND_TOTAL_OZONE = "total_ozone"
 
 SET_DKINDS = set([
     DKIND_RADIANCE,
@@ -147,7 +184,17 @@ SET_DKINDS = set([
     DKIND_PERCENT,
     DKIND_C_INDEX,
     DKIND_CREFL,
-    DKIND_TCOLOR_CREFL
+    DKIND_TCOLOR_CREFL,
+    DKIND_TEMPERATURE,
+    DKIND_PRESSURE,
+    DKIND_MIXING_RATIO,
+    DKIND_EMISSIVITY,
+    DKIND_OPTICAL_THICKNESS,
+    DKIND_LIFTED_INDEX,
+    DKIND_CAPE,
+    DKIND_CO2_AMOUNT,
+    DKIND_TOTAL_WATER,
+    DKIND_TOTAL_OZONE
     ])
 
 # Data types (int,float,#bits,etc.)
@@ -171,6 +218,9 @@ GEO_500M_NAV_UID   = "geo_500m_nav" # the geo navigation group
 GEO_250M_NAV_UID   = "geo_250m_nav" # the 250m navigation group
 MOD06_NAV_UID      = "mod06_nav"    # the mod06 navigation group
 MOD07_NAV_UID      = "mod07_nav"    # the mod07 navigation group
+CRIS_NAV_UID = "cris_nav"
+IASI_NAV_UID = "iasi_nav"
+AIRS_NAV_UID = "airs_nav"
 
 # Grid Constants
 GRIDS_ANY         = "any_grid"

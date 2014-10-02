@@ -88,6 +88,7 @@ dtype2fbf = {
         DTYPE_UINT64  : FBF_UINT64
         }
 
+
 def data_type_to_fbf_type(data_type):
     if data_type not in dtype2fbf:
         msg = "Can not convert data type '%s' to FBF data type" % (data_type,)
@@ -128,7 +129,7 @@ class Workspace(object):
         parts = filename.split(".")
         if len(parts) != 4 and len(parts) != 5:
             log.error("Found filename %s with incorrect format, need 4 or 5 parts" % filename)
-            raise ValueError("Found filename %s with incorrect format, need 4 or 5parts" % filename)
+            raise ValueError("Found filename %s with incorrect format, need 4 or 5 parts" % filename)
 
         attr_name = parts[0]
         type = parts[1]

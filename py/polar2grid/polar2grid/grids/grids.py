@@ -575,6 +575,7 @@ def create_grid_jobs(sat, instrument, nav_set_uid, bands, backend, cart,
 
     # Figure out which grids are useful for data coverage (or forced grids) and the backend can support
     grid_infos = dict((g,cart.get_grid_info(g)) for g in grids)# if g not in [GRIDS_ANY,GRIDS_ANY_GPD,GRIDS_ANY_PROJ4])
+    log.debug('grid_infos: %s' % repr(grid_infos))
     for band_kind, band_id in bands.keys():
         if bands [(band_kind, band_id)]["grids"] == GRIDS_ANY:
             bands [(band_kind, band_id)]["grids"] = list(grids)
