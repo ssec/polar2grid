@@ -1,54 +1,54 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    October 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
 """Abstract Base Classes for polar2grid components
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
+:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:date:         Oct 2014
 :license:      GNU GPLv3
-
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
 
 """
 __docformat__ = "restructuredtext en"
 
 from .constants import *
 from .time_utils import utc_now
-from .fbf import data_type_to_fbf_type
+from polar2grid.core.dtype import dtype_to_str
 
 import os
 import sys
 import logging
 import re
 from StringIO import StringIO
+from ConfigParser import SafeConfigParser, Error as ConfigParserError
 from abc import ABCMeta,abstractmethod,abstractproperty
 
 try:
@@ -101,6 +101,138 @@ class abstractstaticmethod(staticmethod):
         super(abstractstaticmethod, self).__init__(callable)
 
 ### End of Copy ###
+
+class INIConfigReader(object):
+    """Base class for INI configuration file readers.
+
+    Basic .ini file format, but certain fields are identifying fields that identify the product being configured.
+
+    Class attribute `id_fields` is used to read in certain section options as identifying fields. The values should be
+    a conversion function to go from the read-in string to the proper type.
+    """
+    id_fields = None
+
+    def __init__(self, *config_files, **kwargs):
+        if self.id_fields is None:
+            log.error("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
+            raise RuntimeError("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
+
+        self.section_prefix = kwargs.get("section_prefix", None)
+        self.config = []
+        self.config_files = config_files
+        file_objs = set([f for f in self.config_files if not isinstance(f, (str, unicode))])
+        filepaths = set([f for f in self.config_files if isinstance(f, (str, unicode))])
+        defaults = dict((k, kwargs.get(k, None)) for k in self.id_fields)
+        self.config_parser = SafeConfigParser(defaults, allow_no_value=True)
+        if file_objs:
+            for fp in file_objs:
+                self.config_parser.readfp(fp)
+        else:
+            for fp in filepaths:
+                fo = self.open_config_file(fp)
+                try:
+                    self.config_parser.readfp(fo, fp)
+                except ConfigParserError:
+                    log.warning("Could not parse config file: %s", fp)
+        self.load_config()
+        if not self.config:
+            log.error("No valid configuration sections found with prefix '%s'", self.section_prefix)
+            raise ValueError("No valid configuration sections found")
+
+    def open_config_file(self, config_file):
+        """Load one configuration file into internal storage.
+
+        If the config_file is a relative path string and can't be found it
+        will be loaded from a package relative location. If it can't be found
+        in the package an exception is raised.
+        """
+        # If we were provided a string filepath then open the file
+        if isinstance(config_file, str):
+            if not os.path.isabs(config_file):
+                # Its not an absolute path, lets see if its relative path
+                cwd_config = os.path.join(os.path.curdir, config_file)
+                if os.path.exists(cwd_config):
+                    config_file = cwd_config
+                    config_file = open(config_file, 'r')
+                else:
+                    # they have specified a package provided file
+                    log.info("Loading package provided configuration file: '%s'" % (config_file,))
+                    try:
+                        config_str = get_resource_string(self.__module__, config_file)
+                    except StandardError:
+                        log.error("Configuration file '%s' was not found" % (config_file,))
+                        raise
+                    config_file = StringIO(config_str)
+            else:
+                config_file = open(config_file, 'r')
+        return config_file
+
+    def load_config(self):
+        # Organize rescaling configuration sections
+        for section in self.config_parser.sections():
+            if self.section_prefix and not section.startswith(self.section_prefix):
+                continue
+
+            id_values = [self.config_parser.get(section, id_field) for id_field in self.id_fields]
+            num_wildcards = 0
+            id_regexes = []
+            for v in id_values:
+                if not v or v.lower() == "none":
+                    num_wildcards += 1
+                    id_regexes.append(".*")
+                else:
+                    id_regexes.append(v)
+            id_regex = "^" + "_".join(id_regexes) + "$"
+
+            try:
+                this_regex_obj = re.compile(id_regex)
+            except re.error:
+                log.error("Invalid configuration identifying information (not a valid regular expression): '%s'" % (str(id_regex),))
+                raise ValueError("Invalid configuration identifying information (not a valid regular expression): '%s'" % (str(id_regex),))
+
+            # Just need to know what section I should look in
+            config_key = (num_wildcards, this_regex_obj, section)
+            self.config.append(config_key)
+        # XXX: If 2 or more entries have the same number of wildcards they may not be sorted optimally (i.e. specific first field highest)
+        self.config.sort()
+
+    @staticmethod
+    def convert_boolean(val):
+        return val and val.lower() not in "false"
+
+    def get_config_section(self, **kwargs):
+        if len(kwargs) != len(self.id_fields):
+            log.error("Incorrect number of identifying arguments, expected %d, got %d" % (len(self.id_fields), len(kwargs)))
+            log.debug("Got %r; Expected %r", kwargs, self.id_fields)
+            raise ValueError("Incorrect number of identifying arguments, expected %d, got %d" % (len(self.id_fields), len(kwargs)))
+
+        id_key = "_".join(str(kwargs.get(k, None)) for k in self.id_fields)
+        for num_wildcards, regex_obj, section in self.config:
+            if regex_obj.match(id_key):
+                log.debug("Matched config regular expression; Regex %s; Key: %s", regex_obj.pattern, id_key)
+                return section
+        log.debug("No match found in config for key: %s", id_key)
+        return None
+
+    def get_config_options(self, **kwargs):
+        section = self.get_config_section(**kwargs)
+        if section is None:
+            log.debug("Using default configuration section")
+            section_options = self.config_parser.defaults().copy()
+        else:
+            log.debug("Using configuration section: %s", section)
+            section_options = dict((k, self.config_parser.get(section, k)) for k in self.config_parser.options(section))
+            # gotta get the defaults too
+            for k, v in self.config_parser.defaults().items():
+                if k not in section_options:
+                    section_options[k] = v
+
+        for k, v in kwargs.items():
+            # overwrite any wildcards with what we were provided
+            section_options[k] = v
+
+        return section_options
+
 
 class CSVConfigReader(object):
     """Base class for CSV configuration file readers.
@@ -371,6 +503,124 @@ class RescalerRole(CSVConfigReader):
     def __call__(self, sat, instrument, nav_set_uid, kind, band, data_kind, data):
         raise NotImplementedError("This function has not been implemented")
 
+
+class BackendRole2(object):
+    __metaclass__ = ABCMeta
+
+    def create_output_filename(self, pattern, satellite, instrument, product_name, grid_name, **kwargs):
+        """Helper function that will take common meta data and put it into
+        the output filename pattern provided. If either of the keyword arguments
+        ``begin_time`` or ``end_time`` are not specified the other is used
+        in its place.  If neither are specified the current time in UTC is
+        taken.
+
+        Some arguments are handled in special ways:
+            - begin_time : begin_time is converted into 5 different strings
+                that can each be individually specified in the pattern:
+                    * begin_time     : YYYYMMDD_HHMMSS
+                    * begin_YYYYMMDD : YYYYMMDD
+                    * begin_YYMMDD   : YYMMDD
+                    * begin_HHMMSS   : HHMMSS
+                    * begin_HHMM     : HHMM
+            - end_time   : Same as begin_time
+
+        If a keyword is provided that is not recognized it will be provided
+        to the pattern after running through a `str` filter.
+
+        Possible pattern keywords (\*created internally in this function):
+            - satellite       : identifier for the instrument's satellite
+            - instrument      : name of the instrument
+            - product_name    : name of the product in the output
+            - data_kind       : kind of data (brightness temperature, radiance, reflectance, etc.)
+            - data_type       : data type name of data in-memory (ex. uint1, int4, real4)
+            - grid_name       : name of the grid the data was mapped to
+            - columns         : number of columns in the data
+            - rows            : number of rows in the data
+            - begin_time      : begin time of the first scan (YYYYMMDD_HHMMSS)
+            - begin_YYYYMMDD\* : begin date of the first scan
+            - begin_YYMMDD\*   : begin date of the first scan
+            - begin_HHMMSS\*   : begin time of the first scan
+            - begin_HHMM\*     : begin time of the first scan
+            - end_time        : end time of the first scan. Same keywords as start_time.
+
+        >>> from datetime import datetime
+        >>> pattern = "%(satellite)s_%(instrument)s_%(product_name)s_%(data_kind)s_%(grid_name)s_%(start_time)s.%(data_type)s.%(columns)s.%(rows)s"
+        >>> class FakeBackend(BackendRole):
+        ...     def create_product(self, *args): pass
+        ...     def can_handle_inputs(self, *args): pass
+        >>> backend = FakeBackend()
+        >>> filename = backend.create_output_filename(pattern,
+        ...     "npp",
+        ...     "viirs",
+        ...     "i04",
+        ...     data_kind="btemp",
+        ...     grid_name="wgs84_fit",
+        ...     data_type="uint1",
+        ...     columns = 2500, rows=3000, begin_time=datetime(2012, 11, 10, 9, 8, 7))
+        >>> print filename
+        npp_viirs_i04_btemp_wgs84_fit_20121110_090807.uint1.2500.3000
+
+        """
+        # Keyword arguments
+        data_type = kwargs.pop("data_type", None)
+        data_kind = kwargs.pop("data_kind", None)
+        columns = kwargs.pop("columns", None)
+        rows = kwargs.pop("rows", None)
+        begin_time_dt = kwargs.pop("begin_time", None)
+        end_time_dt = kwargs.pop("end_time", None)
+
+        if data_type and not isinstance(data_type, (str, unicode)):
+            data_type = dtype_to_str(data_type)
+
+        # Convert begin time and end time
+        if begin_time_dt is None and end_time_dt is None:
+            begin_time_dt = end_time_dt = utc_now()
+        elif begin_time_dt is None:
+            begin_time_dt = end_time_dt
+        elif end_time_dt is None:
+            end_time_dt   = begin_time_dt
+
+        begin_time = begin_time_dt.strftime("%Y%m%d_%H%M%S")
+        begin_YYYYMMDD = begin_time_dt.strftime("%Y%m%d")
+        begin_YYMMDD = begin_time_dt.strftime("%y%m%d")
+        begin_HHMMSS = begin_time_dt.strftime("%H%M%S")
+        begin_HHMM = begin_time_dt.strftime("%H%M")
+        end_time = end_time_dt.strftime("%Y%m%d_%H%M%S")
+        end_YYYYMMDD = end_time_dt.strftime("%Y%m%d")
+        end_YYMMDD = end_time_dt.strftime("%y%m%d")
+        end_HHMMSS = end_time_dt.strftime("%H%M%S")
+        end_HHMM = end_time_dt.strftime("%H%M")
+
+        try:
+            output_filename = pattern % dict(
+                satellite=satellite,
+                instrument=instrument,
+                product_name=product_name,
+                data_kind=data_kind,
+                data_type=data_type,
+                grid_name=grid_name,
+                columns=columns,
+                rows=rows,
+                begin_time=begin_time,
+                begin_YYYYMMDD=begin_YYYYMMDD,
+                begin_YYMMDD=begin_YYMMDD,
+                begin_HHMMSS=begin_HHMMSS,
+                begin_HHMM=begin_HHMM,
+                end_time=end_time,
+                end_YYYYMMDD=end_YYYYMMDD,
+                end_YYMMDD=end_YYMMDD,
+                end_HHMMSS=end_HHMMSS,
+                end_HHMM=end_HHMM,
+                **kwargs
+            )
+        except KeyError as e:
+            log.error("Unknown output pattern key: '%s'" % (e.message,))
+            raise
+
+        return output_filename
+        pass
+
+
 class BackendRole(object):
     __metaclass__ = ABCMeta
 
@@ -407,8 +657,7 @@ class BackendRole(object):
             - kind            : band kind
             - band            : band identifier or number
             - data_kind       : kind of data (brightness temperature, radiance, reflectance, etc.)
-            - data_type       : data type name of data in-memory, numpy naming(ex. uint8, int32, real32)
-            - fbf_dtype\*      : data type name of data on-disk, fbf naming (ex. uint1, int4, real4)
+            - data_type       : data type name of data in-memory (ex. uint1, int4, real4)
             - grid_name       : name of the grid the data was mapped to
             - cols            : number of columns in the data
             - rows            : number of rows in the data
@@ -447,12 +696,6 @@ class BackendRole(object):
         start_time_dt  = kwargs.pop("start_time", None)
         end_time_dt    = kwargs.pop("end_time", None)
 
-        # Convert FBF data type
-        try:
-            fbf_dtype  = data_type_to_fbf_type(data_type) if data_type is not None else data_type
-        except ValueError:
-            fbf_dtype  = None
-
         # Convert start time and end time
         if start_time_dt is None and end_time_dt is None:
             start_time_dt = end_time_dt = utc_now()
@@ -481,7 +724,6 @@ class BackendRole(object):
                     band           = band,
                     data_kind      = data_kind,
                     data_type      = data_type,
-                    fbf_dtype       = fbf_dtype,
                     grid_name      = grid_name,
                     cols           = cols,
                     rows           = rows,

@@ -41,7 +41,8 @@ __docformat__ = "restructuredtext en"
 
 
 from polar2grid.mirs import Frontend, add_frontend_argument_groups
-from polar2grid.remap import add_remap_argument_groups, Remapper
+from polar2grid.remap import Remapper, add_remap_argument_groups
+from polar2grid.gtiff_backend import Backend2, add_backend_argument_groups
 
 import os
 import sys
@@ -61,6 +62,7 @@ def main():
     group_titles = []
     group_titles += add_frontend_argument_groups(parser)
     group_titles += add_remap_argument_groups(parser, default_fornav_d=2.0, default_fornav_D=20)
+    group_titles += add_backend_argument_groups(parser)
     parser.add_argument('-f', dest='data_files', nargs="+", default=[],
                         help="List of one or more data files")
     parser.add_argument('-d', dest='data_dirs', nargs="+", default=[],
@@ -80,13 +82,18 @@ def main():
 
     # Frontend
     LOG.info("Initializing swath extractor...")
-    list_products = args.subgroup_args["frontend_init"].pop("list_products")
-    f = Frontend(args.data_files + args.data_dirs, **args.subgroup_args["frontend_init"])
+    list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
+    f = Frontend(args.data_files + args.data_dirs, **args.subgroup_args["Frontend Initialization"])
     if list_products:
         print("\n".join(f.available_product_names))
         return 0
+
+    remapper = Remapper(**args.subgroup_args["Remapping Initialization"])
+    remap_kwargs = args.subgroup_args["Remapping"]
+    backend = Backend2(**args.subgroup_args["Backend Initialization"])
+
     LOG.info("Extracting swaths from data files available...")
-    scene = f.create_scene(**args.subgroup_args["frontend_create_scene"])
+    scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
     if args.keep_intermediate:
         scene.set_persist()
 
@@ -96,8 +103,6 @@ def main():
 
     # Remap
     gridded_scenes = {}
-    remapper = Remapper(**args.subgroup_args["remap_init"])
-    remap_kwargs = args.subgroup_args["remap"]
     # TODO: Grid determination
     for grid_name in remap_kwargs.pop("forced_grids"):
         LOG.info("Remapping to grid %s", grid_name)
@@ -106,10 +111,13 @@ def main():
         if args.keep_intermediate:
             gridded_scene.set_persist()
 
-        LOG.info("Creating output from data on grid %s", grid_name)
-
         # Backend
-        pass
+        try:
+            LOG.info("Creating output from data mapped to grid %s", grid_name)
+            backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
+        except StandardError:
+            LOG.error("Could not create output, see log for more info.")
+            continue
 
     return 0
 

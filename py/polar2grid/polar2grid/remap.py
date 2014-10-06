@@ -523,21 +523,21 @@ class Remapper(object):
         from .grids.grids import Cartographer
         self.cart = Cartographer(*grid_configs)
 
-    def remap_scene(self, scene, grid_name, **kwargs):
+    def remap_scene(self, swath_scene, grid_name, **kwargs):
         method = kwargs.pop("method", "ewa")
         if method != "ewa":
             raise NotImplementedError("Remapping methods other than 'ewa' are not supported at this time")
 
-        return self._remap_scene_ewa(scene, grid_name, **kwargs)
+        return self._remap_scene_ewa(swath_scene, grid_name, **kwargs)
 
-    def _remap_scene_ewa(self, scene, grid_name, **kwargs):
+    def _remap_scene_ewa(self, swath_scene, grid_name, **kwargs):
         # TODO: Make methods more flexible than just a function call
         gridded_scene = GriddedScene()
 
         # Group products together that shared the same geolocation
         from collections import defaultdict
         product_groups = defaultdict(list)
-        for product_name, swath_product in scene.items():
+        for product_name, swath_product in swath_scene.items():
             geo_id = (swath_product["longitude"]["product_name"], swath_product["latitude"]["product_name"])
             product_groups[geo_id].append(product_name)
 
@@ -552,13 +552,13 @@ class Remapper(object):
             # TODO: Add some multiprocessing
             # TODO: Allow ll2cr to return arrays
             grid_def = self.cart.get_grid_definition(grid_name)
-            lon_product = scene[product_names[0]]["longitude"]
-            lat_product = scene[product_names[0]]["latitude"]
+            lon_product = swath_scene[product_names[0]]["longitude"]
+            lat_product = swath_scene[product_names[0]]["latitude"]
             lon_arr = lon_product.get_data_array("swath_data")
             lat_arr = lat_product.get_data_array("swath_data")
             rows_fn = "ll2cr_rows_%s_%s.dat" % (grid_name, geo_id_number)
             cols_fn = "ll2cr_cols_%s_%s.dat" % (grid_name, geo_id_number)
-            ll2cr_output = gator.ll2cr(lon_arr, lat_arr, grid_def["proj4_def"],
+            ll2cr_output = gator.ll2cr(lon_arr, lat_arr, grid_def["proj4_definition"],
                                      pixel_size_x=grid_def["cell_width"], pixel_size_y=grid_def["cell_height"],
                                      grid_origin_x=grid_def["origin_x"], grid_origin_y=grid_def["origin_y"],
                                      grid_width=grid_def["width"], grid_height=grid_def["height"],
@@ -577,23 +577,23 @@ class Remapper(object):
 
             # Prepare the products
             for product_name in product_names:
-                swath_product = scene[product_name]
+                swath_product = swath_scene[product_name]
                 gridded_product = GriddedProduct()
                 gridded_product.from_swath_product(swath_product)
-                gridded_product["grid_def"] = grid_def
+                gridded_product["grid_definition"] = grid_def
                 gridded_product["fill_value"] = numpy.nan
                 gridded_scene[product_name] = gridded_product
 
             # Run fornav for all of the products at once
             # XXX: May have to do something smarter if there are float products and integer products together
-            product_filepaths = [scene[product_name]["swath_data"] for product_name in product_names]
+            product_filepaths = [swath_scene[product_name]["swath_data"] for product_name in product_names]
             fornav_prefix = "grid_%s_" % (grid_name,)
             fornav_filepaths = [os.path.join(os.path.dirname(x), fornav_prefix + os.path.basename(x)) for x in product_filepaths]
             log_level = logging.getLogger('').handlers[0].level or 0
             rows_per_scan = lon_product.get("rows_per_scan", 0) or 2
             fornav_output = run_fornav_c(
                 len(product_filepaths),
-                lon_product["swath_cols"],
+                lon_product["swath_columns"],
                 lon_product["swath_rows"]/rows_per_scan,
                 rows_per_scan,
                 cols_fn,
@@ -604,7 +604,7 @@ class Remapper(object):
                 fornav_filepaths,
                 verbose=log_level <= logging.DEBUG,
                 swath_data_type_1="f4",
-                swath_fill_1=scene.get_fill_value(product_names),
+                swath_fill_1=swath_scene.get_fill_value(product_names),
                 grid_fill_1=numpy.nan,
                 weight_delta_max=kwargs.get("fornav_D", None),
                 weight_distance_max=kwargs.get("fornav_d", None),
@@ -635,10 +635,10 @@ class Remapper(object):
 
 def add_remap_argument_groups(parser, default_grids=None, default_fornav_d=2, default_fornav_D=40):
     default_grids = default_grids or ["wgs84_fit"]
-    group = parser.add_argument_group(title="remap_init", description="Remapping initialization options")
+    group = parser.add_argument_group(title="Remapping Initialization")
     group.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
                        help="Specify additional grid configuration files ('grids.conf' for built-ins)")
-    group = parser.add_argument_group(title="remap", description="Remapping main options")
+    group = parser.add_argument_group(title="Remapping")
     group.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default=default_grids,
                        help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
     group.add_argument("--method", dest="remap_method", default="ewa", choices=["ewa"],
@@ -647,7 +647,7 @@ def add_remap_argument_groups(parser, default_grids=None, default_fornav_d=2, de
                        help="Specify the -D option for fornav")
     group.add_argument('--fornav-d', dest='fornav_d', default=default_fornav_d,
                        help="Specify the -d option for fornav")
-    return ["remap_init", "remap"]
+    return ["Remapping Initialization", "Remapping"]
 
 
 def main():
@@ -666,8 +666,8 @@ def main():
     from polar2grid.core.meta import SwathScene
     scene = SwathScene.load(args.scene)
 
-    remapper = Remapper(**args.subgroup_args["remap_init"])
-    remap_kwargs = args.subgroup_args["remap"]
+    remapper = Remapper(**args.subgroup_args["Remapping Initialization"])
+    remap_kwargs = args.subgroup_args["Remapping"]
     for grid_name in remap_kwargs.pop("forced_grids"):
         gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
         # FIXME: Either allow only 1 grid or find a nice way to output multiple gridded scenes as JSON to stdout

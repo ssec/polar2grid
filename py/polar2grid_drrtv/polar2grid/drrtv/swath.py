@@ -86,7 +86,7 @@ from pprint import pformat
 from scipy import interpolate
 
 from polar2grid.core.roles import FrontendRole
-from polar2grid.core.fbf import str_to_dtype
+from polar2grid.core.dtype import str2dtype
 from polar2grid.core.constants import *
 
 LOG = logging.getLogger(__name__)
@@ -283,7 +283,7 @@ def _dict_reverse(D):
     return dict((v,k) for (k,v) in D.items())
 
 
-nptype_to_suffix = _dict_reverse(str_to_dtype)
+nptype_to_suffix = _dict_reverse(str2dtype)
 
 
 def _write_array_to_fbf(name, data):

@@ -49,7 +49,7 @@ from .grids.grids import create_grid_jobs, Cartographer
 from polar2grid.modis import Frontend
 import remap
 from .gtiff_backend import Backend
-from polar2grid.core.dtype import str_to_dtype
+from polar2grid.core.dtype import normalize_dtype_string
 
 import os
 import sys
@@ -324,7 +324,7 @@ through strftime. Current time if no files.""")
             help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
 
     # Backend Specific
-    parser.add_argument('--dtype', dest="data_type", type=str_to_dtype, default=None,
+    parser.add_argument('--dtype', dest="data_type", type=normalize_dtype_string, default=None,
             help="specify the data type for the backend to output")
     # pattern needs double formatting %% because argparse runs dict formatting on it
     parser.add_argument('-p', '--pattern', dest="output_pattern", default=None,

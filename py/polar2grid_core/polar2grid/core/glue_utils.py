@@ -181,6 +181,21 @@ def remove_file_patterns(*args):
 
 
 class ArgumentParser(argparse.ArgumentParser):
+    def _get_group_actions(self, group):
+        """Get all the options/actions in a group including those from subgroups of the provided group.
+
+        .. note::
+
+            This does not group the subgroup options as their own dictionaries.
+
+        """
+        these_actions = [action for action in group._group_actions]
+        # get actions if this group has even more subgroups
+        for subgroup in group._action_groups:
+            these_actions += self._get_group_actions(subgroup)
+
+        return these_actions
+
     def parse_args(self, *args, **kwargs):
         subgroup_titles = kwargs.pop("subgroup_titles", [])
         args = super(ArgumentParser, self).parse_args(*args, **kwargs)
@@ -190,11 +205,12 @@ class ArgumentParser(argparse.ArgumentParser):
             try:
                 subgroup = [x for x in self._action_groups if x.title == subgroup_title][0]
             except IndexError:
-                LOG.warning("Couldn't find argument group '%s' in configured parser" % (subgroup_title,))
+                # we don't have any loggers configured at this point
+                print("WARNING: Couldn't find argument group '%s' in configured parser" % (subgroup_title,))
                 continue
 
             subgroup_args = {}
-            for action in subgroup._group_actions:
+            for action in self._get_group_actions(subgroup):
                 if hasattr(args, action.dest):
                     subgroup_args[action.dest] = getattr(args, action.dest)
                     delattr(args, action.dest)

@@ -198,16 +198,19 @@ SET_DKINDS = set([
     ])
 
 # Data types (int,float,#bits,etc.)
-DTYPE_UINT8   = "uint1"
-DTYPE_UINT16  = "uint2"
-DTYPE_UINT32  = "uint4"
-DTYPE_UINT64  = "uint8"
-DTYPE_INT8    = "int1"
-DTYPE_INT16   = "int2"
-DTYPE_INT32   = "int4"
-DTYPE_INT64   = "int8"
-DTYPE_FLOAT32 = "real4"
-DTYPE_FLOAT64 = "real8"
+# XXX: This is for backwards compatibility with older modules, but these should be taken from the dtype module now
+from polar2grid.core.dtype import (
+    DTYPE_UINT8,
+    DTYPE_UINT16,
+    DTYPE_UINT32,
+    DTYPE_UINT64,
+    DTYPE_INT8,
+    DTYPE_INT16,
+    DTYPE_INT32,
+    DTYPE_INT64,
+    DTYPE_FLOAT32,
+    DTYPE_FLOAT64
+)
 
 # Nav Set UIDs
 MBAND_NAV_UID      = "m_nav"        # the M band navigation group

@@ -43,11 +43,12 @@ __docformat__ = "restructuredtext en"
 
 from osgeo import gdal
 import osr
+import numpy
 
-from polar2grid.core.rescale import Rescaler
+from polar2grid.core.rescale import Rescaler, Rescaler2
 from polar2grid.core.constants import *
 from polar2grid.core import roles
-from polar2grid.core.dtype import str_to_dtype,clip_to_data_type
+from polar2grid.core.dtype import normalize_dtype_string, clip_to_data_type, str_to_dtype
 
 import sys
 import logging
@@ -56,11 +57,13 @@ log = logging.getLogger(__name__)
 
 gtiff_driver = gdal.GetDriverByName("GTIFF")
 
+DEFAULT_RCONFIG      = "rescale_configs/rescale.ini"
 DEFAULT_8BIT_RCONFIG      = "rescale_configs/rescale.8bit.conf"
 DEFAULT_16BIT_RCONFIG     = "rescale_configs/rescale.16bit.conf"
 DEFAULT_INC_8BIT_RCONFIG  = "rescale_configs/rescale_inc.8bit.conf"
 DEFAULT_INC_16BIT_RCONFIG = "rescale_configs/rescale_inc.16bit.conf"
 DEFAULT_OUTPUT_PATTERN = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s_%(grid_name)s.tif"
+DEFAULT_OUTPUT_PATTERN2 = "%(satellite)s_%(instrument)s_%(product_name)s_%(begin_time)s_%(grid_name)s.tif"
 
 def _proj4_to_srs(proj4_str):
     """Helper function to convert a proj4 string
@@ -95,7 +98,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
         num_bands = data.shape[0]
 
     # We only know how to handle gray scale, RGB, and RGBA
-    if num_bands not in [1,3,4]:
+    if num_bands not in [1, 3, 4]:
         msg = "Geotiff backend doesn't know how to handle data of shape '%r'" % (data.shape,)
         log.error(msg)
         raise ValueError(msg)
@@ -148,6 +151,11 @@ dtype2etype = {
         DTYPE_UINT16  : gdal.GDT_UInt16,
         DTYPE_UINT8   : gdal.GDT_Byte
         }
+
+np2etype = {
+    numpy.uint16: gdal.GDT_UInt16,
+    numpy.uint8: gdal.GDT_Byte,
+}
 
 class Backend(roles.BackendRole):
     removable_file_patterns = [
@@ -288,6 +296,51 @@ class Backend(roles.BackendRole):
         geotransform = (grid_origin_x, pixel_size_x, rotate_x, grid_origin_y, rotate_y, pixel_size_y)
         create_geotiff(data, output_filename, proj4_str, geotransform, etype=etype)
 
+
+class Backend2(roles.BackendRole2):
+    def __init__(self, rescale_configs=None):
+        self.rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
+        self.rescaler = Rescaler2(*self.rescale_configs)
+
+    def create_output_from_scene(self, gridded_scene, output_pattern=None, inc_by_one=None):
+        output_filenames = []
+        for product_name, gridded_product in gridded_scene.items():
+            output_fn = self.create_output_from_product(gridded_product, output_pattern=output_pattern,
+                                                        inc_by_one=inc_by_one)
+            output_filenames.append(output_fn)
+        return output_filenames
+
+    def create_output_from_product(self, gridded_product, output_pattern=None,
+                                   data_type=None, inc_by_one=None, fill_value=0):
+        data_type = data_type or DTYPE_UINT8
+        data_type = str_to_dtype(data_type)
+        etype = np2etype[data_type]
+        inc_by_one = inc_by_one or False
+        grid_def = gridded_product["grid_definition"]
+        if not output_pattern:
+            output_pattern = DEFAULT_OUTPUT_PATTERN2
+        if "%" in output_pattern:
+            # format the filename
+            kwargs = gridded_product.copy()
+            kwargs["data_type"] = data_type
+            output_filename = self.create_output_filename(output_pattern,
+                                                          grid_name=grid_def["grid_name"],
+                                                          rows=grid_def["height"],
+                                                          columns=grid_def["width"],
+                                                          **gridded_product)
+        else:
+            output_filename = output_pattern
+
+        data = self.rescaler.rescale_product(gridded_product, data_type, inc_by_one=inc_by_one, fill_value=fill_value)
+
+        # Create the geotiff
+        # X and Y rotation are 0 in most cases so we just hard-code it
+        geotransform = (grid_def["origin_x"], grid_def["cell_width"], 0,
+                        grid_def["origin_y"], 0, grid_def["cell_height"])
+        create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform, etype=etype)
+        return output_filename
+
+
 def _type_dt(datestring):
     from datetime import datetime
     return datetime.strptime(datestring, "%Y%m%d_%H%M%S")
@@ -327,7 +380,7 @@ def _bits_to_etype(bits_str):
 
     return etype
 
-def main():
+def old_main():
     from polar2grid.core import Workspace
     from argparse import ArgumentParser
 
@@ -360,7 +413,7 @@ custom name if proj4_str is provided""")
             help="Proj4 string of the data, empty if 'grid_name' in grids.conf")
     parser.add_argument('--output_filename', default=None, nargs='?', dest="output_filename",
             help="name of the output geotiff, uses default naming scheme if not entered")
-    parser.add_argument('--dtype', type=str_to_dtype, default="uint2", dest="data_type",
+    parser.add_argument('--dtype', type=normalize_dtype_string, default="uint2", dest="data_type",
             help="number of bits in the geotiff, usually unsigned")
     parser.add_argument('--rescale-config', default=None, dest="rescale_config",
             help="alternative rescale configuration file")
@@ -415,6 +468,24 @@ custom name if proj4_str is provided""")
 
     backend = Backend(data_type=args.data_type, rescale_config=rescale_config)
     return backend.create_product(*arg_list, output_filename=args.output_filename, **kwargs)
+
+
+def add_backend_argument_groups(parser):
+    group = parser.add_argument_group(title="Backend Initialization")
+    group.add_argument('--rescale-configs', nargs="*", dest="rescale_configs",
+                       help="alternative rescale configuration file")
+    group = parser.add_argument_group(title="Backend Output Creation")
+    group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN2,
+                       help="output filenaming pattern")
+    group.add_argument('--dont_inc', dest="inc_by_one", default=True, action="store_false",
+                        help="tell rescaler to not increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
+    return ["Backend Initialization", "Backend Output Creation"]
+
+
+def main():
+    from polar2grid.core.glue_utils import create_basic_parser, create_exc_handler, setup_logging
+    parser = create_basic_parser()
+    group_titles = add_backend_argument_groups(parser)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)

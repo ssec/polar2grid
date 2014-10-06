@@ -40,8 +40,6 @@ Functions that handle polar2grid data types.
 """
 __docformat__ = "restructuredtext en"
 
-from .constants import *
-
 import numpy
 
 import sys
@@ -49,8 +47,19 @@ import logging
 
 log = logging.getLogger(__name__)
 
+DTYPE_UINT8 = "uint1"
+DTYPE_UINT16 = "uint2"
+DTYPE_UINT32 = "uint4"
+DTYPE_UINT64 = "uint8"
+DTYPE_INT8 = "int1"
+DTYPE_INT16 = "int2"
+DTYPE_INT32 = "int4"
+DTYPE_INT64 = "int8"
+DTYPE_FLOAT32 = "real4"
+DTYPE_FLOAT64 = "real8"
+
 # Map data type to numpy type for conversion
-dtype2np = {
+str2dtype = {
     DTYPE_UINT8: numpy.uint8,
     DTYPE_UINT16: numpy.uint16,
     DTYPE_UINT32: numpy.uint32,
@@ -62,7 +71,7 @@ dtype2np = {
     DTYPE_FLOAT32: numpy.float32,
     DTYPE_FLOAT64: numpy.float64
 }
-np2dtype = dict((v, k) for k, v in dtype2np.items())
+dtype2str = dict((v, k) for k, v in str2dtype.items())
 
 # Map data type to valid data range
 # Since float32 is polar2grid's intermediate type, float32 and float64 don't
@@ -81,8 +90,8 @@ dtype2range = {
 }
 
 
-def str_to_dtype(dtype_str):
-    if dtype_str in dtype2np:
+def normalize_dtype_string(dtype_str):
+    if dtype_str in str2dtype:
         return dtype_str
     else:
         msg = "Unknown data type string '%s'" % (dtype_str,)
@@ -90,28 +99,46 @@ def str_to_dtype(dtype_str):
         raise ValueError(msg)
 
 
-def dtype_to_numpy(dtype_str):
-    return dtype2np[dtype_str]
+def str_to_dtype(dtype_str):
+    try:
+        return str2dtype[dtype_str]
+    except KeyError:
+        msg = "Not a valid data type string: %s" % (dtype_str,)
+        log.error(msg)
+        raise ValueError(msg)
 
 
-def numpy_to_dtype(numpy_dtype):
-    return np2dtype[numpy_dtype]
+def dtype_to_str(numpy_dtype):
+    if isinstance(numpy_dtype, (str, unicode)):
+        return normalize_dtype_string(numpy_dtype)
+
+    try:
+        return dtype2str[numpy_dtype]
+    except KeyError:
+        msg = "Unsupported numpy data type: %r" % (numpy_dtype,)
+        log.error(msg)
+        raise ValueError(msg)
 
 
 def convert_to_data_type(data, data_type):
     """Convert a numpy array to a different data type represented by a
     polar2grid data type constant.
     """
-    if data_type not in dtype2np:
-        log.error("Unknown data_type '%s', don't know how to convert data" % (data_type,))
-        raise ValueError("Unknown data_type '%s', don't know how to convert data" % (data_type,))
+    if isinstance(data_type, (str, unicode)):
+        if data_type not in str2dtype:
+            log.error("Unknown data_type '%s', don't know how to convert data" % (data_type,))
+            raise ValueError("Unknown data_type '%s', don't know how to convert data" % (data_type,))
+        np_type = str2dtype[data_type]
+    else:
+        np_type = data_type
 
-    np_type = dtype2np[data_type]
     return data.astype(np_type)
 
 
 def clip_to_data_type(data, data_type):
-    if data_type not in dtype2np:
+    if not isinstance(data_type, (str, unicode)):
+        data_type = dtype_to_str(data_type)
+    if data_type not in str2dtype:
         log.error("Unknown data_type '%s', don't know how to convert data" % (data_type,))
         raise ValueError("Unknown data_type '%s', don't know how to convert data" % (data_type,))
 

@@ -41,7 +41,7 @@ __docformat__ = "restructuredtext en"
 
 import numpy
 from polar2grid.core.time_utils import iso8601
-from polar2grid.core.dtype import dtype_to_numpy, numpy_to_dtype
+from polar2grid.core.dtype import str_to_dtype, dtype_to_str
 
 import os
 import sys
@@ -83,7 +83,7 @@ class P2GJSONDecoder(json.JSONDecoder):
                     pass
 
                 try:
-                    dtype_to_numpy, numpy_to_dtype
+                    str_to_dtype, dtype_to_str
                     continue
                 except KeyError:
                     pass
@@ -183,7 +183,7 @@ class P2GJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, datetime):
             return obj.isoformat()
         elif numpy.issubclass_(obj, numpy.number):
-            return numpy_to_dtype(obj)
+            return dtype_to_str(obj)
         else:
             return super(P2GJSONEncoder, self).default(obj)
 
@@ -402,12 +402,16 @@ class BaseProduct(BaseP2GObject):
                 shutil.copyfile(data, filename)
                 data = filename
                 return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode=mode)
-            return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode="r")
+            if mode == "r":
+                return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode="r")
+            else:
+                return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode="r").copy()
         else:
             if filename:
                 data.tofile(filename)
                 return numpy.memmap(filename, dtype=dtype, shape=(rows, cols), mode=mode)
             return data.copy()
+
 
 class SwathProduct(BaseProduct):
     """Swath product class for image products geolocated using longitude and latitude points.
@@ -421,7 +425,7 @@ class SwathProduct(BaseProduct):
         - longitude (product object): Longitude `SwathProduct`, may be 'None' inside Longitude object
         - latitude (product object): Latitude `SwathProduct`, may be 'None' inside Latitude object
         - swath_rows (int): Number of rows in the main 2D data array
-        - swath_cols (int): Number of columns in the main 2D data array
+        - swath_columns (int): Number of columns in the main 2D data array
         - data_type (numpy.dtype): Data type of image data or if on disk on of (real4, int1, uint1, etc)
         - swath_data (array): Binary filename or numpy array for the main data array
 
@@ -432,9 +436,8 @@ class SwathProduct(BaseProduct):
         - rows_per_scan (int): Number of swath rows making up one scan of the sensor (0 if not applicable or not specified)
         - units (string): Image data units (empty string by default)
         - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
-        # FIXME: better name
-        - x_res: Size in meters of instrument footprint/pixel in the X direction
-        - y_res: Size in meters of instrument footprint/pixel in the Y direction
+        - nadir_resolution (float): Size in meters of instrument's nadir footprint/pixel
+        - edge_resolution (float): Size in meters of instrument's edge footprint/pixel
 
     .. note::
 
@@ -455,7 +458,7 @@ class SwathProduct(BaseProduct):
         "longitude",
         "latitude",
         "swath_rows",
-        "swath_cols",
+        "swath_columns",
         "data_type",
         "swath_data",
     )
@@ -477,10 +480,13 @@ class SwathProduct(BaseProduct):
 
         File is loaded from disk as a memory mapped file if needed.
         """
-        dtype = dtype_to_numpy(self["data_type"])
+        dtype = str_to_dtype(self["data_type"])
         rows = self["swath_rows"]
-        cols = self["swath_cols"]
+        cols = self["swath_columns"]
         return super(SwathProduct, self).get_data_array(item, rows, cols, dtype)
+
+    def get_data_mask(self, item):
+        return super(SwathProduct, self).get_data_mask(item, fill_key="fill_value")
 
     def copy_array(self, item, filename=None, read_only=True):
         """Copy the array item of this swath.
@@ -490,9 +496,9 @@ class SwathProduct(BaseProduct):
 
         The 'read_only' keyword is ignored if `filename` is None.
         """
-        dtype = dtype_to_numpy(self["data_type"])
+        dtype = str_to_dtype(self["data_type"])
         rows = self["swath_rows"]
-        cols = self["swath_cols"]
+        cols = self["swath_columns"]
         return super(SwathProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
 
 
@@ -520,7 +526,6 @@ class GriddedProduct(BaseProduct):
         `SwathProduct`: Product object for products using longitude and latitude for geolocation.
 
     """
-    # XXX: One "grid_def" key or multiple/separate grid parameters
     # Validate required keys when loaded from disk
     _required_kwargs = (
         "product_name",
@@ -528,7 +533,7 @@ class GriddedProduct(BaseProduct):
         "instrument",
         "begin_time",
         "end_time",
-        "grid_def",
+        "grid_definition",
         "grid_data",
     )
 
@@ -536,18 +541,8 @@ class GriddedProduct(BaseProduct):
         "grid_data",
     )
 
-    def __getitem__(self, item):
-        try:
-            return super(GriddedProduct, self).__getitem__(item)
-        except KeyError:
-            grid_def = super(GriddedProduct, self).__getitem__("grid_def")
-            if item not in grid_def:
-                raise
-            return grid_def[item]
-
-
     def from_swath_product(self, swath_product):
-        for k in ["product_name", "satellite", "instrument", "begin_time", "end_time"]:
+        for k in ["product_name", "satellite", "instrument", "begin_time", "end_time", "data_type"]:
             self[k] = swath_product[k]
 
     def get_data_array(self, item):
@@ -555,10 +550,13 @@ class GriddedProduct(BaseProduct):
 
         File is loaded from disk as a memory mapped file if needed.
         """
-        dtype = dtype_to_numpy(self["data_type"])
-        rows = self["grid_def"]["height"]
-        cols = self["grid_def"]["width"]
+        dtype = str_to_dtype(self["data_type"])
+        rows = self["grid_definition"]["height"]
+        cols = self["grid_definition"]["width"]
         return super(GriddedProduct, self).get_data_array(item, rows, cols, dtype)
+
+    def get_data_mask(self, item):
+        return super(GriddedProduct, self).get_data_mask(item, fill_key="fill_value")
 
     def copy_array(self, item, filename=None, read_only=True):
         """Copy the array item of this swath.
@@ -568,9 +566,9 @@ class GriddedProduct(BaseProduct):
 
         The 'read_only' keyword is ignored if `filename` is None.
         """
-        dtype = dtype_to_numpy(self["data_type"])
-        rows = self["grid_def"]["height"]
-        cols = self["grid_def"]["width"]
+        dtype = str_to_dtype(self["data_type"])
+        rows = self["grid_definition"]["height"]
+        cols = self["grid_definition"]["width"]
         return super(GriddedProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
 
 
@@ -579,7 +577,7 @@ class GridDefinition(BaseP2GObject):
 
     Required Information:
         - name: Identifying name for the grid
-        - proj4_def (string): PROJ.4 projection definition
+        - proj4_definition (string): PROJ.4 projection definition
         - height: Height of the grid in number of pixels
         - width: Width of the grid in number of pixels
         - cell_height: Grid cell height in the projection domain (usually in meters or degrees)
@@ -589,7 +587,7 @@ class GridDefinition(BaseP2GObject):
     """
     _required_kwargs = (
         "grid_name",
-        "proj4_def",
+        "proj4_definition",
         "height",
         "width",
         "cell_height",

@@ -725,7 +725,7 @@ class Cartographer(roles.CartographerRole):
         grid_info = self.get_grid_info(grid_name)
         return GridDefinition(
             grid_name=grid_name,
-            proj4_def=grid_info["proj4_str"],
+            proj4_definition=grid_info["proj4_str"],
             height=grid_info["grid_height"],
             width=grid_info["grid_width"],
             cell_width=grid_info["pixel_size_x"],

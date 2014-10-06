@@ -49,7 +49,7 @@ from netCDF4 import Dataset
 
 from polar2grid.core import roles
 from polar2grid.core.fbf import FileAppender
-from polar2grid.core.dtype import numpy_to_dtype
+from polar2grid.core.dtype import dtype_to_str
 from polar2grid.core import meta
 
 LOG = logging.getLogger(__name__)
@@ -94,10 +94,10 @@ class ProductList(dict):
         pd = self.base_class(*args, **kwargs)
         self[pd.name] = pd
 
-PRODUCT_RAIN_RATE = "rain_rate"
-PRODUCT_BT_88 = "btemp_88"
-PRODUCT_LATITUDE = "latitude"
-PRODUCT_LONGITUDE = "longitude"
+PRODUCT_RAIN_RATE = "mirs_rain_rate"
+PRODUCT_BT_88 = "mirs_btemp_88"
+PRODUCT_LATITUDE = "mirs_latitude"
+PRODUCT_LONGITUDE = "mirs_longitude"
 
 PRODUCTS = ProductList(base_class=MIRSProductDefiniton)
 PRODUCTS.add_product(PRODUCT_RAIN_RATE, "rain_rate", FT_IMG, RR_VAR,
@@ -130,6 +130,16 @@ class MIRSFileReader(object):
         LON_VAR: ("Longitude", None, None, None),
     }
 
+    # best case nadir resolutions in meters (could be made per band):
+    INST_NADIR_RESOLUTION = {
+        "atms": 15800,
+    }
+
+    # worst case nadir resolutions in meters (could be made per band):
+    INST_EDGE_RESOLUTION = {
+        "atms": 323100,
+    }
+
     def __init__(self, filepath):
         self.filename = os.path.basename(filepath)
         self.filepath = os.path.realpath(filepath)
@@ -142,8 +152,16 @@ class MIRSFileReader(object):
         self.instrument = self.nc_obj.instrument_name
         self.begin_time = datetime.strptime(self.nc_obj.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
         self.end_time = datetime.strptime(self.nc_obj.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
-        self.x_res = float(self.nc_obj.geospatial_lon_resolution)
-        self.y_res = float(self.nc_obj.geospatial_lat_resolution)
+
+        if self.instrument in self.INST_NADIR_RESOLUTION:
+            self.nadir_resolution = self.INST_NADIR_RESOLUTION[self.instrument]
+        else:
+            self.nadir_resolution = None
+
+        if self.instrument in self.INST_EDGE_RESOLUTION:
+            self.edge_resolution = self.INST_EDGE_RESOLUTION[self.instrument]
+        else:
+            self.edge_resolution = None
 
     @classmethod
     def handles_file(cls, fn_or_nc_obj):
@@ -280,6 +298,12 @@ class MIRSMultiReader(object):
 
     def finalize_files(self):
         self.file_readers = sorted(self.file_readers)
+        if not all(fr.instrument == self.file_readers[0].instrument for fr in self.file_readers):
+            LOG.error("Can't concatenate files because they are not for the same instrument")
+            raise RuntimeError("Can't concatenate files because they are not for the same instrument")
+        if not all(fr.satellite == self.file_readers[0].satellite for fr in self.file_readers):
+            LOG.error("Can't concatenate files because they are not for the same satellite")
+            raise RuntimeError("Can't concatenate files because they are not for the same satellite")
         self._files_finalized = True
 
     def write_var_to_flat_binary(self, item, filename, dtype=numpy.float32):
@@ -314,12 +338,12 @@ class MIRSMultiReader(object):
         return self.file_readers[-1].end_time
 
     @property
-    def x_res(self):
-        return self.file_readers[0].x_res
+    def nadir_resolution(self):
+        return self.file_readers[0].nadir_resolution
 
     @property
-    def y_res(self):
-        return self.file_readers[0].y_res
+    def edge_resolution(self):
+        return self.file_readers[0].edge_resolution
 
     @property
     def filepaths(self):
@@ -400,7 +424,7 @@ class Frontend(object):
         shape = file_reader.write_var_to_flat_binary(product_def.file_key, filename)
         lat_product = products_created.get(PRODUCT_LATITUDE, None)
         lon_product = products_created.get(PRODUCT_LONGITUDE, None)
-        dtype_str = numpy_to_dtype(numpy.float32)
+        dtype_str = dtype_to_str(numpy.float32)
         if product_name in [PRODUCT_LATITUDE, PRODUCT_LONGITUDE]:
             lat_product = None
             lon_product = None
@@ -409,9 +433,9 @@ class Frontend(object):
             satellite=file_reader.satellite, instrument=file_reader.instrument,
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
             longitude=lon_product, latitude=lat_product, fill_value=numpy.nan,
-            swath_rows=shape[0], swath_cols=shape[1], data_type=dtype_str, swath_data=filename,
+            swath_rows=shape[0], swath_columns=shape[1], data_type=dtype_str, swath_data=filename,
             source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=0,
-            x_res=file_reader.x_res, y_res=file_reader.y_res,
+            nadir_resolution=file_reader.nadir_resolution, edge_resolution=file_reader.edge_resolution,
         )
         return one_swath
 
@@ -464,15 +488,15 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    group_title = "frontend_init"
+    group_title = "Frontend Initialization"
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
     group.add_argument("--list-products", dest="list_products", action="store_true",
                         help="List available frontend products")
-    group_title = "frontend_create_scene"
+    group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     group.add_argument("-p", "--products", dest="products", nargs="*", default=None,
                        help="Specify frontend products to process")
-    return ["frontend_init", "frontend_create_scene"]
+    return ["Frontend Initialization", "Frontend Swath Extraction"]
 
 
 def main():
@@ -490,14 +514,14 @@ def main():
     sys.excepthook = create_exc_handler(LOG.name)
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
-    list_products = args.subgroup_args["frontend_init"].pop("list_products")
-    f = Frontend(args.data_files + args.data_dirs, **args.subgroup_args["frontend_init"])
+    list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
+    f = Frontend(args.data_files + args.data_dirs, **args.subgroup_args["Frontend Initialization"])
 
     if list_products:
         print("\n".join(f.available_product_names))
         return 0
 
-    scene = f.create_scene(**args.subgroup_args["frontend_create_scene"])
+    scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
     print(scene.dumps(persist=True))
     return 0
 
