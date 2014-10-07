@@ -538,26 +538,23 @@ class Remapper(object):
         from collections import defaultdict
         product_groups = defaultdict(list)
         for product_name, swath_product in swath_scene.items():
-            geo_id = (swath_product["longitude"]["product_name"], swath_product["latitude"]["product_name"])
+            swath_def = swath_product["swath_definition"]
+            geo_id = swath_def["swath_name"]
             product_groups[geo_id].append(product_name)
 
-        geo_id_numbers = dict((k, idx) for idx, k in enumerate(product_groups.keys()))
         for geo_id, product_names in product_groups.items():
             LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
-            # an identifying number
-            geo_id_number = str(geo_id_numbers[geo_id])
-            LOG.debug("Product group index: %s", geo_id_number)
+            LOG.debug("Swath name: %s", geo_id)
 
             # TODO: Move into it's own function if this gets complicated
             # TODO: Add some multiprocessing
             # TODO: Allow ll2cr to return arrays
             grid_def = self.cart.get_grid_definition(grid_name)
-            lon_product = swath_scene[product_names[0]]["longitude"]
-            lat_product = swath_scene[product_names[0]]["latitude"]
-            lon_arr = lon_product.get_data_array("swath_data")
-            lat_arr = lat_product.get_data_array("swath_data")
-            rows_fn = "ll2cr_rows_%s_%s.dat" % (grid_name, geo_id_number)
-            cols_fn = "ll2cr_cols_%s_%s.dat" % (grid_name, geo_id_number)
+            swath_def = swath_scene[product_names[0]]["swath_definition"]
+            lon_arr = swath_def.get_longitude_array()
+            lat_arr = swath_def.get_latitude_array()
+            rows_fn = "ll2cr_rows_%s_%s.dat" % (grid_name, geo_id)
+            cols_fn = "ll2cr_cols_%s_%s.dat" % (grid_name, geo_id)
             ll2cr_output = gator.ll2cr(lon_arr, lat_arr, grid_def["proj4_definition"],
                                      pixel_size_x=grid_def["cell_width"], pixel_size_y=grid_def["cell_height"],
                                      grid_origin_x=grid_def["origin_x"], grid_origin_y=grid_def["origin_y"],
@@ -585,16 +582,16 @@ class Remapper(object):
                 gridded_scene[product_name] = gridded_product
 
             # Run fornav for all of the products at once
+            LOG.info("Running fornav for the following products:\n\t%s", "\n\t".join(product_names))
             # XXX: May have to do something smarter if there are float products and integer products together
             product_filepaths = [swath_scene[product_name]["swath_data"] for product_name in product_names]
             fornav_prefix = "grid_%s_" % (grid_name,)
             fornav_filepaths = [os.path.join(os.path.dirname(x), fornav_prefix + os.path.basename(x)) for x in product_filepaths]
-            log_level = logging.getLogger('').handlers[0].level or 0
-            rows_per_scan = lon_product.get("rows_per_scan", 0) or 2
-            fornav_output = run_fornav_c(
+            rows_per_scan = swath_def.get("rows_per_scan", 0) or 2
+            run_fornav_c(
                 len(product_filepaths),
-                lon_product["swath_columns"],
-                lon_product["swath_rows"]/rows_per_scan,
+                swath_def["swath_columns"],
+                swath_def["swath_rows"]/rows_per_scan,
                 rows_per_scan,
                 cols_fn,
                 rows_fn,
@@ -602,7 +599,6 @@ class Remapper(object):
                 grid_def["width"],
                 grid_def["height"],
                 fornav_filepaths,
-                verbose=log_level <= logging.DEBUG,
                 swath_data_type_1="f4",
                 swath_fill_1=swath_scene.get_fill_value(product_names),
                 grid_fill_1=numpy.nan,

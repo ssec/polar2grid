@@ -100,15 +100,18 @@ PRODUCT_LATITUDE = "mirs_latitude"
 PRODUCT_LONGITUDE = "mirs_longitude"
 
 PRODUCTS = ProductList(base_class=MIRSProductDefiniton)
-PRODUCTS.add_product(PRODUCT_RAIN_RATE, "rain_rate", FT_IMG, RR_VAR,
-                     description="Rain Rate", units="mm/hr")
-PRODUCTS.add_product(PRODUCT_BT_88, "btemp", FT_IMG, BT_88_VAR,
-                     description="Channel Brightness Temperature at 88.2GHz", units="K")
+# FUTURE: Add a "geoproduct_pair" field and have a second geoproduct list for the pairs
 PRODUCTS.add_product(PRODUCT_LATITUDE, "latitude", FT_IMG, LAT_VAR,
                      description="Latitude", units="degrees", is_geoproduct=True)
 PRODUCTS.add_product(PRODUCT_LONGITUDE, "longitude", FT_IMG, LON_VAR,
                      description="Longitude", units="degrees", is_geoproduct=True)
-GEO_PRODUCTS = [PRODUCT_LONGITUDE, PRODUCT_LATITUDE]
+PRODUCTS.add_product(PRODUCT_RAIN_RATE, "rain_rate", FT_IMG, RR_VAR,
+                     description="Rain Rate", units="mm/hr")
+PRODUCTS.add_product(PRODUCT_BT_88, "btemp", FT_IMG, BT_88_VAR,
+                     description="Channel Brightness Temperature at 88.2GHz", units="K")
+GEO_PAIRS = (
+    (PRODUCT_LONGITUDE, PRODUCT_LATITUDE),
+)
 
 ### I/O Operations ###
 
@@ -144,12 +147,13 @@ class MIRSFileReader(object):
         self.filename = os.path.basename(filepath)
         self.filepath = os.path.realpath(filepath)
         self.nc_obj = Dataset(self.filepath, "r")
+        self.nc_obj.set_auto_maskandscale(False)
         if not self.handles_file(self.nc_obj):
             LOG.error("Unknown file format for file %s" % (self.filename,))
             raise ValueError("Unknown file format for file %s" % (self.filename,))
 
-        self.satellite = self.nc_obj.satellite_name
-        self.instrument = self.nc_obj.instrument_name
+        self.satellite = self.nc_obj.satellite_name.lower()
+        self.instrument = self.nc_obj.instrument_name.lower()
         self.begin_time = datetime.strptime(self.nc_obj.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
         self.end_time = datetime.strptime(self.nc_obj.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
 
@@ -207,7 +211,7 @@ class MIRSFileReader(object):
             var_name = self.FILE_STRUCTURE[item][0]
             scale_attr_name = self.FILE_STRUCTURE[item][1]
             if scale_attr_name:
-                scale_value = float(getattr(self.nc_obj.variables[var_name], scale_attr_name))
+                scale_value = float(self.nc_obj.variables[var_name].getncattr(scale_attr_name))
                 LOG.debug("File scale value for '%s' is '%f'", item, float(scale_value))
         return scale_value
 
@@ -319,6 +323,7 @@ class MIRSMultiReader(object):
                 single_array = file_reader.get_swath_data(item)
                 file_appender.append(single_array)
 
+        LOG.debug("File %s has shape %r", filename, file_appender.shape)
         return file_appender.shape
 
     @property
@@ -416,26 +421,55 @@ class Frontend(object):
     def all_product_names(self):
         return PRODUCTS.keys()
 
-    def _create_raw_swath_object(self, product_name, file_readers, products_created):
+    def _create_swath_definition(self, lon_product, lat_product, file_readers):
+        product_def = PRODUCTS[lon_product["product_name"]]
+        lon_file_reader = file_readers[product_def.file_type]
+        product_def = PRODUCTS[lat_product["product_name"]]
+        lat_file_reader = file_readers[product_def.file_type]
+
+        # sanity check
+        for k in ["data_type", "swath_rows", "swath_columns", "rows_per_scan", "fill_value"]:
+            if lon_product[k] != lat_product[k]:
+                if k == "fill_value" and numpy.isnan(lon_product[k]) and numpy.isnan(lat_product[k]):
+                    # NaN special case: NaNs can't be compared normally
+                    continue
+                LOG.error("Longitude and latitude products do not have equal attributes: %s", k)
+                raise RuntimeError("Longitude and latitude products do not have equal attributes: %s" % (k,))
+
+        swath_name = lon_product["product_name"] + "_" + lat_product["product_name"]
+        swath_definition = meta.SwathDefinition(
+            swath_name=swath_name, longitude=lon_product["swath_data"], latitude=lat_product["swath_data"],
+            data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
+            swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["rows_per_scan"],
+            source_filenames=sorted(set(lon_file_reader.filepaths + lat_file_reader.filepaths)),
+            nadir_resolution=lon_file_reader.nadir_resolution, edge_resolution=lat_file_reader.edge_resolution,
+            fill_value=lon_product["fill_value"],
+        )
+
+        # Tell the lat and lon products not to delete the data arrays, the swath definition will handle that
+        lon_product.set_persist()
+        lat_product.set_persist()
+
+        # mmmmm, almost circular
+        lon_product["swath_definition"] = swath_definition
+        lat_product["swath_definition"] = swath_definition
+
+        return swath_definition
+
+    def _create_raw_swath_object(self, product_name, file_readers, swath_definition):
         product_def = PRODUCTS[product_name]
         file_reader = file_readers[product_def.file_type]
         filename = product_name + ".dat"
         # TODO: Use dtype somehow
         shape = file_reader.write_var_to_flat_binary(product_def.file_key, filename)
-        lat_product = products_created.get(PRODUCT_LATITUDE, None)
-        lon_product = products_created.get(PRODUCT_LONGITUDE, None)
         dtype_str = dtype_to_str(numpy.float32)
-        if product_name in [PRODUCT_LATITUDE, PRODUCT_LONGITUDE]:
-            lat_product = None
-            lon_product = None
         one_swath = meta.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
             satellite=file_reader.satellite, instrument=file_reader.instrument,
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
-            longitude=lon_product, latitude=lat_product, fill_value=numpy.nan,
+            swath_definition=swath_definition, fill_value=numpy.nan,
             swath_rows=shape[0], swath_columns=shape[1], data_type=dtype_str, swath_data=filename,
-            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=0,
-            nadir_resolution=file_reader.nadir_resolution, edge_resolution=file_reader.edge_resolution,
+            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=0
         )
         return one_swath
 
@@ -452,6 +486,9 @@ class Frontend(object):
         # Figure out any dependencies
         raw_products = []
         for product_name in products:
+            if product_name not in PRODUCTS:
+                LOG.error("Unknown product name: %s", product_name)
+                raise ValueError("Unknown product name: %s" % (product_name,))
             if PRODUCTS[product_name].dependencies:
                 raise NotImplementedError("Don't know how to handle products dependent on other products")
             raw_products.append(product_name)
@@ -466,19 +503,38 @@ class Frontend(object):
 
         # Load geographic products - every product needs a geo-product
         products_created = {}
-        for geo_product in [PRODUCT_LATITUDE, PRODUCT_LONGITUDE]:
-            one_swath = self._create_raw_swath_object(geo_product, file_readers, products_created)
-            products_created[geo_product] = one_swath
-            if geo_product in raw_products:
-                # only process the geolocation product if the user requested it that way
-                scene[geo_product] = one_swath
+        swath_definitions = {}
+        for geo_product_pair in GEO_PAIRS:
+            # longitude
+            if geo_product_pair[0] not in products_created:
+                one_lon_swath = self._create_raw_swath_object(geo_product_pair[0], file_readers, None)
+                products_created[geo_product_pair[0]] = one_lon_swath
+                if geo_product_pair[0] in raw_products:
+                    # only process the geolocation product if the user requested it that way
+                    scene[geo_product_pair[0]] = one_lon_swath
+            else:
+                one_lon_swath = products_created[geo_product_pair[0]]
+
+            # latitude
+            if geo_product_pair[1] not in products_created:
+                one_lat_swath = self._create_raw_swath_object(geo_product_pair[1], file_readers, None)
+                products_created[geo_product_pair[1]] = one_lat_swath
+                if geo_product_pair[1] in raw_products:
+                    # only process the geolocation product if the user requested it that way
+                    scene[geo_product_pair[1]] = one_lat_swath
+            else:
+                one_lat_swath = products_created[geo_product_pair[1]]
+
+            swath_definitions[geo_product_pair] = self._create_swath_definition(one_lon_swath, one_lat_swath, file_readers)
 
         # Load raw products
         for raw_product in raw_products:
+            # FUTURE: Get this info from the product definition
+            geo_pair = GEO_PAIRS[0]
             if raw_product not in products_created:
-                one_swath = self._create_raw_swath_object(raw_product, file_readers, products_created)
-                products_created[raw_product] = one_swath
-                scene[raw_product] = one_swath
+                one_lat_swath = self._create_raw_swath_object(raw_product, file_readers, swath_definitions[geo_pair])
+                products_created[raw_product] = one_lat_swath
+                scene[raw_product] = one_lat_swath
 
         return scene
 

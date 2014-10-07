@@ -50,16 +50,16 @@ from glob import glob
 LOG = logging.getLogger(__name__)
 
 
-def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log"):
+def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log_numpy=True):
     """Setup the logger to the console to the logging level defined in the
     command line (default INFO).  Sets up a file logging for everything,
     regardless of command line level specified.  Adds extra logger for
     tracebacks to go to the log file if the exception is caught.  See
     `exc_handler` for more information.
 
-    :Keywords:
-        console_level : int
-            Python logging level integer (ex. logging.INFO).
+    :param console_level: Python logging level integer (ex. logging.INFO).
+    :param log_filename: Log messages to console and specified log_filename (None for no file log)
+    :param log_numpy: Tell numpy to log invalid values encountered
     """
     root_logger = logging.getLogger('')
     root_logger.setLevel(logging.DEBUG)
@@ -84,6 +84,14 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log"):
         traceback_log.propagate = False
         traceback_log.setLevel(logging.ERROR)
         traceback_log.addHandler(file_handler)
+
+    if log_numpy:
+        import numpy
+        class TempLog(object):
+            def write(self, msg):
+                LOG.debug(msg)
+        numpy.seterr(invalid="log")
+        numpy.seterrcall(TempLog())
 
 
 def rename_log_file(new_filename):
@@ -118,6 +126,8 @@ def rename_log_file(new_filename):
     file_handler.setLevel(logging.DEBUG)
     root_logger.addHandler(file_handler)
     traceback_log.addHandler(file_handler)
+
+    LOG.info("Log renamed from '%s' to '%s'", fn, new_filename)
 
 
 def create_exc_handler(glue_name):

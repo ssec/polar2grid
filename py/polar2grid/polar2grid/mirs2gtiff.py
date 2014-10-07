@@ -88,8 +88,10 @@ def main():
         print("\n".join(f.available_product_names))
         return 0
 
+    LOG.info("Initializing remapping...")
     remapper = Remapper(**args.subgroup_args["Remapping Initialization"])
     remap_kwargs = args.subgroup_args["Remapping"]
+    LOG.info("Initializing backend...")
     backend = Backend2(**args.subgroup_args["Backend Initialization"])
 
     LOG.info("Extracting swaths from data files available...")
@@ -117,6 +119,7 @@ def main():
             backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
         except StandardError:
             LOG.error("Could not create output, see log for more info.")
+            LOG.debug("Backend exception: ", exc_info=True)
             continue
 
     return 0

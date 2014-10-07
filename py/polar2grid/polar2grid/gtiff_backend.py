@@ -331,6 +331,7 @@ class Backend2(roles.BackendRole2):
         else:
             output_filename = output_pattern
 
+        log.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
         data = self.rescaler.rescale_product(gridded_product, data_type, inc_by_one=inc_by_one, fill_value=fill_value)
 
         # Create the geotiff

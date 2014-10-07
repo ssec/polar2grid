@@ -78,7 +78,7 @@ def _ll2cr_cols_info(fn):
 
 
 def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
-          verbose=False, f_scansout=True, rind=None, fill_io=None, tag="ll2cr"):
+          verbose=True, f_scansout=True, rind=None, fill_io=None, tag="ll2cr"):
     args = ["ll2cr"]
     if verbose:
         args.append("-v")
@@ -96,9 +96,9 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
         args = [str(a) for a in args]
         log.debug("Running ll2cr with '%s'" % " ".join(args))
         ll2cr_output = check_output(args, stderr=STDOUT)
-        log.info("ll2cr output:\n%s", ll2cr_output)
+        log.debug("ll2cr output:\n%s", ll2cr_output)
     except CalledProcessError as e:
-        log.info("ll2cr output:\n%s", e.output)
+        log.debug("ll2cr output:\n%s", e.output)
         log.error("Error running ll2cr", exc_info=1)
         raise ValueError("Error running ll2cr")
     except OSError:
@@ -163,7 +163,7 @@ def ll2cr(colsin, scansin, rowsperscan, latfile, lonfile, gpdfile,
 
 
 def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, rowfile, swathfile, grid_cols, grid_rows, output_fn,
-           verbose=False, swath_data_type_1=None, swath_fill_1=None, grid_fill_1=None, weight_delta_max=None, weight_distance_max=None,
+           verbose=True, swath_data_type_1=None, swath_fill_1=None, grid_fill_1=None, weight_delta_max=None, weight_distance_max=None,
            start_scan=None, select_single_samples=False):
     args = ["fornav", "%d" % chan_count]
     
@@ -237,7 +237,7 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         args = [str(a) for a in args]
         log.debug("Running fornav with '%s'" % " ".join(args))
         fornav_output = check_output(args, stderr=STDOUT)
-        log.info("fornav output:\n%s", fornav_output)
+        log.debug("fornav output:\n%s", fornav_output)
 
         # Check to make sure fornav actually created the files
         for o_fn in output_fn:
@@ -245,7 +245,7 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
                 log.error("Couldn't find fornav output file '%s'" % o_fn)
                 raise RuntimeError("Couldn't find fornav output file '%s'" % o_fn)
     except CalledProcessError as e:
-        log.info("fornav output:\n%s", e.output)
+        log.debug("fornav output:\n%s", e.output)
         log.error("Error running fornav", exc_info=1)
         raise ValueError("Fornav failed")
     except OSError:

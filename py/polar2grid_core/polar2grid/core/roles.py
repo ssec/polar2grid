@@ -196,10 +196,6 @@ class INIConfigReader(object):
         # XXX: If 2 or more entries have the same number of wildcards they may not be sorted optimally (i.e. specific first field highest)
         self.config.sort()
 
-    @staticmethod
-    def convert_boolean(val):
-        return val and val.lower() not in "false"
-
     def get_config_section(self, **kwargs):
         if len(kwargs) != len(self.id_fields):
             log.error("Incorrect number of identifying arguments, expected %d, got %d" % (len(self.id_fields), len(kwargs)))
@@ -209,7 +205,7 @@ class INIConfigReader(object):
         id_key = "_".join(str(kwargs.get(k, None)) for k in self.id_fields)
         for num_wildcards, regex_obj, section in self.config:
             if regex_obj.match(id_key):
-                log.debug("Matched config regular expression; Regex %s; Key: %s", regex_obj.pattern, id_key)
+                log.debug("Key '%s' matched config regular expression '%s'", id_key, regex_obj.pattern)
                 return section
         log.debug("No match found in config for key: %s", id_key)
         return None

@@ -422,11 +422,10 @@ class SwathProduct(BaseProduct):
         - instrument (string): Name of the instrument on the satellite from which the data was observed
         - begin_time (datetime): Datetime object representing the best known start of observation for this product's data
         - end_time (datetime): Datetime object representing the best known end of observation for this product's data
-        - longitude (product object): Longitude `SwathProduct`, may be 'None' inside Longitude object
-        - latitude (product object): Latitude `SwathProduct`, may be 'None' inside Latitude object
+        - swath_definition (`SwathDefinition` object): definition of the geographic area covered by this swath (None is not applicable)
+        - data_type (numpy.dtype): Data type of image data or if on disk on of (real4, int1, uint1, etc)
         - swath_rows (int): Number of rows in the main 2D data array
         - swath_columns (int): Number of columns in the main 2D data array
-        - data_type (numpy.dtype): Data type of image data or if on disk on of (real4, int1, uint1, etc)
         - swath_data (array): Binary filename or numpy array for the main data array
 
     Optional Information:
@@ -436,8 +435,6 @@ class SwathProduct(BaseProduct):
         - rows_per_scan (int): Number of swath rows making up one scan of the sensor (0 if not applicable or not specified)
         - units (string): Image data units (empty string by default)
         - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
-        - nadir_resolution (float): Size in meters of instrument's nadir footprint/pixel
-        - edge_resolution (float): Size in meters of instrument's edge footprint/pixel
 
     .. note::
 
@@ -455,8 +452,7 @@ class SwathProduct(BaseProduct):
         "instrument",
         "begin_time",
         "end_time",
-        "longitude",
-        "latitude",
+        "swath_definition",
         "swath_rows",
         "swath_columns",
         "data_type",
@@ -464,8 +460,7 @@ class SwathProduct(BaseProduct):
     )
 
     _loadable_kwargs = (
-        "longitude",
-        "latitude",
+        "swath_definition",
     )
 
     _cleanup_kwargs = (
@@ -475,27 +470,16 @@ class SwathProduct(BaseProduct):
     def __init__(self, *args, **kwargs):
         super(SwathProduct, self).__init__(*args, **kwargs)
 
-    def get_data_array(self, item):
-        """Get FBF item as a numpy array.
-
-        File is loaded from disk as a memory mapped file if needed.
-        """
+    def get_data_array(self, item="swath_data"):
         dtype = str_to_dtype(self["data_type"])
         rows = self["swath_rows"]
         cols = self["swath_columns"]
         return super(SwathProduct, self).get_data_array(item, rows, cols, dtype)
 
-    def get_data_mask(self, item):
+    def get_data_mask(self, item="swath_data"):
         return super(SwathProduct, self).get_data_mask(item, fill_key="fill_value")
 
-    def copy_array(self, item, filename=None, read_only=True):
-        """Copy the array item of this swath.
-
-        If the `filename` keyword is passed the data will be written to that file. The copy returned
-        will be a memory map. If `read_only` is False, the memory map will be opened with mode "r+".
-
-        The 'read_only' keyword is ignored if `filename` is None.
-        """
+    def copy_array(self, item="swath_data", filename=None, read_only=True):
         dtype = str_to_dtype(self["data_type"])
         rows = self["swath_rows"]
         cols = self["swath_columns"]
@@ -537,6 +521,10 @@ class GriddedProduct(BaseProduct):
         "grid_data",
     )
 
+    _loadable_kwargs = (
+        "grid_definition",
+    )
+
     _cleanup_kwargs = (
         "grid_data",
     )
@@ -545,7 +533,7 @@ class GriddedProduct(BaseProduct):
         for k in ["product_name", "satellite", "instrument", "begin_time", "end_time", "data_type"]:
             self[k] = swath_product[k]
 
-    def get_data_array(self, item):
+    def get_data_array(self, item="grid_data"):
         """Get FBF item as a numpy array.
 
         File is loaded from disk as a memory mapped file if needed.
@@ -555,10 +543,10 @@ class GriddedProduct(BaseProduct):
         cols = self["grid_definition"]["width"]
         return super(GriddedProduct, self).get_data_array(item, rows, cols, dtype)
 
-    def get_data_mask(self, item):
+    def get_data_mask(self, item="grid_data"):
         return super(GriddedProduct, self).get_data_mask(item, fill_key="fill_value")
 
-    def copy_array(self, item, filename=None, read_only=True):
+    def copy_array(self, item="grid_data", filename=None, read_only=True):
         """Copy the array item of this swath.
 
         If the `filename` keyword is passed the data will be written to that file. The copy returned
@@ -572,11 +560,73 @@ class GriddedProduct(BaseProduct):
         return super(GriddedProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
 
 
-class GridDefinition(BaseP2GObject):
+class GeographicDefinition(BaseP2GObject):
+    """Base class for objects that define a geographic area.
+    """
+    pass
+
+
+class SwathDefinition(GeographicDefinition, BaseProduct):
+    """Geographic area defined by longitude and latitude points.
+
+    Required Information:
+        - swath_name: Give a descriptive name to the swath definition (used for filenaming if needed)
+        - longitude (array): Binary filename or numpy array for the main data array
+        - latitude (array): Binary filename or numpy array for the main data array
+        - data_type (numpy.dtype): Data type of image data or if on disk on of (real4, int1, uint1, etc)
+        - swath_rows (int): Number of rows in the main 2D data array
+        - swath_columns (int): Number of columns in the main 2D data array
+
+    Optional Information:
+        - nadir_resolution (float): Size in meters of instrument's nadir footprint/pixel
+        - edge_resolution (float): Size in meters of instrument's edge footprint/pixel
+        - rows_per_scan (int): Number of swath rows making up one scan of the sensor (0 if not applicable or not specified)
+        - description (string): Basic description of the product (empty string by default)
+        - source_filenames (list of strings): Unordered list of source files that made up this product ([] by default)
+        - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
+    """
+    # Validate required keys when loaded from disk
+    _required_kwargs = (
+        "swath_name",
+        "longitude",
+        "latitude",
+        "data_type",
+        "swath_rows",
+        "swath_columns",
+    )
+
+    _loadable_kwargs = (
+    )
+
+    _cleanup_kwargs = (
+        "longitude",
+        "latitude",
+    )
+
+    def get_longitude_array(self):
+        dtype = str_to_dtype(self["data_type"])
+        rows = self["swath_rows"]
+        cols = self["swath_columns"]
+        return super(SwathDefinition, self).get_data_array("longitude", rows, cols, dtype)
+
+    def get_latitude_array(self):
+        dtype = str_to_dtype(self["data_type"])
+        rows = self["swath_rows"]
+        cols = self["swath_columns"]
+        return super(SwathDefinition, self).get_data_array("latitude", rows, cols, dtype)
+
+    def get_longitude_mask(self, item="longitude"):
+        return super(SwathDefinition, self).get_data_mask(item, fill_key="fill_value")
+
+    def get_latitude_mask(self, item="latitude"):
+        return super(SwathDefinition, self).get_data_mask(item, fill_key="fill_value")
+
+
+class GridDefinition(GeographicDefinition):
     """Projected grid defined by a PROJ.4 projection string and other grid parameters.
 
     Required Information:
-        - name: Identifying name for the grid
+        - grid_name: Identifying name for the grid
         - proj4_definition (string): PROJ.4 projection definition
         - height: Height of the grid in number of pixels
         - width: Width of the grid in number of pixels

@@ -64,6 +64,14 @@ log = logging.getLogger(__name__)
 DEFAULT_FILL_IN  = DEFAULT_FILL_VALUE
 DEFAULT_FILL_OUT = DEFAULT_FILL_VALUE
 
+
+def mask_helper(img, fill_value):
+    if numpy.isnan(fill_value):
+        return numpy.isnan(img)
+    else:
+        return img == fill_value
+
+
 def _make_lin_scale(m, b):
     """Factory function to make a static linear scaling function
     """
@@ -214,17 +222,24 @@ def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=
     
 
 # this method is intended to work on brightness temperatures in Kelvin
+bt_scale_kwargs = dict(threshold=float, high_max=float, high_mult=float, low_max=float, low_mult=float,
+                       clip_min=float, clip_max=float,
+                       fill_in=float, fill_out=float)
 def bt_scale(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=None, clip_max=None, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwargs):
     log.debug("Running 'bt_scale'...")
-    high_idx = img >= threshold
-    low_idx = img < threshold
-    z_idx = img == fill_in
-    img[high_idx] = high_max - (high_mult*img[high_idx])
-    img[low_idx] = low_max - (low_mult*img[low_idx])
+    bad_mask = mask_helper(img, fill_in)
+    good_img = img[~bad_mask]
+    # print good_img, good_img.shape, numpy.isnan(good_img).all()
+    print bad_mask.shape, good_img.shape
+    high_idx = good_img >= threshold
+    low_idx = good_img < threshold
+    good_img[high_idx] = high_max - (high_mult*good_img[high_idx])
+    good_img[low_idx] = low_max - (low_mult*good_img[low_idx])
     if clip_min is not None and clip_max is not None:
         log.debug("Clipping data in 'bt_scale' to '%f' and '%f'" % (clip_min, clip_max))
-        numpy.clip(img, clip_min, clip_max, out=img)
-    img[z_idx] = fill_out
+        numpy.clip(good_img, clip_min, clip_max, out=good_img)
+    img[~bad_mask] = good_img
+    img[bad_mask] = fill_out
     return img
 
 # this method is intended to work on brightness temperatures in Kelvin
@@ -348,20 +363,20 @@ class Rescaler2(roles.INIConfigReader):
     )
 
     rescale_methods = {
-        'sqrt'     :  sqrt_scale,
-        'linear'   :  linear_scale,
-        'unlinear' :  unlinear_scale,
-        'raw'      :  passive_scale,
-        'btemp'    :  bt_scale,
-        'btemp_enh':  linear_scale, # TODO, this probably shouldn't go here?
-        'fog'      :  fog_scale,
-        'btemp_c'  :  bt_scale_c,
-        'lst'      :  lst_scale,
-        'ndvi'     :  ndvi_scale,
+        'linear_flex': (linear_flexible_scale, linear_flexible_scale_kwargs),
+        'btemp': (bt_scale, bt_scale_kwargs),
+        'sqrt'     : sqrt_scale,
+        'linear'   : linear_scale,
+        'unlinear' : unlinear_scale,
+        'raw'      : passive_scale,
+        'btemp_enh': linear_scale, # TODO, this probably shouldn't go here?
+        'fog'      : fog_scale,
+        'btemp_c'  : bt_scale_c,
+        'lst'      : lst_scale,
+        'ndvi'     : ndvi_scale,
         'distance' : passive_scale, # TODO, this is wrong... but we'll sort it out later?
         'percent'  : passive_scale, # TODO, this is wrong, find out what it should be
         'lookup'   : lookup_scale,
-        'linear_flex': (linear_flexible_scale, linear_flexible_scale_kwargs),
     }
 
     def __init__(self, *rescale_configs, **kwargs):
