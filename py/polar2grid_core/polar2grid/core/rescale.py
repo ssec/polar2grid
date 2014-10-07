@@ -223,14 +223,11 @@ def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=
 
 # this method is intended to work on brightness temperatures in Kelvin
 bt_scale_kwargs = dict(threshold=float, high_max=float, high_mult=float, low_max=float, low_mult=float,
-                       clip_min=float, clip_max=float,
-                       fill_in=float, fill_out=float)
+                       clip_min=float, clip_max=float, fill_in=float, fill_out=float)
 def bt_scale(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=None, clip_max=None, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwargs):
     log.debug("Running 'bt_scale'...")
     bad_mask = mask_helper(img, fill_in)
     good_img = img[~bad_mask]
-    # print good_img, good_img.shape, numpy.isnan(good_img).all()
-    print bad_mask.shape, good_img.shape
     high_idx = good_img >= threshold
     low_idx = good_img < threshold
     good_img[high_idx] = high_max - (high_mult*good_img[high_idx])
