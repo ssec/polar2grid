@@ -83,9 +83,9 @@ class P2GJSONDecoder(json.JSONDecoder):
                     pass
 
                 try:
-                    str_to_dtype, dtype_to_str
+                    obj[k] = str_to_dtype(v)
                     continue
-                except KeyError:
+                except StandardError:
                     pass
 
         if "__class__" not in obj:
@@ -471,7 +471,7 @@ class SwathProduct(BaseProduct):
         super(SwathProduct, self).__init__(*args, **kwargs)
 
     def get_data_array(self, item="swath_data"):
-        dtype = str_to_dtype(self["data_type"])
+        dtype = self["data_type"]
         rows = self["swath_rows"]
         cols = self["swath_columns"]
         return super(SwathProduct, self).get_data_array(item, rows, cols, dtype)
@@ -480,7 +480,7 @@ class SwathProduct(BaseProduct):
         return super(SwathProduct, self).get_data_mask(item, fill_key="fill_value")
 
     def copy_array(self, item="swath_data", filename=None, read_only=True):
-        dtype = str_to_dtype(self["data_type"])
+        dtype = self["data_type"]
         rows = self["swath_rows"]
         cols = self["swath_columns"]
         return super(SwathProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
@@ -538,7 +538,7 @@ class GriddedProduct(BaseProduct):
 
         File is loaded from disk as a memory mapped file if needed.
         """
-        dtype = str_to_dtype(self["data_type"])
+        dtype = self["data_type"]
         rows = self["grid_definition"]["height"]
         cols = self["grid_definition"]["width"]
         return super(GriddedProduct, self).get_data_array(item, rows, cols, dtype)
@@ -554,7 +554,7 @@ class GriddedProduct(BaseProduct):
 
         The 'read_only' keyword is ignored if `filename` is None.
         """
-        dtype = str_to_dtype(self["data_type"])
+        dtype = self["data_type"]
         rows = self["grid_definition"]["height"]
         cols = self["grid_definition"]["width"]
         return super(GriddedProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
@@ -604,13 +604,13 @@ class SwathDefinition(GeographicDefinition, BaseProduct):
     )
 
     def get_longitude_array(self):
-        dtype = str_to_dtype(self["data_type"])
+        dtype = self["data_type"]
         rows = self["swath_rows"]
         cols = self["swath_columns"]
         return super(SwathDefinition, self).get_data_array("longitude", rows, cols, dtype)
 
     def get_latitude_array(self):
-        dtype = str_to_dtype(self["data_type"])
+        dtype = self["data_type"]
         rows = self["swath_rows"]
         cols = self["swath_columns"]
         return super(SwathDefinition, self).get_data_array("latitude", rows, cols, dtype)

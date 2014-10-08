@@ -100,24 +100,25 @@ def normalize_dtype_string(dtype_str):
 
 
 def str_to_dtype(dtype_str):
+    if numpy.issubclass_(dtype_str, numpy.number):
+        # if they gave us a numpy dtype
+        return dtype_str
+
     try:
         return str2dtype[dtype_str]
     except KeyError:
-        msg = "Not a valid data type string: %s" % (dtype_str,)
-        log.error(msg)
-        raise ValueError(msg)
+        raise ValueError("Not a valid data type string: %s" % (dtype_str,))
 
 
 def dtype_to_str(numpy_dtype):
     if isinstance(numpy_dtype, (str, unicode)):
+        # if they gave us a string, make sure it's valid
         return normalize_dtype_string(numpy_dtype)
 
     try:
         return dtype2str[numpy_dtype]
     except KeyError:
-        msg = "Unsupported numpy data type: %r" % (numpy_dtype,)
-        log.error(msg)
-        raise ValueError(msg)
+        raise ValueError("Unsupported numpy data type: %r" % (numpy_dtype,))
 
 
 def convert_to_data_type(data, data_type):

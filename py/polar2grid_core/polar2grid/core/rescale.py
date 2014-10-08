@@ -147,6 +147,7 @@ def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, clip=
 
     m = (max_out - min_out) / (max_in - min_in)
     b = min_out - m * min_in
+    log.debug("Linear parameters: m=%f, b=%f", m, b)
 
     numpy.multiply(img, m, img)
     numpy.add(img, b, img)

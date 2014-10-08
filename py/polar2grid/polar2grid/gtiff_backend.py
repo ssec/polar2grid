@@ -53,7 +53,7 @@ from polar2grid.core.dtype import normalize_dtype_string, clip_to_data_type, str
 import sys
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 gtiff_driver = gdal.GetDriverByName("GTIFF")
 
@@ -65,29 +65,35 @@ DEFAULT_INC_16BIT_RCONFIG = "rescale_configs/rescale_inc.16bit.conf"
 DEFAULT_OUTPUT_PATTERN = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s_%(grid_name)s.tif"
 DEFAULT_OUTPUT_PATTERN2 = "%(satellite)s_%(instrument)s_%(product_name)s_%(begin_time)s_%(grid_name)s.tif"
 
+
 def _proj4_to_srs(proj4_str):
     """Helper function to convert a proj4 string
     into a GDAL compatible srs.  Mainly a function
     so if used multiple times it only has to be changed
     once for special cases.
     """
-    srs = osr.SpatialReference()
-    if proj4_str[:4].lower() == "epsg":
-        epsg_code = int(proj4_str[5:]) # ex. "EPSG:3857"
-        result = srs.ImportFromEPSG(epsg_code)
-    else:
-        result = srs.ImportFromProj4(proj4_str)
-    if result != 0:
-        log.error("Could not convert Proj4 string '%s' into a GDAL SRS" % (proj4_str,))
+    try:
+        srs = osr.SpatialReference()
+        # GDAL doesn't like unicode
+        result = srs.ImportFromProj4(str(proj4_str))
+    except StandardError:
+        LOG.error("Could not convert Proj4 string '%s' into a GDAL SRS" % (proj4_str,))
+        LOG.debug("Exception: ", exc_info=True)
         raise ValueError("Could not convert Proj4 string '%s' into a GDAL SRS" % (proj4_str,))
+
+    if result != 0:
+        LOG.error("Could not convert Proj4 string '%s' into a GDAL SRS" % (proj4_str,))
+        raise ValueError("Could not convert Proj4 string '%s' into a GDAL SRS" % (proj4_str,))
+
     return srs
+
 
 def create_geotiff(data, output_filename, proj4_str, geotransform,
         etype=gdal.GDT_UInt16):
     """Function that creates a geotiff from the information provided.
     """
     log_level = logging.getLogger('').handlers[0].level or 0
-    log.info("Creating geotiff '%s'" % (output_filename,))
+    LOG.info("Creating geotiff '%s'" % (output_filename,))
 
     # Find the number of bands provided
     if isinstance(data, (list, tuple)):
@@ -100,7 +106,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
     # We only know how to handle gray scale, RGB, and RGBA
     if num_bands not in [1, 3, 4]:
         msg = "Geotiff backend doesn't know how to handle data of shape '%r'" % (data.shape,)
-        log.error(msg)
+        LOG.error(msg)
         raise ValueError(msg)
 
     if num_bands == 1:
@@ -139,11 +145,11 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
         elif etype == gdal.GDT_Byte:
             band_data = clip_to_data_type(band_data, DTYPE_UINT8)
         if log_level <= logging.DEBUG:
-            log.debug("Data min: %f, max: %f" % (band_data.min(),band_data.max()))
+            LOG.debug("Data min: %f, max: %f" % (band_data.min(),band_data.max()))
 
         # Write the data
         if gtiff_band.WriteArray(band_data) != 0:
-            log.error("Could not write band 1 data to geotiff '%s'" % (output_filename,))
+            LOG.error("Could not write band 1 data to geotiff '%s'" % (output_filename,))
             raise ValueError("Could not write band 1 data to geotiff '%s'" % (output_filename,))
     # Garbage collection/destructor should close the file properly
 
@@ -302,11 +308,13 @@ class Backend2(roles.BackendRole2):
         self.rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
         self.rescaler = Rescaler2(*self.rescale_configs)
 
-    def create_output_from_scene(self, gridded_scene, output_pattern=None, inc_by_one=None):
+    def create_output_from_scene(self, gridded_scene, output_pattern=None, inc_by_one=None, data_type=None,
+                                 fill_value=0):
         output_filenames = []
         for product_name, gridded_product in gridded_scene.items():
             output_fn = self.create_output_from_product(gridded_product, output_pattern=output_pattern,
-                                                        inc_by_one=inc_by_one)
+                                                        inc_by_one=inc_by_one, data_type=data_type,
+                                                        fill_value=fill_value)
             output_filenames.append(output_fn)
         return output_filenames
 
@@ -331,7 +339,7 @@ class Backend2(roles.BackendRole2):
         else:
             output_filename = output_pattern
 
-        log.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
+        LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
         data = self.rescaler.rescale_product(gridded_product, data_type, inc_by_one=inc_by_one, fill_value=fill_value)
 
         # Create the geotiff
@@ -474,7 +482,7 @@ custom name if proj4_str is provided""")
 def add_backend_argument_groups(parser):
     group = parser.add_argument_group(title="Backend Initialization")
     group.add_argument('--rescale-configs', nargs="*", dest="rescale_configs",
-                       help="alternative rescale configuration file")
+                       help="alternative rescale configuration files")
     group = parser.add_argument_group(title="Backend Output Creation")
     group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN2,
                        help="output filenaming pattern")
@@ -485,10 +493,29 @@ def add_backend_argument_groups(parser):
 
 def main():
     from polar2grid.core.glue_utils import create_basic_parser, create_exc_handler, setup_logging
-    parser = create_basic_parser()
-    group_titles = add_backend_argument_groups(parser)
+    from polar2grid.core.meta import GriddedScene, GriddedProduct
+    parser = create_basic_parser(description="Create geotiff files from provided gridded scene or product data")
+    subgroup_titles = add_backend_argument_groups(parser)
+    parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")
+    args = parser.parse_args(subgroup_titles=subgroup_titles)
+
+    # Logs are renamed once data the provided start date is known
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
+
+    LOG.info("Loading scene or product...")
+    gridded_scene = GriddedScene.load(args.scene)
+
+    LOG.info("Initializing backend...")
+    backend = Backend2(**args.subgroup_args["Backend Initialization"])
+    if isinstance(gridded_scene, GriddedScene):
+        backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
+    elif isinstance(gridded_scene, GriddedProduct):
+        backend.create_output_from_product(gridded_scene, **args.subgroup_args["Backend Output Creation"])
+    else:
+        raise ValueError("Unknown Polar2Grid object provided")
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
     sys.exit(main())
 

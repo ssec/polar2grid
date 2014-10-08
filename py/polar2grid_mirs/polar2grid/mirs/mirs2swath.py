@@ -240,10 +240,16 @@ class MIRSFileReader(object):
         file_fill = self.get_fill_value(item)
         file_scale = self.get_scale_value(item)
 
-        if file_scale:
-            var_data = var_data.astype(dtype) / file_scale
+        bad_mask = None
         if file_fill:
-            var_data[var_data == file_fill] = fill
+            bad_mask = var_data == file_fill
+            var_data[bad_mask] = fill
+        if file_scale:
+            var_data = var_data.astype(dtype)
+            if bad_mask is not None:
+                var_data[~bad_mask] = var_data[~bad_mask] / file_scale
+            else:
+                var_data = var_data / file_scale
 
         return var_data
 
@@ -563,6 +569,8 @@ def main():
                         help="List of one or more data files")
     parser.add_argument('-d', dest='data_dirs', nargs="+", default=[],
                         help="Data directories to look for input data files")
+    parser.add_argument('-o', dest="output_filename", default=None,
+                        help="Output filename for JSON scene (default is to stdout)")
     args = parser.parse_args(subgroup_titles=subgroup_titles)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
@@ -578,7 +586,12 @@ def main():
         return 0
 
     scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
-    print(scene.dumps(persist=True))
+    json_str = scene.dumps(persist=True)
+    if args.output_filename:
+        with open(args.output_filename, 'w') as output_file:
+            output_file.write(json_str)
+    else:
+        print(json_str)
     return 0
 
 if __name__ == "__main__":
