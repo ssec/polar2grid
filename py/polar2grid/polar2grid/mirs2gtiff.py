@@ -73,7 +73,7 @@ def main():
     rename_log = False
     if args.log_fn is None:
         rename_log = True
-        args.log_fn = GLUE_NAME + ".log"
+        args.log_fn = GLUE_NAME + "_fail.log"
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
     sys.excepthook = create_exc_handler(LOG.name)

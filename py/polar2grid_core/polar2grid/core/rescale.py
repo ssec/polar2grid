@@ -134,33 +134,36 @@ def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, clip=
         the "clip" keyword. Note that most backends will do this to fit the
         data type of the output format.
     """
-    log.debug("Running 'linear_flexible_scale' with (min_out: %f, max_out: %f..." % (min_out,max_out))
-    fill_mask = img == fill_in
+    log.debug("Running 'linear_flexible_scale' with (min_out: %f, max_out: %f)..." % (min_out, max_out))
+    fill_mask = mask_helper(img, fill_in)
+    new_img = img[~fill_mask]
 
-    min_in = numpy.nanmin(img[~fill_mask]) if min_in is None else min_in
-    max_in = numpy.nanmax(img[~fill_mask]) if max_in is None else max_in
+    min_in = numpy.nanmin(new_img) if min_in is None else min_in
+    max_in = numpy.nanmax(new_img) if max_in is None else max_in
     if min_in == max_in:
         # Data doesn't differ...at all
         log.warning("Data does not differ (min/max are the same), can not scale properly")
         max_in = min_in + 1.0
-    log.debug("Input minimum: %f, Input maximum: %f" % (min_in,max_in))
+    log.debug("Input minimum: %f, Input maximum: %f" % (min_in, max_in))
 
     m = (max_out - min_out) / (max_in - min_in)
     b = min_out - m * min_in
     log.debug("Linear parameters: m=%f, b=%f", m, b)
 
-    numpy.multiply(img, m, img)
-    numpy.add(img, b, img)
+    numpy.multiply(new_img, m, new_img)
+    numpy.add(new_img, b, new_img)
 
     if clip:
         if min_out < max_out:
-            numpy.clip(img, min_out, max_out, out=img)
+            numpy.clip(new_img, min_out, max_out, out=new_img)
         else:
-            numpy.clip(img, max_out, min_out, out=img)
+            numpy.clip(new_img, max_out, min_out, out=new_img)
 
+    img[~fill_mask] = new_img
     img[fill_mask] = fill_out
 
     return img
+
 
 def sqrt_scale(img, inner_mult, outer_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwargs):
     """Square root enhancement
@@ -426,7 +429,7 @@ class Rescaler2(roles.INIConfigReader):
             try:
                 if good_data_mask is None:
                     good_data_mask = ~gridded_product.get_data_mask("grid_data")
-                log.debug("Data min: %f, max: %f" % (data[good_data_mask].min(),data[good_data_mask].max()))
+                log.debug("Data min: %f, max: %f" % (data[good_data_mask].min(), data[good_data_mask].max()))
             except StandardError:
                 log.debug("Couldn't get min/max values for %s (all fill data?)", gridded_product["product_name"])
 
