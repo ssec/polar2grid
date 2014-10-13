@@ -502,7 +502,6 @@ class GriddedProduct(BaseProduct):
         - description (string): Basic description of the product (empty string by default)
         - source_filenames (list of strings): Unordered list of source files that made up this product ([] by default)
         - data_kind (string): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
-        - rows_per_scan (int): Number of swath rows making up one scan of the sensor (0 if not applicable or not specified)
         - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
 
     .. seealso::
@@ -530,8 +529,11 @@ class GriddedProduct(BaseProduct):
     )
 
     def from_swath_product(self, swath_product):
-        for k in ["product_name", "satellite", "instrument", "begin_time", "end_time", "data_type"]:
-            self[k] = swath_product[k]
+        for k in ["product_name", "satellite", "instrument",
+                  "begin_time", "end_time", "data_type", "data_kind",
+                  "description", "source_filenames"]:
+            if k in swath_product:
+                self[k] = swath_product[k]
 
     def get_data_array(self, item="grid_data"):
         """Get FBF item as a numpy array.

@@ -55,6 +55,7 @@ script_dir = os.path.split(os.path.realpath(__file__))[0]
 # Default config file if none is specified
 DEFAULT_CONFIG_NAME = "awips_grids.conf"
 DEFAULT_CONFIG_FILE = DEFAULT_CONFIG_NAME
+DEFAULT_CONFIG_FILE2 = "awips_backend.ini"
 # Default search directory for any awips configuration files
 DEFAULT_CONFIG_DIR = script_dir
 # Default search directory for NCML files
@@ -62,6 +63,7 @@ DEFAULT_NCML_DIR = os.path.join(script_dir, "ncml")
 
 # Get configuration file locations
 CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", DEFAULT_CONFIG_FILE)
+CONFIG_FILE2 = os.environ.get("AWIPS_CONFIG_FILE", DEFAULT_CONFIG_FILE2)
 CONFIG_DIR  = os.environ.get("AWIPS_CONFIG_DIR", DEFAULT_CONFIG_DIR)
 NCML_DIR    = os.environ.get("AWIPS_NCML_DIR", DEFAULT_NCML_DIR)
 
@@ -235,6 +237,45 @@ class AWIPSConfigReader(roles.CSVConfigReader):
                     return config_info
             log.error("'%s' could not be found in the loaded configuration" % (args,))
             raise ValueError("'%s' could not be found in the loaded configuration" % (args,))
+
+
+class AWIPSConfigReader2(roles.INIConfigReader):
+    id_fields = (
+        "product_name",
+        "grid_name",
+        "data_kind"
+        "satellite",
+        "instrument",
+    )
+
+    info_fields = (
+        "grid_name",
+        "product_id",
+        "awips2_channel",
+        "awips2_source",
+        "awips2_satellite_name",
+        "ncml_template",
+        "filename_format",
+    )
+
+    def __init__(self, *config_files, **kwargs):
+        kwargs["section_prefix"] = kwargs.get("section_prefix", "awips_")
+        log.info("Loading AWIPS configuration files:\n\t%s", "\n\t".join(config_files))
+        super(AWIPSConfigReader2, self).__init__(*config_files, **kwargs)
+
+    def get_product_options(self, gridded_product):
+        all_meta = gridded_product["grid_definition"].copy()
+        all_meta.update(**gridded_product)
+        kwargs = dict((k, all_meta.get(k, None)) for k in self.id_fields)
+        try:
+            awips_info = self.get_config_options(allow_default=False, **kwargs)
+            awips_info = dict((k, awips_info[k]) for k in self.info_fields)
+            awips_info["ncml_template"] = _rel_to_abs(awips_info["ncml_template"], NCML_DIR)
+        except StandardError:
+            log.error("Could not find an AWIPS configuration section for '%s'" % (all_meta["product_name"],))
+            log.debug("Configuration Error: ", exc_info=True)
+            raise RuntimeError("Could not find an AWIPS configuration section for '%s'" % (all_meta["product_name"],))
+        return awips_info
 
 if __name__ == "__main__":
     sys.exit(0)

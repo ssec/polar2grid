@@ -354,6 +354,7 @@ class Rescaler2(roles.INIConfigReader):
     id_fields = (
         "product_name",
         "data_type",
+        "data_kind",
         "satellite",
         "instrument",
         "grid_name",
@@ -399,9 +400,8 @@ class Rescaler2(roles.INIConfigReader):
         all_meta.update(**gridded_product)
         kwargs = dict((k, all_meta.get(k, None)) for k in self.id_fields)
         # we don't want the product's current data_type, we want what the output will be
-        kwargs["data_type"] = data_type
+        kwargs["data_type"] = dtype_to_str(data_type)
         kwargs["inc_by_one"] = inc_by_one
-        kwargs["data_type"] = dtype_to_str(kwargs["data_type"])
         rescale_options = self.get_config_options(**kwargs)
         inc_by_one = rescale_options.pop("inc_by_one")
         if "method" not in rescale_options:

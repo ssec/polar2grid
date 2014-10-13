@@ -58,11 +58,11 @@ LOG = logging.getLogger(__name__)
 FT_IMG = "MIRS_IMG"
 # File variables
 RR_VAR = "rr"
-BT_88_VAR = "bt_88"
+BT_90_VAR = "bt_90"
 FREQ_VAR = "freq"
 LAT_VAR = "latitude"
 LON_VAR = "longitude"
-BT_VARS = [BT_88_VAR]
+BT_VARS = [BT_90_VAR]
 
 ### PRODUCT DEFINITIONS ###
 # FIXME: Move ProductDefiniton to polar2grid.core
@@ -95,7 +95,7 @@ class ProductList(dict):
         self[pd.name] = pd
 
 PRODUCT_RAIN_RATE = "mirs_rain_rate"
-PRODUCT_BT_88 = "mirs_btemp_88"
+PRODUCT_BT_90 = "mirs_btemp_90"
 PRODUCT_LATITUDE = "mirs_latitude"
 PRODUCT_LONGITUDE = "mirs_longitude"
 
@@ -107,7 +107,7 @@ PRODUCTS.add_product(PRODUCT_LONGITUDE, "longitude", FT_IMG, LON_VAR,
                      description="Longitude", units="degrees", is_geoproduct=True)
 PRODUCTS.add_product(PRODUCT_RAIN_RATE, "rain_rate", FT_IMG, RR_VAR,
                      description="Rain Rate", units="mm/hr")
-PRODUCTS.add_product(PRODUCT_BT_88, "btemp", FT_IMG, BT_88_VAR,
+PRODUCTS.add_product(PRODUCT_BT_90, "btemp", FT_IMG, BT_90_VAR,
                      description="Channel Brightness Temperature at 88.2GHz", units="K")
 GEO_PAIRS = (
     (PRODUCT_LONGITUDE, PRODUCT_LATITUDE),
@@ -127,7 +127,7 @@ class MIRSFileReader(object):
     # Constant -> (var_name, scale_attr_name, fill_attr_name, frequency)
     FILE_STRUCTURE = {
         RR_VAR: ("RR", "scale", None, None),
-        BT_88_VAR: ("BT", "scale", None, 88.2),
+        BT_90_VAR: ("BT", "scale", None, 88.2),
         FREQ_VAR: ("Freq", None, None, None),
         LAT_VAR: ("Latitude", None, None, None),
         LON_VAR: ("Longitude", None, None, None),
@@ -466,15 +466,14 @@ class Frontend(object):
         product_def = PRODUCTS[product_name]
         file_reader = file_readers[product_def.file_type]
         filename = product_name + ".dat"
-        # TODO: Use dtype somehow
+        # TODO: Get the data type from the data or allow the user to specify
         shape = file_reader.write_var_to_flat_binary(product_def.file_key, filename)
-        dtype_str = dtype_to_str(numpy.float32)
         one_swath = meta.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
             satellite=file_reader.satellite, instrument=file_reader.instrument,
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
             swath_definition=swath_definition, fill_value=numpy.nan,
-            swath_rows=shape[0], swath_columns=shape[1], data_type=dtype_str, swath_data=filename,
+            swath_rows=shape[0], swath_columns=shape[1], data_type=numpy.float32, swath_data=filename,
             source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=0
         )
         return one_swath

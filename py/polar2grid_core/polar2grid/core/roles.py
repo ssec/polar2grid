@@ -211,17 +211,21 @@ class INIConfigReader(object):
         return None
 
     def get_config_options(self, **kwargs):
+        allow_default = kwargs.pop("allow_default", True)
         section = self.get_config_section(**kwargs)
-        if section is None:
-            log.debug("Using default configuration section")
-            section_options = self.config_parser.defaults().copy()
-        else:
+        if section is not None:
             log.debug("Using configuration section: %s", section)
             section_options = dict((k, self.config_parser.get(section, k)) for k in self.config_parser.options(section))
             # gotta get the defaults too
             for k, v in self.config_parser.defaults().items():
                 if k not in section_options:
                     section_options[k] = v
+        elif allow_default:
+            log.debug("Using default configuration section")
+            section_options = self.config_parser.defaults().copy()
+        else:
+            log.error("No configuration section found")
+            raise RuntimeError("No configuration section found")
 
         for k, v in kwargs.items():
             # overwrite any wildcards with what we were provided
