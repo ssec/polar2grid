@@ -648,8 +648,104 @@ class GridDefinition(GeographicDefinition):
         "origin_y",
     )
 
+    def __init__(self, *args, **kwargs):
+        # pyproj.Proj object if needed
+        self.p = None
+        if "proj4_definition" in kwargs:
+            # pyproj doesn't like unicode
+            kwargs["proj4_definition"] = str(kwargs["proj4_definition"])
+        super(GridDefinition, self).__init__(*args, **kwargs)
+
     @property
     def is_static(self):
         return all([self[x] is not None for x in [
             "height", "width", "cell_height", "cell_width", "origin_x", "origin_y"
         ]])
+
+    @property
+    def is_latlong(self):
+        if self.p is None:
+            from polar2grid.proj import Proj
+            self.p = Proj(self["proj4_definition"])
+        return self.p.is_latlong()
+
+    @property
+    def cell_width_meters(self):
+        """Estimation of what a latlong cell width would be in meters.
+        """
+        from polar2grid.proj import Proj
+        proj4_dict = self.proj4_dict
+        lon0 = proj4_dict.get("lon0", 0.0)
+        lat0 = proj4_dict.get("lat0", 0.0)
+        p = Proj("+proj=eqc +lon0=%f +lat0=%f" % (lon0, lat0))
+        x0, y0 = p(lon0, lat0)
+        x1, y1 = p(lon0+self["cell_width"], lat0)
+        return abs(x1 - x0)
+
+    @property
+    def lonlat_lowerleft(self):
+        if self.p is None:
+            from polar2grid.proj import Proj
+            self.p = Proj(self["proj4_definition"])
+        x_ll, y_ll = self.xy_lowerleft
+        return self.p(x_ll, y_ll, inverse=True)
+
+    @property
+    def lonlat_upperright(self):
+        if self.p is None:
+            from polar2grid.proj import Proj
+            self.p = Proj(self["proj4_definition"])
+        x_ur, y_ur = self.xy_upperright
+        return self.p(x_ur, y_ur, inverse=True)
+
+    @property
+    def xy_lowerleft(self):
+        y_ll = self["origin_y"] + self["cell_height"] * self["height"]
+        return self["origin_x"], y_ll
+
+    @property
+    def xy_upperright(self):
+        x_ll = self["origin_x"] + self["cell_width"] * self["width"]
+        return x_ll, self["origin_y"]
+
+    @property
+    def proj4_dict(self):
+        parts = [x.replace("+", "") for x in self["proj4_definition"].split(" ")]
+        no_defs = False
+        if "no_defs" in parts:
+            parts.remove("no_defs")
+            no_defs = True
+
+        proj4_dict = dict(p.split("=") for p in parts)
+        # Convert numeric parameters to floats
+        for k in ["lat_0", "lat_1", "lat_2", "lat_ts", "lat_b", "lat_t", "lon_0", "lon_1", "lon_2", "lonc", "a", "b", "es"]:
+            if k in proj4_dict:
+                proj4_dict[k] = float(proj4_dict[k])
+
+        # Add removed keywords back in
+        if no_defs:
+            proj4_dict["no_defs"] = True
+
+        return proj4_dict
+
+    def to_basemap_object(self):
+        from mpl_toolkits.basemap import Basemap
+        proj4_dict = self.proj4_dict
+        proj4_dict.pop("no_defs", None)
+        proj4_dict.pop("units", None)
+        proj4_dict["projection"] = proj4_dict.pop("proj")
+
+        if "a" in proj4_dict and "b" in proj4_dict:
+            a = proj4_dict.pop("a")
+            b = proj4_dict.pop("b")
+            proj4_dict["rsphere"] = (a, b)
+        elif "a" in proj4_dict:
+            proj4_dict["rsphere"] = proj4_dict.pop("a")
+        elif "b" in proj4_dict:
+            proj4_dict["rsphere"] = proj4_dict.pop("b")
+
+        lon_ll, lat_ll = self.lonlat_lowerleft
+        lon_ur, lat_ur = self.lonlat_upperright
+        LOG.debug("Passing basemap the following keywords from PROJ.4: %r", proj4_dict)
+        LOG.debug("Lower-left corner: (%f, %f); Upper-right corner: (%f, %f)", lon_ll, lat_ll, lon_ur, lat_ur)
+        return Basemap(llcrnrlon=lon_ll, llcrnrlat=lat_ll, urcrnrlon=lon_ur, urcrnrlat=lat_ur, **proj4_dict)

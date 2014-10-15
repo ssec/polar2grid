@@ -51,6 +51,7 @@ import sys
 import logging
 import signal
 import multiprocessing
+from itertools import izip
 
 LOG = logging.getLogger(__name__)
 
@@ -522,13 +523,21 @@ class Remapper(object):
     def __init__(self, grid_configs=[]):
         from .grids.grids import Cartographer
         self.cart = Cartographer(*grid_configs)
+        self.methods = {
+            "ewa": self._remap_scene_ewa,
+            "nearest": self._remap_scene_nearest,
+        }
+
 
     def remap_scene(self, swath_scene, grid_name, **kwargs):
-        method = kwargs.pop("method", "ewa")
-        if method != "ewa":
-            raise NotImplementedError("Remapping methods other than 'ewa' are not supported at this time")
+        method = kwargs.pop("remap_method", "ewa")
+        LOG.debug("Remap scene being run with method '%s'", method)
+        if method not in self.methods:
+            LOG.error("Unknown remapping method '%s'", method)
+            raise ValueError("Unknown remapping method '%s'" % (method,))
 
-        return self._remap_scene_ewa(swath_scene, grid_name, **kwargs)
+        func = self.methods[method]
+        return func(swath_scene, grid_name, **kwargs)
 
     def _remap_scene_ewa(self, swath_scene, grid_name, **kwargs):
         # TODO: Make methods more flexible than just a function call
@@ -588,6 +597,14 @@ class Remapper(object):
             fornav_prefix = "grid_%s_" % (grid_name,)
             fornav_filepaths = [os.path.join(os.path.dirname(x), fornav_prefix + os.path.basename(x)) for x in product_filepaths]
             rows_per_scan = swath_def.get("rows_per_scan", 0) or 2
+            edge_res = swath_def.get("edge_resolution", None)
+            if kwargs.get("fornav_D", None) is None:
+                if edge_res is not None:
+                    if grid_def.is_latlong:
+                        kwargs["fornav_D"] = (edge_res / 2) / grid_def.cell_width_meters
+                    else:
+                        kwargs["fornav_D"] = (edge_res / 2) / grid_def["cell_width"]
+
             run_fornav_c(
                 len(product_filepaths),
                 swath_def["swath_columns"],
@@ -625,11 +642,105 @@ class Remapper(object):
 
         return gridded_scene
 
+    def _remap_scene_nearest(self, swath_scene, grid_name, **kwargs):
+        # TODO: Make methods more flexible than just a function call
+        gridded_scene = GriddedScene()
+
+        # Group products together that shared the same geolocation
+        from collections import defaultdict
+        product_groups = defaultdict(list)
+        for product_name, swath_product in swath_scene.items():
+            swath_def = swath_product["swath_definition"]
+            geo_id = swath_def["swath_name"]
+            product_groups[geo_id].append(product_name)
+
+        for geo_id, product_names in product_groups.items():
+            LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
+            LOG.debug("Swath name: %s", geo_id)
+
+            # TODO: Move into it's own function if this gets complicated
+            # TODO: Add some multiprocessing
+            # TODO: Allow ll2cr to return arrays
+            grid_def = self.cart.get_grid_definition(grid_name)
+            swath_def = swath_scene[product_names[0]]["swath_definition"]
+            lon_arr = swath_def.get_longitude_array()
+            lat_arr = swath_def.get_latitude_array()
+            rows_fn = "ll2cr_rows_%s_%s.dat" % (grid_name, geo_id)
+            cols_fn = "ll2cr_cols_%s_%s.dat" % (grid_name, geo_id)
+            ll2cr_output = gator.ll2cr(lon_arr, lat_arr, grid_def["proj4_definition"],
+                                       pixel_size_x=grid_def["cell_width"], pixel_size_y=grid_def["cell_height"],
+                                       grid_origin_x=grid_def["origin_x"], grid_origin_y=grid_def["origin_y"],
+                                       grid_width=grid_def["width"], grid_height=grid_def["height"],
+                                       rows_fn=rows_fn, cols_fn=cols_fn,
+                                       fill_in=numpy.nan
+            )
+
+            # Update our definition of the grid with what was found by ll2cr
+            # FIXME: Obvious that this should be its own helper function along with the ll2cr call
+            grid_def["height"] = ll2cr_output["grid_height"]
+            grid_def["width"] = ll2cr_output["grid_width"]
+            grid_def["cell_height"] = ll2cr_output["pixel_size_y"]
+            grid_def["cell_width"] = ll2cr_output["pixel_size_x"]
+            grid_def["origin_x"] = ll2cr_output["grid_origin_x"]
+            grid_def["origin_y"] = ll2cr_output["grid_origin_y"]
+
+            LOG.info("Running nearest neighbor for the following products:\n\t%s", "\n\t".join(product_names))
+            grid_x, grid_y = numpy.mgrid[:grid_def["height"], :grid_def["width"]]
+            # we need flattened versions of these
+            cols_array = numpy.memmap(cols_fn, shape=(swath_def["swath_rows"] * swath_def["swath_columns"],), dtype=swath_def["data_type"])
+            rows_array = numpy.memmap(rows_fn, shape=(swath_def["swath_rows"] * swath_def["swath_columns"],), dtype=swath_def["data_type"])
+            edge_res = swath_def.get("edge_resolution", None)
+            if kwargs.get("distance_upper_bound", None) is None:
+                if edge_res is not None:
+                    if grid_def.is_latlong:
+                        distance_upper_bound = (edge_res / 2) / grid_def.cell_width_meters
+                    else:
+                        distance_upper_bound = (edge_res / 2) / grid_def["cell_width"]
+                else:
+                    distance_upper_bound = 3.0
+                kwargs["distance_upper_bound"] = distance_upper_bound
+            prefix = "grid_%s_" % (grid_name,)
+            # Prepare the products
+            for product_name in product_names:
+                LOG.debug("Running nearest neighbor on '%s'", product_name)
+                swath_product = swath_scene[product_name]
+                gridded_product = GriddedProduct()
+                gridded_product.from_swath_product(swath_product)
+                gridded_product["grid_definition"] = grid_def
+                gridded_product["fill_value"] = numpy.nan
+
+                # XXX: May have to do something smarter if there are float products and integer products together
+                product_filepath = swath_scene[product_name]["swath_data"]
+                output_fn = os.path.join(os.path.dirname(product_filepath), prefix + os.path.basename(product_filepath))
+                image_array = swath_scene[product_name].get_data_array()
+                # FIXME: Use the "edge_resolution" to calculate the number of grid cells for distance upper bound
+                output_array = griddata((cols_array, rows_array), image_array.flatten(), (grid_y, grid_x),
+                                        method='nearest', fill_value=gridded_product["fill_value"],
+                                        distance_upper_bound=kwargs["distance_upper_bound"])
+                output_array.tofile(output_fn)
+                # Give the gridded product ownership of the remapped data
+                gridded_product["grid_data"] = output_fn
+                gridded_scene[product_name] = gridded_product
+                # hopefully force garbage collection
+                del output_array
+
+                LOG.debug("Done running nearest neighbor on '%s'", product_name)
+
+            # Remove ll2cr files now that we are done with them
+            try:
+                os.remove(rows_fn)
+                os.remove(cols_fn)
+            except OSError:
+                LOG.warning("Could not remove ll2cr output files that aren't needed anymore.")
+                LOG.debug("ll2cr output file remove exception:", exc_info=True)
+
+        return gridded_scene
+
     def remap_product(self, product, grid_name):
         raise NotImplementedError("Single product remapping is not implemented yet")
 
 
-def add_remap_argument_groups(parser, default_grids=None, default_fornav_d=2, default_fornav_D=40):
+def add_remap_argument_groups(parser, default_grids=None, default_fornav_d=1, default_fornav_D=10):
     default_grids = default_grids or ["wgs84_fit"]
     group = parser.add_argument_group(title="Remapping Initialization")
     group.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
@@ -637,12 +748,13 @@ def add_remap_argument_groups(parser, default_grids=None, default_fornav_d=2, de
     group = parser.add_argument_group(title="Remapping")
     group.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default=default_grids,
                        help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
-    group.add_argument("--method", dest="remap_method", default="ewa", choices=["ewa"],
+    group.add_argument("--method", dest="remap_method", default="ewa", choices=["ewa", "nearest"],
                        help="Remapping algorithm to use")
-    group.add_argument('--fornav-D', dest='fornav_D', default=default_fornav_D,
+    group.add_argument('--fornav-D', dest='fornav_D', default=default_fornav_D, type=float,
                        help="Specify the -D option for fornav")
-    group.add_argument('--fornav-d', dest='fornav_d', default=default_fornav_d,
+    group.add_argument('--fornav-d', dest='fornav_d', default=default_fornav_d, type=float,
                        help="Specify the -d option for fornav")
+    group.add_argument("--distance-upper-bound", dest="distance_upper_bound", )
     return ["Remapping Initialization", "Remapping"]
 
 
