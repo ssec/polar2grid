@@ -222,9 +222,9 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
         else:
             args.append(grid_fill_1)
     if weight_delta_max is not None:
-        args.extend(["-D", "%d" % weight_delta_max])
+        args.extend(["-D", "%0.3f" % weight_delta_max])
     if weight_distance_max is not None:
-        args.extend(["-d", "%d" % weight_distance_max])
+        args.extend(["-d", "%0.3f" % weight_distance_max])
     if start_scan is not None:
         args.extend(["-s", "%d" % start_scan[0], "%d" % start_scan[1]])
 

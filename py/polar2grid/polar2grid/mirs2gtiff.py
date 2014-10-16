@@ -61,7 +61,7 @@ def main():
     parser = create_basic_parser(description="Create geotiff images from MIRS data files")
     group_titles = []
     group_titles += add_frontend_argument_groups(parser)
-    group_titles += add_remap_argument_groups(parser, default_fornav_d=1.0, default_fornav_D=None)
+    group_titles += add_remap_argument_groups(parser, default_fornav_d=1.0, default_fornav_D=None, default_grids=["wgs84_fit"])
     group_titles += add_backend_argument_groups(parser)
     parser.add_argument('-f', dest='data_files', nargs="+", default=[],
                         help="List of one or more data files")

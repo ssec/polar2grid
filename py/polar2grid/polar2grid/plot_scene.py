@@ -54,7 +54,7 @@ def plot_binary(arr, output_fn, dpi_to_use=DEFAULT_DPI, vmin=None, vmax=None):
     plt.figure()
     print("Minimum: %f | Maximum: %f" % (numpy.nanmin(arr), numpy.nanmax(arr)))
     plt.imshow(arr, vmin=vmin, vmax=vmax)
-    # plt.bone()
+    plt.bone()
     plt.colorbar()
     plt.savefig(output_fn, dpi=dpi_to_use)
     plt.close()

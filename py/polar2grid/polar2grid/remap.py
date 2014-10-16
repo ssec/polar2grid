@@ -604,6 +604,7 @@ class Remapper(object):
                         kwargs["fornav_D"] = (edge_res / 2) / grid_def.cell_width_meters
                     else:
                         kwargs["fornav_D"] = (edge_res / 2) / grid_def["cell_width"]
+                    LOG.debug("Fornav 'D' option dynamically set to %f", kwargs["fornav_D"])
 
             run_fornav_c(
                 len(product_filepaths),
@@ -696,6 +697,7 @@ class Remapper(object):
                         distance_upper_bound = (edge_res / 2) / grid_def.cell_width_meters
                     else:
                         distance_upper_bound = (edge_res / 2) / grid_def["cell_width"]
+                    LOG.debug("Distance upper bound dynamically set to %f", distance_upper_bound)
                 else:
                     distance_upper_bound = 3.0
                 kwargs["distance_upper_bound"] = distance_upper_bound
@@ -741,7 +743,6 @@ class Remapper(object):
 
 
 def add_remap_argument_groups(parser, default_grids=None, default_fornav_d=1, default_fornav_D=10):
-    default_grids = default_grids or ["wgs84_fit"]
     group = parser.add_argument_group(title="Remapping Initialization")
     group.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
                        help="Specify additional grid configuration files ('grids.conf' for built-ins)")

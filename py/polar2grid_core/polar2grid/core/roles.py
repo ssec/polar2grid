@@ -111,6 +111,7 @@ class INIConfigReader(object):
     a conversion function to go from the read-in string to the proper type.
     """
     id_fields = None
+    sep_char = ":"
 
     def __init__(self, *config_files, **kwargs):
         if self.id_fields is None:
@@ -182,7 +183,7 @@ class INIConfigReader(object):
                     id_regexes.append(".*")
                 else:
                     id_regexes.append(v)
-            id_regex = "^" + "_".join(id_regexes) + "$"
+            id_regex = "^" + self.sep_char.join(id_regexes) + "$"
 
             try:
                 this_regex_obj = re.compile(id_regex)
@@ -202,7 +203,7 @@ class INIConfigReader(object):
             log.debug("Got %r; Expected %r", kwargs, self.id_fields)
             raise ValueError("Incorrect number of identifying arguments, expected %d, got %d" % (len(self.id_fields), len(kwargs)))
 
-        id_key = "_".join(str(kwargs.get(k, None)) for k in self.id_fields)
+        id_key = self.sep_char.join(str(kwargs.get(k, None)) for k in self.id_fields)
         for num_wildcards, regex_obj, section in self.config:
             if regex_obj.match(id_key):
                 log.debug("Key '%s' matched config regular expression '%s'", id_key, regex_obj.pattern)

@@ -21,19 +21,19 @@
 #     input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-# Written by David Hoese    September 2014
+# Written by David Hoese    October 2014
 # University of Wisconsin-Madison
 # Space Science and Engineering Center
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Helper script to create geotiff images from Microwave Integrated Retrieval System (MIRS) image files.
+"""Helper script to create AWIPS compatible NetCDF files from Microwave Integrated Retrieval System (MIRS) image files.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Sept 2014
+:date:         Oct 2014
 :license:      GNU GPLv3
 
 """
@@ -42,13 +42,13 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.mirs import Frontend, add_frontend_argument_groups
 from polar2grid.remap import Remapper, add_remap_argument_groups
-from polar2grid.gtiff_backend import Backend2, add_backend_argument_groups
+from polar2grid.awips.awips_netcdf import Backend2, add_backend_argument_groups
 
 import os
 import sys
 import logging
 
-GLUE_NAME = "mirs2gtiff"
+GLUE_NAME = "mirs2awips"
 LOG = logging.getLogger(GLUE_NAME)
 
 
@@ -61,7 +61,7 @@ def main():
     parser = create_basic_parser(description="Create geotiff images from MIRS data files")
     group_titles = []
     group_titles += add_frontend_argument_groups(parser)
-    group_titles += add_remap_argument_groups(parser, default_fornav_d=1.0, default_fornav_D=None)
+    group_titles += add_remap_argument_groups(parser, default_fornav_d=1.0, default_fornav_D=None, default_grids=None)
     group_titles += add_backend_argument_groups(parser)
     parser.add_argument('-f', dest='data_files', nargs="+", default=[],
                         help="List of one or more data files")
