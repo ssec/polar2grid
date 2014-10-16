@@ -43,3 +43,8 @@ __docformat__ = "restructuredtext en"
 
 from .viirs_imager_to_swath import Frontend
 
+# Configure a null handler in case someone is using this as a library (i.e. no warning about not configuring logging)
+import logging
+log = logging.getLogger(__name__)
+log.addHandler(logging.NullHandler())
+

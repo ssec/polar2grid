@@ -59,7 +59,10 @@ setup(
         'polar2grid.core',
         'matplotlib',
         'basemap'
-        ],
+    ],
+    test_requires=[
+        'mock'
+    ],
     dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points = {'console_scripts' : [ ]}
 )
