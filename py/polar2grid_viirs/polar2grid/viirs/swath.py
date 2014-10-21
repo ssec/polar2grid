@@ -558,6 +558,8 @@ class Frontend(object):
             # nadir_resolution=lon_file_reader.nadir_resolution, edge_resolution=lat_file_reader.edge_resolution,
             fill_value=lon_product["fill_value"],
         )
+        file_key = PRODUCTS.file_key_for_product(lon_product["product_name"], self.use_terrain_corrected)
+        swath_definition["orbit_rows"] = lon_file_reader.get_orbit_rows(file_key)
 
         # Tell the lat and lon products not to delete the data arrays, the swath definition will handle that
         lon_product.set_persist()
@@ -599,9 +601,11 @@ class Frontend(object):
             swath_rows=shape[0], swath_columns=shape[1], data_type=numpy.float32, swath_data=filename,
             source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=rows_per_scan
         )
+        file_key = PRODUCTS.file_key_for_product(product_name, self.use_terrain_corrected)
+        one_swath["orbit_rows"] = file_reader.get_orbit_rows(file_key)
         return one_swath
 
-    def _create_secondary_swath_object(self, product_name, swath_definition, filename, data_type, products_created):
+    def create_secondary_swath_object(self, product_name, swath_definition, filename, data_type, products_created):
         product_def = PRODUCTS[product_name]
         dep_objects = [products_created[dep_name] for dep_name in product_def.dependencies]
         filepaths = sorted(set([filepath for swath in dep_objects for filepath in swath["source_filenames"]]))
@@ -615,6 +619,7 @@ class Frontend(object):
             swath_rows=s["swath_rows"], swath_columns=s["swath_columns"], data_type=data_type, swath_data=filename,
             source_filenames=filepaths, data_kind=product_def.data_kind, rows_per_scan=s["rows_per_scan"]
         )
+        one_swath["orbit_rows"] = s["orbit_rows"]
         return one_swath
 
     def raw_product_available(self, product_name):
@@ -757,8 +762,8 @@ class Frontend(object):
 
         dnb_scale(dnb_data, solarZenithAngle=sza_data, fillValue=fill, out=output_data)
 
-        one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
-                                                        dnb_product["data_type"], products_created)
+        one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                       dnb_product["data_type"], products_created)
 
         return one_swath
 
@@ -787,8 +792,8 @@ class Frontend(object):
                            solarZenithAngle=sza_data, lunarZenithAngle=lza_data, moonIllumFraction=moon_illum_fraction,
                            fillValue=fill, out=output_data)
 
-        one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
-                                                        dnb_product["data_type"], products_created)
+        one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                       dnb_product["data_type"], products_created)
 
         return one_swath
 
@@ -808,8 +813,8 @@ class Frontend(object):
 
         histogram.local_histogram_equalization(bt_data, ~bt_mask, do_log_scale=False, out=output_data)
 
-        one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
-                                                        bt_product["data_type"], products_created)
+        one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                       bt_product["data_type"], products_created)
 
         return one_swath
 
@@ -836,8 +841,8 @@ class Frontend(object):
         numpy.subtract(left_data, right_data, fog_data)
         fog_data[left_mask | right_mask | sza_mask | ~night_mask] = fill
 
-        one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
-                                                        products_created[left_term_name]["data_type"], products_created)
+        one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                       products_created[left_term_name]["data_type"], products_created)
 
         return one_swath
 
@@ -877,8 +882,8 @@ class Frontend(object):
         min_val = numpy.power(10, -4.0 - (2.95 + moon_factor2) * erf_portion)
         numpy.sqrt((dnb_data - min_val) / (max_val - min_val), out=output_data)
 
-        one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
-                                                        dnb_product["data_type"], products_created)
+        one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                       dnb_product["data_type"], products_created)
 
         return one_swath
 

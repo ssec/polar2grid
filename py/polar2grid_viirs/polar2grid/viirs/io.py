@@ -56,6 +56,7 @@ from datetime import datetime, timedelta
 
 LOG = logging.getLogger(__name__)
 UTC = UTC()
+ORBIT_TRANSITION_THRESHOLD=timedelta(seconds=10)
 
 
 class HDF5Reader(object):
@@ -352,6 +353,33 @@ class VIIRSSDRMultiReader(object):
     def filepaths(self):
         return [fr.filepath for fr in self.file_readers]
 
+    def get_orbit_rows(self, data_key):
+        """List of number of rows for each orbit being processed.
+
+        In the common case the returned list will only have one element. In the future, this shouldn't be needed
+        because multiple orbits should be processed as separate scenes.
+        """
+        if hasattr(self, "_orbit_scans"):
+            return self._orbit_scans
+
+        orbit_rows = []
+        begin_times = [fr.begin_time for fr in self.file_readers]
+        end_times = [fr.end_time for fr in self.file_readers]
+        num_rows = [fr[data_key].shape[0] for fr in self.file_readers]
+        prev_end = end_times[0]
+        current_num_rows = num_rows[0]
+        for idx in range(1, len(begin_times)):
+            if begin_times[idx] - prev_end > ORBIT_TRANSITION_THRESHOLD:
+                orbit_rows.append(current_num_rows)
+                current_num_rows = 0
+            current_num_rows += num_rows[idx]
+            prev_end = end_times[idx]
+        else:
+            # on the last file
+            orbit_rows.append(current_num_rows)
+
+        return orbit_rows
+
     def __getitem__(self, item):
         """Get a HDF5 variable as one logical item.
 
@@ -411,12 +439,6 @@ class VIIRSSDRMultiReader(object):
 
         LOG.debug("File %s has shape %r", filename, file_appender.shape)
         return file_appender.shape
-
-    def get_number_of_scans(self):
-        return self.file_readers[0].get_number_of_scans()
-
-    def get_rows_per_scan(self):
-        return self.file_readers[0].get_rows_per_scan()
 
 
 class VIIRSSDRGeoMultiReader(VIIRSSDRMultiReader):
