@@ -190,6 +190,31 @@ def remove_file_patterns(*args):
                 _safe_remove(f)
 
 
+### Argument Parsing ###
+
+class ExtendAction(argparse.Action):
+    """Similar to the 'append' action, but expects multiple elements instead of just one.
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        current_values = getattr(namespace, self.dest, []) or []
+        current_values.extend(values)
+        setattr(namespace, self.dest, current_values)
+
+
+class ExtendConstAction(argparse.Action):
+    """Similar to the 'append' action, but expects multiple elements instead of just one.
+    """
+    def __init__(self, option_strings, dest, nargs=0, **kwargs):
+        if nargs:
+            raise ValueError("nargs is not allowed")
+        super(ExtendConstAction, self).__init__(option_strings, dest, nargs=0, **kwargs)
+    def __call__(self, parser, namespace, values, option_string=None):
+        print self.const
+        current_values = getattr(namespace, self.dest, []) or []
+        current_values.extend(self.const)
+        setattr(namespace, self.dest, current_values)
+
+
 class ArgumentParser(argparse.ArgumentParser):
     def _get_group_actions(self, group):
         """Get all the options/actions in a group including those from subgroups of the provided group.

@@ -323,7 +323,7 @@ class Frontend(roles.FrontendRole):
 
 def main():
     from argparse import ArgumentParser
-    from polar2grid.core.glue_utils import remove_file_patterns
+    from polar2grid.core.script_utils import remove_file_patterns
     import json
     description = """Run crefl frontend on files provided, writing JSON-ified
     meta data dictionary to stdout.

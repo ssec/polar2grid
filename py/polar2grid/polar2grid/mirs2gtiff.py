@@ -57,7 +57,7 @@ def run(**kwargs):
 
 
 def main():
-    from polar2grid.core.glue_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file
+    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file
     parser = create_basic_parser(description="Create geotiff images from MIRS data files")
     group_titles = []
     group_titles += add_frontend_argument_groups(parser)

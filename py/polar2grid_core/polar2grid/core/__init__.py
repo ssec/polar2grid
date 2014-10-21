@@ -47,4 +47,4 @@ from .constants  import *
 from .time_utils import UTC
 from .fbf        import Workspace
 from .fbf        import array_appender
-from .fbf        import FBFAppender, file_appender
+from .fbf        import FileAppender, file_appender

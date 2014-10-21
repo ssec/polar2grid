@@ -1,5 +1,32 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    October 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
 """
 Read one or more contiguous in-order HDF5 VIIRS imager granules in any aggregation
 Write out Swath binary files used by ms2gt tools.
@@ -9,44 +36,16 @@ Write out Swath binary files used by ms2gt tools.
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
+:date:         Oct 2014
 :license:      GNU GPLv3
-
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
 
 """
 __docformat__ = "restructuredtext en"
 
-from .guidebook import *
-from .io import VIIRSSDRMultiReader, VIIRSSDRGeoMultiReader
-from polar2grid.core.time_utils import iso8601
-from polar2grid.core.fbf import Workspace, create_fbf_filename
+from . import guidebook
+# FIXME: Actually use the Geo Readers
+from .io import VIIRSSDRMultiReader, VIIRSSDRGeoMultiReader, HDF5Reader
+from polar2grid.core import meta
 from polar2grid.core import histogram
 from .prescale import adaptive_dnb_scale, dnb_scale
 from polar2grid.core import roles
@@ -61,7 +60,7 @@ import shutil
 from datetime import datetime
 from collections import namedtuple, defaultdict
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 # XXX: For now anything having to do directly with products is kept in the swath module
 # XXX: Stuff about the actual files and what keys are what are kept in the guidebook
@@ -121,459 +120,311 @@ PRODUCT_M_LON = "m_longitude"
 PRODUCT_DNB_LAT = "dnb_latitude"
 PRODUCT_DNB_LON = "dnb_longitude"
 
-# All configuration information for a product goes in this named tuple
-#NavigationTuple = namedtuple("NavigationTuple",
-#['tc_file_pattern', 'nontc_file_pattern', 'longitude_product', 'latitude_product'])
-NavigationTuple = namedtuple("NavigationTuple", ['scene_name', 'longitude_product', 'latitude_product'])
-# A dependency of None in the tuple of dependencies means that further processing/masking is required
-ProductInfo = namedtuple("ProductInfo", ['dependencies', 'geolocation', 'rows_per_scan', 'data_kind', 'description'])
+# TODO: Add ProductDefinition class
+# TDOO: Add GeolocationProductDefiniton class that is subclass of ProductDefinition (may not be needed depending on working logic)
+# TODO: Conceptually geoproducts have the idea saying "a geoproduct can come from multiple files"
+GEO_PAIRS = {
+    "inav": (PRODUCT_I_LON, PRODUCT_I_LAT),
+    "mnav": (PRODUCT_M_LON, PRODUCT_M_LAT),
+    "dnbnav": (PRODUCT_DNB_LON, PRODUCT_DNB_LAT),
 
-# dependencies: Product keys mapped to product dependencies
-#   (the products needed to produce the specified product)
-# geolocation: Products that define the navigation of the product
-#   For VIIRS that means Longitude and Latitude
-#   If navigation file pattern is None the h5 file will be searched for navigation
-# shortcuts:
-i_nav_tuple = NavigationTuple("i_nav", PRODUCT_I_LON, PRODUCT_I_LAT)
-#i_nav_tuple = NavigationTuple(I_GEO_TC_REGEX, I_GEO_REGEX, PRODUCT_I_LON, PRODUCT_I_LAT)
-m_nav_tuple = NavigationTuple("m_nav", PRODUCT_M_LON, PRODUCT_M_LAT)
-#m_nav_tuple = NavigationTuple(M_GEO_TC_REGEX, M_GEO_REGEX, PRODUCT_M_LON, PRODUCT_M_LAT)
-dnb_nav_tuple = NavigationTuple("dnb_nav", PRODUCT_DNB_LON, PRODUCT_DNB_LAT)
-#dnb_nav_tuple = NavigationTuple(DNB_GEO_TC_REGEX, DNB_GEO_REGEX, PRODUCT_DNB_LON, PRODUCT_DNB_LAT)
-PRODUCT_INFO = {
-    PRODUCT_I01: ProductInfo(tuple(), i_nav_tuple, 32, "reflectance", ""),
-    PRODUCT_I02: ProductInfo(tuple(), i_nav_tuple, 32, "reflectance", ""),
-    PRODUCT_I03: ProductInfo(tuple(), i_nav_tuple, 32, "reflectance", ""),
-    PRODUCT_I04: ProductInfo(tuple(), i_nav_tuple, 32, "btemp", ""),
-    PRODUCT_I05: ProductInfo(tuple(), i_nav_tuple, 32, "btemp", ""),
-    PRODUCT_M01: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M02: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M03: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M04: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M05: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M06: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M07: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M08: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M09: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M10: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M11: ProductInfo(tuple(), m_nav_tuple, 16, "reflectance", ""),
-    PRODUCT_M12: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
-    PRODUCT_M13: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
-    PRODUCT_M14: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
-    PRODUCT_M15: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
-    PRODUCT_M16: ProductInfo(tuple(), m_nav_tuple, 16, "btemp", ""),
-    PRODUCT_DNB: ProductInfo(tuple(), dnb_nav_tuple, 16, "radiance", ""),
-    PRODUCT_DNB_SZA: ProductInfo(tuple(), dnb_nav_tuple, 16, "solar_zenith_angle", ""),
-    PRODUCT_M_SZA: ProductInfo(tuple(), m_nav_tuple, 16, "solar_zenith_angle", ""),
-    PRODUCT_I_SZA: ProductInfo(tuple(), i_nav_tuple, 32, "solar_zenith_angle", ""),
-    PRODUCT_DNB_LZA: ProductInfo(tuple(), dnb_nav_tuple, 16, "lunar_zenith_angle", ""),
-    PRODUCT_M_LZA: ProductInfo(tuple(), m_nav_tuple, 16, "lunar_zenith_angle", ""),
-    PRODUCT_I_LZA: ProductInfo(tuple(), i_nav_tuple, 32, "lunar_zenith_angle", ""),
-    PRODUCT_IFOG: ProductInfo((PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA), i_nav_tuple, 32, "temperature_difference", ""),
-    PRODUCT_HISTOGRAM_DNB: ProductInfo((PRODUCT_DNB, PRODUCT_DNB_SZA), dnb_nav_tuple, 16, "equalized_radiance", ""),
-    PRODUCT_ADAPTIVE_DNB: ProductInfo((PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), dnb_nav_tuple, 16, "equalized_radiance", ""),
-    # adaptive IR
-    PRODUCT_ADAPTIVE_I04: ProductInfo((PRODUCT_I04,), i_nav_tuple, 32, "equalized_btemp", ""),
-    PRODUCT_ADAPTIVE_I05: ProductInfo((PRODUCT_I05,), i_nav_tuple, 32, "equalized_btemp", ""),
-    PRODUCT_ADAPTIVE_M12: ProductInfo((PRODUCT_M12,), m_nav_tuple, 16, "equalized_btemp", ""),
-    PRODUCT_ADAPTIVE_M13: ProductInfo((PRODUCT_M13,), m_nav_tuple, 16, "equalized_btemp", ""),
-    PRODUCT_ADAPTIVE_M14: ProductInfo((PRODUCT_M14,), m_nav_tuple, 16, "equalized_btemp", ""),
-    PRODUCT_ADAPTIVE_M15: ProductInfo((PRODUCT_M15,), m_nav_tuple, 16, "equalized_btemp", ""),
-    PRODUCT_ADAPTIVE_M16: ProductInfo((PRODUCT_M16,), m_nav_tuple, 16, "equalized_btemp", ""),
-    PRODUCT_SST: ProductInfo((None,), m_nav_tuple, 16, "btemp", ""),
-    # Navigation (doing this here we can mimic normal products if people want them remapped for some reason)
-    PRODUCT_I_LON: ProductInfo(tuple(), i_nav_tuple, 32, "longitude", ""),
-    PRODUCT_I_LAT: ProductInfo(tuple(), i_nav_tuple, 32, "latitude", ""),
-    PRODUCT_M_LON: ProductInfo(tuple(), m_nav_tuple, 16, "longitude", ""),
-    PRODUCT_M_LAT: ProductInfo(tuple(), m_nav_tuple, 16, "latitude", ""),
-    PRODUCT_DNB_LON: ProductInfo(tuple(), dnb_nav_tuple, 16, "longitude", ""),
-    PRODUCT_DNB_LAT: ProductInfo(tuple(), dnb_nav_tuple, 16, "latitude", ""),
 }
 
-# What file regex do I need to get the 'raw' products
-# We can generalize getting raw products from files, secondary/derived products have to be special cased
-RawProductFileInfo = namedtuple("RawProductFileInfo", ["file_pattern", "variable"])
-PRODUCT_FILE_REGEXES = {
-    PRODUCT_I01: RawProductFileInfo(I01_REGEX, K_REFLECTANCE),
-    PRODUCT_I02: RawProductFileInfo(I02_REGEX, K_REFLECTANCE),
-    PRODUCT_I03: RawProductFileInfo(I03_REGEX, K_REFLECTANCE),
-    PRODUCT_I04: RawProductFileInfo(I04_REGEX, K_BTEMP),
-    PRODUCT_I05: RawProductFileInfo(I05_REGEX, K_BTEMP),
-    PRODUCT_M01: RawProductFileInfo(M01_REGEX, K_REFLECTANCE),
-    PRODUCT_M02: RawProductFileInfo(M02_REGEX, K_REFLECTANCE),
-    PRODUCT_M03: RawProductFileInfo(M03_REGEX, K_REFLECTANCE),
-    PRODUCT_M04: RawProductFileInfo(M04_REGEX, K_REFLECTANCE),
-    PRODUCT_M05: RawProductFileInfo(M05_REGEX, K_REFLECTANCE),
-    PRODUCT_M06: RawProductFileInfo(M06_REGEX, K_REFLECTANCE),
-    PRODUCT_M07: RawProductFileInfo(M07_REGEX, K_REFLECTANCE),
-    PRODUCT_M08: RawProductFileInfo(M08_REGEX, K_REFLECTANCE),
-    PRODUCT_M09: RawProductFileInfo(M09_REGEX, K_REFLECTANCE),
-    PRODUCT_M10: RawProductFileInfo(M10_REGEX, K_REFLECTANCE),
-    PRODUCT_M11: RawProductFileInfo(M11_REGEX, K_REFLECTANCE),
-    PRODUCT_M12: RawProductFileInfo(M12_REGEX, K_BTEMP),
-    PRODUCT_M13: RawProductFileInfo(M13_REGEX, K_BTEMP),
-    PRODUCT_M14: RawProductFileInfo(M14_REGEX, K_BTEMP),
-    PRODUCT_M15: RawProductFileInfo(M15_REGEX, K_BTEMP),
-    PRODUCT_M16: RawProductFileInfo(M16_REGEX, K_BTEMP),
-    PRODUCT_DNB: RawProductFileInfo(DNB_REGEX, K_RADIANCE),
-    # Solar Zenith Angle
-    PRODUCT_DNB_SZA: RawProductFileInfo((DNB_GEO_TC_REGEX, DNB_GEO_REGEX), K_SOLARZENITH),
-    PRODUCT_M_SZA: RawProductFileInfo((M_GEO_TC_REGEX, M_GEO_REGEX), K_SOLARZENITH),
-    PRODUCT_I_SZA: RawProductFileInfo((I_GEO_TC_REGEX, I_GEO_REGEX), K_SOLARZENITH),
-    # Lunar Zenith Angle
-    PRODUCT_DNB_LZA: RawProductFileInfo((DNB_GEO_TC_REGEX, DNB_GEO_REGEX), K_LUNARZENITH),
-    PRODUCT_M_LZA: RawProductFileInfo((M_GEO_TC_REGEX, M_GEO_REGEX), K_LUNARZENITH),
-    PRODUCT_I_LZA: RawProductFileInfo((I_GEO_TC_REGEX, I_GEO_REGEX), K_LUNARZENITH),
-    PRODUCT_SST: RawProductFileInfo(SST_REGEX, K_BTEMP),
-    # Geolocation products (products from a geolocation file)
-    PRODUCT_I_LON: RawProductFileInfo((I_GEO_TC_REGEX, I_GEO_REGEX), K_LONGITUDE),
-    PRODUCT_I_LAT: RawProductFileInfo((I_GEO_TC_REGEX, I_GEO_REGEX), K_LATITUDE),
-    PRODUCT_M_LON: RawProductFileInfo((M_GEO_TC_REGEX, M_GEO_REGEX), K_LONGITUDE),
-    PRODUCT_M_LAT: RawProductFileInfo((M_GEO_TC_REGEX, M_GEO_REGEX), K_LATITUDE),
-    PRODUCT_DNB_LON: RawProductFileInfo((DNB_GEO_TC_REGEX, DNB_GEO_REGEX), K_LONGITUDE),
-    PRODUCT_DNB_LAT: RawProductFileInfo((DNB_GEO_TC_REGEX, DNB_GEO_REGEX), K_LATITUDE),
-}
-
-ALL_FILE_REGEXES = set()
-for k, v in PRODUCT_FILE_REGEXES.iteritems():
-    if isinstance(v.file_pattern, str):
-        ALL_FILE_REGEXES.add(v.file_pattern)
-    else:
-        ALL_FILE_REGEXES.update(v.file_pattern)
-ALL_FILE_REGEXES = list(ALL_FILE_REGEXES)
+ADAPTIVE_IR_PRODUCTS = [
+    PRODUCT_ADAPTIVE_I04, PRODUCT_ADAPTIVE_I05,
+    PRODUCT_ADAPTIVE_M12, PRODUCT_ADAPTIVE_M13, PRODUCT_ADAPTIVE_M14, PRODUCT_ADAPTIVE_M15, PRODUCT_ADAPTIVE_M16
+]
 
 
-def all_product_names():
-    return sorted(PRODUCT_INFO.keys())
+class ProductDefinition(object):
+    def __init__(self, name, geo_pair_name, data_kind, dependencies=None, description=None, units=None):
+        self.name = name
+        self.geo_pair_name = geo_pair_name
+        self.data_kind = data_kind
+        self.dependencies = dependencies or []
+        self.description = description or ""
+        self.units = units or ""
+        self.dependents = []
 
 
-def product_is_raw(product_name):
-    deps = PRODUCT_INFO[product_name].dependencies
-    return not deps or deps == (None,)
+class RawVIIRSProductDefinition(ProductDefinition):
+    def __init__(self, name, geo_pair_name, data_kind, file_type, file_key,
+                 dependencies=None, description=None, units=None):
+        self.file_type = file_type
+        self.file_key = file_key
+        # Even though raw products come directly from a file, some may need extra processing (i.e. dependency of None)
+        super(RawVIIRSProductDefinition, self).__init__(name, geo_pair_name, data_kind, dependencies=dependencies,
+                                                        description=description, units=units)
 
 
-def product_needs_processing(product_name):
-    """Does this product require additional processing beyond being loaded (and scaled) from the data files.
-
-    This includes "secondary" products and raw products that require extra masking.
-    """
-    return bool(PRODUCT_INFO[product_name].dependencies)
+class GeoVIIRSProductDefinition(RawVIIRSProductDefinition):
+    pass
 
 
-def get_product_dependencies(product_name):
-    """Recursive function to get all dependencies to create a single product.
-
-    :param product_name: Valid product name for this frontend
-    :returns: Stack-like list where the last element is the most depended (duplicates possible)
-
-    >>> for k in PRODUCT_INFO.keys():
-    ...     assert(isinstance(get_product_dependencies(k), set))
-    >>> get_product_dependencies("blahdkjlwkjdoisdlfkjlk2j3lk4j")
-    Traceback (most recent call last):
-    ...
-    ValueError: Unknown product was requested from frontend: 'blahdkjlwkjdoisdlfkjlk2j3lk4j'
-    >>> PRODUCT_INFO["fake_dnb"] = ProductInfo((PRODUCT_ADAPTIVE_DNB, PRODUCT_DNB), dnb_nav_tuple, 16, "fake_dnb", "")
-    >>> assert(get_product_dependencies("fake_dnb") == {PRODUCT_ADAPTIVE_DNB, PRODUCT_DNB})
-    """
-    #
-    _dependencies = []
-
-    if product_name not in PRODUCT_INFO:
-        log.error("Unknown product was requested from frontend: '%s'" % (product_name,))
-        raise ValueError("Unknown product was requested from frontend: '%s'" % (product_name,))
-
-    for dependency_product in PRODUCT_INFO[product_name].dependencies:
-        if dependency_product is None:
-            log.debug("Product Dependency: Some additional processing will be required for product '%s'", product_name)
-            continue
-
-        log.info("Product Dependency: To create '%s', '%s' must be created first", product_name, dependency_product)
-        _dependencies.append(dependency_product)
-        _dependencies.extend(get_product_dependencies(dependency_product))
-
-    # Check if the product_name is already in the set, if it is then we have a circular dependency
-    if product_name in _dependencies:
-        log.error("Circular dependency found in frontend, '%s' requires itself", product_name)
-        raise RuntimeError("Circular dependency found in frontend, '%s' requires itself", product_name)
-
-    return _dependencies
+class SecondaryVIIRSProductDefinition(ProductDefinition):
+    def __init__(self, name, geo_pair_name, data_kind, dependencies, description=None, units=None):
+        super(SecondaryVIIRSProductDefinition, self).__init__(name, geo_pair_name, data_kind, dependencies,
+                                                              description, units)
 
 
-def get_product_descendants(starting_products, remaining_dependencies=None, dependency_required=False):
-    """Recursively determine what products (secondary) can be made from the products provided.
+class GeoPair(object):
+    def __init__(self, name, lon_product, lat_product, rows_per_scan):
+        self.name = name
+        self.lon_product = lon_product
+        self.lat_product = lat_product
+        self.rows_per_scan = rows_per_scan
 
-    >>> available_products = get_product_descendants([PRODUCT_I04])
-    >>> assert(PRODUCT_ADAPTIVE_I04 in available_products)
-    >>> available_products = get_product_descendants([PRODUCT_I04, PRODUCT_DNB, PRODUCT_I05])
-    >>> assert(PRODUCT_ADAPTIVE_I04 in available_products)
-    >>> assert(PRODUCT_ADAPTIVE_I05 in available_products)
-    >>> assert(PRODUCT_HISTOGRAM_DNB in available_products)
-    >>> assert(PRODUCT_IFOG in available_products)
-    """
-    if remaining_dependencies is None:
-        # Need to remove raw products we aren't starting with and remove navigation products
-        remaining_dependencies = [k for k in PRODUCT_INFO.keys() if
-                                  (PRODUCT_INFO[k].data_kind not in ["longitude", "latitude"])
-                                  and not product_is_raw(k)]
 
-    for product_name in remaining_dependencies:
-        if product_name is None or product_name in starting_products:
-            continue
-        elif product_is_raw(product_name) or \
-                not get_product_descendants(starting_products, PRODUCT_INFO[product_name].dependencies, True):
-            # This dependency is a raw product that we don't already have...so we can't make this product
-            # Or this is a secondary product that we don't have all of the dependencies for
-            if dependency_required:
-                return []
-            else:
+class ProductDict(dict):
+    def __init__(self, raw_base_class=RawVIIRSProductDefinition, geo_base_class=GeoVIIRSProductDefinition,
+                 secondary_base_class=SecondaryVIIRSProductDefinition):
+        self.raw_base_class = raw_base_class
+        self.geo_base_class = geo_base_class
+        self.secondary_base_class = secondary_base_class
+        super(ProductDict, self).__init__()
+
+    def add_raw_product(self, *args, **kwargs):
+        pd = self.raw_base_class(*args, **kwargs)
+        self[pd.name] = pd
+
+    def add_geo_product(self, *args, **kwargs):
+        pd = self.geo_base_class(*args, **kwargs)
+        self[pd.name] = pd
+
+    def add_secondary_product(self, *args, **kwargs):
+        pd = self.secondary_base_class(*args, **kwargs)
+        for dep in pd.dependencies:
+            if dep is None:
+                continue
+            try:
+                self[dep].dependents.append(pd.name)
+            except KeyError:
+                raise ValueError("Product %s depends on uknown product %s" % (pd.name, dep))
+        self[pd.name] = pd
+
+    @property
+    def all_raw_products(self):
+        for p, p_def in self.items():
+            if isinstance(p_def, RawVIIRSProductDefinition):
+                yield p
+    @property
+    def all_nongeo_raw_products(self):
+        for p, p_def in self.items():
+            if isinstance(p_def, RawVIIRSProductDefinition) and not isinstance(p_def, GeoVIIRSProductDefinition):
+                yield p
+
+    @property
+    def all_geo_products(self):
+        for p, p_def in self.items():
+            if isinstance(p_def, GeoVIIRSProductDefinition):
+                yield p
+
+    @property
+    def all_secondary_products(self):
+        for p, p_def in self.items():
+            if isinstance(p_def, SecondaryVIIRSProductDefinition):
+                yield p
+
+    def is_raw(self, product_name, geo_allowed=True):
+        """Product is raw or not. If `geo_allowed` is True (default), then geoproducts are considered raw products.
+
+        Logic:
+        geo_product -> True and (True or False)
+        geo_product -> True and (False or False)
+        reg_product -> True and (True or True)
+        reg_product -> True and (False or True)
+        bad_product -> False and (True/False or True)
+        """
+        p_def = self[product_name]
+        return isinstance(p_def, RawVIIRSProductDefinition) and (geo_allowed or not isinstance(p_def, GeoVIIRSProductDefinition))
+
+    def is_geo(self, product_name):
+        return isinstance(self[product_name], GeoVIIRSProductDefinition)
+
+    def needs_processing(self, product_name):
+        """Does this product require additional processing beyond being loaded (and scaled) from the data files.
+
+        This includes "secondary" products and raw products that require extra masking.
+        """
+        return bool(self[product_name].dependencies)
+
+    def geo_pairs_for_products(self, product_names):
+        return list(set(self[p].geo_pair_name for p in product_names))
+
+    def get_product_dependencies(self, product_name):
+        """Recursive function to get all dependencies to create a single product.
+
+        :param product_name: Valid product name for this frontend
+        :returns: Stack-like list where the last element is the most depended (duplicates possible)
+
+        """
+        #
+        _dependencies = []
+
+        if product_name not in self:
+            LOG.error("Requested information for unknown product: '%s'" % (product_name,))
+            raise ValueError("Requested information for unknown product: '%s'" % (product_name,))
+
+        for dependency_product in self[product_name].dependencies:
+            if dependency_product is None:
+                LOG.debug("Product Dependency: Some additional processing will be required for product '%s'", product_name)
                 continue
 
-        starting_products.append(product_name)
+            LOG.info("Product Dependency: To create '%s', '%s' must be created first", product_name, dependency_product)
+            _dependencies.append(dependency_product)
+            _dependencies.extend(self.get_product_dependencies(dependency_product))
 
-    # We went through every dependency and found that it could be made so we are done.
-    return starting_products
+        # Check if the product_name is already in the set, if it is then we have a circular dependency
+        if product_name in _dependencies:
+            LOG.error("Circular dependency found in frontend, '%s' requires itself", product_name)
+            raise RuntimeError("Circular dependency found in frontend, '%s' requires itself", product_name)
 
+        return _dependencies
 
-def open_p2g_object(json_filename):
-    """Open a Polar2Grid object either from a JSON filename.
-    """
-    inst = json.load(open(json_filename, "r"), cls=P2GJSONDecoder)
-    return inst
+    def get_product_dependents(self, starting_products, remaining_dependencies=None, dependency_required=False):
+        """Recursively determine what products (secondary) can be made from the products provided.
+        """
+        if remaining_dependencies is None:
+            # Need to remove raw products we aren't starting with and remove navigation products
+            remaining_dependencies = self.all_secondary_products
 
+        def _these_dependents(pname):
+            my_dependents = set(self[pname].dependents)
+            for p in my_dependents:
+                my_dependents |= _these_dependents(p)
+            return my_dependents
 
-def remove_p2g_object(obj):
-    """Recursively remove a Polar2Grid object from disk.
+        possible_products = set(starting_products[:])
+        for product_name in starting_products:
+            possible_products |= _these_dependents(product_name)
 
-    By default objects persist once saved to disk. This function should be used to
-    recursively remove them by filename or P2G object.
-    """
-    p2g_obj = obj
-    fn = None
-    if isinstance(obj, (str, unicode)):
-        p2g_obj = json.load(open(obj, "r"), obj=P2GJSONDecoder)
-        fn = obj
+        return possible_products
 
-    # Tell the object to clean itself up
-    p2g_obj.persist = False
-    # Garbage collection will get this eventually (as long as the caller removes their pointer to the object
-    del p2g_obj
+    def dependency_ordered_products(self, product_names):
+        """Returns ordered list from most independent to least independent product names.
+        """
+        products_needed = []
+        # Check what products they asked for and see what we need to be able to create them
+        for product_name in product_names:
+            LOG.debug("Searching for dependencies for '%s'", product_name)
+            if product_name in products_needed:
+                # put in least-depended product -> most-depended product order
+                products_needed.remove(product_name)
+            products_needed.append(product_name)
 
-    if fn:
-        try:
-            log.info("Removing JSON on-disk file: '%s'", fn)
-            os.remove(fn)
-        except StandardError:
-            log.error("Could not remove JSON file: '%s'", fn, exc_info=True)
+            other_deps = self.get_product_dependencies(product_name)
+            # only add products that aren't already account for
+            for dep in other_deps:
+                if dep in products_needed:
+                    # put in least-depended product -> most-depended product order
+                    products_needed.remove(dep)
+                products_needed.append(dep)
 
+        return products_needed
 
-class P2GJSONDecoder(json.JSONDecoder):
-    def __init__(self, *args, **kargs):
-        super(P2GJSONDecoder, self).__init__(object_hook=self.dict_to_object, *args, **kargs)
-
-    @staticmethod
-    def _jsonclass_to_pyclass(json_class_name):
-        import importlib
-        cls_name = json_class_name.split(".")[-1]
-        mod_name = ".".join(json_class_name.split(".")[:-1])
-        cls = getattr(importlib.import_module(mod_name), cls_name)
-        return cls
-
-    def dict_to_object(self, obj):
-        if "__class__" not in obj:
-            return obj
-
-        cls = self._jsonclass_to_pyclass(obj["__class__"])
-
-        for k, v in obj.items():
-            if isinstance(v, (str, unicode)):
-                try:
-                    obj[k] = iso8601(v)
-                except ValueError:
-                    pass
-
-        inst = cls(**obj)
-        return inst
-
-
-class P2GJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, BaseP2GObject):
-            obj = obj.copy()
-            obj["__class__"] = str(obj.__class__.__module__) + "." + str(obj.__class__.__name__)
-            return super(P2GJSONEncoder, self).default(obj)
-        elif isinstance(obj, datetime):
-            return obj.isoformat()
+    def file_type_for_product(self, product_name, use_terrain_corrected=True):
+        product_def = self[product_name]
+        if isinstance(product_def.file_type, str):
+            return product_def.file_type
+        elif len(product_def.file_type) == 2:
+            # First element is terrain corrected, second element is non-TC
+            return product_def.file_type[not use_terrain_corrected]
         else:
-            return super(P2GJSONEncoder, self).default(obj)
+            raise NotImplementedError("Can't handle product that uses more than one file type except for to handle terrain-correction")
 
-
-class BaseP2GObject(dict):
-    def __init__(self, *args, **kwargs):
-        if kwargs.pop("__class__", None):
-            # this is being loaded from a serialized version
-            # we don't have the 'right' to delete any FBF files associated with it
-            self.persist = True
+    def file_key_for_product(self, product_name, use_terrain_corrected=True):
+        product_def = self[product_name]
+        if isinstance(product_def.file_key, str):
+            return product_def.file_key
+        elif len(product_def.file_key) == 2:
+            # First element is terrain corrected, second element is non-TC
+            return product_def.file_key[not use_terrain_corrected]
         else:
-            self.persist = False
-
-        required_kwargs = kwargs.pop("_required_kwargs", [])
-        super(BaseP2GObject, self).__init__(*args, **kwargs)
-
-        for k in required_kwargs:
-            if k not in self:
-                raise ValueError("Missing required keyword '%s'" % (k,))
-
-    @classmethod
-    def open(cls, filename):
-        """Open a JSON file representing a Polar2Grid object.
-        """
-        inst = json.load(open(filename, "r"), cls=P2GJSONDecoder)
-        return inst
-
-    def save(self, filename):
-        """Write the JSON representation of this class to a file.
-        """
-        f = open(filename, "w")
-        try:
-            json.dump(self, f, cls=P2GJSONEncoder, indent=4, sort_keys=True)
-            self.persist = True
-        except TypeError:
-            log.error("Could not write P2G object to JSON file: '%s'", filename, exc_info=True)
-            f.close()
-            os.remove(filename)
-            raise
+            raise NotImplementedError("Can't handle product that uses more than one file key except for to handle terrain-correction")
 
 
-class BaseMetaData(BaseP2GObject):
-    pass
+class GeoPairDict(dict):
+    def __init__(self, base_class=GeoPair):
+        self.base_class = base_class
+        super(GeoPairDict, self).__init__()
+
+    def add_pair(self, *args, **kwargs):
+        gp = self.base_class(*args, **kwargs)
+        self[gp.name] = gp
+
+    def geoproducts_for_pairs(self, pair_names):
+        product_names = []
+        for p in pair_names:
+            product_names.append(self[p].lon_product)
+            product_names.append(self[p].lat_product)
+        return product_names
 
 
-# class BaseScene(BaseP2GObject):
-#     def __init__(self, *args, **kwargs):
-#         """Create a basic Polar2Grid scene.
-#
-#         :param geolocation: BaseGeoSwath instance object describing the navigation data for this scene (required)
-#         """
-#         required_kwargs = kwargs.pop("_required_kwargs", []) + ["geolocation"]
-#         super(BaseScene, self).__init__(_required_kwargs=required_kwargs, **kwargs)
+PRODUCTS = ProductDict()
+GEO_PAIRS = GeoPairDict()
+
+PAIR_INAV = "inav"
+PAIR_MNAV = "mnav"
+PAIR_DNBNAV = "dnbnav"
+# Cool, there's no way to get rows per scan from the file
+GEO_PAIRS.add_pair(PAIR_INAV, PRODUCT_I_LON, PRODUCT_I_LAT, 32)
+GEO_PAIRS.add_pair(PAIR_MNAV, PRODUCT_M_LON, PRODUCT_M_LAT, 16)
+GEO_PAIRS.add_pair(PAIR_DNBNAV, PRODUCT_DNB_LON, PRODUCT_DNB_LAT, 16)
+
+# TODO: Add description and units
+PRODUCTS.add_geo_product(PRODUCT_I_LON, PAIR_INAV, "longitude", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LONGITUDE)
+PRODUCTS.add_geo_product(PRODUCT_I_LAT, PAIR_INAV, "latitude", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LATITUDE)
+PRODUCTS.add_geo_product(PRODUCT_M_LON, PAIR_MNAV, "longitude", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LONGITUDE)
+PRODUCTS.add_geo_product(PRODUCT_M_LAT, PAIR_MNAV, "latitude", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LATITUDE)
+PRODUCTS.add_geo_product(PRODUCT_DNB_LON, PAIR_DNBNAV, "longitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), guidebook.K_LONGITUDE)
+PRODUCTS.add_geo_product(PRODUCT_DNB_LAT, PAIR_DNBNAV, "latitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), guidebook.K_LATITUDE)
+
+PRODUCTS.add_raw_product(PRODUCT_I01, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I01, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_I02, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I02, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_I03, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I03, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_I04, PAIR_INAV, "btemp", guidebook.FILE_TYPE_I04, guidebook.K_BTEMP)
+PRODUCTS.add_raw_product(PRODUCT_I05, PAIR_INAV, "btemp", guidebook.FILE_TYPE_I05, guidebook.K_BTEMP)
+PRODUCTS.add_raw_product(PRODUCT_M01, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M01, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M02, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M02, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M03, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M03, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M04, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M04, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M05, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M05, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M06, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M06, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M07, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M07, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M08, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M08, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M09, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M09, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M10, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M10, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M11, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M11, guidebook.K_REFLECTANCE)
+PRODUCTS.add_raw_product(PRODUCT_M12, PAIR_MNAV, "btemp", guidebook.FILE_TYPE_M12, guidebook.K_BTEMP)
+PRODUCTS.add_raw_product(PRODUCT_M13, PAIR_MNAV, "btemp", guidebook.FILE_TYPE_M13, guidebook.K_BTEMP)
+PRODUCTS.add_raw_product(PRODUCT_M14, PAIR_MNAV, "btemp", guidebook.FILE_TYPE_M14, guidebook.K_BTEMP)
+PRODUCTS.add_raw_product(PRODUCT_M15, PAIR_MNAV, "btemp", guidebook.FILE_TYPE_M15, guidebook.K_BTEMP)
+PRODUCTS.add_raw_product(PRODUCT_M16, PAIR_MNAV, "btemp", guidebook.FILE_TYPE_M16, guidebook.K_BTEMP)
+PRODUCTS.add_raw_product(PRODUCT_DNB, PAIR_DNBNAV, "radiance", guidebook.FILE_TYPE_DNB, guidebook.K_RADIANCE)
+PRODUCTS.add_raw_product(PRODUCT_DNB_SZA, PAIR_DNBNAV, "solar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SOLARZENITH)
+PRODUCTS.add_raw_product(PRODUCT_I_SZA, PAIR_INAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_raw_product(PRODUCT_M_SZA, PAIR_MNAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_raw_product(PRODUCT_DNB_LZA, PAIR_DNBNAV, "lunar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_LUNARZENITH)
+PRODUCTS.add_raw_product(PRODUCT_I_LZA, PAIR_INAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LUNARZENITH)
+PRODUCTS.add_raw_product(PRODUCT_M_LZA, PAIR_MNAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LUNARZENITH)
+# PRODUCTS.add_raw_product(PRODUCT_SST, PAIR_MNAV, "btemp", guidebook.FILE_TYPE_SST, guidebook.K_BTEMP, (None,))
+
+PRODUCTS.add_secondary_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", (PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA))
+PRODUCTS.add_secondary_product(PRODUCT_HISTOGRAM_DNB, PAIR_DNBNAV, "equalized_radiance", (PRODUCT_DNB, PRODUCT_DNB_SZA))
+PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_DNB, PAIR_DNBNAV, "equalized_radiance", (PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA))
+PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_I04, PAIR_INAV, "equalized_btemp", (PRODUCT_I04,))
+PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_I05, PAIR_INAV, "equalized_btemp", (PRODUCT_I05,))
+PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M12, PAIR_MNAV, "equalized_btemp", (PRODUCT_M12,))
+PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M13, PAIR_MNAV, "equalized_btemp", (PRODUCT_M13,))
+PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M14, PAIR_MNAV, "equalized_btemp", (PRODUCT_M14,))
+PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M15, PAIR_MNAV, "equalized_btemp", (PRODUCT_M15,))
+PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_btemp", (PRODUCT_M16,))
 
 
-class BaseSwath(BaseP2GObject):
-    """Base swath class for image products.
+class Frontend(object):
+    DEFAULT_FILE_READER = VIIRSSDRMultiReader
 
-    Required Information:
-        - product_name: Publically known name of the product this swath represents
-        - source_filenames: Unordered list of source files that made up this product
-        - satellite: Name of the satellite the data came from
-        - instrument: Name of the instrument on the satellite from which the data was observed
-        - data_kind (optional): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
-        - scene_name: Name of the navigation "set" or scene to which this swath belongs.
-        - longitude: Longitude Swath Object
-        - latitude: Latitude Swath Object
-        - swath_rows: Number of rows in the main 2D data array
-        - swath_cols: Number of columns in the main 2D data array
-        - start_time: Datetime object representing the best known start of observation for this product's data
-        - end_time: Datetime object represnting the best known end of observation for this product's data
-        - description (optional): Basic description of the product
-        - rows_per_scan: Number of swath rows making up one scan of the sensor (1 if not applicable)
-        - swath_scans: Number of scans in the main 2D data array (swath_rows / rows_per_scan)
-        - swath_data: Flat binary filename or numpy array for the main data array
-
-    This information should be set via the bracket/setitem dictionary method (ex. swath["product_name"] = "p1").
-    It is up to the creator to fill in these fields at the most convenient time based on the source file structure.
-    """
-
-    def __del__(self):
-        # Do we have swath data that is in an flat binary file
-        if "swath_data" in self and isinstance(self["swath_data"], (str, unicode)):
-            # Do we not want to delete this file because someone tried to save the state of this object
-            if hasattr(self, "persist") and not self.persist:
-                try:
-                    log.info("Removing FBF that is no longer needed: '%s'", self["swath_data"])
-                    os.remove(self["swath_data"])
-                except StandardError:
-                    log.warning("Unable to remove FBF: '%s'", self["swath_data"])
-                    log.debug("Unable to remove FBF traceback:", exc_info=True)
-
-    def get_data_array(self, item):
-        """Get FBF item as a numpy array.
-
-        File is loaded from disk as a memory mapped file if needed.
-        """
-        data = super(BaseSwath, self).__getitem__(item)
-        if isinstance(data, (str, unicode)):
-            # load FBF data from a file if needed
-            data = getattr(Workspace('.'), data.split('.')[0])
-
-        return data
-
-    def get_data_mask(self, item, fill=DEFAULT_FILL_VALUE):
-        """Return a boolean mask where the data for `item` is invalid/bad.
-        """
-        data = self.get_data_array(item)
-
-        if numpy.isnan(fill):
-            return numpy.isnan(data)
-        else:
-            return data == fill
-
-    def copy_array(self, item, fbf_filename=None, read_only=True):
-        """Copy the array item of this swath.
-
-        If the `fbf_filename` keyword is passed the data will be put in the FBF filename provided. The copy returned
-        will be a memory map. If `read_only` is False, the memory map will be opened with "w+" privileges.
-
-        The 'read_only' keyword is ignored if `fbf_filename` is None.
-        """
-        mode = 'r' if read_only else 'r+'
-        data = super(BaseSwath, self).__getitem__(item)
-        if isinstance(data, (str, unicode)):
-            # we have an FBF
-            if fbf_filename:
-                # the user wants to copy the FBF
-                shutil.copyfile(data, fbf_filename)
-                data = fbf_filename
-                return Workspace('.').var(data.split('.')[0], mode=mode)
-            return Workspace('.').var(data.split('.')[0]).copy()
-        else:
-            if fbf_filename:
-                data.tofile(fbf_filename)
-                return Workspace('.').var(fbf_filename('.')[0], mode=mode)
-            return data.copy()
-
-# class BaseGeoSwath(BaseSwath):
-#     def __init__(self, **kwargs):
-#         """Base swath class for navigation products.
-#
-#         :param scene_name: Scene name for the longitude and latitude swaths (required)
-#         :param longitude: Swath object for the longitude data (required)
-#         :param latitude: Swath object for the latitude data (required)
-#         """
-#         required_kwargs = kwargs.pop("_required_kwargs", []) + ["scene_name", "longitude", "latitude"]
-#         super(BaseGeoSwath, self).__init__(_required_kwargs=required_kwargs, **kwargs)
-
-
-# class VIIRSScene(BaseScene):
-#     """Collection of VIIRS Swaths.
-#     """
-#     pass
-
-
-class VIIRSDataSwath(BaseSwath):
-    """Swath Data Class for VIIRS Data.
-    """
-    pass
-
-
-# class VIIRSGeoSwath(BaseGeoSwath):
-#     """Swath data for VIIRS Geolocation Data.
-#     """
-#     pass
-
-
-#class Frontend(roles.FrontendRole):
-class SwathExtractor(object):
-    def __init__(self, search_paths=None):
+    def __init__(self, search_paths=None, keep_intermediate=False, use_terrain_corrected=True, **kwargs):
         """Initialize the frontend.
 
         For each search path, check if it exists and that it is
@@ -586,431 +437,422 @@ class SwathExtractor(object):
 
         :param search_paths: A list of paths to search for usable files
         """
-        search_paths = search_paths or ['.']
-        file_paths = self.find_all_files(search_paths)
+        super(Frontend, self).__init__(**kwargs)
+        if kwargs.get("frontend_configs", None) is not None:
+            raise NotImplementedError("Specifying frontend configuration files is not supported for this frontend yet.")
 
-        # Find all files for each path
-        self.recognized_files = self.filter_filenames(file_paths)
+        self.keep_intermediate = keep_intermediate
+        self.use_terrain_corrected = use_terrain_corrected
+        search_paths = search_paths or ['.']
+
+        # Get all files that we could possibly want to deal with (HDF5 files)
+        file_paths = (x for x in self.find_all_files(search_paths) if x.endswith(".h5"))
+
+        # Load and sort all files
+        self._load_files(list(file_paths))
+
+
+    def _load_files(self, file_paths):
+        """Sort files by 'file type' and create objects to help load the data later.
+
+        This method should not be called by the user.
+        """
+        # FIXME: Add orbit detection
+        # FIXME: This should be faster (~3 seconds for 174 files with SVM01 not recognized)
+        self.file_readers = {}
+        for file_type, file_type_info in guidebook.FILE_TYPES.items():
+            cls = file_type_info.get("file_type_class", self.DEFAULT_FILE_READER)
+            self.file_readers[file_type] = cls(file_type_info)
+        # Don't modify the passed list (we use in place operations)
+        file_paths_left = []
+        # for fp in file_paths:
+        #     h = HDF5Reader(fp)
+        #     for file_type, file_reader in self.file_readers.items():
+        #         if file_reader.handles_file(h, file_reader.file_type_info):
+        #             file_reader.add_file(fp)
+        #             break
+        #     else:
+        #         file_paths_left.append(fp)
+        for fp in file_paths:
+            h = HDF5Reader(fp)
+            for data_path, file_type in guidebook.DATA_PATHS.items():
+                if data_path in h:
+                    self.file_readers[file_type].add_file(h)
+                    break
+            else:
+                file_paths_left.append(fp)
+
+
+        # Log what files we were given that we didn't understand
+        for fp in file_paths_left:
+            LOG.debug("Unrecognized file: %s", fp)
+
+        # Get rid of the readers we aren't using
+        for file_type, file_reader in self.file_readers.items():
+            if not len(file_reader):
+                del self.file_readers[file_type]
+
+        if not self.file_readers:
+            LOG.error("No useable files loaded")
+            raise ValueError("No useable files loaded")
+
+        first_length = len(self.file_readers[self.file_readers.keys()[0]])
+        if not all(len(x) == first_length for x in self.file_readers.values()):
+            LOG.error("Corrupt directory: Varying number of files for each type")
+            ft_str = "\n\t".join("%s: %d" % (ft, len(fr)) for ft, fr in self.file_readers.items())
+            LOG.debug("File types and number of files:\n\t%s", ft_str)
+            raise RuntimeError("Corrupt directory: Varying number of files for each type")
+
+    @property
+    def begin_time(self):
+        return self.file_readers[self.file_readers.keys()[0]].begin_time
+
+    @property
+    def end_time(self):
+        return self.file_readers[self.file_readers.keys()[0]].end_time
 
     @staticmethod
     def find_all_files(search_paths):
-        print "find_all_files"
         for sp in search_paths:
             # Take the realpath because we don't want duplicates
             #   (two links that point to the same directory)
             sp_real = os.path.realpath(sp)
             if os.path.isfile(sp_real):
-                log.debug("Adding file '%s' to search list", sp_real)
+                LOG.debug("Adding file '%s' to search list", sp_real)
                 yield sp_real
             elif os.path.isdir(sp_real):
-                log.info("Searching '%s' for useful files...", sp)
+                LOG.info("Searching '%s' for useful files...", sp)
                 for fn in os.listdir(sp):
                     full_path = os.path.join(sp, fn)
                     if os.path.isfile(full_path):
                         yield full_path
             else:
-                log.warning("Search path '%s' does not exist or is not a directory" % (sp_real,))
+                LOG.warning("Search path '%s' does not exist or is not a directory" % (sp_real,))
 
-    @staticmethod
-    def filter_filenames(filepaths):
-        """Filter out unrecognized file patterns from a list of filepaths.
+    def create_swath_definition(self, lon_product, lat_product):
+        product_def = PRODUCTS[lon_product["product_name"]]
+        file_type = PRODUCTS.file_type_for_product(product_def.name, self.use_terrain_corrected)
+        lon_file_reader = self.file_readers[file_type]
+        product_def = PRODUCTS[lat_product["product_name"]]
+        file_type = PRODUCTS.file_type_for_product(product_def.name, self.use_terrain_corrected)
+        lat_file_reader = self.file_readers[file_type]
 
-        Returns a dictionary mapping regular expressions to an
-        unsorted list of absolute filepaths that were matched.
+        # sanity check
+        for k in ["data_type", "swath_rows", "swath_columns", "rows_per_scan", "fill_value"]:
+            if lon_product[k] != lat_product[k]:
+                if k == "fill_value" and numpy.isnan(lon_product[k]) and numpy.isnan(lat_product[k]):
+                    # NaN special case: NaNs can't be compared normally
+                    continue
+                LOG.error("Longitude and latitude products do not have equal attributes: %s", k)
+                raise RuntimeError("Longitude and latitude products do not have equal attributes: %s" % (k,))
 
-        Files are assumed to exist and be unique (path + filename). If the
-        same filename is found in 2 different directories, both will be processed and
-        will likely produce unexpected results in future processing.
+        swath_name = GEO_PAIRS[product_def.geo_pair_name].name
+        swath_definition = meta.SwathDefinition(
+            swath_name=swath_name, longitude=lon_product["swath_data"], latitude=lat_product["swath_data"],
+            data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
+            swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["rows_per_scan"],
+            source_filenames=sorted(set(lon_file_reader.filepaths + lat_file_reader.filepaths)),
+            # nadir_resolution=lon_file_reader.nadir_resolution, edge_resolution=lat_file_reader.edge_resolution,
+            fill_value=lon_product["fill_value"],
+        )
+
+        # Tell the lat and lon products not to delete the data arrays, the swath definition will handle that
+        lon_product.set_persist()
+        lat_product.set_persist()
+
+        # mmmmm, almost circular
+        lon_product["swath_definition"] = swath_definition
+        lat_product["swath_definition"] = swath_definition
+
+        return swath_definition
+
+    def create_raw_swath_object(self, product_name, swath_definition):
+        product_def = PRODUCTS[product_name]
+        file_type = PRODUCTS.file_type_for_product(product_name, use_terrain_corrected=self.use_terrain_corrected)
+        file_key = PRODUCTS.file_key_for_product(product_name, use_terrain_corrected=self.use_terrain_corrected)
+        file_reader = self.file_readers[file_type]
+        LOG.debug("Using file type '%s' and getting file key '%s' for product '%s'", file_type, file_key, product_name)
+
+        LOG.info("Writing product '%s' data to binary file", product_name)
+        filename = product_name + ".dat"
+        if os.path.isfile(filename):
+            LOG.error("Binary file already exists: %s" % (filename,))
+            raise RuntimeError("Binary file already exists: %s" % (filename,))
+
+        try:
+            # TODO: Do something with data type
+            shape = file_reader.write_var_to_flat_binary(file_key, filename)
+            rows_per_scan = GEO_PAIRS[product_def.geo_pair_name].rows_per_scan
+        except StandardError:
+            LOG.error("Could not extract data from file. Use '--no-tc' flag if terrain-corrected data is not available")
+            LOG.debug("Extraction exception: ", exc_info=True)
+            raise RuntimeError("Could not extract data from file. Use '--no-tc' flag if terrain-corrected data is not available")
+
+        one_swath = meta.SwathProduct(
+            product_name=product_name, description=product_def.description, units=product_def.units,
+            satellite=file_reader.satellite, instrument=file_reader.instrument,
+            begin_time=file_reader.begin_time, end_time=file_reader.end_time,
+            swath_definition=swath_definition, fill_value=numpy.nan,
+            swath_rows=shape[0], swath_columns=shape[1], data_type=numpy.float32, swath_data=filename,
+            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=rows_per_scan
+        )
+        return one_swath
+
+    def _create_secondary_swath_object(self, product_name, swath_definition, filename, data_type, products_created):
+        product_def = PRODUCTS[product_name]
+        dep_objects = [products_created[dep_name] for dep_name in product_def.dependencies]
+        filepaths = sorted(set([filepath for swath in dep_objects for filepath in swath["source_filenames"]]))
+
+        s = dep_objects[0]
+        one_swath = meta.SwathProduct(
+            product_name=product_name, description=product_def.description, units=product_def.units,
+            satellite=s["satellite"], instrument=s["instrument"],
+            begin_time=s["begin_time"], end_time=s["end_time"],
+            swath_definition=swath_definition, fill_value=numpy.nan,
+            swath_rows=s["swath_rows"], swath_columns=s["swath_columns"], data_type=data_type, swath_data=filename,
+            source_filenames=filepaths, data_kind=product_def.data_kind, rows_per_scan=s["rows_per_scan"]
+        )
+        return one_swath
+
+    def raw_product_available(self, product_name):
+        """Is it possible to load the provided product with the files provided to the `Frontend`.
+
+        :returns: True if product can be loaded, False otherwise (including if product is not a raw product)
         """
-        matched_files = defaultdict(set)
-        for filepath in filepaths:
-            #log.debug("Checking file '%s' for usefulness...", filepath)
-            fn = os.path.split(filepath)[1]
-            for fn_regex in ALL_FILE_REGEXES:
-                #log.debug("Checking '%s' '%s'", fn, fn_regex)
-                # FIXME: There has to be a faster way to do this
-                # FIXME: Besides filling in the dictionary and then looking for duplicates
-                if re.match(fn_regex, fn) is not None:
-                    # we found a match
-                    log.debug("Found useful file: '%s'", fn)
-                    matched_files[fn_regex].add(filepath)
-                    break
-
-        # Check if we have any valid directories to look through
-        if not matched_files:
-            log.error("No valid data files were found")
-            raise ValueError("No valid data files were found")
-
-        # Sort the filenames
-        for fn_regex in matched_files.keys():
-            matched_files[fn_regex] = sorted(matched_files[fn_regex], key=lambda f: os.path.split(f)[-1])
-
-        return matched_files
-
-    def _get_file_pattern(self, product_name, alt_pattern_index=0):
-        """Get the file pattern to load the specifed raw products data.
-        """
-        product_file_info = PRODUCT_FILE_REGEXES[product_name]
-        file_pattern = product_file_info.file_pattern
-        # Load the file objects
-        if not isinstance(file_pattern, str):
-            # There is more than one possible pattern and the caller prefers a certain one
-            if alt_pattern_index:
-                if len(file_pattern) > alt_pattern_index:
-                    fp_tmp = file_pattern[alt_pattern_index]
-                    if fp_tmp in self.recognized_files:
-                        file_pattern = fp_tmp
-                    else:
-                        log.warning("Product %s: Could not find preferred file pattern '%s'", product_name, fp_tmp)
-                else:
-                    log.error("Product %s: Preferred file pattern index is too large (not enough patterns)",
-                              product_name)
-                    raise ValueError("Preferred file pattern index is too large (not enough patterns)")
+        product_def = PRODUCTS[product_name]
+        if isinstance(product_def, RawVIIRSProductDefinition):
+            if isinstance(product_def.file_type, str):
+                file_type = product_def.file_type
+            elif len(product_def.file_type) == 2:
+                # First element is terrain corrected, second element is non-TC
+                file_type = product_def.file_type[not self.use_terrain_corrected]
             else:
-                for fp_tmp in file_pattern:
-                    if fp_tmp in self.recognized_files:
-                        file_pattern = fp_tmp
-                        break
+                return any(ft in self.file_readers for ft in product_def.file_type)
 
-        if file_pattern not in self.recognized_files:
-            log.error("Could not find any files to create product '%s', looked through the following patterns: %r",
-                      product_name, file_pattern)
-            log.debug("Recognized file patterns:\n\t%s", "\n\t".join(self.recognized_files.keys()))
-            raise ValueError(
-                "Could not find any files to create product '%s', looked through the following patterns: %r" % (
-                    product_name, file_pattern))
-
-        return file_pattern
-
-    @staticmethod
-    def _create_raw_swath_object(product_name, variable_key, reader, file_pattern, products_created):
-        product_info = PRODUCT_INFO[product_name]
-        one_swath = VIIRSDataSwath()
-        log.info("Writing product data to FBF for '%s'", product_name)
-        fbf_filename, fbf_shape = reader.write_var_to_flat_binary(variable_key, stem=product_name)
-        one_swath["product_name"] = product_name
-        one_swath["source_filenames"] = reader.get_filenames()
-        one_swath["source_file_pattern"] = file_pattern
-        one_swath["start_time"] = reader.start_time
-        one_swath["end_time"] = reader.end_time
-        one_swath["satellite"] = reader.get_satellite()
-        one_swath["instrument"] = reader.get_instrument()
-        one_swath["swath_data"] = fbf_filename
-        one_swath["swath_rows"] = fbf_shape[0]
-        one_swath["swath_cols"] = fbf_shape[1]
-        one_swath["data_kind"] = product_info.data_kind
-        one_swath["description"] = product_info.description
-        one_swath["scene_name"] = product_info.geolocation.scene_name
-        if products_created is None:
-            # Geolocation products themselves just have 'None' for this value
-            one_swath["longitude"] = None
-            one_swath["latitude"] = None
-        else:
-            # Have to be OK with the geolocation not being available
-            one_swath["longitude"] = products_created.get(product_info.geolocation.longitude_product, None)
-            one_swath["latitude"] = products_created.get(product_info.geolocation.latitude_product, None)
-        one_swath["rows_per_scan"] = product_info.rows_per_scan
-        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
-
-        return one_swath
-
-    @staticmethod
-    def _create_secondary_swath_object(product_name, fbf_filename, rows, cols, dep_names, products_created):
-        product_info = PRODUCT_INFO[product_name]
-        dep_objects = [products_created[dep_name] for dep_name in dep_names]
-
-        one_swath = VIIRSDataSwath()
-        log.info("Writing product data to FBF for '%s'", product_name)
-        one_swath["product_name"] = product_name
-        one_swath["source_filenames"] = zip([dep_obj["source_filenames"] for dep_obj in dep_objects])
-        one_swath["start_time"] = dep_objects[0]["start_time"]
-        one_swath["end_time"] = dep_objects[0]["end_time"]
-        one_swath["satellite"] = dep_objects[0]["satellite"]
-        one_swath["instrument"] = dep_objects[0]["instrument"]
-        one_swath["swath_data"] = fbf_filename
-        one_swath["swath_rows"] = rows
-        one_swath["swath_cols"] = cols
-        one_swath["data_kind"] = product_info.data_kind
-        one_swath["description"] = product_info.description
-        one_swath["scene_name"] = product_info.geolocation.scene_name
-        # Have to be OK with geolocation not being available (although unlikely)
-        one_swath["longitude"] = products_created.get(product_info.geolocation.longitude_product, None)
-        one_swath["latitude"] = products_created.get(product_info.geolocation.latitude_product, None)
-        one_swath["rows_per_scan"] = product_info.rows_per_scan
-        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
-        return one_swath
+            return file_type in self.file_readers
+        return False
 
     @property
     def available_product_names(self):
-        raw_products = []
-        for k, v in PRODUCT_FILE_REGEXES.iteritems():
-            if isinstance(v.file_pattern, tuple) and any([(f_pattern in self.recognized_files) for f_pattern in v.file_pattern]):
-                raw_products.append(k)
-            elif v.file_pattern in self.recognized_files:
-                raw_products.append(k)
-
-        return sorted(get_product_descendants(raw_products))
+        raw_products = [p for p in PRODUCTS.all_raw_products if self.raw_product_available(p)]
+        return sorted(PRODUCTS.get_product_dependents(raw_products))
 
     @property
     def all_product_names(self):
-        return all_product_names()
+        return PRODUCTS.keys()
 
     def add_swath_to_scene(self, meta_data, one_swath, products_created):
         meta_data[one_swath["product_name"]] = one_swath
 
-    def create_scenes(self, products=None, use_terrain_corrected=True):
-        log.info("Loading scene data...")
+    def create_scene(self, products=None):
+        LOG.info("Loading scene data...")
         # If the user didn't provide the products they want, figure out which ones we can create
         if products is None:
-            products = self.available_product_names
-        products = list(set(products))
-        meta_data = BaseMetaData()
-        # List of all products we will be creating (what was asked for and what's needed to create them)
+            LOG.info("No products specified to frontend, will try to load all normal raw products")
+            products = PRODUCTS.all_nongeo_raw_products
+
+        # Do we actually have all of the files needed to create the requested products?
+        orig_products = set(products)
+        available_products = self.available_product_names
+        doable_products = orig_products & set(available_products)
+        for p in (doable_products - orig_products):
+            LOG.warning("Missing proper data files to create product: %s", p)
+        products = list(doable_products)
+        if not products:
+            LOG.debug("Original Products:\n\t%r", orig_products)
+            LOG.debug("Available Products:\n\t%r", available_products)
+            LOG.debug("Doable (final) Products:\n\t%r", products)
+            LOG.error("Can not create any of the requested products (missing required data files)")
+            raise RuntimeError("Can not create any of the requested products (missing required data files)")
+
         # Needs to be ordered (least-depended product -> most-depended product)
-        products_needed = []
-        raw_products_needed = set()
-        secondary_products_needed = []
-        nav_products_needed = set()
-        # Hold on to all of the file sets we've loaded
-        files_loaded = {}
-        # Dictionary of all products created so far
+        products_needed = PRODUCTS.dependency_ordered_products(products)
+        geo_pairs_needed = PRODUCTS.geo_pairs_for_products(products_needed)
+        # both lists below include raw products that need extra processing/masking
+        raw_products_needed = (p for p in products_needed if PRODUCTS.is_raw(p, geo_allowed=False))
+        secondary_products_needed = [p for p in products_needed if PRODUCTS.needs_processing(p)]
+        for p in secondary_products_needed:
+            if p not in self.SECONDARY_PRODUCT_FUNCTIONS:
+                LOG.error("Product (secondary or extra processing) required, but not sure how to make it: '%s'", p)
+                raise ValueError("Product (secondary or extra processing) required, but not sure how to make it: '%s'" % (p,))
+
+        # final scene object we'll be providing to the caller
+        scene = meta.SwathScene()
+        # Dictionary of all products created so far (local variable so we don't hold on to any product objects)
         products_created = {}
-        # the first file pattern for geolocation products is terrain corrected, the second is non-TC
-        alt_pattern_index = 0 if use_terrain_corrected else 1
-
-        # Check what products they asked for and see what we need to be able to create them
-        for product_name in products:
-            log.debug("Searching for dependencies for '%s'", product_name)
-            if product_name in products_needed:
-                # put in least-depended product -> most-depended product order
-                products_needed.remove(product_name)
-            products_needed.append(product_name)
-
-            other_deps = get_product_dependencies(product_name)
-            # only add products that aren't already account for
-            for dep in other_deps:
-                if dep in products_needed:
-                    # put in least-depended product -> most-depended product order
-                    products_needed.remove(dep)
-                products_needed.append(dep)
-
-        # Go through each product we are going to have to create and figure out which raw ones need to be loaded
-        while products_needed:
-            product_name = products_needed.pop()
-            product_info = PRODUCT_INFO[product_name]
-            # Looked up the raw products we need
-            if product_needs_processing(product_name):
-                if product_name not in self.SECONDARY_PRODUCT_FUNCTIONS:
-                    log.error("Product (secondary or extra processing) required, but not sure how to make it: '%s'", product_name)
-                    raise ValueError("Product (secondary or extra processing) required, but not sure how to make it: '%s'" % (product_name,))
-                # ordered from least-depended product -> most-depended product
-                secondary_products_needed.append(product_name)
-            if product_is_raw(product_name):
-                # if there are no dependencies then it's a raw product
-                raw_products_needed.add(product_name)
-
-            # For each product look what navigation product it connects with
-            if product_name in products:
-                nav_products_needed.add(product_info.geolocation.longitude_product)
-                nav_products_needed.add(product_info.geolocation.latitude_product)
+        swath_definitions = {}
 
         # Load geolocation files
-        for nav_product_name in nav_products_needed:
-            log.info("Creating navigation product '%s'", nav_product_name)
-            product_file_info = PRODUCT_FILE_REGEXES[nav_product_name]
-            nav_file_pattern = self._get_file_pattern(nav_product_name, alt_pattern_index=alt_pattern_index)
-            log.debug("Using navigation file pattern '%s' for product '%s'", nav_file_pattern, nav_product_name)
+        for geo_pair_name in geo_pairs_needed:
+            ### Lon Product ###
+            lon_product_name = GEO_PAIRS[geo_pair_name].lon_product
+            LOG.info("Creating navigation product '%s'", lon_product_name)
+            lon_swath = products_created[lon_product_name] = self.create_raw_swath_object(lon_product_name, None)
+            if lon_product_name in products:
+                scene[lon_product_name] = lon_swath
 
-            # Load navigation files
-            if nav_file_pattern not in files_loaded:
-                reader = files_loaded[nav_file_pattern] = VIIRSSDRGeoMultiReader(
-                    self.recognized_files[nav_file_pattern])
-            else:
-                reader = files_loaded[nav_file_pattern]
+            ### Lat Product ###
+            lat_product_name = GEO_PAIRS[geo_pair_name].lat_product
+            LOG.info("Creating navigation product '%s'", lat_product_name)
+            lat_swath = products_created[lat_product_name] = self.create_raw_swath_object(lat_product_name, None)
+            if lat_product_name in products:
+                scene[lat_product_name] = lat_swath
 
-            # Write the geolocation information to a file
-            log.info("Writing navigation product data to FBF for '%s'", nav_product_name)
-            products_created[nav_product_name] = self._create_raw_swath_object(nav_product_name,
-                                                                               product_file_info.variable,
-                                                                               reader, nav_file_pattern, None)
+            # Create the SwathDefinition
+            swath_def = self.create_swath_definition(lon_swath, lat_swath)
+            swath_definitions[swath_def["swath_name"]] = swath_def
 
-        # Load each of the raw products (products that are loaded directly from the file)
+        # Create each raw products (products that are loaded directly from the file)
         for product_name in raw_products_needed:
             if product_name in products_created:
-                # if the product was already loaded (ex. navigaton)
-                one_swath = products_created[product_name]
-            else:
-                log.info("Creating data product '%s'", product_name)
-                product_file_info = PRODUCT_FILE_REGEXES[product_name]
+                # already created
+                continue
 
-                file_pattern = self._get_file_pattern(product_name, alt_pattern_index=alt_pattern_index)
-                log.debug("Using file pattern '%s' for product '%s'", file_pattern, file_pattern)
-
-                if file_pattern not in files_loaded:
-                    # Can't do .get(X, default) because the default has to actually be processed
-                    reader = files_loaded[file_pattern] = VIIRSSDRMultiReader(self.recognized_files[file_pattern])
-                else:
-                    reader = files_loaded[file_pattern]
-
-                one_swath = products_created[product_name] = self._create_raw_swath_object(product_name,
-                                                                                           product_file_info.variable,
-                                                                                           reader, file_pattern,
-                                                                                           products_created)
+            LOG.info("Creating data product '%s'", product_name)
+            swath_def = swath_definitions[PRODUCTS[product_name].geo_pair_name]
+            one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
 
             if product_name in products:
                 # the user wants this product
-                self.add_swath_to_scene(meta_data, one_swath, products_created)
+                scene[product_name] = one_swath
 
-        # Special cases (i.e. non-raw products that need further processing)
+        # Dependent products and Special cases (i.e. non-raw products that need further processing)
         for product_name in reversed(secondary_products_needed):
             product_func = self.SECONDARY_PRODUCT_FUNCTIONS[product_name]
+            swath_def = swath_definitions[PRODUCTS[product_name].geo_pair_name]
 
             try:
-                log.info("Creating secondary product '%s'", product_name)
-                one_swath = product_func(self, product_name, files_loaded, products_created)
+                LOG.info("Creating secondary product '%s'", product_name)
+                one_swath = product_func(self, product_name, swath_def, products_created)
             except StandardError:
-                log.error("Could not create product (unexpected error): '%s'", product_name)
-                log.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
+                LOG.error("Could not create product (unexpected error): '%s'", product_name)
+                LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
                 raise
 
             products_created[product_name] = one_swath
             if product_name in products:
                 # the user wants this product
-                self.add_swath_to_scene(meta_data, one_swath, products_created)
+                scene[product_name] = one_swath
 
-        return meta_data
+        return scene
 
     ### Secondary Product Functions
-    def create_histogram_dnb(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
-        product_info = PRODUCT_INFO[product_name]
-        deps = product_info.dependencies
+    def create_histogram_dnb(self, product_name, swath_definition, products_created, fill=numpy.nan):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
         if len(deps) != 2:
-            log.error("Expected 2 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+            LOG.error("Expected 2 dependencies to create adaptive DNB product, got %d" % (len(deps),))
             raise ValueError("Expected 2 dependencies to create adaptive DNB product, got %d" % (len(deps),))
 
         dnb_product_name = deps[0]
         sza_product_name = deps[1]
         dnb_product = products_created[dnb_product_name]
         dnb_data = dnb_product.get_data_array("swath_data")
-        sza_data = products_created[sza_product_name].get_data_array("swath_data")
-        fbf_filename = create_fbf_filename(product_name, data=dnb_data)
-        output_data = dnb_product.copy_array("swath_data", fbf_filename=fbf_filename, read_only=False)
+        sza_data = products_created[sza_product_name].get_data_array()
+        filename = product_name + ".dat"
+        output_data = dnb_product.copy_array(filename=filename, read_only=False)
 
         dnb_scale(dnb_data, solarZenithAngle=sza_data, fillValue=fill, out=output_data)
 
-        one_swath = self._create_secondary_swath_object(product_name, fbf_filename,
-                                                        output_data.shape[0], output_data.shape[1],
-                                                        deps, products_created)
+        one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
+                                                        dnb_product["data_type"], products_created)
 
         return one_swath
 
-    def create_adaptive_dnb(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
-        product_info = PRODUCT_INFO[product_name]
-        deps = product_info.dependencies
+    def create_adaptive_dnb(self, product_name, swath_definition, products_created, fill=numpy.nan):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
         if len(deps) != 3:
-            log.error("Expected 3 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+            LOG.error("Expected 3 dependencies to create adaptive DNB product, got %d" % (len(deps),))
             raise ValueError("Expected 3 dependencies to create adaptive DNB product, got %d" % (len(deps),))
 
         dnb_product_name = deps[0]
         sza_product_name = deps[1]
         lza_product_name = deps[2]
-        geo_file_reader = files_loaded[products_created[product_info.geolocation.longitude_product]["source_file_pattern"]]
-        moon_illum_fraction = geo_file_reader[K_MOONILLUM] / (100.0 * len(geo_file_reader))
+        lon_product_name = GEO_PAIRS[product_def.geo_pair_name].lon_product
+        file_type = PRODUCTS.file_type_for_product(lon_product_name, self.use_terrain_corrected)
+        geo_file_reader = self.file_readers[file_type]
+        moon_illum_fraction = geo_file_reader[guidebook.K_MOONILLUM] / (100.0 * len(geo_file_reader))
         dnb_product = products_created[dnb_product_name]
-        dnb_data = dnb_product.get_data_array("swath_data")
-        sza_data = products_created[sza_product_name].get_data_array("swath_data")
-        lza_data = products_created[lza_product_name].get_data_array("swath_data")
-        fbf_filename = create_fbf_filename(product_name, data=dnb_data)
-        output_data = dnb_product.copy_array("swath_data", fbf_filename=fbf_filename, read_only=False)
+        dnb_data = dnb_product.get_data_array()
+        sza_data = products_created[sza_product_name].get_data_array()
+        lza_data = products_created[lza_product_name].get_data_array()
+        filename = product_name + ".dat"
+        output_data = dnb_product.copy_array(filename=filename, read_only=False)
 
         adaptive_dnb_scale(dnb_data,
                            solarZenithAngle=sza_data, lunarZenithAngle=lza_data, moonIllumFraction=moon_illum_fraction,
                            fillValue=fill, out=output_data)
 
-        one_swath = self._create_secondary_swath_object(product_name, fbf_filename,
-                                                        output_data.shape[0], output_data.shape[1],
-                                                        deps, products_created)
+        one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
+                                                        dnb_product["data_type"], products_created)
 
         return one_swath
 
-    def create_adaptive_btemp(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
-        product_info = PRODUCT_INFO[product_name]
-        deps = product_info.dependencies
+    def create_adaptive_btemp(self, product_name, swath_definition, products_created, fill=numpy.nan):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
         if len(deps) != 1:
-            log.error("Expected 1 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+            LOG.error("Expected 1 dependencies to create adaptive DNB product, got %d" % (len(deps),))
             raise ValueError("Expected 1 dependencies to create adaptive DNB product, got %d" % (len(deps),))
 
         bt_product_name = deps[0]
         bt_product = products_created[bt_product_name]
-        bt_data = bt_product.get_data_array("swath_data")
-        bt_mask = bt_product.get_data_mask("swath_data")
-        fbf_filename = create_fbf_filename(product_name, data=bt_data)
-        output_data = bt_product.copy_array("swath_data", fbf_filename=fbf_filename, read_only=False)
+        bt_data = bt_product.get_data_array()
+        bt_mask = bt_product.get_data_mask()
+        filename = product_name + ".dat"
+        output_data = bt_product.copy_array(filename=filename, read_only=False)
 
         histogram.local_histogram_equalization(bt_data, ~bt_mask, do_log_scale=False, out=output_data)
 
-        one_swath = self._create_secondary_swath_object(product_name, fbf_filename,
-                                                        output_data.shape[0], output_data.shape[1],
-                                                        deps, products_created)
+        one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
+                                                        bt_product["data_type"], products_created)
 
         return one_swath
 
 
-    def create_ifog(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
-        product_info = PRODUCT_INFO[product_name]
-        deps = product_info.dependencies
+    def create_ifog(self, product_name, swath_definition, products_created, fill=numpy.nan):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
         if len(deps) != 3:
-            log.error("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
+            LOG.error("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
             raise ValueError("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
 
         left_term_name = deps[0]
         right_term_name = deps[1]
         sza_product_name = deps[2]
-        left_data = products_created[left_term_name].get_data_array("swath_data")
-        left_mask = products_created[left_term_name].get_data_mask("swath_data")
-        right_data = products_created[right_term_name].get_data_array("swath_data")
-        right_mask = products_created[right_term_name].get_data_mask("swath_data")
-        sza_data = products_created[sza_product_name].get_data_array("swath_data")
-        sza_mask = products_created[sza_product_name].get_data_mask("swath_data")
+        left_data = products_created[left_term_name].get_data_array()
+        left_mask = products_created[left_term_name].get_data_mask()
+        right_data = products_created[right_term_name].get_data_array()
+        right_mask = products_created[right_term_name].get_data_mask()
+        sza_data = products_created[sza_product_name].get_data_array()
+        sza_mask = products_created[sza_product_name].get_data_mask()
         night_mask = sza_data >= 100  # where is it night
 
-        fbf_filename = create_fbf_filename(product_name, data=left_data)
-        fog_data = numpy.memmap(fbf_filename, dtype=left_data.dtype, mode="w+", shape=left_data.shape)
+        filename = product_name + ".dat"
+        fog_data = numpy.memmap(filename, dtype=left_data.dtype, mode="w+", shape=left_data.shape)
         numpy.subtract(left_data, right_data, fog_data)
         fog_data[left_mask | right_mask | sza_mask | ~night_mask] = fill
 
-        one_swath = VIIRSDataSwath()
-        left_product = products_created[left_term_name]
-        log.info("Writing product data to FBF for '%s'", product_name)
-        one_swath["product_name"] = product_name
-        one_swath["source_filenames"] = zip([products_created[dep_name]["source_filenames"] for dep_name in deps])
-        one_swath["start_time"] = left_product["start_time"]
-        one_swath["end_time"] = left_product["end_time"]
-        one_swath["satellite"] = left_product["satellite"]
-        one_swath["instrument"] = left_product["instrument"]
-        one_swath["swath_data"] = fbf_filename
-        one_swath["swath_rows"] = fog_data.shape[0]
-        one_swath["swath_cols"] = fog_data.shape[1]
-        one_swath["data_kind"] = product_info.data_kind
-        one_swath["description"] = product_info.description
-        one_swath["scene_name"] = product_info.geolocation.scene_name
-        one_swath["rows_per_scan"] = product_info.rows_per_scan
-        one_swath["swath_scans"] = one_swath["swath_rows"] / one_swath["rows_per_scan"]
+        one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
+                                                        products_created[left_term_name]["data_type"], products_created)
 
         return one_swath
 
-    def process_sst(self, product_name, files_loaded, products_created, fill=DEFAULT_FILL_VALUE):
-        sst_file_pattern = products_created[product_name]["source_file_pattern"]
-        sst_reader = files_loaded[sst_file_pattern]
+    def process_sst(self, product_name, products_created, fill=guidebook.DEFAULT_FILL_VALUE):
+        product_def = PRODUCTS[product_name]
+        file_type = PRODUCTS.file_type_for_product(product_name, self.use_terrain_corrected)
+        sst_reader = self.file_readers[file_type]
         # TODO: Open as read/write
         sst_swath = products_created[product_name]
-        sst_data = Workspace('.').var(product_name, mode='r+')
+        shape = (sst_swath["swath_rows"], sst_swath["swath_columns"])
+        sst_data = numpy.memmap(sst_swath["swath_data"], dtype=sst_swath["data_type"], mode="r+", shape=shape)
         # Create a quality mask where bad data is masked
         # 11 = High Quality
         # 10 = Degraded
         # 01 = Excluded
         # 00 = Not retrieved
-        sst_data[(numpy.concatenate(sst_reader[K_QF1]) & 3) < 2] = fill
+        sst_data[(numpy.concatenate(sst_reader[guidebook.K_QF1]) & 3) < 2] = fill
         sst_data.flush()
         return sst_swath
 
@@ -1026,39 +868,76 @@ class SwathExtractor(object):
         PRODUCT_ADAPTIVE_M15: create_adaptive_btemp,
         PRODUCT_ADAPTIVE_M16: create_adaptive_btemp,
         PRODUCT_SST: process_sst,
-        }
+    }
+
+
+def add_frontend_argument_groups(parser):
+    """Add command line arguments to an existing parser.
+
+    :returns: list of group titles added
+    """
+    from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
+    # Set defaults for other components that may be used in polar2grid processing
+    parser.set_defaults(fornav_D=40, fornav_d=2)
+
+    # Use the append_const action to handle adding products to the list
+    group_title = "Frontend Initialization"
+    group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
+    group.add_argument("--list-products", dest="list_products", action="store_true",
+                       help="List available frontend products and exit")
+    group.add_argument("--no-tc", dest="use_terrain_corrected", action="store_false",
+                       help="Don't use terrain-corrected navigation")
+    group_title = "Frontend Swath Extraction"
+    group = parser.add_argument_group(title=group_title, description="swath extraction options")
+    # FIXME: Probably need some proper defaults
+    group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
+                       help="Specify frontend products to process")
+    # group.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
+    #                     help="Don't create pseudo bands")
+    group.add_argument('--adaptive-dnb', dest='products', action="append_const", const=PRODUCT_ADAPTIVE_DNB,
+                       help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
+                             "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
+    group.add_argument('--adaptive-ir', dest='products', action=ExtendConstAction, const=ADAPTIVE_IR_PRODUCTS,
+                       help="Create adaptively scaled IR bands")
+    # group.add_argument('--no-dnb-scale', dest='scale_dnb', default=True, action='store_false',
+    #                     help="Turn off all DNB scaling (overrides --adaptive-dnb)")
+    return ["Frontend Initialization", "Frontend Swath Extraction"]
 
 
 def main():
-    from argparse import ArgumentParser
-
-    description = """Parse VIIRS hdf5 files, extracting swath data and meta data"""
-    parser = ArgumentParser(description=description)
-    parser.add_argument('-t', '--test', dest="self_test",
-                        action="store_true", default=False, help="run self-tests")
-    parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
-                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
-    parser.add_argument('--show', dest="show_products", action="store_true",
-                        help="List available products")
-    args = parser.parse_args()
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
+    parser = create_basic_parser(description="Extract VIIRS swath data into binary files")
+    subgroup_titles = add_frontend_argument_groups(parser)
+    parser.add_argument('-f', dest='data_files', nargs="+", default=[],
+                        help="List of data files or directories to extract data from")
+    parser.add_argument('-o', dest="output_filename", default=None,
+                        help="Output filename for JSON scene (default is to stdout)")
+    args = parser.parse_args(subgroup_titles=subgroup_titles)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=levels[min(3, args.verbosity)])
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
+    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
-    if args.self_test:
-        import doctest
+    list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
+    f = Frontend(args.data_files, **args.subgroup_args["Frontend Initialization"])
 
-        doctest.testmod()
-        sys.exit(0)
+    if list_products:
+        print("\n".join(f.available_product_names))
+        return 0
 
-    if args.show_products:
-        print "VIIRS Frontend has the following possible products:"
-        for k in sorted(PRODUCT_INFO.keys()):
-            print "\t%s" % (k,)
-        sys.exit(0)
+    if args.output_filename and os.path.isfile(args.output_filename):
+        LOG.error("JSON file '%s' already exists, will not overwrite." % (args.output_filename,))
+        raise RuntimeError("JSON file '%s' already exists, will not overwrite." % (args.output_filename,))
 
+    scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
+    json_str = scene.dumps(persist=True)
+    if args.output_filename:
+        with open(args.output_filename, 'w') as output_file:
+            output_file.write(json_str)
+    else:
+        print(json_str)
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())

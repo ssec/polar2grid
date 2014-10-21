@@ -43,7 +43,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
-from polar2grid.core.glue_utils import setup_logging,create_exc_handler,remove_file_patterns
+from polar2grid.core.script_utils import setup_logging,create_exc_handler,remove_file_patterns
 from polar2grid.core.time_utils import utc_now
 from polar2grid.core.constants import *
 from .grids.grids import create_grid_jobs, Cartographer

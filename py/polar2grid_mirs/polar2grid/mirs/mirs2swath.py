@@ -49,7 +49,6 @@ from netCDF4 import Dataset
 
 from polar2grid.core import roles
 from polar2grid.core.fbf import FileAppender
-from polar2grid.core.dtype import dtype_to_str
 from polar2grid.core import meta
 
 LOG = logging.getLogger(__name__)
@@ -85,10 +84,10 @@ class MIRSProductDefiniton(ProductDefinition):
                                                    dependencies=dependencies, description=description, units=units)
 
 
-class ProductList(dict):
+class ProductDict(dict):
     def __init__(self, base_class=ProductDefinition):
         self.base_class = base_class
-        super(ProductList, self).__init__()
+        super(ProductDict, self).__init__()
 
     def add_product(self, *args, **kwargs):
         pd = self.base_class(*args, **kwargs)
@@ -99,7 +98,7 @@ PRODUCT_BT_90 = "mirs_btemp_90"
 PRODUCT_LATITUDE = "mirs_latitude"
 PRODUCT_LONGITUDE = "mirs_longitude"
 
-PRODUCTS = ProductList(base_class=MIRSProductDefiniton)
+PRODUCTS = ProductDict(base_class=MIRSProductDefiniton)
 # FUTURE: Add a "geoproduct_pair" field and have a second geoproduct list for the pairs
 PRODUCTS.add_product(PRODUCT_LATITUDE, "latitude", FT_IMG, LAT_VAR,
                      description="Latitude", units="degrees", is_geoproduct=True)
@@ -561,13 +560,11 @@ def add_frontend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core.glue_utils import create_basic_parser, setup_logging, create_exc_handler
+    from polar2grid.core.script_utils import create_basic_parser, setup_logging, create_exc_handler
     parser = create_basic_parser(description="Extract image data from MIRS files and print JSON scene dictionary")
     subgroup_titles = add_frontend_argument_groups(parser)
     parser.add_argument('-f', dest='data_files', nargs="+", default=[],
-                        help="List of one or more data files")
-    parser.add_argument('-d', dest='data_dirs', nargs="+", default=[],
-                        help="Data directories to look for input data files")
+                        help="List of data files and directories to get extract data from")
     parser.add_argument('-o', dest="output_filename", default=None,
                         help="Output filename for JSON scene (default is to stdout)")
     args = parser.parse_args(subgroup_titles=subgroup_titles)
@@ -578,7 +575,7 @@ def main():
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
     list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
-    f = Frontend(args.data_files + args.data_dirs, **args.subgroup_args["Frontend Initialization"])
+    f = Frontend(args.data_files, **args.subgroup_args["Frontend Initialization"])
 
     if list_products:
         print("\n".join(f.available_product_names))

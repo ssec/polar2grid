@@ -363,7 +363,7 @@ def add_backend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core.glue_utils import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
     from polar2grid.core.meta import GriddedScene, GriddedProduct
     parser = create_basic_parser(description="Create geotiff files from provided gridded scene or product data")
     subgroup_titles = add_backend_argument_groups(parser)
