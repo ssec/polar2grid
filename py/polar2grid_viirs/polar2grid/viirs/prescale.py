@@ -51,7 +51,7 @@ from polar2grid.core.histogram import local_histogram_equalization, histogram_eq
 from polar2grid.core.constants import DEFAULT_FILL_VALUE
 from polar2grid.core import Workspace
 
-from mpl_toolkits.basemap import maskoceans
+# from mpl_toolkits.basemap import maskoceans
 
 import os
 import sys
@@ -63,10 +63,16 @@ log = logging.getLogger(__name__)
 DEFAULT_HIGH_ANGLE = 100
 DEFAULT_LOW_ANGLE  = 88
 
-def _make_day_night_masks (image, solarZenithAngle, fillValue,
-                           highAngleCutoff=DEFAULT_HIGH_ANGLE,
-                           lowAngleCutoff=DEFAULT_LOW_ANGLE,
-                           stepsDegrees=None) :
+
+def mask_helper(arr, fill_value):
+    if numpy.isnan(fill_value):
+        return numpy.isnan(arr)
+    else:
+        return arr == fill_value
+
+
+def _make_day_night_masks(image, solarZenithAngle, fillValue,
+                           highAngleCutoff=DEFAULT_HIGH_ANGLE, lowAngleCutoff=DEFAULT_LOW_ANGLE, stepsDegrees=None) :
     """
     given informaiton on the solarZenithAngle for each point,
     generate masks defining where the day, night, and mixed regions are
@@ -87,7 +93,7 @@ def _make_day_night_masks (image, solarZenithAngle, fillValue,
     # if the caller passes None, we're only doing one step
     stepsDegrees = highAngleCutoff - lowAngleCutoff if stepsDegrees is None else stepsDegrees
     
-    good_mask  = ~((image == fillValue) | (solarZenithAngle == fillValue))
+    good_mask  = ~(mask_helper(image, fillValue) | mask_helper(solarZenithAngle, fillValue))
     night_mask = (solarZenithAngle >= highAngleCutoff) & good_mask
     day_mask   = (solarZenithAngle <= lowAngleCutoff ) & good_mask
     mixed_mask = [ ]
@@ -104,6 +110,7 @@ def _make_day_night_masks (image, solarZenithAngle, fillValue,
         del tmp
     
     return day_mask, mixed_mask, night_mask, good_mask
+
 
 def _calculate_average_moon_illumination (moonIlluminatonFraction,
                                           lunarZenithAngle,
@@ -140,17 +147,18 @@ def _calculate_average_moon_illumination (moonIlluminatonFraction,
     
     return avgIllum
 
-def _make_water_mask (latData, lonData, alsoMaskLakes=True) :
-    """
-    use mpl_toolkits.basemap.maskoceans to make a water mask
-    
-    TODO, this is a pretty rough way to do this
-    """
-    
-    temp = numpy.ones(latData.shape)
-    temp = maskoceans(lonData, latData, temp, inlands=alsoMaskLakes)
-    
-    return temp.mask
+# def _make_water_mask (latData, lonData, alsoMaskLakes=True) :
+#     """
+#     use mpl_toolkits.basemap.maskoceans to make a water mask
+#
+#     TODO, this is a pretty rough way to do this
+#     """
+#
+#     temp = numpy.ones(latData.shape)
+#     temp = maskoceans(lonData, latData, temp, inlands=alsoMaskLakes)
+#
+#     return temp.mask
+
 
 def adaptive_dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None, lunarZenithAngle=None,
                        moonIllumFraction=None, highAngleCutoff=None, lowAngleCutoff=None, waterMask=None, out=None):
@@ -196,39 +204,41 @@ def adaptive_dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
 
     if night_mask is not None and (numpy.sum(night_mask) > 0):
         log.debug("  scaling DNB in night mask")
-        log.debug("Moon Illumination, before angle weighting: " + str(moonIllumFraction))
-        weightedMoonIllumFract = _calculate_average_moon_illumination (moonIllumFraction,
-                                                                       lunarZenithAngle,
-                                                                       good_mask)
-        log.debug("Moon Illumination, after  angle weighting: " + str(weightedMoonIllumFract))
+        # log.debug("Moon Illumination, before angle weighting: " + str(moonIllumFraction))
+        # weightedMoonIllumFract = _calculate_average_moon_illumination (moonIllumFraction,
+        #                                                                lunarZenithAngle,
+        #                                                                good_mask)
+        # log.debug("Moon Illumination, after  angle weighting: " + str(weightedMoonIllumFract))
+        #
+        # # TODO, this should probably also be affected by whether or not there is a day mask
+        # if weightedMoonIllumFract > 0.90 :
+        #     if has_multi_times :
+        #         local_histogram_equalization(img, night_mask, valid_data_mask=good_mask, local_radius_px=100, out=out)
+        #     else :
+        #         histogram_equalization(img, night_mask, out=out)
+        # else :
+        #     # FUTURE, for now we're not using the water mask
+        #     #night_water = night_mask & waterMask
+        #     #tmp_night_mask = night_mask & ~waterMask
+        #     tmp_night_mask = night_mask
+        #     if weightedMoonIllumFract > 0.25 :
+        #         local_histogram_equalization(img, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=200, out=out)
+        #     elif weightedMoonIllumFract > 0.10 :
+        #         local_histogram_equalization(img, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=100, out=out)
+        #     else :
+        #         local_histogram_equalization(img, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=50, out=out)
 
-        # TODO, this should probably also be affected by whether or not there is a day mask
-        if weightedMoonIllumFract > 0.90 :
-            if has_multi_times :
-                local_histogram_equalization(img, night_mask, valid_data_mask=good_mask, local_radius_px=100, out=out)
-            else :
-                histogram_equalization(img, night_mask, out=out)
-        else :
-            # FUTURE, for now we're not using the water mask
-            #night_water = night_mask & waterMask
-            #tmp_night_mask = night_mask & ~waterMask
-            tmp_night_mask = night_mask
-            if weightedMoonIllumFract > 0.25 :
-                local_histogram_equalization(img, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=200, out=out)
-            elif weightedMoonIllumFract > 0.10 :
-                local_histogram_equalization(img, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=100, out=out)
-            else :
-                local_histogram_equalization(img, tmp_night_mask, valid_data_mask=good_mask, local_radius_px=50, out=out)
+        histogram_equalization(img, night_mask, out=out)
 
-    if night_water is not None and (numpy.any(night_water)):
-        log.debug ("  scaling DNB in night water mask")
-
-        local_histogram_equalization(img, night_water, valid_data_mask=good_mask, local_radius_px=500, out=out)
+    # if night_water is not None and (numpy.any(night_water)):
+    #     log.debug ("  scaling DNB in night water mask")
+    #     local_histogram_equalization(img, night_water, valid_data_mask=good_mask, local_radius_px=500, out=out)
 
     # set any data that's not in the good areas to fill
     out[~good_mask] = fillValue
 
     return out
+
 
 def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
               highAngleCutoff=None, lowAngleCutoff=None, out=None):
@@ -252,7 +262,7 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
                                                              fillValue,
                                                              highAngleCutoff=highAngleCutoff,
                                                              lowAngleCutoff=lowAngleCutoff)
-    has_multi_times = (mixed_mask is not None) and (len(mixed_mask) > 0)
+    # has_multi_times = (mixed_mask is not None) and (len(mixed_mask) > 0)
 
     if day_mask is not None and (numpy.sum(day_mask)   > 0) :
         log.debug("  scaling DNB in day mask")
@@ -271,114 +281,4 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
     out[~good_mask] = fillValue
     
     return out
-
-# XXX: Remove new_dnb when a method has been decided on
-# XXX: It is just temporary
-def run_dnb_scale(img_filepath, mode_filepath,
-        lunar_angle_filepath=None, moonIllumFraction=None,
-        lat_filepath=None, lon_filepath=None,
-        new_dnb=False, fill_value=DEFAULT_FILL_VALUE):
-    """A wrapper function for calling the prescaling function for dnb.
-    This function will read the binary image data from ``img_filepath``
-    as well as any other data that may be required to prescale the data
-    correctly, such as day/night/twilight masks.
-
-    :Parameters:
-        img_filepath : str
-            Filepath to the binary image swath data in FBF format
-            (ex. ``image_I01.real4.6400.10176``).
-        mode_filepath : str
-            Filepath to the binary mode swath data in FBF format
-            (ex. ``mode_I01.real4.6400.10176``).
-    """
-    
-    img_attr  = os.path.split(img_filepath)        [1].split('.')[0]
-    mode_attr = os.path.split(mode_filepath)       [1].split('.')[0]
-    moon_attr = os.path.split(lunar_angle_filepath)[1].split('.')[0]
-    lat_attr  = os.path.split(lat_filepath)        [1].split('.')[0]
-    lon_attr  = os.path.split(lon_filepath)        [1].split('.')[0]
-    
-    # Rescale the image
-    try:
-        W = Workspace('.')
-        img = getattr(W, img_attr)
-        data = img.copy()
-        log.debug("Data min: %f, Data max: %f" % (data.min(),data.max()))
-    except StandardError:
-        log.error("Could not open img file %s" % img_filepath)
-        log.debug("Files matching %r" % glob(img_attr + "*"))
-        raise
-    
-    # set up the kwargs with the parameters we already have
-    scale_kwargs = {
-            'new_dnb':           new_dnb, # XXX
-            'moonIllumFraction': moonIllumFraction,
-            "fillValue":         fill_value,
-            }
-    
-    # load the zolar zenith angle if possible
-    try:
-        mode_mask = getattr(W, mode_attr)
-        # Only add parameters if they're useful
-        if mode_mask.shape == data.shape:
-            log.debug("Adding solar angle to rescaling arguments")
-            scale_kwargs["solarZenithAngle"] = mode_mask
-        else:
-            log.error("Solar angle data shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
-            raise ValueError("Solar angle data shape is different than the data's shape (%s) vs (%s)" % (mode_mask.shape, data.shape))
-    except StandardError:
-        log.error("Could not open solar zenith angle file %s" % mode_filepath)
-        log.debug("Files matching %r" % glob(mode_attr + "*"))
-        raise
-    
-    # load the lunar zenith angle if possible
-    try:
-        lunar_data = getattr(W, moon_attr)
-        # Only add parameters if they're useful
-        if lunar_data.shape == data.shape:
-            log.debug("Adding lunar angle to rescaling arguments")
-            scale_kwargs["lunarZenithAngle"] = lunar_data
-        else:
-            log.error("Lunar angle data shape is different than the data's shape (%s) vs (%s)" % (lunar_data.shape, data.shape))
-            raise ValueError("Lunar angle data shape is different than the data's shape (%s) vs (%s)" % (lunar_data.shape, data.shape))
-    except StandardError:
-        log.error("Could not open lunar zenith angle file %s" % lunar_angle_filepath)
-        log.debug("Files matching %r" % glob(moon_attr + "*"))
-        raise
-    
-    # load the lon and lat to make the water mask if possible
-    try:
-        lat_data = getattr(W, lat_attr)
-        lon_data = getattr(W, lon_attr)
-        
-        if (lat_data.shape == data.shape) and (lon_data.shape == data.shape) :
-            # FUTURE for now we won't be using the land sea information
-            #log.debug("Creating water mask and adding it to rescaling arguments")
-            #water_mask = _make_water_mask(lat_data, lon_data)
-            #scale_kwargs["waterMask"] = water_mask
-            pass
-        else:
-            log.error("Navigation data shape is different than the data's shape data (%s) vs lat (%s) vs lon (%s)" % (data.shape, lat_data.shape, lon_data.shape))
-            raise ValueError("Navigation data shape is different than the data's shape data (%s) vs lat (%s) vs lon (%s)" % (data.shape, lat_data.shape, lon_data.shape))
-    except StandardError:
-        log.error("Unable to retrieve navigation data and calculate water mask.")
-    
-    try:
-        rescaled_data = dnb_scale(data,
-                **scale_kwargs)
-        if (logging.getLogger('').handlers[0].level or 0) <= logging.DEBUG:
-            log.debug("Data min: %f, Data max: %f" % (
-                rescaled_data[ rescaled_data != fill_value ].min(),
-                rescaled_data[ rescaled_data != fill_value ].max()
-                ))
-        rows,cols = rescaled_data.shape
-        fbf_swath_var = "prescale_dnb" if not new_dnb else "prescale_new_dnb"
-        fbf_swath = "./%s.real4.%d.%d" % (fbf_swath_var, cols, rows)
-        rescaled_data.tofile(fbf_swath)
-    except StandardError:
-        log.error("Unexpected error while rescaling data")
-        log.debug("Rescaling error:", exc_info=1)
-        raise
-
-    return fbf_swath
 

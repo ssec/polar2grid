@@ -125,6 +125,9 @@ FILE_TYPES = {
 
 K_LATITUDE = "latitude"
 K_LONGITUDE = "longitude"
+# Special case for TC DNB:
+K_TCLATITUDE = "tclatitude"
+K_TCLONGITUDE = "tclongitude"
 K_RADIANCE = "radiance"
 K_REFLECTANCE = "reflectance"
 K_BTEMP = "brightness_temperature"
@@ -211,6 +214,9 @@ def create_geo_file_info(file_kind, file_band, **kwargs):
     d = {
         K_LATITUDE: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Latitude', **kwargs),
         K_LONGITUDE: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Longitude', **kwargs),
+        # special case for TC DNB:
+        K_TCLATITUDE: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Latitude_TC', **kwargs),
+        K_TCLONGITUDE: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Longitude_TC', **kwargs),
         # K_NUMSCANS: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/NumberOfScans',
         K_ALTITUDE: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/Height',
         K_STARTTIME: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/StartTime',

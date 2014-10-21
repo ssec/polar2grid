@@ -369,9 +369,9 @@ class VIIRSSDRMultiReader(object):
             raise
 
         # This all assumes we are dealing with numpy arrays
-        if len(individual_items[0]) == 1:
-            # We are dealing with integers or floats, we should probably add them together
-            return sum(individual_items)[0]
+        if isinstance(individual_items[0], numpy.ndarray) and len(individual_items[0]) == 1:
+            # HDF5 gives us arrays with 1 element for some stuff, we don't need the array
+            return numpy.array([x[0] for x in individual_items])
         else:
             # TODO: Other possible formations of data
             return individual_items

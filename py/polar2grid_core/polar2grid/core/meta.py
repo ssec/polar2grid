@@ -252,6 +252,10 @@ class BaseP2GObject(dict):
                 raise ValueError("Missing required keyword '%s'" % (k,))
 
     def load_loadable_kwargs(self):
+        if self._loadable_kwargs is None:
+            # when every key is loadable
+            self._loadable_kwargs = self.keys()
+
         for kw in self._loadable_kwargs:
             if kw in self and isinstance(self[kw], (str, unicode)):
                 LOG.debug("Loading associated JSON file: '%s'", self[kw])
@@ -291,6 +295,9 @@ class BaseP2GObject(dict):
 class BaseScene(BaseP2GObject):
     """Base scene class mapping product name to product metadata object.
     """
+    # special value when every key is loadable
+    _loadable_kwargs = None
+
     def get_fill_value(self, products=None):
         """Get the fill value shared by the products specified (all products by default).
         """
@@ -749,3 +756,69 @@ class GridDefinition(GeographicDefinition):
         LOG.debug("Passing basemap the following keywords from PROJ.4: %r", proj4_dict)
         LOG.debug("Lower-left corner: (%f, %f); Upper-right corner: (%f, %f)", lon_ll, lat_ll, lon_ur, lat_ur)
         return Basemap(llcrnrlon=lon_ll, llcrnrlat=lat_ll, urcrnrlon=lon_ur, urcrnrlat=lat_ur, **proj4_dict)
+
+
+def remove_json(json_filename, binary_only=False):
+    obj = BaseP2GObject.load(json_filename)
+    if not binary_only:
+        for json_key in obj._loadable_kwargs:
+            if isinstance(obj[json_key], (str, unicode)):
+                remove_json(obj[json_key], binary_only=False)
+        LOG.info("Deleting JSON file '%s'", json_filename)
+        os.remove(json_filename)
+
+    obj.set_persist(False)
+    del obj
+    return
+
+
+def info_json(json_filename):
+    obj = BaseP2GObject.load(json_filename)
+    if isinstance(obj, BaseScene):
+        print("Polar2Grid %s Scene" % ("Gridded" if isinstance(obj, GriddedScene) else "Swath",))
+        print("Contains the following products:\n\t" + "\n\t".join(obj.keys()))
+    elif isinstance(obj, BaseProduct):
+        print("Polar2Grid %s Product: %s" % ("Gridded" if isinstance(obj, GriddedProduct) else "Swath", obj["product_name"]))
+    elif isinstance(obj, GridDefinition):
+        print("%s Grid Definition" % (obj["grid_name"],))
+        print("PROJ.4 Definition: %s" % (obj["proj4_definition"],))
+        print("Width: %d" % (obj["width"],))
+        print("Height: %d" % (obj["height"],))
+        print("Cell Width: %f" % (obj["cell_width"],))
+        print("Cell Height: %f" % (obj["cell_eight"],))
+        print("Origin X: %f" % (obj["origin_x"],))
+        print("Origin Y: %f" % (obj["origin_y"],))
+    elif isinstance(obj, SwathDefinition):
+        print("Swath Definition (%s)" % (obj["swath_name"],))
+        print("Number of Rows: %f" % (obj["swath_rows"],))
+        print("Number of Columns: %f" % (obj["swath_columns"],))
+    else:
+        print("ERROR: Unknown object from file '%s'" % (json_filename,))
+
+
+def main():
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description="Utility for working with Polar2Grid metadata objects on disk")
+    subparsers = parser.add_subparsers()
+    sp_remove = subparsers.add_parser("remove", help="Remove a P2G JSON file and associate files")
+    sp_remove.set_defaults(func=remove_json)
+    sp_remove.add_argument("-b", dest="binary_only", action="store_true",
+                           help="Only remove binary files associated with the JSON files")
+    sp_remove.add_argument("json_filename", help="JSON file to recursively remove")
+
+    sp_info = subparsers.add_parser("info", help="List information about the provided P2G JSON file")
+    sp_info.set_defaults(func=info_json)
+    sp_info.add_argument("json_filename", help="JSON file to recursively remove")
+
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO)
+
+    kwargs = vars(args)
+    func = kwargs.pop("func")
+    func(**kwargs)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

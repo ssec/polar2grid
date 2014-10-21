@@ -89,7 +89,7 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log
         import numpy
         class TempLog(object):
             def write(self, msg):
-                LOG.debug(msg)
+                logging.getLogger("numpy").debug(msg)
         numpy.seterr(invalid="log")
         numpy.seterrcall(TempLog())
 

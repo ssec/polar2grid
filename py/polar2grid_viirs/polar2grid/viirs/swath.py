@@ -50,6 +50,7 @@ from polar2grid.core import histogram
 from .prescale import adaptive_dnb_scale, dnb_scale
 from polar2grid.core import roles
 import numpy
+from scipy.special import erf
 
 import os
 import sys
@@ -97,6 +98,7 @@ PRODUCT_I_LZA = "i_lunar_zenith_angle"
 PRODUCT_IFOG = "ifog"
 PRODUCT_HISTOGRAM_DNB = "histogram_dnb"
 PRODUCT_ADAPTIVE_DNB = "adaptive_dnb"
+PRODUCT_DYNAMIC_DNB = "dynamic_dnb"
 #   adaptive IR
 PRODUCT_ADAPTIVE_I04 = "adaptive_i04"
 PRODUCT_ADAPTIVE_I05 = "adaptive_i05"
@@ -376,8 +378,8 @@ PRODUCTS.add_geo_product(PRODUCT_I_LON, PAIR_INAV, "longitude", (guidebook.FILE_
 PRODUCTS.add_geo_product(PRODUCT_I_LAT, PAIR_INAV, "latitude", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LATITUDE)
 PRODUCTS.add_geo_product(PRODUCT_M_LON, PAIR_MNAV, "longitude", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LONGITUDE)
 PRODUCTS.add_geo_product(PRODUCT_M_LAT, PAIR_MNAV, "latitude", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LATITUDE)
-PRODUCTS.add_geo_product(PRODUCT_DNB_LON, PAIR_DNBNAV, "longitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), guidebook.K_LONGITUDE)
-PRODUCTS.add_geo_product(PRODUCT_DNB_LAT, PAIR_DNBNAV, "latitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), guidebook.K_LATITUDE)
+PRODUCTS.add_geo_product(PRODUCT_DNB_LON, PAIR_DNBNAV, "longitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLONGITUDE, guidebook.K_LONGITUDE))
+PRODUCTS.add_geo_product(PRODUCT_DNB_LAT, PAIR_DNBNAV, "latitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLATITUDE, guidebook.K_LATITUDE))
 
 PRODUCTS.add_raw_product(PRODUCT_I01, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I01, guidebook.K_REFLECTANCE)
 PRODUCTS.add_raw_product(PRODUCT_I02, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I02, guidebook.K_REFLECTANCE)
@@ -412,6 +414,7 @@ PRODUCTS.add_raw_product(PRODUCT_M_LZA, PAIR_MNAV, "lunar_zenith_angle", (guideb
 PRODUCTS.add_secondary_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", (PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA))
 PRODUCTS.add_secondary_product(PRODUCT_HISTOGRAM_DNB, PAIR_DNBNAV, "equalized_radiance", (PRODUCT_DNB, PRODUCT_DNB_SZA))
 PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_DNB, PAIR_DNBNAV, "equalized_radiance", (PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA))
+PRODUCTS.add_secondary_product(PRODUCT_DYNAMIC_DNB, PAIR_DNBNAV, "equalized_radiance", (PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA))
 PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_I04, PAIR_INAV, "equalized_btemp", (PRODUCT_I04,))
 PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_I05, PAIR_INAV, "equalized_btemp", (PRODUCT_I05,))
 PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M12, PAIR_MNAV, "equalized_btemp", (PRODUCT_M12,))
@@ -764,7 +767,7 @@ class Frontend(object):
         deps = product_def.dependencies
         if len(deps) != 3:
             LOG.error("Expected 3 dependencies to create adaptive DNB product, got %d" % (len(deps),))
-            raise ValueError("Expected 3 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+            raise RuntimeError("Expected 3 dependencies to create adaptive DNB product, got %d" % (len(deps),))
 
         dnb_product_name = deps[0]
         sza_product_name = deps[1]
@@ -772,7 +775,7 @@ class Frontend(object):
         lon_product_name = GEO_PAIRS[product_def.geo_pair_name].lon_product
         file_type = PRODUCTS.file_type_for_product(lon_product_name, self.use_terrain_corrected)
         geo_file_reader = self.file_readers[file_type]
-        moon_illum_fraction = geo_file_reader[guidebook.K_MOONILLUM] / (100.0 * len(geo_file_reader))
+        moon_illum_fraction = sum(geo_file_reader[guidebook.K_MOONILLUM]) / (100.0 * len(geo_file_reader))
         dnb_product = products_created[dnb_product_name]
         dnb_data = dnb_product.get_data_array()
         sza_data = products_created[sza_product_name].get_data_array()
@@ -794,7 +797,7 @@ class Frontend(object):
         deps = product_def.dependencies
         if len(deps) != 1:
             LOG.error("Expected 1 dependencies to create adaptive DNB product, got %d" % (len(deps),))
-            raise ValueError("Expected 1 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+            raise RuntimeError("Expected 1 dependencies to create adaptive DNB product, got %d" % (len(deps),))
 
         bt_product_name = deps[0]
         bt_product = products_created[bt_product_name]
@@ -810,13 +813,12 @@ class Frontend(object):
 
         return one_swath
 
-
     def create_ifog(self, product_name, swath_definition, products_created, fill=numpy.nan):
         product_def = PRODUCTS[product_name]
         deps = product_def.dependencies
         if len(deps) != 3:
             LOG.error("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
-            raise ValueError("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
+            raise RuntimeError("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
 
         left_term_name = deps[0]
         right_term_name = deps[1]
@@ -836,6 +838,47 @@ class Frontend(object):
 
         one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
                                                         products_created[left_term_name]["data_type"], products_created)
+
+        return one_swath
+
+    def create_dynamic_dnb(self, product_name, swath_definition, products_created, fill=numpy.nan):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
+        if len(deps) != 3:
+            LOG.error("Expected 3 dependencies to create dynamic DNB product, got %d" % (len(deps),))
+            raise RuntimeError("Expected 3 dependencies to create dynamic DNB product, got %d" % (len(deps),))
+
+        dnb_product_name = deps[0]
+        sza_product_name = deps[1]
+        lza_product_name = deps[2]
+        lon_product_name = GEO_PAIRS[product_def.geo_pair_name].lon_product
+        file_type = PRODUCTS.file_type_for_product(lon_product_name, self.use_terrain_corrected)
+        geo_file_reader = self.file_readers[file_type]
+        # convert to decimal instead of %
+        # XXX: Operate on each fraction separately?
+        moon_illum_fraction = sum(geo_file_reader[guidebook.K_MOONILLUM]) / (100.0 * len(geo_file_reader))
+        dnb_product = products_created[dnb_product_name]
+        dnb_data = dnb_product.get_data_array()
+        sza_data = products_created[sza_product_name].get_data_array()
+        lza_data = products_created[lza_product_name].get_data_array()
+        filename = product_name + ".dat"
+        output_data = dnb_product.copy_array(filename=filename, read_only=False)
+
+        # From Steve Miller and Curtis Seaman
+        # maxval = 10.^(-1.7 - (((2.65+moon_factor1+moon_factor2))*(1+erf((solar_zenith-95.)/(5.*sqrt(2.0))))))
+        # minval = 10.^(-4. - ((2.95+moon_factor2)*(1+erf((solar_zenith-95.)/(5.*sqrt(2.0))))))
+        # scaled_radiance = (radiance - minval) / (maxval - minval)
+        # radiance = sqrt(scaled_radiance)
+
+        moon_factor1 = 0.7 * (1.0 - moon_illum_fraction)
+        moon_factor2 = 0.0022 * lza_data
+        erf_portion = 1 + erf((sza_data - 95.0) / (5.0 * numpy.sqrt(2.0)))
+        max_val = numpy.power(10, -1.7 - (2.65 + moon_factor1 + moon_factor2) * erf_portion)
+        min_val = numpy.power(10, -4.0 - (2.95 + moon_factor2) * erf_portion)
+        numpy.sqrt((dnb_data - min_val) / (max_val - min_val), out=output_data)
+
+        one_swath = self._create_secondary_swath_object(product_name, swath_definition, filename,
+                                                        dnb_product["data_type"], products_created)
 
         return one_swath
 
@@ -867,7 +910,8 @@ class Frontend(object):
         PRODUCT_ADAPTIVE_M14: create_adaptive_btemp,
         PRODUCT_ADAPTIVE_M15: create_adaptive_btemp,
         PRODUCT_ADAPTIVE_M16: create_adaptive_btemp,
-        PRODUCT_SST: process_sst,
+        PRODUCT_DYNAMIC_DNB: create_dynamic_dnb,
+        # PRODUCT_SST: process_sst,
     }
 
 
