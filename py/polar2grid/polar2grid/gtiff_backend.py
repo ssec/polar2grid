@@ -351,6 +351,7 @@ class Backend2(roles.BackendRole2):
 
 
 def add_backend_argument_groups(parser):
+    parser.set_defaults(forced_grids=["wgs84_fit"])
     group = parser.add_argument_group(title="Backend Initialization")
     group.add_argument('--rescale-configs', nargs="*", dest="rescale_configs",
                        help="alternative rescale configuration files")
