@@ -146,7 +146,8 @@ class MIRSFileReader(object):
         self.filename = os.path.basename(filepath)
         self.filepath = os.path.realpath(filepath)
         self.nc_obj = Dataset(self.filepath, "r")
-        self.nc_obj.set_auto_maskandscale(False)
+        # Not supported in older version of NetCDF4 library
+        #self.nc_obj.set_auto_maskandscale(False)
         if not self.handles_file(self.nc_obj):
             LOG.error("Unknown file format for file %s" % (self.filename,))
             raise ValueError("Unknown file format for file %s" % (self.filename,))
@@ -176,9 +177,9 @@ class MIRSFileReader(object):
             else:
                 nc_obj = fn_or_nc_obj
 
-            assert(nc_obj.project == "Microwave Integrated Retrieval System")
-            assert(nc_obj.title == "MIRS IMG")
-            assert(nc_obj.data_model == "NETCDF4")
+            assert(hasattr(nc_obj, "project") and nc_obj.project == "Microwave Integrated Retrieval System")
+            assert(hasattr(nc_obj, "title") and nc_obj.title == "MIRS IMG")
+            #assert(hasattr(nc_obj, "data_model") and nc_obj.data_model == "NETCDF4")
             return True
         except AssertionError:
             LOG.debug("File Validation Exception Information: ", exc_info=True)
@@ -188,6 +189,7 @@ class MIRSFileReader(object):
         if item in self.FILE_STRUCTURE:
             var_name = self.FILE_STRUCTURE[item][0]
             nc_var = self.nc_obj.variables[var_name]
+            nc_var.set_auto_maskandscale(False)
             return nc_var
         return self.nc_obj.variables[item]
 
