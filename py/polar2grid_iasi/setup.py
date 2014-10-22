@@ -35,7 +35,8 @@ version = '0.1'
 try:
     import eugene
 except ImportError as idunnoaboutthis:
-    raise RuntimeWarning('eugene module is not available, which will cripple polar2grid.iasi')
+    import warnings
+    warnings.warn('eugene module is not available, which will cripple polar2grid.iasi', RuntimeWarning)
 
 setup(
     name='polar2grid.iasi',
