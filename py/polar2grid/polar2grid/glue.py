@@ -40,34 +40,63 @@
 """
 __docformat__ = "restructuredtext en"
 
-# from polar2grid.mirs import Frontend, add_frontend_argument_groups
-from polar2grid.viirs.swath import Frontend as VIIRSFrontend, add_frontend_argument_groups as add_viirs_arguments
+import pkg_resources
 from polar2grid.remap import Remapper, add_remap_argument_groups
-from polar2grid.gtiff_backend import Backend2 as GTiffBackend, add_backend_argument_groups as add_gtiff_arguments
 
-import os
 import sys
 import logging
 
-FRONTENDS = {
-    "viirs": (add_viirs_arguments, VIIRSFrontend),
-}
+### Return Status Values ###
+STATUS_SUCCESS       = 0
+# the frontend failed
+STATUS_FRONTEND_FAIL = 1
+# the backend failed
+STATUS_BACKEND_FAIL  = 2
+# either ll2cr or fornav failed (4 + 8)
+STATUS_REMAP_FAIL    = 12
+# ll2cr failed
+STATUS_LL2CR_FAIL    = 4
+# fornav failed
+STATUS_FORNAV_FAIL   = 8
+# grid determination or grid jobs creation failed
+STATUS_GDETER_FAIL   = 16
+# not sure why we failed, not an expected failure
+STATUS_UNKNOWN_FAIL  = -1
+
+P2G_FRONTEND_CLS_EP = "polar2grid.frontend_class"
+P2G_FRONTEND_ARGS_EP = "polar2grid.frontend_arguments"
+P2G_BACKEND_CLS_EP = "polar2grid.backend_class"
+P2G_BACKEND_ARGS_EP = "polar2grid.backend_arguments"
+
+FRONTENDS = {frontend_ep.name: frontend_ep.dist for frontend_ep in pkg_resources.iter_entry_points(P2G_FRONTEND_CLS_EP)}
+BACKENDS = {backend_ep.name: backend_ep.dist for backend_ep in pkg_resources.iter_entry_points(P2G_BACKEND_CLS_EP)}
 
 
-BACKENDS = {
-    "gtiff": (add_gtiff_arguments, GTiffBackend),
-}
+def get_frontend_argument_func(name):
+    return pkg_resources.load_entry_point(FRONTENDS[name], P2G_FRONTEND_ARGS_EP, name)
+
+
+def get_frontend_class(name):
+    return pkg_resources.load_entry_point(FRONTENDS[name], P2G_FRONTEND_CLS_EP, name)
+
+
+def get_backend_argument_func(name):
+    return pkg_resources.load_entry_point(BACKENDS[name], P2G_BACKEND_ARGS_EP, name)
+
+
+def get_backend_class(name):
+    return pkg_resources.load_entry_point(BACKENDS[name], P2G_BACKEND_CLS_EP, name)
 
 
 def main(argv=sys.argv[1:]):
     # from argparse import ArgumentParser
     # init_parser = ArgumentParser(description="Extract swath data, remap it, and write it to a new file format")
-    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file
+    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
     from argparse import ArgumentError
     parser = create_basic_parser(description="Extract swath data, remap it, and write it to a new file format")
-    parser.add_argument("frontend", choices=FRONTENDS.keys(),
+    parser.add_argument("frontend", choices=sorted(FRONTENDS.keys()),
                         help="Specify the swath extractor to use to read data (additional arguments are determined after this is specified)")
-    parser.add_argument("backend", choices=BACKENDS.keys(),
+    parser.add_argument("backend", choices=sorted(BACKENDS.keys()),
                         help="Specify the backend to use to write data output (additional arguments are determined after this is specified)")
     # don't include the help flag
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
@@ -75,16 +104,27 @@ def main(argv=sys.argv[1:]):
     glue_name = args.frontend + "2" + args.backend
     LOG = logging.getLogger(glue_name)
 
+    # load the actual components we need
+    farg_func = get_frontend_argument_func(args.frontend)
+    fcls = get_frontend_class(args.frontend)
+    barg_func = get_backend_argument_func(args.backend)
+    bcls = get_backend_class(args.backend)
+
     # add_frontend_arguments(parser)
     group_titles = []
-    group_titles += FRONTENDS[args.frontend][0](parser)
+    group_titles += farg_func(parser)
     group_titles += add_remap_argument_groups(parser)
-    group_titles += BACKENDS[args.backend][0](parser)
-    parser.add_argument('-f', dest='data_files', nargs="+", default=[],
-                        help="List of one or more data files")
-    parser.add_argument('-d', dest='data_dirs', nargs="+", default=[],
-                        help="Data directories to look for input data files")
+    group_titles += barg_func(parser)
+    parser.add_argument('-f', dest='data_files', nargs="+", default=[], action=ExtendAction,
+                        help="List of files or directories to extract data from")
+    parser.add_argument('-d', dest='data_files', nargs="+", default=[], action=ExtendAction,
+                        help="Data directories to look for input data files (equivalent to -f)")
     args = parser.parse_args(argv, subgroup_titles=group_titles)
+
+    if not args.data_files:
+        # FUTURE: When the -d flag is removed this won't be needed because -f will be required
+        parser.print_usage()
+        parser.exit(1, "ERROR: No data files provided (-f flag)\n")
 
     # Logs are renamed once data the provided start date is known
     rename_log = False
@@ -96,50 +136,81 @@ def main(argv=sys.argv[1:]):
     sys.excepthook = create_exc_handler(LOG.name)
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
+    # Keep track of things going wrong to tell the user what went wrong (we want to create as much as possible)
+    status_to_return = STATUS_SUCCESS
 
     # Frontend
-    LOG.info("Initializing swath extractor...")
-    list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
-    f = FRONTENDS[args.frontend][1](args.data_files + args.data_dirs, **args.subgroup_args["Frontend Initialization"])
-    if list_products:
-        print("\n".join(f.available_product_names))
-        return 0
-
-    LOG.info("Initializing remapping...")
-    remapper = Remapper(**args.subgroup_args["Remapping Initialization"])
-    remap_kwargs = args.subgroup_args["Remapping"]
-    LOG.info("Initializing backend...")
-    backend = BACKENDS[args.backend][1](**args.subgroup_args["Backend Initialization"])
-
-    LOG.info("Extracting swaths from data files available...")
-    scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
-    if args.keep_intermediate:
-        scene.save(glue_name + "_swath_scene.json")
+    try:
+        LOG.info("Initializing swath extractor...")
+        list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
+        f = fcls(args.data_files, **args.subgroup_args["Frontend Initialization"])
+    except StandardError:
+        LOG.debug("Frontend exception: ", exc_info=True)
+        LOG.error("%s frontend failed to load and sort data files (see log for details)", args.frontend)
+        return STATUS_FRONTEND_FAIL
 
     # Rename the log file
     if rename_log:
-        rename_log_file(glue_name + scene.get_begin_time().strftime("_%Y%m%d_%H%M%S.log"))
+        rename_log_file(glue_name + f.begin_time.strftime("_%Y%m%d_%H%M%S.log"))
+
+    if list_products:
+        print("\n".join(f.available_product_names))
+        return STATUS_SUCCESS
+
+    try:
+        LOG.info("Initializing remapping...")
+        remapper = Remapper(**args.subgroup_args["Remapping Initialization"])
+        remap_kwargs = args.subgroup_args["Remapping"]
+    except StandardError:
+        LOG.debug("Remapping initialization exception: ", exc_info=True)
+        LOG.error("Remapping initialization failed (see log for details)")
+        return STATUS_REMAP_FAIL
+
+    try:
+        LOG.info("Initializing backend...")
+        backend = bcls(**args.subgroup_args["Backend Initialization"])
+    except StandardError:
+        LOG.debug("Backend initialization exception: ", exc_info=True)
+        LOG.error("Backend initialization failed (see log for details)")
+        return STATUS_BACKEND_FAIL
+
+    try:
+        LOG.info("Extracting swaths from data files available...")
+        scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
+        if args.keep_intermediate:
+            scene.save(glue_name + "_swath_scene.json")
+    except StandardError:
+        LOG.debug("Frontend data extraction exception: ", exc_info=True)
+        LOG.error("Frontend data extraction failed (see log for details)")
+        return STATUS_FRONTEND_FAIL
 
     # Remap
     gridded_scenes = {}
     # TODO: Grid determination
     for grid_name in remap_kwargs.pop("forced_grids"):
-        LOG.info("Remapping to grid %s", grid_name)
-        gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
-        gridded_scenes[grid_name] = gridded_scene
-        if args.keep_intermediate:
-            gridded_scene.save(glue_name + "_gridded_scene_" + grid_name + ".json")
+        try:
+            LOG.info("Remapping to grid %s", grid_name)
+            gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
+            gridded_scenes[grid_name] = gridded_scene
+            if args.keep_intermediate:
+                gridded_scene.save(glue_name + "_gridded_scene_" + grid_name + ".json")
+        except StandardError:
+            LOG.debug("Remapping data exception: ", exc_info=True)
+            LOG.error("Remapping data failed")
+            status_to_return |= STATUS_REMAP_FAIL
+            continue
 
         # Backend
         try:
             LOG.info("Creating output from data mapped to grid %s", grid_name)
             backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
         except StandardError:
-            LOG.error("Could not create output, see log for more info.")
-            LOG.debug("Backend exception: ", exc_info=True)
+            LOG.debug("Backend output creation exception: ", exc_info=True)
+            LOG.error("Backend output creation failed (see log for details)")
+            status_to_return |= STATUS_BACKEND_FAIL
             continue
 
-    return 0
+    return status_to_return
 
 if __name__ == "__main__":
     sys.exit(main())

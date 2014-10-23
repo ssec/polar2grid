@@ -758,12 +758,20 @@ class Frontend(object):
         dnb_data = dnb_product.get_data_array("swath_data")
         sza_data = products_created[sza_product_name].get_data_array()
         filename = product_name + ".dat"
-        output_data = dnb_product.copy_array(filename=filename, read_only=False)
+        if os.path.isfile(filename):
+            LOG.error("Binary file already exists: %s" % (filename,))
+            raise RuntimeError("Binary file already exists: %s" % (filename,))
 
-        dnb_scale(dnb_data, solarZenithAngle=sza_data, fillValue=fill, out=output_data)
+        try:
+            output_data = dnb_product.copy_array(filename=filename, read_only=False)
+            dnb_scale(dnb_data, solarZenithAngle=sza_data, fillValue=fill, out=output_data)
 
-        one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
-                                                       dnb_product["data_type"], products_created)
+            one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                           dnb_product["data_type"], products_created)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
 
         return one_swath
 
@@ -786,14 +794,21 @@ class Frontend(object):
         sza_data = products_created[sza_product_name].get_data_array()
         lza_data = products_created[lza_product_name].get_data_array()
         filename = product_name + ".dat"
-        output_data = dnb_product.copy_array(filename=filename, read_only=False)
+        if os.path.isfile(filename):
+            LOG.error("Binary file already exists: %s" % (filename,))
+            raise RuntimeError("Binary file already exists: %s" % (filename,))
 
-        adaptive_dnb_scale(dnb_data,
-                           solarZenithAngle=sza_data, lunarZenithAngle=lza_data, moonIllumFraction=moon_illum_fraction,
-                           fillValue=fill, out=output_data)
+        try:
+            output_data = dnb_product.copy_array(filename=filename, read_only=False)
+            adaptive_dnb_scale(dnb_data, solarZenithAngle=sza_data, lunarZenithAngle=lza_data,
+                               moonIllumFraction=moon_illum_fraction, fillValue=fill, out=output_data)
 
-        one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
-                                                       dnb_product["data_type"], products_created)
+            one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                           dnb_product["data_type"], products_created)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
 
         return one_swath
 
@@ -809,12 +824,20 @@ class Frontend(object):
         bt_data = bt_product.get_data_array()
         bt_mask = bt_product.get_data_mask()
         filename = product_name + ".dat"
-        output_data = bt_product.copy_array(filename=filename, read_only=False)
+        if os.path.isfile(filename):
+            LOG.error("Binary file already exists: %s" % (filename,))
+            raise RuntimeError("Binary file already exists: %s" % (filename,))
 
-        histogram.local_histogram_equalization(bt_data, ~bt_mask, do_log_scale=False, out=output_data)
+        try:
+            output_data = bt_product.copy_array(filename=filename, read_only=False)
+            histogram.local_histogram_equalization(bt_data, ~bt_mask, do_log_scale=False, out=output_data)
 
-        one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
-                                                       bt_product["data_type"], products_created)
+            one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                           bt_product["data_type"], products_created)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
 
         return one_swath
 
@@ -835,14 +858,22 @@ class Frontend(object):
         sza_data = products_created[sza_product_name].get_data_array()
         sza_mask = products_created[sza_product_name].get_data_mask()
         night_mask = sza_data >= 100  # where is it night
-
         filename = product_name + ".dat"
-        fog_data = numpy.memmap(filename, dtype=left_data.dtype, mode="w+", shape=left_data.shape)
-        numpy.subtract(left_data, right_data, fog_data)
-        fog_data[left_mask | right_mask | sza_mask | ~night_mask] = fill
+        if os.path.isfile(filename):
+            LOG.error("Binary file already exists: %s" % (filename,))
+            raise RuntimeError("Binary file already exists: %s" % (filename,))
 
-        one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
-                                                       products_created[left_term_name]["data_type"], products_created)
+        try:
+            fog_data = numpy.memmap(filename, dtype=left_data.dtype, mode="w+", shape=left_data.shape)
+            numpy.subtract(left_data, right_data, fog_data)
+            fog_data[left_mask | right_mask | sza_mask | ~night_mask] = fill
+
+            one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                           products_created[left_term_name]["data_type"], products_created)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
 
         return one_swath
 
@@ -867,42 +898,51 @@ class Frontend(object):
         sza_data = products_created[sza_product_name].get_data_array()
         lza_data = products_created[lza_product_name].get_data_array()
         filename = product_name + ".dat"
-        output_data = dnb_product.copy_array(filename=filename, read_only=False)
+        if os.path.isfile(filename):
+            LOG.error("Binary file already exists: %s" % (filename,))
+            raise RuntimeError("Binary file already exists: %s" % (filename,))
 
-        # From Steve Miller and Curtis Seaman
-        # maxval = 10.^(-1.7 - (((2.65+moon_factor1+moon_factor2))*(1+erf((solar_zenith-95.)/(5.*sqrt(2.0))))))
-        # minval = 10.^(-4. - ((2.95+moon_factor2)*(1+erf((solar_zenith-95.)/(5.*sqrt(2.0))))))
-        # scaled_radiance = (radiance - minval) / (maxval - minval)
-        # radiance = sqrt(scaled_radiance)
+        try:
+            output_data = dnb_product.copy_array(filename=filename, read_only=False)
 
-        moon_factor1 = 0.7 * (1.0 - moon_illum_fraction)
-        moon_factor2 = 0.0022 * lza_data
-        erf_portion = 1 + erf((sza_data - 95.0) / (5.0 * numpy.sqrt(2.0)))
-        max_val = numpy.power(10, -1.7 - (2.65 + moon_factor1 + moon_factor2) * erf_portion)
-        min_val = numpy.power(10, -4.0 - (2.95 + moon_factor2) * erf_portion)
-        numpy.sqrt((dnb_data - min_val) / (max_val - min_val), out=output_data)
+            # From Steve Miller and Curtis Seaman
+            # maxval = 10.^(-1.7 - (((2.65+moon_factor1+moon_factor2))*(1+erf((solar_zenith-95.)/(5.*sqrt(2.0))))))
+            # minval = 10.^(-4. - ((2.95+moon_factor2)*(1+erf((solar_zenith-95.)/(5.*sqrt(2.0))))))
+            # scaled_radiance = (radiance - minval) / (maxval - minval)
+            # radiance = sqrt(scaled_radiance)
 
-        one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
-                                                       dnb_product["data_type"], products_created)
+            moon_factor1 = 0.7 * (1.0 - moon_illum_fraction)
+            moon_factor2 = 0.0022 * lza_data
+            erf_portion = 1 + erf((sza_data - 95.0) / (5.0 * numpy.sqrt(2.0)))
+            max_val = numpy.power(10, -1.7 - (2.65 + moon_factor1 + moon_factor2) * erf_portion)
+            min_val = numpy.power(10, -4.0 - (2.95 + moon_factor2) * erf_portion)
+            numpy.sqrt((dnb_data - min_val) / (max_val - min_val), out=output_data)
+
+            one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                           dnb_product["data_type"], products_created)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
 
         return one_swath
 
-    def process_sst(self, product_name, products_created, fill=guidebook.DEFAULT_FILL_VALUE):
-        product_def = PRODUCTS[product_name]
-        file_type = PRODUCTS.file_type_for_product(product_name, self.use_terrain_corrected)
-        sst_reader = self.file_readers[file_type]
-        # TODO: Open as read/write
-        sst_swath = products_created[product_name]
-        shape = (sst_swath["swath_rows"], sst_swath["swath_columns"])
-        sst_data = numpy.memmap(sst_swath["swath_data"], dtype=sst_swath["data_type"], mode="r+", shape=shape)
-        # Create a quality mask where bad data is masked
-        # 11 = High Quality
-        # 10 = Degraded
-        # 01 = Excluded
-        # 00 = Not retrieved
-        sst_data[(numpy.concatenate(sst_reader[guidebook.K_QF1]) & 3) < 2] = fill
-        sst_data.flush()
-        return sst_swath
+    # def process_sst(self, product_name, products_created, fill=guidebook.DEFAULT_FILL_VALUE):
+    #     product_def = PRODUCTS[product_name]
+    #     file_type = PRODUCTS.file_type_for_product(product_name, self.use_terrain_corrected)
+    #     sst_reader = self.file_readers[file_type]
+    #     # TODO: Open as read/write
+    #     sst_swath = products_created[product_name]
+    #     shape = (sst_swath["swath_rows"], sst_swath["swath_columns"])
+    #     sst_data = numpy.memmap(sst_swath["swath_data"], dtype=sst_swath["data_type"], mode="r+", shape=shape)
+    #     # Create a quality mask where bad data is masked
+    #     # 11 = High Quality
+    #     # 10 = Degraded
+    #     # 01 = Excluded
+    #     # 00 = Not retrieved
+    #     sst_data[(numpy.concatenate(sst_reader[guidebook.K_QF1]) & 3) < 2] = fill
+    #     sst_data.flush()
+    #     return sst_swath
 
     SECONDARY_PRODUCT_FUNCTIONS = {
         PRODUCT_HISTOGRAM_DNB: create_histogram_dnb,

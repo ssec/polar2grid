@@ -60,10 +60,14 @@ setup(
         'matplotlib',
         'basemap'
     ],
-    test_requires=[
+    tests_require=[
         'mock'
     ],
-    dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
-    entry_points = {'console_scripts' : [ ]}
+    dependency_links=['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
+    entry_points={
+        'console_scripts': [],
+        'polar2grid.frontend_class': ['viirs=polar2grid.viirs.swath:Frontend'],
+        'polar2grid.frontend_arguments': ['viirs=polar2grid.viirs.swath:add_frontend_argument_groups'],
+    }
 )
 

@@ -94,18 +94,19 @@ def _make_day_night_masks(image, solarZenithAngle, fillValue,
     stepsDegrees = highAngleCutoff - lowAngleCutoff if stepsDegrees is None else stepsDegrees
     
     good_mask  = ~(mask_helper(image, fillValue) | mask_helper(solarZenithAngle, fillValue))
-    night_mask = (solarZenithAngle >= highAngleCutoff) & good_mask
-    day_mask   = (solarZenithAngle <= lowAngleCutoff ) & good_mask
+    night_mask = (solarZenithAngle > highAngleCutoff) & good_mask
+    day_mask   = (solarZenithAngle <= lowAngleCutoff) & good_mask
     mixed_mask = [ ]
     steps = range(lowAngleCutoff, highAngleCutoff+1, stepsDegrees)
-    if steps[-1] >= highAngleCutoff: steps[-1] = highAngleCutoff
+    if steps[-1] >= highAngleCutoff:
+        steps[-1] = highAngleCutoff
     steps = zip(steps, steps[1:])
-    for i,j in steps:
-        log.debug("Processing step %d to %d" % (i,j))
-        tmp = (solarZenithAngle >  i) & (solarZenithAngle < j) & good_mask
-        if numpy.any(tmp):
-            log.debug("Adding step %d to %d" % (i,j))
-            log.debug("Points to process in this range: " + str(numpy.sum(tmp)))
+    for i, j in steps:
+        log.debug("Processing step %d to %d" % (i, j))
+        tmp = (solarZenithAngle > i) & (solarZenithAngle <= j) & good_mask
+        if tmp.any():
+            log.debug("Adding step %d to %d" % (i, j))
+            # log.debug("Points to process in this range: " + str(numpy.sum(tmp)))
             mixed_mask.append(tmp)
         del tmp
     
@@ -177,6 +178,9 @@ def adaptive_dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
     FIXME: The below shouldn't need to be true
     If `out` is provided it must be a writable copy of the original DNB data.
     """
+    if img is out:
+        log.error("Out array can not be the same as the input array")
+        raise ValueError("Out array can not be the same as the input array")
     if out is None:
         out = numpy.zeros_like(img)
 
@@ -190,19 +194,19 @@ def adaptive_dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
     has_multi_times = (mixed_mask is not None) and (len(mixed_mask) > 0)
     night_water = None # a mask of water at night
 
-    if day_mask is not None and (numpy.sum(day_mask)   > 0) :
+    if day_mask is not None and day_mask.any():
         log.debug("  scaling DNB in day mask")
         if has_multi_times:
             local_histogram_equalization(img, day_mask, valid_data_mask=good_mask, local_radius_px=400, out=out)
         else:
             histogram_equalization(img, day_mask, out=out)
 
-    if mixed_mask is not None and (len(mixed_mask)     > 0) :
+    if mixed_mask is not None and len(mixed_mask) > 0:
         log.debug("  scaling DNB in twilight mask")
         for mask in mixed_mask:
             local_histogram_equalization(img, mask, valid_data_mask=good_mask, local_radius_px=100, out=out)
 
-    if night_mask is not None and (numpy.sum(night_mask) > 0):
+    if night_mask is not None and night_mask.any():
         log.debug("  scaling DNB in night mask")
         # log.debug("Moon Illumination, before angle weighting: " + str(moonIllumFraction))
         # weightedMoonIllumFract = _calculate_average_moon_illumination (moonIllumFraction,
@@ -264,16 +268,16 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
                                                              lowAngleCutoff=lowAngleCutoff)
     # has_multi_times = (mixed_mask is not None) and (len(mixed_mask) > 0)
 
-    if day_mask is not None and (numpy.sum(day_mask)   > 0) :
+    if day_mask is not None and day_mask.any():
         log.debug("  scaling DNB in day mask")
         histogram_equalization(img, day_mask, out=out)
 
-    if mixed_mask is not None and (len(mixed_mask)     > 0) :
+    if mixed_mask is not None and (len(mixed_mask) > 0):
         log.debug("  scaling DNB in twilight mask")
         for mask in mixed_mask:
             histogram_equalization(img, mask, out=out)
 
-    if night_mask is not None and (numpy.sum(night_mask) > 0) :
+    if night_mask is not None and night_mask.any():
         log.debug("  scaling DNB in night mask")
         histogram_equalization(img, night_mask, out=out)
 

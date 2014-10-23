@@ -66,10 +66,20 @@ setup(
         'polar2grid.viirs',
         'polar2grid.modis'
         ],
-    dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
-    entry_points = {'console_scripts' : [
+    dependency_links=['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
+    entry_points={
+        'console_scripts': [
             'viirs2awips = polar2grid.viirs2awips:main',
             'modis2awips = polar2grid.modis2awips:main'
-            ]}
+        ],
+        'polar2grid.backend_class': [
+            'gtiff=polar2grid.gtiff_backend:Backend2',
+            'awips=polar2grid.awips.awips_netcdf:Backend2'
+        ],
+        'polar2grid.backend_arguments': [
+            'gtiff=polar2grid.gtiff_backend:add_backend_argument_groups',
+            'awips=polar2grid.awips.awips_netcdf:add_backend_argument_groups'
+        ],
+    }
 )
 

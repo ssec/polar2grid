@@ -50,6 +50,7 @@ from polar2grid.core.constants import *
 from polar2grid.core import roles
 from polar2grid.core.dtype import normalize_dtype_string, clip_to_data_type, str_to_dtype
 
+import os
 import sys
 import logging
 
@@ -338,6 +339,10 @@ class Backend2(roles.BackendRole2):
                                                           **gridded_product)
         else:
             output_filename = output_pattern
+
+        if os.path.isfile(output_filename):
+            LOG.error("Geotiff file already exists: %s", output_filename)
+            raise RuntimeError("Geotiff file already exists: %s" % (output_filename,))
 
         LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
         data = self.rescaler.rescale_product(gridded_product, data_type, inc_by_one=inc_by_one, fill_value=fill_value)
