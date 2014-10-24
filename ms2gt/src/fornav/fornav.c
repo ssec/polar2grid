@@ -190,6 +190,10 @@ static void DisplayInvalidParameter(char *param)
   DisplayUsage();
 }
 
+static int IsFill(float val, float fill) {
+    return !isfinite(val) || val == fill;
+}
+
 static void InitializeImage(image *ip, char *name, char *open_type_str,
                             char *data_type_str, int cols, int rows,
                             int swath_scan_first)
@@ -647,9 +651,13 @@ bool ComputeEwa(image *uimg, image *vimg,
               break;
             case TYPE_FLOAT:
               *this_swath_chanp = *((float *)this_buf + swath_offset);
+              // Handle NaN properly
+              if (IsFill(*this_swath_chanp++, *this_swath_fillp++)) {
+                got_fills[chan] = TRUE;
+              }
               break;
             }
-            if (*this_swath_chanp++ == *this_swath_fillp++) {
+            if (this_swath->data_type != TYPE_FLOAT && IsFill(*this_swath_chanp++, *this_swath_fillp++)) {
               got_fills[chan] = TRUE;
             }
           } /* for (chan = 0; chan < chan_count; chan++, this_swath++) */
@@ -827,7 +835,7 @@ int WriteGridImage(image *ip, image *wp,
         *((int4 *)this_chanp_out) = (int4)chanf;
         break;
       case TYPE_FLOAT:
-        if (chanf == fill)
+        if (IsFill(chanf, fill))
           fill_count++;
         *((float *)this_chanp_out) = chanf;
         break;
