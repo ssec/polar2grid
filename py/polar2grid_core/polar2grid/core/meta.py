@@ -306,7 +306,7 @@ class BaseScene(BaseP2GObject):
         if numpy.isnan(fills[0]):
             fills_same = numpy.isnan(fills).all()
         else:
-            fills_same = [f == fills[0] for f in fills].all()
+            fills_same = all(f == fills[0] for f in fills)
         if not fills_same:
             raise RuntimeError("Scene's products don't all share the same fill value")
         return fills[0]

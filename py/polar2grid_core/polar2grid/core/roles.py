@@ -48,8 +48,9 @@ import sys
 import logging
 import re
 from StringIO import StringIO
+from collections import defaultdict
 from ConfigParser import SafeConfigParser, Error as ConfigParserError
-from abc import ABCMeta,abstractmethod,abstractproperty
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 try:
     # try getting setuptools/distribute's version of resource retrieval first
@@ -118,13 +119,21 @@ class INIConfigReader(object):
             log.error("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
             raise RuntimeError("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
 
-        self.section_prefix = kwargs.get("section_prefix", None)
+        self.section_prefix = kwargs.pop("section_prefix", None)
         self.config = []
         self.config_files = config_files
         file_objs = set([f for f in self.config_files if not isinstance(f, (str, unicode))])
         filepaths = set([f for f in self.config_files if isinstance(f, (str, unicode))])
-        defaults = dict((k, kwargs.get(k, None)) for k in self.id_fields)
-        self.config_parser = SafeConfigParser(defaults, allow_no_value=True)
+
+        # defaults to string (meaning nothing happens)
+        # this only affects non-ID fields
+        # self.keyword_types = defaultdict(kwargs.pop("default_keyword_type", str))
+        self.float_kwargs = kwargs.pop("float_kwargs", [])
+
+        # Need to have defaults for id fields
+        for k in self.id_fields:
+            kwargs.setdefault(k, None)
+        self.config_parser = SafeConfigParser(kwargs, allow_no_value=True)
         if file_objs:
             for fp in file_objs:
                 self.config_parser.readfp(fp)
@@ -227,6 +236,11 @@ class INIConfigReader(object):
         else:
             log.error("No configuration section found")
             raise RuntimeError("No configuration section found")
+
+        # Convert values
+        for k, v in section_options.items():
+            if k in self.float_kwargs:
+                section_options[k] = float(v)
 
         for k, v in kwargs.items():
             # overwrite any wildcards with what we were provided

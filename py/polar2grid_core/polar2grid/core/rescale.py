@@ -50,7 +50,7 @@ __docformat__ = "restructuredtext en"
 
 from .constants import *
 from . import roles
-from polar2grid.core.dtype import dtype_to_str
+from polar2grid.core.dtype import dtype_to_str, dtype2range
 
 import os
 import sys
@@ -161,22 +161,26 @@ def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, clip=
 
     img[~fill_mask] = new_img
     img[fill_mask] = fill_out
-
     return img
 
-
-def sqrt_scale(img, inner_mult, outer_mult, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwargs):
+sqrt_scale_kwargs = dict(inner_mult=float, outer_mult=float, fill_in=float, fill_out=float)
+def sqrt_scale(img, fill_in, fill_out, inner_mult=1, outer_mult=1, **kwargs):
     """Square root enhancement
 
     Note that any values below zero are clipped to zero before calculations.
     """
     log.debug("Running 'sqrt_scale'...")
-    mask = img == fill_in
-    img[ img < 0 ] = 0 # because < 0 cant be sqrted
-    numpy.multiply(img, inner_mult, img)
-    numpy.sqrt(img, out=img)
-    numpy.multiply(img, outer_mult, img)
-    numpy.round(img, out=img)
+    mask = mask_helper(img, fill_in)
+    img[img < 0] = 0  # because < 0 cant be sqrted
+    img_tmp = img[~mask]
+    if inner_mult != 1:
+        numpy.multiply(img_tmp, inner_mult, img_tmp)
+    numpy.sqrt(img_tmp, out=img_tmp)
+    if outer_mult != 1:
+        numpy.multiply(img_tmp, outer_mult, img_tmp)
+    numpy.round(img_tmp, out=img_tmp)
+
+    img[~mask] = img_tmp
     img[mask] = fill_out
     return img
 
@@ -352,6 +356,7 @@ def ndvi_scale (data,
     
     return data
 
+
 class Rescaler2(roles.INIConfigReader):
     # Fields used to match a product object to it's correct configuration
     id_fields = (
@@ -365,9 +370,12 @@ class Rescaler2(roles.INIConfigReader):
     )
 
     rescale_methods = {
-        'linear_flex': (linear_flexible_scale, linear_flexible_scale_kwargs),
-        'btemp': (bt_scale, bt_scale_kwargs),
-        'sqrt'     : sqrt_scale,
+        # 'linear_flex': (linear_flexible_scale, linear_flexible_scale_kwargs),
+        # 'btemp': (bt_scale, bt_scale_kwargs),
+        # 'sqrt': (sqrt_scale, sqrt_scale_kwargs),
+        'linear_flex': linear_flexible_scale,
+        'btemp': bt_scale,
+        'sqrt': sqrt_scale,
         'linear'   : linear_scale,
         'unlinear' : unlinear_scale,
         'raw'      : passive_scale,
@@ -383,8 +391,24 @@ class Rescaler2(roles.INIConfigReader):
 
     def __init__(self, *rescale_configs, **kwargs):
         kwargs["section_prefix"] = kwargs.get("section_prefix", "rescale_")
+        # kwargs["default_keyword_type"] = lambda: float
+        # set defaults for the config reader (these will get passed to the scaling function)
+        # kwargs["fill_in"] = kwargs.get("fill_in", "nan")
+        # kwargs["fill_out"] = kwargs.get("fill_out", "nan")
+        kwargs["float_kwargs"] = self._float_kwargs()
         log.info("Loading rescale configuration files:\n\t%s", "\n\t".join(rescale_configs))
         super(Rescaler2, self).__init__(*rescale_configs, **kwargs)
+
+    def _float_kwargs(self):
+        """Get the names of the arguments that will be passed to the scaling functions.
+        """
+        import inspect
+        args = set([a for func in self.rescale_methods.values() for a in inspect.getargspec(func).args])
+        # caller provided arguments
+        args.remove("img")
+        args.remove("min_out")
+        args.remove("max_out")
+        return args
 
     def register_rescale_method(self, name, func, **kwargs):
         self.rescale_methods[name] = (func, kwargs)
@@ -413,9 +437,14 @@ class Rescaler2(roles.INIConfigReader):
         log.debug("Product %s found in rescale config: %r", gridded_product["product_name"], rescale_options)
 
         data = gridded_product.copy_array("grid_data", read_only=False)
-        rescale_func, arg_convs = self.rescale_methods[rescale_options.pop("method")]
+        # rescale_func, arg_convs = self.rescale_methods[rescale_options.pop("method")]
+        rescale_func = self.rescale_methods[rescale_options.pop("method")]
         fill_in = gridded_product.get("fill_value", numpy.nan)
-        rescale_options = dict((k, v(rescale_options[k])) for k, v in arg_convs.items() if k in rescale_options)
+        # if the configuration file didn't force these then provide a logical default
+        rescale_options.setdefault("min_out", dtype2range[kwargs["data_type"]][0])
+        max_out = dtype2range[kwargs["data_type"]][1]
+        rescale_options.setdefault("max_out", max_out - 1 if inc_by_one else max_out)
+        # rescale_options = dict((k, v(rescale_options[k])) for k, v in arg_convs.items() if k in rescale_options)
         data = rescale_func(data, fill_in=fill_in, fill_out=fill_value, **rescale_options)
 
         good_data_mask = None

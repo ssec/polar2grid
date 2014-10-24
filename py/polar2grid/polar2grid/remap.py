@@ -742,18 +742,21 @@ class Remapper(object):
         raise NotImplementedError("Single product remapping is not implemented yet")
 
 
-def add_remap_argument_groups(parser, default_grids=None, default_fornav_d=1, default_fornav_D=10):
+def add_remap_argument_groups(parser):
+    # Let frontends and backends provide defaults, we must "SUPPRESS" the attribute being created
+    from argparse import SUPPRESS
+    # , default_grids=None, default_fornav_d=1, default_fornav_D=10):
     group = parser.add_argument_group(title="Remapping Initialization")
     group.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
                        help="Specify additional grid configuration files ('grids.conf' for built-ins)")
     group = parser.add_argument_group(title="Remapping")
-    group.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default=default_grids,
+    group.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default=SUPPRESS,
                        help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
     group.add_argument("--method", dest="remap_method", default="ewa", choices=["ewa", "nearest"],
                        help="Remapping algorithm to use")
-    group.add_argument('--fornav-D', dest='fornav_D', default=default_fornav_D, type=float,
+    group.add_argument('--fornav-D', dest='fornav_D', default=SUPPRESS, type=float,
                        help="Specify the -D option for fornav")
-    group.add_argument('--fornav-d', dest='fornav_d', default=default_fornav_d, type=float,
+    group.add_argument('--fornav-d', dest='fornav_d', default=SUPPRESS, type=float,
                        help="Specify the -d option for fornav")
     group.add_argument("--distance-upper-bound", dest="distance_upper_bound", )
     return ["Remapping Initialization", "Remapping"]

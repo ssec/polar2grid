@@ -575,6 +575,9 @@ class Frontend(object):
         product_def = PRODUCTS[product_name]
         file_type = PRODUCTS.file_type_for_product(product_name, use_terrain_corrected=self.use_terrain_corrected)
         file_key = PRODUCTS.file_key_for_product(product_name, use_terrain_corrected=self.use_terrain_corrected)
+        if file_type not in self.file_readers:
+            LOG.error("Could not create product '%s' because some data files are missing" % (product_name,))
+            raise RuntimeError("Could not create product '%s' because some data files are missing" % (product_name,))
         file_reader = self.file_readers[file_type]
         LOG.debug("Using file type '%s' and getting file key '%s' for product '%s'", file_type, file_key, product_name)
 

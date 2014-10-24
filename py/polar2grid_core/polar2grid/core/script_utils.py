@@ -139,7 +139,8 @@ def create_exc_handler(glue_name):
         Note, however, that this doesn't effect code in a separate process as the
         exception never gets raised in the parent.
         """
-        logging.getLogger(glue_name).error(exc_value)
+        logging.getLogger(glue_name).error("Unexpected error. Enable debug messages (-vvv) or see log file for details.")
+        logging.getLogger(glue_name).debug("Unexpected error exception: ", exc_info=(exc_type, exc_value, traceback))
         tb_log = logging.getLogger('traceback')
         if tb_log.handlers:
             tb_log.error(exc_value, exc_info=(exc_type, exc_value, traceback))
