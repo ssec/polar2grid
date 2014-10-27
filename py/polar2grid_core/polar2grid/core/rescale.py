@@ -115,7 +115,7 @@ def passive_scale(img, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwa
     return img
 
 
-def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, clip=0, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwargs):
+def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, flip=False, **kwargs):
     """Flexible linear scaling by specifying what you want output, not the parameters of the linear equation.
 
     This scaling function stops humans from doing math...let the computers do it.
@@ -133,52 +133,47 @@ def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, clip=
         data type of the output format.
     """
     log.debug("Running 'linear_flexible_scale' with (min_out: %f, max_out: %f)..." % (min_out, max_out))
-    fill_mask = mask_helper(img, fill_in)
-    new_img = img[~fill_mask]
 
-    min_in = numpy.nanmin(new_img) if min_in is None else min_in
-    max_in = numpy.nanmax(new_img) if max_in is None else max_in
+    min_in = numpy.nanmin(img) if min_in is None else min_in
+    max_in = numpy.nanmax(img) if max_in is None else max_in
     if min_in == max_in:
         # Data doesn't differ...at all
         log.warning("Data does not differ (min/max are the same), can not scale properly")
         max_in = min_in + 1.0
     log.debug("Input minimum: %f, Input maximum: %f" % (min_in, max_in))
 
-    m = (max_out - min_out) / (max_in - min_in)
-    b = min_out - m * min_in
+    if flip:
+        m = (min_out - max_out) / (max_in - min_in)
+        b = max_out - m * min_in
+    else:
+        m = (max_out - min_out) / (max_in - min_in)
+        b = min_out - m * min_in
     log.debug("Linear parameters: m=%f, b=%f", m, b)
 
-    numpy.multiply(new_img, m, new_img)
-    numpy.add(new_img, b, new_img)
+    numpy.multiply(img, m, img)
+    numpy.add(img, b, img)
 
-    if clip:
-        if min_out < max_out:
-            numpy.clip(new_img, min_out, max_out, out=new_img)
-        else:
-            numpy.clip(new_img, max_out, min_out, out=new_img)
-
-    img[~fill_mask] = new_img
-    img[fill_mask] = fill_out
     return img
 
-def sqrt_scale(img, fill_in, fill_out, inner_mult=1, outer_mult=1, **kwargs):
+
+def sqrt_scale(img, inner_mult=1, outer_mult=1, **kwargs):
     """Square root enhancement
 
     Note that any values below zero are clipped to zero before calculations.
     """
     log.debug("Running 'sqrt_scale'...")
-    mask = mask_helper(img, fill_in)
     img[img < 0] = 0  # because < 0 cant be sqrted
-    img_tmp = img[~mask]
-    if inner_mult != 1:
-        numpy.multiply(img_tmp, inner_mult, img_tmp)
-    numpy.sqrt(img_tmp, out=img_tmp)
-    if outer_mult != 1:
-        numpy.multiply(img_tmp, outer_mult, img_tmp)
-    numpy.round(img_tmp, out=img_tmp)
 
-    img[~mask] = img_tmp
-    img[mask] = fill_out
+    if inner_mult != 1:
+        numpy.multiply(img, inner_mult, img)
+
+    numpy.sqrt(img, out=img)
+
+    if outer_mult != 1:
+        numpy.multiply(img, outer_mult, img)
+
+    numpy.round(img, out=img)
+
     return img
 
 pw_255_lookup_table = numpy.array([  0,   3,   7,  10,  14,  18,  21,  25,  28,  32,  36,  39,  43,
@@ -227,7 +222,7 @@ def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=
     
 
 # this method is intended to work on brightness temperatures in Kelvin
-def bt_scale(img, threshold, min_in, max_in, min_out, max_out, threshold_out=None, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwargs):
+def bt_scale(img, threshold, min_in, max_in, min_out, max_out, threshold_out=None, **kwargs):
     log.debug("Running 'bt_scale'...")
     # equation 1: middle_file_value = low_max - (low_mult * threshold)
     # equation 2: max_out = low_max - (low_mult * min_temp)
@@ -243,17 +238,10 @@ def bt_scale(img, threshold, min_in, max_in, min_out, max_out, threshold_out=Non
     log.debug("BT scale: threshold_out=%f; low_factor=%f; low_offset=%f; high_factor=%f; high_offset=%f",
               threshold_out, low_factor, low_offset, high_factor, high_offset)
 
-    bad_mask = mask_helper(img, fill_in)
-    good_img = img[~bad_mask]
-    high_idx = good_img >= threshold
-    low_idx = good_img < threshold
-    good_img[high_idx] = high_offset - (high_factor*good_img[high_idx])
-    good_img[low_idx] = low_offset - (low_factor*good_img[low_idx])
-    # if clip_min is not None and clip_max is not None:
-    #     log.debug("Clipping data in 'bt_scale' to '%f' and '%f'" % (clip_min, clip_max))
-    numpy.clip(good_img, min_out, max_out, out=good_img)
-    img[~bad_mask] = good_img
-    img[bad_mask] = fill_out
+    high_idx = img >= threshold
+    low_idx = img < threshold
+    img[high_idx] = high_offset - (high_factor * img[high_idx])
+    img[low_idx] = low_offset - (low_factor * img[low_idx])
     return img
 
 # this method is intended to work on brightness temperatures in Kelvin
@@ -405,8 +393,13 @@ class Rescaler2(roles.INIConfigReader):
         # kwargs["fill_in"] = kwargs.get("fill_in", "nan")
         # kwargs["fill_out"] = kwargs.get("fill_out", "nan")
         kwargs["float_kwargs"] = self._float_kwargs()
+        kwargs["boolean_kwargs"] = self._bool_kwargs()
         log.info("Loading rescale configuration files:\n\t%s", "\n\t".join(rescale_configs))
         super(Rescaler2, self).__init__(*rescale_configs, **kwargs)
+
+    def _bool_kwargs(self):
+        args = {"clip", "flip"}
+        return args
 
     def _float_kwargs(self):
         """Get the names of the arguments that will be passed to the scaling functions.
@@ -415,8 +408,9 @@ class Rescaler2(roles.INIConfigReader):
         args = set([a for func in self.rescale_methods.values() for a in inspect.getargspec(func).args])
         # caller provided arguments
         args.remove("img")
-        args.remove("min_out")
-        args.remove("max_out")
+        args.remove("flip")  # boolean
+        args.add("min_out")
+        args.add("max_out")
         return args
 
     def register_rescale_method(self, name, func, **kwargs):
@@ -445,21 +439,35 @@ class Rescaler2(roles.INIConfigReader):
             raise ValueError("No rescaling method configured for %s" % (gridded_product["product_name"],))
         log.debug("Product %s found in rescale config: %r", gridded_product["product_name"], rescale_options)
 
-        data = gridded_product.copy_array("grid_data", read_only=False)
-        # rescale_func, arg_convs = self.rescale_methods[rescale_options.pop("method")]
-        rescale_func = self.rescale_methods[rescale_options.pop("method")]
-        fill_in = gridded_product.get("fill_value", numpy.nan)
+        method = rescale_options.pop("method")
+        rescale_func = self.rescale_methods[method]
         # if the configuration file didn't force these then provide a logical default
-        rescale_options.setdefault("min_out", dtype2range[kwargs["data_type"]][0])
-        max_out = dtype2range[kwargs["data_type"]][1]
+        clip = rescale_options.pop("method", True)
+        min_out, max_out = dtype2range[kwargs["data_type"]]
+        rescale_options.setdefault("min_out", min_out)
         rescale_options.setdefault("max_out", max_out - 1 if inc_by_one else max_out)
-        # rescale_options = dict((k, v(rescale_options[k])) for k, v in arg_convs.items() if k in rescale_options)
-        data = rescale_func(data, fill_in=fill_in, fill_out=fill_value, **rescale_options)
 
-        good_data_mask = None
-        if inc_by_one:
-            good_data_mask = ~gridded_product.get_data_mask("grid_data")
-            data[good_data_mask] += 1
+        try:
+            log.debug("Scaling data with method %s and arguments %r", method, rescale_options)
+            data = gridded_product.copy_array(read_only=False)
+            good_data_mask = ~gridded_product.get_data_mask()
+            good_data = data[good_data_mask]
+            good_data = rescale_func(good_data, **rescale_options)
+
+            if clip:
+                log.debug("Clipping data between %f and %f", rescale_options["min_out"], rescale_options["max_out"])
+                good_data = numpy.clip(good_data, rescale_options["min_out"], rescale_options["max_out"], out=good_data)
+
+            if inc_by_one:
+                log.debug("Incrementing data by 1 so 0 acts as a fill value")
+                good_data += 1
+
+            data[good_data_mask] = good_data
+            data[~good_data_mask] = fill_value
+        except StandardError:
+            log.error("Unexpected error during rescaling")
+            raise
+
 
         log_level = logging.getLogger('').handlers[0].level or 0
         # Only perform this calculation if it will be shown, its very time consuming

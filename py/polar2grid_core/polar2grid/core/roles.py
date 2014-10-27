@@ -129,6 +129,7 @@ class INIConfigReader(object):
         # this only affects non-ID fields
         # self.keyword_types = defaultdict(kwargs.pop("default_keyword_type", str))
         self.float_kwargs = kwargs.pop("float_kwargs", [])
+        self.boolean_kwargs = kwargs.pop("boolean_kwargs", [])
 
         # Need to have defaults for id fields
         for k in self.id_fields:
@@ -241,6 +242,9 @@ class INIConfigReader(object):
         for k, v in section_options.items():
             if k in self.float_kwargs:
                 section_options[k] = float(v)
+                continue
+            if k in self.boolean_kwargs:
+                section_options[k] = v == "True"
 
         for k, v in kwargs.items():
             # overwrite any wildcards with what we were provided

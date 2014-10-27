@@ -325,6 +325,7 @@ class Backend2(roles.BackendRole2):
                 LOG.error("Could not create output for '%s'", product_name)
                 if self.exit_on_error:
                     raise
+                LOG.debug("Backend exception: ", exc_info=True)
                 continue
         return output_filenames
 
