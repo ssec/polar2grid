@@ -204,9 +204,12 @@ class Backend2(roles.BackendRole2):
         awips_info = self.awips_config_reader.get_product_options(gridded_product)
         output_filename = gridded_product["begin_time"].strftime(awips_info["filename_format"])
 
-        if not self.overwrite_existing and os.path.isfile(output_filename):
-            LOG.error("AWIPS file already exists: %s", output_filename)
-            raise RuntimeError("AWIPS file already exists: %s" % (output_filename,))
+        if os.path.isfile(output_filename):
+            if not self.overwrite_existing:
+                LOG.error("AWIPS file already exists: %s", output_filename)
+                raise RuntimeError("AWIPS file already exists: %s" % (output_filename,))
+            else:
+                LOG.warning("AWIPS file already exists, will overwrite: %s", output_filename)
 
         # Create the geotiff
         try:

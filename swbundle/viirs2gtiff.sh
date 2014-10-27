@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-### VIIRS2GTIFF WRAPPER ###
+### GLUE SCRIPT WRAPPER ###
 #
-# Copyright (C) 2013 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-#     Written by David Hoese    January 2013
+#     Written by David Hoese    October 2014
 #     University of Wisconsin-Madison 
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
@@ -37,5 +37,5 @@ fi
 source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
 # Call the python module to do the processing, passing all arguments
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.viirs2gtiff -vv $@
+$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.glue viirs gtiff -vv $@
 

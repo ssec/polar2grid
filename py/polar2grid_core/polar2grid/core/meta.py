@@ -597,7 +597,7 @@ class SwathDefinition(GeographicDefinition, BaseProduct):
 
     Optional Information:
         - nadir_resolution (float): Size in meters of instrument's nadir footprint/pixel
-        - edge_resolution (float): Size in meters of instrument's edge footprint/pixel
+        - limb_resolution (float): Size in meters of instrument's edge footprint/pixel
         - rows_per_scan (int): Number of swath rows making up one scan of the sensor (0 if not applicable or not specified)
         - description (string): Basic description of the product (empty string by default)
         - source_filenames (list of strings): Unordered list of source files that made up this product ([] by default)

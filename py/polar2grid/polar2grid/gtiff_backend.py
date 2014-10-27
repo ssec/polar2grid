@@ -350,9 +350,12 @@ class Backend2(roles.BackendRole2):
         else:
             output_filename = output_pattern
 
-        if not self.overwrite_existing and os.path.isfile(output_filename):
-            LOG.error("Geotiff file already exists: %s", output_filename)
-            raise RuntimeError("Geotiff file already exists: %s" % (output_filename,))
+        if os.path.isfile(output_filename):
+            if not self.overwrite_existing:
+                LOG.error("Geotiff file already exists: %s", output_filename)
+                raise RuntimeError("Geotiff file already exists: %s" % (output_filename,))
+            else:
+                LOG.warning("Geotiff file already exists, will overwrite: %s", output_filename)
 
         try:
             LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])

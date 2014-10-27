@@ -272,7 +272,7 @@ class VIIRSSDRReader(object):
         return None
 
     @property
-    def edge_resolution(self):
+    def limb_resolution(self):
         return None
 
 
@@ -346,8 +346,8 @@ class VIIRSSDRMultiReader(object):
         return self.file_readers[0].nadir_resolution
 
     @property
-    def edge_resolution(self):
-        return self.file_readers[0].edge_resolution
+    def limb_resolution(self):
+        return self.file_readers[0].limb_resolution
 
     @property
     def filepaths(self):

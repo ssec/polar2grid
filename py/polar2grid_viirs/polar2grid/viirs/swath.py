@@ -550,7 +550,7 @@ class Frontend(object):
             data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
             swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["rows_per_scan"],
             source_filenames=sorted(set(lon_file_reader.filepaths + lat_file_reader.filepaths)),
-            # nadir_resolution=lon_file_reader.nadir_resolution, edge_resolution=lat_file_reader.edge_resolution,
+            # nadir_resolution=lon_file_reader.nadir_resolution, limb_resolution=lat_file_reader.limb_resolution,
             fill_value=lon_product["fill_value"],
         )
         file_key = PRODUCTS.file_key_for_product(lon_product["product_name"], self.use_terrain_corrected)
@@ -578,9 +578,12 @@ class Frontend(object):
 
         LOG.info("Writing product '%s' data to binary file", product_name)
         filename = product_name + ".dat"
-        if not self.overwrite_existing and os.path.isfile(filename):
-            LOG.error("Binary file already exists: %s" % (filename,))
-            raise RuntimeError("Binary file already exists: %s" % (filename,))
+        if os.path.isfile(filename):
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
         try:
             # TODO: Do something with data type

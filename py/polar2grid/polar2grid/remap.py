@@ -556,12 +556,18 @@ class Remapper(object):
         lon_arr = swath_definition.get_longitude_array()
         lat_arr = swath_definition.get_latitude_array()
 
-        if not self.overwrite_existing and os.path.isfile(rows_fn):
-            LOG.error("Intermediate remapping file already exists: %s" % (rows_fn,))
-            raise RuntimeError("Intermediate remapping file already exists: %s" % (rows_fn,))
-        if not self.overwrite_existing and os.path.isfile(cols_fn):
-            LOG.error("Intermediate remapping file already exists: %s" % (cols_fn,))
-            raise RuntimeError("Intermediate remapping file already exists: %s" % (cols_fn,))
+        if os.path.isfile(rows_fn):
+            if not self.overwrite_existing:
+                LOG.error("Intermediate remapping file already exists: %s" % (rows_fn,))
+                raise RuntimeError("Intermediate remapping file already exists: %s" % (rows_fn,))
+            else:
+                LOG.warning("Intermediate remapping file already exists, will overwrite: %s", rows_fn)
+        if os.path.isfile(cols_fn):
+            if not self.overwrite_existing:
+                LOG.error("Intermediate remapping file already exists: %s" % (cols_fn,))
+                raise RuntimeError("Intermediate remapping file already exists: %s" % (cols_fn,))
+            else:
+                LOG.warning("Intermediate remapping file already exists, will overwrite: %s", cols_fn)
         try:
             rows_arr = numpy.memmap(rows_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
             cols_arr = numpy.memmap(cols_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
@@ -644,12 +650,15 @@ class Remapper(object):
             product_filepaths = list(swath_scene.get_data_filepaths(product_names))
             fornav_filepaths = self._add_prefix("grid_%s_" % (grid_name,), *product_filepaths)
             for fp in fornav_filepaths:
-                if not self.overwrite_existing and os.path.isfile(fp):
-                    LOG.error("Intermediate remapping file already exists: %s" % (fp,))
-                    raise RuntimeError("Intermediate remapping file already exists: %s" % (fp,))
+                if os.path.isfile(fp):
+                    if not self.overwrite_existing:
+                        LOG.error("Intermediate remapping file already exists: %s" % (fp,))
+                        raise RuntimeError("Intermediate remapping file already exists: %s" % (fp,))
+                else:
+                    LOG.warning("Intermediate remapping file already exists, will overwrite: %s", fp)
 
             rows_per_scan = swath_def.get("rows_per_scan", 0) or 2
-            edge_res = swath_def.get("edge_resolution", None)
+            edge_res = swath_def.get("limb_resolution", None)
             fornav_D = kwargs.get("fornav_D", None)
             if fornav_D is None:
                 if edge_res is not None:
@@ -738,7 +747,7 @@ class Remapper(object):
             # we need flattened versions of these
             cols_array = numpy.memmap(cols_fn, shape=(swath_def["swath_rows"] * swath_def["swath_columns"],), dtype=swath_def["data_type"])
             rows_array = numpy.memmap(rows_fn, shape=(swath_def["swath_rows"] * swath_def["swath_columns"],), dtype=swath_def["data_type"])
-            edge_res = swath_def.get("edge_resolution", None)
+            edge_res = swath_def.get("limb_resolution", None)
             if kwargs.get("distance_upper_bound", None) is None:
                 if edge_res is not None:
                     if grid_def.is_latlong:
@@ -756,9 +765,12 @@ class Remapper(object):
             # Prepare the products
             for product_name, output_fn in izip(product_names, output_filepaths):
                 LOG.debug("Running nearest neighbor on '%s'", product_name)
-                if not self.overwrite_existing and os.path.isfile(output_fn):
-                    LOG.error("Intermediate remapping file already exists: %s" % (output_fn,))
-                    raise RuntimeError("Intermediate remapping file already exists: %s" % (output_fn,))
+                if os.path.isfile(output_fn):
+                    if not self.overwrite_existing:
+                        LOG.error("Intermediate remapping file already exists: %s" % (output_fn,))
+                        raise RuntimeError("Intermediate remapping file already exists: %s" % (output_fn,))
+                    else:
+                        LOG.warning("Intermediate remapping file already exists, will overwrite: %s", fp)
 
                 try:
                     # XXX: May have to do something smarter if there are float products and integer products together
