@@ -409,7 +409,7 @@ def _load_image_data (nav_uid, meta_data_to_update, cut_bad=False) :
             log.error(msg)
             raise ValueError(msg)
 
-class Frontend(roles.FrontendRole):
+class FrontendOld(roles.FrontendRoleOld):
     removable_file_patterns = [
             "*.*_infrared_20",
             "*.*_infrared_27",

@@ -424,7 +424,7 @@ PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M15, PAIR_MNAV, "equalized_btemp
 PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_btemp", (PRODUCT_M16,))
 
 
-class Frontend(object):
+class Frontend(roles.FrontendRole):
     DEFAULT_FILE_READER = VIIRSSDRMultiReader
 
     def __init__(self, search_paths=None, use_terrain_corrected=True,

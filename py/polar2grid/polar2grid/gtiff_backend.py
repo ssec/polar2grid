@@ -164,7 +164,7 @@ np2etype = {
     numpy.uint8: gdal.GDT_Byte,
 }
 
-class BackendOld(roles.BackendRole):
+class BackendOld(roles.BackendRoleOld):
     removable_file_patterns = [
             "*_*_*_*_????????_??????_*.tif"
             ]
@@ -304,7 +304,7 @@ class BackendOld(roles.BackendRole):
         create_geotiff(data, output_filename, proj4_str, geotransform, etype=etype)
 
 
-class Backend(roles.BackendRole2):
+class Backend(roles.BackendRole):
     def __init__(self, rescale_configs=None, overwrite_existing=False, keep_intermediate=False, exit_on_error=True):
         self.rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
         self.overwrite_existing = overwrite_existing

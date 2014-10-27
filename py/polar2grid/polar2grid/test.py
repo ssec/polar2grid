@@ -54,7 +54,7 @@ import unittest
 log = logging.getLogger(__name__)
 
 ### Fake polar2grid classes ###
-class FakeBackend(roles.BackendRole):
+class FakeBackendOld(roles.BackendRoleOld):
     """Fake backend to help with testing.
 
     Tests will overwrite these methods
@@ -192,7 +192,7 @@ polar_south_pacific,proj4, +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=-90 +lat
         """
         def fake_handle_inputs(self, *args, **kwargs):
             return can_handle
-        backend = FakeBackend()
+        backend = FakeBackendOld()
         backend.can_handle_inputs = fake_handle_inputs
         cart = grids.Cartographer(no_defaults=True)
         cart.add_grid_config_str(self._grid_config_str)
@@ -221,7 +221,7 @@ polar_south_pacific,proj4, +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=-90 +lat
         """
         def fake_handle_inputs(self, *args, **kwargs):
             return constants.GRIDS_ANY
-        backend = FakeBackend()
+        backend = FakeBackendOld()
         backend.can_handle_inputs = fake_handle_inputs
         cart = grids.Cartographer(no_defaults=True)
         cart.add_grid_config_str(self._grid_config_str)
@@ -243,7 +243,7 @@ polar_south_pacific,proj4, +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=-90 +lat
     def test_output_grids_proj4_forced(self):
         def fake_handle_inputs(self, *args, **kwargs):
             return constants.GRIDS_ANY_PROJ4
-        backend = FakeBackend()
+        backend = FakeBackendOld()
         backend.can_handle_inputs = fake_handle_inputs
         cart = grids.Cartographer(no_defaults=True)
         cart.add_grid_config_str(self._grid_config_str)
@@ -265,7 +265,7 @@ polar_south_pacific,proj4, +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=-90 +lat
     def test_output_grids_gpd_forced(self):
         def fake_handle_inputs(self, *args, **kwargs):
             return constants.GRIDS_ANY_GPD
-        backend = FakeBackend()
+        backend = FakeBackendOld()
         backend.can_handle_inputs = fake_handle_inputs
         cart = grids.Cartographer(no_defaults=True)
         cart.add_grid_config_str(self._grid_config_str)
@@ -305,7 +305,7 @@ polar_south_pacific,proj4, +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=-90 +lat
         """
         def fake_handle_inputs(self, *args, **kwargs):
             return constants.GRIDS_ANY
-        backend = FakeBackend()
+        backend = FakeBackendOld()
         backend.can_handle_inputs = fake_handle_inputs
         cart = grids.Cartographer(no_defaults=True)
         cart.add_grid_config_str(self._grid_config_str)

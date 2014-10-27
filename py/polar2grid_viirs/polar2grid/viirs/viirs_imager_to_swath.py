@@ -586,7 +586,7 @@ def make_swaths(nav_set_uid, filepaths_dict, filter=None, cut_bad=False):
 
     return meta_data
 
-class Frontend(roles.FrontendRole):
+class FrontendOld(roles.FrontendRoleOld):
     removable_file_patterns = [
             ".lat*",
             ".lon*",
@@ -753,7 +753,7 @@ def main():
 
     import json
     all_meta_data = []
-    nav_uid_dict = Frontend.sort_files_by_nav_uid(args[:])
+    nav_uid_dict = FrontendOld.sort_files_by_nav_uid(args[:])
     ret_status = 0
     for (nav_uid,filepaths_dict) in nav_uid_dict.items():
         try:

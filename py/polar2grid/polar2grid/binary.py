@@ -44,7 +44,7 @@ DEFAULT_INC_8BIT_RCONFIG  = "rescale_configs/rescale_inc.8bit.conf"
 DEFAULT_INC_16BIT_RCONFIG = "rescale_configs/rescale_inc.16bit.conf"
 DEFAULT_OUTPUT_PATTERN = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s_%(grid_name)s.%(fbf_dtype)s.%(cols)s.%(rows)s"
 
-class Backend(roles.BackendRole):
+class BackendOld(roles.BackendRoleOld):
     removable_file_patterns = [
             "*_*_*_*_????????_??????_*.real4.*.*",
             "*_*_*_*_????????_??????_*.real8.*.*",

@@ -48,7 +48,7 @@ from polar2grid.core.constants import *
 from .grids.grids import create_grid_jobs, Cartographer
 from polar2grid.viirs import Frontend
 import remap
-from .ninjo import Backend
+from .ninjo import BackendOld
 
 import os
 import sys
@@ -81,7 +81,7 @@ def process_data_sets(nav_set_uid, filepaths,
     # Declare polar2grid components
     cart     = Cartographer(*grid_configs)
     frontend = Frontend()
-    backend  = Backend(
+    backend  = BackendOld(
             rescale_config = rescale_config,
             output_pattern = output_pattern
             )
@@ -368,7 +368,7 @@ through strftime. Current time if no files.""")
         remove_file_patterns(
                 Frontend.removable_file_patterns,
                 remap.removable_file_patterns,
-                Backend.removable_file_patterns
+                BackendOld.removable_file_patterns
                 )
         return 0
 

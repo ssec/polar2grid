@@ -46,7 +46,7 @@ from collections import defaultdict
 from pprint import pformat
 from numpy import exp,log,array,arange,empty,float32,float64,int8,sin,linspace,concatenate,repeat,reshape,rollaxis
 
-from polar2grid.core.roles import FrontendRole
+from polar2grid.core.roles import FrontendRoleOld
 #from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
 
 
@@ -905,7 +905,7 @@ def generate_metadata(swath, bands):
 
 
 # FUTURE: add a way to configure which slices to produce, or all by default
-class CrisSdrFrontend(FrontendRole):
+class CrisSdrFrontendOld(FrontendRoleOld):
     """
     """
     info = None

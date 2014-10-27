@@ -654,8 +654,8 @@ class Remapper(object):
                     if not self.overwrite_existing:
                         LOG.error("Intermediate remapping file already exists: %s" % (fp,))
                         raise RuntimeError("Intermediate remapping file already exists: %s" % (fp,))
-                else:
-                    LOG.warning("Intermediate remapping file already exists, will overwrite: %s", fp)
+                    else:
+                        LOG.warning("Intermediate remapping file already exists, will overwrite: %s", fp)
 
             rows_per_scan = swath_def.get("rows_per_scan", 0) or 2
             edge_res = swath_def.get("limb_resolution", None)
@@ -770,7 +770,7 @@ class Remapper(object):
                         LOG.error("Intermediate remapping file already exists: %s" % (output_fn,))
                         raise RuntimeError("Intermediate remapping file already exists: %s" % (output_fn,))
                     else:
-                        LOG.warning("Intermediate remapping file already exists, will overwrite: %s", fp)
+                        LOG.warning("Intermediate remapping file already exists, will overwrite: %s", output_fn)
 
                 try:
                     # XXX: May have to do something smarter if there are float products and integer products together

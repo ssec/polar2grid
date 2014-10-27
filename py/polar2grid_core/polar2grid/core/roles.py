@@ -103,6 +103,7 @@ class abstractstaticmethod(staticmethod):
 
 ### End of Copy ###
 
+
 class INIConfigReader(object):
     """Base class for INI configuration file readers.
 
@@ -447,6 +448,7 @@ class CSVConfigReader(object):
         else:
             raise ValueError("No config entry found matching: '%s'" % (search_id,))
 
+
 class RescalerRole(CSVConfigReader):
     __metaclass__ = ABCMeta
 
@@ -523,8 +525,16 @@ class RescalerRole(CSVConfigReader):
         raise NotImplementedError("This function has not been implemented")
 
 
-class BackendRole2(object):
+class BackendRole(object):
+    """Polar2Grid base class for Backends.
+
+    Backends are responsible for taking image data mapped to a uniform grid, rescaling it, and then writing it
+    to a file format on disk.
+    """
     __metaclass__ = ABCMeta
+
+    def __init__(self, **kwargs):
+        pass
 
     def create_output_filename(self, pattern, satellite, instrument, product_name, grid_name, **kwargs):
         """Helper function that will take common meta data and put it into
@@ -564,7 +574,7 @@ class BackendRole2(object):
 
         >>> from datetime import datetime
         >>> pattern = "%(satellite)s_%(instrument)s_%(product_name)s_%(data_kind)s_%(grid_name)s_%(start_time)s.%(data_type)s.%(columns)s.%(rows)s"
-        >>> class FakeBackend(BackendRole):
+        >>> class FakeBackend(BackendRoleOld):
         ...     def create_product(self, *args): pass
         ...     def can_handle_inputs(self, *args): pass
         >>> backend = FakeBackend()
@@ -639,8 +649,71 @@ class BackendRole2(object):
         return output_filename
         pass
 
+    @abstractmethod
+    def create_output_from_scene(self, gridded_scene, **kwargs):
+        """Create output files for each product in the scene.
 
-class BackendRole(object):
+        :param gridded_scene: `GriddedScene` object to create output from
+        :returns: list of created output files
+        """
+        pass
+
+    @abstractmethod
+    def create_output_from_product(self, gridded_product, **kwargs):
+        """Create output file for the provided product.
+
+        :param gridded_product: `GriddedProduct` object to create output from
+        :returns: Created output filename
+        """
+        pass
+
+
+class FrontendRole(object):
+    """Polar2Grid base class for Frontends.
+
+    Frontends are responsible for extracting data from data files and providing that data to other Polar2Grid components
+    as a `SwathScene`.
+    """
+    __metaclass__ = ABCMeta
+
+    def __init__(self, search_paths=None, **kwargs):
+        pass
+
+    @abstractproperty
+    def begin_time(self):
+        """Datetime object of first observed data point loaded by Frontend.
+        """
+        pass
+
+    @abstractproperty
+    def end_time(self):
+        """Datetime object of last observed data point loaded by Frontend.
+        """
+        pass
+
+    @abstractproperty
+    def available_product_names(self):
+        """Names of data products that can be created from the data loaded during initialization.
+        """
+        pass
+
+    @abstractproperty
+    def all_product_names(self):
+        """All product names that this Frontend knows how to create (assuming the proper data is available).
+        """
+        pass
+
+    @abstractmethod
+    def create_scene(self, products=None, **kwargs):
+        """Create a `SwathScene` object with the specified products in it (all raw products by default).
+
+        :param products: List of product names to create
+        :returns: `SwathScene` object
+        """
+        pass
+
+
+class BackendRoleOld(object):
     __metaclass__ = ABCMeta
 
     # Glob patterns for files that a glue script should remove
@@ -689,7 +762,7 @@ class BackendRole(object):
 
         >>> from datetime import datetime
         >>> pattern = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(data_kind)s_%(grid_name)s_%(start_time)s.%(data_type)s.%(cols)s.%(rows)s"
-        >>> class FakeBackend(BackendRole):
+        >>> class FakeBackend(BackendRoleOld):
         ...     def create_product(self, *args): pass
         ...     def can_handle_inputs(self, *args): pass
         >>> backend = FakeBackend()
@@ -785,7 +858,7 @@ class BackendRole(object):
             output_filename=None):
         raise NotImplementedError("This function has not been implemented")
 
-class FrontendRole(object):
+class FrontendRoleOld(object):
     """Polar2grid role for data providing frontends. When provided satellite
     observation data the frontend should create binary files for each of the
     bands to be processed and their corresponding navigation data.

@@ -85,7 +85,7 @@ from functools import partial
 from pprint import pformat
 from scipy import interpolate
 
-from polar2grid.core.roles import FrontendRole
+from polar2grid.core.roles import FrontendRoleOld
 from polar2grid.core.dtype import str2dtype
 from polar2grid.core.constants import *
 
@@ -452,7 +452,7 @@ def swathbuckler(*h5_pathnames):
     return nfo
 
 
-class Frontend(FrontendRole):
+class FrontendOld(FrontendRoleOld):
     """
     """
     removable_file_patterns = [

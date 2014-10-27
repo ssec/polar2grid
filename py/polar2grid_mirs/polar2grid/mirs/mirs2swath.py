@@ -384,7 +384,7 @@ def get_file_type(filepath):
     return None
 
 
-class Frontend(object):
+class Frontend(roles.FrontendRole):
     """Polar2Grid Frontend object for handling MIRS files.
     """
     def __init__(self, search_paths=None,

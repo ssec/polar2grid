@@ -76,7 +76,7 @@ def load_geo_data(nav_set_uid, geo_filepath, fill_value=DEFAULT_FILL_VALUE, dtyp
 
     return lon_array,lat_array,west_bound,east_bound,north_bound,south_bound
 
-class Frontend(roles.FrontendRole):
+class FrontendOld(roles.FrontendRoleOld):
     removable_file_patterns = [
             ".latitude_*_",
             ".longitude_*_*",
@@ -348,13 +348,13 @@ def main():
     if args.remove_prev:
         log.info("Removing any possible conflicting files")
         remove_file_patterns(
-                Frontend.removable_file_patterns
+                FrontendOld.removable_file_patterns
                 )
         return 0
 
-    nav_set_dict = Frontend.sort_files_by_nav_uid(args.crefl_files)
+    nav_set_dict = FrontendOld.sort_files_by_nav_uid(args.crefl_files)
     for nav_set_uid,filepaths_dict in nav_set_dict.items():
-        frontend = Frontend()
+        frontend = FrontendOld()
         meta_data = frontend.make_swaths(nav_set_uid, filepaths_dict)
         pprint(meta_data)
         #print json.dumps(meta_data)

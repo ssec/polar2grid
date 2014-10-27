@@ -46,7 +46,7 @@ from polar2grid.core.script_utils import setup_logging,create_exc_handler,remove
 from polar2grid.core.time_utils import utc_now
 from polar2grid.core.constants import *
 from .grids.grids import create_grid_jobs, Cartographer
-from polar2grid.drrtv import Frontend
+from polar2grid.drrtv import FrontendOld
 import remap
 from .awips import BackendOld
 
@@ -81,7 +81,7 @@ def process_data_sets(nav_set_uid, filepaths,
 
     # Declare polar2grid components
     cart     = Cartographer(*grid_configs)
-    frontend = Frontend()
+    frontend = FrontendOld()
     backend  = BackendOld(
             rescale_config = rescale_config,
             backend_config = backend_config
@@ -232,7 +232,7 @@ def run_glue(filepaths,
     filepaths = [ os.path.abspath(os.path.expanduser(x)) for x in sorted(filepaths) ]
 
     # sort our file paths based on their navigation
-    nav_file_type_sets = Frontend.sort_files_by_nav_uid(filepaths)
+    nav_file_type_sets = FrontendOld.sort_files_by_nav_uid(filepaths)
 
     # some things that we'll use later for clean up
     process_to_wait_for = { }
@@ -351,7 +351,7 @@ through strftime. Current time if no files.""")
                 return -1
 
         # Get the date of the first file if provided
-        file_start_time = list(sorted(x for x in Frontend.parse_datetimes_from_filepaths(hdf_files) if x is not None))[0]
+        file_start_time = list(sorted(x for x in FrontendOld.parse_datetimes_from_filepaths(hdf_files) if x is not None))[0]
 
     # Determine the log filename
     if log_fn is None: log_fn = GLUE_NAME + "_%Y%m%d_%H%M%S.log"
@@ -367,7 +367,7 @@ through strftime. Current time if no files.""")
     if args.remove_prev:
         log.info("Removing any possible conflicting files")
         remove_file_patterns(
-                Frontend.removable_file_patterns,
+                FrontendOld.removable_file_patterns,
                 remap.removable_file_patterns,
                 BackendOld.removable_file_patterns
                 )
@@ -406,7 +406,7 @@ through strftime. Current time if no files.""")
     if not stat and not args.debug_mode:
         log.info("Removing intermediate products")
         remove_file_patterns(
-                Frontend.removable_file_patterns,
+                FrontendOld.removable_file_patterns,
                 remap.removable_file_patterns
                 )
 

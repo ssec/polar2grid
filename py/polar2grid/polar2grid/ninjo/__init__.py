@@ -40,5 +40,5 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .ninjo_backend import Backend
+from .ninjo_backend import BackendOld
 

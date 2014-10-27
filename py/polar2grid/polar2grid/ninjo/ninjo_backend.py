@@ -446,7 +446,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
 
     return
 
-class Backend(roles.BackendRole):
+class BackendOld(roles.BackendRoleOld):
     grid_config = {}
     band_config = {}
 
