@@ -191,14 +191,14 @@ class P2GJSONEncoder(json.JSONEncoder):
 class BaseP2GObject(dict):
     """Base object for all Polar2Grid dictionary-like objects.
 
-    :var _required_kwargs: Keys that must exist when loading an object from a JSON file
-    :var _loadable_kwargs: Keys that may be P2G objects saved on disk and should be loaded on creation.
-    :var _cleanup_kwargs: Keys that may be saved files on disk (*not* P2G dict-like objects) and should be removed
+    :var required_kwargs: Keys that must exist when loading an object from a JSON file
+    :var loadable_kwargs: Keys that may be P2G objects saved on disk and should be loaded on creation.
+    :var cleanup_kwargs: Keys that may be saved files on disk (*not* P2G dict-like objects) and should be removed
 
     """
-    _required_kwargs = tuple()
-    _loadable_kwargs = tuple()
-    _cleanup_kwargs = tuple()
+    required_kwargs = tuple()
+    loadable_kwargs = tuple()
+    cleanup_kwargs = tuple()
 
     def __init__(self, *args, **kwargs):
         if kwargs.pop("__class__", None):
@@ -219,7 +219,7 @@ class BaseP2GObject(dict):
     def cleanup(self):
         """Delete any files associated with this object.
         """
-        for kw in self._cleanup_kwargs:
+        for kw in self.cleanup_kwargs:
             if kw in self and isinstance(self[kw], (str, unicode)):
                 # Do we not want to delete this file because someone tried to save the state of this object
                 if hasattr(self, "persist") and not self.persist:
@@ -247,16 +247,16 @@ class BaseP2GObject(dict):
 
     def validate_keys(self, kwargs):
         # sanity check, does this dictionary have everything the class expects it to
-        for k in self._required_kwargs:
+        for k in self.required_kwargs:
             if k not in kwargs:
                 raise ValueError("Missing required keyword '%s'" % (k,))
 
     def load_loadable_kwargs(self):
-        if self._loadable_kwargs is None:
+        if self.loadable_kwargs is None:
             # when every key is loadable
-            self._loadable_kwargs = self.keys()
+            self.loadable_kwargs = self.keys()
 
-        for kw in self._loadable_kwargs:
+        for kw in self.loadable_kwargs:
             if kw in self and isinstance(self[kw], (str, unicode)):
                 LOG.debug("Loading associated JSON file: '%s'", self[kw])
                 self[kw] = SwathProduct.load(self[kw])
@@ -296,7 +296,7 @@ class BaseScene(BaseP2GObject):
     """Base scene class mapping product name to product metadata object.
     """
     # special value when every key is loadable
-    _loadable_kwargs = None
+    loadable_kwargs = None
 
     def get_fill_value(self, products=None):
         """Get the fill value shared by the products specified (all products by default).
@@ -341,7 +341,16 @@ class SwathScene(BaseScene):
         `GriddedScene`: Scene object for gridded products.
 
     """
-    pass
+    def get_data_filepaths(self, product_names=None, data_key=None):
+        """Generator of filepaths for each product provided or all products by default.
+        """
+        product_names = product_names if product_names is not None else self.keys()
+        data_key = data_key if data_key is not None else self.values()[0].cleanup_kwargs[0]
+        for pname in product_names:
+            fp = self[pname][data_key]
+            if not isinstance(fp, (str, unicode)):
+                LOG.warning("Non-string filepath being provided from product")
+            yield fp
 
 
 class GriddedScene(BaseScene):
@@ -453,7 +462,7 @@ class SwathProduct(BaseProduct):
 
     """
     # Validate required keys when loaded from disk
-    _required_kwargs = (
+    required_kwargs = (
         "product_name",
         "satellite",
         "instrument",
@@ -466,11 +475,11 @@ class SwathProduct(BaseProduct):
         "swath_data",
     )
 
-    _loadable_kwargs = (
+    loadable_kwargs = (
         "swath_definition",
     )
 
-    _cleanup_kwargs = (
+    cleanup_kwargs = (
         "swath_data",
     )
 
@@ -517,7 +526,7 @@ class GriddedProduct(BaseProduct):
 
     """
     # Validate required keys when loaded from disk
-    _required_kwargs = (
+    required_kwargs = (
         "product_name",
         "satellite",
         "instrument",
@@ -527,11 +536,11 @@ class GriddedProduct(BaseProduct):
         "grid_data",
     )
 
-    _loadable_kwargs = (
+    loadable_kwargs = (
         "grid_definition",
     )
 
-    _cleanup_kwargs = (
+    cleanup_kwargs = (
         "grid_data",
     )
 
@@ -595,7 +604,7 @@ class SwathDefinition(GeographicDefinition, BaseProduct):
         - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
     """
     # Validate required keys when loaded from disk
-    _required_kwargs = (
+    required_kwargs = (
         "swath_name",
         "longitude",
         "latitude",
@@ -604,10 +613,10 @@ class SwathDefinition(GeographicDefinition, BaseProduct):
         "swath_columns",
     )
 
-    _loadable_kwargs = (
+    loadable_kwargs = (
     )
 
-    _cleanup_kwargs = (
+    cleanup_kwargs = (
         "longitude",
         "latitude",
     )
@@ -644,7 +653,7 @@ class GridDefinition(GeographicDefinition):
         - origin_x: X-coordinate of the upper-left corner of the grid in the projection domain
         - origin_y: Y-coordinate of the upper-left corner of the grid in the projection domain
     """
-    _required_kwargs = (
+    required_kwargs = (
         "grid_name",
         "proj4_definition",
         "height",
@@ -761,7 +770,7 @@ class GridDefinition(GeographicDefinition):
 def remove_json(json_filename, binary_only=False):
     obj = BaseP2GObject.load(json_filename)
     if not binary_only:
-        for json_key in obj._loadable_kwargs:
+        for json_key in obj.loadable_kwargs:
             if isinstance(obj[json_key], (str, unicode)):
                 remove_json(obj[json_key], binary_only=False)
         LOG.info("Deleting JSON file '%s'", json_filename)

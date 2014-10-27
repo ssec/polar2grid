@@ -95,8 +95,8 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
         lon_fill_in=None,
         lat_fill_in=None,
         fill_out=-1e30,
-        rows_fn=None,
-        cols_fn=None,
+        rows_out=None,
+        cols_out=None,
         prefix="ll2cr_"):
     """Similar to GDAL, y pixel resolution should be negative for downward
     images.
@@ -139,12 +139,10 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
 
     # Memory map the output filenames
     # cols then rows in FBF filenames
-    if rows_fn is None:
-        rows_fn = prefix + "_rows.real4.%d.%d" % lat_arr.shape[::-1]
-    rows_arr = numpy.memmap(rows_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
-    if cols_fn is None:
-        cols_fn = prefix + "_cols.real4.%d.%d" % lat_arr.shape[::-1]
-    cols_arr = numpy.memmap(cols_fn, dtype=dtype, mode="w+", shape=lat_arr.shape)
+    if rows_out is None:
+        rows_out = numpy.zeros_like(lat_arr)
+    if cols_out is None:
+        cols_out = numpy.zeros_like(lon_arr)
 
     good_mask = (lon_arr != lon_fill_in) & (lat_arr != lat_fill_in)
 
@@ -264,8 +262,8 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
     ll2cr_info["grid_height"] = grid_height
     ll2cr_info["pixel_size_x"] = pixel_size_x
     ll2cr_info["pixel_size_y"] = pixel_size_y
-    ll2cr_info["rows_filename"] = rows_fn
-    ll2cr_info["cols_filename"] = cols_fn
+    ll2cr_info["rows_array"] = rows_out
+    ll2cr_info["cols_array"] = cols_out
 
     # Do calculations for each row in the source file
     # Go per row to save on memory, disk load
@@ -280,10 +278,10 @@ def ll2cr(lon_arr, lat_arr, proj4_str,
 
         # good_mask here is True for good values
         good_mask[:] =  ~( ((lon_arr[idx] == lon_fill_in) | (lat_arr[idx] == lon_fill_in)) )
-        cols_arr[idx,good_mask] = x_tmp[good_mask]
-        cols_arr[idx,~good_mask] = fill_out
-        rows_arr[idx,good_mask] = y_tmp[good_mask]
-        rows_arr[idx,~good_mask] = fill_out
+        cols_out[idx,good_mask] = x_tmp[good_mask]
+        cols_out[idx,~good_mask] = fill_out
+        rows_out[idx,good_mask] = y_tmp[good_mask]
+        rows_out[idx,~good_mask] = fill_out
 
     log.info("row and column calculation complete")
 

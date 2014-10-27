@@ -71,15 +71,11 @@ def create_netcdf(nc_name, image, template, start_dt,
         LOG.error("Template does not exist %s" % template)
         raise ValueError("Template does not exist %s" % template)
 
-    if os.path.exists(nc_name):
-        LOG.error("Output file %s already exists" % nc_name)
-        raise ValueError("Output file %s already exists" % nc_name)
-
     try:
         nc = create_nc_from_ncml(nc_name, template, format="NETCDF3_CLASSIC")
     except StandardError:
         LOG.error("Could not create base netcdf from template %s" % template)
-        raise ValueError("Could not create base netcdf from template %s" % template)
+        raise
 
     if nc.file_format != "NETCDF3_CLASSIC":
         LOG.warning("Expected file format NETCDF3_CLASSIC got %s" % (nc.file_format))
@@ -176,18 +172,28 @@ class Backend(roles.BackendRole):
 
 
 class Backend2(roles.BackendRole2):
-    def __init__(self, backend_configs=None, rescale_configs=None):
+    def __init__(self, backend_configs=None, rescale_configs=None,
+                 overwrite_existing=False, keep_intermediate=False, exit_on_error=True):
         backend_configs = backend_configs or [DEFAULT_AWIPS_CONFIG2]
         rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
         # FIXME: Redo the config reader
         self.awips_config_reader = AWIPSConfigReader2(*backend_configs)
         self.rescaler = Rescaler2(*rescale_configs)
+        self.overwrite_existing = overwrite_existing
+        self.keep_intermediate = keep_intermediate
+        self.exit_on_error = exit_on_error
 
     def create_output_from_scene(self, gridded_scene):
         output_filenames = []
         for product_name, gridded_product in gridded_scene.items():
-            output_fn = self.create_output_from_product(gridded_product)
-            output_filenames.append(output_fn)
+            try:
+                output_fn = self.create_output_from_product(gridded_product)
+                output_filenames.append(output_fn)
+            except StandardError:
+                LOG.error("Could not create output for '%s'", product_name)
+                if self.exit_on_error:
+                    raise
+                continue
         return output_filenames
 
     def create_output_from_product(self, gridded_product, ncml_template=None):
@@ -197,19 +203,26 @@ class Backend2(roles.BackendRole2):
         awips_info = self.awips_config_reader.get_product_options(gridded_product)
         output_filename = gridded_product["begin_time"].strftime(awips_info["filename_format"])
 
-        LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
-        data = self.rescaler.rescale_product(gridded_product, data_type, inc_by_one=inc_by_one, fill_value=fill_value)
+        if not self.overwrite_existing and os.path.isfile(output_filename):
+            LOG.error("AWIPS file already exists: %s", output_filename)
+            raise RuntimeError("AWIPS file already exists: %s" % (output_filename,))
 
         # Create the geotiff
         try:
+            LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
+            data = self.rescaler.rescale_product(gridded_product, data_type, inc_by_one=inc_by_one, fill_value=fill_value)
+
             LOG.info("Writing product %s to AWIPS NetCDF file", gridded_product["product_name"])
             create_netcdf(output_filename, data, ncml_template or awips_info["ncml_template"],
                           gridded_product["begin_time"],
                           awips_info["awips2_channel"], awips_info["awips2_source"], awips_info["awips2_satellite_name"])
-            return output_filename
         except StandardError:
             LOG.error("Error while filling in NC file with data")
+            if not self.keep_intermediate and os.path.isfile(output_filename):
+                os.remove(output_filename)
             raise
+
+        return output_filename
 
 
 def add_backend_argument_groups(parser):

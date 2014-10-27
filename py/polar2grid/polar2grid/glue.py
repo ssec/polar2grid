@@ -119,7 +119,10 @@ def main(argv=sys.argv[1:]):
                         help="List of files or directories to extract data from")
     parser.add_argument('-d', dest='data_files', nargs="+", default=[], action=ExtendAction,
                         help="Data directories to look for input data files (equivalent to -f)")
-    args = parser.parse_args(argv, subgroup_titles=group_titles)
+    parser.add_argument('--ignore-error', dest="exit_on_error", action="store_false",
+                        help="if a non-fatal error is encountered ignore it and continue for the remaining products")
+    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
+    args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=group_titles)
 
     if not args.data_files:
         # FUTURE: When the -d flag is removed this won't be needed because -f will be required

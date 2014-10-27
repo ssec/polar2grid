@@ -372,7 +372,7 @@ def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
         'nearest' : run_fornav_py,
     }
     if method not in methods:
-        log.error("Unknown remapping method: '%s'", method)
+        LOG.error("Unknown remapping method: '%s'", method)
         raise ValueError("Unknown remapping method: '%s'" % method)
     remap_method = methods[method]
 
@@ -518,16 +518,24 @@ def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
     return fornav_output
 
 
+def run_fornav(swath_definition, grid_definition, overwrite_existing, keep_intermediate=False):
+    # TODO: Move this to its own file probably, maybe when fornav is rewritten in python
+    pass
+
+
 # FUTURE: Create a role for this in polar2grid.core.roles
 class Remapper(object):
-    def __init__(self, grid_configs=[]):
+    def __init__(self, grid_configs=[],
+                 overwrite_existing=False, keep_intermediate=False, exit_on_error=True, **kwargs):
         from .grids.grids import Cartographer
         self.cart = Cartographer(*grid_configs)
+        self.overwrite_existing = overwrite_existing
+        self.keep_intermediate = keep_intermediate
+        self.exit_on_error = exit_on_error
         self.methods = {
             "ewa": self._remap_scene_ewa,
             "nearest": self._remap_scene_nearest,
         }
-
 
     def remap_scene(self, swath_scene, grid_name, **kwargs):
         method = kwargs.pop("remap_method", "ewa")
@@ -538,6 +546,71 @@ class Remapper(object):
 
         func = self.methods[method]
         return func(swath_scene, grid_name, **kwargs)
+
+    def ll2cr(self, swath_definition, grid_definition):
+        geo_id = swath_definition["swath_name"]
+        grid_name = grid_definition["grid_name"]
+        LOG.debug("Swath '%s' -> Grid '%s'", geo_id, grid_name)
+        rows_fn = "ll2cr_rows_%s_%s.dat" % (grid_name, geo_id)
+        cols_fn = "ll2cr_cols_%s_%s.dat" % (grid_name, geo_id)
+        lon_arr = swath_definition.get_longitude_array()
+        lat_arr = swath_definition.get_latitude_array()
+
+        if not self.overwrite_existing and os.path.isfile(rows_fn):
+            LOG.error("Intermediate remapping file already exists: %s" % (rows_fn,))
+            raise RuntimeError("Intermediate remapping file already exists: %s" % (rows_fn,))
+        if not self.overwrite_existing and os.path.isfile(cols_fn):
+            LOG.error("Intermediate remapping file already exists: %s" % (cols_fn,))
+            raise RuntimeError("Intermediate remapping file already exists: %s" % (cols_fn,))
+        try:
+            rows_arr = numpy.memmap(rows_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
+            cols_arr = numpy.memmap(cols_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
+            proj4_def = grid_definition["proj4_definition"]
+            cell_width = grid_definition["cell_width"]
+            cell_height = grid_definition["cell_height"]
+            origin_x = grid_definition["origin_x"]
+            origin_y = grid_definition["origin_y"]
+            width = grid_definition["width"]
+            height = grid_definition["height"]
+            ll2cr_output = gator.ll2cr(lon_arr, lat_arr, proj4_def,
+                                       pixel_size_x=cell_width, pixel_size_y=cell_height,
+                                       grid_origin_x=origin_x, grid_origin_y=origin_y,
+                                       grid_width=width, grid_height=height,
+                                       rows_out=rows_arr, cols_out=cols_arr, fill_in=numpy.nan
+            )
+
+            # Update our definition of the grid with what was found by ll2cr
+            if not grid_definition.is_static:
+                grid_definition["height"] = ll2cr_output["grid_height"]
+                grid_definition["width"] = ll2cr_output["grid_width"]
+                grid_definition["cell_height"] = ll2cr_output["pixel_size_y"]
+                grid_definition["cell_width"] = ll2cr_output["pixel_size_x"]
+                grid_definition["origin_x"] = ll2cr_output["grid_origin_x"]
+                grid_definition["origin_y"] = ll2cr_output["grid_origin_y"]
+        except StandardError:
+            LOG.error("Unexpected error encountered during ll2cr gridding for %s -> %s", geo_id, grid_name)
+            LOG.debug("ll2cr error exception: ", exc_info=True)
+            if not self.keep_intermediate and os.path.isfile(rows_fn):
+                os.remove(rows_fn)
+            if not self.keep_intermediate and os.path.isfile(cols_fn):
+                os.remove(rows_fn)
+            raise
+
+        return rows_fn, cols_fn
+
+    def _add_prefix(self, prefix, *filepaths):
+        return [os.path.join(os.path.dirname(x), prefix + os.path.basename(x)) for x in filepaths]
+
+    def _safe_remove(self, *filepaths):
+        if not self.keep_intermediate:
+            for fp in filepaths:
+                if os.path.isfile(fp):
+                    try:
+                        LOG.info("Removing intermediate file '%s'...", fp)
+                        os.remove(fp)
+                    except OSError:
+                        LOG.warning("Could not remove intermediate files that aren't needed anymore.")
+                        LOG.debug("Intermediate output file remove exception:", exc_info=True)
 
     def _remap_scene_ewa(self, swath_scene, grid_name, **kwargs):
         # TODO: Make methods more flexible than just a function call
@@ -552,94 +625,82 @@ class Remapper(object):
             product_groups[geo_id].append(product_name)
 
         for geo_id, product_names in product_groups.items():
-            LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
-            LOG.debug("Swath name: %s", geo_id)
-
             # TODO: Move into it's own function if this gets complicated
             # TODO: Add some multiprocessing
-            # TODO: Allow ll2cr to return arrays
-            grid_def = self.cart.get_grid_definition(grid_name)
-            swath_def = swath_scene[product_names[0]]["swath_definition"]
-            lon_arr = swath_def.get_longitude_array()
-            lat_arr = swath_def.get_latitude_array()
-            rows_fn = "ll2cr_rows_%s_%s.dat" % (grid_name, geo_id)
-            cols_fn = "ll2cr_cols_%s_%s.dat" % (grid_name, geo_id)
-            ll2cr_output = gator.ll2cr(lon_arr, lat_arr, grid_def["proj4_definition"],
-                                     pixel_size_x=grid_def["cell_width"], pixel_size_y=grid_def["cell_height"],
-                                     grid_origin_x=grid_def["origin_x"], grid_origin_y=grid_def["origin_y"],
-                                     grid_width=grid_def["width"], grid_height=grid_def["height"],
-                                     rows_fn=rows_fn, cols_fn=cols_fn,
-                                     fill_in=numpy.nan
-            )
+            try:
+                LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
+                grid_def = self.cart.get_grid_definition(grid_name)
+                swath_def = swath_scene[product_names[0]]["swath_definition"]
+                rows_fn, cols_fn = self.ll2cr(swath_def, grid_def)
+            except StandardError:
+                LOG.error("Remapping error")
+                if self.exit_on_error:
+                    raise
+                continue
 
-            # Update our definition of the grid with what was found by ll2cr
-            # FIXME: Obvious that this should be its own helper function along with the ll2cr call
-            grid_def["height"] = ll2cr_output["grid_height"]
-            grid_def["width"] = ll2cr_output["grid_width"]
-            grid_def["cell_height"] = ll2cr_output["pixel_size_y"]
-            grid_def["cell_width"] = ll2cr_output["pixel_size_x"]
-            grid_def["origin_x"] = ll2cr_output["grid_origin_x"]
-            grid_def["origin_y"] = ll2cr_output["grid_origin_y"]
+            # Run fornav for all of the products at once
+            LOG.info("Running fornav for the following products:\n\t%s", "\n\t".join(product_names))
+            # XXX: May have to do something smarter if there are float products and integer products together (is_category property on SwathProduct?)
+            product_filepaths = list(swath_scene.get_data_filepaths(product_names))
+            fornav_filepaths = self._add_prefix("grid_%s_" % (grid_name,), *product_filepaths)
+            for fp in fornav_filepaths:
+                if not self.overwrite_existing and os.path.isfile(fp):
+                    LOG.error("Intermediate remapping file already exists: %s" % (fp,))
+                    raise RuntimeError("Intermediate remapping file already exists: %s" % (fp,))
 
-            # Prepare the products
-            for product_name in product_names:
+            rows_per_scan = swath_def.get("rows_per_scan", 0) or 2
+            edge_res = swath_def.get("edge_resolution", None)
+            fornav_D = kwargs.get("fornav_D", None)
+            if fornav_D is None:
+                if edge_res is not None:
+                    if grid_def.is_latlong:
+                        fornav_D = (edge_res / 2) / grid_def.cell_width_meters
+                    else:
+                        fornav_D = (edge_res / 2) / grid_def["cell_width"]
+                    LOG.debug("Fornav 'D' option dynamically set to %f", fornav_D)
+
+            try:
+                run_fornav_c(
+                    len(product_filepaths),
+                    swath_def["swath_columns"],
+                    swath_def["swath_rows"]/rows_per_scan,
+                    rows_per_scan,
+                    cols_fn,
+                    rows_fn,
+                    product_filepaths,
+                    grid_def["width"],
+                    grid_def["height"],
+                    fornav_filepaths,
+                    swath_data_type_1="f4",
+                    swath_fill_1=swath_scene.get_fill_value(product_names),
+                    grid_fill_1=numpy.nan,
+                    weight_delta_max=fornav_D,
+                    weight_distance_max=kwargs.get("fornav_d", None),
+                    maximum_weight_mode=kwargs.get("maximum_weight_mode", None),
+                    # We only specify start_scan for the 'image'/channel
+                    # data because ll2cr is not 'forced' so it only writes
+                    # useful data to the output cols/rows files
+                    start_scan=(0, 0),
+                )
+            except StandardError:
+                LOG.error("Remapping error")
+                self._safe_remove(rows_fn, cols_fn, *fornav_filepaths)
+                if self.exit_on_error:
+                    raise
+                continue
+
+            # Give the gridded product ownership of the remapped data
+            for product_name, fornav_fp in zip(product_names, fornav_filepaths):
                 swath_product = swath_scene[product_name]
                 gridded_product = GriddedProduct()
                 gridded_product.from_swath_product(swath_product)
                 gridded_product["grid_definition"] = grid_def
                 gridded_product["fill_value"] = numpy.nan
+                gridded_product["grid_data"] = fornav_fp
                 gridded_scene[product_name] = gridded_product
 
-            # Run fornav for all of the products at once
-            LOG.info("Running fornav for the following products:\n\t%s", "\n\t".join(product_names))
-            # XXX: May have to do something smarter if there are float products and integer products together
-            product_filepaths = [swath_scene[product_name]["swath_data"] for product_name in product_names]
-            fornav_prefix = "grid_%s_" % (grid_name,)
-            fornav_filepaths = [os.path.join(os.path.dirname(x), fornav_prefix + os.path.basename(x)) for x in product_filepaths]
-            rows_per_scan = swath_def.get("rows_per_scan", 0) or 2
-            edge_res = swath_def.get("edge_resolution", None)
-            if kwargs.get("fornav_D", None) is None:
-                if edge_res is not None:
-                    if grid_def.is_latlong:
-                        kwargs["fornav_D"] = (edge_res / 2) / grid_def.cell_width_meters
-                    else:
-                        kwargs["fornav_D"] = (edge_res / 2) / grid_def["cell_width"]
-                    LOG.debug("Fornav 'D' option dynamically set to %f", kwargs["fornav_D"])
-
-            run_fornav_c(
-                len(product_filepaths),
-                swath_def["swath_columns"],
-                swath_def["swath_rows"]/rows_per_scan,
-                rows_per_scan,
-                cols_fn,
-                rows_fn,
-                product_filepaths,
-                grid_def["width"],
-                grid_def["height"],
-                fornav_filepaths,
-                swath_data_type_1="f4",
-                swath_fill_1=swath_scene.get_fill_value(product_names),
-                grid_fill_1=numpy.nan,
-                weight_delta_max=kwargs.get("fornav_D", None),
-                weight_distance_max=kwargs.get("fornav_d", None),
-                select_single_samples=kwargs.get("do_single_sample", None),
-                # We only specify start_scan for the 'image'/channel
-                # data because ll2cr is not 'forced' so it only writes
-                # useful data to the output cols/rows files
-                start_scan=(0, 0),
-            )
-
-            # Give the gridded product ownership of the remapped data
-            for product_name, fornav_fp in zip(product_names, fornav_filepaths):
-                gridded_scene[product_name]["grid_data"] = fornav_fp
-
             # Remove ll2cr files now that we are done with them
-            try:
-                os.remove(rows_fn)
-                os.remove(cols_fn)
-            except OSError:
-                LOG.warning("Could not remove ll2cr output files that aren't needed anymore.")
-                LOG.debug("ll2cr output file remove exception:", exc_info=True)
+            self._safe_remove(rows_fn, cols_fn)
 
         return gridded_scene
 
@@ -661,29 +722,16 @@ class Remapper(object):
 
             # TODO: Move into it's own function if this gets complicated
             # TODO: Add some multiprocessing
-            # TODO: Allow ll2cr to return arrays
-            grid_def = self.cart.get_grid_definition(grid_name)
-            swath_def = swath_scene[product_names[0]]["swath_definition"]
-            lon_arr = swath_def.get_longitude_array()
-            lat_arr = swath_def.get_latitude_array()
-            rows_fn = "ll2cr_rows_%s_%s.dat" % (grid_name, geo_id)
-            cols_fn = "ll2cr_cols_%s_%s.dat" % (grid_name, geo_id)
-            ll2cr_output = gator.ll2cr(lon_arr, lat_arr, grid_def["proj4_definition"],
-                                       pixel_size_x=grid_def["cell_width"], pixel_size_y=grid_def["cell_height"],
-                                       grid_origin_x=grid_def["origin_x"], grid_origin_y=grid_def["origin_y"],
-                                       grid_width=grid_def["width"], grid_height=grid_def["height"],
-                                       rows_fn=rows_fn, cols_fn=cols_fn,
-                                       fill_in=numpy.nan
-            )
-
-            # Update our definition of the grid with what was found by ll2cr
-            # FIXME: Obvious that this should be its own helper function along with the ll2cr call
-            grid_def["height"] = ll2cr_output["grid_height"]
-            grid_def["width"] = ll2cr_output["grid_width"]
-            grid_def["cell_height"] = ll2cr_output["pixel_size_y"]
-            grid_def["cell_width"] = ll2cr_output["pixel_size_x"]
-            grid_def["origin_x"] = ll2cr_output["grid_origin_x"]
-            grid_def["origin_y"] = ll2cr_output["grid_origin_y"]
+            try:
+                LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
+                grid_def = self.cart.get_grid_definition(grid_name)
+                swath_def = swath_scene[product_names[0]]["swath_definition"]
+                rows_fn, cols_fn = self.ll2cr(swath_def, grid_def)
+            except StandardError:
+                LOG.error("Remapping error")
+                if self.exit_on_error:
+                    raise
+                continue
 
             LOG.info("Running nearest neighbor for the following products:\n\t%s", "\n\t".join(product_names))
             grid_x, grid_y = numpy.mgrid[:grid_def["height"], :grid_def["width"]]
@@ -701,40 +749,49 @@ class Remapper(object):
                 else:
                     distance_upper_bound = 3.0
                 kwargs["distance_upper_bound"] = distance_upper_bound
-            prefix = "grid_%s_" % (grid_name,)
-            # Prepare the products
-            for product_name in product_names:
-                LOG.debug("Running nearest neighbor on '%s'", product_name)
-                swath_product = swath_scene[product_name]
-                gridded_product = GriddedProduct()
-                gridded_product.from_swath_product(swath_product)
-                gridded_product["grid_definition"] = grid_def
-                gridded_product["fill_value"] = numpy.nan
 
-                # XXX: May have to do something smarter if there are float products and integer products together
-                product_filepath = swath_scene[product_name]["swath_data"]
-                output_fn = os.path.join(os.path.dirname(product_filepath), prefix + os.path.basename(product_filepath))
-                image_array = swath_scene[product_name].get_data_array()
-                # FIXME: Use the "edge_resolution" to calculate the number of grid cells for distance upper bound
-                output_array = griddata((cols_array, rows_array), image_array.flatten(), (grid_y, grid_x),
-                                        method='nearest', fill_value=gridded_product["fill_value"],
-                                        distance_upper_bound=kwargs["distance_upper_bound"])
-                output_array.tofile(output_fn)
-                # Give the gridded product ownership of the remapped data
-                gridded_product["grid_data"] = output_fn
-                gridded_scene[product_name] = gridded_product
-                # hopefully force garbage collection
-                del output_array
+            product_filepaths = swath_scene.get_data_filepaths(product_names)
+            output_filepaths = self._add_prefix("grid_%s_" % (grid_name,), *product_filepaths)
+
+            # Prepare the products
+            for product_name, output_fn in izip(product_names, output_filepaths):
+                LOG.debug("Running nearest neighbor on '%s'", product_name)
+                if not self.overwrite_existing and os.path.isfile(output_fn):
+                    LOG.error("Intermediate remapping file already exists: %s" % (output_fn,))
+                    raise RuntimeError("Intermediate remapping file already exists: %s" % (output_fn,))
+
+                try:
+                    # XXX: May have to do something smarter if there are float products and integer products together
+                    image_array = swath_scene[product_name].get_data_array()
+                    output_array = griddata((cols_array, rows_array), image_array.flatten(), (grid_y, grid_x),
+                                            method='nearest', fill_value=numpy.nan,
+                                            distance_upper_bound=kwargs["distance_upper_bound"])
+                    output_array.tofile(output_fn)
+
+                    # Give the gridded product ownership of the remapped data
+                    swath_product = swath_scene[product_name]
+                    gridded_product = GriddedProduct()
+                    gridded_product.from_swath_product(swath_product)
+                    gridded_product["grid_definition"] = grid_def
+                    gridded_product["fill_value"] = numpy.nan
+                    gridded_product["grid_data"] = output_fn
+                    gridded_scene[product_name] = gridded_product
+
+                    # hopefully force garbage collection
+                    del output_array
+                except StandardError:
+                    LOG.error("Remapping error")
+                    self._safe_remove(rows_fn, cols_fn, output_fn)
+                    if not self.keep_intermediate and os.path.isfile(output_fn):
+                        os.remove(output_fn)
+                    if self.exit_on_error:
+                        raise
+                    continue
 
                 LOG.debug("Done running nearest neighbor on '%s'", product_name)
 
             # Remove ll2cr files now that we are done with them
-            try:
-                os.remove(rows_fn)
-                os.remove(cols_fn)
-            except OSError:
-                LOG.warning("Could not remove ll2cr output files that aren't needed anymore.")
-                LOG.debug("ll2cr output file remove exception:", exc_info=True)
+            self._safe_remove(rows_fn, cols_fn)
 
         return gridded_scene
 
@@ -758,6 +815,8 @@ def add_remap_argument_groups(parser):
                        help="Specify the -D option for fornav")
     group.add_argument('--fornav-d', dest='fornav_d', default=SUPPRESS, type=float,
                        help="Specify the -d option for fornav")
+    group.add_argument('--maximum-weight-mode', dest="maximum_weight_mode", default=SUPPRESS, action="store_true",
+                       help="Use maximum weight mode in fornav (-m)")
     group.add_argument("--distance-upper-bound", dest="distance_upper_bound", )
     return ["Remapping Initialization", "Remapping"]
 

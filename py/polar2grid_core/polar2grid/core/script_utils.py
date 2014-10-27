@@ -233,7 +233,14 @@ class ArgumentParser(argparse.ArgumentParser):
         return these_actions
 
     def parse_args(self, *args, **kwargs):
+        """Custom argument parsing for polar2grid basic behavior.
+
+        :param subgroup_titles: Groups and their arguments that will be put
+                                in a separate dictionary in the 'subgroup_args' attribute
+        :param global_keywords: Keywords/arguments that should be added to all subgroup dictionaries
+        """
         subgroup_titles = kwargs.pop("subgroup_titles", [])
+        global_keywords = kwargs.pop("global_keywords", [])
         args = super(ArgumentParser, self).parse_args(*args, **kwargs)
         # a dictionary that holds arguments from the specified subgroups (defaultdict for easier user by caller)
         args.subgroup_args = defaultdict(dict)
@@ -250,6 +257,12 @@ class ArgumentParser(argparse.ArgumentParser):
                 if hasattr(args, action.dest):
                     subgroup_args[action.dest] = getattr(args, action.dest)
                     delattr(args, action.dest)
+
+            # Add 'global' arguments
+            for kw in global_keywords:
+                if hasattr(args, kw):
+                    subgroup_args[kw] = getattr(args, kw)
+
             args.subgroup_args[subgroup_title] = subgroup_args
 
         return args
@@ -261,11 +274,9 @@ def create_basic_parser(*args, **kwargs):
                         help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_argument('-l', '--log', dest="log_fn", default=None,
                         help="specify the log filename")
-    #parser.add_argument('--keep-intermediate', dest="keep_intermediate", default=False,
     parser.add_argument('--debug', dest="keep_intermediate", default=False,
                         action='store_true',
                         help="Keep intermediate files for future use.")
-    # parser.add_argument('--debug', dest="debug_mode", default=False,
-    #                     action='store_true',
-    #                     help="Enter debug mode. Keeping intermediate files.")
+    parser.add_argument('--overwrite', dest="overwrite_existing", action="store_true",
+                        help="Overwrite intermediate or output files if they exist already")
     return parser

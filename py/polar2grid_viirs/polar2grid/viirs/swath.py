@@ -427,7 +427,8 @@ PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_btemp
 class Frontend(object):
     DEFAULT_FILE_READER = VIIRSSDRMultiReader
 
-    def __init__(self, search_paths=None, keep_intermediate=False, use_terrain_corrected=True, **kwargs):
+    def __init__(self, search_paths=None, use_terrain_corrected=True,
+                 overwrite_existing=False, keep_intermediate=False, exit_on_error=True, **kwargs):
         """Initialize the frontend.
 
         For each search path, check if it exists and that it is
@@ -444,7 +445,9 @@ class Frontend(object):
         if kwargs.get("frontend_configs", None) is not None:
             raise NotImplementedError("Specifying frontend configuration files is not supported for this frontend yet.")
 
+        self.overwrite_existing = overwrite_existing
         self.keep_intermediate = keep_intermediate
+        self.exit_on_error = exit_on_error
         self.use_terrain_corrected = use_terrain_corrected
         search_paths = search_paths or ['.']
 
@@ -468,14 +471,6 @@ class Frontend(object):
             self.file_readers[file_type] = cls(file_type_info)
         # Don't modify the passed list (we use in place operations)
         file_paths_left = []
-        # for fp in file_paths:
-        #     h = HDF5Reader(fp)
-        #     for file_type, file_reader in self.file_readers.items():
-        #         if file_reader.handles_file(h, file_reader.file_type_info):
-        #             file_reader.add_file(fp)
-        #             break
-        #     else:
-        #         file_paths_left.append(fp)
         for fp in file_paths:
             h = HDF5Reader(fp)
             for data_path, file_type in guidebook.DATA_PATHS.items():
@@ -655,7 +650,7 @@ class Frontend(object):
     def add_swath_to_scene(self, meta_data, one_swath, products_created):
         meta_data[one_swath["product_name"]] = one_swath
 
-    def create_scene(self, products=None):
+    def create_scene(self, products=None, **kwargs):
         LOG.info("Loading scene data...")
         # If the user didn't provide the products they want, figure out which ones we can create
         if products is None:

@@ -305,22 +305,31 @@ class Backend(roles.BackendRole):
 
 
 class Backend2(roles.BackendRole2):
-    def __init__(self, rescale_configs=None):
+    def __init__(self, rescale_configs=None, overwrite_existing=False, keep_intermediate=False, exit_on_error=True):
         self.rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
+        self.overwrite_existing = overwrite_existing
+        self.keep_intermediate = keep_intermediate
+        self.exit_on_error = exit_on_error
         self.rescaler = Rescaler2(*self.rescale_configs)
 
     def create_output_from_scene(self, gridded_scene, output_pattern=None, inc_by_one=None, data_type=None,
-                                 fill_value=0):
+                                 fill_value=0, **kwargs):
         output_filenames = []
         for product_name, gridded_product in gridded_scene.items():
-            output_fn = self.create_output_from_product(gridded_product, output_pattern=output_pattern,
-                                                        inc_by_one=inc_by_one, data_type=data_type,
-                                                        fill_value=fill_value)
-            output_filenames.append(output_fn)
+            try:
+                output_fn = self.create_output_from_product(gridded_product, output_pattern=output_pattern,
+                                                            inc_by_one=inc_by_one, data_type=data_type,
+                                                            fill_value=fill_value)
+                output_filenames.append(output_fn)
+            except StandardError:
+                LOG.error("Could not create output for '%s'", product_name)
+                if self.exit_on_error:
+                    raise
+                continue
         return output_filenames
 
     def create_output_from_product(self, gridded_product, output_pattern=None,
-                                   data_type=None, inc_by_one=None, fill_value=0):
+                                   data_type=None, inc_by_one=None, fill_value=0, **kwargs):
         data_type = data_type or DTYPE_UINT8
         data_type = str_to_dtype(data_type)
         etype = np2etype[data_type]
@@ -340,18 +349,23 @@ class Backend2(roles.BackendRole2):
         else:
             output_filename = output_pattern
 
-        if os.path.isfile(output_filename):
+        if not self.overwrite_existing and os.path.isfile(output_filename):
             LOG.error("Geotiff file already exists: %s", output_filename)
             raise RuntimeError("Geotiff file already exists: %s" % (output_filename,))
 
-        LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
-        data = self.rescaler.rescale_product(gridded_product, data_type, inc_by_one=inc_by_one, fill_value=fill_value)
+        try:
+            LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
+            data = self.rescaler.rescale_product(gridded_product, data_type, inc_by_one=inc_by_one, fill_value=fill_value)
 
-        # Create the geotiff
-        # X and Y rotation are 0 in most cases so we just hard-code it
-        geotransform = (grid_def["origin_x"], grid_def["cell_width"], 0,
-                        grid_def["origin_y"], 0, grid_def["cell_height"])
-        create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform, etype=etype)
+            # Create the geotiff
+            # X and Y rotation are 0 in most cases so we just hard-code it
+            geotransform = (grid_def["origin_x"], grid_def["cell_width"], 0,
+                            grid_def["origin_y"], 0, grid_def["cell_height"])
+            create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform, etype=etype)
+        except StandardError:
+            if not self.keep_intermediate and os.path.isfile(output_filename):
+                os.remove(output_filename)
+
         return output_filename
 
 
