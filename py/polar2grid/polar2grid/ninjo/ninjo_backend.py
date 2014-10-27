@@ -45,7 +45,7 @@ __docformat__ = "restructuredtext en"
 from polar2grid.core import Workspace,roles
 from polar2grid.core.time_utils import utc_now
 from polar2grid.core.constants import *
-from polar2grid.core.rescale import Rescaler
+from polar2grid.core.rescale import RescalerOld
 from polar2grid.core.dtype import clip_to_data_type
 from libtiff import libtiff_ctypes as libtiff
 from libtiff.libtiff_ctypes import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
@@ -480,7 +480,7 @@ class Backend(roles.BackendRole):
         # Instatiate the rescaler
         self.fill_in  = fill_value
         self.fill_out = DEFAULT_FILL_VALUE
-        self.rescaler = Rescaler(self.rescale_config,
+        self.rescaler = RescalerOld(self.rescale_config,
                 fill_in=self.fill_in, fill_out=self.fill_out
                 )
 

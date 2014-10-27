@@ -73,8 +73,8 @@ setup(
             'modis2awips = polar2grid.modis2awips:main'
         ],
         'polar2grid.backend_class': [
-            'gtiff=polar2grid.gtiff_backend:Backend2',
-            'awips=polar2grid.awips.awips_netcdf:Backend2'
+            'gtiff=polar2grid.gtiff_backend:Backend',
+            'awips=polar2grid.awips.awips_netcdf:Backend'
         ],
         'polar2grid.backend_arguments': [
             'gtiff=polar2grid.gtiff_backend:add_backend_argument_groups',

@@ -41,7 +41,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-# from .viirs_imager_to_swath import Frontend
+from polar2grid.viirs.swath import Frontend, add_frontend_argument_groups
 
 # Configure a null handler in case someone is using this as a library (i.e. no warning about not configuring logging)
 import logging

@@ -354,7 +354,7 @@ def ndvi_scale (data,
     return data
 
 
-class Rescaler2(roles.INIConfigReader):
+class Rescaler(roles.INIConfigReader):
     # Fields used to match a product object to it's correct configuration
     id_fields = (
         "product_name",
@@ -395,7 +395,7 @@ class Rescaler2(roles.INIConfigReader):
         kwargs["float_kwargs"] = self._float_kwargs()
         kwargs["boolean_kwargs"] = self._bool_kwargs()
         log.info("Loading rescale configuration files:\n\t%s", "\n\t".join(rescale_configs))
-        super(Rescaler2, self).__init__(*rescale_configs, **kwargs)
+        super(Rescaler, self).__init__(*rescale_configs, **kwargs)
 
     def _bool_kwargs(self):
         args = {"clip", "flip"}
@@ -482,7 +482,7 @@ class Rescaler2(roles.INIConfigReader):
         return data
 
 
-class Rescaler(roles.RescalerRole):
+class RescalerOld(roles.RescalerRole):
     DEFAULT_FILL_IN = DEFAULT_FILL_IN
     DEFAULT_FILL_OUT = DEFAULT_FILL_OUT
 
@@ -519,7 +519,7 @@ class Rescaler(roles.RescalerRole):
 
     def __init__(self, *args, **kwargs):
         self.inc_by_one = kwargs.pop("inc_by_one", False)
-        super(Rescaler, self).__init__(*args, **kwargs)
+        super(RescalerOld, self).__init__(*args, **kwargs)
 
     def __call__(self, sat, instrument, nav_set_uid, kind, band, data_kind, data,
             fill_in=None, fill_out=None, inc_by_one=None):

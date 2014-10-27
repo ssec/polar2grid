@@ -46,7 +46,7 @@ from polar2grid.core import Workspace
 from polar2grid.core import roles
 from polar2grid.core.constants import *
 from polar2grid.nc import create_nc_from_ncml
-from polar2grid.core.rescale import Rescaler, Rescaler2
+from polar2grid.core.rescale import RescalerOld, Rescaler
 from polar2grid.core.dtype import clip_to_data_type
 from .awips_config import AWIPSConfigReader, AWIPSConfigReader2, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, CONFIG_FILE2 as DEFAULT_AWIPS_CONFIG2
 
@@ -101,7 +101,8 @@ def create_netcdf(nc_name, image, template, start_dt,
     nc.close()
     LOG.debug("Data transferred into NC file correctly")
 
-class Backend(roles.BackendRole):
+
+class BackendOld(roles.BackendRole):
     removable_file_patterns = [
             "SSEC_AWIPS_*"
             ]
@@ -119,7 +120,7 @@ class Backend(roles.BackendRole):
             rescale_config = DEFAULT_8BIT_RCONFIG
         self.fill_in = fill_value
         self.fill_out = DEFAULT_FILL_VALUE
-        self.rescaler = Rescaler(rescale_config, fill_in=self.fill_in, fill_out=self.fill_out)
+        self.rescaler = RescalerOld(rescale_config, fill_in=self.fill_in, fill_out=self.fill_out)
 
     def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
         """Function for backend-calling script to ask if the backend will be
@@ -171,14 +172,14 @@ class Backend(roles.BackendRole):
             raise
 
 
-class Backend2(roles.BackendRole2):
+class Backend(roles.BackendRole2):
     def __init__(self, backend_configs=None, rescale_configs=None,
                  overwrite_existing=False, keep_intermediate=False, exit_on_error=True):
         backend_configs = backend_configs or [DEFAULT_AWIPS_CONFIG2]
         rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
         # FIXME: Redo the config reader
         self.awips_config_reader = AWIPSConfigReader2(*backend_configs)
-        self.rescaler = Rescaler2(*rescale_configs)
+        self.rescaler = Rescaler(*rescale_configs)
         self.overwrite_existing = overwrite_existing
         self.keep_intermediate = keep_intermediate
         self.exit_on_error = exit_on_error
@@ -264,7 +265,7 @@ def main():
                 del gridded_scene[k]
 
     LOG.info("Initializing backend...")
-    backend = Backend2(**args.subgroup_args["Backend Initialization"])
+    backend = Backend(**args.subgroup_args["Backend Initialization"])
     if isinstance(gridded_scene, GriddedScene):
         backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
     elif isinstance(gridded_scene, GriddedProduct):

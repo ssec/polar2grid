@@ -45,7 +45,7 @@ from osgeo import gdal
 import osr
 import numpy
 
-from polar2grid.core.rescale import Rescaler, Rescaler2
+from polar2grid.core.rescale import RescalerOld, Rescaler
 from polar2grid.core.constants import *
 from polar2grid.core import roles
 from polar2grid.core.dtype import normalize_dtype_string, clip_to_data_type, str_to_dtype
@@ -164,7 +164,7 @@ np2etype = {
     numpy.uint8: gdal.GDT_Byte,
 }
 
-class Backend(roles.BackendRole):
+class BackendOld(roles.BackendRole):
     removable_file_patterns = [
             "*_*_*_*_????????_??????_*.tif"
             ]
@@ -207,7 +207,7 @@ class Backend(roles.BackendRole):
         # Instantiate the rescaler
         self.fill_in = fill_value
         self.fill_out = DEFAULT_FILL_VALUE
-        self.rescaler = Rescaler(self.rescale_config,
+        self.rescaler = RescalerOld(self.rescale_config,
                 fill_in=self.fill_in, fill_out=self.fill_out,
                 inc_by_one=inc_by_one
                 )
@@ -304,13 +304,13 @@ class Backend(roles.BackendRole):
         create_geotiff(data, output_filename, proj4_str, geotransform, etype=etype)
 
 
-class Backend2(roles.BackendRole2):
+class Backend(roles.BackendRole2):
     def __init__(self, rescale_configs=None, overwrite_existing=False, keep_intermediate=False, exit_on_error=True):
         self.rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
         self.overwrite_existing = overwrite_existing
         self.keep_intermediate = keep_intermediate
         self.exit_on_error = exit_on_error
-        self.rescaler = Rescaler2(*self.rescale_configs)
+        self.rescaler = Rescaler(*self.rescale_configs)
 
     def create_output_from_scene(self, gridded_scene, output_pattern=None, inc_by_one=None, data_type=None,
                                  fill_value=0, **kwargs):
@@ -404,7 +404,7 @@ def main():
     gridded_scene = GriddedScene.load(args.scene)
 
     LOG.info("Initializing backend...")
-    backend = Backend2(**args.subgroup_args["Backend Initialization"])
+    backend = Backend(**args.subgroup_args["Backend Initialization"])
     if isinstance(gridded_scene, GriddedScene):
         backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
     elif isinstance(gridded_scene, GriddedProduct):

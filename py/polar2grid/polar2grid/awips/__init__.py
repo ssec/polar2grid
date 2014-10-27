@@ -40,5 +40,5 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .awips_netcdf import Backend
+from .awips_netcdf import BackendOld
 

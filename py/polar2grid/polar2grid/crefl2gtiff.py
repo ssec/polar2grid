@@ -49,7 +49,7 @@ from polar2grid.core.constants import *
 from .grids.grids import create_grid_jobs, Cartographer
 from polar2grid.crefl import Frontend
 import remap
-from .gtiff_backend import Backend
+from .gtiff_backend import BackendOld
 from polar2grid.core.dtype import normalize_dtype_string
 import numpy
 
@@ -87,7 +87,7 @@ def process_data_sets(nav_set_dict,
     nav_set_jobs = {}
     cart     = Cartographer(*grid_configs)
     frontend = Frontend()
-    backend  = Backend(
+    backend  = BackendOld(
             data_type      = data_type,
             output_pattern = output_pattern,
             rescale_config = rescale_config,
@@ -512,7 +512,7 @@ through strftime. Current time if no files.""")
         remove_file_patterns(
                 Frontend.removable_file_patterns,
                 remap.removable_file_patterns,
-                Backend.removable_file_patterns
+                BackendOld.removable_file_patterns
                 )
         return 0
 

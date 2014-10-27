@@ -21,8 +21,8 @@ setup(
     dependency_links=['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points={
         'console_scripts': [],
-        'polar2grid.frontend_class': ['mirs=polar2grid.mirs.mirs2swath:Frontend'],
-        'polar2grid.frontend_arguments': ['mirs=polar2grid.mirs.mirs2swath:add_frontend_argument_groups']
+        'polar2grid.frontend_class': ['mirs=polar2grid.mirs:Frontend'],
+        'polar2grid.frontend_arguments': ['mirs=polar2grid.mirs:add_frontend_argument_groups']
     }
 )
 

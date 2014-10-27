@@ -33,7 +33,7 @@ provided.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.rescale import Rescaler
+from polar2grid.core.rescale import RescalerOld
 from polar2grid.core import roles
 from polar2grid.core.dtype import convert_to_data_type,clip_to_data_type
 from polar2grid.core.constants import *
@@ -84,7 +84,7 @@ class Backend(roles.BackendRole):
         if rescale_config is None:
             self.rescaler = None
         else:
-            self.rescaler = Rescaler(self.rescale_config,
+            self.rescaler = RescalerOld(self.rescale_config,
                     fill_in=self.fill_in, fill_out=self.fill_out,
                     inc_by_one=inc_by_one
                     )
