@@ -578,7 +578,7 @@ class Frontend(object):
 
         LOG.info("Writing product '%s' data to binary file", product_name)
         filename = product_name + ".dat"
-        if os.path.isfile(filename):
+        if not self.overwrite_existing and os.path.isfile(filename):
             LOG.error("Binary file already exists: %s" % (filename,))
             raise RuntimeError("Binary file already exists: %s" % (filename,))
 
@@ -589,7 +589,7 @@ class Frontend(object):
         except StandardError:
             LOG.error("Could not extract data from file. Use '--no-tc' flag if terrain-corrected data is not available")
             LOG.debug("Extraction exception: ", exc_info=True)
-            raise RuntimeError("Could not extract data from file. Use '--no-tc' flag if terrain-corrected data is not available")
+            raise
 
         one_swath = meta.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
@@ -661,7 +661,7 @@ class Frontend(object):
         orig_products = set(products)
         available_products = self.available_product_names
         doable_products = orig_products & set(available_products)
-        for p in (doable_products - orig_products):
+        for p in (orig_products - doable_products):
             LOG.warning("Missing proper data files to create product: %s", p)
         products = list(doable_products)
         if not products:
@@ -714,9 +714,15 @@ class Frontend(object):
                 # already created
                 continue
 
-            LOG.info("Creating data product '%s'", product_name)
-            swath_def = swath_definitions[PRODUCTS[product_name].geo_pair_name]
-            one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
+            try:
+                LOG.info("Creating data product '%s'", product_name)
+                swath_def = swath_definitions[PRODUCTS[product_name].geo_pair_name]
+                one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
+            except StandardError:
+                LOG.error("Could not create raw product '%s'", product_name)
+                if self.exit_on_error:
+                    raise
+                continue
 
             if product_name in products:
                 # the user wants this product
@@ -733,7 +739,9 @@ class Frontend(object):
             except StandardError:
                 LOG.error("Could not create product (unexpected error): '%s'", product_name)
                 LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
-                raise
+                if self.exit_on_error:
+                    raise
+                continue
 
             products_created[product_name] = one_swath
             if product_name in products:

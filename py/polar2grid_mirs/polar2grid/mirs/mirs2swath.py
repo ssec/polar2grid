@@ -322,11 +322,16 @@ class MIRSMultiReader(object):
         :param filename: Filename filename if the file should follow traditional FBF naming conventions
         """
         LOG.info("Writing binary data for %s to file %s", item, filename)
-        with open(filename, "w") as file_obj:
-            file_appender = FileAppender(file_obj, dtype)
-            for file_reader in self.file_readers:
-                single_array = file_reader.get_swath_data(item)
-                file_appender.append(single_array)
+        try:
+            with open(filename, "w") as file_obj:
+                file_appender = FileAppender(file_obj, dtype)
+                for file_reader in self.file_readers:
+                    single_array = file_reader.get_swath_data(item)
+                    file_appender.append(single_array)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
 
         LOG.debug("File %s has shape %r", filename, file_appender.shape)
         return file_appender.shape
@@ -382,19 +387,47 @@ def get_file_type(filepath):
 class Frontend(object):
     """Polar2Grid Frontend object for handling MIRS files.
     """
-    def __init__(self, search_paths=None, **kwargs):
+    def __init__(self, search_paths=None,
+                 overwrite_existing=False, keep_intermediate=False, exit_on_error=False, **kwargs):
         super(Frontend, self).__init__(**kwargs)
+        self.overwrite_existing = overwrite_existing
+        self.keep_intermediate = keep_intermediate
+        self.exit_on_error = exit_on_error
         if not search_paths:
             LOG.info("No files or paths provided as input, will search the current directory...")
             search_paths = ['.']
-        self.recognized_files = {}
+
+        self._load_files(search_paths)
+
+    def _load_files(self, search_paths):
+        recognized_files = {}
         for file_kind, filepath in self.find_all_files(search_paths):
-            if file_kind not in self.recognized_files:
-                self.recognized_files[file_kind] = []
-            self.recognized_files[file_kind].append(filepath)
-        if not self.recognized_files:
-            LOG.error("No useable files provided or found")
-            raise RuntimeError("No useable files provided or found")
+            if file_kind not in recognized_files:
+                recognized_files[file_kind] = []
+            recognized_files[file_kind].append(filepath)
+
+        self.file_readers = {}
+        for file_type, filepaths in recognized_files.items():
+            file_reader_class = FILE_CLASSES[file_type]
+            file_reader = file_reader_class(filenames=filepaths)
+            if len(file_reader):
+                self.file_readers[file_reader.FILE_TYPE] = file_reader
+
+        # Get rid of the readers we aren't using
+        for file_type, file_reader in self.file_readers.items():
+            if not len(file_reader):
+                del self.file_readers[file_type]
+
+        if not self.file_readers:
+            LOG.error("No useable files loaded")
+            raise ValueError("No useable files loaded")
+
+        first_length = len(self.file_readers[self.file_readers.keys()[0]])
+        if not all(len(x) == first_length for x in self.file_readers.values()):
+            LOG.error("Corrupt directory: Varying number of files for each type")
+            ft_str = "\n\t".join("%s: %d" % (ft, len(fr)) for ft, fr in self.file_readers.items())
+            LOG.debug("File types and number of files:\n\t%s", ft_str)
+            raise RuntimeError("Corrupt directory: Varying number of files for each type")
 
     def find_all_files(self, search_paths):
         for p in search_paths:
@@ -426,11 +459,19 @@ class Frontend(object):
     def all_product_names(self):
         return PRODUCTS.keys()
 
-    def _create_swath_definition(self, lon_product, lat_product, file_readers):
+    @property
+    def begin_time(self):
+        return self.file_readers[self.file_readers.keys()[0]].begin_time
+
+    @property
+    def end_time(self):
+        return self.file_readers[self.file_readers.keys()[0]].end_time
+
+    def create_swath_definition(self, lon_product, lat_product):
         product_def = PRODUCTS[lon_product["product_name"]]
-        lon_file_reader = file_readers[product_def.file_type]
+        lon_file_reader = self.file_readers[product_def.file_type]
         product_def = PRODUCTS[lat_product["product_name"]]
-        lat_file_reader = file_readers[product_def.file_type]
+        lat_file_reader = self.file_readers[product_def.file_type]
 
         # sanity check
         for k in ["data_type", "swath_rows", "swath_columns", "rows_per_scan", "fill_value"]:
@@ -461,12 +502,22 @@ class Frontend(object):
 
         return swath_definition
 
-    def _create_raw_swath_object(self, product_name, file_readers, swath_definition):
+    def create_raw_swath_object(self, product_name, swath_definition):
         product_def = PRODUCTS[product_name]
-        file_reader = file_readers[product_def.file_type]
+        file_reader = self.file_readers[product_def.file_type]
         filename = product_name + ".dat"
+        if not self.overwrite_existing and os.path.isfile(filename):
+            LOG.error("Binary file already exists: %s" % (filename,))
+            raise RuntimeError("Binary file already exists: %s" % (filename,))
+
         # TODO: Get the data type from the data or allow the user to specify
-        shape = file_reader.write_var_to_flat_binary(product_def.file_key, filename)
+        try:
+            shape = file_reader.write_var_to_flat_binary(product_def.file_key, filename)
+        except StandardError:
+            LOG.error("Could not extract data from file")
+            LOG.debug("Extraction exception: ", exc_info=True)
+            raise
+
         one_swath = meta.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
             satellite=file_reader.satellite, instrument=file_reader.instrument,
@@ -477,12 +528,24 @@ class Frontend(object):
         )
         return one_swath
 
-    def create_scene(self, products=None, nprocs=1):
+    def create_scene(self, products=None, nprocs=1, **kwargs):
         if nprocs != 1:
             raise NotImplementedError("The MIRS frontend does not support multiple processes yet")
         if products is None:
             products = self.available_product_names
-        products = list(set(products))
+        orig_products = set(products)
+        available_products = self.available_product_names
+        doable_products = orig_products & set(available_products)
+        for p in (orig_products - doable_products):
+            LOG.warning("Missing proper data files to create product: %s", p)
+        products = list(doable_products)
+        if not products:
+            LOG.debug("Original Products:\n\t%r", orig_products)
+            LOG.debug("Available Products:\n\t%r", available_products)
+            LOG.debug("Doable (final) Products:\n\t%r", products)
+            LOG.error("Can not create any of the requested products (missing required data files)")
+            raise RuntimeError("Can not create any of the requested products (missing required data files)")
+
         LOG.debug("Extracting data to create the following products:\n\t%s", "\n\t".join(products))
 
         scene = meta.SwathScene()
@@ -497,48 +560,47 @@ class Frontend(object):
                 raise NotImplementedError("Don't know how to handle products dependent on other products")
             raw_products.append(product_name)
 
-        # Load files
-        file_readers = {}
-        for file_type, filepaths in self.recognized_files.items():
-            file_reader_class = FILE_CLASSES[file_type]
-            file_reader = file_reader_class(filenames=filepaths)
-            if len(file_reader):
-                file_readers[file_reader.FILE_TYPE] = file_reader
-
         # Load geographic products - every product needs a geo-product
         products_created = {}
         swath_definitions = {}
         for geo_product_pair in GEO_PAIRS:
+            lon_product_name, lat_product_name = geo_product_pair
             # longitude
-            if geo_product_pair[0] not in products_created:
-                one_lon_swath = self._create_raw_swath_object(geo_product_pair[0], file_readers, None)
-                products_created[geo_product_pair[0]] = one_lon_swath
-                if geo_product_pair[0] in raw_products:
+            if lon_product_name not in products_created:
+                one_lon_swath = self.create_raw_swath_object(lon_product_name, None)
+                products_created[lon_product_name] = one_lon_swath
+                if lon_product_name in raw_products:
                     # only process the geolocation product if the user requested it that way
-                    scene[geo_product_pair[0]] = one_lon_swath
+                    scene[lon_product_name] = one_lon_swath
             else:
-                one_lon_swath = products_created[geo_product_pair[0]]
+                one_lon_swath = products_created[lon_product_name]
 
             # latitude
-            if geo_product_pair[1] not in products_created:
-                one_lat_swath = self._create_raw_swath_object(geo_product_pair[1], file_readers, None)
-                products_created[geo_product_pair[1]] = one_lat_swath
-                if geo_product_pair[1] in raw_products:
+            if lat_product_name not in products_created:
+                one_lat_swath = self.create_raw_swath_object(lat_product_name, None)
+                products_created[lat_product_name] = one_lat_swath
+                if lat_product_name in raw_products:
                     # only process the geolocation product if the user requested it that way
-                    scene[geo_product_pair[1]] = one_lat_swath
+                    scene[lat_product_name] = one_lat_swath
             else:
-                one_lat_swath = products_created[geo_product_pair[1]]
+                one_lat_swath = products_created[lat_product_name]
 
-            swath_definitions[geo_product_pair] = self._create_swath_definition(one_lon_swath, one_lat_swath, file_readers)
+            swath_definitions[geo_product_pair] = self.create_swath_definition(one_lon_swath, one_lat_swath)
 
         # Load raw products
         for raw_product in raw_products:
             # FUTURE: Get this info from the product definition
             geo_pair = GEO_PAIRS[0]
             if raw_product not in products_created:
-                one_lat_swath = self._create_raw_swath_object(raw_product, file_readers, swath_definitions[geo_pair])
-                products_created[raw_product] = one_lat_swath
-                scene[raw_product] = one_lat_swath
+                try:
+                    one_lat_swath = self.create_raw_swath_object(raw_product, swath_definitions[geo_pair])
+                    products_created[raw_product] = one_lat_swath
+                    scene[raw_product] = one_lat_swath
+                except StandardError:
+                    LOG.error("Could not create raw product '%s'", raw_product)
+                    if self.exit_on_error:
+                        raise
+                    continue
 
         return scene
 
@@ -554,7 +616,7 @@ def add_frontend_argument_groups(parser):
                         help="List available frontend products")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
-    group.add_argument("-p", "--products", dest="products", nargs="*", default=None,
+    group.add_argument("-p", "--products", dest="products", nargs="*", default=None, choices=PRODUCTS.keys(),
                        help="Specify frontend products to process")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
 
