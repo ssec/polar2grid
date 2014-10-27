@@ -217,7 +217,7 @@ class Backend2(roles.BackendRole2):
                           gridded_product["begin_time"],
                           awips_info["awips2_channel"], awips_info["awips2_source"], awips_info["awips2_satellite_name"])
         except StandardError:
-            LOG.error("Error while filling in NC file with data")
+            LOG.error("Error while filling in NC file with data: %s", output_filename)
             if not self.keep_intermediate and os.path.isfile(output_filename):
                 os.remove(output_filename)
             raise

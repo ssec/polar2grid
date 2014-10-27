@@ -115,8 +115,6 @@ def passive_scale(img, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwa
     return img
 
 
-linear_flexible_scale_kwargs = dict(min_out=float, max_out=float, min_in=float, max_in=float, clip=int,
-                                    fill_in=float, fill_out=float)
 def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, clip=0, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwargs):
     """Flexible linear scaling by specifying what you want output, not the parameters of the linear equation.
 
@@ -163,7 +161,6 @@ def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, clip=
     img[fill_mask] = fill_out
     return img
 
-sqrt_scale_kwargs = dict(inner_mult=float, outer_mult=float, fill_in=float, fill_out=float)
 def sqrt_scale(img, fill_in, fill_out, inner_mult=1, outer_mult=1, **kwargs):
     """Square root enhancement
 
@@ -230,19 +227,31 @@ def bt_scale_c(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=
     
 
 # this method is intended to work on brightness temperatures in Kelvin
-bt_scale_kwargs = dict(threshold=float, high_max=float, high_mult=float, low_max=float, low_mult=float,
-                       clip_min=float, clip_max=float, fill_in=float, fill_out=float)
-def bt_scale(img, threshold, high_max, high_mult, low_max, low_mult, clip_min=None, clip_max=None, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwargs):
+def bt_scale(img, threshold, min_in, max_in, min_out, max_out, threshold_out=None, fill_in=DEFAULT_FILL_IN, fill_out=DEFAULT_FILL_OUT, **kwargs):
     log.debug("Running 'bt_scale'...")
+    # equation 1: middle_file_value = low_max - (low_mult * threshold)
+    # equation 2: max_out = low_max - (low_mult * min_temp)
+    # equation #1 - #2: threshold_out - max_out = low_mult * threshold + low_mult * min_temp = low_mult (threshold + min_temp) => low_mult = (threshold_out - max_out) / (min_temp - threshold)
+    # equation 3: middle_file_value = high_max - (high_mult * threshold)
+    # equation 4: min_out = high_max - (high_mult * max_temp)
+    # equation #3 - #4: (middle_file_value - min_out) = high_mult * (max_in - threshold)
+    threshold_out = threshold_out if threshold_out is not None else (176 / 255.0) * max_out
+    low_factor = (threshold_out - max_out) / (min_in - threshold)
+    low_offset = max_out + (low_factor * min_in)
+    high_factor = (threshold_out - min_out) / (max_in - threshold)
+    high_offset = min_out + (high_factor * max_in)
+    log.debug("BT scale: threshold_out=%f; low_factor=%f; low_offset=%f; high_factor=%f; high_offset=%f",
+              threshold_out, low_factor, low_offset, high_factor, high_offset)
+
     bad_mask = mask_helper(img, fill_in)
     good_img = img[~bad_mask]
     high_idx = good_img >= threshold
     low_idx = good_img < threshold
-    good_img[high_idx] = high_max - (high_mult*good_img[high_idx])
-    good_img[low_idx] = low_max - (low_mult*good_img[low_idx])
-    if clip_min is not None and clip_max is not None:
-        log.debug("Clipping data in 'bt_scale' to '%f' and '%f'" % (clip_min, clip_max))
-        numpy.clip(good_img, clip_min, clip_max, out=good_img)
+    good_img[high_idx] = high_offset - (high_factor*good_img[high_idx])
+    good_img[low_idx] = low_offset - (low_factor*good_img[low_idx])
+    # if clip_min is not None and clip_max is not None:
+    #     log.debug("Clipping data in 'bt_scale' to '%f' and '%f'" % (clip_min, clip_max))
+    numpy.clip(good_img, min_out, max_out, out=good_img)
     img[~bad_mask] = good_img
     img[bad_mask] = fill_out
     return img
@@ -373,10 +382,10 @@ class Rescaler2(roles.INIConfigReader):
         # 'linear_flex': (linear_flexible_scale, linear_flexible_scale_kwargs),
         # 'btemp': (bt_scale, bt_scale_kwargs),
         # 'sqrt': (sqrt_scale, sqrt_scale_kwargs),
-        'linear_flex': linear_flexible_scale,
+        'linear': linear_flexible_scale,
         'btemp': bt_scale,
         'sqrt': sqrt_scale,
-        'linear'   : linear_scale,
+        # 'linear'   : linear_scale,
         'unlinear' : unlinear_scale,
         'raw'      : passive_scale,
         'btemp_enh': linear_scale, # TODO, this probably shouldn't go here?

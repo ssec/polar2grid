@@ -365,6 +365,7 @@ class Backend2(roles.BackendRole2):
         except StandardError:
             if not self.keep_intermediate and os.path.isfile(output_filename):
                 os.remove(output_filename)
+            raise
 
         return output_filename
 
@@ -377,7 +378,7 @@ def add_backend_argument_groups(parser):
     group = parser.add_argument_group(title="Backend Output Creation")
     group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN2,
                        help="output filenaming pattern")
-    group.add_argument('--dont_inc', dest="inc_by_one", default=True, action="store_false",
+    group.add_argument('--dont-inc', dest="inc_by_one", default=True, action="store_false",
                         help="tell rescaler to not increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
     return ["Backend Initialization", "Backend Output Creation"]
 

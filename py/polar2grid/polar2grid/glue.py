@@ -201,6 +201,8 @@ def main(argv=sys.argv[1:]):
             LOG.debug("Remapping data exception: ", exc_info=True)
             LOG.error("Remapping data failed")
             status_to_return |= STATUS_REMAP_FAIL
+            if args.exit_on_error:
+                raise
             continue
 
         # Backend
@@ -211,6 +213,8 @@ def main(argv=sys.argv[1:]):
             LOG.debug("Backend output creation exception: ", exc_info=True)
             LOG.error("Backend output creation failed (see log for details)")
             status_to_return |= STATUS_BACKEND_FAIL
+            if args.exit_on_error:
+                raise
             continue
 
     return status_to_return
