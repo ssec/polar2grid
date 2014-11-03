@@ -106,7 +106,7 @@ PRODUCTS.add_product(PRODUCT_LONGITUDE, "longitude", FT_IMG, LON_VAR,
                      description="Longitude", units="degrees", is_geoproduct=True)
 PRODUCTS.add_product(PRODUCT_RAIN_RATE, "rain_rate", FT_IMG, RR_VAR,
                      description="Rain Rate", units="mm/hr")
-PRODUCTS.add_product(PRODUCT_BT_90, "btemp", FT_IMG, BT_90_VAR,
+PRODUCTS.add_product(PRODUCT_BT_90, "brightness_temperature", FT_IMG, BT_90_VAR,
                      description="Channel Brightness Temperature at 88.2GHz", units="K")
 GEO_PAIRS = (
     (PRODUCT_LONGITUDE, PRODUCT_LATITUDE),
