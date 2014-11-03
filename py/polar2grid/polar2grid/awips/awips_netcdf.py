@@ -42,20 +42,17 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import Workspace
 from polar2grid.core import roles
 from polar2grid.core.constants import *
 from polar2grid.nc import create_nc_from_ncml
-from polar2grid.core.rescale import RescalerOld, Rescaler
+from polar2grid.core.rescale import Rescaler
 from polar2grid.core.dtype import clip_to_data_type
-from .awips_config import AWIPSConfigReader, AWIPSConfigReader2, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, CONFIG_FILE2 as DEFAULT_AWIPS_CONFIG2
+from .awips_config import AWIPSConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG
 
 import os, sys, logging
 import calendar
-from datetime import datetime
 
 LOG = logging.getLogger(__name__)
-DEFAULT_8BIT_RCONFIG = "rescale_configs/rescale.8bit.conf"
 DEFAULT_RCONFIG      = "rescale_configs/rescale.ini"
 
 def create_netcdf(nc_name, image, template, start_dt,
@@ -102,83 +99,13 @@ def create_netcdf(nc_name, image, template, start_dt,
     LOG.debug("Data transferred into NC file correctly")
 
 
-class BackendOld(roles.BackendRoleOld):
-    removable_file_patterns = [
-            "SSEC_AWIPS_*"
-            ]
-
-    def __init__(self, backend_config=None, rescale_config=None, fill_value=DEFAULT_FILL_VALUE):
-        # Load AWIPS backend configuration
-        if backend_config is None:
-            LOG.debug("Using default AWIPS configuration: '%s'" % DEFAULT_AWIPS_CONFIG)
-            backend_config = DEFAULT_AWIPS_CONFIG
-        self.awips_config_reader = AWIPSConfigReader(backend_config)
-
-        # Load rescaling configuration
-        if rescale_config is None:
-            LOG.debug("Using default 8bit rescaling '%s'" % DEFAULT_8BIT_RCONFIG)
-            rescale_config = DEFAULT_8BIT_RCONFIG
-        self.fill_in = fill_value
-        self.fill_out = DEFAULT_FILL_VALUE
-        self.rescaler = RescalerOld(rescale_config, fill_in=self.fill_in, fill_out=self.fill_out)
-
-    def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
-        """Function for backend-calling script to ask if the backend will be
-        able to handle the data that will be processed.  For the AWIPS backend
-        it can handle any gpd grid that it is configured for in
-        polar2grid/awips/awips.conf
-
-        It is also assumed that rescaling will be able to handle the `data_kind`
-        provided.
-        """
-        try:
-            matching_entries = self.awips_config_reader.get_all_matching_entries(sat, instrument, nav_set_uid, kind, band, data_kind)
-            return [config_info["grid_name"] for config_info in matching_entries]
-        except ValueError:
-            return []
-
-    def create_product(self, sat, instrument, nav_set_uid, kind, band, data_kind, data,
-            start_time=None, end_time=None, grid_name=None,
-            output_filename=None,
-            ncml_template=None, fill_value=None):
-        # Filter out required keywords
-        if grid_name is None:
-            LOG.error("'grid_name' is a required keyword for this backend")
-            raise ValueError("'grid_name' is a required keyword for this backend")
-        if start_time is None and output_filename is None:
-            LOG.error("'start_time' is a required keyword for this backend if 'output_filename' is not specified")
-            raise ValueError("'start_time' is a required keyword for this backend if 'output_filename' is not specified")
-
-        fill_in = fill_value or self.fill_in
-        data = self.rescaler(sat, instrument, nav_set_uid, kind, band, data_kind, data, fill_in=fill_in, fill_out=self.fill_out)
-
-        # Get information from the configuration files
-        awips_info = self.awips_config_reader.get_config_entry(sat, instrument, nav_set_uid, kind, band, data_kind, grid_name)
-        # Get the proper output name if it wasn't forced to something else
-        if output_filename is None:
-            output_filename = start_time.strftime(awips_info["nc_format"])
-
-        try:
-            create_netcdf(output_filename,
-                    data,
-                    ncml_template or awips_info["ncml_template"],
-                    start_time,
-                    awips_info["awips2_channel"],
-                    awips_info["awips2_source"],
-                    awips_info["awips2_satellitename"]
-                    )
-        except StandardError:
-            LOG.error("Error while filling in NC file with data")
-            raise
-
-
 class Backend(roles.BackendRole):
     def __init__(self, backend_configs=None, rescale_configs=None,
                  overwrite_existing=False, keep_intermediate=False, exit_on_error=True):
-        backend_configs = backend_configs or [DEFAULT_AWIPS_CONFIG2]
+        backend_configs = backend_configs or [DEFAULT_AWIPS_CONFIG]
         rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
         # FIXME: Redo the config reader
-        self.awips_config_reader = AWIPSConfigReader2(*backend_configs)
+        self.awips_config_reader = AWIPSConfigReader(*backend_configs)
         self.rescaler = Rescaler(*rescale_configs)
         self.overwrite_existing = overwrite_existing
         self.keep_intermediate = keep_intermediate
