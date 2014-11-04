@@ -241,7 +241,7 @@ def process_data_sets(nav_set_dict,
             try:
                 true_color_data = numpy.array([sharp_red,sharp_green,sharp_blue])
                 fill_value = mgrid_dict[(BKIND_CREFL,BID_01)]["fill_value"] # Assumes all RGB bands have same fill
-                true_color_mask = (red_lo == fill_value) | (sharp_red == fill_value) | (sharp_green == fill_value) | (sharp_blue == fill_value)
+                true_color_mask = (red_lo == fill_value) | (red_hi is not None and (red_hi == fill_value)) | (green == fill_value) | (blue == fill_value)
                 true_color_data[ :, true_color_mask ] = fill_value
                 true_color_stem = "result_%s_%s_%s_%s" % (nav_set_uid, BKIND_TCOLOR_CREFL, NOT_APPLICABLE, grid_name)
                 true_color_fn   = true_color_stem + ".real4." + ".".join( str(x) for x in true_color_data.shape[::-1] )
