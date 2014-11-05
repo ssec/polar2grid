@@ -536,6 +536,12 @@ class BackendRole(object):
     def __init__(self, **kwargs):
         pass
 
+    @abstractproperty
+    def known_grids(self):
+        """Provide a list of known grids that this backend knows how to handle. For all grids use `None`.
+        """
+        return None
+
     def create_output_filename(self, pattern, satellite, instrument, product_name, grid_name, **kwargs):
         """Helper function that will take common meta data and put it into
         the output filename pattern provided. If either of the keyword arguments

@@ -744,6 +744,10 @@ class GridDefinition(GeographicDefinition):
 
         return proj4_dict
 
+    @property
+    def gdal_geotransform(self):
+        return self["origin_x"], self["cell_width"], 0, self["origin_y"], 0, self["cell_height"]
+
     def to_basemap_object(self):
         from mpl_toolkits.basemap import Basemap
         proj4_dict = self.proj4_dict

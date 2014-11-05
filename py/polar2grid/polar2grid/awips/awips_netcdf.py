@@ -111,6 +111,10 @@ class Backend(roles.BackendRole):
         self.keep_intermediate = keep_intermediate
         self.exit_on_error = exit_on_error
 
+    @property
+    def known_grids(self):
+        return self.awips_config_reader.known_grids
+
     def create_output_from_scene(self, gridded_scene):
         output_filenames = []
         for product_name, gridded_product in gridded_scene.items():

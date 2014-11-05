@@ -218,6 +218,11 @@ class AWIPSConfigReader(roles.INIConfigReader):
         log.info("Loading AWIPS configuration files:\n\t%s", "\n\t".join(config_files))
         super(AWIPSConfigReader, self).__init__(*config_files, **kwargs)
 
+    @property
+    def known_grids(self):
+        sections = (x[-1] for x in self.config)
+        return list(set(self.config_parser.get(section_name, "grid_name") for section_name in sections))
+
     def get_product_options(self, gridded_product):
         all_meta = gridded_product["grid_definition"].copy()
         all_meta.update(**gridded_product)

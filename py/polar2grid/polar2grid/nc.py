@@ -131,9 +131,6 @@ def create_nc_from_ncml(nc_filename, ncml_filename, format="NETCDF3_CLASSIC"):
     and variables listed in the NCML file.
 
     """
-    if os.path.exists(nc_filename):
-        log.warning("Overwriting NC file %s" % nc_filename)
-
     xml_parser = cElementTree.iterparse(ncml_filename, events=("start", "end"))
     nc = Dataset(nc_filename, "w", format=format)
     for event,elem in xml_parser:

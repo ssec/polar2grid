@@ -47,21 +47,20 @@ import sys
 import logging
 
 ### Return Status Values ###
-STATUS_SUCCESS       = 0
-# the frontend failed
-STATUS_FRONTEND_FAIL = 1
-# the backend failed
-STATUS_BACKEND_FAIL  = 2
-# either ll2cr or fornav failed (4 + 8)
-STATUS_REMAP_FAIL    = 12
-# ll2cr failed
-STATUS_LL2CR_FAIL    = 4
-# fornav failed
-STATUS_FORNAV_FAIL   = 8
-# grid determination or grid jobs creation failed
-STATUS_GDETER_FAIL   = 16
+STATUS_SUCCESS = 0
+# Python looks like it always returns 1 if an exception was found so that's our unknown failure value
 # not sure why we failed, not an expected failure
-STATUS_UNKNOWN_FAIL  = -1
+STATUS_UNKNOWN_FAIL = 1
+# the frontend failed
+STATUS_FRONTEND_FAIL = 2
+# the backend failed
+STATUS_BACKEND_FAIL = 4
+# something with remapping failed
+STATUS_REMAP_FAIL = 8
+# grid determination or grid jobs creation failed
+STATUS_GDETER_FAIL = 16
+# composition failed
+STATUS_COMP_FAIL = 32
 
 P2G_FRONTEND_CLS_EP = "polar2grid.frontend_class"
 P2G_FRONTEND_ARGS_EP = "polar2grid.frontend_arguments"
@@ -119,8 +118,8 @@ def main(argv=sys.argv[1:]):
                         help="List of files or directories to extract data from")
     parser.add_argument('-d', dest='data_files', nargs="+", default=[], action=ExtendAction,
                         help="Data directories to look for input data files (equivalent to -f)")
-    parser.add_argument('--ignore-error', dest="exit_on_error", action="store_false",
-                        help="if a non-fatal error is encountered ignore it and continue for the remaining products")
+    parser.add_argument('--exit-on-error', dest="exit_on_error", action="store_true",
+                        help="exit on first error including non-fatal errors")
     global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
     args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=group_titles)
 
@@ -187,10 +186,29 @@ def main(argv=sys.argv[1:]):
         LOG.error("Frontend data extraction failed (see log for details)")
         return STATUS_FRONTEND_FAIL
 
+    # What grids should we remap to (the user should tell us or the backend should have a good set of defaults)
+    known_grids = backend.known_grids
+    LOG.debug("Backend known grids: %r", known_grids)
+    grids = remap_kwargs.pop("forced_grids", None)
+    LOG.debug("Forced Grids: %r", grids)
+    if not grids and not known_grids:
+        # the user didn't ask for any grids and the backend doesn't have specific defaults
+        LOG.error("No grids specified and no known defaults")
+        return STATUS_GDETER_FAIL
+    elif not grids:
+        # the user didn't tell us what to do, so let's try everything the backend knows how to do
+        grids = known_grids
+    elif known_grids is not None:
+        # the user told us what to do, let's make sure the backend can do it
+        grids = list(set(grids) & set(known_grids))
+        if not grids:
+            LOG.error("%s backend doesn't know how to handle any of the grids specified", args.backend)
+            return STATUS_GDETER_FAIL
+    LOG.debug("Grids that will be mapped to: %r", grids)
+
     # Remap
     gridded_scenes = {}
-    # TODO: Grid determination
-    for grid_name in remap_kwargs.pop("forced_grids"):
+    for grid_name in grids:
         try:
             LOG.info("Remapping to grid %s", grid_name)
             gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
@@ -202,8 +220,11 @@ def main(argv=sys.argv[1:]):
             LOG.error("Remapping data failed")
             status_to_return |= STATUS_REMAP_FAIL
             if args.exit_on_error:
-                raise
+                return status_to_return
+            print "Exiting on error ", status_to_return
             continue
+
+        # Composition
 
         # Backend
         try:
@@ -214,7 +235,7 @@ def main(argv=sys.argv[1:]):
             LOG.error("Backend output creation failed (see log for details)")
             status_to_return |= STATUS_BACKEND_FAIL
             if args.exit_on_error:
-                raise
+                return status_to_return
             continue
 
     return status_to_return

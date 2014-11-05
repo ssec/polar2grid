@@ -89,8 +89,8 @@ def _proj4_to_srs(proj4_str):
     return srs
 
 
-def create_geotiff(data, output_filename, proj4_str, geotransform,
-        etype=gdal.GDT_UInt16):
+def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GDT_UInt16, compress=None,
+                   quicklook=False, **kwargs):
     """Function that creates a geotiff from the information provided.
     """
     log_level = logging.getLogger('').handlers[0].level or 0
@@ -110,22 +110,26 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
         LOG.error(msg)
         raise ValueError(msg)
 
+    options = []
     if num_bands == 1:
-        photometric = "PHOTOMETRIC=MINISBLACK"
+        options.append("PHOTOMETRIC=MINISBLACK")
     elif num_bands == 3:
-        photometric = "PHOTOMETRIC=RGB"
+        options.append("PHOTOMETRIC=RGB")
     elif num_bands == 4:
-        photometric = "PHOTOMETRIC=RGB"
+        options.append("PHOTOMETRIC=RGB")
+
+    if compress is not None and compress != "NONE":
+        options.append("COMPRESS=%s" % (compress,))
+
 
     # Creating the file will truncate any pre-existing file
+    LOG.debug("Creation Geotiff with options %r", options)
     if num_bands == 1:
-        gtiff = gtiff_driver.Create(output_filename,
-                data.shape[1], data.shape[0],
-                bands=num_bands, eType=etype, options = [ photometric ])
+        gtiff = gtiff_driver.Create(output_filename, data.shape[1], data.shape[0],
+                                    bands=num_bands, eType=etype, options=options)
     else:
-        gtiff = gtiff_driver.Create(output_filename,
-                data[0].shape[1], data[0].shape[0],
-                bands=num_bands, eType=etype, options = [ photometric ])
+        gtiff = gtiff_driver.Create(output_filename, data[0].shape[1], data[0].shape[0],
+                                    bands=num_bands, eType=etype, options=options)
 
     gtiff.SetGeoTransform(geotransform)
     srs = _proj4_to_srs(proj4_str)
@@ -152,6 +156,12 @@ def create_geotiff(data, output_filename, proj4_str, geotransform,
         if gtiff_band.WriteArray(band_data) != 0:
             LOG.error("Could not write band 1 data to geotiff '%s'" % (output_filename,))
             raise ValueError("Could not write band 1 data to geotiff '%s'" % (output_filename,))
+
+    if quicklook:
+        png_filename = output_filename.replace(os.path.splitext(output_filename)[1], ".png")
+        png_driver = gdal.GetDriverByName("PNG")
+        png_driver.CreateCopy(png_filename, gtiff)
+
     # Garbage collection/destructor should close the file properly
 
 
@@ -169,14 +179,16 @@ class Backend(roles.BackendRole):
         self.exit_on_error = exit_on_error
         self.rescaler = Rescaler(*self.rescale_configs)
 
-    def create_output_from_scene(self, gridded_scene, output_pattern=None, inc_by_one=None, data_type=None,
-                                 fill_value=0, **kwargs):
+    @property
+    def known_grids(self):
+        # Should work regardless of grid
+        return None
+
+    def create_output_from_scene(self, gridded_scene, **kwargs):
         output_filenames = []
         for product_name, gridded_product in gridded_scene.items():
             try:
-                output_fn = self.create_output_from_product(gridded_product, output_pattern=output_pattern,
-                                                            inc_by_one=inc_by_one, data_type=data_type,
-                                                            fill_value=fill_value)
+                output_fn = self.create_output_from_product(gridded_product, **kwargs)
                 output_filenames.append(output_fn)
             except StandardError:
                 LOG.error("Could not create output for '%s'", product_name)
@@ -197,13 +209,13 @@ class Backend(roles.BackendRole):
             output_pattern = DEFAULT_OUTPUT_PATTERN2
         if "%" in output_pattern:
             # format the filename
-            kwargs = gridded_product.copy()
-            kwargs["data_type"] = data_type
+            of_kwargs = gridded_product.copy()
+            of_kwargs["data_type"] = data_type
             output_filename = self.create_output_filename(output_pattern,
                                                           grid_name=grid_def["grid_name"],
                                                           rows=grid_def["height"],
                                                           columns=grid_def["width"],
-                                                          **gridded_product)
+                                                          **of_kwargs)
         else:
             output_filename = output_pattern
 
@@ -220,9 +232,11 @@ class Backend(roles.BackendRole):
 
             # Create the geotiff
             # X and Y rotation are 0 in most cases so we just hard-code it
-            geotransform = (grid_def["origin_x"], grid_def["cell_width"], 0,
-                            grid_def["origin_y"], 0, grid_def["cell_height"])
-            create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform, etype=etype)
+            geotransform = gridded_product["grid_definition"].gdal_geotransform
+            print geotransform
+            print kwargs
+            create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform,
+                           etype=etype, **kwargs)
         except StandardError:
             if not self.keep_intermediate and os.path.isfile(output_filename):
                 os.remove(output_filename)
@@ -241,6 +255,10 @@ def add_backend_argument_groups(parser):
                        help="output filenaming pattern")
     group.add_argument('--dont-inc', dest="inc_by_one", default=True, action="store_false",
                         help="tell rescaler to not increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
+    group.add_argument("--compress", default="LZW", choices=["JPEG", "LZW", "PACKBITS", "DEFLATE", "NONE"],
+                       help="Specify compression method for geotiff")
+    group.add_argument("--png-quicklook", dest="quicklook", action="store_true",
+                       help="Create a PNG version of the created geotiff")
     return ["Backend Initialization", "Backend Output Creation"]
 
 
