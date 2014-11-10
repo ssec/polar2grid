@@ -463,8 +463,6 @@ class Frontend(roles.FrontendRole):
 
         This method should not be called by the user.
         """
-        # FIXME: Add orbit detection
-        # FIXME: This should be faster (~3 seconds for 174 files with SVM01 not recognized)
         self.file_readers = {}
         for file_type, file_type_info in guidebook.FILE_TYPES.items():
             cls = file_type_info.get("file_type_class", self.DEFAULT_FILE_READER)

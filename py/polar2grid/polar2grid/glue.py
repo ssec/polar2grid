@@ -221,7 +221,6 @@ def main(argv=sys.argv[1:]):
             status_to_return |= STATUS_REMAP_FAIL
             if args.exit_on_error:
                 return status_to_return
-            print "Exiting on error ", status_to_return
             continue
 
         # Composition
