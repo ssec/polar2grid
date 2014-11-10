@@ -766,8 +766,11 @@ class Frontend(roles.FrontendRole):
         sza_data = products_created[sza_product_name].get_data_array()
         filename = product_name + ".dat"
         if os.path.isfile(filename):
-            LOG.error("Binary file already exists: %s" % (filename,))
-            raise RuntimeError("Binary file already exists: %s" % (filename,))
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
         try:
             output_data = dnb_product.copy_array(filename=filename, read_only=False)
@@ -802,8 +805,11 @@ class Frontend(roles.FrontendRole):
         lza_data = products_created[lza_product_name].get_data_array()
         filename = product_name + ".dat"
         if os.path.isfile(filename):
-            LOG.error("Binary file already exists: %s" % (filename,))
-            raise RuntimeError("Binary file already exists: %s" % (filename,))
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
         try:
             output_data = dnb_product.copy_array(filename=filename, read_only=False)
@@ -832,8 +838,11 @@ class Frontend(roles.FrontendRole):
         bt_mask = bt_product.get_data_mask()
         filename = product_name + ".dat"
         if os.path.isfile(filename):
-            LOG.error("Binary file already exists: %s" % (filename,))
-            raise RuntimeError("Binary file already exists: %s" % (filename,))
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
         try:
             output_data = bt_product.copy_array(filename=filename, read_only=False)
@@ -867,8 +876,11 @@ class Frontend(roles.FrontendRole):
         night_mask = sza_data >= 100  # where is it night
         filename = product_name + ".dat"
         if os.path.isfile(filename):
-            LOG.error("Binary file already exists: %s" % (filename,))
-            raise RuntimeError("Binary file already exists: %s" % (filename,))
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
         try:
             fog_data = numpy.memmap(filename, dtype=left_data.dtype, mode="w+", shape=left_data.shape)
@@ -906,8 +918,11 @@ class Frontend(roles.FrontendRole):
         lza_data = products_created[lza_product_name].get_data_array()
         filename = product_name + ".dat"
         if os.path.isfile(filename):
-            LOG.error("Binary file already exists: %s" % (filename,))
-            raise RuntimeError("Binary file already exists: %s" % (filename,))
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
         try:
             output_data = dnb_product.copy_array(filename=filename, read_only=False)

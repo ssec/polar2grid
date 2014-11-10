@@ -180,7 +180,9 @@ def main(argv=sys.argv[1:]):
         LOG.info("Extracting swaths from data files available...")
         scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
         if args.keep_intermediate:
-            scene.save(glue_name + "_swath_scene.json")
+            filename = glue_name + "_swath_scene.json"
+            LOG.info("Saving intermediate swath scene as '%s'", filename)
+            scene.save(filename)
     except StandardError:
         LOG.debug("Frontend data extraction exception: ", exc_info=True)
         LOG.error("Frontend data extraction failed (see log for details)")
@@ -214,7 +216,9 @@ def main(argv=sys.argv[1:]):
             gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
             gridded_scenes[grid_name] = gridded_scene
             if args.keep_intermediate:
-                gridded_scene.save(glue_name + "_gridded_scene_" + grid_name + ".json")
+                filename = glue_name + "_gridded_scene_" + grid_name + ".json"
+                LOG.debug("saving intermediate gridded scene as '%s'", filename)
+                gridded_scene.save(filename)
         except StandardError:
             LOG.debug("Remapping data exception: ", exc_info=True)
             LOG.error("Remapping data failed")

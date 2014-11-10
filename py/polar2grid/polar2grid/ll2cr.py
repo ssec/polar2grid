@@ -182,8 +182,8 @@ def ll2cr(lon_arr, lat_arr, grid_info, fill_in=numpy.nan, fill_out=None, cols_ou
 
         if ox is None:
             # upper-left corner
-            ox = grid_info["origin_x"] = xmin
-            oy = grid_info["origin_y"] = ymax
+            ox = grid_info["origin_x"] = float(xmin)
+            oy = grid_info["origin_y"] = float(ymax)
             log.debug("Dynamic grid origin (%f, %f)", xmin, ymax)
         if w is None:
             w = grid_info["width"] = int(abs((xmax - xmin) / cw))
