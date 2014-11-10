@@ -297,12 +297,14 @@ def parse_proj4_config_line(grid_name, parts):
             grid_height   = int(parts[4])
 
         if parts[5] == "None" or parts[5] == '':
+            log.warning("Grid '%s' may not process properly due to unspecified pixel size", grid_name)
             static        = False
             pixel_size_x  = None
         else:
             pixel_size_x  = float(parts[5])
 
         if parts[6] == "None" or parts[6] == '':
+            log.warning("Grid '%s' may not process properly due to unspecified pixel size", grid_name)
             static        = False
             pixel_size_y  = None
         else:
@@ -395,7 +397,7 @@ def read_grids_config_str(config_str):
 
         grid_type = parts[1].lower()
         if grid_type == "gpd":
-            grid_information[grid_name] = parse_gpd_config_line(grid_name, parts)
+            log.warning("GPD grids are no longer supported (ignoring '%s')", grid_name)
         elif grid_type == "proj4":
             grid_information[grid_name] = parse_proj4_config_line(grid_name, parts)
         else:

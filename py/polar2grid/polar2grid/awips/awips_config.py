@@ -62,6 +62,27 @@ CONFIG_DIR = os.environ.get("AWIPS_CONFIG_DIR", DEFAULT_CONFIG_DIR)
 NCML_DIR = os.environ.get("AWIPS_NCML_DIR", DEFAULT_NCML_DIR)
 
 
+def _rel_to_abs(filename, default_base_path):
+    """Function that checks if a filename provided is not an absolute
+    path.  If it is not, then it checks if the file exists in the current
+    working directory.  If it does not exist in the cwd, then the default
+    base path is used.  If that file does not exist an exception is raised.
+    """
+    if not os.path.isabs(filename):
+        cwd_filepath = os.path.join(os.path.curdir, filename)
+        if os.path.exists(cwd_filepath):
+            filename = cwd_filepath
+        else:
+            filename = os.path.join(default_base_path, filename)
+    filename = os.path.realpath(filename)
+
+    if not os.path.exists(filename):
+        log.error("File '%s' could not be found" % (filename,))
+        raise ValueError("File '%s' could not be found" % (filename,))
+
+    return filename
+
+
 class AWIPSConfigReader(roles.INIConfigReader):
     id_fields = (
         "product_name",

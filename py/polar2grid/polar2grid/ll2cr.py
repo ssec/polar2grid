@@ -84,7 +84,123 @@ def _transform_array(tformer, lon, lat, proj_circum, stradles_anti=False):
         x[x < 0] += proj_circum
     return x,y
 
-def ll2cr(lon_arr, lat_arr, proj4_str,
+
+def projection_circumference(p):
+    """Return the projection circumference if the projection is cylindrical. None is returned otherwise.
+
+    Projections that are not cylindrical and centered on the globes axis can not easily have data cross the antimeridian
+    of the projection.
+    """
+    lon0, lat0 = p(0, 0, inverse=True)
+    lon1 = lon0 + 360
+    lat1 = lat0 + 5
+    x0, y0 = p(lon0, lat0)  # should result in zero or near zero
+    x1, y1 = p(lon1, lat0)
+    x2, y2 = p(lon1, lat1)
+    if y0 != y1 or x1 != x2:
+        return None
+    return abs(x1 - x2) * 2
+
+
+def mask_helper(arr, fill):
+    if numpy.isnan(fill):
+        return numpy.isnan(arr)
+    else:
+        return arr == fill
+
+
+def ll2cr(lon_arr, lat_arr, grid_info, fill_in=numpy.nan, fill_out=None, cols_out=None, rows_out=None):
+    """Project longitude and latitude points to column rows in the specified grid.
+
+    :param lon_arr: Numpy array of longitude floats
+    :param lat_arr: Numpy array of latitude floats
+    :param grid_info: dictionary of grid information (see below)
+    :param fill_in: (optional) Fill value for input longitude and latitude arrays (default: NaN)
+    :param fill_out: (optional) Fill value for output column and row array (default: `fill_in`)
+    :returns: tuple(points_in_grid, cols_out, rows_out)
+
+    The provided grid info must have the following parameters (optional grids mean dynamic):
+
+        - proj4_definition
+        - cell_width
+        - cell_height
+        - width (optional/None)
+        - height (optional/None)
+        - origin_x (optional/None)
+        - origin_y (optional/None)
+
+    Steps taken in this function:
+
+        1. Convert (lon, lat) points to (X, Y) points in the projection space
+        2. If grid is missing some parameters (dynamic grid), then fill them in
+        3. Convert (X, Y) points to (column, row) points in the grid space
+    """
+    p = Proj(grid_info["proj4_definition"])
+    cw = grid_info["cell_width"]
+    ch = grid_info["cell_height"]
+    w = grid_info.get("width", None)
+    h = grid_info.get("height", None)
+    ox = grid_info.get("origin_x", None)
+    oy = grid_info.get("origin_y", None)
+    is_static = None not in [w, h, ox, oy]
+    proj_circum = projection_circumference(p)
+
+    if rows_out is None:
+        rows_out = numpy.zeros_like(lat_arr)
+    if cols_out is None:
+        cols_out = numpy.zeros_like(lon_arr)
+    if fill_out is None:
+        fill_out = fill_in
+
+    mask = ~(mask_helper(lon_arr, fill_in) | mask_helper(lat_arr, fill_in))
+    x, y = p(lon_arr, lat_arr)
+    mask = mask & (x < 1e30) & (y < 1e30)
+    # need temporary storage because x and y are might NOT be copies (latlong projections)
+    cols_out[:] = numpy.where(mask, x, fill_out)
+    rows_out[:] = numpy.where(mask, y, fill_out)
+    # we only need the good Xs and Ys from here on out
+    x = cols_out[mask]
+    y = rows_out[mask]
+
+    if not is_static:
+        # fill in grid parameters
+        xmin = numpy.nanmin(x)
+        xmax = numpy.nanmax(x)
+        ymin = numpy.nanmin(y)
+        ymax = numpy.nanmax(y)
+        # if the data seems to be covering more than 75% of the projection space then the antimeridian is being crossed
+        # if proj_circum is None then we can't simply wrap the data around projection, the grid will probably be large
+        log.debug("Projection circumference: %f", proj_circum)
+        if proj_circum is not None and xmax - xmin >= proj_circum * .75:
+            x[x < 0] += proj_circum
+            old_xmin = xmin
+            old_xmax = xmax
+            xmin = numpy.nanmin(x)
+            xmax = numpy.nanmax(x)
+            log.debug("Data seems to cross the antimeridian: old_xmin=%f; old_xmax=%f; xmin=%f; xmax=%f", old_xmin, old_xmax, xmin, xmax)
+        log.debug("Xmin=%f; Xmax=%f; Ymin=%f; Ymax=%f", xmin, xmax, ymin, ymax)
+
+        if ox is None:
+            # upper-left corner
+            ox = grid_info["origin_x"] = xmin
+            oy = grid_info["origin_y"] = ymax
+            log.debug("Dynamic grid origin (%f, %f)", xmin, ymax)
+        if w is None:
+            w = grid_info["width"] = int(abs((xmax - xmin) / cw))
+            h = grid_info["height"] = int(abs((ymax - ymin) / ch))
+            log.debug("Dynamic grid width and height (%d x %d) with cell width and height (%f x %f)", w, h, cw, ch)
+
+    rows_out[mask] = (y - oy) / ch
+    cols_out[mask] = (x - ox) / cw
+
+    good_cols = cols_out[mask]
+    good_rows = rows_out[mask]
+    points_in_grid = numpy.count_nonzero((good_cols >= -1) & (good_cols <= w + 1) & (good_rows >= -1) & (good_rows <= h + 1))
+
+    return points_in_grid, cols_out, rows_out
+
+
+def ll2cr_old(lon_arr, lat_arr, proj4_str,
         pixel_size_x=None, pixel_size_y=None,
         grid_origin_x=None, grid_origin_y=None,
         swath_lat_south=None, swath_lat_north=None,
@@ -295,7 +411,7 @@ def ll2cr_fbf(lon_fbf, lat_fbf, *args, **kwargs):
     W = Workspace('.')
     lon_arr = getattr(W, lon_fbf.split('.')[0])
     lat_arr = getattr(W, lat_fbf.split('.')[0])
-    return ll2cr(lon_arr, lat_arr, *args, **kwargs)
+    return ll2cr_old(lon_arr, lat_arr, *args, **kwargs)
 
 def main():
     from optparse import OptionParser
@@ -381,7 +497,7 @@ def main():
     lon_arr = getattr(W, lon_var)
 
     from pprint import pprint
-    ll2cr_dict = ll2cr(lon_arr, lat_arr, proj4_str,
+    ll2cr_dict = ll2cr_old(lon_arr, lat_arr, proj4_str,
             pixel_size_x=pixel_size_x, pixel_size_y=pixel_size_y,
             grid_origin_x=origin_x, grid_origin_y=origin_y,
             grid_width=grid_width, grid_height=grid_height,

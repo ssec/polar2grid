@@ -41,10 +41,9 @@ __docformat__ = "restructuredtext en"
 
 from polar2grid.core.constants import GRID_KIND_PROJ4,GRID_KIND_GPD,DEFAULT_FILL_VALUE
 from polar2grid.core.fbf import check_stem
-from polar2grid.core.meta import GriddedProduct, GriddedScene
+from polar2grid.core.meta import GriddedProduct, GriddedScene, SwathScene
 from polar2grid import ll2cr as gator # gridinator
 from polar2grid import ms2gt
-import numpy
 
 import os
 import sys
@@ -536,6 +535,17 @@ class Remapper(object):
             "ewa": self._remap_scene_ewa,
             "nearest": self._remap_scene_nearest,
         }
+        self.ll2cr_cache = {}
+
+    def highest_resolution_swath_definition(self, swath_scene_or_product):
+        if isinstance(swath_scene_or_product, SwathScene):
+            swath_defs = [product_def["swath_definition"] for product_def in swath_scene_or_product.values()]
+            # choose the highest resolution swath definition navigation (the one with the most columns)
+            swath_def = max(swath_defs, key=lambda d: d["swath_columns"])
+        else:
+            # given a single product
+            swath_def = swath_scene_or_product["swath_definition"]
+        return swath_def
 
     def remap_scene(self, swath_scene, grid_name, **kwargs):
         method = kwargs.pop("remap_method", "ewa")
@@ -544,13 +554,30 @@ class Remapper(object):
             LOG.error("Unknown remapping method '%s'", method)
             raise ValueError("Unknown remapping method '%s'" % (method,))
 
+        grid_def = self.cart.get_grid_definition(grid_name)
         func = self.methods[method]
-        return func(swath_scene, grid_name, **kwargs)
+
+        # FUTURE: Make this a keyword and add the logic to support it
+        share_dynamic_grids = True
+        if share_dynamic_grids:
+            # Let's run ll2cr to fill in any parameters we need to and decide if the data fits in the grid
+            best_swath_def = self.highest_resolution_swath_definition(swath_scene)
+            LOG.debug("Running ll2cr on the highest resolution swath to determine if it fits")
+            try:
+                self.ll2cr(best_swath_def, grid_def)
+            except StandardError:
+                LOG.error("Remapping error")
+                raise
+
+        return func(swath_scene, grid_def, **kwargs)
 
     def ll2cr(self, swath_definition, grid_definition):
         geo_id = swath_definition["swath_name"]
         grid_name = grid_definition["grid_name"]
+        if (geo_id, grid_name) in self.ll2cr_cache:
+            return self.ll2cr_cache[(geo_id, grid_name)]
         LOG.debug("Swath '%s' -> Grid '%s'", geo_id, grid_name)
+
         rows_fn = "ll2cr_rows_%s_%s.dat" % (grid_name, geo_id)
         cols_fn = "ll2cr_cols_%s_%s.dat" % (grid_name, geo_id)
         lon_arr = swath_definition.get_longitude_array()
@@ -571,38 +598,26 @@ class Remapper(object):
         try:
             rows_arr = numpy.memmap(rows_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
             cols_arr = numpy.memmap(cols_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
-            proj4_def = grid_definition["proj4_definition"]
-            cell_width = grid_definition["cell_width"]
-            cell_height = grid_definition["cell_height"]
-            origin_x = grid_definition["origin_x"]
-            origin_y = grid_definition["origin_y"]
-            width = grid_definition["width"]
-            height = grid_definition["height"]
-            ll2cr_output = gator.ll2cr(lon_arr, lat_arr, proj4_def,
-                                       pixel_size_x=cell_width, pixel_size_y=cell_height,
-                                       grid_origin_x=origin_x, grid_origin_y=origin_y,
-                                       grid_width=width, grid_height=height,
-                                       rows_out=rows_arr, cols_out=cols_arr, fill_in=numpy.nan
-            )
-
-            # Update our definition of the grid with what was found by ll2cr
-            if not grid_definition.is_static:
-                grid_definition["height"] = ll2cr_output["grid_height"]
-                grid_definition["width"] = ll2cr_output["grid_width"]
-                grid_definition["cell_height"] = ll2cr_output["pixel_size_y"]
-                grid_definition["cell_width"] = ll2cr_output["pixel_size_x"]
-                grid_definition["origin_x"] = ll2cr_output["grid_origin_x"]
-                grid_definition["origin_y"] = ll2cr_output["grid_origin_y"]
+            points_in_grid, _, _ = gator.ll2cr(lon_arr, lat_arr, grid_definition,
+                                               fill_in=swath_definition["fill_value"],
+                                               cols_out=cols_arr, rows_out=rows_arr)
         except StandardError:
             LOG.error("Unexpected error encountered during ll2cr gridding for %s -> %s", geo_id, grid_name)
             LOG.debug("ll2cr error exception: ", exc_info=True)
-            if not self.keep_intermediate and os.path.isfile(rows_fn):
-                os.remove(rows_fn)
-            if not self.keep_intermediate and os.path.isfile(cols_fn):
-                os.remove(rows_fn)
+            self._safe_remove(rows_fn, cols_fn)
             raise
 
-        return rows_fn, cols_fn
+        # if 5% of the grid will have data in it then it fits
+        fits_grid = (points_in_grid / grid_definition["width"] * grid_definition["height"]) >= 0.05
+        if not fits_grid:
+            self._safe_remove(rows_fn, cols_fn)
+            LOG.error("Data does not fit in grid %s" % (grid_name,))
+            raise RuntimeError("Data does not fit in grid %s" % (grid_name,))
+        else:
+            LOG.debug("Data fits in grid %s", grid_name)
+
+        self.ll2cr_cache[(geo_id, grid_name)] = (cols_fn, rows_fn)
+        return cols_fn, rows_fn
 
     def _add_prefix(self, prefix, *filepaths):
         return [os.path.join(os.path.dirname(x), prefix + os.path.basename(x)) for x in filepaths]
@@ -618,9 +633,10 @@ class Remapper(object):
                         LOG.warning("Could not remove intermediate files that aren't needed anymore.")
                         LOG.debug("Intermediate output file remove exception:", exc_info=True)
 
-    def _remap_scene_ewa(self, swath_scene, grid_name, **kwargs):
+    def _remap_scene_ewa(self, swath_scene, grid_def, **kwargs):
         # TODO: Make methods more flexible than just a function call
         gridded_scene = GriddedScene()
+        grid_name = grid_def["grid_name"]
 
         # Group products together that shared the same geolocation
         from collections import defaultdict
@@ -635,9 +651,8 @@ class Remapper(object):
             # TODO: Add some multiprocessing
             try:
                 LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
-                grid_def = self.cart.get_grid_definition(grid_name)
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
-                rows_fn, cols_fn = self.ll2cr(swath_def, grid_def)
+                cols_fn, rows_fn = self.ll2cr(swath_def, grid_def)
             except StandardError:
                 LOG.error("Remapping error")
                 if self.exit_on_error:
@@ -735,7 +750,7 @@ class Remapper(object):
                 LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
                 grid_def = self.cart.get_grid_definition(grid_name)
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
-                rows_fn, cols_fn = self.ll2cr(swath_def, grid_def)
+                cols_fn, rows_fn = self.ll2cr(swath_def, grid_def)
             except StandardError:
                 LOG.error("Remapping error")
                 if self.exit_on_error:

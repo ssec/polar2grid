@@ -58,10 +58,10 @@ LOG = logging.getLogger(__name__)
 
 gtiff_driver = gdal.GetDriverByName("GTIFF")
 
-DEFAULT_RCONFIG      = "rescale_configs/rescale.ini"
-DEFAULT_8BIT_RCONFIG      = "rescale_configs/rescale.8bit.conf"
-DEFAULT_16BIT_RCONFIG     = "rescale_configs/rescale.16bit.conf"
-DEFAULT_INC_8BIT_RCONFIG  = "rescale_configs/rescale_inc.8bit.conf"
+DEFAULT_RCONFIG = "rescale_configs/rescale.ini"
+DEFAULT_8BIT_RCONFIG = "rescale_configs/rescale.8bit.conf"
+DEFAULT_16BIT_RCONFIG = "rescale_configs/rescale.16bit.conf"
+DEFAULT_INC_8BIT_RCONFIG = "rescale_configs/rescale_inc.8bit.conf"
 DEFAULT_INC_16BIT_RCONFIG = "rescale_configs/rescale_inc.16bit.conf"
 DEFAULT_OUTPUT_PATTERN = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s_%(grid_name)s.tif"
 DEFAULT_OUTPUT_PATTERN2 = "%(satellite)s_%(instrument)s_%(product_name)s_%(begin_time)s_%(grid_name)s.tif"
@@ -121,7 +121,6 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
     if compress is not None and compress != "NONE":
         options.append("COMPRESS=%s" % (compress,))
 
-
     # Creating the file will truncate any pre-existing file
     LOG.debug("Creation Geotiff with options %r", options)
     if num_bands == 1:
@@ -138,8 +137,10 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
     for idx in range(num_bands):
         gtiff_band = gtiff.GetRasterBand(idx + 1)
 
-        if num_bands == 1: band_data = data
-        else: band_data = data[idx]
+        if num_bands == 1:
+            band_data = data
+        else:
+            band_data = data[idx]
 
         # Clip data to datatype, otherwise let it go and see what happens
         # XXX: This might need to operate on colors as a whole or
@@ -150,7 +151,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
         elif etype == gdal.GDT_Byte:
             band_data = clip_to_data_type(band_data, DTYPE_UINT8)
         if log_level <= logging.DEBUG:
-            LOG.debug("Data min: %f, max: %f" % (band_data.min(),band_data.max()))
+            LOG.debug("Data min: %f, max: %f" % (band_data.min(), band_data.max()))
 
         # Write the data
         if gtiff_band.WriteArray(band_data) != 0:
@@ -178,6 +179,7 @@ class Backend(roles.BackendRole):
         self.keep_intermediate = keep_intermediate
         self.exit_on_error = exit_on_error
         self.rescaler = Rescaler(*self.rescale_configs)
+        super(Backend, self).__init__()
 
     @property
     def known_grids(self):
@@ -228,13 +230,12 @@ class Backend(roles.BackendRole):
 
         try:
             LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
-            data = self.rescaler.rescale_product(gridded_product, data_type, inc_by_one=inc_by_one, fill_value=fill_value)
+            data = self.rescaler.rescale_product(gridded_product, data_type,
+                                                 inc_by_one=inc_by_one, fill_value=fill_value)
 
             # Create the geotiff
             # X and Y rotation are 0 in most cases so we just hard-code it
             geotransform = gridded_product["grid_definition"].gdal_geotransform
-            print geotransform
-            print kwargs
             create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform,
                            etype=etype, **kwargs)
         except StandardError:
@@ -254,7 +255,7 @@ def add_backend_argument_groups(parser):
     group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN2,
                        help="output filenaming pattern")
     group.add_argument('--dont-inc', dest="inc_by_one", default=True, action="store_false",
-                        help="tell rescaler to not increment by one to scaled data can have a 0 fill value (ex. 0-254 -> 1-255 with 0 being fill)")
+                       help="do not increment data by one (ex. 0-254 -> 1-255 with 0 being fill)")
     group.add_argument("--compress", default="LZW", choices=["JPEG", "LZW", "PACKBITS", "DEFLATE", "NONE"],
                        help="Specify compression method for geotiff")
     group.add_argument("--png-quicklook", dest="quicklook", action="store_true",
@@ -289,4 +290,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

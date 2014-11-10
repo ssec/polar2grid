@@ -673,6 +673,13 @@ class GridDefinition(GeographicDefinition):
         super(GridDefinition, self).__init__(*args, **kwargs)
 
     @property
+    def proj(self):
+        if self.p is None:
+            from polar2grid.proj import Proj
+            self.p = Proj(self["proj4_definition"])
+        return self.p
+
+    @property
     def is_static(self):
         return all([self[x] is not None for x in [
             "height", "width", "cell_height", "cell_width", "origin_x", "origin_y"
@@ -680,10 +687,7 @@ class GridDefinition(GeographicDefinition):
 
     @property
     def is_latlong(self):
-        if self.p is None:
-            from polar2grid.proj import Proj
-            self.p = Proj(self["proj4_definition"])
-        return self.p.is_latlong()
+        return self.proj.is_latlong()
 
     @property
     def cell_width_meters(self):
@@ -700,19 +704,13 @@ class GridDefinition(GeographicDefinition):
 
     @property
     def lonlat_lowerleft(self):
-        if self.p is None:
-            from polar2grid.proj import Proj
-            self.p = Proj(self["proj4_definition"])
         x_ll, y_ll = self.xy_lowerleft
-        return self.p(x_ll, y_ll, inverse=True)
+        return self.proj(x_ll, y_ll, inverse=True)
 
     @property
     def lonlat_upperright(self):
-        if self.p is None:
-            from polar2grid.proj import Proj
-            self.p = Proj(self["proj4_definition"])
         x_ur, y_ur = self.xy_upperright
-        return self.p(x_ur, y_ur, inverse=True)
+        return self.proj(x_ur, y_ur, inverse=True)
 
     @property
     def xy_lowerleft(self):
