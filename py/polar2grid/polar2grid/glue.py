@@ -91,7 +91,6 @@ def main(argv=sys.argv[1:]):
     # from argparse import ArgumentParser
     # init_parser = ArgumentParser(description="Extract swath data, remap it, and write it to a new file format")
     from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
-    from argparse import ArgumentError
     parser = create_basic_parser(description="Extract swath data, remap it, and write it to a new file format")
     parser.add_argument("frontend", choices=sorted(FRONTENDS.keys()),
                         help="Specify the swath extractor to use to read data (additional arguments are determined after this is specified)")
@@ -145,7 +144,7 @@ def main(argv=sys.argv[1:]):
     try:
         LOG.info("Initializing swath extractor...")
         list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
-        f = fcls(args.data_files, **args.subgroup_args["Frontend Initialization"])
+        f = fcls(search_paths=args.data_files, **args.subgroup_args["Frontend Initialization"])
     except StandardError:
         LOG.debug("Frontend exception: ", exc_info=True)
         LOG.error("%s frontend failed to load and sort data files (see log for details)", args.frontend)

@@ -681,9 +681,17 @@ class FrontendRole(object):
     as a `SwathScene`.
     """
     __metaclass__ = ABCMeta
+    FILE_EXTENSIONS = []
 
-    def __init__(self, search_paths=None, **kwargs):
-        pass
+    def __init__(self, search_paths=None, overwrite_existing=False, keep_intermediate=False, exit_on_error=True,
+                 **kwargs):
+        self.overwrite_existing = overwrite_existing
+        self.keep_intermediate = keep_intermediate
+        self.exit_on_error = exit_on_error
+        self.search_paths = search_paths
+        if not self.search_paths:
+            log.info("No files or paths provided as input, will search the current directory...")
+            self.search_paths = ['.']
 
     @abstractproperty
     def begin_time(self):
@@ -717,6 +725,44 @@ class FrontendRole(object):
         :returns: `SwathScene` object
         """
         pass
+
+    def find_files_with_extensions(self, extensions=None):
+        """Generator that uses `self.search_paths` to yield any file with extensions from `FILE_EXTENSIONS`.
+
+        Extensions must include the period at the beginning (ex: .hdf).
+        """
+        extensions = extensions if extensions is not None else self.FILE_EXTENSIONS
+        for p in self.search_paths:
+            if os.path.isdir(p):
+                log.debug("Searching '%s' for useful files", p)
+                for fn in os.listdir(p):
+                    fp = os.path.join(p, fn)
+                    ext = os.path.splitext(fp)[1]
+                    if ext in extensions:
+                        yield os.path.realpath(fp)
+            elif os.path.isfile(p):
+                ext = os.path.splitext(p)[1]
+                if ext in extensions:
+                    yield os.path.realpath(p)
+                else:
+                    log.error("File is not a valid file for this frontend: %s", p)
+            else:
+                log.error("File or directory does not exist: %s", p)
+
+    def loadable_products(self, desired_products):
+        orig_products = set(desired_products)
+        available_products = self.available_product_names
+        doable_products = orig_products & set(available_products)
+        for p in (orig_products - doable_products):
+            log.warning("Missing proper data files to create product: %s", p)
+        products = list(doable_products)
+        if not products:
+            log.debug("Original Products:\n\t%r", orig_products)
+            log.debug("Available Products:\n\t%r", available_products)
+            log.debug("Doable (final) Products:\n\t%r", products)
+            log.error("Can not create any of the requested products (missing required data files)")
+            raise RuntimeError("Can not create any of the requested products (missing required data files)")
+        return products
 
 
 class BackendRoleOld(object):

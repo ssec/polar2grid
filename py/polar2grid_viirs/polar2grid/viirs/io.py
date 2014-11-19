@@ -44,7 +44,6 @@ import h5py
 import numpy
 
 from polar2grid.viirs import guidebook
-from polar2grid.core import UTC
 from polar2grid.core.fbf import FileAppender
 from polar2grid.viirs.guidebook import K_DATA_PATH
 
@@ -55,8 +54,7 @@ import logging
 from datetime import datetime, timedelta
 
 LOG = logging.getLogger(__name__)
-UTC = UTC()
-ORBIT_TRANSITION_THRESHOLD=timedelta(seconds=10)
+ORBIT_TRANSITION_THRESHOLD = timedelta(seconds=10)
 
 
 class HDF5Reader(object):
@@ -109,7 +107,7 @@ def time_attr_to_datetime(d, st):
     # The last character is a Z (as in Zulu/UTC)
     whole_sec, s_us = st[:-1].split(".")
     s_us = int(s_us)
-    s_dt = datetime.strptime(d + whole_sec, "%Y%m%d%H%M%S").replace(tzinfo=UTC, microsecond=s_us)
+    s_dt = datetime.strptime(d + whole_sec, "%Y%m%d%H%M%S").replace(microsecond=s_us)
     return s_dt
 
 

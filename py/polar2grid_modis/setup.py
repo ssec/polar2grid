@@ -37,7 +37,7 @@ __docformat__ = "restructuredtext en"
 from setuptools import setup, find_packages
 
 classifiers = ""
-version = '1.0.0'
+version = '2.0.0'
 
 setup(
     name='polar2grid.modis',
@@ -58,7 +58,11 @@ setup(
         'pyhdf',
         'polar2grid.core'
         ],
-    dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
-    entry_points = {'console_scripts' : [ ]}
+    dependency_links=['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
+    entry_points={
+        'console_scripts': [],
+        'polar2grid.frontend_class': ['modis=polar2grid.modis:Frontend'],
+        'polar2grid.frontend_arguments': ['modis=polar2grid.modis:add_frontend_argument_groups'],
+    }
 )
 

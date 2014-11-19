@@ -43,645 +43,711 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-import modis_guidebook
-from polar2grid.core.constants import *
-from polar2grid.core import roles, histogram, Workspace
-from polar2grid.core.fbf import file_appender, check_stem
-from .modis_filters  import convert_radiance_to_bt, make_data_category_cleared, create_fog_band
-from .modis_geo_interp_250 import interpolate_geolocation
-
+from polar2grid.modis import modis_guidebook as guidebook
+from polar2grid.core import roles, histogram, meta
+from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
+from polar2grid.modis.bt import bright_shift
 import numpy
-from pyhdf.SD import SD,SDC, SDS, HDF4Error
-from copy import deepcopy
 
 import os
-import re
 import sys
+import shutil
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
-class FileInfoObject (object) :
-    """
-    An object that will automatically compile some info on our file.
-    """
-    
-    def __init__ (self, file_path, load_file=True) :
+PRODUCTS = ProductDict()
+GEO_PAIRS = GeoPairDict()
+
+### PRODUCT KEYS ###
+# PRODUCT_VIS01_1000m = "visible_01_1000m"  # if someone wants to have both the 250m and the 1000m version
+PRODUCT_VIS01 = "visible_01"
+PRODUCT_VIS02 = "visible_02"
+PRODUCT_VIS07 = "visible_07"
+PRODUCT_VIS26 = "visible_26"
+
+# need to be converted to BTs:
+PRODUCT_IR20 = "infrared_20"
+PRODUCT_IR27 = "infrared_27"
+PRODUCT_IR31 = "infrared_31"
+PRODUCT_BT20 = "brightness_temperature_20"
+PRODUCT_BT27 = "brightness_temperature_27"
+PRODUCT_BT31 = "brightness_temperature_31"
+
+PRODUCT_CMASK = "cloud_mask"
+PRODUCT_LSMASK = "land_sea_mask"
+PRODUCT_SZA = "solar_zenith_angle"
+
+# Need land mask clearing and cloud clearing
+PRODUCT_SST = "sea_surface_temperature"
+PRODUCT_LST = "land_surface_temperature"
+PRODUCT_SLST = "summer_land_surface_temperature"
+PRODUCT_NDVI = "ndvi"
+PRODUCT_CLEAR_SST = "sea_surface_temperature_cleared"
+PRODUCT_CLEAR_LST = "land_surface_temperature_cleared"
+PRODUCT_CLEAR_SLST = "summer_land_surface_temperature_cleared"
+PRODUCT_CLEAR_NDVI = "ndvi_cleared"
+
+PRODUCT_IST = "ice_surface_temperature"
+PRODUCT_INV = "inversion_strength"
+PRODUCT_IND = "inversion_depth"
+PRODUCT_ICON = "ice_concentration"
+PRODUCT_CTT = "cloud_top_temperature"
+PRODUCT_TPW = "total_precipitable_water"
+# secondary products
+PRODUCT_FOG = "fog"
+# Adaptive BT Products
+PRODUCT_ADAPTIVE_BT20 = "adaptive_brightness_temperature_20"
+PRODUCT_ADAPTIVE_BT27 = "adaptive_brightness_temperature_27"
+PRODUCT_ADAPTIVE_BT31 = "adaptive_brightness_temperature_31"
+# Geolocation "Products"
+PRODUCT_1000M_LAT = "latitude_1000m"
+PRODUCT_1000M_LON = "longitude_1000m"
+PRODUCT_500M_LAT = "latitude_500m"
+PRODUCT_500M_LON = "longitude_500m"
+PRODUCT_250M_LAT = "latitude_250m"
+PRODUCT_250M_LON = "longitude_250m"
+PRODUCT_MOD06_LAT = "latitude_mod06"
+PRODUCT_MOD06_LON = "longitude_mod06"
+PRODUCT_MOD07_LAT = "latitude_mod07"
+PRODUCT_MOD07_LON = "longitude_mod07"
+# we just use the geolocation in the geo file
+# PRODUCT_MOD28_LAT = "latitude_mod28"
+# PRODUCT_MOD28_LON = "longitude_mod28"
+# PRODUCT_MOD35_LAT = "latitude_mod35"
+# PRODUCT_MOD35_LON = "longitude_mod35"
+# PRODUCT_MODLST_LAT = "latitude_modlst"
+# PRODUCT_MODLST_LON = "longitude_modlst"
+# PRODUCT_MASKBYTE_LAT = "latitude_mask_byte"
+# PRODUCT_MASKBYTE_LON = "longitude_mask_byte"
+
+ADAPTIVE_BT_PRODUCTS = [PRODUCT_ADAPTIVE_BT20, PRODUCT_ADAPTIVE_BT27, PRODUCT_ADAPTIVE_BT31]
+
+PAIR_1000M = "1000m_nav"
+PAIR_500M = "500m_nav"
+PAIR_250M = "250m_nav"
+PAIR_MOD06 = "mod06_nav"
+PAIR_MOD07 = "mod07_nav"
+
+GEO_PAIRS.add_pair(PAIR_1000M, PRODUCT_1000M_LON, PRODUCT_1000M_LAT, 10)
+# GEO_PAIRS.add_pair(PAIR_500M, PRODUCT_500M_LON, PRODUCT_500M_LAT, 20)
+GEO_PAIRS.add_pair(PAIR_250M, PRODUCT_250M_LON, PRODUCT_250M_LAT, 40)
+GEO_PAIRS.add_pair(PAIR_MOD06, PRODUCT_MOD06_LON, PRODUCT_MOD06_LAT, 10)
+GEO_PAIRS.add_pair(PAIR_MOD07, PRODUCT_MOD07_LON, PRODUCT_MOD07_LAT, 10)
+
+# TODO: Add description and units
+PRODUCTS.add_product(PRODUCT_1000M_LON, PAIR_1000M, "longitude", guidebook.FT_GEO, guidebook.K_LONGITUDE)
+PRODUCTS.add_product(PRODUCT_1000M_LAT, PAIR_1000M, "latitude", guidebook.FT_GEO, guidebook.K_LATITUDE)
+# 500M interpolation is not implemented yet
+# PRODUCTS.add_product(PRODUCT_500M_LON, PAIR_500M, "longitude", guidebook.FT_GEO, guidebook.K_LONGITUDE,
+#                      dependencies=(None,))
+# PRODUCTS.add_product(PRODUCT_500M_LAT, PAIR_500M, "latitude", guidebook.FT_GEO, guidebook.K_LATITUDE,
+#                      dependencies=(None,))
+PRODUCTS.add_product(PRODUCT_250M_LON, PAIR_250M, "longitude", guidebook.FT_GEO, guidebook.K_LONGITUDE_250)
+PRODUCTS.add_product(PRODUCT_250M_LAT, PAIR_250M, "latitude", guidebook.FT_GEO, guidebook.K_LATITUDE_250)
+PRODUCTS.add_product(PRODUCT_MOD06_LON, PAIR_MOD06, "longitude", guidebook.FT_MOD06CT, guidebook.K_LONGITUDE)
+PRODUCTS.add_product(PRODUCT_MOD06_LAT, PAIR_MOD06, "latitude", guidebook.FT_MOD06CT, guidebook.K_LATITUDE)
+PRODUCTS.add_product(PRODUCT_MOD07_LON, PAIR_MOD07, "longitude", guidebook.FT_MOD07, guidebook.K_LONGITUDE)
+PRODUCTS.add_product(PRODUCT_MOD07_LAT, PAIR_MOD07, "latitude", guidebook.FT_MOD07, guidebook.K_LATITUDE)
+
+# if in the future someone needs both the 250M version and the 1000M version add uncomment this line
+# PRODUCTS.add_product(PRODUCT_VIS01_1000M, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS01)
+PRODUCTS.add_product(PRODUCT_VIS01, (PAIR_250M, PAIR_1000M), "reflectance", (guidebook.FT_250M, guidebook.FT_1000M), guidebook.K_VIS01)
+PRODUCTS.add_product(PRODUCT_VIS02, PAIR_250M, "reflectance", guidebook.FT_250M, guidebook.K_VIS02)
+PRODUCTS.add_product(PRODUCT_VIS07, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS07)
+PRODUCTS.add_product(PRODUCT_VIS26, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS26)
+PRODUCTS.add_product(PRODUCT_IR20, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR20)
+PRODUCTS.add_product(PRODUCT_IR27, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR27)
+PRODUCTS.add_product(PRODUCT_IR31, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR31)
+PRODUCTS.add_product(PRODUCT_CMASK, PAIR_1000M, "category", (guidebook.FT_MASK_BYTE1, guidebook.FT_MOD35), guidebook.K_CMASK)
+PRODUCTS.add_product(PRODUCT_LSMASK, PAIR_1000M, "category", guidebook.FT_MASK_BYTE1, guidebook.K_LSMASK)
+PRODUCTS.add_product(PRODUCT_SST, PAIR_1000M, "sea_surface_temperature", guidebook.FT_MOD28, guidebook.K_SST)
+PRODUCTS.add_product(PRODUCT_LST, PAIR_1000M, "land_surface_temperature", guidebook.FT_MODLST, guidebook.K_LST)
+PRODUCTS.add_product(PRODUCT_NDVI, PAIR_1000M, "ndvi", guidebook.FT_NDVI_1000M, guidebook.K_NDVI)
+PRODUCTS.add_product(PRODUCT_SZA, PAIR_1000M, "angle", guidebook.FT_GEO, guidebook.K_SZA)
+PRODUCTS.add_product(PRODUCT_IST, PAIR_1000M, "ice_surface_temperature", guidebook.FT_IST, guidebook.K_IST)
+PRODUCTS.add_product(PRODUCT_INV, PAIR_1000M, "inversion_strength", guidebook.FT_INV, guidebook.K_INV)
+PRODUCTS.add_product(PRODUCT_IND, PAIR_1000M, "inversion_depth", guidebook.FT_INV, guidebook.K_IND)
+PRODUCTS.add_product(PRODUCT_ICON, PAIR_1000M, "ice_concentration", guidebook.FT_ICECON, guidebook.K_ICECON)
+PRODUCTS.add_product(PRODUCT_CTT, PAIR_MOD06, "cloud_top_temperature", guidebook.FT_MOD06CT, guidebook.K_CTT)
+PRODUCTS.add_product(PRODUCT_TPW, PAIR_MOD07, "total_precipitable_water", guidebook.FT_MOD07, guidebook.K_TPW)
+### secondary products ###
+PRODUCTS.add_product(PRODUCT_SLST, PAIR_1000M, "summer_land_surface_temperature", dependencies=(PRODUCT_LST,))
+# radiance -> brightness temperature
+PRODUCTS.add_product(PRODUCT_BT20, PAIR_1000M, "brightness_temperature", dependencies=(PRODUCT_IR20,))
+PRODUCTS.add_product(PRODUCT_BT27, PAIR_1000M, "brightness_temperature", dependencies=(PRODUCT_IR27,))
+PRODUCTS.add_product(PRODUCT_BT31, PAIR_1000M, "brightness_temperature", dependencies=(PRODUCT_IR31,))
+PRODUCTS.add_product(PRODUCT_FOG, PAIR_1000M, "temperature_difference", dependencies=(PRODUCT_BT31, PRODUCT_BT20, PRODUCT_SZA))
+# cloud clear and land/sea mask cleared
+PRODUCTS.add_product(PRODUCT_CLEAR_SST, PAIR_1000M, "sea_surface_temperature", dependencies=(PRODUCT_SST, PRODUCT_CMASK, PRODUCT_LSMASK))
+PRODUCTS.add_product(PRODUCT_CLEAR_LST, PAIR_1000M, "land_surface_temperature", dependencies=(PRODUCT_LST, PRODUCT_CMASK, PRODUCT_LSMASK))
+PRODUCTS.add_product(PRODUCT_CLEAR_SLST, PAIR_1000M, "summer_land_surface_temperature", dependencies=(PRODUCT_CLEAR_LST,))
+PRODUCTS.add_product(PRODUCT_CLEAR_NDVI, PAIR_1000M, "ndvi", dependencies=(PRODUCT_NDVI, PRODUCT_CMASK, PRODUCT_LSMASK))
+# adaptive btemp
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_BT20, PAIR_1000M, "equalized_brightness_temperature", dependencies=(PRODUCT_BT20,))
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_BT27, PAIR_1000M, "equalized_brightness_temperature", dependencies=(PRODUCT_VIS02,))
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_BT31, PAIR_1000M, "equalized_brightness_temperature", dependencies=(PRODUCT_VIS07,))
+
+
+class Frontend(roles.FrontendRole):
+    FILE_EXTENSIONS = [".hdf"]
+
+    def __init__(self, **kwargs):
+        super(Frontend, self).__init__(**kwargs)
+        self.load_files(self.find_files_with_extensions())
+
+    def load_files(self, file_paths):
+        """Sort files by 'file type' and create objects to help load the data later.
+
+        This method should not be called by the user.
         """
-        Figure out some per-file information.
+        self.file_readers = {}
+        for file_type, file_type_info in guidebook.FILE_TYPES.items():
+            self.file_readers[file_type] = guidebook.MultiFileReader(file_type_info)
+
+        # Don't modify the passed list (we use in place operations)
+        file_paths_left = []
+        for fp in file_paths:
+            try:
+                h = guidebook.HDFEOSReader(fp)
+                LOG.debug("Recognize file %s as file type %s", fp, h.file_type)
+                if h.file_type in self.file_readers:
+                    self.file_readers[h.file_type].add_file(h)
+                else:
+                    LOG.debug("Recognized the file type, but don't know anything more about the file")
+            except StandardError:
+                LOG.debug("Could not parse HDF file as HDF-EOS file: %s", fp)
+                LOG.debug("File parsing error: ", exc_info=True)
+                file_paths_left.append(fp)
+                continue
+
+        # Log what files we were given that we didn't understand
+        for fp in file_paths_left:
+            LOG.debug("Unrecognized file: %s", fp)
+
+        # Get rid of the readers we aren't using
+        for file_type, file_reader in self.file_readers.items():
+            if not len(file_reader):
+                del self.file_readers[file_type]
+
+        if not self.file_readers:
+            LOG.error("No useable files loaded")
+            raise ValueError("No useable files loaded")
+
+        first_length = len(self.file_readers[self.file_readers.keys()[0]])
+        if not all(len(x) == first_length for x in self.file_readers.values()):
+            LOG.error("Corrupt directory: Varying number of files for each type")
+            ft_str = "\n\t".join("%s: %d" % (ft, len(fr)) for ft, fr in self.file_readers.items())
+            LOG.debug("File types and number of files:\n\t%s", ft_str)
+            raise RuntimeError("Corrupt directory: Varying number of files for each type")
+
+        self.available_file_types = self.file_readers.keys()
+
+    @property
+    def begin_time(self):
+        return self.file_readers[self.available_file_types[0]].begin_time
+
+    @property
+    def end_time(self):
+        return self.file_readers[self.available_file_types[0]].end_time
+
+    @property
+    def all_product_names(self):
+        return PRODUCTS.keys()
+
+    @property
+    def available_product_names(self):
+        """Return all loadable products including all geolocation products.
         """
-        
-        self.full_path     = file_path
-        self.file_name     = os.path.split(file_path)[1]
-        self.matching_re   = _get_matching_re(self.file_name)
-        self.datetime      = modis_guidebook.parse_datetime_from_filename(self.file_name)
-        self.geo_file_name = modis_guidebook.get_equivalent_geolocation_filename(self.file_name)
-        self.geo_file_obj  = None
-        
-        self.file_object   = None
-        if load_file :
-            self.file_object = SD(self.full_path, SDC.READ)
-        
-    
-    def get_geo_file (self) :
+        raw_products = [p for p in PRODUCTS.all_raw_products if self.raw_product_available(p)]
+        return sorted(PRODUCTS.get_product_dependents(raw_products))
+
+    @property
+    def default_products(self):
+        """Logical default list of products if not specified by the user
         """
-        get the geonavigation file as an opened file object, open it if needed
+        if os.getenv("P2G_MODIS_DEFAULTS", None):
+            return os.getenv("P2G_MODIS_DEFAULTS")
+        defaults = []
+        available = self.available_product_names
+
+        # If we can't cloud/land/sea clear these products then we want the regular uncleared products
+        # If we can clear them then we don't want the uncleared products
+        for clearp, p in ((PRODUCT_CLEAR_SST, PRODUCT_SST), (PRODUCT_CLEAR_LST, PRODUCT_LST),
+                          (PRODUCT_CLEAR_SLST, PRODUCT_SLST), (PRODUCT_CLEAR_NDVI, PRODUCT_NDVI)):
+            if clearp in available:
+                defaults.append(clearp)
+                continue
+            if p in available:
+                defaults.append(p)
+
+        other_defaults = [
+            PRODUCT_VIS01, PRODUCT_VIS02, PRODUCT_VIS07, PRODUCT_VIS26, PRODUCT_BT20, PRODUCT_BT27, PRODUCT_BT31,
+            PRODUCT_IST, PRODUCT_INV, PRODUCT_IND, PRODUCT_ICON, PRODUCT_CTT, PRODUCT_TPW, PRODUCT_FOG,
+        ]
+        return defaults + other_defaults
+
+    def raw_product_available(self, product_name):
+        """Is it possible to load the provided product with the files provided to the `Frontend`.
+
+        :returns: True if product can be loaded, False otherwise (including if product is not a raw product)
         """
-        
-        if self.geo_file_obj is None :
-            self.geo_file_obj = SD(os.path.join(os.path.split(self.full_path)[0], self.geo_file_name), SDC.READ)
-        
-        return self.geo_file_obj
+        product_def = PRODUCTS[product_name]
+        if product_def.is_raw:
+            if isinstance(product_def.file_type, str):
+                file_type = product_def.file_type
+            else:
+                return any(ft in self.file_readers for ft in product_def.file_type)
 
-    def get_geo_path(self):
-        return os.path.join(os.path.split(self.full_path)[0], self.geo_file_name)
-    
-    def close_files (self) :
-        """
-        close the various files when we're done with them
-        """
-        
-        self.file_object.close()
-        if self.geo_file_obj is not None :
-            self.geo_file_obj.close()
+            return file_type in self.file_readers
+        return False
 
-def _get_matching_re (file_name) :
-    """
-    given a file, figure out what regular expression matches it in
-    the modis_guidebook.FILE_CONTENTS_GUIDE
-    
-    WARNING: if the file somehow matches multiple expressions,
-    only the last will be returned
-    """
-    matched_re = None
-    
-    for file_expression in modis_guidebook.FILE_CONTENTS_GUIDE :
-        
-        if re.match(file_expression, file_name) :
-            matched_re = file_expression
-    
-    return matched_re
+    def create_swath_definition(self, lon_product, lat_product):
+        product_def = PRODUCTS[lon_product["product_name"]]
+        file_type = product_def.get_file_type(self.available_file_types)
+        lon_file_reader = self.file_readers[file_type]
+        product_def = PRODUCTS[lat_product["product_name"]]
+        file_type = product_def.get_file_type(self.available_file_types)
+        lat_file_reader = self.file_readers[file_type]
 
-def _load_meta_data (file_objects) :
-    """
-    load meta-data from the given list of FileInfoObject's
-    
-    Note: this method will eventually support concatinating multiple files,
-    for now it only supports processing one file at a time! TODO FUTURE
-    """
-    
-    # TODO, this is only temporary
-    if len(file_objects) != 1 :
-        raise ValueError("One file was expected for processing in _load_meta_data_and_image_data and more were given.")
-    file_object = file_objects[0]
-    
-    # set up the base dictionaries
-    meta_data = {
-                 "sat": modis_guidebook.get_satellite_from_filename(file_object.file_name),
-                 "instrument": INST_MODIS,
-                 "start_time": modis_guidebook.parse_datetime_from_filename(file_object.file_name),
-                 "bands" : { },
-                 
-                 # TO FILL IN LATER
-                 "rows_per_scan": None,
-                 "lon_fill_value": None,
-                 "lat_fill_value": None,
-                 "fbf_lat":        None,
-                 "fbf_lon":        None,
-                 # these have been changed to north, south, east, west
-                 #"lat_min":        None,
-                 #"lon_min":        None,
-                 #"lat_max":        None,
-                 #"lon_max":        None,
-                 "swath_rows":     None,
-                 "swath_cols":     None,
-                 "swath_scans":    None,
-                }
-    
-    # pull information on the data that should be in this file
-    file_contents_guide = modis_guidebook.FILE_CONTENTS_GUIDE[file_object.matching_re]
-    
-    # based on the list of bands/band IDs that should be in the file, load up the meta data and image data
-    for band_kind in file_contents_guide.keys() :
-        
-        for band_number in file_contents_guide[band_kind] :
-            
-            data_kind_const = modis_guidebook.DATA_KINDS[(band_kind, band_number)]
-            
-            # TODO, when there are multiple files, this will algorithm will need to change
-            meta_data["bands"][(band_kind, band_number)] = {
-                                                            "data_kind": data_kind_const,
-                                                            "remap_data_as": data_kind_const,
-                                                            "kind": band_kind,
-                                                            "band": band_number,
-                                                            
-                                                            # TO FILL IN LATER
-                                                            "rows_per_scan": None,
-                                                            "fill_value":    None,
-                                                            "fbf_img":       None,
-                                                            "swath_rows":    None,
-                                                            "swath_cols":    None,
-                                                            "swath_scans":   None,
-                                                            
-                                                            # this is temporary so it will be easier to load the data later
-                                                            "file_obj":      file_object # TODO, strategy won't work with multiple files!
-                                                           }
-    
-    return meta_data
-
-def _load_geonav_data(nav_uid, meta_data_to_update, file_info_objects, cut_bad=False) :
-    """
-    load the geonav data and save it in flat binary files; update the given meta_data_to_update
-    with information on where the files are and what the shape and range of the nav data are
-    
-    TODO, cut_bad currently does nothing
-    FUTURE nav_uid will need to be passed once we are using more types of navigation
-    """
-    list_of_geo_files = [ ]
-    for file_info in file_info_objects :
-        list_of_geo_files.append(file_info.get_geo_file())
-    
-    # Check if the navigation will need to be interpolated to a better
-    # resolution
-    # FUTURE: 500m geo nav key will have to be added along with the proper
-    # interpolation function
-    interpolate_data = False
-    if nav_uid in modis_guidebook.NAV_SETS_TO_INTERPOLATE_GEO:
-        interpolate_data = True
-
-    # FUTURE, if the longitude and latitude ever have different variable names, this will need refactoring
-    lat_temp_file_name, lat_stats = _load_data_to_flat_file (list_of_geo_files, "lat_" + nav_uid,
-                                                             modis_guidebook.LATITUDE_GEO_VARIABLE_NAME,
-                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
-                                                             interpolate_data=interpolate_data)
-    lon_temp_file_name, lon_stats = _load_data_to_flat_file (list_of_geo_files, "lon_" + nav_uid,
-                                                             modis_guidebook.LONGITUDE_GEO_VARIABLE_NAME,
-                                                             missing_attribute_name=modis_guidebook.LON_LAT_FILL_VALUE_NAMES[nav_uid],
-                                                             interpolate_data=interpolate_data)
-    
-    # rename the flat file to a more descriptive name
-    shape_temp = lat_stats["shape"]
-    suffix = '.real4.' + '.'.join(str(x) for x in reversed(shape_temp))
-    new_lat_file_name = "latitude_"  + str(nav_uid) + suffix 
-    new_lon_file_name = "longitude_" + str(nav_uid) + suffix 
-    os.rename(lat_temp_file_name, new_lat_file_name)
-    os.rename(lon_temp_file_name, new_lon_file_name)
-    
-    # based on our statistics, save some meta data to our meta data dictionary
-    rows, cols = shape_temp
-    meta_data_to_update["lon_fill_value"] = lon_stats["fill_value"]
-    meta_data_to_update["lat_fill_value"] = lat_stats["fill_value"]
-    meta_data_to_update["fbf_lat"]        = new_lat_file_name
-    meta_data_to_update["fbf_lon"]        = new_lon_file_name
-    meta_data_to_update["nav_set_uid"]    = nav_uid
-    meta_data_to_update["swath_rows"]     = rows
-    meta_data_to_update["swath_cols"]     = cols
-    meta_data_to_update["rows_per_scan"]  = modis_guidebook.ROWS_PER_SCAN[nav_uid]
-    meta_data_to_update["swath_scans"]    = rows / meta_data_to_update["rows_per_scan"]
-    
-    """ # these have been changed to north, south, east, west and the backend will calculate them anyway
-    meta_data_to_update["lat_min"]        = lat_stats["min"]
-    meta_data_to_update["lat_max"]        = lat_stats["max"]
-    meta_data_to_update["lon_min"]        = lon_stats["min"]
-    meta_data_to_update["lon_max"]        = lon_stats["max"]
-    """
-
-def _load_data_to_flat_file (file_objects, descriptive_string, variable_name,
-                             missing_attribute_name=None, fill_value_default=DEFAULT_FILL_VALUE,
-                             variable_idx=None, scale_name=None, offset_name=None,
-                             interpolate_data=False,
-                             min_fn=numpy.min, max_fn=numpy.max,
-                             valid_range_attribute_name=None) :
-    """
-    given a list of file info objects, load the requested variable and append it into a single flat
-    binary file with a temporary name based on the descriptive string
-    
-    the name of the new flat binary file and dictionary of statistics about the data will be returned
-    """
-    
-    # a couple of temporaries to hold some stats
-    minimum_value = None
-    maximum_value = None
-    fill_value    = None
-    
-    # open the file with a temporary name and set up a file appender
-    temp_id        = str(os.getpid())
-    temp_file_name = temp_id + "." + descriptive_string
-    temp_flat_file = file(temp_file_name, 'wb')
-    temp_appender  = file_appender(temp_flat_file, dtype=numpy.float32) # set to float32 to keep everything consistent
-    
-    # append in data from each file
-    # TODO, these files aren't currently sorted by date
-    for file_object in file_objects :
-        
-        # get the appropriate file and variable object
-        temp_var_object = file_object.select(variable_name)
-        
-        # extract the variable data
-        temp_var_data   = temp_var_object[:].astype(numpy.float32) if variable_idx is None else temp_var_object[variable_idx].astype(numpy.float32)
-        
-        # figure out where the missing values are
-        temp_fill_value = None
-        # if we have an attribute name for the fill value then load it, otherwise use the default
-        if missing_attribute_name is not None :
-            temp_fill_value = temp_var_object.attributes()[missing_attribute_name]
-        else :
-            temp_fill_value = fill_value_default
-        # if we already have a fill value and it's not the same as the one we just loaded, fix our data
-        if (fill_value is not None) and (temp_fill_value != fill_value) :
-            temp_var_data[temp_var_data == temp_fill_value] = fill_value
-            temp_fill_value = fill_value
-        fill_value      = temp_fill_value
-        not_fill_mask   = temp_var_data != fill_value
-        
-        # some bands have a value that means saturation of the sensor or that they could not be aggregated
-        if valid_range_attribute_name is not None:
-            valid_min,valid_max = temp_var_object.attributes()[valid_range_attribute_name]
-        else:
-            valid_min,valid_max = None,None
-        # Mask out saturation or couldn't aggregate to 1km values
-        # XXX: I don't think there is a way to get these values from the hdf files
-        saturation_value = modis_guidebook.SATURATION_VALUE
-        cant_aggr_value  = modis_guidebook.CANT_AGGR_VALUE
-        if valid_max is not None and variable_name in modis_guidebook.CLIP_SATURATION_VARIABLES:
-            # XXX: This may be a waste of time to perform on other bands, but I'm not sure
-            log.debug("Clipping saturation values")
-            temp_var_data[ (temp_var_data == saturation_value) | (temp_var_data == cant_aggr_value) ] = valid_max
-
-        # if there's a scale and/or offset load them
-        scale_value  = None
-        if scale_name  is not None :
-            scale_value  = temp_var_object.attributes()[scale_name] if variable_idx  is None else temp_var_object.attributes()[scale_name][variable_idx]
-            scale_value  = float(scale_value)  if scale_value  is not None else scale_value
-        offset_value = None
-        if offset_name is not None :
-            offset_value = temp_var_object.attributes()[offset_name] if variable_idx is None else temp_var_object.attributes()[offset_name][variable_idx]
-            offset_value = float(offset_value) if offset_value is not None else offset_value
-        
-        log.debug ("Variable " + str(variable_name) + " is using scale value " + str(scale_value) + " and offset value " + str(offset_value))
-        
-        # abstractly the formula for scaling is:
-        #           data_to_return = (data_from_file - offset_value) * scale_value
-        
-        # if we found an offset use it to offset the data
-        if offset_value is not None :
-            temp_var_data[not_fill_mask] -= offset_value
-        # if we found a scale use it to scale the data
-        if scale_value  is not None :
-            temp_var_data[not_fill_mask] *= scale_value
-        
-        # Special case: if we are handling 250m or 500m data we need to interpolate
-        # the navigation lat/lon data only exists for 1km resolutions
-        if interpolate_data:
-            log.debug("Interpolating to higher resolution: %s" % (variable_name,))
-            temp_var_data[~not_fill_mask] = numpy.nan
-            temp_var_data = interpolate_geolocation(temp_var_data)
-            temp_var_data[numpy.isnan(temp_var_data)] = fill_value
-
-        # append the file data to the flat file
-        temp_appender.append(temp_var_data)
-        
-        # at this point we need to calculate some statistics based on the data we're saving
-        to_use_temp   = numpy.append(temp_var_data[not_fill_mask], minimum_value) if minimum_value is not None else temp_var_data[not_fill_mask]
-        minimum_value = min_fn(to_use_temp) if to_use_temp.size > 0 else minimum_value
-        to_use_temp   = numpy.append(temp_var_data[not_fill_mask], maximum_value) if maximum_value is not None else temp_var_data[not_fill_mask]
-        maximum_value = max_fn(to_use_temp) if to_use_temp.size > 0 else maximum_value
-        
-        log.debug ("After loading, variable " + str(variable_name) + " has fill value " + str(fill_value) + " and data range " + str(minimum_value) + " to " + str(maximum_value))
-    
-    # save some statistics to a dictionary
-    stats = {
-             "shape": temp_appender.shape,
-             "min":         minimum_value,
-             "max":         maximum_value,
-             "fill_value":     fill_value,
-            }
-    
-    # close the flat binary file object (insuring that all appends are flushed to disk)
-    temp_flat_file.close()
-    
-    return temp_file_name, stats
-
-def _load_image_data (nav_uid, meta_data_to_update, cut_bad=False) :
-    """
-    load image data into binary flat files based on the meta data provided
-    """
-    
-    # process each of the band kind / id sets
-    for band_kind, band_id in meta_data_to_update["bands"] :
-        
-        # load the data into a flat file
-        (scale_name, offset_name) = modis_guidebook.RESCALING_ATTRS[(band_kind, band_id)]
-        matching_file_pattern = meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"].matching_re
-        var_name = modis_guidebook.VAR_NAMES[matching_file_pattern][(band_kind,band_id)]
-        var_idx  = modis_guidebook.VAR_IDX[matching_file_pattern][(band_kind,band_id)]
-        valid_range_attribute_name = modis_guidebook.VALID_RANGE_ATTR_NAMES[(band_kind, band_id)]
-        temp_image_file_name, image_stats = _load_data_to_flat_file ([meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"].file_object],
-                                                                     "%s_%s_%s" % (str(nav_uid),str(band_kind),str(band_id)),
-                                                                     var_name,
-                                                                     missing_attribute_name=modis_guidebook.FILL_VALUE_ATTR_NAMES[(band_kind, band_id)],
-                                                                     variable_idx=var_idx,
-                                                                     scale_name=scale_name, offset_name=offset_name,
-                                                                     valid_range_attribute_name=valid_range_attribute_name)
-        
-        # we don't need this entry with the file object anymore, so remove it
-        del meta_data_to_update["bands"][(band_kind, band_id)]["file_obj"]
-        
-        # rename the file with a more descriptive name
-        shape_temp = image_stats["shape"]
-        suffix = '.real4.' + '.'.join(str(x) for x in reversed(shape_temp))
-        new_img_file_stem = "image_%s_%s_%s" % (str(nav_uid),str(band_kind),str(band_id))
-        new_img_file_name = new_img_file_stem + suffix
-        os.rename(temp_image_file_name, new_img_file_name)
-        
-        # based on our statistics, save some meta data to our meta data dictionary
-        rows, cols = shape_temp
-        meta_data_to_update["bands"][(band_kind, band_id)]["fill_value"]  = image_stats["fill_value"]
-        meta_data_to_update["bands"][(band_kind, band_id)]["fbf_img"]     = new_img_file_name
-        meta_data_to_update["bands"][(band_kind, band_id)]["swath_rows"]  = rows
-        meta_data_to_update["bands"][(band_kind, band_id)]["swath_cols"]  = cols
-        meta_data_to_update["bands"][(band_kind, band_id)]["rows_per_scan"] = rows_per_scan = meta_data_to_update["rows_per_scan"]
-        meta_data_to_update["bands"][(band_kind, band_id)]["swath_scans"] = rows / rows_per_scan
-        
-        if rows != meta_data_to_update["swath_rows"] or cols != meta_data_to_update["swath_cols"]:
-            msg = ("Expected %d rows and %d cols, but band %s %s had %d rows and %d cols"
-                   % (meta_data_to_update["swath_rows"], meta_data_to_update["swath_cols"], band_kind, band_id, rows, cols))
-            log.error(msg)
-            raise ValueError(msg)
-
-class FrontendOld(roles.FrontendRoleOld):
-    removable_file_patterns = [
-            "*.*_infrared_20",
-            "*.*_infrared_27",
-            "*.*_infrared_31",
-            "*.*_visible_01",
-            "*.*_visible_02",
-            "*.*_visible_07",
-            "*.*_visible_26",
-            "*.*_cloud_mask_None",
-            "*.*_land_sea_mask_None",
-            "*.*_solar_zenith_angle_None",
-            "*.*_land_surface_temperature_None",
-            "*.*_summer_land_surface_temp_None",
-            "*.*_ice_surface_temperature_None",
-            "*.*_inversion_strength_None",
-            "*.*_inversion_depth_None",
-            "*.*_ice_concentration_None",
-            "*.*_cloud_top_temperature_None",
-            "*.*_total_precipitable_water",
-            "*.*_ndvi_None",
-            "*.lat_*",
-            "*.lon_*",
-            "image*.real4.*",
-            "btimage*.real4.*",
-            "bt_prescale*.real4.*",
-            "cloud_cleared*.real4.*",
-            "landsea_cleared*.real4.*",
-            "latitude*.real4.*",
-            "longitude*.real4.*"
-            ]
-
-    def __init__(self):
-        pass
-
-    def make_swaths(self, nav_set_uid, filepaths, **kwargs):
-        
-        create_fog = kwargs.pop("create_fog", False)
-        cut_bad    = kwargs.pop("cut_bad", False)
-        remove_aux = kwargs.pop("remove_aux", True)
-        create_adaptive_ir = kwargs.pop("create_adaptive_ir", False)
-        
-        # load up all the meta data
-        meta_data = { }
-        for file_pattern_key in filepaths.keys() :
-            temp_filepaths = sorted(filepaths[file_pattern_key])
-            
-            if len(temp_filepaths) > 0 :
-                # TODO, for now this method only handles one file, eventually it will need to handle more
-                if len(temp_filepaths) != 1 :
-                    log.error("Swath creation failed")
-                    log.debug("Swath creation error: One file was expected for processing in make_swaths and more were given.")
+        # sanity check
+        for k in ["data_type", "swath_rows", "swath_columns", "rows_per_scan", "fill_value"]:
+            if lon_product[k] != lat_product[k]:
+                if k == "fill_value" and numpy.isnan(lon_product[k]) and numpy.isnan(lat_product[k]):
+                    # NaN special case: NaNs can't be compared normally
                     continue
-                
-                # make sure the file exists and get minimal info on it
-                assert(os.path.exists(temp_filepaths[0]))
-                file_info = FileInfoObject(temp_filepaths[0])
-                
-                # get the initial meta data information and raw image data
-                log.info("Getting data file info...")
-                temp_meta_data = _load_meta_data ([file_info])
-                temp_bands     = { } if "bands" not in meta_data else meta_data["bands"]
-                meta_data.update(temp_meta_data)
-                meta_data["bands"].update(temp_bands)
+                LOG.error("Longitude and latitude products do not have equal attributes: %s", k)
+                raise RuntimeError("Longitude and latitude products do not have equal attributes: %s" % (k,))
 
-        # Load the actual data
+        swath_name = GEO_PAIRS[product_def.get_geo_pair_name(self.available_file_types)].name
+        swath_definition = meta.SwathDefinition(
+            swath_name=swath_name, longitude=lon_product["swath_data"], latitude=lat_product["swath_data"],
+            data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
+            swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["rows_per_scan"],
+            source_filenames=sorted(set(lon_file_reader.filepaths + lat_file_reader.filepaths)),
+            # nadir_resolution=lon_file_reader.nadir_resolution, limb_resolution=lat_file_reader.limb_resolution,
+            fill_value=lon_product["fill_value"],
+            )
+
+        # Tell the lat and lon products not to delete the data arrays, the swath definition will handle that
+        lon_product.set_persist()
+        lat_product.set_persist()
+
+        # mmmmm, almost circular
+        lon_product["swath_definition"] = swath_definition
+        lat_product["swath_definition"] = swath_definition
+
+        return swath_definition
+
+    def create_raw_swath_object(self, product_name, swath_definition):
+        product_def = PRODUCTS[product_name]
         try:
-            # Get file objects for one file pattern
-            one_patterns_file_objects = [ FileInfoObject(fp) for fp in filepaths[ filepaths.keys()[0] ] ]
-
-            log.info("Creating binary files for latitude and longitude data")
-            _load_geonav_data(nav_set_uid, meta_data, one_patterns_file_objects, cut_bad=cut_bad)
-
-            # load up all the image data
-            log.info("Creating binary files for image data")
-            _load_image_data(nav_set_uid, meta_data, cut_bad=cut_bad)
+            file_type = product_def.get_file_type(self.available_file_types)
+            file_key = product_def.get_file_key(self.available_file_types)
         except StandardError:
-            log.error("Swath creation failed")
-            log.debug("Swath creation error:", exc_info=1)
+            LOG.error("Could not create product '%s' because some data files are missing" % (product_name,))
+            raise RuntimeError("Could not create product '%s' because some data files are missing" % (product_name,))
+        file_reader = self.file_readers[file_type]
+        LOG.debug("Using file type '%s' and getting file key '%s' for product '%s'", file_type, file_key, product_name)
 
-        # if we weren't able to load any of the swaths... stop now
-        if len(meta_data.keys()) <= 0 :
-            log.error("Unable to load basic swaths, quitting...")
-            return meta_data
-        
-        # pull out some information for ease of use
-        band_info = meta_data["bands"]
-        sat       = meta_data["sat"]
-        
-        # cloud clear some of our bands if we have the cloud mask
-        for band_kind, band_id in band_info.keys() :
-            
-            # only do the clearing if it's appropriate for this band
-            if modis_guidebook.IS_CLOUD_CLEARED[(band_kind, band_id)] :
-                
-                # we can only cloud clear if we have a cloud mask
-                if (BKIND_CMASK, NOT_APPLICABLE) in band_info :
-                    
-                    file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
-                    try:
-                        new_path = make_data_category_cleared (file_to_use, band_info[(BKIND_CMASK, NOT_APPLICABLE)]["fbf_img"],
-                                                               list_of_category_values_to_clear=modis_guidebook.CLOUDS_VALUES_TO_CLEAR,
-                                                               data_fill_value=band_info[band_kind, band_id]["fill_value"],
-                                                               prefix_for_file="cloud_cleared_%s")
-                        band_info[band_kind, band_id]["fbf_swath"] = new_path
-                    except StandardError:
-                        log.error("Unexpected error while cloud clearing " + str(band_kind) + " " + str(band_id) + ", removing...")
-                        log.debug("Error:", exc_info=1)
-                        del band_info[(band_kind, band_id)]
-                
-                # if we don't have the cloud mask to clear this product, we can't produce it
-                else :
-                    log.error("Cloud mask unavailable to cloud clear " + str(band_kind) + " " + str(band_id) + ", removing...")
-                    del band_info[(band_kind, band_id)]
-        
-        # clear some data based on the land sea mask
-        for band_kind, band_id in band_info.keys() :
-            
-            clearing_key = modis_guidebook.CLEAR_ALL_LANDSEA_VALUES_EXCEPT[(band_kind, band_id)]
-            
-            # only do the clearing if it's appropriate for this band
-            if clearing_key is not None :
-                
-                # we can only clear if we have a land sea mask
-                if (BKIND_LSMSK, NOT_APPLICABLE) in band_info :
-                    
-                    file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
-                    try:
-                        new_path = make_data_category_cleared (file_to_use, band_info[(BKIND_LSMSK, NOT_APPLICABLE)]["fbf_img"],
-                                                               list_of_category_values_to_preserve=clearing_key,
-                                                               data_fill_value=band_info[band_kind, band_id]["fill_value"],
-                                                               prefix_for_file="landsea_cleared_%s")
-                        band_info[band_kind, band_id]["fbf_swath"] = new_path
-                    except StandardError:
-                        log.error("Unexpected error while land sea clearing " + str(band_kind) + " " + str(band_id) + ", removing...")
-                        log.debug("Error:", exc_info=1)
-                        del band_info[(band_kind, band_id)]
-                
-                # if we don't have the cloud mask to clear this product, we can't produce it
-                else :
-                    log.error("Land sea mask unavailable to clear parts of " + str(band_kind) + " " + str(band_id) + ", removing...")
-                    del band_info[(band_kind, band_id)]
-        
-        # convert some of our bands to brightness temperature
-        for band_kind, band_id in band_info.keys() :
-            
-            # only do the conversion if it's appropriate for this band
-            if modis_guidebook.SHOULD_CONVERT_TO_BT[(band_kind, band_id)] :
-                
-                file_to_use = band_info[band_kind, band_id]["fbf_swath"] if "fbf_swath" in band_info[band_kind, band_id] else band_info[band_kind, band_id]["fbf_img"]
-                
-                try :
-                    # convert the data and change the associated meta data to reflect the change
-                    new_path = convert_radiance_to_bt (file_to_use, sat, band_id, fill_value=band_info[band_kind, band_id]["fill_value"])
-                    band_info[band_kind, band_id]["fbf_swath"] = new_path
-                    band_info[band_kind, band_id]["data_kind"] = DKIND_BTEMP
-                except StandardError :
-                    log.error("Unexpected error prescaling " + str(band_kind) + " " + str(band_id) + ", removing...")
-                    log.debug("Prescaling error:", exc_info=1)
-                    del band_info[(band_kind, band_id)]
-        
-        # the fog band and adaptive IR must be calculated after the other bands are converted to brightness temperatures
-        
-        # if we have what we need, we want to build the fog band
-        if create_fog :
-            have_bands_needed_for_fog = True
-            for band_kind, band_id in modis_guidebook.BANDS_REQUIRED_TO_CALCULATE_FOG_BAND :
-                have_bands_needed_for_fog = False if (band_kind, band_id) not in band_info else have_bands_needed_for_fog
-            if have_bands_needed_for_fog :
-                try :
-                    fog_meta_data = create_fog_band (band_info[(BKIND_IR, BID_20)], band_info[(BKIND_IR, BID_31)],
-                                                     sza_meta_data=band_info[(BKIND_SZA, NOT_APPLICABLE)],
-                                                     fog_fill_value=band_info[(BKIND_IR, BID_20)]['fill_value']) # for now, use one of the fill values
-                    band_info[(fog_meta_data["kind"], fog_meta_data["band"])] = fog_meta_data
-                except StandardError :
-                    log.warning("Error while creating fog band; fog will not be created...")
-                    log.debug("Fog creation error:", exc_info=1)
-        
-        # if we have IR bands, and we were told to create adaptive versions, do so now
-        if create_adaptive_ir :
-            for band_kind, band_id in band_info.keys() :
-                
-                if band_kind == BKIND_IR :
-                    try :
-                        log.info("Creating adaptive IR version of %s %s" % (band_kind, band_id,))
-                        new_band_job = deepcopy(band_info[(band_kind, band_id)])
-                        new_band_kind = BKIND_IR_ADAPTIVE
-                        fbf_swath_stem = "image_%s_%s" % (new_band_kind, band_id)
-                        check_stem(fbf_swath_stem)
-                        W = Workspace('.')
-                        fbf_swath_data = getattr(W, new_band_job["fbf_img"].split('.')[0]).copy()
-                        histogram.local_histogram_equalization(
-                                fbf_swath_data,
-                                fbf_swath_data != new_band_job["fill_value"],
-                                do_log_scale=False)
-                        fbf_swath = fbf_swath_stem + ".real4.%d.%d" % (fbf_swath_data.shape[1], fbf_swath_data.shape[0],)
-                        fbf_swath_data.tofile(fbf_swath)
-                        new_band_job["fbf_swath"] = fbf_swath
-                        new_band_job["data_kind"] = DKIND_IR_ADAPTIVE
-                        band_info[(new_band_kind, band_id)] = new_band_job
-                    except StandardError:
-                        log.error("Could not create adaptive IR image for band %s %s" % (band_kind,band_id))
-                        log.debug("Adaptive IR error:", exc_info=True)
-        
-        # We don't want to give solar zenith angle to the rest of polar2grid, so we'll remove it
-        if remove_aux:
-            for band_kind,band_id in modis_guidebook.AUX_BANDS:
-                if (band_kind,band_id) in band_info:
-                    del band_info[(band_kind, band_id)]
+        LOG.info("Writing product '%s' data to binary file", product_name)
+        filename = product_name + ".dat"
+        if os.path.isfile(filename):
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
-        return meta_data
-    
-    @classmethod
-    def sort_files_by_nav_uid(cls, filepaths):
-        """
-        sort the filepaths by which navigation they use
-        """
-        
-        return modis_guidebook.sort_files_by_nav_uid(filepaths)
-    
-    @classmethod
-    def parse_datetimes_from_filepaths(cls, filepaths):
-        """
-        given a list of filepaths, return the associated datetimes
-        """
-        
-        all_datetimes = [ ]
-        
-        # figure out each datetime
-        for filepath in filepaths :
-            # Guidebook's function ignores bad files
-            datetime_temp = modis_guidebook.parse_datetime_from_filename(os.path.split(filepath)[-1])
-            all_datetimes.append(datetime_temp) if datetime_temp is not None else log.debug("Discarding None datetime.") # TODO, fix the datetime generator so this doesn't happen
-        
-        return all_datetimes
+        try:
+            # TODO: Do something with data type
+            shape = file_reader.write_var_to_flat_binary(file_key, filename)
+            data_type = file_reader.get_data_type(file_key)
+            fill_value = file_reader.get_fill_value(file_key)
+            rows_per_scan = GEO_PAIRS[product_def.get_geo_pair_name(self.available_file_types)].rows_per_scan
+        except StandardError:
+            LOG.error("Could not extract data from file")
+            LOG.debug("Extraction exception: ", exc_info=True)
+            raise
+
+        one_swath = meta.SwathProduct(
+            product_name=product_name, description=product_def.description, units=product_def.units,
+            satellite=file_reader.satellite, instrument=file_reader.instrument,
+            begin_time=file_reader.begin_time, end_time=file_reader.end_time,
+            swath_definition=swath_definition, fill_value=fill_value,
+            swath_rows=shape[0], swath_columns=shape[1], data_type=data_type, swath_data=filename,
+            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=rows_per_scan
+        )
+        return one_swath
+
+    def create_secondary_swath_object(self, product_name, swath_definition, filename, data_type, products_created):
+        product_def = PRODUCTS[product_name]
+        dep_objects = [products_created[dep_name] for dep_name in product_def.dependencies]
+        filepaths = sorted(set([filepath for swath in dep_objects for filepath in swath["source_filenames"]]))
+
+        s = dep_objects[0]
+        one_swath = meta.SwathProduct(
+            product_name=product_name, description=product_def.description, units=product_def.units,
+            satellite=s["satellite"], instrument=s["instrument"],
+            begin_time=s["begin_time"], end_time=s["end_time"],
+            swath_definition=swath_definition, fill_value=numpy.nan,
+            swath_rows=s["swath_rows"], swath_columns=s["swath_columns"], data_type=data_type, swath_data=filename,
+            source_filenames=filepaths, data_kind=product_def.data_kind, rows_per_scan=s["rows_per_scan"]
+        )
+        return one_swath
+
+    def create_scene(self, products=None, **kwargs):
+        LOG.info("Loading scene data...")
+        # If the user didn't provide the products they want, figure out which ones we can create
+        if products is None:
+            LOG.info("No products specified to frontend, will try to load logical defaults")
+            products = self.default_products
+
+        # Do we actually have all of the files needed to create the requested products?
+        products = self.loadable_products(products)
+
+        # Needs to be ordered (least-depended product -> most-depended product)
+        products_needed = PRODUCTS.dependency_ordered_products(products)
+        geo_pairs_needed = PRODUCTS.geo_pairs_for_products(products_needed, self.available_file_types)
+        # both lists below include raw products that need extra processing/masking
+        raw_products_needed = (p for p in products_needed if PRODUCTS.is_raw(p, geo_is_raw=False))
+        secondary_products_needed = [p for p in products_needed if PRODUCTS.needs_processing(p)]
+        for p in secondary_products_needed:
+            if p not in self.SECONDARY_PRODUCT_FUNCTIONS:
+                msg = "Product (secondary or extra processing) required, but not sure how to make it: '%s'" % (p,)
+                LOG.error(msg)
+                raise ValueError(msg)
+
+        # final scene object we'll be providing to the caller
+        scene = meta.SwathScene()
+        # Dictionary of all products created so far (local variable so we don't hold on to any product objects)
+        products_created = {}
+        swath_definitions = {}
+
+        # Load geolocation files
+        for geo_pair_name in geo_pairs_needed:
+            ### Lon Product ###
+            lon_product_name = GEO_PAIRS[geo_pair_name].lon_product
+            LOG.info("Creating navigation product '%s'", lon_product_name)
+            lon_swath = products_created[lon_product_name] = self.create_raw_swath_object(lon_product_name, None)
+            if lon_product_name in products:
+                scene[lon_product_name] = lon_swath
+
+            ### Lat Product ###
+            lat_product_name = GEO_PAIRS[geo_pair_name].lat_product
+            LOG.info("Creating navigation product '%s'", lat_product_name)
+            lat_swath = products_created[lat_product_name] = self.create_raw_swath_object(lat_product_name, None)
+            if lat_product_name in products:
+                scene[lat_product_name] = lat_swath
+
+            # Create the SwathDefinition
+            swath_def = self.create_swath_definition(lon_swath, lat_swath)
+            swath_definitions[swath_def["swath_name"]] = swath_def
+
+        # Create each raw products (products that are loaded directly from the file)
+        for product_name in raw_products_needed:
+            if product_name in products_created:
+                # already created
+                continue
+
+            try:
+                LOG.info("Creating data product '%s'", product_name)
+                swath_def = swath_definitions[PRODUCTS[product_name].get_geo_pair_name(self.available_file_types)]
+                one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
+            except StandardError:
+                LOG.error("Could not create raw product '%s'", product_name)
+                if self.exit_on_error:
+                    raise
+                continue
+
+            if product_name in products:
+                # the user wants this product
+                scene[product_name] = one_swath
+
+        # Dependent products and Special cases (i.e. non-raw products that need further processing)
+        for product_name in reversed(secondary_products_needed):
+            product_func = self.SECONDARY_PRODUCT_FUNCTIONS[product_name]
+            swath_def = swath_definitions[PRODUCTS[product_name].get_geo_pair_name(self.available_file_types)]
+
+            try:
+                LOG.info("Creating secondary product '%s'", product_name)
+                one_swath = product_func(self, product_name, swath_def, products_created)
+            except StandardError:
+                LOG.error("Could not create product (unexpected error): '%s'", product_name)
+                LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
+                if self.exit_on_error:
+                    raise
+                continue
+
+            products_created[product_name] = one_swath
+            if product_name in products:
+                # the user wants this product
+                scene[product_name] = one_swath
+
+        return scene
+
+    def create_slst(self, product_name, swath_definition, products_created):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
+        if len(deps) != 1:
+            LOG.error("Expected 1 dependencies to create SLST product, got %d" % (len(deps),))
+            raise RuntimeError("Expected 1 dependencies to create SLST product, got %d" % (len(deps),))
+
+        lst_product_name = deps[0]
+        lst_product = products_created[lst_product_name]
+        filename = product_name + ".dat"
+        if os.path.isfile(filename):
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
+
+        try:
+            shutil.copyfile(lst_product["swath_data"], filename)
+            one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                           lst_product["data_type"], products_created)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
+
+        return one_swath
+
+    def create_bt_from_ir(self, product_name, swath_definition, products_created):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
+        if len(deps) != 1:
+            LOG.error("Expected 1 dependencies to create BT product from IR, got %d" % (len(deps),))
+            raise RuntimeError("Expected 1 dependencies to create BT product from IR, got %d" % (len(deps),))
+
+        ir_product_name = deps[0]
+        ir_product = products_created[ir_product_name]
+        ir_mask = ir_product.get_data_mask()
+        filename = product_name + ".dat"
+        if os.path.isfile(filename):
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
+
+        try:
+            output_data = ir_product.copy_array(filename=filename, read_only=False)
+            sat = ir_product["satellite"]
+            band_number = {PRODUCT_BT20: 20, PRODUCT_BT27: 27, PRODUCT_BT31: 31}[product_name]
+            # since the input and output fill value and the invalid calculation value are all NaN we don't have to do
+            # any extra calculations
+            output_data[~ir_mask] = bright_shift(sat.title(), output_data[~ir_mask], band_number)
+
+            one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                           ir_product["data_type"], products_created)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
+
+        return one_swath
+
+    def create_adaptive_btemp(self, product_name, swath_definition, products_created):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
+        if len(deps) != 1:
+            LOG.error("Expected 1 dependencies to create adaptive BT product, got %d" % (len(deps),))
+            raise RuntimeError("Expected 1 dependencies to create adaptive BT product, got %d" % (len(deps),))
+
+        bt_product_name = deps[0]
+        bt_product = products_created[bt_product_name]
+        bt_data = bt_product.get_data_array()
+        bt_mask = bt_product.get_data_mask()
+        filename = product_name + ".dat"
+        if os.path.isfile(filename):
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
+
+        try:
+            output_data = bt_product.copy_array(filename=filename, read_only=False)
+            histogram.local_histogram_equalization(bt_data, ~bt_mask, do_log_scale=False, out=output_data)
+
+            one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                           bt_product["data_type"], products_created)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
+
+        return one_swath
+
+    def create_fog(self, product_name, swath_definition, products_created):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
+        if len(deps) != 3:
+            LOG.error("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
+            raise RuntimeError("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
+
+        PRODUCTS.add_product(PRODUCT_FOG, PAIR_1000M, "temperature_difference", dependencies=(PRODUCT_BT20, PRODUCT_BT31, PRODUCT_SZA))
+        left_term_name = deps[0]
+        right_term_name = deps[1]
+        sza_product_name = deps[2]
+        fill = products_created[left_term_name]["fill_value"]
+        left_data = products_created[left_term_name].get_data_array()
+        left_mask = products_created[left_term_name].get_data_mask()
+        right_data = products_created[right_term_name].get_data_array()
+        right_mask = products_created[right_term_name].get_data_mask()
+        sza_data = products_created[sza_product_name].get_data_array()
+        sza_mask = products_created[sza_product_name].get_data_mask()
+        night_mask = sza_data >= 90  # where is it night
+        filename = product_name + ".dat"
+        if os.path.isfile(filename):
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
+
+        try:
+            fog_data = numpy.memmap(filename, dtype=left_data.dtype, mode="w+", shape=left_data.shape)
+            numpy.subtract(left_data, right_data, fog_data)
+            invalid_mask = left_mask | right_mask | sza_mask
+            valid_night_mask = night_mask & ~invalid_mask
+            fog_data[~valid_night_mask] = fill
+            # get the fraction of the data that is valid night data from all valid data
+            fraction_night = numpy.count_nonzero(valid_night_mask) / (sza_data.size - numpy.count_nonzero(invalid_mask))
+            if fraction_night < 0.10:
+                raise ValueError("Less than 10%% of the data provided for fog calculation was night data: %f%%" % (fraction_night * 100,))
+
+            one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                           products_created[left_term_name]["data_type"], products_created)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
+
+        return one_swath
+
+    def create_cloud_land_cleared(self, product_name, swath_definition, products_created,
+                                  cloud_values_to_clear=[1, 2], lsmask_values_to_clear=[1, 2]):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
+        if len(deps) != 3:
+            LOG.error("Expected 1 dependencies to create cleared product, got %d" % (len(deps),))
+            raise RuntimeError("Expected 1 dependencies to create cleared product, got %d" % (len(deps),))
+
+        base_product_name = deps[0]
+        cmask_product_name = deps[1]
+        lsmask_product_name = deps[2]
+        base_product = products_created[base_product_name]
+        fill = base_product["fill_value"]
+        base_mask = base_product.get_data_mask()
+        cmask = products_created[cmask_product_name].get_data_array()
+        lsmask = products_created[lsmask_product_name].get_data_array()
+        filename = product_name + ".dat"
+        if os.path.isfile(filename):
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
+
+        try:
+            output_data = base_product.copy_array(filename=filename, read_only=False)
+            # in1d operates on 1 dimensional arrays so we need to reshape it back to the swath shape
+            shape = (base_product["swath_rows"], base_product["swath_columns"])
+            clearable_mask = base_mask | numpy.in1d(cmask, cloud_values_to_clear).reshape(shape) | numpy.in1d(lsmask, lsmask_values_to_clear).reshape(shape)
+            output_data[clearable_mask] = fill
+
+            one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                           base_product["data_type"], products_created)
+        except StandardError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
+
+        return one_swath
+
+    def create_cloud_sea_cleared(self, product_name, swath_definition, products_created):
+        return self.create_cloud_land_cleared(product_name, swath_definition, products_created,
+                                              lsmask_values_to_clear=[2, 3, 4])
+
+    SECONDARY_PRODUCT_FUNCTIONS = {
+        PRODUCT_SLST: create_slst,
+        PRODUCT_BT20: create_bt_from_ir,
+        PRODUCT_BT27: create_bt_from_ir,
+        PRODUCT_BT31: create_bt_from_ir,
+        PRODUCT_ADAPTIVE_BT20: create_adaptive_btemp,
+        PRODUCT_ADAPTIVE_BT27: create_adaptive_btemp,
+        PRODUCT_ADAPTIVE_BT31: create_adaptive_btemp,
+        PRODUCT_FOG: create_fog,
+        PRODUCT_CLEAR_SST: create_cloud_land_cleared,
+        PRODUCT_CLEAR_LST: create_cloud_sea_cleared,
+        PRODUCT_CLEAR_SLST: create_slst,
+        PRODUCT_CLEAR_NDVI: create_cloud_sea_cleared,
+    }
+
+
+def add_frontend_argument_groups(parser):
+    """Add command line arguments to an existing parser.
+
+    :returns: list of group titles added
+    """
+    from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
+    # Set defaults for other components that may be used in polar2grid processing
+    parser.set_defaults(fornav_D=10, fornav_d=1)
+
+    # Use the append_const action to handle adding products to the list
+    group_title = "Frontend Initialization"
+    group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
+    group.add_argument("--list-products", dest="list_products", action="store_true",
+                       help="List available frontend products and exit")
+    group_title = "Frontend Swath Extraction"
+    group = parser.add_argument_group(title=group_title, description="swath extraction options")
+    group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
+                       help="Specify frontend products to process")
+    group.add_argument('--adaptive-bt', dest='products', action=ExtendConstAction, const=ADAPTIVE_BT_PRODUCTS,
+                       help="Create adaptively scaled brightness temperature bands")
+    return ["Frontend Initialization", "Frontend Swath Extraction"]
+
 
 def main():
-    import optparse
-    usage = """
-%prog [options] filename1.h,filename2.h,filename3.h,... struct1,struct2,struct3,...
-
-"""
-    parser = optparse.OptionParser(usage)
-    parser.add_option('-t', '--test', dest="self_test",
-                    action="store_true", default=False, help="run self-tests")
-    parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
-                    help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
-    # parser.add_option('-o', '--output', dest='output',
-    #                 help='location to store output')
-    # parser.add_option('-I', '--include-path', dest="includes",
-    #                 action="append", help="include path to append to GCCXML call")
-    (options, args) = parser.parse_args()
-
-    # make options a globally accessible structure, e.g. OPTS.
-    global OPTS
-    OPTS = options
-
-    if options.self_test:
-        import doctest
-        doctest.testmod()
-        sys.exit(0)
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
+    parser = create_basic_parser(description="Extract MODIS swath data into binary files")
+    subgroup_titles = add_frontend_argument_groups(parser)
+    parser.add_argument('-f', dest='data_files', nargs="+", default=[],
+                        help="List of data files or directories to extract data from")
+    parser.add_argument('-o', dest="output_filename", default=None,
+                        help="Output filename for JSON scene (default is to stdout)")
+    parser.add_argument('--exit-on-error', dest="exit_on_error", action="store_true",
+                        help="exit on first error including non-fatal errors")
+    global_keywords = ["exit_on_error", "keep_intermediate", "overwrite_existing"]
+    args = parser.parse_args(subgroup_titles=subgroup_titles, global_keywords=global_keywords)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level = levels[min(3, options.verbosity)])
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
+    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
-    if not args:
-        parser.error( 'incorrect arguments, try -h or --help.' )
-        return 9
+    list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
+    f = Frontend(search_paths=args.data_files, **args.subgroup_args["Frontend Initialization"])
 
-    import json
-    meta_data = make_swaths(args[:])
-    print json.dumps(meta_data)
+    if list_products:
+        print("\n".join(f.available_product_names))
+        return 0
+
+    if args.output_filename and os.path.isfile(args.output_filename):
+        LOG.error("JSON file '%s' already exists, will not overwrite." % (args.output_filename,))
+        raise RuntimeError("JSON file '%s' already exists, will not overwrite." % (args.output_filename,))
+
+    scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
+    json_str = scene.dumps(persist=True)
+    if args.output_filename:
+        with open(args.output_filename, 'w') as output_file:
+            output_file.write(json_str)
+    else:
+        print(json_str)
     return 0
 
-if __name__=='__main__':
+if __name__ == '__main__':
     sys.exit(main())

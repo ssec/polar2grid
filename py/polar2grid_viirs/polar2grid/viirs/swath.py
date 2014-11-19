@@ -107,10 +107,6 @@ PRODUCT_ADAPTIVE_M13 = "adaptive_m13"
 PRODUCT_ADAPTIVE_M14 = "adaptive_m14"
 PRODUCT_ADAPTIVE_M15 = "adaptive_m15"
 PRODUCT_ADAPTIVE_M16 = "adaptive_m16"
-# if the below were their own products
-#PRODUCT_CORRECTED_DNB = "corrected_dnb"
-#PRODUCT_CORRECTED_ADAPTIVE_DNB = "corrected_adaptive_dnb"
-# FIXME: How do future config files handle this product ID since MODIS would have a similar product?
 PRODUCT_SST = "sst"
 
 # Geolocation "Products"
@@ -122,17 +118,7 @@ PRODUCT_M_LON = "m_longitude"
 PRODUCT_DNB_LAT = "dnb_latitude"
 PRODUCT_DNB_LON = "dnb_longitude"
 
-# TODO: Add ProductDefinition class
-# TDOO: Add GeolocationProductDefiniton class that is subclass of ProductDefinition (may not be needed depending on working logic)
-# TODO: Conceptually geoproducts have the idea saying "a geoproduct can come from multiple files"
-GEO_PAIRS = {
-    "inav": (PRODUCT_I_LON, PRODUCT_I_LAT),
-    "mnav": (PRODUCT_M_LON, PRODUCT_M_LAT),
-    "dnbnav": (PRODUCT_DNB_LON, PRODUCT_DNB_LAT),
-
-}
-
-ADAPTIVE_IR_PRODUCTS = [
+ADAPTIVE_BT_PRODUCTS = [
     PRODUCT_ADAPTIVE_I04, PRODUCT_ADAPTIVE_I05,
     PRODUCT_ADAPTIVE_M12, PRODUCT_ADAPTIVE_M13, PRODUCT_ADAPTIVE_M14, PRODUCT_ADAPTIVE_M15, PRODUCT_ADAPTIVE_M16
 ]
@@ -425,10 +411,10 @@ PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_brigh
 
 
 class Frontend(roles.FrontendRole):
+    FILE_EXTENSIONS = [".h5"]
     DEFAULT_FILE_READER = VIIRSSDRMultiReader
 
-    def __init__(self, search_paths=None, use_terrain_corrected=True,
-                 overwrite_existing=False, keep_intermediate=False, exit_on_error=True, **kwargs):
+    def __init__(self, use_terrain_corrected=True, **kwargs):
         """Initialize the frontend.
 
         For each search path, check if it exists and that it is
@@ -442,20 +428,12 @@ class Frontend(roles.FrontendRole):
         :param search_paths: A list of paths to search for usable files
         """
         super(Frontend, self).__init__(**kwargs)
+        self.use_terrain_corrected = use_terrain_corrected
         if kwargs.get("frontend_configs", None) is not None:
             raise NotImplementedError("Specifying frontend configuration files is not supported for this frontend yet.")
 
-        self.overwrite_existing = overwrite_existing
-        self.keep_intermediate = keep_intermediate
-        self.exit_on_error = exit_on_error
-        self.use_terrain_corrected = use_terrain_corrected
-        search_paths = search_paths or ['.']
-
-        # Get all files that we could possibly want to deal with (HDF5 files)
-        file_paths = (x for x in self.find_all_files(search_paths) if x.endswith(".h5"))
-
         # Load and sort all files
-        self._load_files(list(file_paths))
+        self._load_files(self.find_files_with_extensions())
 
 
     def _load_files(self, file_paths):
@@ -507,23 +485,44 @@ class Frontend(roles.FrontendRole):
     def end_time(self):
         return self.file_readers[self.file_readers.keys()[0]].end_time
 
-    @staticmethod
-    def find_all_files(search_paths):
-        for sp in search_paths:
-            # Take the realpath because we don't want duplicates
-            #   (two links that point to the same directory)
-            sp_real = os.path.realpath(sp)
-            if os.path.isfile(sp_real):
-                LOG.debug("Adding file '%s' to search list", sp_real)
-                yield sp_real
-            elif os.path.isdir(sp_real):
-                LOG.info("Searching '%s' for useful files...", sp)
-                for fn in os.listdir(sp):
-                    full_path = os.path.join(sp, fn)
-                    if os.path.isfile(full_path):
-                        yield full_path
-            else:
-                LOG.warning("Search path '%s' does not exist or is not a directory" % (sp_real,))
+    @property
+    def available_product_names(self):
+        raw_products = [p for p in PRODUCTS.all_raw_products if self.raw_product_available(p)]
+        return sorted(PRODUCTS.get_product_dependents(raw_products))
+
+    @property
+    def all_product_names(self):
+        return PRODUCTS.keys()
+
+    @property
+    def default_products(self):
+        if os.getenv("P2G_VIIRS_DEFAULTS", None):
+            return os.getenv("P2G_VIIRS_DEFAULTS")
+
+        defaults = [
+            PRODUCT_I01, PRODUCT_I02, PRODUCT_I03, PRODUCT_I04, PRODUCT_I05,
+            PRODUCT_M01,
+            PRODUCT_M02,
+            PRODUCT_M03,
+            PRODUCT_M04,
+            PRODUCT_M05,
+            PRODUCT_M06,
+            PRODUCT_M07,
+            PRODUCT_M08,
+            PRODUCT_M09,
+            PRODUCT_M10,
+            PRODUCT_M11,
+            PRODUCT_M12,
+            PRODUCT_M13,
+            PRODUCT_M14,
+            PRODUCT_M15,
+            PRODUCT_M16,
+            PRODUCT_IFOG,
+            PRODUCT_HISTOGRAM_DNB,
+            PRODUCT_ADAPTIVE_DNB,
+            PRODUCT_DYNAMIC_DNB,
+        ]
+        return defaults
 
     def create_swath_definition(self, lon_product, lat_product):
         product_def = PRODUCTS[lon_product["product_name"]]
@@ -639,38 +638,15 @@ class Frontend(roles.FrontendRole):
             return file_type in self.file_readers
         return False
 
-    @property
-    def available_product_names(self):
-        raw_products = [p for p in PRODUCTS.all_raw_products if self.raw_product_available(p)]
-        return sorted(PRODUCTS.get_product_dependents(raw_products))
-
-    @property
-    def all_product_names(self):
-        return PRODUCTS.keys()
-
-    def add_swath_to_scene(self, meta_data, one_swath, products_created):
-        meta_data[one_swath["product_name"]] = one_swath
-
     def create_scene(self, products=None, **kwargs):
         LOG.info("Loading scene data...")
         # If the user didn't provide the products they want, figure out which ones we can create
         if products is None:
-            LOG.info("No products specified to frontend, will try to load all normal raw products")
-            products = PRODUCTS.all_nongeo_raw_products
+            LOG.info("No products specified to frontend, will try to load logical defaults products")
+            products = self.default_products
 
         # Do we actually have all of the files needed to create the requested products?
-        orig_products = set(products)
-        available_products = self.available_product_names
-        doable_products = orig_products & set(available_products)
-        for p in (orig_products - doable_products):
-            LOG.warning("Missing proper data files to create product: %s", p)
-        products = list(doable_products)
-        if not products:
-            LOG.debug("Original Products:\n\t%r", orig_products)
-            LOG.debug("Available Products:\n\t%r", available_products)
-            LOG.debug("Doable (final) Products:\n\t%r", products)
-            LOG.error("Can not create any of the requested products (missing required data files)")
-            raise RuntimeError("Can not create any of the requested products (missing required data files)")
+        products = self.loadable_products(products)
 
         # Needs to be ordered (least-depended product -> most-depended product)
         products_needed = PRODUCTS.dependency_ordered_products(products)
@@ -829,8 +805,8 @@ class Frontend(roles.FrontendRole):
         product_def = PRODUCTS[product_name]
         deps = product_def.dependencies
         if len(deps) != 1:
-            LOG.error("Expected 1 dependencies to create adaptive DNB product, got %d" % (len(deps),))
-            raise RuntimeError("Expected 1 dependencies to create adaptive DNB product, got %d" % (len(deps),))
+            LOG.error("Expected 1 dependencies to create adaptive BT product, got %d" % (len(deps),))
+            raise RuntimeError("Expected 1 dependencies to create adaptive BT product, got %d" % (len(deps),))
 
         bt_product_name = deps[0]
         bt_product = products_created[bt_product_name]
@@ -1008,8 +984,8 @@ def add_frontend_argument_groups(parser):
     group.add_argument('--adaptive-dnb', dest='products', action="append_const", const=PRODUCT_ADAPTIVE_DNB,
                        help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
                              "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
-    group.add_argument('--adaptive-ir', dest='products', action=ExtendConstAction, const=ADAPTIVE_IR_PRODUCTS,
-                       help="Create adaptively scaled IR bands")
+    group.add_argument('--adaptive-bt', dest='products', action=ExtendConstAction, const=ADAPTIVE_BT_PRODUCTS,
+                       help="Create adaptively scaled brightness temperature bands")
     # group.add_argument('--no-dnb-scale', dest='scale_dnb', default=True, action='store_false',
     #                     help="Turn off all DNB scaling (overrides --adaptive-dnb)")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
@@ -1031,7 +1007,7 @@ def main():
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
     list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
-    f = Frontend(args.data_files, **args.subgroup_args["Frontend Initialization"])
+    f = Frontend(search_paths=args.data_files, **args.subgroup_args["Frontend Initialization"])
 
     if list_products:
         print("\n".join(f.available_product_names))

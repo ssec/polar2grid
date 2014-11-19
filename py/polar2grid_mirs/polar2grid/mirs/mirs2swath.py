@@ -389,21 +389,13 @@ def get_file_type(filepath):
 class Frontend(roles.FrontendRole):
     """Polar2Grid Frontend object for handling MIRS files.
     """
-    def __init__(self, search_paths=None,
-                 overwrite_existing=False, keep_intermediate=False, exit_on_error=False, **kwargs):
+    def __init__(self, **kwargs):
         super(Frontend, self).__init__(**kwargs)
-        self.overwrite_existing = overwrite_existing
-        self.keep_intermediate = keep_intermediate
-        self.exit_on_error = exit_on_error
-        if not search_paths:
-            LOG.info("No files or paths provided as input, will search the current directory...")
-            search_paths = ['.']
+        self._load_files()
 
-        self._load_files(search_paths)
-
-    def _load_files(self, search_paths):
+    def _load_files(self):
         recognized_files = {}
-        for file_kind, filepath in self.find_all_files(search_paths):
+        for file_kind, filepath in self.find_all_files(self.search_paths):
             if file_kind not in recognized_files:
                 recognized_files[file_kind] = []
             recognized_files[file_kind].append(filepath)
@@ -642,7 +634,7 @@ def main():
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
     list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
-    f = Frontend(args.data_files, **args.subgroup_args["Frontend Initialization"])
+    f = Frontend(search_paths=args.data_files, **args.subgroup_args["Frontend Initialization"])
 
     if list_products:
         print("\n".join(f.available_product_names))

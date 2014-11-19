@@ -1,740 +1,535 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""
-Provide information about MODIS product files for a variety of uses.
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    November 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
+"""Provide information about MODIS product files for a variety of uses.
 
-:author:       Eva Schiffer (evas)
-:contact:      evas@ssec.wisc.edu
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
+:date:         Nov 2014
 :license:      GNU GPLv3
-
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
 
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.constants import *
-from polar2grid.core.time_utils import UTC
+from polar2grid.core.frontend_utils import BaseFileReader, BaseMultiFileReader
+from polar2grid.modis.modis_geo_interp_250 import interpolate_geolocation
 
-import sys
-import re
 import os
 import logging
 
 from datetime import datetime
-from collections import defaultdict
+from pyhdf import SD
+import numpy
 
 LOG = logging.getLogger(__name__)
-UTC = UTC()
 
-LATITUDE_GEO_VARIABLE_NAME   = 'Latitude'
-LONGITUDE_GEO_VARIABLE_NAME  = 'Longitude'
-
-# 1KM products
-VISIBLE_CH_1_VARIABLE_NAME   = 'EV_250_Aggr1km_RefSB'
-VISIBLE_CH_1_VARIABLE_IDX    = 0
-VISIBLE_CH_7_VARIABLE_NAME   = 'EV_500_Aggr1km_RefSB'
-VISIBLE_CH_7_VARIABLE_IDX    = 4
-VISIBLE_CH_26_VARIABLE_NAME  = 'EV_Band26'
-VISIBLE_CH_26_VARIABLE_IDX   = None
-INFRARED_CH_20_VARIABLE_NAME = 'EV_1KM_Emissive'
-INFRARED_CH_20_VARIABLE_IDX  = 0
-INFRARED_CH_27_VARIABLE_NAME = 'EV_1KM_Emissive'
-INFRARED_CH_27_VARIABLE_IDX  = 6
-INFRARED_CH_31_VARIABLE_NAME = 'EV_1KM_Emissive'
-INFRARED_CH_31_VARIABLE_IDX  = 10
-
-# 500m products
-# FUTURE
-
-# 250m products
-VISIBLE_250_CH_1_VARIABLE_NAME    = 'EV_250_RefSB'
-VISIBLE_250_CH_1_VARIABLE_IDX     = 0
-VISIBLE_250_CH_2_VARIABLE_NAME    = 'EV_250_RefSB'
-VISIBLE_250_CH_2_VARIABLE_IDX     = 1
-
-CLOUD_MASK_NAME              = 'MODIS_Cloud_Mask'
-CLOUD_MASK_IDX               = None
-LAND_SEA_MASK_NAME           = 'MODIS_Simple_LandSea_Mask'
-LAND_SEA_MASK_IDX            = None
-
-SOLAR_ZENITH_ANGLE_NAME      = "SolarZenith"
-SOLAR_ZENITH_ANGLE_IDX       = None
-
-SEA_SURFACE_TEMP_NAME        = 'Sea_Surface_Temperature'
-SEA_SURFACE_TEMP_IDX         = None
-LAND_SURFACE_TEMP_NAME       = "LST"
-LAND_SURFACE_TEMP_IDX        = None
-NDVI_NAME                    = "NDVI"
-NDVI_IDX                     = None
-
-ICE_SURFACE_TEMP_NAME        = "Ice_Surface_Temperature"
-ICE_SURFACE_TEMP_IDX         = None
-INVERSION_STRENGTH_NAME      = "Inversion_Strength"
-INVERSION_STRENGTH_IDX       = None
-INVERSION_DEPTH_NAME         = "Inversion_Depth"
-INVERSION_DEPTH_IDX          = None
-ICE_CONCENTRATION_NAME       = "Ice_Concentration"
-ICE_CONCENTRATION_IDX        = None
-
-CLOUD_TOP_TEMP_NAME          = "Cloud_Top_Temperature"
-CLOUD_TOP_TEMP_IDX           = None
-TOTAL_PRECIP_WATER_NAME      = "Water_Vapor"
-TOTAL_PRECIP_WATER_IDX       = None
-
-VISIBLE_SCALE_ATTR_NAME      = "reflectance_scales"
-VISIBLE_OFFSET_ATTR_NAME     = "reflectance_offsets"
-INFRARED_SCALE_ATTR_NAME     = "radiance_scales"
-INFRARED_OFFSET_ATTR_NAME    = "radiance_offsets"
-
-GENERIC_SCALE_ATTR_NAME      = "scale_factor"
-GENERIC_OFFSET_ATTR_NAME     = "add_offset"
-GENERIC_VALID_RANGE_NAME     = "valid_range"
-
-FILL_VALUE_ATTR_NAME         = "_FillValue"
-MISSING_VALUE_ATTR_NAME      = "missing_value"
-
-GEO_FILE_SUFFIX              = ".geo.hdf"
-
-NAV_SETS_TO_INTERPOLATE_GEO          = [GEO_250M_NAV_UID]
-
-# this is true for the 1km data, FUTURE: when we get to other kinds, this will need to be more sophisicated
-ROWS_PER_SCAN = defaultdict(lambda: 10)
-ROWS_PER_SCAN[GEO_NAV_UID]      = 10
-ROWS_PER_SCAN[GEO_250M_NAV_UID] = 40
-
-# Special values (not verified, but this is what I was told)
-# these are used in reflectance band 1 and 2
-SATURATION_VALUE = 65535
-# if a value couldn't be aggregated from 250m/500m to 1km then we should clip those too
-CANT_AGGR_VALUE  = 65528
-# we only want to clip the saturation fill values for certain bands, otherwise night time becomes max valid
-CLIP_SATURATION_VARIABLES = [VISIBLE_250_CH_2_VARIABLE_NAME]
-
-# the cloud values that correspond to areas we should clear; this came from William so it's probably more right than my guessing ;)
-CLOUDS_VALUES_TO_CLEAR       = [1, 2]
-
-# a regular expression that will match files containing the visible and infrared bands
-VIS_INF_FILE_PATTERN           = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.1000m\.hdf'
-# a regular expression that will match files containing the 250m visible bands
-VIS_250M_FILE_PATTERN          = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.250m\.hdf'
-# a regular expression that will match files containing the cloud mask
-CLOUD_MASK_FILE_PATTERN        = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mask_byte1\.hdf'
-# a regular expression that will match files containing sea surface temperature
-SEA_SURFACE_TEMP_FILE_PATTERN  = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mod28\.hdf'
-# a regular expression that will match files containing land surface temperature
-LAND_SURFACE_TEMP_FILE_PATTERN = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.modlst\.hdf'
-# a regular expression that will match files containing the nav data (including lon/lat and solar zenith angle)
-GEO_FILE_PATTERN               = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.geo\.hdf'
-# a regular expression that will match files that have some clouds related data in them
-CLOUDS_06_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mod06ct\.hdf'
-# a regular file pattern that will match files taht contain total precipitable water
-CLOUDS_07_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.mod07\.hdf'
-# a regular expression that will match files containing ice surface temperature
-ICE_SURFACE_TEMP_FILE_PATTERN  = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.ist\.hdf'
-# a regular expression that will match files containing several inversion products
-INVERSION_FILE_PATTERN         = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.inversion\.hdf'
-# a regular expression that will match files containing ice concentration
-ICE_CONCENTRATION_FILE_PATTERN = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.icecon\.hdf'
-# a regular expression that will match files containing NDVI data
-NDVI_FILE_PATTERN              = r'[at]1\.\d\d\d\d\d\.\d\d\d\d\.ndvi\.1000m\.hdf'
-
-BANDS_REQUIRED_TO_CALCULATE_FOG_BAND = [(BKIND_IR,  BID_20), (BKIND_IR,  BID_31), (BKIND_SZA, NOT_APPLICABLE)]
-
-# a mapping between which navigation groups contain which data files
-GEO_FILE_GROUPING = {
-                      GEO_NAV_UID:      [VIS_INF_FILE_PATTERN, CLOUD_MASK_FILE_PATTERN,
-                                         SEA_SURFACE_TEMP_FILE_PATTERN, LAND_SURFACE_TEMP_FILE_PATTERN, NDVI_FILE_PATTERN,
-                                         ICE_SURFACE_TEMP_FILE_PATTERN, INVERSION_FILE_PATTERN, ICE_CONCENTRATION_FILE_PATTERN],
-                      GEO_250M_NAV_UID: [VIS_250M_FILE_PATTERN],
-                      MOD06_NAV_UID:    [CLOUDS_06_FILE_PATTERN],
-                      MOD07_NAV_UID:    [CLOUDS_07_FILE_PATTERN],
-                    }
-
-# a mapping of what navigation groups required geolocation auxiliary data
-# the file pattern is used in the filepaths dictionary passed to the frontend
-NAV_SETS_REQUIRE_GEO = {
-                      GEO_NAV_UID      : GEO_FILE_PATTERN,
-                    }
-
-# a mapping between the geo file group and the name of the fill value attribute for the longitude and latitude
-# FUTURE, if the lon/lat have different fill values in the future this may need to be more complex
-LON_LAT_FILL_VALUE_NAMES = \
-                    {
-                      GEO_NAV_UID:   FILL_VALUE_ATTR_NAME,
-                      GEO_250M_NAV_UID:   FILL_VALUE_ATTR_NAME,
-                      MOD06_NAV_UID: None,
-                      MOD07_NAV_UID: None,
-                    }
-
-# a mapping between regular expressions to match files and their band_kind and band_id contents
-FILE_CONTENTS_GUIDE = {
-                        VIS_INF_FILE_PATTERN:                       {
-                                                                     BKIND_VIS:   [BID_01, BID_07, BID_26],
-                                                                     BKIND_IR:    [BID_20, BID_27, BID_31]
-                                                                    },
-                        VIS_250M_FILE_PATTERN:                      {
-                                                                     BKIND_VIS:   [BID_01, BID_02]
-                                                                    },
-                        CLOUD_MASK_FILE_PATTERN:                    {
-                                                                     BKIND_CMASK: [NOT_APPLICABLE],
-                                                                     BKIND_LSMSK: [NOT_APPLICABLE],
-                                                                    },
-                        SEA_SURFACE_TEMP_FILE_PATTERN:              {
-                                                                     BKIND_SST:   [NOT_APPLICABLE]
-                                                                    },
-                        LAND_SURFACE_TEMP_FILE_PATTERN:             {
-                                                                     BKIND_LST:   [NOT_APPLICABLE],
-                                                                     BKIND_SLST:  [NOT_APPLICABLE]
-                                                                    },
-                        NDVI_FILE_PATTERN:                          {
-                                                                     BKIND_NDVI:  [NOT_APPLICABLE]
-                                                                    },
-                        GEO_FILE_PATTERN:                           {
-                                                                     BKIND_SZA:   [NOT_APPLICABLE]
-                                                                    },
-                        ICE_SURFACE_TEMP_FILE_PATTERN:              {
-                                                                     BKIND_IST:   [NOT_APPLICABLE]
-                                                                    },
-                        INVERSION_FILE_PATTERN:                     {
-                                                                     BKIND_INV:   [NOT_APPLICABLE],
-                                                                     BKIND_IND:   [NOT_APPLICABLE]
-                                                                    },
-                        ICE_CONCENTRATION_FILE_PATTERN:             {
-                                                                     BKIND_ICON:  [NOT_APPLICABLE]
-                                                                    },
-                        
-                        
-                        CLOUDS_06_FILE_PATTERN:                     {
-                                                                     BKIND_CTT:   [NOT_APPLICABLE],
-                                                                    },
-                        CLOUDS_07_FILE_PATTERN:                     {
-                                                                     BKIND_TPW:   [NOT_APPLICABLE],
-                                                                    },
-                      }
-
-# a mapping between bands and their fill value attribute names
-# XXX: this may require finer grain keys, like including nav set id if things
-# get complicated
-FILL_VALUE_ATTR_NAMES = \
-            {
-              (BKIND_VIS, BID_01):           FILL_VALUE_ATTR_NAME,
-              (BKIND_VIS, BID_02):           FILL_VALUE_ATTR_NAME,
-              (BKIND_VIS, BID_07):           FILL_VALUE_ATTR_NAME,
-              (BKIND_VIS, BID_26):           FILL_VALUE_ATTR_NAME,
-              (BKIND_IR,  BID_20):           FILL_VALUE_ATTR_NAME,
-              (BKIND_IR,  BID_27):           FILL_VALUE_ATTR_NAME,
-              (BKIND_IR,  BID_31):           FILL_VALUE_ATTR_NAME,
-              
-              (BKIND_CMASK, NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
-              (BKIND_LSMSK, NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
-              (BKIND_SZA,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
-              
-              (BKIND_SST,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
-              (BKIND_LST,   NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
-              (BKIND_SLST,  NOT_APPLICABLE): MISSING_VALUE_ATTR_NAME,
-              (BKIND_NDVI,  NOT_APPLICABLE): None,
-              
-              (BKIND_IST,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
-              (BKIND_INV,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
-              (BKIND_IND,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
-              (BKIND_ICON,  NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
-              
-              (BKIND_CTT,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
-              (BKIND_TPW,   NOT_APPLICABLE): FILL_VALUE_ATTR_NAME,
-            }
-
-# a list of the bands that are auxiliary bands (non-image data)
-AUX_BANDS = [
-              (BKIND_CMASK, NOT_APPLICABLE),
-              (BKIND_LSMSK, NOT_APPLICABLE),
-              (BKIND_SZA,   NOT_APPLICABLE),
-            ]
-
-# a mapping between the bands and their data kinds (in the file)
-DATA_KINDS = {
-              (BKIND_VIS, BID_01): DKIND_REFLECTANCE,
-              (BKIND_VIS, BID_02): DKIND_REFLECTANCE,
-              (BKIND_VIS, BID_07): DKIND_REFLECTANCE,
-              (BKIND_VIS, BID_26): DKIND_REFLECTANCE,
-              (BKIND_IR,  BID_20): DKIND_RADIANCE,
-              (BKIND_IR,  BID_27): DKIND_RADIANCE,
-              (BKIND_IR,  BID_31): DKIND_RADIANCE,
-              
-              (BKIND_CMASK, NOT_APPLICABLE): DKIND_CATEGORY,
-              (BKIND_LSMSK, NOT_APPLICABLE): DKIND_CATEGORY,
-              (BKIND_SZA,   NOT_APPLICABLE): DKIND_ANGLE,
-              
-              (BKIND_SST,   NOT_APPLICABLE): DKIND_BTEMP,
-              (BKIND_LST,   NOT_APPLICABLE): DKIND_BTEMP,
-              (BKIND_SLST,  NOT_APPLICABLE): DKIND_BTEMP,
-              (BKIND_NDVI,  NOT_APPLICABLE): DKIND_C_INDEX,
-              
-              (BKIND_IST,   NOT_APPLICABLE): DKIND_BTEMP,
-              (BKIND_INV,   NOT_APPLICABLE): DKIND_BTEMP,
-              (BKIND_IND,   NOT_APPLICABLE): DKIND_DISTANCE,
-              (BKIND_ICON,  NOT_APPLICABLE): DKIND_PERCENT,
-              
-              (BKIND_CTT,   NOT_APPLICABLE): DKIND_BTEMP,
-              (BKIND_TPW,   NOT_APPLICABLE): DKIND_DISTANCE,
-             }
-
-# a mapping between the bands and the variable names used in the files to hold them
-VAR_NAMES  = {
-            VIS_INF_FILE_PATTERN:           {
-                                             (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_NAME,
-                                             (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_NAME,
-                                             (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_NAME,
-                                             (BKIND_VIS, BID_01): VISIBLE_CH_1_VARIABLE_NAME,
-                                             (BKIND_VIS, BID_07): VISIBLE_CH_7_VARIABLE_NAME,
-                                             (BKIND_VIS, BID_26): VISIBLE_CH_26_VARIABLE_NAME,
-                                            },
-            CLOUD_MASK_FILE_PATTERN:        {
-                                             (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_NAME,
-                                             (BKIND_LSMSK, NOT_APPLICABLE): LAND_SEA_MASK_NAME,
-                                            },
-            SEA_SURFACE_TEMP_FILE_PATTERN:  {
-                                             (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_NAME,
-                                            },
-            LAND_SURFACE_TEMP_FILE_PATTERN: {
-                                             (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
-                                             (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_NAME,
-                                            },
-            NDVI_FILE_PATTERN:              {
-                                             (BKIND_NDVI,  NOT_APPLICABLE): NDVI_NAME,
-                                            },
-            GEO_FILE_PATTERN:               {
-                                             (BKIND_SZA,   NOT_APPLICABLE): SOLAR_ZENITH_ANGLE_NAME,
-                                            },
-            ICE_SURFACE_TEMP_FILE_PATTERN:  {
-                                             (BKIND_IST,   NOT_APPLICABLE): ICE_SURFACE_TEMP_NAME,
-                                            },
-            INVERSION_FILE_PATTERN:         {
-                                             (BKIND_INV,   NOT_APPLICABLE): INVERSION_STRENGTH_NAME,
-                                             (BKIND_IND,   NOT_APPLICABLE): INVERSION_DEPTH_NAME,
-                                            },
-            ICE_CONCENTRATION_FILE_PATTERN: {
-                                             (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_NAME,
-                                            },
-            CLOUDS_06_FILE_PATTERN:         {
-                                             (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_NAME,
-                                            },
-            CLOUDS_07_FILE_PATTERN:         {
-                                             (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_NAME,
-                                            },
-            VIS_250M_FILE_PATTERN:          {
-                                             (BKIND_VIS, BID_01): VISIBLE_250_CH_1_VARIABLE_NAME,
-                                             (BKIND_VIS, BID_02): VISIBLE_250_CH_2_VARIABLE_NAME,
-                                            },
-            }
+# file keys
+K_LONGITUDE = "longitude_var"
+K_LATITUDE = "latitude_var"
+K_LONGITUDE_250 = "longitude250_var"
+K_LATITUDE_250 = "latitude250_var"
+K_VIS01 = "vis01_var"
+K_VIS02 = "vis02_var"
+K_VIS07 = "vis07_var"
+K_VIS26 = "vis26_var"
+K_IR20 = "ir20_var"
+K_IR27 = "ir27_var"
+K_IR31 = "ir31_var"
+K_CMASK = "cloud_mask_var"
+K_LSMASK = "land_sea_mask_var"
+K_SST = "sst_var"
+K_LST = "lst_var"
+K_SLST = "slst_var"
+K_NDVI = "ndvi_var"
+K_SZA = "sza_var"
+K_IST = "ist_var"
+K_INV = "inv_var"
+K_IND = "ind_var"
+K_ICECON = "icecon_var"
+K_CTT = "ctt_var"
+K_TPW = "tpw_var"
 
 
-# a mapping between the bands and any index needed to access the data in the variable (for slicing)
-# if no slicing is needed the index will be None
-VAR_IDX    = {
-            VIS_INF_FILE_PATTERN:           {
-                                             (BKIND_IR,  BID_20): INFRARED_CH_20_VARIABLE_IDX,
-                                             (BKIND_IR,  BID_27): INFRARED_CH_27_VARIABLE_IDX,
-                                             (BKIND_IR,  BID_31): INFRARED_CH_31_VARIABLE_IDX,
-                                             (BKIND_VIS, BID_01): VISIBLE_CH_1_VARIABLE_IDX,
-                                             (BKIND_VIS, BID_07): VISIBLE_CH_7_VARIABLE_IDX,
-                                             (BKIND_VIS, BID_26): VISIBLE_CH_26_VARIABLE_IDX,
-                                            },
-            CLOUD_MASK_FILE_PATTERN:        {
-                                             (BKIND_CMASK, NOT_APPLICABLE): CLOUD_MASK_IDX,
-                                             (BKIND_LSMSK, NOT_APPLICABLE): LAND_SEA_MASK_IDX,
-                                            },
-            SEA_SURFACE_TEMP_FILE_PATTERN:  {
-                                             (BKIND_SST,   NOT_APPLICABLE): SEA_SURFACE_TEMP_IDX,
-                                            },
-            LAND_SURFACE_TEMP_FILE_PATTERN: {
-                                             (BKIND_LST,   NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
-                                             (BKIND_SLST,  NOT_APPLICABLE): LAND_SURFACE_TEMP_IDX,
-                                            },
-            NDVI_FILE_PATTERN:              {
-                                             (BKIND_NDVI,  NOT_APPLICABLE): NDVI_IDX,
-                                            },
-            GEO_FILE_PATTERN:               {
-                                             (BKIND_SZA,   NOT_APPLICABLE): SOLAR_ZENITH_ANGLE_IDX,
-                                            },
-            ICE_SURFACE_TEMP_FILE_PATTERN:  {
-                                             (BKIND_IST,   NOT_APPLICABLE): ICE_SURFACE_TEMP_IDX,
-                                            },
-            INVERSION_FILE_PATTERN:         {
-                                             (BKIND_INV,   NOT_APPLICABLE): INVERSION_STRENGTH_IDX,
-                                             (BKIND_IND,   NOT_APPLICABLE): INVERSION_DEPTH_IDX,
-                                            },
-            ICE_CONCENTRATION_FILE_PATTERN: {
-                                             (BKIND_ICON,  NOT_APPLICABLE): ICE_CONCENTRATION_IDX,
-                                            },
-            CLOUDS_06_FILE_PATTERN:         {
-                                             (BKIND_CTT,   NOT_APPLICABLE): CLOUD_TOP_TEMP_IDX,
-                                            },
-            CLOUDS_07_FILE_PATTERN:         {
-                                             (BKIND_TPW,   NOT_APPLICABLE): TOTAL_PRECIP_WATER_IDX,
-                                            },
-            VIS_250M_FILE_PATTERN:          {
-                                             (BKIND_VIS, BID_01): VISIBLE_250_CH_1_VARIABLE_IDX,
-                                             (BKIND_VIS, BID_02): VISIBLE_250_CH_2_VARIABLE_IDX,
-                                            },
-        }
+def mask_helper(data, fill_value):
+    if numpy.isnan(fill_value):
+        return numpy.isnan(data)
+    return data == fill_value
 
-# a mapping between bands and the names of their scale and offset attributes
-RESCALING_ATTRS = \
-             {
-              (BKIND_VIS, BID_01): (VISIBLE_SCALE_ATTR_NAME,  VISIBLE_OFFSET_ATTR_NAME),
-              (BKIND_VIS, BID_02): (VISIBLE_SCALE_ATTR_NAME,  VISIBLE_OFFSET_ATTR_NAME),
-              (BKIND_VIS, BID_07): (VISIBLE_SCALE_ATTR_NAME,  VISIBLE_OFFSET_ATTR_NAME),
-              (BKIND_VIS, BID_26): (VISIBLE_SCALE_ATTR_NAME,  VISIBLE_OFFSET_ATTR_NAME),
-              (BKIND_IR,  BID_20): (INFRARED_SCALE_ATTR_NAME, INFRARED_OFFSET_ATTR_NAME),
-              (BKIND_IR,  BID_27): (INFRARED_SCALE_ATTR_NAME, INFRARED_OFFSET_ATTR_NAME),
-              (BKIND_IR,  BID_31): (INFRARED_SCALE_ATTR_NAME, INFRARED_OFFSET_ATTR_NAME),
-              
-              (BKIND_CMASK, NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
-              (BKIND_LSMSK, NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
-              (BKIND_SZA,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
-              
-              (BKIND_SST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
-              (BKIND_LST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
-              (BKIND_SLST,  NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, None),
-              (BKIND_NDVI,  NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
-              
-              (BKIND_IST,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
-              (BKIND_INV,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
-              (BKIND_IND,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
-              (BKIND_ICON,  NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
-              
-              (BKIND_CTT,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
-              (BKIND_TPW,   NOT_APPLICABLE): (GENERIC_SCALE_ATTR_NAME, GENERIC_OFFSET_ATTR_NAME),
-             }
 
-# a mapping between bands and the names of their valid range attributes
-# None means there is no valid range attribute
-VALID_RANGE_ATTR_NAMES = \
-             {
-              (BKIND_VIS, BID_01): GENERIC_VALID_RANGE_NAME,
-              (BKIND_VIS, BID_02): GENERIC_VALID_RANGE_NAME,
-              (BKIND_VIS, BID_03): GENERIC_VALID_RANGE_NAME,
-              (BKIND_VIS, BID_07): GENERIC_VALID_RANGE_NAME,
-              (BKIND_VIS, BID_26): GENERIC_VALID_RANGE_NAME,
-              (BKIND_IR,  BID_20): GENERIC_VALID_RANGE_NAME,
-              (BKIND_IR,  BID_27): GENERIC_VALID_RANGE_NAME,
-              (BKIND_IR,  BID_31): GENERIC_VALID_RANGE_NAME,
-              
-              (BKIND_CMASK, NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              (BKIND_LSMSK, NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              (BKIND_SZA,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              
-              (BKIND_SST,   NOT_APPLICABLE): None,
-              (BKIND_LST,   NOT_APPLICABLE): None,
-              (BKIND_SLST,  NOT_APPLICABLE): None,
-              (BKIND_NDVI,  NOT_APPLICABLE): None,
-              
-              (BKIND_IST,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              (BKIND_INV,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              (BKIND_IND,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              (BKIND_ICON,  NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              
-              (BKIND_CTT,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-              (BKIND_TPW,   NOT_APPLICABLE): GENERIC_VALID_RANGE_NAME,
-             }
+class HDFEOSMetadata(dict):
+    """Basic Metadata parser for MODIS HDF-EOS files.
 
-# whether or not each band should be cloud cleared
-IS_CLOUD_CLEARED = \
-             {
-              (BKIND_VIS, BID_01): False,
-              (BKIND_VIS, BID_02): False,
-              (BKIND_VIS, BID_07): False,
-              (BKIND_VIS, BID_26): False,
-              (BKIND_IR,  BID_20): False,
-              (BKIND_IR,  BID_27): False,
-              (BKIND_IR,  BID_31): False,
-              
-              (BKIND_CMASK, NOT_APPLICABLE): False,
-              (BKIND_LSMSK, NOT_APPLICABLE): False,
-              (BKIND_SZA,   NOT_APPLICABLE): False,
-              
-              (BKIND_SST,   NOT_APPLICABLE): True,
-              (BKIND_LST,   NOT_APPLICABLE): True,
-              (BKIND_SLST,  NOT_APPLICABLE): True,
-              (BKIND_NDVI,  NOT_APPLICABLE): True,
-              
-              (BKIND_IST,   NOT_APPLICABLE): False,
-              (BKIND_INV,   NOT_APPLICABLE): False,
-              (BKIND_IND,   NOT_APPLICABLE): False,
-              (BKIND_ICON,  NOT_APPLICABLE): False,
-              
-              (BKIND_CTT,   NOT_APPLICABLE): False,
-              (BKIND_TPW,   NOT_APPLICABLE): False,
-             }
-
-# whether or not each band should be converted to brightness temperature
-SHOULD_CONVERT_TO_BT = \
-             {
-              (BKIND_VIS, BID_01): False,
-              (BKIND_VIS, BID_02): False,
-              (BKIND_VIS, BID_07): False,
-              (BKIND_VIS, BID_26): False,
-              (BKIND_IR,  BID_20): True,
-              (BKIND_IR,  BID_27): True,
-              (BKIND_IR,  BID_31): True,
-              
-              (BKIND_CMASK, NOT_APPLICABLE): False,
-              (BKIND_LSMSK, NOT_APPLICABLE): False,
-              (BKIND_SZA,   NOT_APPLICABLE): False,
-              
-              (BKIND_SST,   NOT_APPLICABLE): False,
-              (BKIND_LST,   NOT_APPLICABLE): False,
-              (BKIND_SLST,  NOT_APPLICABLE): False,
-              (BKIND_NDVI,  NOT_APPLICABLE): False,
-              
-              (BKIND_IST,   NOT_APPLICABLE): False,
-              (BKIND_INV,   NOT_APPLICABLE): False,
-              (BKIND_IND,   NOT_APPLICABLE): False,
-              (BKIND_ICON,  NOT_APPLICABLE): False,
-              
-              (BKIND_CTT,   NOT_APPLICABLE): False,
-              (BKIND_TPW,   NOT_APPLICABLE): False,
-             }
-
-# a list land sea mask values to keep when clearing or None if
-# that variable's data won't be cleared using this mask
-CLEAR_ALL_LANDSEA_VALUES_EXCEPT = \
-             {
-              (BKIND_VIS, BID_01): None,
-              (BKIND_VIS, BID_02): None,
-              (BKIND_VIS, BID_07): None,
-              (BKIND_VIS, BID_26): None,
-              (BKIND_IR,  BID_20): None,
-              (BKIND_IR,  BID_27): None,
-              (BKIND_IR,  BID_31): None,
-              
-              (BKIND_CMASK, NOT_APPLICABLE): None,
-              (BKIND_LSMSK, NOT_APPLICABLE): None,
-              (BKIND_SZA,   NOT_APPLICABLE): None,
-              
-              (BKIND_SST,   NOT_APPLICABLE): [1, 2],
-              (BKIND_LST,   NOT_APPLICABLE): [2, 3, 4],
-              (BKIND_SLST,  NOT_APPLICABLE): [2, 3, 4],
-              (BKIND_NDVI,  NOT_APPLICABLE): [2, 3, 4],
-              
-              (BKIND_IST,   NOT_APPLICABLE): None,
-              (BKIND_INV,   NOT_APPLICABLE): None,
-              (BKIND_IND,   NOT_APPLICABLE): None,
-              (BKIND_ICON,  NOT_APPLICABLE): None,
-              
-              (BKIND_CTT,   NOT_APPLICABLE): None,
-              (BKIND_TPW,   NOT_APPLICABLE): None,
-             }
-
-def parse_datetime_from_filename (file_name_string) :
-    """parse the given file_name_string and create an appropriate datetime object
-    that represents the datetime indicated by the file name; if the file name does
-    not represent a pattern that is understood as a MODIS file, None will be returned
+    This parser could probably be done better, but no one seems to know specifics about the Metadata format.
     """
-    
-    datetime_to_return = None
-    
-    # there are at least two file name formats to parse here
-    if (file_name_string.startswith('a1') or file_name_string.startswith('t1')) :
-        temp = file_name_string.split('.')
-        datetime_to_return = datetime.strptime(temp[1] + temp[2], "%y%j%H%M").replace(tzinfo=UTC)
-    
-    return datetime_to_return
+    def __init__(self, metadata_str):
+        metadata_lines = [x.strip() for x in metadata_str.split("\n") if x]
 
-def get_satellite_from_filename (data_file_name_string) :
-    """given a file name, figure out which satellite it's from
-    if the file does not represent a known MODIS satellite name
-    configuration None will be returned
-    """
-    
-    satellite_to_return = None
-    
-    if   data_file_name_string.find("Aqua")  >= 0 or data_file_name_string.find("a1") == 0 :
-        satellite_to_return = SAT_AQUA
-    elif data_file_name_string.find("Terra") >= 0 or data_file_name_string.find("t1") == 0 :
-        satellite_to_return = SAT_TERRA
-    
-    return satellite_to_return
+        # Check that we have a fully constructed metadata dictionary
+        assert(metadata_lines[0].split("=")[0].strip() == "GROUP")
+        group_type_key, group_type = metadata_lines[1].split("=")
+        assert(group_type_key.strip() == "GROUPTYPE" and group_type.strip() == "MASTERGROUP")
+        assert(metadata_lines[-1] == "END")
 
-def get_equivalent_geolocation_filename (data_file_name_string) :
-    """given the name of a MODIS file, figure out the expected
-    name for it's equivalent geolocation file; no checks into
-    the existence or formatting of the geolocation file are made,
-    this is just the name of the theoretical file where we would
-    expect to find the geolocation for the given data file; if
-    the given file name is not a pattern we understand as a MODIS
-    file, None will be returned
-    """
-    
-    filename_to_return = None
-    
-    # file correspondances are handled here, but clumbsily; FUTURE make a better reverse index to handle this
-    
-    if   re.match(VIS_INF_FILE_PATTERN,           data_file_name_string) is not None :
-        filename_to_return = data_file_name_string.split('.1000m.hdf'     )[0] + GEO_FILE_SUFFIX
-    elif re.match(VIS_250M_FILE_PATTERN,           data_file_name_string) is not None :
-        filename_to_return = data_file_name_string.split('.250m.hdf'      )[0] + GEO_FILE_SUFFIX
-    elif re.match(CLOUD_MASK_FILE_PATTERN,        data_file_name_string) is not None :
-        filename_to_return = data_file_name_string.split('.mask_byte1.hdf')[0] + GEO_FILE_SUFFIX
-    elif re.match(SEA_SURFACE_TEMP_FILE_PATTERN,  data_file_name_string) is not None :
-        filename_to_return = data_file_name_string.split('.mod28.hdf'     )[0] + GEO_FILE_SUFFIX
-    elif re.match(LAND_SURFACE_TEMP_FILE_PATTERN, data_file_name_string) is not None :
-        filename_to_return = data_file_name_string.split('.modlst.hdf'    )[0] + GEO_FILE_SUFFIX
-    elif re.match(GEO_FILE_PATTERN,               data_file_name_string) is not None :
-        filename_to_return = data_file_name_string
-    elif re.match(CLOUDS_06_FILE_PATTERN,         data_file_name_string) is not None :
-        filename_to_return = data_file_name_string
-    elif re.match(CLOUDS_07_FILE_PATTERN,         data_file_name_string) is not None :
-        filename_to_return = data_file_name_string
-    elif re.match(ICE_SURFACE_TEMP_FILE_PATTERN,  data_file_name_string) is not None :
-        filename_to_return = data_file_name_string.split('.ist.hdf'       )[0] + GEO_FILE_SUFFIX
-    elif re.match(ICE_CONCENTRATION_FILE_PATTERN, data_file_name_string) is not None :
-        filename_to_return = data_file_name_string.split('.icecon.hdf'    )[0] + GEO_FILE_SUFFIX
-    elif re.match(INVERSION_FILE_PATTERN,         data_file_name_string) is not None :
-        filename_to_return = data_file_name_string.split('.inversion.hdf' )[0] + GEO_FILE_SUFFIX
-    elif re.match(NDVI_FILE_PATTERN,              data_file_name_string) is not None :
-        filename_to_return = data_file_name_string.split('.ndvi.1000m.hdf')[0] + GEO_FILE_SUFFIX
-    
-    return filename_to_return
+        # We only want the stuff inside
+        # Add special value to END keyword because why would consistency matter
+        metadata_key_values = [(line.split("=")[0].strip(), line.split("=")[1].strip()) for line in metadata_lines[:-1]] + [("END", "END")]
+        self._recurse_metadata_lines(metadata_key_values)
 
-def sort_files_by_nav_uid (filepaths) :
-    """
-    given a list of filepaths, sort them into a dictionary by the nav sets they belong to
-    """
-    
-    # some useful data structures
-    nav_file_type_sets = defaultdict(dict) # this will be our return sorted dictionary
-    
-    # for each of the possible navigation sets
-    for nav_group_uid in GEO_FILE_GROUPING.keys() :
-        # for each file pattern that uses that navigation set
-        for file_pattern in GEO_FILE_GROUPING[nav_group_uid] :
-            # add the files matching that pattern to the appropriate set (ignore any that don't match)
-            nav_file_type_sets[nav_group_uid][file_pattern] = set([ ]) if file_pattern not in nav_file_type_sets[nav_group_uid] else nav_file_type_sets[nav_group_uid][file_pattern]
-            nav_file_type_sets[nav_group_uid][file_pattern].update(set([ x for x in filepaths if re.match(file_pattern, os.path.split(x)[-1]) ]))
-    
-    # removing empty nav patterns
-    for nav_group_uid in nav_file_type_sets.keys() :
-        for file_pattern in nav_file_type_sets[nav_group_uid].keys() :
-            if not nav_file_type_sets[nav_group_uid][file_pattern] :
-                LOG.debug("Removing empty file pattern '%s':'%s'" % (nav_group_uid, file_pattern))
-                del nav_file_type_sets[nav_group_uid][file_pattern]
-            else :
-                # if there is stuff in this nav group / file pattern, make it into a list instead of a set
-                nav_file_type_sets[nav_group_uid][file_pattern] = list(nav_file_type_sets[nav_group_uid][file_pattern])
-        
-        # if the entire nav pattern has no matches
-        if not nav_file_type_sets[nav_group_uid] :
-            LOG.debug("Removing empty nav file set '%s'" % (nav_group_uid,))
-            del nav_file_type_sets[nav_group_uid]
-    
-    # add navigation file patterns (if needed)
-    for nav_group_uid in nav_file_type_sets.keys():
-        # does this nav set need geonavigation aux. data?
-        if nav_group_uid not in NAV_SETS_REQUIRE_GEO:
-            continue
+    def _recurse_metadata_lines(self, key_values, current_idx=0, current_prefix=""):
+        current_key, current_val = key_values[current_idx]
+        # print "Info: ", current_prefix, current_idx, current_key, current_val
+        if current_idx >= len(key_values):
+            return current_idx + 1
 
-        # get a band representative to get the corresponding geo filename
-        file_pattern = nav_file_type_sets[nav_group_uid].keys()[0]
-        file_paths_for_pattern = nav_file_type_sets[nav_group_uid][file_pattern]
-        # add navigation file pattern to the dictionary
-        geo_file_pattern = NAV_SETS_REQUIRE_GEO[nav_group_uid]
-        nav_file_type_sets[nav_group_uid][geo_file_pattern] = set([ ])
+        if current_key == "OBJECT":
+            this_prefix = "/%s" % (current_val,)
+            current_prefix += this_prefix
+            current_object_val = None
+            current_object_num_vals = None
+            current_idx += 1
+            current_key, current_val = key_values[current_idx]
+            # we are starting an object
+            while current_key != "END_OBJECT":
+                if current_key == "NUM_VAL":
+                    current_object_num_vals = int(current_val)
+                elif current_key == "VALUE":
+                    current_object_val = current_val
+                elif current_key == "CLASS":
+                    # not sure what this is used for or what it means
+                    pass
+                elif current_key == "OBJECT" or current_key == "GROUP":
+                    # go process this object or group which could be recursive
+                    # since we are a container object we don't have any specific value to add so return to parent
+                    while current_key != "END_OBJECT":
+                        current_idx = self._recurse_metadata_lines(key_values, current_idx=current_idx, current_prefix=current_prefix)
+                        current_key, current_val = key_values[current_idx]
+                    LOG.debug("End of container object: %s", current_prefix)
+                    return current_idx + 1
+                else:
+                    LOG.warning("Unknown key/value: %s = %s", current_key, current_val)
 
-        # get the geolocation filepath for each data filepath
-        for fp in file_paths_for_pattern:
-            base_dir,fn = os.path.split(fp)
-            geo_path = os.path.join( base_dir, get_equivalent_geolocation_filename(fn) )
-            LOG.debug("Adding geolocation file '%s'" % (geo_path,))
-            nav_file_type_sets[nav_group_uid][geo_file_pattern].update([geo_path])
+                current_idx += 1
+                current_key, current_val = key_values[current_idx]
 
-        # turn the set into a list
-        nav_file_type_sets[nav_group_uid][geo_file_pattern] = list(nav_file_type_sets[nav_group_uid][geo_file_pattern])
-
-    return nav_file_type_sets
-
-
-def main():
-    import optparse
-    from pprint import pprint
-    usage = """
-%prog [options] filename1.hdf
-
-"""
-    parser = optparse.OptionParser(usage)
-    parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
-            help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
-    parser.add_option('-r', '--no-read', dest='read_hdf', action='store_false', default=True,
-            help="don't read or look for the hdf file, only analyze the filename")
-    (options, args) = parser.parse_args()
-    
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level = levels[min(3, options.verbosity)])
-    
-    LOG.info("Currently no command line tests are set up for this module.")
-    
-    """
-    if not args:
-        parser.error( 'must specify 1 filename, try -h or --help.' )
-        return -1
-    
-    for fn in args:
-        try:
-            finfo = generic_info(fn)
-        except:
-            LOG.error("Failed to get info from filename '%s'" % fn, exc_info=1)
-            continue
-    
-        if options.read_h5:
-            generic_read(fn, finfo)
-            pprint(finfo)
-            if finfo["data_kind"] == K_RADIANCE:
-                data_shape = str(finfo["data"].shape)
-                print "Got Radiance with shape %s" % data_shape
-            elif finfo["data_kind"] == K_REFLECTANCE:
-                data_shape = str(finfo["data"].shape)
-                print "Got Reflectance with shape %s" % data_shape
-            elif finfo["data_kind"] == K_BTEMP:
-                data_shape = str(finfo["data"].shape)
-                print "Got Brightness Temperature with shape %s" % data_shape
+            if current_object_num_vals != 1:
+                current_object_val = tuple(current_object_val[1:-1].split(","))
             else:
-                data_shape = "Unknown data type"
-                print "Got %s" % data_shape
-            mask_shape = str(finfo["mask"].shape)
-            print "Mask was created with shape %s" % mask_shape
+                # remove quotation marks
+                current_object_val = current_object_val.replace("\"", "")
+            LOG.debug("Adding metadata: %s = %r", current_prefix, current_object_val)
+            self[current_prefix] = current_object_val
+            return current_idx+1
+        elif current_key == "GROUP":
+            this_prefix = "/%s" % (current_val,)
+            current_prefix += this_prefix
+            current_idx += 1
+            current_key, current_val = key_values[current_idx]
+            # process everything in this group
+            while current_key != "END_GROUP":
+                current_idx = self._recurse_metadata_lines(key_values, current_idx=current_idx, current_prefix=current_prefix)
+                current_key, current_val = key_values[current_idx]
+            # we are done with the group and the parent should keep moving on
+            LOG.debug("End of group: %s", current_prefix)
+            return current_idx + 1
+        elif current_key == "GROUPTYPE":
+            # passive group thing, just keep moving on
+            return current_idx + 1
+        elif current_key == "CLASS":
+            # we don't know what to do with this
+            return current_idx + 1
         else:
-            pprint(finfo)
-    
-    """
+            raise RuntimeError("Could not properly parse HDF-EOS Metadata")
 
-if __name__ == '__main__':
-    sys.exit(main())
+        # Return the next index to look at
+        return current_idx + 1
+
+
+class HDFReader(object):
+    """Abstract HDF4 file object reader.
+
+    Attributes can be retrieved via "var_name.attr_name" or ".attr_name" for global attributes.
+    """
+    def __init__(self, filename):
+        self.filename = os.path.basename(filename)
+        self.filepath = os.path.realpath(filename)
+        self._hdf_handle = SD.SD(self.filepath, SD.SDC.READ)
+        # HDF4 files are fairly simple so no need to get all of the variables before
+
+    def __contains__(self, item):
+        """Does this file contain the specified variable or attribute.
+        """
+        try:
+            _ = self[item]
+            return True
+        except KeyError:
+            return False
+
+    def __getitem__(self, item):
+        # work around for attributes with periods in the name (WTF)
+        item = item.replace("\.", "\\")
+        var_name, attr_name = item.split(".") if "." in item else (item, None)
+        if var_name:
+            try:
+                var_name = var_name.replace("\\", ".")
+                var_obj = self._hdf_handle.select(var_name)
+            except SD.HDF4Error:
+                raise KeyError("'%s' not found in HDF4 file '%s'" % (item, self.filepath))
+        else:
+            # global attribute access
+            var_obj = self._hdf_handle
+
+        if attr_name:
+            try:
+                attr_name = attr_name.replace("\\", ".")
+                attr_obj = var_obj.attributes()[attr_name]
+                return attr_obj
+            except KeyError:
+                raise KeyError("'%s' not found in HDF4 file '%s'" % (item, self.filepath))
+
+        return var_obj
+
+FT_MOD03 = FT_GEO = "file_type_geo"
+FT_MOD021KM = FT_1000M = "file_type_1000m"
+FT_MOD02HKM = FT_500M = "file_type_500m"
+FT_MOD02QKM = FT_250M = "file_type_250m"
+FT_MOD06 = "file_type_mod06"
+FT_MOD06CT = "file_type_mod06ct"  # Special IMAPP subset of the MOD06 file
+FT_MOD07 = "file_type_mod07"
+FT_MOD28 = "file_type_mod28"
+FT_MOD35 = "file_type_mod35"
+# FT_MOD11 = "file_type_mod11"  # LST, but different than direct broadcast
+# FT_MOD13A2 = "file_type_ndvi_1000m"
+# FT_MOD13A1 = "file_type_ndvi_500m"
+# FT_MOD13Q1 = "file_type_ndvi_250m"
+# IMAPP Direct Broadcast Files
+FT_MODLST = "file_type_modlst"
+FT_MASK_BYTE1 = "file_type_mask_byte1"  # Special IMAPP DB product = Byte 1 of MOD35 and separated out
+FT_IST = "file_type_ist"
+FT_INV = "file_type_inversion"
+FT_ICECON = "file_type_icecon"
+FT_SNOW_MASK = "file_type_snow_mask"  # FIXME: What MOD product does this come from? And others of course
+FT_NDVI_1000M = "file_type_ndvi_1000m"
+FT_NDVI_500M = "file_type_ndvi_500m"
+FT_NDVI_250M = "file_type_ndvi_250m"
+
+
+class HDFEOSReader(HDFReader):
+    """HDF-EOS file reader with special handling of 'MetaData' attributes.
+
+    If the 'CoreMetadata.0' global attribute doesn't exist it will try to use the filename to get the
+    needed information.
+    """
+    METADATA_ATTR_NAME = "CoreMetadata\.0"
+    METADATA_SDATE = "/INVENTORYMETADATA/RANGEDATETIME/RANGEBEGINNINGDATE"
+    METADATA_STIME = "/INVENTORYMETADATA/RANGEDATETIME/RANGEBEGINNINGTIME"
+    METADATA_EDATE = "/INVENTORYMETADATA/RANGEDATETIME/RANGEENDINGDATE"
+    METADATA_ETIME = "/INVENTORYMETADATA/RANGEDATETIME/RANGEENDINGTIME"
+    METADATA_INSTRUMENT = "/INVENTORYMETADATA/ASSOCIATEDPLATFORMINSTRUMENTSENSOR/ASSOCIATEDPLATFORMINSTRUMENTSENSORCONTAINER/ASSOCIATEDINSTRUMENTSHORTNAME"
+    METADATA_FILE_TYPE = "/INVENTORYMETADATA/COLLECTIONDESCRIPTIONCLASS/SHORTNAME"
+
+    MODIS2FILETYPE = {
+        # archive locations
+        "021KM": FT_1000M,
+        "02QKM": FT_250M,
+        "02HKM": FT_500M,
+        "03": FT_MOD03,
+        "06_L2": FT_MOD06,
+        "07_L2": FT_MOD07,
+        "28_L2": FT_MOD28,
+        "35_L2": FT_MOD35,
+        # "11A1": FT_MOD11,
+        # "13A2": FT_MOD13A2,
+        # "13A1": FT_MOD13A1,
+        # "13Q1": FT_MOD13Q1,
+        # DB naming:
+        "geo": FT_GEO,
+        "1000m": FT_1000M,
+        "500m": FT_500M,
+        "250m": FT_250M,
+        "icecon": FT_ICECON,
+        "inversion": FT_INV,
+        "ist": FT_IST,
+        "mask_byte1": FT_MASK_BYTE1,
+        "mod06ct": FT_MOD06CT,
+        "mod07": FT_MOD07,
+        "mod28": FT_MOD28,
+        "mod35": FT_MOD35,
+        "modlst": FT_MODLST,
+        "ndvi.1000m": FT_NDVI_1000M,
+        "ndvi.500m": FT_NDVI_500M,
+        "ndvi.250m": FT_NDVI_250M,
+        "snowmask": FT_SNOW_MASK,
+    }
+
+    def __init__(self, filename):
+        super(HDFEOSReader, self).__init__(filename)
+
+        # handle meta data
+        try:
+            try:
+                metadata_str = self["." + self.METADATA_ATTR_NAME]
+                self.meta = HDFEOSMetadata(metadata_str)
+
+                begin_time_str = self.meta[self.METADATA_SDATE] + self.meta[self.METADATA_STIME]
+                end_time_str = self.meta[self.METADATA_EDATE] + self.meta[self.METADATA_ETIME]
+                self.begin_time = datetime.strptime(begin_time_str.split(".")[0], "%Y-%m-%d%H:%M:%S")
+                self.begin_time.replace(microsecond=int(begin_time_str.split(".")[1]))
+                self.end_time = datetime.strptime(end_time_str.split(".")[0], "%Y-%m-%d%H:%M:%S")
+                self.end_time.replace(microsecond=int(end_time_str.split(".")[1]))
+                self.instrument = self.meta[self.METADATA_INSTRUMENT]
+                file_type_str = self.meta[self.METADATA_FILE_TYPE]
+                self.file_type = self.MODIS2FILETYPE[file_type_str[3:]]
+                self.satellite = "aqua" if file_type_str.startswith("MYD") else "terra"
+            except KeyError:
+                LOG.debug("Could not use meta data for '%s', will try using the filename", filename, exc_info=True)
+                self.meta = None
+                fn = os.path.basename(filename)
+                if fn[0] == "M":
+                    # archive filenaming:
+                    self.satellite = "aqua" if fn[:3] == "MYD" else "terra"
+                    self.instrument = "modis"
+                    parts = fn.split(".")
+                    self.begin_time = datetime.strptime(parts[1][1:] + parts[2], "%Y%j%H%M")
+                    # we don't know the end time from the filename
+                    self.end_time = self.begin_time
+                    self.file_type = self.MODIS2FILETYPE[parts[0][3:]]
+                else:
+                    self.satellite = "aqua" if fn[0] == "a" else "terra"
+                    self.instrument = "modis"
+                    parts = fn.split(".")
+                    self.begin_time = datetime.strptime(parts[1] + parts[2], "%y%j%H%M")
+                    # we don't know the end time from the filename
+                    self.end_time = self.begin_time
+                    file_type_str = ".".join(parts[3:-1])
+                    self.file_type = self.MODIS2FILETYPE[file_type_str]
+        except StandardError:
+            LOG.debug("Could not parse HDF-EOS file", exc_info=True)
+            raise RuntimeError("Could not parse HDF-EOS file (see debug log for details)")
+
+
+class FileReader(BaseFileReader):
+    """Basic file wrapper that uses a `file_type_info` dictionary to map common key names to complex
+    variable or attribute names and how to get them.
+    """
+    # Special values (not verified, but this is what I was told) because who would store special values in a file
+    # these are used in reflectance band 1 and 2
+    SATURATION_VALUE = 65535
+    # if a value couldn't be aggregated from 250m/500m to 1km then we should clip those too
+    CANT_AGGR_VALUE = 65528
+
+    def __init__(self, filename_or_hdf_obj, file_type_info):
+        if isinstance(filename_or_hdf_obj, (str, unicode)):
+            filename_or_hdf_obj = HDFEOSReader(filename_or_hdf_obj)
+        super(FileReader, self).__init__(filename_or_hdf_obj, file_type_info)
+
+        self.instrument = self.file_handle.instrument.lower()
+        self.satellite = self.file_handle.satellite.lower()
+        self.begin_time = self.file_handle.begin_time
+        self.end_time = self.file_handle.end_time
+
+    def __getitem__(self, item):
+        known_item = self.file_type_info.get(item, item)
+        if known_item is None:
+            raise KeyError("Key 'None' was not found")
+
+        if not isinstance(known_item, (str, unicode)):
+            # Using FileVar class
+            known_item = known_item.var_path
+        LOG.debug("Loading %s from %s", known_item, self.filename)
+        return self.file_handle[known_item]
+
+    def get_swath_data(self, item, fill=None):
+        """Retrieve the item asked for then set it to the specified data type, scale it, and mask it.
+        """
+        if fill is None:
+            fill = self.get_fill_value(item)
+        var_info = self.file_type_info.get(item)
+        variable = self[var_info.var_name]
+        data = variable.get()
+        if var_info.index is not None:
+            data = data[var_info.index]
+        # before or after scaling/offset?
+        if var_info.bit_mask is not None:
+            bit_mask = var_info.bit_mask
+            shift_amount = var_info.right_shift
+            offset = var_info.additional_offset
+            numpy.bitwise_and(data, bit_mask, data)
+            numpy.right_shift(data, shift_amount, data)
+            numpy.add(data, offset, data)
+
+        # Convert to the correct data type
+        data = data.astype(var_info.data_type)
+
+        # Get the fill value
+        if var_info.fill_attr_name:
+            fill_value = self[var_info.var_name + "." + var_info.fill_attr_name]
+        else:
+            fill_value = -999.0
+        mask = mask_helper(data, fill_value)
+
+        # Get the valid_min and valid_max
+        valid_min, valid_max = None, None
+        if var_info.range_attr_name:
+            valid_min, valid_max = self[var_info.var_name + "." + var_info.range_attr_name]
+
+        # Certain data need to have special values clipped
+        if var_info.clip_saturated and valid_max is not None:
+            data[(data == self.CANT_AGGR_VALUE) | (data == self.SATURATION_VALUE)] = valid_max
+
+        # Get the scaling factors
+        scale_value = None
+        if var_info.scale_attr_name:
+            try:
+                scale_value = self[var_info.var_name + "." + var_info.scale_attr_name]
+                if var_info.index is not None:
+                    scale_value = scale_value[var_info.index]
+                scale_value = float(scale_value)
+            except KeyError:
+                LOG.debug("No scaling factors for %s", item)
+        offset_value = None
+        if var_info.offset_attr_name is not None:
+            try:
+                offset_value = self[var_info.var_name + "." + var_info.offset_attr_name]
+                if var_info.index is not None:
+                    offset_value = offset_value[var_info.index]
+                offset_value = float(offset_value)
+            except KeyError:
+                LOG.debug("No offset for %s", item)
+
+        LOG.debug("Variable " + str(var_info.var_name) + " is using scale value " + str(scale_value) + " and offset value " + str(offset_value))
+
+        if offset_value is not None:
+            data -= offset_value
+        if scale_value is not None:
+            data *= scale_value
+
+        # Special case: 250m Resolution
+        if var_info.interpolate:
+            LOG.debug("Interpolating to higher resolution: %s" % (var_info.var_name,))
+            if mask is not None:
+                data[mask] = numpy.nan
+            data = interpolate_geolocation(data)
+            data[numpy.isnan(data)] = fill
+        elif mask is not None:
+            data[mask] = fill
+
+        return data
+
+
+class MultiFileReader(BaseMultiFileReader):
+    def __init__(self, file_type_info, single_class=FileReader):
+        super(MultiFileReader, self).__init__(file_type_info, single_class)
+
+
+class FileInfo(object):
+    def __init__(self, var_name, index=None,
+                 scale_attr_name="scale_factor", offset_attr_name="add_offset", range_attr_name="valid_range",
+                 bit_mask=None, right_shift=None, additional_offset=None, fill_attr_name="_FillValue",
+                 data_type=numpy.float32, interpolate=False, clip_saturated=False):
+        self.var_name = var_name
+        self.index = index
+        self.data_type = data_type
+        self.scale_attr_name = scale_attr_name
+        self.offset_attr_name = offset_attr_name
+        self.range_attr_name = range_attr_name
+        self.bit_mask = bit_mask
+        self.right_shift = right_shift
+        self.additional_offset = additional_offset
+        self.fill_attr_name = fill_attr_name
+        self.interpolate = interpolate
+        self.clip_saturated = clip_saturated
+
+
+FILE_TYPES = {}
+FILE_TYPES[FT_MOD03] = {
+    K_LONGITUDE: FileInfo("Longitude", scale_attr_name=None, offset_attr_name=None),
+    K_LATITUDE: FileInfo("Latitude", scale_attr_name=None, offset_attr_name=None),
+    K_LONGITUDE_250: FileInfo("Longitude", interpolate=True),
+    K_LATITUDE_250: FileInfo("Latitude", interpolate=True),
+    K_SZA: FileInfo("SolarZenith", offset_attr_name=None),
+}
+FILE_TYPES[FT_MOD021KM] = {
+    K_VIS01: FileInfo("EV_250_Aggr1km_RefSB", 0, "reflectance_scales", "reflectance_offsets"),
+    K_VIS07: FileInfo("EV_500_Aggr1km_RefSB", 4, "reflectance_scales", "reflectance_offsets"),
+    K_VIS26: FileInfo("EV_Band26", None, "reflectance_scales", "reflectance_offsets"),
+    K_IR20: FileInfo("EV_1KM_Emissive", 0, "radiance_scales", "radiance_offsets"),
+    K_IR27: FileInfo("EV_1KM_Emissive", 6, "radiance_scales", "radiance_offsets"),
+    K_IR31: FileInfo("EV_1KM_Emissive", 10, "radiance_scales", "radiance_offsets"),
+}
+FILE_TYPES[FT_MOD02QKM] = {
+    K_VIS01: FileInfo("EV_250_RefSB", 0, "reflectance_scales", "reflectance_offsets"),
+    K_VIS02: FileInfo("EV_250_RefSB", 1, "reflectance_scales", "reflectance_offsets", clip_saturated=True),
+}
+FILE_TYPES[FT_MOD06CT] = {
+    K_LONGITUDE: FileInfo("Longitude",
+                          scale_attr_name=None, offset_attr_name=None, range_attr_name=None, fill_attr_name=None),
+    K_LATITUDE: FileInfo("Latitude",
+                         scale_attr_name=None, offset_attr_name=None, range_attr_name=None, fill_attr_name=None),
+    K_CTT: FileInfo("Cloud_Top_Temperature"),
+}
+FILE_TYPES[FT_MOD07] = {
+    K_LONGITUDE: FileInfo("Longitude",
+                          scale_attr_name=None, offset_attr_name=None, range_attr_name=None, fill_attr_name=None),
+    K_LATITUDE: FileInfo("Latitude",
+                         scale_attr_name=None, offset_attr_name=None, range_attr_name=None, fill_attr_name=None),
+    K_TPW: FileInfo("Water_Vapor"),
+}
+FILE_TYPES[FT_MOD28] = {
+    K_SST: FileInfo("Sea_Surface_Temperature", range_attr_name=None),
+}
+FILE_TYPES[FT_MOD35] = {
+    K_CMASK: FileInfo("Cloud_Mask",
+                      index=0, bit_mask=0b110, right_shift=1, additional_offset=1, data_type=numpy.int32),
+    K_LSMASK: FileInfo("Cloud_Mask",
+                       index=0, bit_mask=0b11000000, right_shift=1, additional_offset=1, data_type=numpy.int32),
+}
+FILE_TYPES[FT_MASK_BYTE1] = {
+    K_CMASK: FileInfo("MODIS_Cloud_Mask", data_type=numpy.int32),
+    K_LSMASK: FileInfo("MODIS_Simple_LandSea_Mask", data_type=numpy.int32),
+}
+FILE_TYPES[FT_MODLST] = {
+    K_LST: FileInfo("LST", range_attr_name=None, offset_attr_name=None, fill_attr_name="missing_value"),
+    K_SLST: FileInfo("LST", range_attr_name=None, offset_attr_name=None, fill_attr_name="missing_value"),
+}
+FILE_TYPES[FT_IST] = {
+    K_IST: FileInfo("Ice_Surface_Temperature"),
+}
+FILE_TYPES[FT_INV] = {
+    K_INV: FileInfo("Inversion_Strength"),
+    K_IND: FileInfo("Inversion_Depth"),
+}
+FILE_TYPES[FT_ICECON] = {
+    K_ICECON: FileInfo("Ice_Concentration"),
+}
+FILE_TYPES[FT_NDVI_1000M] = {
+    K_NDVI: FileInfo("NDVI", range_attr_name=None, fill_attr_name=None),
+}
+
