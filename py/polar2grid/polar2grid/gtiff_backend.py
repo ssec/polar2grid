@@ -1,42 +1,41 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    November 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
 """polar2grid backend to take polar-orbitting satellite data arrays
 and place it into a geotiff.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
+:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:date:         Nov 2014
 :license:      GNU GPLv3
-
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
 
 """
 __docformat__ = "restructuredtext en"
@@ -45,8 +44,7 @@ from osgeo import gdal
 import osr
 import numpy
 
-from polar2grid.core.rescale import Rescaler
-from polar2grid.core.constants import *
+from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
 from polar2grid.core import roles
 from polar2grid.core.dtype import clip_to_data_type, str_to_dtype
 
@@ -58,13 +56,7 @@ LOG = logging.getLogger(__name__)
 
 gtiff_driver = gdal.GetDriverByName("GTIFF")
 
-DEFAULT_RCONFIG = "rescale_configs/rescale.ini"
-DEFAULT_8BIT_RCONFIG = "rescale_configs/rescale.8bit.conf"
-DEFAULT_16BIT_RCONFIG = "rescale_configs/rescale.16bit.conf"
-DEFAULT_INC_8BIT_RCONFIG = "rescale_configs/rescale_inc.8bit.conf"
-DEFAULT_INC_16BIT_RCONFIG = "rescale_configs/rescale_inc.16bit.conf"
-DEFAULT_OUTPUT_PATTERN = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s_%(grid_name)s.tif"
-DEFAULT_OUTPUT_PATTERN2 = "%(satellite)s_%(instrument)s_%(product_name)s_%(begin_time)s_%(grid_name)s.tif"
+DEFAULT_OUTPUT_PATTERN = "%(satellite)s_%(instrument)s_%(product_name)s_%(begin_time)s_%(grid_name)s.tif"
 
 
 def _proj4_to_srs(proj4_str):
@@ -147,9 +139,9 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
         # do a linear scaling. No one should be scaling data to outside these
         # ranges anyway
         if etype == gdal.GDT_UInt16:
-            band_data = clip_to_data_type(band_data, DTYPE_UINT16)
+            band_data = clip_to_data_type(band_data, numpy.uint16)
         elif etype == gdal.GDT_Byte:
-            band_data = clip_to_data_type(band_data, DTYPE_UINT8)
+            band_data = clip_to_data_type(band_data, numpy.uint8)
         if log_level <= logging.DEBUG:
             LOG.debug("Data min: %f, max: %f" % (band_data.min(), band_data.max()))
 
@@ -173,42 +165,24 @@ np2etype = {
 
 
 class Backend(roles.BackendRole):
-    def __init__(self, rescale_configs=None, overwrite_existing=False, keep_intermediate=False, exit_on_error=True):
+    def __init__(self, rescale_configs=None, **kwargs):
         self.rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
-        self.overwrite_existing = overwrite_existing
-        self.keep_intermediate = keep_intermediate
-        self.exit_on_error = exit_on_error
         self.rescaler = Rescaler(*self.rescale_configs)
-        super(Backend, self).__init__()
+        super(Backend, self).__init__(**kwargs)
 
     @property
     def known_grids(self):
-        # Should work regardless of grid
+        # should work regardless of grid
         return None
-
-    def create_output_from_scene(self, gridded_scene, **kwargs):
-        output_filenames = []
-        for product_name, gridded_product in gridded_scene.items():
-            try:
-                output_fn = self.create_output_from_product(gridded_product, **kwargs)
-                output_filenames.append(output_fn)
-            except StandardError:
-                LOG.error("Could not create output for '%s'", product_name)
-                if self.exit_on_error:
-                    raise
-                LOG.debug("Backend exception: ", exc_info=True)
-                continue
-        return output_filenames
 
     def create_output_from_product(self, gridded_product, output_pattern=None,
                                    data_type=None, inc_by_one=None, fill_value=0, **kwargs):
-        data_type = data_type or DTYPE_UINT8
-        data_type = str_to_dtype(data_type)
+        data_type = data_type or numpy.uint8
         etype = np2etype[data_type]
         inc_by_one = inc_by_one or False
         grid_def = gridded_product["grid_definition"]
         if not output_pattern:
-            output_pattern = DEFAULT_OUTPUT_PATTERN2
+            output_pattern = DEFAULT_OUTPUT_PATTERN
         if "%" in output_pattern:
             # format the filename
             of_kwargs = gridded_product.copy()
@@ -252,7 +226,7 @@ def add_backend_argument_groups(parser):
     group.add_argument('--rescale-configs', nargs="*", dest="rescale_configs",
                        help="alternative rescale configuration files")
     group = parser.add_argument_group(title="Backend Output Creation")
-    group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN2,
+    group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
                        help="output filenaming pattern")
     group.add_argument('--dont-inc', dest="inc_by_one", default=True, action="store_false",
                        help="do not increment data by one (ex. 0-254 -> 1-255 with 0 being fill)")
@@ -260,6 +234,8 @@ def add_backend_argument_groups(parser):
                        help="Specify compression method for geotiff")
     group.add_argument("--png-quicklook", dest="quicklook", action="store_true",
                        help="Create a PNG version of the created geotiff")
+    group.add_argument("--dtype", dest="data_type", type=str_to_dtype, default=None,
+                        help="specify the data type for the backend to output")
     return ["Backend Initialization", "Backend Output Creation"]
 
 

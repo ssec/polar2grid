@@ -533,8 +533,10 @@ class BackendRole(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, **kwargs):
-        pass
+    def __init__(self, overwrite_existing=False, keep_intermediate=False, exit_on_error=True, **kwargs):
+        self.overwrite_existing = overwrite_existing
+        self.keep_intermediate = keep_intermediate
+        self.exit_on_error = exit_on_error
 
     @abstractproperty
     def known_grids(self):
@@ -655,14 +657,26 @@ class BackendRole(object):
         return output_filename
         pass
 
-    @abstractmethod
     def create_output_from_scene(self, gridded_scene, **kwargs):
         """Create output files for each product in the scene.
+
+        Default implementation is to call `create_output_from_product` for each product in the provided `gridded_scene`.
 
         :param gridded_scene: `GriddedScene` object to create output from
         :returns: list of created output files
         """
-        pass
+        output_filenames = []
+        for product_name, gridded_product in gridded_scene.items():
+            try:
+                output_fn = self.create_output_from_product(gridded_product, **kwargs)
+                output_filenames.append(output_fn)
+            except StandardError:
+                log.error("Could not create output for '%s'", product_name)
+                if self.exit_on_error:
+                    raise
+                log.debug("Backend exception: ", exc_info=True)
+                continue
+        return output_filenames
 
     @abstractmethod
     def create_output_from_product(self, gridded_product, **kwargs):

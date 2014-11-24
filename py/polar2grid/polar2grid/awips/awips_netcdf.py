@@ -43,20 +43,20 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import roles
-from polar2grid.core.constants import *
 from polar2grid.nc import create_nc_from_ncml
-from polar2grid.core.rescale import Rescaler
-from polar2grid.core.dtype import clip_to_data_type
+from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
+from polar2grid.core.dtype import clip_to_data_type, DTYPE_UINT8
 from .awips_config import AWIPSConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG
 
-import os, sys, logging
+import os
+import sys
+import logging
 import calendar
 
 LOG = logging.getLogger(__name__)
-DEFAULT_RCONFIG      = "rescale_configs/rescale.ini"
 
-def create_netcdf(nc_name, image, template, start_dt,
-        channel, source, sat_name):
+
+def create_netcdf(nc_name, image, template, start_dt, channel, source, sat_name):
     """Copy a template file to destination and fill it
     with the provided image data.
 
@@ -75,61 +75,43 @@ def create_netcdf(nc_name, image, template, start_dt,
         raise
 
     if nc.file_format != "NETCDF3_CLASSIC":
-        LOG.warning("Expected file format NETCDF3_CLASSIC got %s" % (nc.file_format))
+        LOG.warning("Expected file format NETCDF3_CLASSIC got %s" % (nc.file_format,))
 
     image_var = nc.variables["image"]
     if image_var.shape != image.shape:
-        LOG.error("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape),str(image.shape)))
-        raise ValueError("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape),str(image.shape)))
+        LOG.error("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape), str(image.shape)))
+        raise ValueError("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape), str(image.shape)))
 
     # Convert to signed byte keeping large values large
     image = clip_to_data_type(image, DTYPE_UINT8)
 
     image_var[:] = image
     time_var = nc.variables["validTime"]
-    time_var[:] = float(calendar.timegm( start_dt.utctimetuple() )) + float(start_dt.microsecond)/1e6
+    time_var[:] = float(calendar.timegm(start_dt.utctimetuple())) + float(start_dt.microsecond)/1e6
 
     # Add AWIPS 2 global attributes
     nc.channel = channel
     nc.source = source
     nc.satelliteName = sat_name
 
-    nc.sync() # Just in case
+    nc.sync()  # Just in case
     nc.close()
     LOG.debug("Data transferred into NC file correctly")
 
 
 class Backend(roles.BackendRole):
-    def __init__(self, backend_configs=None, rescale_configs=None,
-                 overwrite_existing=False, keep_intermediate=False, exit_on_error=True):
+    def __init__(self, backend_configs=None, rescale_configs=None, **kwargs):
         backend_configs = backend_configs or [DEFAULT_AWIPS_CONFIG]
         rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
-        # FIXME: Redo the config reader
         self.awips_config_reader = AWIPSConfigReader(*backend_configs)
-        self.rescaler = Rescaler(*rescale_configs)
-        self.overwrite_existing = overwrite_existing
-        self.keep_intermediate = keep_intermediate
-        self.exit_on_error = exit_on_error
+        self.rescaler = Rescaler(*rescale_configs, **kwargs)
+        super(Backend, self).__init__(**kwargs)
 
     @property
     def known_grids(self):
         return self.awips_config_reader.known_grids
 
-    def create_output_from_scene(self, gridded_scene):
-        output_filenames = []
-        for product_name, gridded_product in gridded_scene.items():
-            try:
-                output_fn = self.create_output_from_product(gridded_product)
-                output_filenames.append(output_fn)
-            except StandardError:
-                LOG.error("Could not create output for '%s'", product_name)
-                if self.exit_on_error:
-                    raise
-                LOG.debug("Backend exception: ", exc_info=True)
-                continue
-        return output_filenames
-
-    def create_output_from_product(self, gridded_product, ncml_template=None):
+    def create_output_from_product(self, gridded_product, ncml_template=None, **kwargs):
         data_type = DTYPE_UINT8
         inc_by_one = False
         fill_value = 0
@@ -146,12 +128,13 @@ class Backend(roles.BackendRole):
         # Create the geotiff
         try:
             LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
-            data = self.rescaler.rescale_product(gridded_product, data_type, inc_by_one=inc_by_one, fill_value=fill_value)
+            data = self.rescaler.rescale_product(gridded_product, data_type,
+                                                 inc_by_one=inc_by_one, fill_value=fill_value)
 
             LOG.info("Writing product %s to AWIPS NetCDF file", gridded_product["product_name"])
             create_netcdf(output_filename, data, ncml_template or awips_info["ncml_template"],
-                          gridded_product["begin_time"],
-                          awips_info["awips2_channel"], awips_info["awips2_source"], awips_info["awips2_satellite_name"])
+                          gridded_product["begin_time"], awips_info["awips2_channel"],
+                          awips_info["awips2_source"], awips_info["awips2_satellite_name"])
         except StandardError:
             LOG.error("Error while filling in NC file with data: %s", output_filename)
             if not self.keep_intermediate and os.path.isfile(output_filename):

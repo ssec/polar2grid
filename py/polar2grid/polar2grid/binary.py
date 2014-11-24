@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2013 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -30,103 +30,139 @@
 """Simple backend to just passively 'produce' the binary files that are
 provided.
 
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:date:         Nov 2014
+:license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.rescale import RescalerOld
+from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
 from polar2grid.core import roles
-from polar2grid.core.dtype import convert_to_data_type,clip_to_data_type
-from polar2grid.core.constants import *
+from polar2grid.core.dtype import str_to_dtype, clip_to_data_type
+import numpy
 
-DEFAULT_8BIT_RCONFIG      = "rescale_configs/rescale.8bit.conf"
-DEFAULT_16BIT_RCONFIG     = "rescale_configs/rescale.16bit.conf"
-DEFAULT_INC_8BIT_RCONFIG  = "rescale_configs/rescale_inc.8bit.conf"
-DEFAULT_INC_16BIT_RCONFIG = "rescale_configs/rescale_inc.16bit.conf"
-DEFAULT_OUTPUT_PATTERN = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s_%(grid_name)s.%(fbf_dtype)s.%(cols)s.%(rows)s"
+import os
+import sys
+import shutil
+import logging
 
-class BackendOld(roles.BackendRoleOld):
-    removable_file_patterns = [
-            "*_*_*_*_????????_??????_*.real4.*.*",
-            "*_*_*_*_????????_??????_*.real8.*.*",
-            "*_*_*_*_????????_??????_*.uint1.*.*",
-            "*_*_*_*_????????_??????_*.uint2.*.*",
-            "*_*_*_*_????????_??????_*.uint4.*.*",
-            "*_*_*_*_????????_??????_*.uint8.*.*",
-            "*_*_*_*_????????_??????_*.int1.*.*",
-            "*_*_*_*_????????_??????_*.int2.*.*",
-            "*_*_*_*_????????_??????_*.int4.*.*",
-            "*_*_*_*_????????_??????_*.int8.*.*"
-            ]
+LOG = logging.getLogger(__name__)
+DEFAULT_OUTPUT_PATTERN = "%(satellite)s_%(instrument)s_%(product_name)s_%(begin_time)s_%(grid_name)s.dat"
 
-    def __init__(self, output_pattern=None,
-            rescale_config=None, fill_value=DEFAULT_FILL_VALUE,
-            data_type=None, inc_by_one=False):
-        self.output_pattern = output_pattern or DEFAULT_OUTPUT_PATTERN
-        self.data_type = data_type or DTYPE_FLOAT32
 
-        # Use predefined rescaling configurations if we weren't told what to do
-        if rescale_config is None:
-            if self.data_type == DTYPE_UINT8:
-                if inc_by_one:
-                    rescale_config = DEFAULT_INC_8BIT_RCONFIG
-                else:
-                    rescale_config = DEFAULT_8BIT_RCONFIG
-            elif self.data_type == DTYPE_UINT16:
-                if inc_by_one:
-                    rescale_config = DEFAULT_INC_16BIT_RCONFIG
-                else:
-                    rescale_config = DEFAULT_16BIT_RCONFIG
-        self.rescale_config = rescale_config
+class Backend(roles.BackendRole):
+    """Simple backend for renaming or rescaling binary files created from remapping.
 
-        # Create the rescaler if we know what to do
-        self.fill_in = fill_value
-        self.fill_out = DEFAULT_FILL_VALUE
-        if rescale_config is None:
-            self.rescaler = None
+    Rescale configuration files are only used for non-float data types.
+    """
+    def __init__(self, rescale_configs=None, **kwargs):
+        self.rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
+        self.rescaler = Rescaler(*self.rescale_configs)
+        super(Backend, self).__init__(**kwargs)
+
+    @property
+    def known_grids(self):
+        # should work regardless of grid
+        return None
+
+    def create_output_from_product(self, gridded_product, output_pattern=None,
+                                   data_type=None, inc_by_one=None, fill_value=None, **kwargs):
+        inc_by_one = inc_by_one or False
+        data_type = data_type or gridded_product["data_type"]
+        fill_value = fill_value or gridded_product["fill_value"]
+        same_fill = numpy.isnan(fill_value) and numpy.isnan(gridded_product["fill_value"]) or fill_value == gridded_product["fill_value"]
+        grid_def = gridded_product["grid_definition"]
+        if not output_pattern:
+            output_pattern = DEFAULT_OUTPUT_PATTERN
+        if "%" in output_pattern:
+            # format the filename
+            of_kwargs = gridded_product.copy()
+            of_kwargs["data_type"] = data_type
+            output_filename = self.create_output_filename(output_pattern,
+                                                          grid_name=grid_def["grid_name"],
+                                                          rows=grid_def["height"],
+                                                          columns=grid_def["width"],
+                                                          **of_kwargs)
         else:
-            self.rescaler = RescalerOld(self.rescale_config,
-                    fill_in=self.fill_in, fill_out=self.fill_out,
-                    inc_by_one=inc_by_one
-                    )
+            output_filename = output_pattern
 
-    def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
-        return GRIDS_ANY
+        if os.path.isfile(output_filename):
+            if not self.overwrite_existing:
+                LOG.error("Geotiff file already exists: %s", output_filename)
+                raise RuntimeError("Geotiff file already exists: %s" % (output_filename,))
+            else:
+                LOG.warning("Geotiff file already exists, will overwrite: %s", output_filename)
 
-    def create_product(self, sat, instrument, nav_set_uid,
-            kind, band, data_kind, data,
-            output_filename=None, start_time=None, end_time=None,
-            grid_name=None, data_type=None, inc_by_one=None,
-            fill_value=None):
-        fill_in = fill_value or self.fill_in
-        data_type = data_type or self.data_type
-
-        # Create the output filename if its not provided
-        # We can't guarantee that the user is doing FBF naming so we can't
-        # fail on a file already existing with the same stem
-        if output_filename is None:
-            output_filename = self.create_output_filename(self.output_pattern,
-                    sat, instrument, nav_set_uid, kind, band, data_kind,
-                    start_time  = start_time,
-                    end_time    = end_time,
-                    grid_name   = grid_name,
-                    data_type   = data_type,
-                    cols        = data.shape[1],
-                    rows        = data.shape[0]
-                    )
-
-        # Rescale the data based on the configuration that was loaded earlier
-        if self.rescaler:
-            data = self.rescaler(sat, instrument, nav_set_uid, kind, band, data_kind, data,
-                    fill_in=fill_in, fill_out=self.fill_out,
-                    inc_by_one=inc_by_one)
-
-            # Clip to the proper data type range and convert to that data type
-            if data_type is not None:
+        # if we have a floating point data type, then scaling doesn't make much sense
+        if data_type == gridded_product["data_type"] and same_fill:
+            LOG.info("Saving product %s to binary file %s", gridded_product["product_name"], output_filename)
+            shutil.copyfile(gridded_product["grid_data"], output_filename)
+            return output_filename
+        elif numpy.issubclass_(data_type, numpy.floating):
+            # we didn't rescale any data, but we need to convert it
+            data = gridded_product.get_data_array()
+        else:
+            try:
+                LOG.info("Scaling %s data to fit data type")
+                data = self.rescaler.rescale_product(gridded_product, data_type,
+                                                     inc_by_one=inc_by_one, fill_value=fill_value)
                 data = clip_to_data_type(data, data_type)
-        elif data_type is not None:
-            # Convert to a certain data type
-            data = convert_to_data_type(data, data_type)
+            except StandardError:
+                if not self.keep_intermediate and os.path.isfile(output_filename):
+                    os.remove(output_filename)
+                raise
 
-        # Write the binary data to a file
+        LOG.info("Saving product %s to binary file %s", gridded_product["product_name"], output_filename)
+        data = data.astype(data_type)
+        fill_mask = gridded_product.get_data_mask()
+        data[fill_mask] = fill_value
         data.tofile(output_filename)
 
+        return output_filename
+
+
+def add_backend_argument_groups(parser):
+    parser.set_defaults(forced_grids=["wgs84_fit"])
+    group = parser.add_argument_group(title="Backend Initialization")
+    group.add_argument('--rescale-configs', nargs="*", dest="rescale_configs",
+                       help="alternative rescale configuration files")
+    group = parser.add_argument_group(title="Backend Output Creation")
+    group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
+                       help="output filenaming pattern")
+    group.add_argument('--dont-inc', dest="inc_by_one", default=True, action="store_false",
+                       help="do not increment data by one (ex. 0-254 -> 1-255 with 0 being fill)")
+    group.add_argument("--dtype", dest="data_type", type=str_to_dtype, default=None,
+                       help="specify the data type for the backend to output")
+    return ["Backend Initialization", "Backend Output Creation"]
+
+
+def main():
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core.meta import GriddedScene, GriddedProduct
+    parser = create_basic_parser(description="Create binary files from provided gridded scene or product data")
+    subgroup_titles = add_backend_argument_groups(parser)
+    parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")
+    args = parser.parse_args(subgroup_titles=subgroup_titles)
+
+    # Logs are renamed once data the provided start date is known
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
+
+    LOG.info("Loading scene or product...")
+    gridded_scene = GriddedScene.load(args.scene)
+
+    LOG.info("Initializing backend...")
+    backend = Backend(**args.subgroup_args["Backend Initialization"])
+    if isinstance(gridded_scene, GriddedScene):
+        backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
+    elif isinstance(gridded_scene, GriddedProduct):
+        backend.create_output_from_product(gridded_scene, **args.subgroup_args["Backend Output Creation"])
+    else:
+        raise ValueError("Unknown Polar2Grid object provided")
+
+if __name__ == "__main__":
+    sys.exit(main())
