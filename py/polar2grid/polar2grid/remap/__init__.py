@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2013 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,20 +21,22 @@
 #     input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-# Written by David Hoese    January 2013
+# Written by David Hoese    November 2014
 # University of Wisconsin-Madison
 # Space Science and Engineering Center
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Location for grid utility functions and grid configuration files
+"""Tools for remapping image data (lon/lat geolocation) to a uniform grid
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
+:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:date:         Nov 2014
 :license:      GNU GPLv3
 
 """
 __docformat__ = "restructuredtext en"
+
+from .remap import Remapper, add_remap_argument_groups

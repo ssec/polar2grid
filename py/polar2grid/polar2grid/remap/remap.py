@@ -37,12 +37,13 @@
 :license:      GNU GPLv3
 
 """
+from polar2grid.remap import ms2gt
+
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.meta import GriddedProduct, GriddedScene, SwathScene
-from polar2grid import ll2cr as gator  # gridinator
-from .grids.grids import Cartographer
-from polar2grid import ms2gt
+from polar2grid.remap import ll2cr as gator  # gridinator
+from polar2grid.grids.grids import Cartographer
 
 import os
 import sys
