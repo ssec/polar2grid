@@ -608,13 +608,14 @@ class Remapper(object):
             raise
 
         # if 5% of the grid will have data in it then it fits
-        fits_grid = (points_in_grid / grid_definition["width"] * grid_definition["height"]) >= 0.05
+        fraction_in = points_in_grid / float(grid_definition["width"] * grid_definition["height"])
+        fits_grid = fraction_in >= 0.05
         if not fits_grid:
             self._safe_remove(rows_fn, cols_fn)
-            LOG.error("Data does not fit in grid %s" % (grid_name,))
+            LOG.error("Data does not fit in grid %s because it only covered %f%%" % (grid_name, fraction_in * 100))
             raise RuntimeError("Data does not fit in grid %s" % (grid_name,))
         else:
-            LOG.debug("Data fits in grid %s", grid_name)
+            LOG.debug("Data fits in grid %s and covers %f%% of the grid", grid_name, fraction_in * 100)
 
         self.ll2cr_cache[(geo_id, grid_name)] = (cols_fn, rows_fn)
         return cols_fn, rows_fn

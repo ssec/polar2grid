@@ -42,15 +42,15 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import Workspace,roles
+from polar2grid.core import roles
 from polar2grid.core.time_utils import utc_now
-from polar2grid.core.constants import *
-from polar2grid.core.rescale import RescalerOld
-from polar2grid.core.dtype import clip_to_data_type
+from polar2grid.core.rescale import Rescaler
+from polar2grid.core.dtype import clip_to_data_type, dtype_to_str, DTYPE_UINT8
 from libtiff import libtiff_ctypes as libtiff
-from libtiff.libtiff_ctypes import TIFF,TIFFFieldInfo,TIFFDataType,FIELD_CUSTOM,add_tags
-from .ninjo_config import _create_config_id,load_grid_config,load_band_config,DEFAULT_GRID_CONFIG_FILE,DEFAULT_BAND_CONFIG_FILE
-from polar2grid.proj import Proj
+from libtiff.libtiff_ctypes import TIFF, TIFFFieldInfo, TIFFDataType, FIELD_CUSTOM, add_tags
+# from .ninjo_config import _create_config_id, load_grid_config, load_band_config,\
+#     DEFAULT_GRID_CONFIG_FILE, DEFAULT_BAND_CONFIG_FILE
+# from polar2grid.proj import Proj
 import numpy
 
 import os
@@ -58,10 +58,11 @@ import sys
 import logging
 import calendar
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
-DEFAULT_8BIT_RCONFIG = "rescale_configs/rescale_ninjo.8bit.conf"
-DEFAULT_OUTPUT_PATTERN = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(start_time)s_%(grid_name)s.tif"
+DEFAULT_NINJO_RCONFIG = "polar2grid.ninjo:rescale_ninjo.ini"
+DEFAULT_NINJO_CONFIG = "ninjo_backend.ini"
+DEFAULT_OUTPUT_PATTERN = "%(satellite)s_%(instrument)s_%(product_name)s_%(begin_time)s_%(grid_name)s.tif"
 
 ninjo_tags = []
 ninjo_tags.append(TIFFFieldInfo(33922, 6, 6, TIFFDataType.TIFF_DOUBLE, FIELD_CUSTOM, True, False, "ModelTiePoint"))
@@ -121,16 +122,17 @@ ninjo_tags.append(TIFFFieldInfo(40044, -1, -1, TIFFDataType.TIFF_ASCII, FIELD_CU
 ninjo_extension = add_tags(ninjo_tags)
 
 dkind2physical = {
-        DKIND_RADIANCE    : ("\0", "\0"),
-        DKIND_REFLECTANCE : ("ALBEDO", "%"),
-        DKIND_BTEMP       : ("T", "CELSIUS")
-        }
+        "equalized_radiance": ("\0", "\0"),
+        "reflectance": ("ALBEDO", "%"),
+        "brightness_temperature": ("T", "CELSIUS"),
+}
 
 dkind2grad = {
-        DKIND_RADIANCE    : (1.0, 0.0),
-        DKIND_REFLECTANCE : (0.490196,0.0),
-        DKIND_BTEMP       : (-0.5, 40.0)
-        }
+        "equalized_radiance": (1.0, 0.0),
+        "reflectance": (0.490196,0.0),
+        "brightness_temperature": (-0.5, 40.0),
+}
+
 
 def get_default_lw_colortable():
     # Long wave or SVI04 or SVI05 or brightness temp
@@ -155,10 +157,12 @@ def get_default_lw_colortable():
     # LW colortable is now the same as the SW table
     return get_default_sw_colortable()
 
+
 def get_default_sw_colortable():
     # Short wave or SVI01 or SVI03 or reflectance
     cmap = [[ x*256 for x in range(256) ]]*3
     return cmap
+
 
 def create_ninjo_tiff(image_data, output_fn, **kwargs):
     """Create a NinJo compatible TIFF file with the tags used
@@ -276,7 +280,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
         KeyError :
             if required keyword is not provided
     """
-    log.info("Creating output file '%s'" % (output_fn,))
+    LOG.info("Creating output file '%s'" % (output_fn,))
     out_tiff = TIFF.open(output_fn, "w")
 
     image_data = clip_to_data_type(image_data, DTYPE_UINT8)
@@ -285,7 +289,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     data_kind = kwargs.pop("data_kind", None) # called as a backend
     if data_kind is not None and (data_kind not in dkind2physical or data_kind not in dkind2grad):
         # Must do the check here since it matters when pulling out physic value
-        log.warning("'data_kind' is not known to the ninjo tiff creator, it will be ignored")
+        LOG.warning("'data_kind' is not known to the ninjo tiff creator, it will be ignored")
         data_kind = None
     cmap = kwargs.pop("cmap", None)
     sat_id = int(kwargs.pop("sat_id"))
@@ -331,28 +335,28 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
 
     # Keyword checks / verification
     if cmap is None:
-        if data_kind == DKIND_BTEMP:
+        if data_kind == "brightness_temperature":
             cmap = get_default_lw_colortable()
         else:
             cmap = get_default_sw_colortable()
     elif len(cmap) != 3:
-        log.error("Colormap (cmap) must be a list of 3 lists (RGB), not %d" % len(cmap))
+        LOG.error("Colormap (cmap) must be a list of 3 lists (RGB), not %d" % len(cmap))
 
     if len(data_cat) != 4:
-        log.error("NinJo data type must be 4 characters")
+        LOG.error("NinJo data type must be 4 characters")
         raise ValueError("NinJo data type must be 4 characters")
     if data_cat[0] not in ["P", "G"]:
-        log.error("NinJo data type's first character must be 'P' or 'G' not '%s'" % data_cat[0])
+        LOG.error("NinJo data type's first character must be 'P' or 'G' not '%s'" % data_cat[0])
         raise ValueError("NinJo data type's first character must be 'P' or 'G' not '%s'" % data_cat[0])
     if data_cat[1] not in ["O", "P"]:
-        log.error("NinJo data type's second character must be 'O' or 'P' not '%s'" % data_cat[1])
+        LOG.error("NinJo data type's second character must be 'O' or 'P' not '%s'" % data_cat[1])
         raise ValueError("NinJo data type's second character must be 'O' or 'P' not '%s'" % data_cat[1])
     if data_cat[2:4] not in ["RN","RB","RA","BN","AN"]:
-        log.error("NinJo data type's last 2 characters must be one of %s not '%s'" % ("['RN','RB','RA','BN','AN']", data_cat[2:4]))
+        LOG.error("NinJo data type's last 2 characters must be one of %s not '%s'" % ("['RN','RB','RA','BN','AN']", data_cat[2:4]))
         raise ValueError("NinJo data type's last 2 characters must be one of %s not '%s'" % ("['RN','RB','RA','BN','AN']", data_cat[2:4]))
 
     if description is not None and len(description) >= 1000:
-        log.error("NinJo description must be less than 1000 characters")
+        LOG.error("NinJo description must be less than 1000 characters")
         raise ValueError("NinJo description must be less than 1000 characters")
 
     file_dt = utc_now()
@@ -360,7 +364,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     image_epoch = calendar.timegm(image_dt.timetuple())
 
     def _write_oneres(image_data, pixel_xres, pixel_yres, subfile=False):
-        log.info("Writing tag data for a resolution of the output file '%s'" % (output_fn,))
+        LOG.info("Writing tag data for a resolution of the output file '%s'" % (output_fn,))
 
         ### Write Tag Data ###
         # Built ins
@@ -442,148 +446,130 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     _write_oneres(image_data[::16,::16], pixel_xres*16, pixel_yres*16)
     out_tiff.close()
 
-    log.info("Successfully created a NinJo tiff file: '%s'" % (output_fn,))
+    LOG.info("Successfully created a NinJo tiff file: '%s'" % (output_fn,))
 
     return
 
-class BackendOld(roles.BackendRoleOld):
-    grid_config = {}
-    band_config = {}
 
-    removable_file_patterns = [
-            "*_*_*_*_????????_??????_*.tif"
-            ]
+class NinjoGridConfigReader(roles.INIConfigReader):
+    id_fields = ("grid_name",)
 
-    def __init__(self,
-            rescale_config = None,
-            grid_config    = None,
-            band_config    = None,
-            fill_value     = DEFAULT_FILL_VALUE,
-            output_pattern = None
-            ):
-        self.output_pattern = output_pattern or DEFAULT_OUTPUT_PATTERN
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("float_kwargs", ("xres", "yres"))
+        kwargs.setdefault("section_prefix", "ninjo_grid")
+        super(NinjoGridConfigReader, self).__init__(*args, **kwargs)
 
-        if grid_config is None:
-            log.debug("Using default NinJo grid configuration: '%s'" % DEFAULT_GRID_CONFIG_FILE)
-            grid_config = DEFAULT_GRID_CONFIG_FILE
-        load_grid_config(self.grid_config, grid_config)
+    @property
+    def known_grids(self):
+        sections = (x[-1] for x in self.config)
+        return list(set(self.config_parser.get(section_name, "grid_name") for section_name in sections))
 
-        if band_config is None:
-            log.debug("Using default NinJo band configuration: '%s'" % DEFAULT_BAND_CONFIG_FILE)
-            band_config = DEFAULT_BAND_CONFIG_FILE
-        load_band_config(self.band_config, band_config)
 
-        if rescale_config is None:
-            rescale_config = DEFAULT_8BIT_RCONFIG
-        self.rescale_config = rescale_config
+class NinjoBandConfigReader(roles.INIConfigReader):
+    id_fields = (
+        "product_name",
+        "data_type",
+        "data_kind",
+        "satellite",
+        "instrument",
+    )
 
-        # Instatiate the rescaler
-        self.fill_in  = fill_value
-        self.fill_out = DEFAULT_FILL_VALUE
-        self.rescaler = RescalerOld(self.rescale_config,
-                fill_in=self.fill_in, fill_out=self.fill_out
-                )
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("int_kwargs", ("satellite_id", "band_id"))
+        kwargs.setdefault("section_prefix", "ninjo_product")
+        super(NinjoBandConfigReader, self).__init__(*args, **kwargs)
 
-    def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
-        band_entry_id = _create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind)
-        if band_entry_id in self.band_config:
-            return self.grid_config.keys()
+
+class Backend(roles.BackendRole):
+    def __init__(self, backend_configs=None, rescale_configs=None, **kwargs):
+        self.rescale_configs = rescale_configs or [DEFAULT_NINJO_RCONFIG]
+        self.backend_configs = backend_configs or [DEFAULT_NINJO_CONFIG]
+        self.rescaler = Rescaler(*self.rescale_configs)
+        self.band_config_reader = NinjoBandConfigReader(*self.backend_configs)
+        self.grid_config_reader = NinjoGridConfigReader(*self.backend_configs)
+        super(Backend, self).__init__(**kwargs)
+
+    @property
+    def known_grids(self):
+        return self.grid_config_reader.known_grids
+
+    def create_output_from_product(self, gridded_product, output_pattern=None,
+                                   data_type=None, inc_by_one=None, fill_value=-999.0, **kwargs):
+        # FIXME: Previous version had -999.0 as the fill value...really?
+        grid_def = gridded_product["grid_definition"]
+        grid_name = grid_def["grid_name"]
+        data_type = data_type or numpy.uint8
+        inc_by_one = inc_by_one or False
+        grid_config_info = self.grid_config_reader.get_config_options(grid_name=grid_name, allow_default=False)
+        band_config_info = self.band_config_reader.get_config_options(
+            product_name=gridded_product["product_name"],
+            satellite=gridded_product["satellite"],
+            instrument=gridded_product["instrument"],
+            data_type=gridded_product["data_type"],
+            data_kind=gridded_product["data_kind"],
+            allow_default=False,
+        )
+
+        if not output_pattern:
+            output_pattern = DEFAULT_OUTPUT_PATTERN
+        if "%" in output_pattern:
+            # format the filename
+            of_kwargs = gridded_product.copy()
+            of_kwargs["data_type"] = dtype_to_str(data_type)
+            output_filename = self.create_output_filename(output_pattern,
+                                                          grid_name=grid_def["grid_name"],
+                                                          rows=grid_def["height"],
+                                                          columns=grid_def["width"],
+                                                          **of_kwargs)
         else:
-            return []
+            output_filename = output_pattern
 
-    def create_product(self, sat, instrument, nav_set_uid, kind, band, data_kind, data,
-            start_time=None, end_time=None, grid_name=None,
-            output_filename=None, grid_info=None,
-            fill_value=None):
-        """Function to be called from a connecting script to interpret the
-        information provided and create a NinJo compatible tiff image.
+        if os.path.isfile(output_filename):
+            if not self.overwrite_existing:
+                LOG.error("NinJo TIFF file already exists: %s", output_filename)
+                raise RuntimeError("NinJo TIFF file already exists: %s" % (output_filename,))
+            else:
+                LOG.warning("NinJo TIFF file already exists, will overwrite: %s", output_filename)
 
-        Most arguments are keywords to fit the backend interface, but some
-        of these keywords are required:
+        try:
+            LOG.info("Extracting additional information from grid projection")
+            map_origin_lon, map_origin_lat = grid_def.lonlat_upperleft
+            proj_dict = grid_def.proj4_dict
+            equ_radius = proj_dict["a"]
+            pol_radius = proj_dict["b"]
+            central_meridian = proj_dict.get("lon_0", None)
+            ref_lat1 = proj_dict.get("lat_ts", None)
 
-            - start_time (required if `output_filename` is not):
-                Parameter to make the output filename more specific
-            - grid_name (required if `output_filename` is not):
-                Parameter to make the output filename more specific.
-                Does not have to equal an actual grid_name in a configuration
-                file.
-            - grid_info (required):
-                Grid info dictionary returned from a grids cartographer.
+            LOG.info("Scaling %s data to fit in ninjotiff...", gridded_product["product_name"])
+            data = self.rescaler.rescale_product(gridded_product, data_type,
+                                                 inc_by_one=inc_by_one, fill_value=fill_value)
 
-        Optional keywords:
+            # Create the geotiff
+            create_ninjo_tiff(data, output_filename,
+                              pixel_xres=grid_config_info["xres"],
+                              pixel_yres=grid_config_info["yres"],
+                              projection=grid_config_info["projection"],
+                              origin_lat=map_origin_lat,
+                              origin_lon=map_origin_lon,
+                              radius_a=equ_radius,
+                              radius_b=pol_radius,
+                              central_meridian=central_meridian,
+                              ref_lat1=ref_lat1,
+                              is_calibrated=1,
+                              sat_id=band_config_info["satellite_id"],
+                              chan_id=band_config_info["band_id"],
+                              data_source=band_config_info["data_source"],
+                              data_cat=band_config_info["data_category"],
+                              image_dt=gridded_product["begin_time"],
+                              data_kind=gridded_product["data_kind"]
+                              )
+        except StandardError:
+            if not self.keep_intermediate and os.path.isfile(output_filename):
+                os.remove(output_filename)
+            raise
 
-            - end_time (used if `output_filename` is not):
-                Parameter to make the output filename more specific, added to
-                start_time to produce "YYYYMMDD_HHMMSS_YYYYMMDD_HHMMSS"
-            - output_filename:
-                Force the filename of the geotiff being produced
-        """
-        fill_in = fill_value or self.fill_in
+        return output_filename
 
-        # Create the filename if it wasn't provided
-        if output_filename is None:
-            output_filename = self.create_output_filename(self.output_pattern,
-                    sat, instrument, nav_set_uid, kind, band, data_kind,
-                    start_time  = start_time,
-                    end_time    = end_time,
-                    grid_name   = grid_name,
-                    data_type   = DTYPE_UINT8,
-                    cols        = data.shape[1],
-                    rows        = data.shape[0]
-                    )
-
-        # Get information about the grid
-        band_entry_id = _create_config_id(sat, instrument, nav_set_uid, kind, band, data_kind)
-        band_config_entry = self.band_config[band_entry_id]
-        sat_id            = band_config_entry["sat_id"]
-        band_id           = band_config_entry["band_id"]
-        data_source       = band_config_entry["data_source"]
-        data_cat          = band_config_entry["data_cat"]
-
-        if "MAPORIGINLATITUDE" in grid_info:
-            nproj,xres,yres   = self.grid_config[grid_name]
-            map_origin_lat    = grid_info["MAPORIGINLATITUDE"]
-            map_origin_lon    = grid_info["MAPORIGINLONGITUDE"]
-            equ_radius        = grid_info["MAPEQUATORIALRADIUS"]
-            pol_radius        = grid_info.get("MAPPOLARRADIUS", equ_radius)
-            central_meridian  = grid_info.get("MAPREFERENCELONGITUDE", None)
-            ref_lat1          = grid_info.get("MAPSECONDREFERENCELATITUDE", None)
-            #ref_lat2          = gpd_grid_info.get("", None)
-        else:
-            # PROJ.4 Grid
-            nproj,xres,yres = self.grid_config[grid_name]
-            p = Proj(grid_info["proj4_str"])
-            map_origin_lon, map_origin_lat = p(grid_info["grid_origin_x"], grid_info["grid_origin_y"], inverse=True)
-            equ_radius = grid_info["a"]
-            pol_radius = grid_info["b"]
-            central_meridian = grid_info.get("lon_0", None)
-            ref_lat1 = grid_info.get("lat_ts", None)
-
-
-
-        # Rescale the data based on the configuration that was loaded earlier
-        data = self.rescaler(sat, instrument, nav_set_uid, kind, band, data_kind, data,
-                fill_in=fill_in, fill_out=self.fill_out)
-
-        # Create NinJo tiff
-        create_ninjo_tiff(data, output_filename,
-                pixel_xres       = xres,
-                pixel_yres       = yres,
-                projection       = nproj,
-                origin_lat       = map_origin_lat,
-                origin_lon       = map_origin_lon,
-                radius_a         = equ_radius,
-                radius_b         = pol_radius,
-                central_meridian = central_meridian,
-                ref_lat1         = ref_lat1,
-                is_calibrated    = 1,
-                sat_id           = sat_id,
-                chan_id          = band_id,
-                data_source      = data_source,
-                data_cat         = data_cat,
-                image_dt         = start_time,
-                data_kind        = data_kind
-                )
 
 def test_write_tags(*args):
     """Create a sample NinJo file that writes all ninjo tags and a fake data
@@ -719,7 +705,7 @@ def test_read_tags(*args):
         tiff_fn = args[0]
 
     if not os.path.exists(tiff_fn):
-        log.error("TIFF input file %s doesn't exists" % (tiff_fn,))
+        LOG.error("TIFF input file %s doesn't exists" % (tiff_fn,))
         return -1
 
     a = TIFF.open(tiff_fn, "r")
@@ -814,51 +800,61 @@ def test_write(*args):
 
     return 0
 
-def test_read(*args):
-    pass
 
 TESTS = {
-    "test_write" : test_write,
-    "test_read" : test_read,
-    "test_write_tags" : test_write_tags
+    "test_write": test_write,
+    "test_write_tags": test_write_tags
     }
+
+
+def add_backend_argument_groups(parser):
+    parser.set_defaults(forced_grids=None)
+    group = parser.add_argument_group(title="Backend Initialization")
+    group.add_argument('--rescale-configs', nargs="*", dest="rescale_configs",
+                       help="alternative rescale configuration files")
+    group.add_argument('--backend-configs', nargs="*", dest="rescale_configs",
+                       help="alternative backend configuration files")
+    group = parser.add_argument_group(title="Backend Output Creation")
+    group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
+                       help="output filenaming pattern")
+    # group.add_argument('--dont-inc', dest="inc_by_one", default=True, action="store_false",
+    #                    help="do not increment data by one (ex. 0-254 -> 1-255 with 0 being fill)")
+    return ["Backend Initialization", "Backend Output Creation"]
+
+
 def main():
-    import optparse
-    usage = "%prog [options] <fbf image file> <quoted proj4 string> <output tiff name>"
-    parser = optparse.OptionParser(usage=usage)
-    parser.add_option("--debug", dest="show_debug", action="store_true", default=False,
-            help="Show additional debug messages")
-    parser.add_option("-t", "--test", dest="run_test", default=None,
-            help="Run specified test [test_write, test_read, etc]")
-    options,args = parser.parse_args()
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core.meta import GriddedScene, GriddedProduct
+    parser = create_basic_parser(description="Create NinJo files from provided gridded scene or product data")
+    subgroup_titles = add_backend_argument_groups(parser)
+    parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")
+    parser.add_argument("-t", "--test", dest="run_test", default=None,
+                        help="Run specified test [test_write, test_write_tags, etc]")
+    args = parser.parse_args(subgroup_titles=subgroup_titles)
 
-    if options.show_debug:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.WARNING)
+    # Logs are renamed once data the provided start date is known
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
 
-    if options.run_test is not None:
-        if options.run_test not in TESTS:
+    if args.run_test is not None:
+        if args.run_test not in TESTS:
             parser.print_usage()
             print "Available tests:\n\t%s" % ("\n\t".join(TESTS.keys()))
             return -1
-        return TESTS[options.run_test](*args)
+        return TESTS[args.run_test](*args)
 
-    if len(args) == 3:
-        image_fn = args[0]
-        proj4_str = args[1]
-        tiff_fn = args[2]
+    LOG.info("Loading scene or product...")
+    gridded_scene = GriddedScene.load(args.scene)
+
+    LOG.info("Initializing backend...")
+    backend = Backend(**args.subgroup_args["Backend Initialization"])
+    if isinstance(gridded_scene, GriddedScene):
+        backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
+    elif isinstance(gridded_scene, GriddedProduct):
+        backend.create_output_from_product(gridded_scene, **args.subgroup_args["Backend Output Creation"])
     else:
-        parser.print_usage()
-        return -1
-
-    # Get the image data to be put into the ninjotiff
-    W = Workspace(".")
-    image_data = getattr(W, image_fn.split(".")[0])
-
-    # Create the ninjotiff
-    create_ninjo_tiff(image_data, tiff_fn, proj4_dict=from_proj4(proj4_str))
+        raise ValueError("Unknown Polar2Grid object provided")
 
 if __name__ == "__main__":
     sys.exit(main())
-

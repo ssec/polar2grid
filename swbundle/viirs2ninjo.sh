@@ -37,5 +37,5 @@ fi
 source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
 # Call the python module to do the processing, passing all arguments
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.viirs2ninjo -vv $@
+$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.glue viirs ninjo -vv $@
 

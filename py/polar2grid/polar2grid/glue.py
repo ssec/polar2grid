@@ -240,6 +240,8 @@ def main(argv=sys.argv[1:]):
                 return status_to_return
             continue
 
+        LOG.info("Processing data for grid %s complete", grid_name)
+
     return status_to_return
 
 if __name__ == "__main__":

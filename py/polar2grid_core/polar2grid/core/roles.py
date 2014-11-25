@@ -48,7 +48,6 @@ import sys
 import logging
 import re
 from StringIO import StringIO
-from collections import defaultdict
 from ConfigParser import SafeConfigParser, Error as ConfigParserError
 from abc import ABCMeta, abstractmethod, abstractproperty
 
@@ -130,6 +129,7 @@ class INIConfigReader(object):
         # this only affects non-ID fields
         # self.keyword_types = defaultdict(kwargs.pop("default_keyword_type", str))
         self.float_kwargs = kwargs.pop("float_kwargs", [])
+        self.int_kwargs = kwargs.pop("int_kwargs", [])
         self.boolean_kwargs = kwargs.pop("boolean_kwargs", [])
 
         # Need to have defaults for id fields
@@ -170,7 +170,10 @@ class INIConfigReader(object):
                     # they have specified a package provided file
                     log.info("Loading package provided configuration file: '%s'" % (config_file,))
                     try:
-                        config_str = get_resource_string(self.__module__, config_file)
+                        parts = config_file.split(":")
+                        mod_part, file_part = parts if len(parts) == 2 else ("", parts[0])
+                        mod_part = mod_part or self.__module__
+                        config_str = get_resource_string(mod_part, file_part)
                     except StandardError:
                         log.error("Configuration file '%s' was not found" % (config_file,))
                         raise
@@ -205,7 +208,8 @@ class INIConfigReader(object):
             # Just need to know what section I should look in
             config_key = (num_wildcards, this_regex_obj, section)
             self.config.append(config_key)
-        # XXX: If 2 or more entries have the same number of wildcards they may not be sorted optimally (i.e. specific first field highest)
+        # If 2 or more entries have the same number of wildcards they may not be sorted optimally
+        # (i.e. specific first field highest)
         self.config.sort()
 
     def get_config_section(self, **kwargs):
@@ -244,8 +248,12 @@ class INIConfigReader(object):
             if k in self.float_kwargs:
                 section_options[k] = float(v)
                 continue
+            if k in self.int_kwargs:
+                section_options[k] = int(v)
+                continue
             if k in self.boolean_kwargs:
                 section_options[k] = v == "True"
+                continue
 
         for k, v in kwargs.items():
             # overwrite any wildcards with what we were provided
@@ -779,151 +787,6 @@ class FrontendRole(object):
         return products
 
 
-class BackendRoleOld(object):
-    __metaclass__ = ABCMeta
-
-    # Glob patterns for files that a glue script should remove
-    # default is none
-    removable_file_patterns = []
-
-    def create_output_filename(self, pattern, sat, instrument, nav_set_uid, kind, band,
-            data_kind, **kwargs):
-        """Helper function that will take common meta data and put it into
-        the output filename pattern provided.  The ``*args`` arguments are
-        the same as for `create_product`. If either of the keyword arguments
-        ``start_time`` or ``end_time`` are not specified the other is used
-        in its place.  If neither are specified the current time in UTC is
-        taken.
-
-        Some arguments are handled in special ways:
-            - start_time : start_time converted into 5 different strings
-                that can each be individually specified in the pattern:
-                    * start_time     : YYYYMMDD_HHMMSS
-                    * start_YYYYMMDD : YYYYMMDD
-                    * start_YYMMDD   : YYMMDD
-                    * start_HHMMSS   : HHMMSS
-                    * start_HHMM     : HHMM
-            - end_time   : Same as start_time
-
-        If a keyword is provided that is not recognized it will be provided
-        to the pattern after running through a `str` filter.
-
-        Possible pattern keywords (\*created internally in this function):
-            - sat             : identifier for the instrument's satellite
-            - instrument      : name of the instrument
-            - nav_set_uid     : navigation set unique identifier
-            - kind            : band kind
-            - band            : band identifier or number
-            - data_kind       : kind of data (brightness temperature, radiance, reflectance, etc.)
-            - data_type       : data type name of data in-memory (ex. uint1, int4, real4)
-            - grid_name       : name of the grid the data was mapped to
-            - cols            : number of columns in the data
-            - rows            : number of rows in the data
-            - start_time      : start time of the first scan (YYYYMMDD_HHMMSS)
-            - start_YYYYMMDD\* : start date of the first scan
-            - start_YYMMDD\*   : start date of the first scan
-            - start_HHMMSS\*   : start time of the first scan
-            - start_HHMM\*     : start time of the first scan
-            - end_time        : end time of the first scan. Same keywords as start_time.
-
-        >>> from datetime import datetime
-        >>> pattern = "%(sat)s_%(instrument)s_%(kind)s_%(band)s_%(data_kind)s_%(grid_name)s_%(start_time)s.%(data_type)s.%(cols)s.%(rows)s"
-        >>> class FakeBackend(BackendRoleOld):
-        ...     def create_product(self, *args): pass
-        ...     def can_handle_inputs(self, *args): pass
-        >>> backend = FakeBackend()
-        >>> filename = backend.create_output_filename(pattern,
-        ...     "npp",
-        ...     "viirs",
-        ...     "i_nav",
-        ...     "i",
-        ...     "04",
-        ...     "btemp",
-        ...     grid_name = "wgs84_fit",
-        ...     data_type = "uint8",
-        ...     cols = 2500, rows=3000, start_time=datetime(2012, 11, 10, 9, 8, 7))
-        >>> print filename
-        npp_viirs_i_04_btemp_wgs84_fit_20121110_090807.uint8.2500.3000
-
-        """
-        # Keyword arguments
-        data_type      = kwargs.pop("data_type", None)
-        grid_name      = str(kwargs.pop("grid_name", None))
-        cols           = kwargs.pop("cols", None)
-        rows           = kwargs.pop("rows", None)
-        start_time_dt  = kwargs.pop("start_time", None)
-        end_time_dt    = kwargs.pop("end_time", None)
-
-        # Convert start time and end time
-        if start_time_dt is None and end_time_dt is None:
-            start_time_dt = end_time_dt = utc_now()
-        elif start_time_dt is None:
-            start_time_dt = end_time_dt
-        elif end_time_dt is None:
-            end_time_dt   = start_time_dt
-
-        start_time     = start_time_dt.strftime("%Y%m%d_%H%M%S")
-        start_YYYYMMDD = start_time_dt.strftime("%Y%m%d")
-        start_YYMMDD   = start_time_dt.strftime("%y%m%d")
-        start_HHMMSS   = start_time_dt.strftime("%H%M%S")
-        start_HHMM     = start_time_dt.strftime("%H%M")
-        end_time       = end_time_dt.strftime("%Y%m%d_%H%M%S")
-        end_YYYYMMDD   = end_time_dt.strftime("%Y%m%d")
-        end_YYMMDD     = end_time_dt.strftime("%y%m%d")
-        end_HHMMSS     = end_time_dt.strftime("%H%M%S")
-        end_HHMM       = end_time_dt.strftime("%H%M")
-
-        try:
-            output_filename = pattern % dict(
-                    sat            = sat,
-                    instrument     = instrument,
-                    nav_set_uid    = nav_set_uid,
-                    kind           = kind,
-                    band           = band,
-                    data_kind      = data_kind,
-                    data_type      = data_type,
-                    grid_name      = grid_name,
-                    cols           = cols,
-                    rows           = rows,
-                    start_time     = start_time,
-                    start_YYYYMMDD = start_YYYYMMDD,
-                    start_YYMMDD   = start_YYMMDD,
-                    start_HHMMSS   = start_HHMMSS,
-                    start_HHMM     = start_HHMM,
-                    end_time       = end_time,
-                    end_YYYYMMDD   = end_YYYYMMDD,
-                    end_YYMMDD     = end_YYMMDD,
-                    end_HHMMSS     = end_HHMMSS,
-                    end_HHMM       = end_HHMM,
-                    **kwargs
-                    )
-        except KeyError as e:
-            log.error("Unknown output pattern key: '%s'" % (e.message,))
-            raise
-
-        return output_filename
-
-    @abstractmethod
-    def can_handle_inputs(self, sat, instrument, nav_set_uid, kind, band, data_kind):
-        """Function that returns the grids that it will be able to handle
-        for the data described by the arguments passed.  It returns either
-        a list of grid names (that must be defined in grids.conf) or it
-        returns a constant defined in `polar2grid.core.constants` for grids.
-        Possible constants are:
-
-            - GRIDS_ANY: Any gpd or proj4 grid
-            - GRIDS_ANY_GPD: Any gpd grid
-            - GRIDS_ANY_PROJ4: Any proj4 grid
-
-        """
-        return []
-
-    @abstractmethod
-    def create_product(self, sat, instrument, nav_set_uid, kind, band, data_kind,
-            start_time=None, end_time=None, grid_name=None,
-            output_filename=None):
-        raise NotImplementedError("This function has not been implemented")
-
 class FrontendRoleOld(object):
     """Polar2grid role for data providing frontends. When provided satellite
     observation data the frontend should create binary files for each of the
@@ -989,6 +852,7 @@ class FrontendRoleOld(object):
         """
         raise NotImplementedError("This function has not been implemented")
 
+
 class CartographerRole(object):
     """Polar2grid role for managing grids. Grid information such as
     the projection, the projection's parameters, pixel size, grid height,
@@ -1041,6 +905,7 @@ class CartographerRole(object):
         overwrite a ``grid_name`` that was added earlier.
         """
         raise NotImplementedError("Child class must implement this method")
+
 
 def main():
     """Run some tests on the interfaces/roles

@@ -713,6 +713,11 @@ class GridDefinition(GeographicDefinition):
         return self.proj(x_ur, y_ur, inverse=True)
 
     @property
+    def lonlat_upperleft(self):
+        x_ur, y_ur = self["origin_x"], self["origin_y"]
+        return self.proj(x_ur, y_ur, inverse=True)
+
+    @property
     def xy_lowerleft(self):
         y_ll = self["origin_y"] + self["cell_height"] * self["height"]
         return self["origin_x"], y_ll

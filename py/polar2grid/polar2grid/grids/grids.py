@@ -233,35 +233,35 @@ def get_proj4_info(proj4_str):
         if k in proj4_dict:
             proj4_dict[k] = float(proj4_dict[k])
 
-    ellps_name = proj4_dict.get("ellps", proj4_dict.get("datum", None))
-    a = proj4_dict.get("a", None)
-    b = proj4_dict.get("b", None)
-    es = proj4_dict.get("es", None)
-    rf = None
-
-    if ellps_name is not None:
-        rf = pj_ellps[ellps_name].get("rf", None)
-        a = a or pj_ellps[ellps_name].get("a", None)
-        b = b or pj_ellps[ellps_name].get("b", None)
-
-    if a is None and b is not None and es is not None:
-        a = b / numpy.sqrt(1.0 - es)
-    if b is None and a is not None:
-        if es is not None:
-            b = a * numpy.sqrt(1.0 - es)
-        elif rf is not None:
-            f = 1.0 / rf
-            b = a * (1.0 - f)
-    if es is None and a is not None and b is not None:
-        es = 1.0 - (b * b) / (a * a)
-
-    if a is None or b is None or es is None:
-        log.error("Could not calculate radii a and b and the eccentricity squared from the PROJ.4 definition")
-        raise ValueError("Could not calculate radii a and b and the eccentricity squared from the PROJ.4 definition")
-
-    proj4_dict["a"] = a
-    proj4_dict["b"] = b
-    proj4_dict["es"] = es
+    # ellps_name = proj4_dict.get("ellps", proj4_dict.get("datum", None))
+    # a = proj4_dict.get("a", None)
+    # b = proj4_dict.get("b", None)
+    # es = proj4_dict.get("es", None)
+    # rf = None
+    #
+    # if ellps_name is not None:
+    #     rf = pj_ellps[ellps_name].get("rf", None)
+    #     a = a or pj_ellps[ellps_name].get("a", None)
+    #     b = b or pj_ellps[ellps_name].get("b", None)
+    #
+    # if a is None and b is not None and es is not None:
+    #     a = b / numpy.sqrt(1.0 - es)
+    # if b is None and a is not None:
+    #     if es is not None:
+    #         b = a * numpy.sqrt(1.0 - es)
+    #     elif rf is not None:
+    #         f = 1.0 / rf
+    #         b = a * (1.0 - f)
+    # if es is None and a is not None and b is not None:
+    #     es = 1.0 - (b * b) / (a * a)
+    #
+    # if a is None or b is None or es is None:
+    #     log.error("Could not calculate radii a and b and the eccentricity squared from the PROJ.4 definition")
+    #     raise ValueError("Could not calculate radii a and b and the eccentricity squared from the PROJ.4 definition")
+    #
+    # proj4_dict["a"] = a
+    # proj4_dict["b"] = b
+    # proj4_dict["es"] = es
 
     return proj4_dict
 
