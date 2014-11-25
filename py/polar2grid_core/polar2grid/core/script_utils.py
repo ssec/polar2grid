@@ -279,4 +279,6 @@ def create_basic_parser(*args, **kwargs):
                         help="Keep intermediate files for future use.")
     parser.add_argument('--overwrite', dest="overwrite_existing", action="store_true",
                         help="Overwrite intermediate or output files if they exist already")
+    parser.add_argument('--exit-on-error', dest="exit_on_error", action="store_true",
+                        help="exit on first error including non-fatal errors")
     return parser

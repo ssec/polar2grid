@@ -164,7 +164,8 @@ def main():
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")
     parser.add_argument("-p", "--products", nargs="*", default=None,
                         help="Specify only certain products from the provided scene")
-    args = parser.parse_args(subgroup_titles=subgroup_titles)
+    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
+    args = parser.parse_args(subgroup_titles=subgroup_titles, global_keywords=global_keywords)
 
     # Logs are renamed once data the provided start date is known
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]

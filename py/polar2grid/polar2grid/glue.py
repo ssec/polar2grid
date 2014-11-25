@@ -117,8 +117,6 @@ def main(argv=sys.argv[1:]):
                         help="List of files or directories to extract data from")
     parser.add_argument('-d', dest='data_files', nargs="+", default=[], action=ExtendAction,
                         help="Data directories to look for input data files (equivalent to -f)")
-    parser.add_argument('--exit-on-error', dest="exit_on_error", action="store_true",
-                        help="exit on first error including non-fatal errors")
     global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
     args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=group_titles)
 

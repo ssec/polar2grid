@@ -601,7 +601,8 @@ def main():
                         help="List of data files and directories to get extract data from")
     parser.add_argument('-o', dest="output_filename", default=None,
                         help="Output filename for JSON scene (default is to stdout)")
-    args = parser.parse_args(subgroup_titles=subgroup_titles)
+    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
+    args = parser.parse_args(subgroup_titles=subgroup_titles, global_keywords=global_keywords)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)

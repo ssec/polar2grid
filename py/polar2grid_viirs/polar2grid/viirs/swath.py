@@ -986,8 +986,8 @@ def add_frontend_argument_groups(parser):
                              "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
     group.add_argument('--adaptive-bt', dest='products', action=ExtendConstAction, const=ADAPTIVE_BT_PRODUCTS,
                        help="Create adaptively scaled brightness temperature bands")
-    # group.add_argument('--no-dnb-scale', dest='scale_dnb', default=True, action='store_false',
-    #                     help="Turn off all DNB scaling (overrides --adaptive-dnb)")
+    group.add_argument('--include-dnb', dest='products', action="append_const", const=PRODUCT_DNB,
+                       help="Add unscaled DNB product to list of products")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
 
 
@@ -999,7 +999,8 @@ def main():
                         help="List of data files or directories to extract data from")
     parser.add_argument('-o', dest="output_filename", default=None,
                         help="Output filename for JSON scene (default is to stdout)")
-    args = parser.parse_args(subgroup_titles=subgroup_titles)
+    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
+    args = parser.parse_args(subgroup_titles=subgroup_titles, global_keywords=global_keywords)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)

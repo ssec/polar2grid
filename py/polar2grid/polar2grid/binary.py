@@ -145,7 +145,8 @@ def main():
     parser = create_basic_parser(description="Create binary files from provided gridded scene or product data")
     subgroup_titles = add_backend_argument_groups(parser)
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")
-    args = parser.parse_args(subgroup_titles=subgroup_titles)
+    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
+    args = parser.parse_args(subgroup_titles=subgroup_titles, global_keywords=global_keywords)
 
     # Logs are renamed once data the provided start date is known
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]

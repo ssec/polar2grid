@@ -719,8 +719,6 @@ def main():
                         help="List of data files or directories to extract data from")
     parser.add_argument('-o', dest="output_filename", default=None,
                         help="Output filename for JSON scene (default is to stdout)")
-    parser.add_argument('--exit-on-error', dest="exit_on_error", action="store_true",
-                        help="exit on first error including non-fatal errors")
     global_keywords = ["exit_on_error", "keep_intermediate", "overwrite_existing"]
     args = parser.parse_args(subgroup_titles=subgroup_titles, global_keywords=global_keywords)
 

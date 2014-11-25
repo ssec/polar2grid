@@ -41,7 +41,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .viirs_imager_to_swath import main
+from .swath import main
 import sys
 
 if __name__ == "__main__":

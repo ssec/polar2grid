@@ -855,7 +855,8 @@ def main():
     subgroup_titles = add_remap_argument_groups(parser)
     parser.add_argument("--scene", required=True,
                         help="JSON SwathScene filename to be remapped")
-    args = parser.parse_args(subgroup_titles=subgroup_titles)
+    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
+    args = parser.parse_args(subgroup_titles=subgroup_titles, global_keywords=global_keywords)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
