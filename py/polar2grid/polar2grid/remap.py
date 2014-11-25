@@ -39,28 +39,25 @@
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.constants import GRID_KIND_PROJ4,GRID_KIND_GPD,DEFAULT_FILL_VALUE
-from polar2grid.core.fbf import check_stem
 from polar2grid.core.meta import GriddedProduct, GriddedScene, SwathScene
-from polar2grid import ll2cr as gator # gridinator
+from polar2grid import ll2cr as gator  # gridinator
+from .grids.grids import Cartographer
 from polar2grid import ms2gt
 
 import os
 import sys
 import logging
 import signal
+from collections import defaultdict
 import multiprocessing
 from itertools import izip
 
+import numpy
+from scipy.interpolate.interpnd import LinearNDInterpolator, NDInterpolatorBase, CloughTocher2DInterpolator, _ndim_coords_from_arrays
+from scipy.spatial import cKDTree
+
 LOG = logging.getLogger(__name__)
 
-removable_file_patterns = [
-        "ll2cr_*_*_cols_*_*_*_*.img",
-        "ll2cr_*_*_rows_*_*_*_*.img",
-        "ll2cr_*_*_cols.real4.*.*",
-        "ll2cr_*_*_rows.real4.*.*",
-        "result_*_*_*_*.real4.*.*"
-        ]
 
 def init_worker():
     """Used in multiprocessing to initialize pool workers.
@@ -71,157 +68,15 @@ def init_worker():
     """
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-def run_ll2cr_c(*args, **kwargs):
-    proc_pool = kwargs.pop("pool", None)
-    if proc_pool is None:
-        result = ms2gt.ll2cr(*args, **kwargs)
-    else:
-        result = proc_pool.apply_async(ms2gt.ll2cr,
-                args=args, kwds=kwargs)
-    return result
-
-def run_ll2cr_py(*args, **kwargs):
-    proc_pool = kwargs.pop("pool", None)
-    if proc_pool is None:
-        result = gator.ll2cr_fbf(*args, **kwargs)
-    else:
-        result = proc_pool.apply_async(gator.ll2cr_fbf,
-                args=args, kwds=kwargs)
-    return result
-
-def run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
-        grid_jobs,
-        num_procs=1, verbose=False, forced_gpd=None,
-        lat_south=None, lat_north=None, lon_west=None, lon_east=None,
-        lon_fill_value=None, lat_fill_value=None):
-    """Run one of the ll2crs and return a dictionary mapping the
-    `grid_name` to the cols and rows files.
-    """
-    proc_pool = multiprocessing.Pool(num_procs, init_worker)
-    # Use the default fill value if the user didn't specify or forced None
-    lon_fill_value = lon_fill_value or DEFAULT_FILL_VALUE
-    lat_fill_value = lat_fill_value or DEFAULT_FILL_VALUE
-    
-    # Run ll2cr
-    ll2cr_results = dict((grid_name, None) for grid_name in grid_jobs)
-    ll2cr_output  = dict((grid_name, None) for grid_name in grid_jobs)
-
-    # We use a big try block to catch a keyboard interrupt and properly
-    # terminate the process pool see:
-    # https://github.com/davidh-ssec/polar2grid/issues/33
-    try:
-        for grid_name in grid_jobs.keys():
-            LOG.info("Running ll2cr for grid %s and bands %r" % (grid_name, grid_jobs[grid_name].keys()))
-            ll2cr_tag = "ll2cr_%s_%s" % (nav_set_uid,grid_name)
-
-            # Get information that is usually per band, but since we are already
-            # separated by 'similar' data, just pick one of the bands to pull the
-            # data from
-            band_representative = grid_jobs[grid_name].keys()[0]
-            band_rep_dict = grid_jobs[grid_name][band_representative]
-            # Get grid info from the grids module
-            grid_info = band_rep_dict["grid_info"]
-            ll2cr_output[grid_name] = grid_info.copy()
-            swath_cols = band_rep_dict["swath_cols"]
-            ll2cr_output[grid_name]["swath_cols"] = swath_cols
-            swath_rows = band_rep_dict["swath_rows"]
-            ll2cr_output[grid_name]["swath_rows"] = swath_rows
-            rows_per_scan = band_rep_dict["rows_per_scan"]
-            ll2cr_output[grid_name]["rows_per_scan"] = rows_per_scan
-
-
-            if grid_info["grid_kind"] == GRID_KIND_PROJ4:
-                # Stuff that fornav needs, but the python version doesn't provide
-                ll2cr_output[grid_name]["scans_out"] = swath_rows/rows_per_scan
-                ll2cr_output[grid_name]["scan_first"] = 0
-                ll2cr_results[grid_name] = run_ll2cr_py(
-                        lon_fbf,
-                        lat_fbf,
-                        grid_info["proj4_str"],
-                        pixel_size_x=grid_info["pixel_size_x"],
-                        pixel_size_y=grid_info["pixel_size_y"],
-                        grid_origin_x=grid_info["grid_origin_x"],
-                        grid_origin_y=grid_info["grid_origin_y"],
-                        grid_width=grid_info["grid_width"],
-                        grid_height=grid_info["grid_height"],
-                        lat_fill_in=lat_fill_value,
-                        lon_fill_in=lon_fill_value,
-                        fill_out=-1e30,
-                        prefix=ll2cr_tag,
-                        swath_lat_south=lat_south,
-                        swath_lat_north=lat_north,
-                        swath_lon_west=lon_west,
-                        swath_lon_east=lon_east,
-                        pool=proc_pool
-                        )
-            elif grid_info["grid_kind"] == GRID_KIND_GPD:
-                # C version of ll2cr can't handle different nav fill values
-                if lon_fill_value != lat_fill_value:
-                    msg = "Navigation files must have the same fill value when using the C ll2cr (%f vs %f)" % (lon_fill_value, lat_fill_value)
-                    LOG.warning(msg)
-                    del grid_jobs[grid_name]
-                    continue
-
-                ll2cr_results[grid_name] = run_ll2cr_c(
-                        swath_cols,
-                        swath_rows/rows_per_scan, # swath_scans
-                        rows_per_scan,
-                        lat_fbf,
-                        lon_fbf,
-                        forced_gpd or grid_info["gpd_filepath"],
-                        verbose = verbose,
-                        fill_io = (lon_fill_value, -1e30),
-                        tag=ll2cr_tag,
-                        pool=proc_pool
-                        )
-        proc_pool.close()
-        proc_pool.join()
-    except KeyboardInterrupt:
-        # Catch keyboard interrupt during pool processing, see comment at
-        # top of try block
-        LOG.debug("Keyboard interrupt during ll2cr call")
-        proc_pool.terminate()
-        proc_pool.join()
-        raise
-
-    # Get the results of the ll2cr calls
-    for grid_name in grid_jobs.keys():
-        try:
-            cr_dict = ll2cr_results[grid_name].get()
-            ll2cr_output[grid_name].update(cr_dict)
-            for band_dict in grid_jobs[grid_name].values():
-                band_dict.update(ll2cr_output[grid_name])
-        except StandardError:
-            LOG.warning("ll2cr failed for grid %s for bands %r" % (grid_name,grid_jobs[grid_name].keys()))
-            LOG.warning("Won't process for this grid...")
-            LOG.debug("ll2cr error:", exc_info=1)
-            for (band_kind, band_id) in grid_jobs[grid_name]:
-                LOG.error("Removing processing for kind %s band %s because of bad ll2cr execution on grid %s" % (band_kind, band_id, grid_name))
-            del grid_jobs[grid_name]
-            del ll2cr_output[grid_name]
-
-    if len(grid_jobs) == 0:
-        LOG.error("All grids failed during ll2cr processing for %s" % (nav_set_uid,))
-        raise ValueError("All grids failed during ll2cr processing for %s" % (nav_set_uid,))
-
-    return ll2cr_output
 
 def run_fornav_c(*args, **kwargs):
     proc_pool = kwargs.pop("pool", None)
     if proc_pool is None:
         result = ms2gt.fornav(*args, **kwargs)
     else:
-        result = proc_pool.apply_async(ms2gt.fornav,
-                args=args,
-                kwds=kwargs
-                )
+        result = proc_pool.apply_async(ms2gt.fornav, args=args, kwds=kwargs)
     return result
 
-import numpy
-# from scipy.interpolate import griddata
-from scipy.interpolate.interpnd import LinearNDInterpolator, NDInterpolatorBase, CloughTocher2DInterpolator, _ndim_coords_from_arrays
-from scipy.spatial import cKDTree
-from polar2grid.core import Workspace
 
 class NearestNDInterpolator(NDInterpolatorBase):
     def __init__(self, x, y):
@@ -248,6 +103,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         dist, i = self.tree.query(xi, **kwargs)
         values = numpy.append(self.values, self.values.dtype.type(fill_value))
         return values[i]
+
 
 def griddata(points, values, xi, method='linear', fill_value=numpy.nan, distance_upper_bound=3.0):
     # DJH: Added distance_upper_bound keyword
@@ -286,247 +142,10 @@ def griddata(points, values, xi, method='linear', fill_value=numpy.nan, distance
         raise ValueError("Unknown interpolation method %r for "
                          "%d dimensional data" % (method, ndim))
 
-def _add_array_border(arr, border_value=-999.0):
-    orig_rows,orig_cols = arr.shape
-    empty_arr = numpy.empty((orig_rows+2, orig_cols+2), dtype=arr.dtype)
-    empty_arr[1:orig_rows+1, 1:orig_cols+1] = arr[:]
-    empty_arr[0, :] = border_value
-    empty_arr[-1, :] = border_value
-    empty_arr[:, 0] = border_value
-    empty_arr[:, -1] = border_value
-    return empty_arr
 
-def _add_array_border2(arr, border_value=-999.0):
-    orig_rows,orig_cols = arr.shape
-    empty_arr = numpy.empty((orig_rows+2, orig_cols+2), dtype=arr.dtype)
-    empty_arr[1:orig_rows+1, 1:orig_cols+1] = arr[:]
-
-    empty_arr[0, 0] = arr[0, 0]
-    empty_arr[0, 1:-1] = arr[0, :]
-    empty_arr[0, -1] = arr[0, -1]
-
-    empty_arr[-1, 0] = arr[-1, 0]
-    empty_arr[-1, 1:-1] = arr[-1, :]
-    empty_arr[-1, -1] = arr[-1, -1]
-
-    empty_arr[1:-1, 0] = arr[:, 0]
-
-    empty_arr[1:-1, -1] = arr[:, -1]
-
-    return empty_arr
-
-def _run_griddata(
-        num_channels,
-        swath_cols,
-        swath_scans,
-        swaths_rows_per_scan,
-        cols_filename,
-        rows_filename,
-        image_filenames,
-        grid_width,
-        grid_height,
-        output_filenames,
-        **kwargs):
-    method = "nearest"
-    # method = "linear"
-    grid_x, grid_y = numpy.mgrid[:grid_height,:grid_width]
-    W = Workspace('.')
-    cols_array = getattr(W, cols_filename.split('.')[0])
-    rows_array = getattr(W, rows_filename.split('.')[0])
-    # cols_array = _add_array_border2(cols_array, border_value=-999.0)
-    # rows_array = _add_array_border2(rows_array, border_value=-999.0)
-
-    for i_fn,o_fn in zip(image_filenames,output_filenames):
-        image_array = getattr(W, i_fn.split('.')[0])
-        # image_array = _add_array_border(image_array, border_value=-999.0)
-
-        #image_array = getattr(W, i_fn.split('.')[0]).copy()
-        #image_array[image_array == -999.0] = numpy.inf
-        image_mask = (image_array != -999.0) | (cols_array == -999.0) | (rows_array == -999.0)
-        # output_array = griddata((cols_array[image_mask].flatten(),rows_array[image_mask].flatten()), image_array[image_mask].flatten(), (grid_y, grid_x), method=method, fill_value=-999.0)
-        output_array = griddata((cols_array.flatten(), rows_array.flatten()), image_array.flatten(), (grid_y, grid_x), method=method, fill_value=-999.0)
-        output_array.tofile(o_fn)
-
-    return {}
-
-def run_fornav_py(*args, **kwargs):
-    proc_pool = kwargs.pop("pool", None)
-    if proc_pool is None:
-        result = _run_griddata(*args, **kwargs)
-    else:
-        result = proc_pool.apply_async(_run_griddata,
-                args=args,
-                kwds=kwargs
-                )
-    return result
-
-def run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
-        num_procs=1, verbose=False, fornav_d=None, fornav_D=None,
-        fill_value=None, do_single_sample=False, method='ewa'):
-    """Run one of the fornavs and return a dictionary mapping grid_name
-    to the fornav remapped image data, among other information.
-    """
-    methods = {
-        'ewa' : run_fornav_c,
-        'nearest' : run_fornav_py,
-    }
-    if method not in methods:
-        LOG.error("Unknown remapping method: '%s'", method)
-        raise ValueError("Unknown remapping method: '%s'" % method)
-    remap_method = methods[method]
-
-    # Copy the grid_jobs dict (shallow copy)
-    fornav_output = grid_jobs
-    fill_value = fill_value or DEFAULT_FILL_VALUE
-    
-    proc_pool = multiprocessing.Pool(num_procs, init_worker)
-
-    # We use a big try block to catch a keyboard interrupt and properly
-    # terminate the process pool see:
-    # https://github.com/davidh-ssec/polar2grid/issues/33
-    try:
-        # Add fornav calls to the process pool
-        fornav_jobs = {} # Store the information for each job
-        for grid_name in grid_jobs:
-            # Collect information for each "fornav job" (sorted by `remap_data_as`)
-            fornav_jobs[grid_name] = {}
-            fornav_group = fornav_jobs[grid_name]
-            for (band_kind, band_id),band_info in fornav_output[grid_name].items():
-                if band_info["remap_data_as"] not in fornav_group:
-                    fornav_group[band_info["remap_data_as"]] = {
-                            "inputs" : [],
-                            "outputs" : [],
-                            "swath_fill_1" : [],
-                            "grid_fill_1" : [],
-                            "result" : None
-                            }
-                fbf_swath_temp = band_info["fbf_swath"] if "fbf_swath" in band_info else band_info["fbf_img"]
-                fornav_group[band_info["remap_data_as"]]["inputs"].append(fbf_swath_temp)
-                stem = "result_%s_%s_%s_%s" % (nav_set_uid,band_kind,band_id,grid_name)
-                check_stem(stem)
-                output_name = "%s.real4.%d.%d" % (stem, band_info["grid_width"], band_info["grid_height"])
-                fornav_group[band_info["remap_data_as"]]["outputs"].append(output_name)
-                fornav_group[band_info["remap_data_as"]]["swath_fill_1"].append(band_info.get("fill_value", fill_value))
-                fornav_group[band_info["remap_data_as"]]["grid_fill_1"].append(band_info.get("fill_value", fill_value))
-                band_info["fbf_remapped"] = output_name
-
-            for remap_data_as,fornav_job in fornav_group.items():
-                fornav_job["result"] = remap_method(
-                            len(fornav_job["inputs"]),
-                            ll2cr_output[grid_name]["swath_cols"],
-                            ll2cr_output[grid_name]["scans_out"],
-                            ll2cr_output[grid_name]["rows_per_scan"],
-                            ll2cr_output[grid_name]["cols_filename"],
-                            ll2cr_output[grid_name]["rows_filename"],
-                            fornav_job["inputs"],
-                            ll2cr_output[grid_name]["grid_width"],
-                            ll2cr_output[grid_name]["grid_height"],
-                            fornav_job["outputs"],
-                            verbose=verbose,
-                            swath_data_type_1="f4",
-                            swath_fill_1=fornav_job["swath_fill_1"],
-                            grid_fill_1=fornav_job["grid_fill_1"],
-                            weight_delta_max=fornav_D,
-                            weight_distance_max=fornav_d,
-                            select_single_samples=do_single_sample,
-                            # We only specify start_scan for the 'image'/channel
-                            # data because ll2cr is not 'forced' so it only writes
-                            # useful data to the output cols/rows files
-                            start_scan=(ll2cr_output[grid_name]["scan_first"],0),
-                            pool=proc_pool
-                            )
-
-        if proc_pool is not None:
-            proc_pool.close()
-            proc_pool.join()
-    except KeyboardInterrupt:
-        # Catch keyboard interrupt during pool processing, see comment at
-        # top of try block
-        LOG.debug("Keyboard interrupt during fornav call")
-        if proc_pool is not None:
-            proc_pool.terminate()
-            proc_pool.join()
-        raise
-    
-    # Get all the results
-    for grid_name,fornav_group in fornav_jobs.items():
-        for remap_data_as,fornav_job in fornav_group.items():
-            try:
-                if proc_pool is None:
-                    fornav_dict = fornav_job["result"]
-                else:
-                    fornav_dict = fornav_job["result"].get()
-                for (band_kind, band_id),band_dict in fornav_output[grid_name].items():
-                    band_dict.update(fornav_dict)
-                LOG.debug("Fornav successfully completed for grid %s, %s data" % (grid_name,remap_data_as))
-            except StandardError:
-                LOG.warning("fornav failed for %s band, grid %s, remapping as %s" % (nav_set_uid,grid_name,remap_data_as))
-                LOG.debug("Exception was:", exc_info=1)
-                LOG.warning("Cleaning up for this job...")
-                for (band_kind, band_id) in fornav_output[grid_name].keys():
-                    if fornav_output[grid_name][(band_kind, band_id)]["remap_data_as"] == remap_data_as:
-                        LOG.error("Removing %s%s because of bad fornav execution" % (band_kind,band_id))
-                        del fornav_output[grid_name][(band_kind, band_id)]
-
-        if len(fornav_output[grid_name]) == 0:
-            LOG.error("The last grid job for grid %s was removed" % (grid_name,))
-            del fornav_output[grid_name]
-
-    if len(fornav_output) == 0:
-        LOG.error("Fornav was not able to complete any remapping for navigation set %s" % (nav_set_uid,))
-        raise RuntimeError("Fornav was not able to complete any remapping for navigation set %s" % (nav_set_uid,))
-
-    return fornav_output
-
-def remap_bands(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
-        grid_jobs, num_procs=1, fornav_d=None, fornav_D=None, forced_gpd=None,
-        lat_south=None, lat_north=None, lon_west=None, lon_east=None,
-        lat_fill_value=None, lon_fill_value=None, fill_value=None,
-        do_single_sample=False, method='ewa'):
-    """Remap data using the C or python version of ll2cr and the
-    C version of fornav.
-
-    Grid information is asked for through the `polar2grid.grids.grids`
-    module.
-    
-    note:
-        Although the C version of ll2cr/fornav requires the number of scans,
-        the number of rows is passed for the likely future requirement
-        of software to need the size of the data being provided.
-    """
-    # Used to determine verbosity
-    log_level = logging.getLogger('').handlers[0].level or 0
-
-    # TODO, this is just a very rough check for now, in the long run handle this more gracefully
-    assert (lat_fill_value == lon_fill_value)
-    
-    # Run ll2cr
-    ll2cr_output = run_ll2cr(sat, instrument, nav_set_uid, lon_fbf, lat_fbf,
-            grid_jobs,
-            num_procs=num_procs, verbose=log_level <= logging.DEBUG, forced_gpd=forced_gpd,
-            lat_south=lat_south, lat_north=lat_north, lon_west=lon_west, lon_east=lon_east,
-            lat_fill_value=lat_fill_value, lon_fill_value=lon_fill_value)
-
-    # Run fornav
-    # FUTURE: 'method' should be used to determine entire method not just what type of fornav call to make
-    fornav_output = run_fornav(sat, instrument, nav_set_uid, grid_jobs, ll2cr_output,
-            num_procs=num_procs, verbose=log_level <= logging.DEBUG,
-            fornav_d=fornav_d, fornav_D=fornav_D, fill_value=fill_value,
-            do_single_sample=do_single_sample, method=method)
-
-    return fornav_output
-
-
-def run_fornav(swath_definition, grid_definition, overwrite_existing, keep_intermediate=False):
-    # TODO: Move this to its own file probably, maybe when fornav is rewritten in python
-    pass
-
-
-# FUTURE: Create a role for this in polar2grid.core.roles
 class Remapper(object):
     def __init__(self, grid_configs=[],
                  overwrite_existing=False, keep_intermediate=False, exit_on_error=True, **kwargs):
-        from .grids.grids import Cartographer
         self.cart = Cartographer(*grid_configs)
         self.overwrite_existing = overwrite_existing
         self.keep_intermediate = keep_intermediate
@@ -558,8 +177,7 @@ class Remapper(object):
         func = self.methods[method]
 
         # FUTURE: Make this a keyword and add the logic to support it
-        share_dynamic_grids = True
-        if share_dynamic_grids:
+        if kwargs.get("share_dynamic_grids", True):
             # Let's run ll2cr to fill in any parameters we need to and decide if the data fits in the grid
             best_swath_def = self.highest_resolution_swath_definition(swath_scene)
             LOG.debug("Running ll2cr on the highest resolution swath to determine if it fits")
@@ -634,13 +252,12 @@ class Remapper(object):
                         LOG.warning("Could not remove intermediate files that aren't needed anymore.")
                         LOG.debug("Intermediate output file remove exception:", exc_info=True)
 
-    def _remap_scene_ewa(self, swath_scene, grid_def, **kwargs):
+    def _remap_scene_ewa(self, swath_scene, grid_def, share_dynamic_grids=True, **kwargs):
         # TODO: Make methods more flexible than just a function call
         gridded_scene = GriddedScene()
         grid_name = grid_def["grid_name"]
 
         # Group products together that shared the same geolocation
-        from collections import defaultdict
         product_groups = defaultdict(list)
         for product_name, swath_product in swath_scene.items():
             swath_def = swath_product["swath_definition"]
@@ -653,7 +270,10 @@ class Remapper(object):
             try:
                 LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
-                cols_fn, rows_fn = self.ll2cr(swath_def, grid_def)
+                if not share_dynamic_grids:
+                    cols_fn, rows_fn = self.ll2cr(swath_def, grid_def.copy())
+                else:
+                    cols_fn, rows_fn = self.ll2cr(swath_def, grid_def)
             except StandardError:
                 LOG.error("Remapping error")
                 if self.exit_on_error:
@@ -729,12 +349,12 @@ class Remapper(object):
 
         return gridded_scene
 
-    def _remap_scene_nearest(self, swath_scene, grid_name, **kwargs):
+    def _remap_scene_nearest(self, swath_scene, grid_def, share_dynamic_grids=True, **kwargs):
         # TODO: Make methods more flexible than just a function call
         gridded_scene = GriddedScene()
+        grid_name = grid_def["grid_name"]
 
         # Group products together that shared the same geolocation
-        from collections import defaultdict
         product_groups = defaultdict(list)
         for product_name, swath_product in swath_scene.items():
             swath_def = swath_product["swath_definition"]
@@ -742,16 +362,18 @@ class Remapper(object):
             product_groups[geo_id].append(product_name)
 
         for geo_id, product_names in product_groups.items():
-            LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
+            pp_names = "\n\t".join(product_names)
+            LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", pp_names)
             LOG.debug("Swath name: %s", geo_id)
 
             # TODO: Move into it's own function if this gets complicated
             # TODO: Add some multiprocessing
             try:
-                LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
-                grid_def = self.cart.get_grid_definition(grid_name)
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
-                cols_fn, rows_fn = self.ll2cr(swath_def, grid_def)
+                if not share_dynamic_grids:
+                    cols_fn, rows_fn = self.ll2cr(swath_def, grid_def.copy())
+                else:
+                    cols_fn, rows_fn = self.ll2cr(swath_def, grid_def)
             except StandardError:
                 LOG.error("Remapping error")
                 if self.exit_on_error:
@@ -761,8 +383,9 @@ class Remapper(object):
             LOG.info("Running nearest neighbor for the following products:\n\t%s", "\n\t".join(product_names))
             grid_x, grid_y = numpy.mgrid[:grid_def["height"], :grid_def["width"]]
             # we need flattened versions of these
-            cols_array = numpy.memmap(cols_fn, shape=(swath_def["swath_rows"] * swath_def["swath_columns"],), dtype=swath_def["data_type"])
-            rows_array = numpy.memmap(rows_fn, shape=(swath_def["swath_rows"] * swath_def["swath_columns"],), dtype=swath_def["data_type"])
+            shape = (swath_def["swath_rows"] * swath_def["swath_columns"],)
+            cols_array = numpy.memmap(cols_fn, shape=shape, dtype=swath_def["data_type"])
+            rows_array = numpy.memmap(rows_fn, shape=shape, dtype=swath_def["data_type"])
             edge_res = swath_def.get("limb_resolution", None)
             if kwargs.get("distance_upper_bound", None) is None:
                 if edge_res is not None:
@@ -845,12 +468,15 @@ def add_remap_argument_groups(parser):
                        help="Specify the -d option for fornav")
     group.add_argument('--maximum-weight-mode', dest="maximum_weight_mode", default=SUPPRESS, action="store_true",
                        help="Use maximum weight mode in fornav (-m)")
-    group.add_argument("--distance-upper-bound", dest="distance_upper_bound", )
+    group.add_argument("--distance-upper-bound", dest="distance_upper_bound",)
+    group.add_argument("--no-share-grid", dest="share_dynamic_grid", action="store_false",
+                       help="Calculate dynamic grid attributes for every grid (instead of sharing highest resolution)")
     return ["Remapping Initialization", "Remapping"]
 
 
 def main():
     from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core.meta import SwathScene
     parser = create_basic_parser(description="Remap a SwathScene to the provided grids")
     subgroup_titles = add_remap_argument_groups(parser)
     parser.add_argument("--scene", required=True,
@@ -863,7 +489,6 @@ def main():
     sys.excepthook = create_exc_handler(LOG.name)
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
-    from polar2grid.core.meta import SwathScene
     scene = SwathScene.load(args.scene)
 
     remapper = Remapper(**args.subgroup_args["Remapping Initialization"])
@@ -874,8 +499,5 @@ def main():
         fn = "gridded_scene_%s.json" % (grid_name,)
         gridded_scene.save(fn)
 
-
-
 if __name__ == "__main__":
     sys.exit(main())
-
