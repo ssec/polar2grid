@@ -39,5 +39,8 @@
 """
 __docformat__ = "restructuredtext en"
 
-from .ninjo_backend import Backend, add_backend_argument_groups
+from .ninjo_backend import main
+import sys
 
+if __name__ == '__main__':
+    sys.exit(main())

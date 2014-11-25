@@ -21,13 +21,13 @@
 #     input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-# Written by David Hoese    November 2014
+# Written by David Hoese    January 2013
 # University of Wisconsin-Madison
 # Space Science and Engineering Center
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""polar2grid NinJo tiff backend subpackage
+"""polar2grid AWIPS backend subpackage
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -39,5 +39,8 @@
 """
 __docformat__ = "restructuredtext en"
 
-from .ninjo_backend import Backend, add_backend_argument_groups
+from .awips_netcdf import main
+import sys
 
+if __name__ == '__main__':
+    sys.exit(main())

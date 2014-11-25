@@ -27,7 +27,7 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""polar2grid NinJo tiff backend subpackage
+"""Tools for remapping image data (lon/lat geolocation) to a uniform grid
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -39,5 +39,8 @@
 """
 __docformat__ = "restructuredtext en"
 
-from .ninjo_backend import Backend, add_backend_argument_groups
+from .remap import main
+import sys
 
+if __name__ == '__main__':
+    sys.exit(main())
