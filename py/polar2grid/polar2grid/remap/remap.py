@@ -408,7 +408,7 @@ def add_remap_argument_groups(parser):
     group = parser.add_argument_group(title="Remapping")
     group.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default=SUPPRESS,
                        help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
-    group.add_argument("--method", dest="remap_method", default="ewa", choices=["ewa", "nearest"],
+    group.add_argument("--method", dest="remap_method", default=SUPPRESS, choices=["ewa", "nearest"],
                        help="Remapping algorithm to use")
     group.add_argument('--fornav-D', dest='fornav_D', default=SUPPRESS, type=float,
                        help="Specify the -D option for fornav")
