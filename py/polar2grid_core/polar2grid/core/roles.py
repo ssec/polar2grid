@@ -774,9 +774,14 @@ class FrontendRole(object):
     def loadable_products(self, desired_products):
         orig_products = set(desired_products)
         available_products = self.available_product_names
+        all_products = self.all_product_names
         doable_products = orig_products & set(available_products)
         for p in (orig_products - doable_products):
-            log.warning("Missing proper data files to create product: %s", p)
+            if p not in all_products:
+                log.error("Unknown product name: %s", p)
+                raise RuntimeError("Unknown product name: %s" % (p,))
+            else:
+                log.warning("Missing proper data files to create product: %s", p)
         products = list(doable_products)
         if not products:
             log.debug("Original Products:\n\t%r", orig_products)

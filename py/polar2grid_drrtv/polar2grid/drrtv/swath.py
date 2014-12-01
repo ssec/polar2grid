@@ -1,13 +1,41 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    November 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
 """
 CrIS EDR front end for polar2grid, which extracts band-pass slices of brightness temperature data.
 
 :author:       Ray Garcia (rayg)
+:author:       David Hoese (davidh)
 :contact:      rayg@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Mar 2013
+:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:date:         Nov 2014
 :license:      GNU GPLv3
 
 Note that Dual Regression products are indexed strangely:
@@ -48,26 +76,6 @@ Example:
  (u'totO3', (84, 60))]
 
 
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 
 __docformat__ = "restructuredtext en"
@@ -85,9 +93,11 @@ from functools import partial
 from pprint import pformat
 from scipy import interpolate
 
-from polar2grid.core.roles import FrontendRoleOld
-from polar2grid.core.dtype import str2dtype
-from polar2grid.core.constants import *
+from polar2grid.core.roles import FrontendRoleOld, FrontendRole
+from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
+# from polar2grid.core.dtype import str2dtype
+# from polar2grid.core.constants import *
+from polar2grid.core import meta
 
 LOG = logging.getLogger(__name__)
 
@@ -105,56 +115,13 @@ EXPLODE_FACTOR = 64
 # scan-line grouping is significant to MS2GT components
 # (sat, inst) => (p2g_sat, p2g_inst, rows_per_swath)
 SAT_INST_TABLE = {
-    (None, 'CRIS'): (SAT_NPP, INST_CRIS, 3, CRIS_NAV_UID),
-    (None, 'CrIS'): (SAT_NPP, INST_CRIS, 3, CRIS_NAV_UID),
-    # FIXME: this should be reviewed; consider how to fold instrument attributes into back-ends
-    #        then figure out best way to handle conf tables referring to instrument name
-    ('M02', 'IASI'): (SAT_METOPA, INST_IASI, 1, IASI_NAV_UID),
-    ('M01', 'IASI'): (SAT_METOPB, INST_IASI, 1, IASI_NAV_UID),
+    (None, 'CRIS'): ("npp", "cris", 3),
+    (None, 'CrIS'): ("npp", "cris", 3),
+    ('M02', 'IASI'): ("metopa", "iasi", 0),
+    ('M01', 'IASI'): ("metopb", "iasi", 0),
     # ('g195', 'AIRS'): (None, None, 0),  # FIXME this needs work
-    (None, 'AIRS'): (SAT_AQUA, INST_AIRS, 1, AIRS_NAV_UID),  # FIXME
+    (None, 'AIRS'): ("aqua", "airs", 0),
 }
-
-# pressure layers to obtain data from
-DEFAULT_LAYER_PRESSURES = (500.0, 900.0)
-
-# h5_var_name => dkind, bkind, pressure-layers-or-None
-VAR_TABLE = {
-     'CAPE': (DKIND_CAPE, BKIND_CAPE, None),
-     'CO2_Amount': (DKIND_CO2_AMOUNT, BKIND_CO2_AMT, None),
-     'COT': (DKIND_OPTICAL_THICKNESS, BKIND_COT, None),
-     'CTP': (DKIND_PRESSURE, BKIND_CTP, None),  # !
-     'CTT': (DKIND_TEMPERATURE, BKIND_CTT, None),
-     # 'Channel_Index': (None, ),
-     'CldEmis': (DKIND_EMISSIVITY, BKIND_CLD_EMIS, None),
-     'Cmask': (DKIND_CATEGORY, BKIND_CMASK, None),
-     'Dewpnt': (DKIND_TEMPERATURE, BKIND_DEWPT, DEFAULT_LAYER_PRESSURES),
-     # 'GDAS_RelHum': (DKIND_PERCENT, BKIND_RH),
-     # 'GDAS_TAir': (DKIND_TEMPERATURE, BKIND_AIR_T),
-     'H2OMMR': (DKIND_MIXING_RATIO, BKIND_H2O_MMR, DEFAULT_LAYER_PRESSURES),
-     # 'H2Ohigh': (None, None, None),
-     # 'H2Olow': (None, None, None),
-     # 'H2Omid': (None, None, None),
-     # 'Latitude': (DKIND_LATITUDE, None),
-     'Lifted_Index': (DKIND_TEMPERATURE, BKIND_LI, None),# is in centigrade
-     # 'Longitude': (DKIND_LONGITUDE, None),
-     'O3VMR': (DKIND_MIXING_RATIO, BKIND_O3_VMR, DEFAULT_LAYER_PRESSURES),
-     # 'Plevs': (DKIND_PRESSURE, None),
-     # 'Qflag1': (None, None),
-     # 'Qflag2': (None, None),
-     # 'Qflag3': (None, None),
-     'RelHum': (DKIND_PERCENT, BKIND_RH, DEFAULT_LAYER_PRESSURES),  # !
-     # 'SurfEmis': (DKIND_EMISSIVITY, BKIND_SRF_EMIS, None),
-     # 'SurfEmis_Wavenumbers': (None, None),
-     'SurfPres': (DKIND_PRESSURE, BKIND_SRF_P, None),
-     'TAir': (DKIND_TEMPERATURE, BKIND_AIR_T, DEFAULT_LAYER_PRESSURES),  # !
-     'TSurf': (DKIND_TEMPERATURE, BKIND_SRF_T, None),
-     'totH2O': (DKIND_TOTAL_WATER, BKIND_H2O_TOT, None),
-     'totO3': (DKIND_TOTAL_OZONE, BKIND_O3_TOT, None),
-     }
-
-
-# END GUIDEBOOK
 
 
 def _filename_info(pathname):
@@ -170,13 +137,13 @@ def _filename_info(pathname):
     mgd = m.groupdict()
     when = datetime.strptime('%(date)s %(start_time)s' % mgd, '%Y%m%d %H%M%S')
     # fetch with preference toward satellite matching - failing that, check with sat=None case
-    sat, inst, rps, nav_set_uid = SAT_INST_TABLE.get((mgd['sat'], mgd['inst']),
+    sat, inst, rps = SAT_INST_TABLE.get((mgd['sat'], mgd['inst']),
                                         SAT_INST_TABLE.get((None, mgd['inst'])))
-    return { 'start_time': when,
-             'nav_set_uid': nav_set_uid,
+    return { 'begin_time': when,
              'sat': sat,
              'instrument': inst,    # why is this not 'inst'? or 'sat' 'satellite'?
-             'rows_per_scan': rps
+             'rows_per_scan': rps,
+             'filepath': pathname,
              }
 
 def _swath_shape(*h5s):
@@ -228,7 +195,7 @@ def _explode(data, factor):
 
 
 def _make_longitude_monotonic(lon_swath):
-    """
+    """DEPRECATED!
     Modify longitude in place to be monotonic -180..180 or 0..360
     :param lon_swath: 2D numpy masked_array of longitude data
     :return: modified array
@@ -269,7 +236,7 @@ def _swath_from_var(var_name, h5_var, tool=None):
         mv = float(h5_var.attrs['missing_value'][0])
         LOG.debug('missing value for %s is %s' % (var_name, mv))
         mask = np.abs(data - mv) < 0.5
-        data[mask] = DEFAULT_FILL_VALUE # FUTURE: we'd rather just deal with masked_array properly in output layer
+        data[mask] = np.nan  # FUTURE: we'd rather just deal with masked_array properly in output layer
         data = np.ma.masked_array(data, mask)  # FUTURE: convince scientists to use NaN. also world peace
         LOG.debug('min, max = %s, %s' % (np.min(data.flatten()), np.max(data.flatten())))
     else:
@@ -279,41 +246,20 @@ def _swath_from_var(var_name, h5_var, tool=None):
     return data
 
 
-def _dict_reverse(D):
-    return dict((v,k) for (k,v) in D.items())
-
-
-nptype_to_suffix = _dict_reverse(str2dtype)
-
-
-def _write_array_to_fbf(name, data):
-    """
-    write a swath to a flat binary file, including mapping missing values to DEFAULT_FILL_VALUE
-    :param name: variable name
-    :param data: data array, typically a numpy.masked_array
-    :return:
-    """
-    if len(data.shape) != 2:
-        LOG.warning('data %r shape is %r, ignoring' % (name, data.shape))
-        return None
-    if hasattr(data, 'mask'):
-        mask = data.mask
-        LOG.debug('found mask for %s' % name)
-        data = np.array(data, dtype=np.float32)
-        data[mask] = DEFAULT_FILL_VALUE
-    rows, cols = data.shape
-    dts = nptype_to_suffix[data.dtype.type]
-    suffix = '.%s.%d.%d' % (dts, cols, rows)
-    fn = name + suffix
-    LOG.debug('writing to %s...' % fn)
+def _get_whole_var(h5s, var_name, tool, explode=DEFAULT_EXPLODE_SAMPLING, filter=None):
+    "extract a swath to a FBF file and return the path"
+    # these aren't huge arrays so it's fine to hold them all in memory
+    sections = [_swath_from_var(var_name, h5[var_name], tool) for h5 in h5s]
+    swath = np.concatenate(sections, axis=0)
+    swarthy = swath if filter is None else filter(swath)
+    data = _explode(swarthy, EXPLODE_FACTOR) if explode else swath
     if data.dtype != np.float32:
         data = data.astype(np.float32)
-    with file(fn, 'wb') as fp:
-        data.tofile(fp)
-    return fn
+
+    return data
 
 
-def _layer_at_pressure(h5v, plev=None, p=None):
+def _layer_at_pressure(h5v, plev=None, p=None, dex=None):
     """
     extract a layer of a variable assuming (layer, rows, cols) indexing and plev lists layer pressures
     this is used to construct slicing tools that are built into the manifest list
@@ -323,279 +269,346 @@ def _layer_at_pressure(h5v, plev=None, p=None):
     :return: data slice from h5v
     """
     # dex = np.searchsorted(plev, p)
-    dex = np.abs(plev - p).argmin()   # FUTURE: memo-ize this value since it shouldn't vary for DR-RTV files
+    if dex is None:
+        dex = np.abs(plev - p).argmin()
 
-    try:
-        LOG.debug('using level %d=%f near %r as %f' % (dex, plev[dex], plev[dex-1:dex+2], p))
-    except IndexError:
-        pass
-    return h5v[dex,:]
-
-
-# tuple describing what swath data we want from a given input series
-manifest_entry = namedtuple("manifest_entry", 'h5_var_name tool bkind dkind bid')
+        try:
+            LOG.debug('using level %d=%f near %r as %f' % (dex, plev[dex], plev[dex-1:dex+2], p))
+        except IndexError:
+            pass
+    return h5v[dex, :]
 
 
-def _var_manifest(sat, inst, plev):
-    """
-    return set of variable extraction info given satellite, instrument pair, its manifest destiny
-    :param sat: const SAT_NPP, SAT_METOPA, etc
-    :param inst: INST_IASI, INST_CRIS
-    :param plev: pressure level array assumed consistent between files
-    :return: yields sequence of (variable-name, manifest-entry-tuple)
-    """
-    # FIXME: this is not fully implemented and needs to use the guidebook as well as generate layer extraction tools
+def _write_var_to_binary_file(filename, h5_files, var_name, pressure=None):
+    if pressure is not None:
+        plev = h5_files[0]["Plevs"][:].squeeze()
+        dex = np.abs(plev - pressure).argmin()   # FUTURE: memo-ize this value since it shouldn't vary for DR-RTV files
+        LOG.debug('using level %d=%f near %r as %f' % (dex, plev[dex], plev[dex-1:dex+2], pressure))
+        tool = partial(_layer_at_pressure, dex=dex)
+    else:
+        tool = None
+    data = _get_whole_var(h5_files, var_name, tool)
 
-    for h5_var_name, info in VAR_TABLE.items():
-        dk, bk, ps = info
-        if ps:
-            for p in ps:
-                yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
-                                                                   tool=partial(_layer_at_pressure, plev=plev, p=p),
-                                                                   dkind=dk,
-                                                                   bkind=bk,
-                                                                   bid='lvl%d' % int(p))
-        else:
-            yield h5_var_name, manifest_entry(h5_var_name=h5_var_name,
-                                              tool=None,
-                                              dkind=dk,
-                                              bkind=bk,
-                                              bid=None)
+    if len(data.shape) != 2:
+        LOG.warning('data %r shape is %r, ignoring' % (filename, data.shape))
+        return None
+    if hasattr(data, 'mask'):
+        mask = data.mask
+        LOG.debug('found mask for %s' % filename)
+        data = np.array(data, dtype=np.float32)
+        data[mask] = np.nan
+    LOG.debug('writing to %s...' % filename)
+    with file(filename, 'wb') as fp:
+        data.tofile(fp)
+    return data.shape
 
 
-    # FIXME: final code should look something like this:
-    # for h5_var_name, info in VAR_TABLE.items():
-    #     dk, bk, ps = info
-    #     if not ps:
-    #         if dk is None or bk is None:
-    #             continue
-    #         yield h5_var_name, manifest_entry(h5_var_name=h5_var_name,
-    #                                           tool=None,  # 2D variable, take the whole variable
-    #                                           dkind=dk,
-    #                                           bkind=bk,
-    #                                           bid=BID_NONE)  # FIXME this should be based on level
-    #     else:
-    #         for p in ps:
-    #             yield '%s_%dmb' % (h5_var_name, p), manifest_entry(h5_var_name=h5_var_name,
-    #                                                                tool=partial(_layer_at_pressure, plev=plev, p=p),
-    #                                                                dkind=dk,
-    #                                                                bkind=bk,
-    #                                                                bid=None)  # FIXME this should be based on level
+PRODUCT_CAPE = "cape"
+PRODUCT_CO2_AMOUNT = "co2_amount"
+PRODUCT_COT = "cot"
+PRODUCT_CTP = "ctp"
+PRODUCT_CTT = "ctt"
+PRODUCT_CLOUD_EMISSIVITY = "cloud_emissivity"
+PRODUCT_CMASK = "cloud_mask"
+PRODUCT_LI = "lifted_index"
+PRODUCT_SURFPRES = "surface_pressure"
+PRODUCT_TSURF = "surface_temperature"
+PRODUCT_TOT_WATER = "total_water"
+PRODUCT_TOT_OZONE = "total_ozone"
+# Handle products with multiple levels later on when creating the product definitions
+PRODUCT_DEWPOINT = "dewpoint"
+PRODUCT_WATER_MMR = "water_mrr"
+PRODUCT_OZONE_VMR = "ozone_vmr"
+PRODUCT_RELHUM = "relative_humidity"
+PRODUCT_TAIR = "tair"
+# geo products
+# This assumes that we will never process more than one instrument at a time
+PRODUCT_LON = "longitude"
+PRODUCT_LAT = "latitude"
+
+GEO_PAIRS = GeoPairDict()
+BASE_PAIR = "drrtv_nav"
+GEO_PAIRS.add_pair(BASE_PAIR, PRODUCT_LON, PRODUCT_LAT)
+
+PRODUCTS = ProductDict()
+FT_DRRTV = "file_type_drrtv"
+# file keys are not specified here, they are determined above in another table (from previous version of this frontend)
+PRODUCTS.add_product(PRODUCT_CAPE, BASE_PAIR, "CAPE", FT_DRRTV, "CAPE")
+PRODUCTS.add_product(PRODUCT_CO2_AMOUNT, BASE_PAIR, "co2_amount", FT_DRRTV, "CO2_Amount")
+PRODUCTS.add_product(PRODUCT_COT, BASE_PAIR, "cloud_optical_thickness", FT_DRRTV, "COT")
+PRODUCTS.add_product(PRODUCT_CTP, BASE_PAIR, "cloud_top_pressure", FT_DRRTV, "CTP")
+PRODUCTS.add_product(PRODUCT_CTT, BASE_PAIR, "cloud_top_temperature", FT_DRRTV, "CTT")
+PRODUCTS.add_product(PRODUCT_CLOUD_EMISSIVITY, BASE_PAIR, "cloud_emissivity", FT_DRRTV, "CldEmis")
+PRODUCTS.add_product(PRODUCT_CMASK, BASE_PAIR, "category", FT_DRRTV, "Cmask")
+PRODUCTS.add_product(PRODUCT_LI, BASE_PAIR, "lifted_index", FT_DRRTV, "Lifted_Index")
+PRODUCTS.add_product(PRODUCT_SURFPRES, BASE_PAIR, "surface_pressure", FT_DRRTV, "SurfPres")
+PRODUCTS.add_product(PRODUCT_TSURF, BASE_PAIR, "surface_temperature", FT_DRRTV, "TSurf")
+PRODUCTS.add_product(PRODUCT_TOT_WATER, BASE_PAIR, "total_water", FT_DRRTV, "totH2O")
+PRODUCTS.add_product(PRODUCT_TOT_OZONE, BASE_PAIR, "total_ozone", FT_DRRTV, "totO3")
+# geo products
+PRODUCTS.add_product(PRODUCT_LON, BASE_PAIR, "longitude", FT_DRRTV, "Longitude")
+PRODUCTS.add_product(PRODUCT_LAT, BASE_PAIR, "latitude", FT_DRRTV, "Latitude")
+lvl_range = [100, 200, 300, 400, 500, 600, 700, 800]
+for lvl_num in lvl_range:
+    suffix = "_%dmb" % (lvl_num,)
+    PRODUCTS.add_product(PRODUCT_DEWPOINT + suffix, BASE_PAIR, "dewpoint_temperature", FT_DRRTV, "Dewpnt", pressure=lvl_num)
+    PRODUCTS.add_product(PRODUCT_WATER_MMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "H2OMMR", pressure=lvl_num)
+    PRODUCTS.add_product(PRODUCT_OZONE_VMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "O3VMR", pressure=lvl_num)
+    PRODUCTS.add_product(PRODUCT_RELHUM + suffix, BASE_PAIR, "relative_humidity", FT_DRRTV, "RelHum", pressure=lvl_num)
+    PRODUCTS.add_product(PRODUCT_TAIR + suffix, BASE_PAIR, "air_temperature", FT_DRRTV, "TAir", pressure=lvl_num)
 
 
-
-def swathbuckler(*h5_pathnames):
-    """
-    return swath metadata after reading all the files in and writing out fbf files
-    :param h5_pathnames:
-    :return: fully formed metadata describing swath written to current working directory
-    """
-    h5_pathnames = list(h5_pathnames)
-
-    bad_files = set()
-    for pn in h5_pathnames:
-        if not h5py.is_hdf5(pn):
-            LOG.warning('%s is not a proper HDF5 file' % pn)
-            bad_files.add(pn)
-        if not RE_DRRTV.match(os.path.split(pn)[-1]):
-            bad_files.add(pn)
-    if bad_files:
-        LOG.warning('These files are not usable and will be ignored: %s' % ', '.join(list(bad_files)))
-        h5_pathnames = [x for x in h5_pathnames if x not in bad_files]
-
-    h5s = [h5py.File(pn, 'r') for pn in h5_pathnames if pn not in bad_files]
-    if not h5s:
-        LOG.error('no input was available to process!')
-        return {}
-    nfo = _swath_info(*h5s)
-    bands = nfo['bands'] = {}
-    # get list of output "bands", their characteristics, and an extraction tool
-    manifest = dict(_var_manifest(nfo['sat'], nfo['instrument'], nfo['_plev']))
-    LOG.debug('manifest to extract: %s' % pformat(manifest))
-
-    def _gobble(name, h5_var_name, tool, h5s=h5s, explode=DEFAULT_EXPLODE_SAMPLING, filter=None):
-        "extract a swath to a FBF file and return the path"
-        sections = [_swath_from_var(h5_var_name, h5[h5_var_name], tool) for h5 in h5s]
-        swath = np.concatenate(sections, axis=0)
-        swarthy = swath if filter is None else filter(swath)
-        arr_a_pirate = _explode(swarthy, EXPLODE_FACTOR) if explode else swath
-        return _write_array_to_fbf(name, arr_a_pirate)
-
-    nfo['fbf_lat'] = _gobble('swath_latitude', 'Latitude', None)
-    nfo['fbf_lon'] = _gobble('swath_longitude', 'Longitude', None) #, filter=_make_longitude_monotonic)
-
-    if DEFAULT_EXPLODE_SAMPLING:
-        nfo['rows_per_scan'] *= EXPLODE_FACTOR
-        nfo['swath_rows'] *= EXPLODE_FACTOR
-        nfo['swath_cols'] *= EXPLODE_FACTOR
-
-    # extract swaths and generate downstream metadata
-    for name, guide in manifest.items():
-        LOG.debug("extracting %s from variable %s" % (name, guide.h5_var_name))
-        filename = _gobble(name, guide.h5_var_name, guide.tool)
-        band = {
-            "band": guide.bid,
-            "data_kind": guide.dkind,
-            "remap_data_as": guide.dkind,
-            "kind": guide.bkind,
-            "fbf_img": filename,
-            "swath_rows": nfo['swath_rows'],
-            "swath_cols": nfo['swath_cols'],
-            "swath_scans": nfo['swath_scans'],
-            "rows_per_scan": nfo['rows_per_scan'],
-            "grids": GRIDS_ANY
-        }
-        # bands[name] = band
-        bands[(guide.bkind, guide.bid)] = band
-    #nfo['nav_set_uid'] = 'cris_nav'   # FIXME move nav_set to the guidebook
-    LOG.debug('metadata: %s' % pformat(nfo))
-    return nfo
-
-
-class FrontendOld(FrontendRoleOld):
-    """
-    """
-    removable_file_patterns = [
-        'CAPE.real4.*',
-        'CO*.real4.*',
-        'CT*.real4.*',
-        'CldEmis.real4.*',
-        'Cmask.real4.*',
-        'Dewpnt_*.real4.*',
-        'H2OMMR_*.real4.*',
-        'Lifted_Index.real4.*',
-        'O3VMR_*.real4.*',
-        'RelHum_*.real4.*',
-        'SurfPres.real4.*',
-        'TAir_*.real4.*',
-        'TSurf.real4.*',
-        'tot*.real4.*',
-        'swath_longitude.real4.*',
-        'swath_latitude.real4.*'
-    ]
-    info = None
+class Frontend(FrontendRole):
+    FILE_EXTENSIONS = (".h5",)
 
     def __init__(self, **kwargs):
-        self.info = {}
+        super(Frontend, self).__init__(**kwargs)
+        self._load_files(self.find_files_with_extensions())
 
-    @classmethod
-    def parse_datetimes_from_filepaths(cls, filepaths):
-        zult = []
-        for pn in filepaths:
-            nfo = _filename_info(pn)
-            if not nfo:
-                continue
-            zult.append(nfo['start_time'] if nfo is not None else None)
-        return zult
-
-    @classmethod
-    def sort_files_by_nav_uid(cls, filepaths):
-        ret = {}
-        for pn in filepaths:
-            file_info = _filename_info(pn)
+    def _load_files(self, file_paths):
+        file_infos = []
+        this_inst = None
+        for fp in file_paths:
+            file_info = _filename_info(fp)
             if not file_info:
+                LOG.debug("Unrecognized file: %s", fp)
                 continue
-            if file_info["nav_set_uid"] not in ret:
-                ret[file_info["nav_set_uid"]] = []
-            ret[file_info["nav_set_uid"]].append(pn)
+            if this_inst is None:
+                this_inst = (file_info["sat"], file_info["instrument"])
+            elif (file_info["sat"], file_info["instrument"]) != this_inst:
+                LOG.error("More than one satellite/instrument's files found, can only process one at a time")
+                raise ValueError("More than one satellite/instrument's files found, can only process one at a time")
+            file_info["h5"] = h5py.File(fp, 'r')
+            file_infos.append(file_info)
+        file_infos.sort(key=lambda x: x["begin_time"])
+        self._begin_time = file_infos[0]["begin_time"]
+        # NOTE: this is technically not correct
+        self._end_time = file_infos[-1]["begin_time"]
+        self.rows_per_scan = file_infos[0]["rows_per_scan"]
+        self.satellite = file_infos[0]["sat"]
+        self.instrument = file_infos[0]["instrument"]
+        self.file_objects = [x.pop("h5") for x in file_infos]
+        self.filepaths = [x.pop("filepath") for x in file_infos]
 
-        return ret
+    @property
+    def begin_time(self):
+        return self._begin_time
 
-    def make_swaths(self, filepaths, **kwargs):
-        """
-        load the swath from the input dir/files
-        extract BT slices
-        write BT slices to flat files in cwd
-        write GEO arrays to flat files in cwd
-        """
-        self.info = swathbuckler(*filepaths)
-        return self.info
+    @property
+    def end_time(self):
+        return self._end_time
+
+    @property
+    def available_product_names(self):
+        # as far as I know if you have any kind of DR-RTV file you should have all of the products available
+        return PRODUCTS.keys()
+
+    @property
+    def default_products(self):
+        not_defaults = [PRODUCT_CMASK, PRODUCT_LON, PRODUCT_LAT]
+        defaults = [p for p in self.all_product_names if p not in not_defaults]
+        return defaults
+
+    @property
+    def all_product_names(self):
+        return PRODUCTS.keys()
+
+    def create_raw_swath_object(self, product_name, swath_definition):
+        product_def = PRODUCTS[product_name]
+        # file_type = PRODUCTS.file_type_for_product(product_name, use_terrain_corrected=self.use_terrain_corrected)
+        # file_key = PRODUCTS.file_key_for_product(product_name, use_terrain_corrected=self.use_terrain_corrected)
+        # simple version
+        file_key = product_def.file_key
+        pressure = getattr(product_def, "pressure", None)
+        LOG.debug("Getting file key '%s' for product '%s'", file_key, product_name)
+
+        LOG.info("Writing product '%s' data to binary file", product_name)
+        filename = product_name + ".dat"
+        if os.path.isfile(filename):
+            if not self.overwrite_existing:
+                LOG.error("Binary file already exists: %s" % (filename,))
+                raise RuntimeError("Binary file already exists: %s" % (filename,))
+            else:
+                LOG.warning("Binary file already exists, will overwrite: %s", filename)
+
+        try:
+            filename = product_name + ".dat"
+            shape = _write_var_to_binary_file(filename, self.file_objects, file_key, pressure=pressure)
+            rows_per_scan = self.rows_per_scan
+        except StandardError:
+            LOG.error("Could not extract data from file")
+            LOG.debug("Extraction exception: ", exc_info=True)
+            raise
+
+        one_swath = meta.SwathProduct(
+            product_name=product_name, description=product_def.description, units=product_def.units,
+            satellite=self.satellite, instrument=self.instrument,
+            begin_time=self.begin_time, end_time=self.end_time,
+            swath_definition=swath_definition, fill_value=np.nan,
+            swath_rows=shape[0], swath_columns=shape[1], data_type=np.float32, swath_data=filename,
+            source_filenames=self.filepaths, data_kind=product_def.data_kind, rows_per_scan=rows_per_scan
+        )
+        return one_swath
+
+    def create_swath_definition(self, lon_product, lat_product):
+        product_def = PRODUCTS[lon_product["product_name"]]
+
+        # sanity check
+        for k in ["data_type", "swath_rows", "swath_columns", "rows_per_scan", "fill_value"]:
+            if lon_product[k] != lat_product[k]:
+                if k == "fill_value" and np.isnan(lon_product[k]) and np.isnan(lat_product[k]):
+                    # NaN special case: NaNs can't be compared normally
+                    continue
+                LOG.error("Longitude and latitude products do not have equal attributes: %s", k)
+                raise RuntimeError("Longitude and latitude products do not have equal attributes: %s" % (k,))
+
+        swath_name = GEO_PAIRS[product_def.geo_pair_name].name
+        swath_definition = meta.SwathDefinition(
+            swath_name=swath_name, longitude=lon_product["swath_data"], latitude=lat_product["swath_data"],
+            data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
+            swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["rows_per_scan"],
+            source_filenames=self.filepaths,
+            # nadir_resolution=lon_file_reader.nadir_resolution, limb_resolution=lat_file_reader.limb_resolution,
+            fill_value=lon_product["fill_value"],
+            )
+
+        # Tell the lat and lon products not to delete the data arrays, the swath definition will handle that
+        lon_product.set_persist()
+        lat_product.set_persist()
+
+        # mmmmm, almost circular
+        lon_product["swath_definition"] = swath_definition
+        lat_product["swath_definition"] = swath_definition
+
+        return swath_definition
+
+    def create_scene(self, products=None, **kwargs):
+        LOG.info("Loading scene data...")
+        # If the user didn't provide the products they want, figure out which ones we can create
+        if products is None:
+            LOG.info("No products specified to frontend, will try to load logical defaults products")
+            products = self.default_products
+
+        # Do we actually have all of the files needed to create the requested products?
+        products = self.loadable_products(products)
+
+        # Needs to be ordered (least-depended product -> most-depended product)
+        products_needed = PRODUCTS.dependency_ordered_products(products)
+        # all of our current products are raw (other frontends have secondary products, but not us)
+        raw_products_needed = products_needed
+
+        # final scene object we'll be providing to the caller
+        scene = meta.SwathScene()
+        # Dictionary of all products created so far (local variable so we don't hold on to any product objects)
+        products_created = {}
+
+        # Load geolocation files
+        # normally there are multiple resolutions provided by a frontend, but we only need one
+        # swath_definitions = {}
+        geo_pair_name = BASE_PAIR
+        ### Lon Product ###
+        lon_product_name = GEO_PAIRS[geo_pair_name].lon_product
+        LOG.info("Creating navigation product '%s'", lon_product_name)
+        lon_swath = products_created[lon_product_name] = self.create_raw_swath_object(lon_product_name, None)
+        if lon_product_name in products:
+            scene[lon_product_name] = lon_swath
+
+        ### Lat Product ###
+        lat_product_name = GEO_PAIRS[geo_pair_name].lat_product
+        LOG.info("Creating navigation product '%s'", lat_product_name)
+        lat_swath = products_created[lat_product_name] = self.create_raw_swath_object(lat_product_name, None)
+        if lat_product_name in products:
+            scene[lat_product_name] = lat_swath
+
+        # Create the SwathDefinition
+        swath_def = self.create_swath_definition(lon_swath, lat_swath)
+        # swath_definitions[swath_def["swath_name"]] = swath_def
+
+        # Create each raw products (products that are loaded directly from the file)
+        for product_name in raw_products_needed:
+            if product_name in products_created:
+                # already created
+                continue
+
+            try:
+                LOG.info("Creating data product '%s'", product_name)
+                one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
+            except StandardError:
+                LOG.error("Could not create raw product '%s'", product_name)
+                if self.exit_on_error:
+                    raise
+                continue
+
+            if product_name in products:
+                # the user wants this product
+                scene[product_name] = one_swath
+
+        return scene
 
 
-# def test_swath(test_data='test/input/case1/IASI_d20130310_t152624_M02.atm_prof_rtv.h5'):
-#     swath = swaths_from_h5s([test_data])
-#     return swath
+def add_frontend_argument_groups(parser):
+    """Add command line arguments to an existing parser.
 
+    :returns: list of group titles added
+    """
+    from polar2grid.core.script_utils import ExtendAction
+    # Set defaults for other components that may be used in polar2grid processing
+    parser.set_defaults(fornav_D=40, fornav_d=2)
 
-# def test_frontend(test_data='test/input/case1/IASI_d20130310_t152624_M02.atm_prof_rtv.h5'):
-#     fe = CrisSdrFrontend()
-#     fe.make_swaths([test_data])
-
-
-def console(banner="enjoy delicious ipython"):
-    from IPython.config.loader import Config
-    cfg = Config()
-    prompt_config = cfg.PromptManager
-    prompt_config.in_template = 'In <\\#>: '
-    prompt_config.in2_template = '   .\\D.: '
-    prompt_config.out_template = 'Out<\\#>: '
-
-    # First import the embeddable shell class
-    from IPython.frontend.terminal.embed import InteractiveShellEmbed
-
-    # Now create an instance of the embeddable shell. The first argument is a
-    # string with options exactly as you would type them if you were starting
-    # IPython at the system command line. Any parameters you want to define for
-    # configuration can thus be specified here.
-    ipshell = InteractiveShellEmbed(config=cfg,
-                           banner1 = 'Welcome to IPython\n%s\n' % banner,
-                           exit_msg = 'Leaving Interpreter, buh-bye.')
-    ipshell()
-
+    # Use the append_const action to handle adding products to the list
+    group_title = "Frontend Initialization"
+    group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
+    group.add_argument("--list-products", dest="list_products", action="store_true",
+                       help="List available frontend products and exit")
+    group_title = "Frontend Swath Extraction"
+    group = parser.add_argument_group(title=group_title, description="swath extraction options")
+    group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
+                       help="Specify frontend products to process")
+    return ["Frontend Initialization", "Frontend Swath Extraction"]
 
 
 def main():
-    import optparse
-    usage = """
-%prog [options] ...
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
+    parser = create_basic_parser(description="Extract DR-RTV swath data into binary files")
+    subgroup_titles = add_frontend_argument_groups(parser)
+    parser.add_argument('-f', dest='data_files', nargs="+", default=[],
+                        help="List of data files or directories to extract data from")
+    parser.add_argument('-o', dest="output_filename", default=None,
+                        help="Output filename for JSON scene (default is to stdout)")
+    parser.add_argument("-t", "--test", dest="run_test", default=None,
+                        help="Run specified test [test_write, test_write_tags, etc]")
+    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
+    args = parser.parse_args(subgroup_titles=subgroup_titles, global_keywords=global_keywords)
 
-"""
-    parser = optparse.OptionParser(usage)
-    parser.add_option('-t', '--test', dest="self_test",
-                    action="store_true", default=False, help="run self-tests")
-    parser.add_option('-I', '--interactive', dest="interactive",
-                    action="store_true", default=False, help="create swaths and interact with metadata")
-    parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
-                    help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
-    # parser.add_option('-o', '--output', dest='output', default='.',
-    #                  help='directory in which to store output')
-    # # parser.add_option('-F', '--format', dest='format', default=DEFAULT_PNG_FMT,
-    #                  help='format string for output filenames')
-    # parser.add_option('-L', '--label', dest='label', default=DEFAULT_LABEL_FMT,
-    #                  help='format string for labels')
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
+    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
-    (options, args) = parser.parse_args()
-
-    # FUTURE: validating the format strings is advisable
-
-    # make options a globally accessible structure, e.g. OPTS.
-    global OPTS
-    OPTS = options
-
-    if options.self_test:
+    if args.self_test:
         import doctest
         doctest.testmod()
         sys.exit(2)
 
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=levels[min(3, options.verbosity)])
+    list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
+    f = Frontend(search_paths=args.data_files, **args.subgroup_args["Frontend Initialization"])
 
-    if not args:
-        parser.error('incorrect arguments, try -h or --help.')
-        return 9
+    if list_products:
+        print("\n".join(sorted(f.available_product_names)))
+        return 0
 
-    meta = swathbuckler(*args)
-    if options.interactive:
-        global m
-        m = meta
-        console("'m' is metadata")
+    if args.output_filename and os.path.isfile(args.output_filename):
+        LOG.error("JSON file '%s' already exists, will not overwrite." % (args.output_filename,))
+        raise RuntimeError("JSON file '%s' already exists, will not overwrite." % (args.output_filename,))
+
+    scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
+    json_str = scene.dumps(persist=True)
+    if args.output_filename:
+        with open(args.output_filename, 'w') as output_file:
+            output_file.write(json_str)
     else:
-        from pprint import pprint
-        pprint(meta)
-
+        print(json_str)
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())
-

@@ -1,76 +1,46 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""
-polar2grid.drrtv
-~~~~~~~~~~~~~~~~
-
-
-A description which can be long and explain the complete
-functionality of this module even with indented code examples.
-Class/Function however should not be documented here.
-
-
-:copyright: 2013 by University of Wisconsin Regents, see AUTHORS for more details
-:license: GPLv3, see LICENSE for more details
-"""
-__author__ = 'R.K.Garcia <rayg@ssec.wisc.edu>'
-__revision__ = '$Id:$'
-__docformat__ = 'reStructuredText'
-
-import os, sys
-import logging, unittest
-
-
-LOG = logging.getLogger(__name__)
-
-
+# encoding: utf-8
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
 #
-## FIXME code goes here.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    November 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
+"""Wrapper around the main DR-RTV command line components.
 
-
-def main():
-    import optparse
-    usage = """
-%prog [options] ...
-
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:date:         Nov 2014
+:license:      GNU GPLv3
 
 """
-    parser = optparse.OptionParser(usage)
-    parser.add_option('-t', '--test', dest="self_test",
-                    action="store_true", default=False, help="run self-tests")
-    parser.add_option('-v', '--verbose', dest='verbosity', action="count", default=0,
-                    help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG')
-    # parser.add_option('-o', '--output', dest='output',
-    #                 help='location to store output')
-    # parser.add_option('-I', '--include-path', dest="includes",
-    #                 action="append", help="include path")
-    (options, args) = parser.parse_args()
+__docformat__ = "restructuredtext en"
 
+from .swath import main
+import sys
 
-    # make options a globally accessible structure, e.g. OPTS.
-    global OPTS
-    OPTS = options
-
-
-    if options.self_test:
-        unittest.main()
-        return 0
-
-
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level = levels[min(3,options.verbosity)])
-
-
-    if not args:
-        parser.error( 'incorrect arguments, try -h or --help.' )
-        return 1
-
-
-    # FIXME main logic
-
-    return 0
-
-
-if __name__=='__main__':
+if __name__ == "__main__":
     sys.exit(main())

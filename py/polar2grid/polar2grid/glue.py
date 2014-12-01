@@ -153,7 +153,7 @@ def main(argv=sys.argv[1:]):
         rename_log_file(glue_name + f.begin_time.strftime("_%Y%m%d_%H%M%S.log"))
 
     if list_products:
-        print("\n".join(f.available_product_names))
+        print("\n".join(sorted(f.available_product_names)))
         return STATUS_SUCCESS
 
     try:
