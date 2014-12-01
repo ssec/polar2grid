@@ -92,14 +92,14 @@ def projection_circumference(p):
     of the projection.
     """
     lon0, lat0 = p(0, 0, inverse=True)
-    lon1 = lon0 + 360
-    lat1 = lat0 + 5
+    lon1 = lon0 + 180.0
+    lat1 = lat0 + 5.0
     x0, y0 = p(lon0, lat0)  # should result in zero or near zero
     x1, y1 = p(lon1, lat0)
     x2, y2 = p(lon1, lat1)
     if y0 != y1 or x1 != x2:
         return None
-    return abs(x1 - x2) * 2
+    return abs(x1 - x0) * 2
 
 
 def mask_helper(arr, fill):
@@ -172,11 +172,12 @@ def ll2cr(lon_arr, lat_arr, grid_info, fill_in=numpy.nan, fill_out=None, cols_ou
         # if proj_circum is None then we can't simply wrap the data around projection, the grid will probably be large
         log.debug("Projection circumference: %f", proj_circum)
         if proj_circum is not None and xmax - xmin >= proj_circum * .75:
-            x[x < 0] += proj_circum
             old_xmin = xmin
             old_xmax = xmax
+            x[x < 0] += proj_circum
             xmin = numpy.nanmin(x)
             xmax = numpy.nanmax(x)
+            print proj_circum
             log.debug("Data seems to cross the antimeridian: old_xmin=%f; old_xmax=%f; xmin=%f; xmax=%f", old_xmin, old_xmax, xmin, xmax)
         log.debug("Xmin=%f; Xmax=%f; Ymin=%f; Ymax=%f", xmin, xmax, ymin, ymax)
 
@@ -190,11 +191,11 @@ def ll2cr(lon_arr, lat_arr, grid_info, fill_in=numpy.nan, fill_out=None, cols_ou
             h = grid_info["height"] = int(abs((ymax - ymin) / ch))
             log.debug("Dynamic grid width and height (%d x %d) with cell width and height (%f x %f)", w, h, cw, ch)
 
-    rows_out[mask] = (y - oy) / ch
-    cols_out[mask] = (x - ox) / cw
+    good_cols = (x - ox) / cw
+    good_rows = (y - oy) / ch
+    cols_out[mask] = good_cols
+    rows_out[mask] = good_rows
 
-    good_cols = cols_out[mask]
-    good_rows = rows_out[mask]
     points_in_grid = numpy.count_nonzero((good_cols >= -1) & (good_cols <= w + 1) & (good_rows >= -1) & (good_rows <= h + 1))
 
     return points_in_grid, cols_out, rows_out

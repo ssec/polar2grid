@@ -54,10 +54,17 @@ import multiprocessing
 from itertools import izip
 
 import numpy
-from scipy.interpolate.interpnd import LinearNDInterpolator, NDInterpolatorBase, CloughTocher2DInterpolator, _ndim_coords_from_arrays
+from scipy.interpolate.interpnd import _ndim_coords_from_arrays
 from scipy.spatial import cKDTree
 
 LOG = logging.getLogger(__name__)
+
+
+def mask_helper(arr, fill):
+    if numpy.isnan(fill):
+        return numpy.isnan(arr)
+    else:
+        return arr == fill
 
 
 def init_worker():
@@ -77,71 +84,6 @@ def run_fornav_c(*args, **kwargs):
     else:
         result = proc_pool.apply_async(ms2gt.fornav, args=args, kwds=kwargs)
     return result
-
-
-class NearestNDInterpolator(NDInterpolatorBase):
-    def __init__(self, x, y):
-        x = _ndim_coords_from_arrays(x)
-        self._check_init_shape(x, y)
-        self.tree = cKDTree(x)
-        self.points = x
-        self.values = y
-
-    def __call__(self, *args, **kwargs):
-        """
-        Evaluate interpolator at given points.
-
-        Parameters
-        ----------
-        xi : ndarray of float, shape (..., ndim)
-            Points where to interpolate data at.
-
-        """
-        # DJH: Added kwargs and passed them to self.tree.query
-        fill_value = kwargs.pop("fill_value", numpy.nan)
-        xi = _ndim_coords_from_arrays(args)
-        xi = self._check_call_shape(xi)
-        dist, i = self.tree.query(xi, **kwargs)
-        values = numpy.append(self.values, self.values.dtype.type(fill_value))
-        return values[i]
-
-
-def griddata(points, values, xi, method='linear', fill_value=numpy.nan, distance_upper_bound=3.0):
-    # DJH: Added distance_upper_bound keyword
-    # FIXME: The distance_upper_bound keyword should default to what the KDTree defaults to (inf) and this functionality should probably be put in scipy itself
-    points = _ndim_coords_from_arrays(points)
-
-    if points.ndim < 2:
-        ndim = points.ndim
-    else:
-        ndim = points.shape[-1]
-
-    if ndim == 1 and method in ('nearest', 'linear', 'cubic'):
-        from scipy.interpolate import interp1d
-        points = points.ravel()
-        if isinstance(xi, tuple):
-            if len(xi) != 1:
-                raise ValueError("invalid number of dimensions in xi")
-            xi, = xi
-        # Sort points/values together, necessary as input for interp1d
-        idx = numpy.argsort(points)
-        points = points[idx]
-        values = values[idx]
-        ip = interp1d(points, values, kind=method, axis=0, bounds_error=False,
-                      fill_value=fill_value)
-        return ip(xi)
-    elif method == 'nearest':
-        ip = NearestNDInterpolator(points, values)
-        return ip(xi, distance_upper_bound=distance_upper_bound, fill_value=fill_value)
-    elif method == 'linear':
-        ip = LinearNDInterpolator(points, values, fill_value=fill_value)
-        return ip(xi)
-    elif method == 'cubic' and ndim == 2:
-        ip = CloughTocher2DInterpolator(points, values, fill_value=fill_value)
-        return ip(xi)
-    else:
-        raise ValueError("Unknown interpolation method %r for "
-                         "%d dimensional data" % (method, ndim))
 
 
 class Remapper(object):
@@ -227,11 +169,11 @@ class Remapper(object):
             raise
 
         # if 5% of the grid will have data in it then it fits
-        fraction_in = points_in_grid / float(grid_definition["width"] * grid_definition["height"])
+        fraction_in = points_in_grid / float(rows_arr.size)
         fits_grid = fraction_in >= 0.05
-        if not fits_grid:
+        if not fits_grid and not os.getenv("P2G_FITS_GRID", None):
             self._safe_remove(rows_fn, cols_fn)
-            LOG.error("Data does not fit in grid %s because it only covered %f%%" % (grid_name, fraction_in * 100))
+            LOG.error("Data does not fit in grid %s because it only %f%% of the swath is used" % (grid_name, fraction_in * 100))
             raise RuntimeError("Data does not fit in grid %s" % (grid_name,))
         else:
             LOG.debug("Data fits in grid %s and covers %f%% of the grid", grid_name, fraction_in * 100)
@@ -382,11 +324,6 @@ class Remapper(object):
                 continue
 
             LOG.info("Running nearest neighbor for the following products:\n\t%s", "\n\t".join(product_names))
-            grid_x, grid_y = numpy.mgrid[:grid_def["height"], :grid_def["width"]]
-            # we need flattened versions of these
-            shape = (swath_def["swath_rows"] * swath_def["swath_columns"],)
-            cols_array = numpy.memmap(cols_fn, shape=shape, dtype=swath_def["data_type"])
-            rows_array = numpy.memmap(rows_fn, shape=shape, dtype=swath_def["data_type"])
             edge_res = swath_def.get("limb_resolution", None)
             if kwargs.get("distance_upper_bound", None) is None:
                 if edge_res is not None:
@@ -399,12 +336,23 @@ class Remapper(object):
                     distance_upper_bound = 3.0
                 kwargs["distance_upper_bound"] = distance_upper_bound
 
+            grid_x, grid_y = numpy.mgrid[:grid_def["height"], :grid_def["width"]]
+            # we need flattened versions of these
+            shape = (swath_def["swath_rows"] * swath_def["swath_columns"],)
+            cols_array = numpy.memmap(cols_fn, shape=shape, dtype=swath_def["data_type"])
+            rows_array = numpy.memmap(rows_fn, shape=shape, dtype=swath_def["data_type"])
+            good_mask = ~mask_helper(cols_array, swath_def["fill_value"])
+            x = _ndim_coords_from_arrays((cols_array[good_mask], rows_array[good_mask]))
+            xi = _ndim_coords_from_arrays((grid_y, grid_x))
+            dist, i = cKDTree(x).query(xi, distance_upper_bound=kwargs["distance_upper_bound"])
+
             product_filepaths = swath_scene.get_data_filepaths(product_names)
             output_filepaths = self._add_prefix("grid_%s_" % (grid_name,), *product_filepaths)
 
             # Prepare the products
+            fill_value = numpy.nan
             for product_name, output_fn in izip(product_names, output_filepaths):
-                LOG.debug("Running nearest neighbor on '%s'", product_name)
+                LOG.debug("Running nearest neighbor on '%s' with search distance %f", product_name, kwargs["distance_upper_bound"])
                 if os.path.isfile(output_fn):
                     if not self.overwrite_existing:
                         LOG.error("Intermediate remapping file already exists: %s" % (output_fn,))
@@ -413,11 +361,9 @@ class Remapper(object):
                         LOG.warning("Intermediate remapping file already exists, will overwrite: %s", output_fn)
 
                 try:
-                    # XXX: May have to do something smarter if there are float products and integer products together
-                    image_array = swath_scene[product_name].get_data_array()
-                    output_array = griddata((cols_array, rows_array), image_array.flatten(), (grid_y, grid_x),
-                                            method='nearest', fill_value=numpy.nan,
-                                            distance_upper_bound=kwargs["distance_upper_bound"])
+                    image_array = swath_scene[product_name].get_data_array().ravel()
+                    values = numpy.append(image_array[good_mask], image_array.dtype.type(fill_value))
+                    output_array = values[i]
                     output_array.tofile(output_fn)
 
                     # Give the gridded product ownership of the remapped data
@@ -425,13 +371,14 @@ class Remapper(object):
                     gridded_product = GriddedProduct()
                     gridded_product.from_swath_product(swath_product)
                     gridded_product["grid_definition"] = grid_def
-                    gridded_product["fill_value"] = numpy.nan
+                    gridded_product["fill_value"] = fill_value
                     gridded_product["grid_data"] = output_fn
                     gridded_scene[product_name] = gridded_product
 
                     # hopefully force garbage collection
                     del output_array
                 except StandardError:
+                    LOG.debug("Remapping exception: ", exc_info=True)
                     LOG.error("Remapping error")
                     self._safe_remove(rows_fn, cols_fn, output_fn)
                     if not self.keep_intermediate and os.path.isfile(output_fn):
@@ -469,7 +416,8 @@ def add_remap_argument_groups(parser):
                        help="Specify the -d option for fornav")
     group.add_argument('--maximum-weight-mode', dest="maximum_weight_mode", default=SUPPRESS, action="store_true",
                        help="Use maximum weight mode in fornav (-m)")
-    group.add_argument("--distance-upper-bound", dest="distance_upper_bound",)
+    group.add_argument("--distance-upper-bound", dest="distance_upper_bound", type=float, default=None,
+                       help="Nearest neighbor search distance upper bound")
     group.add_argument("--no-share-grid", dest="share_dynamic_grid", action="store_false",
                        help="Calculate dynamic grid attributes for every grid (instead of sharing highest resolution)")
     return ["Remapping Initialization", "Remapping"]
