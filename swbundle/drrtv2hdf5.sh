@@ -21,14 +21,14 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-#     Written by David Hoese    October 2014
-#     University of Wisconsin-Madison 
+#     Written by David Hoese    December 2014
+#     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
-if [ -z "$POLAR2GRID_HOME" ]; then 
+if [ -z "$POLAR2GRID_HOME" ]; then
   export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 fi
 
@@ -36,5 +36,4 @@ fi
 source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
 # Call the python module to do the processing, passing all arguments
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.glue viirs gtiff -vv $@
-
+$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.glue drrtv hdf5 -vv $@
