@@ -486,6 +486,10 @@ class SwathProduct(BaseProduct):
     def __init__(self, *args, **kwargs):
         super(SwathProduct, self).__init__(*args, **kwargs)
 
+    @property
+    def shape(self):
+        return (self["swath_rows"], self["swath_columns"])
+
     def get_data_array(self, item="swath_data"):
         dtype = self["data_type"]
         rows = self["swath_rows"]
@@ -543,6 +547,10 @@ class GriddedProduct(BaseProduct):
     cleanup_kwargs = (
         "grid_data",
     )
+
+    @property
+    def shape(self):
+        return (self["grid_definition"]["height"], self["grid_definition"]["width"])
 
     def from_swath_product(self, swath_product):
         for k in ["product_name", "satellite", "instrument",

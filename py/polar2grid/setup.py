@@ -80,12 +80,14 @@ setup(
             'awips=polar2grid.awips.awips_netcdf:Backend',
             'binary=polar2grid.binary:Backend',
             'ninjo=polar2grid.ninjo:Backend',
+            'hdf5=polar2grid.hdf5_backend:Backend',
         ],
         'polar2grid.backend_arguments': [
             'gtiff=polar2grid.gtiff_backend:add_backend_argument_groups',
             'awips=polar2grid.awips.awips_netcdf:add_backend_argument_groups',
             'binary=polar2grid.binary:add_backend_argument_groups',
             'ninjo=polar2grid.ninjo:add_backend_argument_groups',
+            'hdf5=polar2grid.hdf5_backend:add_backend_argument_groups',
         ],
     }
 )
