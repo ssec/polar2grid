@@ -348,14 +348,19 @@ PRODUCTS.add_product(PRODUCT_TOT_OZONE, BASE_PAIR, "total_ozone", FT_DRRTV, "tot
 # geo products
 PRODUCTS.add_product(PRODUCT_LON, BASE_PAIR, "longitude", FT_DRRTV, "Longitude")
 PRODUCTS.add_product(PRODUCT_LAT, BASE_PAIR, "latitude", FT_DRRTV, "Latitude")
+TAIR_PRODUCTS = []
+DEWPOINT_PRODUCTS = []
+WATER_MMR_PRODUCTS = []
+OZONE_VMR_PRODUCTS = []
+RELHUM_PRODUCTS = []
 lvl_range = [100, 200, 300, 400, 500, 600, 700, 800]
 for lvl_num in lvl_range:
     suffix = "_%dmb" % (lvl_num,)
+    PRODUCTS.add_product(PRODUCT_TAIR + suffix, BASE_PAIR, "air_temperature", FT_DRRTV, "TAir", pressure=lvl_num)
     PRODUCTS.add_product(PRODUCT_DEWPOINT + suffix, BASE_PAIR, "dewpoint_temperature", FT_DRRTV, "Dewpnt", pressure=lvl_num)
     PRODUCTS.add_product(PRODUCT_WATER_MMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "H2OMMR", pressure=lvl_num)
     PRODUCTS.add_product(PRODUCT_OZONE_VMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "O3VMR", pressure=lvl_num)
     PRODUCTS.add_product(PRODUCT_RELHUM + suffix, BASE_PAIR, "relative_humidity", FT_DRRTV, "RelHum", pressure=lvl_num)
-    PRODUCTS.add_product(PRODUCT_TAIR + suffix, BASE_PAIR, "air_temperature", FT_DRRTV, "TAir", pressure=lvl_num)
 
 
 class Frontend(FrontendRole):
@@ -551,7 +556,7 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    from polar2grid.core.script_utils import ExtendAction
+    from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # Set defaults for other components that may be used in polar2grid processing
     # remapping microwave data with EWA doesn't look very good, so default to nearest neighbor
     parser.set_defaults(fornav_D=40, fornav_d=2, remap_method="nearest")
@@ -565,6 +570,16 @@ def add_frontend_argument_groups(parser):
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
                        help="Specify frontend products to process")
+    group.add_argument('--tair-products', dest='products', action=ExtendConstAction, const=TAIR_PRODUCTS,
+                       help="Add all TAir products to the list of products to create")
+    group.add_argument('--dewpoint-products', dest='products', action=ExtendConstAction, const=DEWPOINT_PRODUCTS,
+                       help="Add all dewpoint products to the list of products to create")
+    group.add_argument('--water-mmr-products', dest='products', action=ExtendConstAction, const=WATER_MMR_PRODUCTS,
+                       help="Add all Water MMR products to the list of products to create")
+    group.add_argument('--ozone-vmr-products', dest='products', action=ExtendConstAction, const=OZONE_VMR_PRODUCTS,
+                       help="Add all Ozone VMR products to the list of products to create")
+    group.add_argument('--relhum-products', dest='products', action=ExtendConstAction, const=RELHUM_PRODUCTS,
+                       help="Add all relative humidity products to the list of products to create")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
 
 
