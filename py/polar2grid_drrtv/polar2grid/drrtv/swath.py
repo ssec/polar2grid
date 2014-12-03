@@ -361,6 +361,11 @@ for lvl_num in lvl_range:
     PRODUCTS.add_product(PRODUCT_WATER_MMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "H2OMMR", pressure=lvl_num)
     PRODUCTS.add_product(PRODUCT_OZONE_VMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "O3VMR", pressure=lvl_num)
     PRODUCTS.add_product(PRODUCT_RELHUM + suffix, BASE_PAIR, "relative_humidity", FT_DRRTV, "RelHum", pressure=lvl_num)
+    TAIR_PRODUCTS.append(PRODUCT_TAIR + suffix)
+    DEWPOINT_PRODUCTS.append(PRODUCT_DEWPOINT + suffix)
+    WATER_MMR_PRODUCTS.append(PRODUCT_WATER_MMR + suffix)
+    OZONE_VMR_PRODUCTS.append(PRODUCT_OZONE_VMR + suffix)
+    RELHUM_PRODUCTS.append(PRODUCT_RELHUM + suffix)
 
 
 class Frontend(FrontendRole):
