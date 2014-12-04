@@ -90,6 +90,10 @@ class Backend(roles.BackendRole):
         return output_filename
 
     def create_output_from_scene(self, gridded_scene, **kwargs):
+        kwargs["compression"] = kwargs.get("compression", None)
+        if kwargs["compression"] == "none":
+            kwargs["compression"] = None
+
         output_filename = self.determine_output_filename(gridded_scene, output_pattern=kwargs["output_pattern"])
         # get all of the grids in this gridded scene, should only be one in most cases
         grids = {x["grid_definition"]["grid_name"]: x["grid_definition"] for x in gridded_scene.values()}
@@ -116,13 +120,22 @@ class Backend(roles.BackendRole):
         h.close()
         return [output_filename]
 
-    def create_group_from_grid_definition(self, grid_definition, parent, **kwargs):
+    def create_group_from_grid_definition(self, grid_definition, parent, add_geolocation=False, **kwargs):
         if grid_definition["grid_name"] in parent:
             return parent[grid_definition["grid_name"]]
 
         group = parent.create_group(grid_definition["grid_name"])
         for a in ["proj4_definition", "height", "width", "cell_height", "cell_width", "origin_x", "origin_y"]:
             group.attrs[a] = grid_definition[a]
+
+        if add_geolocation:
+            LOG.info("Adding geolocation 'longitude' and 'latitude' datasets for grid %s", grid_definition["grid_name"])
+            lon_data, lat_data = grid_definition.get_geolocation_arrays()
+            group.create_dataset("longitude", shape=lon_data.shape, dtype=lon_data.dtype, data=lon_data,
+                                 compression=kwargs["compression"])
+            group.create_dataset("latitude", shape=lat_data.shape, dtype=lat_data.dtype, data=lat_data,
+                                 compression=kwargs["compression"])
+
         return group
 
     def create_hdf5_file(self, output_filename, append=True):
@@ -200,6 +213,8 @@ def add_backend_argument_groups(parser):
                        help="Specify compression method for hdf5 datasets")
     group.add_argument("--no-append", dest="append", action="store_false",
                        help="Don't append to the hdf5 file if it already exists (otherwise may overwrite data)")
+    group.add_argument("--add-geolocation", dest="add_geolocation", action="store_true",
+                       help="Add 'longitude' and 'latitude' datasets for each grid")
     # group.add_argument("--dtype", dest="data_type", type=str_to_dtype, default=None,
     #                     help="specify the data type for the backend to output")
     return ["Backend Initialization", "Backend Output Creation"]

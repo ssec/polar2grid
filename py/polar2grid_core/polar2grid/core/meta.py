@@ -759,6 +759,16 @@ class GridDefinition(GeographicDefinition):
     def gdal_geotransform(self):
         return self["origin_x"], self["cell_width"], 0, self["origin_y"], 0, self["cell_height"]
 
+    def get_geolocation_arrays(self):
+        """Calculate longitude and latitude arrays for the grid.
+
+        :returns: (longitude array, latitude array)
+        """
+        # the [None] indexing adds a dimension to the array
+        x = self["origin_x"] + numpy.repeat(numpy.arange(self["width"])[None] * self["cell_width"], self["height"], axis=0)
+        y = self["origin_y"] + numpy.repeat(numpy.arange(self["height"])[:, None] * self["cell_height"], self["width"], axis=1)
+        return self.proj(x, y, inverse=True)
+
     def to_basemap_object(self):
         from mpl_toolkits.basemap import Basemap
         proj4_dict = self.proj4_dict
