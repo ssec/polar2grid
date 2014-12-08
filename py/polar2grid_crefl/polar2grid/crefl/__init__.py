@@ -13,4 +13,4 @@ for VIIRS and MODIS data.
 """
 __docformat__ = "restructuredtext en"
 
-from .crefl2swath import FrontendOld
+from .crefl2swath import Frontend, add_frontend_argument_groups

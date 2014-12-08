@@ -197,7 +197,9 @@ def lookup_scale(img, max_out, m, b, table_name="crefl", **kwargs):
     img = linear_scale(img, m, b)
     numpy.clip(img, 0, lut.shape[0]-1, out=img)
     img = lut[img.astype(numpy.uint32)]
-    img *= max_out  # scale to correct output range (technically not correct since assumes min_out is 0
+    # scale to correct output range (technically not correct since assumes min_out is 0
+    # technically (judging by the LUT this should be 255, but to mimic historical results I'm making this 254
+    img *= (max_out / 254.0)
     return img
 
 
