@@ -130,7 +130,7 @@ PAIR_MOD06 = "mod06_nav"
 PAIR_MOD07 = "mod07_nav"
 
 GEO_PAIRS.add_pair(PAIR_1000M, PRODUCT_1000M_LON, PRODUCT_1000M_LAT, 10)
-# GEO_PAIRS.add_pair(PAIR_500M, PRODUCT_500M_LON, PRODUCT_500M_LAT, 20)
+GEO_PAIRS.add_pair(PAIR_500M, PRODUCT_500M_LON, PRODUCT_500M_LAT, 20)
 GEO_PAIRS.add_pair(PAIR_250M, PRODUCT_250M_LON, PRODUCT_250M_LAT, 40)
 GEO_PAIRS.add_pair(PAIR_MOD06, PRODUCT_MOD06_LON, PRODUCT_MOD06_LAT, 10)
 GEO_PAIRS.add_pair(PAIR_MOD07, PRODUCT_MOD07_LON, PRODUCT_MOD07_LAT, 10)
@@ -139,10 +139,8 @@ GEO_PAIRS.add_pair(PAIR_MOD07, PRODUCT_MOD07_LON, PRODUCT_MOD07_LAT, 10)
 PRODUCTS.add_product(PRODUCT_1000M_LON, PAIR_1000M, "longitude", guidebook.FT_GEO, guidebook.K_LONGITUDE)
 PRODUCTS.add_product(PRODUCT_1000M_LAT, PAIR_1000M, "latitude", guidebook.FT_GEO, guidebook.K_LATITUDE)
 # 500M interpolation is not implemented yet
-# PRODUCTS.add_product(PRODUCT_500M_LON, PAIR_500M, "longitude", guidebook.FT_GEO, guidebook.K_LONGITUDE,
-#                      dependencies=(None,))
-# PRODUCTS.add_product(PRODUCT_500M_LAT, PAIR_500M, "latitude", guidebook.FT_GEO, guidebook.K_LATITUDE,
-#                      dependencies=(None,))
+PRODUCTS.add_product(PRODUCT_500M_LON, PAIR_500M, "longitude", guidebook.FT_GEO, guidebook.K_LONGITUDE_500)
+PRODUCTS.add_product(PRODUCT_500M_LAT, PAIR_500M, "latitude", guidebook.FT_GEO, guidebook.K_LATITUDE_500)
 PRODUCTS.add_product(PRODUCT_250M_LON, PAIR_250M, "longitude", guidebook.FT_GEO, guidebook.K_LONGITUDE_250)
 PRODUCTS.add_product(PRODUCT_250M_LAT, PAIR_250M, "latitude", guidebook.FT_GEO, guidebook.K_LATITUDE_250)
 PRODUCTS.add_product(PRODUCT_MOD06_LON, PAIR_MOD06, "longitude", guidebook.FT_MOD06CT, guidebook.K_LONGITUDE)

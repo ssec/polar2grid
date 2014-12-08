@@ -145,14 +145,18 @@ class ProductDefinition(object):
         LOG.warning("Multiple geo pair names specified for product '%s', but only one file type", self.name)
         return self.geo_pair_name[0]
 
-    def get_file_type(self, available_file_types):
+    def get_file_type(self, available_file_types=tuple(), index=None):
         """Return the file type that should be used for this product.
 
         See the class documentation for `ProductDefinition` for more information.
 
         :param available_file_types: file types available to the frontend
+        :param index: if provided use the file type at this index
         """
         if isinstance(self.file_type, (tuple, list)):
+            if index is not None:
+                return self.file_type[index]
+
             for ft in self.file_type:
                 if ft in available_file_types:
                     return ft
@@ -160,7 +164,7 @@ class ProductDefinition(object):
                 raise RuntimeError("No usable file types found for product '%s'", self.name)
         return self.file_type
 
-    def get_file_key(self, available_file_types):
+    def get_file_key(self, available_file_types=tuple(), index=None):
         """Return the file key that should be used for this product.
 
         See the class documentation for `ProductDefinition` for more information.
@@ -174,6 +178,9 @@ class ProductDefinition(object):
         """
         if not isinstance(self.file_key, (tuple, list)):
             return self.file_key
+
+        if index is not None:
+            return self.file_key[index]
 
         if isinstance(self.file_type, (tuple, list)):
             for ft, fk in zip(self.file_type, self.file_key):
@@ -381,7 +388,7 @@ class BaseFileReader(object):
         LOG.debug("Loading %s from %s", known_item, self.filename)
         return self.file_handle[known_item]
 
-    def get_fill_value(self, item):
+    def get_fill_value(self, item, default_dtype=numpy.float32):
         """If the caller of `get_swath_data` doesn't force the output fill value then they need to know what it is now.
         Defaults version expects a 'data_type' attribute in the value returned from `file_type_info`.
 
@@ -391,15 +398,15 @@ class BaseFileReader(object):
 
         :raises: RuntimeError if unknown data type
         """
-        var_info = self.file_type_info[item]
-        if numpy.issubclass_(var_info.data_type, numpy.unsignedinteger):
-            return var_info.data_type(-1)
-        elif numpy.issubclass_(var_info.data_type, numpy.integer):
+        data_type = self.get_data_type(item, default_dtype=default_dtype)
+        if numpy.issubclass_(data_type, numpy.unsignedinteger):
+            return data_type(-1)
+        elif numpy.issubclass_(data_type, numpy.integer):
             return -999
-        elif numpy.issubclass_(var_info.data_type, numpy.floating):
+        elif numpy.issubclass_(data_type, numpy.floating):
             return numpy.nan
         else:
-            raise RuntimeError("Unknown data type for %s: %s" % (item, var_info.data_type))
+            raise RuntimeError("Unknown data type for %s: %s" % (item, data_type))
 
     def get_data_type(self, item, default_dtype=numpy.float32):
         """Return the numpy data type for a specific item. This is needed if the data type isn't forced and there

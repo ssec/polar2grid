@@ -45,6 +45,7 @@ import numpy
 
 from polar2grid.viirs import guidebook
 from polar2grid.core.fbf import FileAppender
+from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader
 from polar2grid.viirs.guidebook import K_DATA_PATH
 
 import os
@@ -111,30 +112,22 @@ def time_attr_to_datetime(d, st):
     return s_dt
 
 
-# TODO: Frontend iterates through each class, runs `handles_file` which gets them the exact file type
-class VIIRSSDRReader(object):
+class VIIRSSDRReader(BaseFileReader):
     """VIIRS Data SDR hdf5 reader.
 
     Handles all the difficulties of reading SDR data (masking, scaling, etc.)
     """
-    def __init__(self, filename_or_hdf_obj, file_type_info, instrument="viirs"):
+    def __init__(self, file_handle, file_type_info):
         """Initialize VIIRS SDR Reader and get information that we can derive by the file name.
 
         :param filename: HDF5 filename for a VIIRS data SDR file.
         :param file_type_info: Dictionary mapping file key constants to the variable path in the file
         :param instrument: Name of the instrument that recorded the data in the file. Defaults to 'viirs'.
         """
-        super(VIIRSSDRReader, self).__init__()
-        if isinstance(filename_or_hdf_obj, str):
-            self.reader = HDF5Reader(filename_or_hdf_obj)
-        else:
-            self.reader = filename_or_hdf_obj
+        super(VIIRSSDRReader, self).__init__(file_handle, file_type_info)
 
-        self.file_type_info = file_type_info
-        self.filename = self.reader.filename
-        self.filepath = self.reader.filepath
         self.satellite = self[guidebook.K_SATELLITE].lower()
-        self.instrument = instrument
+        self.instrument = "viirs"
 
         # begin time
         sd = self[guidebook.K_AGGR_STARTDATE][0][0]
@@ -146,41 +139,6 @@ class VIIRSSDRReader(object):
         et = self[guidebook.K_AGGR_ENDTIME][0][0]
         self.end_time = time_attr_to_datetime(ed, et)
 
-        # number of scans
-        # item = self.file_type_info[guidebook.K_NUMSCANS]
-        # if not isinstance(item, str):
-        #     self.num_scans = item
-        # else:
-        #     self.num_scans = self[guidebook.K_NUMSCANS]
-
-        # rows per scan line
-        # item = self.file_type_info[guidebook.K_ROWSPERSCAN]
-        # if not isinstance(item, str):
-        #     self.rows_per_scan = guidebook.K_ROWSPERSCAN
-        # else:
-        #     self.rows_per_scan = self[guidebook.K_ROWSPERSCAN]
-
-    @classmethod
-    def handles_file(cls, filepath_or_hdf_reader, file_type_info):
-        """Check if this class can handle the provided file.
-
-        DEPRECATED
-        """
-        if isinstance(filepath_or_hdf_reader, str):
-            hdf_reader = HDF5Reader(filepath_or_hdf_reader)
-        else:
-            hdf_reader = filepath_or_hdf_reader
-
-        try:
-            # let's see if we know stuff about this file
-            if file_type_info[K_DATA_PATH] not in hdf_reader:
-                # LOG.debug("Key '%s' not found in file '%s'", v, filepath)
-                return False
-            LOG.debug("Found all file type keys in '%s'", filepath)
-            return True
-        except StandardError:
-            return False
-
     def __getitem__(self, item):
         known_item = self.file_type_info.get(item, item)
         if known_item is None:
@@ -190,7 +148,7 @@ class VIIRSSDRReader(object):
             # Using FileVar class
             known_item = known_item.var_path
         LOG.debug("Loading %s from %s", known_item, self.filename)
-        return self.reader[known_item]
+        return self.file_handle[known_item]
 
     def scale_swath_data(self, data, scaling_factors):
         num_grans = len(scaling_factors)/2
@@ -241,115 +199,16 @@ class VIIRSSDRReader(object):
 
         return data
 
-    def _compare(self, other, method):
-        try:
-            return method(self.begin_time, other.begin_time)
-        except AttributeError:
-            raise NotImplemented
 
-    def __lt__(self, other):
-        return self._compare(other, lambda s, o: s < o)
-
-    def __le__(self, other):
-        return self._compare(other, lambda s, o: s <= o)
-
-    def __eq__(self, other):
-        return self._compare(other, lambda s, o: s == o)
-
-    def __ge__(self, other):
-        return self._compare(other, lambda s, o: s >= o)
-
-    def __gt__(self, other):
-        return self._compare(other, lambda s, o: s > o)
-
-    def __ne__(self, other):
-        return self._compare(other, lambda s, o: s != o)
-
-    @property
-    def nadir_resolution(self):
-        return None
-
-    @property
-    def limb_resolution(self):
-        return None
-
-
-class VIIRSSDRGeoReader(VIIRSSDRReader):
-    """Generic VIIRS SDR Geolocation hdf5 reader.
-    """
-    def __init__(self, filename, file_type_info):
-        super(VIIRSSDRGeoReader, self).__init__(filename, file_type_info)
-
-
-class VIIRSSDRMultiReader(object):
+class VIIRSSDRMultiReader(BaseMultiFileReader):
     """Helper class to wrap multiple VIIRS SDR Files and assist in reading them.
     """
     SINGLE_FILE_CLASS = VIIRSSDRReader
 
-    def __init__(self, file_type_info, filenames=None):
+    def __init__(self, file_type_info):
         """Load multiple HDF5 files, sorting by start time if necessary.
         """
-        self.file_readers = []
-        self._files_finalized = False
-        self.file_type_info = file_type_info
-        if filenames:
-            self.add_files(filenames)
-            self.finalize_files()
-
-    @classmethod
-    def handles_file(cls, fn_or_nc_obj, file_type_info):
-        return cls.SINGLE_FILE_CLASS.handles_file(fn_or_nc_obj, file_type_info)
-
-    def add_file(self, fn):
-        if self._files_finalized:
-            LOG.error("File reader has been finalized and no more files can be added")
-            raise RuntimeError("File reader has been finalized and no more files can be added")
-        self.file_readers.append(self.SINGLE_FILE_CLASS(fn, self.file_type_info))
-
-    def add_files(self, filenames):
-        for fn in filenames:
-            self.add_file(fn)
-
-    def finalize_files(self):
-        self.file_readers = sorted(self.file_readers)
-        if not all(fr.instrument == self.file_readers[0].instrument for fr in self.file_readers):
-            LOG.error("Can't concatenate files because they are not for the same instrument")
-            raise RuntimeError("Can't concatenate files because they are not for the same instrument")
-        if not all(fr.satellite == self.file_readers[0].satellite for fr in self.file_readers):
-            LOG.error("Can't concatenate files because they are not for the same satellite")
-            raise RuntimeError("Can't concatenate files because they are not for the same satellite")
-        self._files_finalized = True
-
-    def __len__(self):
-        return len(self.file_readers)
-
-    @property
-    def satellite(self):
-        return self.file_readers[0].satellite
-
-    @property
-    def instrument(self):
-        return self.file_readers[0].instrument
-
-    @property
-    def begin_time(self):
-        return self.file_readers[0].begin_time
-
-    @property
-    def end_time(self):
-        return self.file_readers[-1].end_time
-
-    @property
-    def nadir_resolution(self):
-        return self.file_readers[0].nadir_resolution
-
-    @property
-    def limb_resolution(self):
-        return self.file_readers[0].limb_resolution
-
-    @property
-    def filepaths(self):
-        return [fr.filepath for fr in self.file_readers]
+        super(VIIRSSDRMultiReader, self).__init__(file_type_info, VIIRSSDRReader)
 
     def get_orbit_rows(self, data_key):
         """List of number of rows for each orbit being processed.
@@ -377,70 +236,3 @@ class VIIRSSDRMultiReader(object):
             orbit_rows.append(current_num_rows)
 
         return orbit_rows
-
-    def __getitem__(self, item):
-        """Get a HDF5 variable as one logical item.
-
-        This function will try its best to concatenate arrays together. If it can't figure out what to do it will
-        return a list of each file's contents.
-
-        Current Rules:
-            - If each file's item is one element, sum those elements and return the sum
-        """
-        try:
-            # Get the data element from the file and get the actual value out of the h5py object
-            individual_items = [f[item].value for f in self.file_readers]
-        except KeyError:
-            LOG.error("Could not get '%s' from source files", item, exc_info=True)
-            raise
-
-        # This all assumes we are dealing with numpy arrays
-        if isinstance(individual_items[0], numpy.ndarray) and len(individual_items[0]) == 1:
-            # HDF5 gives us arrays with 1 element for some stuff, we don't need the array
-            return numpy.array([x[0] for x in individual_items])
-        else:
-            # TODO: Other possible formations of data
-            return individual_items
-
-    def get_one(self, item):
-        """Get a HDF5 variable from one file.
-
-        This function should be used when we know we are getting a representative value from one single file. For
-        example, if we are looking for something that describes all the files and *should* be the same in all of them,
-        then we only want one of those elements.
-        """
-        val = self.file_readers[0][item]
-        if hasattr(val, "value"):
-            return val.value
-        else:
-            return val
-
-    def write_var_to_flat_binary(self, item, filename, dtype=numpy.float32):
-        """Write multiple HDF5 variables to disk as one concatenated flat binary file.
-
-        Data is written incrementally to reduce memory usage.
-
-        :param item: Variable name to retrieve from these files
-        :param filename: Filename to write to
-        """
-        LOG.debug("Writing binary data for '%s' to file '%s'", item, filename)
-        try:
-            with open(filename, "w") as file_obj:
-                file_appender = FileAppender(file_obj, dtype)
-                for file_reader in self.file_readers:
-                    single_array = file_reader.get_swath_data(item)
-                    file_appender.append(single_array)
-        except StandardError:
-            if os.path.isfile(filename):
-                os.remove(filename)
-            raise
-
-        LOG.debug("File %s has shape %r", filename, file_appender.shape)
-        return file_appender.shape
-
-
-class VIIRSSDRGeoMultiReader(VIIRSSDRMultiReader):
-    """Helper class to wrap multiple VIIRS Geolocation SDR Files and assist in reading them.
-    """
-    SINGLE_FILE_CLASS = VIIRSSDRGeoReader
-

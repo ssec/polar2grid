@@ -54,6 +54,8 @@ LOG = logging.getLogger(__name__)
 # file keys
 K_LONGITUDE = "longitude_var"
 K_LATITUDE = "latitude_var"
+K_LONGITUDE_500 = "longitude500_var"
+K_LATITUDE_500 = "latitude500_var"
 K_LONGITUDE_250 = "longitude250_var"
 K_LATITUDE_250 = "latitude250_var"
 K_VIS01 = "vis01_var"
@@ -239,7 +241,9 @@ FT_SNOW_MASK = "file_type_snow_mask"  # FIXME: What MOD product does this come f
 FT_NDVI_1000M = "file_type_ndvi_1000m"
 FT_NDVI_500M = "file_type_ndvi_500m"
 FT_NDVI_250M = "file_type_ndvi_250m"
-
+FT_CREFL_1000M = "file_type_crefl_1000M"
+FT_CREFL_500M = "file_type_crefl_500M"
+FT_CREFL_250M = "file_type_crefl_250M"
 
 class HDFEOSReader(HDFReader):
     """HDF-EOS file reader with special handling of 'MetaData' attributes.
@@ -287,6 +291,9 @@ class HDFEOSReader(HDFReader):
         "ndvi.500m": FT_NDVI_500M,
         "ndvi.250m": FT_NDVI_250M,
         "snowmask": FT_SNOW_MASK,
+        "crefl.1000m": FT_CREFL_1000M,
+        "crefl.500m": FT_CREFL_500M,
+        "crefl.250m": FT_CREFL_250M,
     }
 
     def __init__(self, filename):
@@ -484,6 +491,7 @@ FILE_TYPES[FT_MOD021KM] = {
     K_IR27: FileInfo("EV_1KM_Emissive", 6, "radiance_scales", "radiance_offsets"),
     K_IR31: FileInfo("EV_1KM_Emissive", 10, "radiance_scales", "radiance_offsets"),
 }
+FILE_TYPES[FT_MOD02HKM] = {}
 FILE_TYPES[FT_MOD02QKM] = {
     K_VIS01: FileInfo("EV_250_RefSB", 0, "reflectance_scales", "reflectance_offsets"),
     K_VIS02: FileInfo("EV_250_RefSB", 1, "reflectance_scales", "reflectance_offsets", clip_saturated=True),

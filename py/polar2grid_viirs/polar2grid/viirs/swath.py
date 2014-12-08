@@ -44,11 +44,10 @@ __docformat__ = "restructuredtext en"
 
 from . import guidebook
 # FIXME: Actually use the Geo Readers
-from .io import VIIRSSDRMultiReader, VIIRSSDRGeoMultiReader, HDF5Reader
-from polar2grid.core import meta
-from polar2grid.core import histogram
+from .io import VIIRSSDRMultiReader, HDF5Reader
+from polar2grid.core import meta, histogram, roles
+from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
 from .prescale import adaptive_dnb_scale, dnb_scale
-from polar2grid.core import roles
 import numpy
 from scipy.special import erf
 
@@ -123,231 +122,6 @@ ADAPTIVE_BT_PRODUCTS = [
     PRODUCT_ADAPTIVE_M12, PRODUCT_ADAPTIVE_M13, PRODUCT_ADAPTIVE_M14, PRODUCT_ADAPTIVE_M15, PRODUCT_ADAPTIVE_M16
 ]
 
-
-class ProductDefinition(object):
-    def __init__(self, name, geo_pair_name, data_kind, dependencies=None, description=None, units=None):
-        self.name = name
-        self.geo_pair_name = geo_pair_name
-        self.data_kind = data_kind
-        self.dependencies = dependencies or []
-        self.description = description or ""
-        self.units = units or ""
-        self.dependents = []
-
-
-class RawVIIRSProductDefinition(ProductDefinition):
-    def __init__(self, name, geo_pair_name, data_kind, file_type, file_key,
-                 dependencies=None, description=None, units=None):
-        self.file_type = file_type
-        self.file_key = file_key
-        # Even though raw products come directly from a file, some may need extra processing (i.e. dependency of None)
-        super(RawVIIRSProductDefinition, self).__init__(name, geo_pair_name, data_kind, dependencies=dependencies,
-                                                        description=description, units=units)
-
-
-class GeoVIIRSProductDefinition(RawVIIRSProductDefinition):
-    pass
-
-
-class SecondaryVIIRSProductDefinition(ProductDefinition):
-    def __init__(self, name, geo_pair_name, data_kind, dependencies, description=None, units=None):
-        super(SecondaryVIIRSProductDefinition, self).__init__(name, geo_pair_name, data_kind, dependencies,
-                                                              description, units)
-
-
-class GeoPair(object):
-    def __init__(self, name, lon_product, lat_product, rows_per_scan):
-        self.name = name
-        self.lon_product = lon_product
-        self.lat_product = lat_product
-        self.rows_per_scan = rows_per_scan
-
-
-class ProductDict(dict):
-    def __init__(self, raw_base_class=RawVIIRSProductDefinition, geo_base_class=GeoVIIRSProductDefinition,
-                 secondary_base_class=SecondaryVIIRSProductDefinition):
-        self.raw_base_class = raw_base_class
-        self.geo_base_class = geo_base_class
-        self.secondary_base_class = secondary_base_class
-        super(ProductDict, self).__init__()
-
-    def add_raw_product(self, *args, **kwargs):
-        pd = self.raw_base_class(*args, **kwargs)
-        self[pd.name] = pd
-
-    def add_geo_product(self, *args, **kwargs):
-        pd = self.geo_base_class(*args, **kwargs)
-        self[pd.name] = pd
-
-    def add_secondary_product(self, *args, **kwargs):
-        pd = self.secondary_base_class(*args, **kwargs)
-        for dep in pd.dependencies:
-            if dep is None:
-                continue
-            try:
-                self[dep].dependents.append(pd.name)
-            except KeyError:
-                raise ValueError("Product %s depends on uknown product %s" % (pd.name, dep))
-        self[pd.name] = pd
-
-    @property
-    def all_raw_products(self):
-        for p, p_def in self.items():
-            if isinstance(p_def, RawVIIRSProductDefinition):
-                yield p
-    @property
-    def all_nongeo_raw_products(self):
-        for p, p_def in self.items():
-            if isinstance(p_def, RawVIIRSProductDefinition) and not isinstance(p_def, GeoVIIRSProductDefinition):
-                yield p
-
-    @property
-    def all_geo_products(self):
-        for p, p_def in self.items():
-            if isinstance(p_def, GeoVIIRSProductDefinition):
-                yield p
-
-    @property
-    def all_secondary_products(self):
-        for p, p_def in self.items():
-            if isinstance(p_def, SecondaryVIIRSProductDefinition):
-                yield p
-
-    def is_raw(self, product_name, geo_allowed=True):
-        """Product is raw or not. If `geo_allowed` is True (default), then geoproducts are considered raw products.
-
-        Logic:
-        geo_product -> True and (True or False)
-        geo_product -> True and (False or False)
-        reg_product -> True and (True or True)
-        reg_product -> True and (False or True)
-        bad_product -> False and (True/False or True)
-        """
-        p_def = self[product_name]
-        return isinstance(p_def, RawVIIRSProductDefinition) and (geo_allowed or not isinstance(p_def, GeoVIIRSProductDefinition))
-
-    def is_geo(self, product_name):
-        return isinstance(self[product_name], GeoVIIRSProductDefinition)
-
-    def needs_processing(self, product_name):
-        """Does this product require additional processing beyond being loaded (and scaled) from the data files.
-
-        This includes "secondary" products and raw products that require extra masking.
-        """
-        return bool(self[product_name].dependencies)
-
-    def geo_pairs_for_products(self, product_names):
-        return list(set(self[p].geo_pair_name for p in product_names))
-
-    def get_product_dependencies(self, product_name):
-        """Recursive function to get all dependencies to create a single product.
-
-        :param product_name: Valid product name for this frontend
-        :returns: Stack-like list where the last element is the most depended (duplicates possible)
-
-        """
-        #
-        _dependencies = []
-
-        if product_name not in self:
-            LOG.error("Requested information for unknown product: '%s'" % (product_name,))
-            raise ValueError("Requested information for unknown product: '%s'" % (product_name,))
-
-        for dependency_product in self[product_name].dependencies:
-            if dependency_product is None:
-                LOG.debug("Product Dependency: Some additional processing will be required for product '%s'", product_name)
-                continue
-
-            LOG.info("Product Dependency: To create '%s', '%s' must be created first", product_name, dependency_product)
-            _dependencies.append(dependency_product)
-            _dependencies.extend(self.get_product_dependencies(dependency_product))
-
-        # Check if the product_name is already in the set, if it is then we have a circular dependency
-        if product_name in _dependencies:
-            LOG.error("Circular dependency found in frontend, '%s' requires itself", product_name)
-            raise RuntimeError("Circular dependency found in frontend, '%s' requires itself", product_name)
-
-        return _dependencies
-
-    def get_product_dependents(self, starting_products, remaining_dependencies=None, dependency_required=False):
-        """Recursively determine what products (secondary) can be made from the products provided.
-        """
-        if remaining_dependencies is None:
-            # Need to remove raw products we aren't starting with and remove navigation products
-            remaining_dependencies = self.all_secondary_products
-
-        def _these_dependents(pname):
-            my_dependents = set(self[pname].dependents)
-            for p in my_dependents:
-                my_dependents |= _these_dependents(p)
-            return my_dependents
-
-        possible_products = set(starting_products[:])
-        for product_name in starting_products:
-            possible_products |= _these_dependents(product_name)
-
-        return possible_products
-
-    def dependency_ordered_products(self, product_names):
-        """Returns ordered list from most independent to least independent product names.
-        """
-        products_needed = []
-        # Check what products they asked for and see what we need to be able to create them
-        for product_name in product_names:
-            LOG.debug("Searching for dependencies for '%s'", product_name)
-            if product_name in products_needed:
-                # put in least-depended product -> most-depended product order
-                products_needed.remove(product_name)
-            products_needed.append(product_name)
-
-            other_deps = self.get_product_dependencies(product_name)
-            # only add products that aren't already account for
-            for dep in other_deps:
-                if dep in products_needed:
-                    # put in least-depended product -> most-depended product order
-                    products_needed.remove(dep)
-                products_needed.append(dep)
-
-        return products_needed
-
-    def file_type_for_product(self, product_name, use_terrain_corrected=True):
-        product_def = self[product_name]
-        if isinstance(product_def.file_type, str):
-            return product_def.file_type
-        elif len(product_def.file_type) == 2:
-            # First element is terrain corrected, second element is non-TC
-            return product_def.file_type[not use_terrain_corrected]
-        else:
-            raise NotImplementedError("Can't handle product that uses more than one file type except for to handle terrain-correction")
-
-    def file_key_for_product(self, product_name, use_terrain_corrected=True):
-        product_def = self[product_name]
-        if isinstance(product_def.file_key, str):
-            return product_def.file_key
-        elif len(product_def.file_key) == 2:
-            # First element is terrain corrected, second element is non-TC
-            return product_def.file_key[not use_terrain_corrected]
-        else:
-            raise NotImplementedError("Can't handle product that uses more than one file key except for to handle terrain-correction")
-
-
-class GeoPairDict(dict):
-    def __init__(self, base_class=GeoPair):
-        self.base_class = base_class
-        super(GeoPairDict, self).__init__()
-
-    def add_pair(self, *args, **kwargs):
-        gp = self.base_class(*args, **kwargs)
-        self[gp.name] = gp
-
-    def geoproducts_for_pairs(self, pair_names):
-        product_names = []
-        for p in pair_names:
-            product_names.append(self[p].lon_product)
-            product_names.append(self[p].lat_product)
-        return product_names
-
-
 PRODUCTS = ProductDict()
 GEO_PAIRS = GeoPairDict()
 
@@ -360,54 +134,54 @@ GEO_PAIRS.add_pair(PAIR_MNAV, PRODUCT_M_LON, PRODUCT_M_LAT, 16)
 GEO_PAIRS.add_pair(PAIR_DNBNAV, PRODUCT_DNB_LON, PRODUCT_DNB_LAT, 16)
 
 # TODO: Add description and units
-PRODUCTS.add_geo_product(PRODUCT_I_LON, PAIR_INAV, "longitude", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LONGITUDE)
-PRODUCTS.add_geo_product(PRODUCT_I_LAT, PAIR_INAV, "latitude", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LATITUDE)
-PRODUCTS.add_geo_product(PRODUCT_M_LON, PAIR_MNAV, "longitude", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LONGITUDE)
-PRODUCTS.add_geo_product(PRODUCT_M_LAT, PAIR_MNAV, "latitude", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LATITUDE)
-PRODUCTS.add_geo_product(PRODUCT_DNB_LON, PAIR_DNBNAV, "longitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLONGITUDE, guidebook.K_LONGITUDE))
-PRODUCTS.add_geo_product(PRODUCT_DNB_LAT, PAIR_DNBNAV, "latitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLATITUDE, guidebook.K_LATITUDE))
+PRODUCTS.add_product(PRODUCT_I_LON, PAIR_INAV, "longitude", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LONGITUDE)
+PRODUCTS.add_product(PRODUCT_I_LAT, PAIR_INAV, "latitude", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LATITUDE)
+PRODUCTS.add_product(PRODUCT_M_LON, PAIR_MNAV, "longitude", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LONGITUDE)
+PRODUCTS.add_product(PRODUCT_M_LAT, PAIR_MNAV, "latitude", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LATITUDE)
+PRODUCTS.add_product(PRODUCT_DNB_LON, PAIR_DNBNAV, "longitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLONGITUDE, guidebook.K_LONGITUDE))
+PRODUCTS.add_product(PRODUCT_DNB_LAT, PAIR_DNBNAV, "latitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLATITUDE, guidebook.K_LATITUDE))
 
-PRODUCTS.add_raw_product(PRODUCT_I01, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I01, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_I02, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I02, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_I03, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I03, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_I04, PAIR_INAV, "brightness_temperature", guidebook.FILE_TYPE_I04, guidebook.K_BTEMP)
-PRODUCTS.add_raw_product(PRODUCT_I05, PAIR_INAV, "brightness_temperature", guidebook.FILE_TYPE_I05, guidebook.K_BTEMP)
-PRODUCTS.add_raw_product(PRODUCT_M01, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M01, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M02, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M02, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M03, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M03, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M04, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M04, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M05, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M05, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M06, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M06, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M07, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M07, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M08, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M08, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M09, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M09, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M10, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M10, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M11, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M11, guidebook.K_REFLECTANCE)
-PRODUCTS.add_raw_product(PRODUCT_M12, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M12, guidebook.K_BTEMP)
-PRODUCTS.add_raw_product(PRODUCT_M13, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M13, guidebook.K_BTEMP)
-PRODUCTS.add_raw_product(PRODUCT_M14, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M14, guidebook.K_BTEMP)
-PRODUCTS.add_raw_product(PRODUCT_M15, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M15, guidebook.K_BTEMP)
-PRODUCTS.add_raw_product(PRODUCT_M16, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M16, guidebook.K_BTEMP)
-PRODUCTS.add_raw_product(PRODUCT_DNB, PAIR_DNBNAV, "radiance", guidebook.FILE_TYPE_DNB, guidebook.K_RADIANCE)
-PRODUCTS.add_raw_product(PRODUCT_DNB_SZA, PAIR_DNBNAV, "solar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SOLARZENITH)
-PRODUCTS.add_raw_product(PRODUCT_I_SZA, PAIR_INAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARZENITH)
-PRODUCTS.add_raw_product(PRODUCT_M_SZA, PAIR_MNAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARZENITH)
-PRODUCTS.add_raw_product(PRODUCT_DNB_LZA, PAIR_DNBNAV, "lunar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_LUNARZENITH)
-PRODUCTS.add_raw_product(PRODUCT_I_LZA, PAIR_INAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LUNARZENITH)
-PRODUCTS.add_raw_product(PRODUCT_M_LZA, PAIR_MNAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LUNARZENITH)
+PRODUCTS.add_product(PRODUCT_I01, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I01, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_I02, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I02, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_I03, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I03, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_I04, PAIR_INAV, "brightness_temperature", guidebook.FILE_TYPE_I04, guidebook.K_BTEMP)
+PRODUCTS.add_product(PRODUCT_I05, PAIR_INAV, "brightness_temperature", guidebook.FILE_TYPE_I05, guidebook.K_BTEMP)
+PRODUCTS.add_product(PRODUCT_M01, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M01, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M02, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M02, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M03, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M03, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M04, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M04, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M05, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M05, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M06, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M06, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M07, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M07, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M08, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M08, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M09, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M09, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M10, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M10, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M11, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M11, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M12, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M12, guidebook.K_BTEMP)
+PRODUCTS.add_product(PRODUCT_M13, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M13, guidebook.K_BTEMP)
+PRODUCTS.add_product(PRODUCT_M14, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M14, guidebook.K_BTEMP)
+PRODUCTS.add_product(PRODUCT_M15, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M15, guidebook.K_BTEMP)
+PRODUCTS.add_product(PRODUCT_M16, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M16, guidebook.K_BTEMP)
+PRODUCTS.add_product(PRODUCT_DNB, PAIR_DNBNAV, "radiance", guidebook.FILE_TYPE_DNB, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_DNB_SZA, PAIR_DNBNAV, "solar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_I_SZA, PAIR_INAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_M_SZA, PAIR_MNAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_DNB_LZA, PAIR_DNBNAV, "lunar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_LUNARZENITH)
+PRODUCTS.add_product(PRODUCT_I_LZA, PAIR_INAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LUNARZENITH)
+PRODUCTS.add_product(PRODUCT_M_LZA, PAIR_MNAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LUNARZENITH)
 # PRODUCTS.add_raw_product(PRODUCT_SST, PAIR_MNAV, "btemp", guidebook.FILE_TYPE_SST, guidebook.K_BTEMP, (None,))
 
-PRODUCTS.add_secondary_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", (PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA))
-PRODUCTS.add_secondary_product(PRODUCT_HISTOGRAM_DNB, PAIR_DNBNAV, "equalized_radiance", (PRODUCT_DNB, PRODUCT_DNB_SZA))
-PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_DNB, PAIR_DNBNAV, "equalized_radiance", (PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA))
-PRODUCTS.add_secondary_product(PRODUCT_DYNAMIC_DNB, PAIR_DNBNAV, "equalized_radiance", (PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA))
-PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_I04, PAIR_INAV, "equalized_brightness_temperature", (PRODUCT_I04,))
-PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_I05, PAIR_INAV, "equalized_brightness_temperature", (PRODUCT_I05,))
-PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M12, PAIR_MNAV, "equalized_brightness_temperature", (PRODUCT_M12,))
-PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M13, PAIR_MNAV, "equalized_brightness_temperature", (PRODUCT_M13,))
-PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M14, PAIR_MNAV, "equalized_brightness_temperature", (PRODUCT_M14,))
-PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M15, PAIR_MNAV, "equalized_brightness_temperature", (PRODUCT_M15,))
-PRODUCTS.add_secondary_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_brightness_temperature", (PRODUCT_M16,))
+PRODUCTS.add_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", dependencies=(PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA))
+PRODUCTS.add_product(PRODUCT_HISTOGRAM_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA))
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA))
+PRODUCTS.add_product(PRODUCT_DYNAMIC_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA))
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_I04, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I04,))
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_I05, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I05,))
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M12, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M12,))
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M13, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M13,))
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M14, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M14,))
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M15, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M15,))
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M16,))
 
 
 class Frontend(roles.FrontendRole):
@@ -526,10 +300,11 @@ class Frontend(roles.FrontendRole):
 
     def create_swath_definition(self, lon_product, lat_product):
         product_def = PRODUCTS[lon_product["product_name"]]
-        file_type = PRODUCTS.file_type_for_product(product_def.name, self.use_terrain_corrected)
+        index = 0 if self.use_terrain_corrected else 1
+        file_type = product_def.get_file_type(index=index)
         lon_file_reader = self.file_readers[file_type]
         product_def = PRODUCTS[lat_product["product_name"]]
-        file_type = PRODUCTS.file_type_for_product(product_def.name, self.use_terrain_corrected)
+        file_type = product_def.get_file_type(index=index)
         lat_file_reader = self.file_readers[file_type]
 
         # sanity check
@@ -550,7 +325,7 @@ class Frontend(roles.FrontendRole):
             # nadir_resolution=lon_file_reader.nadir_resolution, limb_resolution=lat_file_reader.limb_resolution,
             fill_value=lon_product["fill_value"],
         )
-        file_key = PRODUCTS.file_key_for_product(lon_product["product_name"], self.use_terrain_corrected)
+        file_key = product_def.get_file_key(index=index)
         swath_definition["orbit_rows"] = lon_file_reader.get_orbit_rows(file_key)
 
         # Tell the lat and lon products not to delete the data arrays, the swath definition will handle that
@@ -565,8 +340,9 @@ class Frontend(roles.FrontendRole):
 
     def create_raw_swath_object(self, product_name, swath_definition):
         product_def = PRODUCTS[product_name]
-        file_type = PRODUCTS.file_type_for_product(product_name, use_terrain_corrected=self.use_terrain_corrected)
-        file_key = PRODUCTS.file_key_for_product(product_name, use_terrain_corrected=self.use_terrain_corrected)
+        index = 0 if self.use_terrain_corrected else 1
+        file_type = product_def.get_file_type(index=index)
+        file_key = product_def.get_file_key(index=index)
         if file_type not in self.file_readers:
             LOG.error("Could not create product '%s' because some data files are missing" % (product_name,))
             raise RuntimeError("Could not create product '%s' because some data files are missing" % (product_name,))
@@ -599,7 +375,7 @@ class Frontend(roles.FrontendRole):
             swath_rows=shape[0], swath_columns=shape[1], data_type=numpy.float32, swath_data=filename,
             source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=rows_per_scan
         )
-        file_key = PRODUCTS.file_key_for_product(product_name, self.use_terrain_corrected)
+        file_key = product_def.get_file_key(index=index)
         one_swath["orbit_rows"] = file_reader.get_orbit_rows(file_key)
         return one_swath
 
@@ -626,15 +402,9 @@ class Frontend(roles.FrontendRole):
         :returns: True if product can be loaded, False otherwise (including if product is not a raw product)
         """
         product_def = PRODUCTS[product_name]
-        if isinstance(product_def, RawVIIRSProductDefinition):
-            if isinstance(product_def.file_type, str):
-                file_type = product_def.file_type
-            elif len(product_def.file_type) == 2:
-                # First element is terrain corrected, second element is non-TC
-                file_type = product_def.file_type[not self.use_terrain_corrected]
-            else:
-                return any(ft in self.file_readers for ft in product_def.file_type)
-
+        if product_def.is_raw:
+            # First element is terrain corrected, second element is non-TC
+            file_type = product_def.get_file_type(index=0 if self.use_terrain_corrected else 1)
             return file_type in self.file_readers
         return False
 
@@ -652,7 +422,7 @@ class Frontend(roles.FrontendRole):
         products_needed = PRODUCTS.dependency_ordered_products(products)
         geo_pairs_needed = PRODUCTS.geo_pairs_for_products(products_needed)
         # both lists below include raw products that need extra processing/masking
-        raw_products_needed = (p for p in products_needed if PRODUCTS.is_raw(p, geo_allowed=False))
+        raw_products_needed = (p for p in products_needed if PRODUCTS.is_raw(p, geo_is_raw=False))
         secondary_products_needed = [p for p in products_needed if PRODUCTS.needs_processing(p)]
         for p in secondary_products_needed:
             if p not in self.SECONDARY_PRODUCT_FUNCTIONS:
@@ -772,7 +542,8 @@ class Frontend(roles.FrontendRole):
         sza_product_name = deps[1]
         lza_product_name = deps[2]
         lon_product_name = GEO_PAIRS[product_def.geo_pair_name].lon_product
-        file_type = PRODUCTS.file_type_for_product(lon_product_name, self.use_terrain_corrected)
+        index = 0 if self.use_terrain_corrected else 1
+        file_type = PRODUCTS[lon_product_name].get_file_type(index=index)
         geo_file_reader = self.file_readers[file_type]
         moon_illum_fraction = sum(geo_file_reader[guidebook.K_MOONILLUM]) / (100.0 * len(geo_file_reader))
         dnb_product = products_created[dnb_product_name]
@@ -883,7 +654,8 @@ class Frontend(roles.FrontendRole):
         sza_product_name = deps[1]
         lza_product_name = deps[2]
         lon_product_name = GEO_PAIRS[product_def.geo_pair_name].lon_product
-        file_type = PRODUCTS.file_type_for_product(lon_product_name, self.use_terrain_corrected)
+        index = 0 if self.use_terrain_corrected else 1
+        file_type = PRODUCTS[lon_product_name].get_file_type(index=index)
         geo_file_reader = self.file_readers[file_type]
         # convert to decimal instead of %
         # XXX: Operate on each fraction separately?
@@ -983,7 +755,7 @@ def add_frontend_argument_groups(parser):
     #                     help="Don't create pseudo bands")
     group.add_argument('--adaptive-dnb', dest='products', action="append_const", const=PRODUCT_ADAPTIVE_DNB,
                        help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
-                             "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
+                            "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
     group.add_argument('--adaptive-bt', dest='products', action=ExtendConstAction, const=ADAPTIVE_BT_PRODUCTS,
                        help="Create adaptively scaled brightness temperature bands")
     group.add_argument('--include-dnb', dest='products', action="append_const", const=PRODUCT_DNB,

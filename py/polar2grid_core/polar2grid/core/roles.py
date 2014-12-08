@@ -748,13 +748,14 @@ class FrontendRole(object):
         """
         pass
 
-    def find_files_with_extensions(self, extensions=None):
+    def find_files_with_extensions(self, extensions=None, search_paths=None):
         """Generator that uses `self.search_paths` to yield any file with extensions from `FILE_EXTENSIONS`.
 
         Extensions must include the period at the beginning (ex: .hdf).
         """
         extensions = extensions if extensions is not None else self.FILE_EXTENSIONS
-        for p in self.search_paths:
+        search_paths = search_paths if search_paths is not None else self.search_paths
+        for p in search_paths:
             if os.path.isdir(p):
                 log.debug("Searching '%s' for useful files", p)
                 for fn in os.listdir(p):
