@@ -748,7 +748,7 @@ class FrontendRole(object):
         """
         pass
 
-    def find_files_with_extensions(self, extensions=None, search_paths=None):
+    def find_files_with_extensions(self, extensions=None, search_paths=None, warn_invalid=True):
         """Generator that uses `self.search_paths` to yield any file with extensions from `FILE_EXTENSIONS`.
 
         Extensions must include the period at the beginning (ex: .hdf).
@@ -767,8 +767,8 @@ class FrontendRole(object):
                 ext = os.path.splitext(p)[1]
                 if ext in extensions:
                     yield os.path.realpath(p)
-                else:
-                    log.error("File is not a valid file for this frontend: %s", p)
+                elif warn_invalid:
+                    log.warning("File is not a valid file for this frontend: %s", p)
             else:
                 log.error("File or directory does not exist: %s", p)
 

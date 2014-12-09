@@ -344,9 +344,9 @@ class Frontend(roles.FrontendRole):
         self.secondary_product_functions = {}
 
         # MODIS SDRs and CREFL files:
-        hdf4_files = self.find_files_with_extensions([".hdf"])
+        hdf4_files = self.find_files_with_extensions([".hdf"], warn_invalid=False)
         # VIIRS SDR files:
-        hdf5_files = self.find_files_with_extensions([".h5"])
+        hdf5_files = self.find_files_with_extensions([".h5"], warn_invalid=False)
 
         self.modis_refl_fts = (modis_guidebook.FT_1000M, modis_guidebook.FT_500M, modis_guidebook.FT_250M)
         self.viirs_refl_fts = (
@@ -496,6 +496,9 @@ class Frontend(roles.FrontendRole):
                     "m10_files", "m11_files"]
         try:
             ft = FT_GMTCO if self.use_terrain_corrected else FT_GIMGO
+            if ft not in self.file_readers:
+                LOG.error("M-band geolocation is required for crefl processing")
+                raise RuntimeError("M-band geolocation is required for crefl processing")
             geo_files = self.file_readers[ft].filepaths
             kwargs = {"keep_intermediate": self.keep_intermediate}
             for ft, kw_name in zip(self.viirs_refl_fts, kw_names):

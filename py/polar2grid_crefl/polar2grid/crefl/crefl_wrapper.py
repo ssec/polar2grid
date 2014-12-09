@@ -149,11 +149,11 @@ def run_cviirs(geo_files,
         # transfer HDF5 files to HDF4 versions of themselves because that's how CREFL plays
         svm_temp_file = "NPP_VMAE_L1.hdf"
         svi_temp_file = "NPP_VIAE_L1.hdf"
+        # GITCO_npp_d20120225_t1805407_e1807049_b01708_c20120226002721519187_noaa_ops.h5
+        # Result: npp_d20120225_t1805407_e1807049
         output_suffix = "_".join(os.path.basename(geo_file).split("_")[1:5])
         m_output_filename = "CREFLM_%s.hdf" % (output_suffix,)
         i_output_filename = "CREFLI_%s.hdf" % (output_suffix,)
-        output_filenames.append(m_output_filename)
-        output_filenames.append(i_output_filename)
         try:
             run_hdf5_rename(geo_file, svm_temp_file, "Latitude")
             run_hdf5_rename(geo_file, svm_temp_file, "Longitude")
@@ -162,27 +162,31 @@ def run_cviirs(geo_files,
             run_hdf5_rename(geo_file, svm_temp_file, "SolarZenithAngle", "SolZenAng_Mod")
             run_hdf5_rename(geo_file, svm_temp_file, "SolarAzimuthAngle", "SolAziAng_Mod")
 
-            bands = []
+            available_m_bands = []
             for m_file_list, m_var, m_band in izip(m_files, m_vars, m_bands):
-                if m_files:
+                if m_file_list:
                     LOG.debug("Running HDF5 to HDF4 transfer tool for band %s using var %s", m_band, m_var)
                     run_hdf5_rename(m_file_list[idx], svm_temp_file, "Reflectance", m_var)
-                    bands.append(m_band)
+                    available_m_bands.append(m_band)
 
-            # GITCO_npp_d20120225_t1805407_e1807049_b01708_c20120226002721519187_noaa_ops.h5
-            # Result: npp_d20120225_t1805407_e1807049
-            LOG.info("Running CREFL for M bands")
-            _run_cviirs(m_output_filename, [svm_temp_file], bands=bands, output_1km=True)
+            if available_m_bands:
+                # only run this if we were given any files
+                LOG.info("Running CREFL for M bands")
+                _run_cviirs(m_output_filename, [svm_temp_file], bands=available_m_bands, output_1km=True)
+                output_filenames.append(m_output_filename)
 
-            bands = []
+            available_i_bands = []
             for i_file_list, i_var, i_band in izip(i_files, i_vars, i_bands):
-                if i_files:
-                    LOG.debug("Running HDF5 to HDF4 transfer tool for band %s using var %s", m_band, m_var)
+                if i_file_list:
+                    LOG.debug("Running HDF5 to HDF4 transfer tool for band %s using var %s", i_band, i_var)
                     run_hdf5_rename(i_file_list[idx], svi_temp_file, "Reflectance", i_var)
-                    bands.append(i_band)
+                    available_i_bands.append(i_band)
 
-            LOG.info("Running CREFL for I bands")
-            _run_cviirs(i_output_filename, [svm_temp_file, svi_temp_file], bands=bands, output_500m=True)
+            if available_i_bands:
+                # only run this if we have the necessary data
+                LOG.info("Running CREFL for I bands")
+                _run_cviirs(i_output_filename, [svm_temp_file, svi_temp_file], bands=available_i_bands, output_500m=True)
+                output_filenames.append(i_output_filename)
         except StandardError:
             LOG.error("Could not create VIIRS CREFL files", exc_info=True)
             LOG.error("Could not create VIIRS CREFL files")
@@ -201,4 +205,6 @@ def run_cviirs(geo_files,
                 LOG.debug("Removing temporary crefl file: %s", svi_temp_file)
                 os.remove(svi_temp_file)
 
+    output_filenames = list(set(output_filenames))
+    LOG.debug("cviirs output filenames:\n\t%s", "\n\t".join(output_filenames))
     return output_filenames
