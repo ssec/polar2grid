@@ -572,6 +572,11 @@ class BaseMultiFileReader(object):
         :param item: Variable name to retrieve from these files
         :param filename: Filename to write to
         """
+        # sanity check
+        if len(self) == 0:
+            LOG.error("Can't extract swath data, file reader is empty")
+            raise RuntimeError("Empty file reader")
+
         LOG.debug("Writing binary data for '%s' to file '%s'", item, filename)
         try:
             with open(filename, "w") as file_obj:

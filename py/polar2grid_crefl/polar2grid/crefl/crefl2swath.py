@@ -339,6 +339,8 @@ class Frontend(roles.FrontendRole):
         self.use_terrain_corrected = use_terrain_corrected
         # Ignore existing CREFL files and just create from SDRs
         self.ignore_crefl = ignore_crefl
+        # FUTURE: Remove these files or give the option to remove them when an error is encountered
+        self.crefl_files_created = []
         self.secondary_product_functions = {}
 
         # MODIS SDRs and CREFL files:
@@ -358,11 +360,7 @@ class Frontend(roles.FrontendRole):
         # Get any CREFL files we know about
         self.file_readers = {}
         # HDF4
-        self.file_readers[FT_CREFL_M] = MultiFileReader(FILE_TYPES[FT_CREFL_M], single_class=VIIRSFileReader)
-        self.file_readers[FT_CREFL_I] = MultiFileReader(FILE_TYPES[FT_CREFL_I], single_class=VIIRSFileReader)
-        self.file_readers[FT_CREFL_1000M] = MultiFileReader(FILE_TYPES[FT_CREFL_1000M], single_class=MODISFileReader)
-        self.file_readers[FT_CREFL_500M] = MultiFileReader(FILE_TYPES[FT_CREFL_500M], single_class=MODISFileReader)
-        self.file_readers[FT_CREFL_250M] = MultiFileReader(FILE_TYPES[FT_CREFL_250M], single_class=MODISFileReader)
+        self._init_crefl_file_readers()
         self.file_readers[FT_GEO] = modis_guidebook.MultiFileReader(modis_guidebook.FILE_TYPES[FT_GEO])
         # If we don't have any of the files for CREFL then we will need to create them from the following file types
         for ft in self.modis_refl_fts:
@@ -385,17 +383,11 @@ class Frontend(roles.FrontendRole):
             else:
                 have_viirs = self.analyze_hdf5_files(hdf5_files)
                 if have_viirs:
-                    LOG.info("Could not find any existing crefl output will use VIIRS SDRs to create some")
-                    self.create_viirs_crefl_files()
+                        LOG.info("Could not find any existing crefl output will use VIIRS SDRs to create some")
+                        self.create_viirs_crefl_files()
                 else:
                     LOG.error("Could not find any existing CREFL files, MODIS SDRs, or VIIRS SDRs")
                     raise RuntimeError("Could not find any existing CREFL files, MODIS SDRs, or VIIRS SDRs")
-
-            hdf4_files = self.find_files_with_extensions([".hdf"])  # FIXME: needs to use new directory
-            have_crefl, have_modis = self.analyze_hdf4_files(hdf4_files)
-            if not have_crefl:
-                LOG.error("Could not create crefl files from SDRs")
-                raise RuntimeError("Could not create crefl files from SDRs")
         elif FT_CREFL_M in self.file_readers or FT_CREFL_I in self.file_readers:
             # we have crefl files, but we will need the VIIRS SDR Navigation files
             have_viirs = self.analyze_hdf5_files(hdf5_files, geo_only=True)
@@ -407,11 +399,22 @@ class Frontend(roles.FrontendRole):
         for ft in self.modis_refl_fts + self.viirs_refl_fts:
             del self.file_readers[ft]
         # Get rid of empty crefl file readers
-        for ft in self.crefl_fts:
+        for ft in list(self.crefl_fts) + [FT_GEO, FT_GIMGO, FT_GITCO, FT_GMTCO, FT_GMODO]:
             if len(self.file_readers[ft]) == 0:
                 del self.file_readers[ft]
 
         self.available_file_types = self.file_readers.keys()
+
+    def _init_crefl_file_readers(self):
+        self.file_readers[FT_CREFL_M] = MultiFileReader(FILE_TYPES[FT_CREFL_M], single_class=VIIRSFileReader)
+        self.file_readers[FT_CREFL_I] = MultiFileReader(FILE_TYPES[FT_CREFL_I], single_class=VIIRSFileReader)
+        self.file_readers[FT_CREFL_1000M] = MultiFileReader(FILE_TYPES[FT_CREFL_1000M], single_class=MODISFileReader)
+        self.file_readers[FT_CREFL_500M] = MultiFileReader(FILE_TYPES[FT_CREFL_500M], single_class=MODISFileReader)
+        self.file_readers[FT_CREFL_250M] = MultiFileReader(FILE_TYPES[FT_CREFL_250M], single_class=MODISFileReader)
+
+    def _clear_crefl_file_readers(self):
+        for ft in self.crefl_fts:
+            del self.file_readers[ft]
 
     def analyze_hdf4_files(self, hdf4_files):
         have_crefl = False
@@ -478,6 +481,8 @@ class Frontend(roles.FrontendRole):
                     break
             else:
                 LOG.debug("Unnecessary hdf5 file: %s", fp)
+        for ft in file_types:
+            self.file_readers[ft].finalize_files()
         return have_viirs
 
     def create_modis_crefl_files(self):
@@ -485,8 +490,29 @@ class Frontend(roles.FrontendRole):
         pass
 
     def create_viirs_crefl_files(self):
-        # TODO: Delete the intermediate CREFL files if we created them after we've loaded the data
-        pass
+        from polar2grid.crefl.crefl_wrapper import run_cviirs
+        kw_names = ["i01_files", "i02_files", "i03_files", "m05_files",
+                    "m07_files", "m03_files", "m04_files", "m08_files",
+                    "m10_files", "m11_files"]
+        try:
+            ft = FT_GMTCO if self.use_terrain_corrected else FT_GIMGO
+            geo_files = self.file_readers[ft].filepaths
+            kwargs = {"keep_intermediate": self.keep_intermediate}
+            for ft, kw_name in zip(self.viirs_refl_fts, kw_names):
+                if ft in self.file_readers:
+                    kwargs[kw_name] = self.file_readers[ft].filepaths
+            files_created = run_cviirs(geo_files, **kwargs)
+            self.crefl_files_created.extend(files_created)
+
+            # we already tried to load some hdf4 files, so we need to clear the crefl ones
+            self._clear_crefl_file_readers()
+            self._init_crefl_file_readers()
+            have_crefl, _ = self.analyze_hdf4_files(files_created)
+            if not have_crefl:
+                raise RuntimeError("cviirs completed successfully, but didn't give us any recognizable crefl files")
+        except StandardError:
+            LOG.error("Could not create crefl files from SDRs")
+            raise
 
     @property
     def begin_time(self):

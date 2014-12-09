@@ -176,7 +176,7 @@ class Remapper(object):
             LOG.error("Data does not fit in grid %s because it only %f%% of the swath is used" % (grid_name, fraction_in * 100))
             raise RuntimeError("Data does not fit in grid %s" % (grid_name,))
         else:
-            LOG.debug("Data fits in grid %s and covers %f%% of the grid", grid_name, fraction_in * 100)
+            LOG.debug("Data fits in grid %s and uses %f%% of the swath", grid_name, fraction_in * 100)
 
         self.ll2cr_cache[(geo_id, grid_name)] = (cols_fn, rows_fn)
         return cols_fn, rows_fn
