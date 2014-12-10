@@ -42,14 +42,14 @@ __docformat__ = "restructuredtext en"
 import os
 import sys
 from subprocess import check_output, CalledProcessError, STDOUT
-from itertools import izip
+from itertools import izip, izip_longest
 import logging
 
 LOG = logging.getLogger(__name__)
 # executable names
 H5SDS_TRANSFER_RENAME_NAME = os.environ.get("P2G_H5SDS_TRANSFER_RENAME", "h5SDS_transfer_rename")
 CVIIRS_NAME = os.environ.get("P2G_CVIIRS_NAME", "cviirs")
-CREFL_NAME = os.environ.get("P2G_CREFL_NAME", "crefl.1.7.1")
+CREFL_NAME = os.environ.get("P2G_CREFL_NAME", "crefl")
 # Where the CMGDEM.hdf file is
 # Defaults to: /path/to/polar2grid/bin
 cviirs_path = os.path.realpath(os.path.join(os.path.dirname(sys.executable), "../../bin"))
@@ -207,4 +207,114 @@ def run_cviirs(geo_files,
 
     output_filenames = list(set(output_filenames))
     LOG.debug("cviirs output filenames:\n\t%s", "\n\t".join(output_filenames))
+    return output_filenames
+
+
+def _run_modis_crefl(output_filename, input_filenames, bands=None, verbose=True, overwrite=True,
+                     output_1km=False, output_500m=False):
+    """Run modis crefl on one set of file (one granule's worth of time)
+
+    Essentially a replacement for `run_modis_crefl.sh`.
+    """
+    args = [CREFL_NAME]
+    if bands:
+        if isinstance(bands, (str, int)):
+            bands = [bands]
+        bands = ",".join([str(x) for x in bands])
+        args.append("--bands=%s" % (bands,))
+    # 250m is the default
+    if output_500m:
+        args.append("--500m")
+    if output_1km:
+        args.append("--1km")
+    if overwrite:
+        args.append("--overwrite")
+    if verbose:
+        args.append("--verbose")
+    args.append("--of=%s" % (output_filename,))
+    if isinstance(input_filenames, str):
+        input_filenames = [input_filenames]
+    args.extend(input_filenames)
+
+    try:
+        args = [str(a) for a in args]
+        LOG.debug("Running modis crefl with '%s'" % " ".join(args))
+        os.environ["ANCPATH"] = TBASE_PATH
+        transfer_output = check_output(args, stderr=STDOUT)
+        LOG.debug("modis crefl output:\n%s", transfer_output)
+
+        # Check to make sure the HDF4 file actually exists now
+        if not os.path.exists(output_filename):
+            LOG.error("Couldn't find CREFL HDF4 output file '%s'" % output_filename)
+            raise RuntimeError("Couldn't CREFL HDF4 output file '%s'" % output_filename)
+    except CalledProcessError as e:
+        LOG.debug("modis crefl output:\n%s", e.output, exc_info=True)
+        LOG.error("Error running modis crefl")
+        raise ValueError("modis crefl failed")
+    except OSError:
+        LOG.error("Couldn't find '%s' command in PATH", CREFL_NAME)
+        raise ValueError("crefl was not found your PATH")
+
+    return output_filename
+
+
+def run_modis_crefl(km_files, hkm_files=[], qkm_files=[], keep_intermediate=False):
+    bands_1_7 = "1,2,3,4,5,6,7"
+    bands_1_4 = "1,2,3,4"
+    output_filenames = []
+    for km_file, hkm_file, qkm_file in izip_longest(km_files, hkm_files, qkm_files):
+        km_fn = os.path.basename(km_file)
+        if km_fn.startswith("a1") or km_fn.startswith("t1"):
+            # DB/IMAPPS filenaming
+            # t1.14258.1826.1000m.hdf
+            prefix = km_fn[:3]
+            date_str = ".".join(km_fn.split(".")[1:3])
+            # 14258.1826
+            link = True
+            old_km_file = km_file
+            km_file = "MOD021KM.A20%s.hdf" % (date_str,)
+            LOG.debug("Creating link %s -> %s", km_file, old_km_file)
+            os.symlink(old_km_file, km_file)
+            if hkm_file:
+                old_hkm_file = hkm_file
+                hkm_file = "MOD02HKM.A20%s.hdf" % (date_str,)
+                LOG.debug("Creating link %s -> %s", hkm_file, old_hkm_file)
+                os.symlink(old_hkm_file, hkm_file)
+            if qkm_file:
+                old_qkm_file = qkm_file
+                qkm_file = "MOD02QKM.A20%s.hdf" % (date_str,)
+                LOG.debug("Creating link %s -> %s", qkm_file, old_qkm_file)
+                os.symlink(old_qkm_file, qkm_file)
+        else:
+            # Archive filenaming
+            # MOD021KM.A2014258.1825.005.NRT.hdf
+            prefix = "a1." if km_fn.startswith("MYD") else "t1."
+            date_str = ".".join(km_fn.split(".")[1:3])[3:]
+            # 14258.1825
+            link = False
+
+        output_filename = prefix + date_str + ".crefl.1000m.hdf"
+        _run_modis_crefl(output_filename, [km_file], bands=bands_1_7, output_1km=True)
+        output_filenames.append(output_filename)
+
+        if hkm_file:
+            output_filename = prefix + date_str + ".crefl.500m.hdf"
+            _run_modis_crefl(output_filename, [km_file, hkm_file], bands=bands_1_7, output_500m=True)
+            output_filenames.append(output_filename)
+
+            if qkm_file:
+                output_filename = prefix + date_str + ".crefl.250m.hdf"
+                _run_modis_crefl(output_filename, [km_file, hkm_file, qkm_file], bands=bands_1_4)
+                output_filenames.append(output_filename)
+
+        if link and not keep_intermediate:
+            LOG.debug("Unlinking intermediate softlinked modis file: %s", km_file)
+            os.unlink(km_file)
+            if hkm_file:
+                LOG.debug("Unlinking intermediate softlinked modis file: %s", hkm_file)
+                os.unlink(hkm_file)
+            if qkm_file:
+                LOG.debug("Unlinking intermediate softlinked modis file: %s", qkm_file)
+                os.unlink(qkm_file)
+
     return output_filenames

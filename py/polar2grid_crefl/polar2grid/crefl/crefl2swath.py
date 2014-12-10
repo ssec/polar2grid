@@ -266,10 +266,10 @@ PRODUCT_MCR06_500M = "modis_crefl06_500m"
 PRODUCT_MCR07_500M = "modis_crefl07_500m"
 
 # High resolution (250m band resolution)
-PRODUCT_MCR01_250M = "modis_crefl01_500m"
-PRODUCT_MCR02_250M = "modis_crefl02_500m"
-PRODUCT_MCR03_250M = "modis_crefl03_500m"
-PRODUCT_MCR04_250M = "modis_crefl04_500m"
+PRODUCT_MCR01_250M = "modis_crefl01_250m"
+PRODUCT_MCR02_250M = "modis_crefl02_250m"
+PRODUCT_MCR03_250M = "modis_crefl03_250m"
+PRODUCT_MCR04_250M = "modis_crefl04_250m"
 
 PRODUCTS = ProductDict()
 GEO_PAIRS = GeoPairDict()
@@ -420,6 +420,7 @@ class Frontend(roles.FrontendRole):
         have_crefl = False
         have_modis = False
         for fp in hdf4_files:
+            LOG.debug("Analyzing %s", fp)
             fn = os.path.basename(fp)
             if fn.startswith("CREFL") and not self.ignore_crefl:
                 # VIIRS CREFL
@@ -472,6 +473,7 @@ class Frontend(roles.FrontendRole):
         if not geo_only:
             file_types += self.viirs_refl_fts
         for fp in hdf5_files:
+            LOG.debug("Analyzing %s", fp)
             h = viirs_io.HDF5Reader(fp)
             for ft in file_types:
                 data_path = viirs_guidebook.FILE_TYPES[ft][viirs_guidebook.K_DATA_PATH]
@@ -486,8 +488,34 @@ class Frontend(roles.FrontendRole):
         return have_viirs
 
     def create_modis_crefl_files(self):
-        # TODO: Delete the intermediate CREFL files if we created them after we've loaded the data
-        pass
+        from polar2grid.crefl.crefl_wrapper import run_modis_crefl
+        try:
+            kwargs = {"keep_intermediate": self.keep_intermediate}
+            if modis_guidebook.FT_1000M in self.file_readers and len(self.file_readers[modis_guidebook.FT_1000M]):
+                km_files = self.file_readers[modis_guidebook.FT_1000M].filepaths
+            else:
+                LOG.error("Can not create MODIS crefl files with out 1000m files")
+                raise RuntimeError("Can not create MODIS crefl files with out 1000m files")
+
+            if modis_guidebook.FT_500M in self.file_readers and len(self.file_readers[modis_guidebook.FT_500M]):
+                kwargs["hkm_files"] = self.file_readers[modis_guidebook.FT_500M].filepaths
+                LOG.debug("Adding HKM files to crefl call: %s", ",".join(kwargs["hkm_files"]))
+            if modis_guidebook.FT_250M in self.file_readers and len(self.file_readers[modis_guidebook.FT_250M]):
+                kwargs["qkm_files"] = self.file_readers[modis_guidebook.FT_250M].filepaths
+                LOG.debug("Adding QKM files to crefl call: %s", ",".join(kwargs["qkm_files"]))
+
+            files_created = run_modis_crefl(km_files, **kwargs)
+            self.crefl_files_created.extend(files_created)
+
+            # we already tried to load some hdf4 files, so we need to clear the crefl ones
+            self._clear_crefl_file_readers()
+            self._init_crefl_file_readers()
+            have_crefl, _ = self.analyze_hdf4_files(files_created)
+            if not have_crefl:
+                raise RuntimeError("crefl completed successfully, but didn't give us any recognizable crefl files")
+        except StandardError:
+            LOG.error("Could not create modis crefl files from SDRs")
+            raise
 
     def create_viirs_crefl_files(self):
         from polar2grid.crefl.crefl_wrapper import run_cviirs
