@@ -1,46 +1,82 @@
-#==============================================================
-# NDVI_EVI Make File
+# Simplify compiling CREFL. Compile commands were copied from original files and modified to fit Makefile (see readme).
 #
-# Based on Makefile for Makefile for make_ndvi, modified by
-#     A. Lunsford, 23 September 2003
-#     G. Reichert, 26 June 2002
-# Coded by C. Hoisington, Science Systems and Applications, Inc.
-# 21 Sep 2001 Version 1.0
-# 20 Mar 2003 modified by G. Reichert for use in velma "sandbox"
-#             /raid/nppop/software/NDVI/NDVI.src/
-# AUg 21 2007 modified at DRL for Cref_SPA release
+# Example Compile Usage (where static dependencies headers and libaries are in ~/opt/):
+#       LDFLAGS="-I ~/opt/include -L ~/opt/lib" make
 #
+# Example Install Usage (where files will be installed in ~/bin):
+#       PREFIX="~" make install
 #
-# Note:
-# 	Set enviroment variable HDFHOME to point to your local HDF4.1 
-# 	installation.
+# Example Dynamic Compile/Link Usage:
+#		make all_dynamic
 #
-#==============================================================
+# Example Dynamic Compile/Link Usage (with specialized library locations)
+# 		LD_RUN_PATH=/home/user/opt/lib LDFLAGS="-I ~opt/include -L ~/opt/lib" make all_dynamic
+#
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+#  University of Wisconsin-Madison.
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+# input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+#     Written by David Hoese    December 2014
+#     University of Wisconsin-Madison
+#     Space Science and Engineering Center
+#     1225 West Dayton Street
+#     Madison, WI  53706
+#     david.hoese@ssec.wisc.edu
 
-#HDFHOME=/home/mruebens/crefl/trunk/algorithm/hdf32
-HDFHOME=/opt/local
-#------------------------------------------------------------------------------
-# Modify:
-#	HDFHOME (see above),
-# 	COMPILER to be your local C compiler,
-#	CFLAGS to add installation-specific compiler or loader flags,
-#	LOCAL_LIB to add installation required libraries
-#------------------------------------------------------------------------------
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+	CFLAGS ?= -O3
+else
+	CFLAGS ?= -O3 -static
+endif
+LDFLAGS ?=
+LDLIBS ?= -lsz
+PREFIX ?= .
 
-COMPILER  = gcc
-CFLAGS    = -O3
+all: crefl tbase.hdf
 
-HDFLIB = $(HDFHOME)/lib
-HDFINC = $(HDFHOME)/include
+all_dynamic: CFLAGS := -O
+all_dynamic: all
 
-LIB   = -L$(HDFLIB) -lmfhdf -ldf -ljpeg -lz -lm
-INC   = -I$(HDFINC)
+crefl: crefl.c
+	$(CC) -o $@ $(CFLAGS) $< ${LDFLAGS} -lmfhdf -ldf -ljpeg ${LDLIBS} -lz -lm
 
-all:	crefl
+tbase.hdf:
+	wget http://www.ssec.wisc.edu/~davidh/polar2grid/modis_crefl/tbase.hdf
 
-crefl: crefl.1.7.1.c
-	$(COMPILER) $(CFLAGS) crefl.1.7.1.c  -o crefl.1.7.1  ${INC} ${LIB}
+.PHONY: install prebuilt_crefl prebuilt all_dynamic clean clean_all
+install: tbase.hdf crefl run_modis_crefl.sh
+	mkdir -p $(PREFIX)/bin; \
+	cp $^ $(PREFIX)/bin; \
+	chmod u+x $(PREFIX)/bin/crefl; \
+	chmod u+x $(PREFIX)/bin/h5SDS_transfer_rename; \
+	chmod u+x $(PREFIX)/bin/run_viirs_crefl.sh
+
+prebuilt_crefl:
+	wget http://www.ssec.wisc.edu/~davidh/polar2grid/modis_crefl/crefl
+
+prebuilt: prebuilt_crefl tbase.hdf
 
 clean:
-	rm -f *.o crefl.1.7.1
+	rm -f *.o crefl
+
+clean_all: clean
+	rm -f tbase.hdf
 

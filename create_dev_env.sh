@@ -60,12 +60,23 @@ if ${USE_SHELLB3}; then
 fi
 
 # Ask if they want the optional VIIRS CREFL software
-BUILD_CREFL=false
+BUILD_VIIRS_CREFL=false
 echo "###################################################################################################"
 echo "Attempt to build and install VIIRS CREFL (required for creating true color images from VIIRS SDRs)?"
 select yn in "Yes" "No"; do
     case ${yn} in
-        Yes ) BUILD_CREFL=true; break;;
+        Yes ) BUILD_VIIRS_CREFL=true; break;;
+        No ) break;;
+    esac
+done
+
+# Ask if they want the optional MODIS CREFL software
+BUILD_MODIS_CREFL=false
+echo "###################################################################################################"
+echo "Attempt to build and install MODIS CREFL (required for creating true color images from MODIS SDRs)?"
+select yn in "Yes" "No"; do
+    case ${yn} in
+        Yes ) BUILD_MODIS_CREFL=true; break;;
         No ) break;;
     esac
 done
@@ -146,8 +157,8 @@ python -c "from polar2grid import viirs2awips" || oops "Couldn't import python p
 echo "Simple import test passed"
 
 # Compile VIIRS CREFL code
-CREFL_MSG=""
-if ${BUILD_CREFL}; then
+VIIRS_CREFL_MSG=""
+if ${BUILD_VIIRS_CREFL}; then
     echo "Building VIIRS CREFL"
     cd "$VCREFL_DIR"
 
@@ -163,7 +174,7 @@ if ${BUILD_CREFL}; then
     if [ $? -ne 0 ]; then
         echo "Could not compile VIIRS CREFL (CFLAGS and LDFLAGS should propagate to build commands if needed)"
         # don't fail here, this is an optional component anyway. Continue with the script even though this failed
-        CREFL_MSG=" (except VIIRS CREFL)"
+        VIIRS_CREFL_MSG=" (except VIIRS CREFL)"
     else
         # fail if the install fails since that is the "simple" part, if this doesn't pass then something is wrong
         echo "CREFL compiled successfully, now installing"
@@ -171,8 +182,32 @@ if ${BUILD_CREFL}; then
     fi
 fi
 
+if ${BUILD_MODIS_CREFL}; then
+    echo "Building MODIS CREFL"
+    cd "$VCREFL_DIR"
+
+    if [ -z "$LDFLAGS" ] && ${USE_SHELLB3}; then
+        echo "Will use libaries from ShellB3 for linking MODIS CREFL"
+        export LDFLAGS="-I${SHELLB3_URL}/include -L${SHELLB3_URL}/lib"
+        export LD_RUN_PATH="${SHELLB3_URL}/lib:${LD_RUN_PATH}"
+    fi
+    debug "LDFLAGS: $LDFLAGS"
+    debug "CFLAGS: $CFLAGS"
+    make clean
+    make all_dynamic
+    if [ $? -ne 0 ]; then
+        echo "Could not compile MODIS CREFL (CFLAGS and LDFLAGS should propagate to build commands if needed)"
+        # don't fail here, this is an optional component anyway. Continue with the script even though this failed
+        MODIS_CREFL_MSG=" (except MODIS CREFL)"
+    else
+        # fail if the install fails since that is the "simple" part, if this doesn't pass then something is wrong
+        echo "CREFL compiled successfully, now installing"
+        PREFIX="$DEV_DIR" make install || oops "Could not install MODIS CREFL files into development environment"
+    fi
+fi
+
 echo "###################################################################################################"
-echo "Polar2Grid development environment was successfully installed$CREFL_MSG"
+echo "Polar2Grid development environment was successfully installed$VIIRS_CREFL_MSG$MODIS_CREFL_MSG"
 echo "Add the following lines to your .bash_profile or .bashrc file to use it:"
 echo "    export PYTHONPATH=${DEV_DIR}/python:"'$PYTHONPATH'
 if ${USE_SHELLB3}; then

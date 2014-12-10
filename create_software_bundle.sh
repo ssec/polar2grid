@@ -9,6 +9,7 @@ BASE_P2G_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PY_DIR="$BASE_P2G_DIR"/py
 BUNDLE_SCRIPTS_DIR="$BASE_P2G_DIR"/swbundle
 VCREFL_DIR="$BASE_P2G_DIR"/viirs_crefl
+MCREFL_DIR="$BASE_P2G_DIR"/modis_crefl
 
 oops() {
     echo "OOPS: $*"
@@ -77,10 +78,12 @@ rm -r "$(basename "$MS2GT_DOWNLOAD")"
 echo "Moving extracted ms2gt directory to 'ms2gt'"
 mv ms2gt* ms2gt || oops "Could not move extracted ms2gt directory to proper name"
 
-# Create the VIIRS CREFL utilities
+# Create the 'bin' directory
 echo "Creating software bundle bin directory..."
 cd "$SB_NAME"
 mkdir bin
+
+# Create the VIIRS CREFL utilities
 echo "Getting prebuilt VIIRS CREFL binaries..."
 cd "$VCREFL_DIR"
 make clean
@@ -93,7 +96,17 @@ mv CMGDEM.hdf "$SB_NAME"/bin/
 cp run_viirs_crefl.sh "$SB_NAME"/bin/
 chmod a+x "$SB_NAME"/bin/run_viirs_crefl.sh
 
-# Create the 'bin' directory
+# Create the MODIS CREFL utilities
+echo "Getting prebuilt MODIS CREFL binaries..."
+cd "$MCREFL_DIR"
+make clean
+make prebuilt || oops "Couldn't get prebuilt MODIS CREFL binaries"
+chmod a+x crefl
+mv crefl "$SB_NAME"/bin/
+mv tbase.hdf "$SB_NAME"/bin/
+cp run_modis_crefl.sh "$SB_NAME"/bin/
+chmod a+x "$SB_NAME"/bin/run_modis_crefl.sh
+
 echo "Copying bash scripts to software bundle bin"
 cd "$SB_NAME"
 cp ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/
