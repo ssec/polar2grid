@@ -433,7 +433,7 @@ class Frontend(roles.FrontendRole):
                 else:
                     LOG.warning("Unknown CREFL file: %s", fp)
                     continue
-            elif fn.startswith("a1") or fn.startswith("t1"):
+            elif fn[:3] in ["a1.", "t1.", "MYD", "MOD"]:
                 try:
                     hdf4_obj = modis_guidebook.HDFEOSReader(fp)
                     if hdf4_obj.file_type == FT_CREFL_1000M:
