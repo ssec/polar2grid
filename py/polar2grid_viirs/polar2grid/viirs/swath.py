@@ -647,12 +647,12 @@ class Frontend(roles.FrontendRole):
         right_mask = products_created[right_term_name].get_data_mask()
         sza_data = products_created[sza_product_name].get_data_array()
         sza_mask = products_created[sza_product_name].get_data_mask()
-        night_mask = (sza_data >= 100) & ~sza_mask  # where is it night
-        night_percentage = (numpy.count_nonzero(night_mask) / sza_data.size) * 100.0
-        LOG.debug("Fog product's scene has %f%% night data", night_percentage)
-        if night_percentage < 5.0:
-            LOG.info("Less than 5%% of the data is at night, will not create '%s' product", product_name)
-            return None
+        night_mask = sza_data >= 100
+        # night_percentage = (numpy.count_nonzero(night_mask) / sza_data.size) * 100.0
+        # LOG.debug("Fog product's scene has %f%% night data", night_percentage)
+        # if night_percentage < 5.0:
+        #     LOG.info("Less than 5%% of the data is at night, will not create '%s' product", product_name)
+        #     return None
 
         filename = product_name + ".dat"
         if os.path.isfile(filename):
@@ -663,9 +663,17 @@ class Frontend(roles.FrontendRole):
                 LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
         try:
+            invalid_mask = left_mask | right_mask | sza_mask
+            valid_night_mask = night_mask & ~invalid_mask
+            # get the fraction of the data that is valid night data from all valid data
+            fraction_night = numpy.count_nonzero(valid_night_mask) / (sza_data.size - numpy.count_nonzero(invalid_mask))
+            if fraction_night < 0.10:
+                LOG.info("Less than 10%% of the data is at night, will not create '%s' product", product_name)
+                return None
+
             fog_data = numpy.memmap(filename, dtype=left_data.dtype, mode="w+", shape=left_data.shape)
             numpy.subtract(left_data, right_data, fog_data)
-            fog_data[left_mask | right_mask | sza_mask | ~night_mask] = fill
+            fog_data[~valid_night_mask] = fill
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            products_created[left_term_name]["data_type"], products_created)
@@ -733,8 +741,11 @@ class Frontend(roles.FrontendRole):
     def _get_day_percentage(self, sza_swath):
         if "day_percentage" not in sza_swath:
             sza_data = sza_swath.get_data_array()
+            invalid_mask = sza_swath.get_data_mask()
+            valid_day_mask = (sza_data < 100) & ~invalid_mask
             day_mask = (sza_data < 100) & ~sza_swath.get_data_mask()
-            sza_swath["day_percentage"] = (numpy.count_nonzero(day_mask) / sza_data.size) * 100.0
+            fraction_day = numpy.count_nonzero(valid_day_mask) / (sza_data.size - numpy.count_nonzero(invalid_mask))
+            sza_swath["day_percentage"] = fraction_day * 100.0
         else:
             LOG.debug("Day percentage found in SZA swath already")
         return sza_swath["day_percentage"]
@@ -749,8 +760,8 @@ class Frontend(roles.FrontendRole):
         sza_swath = products_created[deps[0]]
         day_percentage = self._get_day_percentage(sza_swath)
         LOG.debug("Reflectance product's scene has %f%% day data", day_percentage)
-        if day_percentage < 5.0:
-            LOG.info("Will not create product '%s' because there is less than 5%% of day data", product_name)
+        if day_percentage < 10.0:
+            LOG.info("Will not create product '%s' because there is less than 10%% of day data", product_name)
             return None
         return products_created[product_name]
 

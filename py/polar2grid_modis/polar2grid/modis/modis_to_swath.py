@@ -148,12 +148,13 @@ PRODUCTS.add_product(PRODUCT_MOD06_LAT, PAIR_MOD06, "latitude", guidebook.FT_MOD
 PRODUCTS.add_product(PRODUCT_MOD07_LON, PAIR_MOD07, "longitude", guidebook.FT_MOD07, guidebook.K_LONGITUDE)
 PRODUCTS.add_product(PRODUCT_MOD07_LAT, PAIR_MOD07, "latitude", guidebook.FT_MOD07, guidebook.K_LATITUDE)
 
+PRODUCTS.add_product(PRODUCT_SZA, PAIR_1000M, "solar_zenith_angle", guidebook.FT_GEO, guidebook.K_SZA)
 # if in the future someone needs both the 250M version and the 1000M version add uncomment this line
 # PRODUCTS.add_product(PRODUCT_VIS01_1000M, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS01)
-PRODUCTS.add_product(PRODUCT_VIS01, (PAIR_250M, PAIR_1000M), "reflectance", (guidebook.FT_250M, guidebook.FT_1000M), guidebook.K_VIS01)
-PRODUCTS.add_product(PRODUCT_VIS02, PAIR_250M, "reflectance", guidebook.FT_250M, guidebook.K_VIS02)
-PRODUCTS.add_product(PRODUCT_VIS07, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS07)
-PRODUCTS.add_product(PRODUCT_VIS26, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS26)
+PRODUCTS.add_product(PRODUCT_VIS01, (PAIR_250M, PAIR_1000M), "reflectance", (guidebook.FT_250M, guidebook.FT_1000M), guidebook.K_VIS01, dependencies=(PRODUCT_SZA,))
+PRODUCTS.add_product(PRODUCT_VIS02, PAIR_250M, "reflectance", guidebook.FT_250M, guidebook.K_VIS02, dependencies=(PRODUCT_SZA,))
+PRODUCTS.add_product(PRODUCT_VIS07, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS07, dependencies=(PRODUCT_SZA,))
+PRODUCTS.add_product(PRODUCT_VIS26, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS26, dependencies=(PRODUCT_SZA,))
 PRODUCTS.add_product(PRODUCT_IR20, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR20)
 PRODUCTS.add_product(PRODUCT_IR27, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR27)
 PRODUCTS.add_product(PRODUCT_IR31, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR31)
@@ -162,7 +163,6 @@ PRODUCTS.add_product(PRODUCT_LSMASK, PAIR_1000M, "category", guidebook.FT_MASK_B
 PRODUCTS.add_product(PRODUCT_SST, PAIR_1000M, "sea_surface_temperature", guidebook.FT_MOD28, guidebook.K_SST)
 PRODUCTS.add_product(PRODUCT_LST, PAIR_1000M, "land_surface_temperature", guidebook.FT_MODLST, guidebook.K_LST)
 PRODUCTS.add_product(PRODUCT_NDVI, PAIR_1000M, "ndvi", guidebook.FT_NDVI_1000M, guidebook.K_NDVI)
-PRODUCTS.add_product(PRODUCT_SZA, PAIR_1000M, "angle", guidebook.FT_GEO, guidebook.K_SZA)
 PRODUCTS.add_product(PRODUCT_IST, PAIR_1000M, "ice_surface_temperature", guidebook.FT_IST, guidebook.K_IST)
 PRODUCTS.add_product(PRODUCT_INV, PAIR_1000M, "inversion_strength", guidebook.FT_INV, guidebook.K_INV)
 PRODUCTS.add_product(PRODUCT_IND, PAIR_1000M, "inversion_depth", guidebook.FT_INV, guidebook.K_IND)
@@ -193,6 +193,25 @@ class Frontend(roles.FrontendRole):
     def __init__(self, **kwargs):
         super(Frontend, self).__init__(**kwargs)
         self.load_files(self.find_files_with_extensions())
+
+        self.secondary_product_functions = {
+            PRODUCT_SLST: self.create_slst,
+            PRODUCT_BT20: self.create_bt_from_ir,
+            PRODUCT_BT27: self.create_bt_from_ir,
+            PRODUCT_BT31: self.create_bt_from_ir,
+            PRODUCT_ADAPTIVE_BT20: self.create_adaptive_btemp,
+            PRODUCT_ADAPTIVE_BT27: self.create_adaptive_btemp,
+            PRODUCT_ADAPTIVE_BT31: self.create_adaptive_btemp,
+            PRODUCT_FOG: self.create_fog,
+            PRODUCT_CLEAR_SST: self.create_cloud_land_cleared,
+            PRODUCT_CLEAR_LST: self.create_cloud_sea_cleared,
+            PRODUCT_CLEAR_SLST: self.create_slst,
+            PRODUCT_CLEAR_NDVI: self.create_cloud_sea_cleared,
+            }
+
+        for p, p_def in PRODUCTS.items():
+            if p_def.data_kind == "reflectance" and p_def.dependencies:
+                self.secondary_product_functions[p] = self.day_check_reflectance
 
     def load_files(self, file_paths):
         """Sort files by 'file type' and create objects to help load the data later.
@@ -411,7 +430,7 @@ class Frontend(roles.FrontendRole):
         raw_products_needed = (p for p in products_needed if PRODUCTS.is_raw(p, geo_is_raw=False))
         secondary_products_needed = [p for p in products_needed if PRODUCTS.needs_processing(p)]
         for p in secondary_products_needed:
-            if p not in self.SECONDARY_PRODUCT_FUNCTIONS:
+            if p not in self.secondary_product_functions:
                 msg = "Product (secondary or extra processing) required, but not sure how to make it: '%s'" % (p,)
                 LOG.error(msg)
                 raise ValueError(msg)
@@ -464,12 +483,12 @@ class Frontend(roles.FrontendRole):
 
         # Dependent products and Special cases (i.e. non-raw products that need further processing)
         for product_name in reversed(secondary_products_needed):
-            product_func = self.SECONDARY_PRODUCT_FUNCTIONS[product_name]
+            product_func = self.secondary_product_functions[product_name]
             swath_def = swath_definitions[PRODUCTS[product_name].get_geo_pair_name(self.available_file_types)]
 
             try:
                 LOG.info("Creating secondary product '%s'", product_name)
-                one_swath = product_func(self, product_name, swath_def, products_created)
+                one_swath = product_func(product_name, swath_def, products_created)
             except StandardError:
                 LOG.error("Could not create product (unexpected error): '%s'", product_name)
                 LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
@@ -477,6 +496,12 @@ class Frontend(roles.FrontendRole):
                     raise
                 continue
 
+            if one_swath is None:
+                LOG.debug("Secondary product function did not produce a swath product")
+                if product_name in scene:
+                    LOG.debug("Removing original swath that was created before")
+                    del scene[product_name]
+                continue
             products_created[product_name] = one_swath
             if product_name in products:
                 # the user wants this product
@@ -607,15 +632,17 @@ class Frontend(roles.FrontendRole):
                 LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
         try:
-            fog_data = numpy.memmap(filename, dtype=left_data.dtype, mode="w+", shape=left_data.shape)
-            numpy.subtract(left_data, right_data, fog_data)
             invalid_mask = left_mask | right_mask | sza_mask
             valid_night_mask = night_mask & ~invalid_mask
-            fog_data[~valid_night_mask] = fill
             # get the fraction of the data that is valid night data from all valid data
             fraction_night = numpy.count_nonzero(valid_night_mask) / (sza_data.size - numpy.count_nonzero(invalid_mask))
             if fraction_night < 0.10:
-                raise ValueError("Less than 10%% of the data provided for fog calculation was night data: %f%%" % (fraction_night * 100,))
+                LOG.info("Less than 10%% of the data is at night, will not create '%s' product", product_name)
+                return None
+
+            fog_data = numpy.memmap(filename, dtype=left_data.dtype, mode="w+", shape=left_data.shape)
+            numpy.subtract(left_data, right_data, fog_data)
+            fog_data[~valid_night_mask] = fill
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            products_created[left_term_name]["data_type"], products_created)
@@ -670,20 +697,29 @@ class Frontend(roles.FrontendRole):
         return self.create_cloud_land_cleared(product_name, swath_definition, products_created,
                                               lsmask_values_to_clear=[2, 3, 4])
 
-    SECONDARY_PRODUCT_FUNCTIONS = {
-        PRODUCT_SLST: create_slst,
-        PRODUCT_BT20: create_bt_from_ir,
-        PRODUCT_BT27: create_bt_from_ir,
-        PRODUCT_BT31: create_bt_from_ir,
-        PRODUCT_ADAPTIVE_BT20: create_adaptive_btemp,
-        PRODUCT_ADAPTIVE_BT27: create_adaptive_btemp,
-        PRODUCT_ADAPTIVE_BT31: create_adaptive_btemp,
-        PRODUCT_FOG: create_fog,
-        PRODUCT_CLEAR_SST: create_cloud_land_cleared,
-        PRODUCT_CLEAR_LST: create_cloud_sea_cleared,
-        PRODUCT_CLEAR_SLST: create_slst,
-        PRODUCT_CLEAR_NDVI: create_cloud_sea_cleared,
-    }
+    def _get_day_percentage(self, sza_swath):
+        if "day_percentage" not in sza_swath:
+            sza_data = sza_swath.get_data_array()
+            day_mask = (sza_data < 90) & ~sza_swath.get_data_mask()
+            sza_swath["day_percentage"] = (numpy.count_nonzero(day_mask) / sza_data.size) * 100.0
+        else:
+            LOG.debug("Day percentage found in SZA swath already")
+        return sza_swath["day_percentage"]
+
+    def day_check_reflectance(self, product_name, swath_definition, products_created, fill=numpy.nan):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
+        if len(deps) != 1:
+            LOG.error("Expected 1 dependencies to check night mask, got %d" % (len(deps),))
+            raise RuntimeError("Expected 1 dependencies to check night mask, got %d" % (len(deps),))
+
+        sza_swath = products_created[deps[0]]
+        day_percentage = self._get_day_percentage(sza_swath)
+        LOG.debug("Reflectance product's scene has %f%% day data", day_percentage)
+        if day_percentage < 10.0:
+            LOG.info("Will not create product '%s' because there is less than 10%% of day data", product_name)
+            return None
+        return products_created[product_name]
 
 
 def add_frontend_argument_groups(parser):
