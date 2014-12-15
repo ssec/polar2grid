@@ -913,6 +913,36 @@ class CartographerRole(object):
         raise NotImplementedError("Child class must implement this method")
 
 
+class CompositorRole(object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self, overwrite_existing=False, keep_intermediate=False, exit_on_error=True, **kwargs):
+        self.overwrite_existing = overwrite_existing
+        self.keep_intermediate = keep_intermediate
+        self.exit_on_error = exit_on_error
+
+    def _create_gridded_product(self, product_name, grid_data, base_product=None, **kwargs):
+        from polar2grid.core.meta import GriddedProduct
+        if base_product is None:
+            base_product = kwargs
+        else:
+            base_product = base_product.copy()
+            base_product.update(kwargs)
+        base_product["product_name"] = product_name
+        base_product["grid_data"] = grid_data
+
+        if base_product.get("grid_definition") is None:
+            msg = "No grid definition provided to base composite on (use `base_product` or `grid_definition`)"
+            log.error(msg)
+            raise ValueError(msg)
+
+        return GriddedProduct(**base_product)
+
+    @abstractmethod
+    def modify_scene(self):
+        pass
+
+
 def main():
     """Run some tests on the interfaces/roles
     """

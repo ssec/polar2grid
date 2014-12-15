@@ -132,8 +132,10 @@ def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, flip=
         b = min_out - m * min_in
     LOG.debug("Linear parameters: m=%f, b=%f", m, b)
 
-    numpy.multiply(img, m, img)
-    numpy.add(img, b, img)
+    if m != 1:
+        numpy.multiply(img, m, img)
+    if b != 0:
+        numpy.add(img, b, img)
 
     return img
 
@@ -165,7 +167,15 @@ def sqrt_scale(img, min_out, max_out, inner_mult=None, outer_mult=None, min_in=0
 
     return img
 
-pw_255_lookup_table = numpy.array([  0,   3,   7,  10,  14,  18,  21,  25,  28,  32,  36,  39,  43,
+# Created by using the following points
+# 0 -> 0
+# 25 -> 90
+# 55 -> 140
+# 100 -> 175
+# 255 -> 255
+# Then concatenate arrays created by: numpy.linspace(output1, output2, input2 - input1 + 1)
+# Remove the duplicates
+pw_255_lookup_table = numpy.array([0,   3,   7,  10,  14,  18,  21,  25,  28,  32,  36,  39,  43,
         46,  50,  54,  57,  61,  64,  68,  72,  75,  79,  82,  86,  90,
         91,  93,  95,  96,  98, 100, 101, 103, 105, 106, 108, 110, 111,
        113, 115, 116, 118, 120, 121, 123, 125, 126, 128, 130, 131, 133,
@@ -191,15 +201,14 @@ lookup_tables = {
 }
 
 
-def lookup_scale(img, max_out, m, b, table_name="crefl", **kwargs):
-    LOG.debug("Running 'lookup_scale'...")
+def lookup_scale(img, min_out, max_out, min_in, max_in, table_name="crefl", **kwargs):
     lut = lookup_tables[table_name]
-    img = linear_scale(img, m, b)
-    numpy.clip(img, 0, lut.shape[0]-1, out=img)
+    tmp_max_out = lut.shape[0] - 1
+    LOG.debug("Running 'lookup_scale' with LUT '%s' which has %d elements...", table_name, tmp_max_out + 1)
+    img = linear_flexible_scale(img, 0, tmp_max_out, min_in, max_in)
+    numpy.clip(img, 0, tmp_max_out, out=img)
     img = lut[img.astype(numpy.uint32)]
-    # scale to correct output range (technically not correct since assumes min_out is 0
-    # technically (judging by the LUT this should be 255, but to mimic historical results I'm making this 254
-    img *= (max_out / 254.0)
+    img = linear_flexible_scale(img, min_out, max_out, lut.min(), lut.max(), **kwargs)
     return img
 
 

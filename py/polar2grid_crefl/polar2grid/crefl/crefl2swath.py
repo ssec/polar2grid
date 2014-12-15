@@ -331,6 +331,10 @@ PRODUCTS.add_product(PRODUCT_MCR04_250M, PAIR_250M, "corrected_reflectance", FT_
 VIIRS_TRUE_COLOR_PRODUCTS = [PRODUCT_VCR01, PRODUCT_VCR04, PRODUCT_VCR03, PRODUCT_VCR08]
 MODIS_TRUE_COLOR_PRODUCTS = [PRODUCT_MCR01_1000M, PRODUCT_MCR04_1000M, PRODUCT_MCR03_1000M, PRODUCT_MCR01_250M]
 TRUE_COLOR_PRODUCTS = VIIRS_TRUE_COLOR_PRODUCTS + MODIS_TRUE_COLOR_PRODUCTS
+# R, G, B, HighRes Blue
+VIIRS_FALSE_COLOR_PRODUCTS = [PRODUCT_VCR07, PRODUCT_VCR02, PRODUCT_VCR01, PRODUCT_VCR08]
+MODIS_FALSE_COLOR_PRODUCTS = [PRODUCT_MCR07_1000M, PRODUCT_MCR02_1000M, PRODUCT_MCR01_1000M, PRODUCT_MCR01_250M]
+FALSE_COLOR_PRODUCTS = VIIRS_FALSE_COLOR_PRODUCTS + MODIS_FALSE_COLOR_PRODUCTS
 
 
 class Frontend(roles.FrontendRole):
@@ -376,24 +380,36 @@ class Frontend(roles.FrontendRole):
             self.file_readers[ft] = viirs_io.VIIRSSDRMultiReader(viirs_guidebook.FILE_TYPES[ft])
 
         have_crefl, have_modis = self.analyze_hdf4_files(hdf4_files)
-        if not have_crefl:
-            if have_modis:
-                LOG.info("Could not find any existing crefl output will use MODIS SDRs to create some")
-                self.create_modis_crefl_files()
-            else:
-                have_viirs = self.analyze_hdf5_files(hdf5_files)
-                if have_viirs:
-                        LOG.info("Could not find any existing crefl output will use VIIRS SDRs to create some")
-                        self.create_viirs_crefl_files()
+        if have_crefl:
+            # Check for VIIRS
+            have_m_crefl = FT_CREFL_M in self.file_readers
+            have_i_crefl = FT_CREFL_I in self.file_readers
+            if have_m_crefl or have_i_crefl:
+                self.analyze_hdf5_files(hdf5_files, geo_only=True)
+                if self.use_terrain_corrected:
+                    have_m_nav = FT_GMTCO in self.file_readers
+                    have_i_nav = FT_GITCO in self.file_readers
                 else:
-                    LOG.error("Could not find any existing CREFL files, MODIS SDRs, or VIIRS SDRs")
-                    raise RuntimeError("Could not find any existing CREFL files, MODIS SDRs, or VIIRS SDRs")
-        elif FT_CREFL_M in self.file_readers or FT_CREFL_I in self.file_readers:
-            # we have crefl files, but we will need the VIIRS SDR Navigation files
-            have_viirs = self.analyze_hdf5_files(hdf5_files, geo_only=True)
-            if not have_viirs:
-                LOG.error("Found VIIRS CREFL files, but not the associated geolocation files")
-                raise RuntimeError("Found VIIRS CREFL files, but not the associated geolocation files")
+                    have_m_nav = FT_GMODO in self.file_readers
+                    have_i_nav = FT_GIMGO in self.file_readers
+                if (have_m_crefl and not have_m_nav) or (have_i_crefl and not have_i_nav):
+                    LOG.error("Found VIIRS CREFL files, but not the associated geolocation files")
+                    raise RuntimeError("Found VIIRS CREFL files, but not the associated geolocation files")
+            elif FT_GEO not in self.file_readers:
+                # Check for MODIS
+                LOG.error("Found MODIS CREFL files, but not the associated geolocation files")
+                raise RuntimeError("Found MODIS CREFL files, but not the associated geolocation files")
+        elif have_modis:
+            LOG.info("Could not find any existing crefl output will use MODIS SDRs to create some")
+            self.create_modis_crefl_files()
+        else:
+            have_viirs = self.analyze_hdf5_files(hdf5_files)
+            if have_viirs:
+                    LOG.info("Could not find any existing crefl output will use VIIRS SDRs to create some")
+                    self.create_viirs_crefl_files()
+            else:
+                LOG.error("Could not find any existing CREFL files, MODIS SDRs, or VIIRS SDRs")
+                raise RuntimeError("Could not find any existing CREFL files, MODIS SDRs, or VIIRS SDRs")
 
         # We have CREFL files now so let's get rid of the SDRs
         for ft in self.modis_refl_fts + self.viirs_refl_fts:
@@ -755,10 +771,18 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    from polar2grid.core.script_utils import ExtendAction
+    from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # Set defaults for other components that may be used in polar2grid processing
     # FIXME: These should probably be changed depending on what instrument is being dealt with...currently not possible in polar2grid
-    parser.set_defaults(fornav_D=40, fornav_d=2)
+    parser.set_defaults(fornav_D=40, fornav_d=2,
+                        tc_red_products=[PRODUCT_VCR01, PRODUCT_MCR01_1000M],
+                        tc_green_products=[PRODUCT_VCR04, PRODUCT_MCR04_1000M],
+                        tc_blue_products=[PRODUCT_VCR03, PRODUCT_MCR03_1000M],
+                        tc_hires_products=[PRODUCT_VCR08, PRODUCT_MCR01_250M],
+                        fc_red_products=[PRODUCT_VCR07, PRODUCT_MCR07_1000M],
+                        fc_green_products=[PRODUCT_VCR02, PRODUCT_MCR02_1000M],
+                        fc_blue_products=[PRODUCT_VCR01, PRODUCT_MCR01_1000M],
+                        fc_hires_products=[PRODUCT_VCR08, PRODUCT_MCR01_250M])
 
     # Use the append_const action to handle adding products to the list
     group_title = "Frontend Initialization"
@@ -771,6 +795,10 @@ def add_frontend_argument_groups(parser):
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
                        help="Specify frontend products to process")
+    group.add_argument("--true-color", dest="products", const=TRUE_COLOR_PRODUCTS, action=ExtendConstAction,
+                       help="Attempt to extract the products that could be used to create true color images")
+    group.add_argument("--false-color", dest="products", const=FALSE_COLOR_PRODUCTS, action=ExtendConstAction,
+                       help="Attempt to extract the products that could be used to create false color images")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
 
 

@@ -375,6 +375,15 @@ class GriddedScene(BaseScene):
 class BaseProduct(BaseP2GObject):
     """Base product class for storing metadata.
     """
+    def _memmap(self, fn, dtype, rows, cols, mode):
+        # load FBF data from a file if needed
+        data = numpy.memmap(fn, dtype=dtype, mode=mode).reshape((-1, rows, cols))
+        # the negative 1 in the above reshape makes it expand to the proper dimensions for the data without
+        # copying. The below if statement checks if we have a regular 2D array. If so, just return that 2D array.
+        if data.shape[0] == 1:
+            data = data.reshape((rows, cols))
+        return data
+
     def get_data_array(self, item, rows, cols, dtype):
         """Get FBF item as a numpy array.
 
@@ -382,8 +391,7 @@ class BaseProduct(BaseP2GObject):
         """
         data = self[item]
         if isinstance(data, (str, unicode)):
-            # load FBF data from a file if needed
-            data = numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode="r")
+            data = self._memmap(data, dtype, rows, cols, "r")
 
         return data
 
@@ -417,15 +425,15 @@ class BaseProduct(BaseP2GObject):
                 # the user wants to copy the FBF
                 shutil.copyfile(data, filename)
                 data = filename
-                return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode=mode)
+                return self._memmap(data, dtype, rows, cols, mode)
             if mode == "r":
-                return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode="r")
+                return self._memmap(data, dtype, rows, cols, "r")
             else:
-                return numpy.memmap(data, dtype=dtype, shape=(rows, cols), mode="r").copy()
+                return self._memmap(data, dtype, rows, cols, "r").copy()
         else:
             if filename:
                 data.tofile(filename)
-                return numpy.memmap(filename, dtype=dtype, shape=(rows, cols), mode=mode)
+                return self._memmap(data, dtype, rows, cols, mode)
             return data.copy()
 
 

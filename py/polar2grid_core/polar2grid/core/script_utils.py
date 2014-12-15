@@ -209,8 +209,8 @@ class ExtendConstAction(argparse.Action):
         if nargs:
             raise ValueError("nargs is not allowed")
         super(ExtendConstAction, self).__init__(option_strings, dest, nargs=0, **kwargs)
+
     def __call__(self, parser, namespace, values, option_string=None):
-        print self.const
         current_values = getattr(namespace, self.dest, []) or []
         current_values.extend(self.const)
         setattr(namespace, self.dest, current_values)

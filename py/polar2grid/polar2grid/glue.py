@@ -91,11 +91,15 @@ def main(argv=sys.argv[1:]):
     # from argparse import ArgumentParser
     # init_parser = ArgumentParser(description="Extract swath data, remap it, and write it to a new file format")
     from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
+    from polar2grid.compositors import available_compositors, get_compositor_class, get_compositor_argument_func
+    compositors = available_compositors()
     parser = create_basic_parser(description="Extract swath data, remap it, and write it to a new file format")
     parser.add_argument("frontend", choices=sorted(FRONTENDS.keys()),
                         help="Specify the swath extractor to use to read data (additional arguments are determined after this is specified)")
     parser.add_argument("backend", choices=sorted(BACKENDS.keys()),
                         help="Specify the backend to use to write data output (additional arguments are determined after this is specified)")
+    parser.add_argument("compositors", choices=sorted(compositors.keys()), nargs="*",
+                        help="Specify the compositors to apply to the provided scene (additional arguments are determined after this is specified)")
     # don't include the help flag
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
     args, remaining_args = parser.parse_known_args(argv_without_help)
@@ -109,16 +113,25 @@ def main(argv=sys.argv[1:]):
     bcls = get_backend_class(args.backend)
 
     # add_frontend_arguments(parser)
-    group_titles = []
-    group_titles += farg_func(parser)
-    group_titles += add_remap_argument_groups(parser)
-    group_titles += barg_func(parser)
+    subgroup_titles = []
+    subgroup_titles += farg_func(parser)
+    subgroup_titles += add_remap_argument_groups(parser)
+    subgroup_titles += barg_func(parser)
+    compositor_classes = {}
+    for c in args.compositors:
+        carg_func = get_compositor_argument_func(compositors, c)
+        ccls = get_compositor_class(compositors, c)
+        compositor_classes[c] = ccls
+
+        # add_frontend_arguments(parser)
+        subgroup_titles += carg_func(parser)
+
     parser.add_argument('-f', dest='data_files', nargs="+", default=[], action=ExtendAction,
                         help="List of files or directories to extract data from")
     parser.add_argument('-d', dest='data_files', nargs="+", default=[], action=ExtendAction,
                         help="Data directories to look for input data files (equivalent to -f)")
     global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
-    args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=group_titles)
+    args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=subgroup_titles)
 
     if not args.data_files:
         # FUTURE: When the -d flag is removed this won't be needed because -f will be required
@@ -174,6 +187,15 @@ def main(argv=sys.argv[1:]):
         return STATUS_BACKEND_FAIL
 
     try:
+        compositor_objects = {}
+        for c, ccls in compositor_classes.items():
+            compositor_objects[c] = ccls(**args.subgroup_args[c + " Initialization"])
+    except StandardError:
+        LOG.debug("Compositor initialization exception: ", exc_info=True)
+        LOG.error("Compositor initialization failed (see log for details)")
+        return STATUS_COMP_FAIL
+
+    try:
         LOG.info("Extracting swaths from data files available...")
         scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
         if args.keep_intermediate:
@@ -225,6 +247,19 @@ def main(argv=sys.argv[1:]):
             continue
 
         # Composition
+        for c, comp in compositor_objects.items():
+            try:
+                LOG.info("Running gridded scene through '%s' compositor", c)
+                gridded_scene = comp.modify_scene(gridded_scene, **args.subgroup_args[c + " Modification"])
+                if args.keep_intermediate:
+                    filename = glue_name + "_gridded_scene_" + grid_name + ".json"
+                    LOG.debug("Updating saved intermediate gridded scene (%s) after compositor", filename)
+                    gridded_scene.save(filename)
+            except StandardError:
+                LOG.debug("Compositor Error: ", exc_info=True)
+                LOG.error("Could not properly modify scene using compositor '%s'" % (c,))
+                if args.exit_on_error:
+                    raise RuntimeError("Could not properly modify scene using compositor '%s'" % (c,))
 
         # Backend
         try:
