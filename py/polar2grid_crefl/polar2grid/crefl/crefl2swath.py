@@ -513,6 +513,15 @@ class Frontend(roles.FrontendRole):
                 LOG.error("Can not create MODIS crefl files with out 1000m files")
                 raise RuntimeError("Can not create MODIS crefl files with out 1000m files")
 
+            # Use the MODIS Frontend to determine if we have enough day time data
+            LOG.info("Loading the MODIS frontend to check for daytime data")
+            f = modis_module.Frontend(search_paths=self.file_readers[FT_GEO].filepaths)
+            scene = f.create_scene(products=[modis_module.PRODUCT_SZA])
+            day_percentage = f._get_day_percentage(scene[modis_module.PRODUCT_SZA])
+            if day_percentage < 10:
+                LOG.error("Will not create modis crefl products because there is less than 10%% of day data")
+                raise RuntimeError("Will not create modis crefl products because there is less than 10%% of day data")
+
             if modis_guidebook.FT_500M in self.file_readers and len(self.file_readers[modis_guidebook.FT_500M]):
                 kwargs["hkm_files"] = self.file_readers[modis_guidebook.FT_500M].filepaths
                 LOG.debug("Adding HKM files to crefl call: %s", ",".join(kwargs["hkm_files"]))
@@ -544,6 +553,17 @@ class Frontend(roles.FrontendRole):
                 LOG.error("M-band geolocation is required for crefl processing")
                 raise RuntimeError("M-band geolocation is required for crefl processing")
             geo_files = self.file_readers[ft].filepaths
+
+            # Use the VIIRS Frontend to determine if we have enough day time data
+            LOG.info("Loading the VIIRS frontend to check for daytime data")
+            f = viirs_module.Frontend(search_paths=geo_files)
+            scene = f.create_scene(products=[viirs_module.PRODUCT_M_SZA])
+            day_percentage = f._get_day_percentage(scene[viirs_module.PRODUCT_M_SZA])
+            if day_percentage < 10:
+                LOG.error("Will not create viirs crefl products because there is less than 10%% of day data")
+                raise RuntimeError("Will not create viirs crefl products because there is less than 10%% of day data")
+            LOG.debug("Will attempt crefl creation, found %f%% day data", day_percentage)
+
             kwargs = {"keep_intermediate": self.keep_intermediate}
             for ft, kw_name in zip(self.viirs_refl_fts, kw_names):
                 if ft in self.file_readers:
