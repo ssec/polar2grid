@@ -129,8 +129,8 @@ PAIR_INAV = "inav"
 PAIR_MNAV = "mnav"
 PAIR_DNBNAV = "dnbnav"
 # Cool, there's no way to get rows per scan from the file
-GEO_PAIRS.add_pair(PAIR_INAV, PRODUCT_I_LON, PRODUCT_I_LAT, 32)
-GEO_PAIRS.add_pair(PAIR_MNAV, PRODUCT_M_LON, PRODUCT_M_LAT, 16)
+GEO_PAIRS.add_pair(PAIR_INAV, PRODUCT_I_LON, PRODUCT_I_LAT, 32, solar_zenith_angle=PRODUCT_I_SZA)
+GEO_PAIRS.add_pair(PAIR_MNAV, PRODUCT_M_LON, PRODUCT_M_LAT, 16, solar_zenith_angle=PRODUCT_M_SZA)
 GEO_PAIRS.add_pair(PAIR_DNBNAV, PRODUCT_DNB_LON, PRODUCT_DNB_LAT, 16)
 
 # TODO: Add description and units
@@ -141,34 +141,35 @@ PRODUCTS.add_product(PRODUCT_M_LAT, PAIR_MNAV, "latitude", (guidebook.FILE_TYPE_
 PRODUCTS.add_product(PRODUCT_DNB_LON, PAIR_DNBNAV, "longitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLONGITUDE, guidebook.K_LONGITUDE))
 PRODUCTS.add_product(PRODUCT_DNB_LAT, PAIR_DNBNAV, "latitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLATITUDE, guidebook.K_LATITUDE))
 
-PRODUCTS.add_product(PRODUCT_I01, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I01, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_I02, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I02, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_I03, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I03, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_DNB_SZA, PAIR_DNBNAV, "solar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_I_SZA, PAIR_INAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_M_SZA, PAIR_MNAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_DNB_LZA, PAIR_DNBNAV, "lunar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_LUNARZENITH)
+PRODUCTS.add_product(PRODUCT_I_LZA, PAIR_INAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LUNARZENITH)
+
+PRODUCTS.add_product(PRODUCT_M_LZA, PAIR_MNAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LUNARZENITH)
+PRODUCTS.add_product(PRODUCT_I01, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I01, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))
+PRODUCTS.add_product(PRODUCT_I02, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I02, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))
+PRODUCTS.add_product(PRODUCT_I03, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I03, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))
 PRODUCTS.add_product(PRODUCT_I04, PAIR_INAV, "brightness_temperature", guidebook.FILE_TYPE_I04, guidebook.K_BTEMP)
 PRODUCTS.add_product(PRODUCT_I05, PAIR_INAV, "brightness_temperature", guidebook.FILE_TYPE_I05, guidebook.K_BTEMP)
-PRODUCTS.add_product(PRODUCT_M01, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M01, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_M02, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M02, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_M03, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M03, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_M04, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M04, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_M05, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M05, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_M06, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M06, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_M07, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M07, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_M08, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M08, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_M09, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M09, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_M10, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M10, guidebook.K_REFLECTANCE)
-PRODUCTS.add_product(PRODUCT_M11, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M11, guidebook.K_REFLECTANCE)
+PRODUCTS.add_product(PRODUCT_M01, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M01, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M02, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M02, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M03, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M03, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M04, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M04, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M05, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M05, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M06, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M06, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M07, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M07, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M08, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M08, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M09, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M09, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M10, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M10, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M11, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M11, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
 PRODUCTS.add_product(PRODUCT_M12, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M12, guidebook.K_BTEMP)
 PRODUCTS.add_product(PRODUCT_M13, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M13, guidebook.K_BTEMP)
 PRODUCTS.add_product(PRODUCT_M14, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M14, guidebook.K_BTEMP)
 PRODUCTS.add_product(PRODUCT_M15, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M15, guidebook.K_BTEMP)
 PRODUCTS.add_product(PRODUCT_M16, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M16, guidebook.K_BTEMP)
 PRODUCTS.add_product(PRODUCT_DNB, PAIR_DNBNAV, "radiance", guidebook.FILE_TYPE_DNB, guidebook.K_RADIANCE)
-PRODUCTS.add_product(PRODUCT_DNB_SZA, PAIR_DNBNAV, "solar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SOLARZENITH)
-PRODUCTS.add_product(PRODUCT_I_SZA, PAIR_INAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARZENITH)
-PRODUCTS.add_product(PRODUCT_M_SZA, PAIR_MNAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARZENITH)
-PRODUCTS.add_product(PRODUCT_DNB_LZA, PAIR_DNBNAV, "lunar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_LUNARZENITH)
-PRODUCTS.add_product(PRODUCT_I_LZA, PAIR_INAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LUNARZENITH)
-PRODUCTS.add_product(PRODUCT_M_LZA, PAIR_MNAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LUNARZENITH)
 # PRODUCTS.add_raw_product(PRODUCT_SST, PAIR_MNAV, "btemp", guidebook.FILE_TYPE_SST, guidebook.K_BTEMP, (None,))
 
 PRODUCTS.add_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", dependencies=(PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA))
@@ -208,6 +209,26 @@ class Frontend(roles.FrontendRole):
 
         # Load and sort all files
         self._load_files(self.find_files_with_extensions())
+
+        # Functions to create additional products
+        self.secondary_product_functions = {
+            PRODUCT_HISTOGRAM_DNB: self.create_histogram_dnb,
+            PRODUCT_ADAPTIVE_DNB: self.create_adaptive_dnb,
+            PRODUCT_IFOG: self.create_ifog,
+            PRODUCT_ADAPTIVE_I04: self.create_adaptive_btemp,
+            PRODUCT_ADAPTIVE_I05: self.create_adaptive_btemp,
+            PRODUCT_ADAPTIVE_M12: self.create_adaptive_btemp,
+            PRODUCT_ADAPTIVE_M13: self.create_adaptive_btemp,
+            PRODUCT_ADAPTIVE_M14: self.create_adaptive_btemp,
+            PRODUCT_ADAPTIVE_M15: self.create_adaptive_btemp,
+            PRODUCT_ADAPTIVE_M16: self.create_adaptive_btemp,
+            PRODUCT_DYNAMIC_DNB: self.create_dynamic_dnb,
+        }
+        for p, p_def in PRODUCTS.items():
+            if p_def.data_kind == "reflectance" and p_def.dependencies:
+                self.secondary_product_functions[p] = self.day_check_reflectance
+
+
 
 
     def _load_files(self, file_paths):
@@ -271,7 +292,7 @@ class Frontend(roles.FrontendRole):
     @property
     def default_products(self):
         if os.getenv("P2G_VIIRS_DEFAULTS", None):
-            return os.getenv("P2G_VIIRS_DEFAULTS")
+            return os.getenv("P2G_VIIRS_DEFAULTS").split(" ")
 
         defaults = [
             PRODUCT_I01, PRODUCT_I02, PRODUCT_I03, PRODUCT_I04, PRODUCT_I05,
@@ -425,7 +446,7 @@ class Frontend(roles.FrontendRole):
         raw_products_needed = (p for p in products_needed if PRODUCTS.is_raw(p, geo_is_raw=False))
         secondary_products_needed = [p for p in products_needed if PRODUCTS.needs_processing(p)]
         for p in secondary_products_needed:
-            if p not in self.SECONDARY_PRODUCT_FUNCTIONS:
+            if p not in self.secondary_product_functions:
                 LOG.error("Product (secondary or extra processing) required, but not sure how to make it: '%s'", p)
                 raise ValueError("Product (secondary or extra processing) required, but not sure how to make it: '%s'" % (p,))
 
@@ -477,12 +498,12 @@ class Frontend(roles.FrontendRole):
 
         # Dependent products and Special cases (i.e. non-raw products that need further processing)
         for product_name in reversed(secondary_products_needed):
-            product_func = self.SECONDARY_PRODUCT_FUNCTIONS[product_name]
+            product_func = self.secondary_product_functions[product_name]
             swath_def = swath_definitions[PRODUCTS[product_name].geo_pair_name]
 
             try:
                 LOG.info("Creating secondary product '%s'", product_name)
-                one_swath = product_func(self, product_name, swath_def, products_created)
+                one_swath = product_func(product_name, swath_def, products_created)
             except StandardError:
                 LOG.error("Could not create product (unexpected error): '%s'", product_name)
                 LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
@@ -490,6 +511,12 @@ class Frontend(roles.FrontendRole):
                     raise
                 continue
 
+            if one_swath is None:
+                LOG.debug("Secondary product function did not produce a swath product")
+                if product_name in scene:
+                    LOG.debug("Removing original swath that was created before")
+                    del scene[product_name]
+                continue
             products_created[product_name] = one_swath
             if product_name in products:
                 # the user wants this product
@@ -620,7 +647,13 @@ class Frontend(roles.FrontendRole):
         right_mask = products_created[right_term_name].get_data_mask()
         sza_data = products_created[sza_product_name].get_data_array()
         sza_mask = products_created[sza_product_name].get_data_mask()
-        night_mask = sza_data >= 100  # where is it night
+        night_mask = (sza_data >= 100) & ~sza_mask  # where is it night
+        night_percentage = (numpy.count_nonzero(night_mask) / sza_data.size) * 100.0
+        LOG.debug("Fog product's scene has %f%% night data", night_percentage)
+        if night_percentage < 5.0:
+            LOG.info("Less than 5%% of the data is at night, will not create '%s' product", product_name)
+            return None
+
         filename = product_name + ".dat"
         if os.path.isfile(filename):
             if not self.overwrite_existing:
@@ -697,37 +730,29 @@ class Frontend(roles.FrontendRole):
 
         return one_swath
 
-    # def process_sst(self, product_name, products_created, fill=guidebook.DEFAULT_FILL_VALUE):
-    #     product_def = PRODUCTS[product_name]
-    #     file_type = PRODUCTS.file_type_for_product(product_name, self.use_terrain_corrected)
-    #     sst_reader = self.file_readers[file_type]
-    #     # TODO: Open as read/write
-    #     sst_swath = products_created[product_name]
-    #     shape = (sst_swath["swath_rows"], sst_swath["swath_columns"])
-    #     sst_data = numpy.memmap(sst_swath["swath_data"], dtype=sst_swath["data_type"], mode="r+", shape=shape)
-    #     # Create a quality mask where bad data is masked
-    #     # 11 = High Quality
-    #     # 10 = Degraded
-    #     # 01 = Excluded
-    #     # 00 = Not retrieved
-    #     sst_data[(numpy.concatenate(sst_reader[guidebook.K_QF1]) & 3) < 2] = fill
-    #     sst_data.flush()
-    #     return sst_swath
+    def _get_day_percentage(self, sza_swath):
+        if "day_percentage" not in sza_swath:
+            sza_data = sza_swath.get_data_array()
+            day_mask = (sza_data < 100) & ~sza_swath.get_data_mask()
+            sza_swath["day_percentage"] = (numpy.count_nonzero(day_mask) / sza_data.size) * 100.0
+        else:
+            LOG.debug("Day percentage found in SZA swath already")
+        return sza_swath["day_percentage"]
 
-    SECONDARY_PRODUCT_FUNCTIONS = {
-        PRODUCT_HISTOGRAM_DNB: create_histogram_dnb,
-        PRODUCT_ADAPTIVE_DNB: create_adaptive_dnb,
-        PRODUCT_IFOG: create_ifog,
-        PRODUCT_ADAPTIVE_I04: create_adaptive_btemp,
-        PRODUCT_ADAPTIVE_I05: create_adaptive_btemp,
-        PRODUCT_ADAPTIVE_M12: create_adaptive_btemp,
-        PRODUCT_ADAPTIVE_M13: create_adaptive_btemp,
-        PRODUCT_ADAPTIVE_M14: create_adaptive_btemp,
-        PRODUCT_ADAPTIVE_M15: create_adaptive_btemp,
-        PRODUCT_ADAPTIVE_M16: create_adaptive_btemp,
-        PRODUCT_DYNAMIC_DNB: create_dynamic_dnb,
-        # PRODUCT_SST: process_sst,
-    }
+    def day_check_reflectance(self, product_name, swath_definition, products_created, fill=numpy.nan):
+        product_def = PRODUCTS[product_name]
+        deps = product_def.dependencies
+        if len(deps) != 1:
+            LOG.error("Expected 1 dependencies to check night mask, got %d" % (len(deps),))
+            raise RuntimeError("Expected 1 dependencies to check night mask, got %d" % (len(deps),))
+
+        sza_swath = products_created[deps[0]]
+        day_percentage = self._get_day_percentage(sza_swath)
+        LOG.debug("Reflectance product's scene has %f%% day data", day_percentage)
+        if day_percentage < 5.0:
+            LOG.info("Will not create product '%s' because there is less than 5%% of day data", product_name)
+            return None
+        return products_created[product_name]
 
 
 def add_frontend_argument_groups(parser):

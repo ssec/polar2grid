@@ -98,7 +98,8 @@ def main(argv=sys.argv[1:]):
                         help="Specify the swath extractor to use to read data (additional arguments are determined after this is specified)")
     parser.add_argument("backend", choices=sorted(BACKENDS.keys()),
                         help="Specify the backend to use to write data output (additional arguments are determined after this is specified)")
-    parser.add_argument("compositors", choices=sorted(compositors.keys()), nargs="*",
+    # Hack: argparse doesn't let you use choices and nargs=* on a positional argument
+    parser.add_argument("compositors", choices=sorted(compositors.keys()) + [[]], nargs="*",
                         help="Specify the compositors to apply to the provided scene (additional arguments are determined after this is specified)")
     # don't include the help flag
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]

@@ -117,7 +117,8 @@ class ProductDefinition(object):
 
     @property
     def is_secondary(self):
-        return self.dependencies and self.dependencies[0] is not None
+        return not self.is_raw
+        # return self.dependencies and self.dependencies[0] is not None
 
     @property
     def needs_processing(self):
@@ -194,11 +195,14 @@ class ProductDefinition(object):
 
 
 class GeoPair(object):
-    def __init__(self, name, lon_product, lat_product, rows_per_scan=0):
+    def __init__(self, name, lon_product, lat_product, rows_per_scan=0, **kwargs):
         self.name = name
         self.lon_product = lon_product
         self.lat_product = lat_product
         self.rows_per_scan = rows_per_scan
+
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 
 class ProductDict(dict):
