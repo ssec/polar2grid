@@ -446,6 +446,7 @@ def main():
         gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
         # FIXME: Either allow only 1 grid or find a nice way to output multiple gridded scenes as JSON to stdout
         fn = "gridded_scene_%s.json" % (grid_name,)
+        LOG.info("Saving gridded scene to file: %s", fn)
         gridded_scene.save(fn)
 
 if __name__ == "__main__":

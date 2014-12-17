@@ -199,6 +199,9 @@ def main(argv=sys.argv[1:]):
     try:
         LOG.info("Extracting swaths from data files available...")
         scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
+        if not scene:
+            LOG.error("No products were returned by the frontend")
+            raise RuntimeError("No products were returned by the frontend")
         if args.keep_intermediate:
             filename = glue_name + "_swath_scene.json"
             LOG.info("Saving intermediate swath scene as '%s'", filename)

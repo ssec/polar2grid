@@ -550,7 +550,7 @@ class BaseMultiFileReader(object):
         """
         try:
             # Get the data element from the file and get the actual value out of the h5py object
-            individual_items = [f[item].get() for f in self.file_readers]
+            individual_items = [f[item][:] for f in self.file_readers]
         except KeyError:
             LOG.error("Could not get '%s' from source files", item, exc_info=True)
             raise

@@ -95,7 +95,7 @@ setup(
             'false_color=polar2grid.compositors.rgb:FalseColorCompositor',
         ],
         'polar2grid.compositor_arguments': [
-            'rgb=polar2grid.compositors.rgb:add_rgb_argument_groups',
+            'rgb=polar2grid.compositors.rgb:add_rgb_compositor_argument_groups',
             'true_color=polar2grid.compositors.rgb:add_true_color_compositor_argument_groups',
             'false_color=polar2grid.compositors.rgb:add_false_color_compositor_argument_groups',
         ]

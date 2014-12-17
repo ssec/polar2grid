@@ -41,7 +41,6 @@ __docformat__ = "restructuredtext en"
 
 import numpy
 from polar2grid.core import roles
-from polar2grid.core.fbf import FileAppender
 
 import os
 import sys
@@ -63,33 +62,32 @@ class RGBCompositor(roles.CompositorRole):
         # return numpy.array(the_stuff)
         return numpy.array([gridded_scene[pname].get_data_array() for pname in product_names])
 
-    def modify_scene(self, gridded_scene, composite_products, composite_name="rgb_composite",
+    def modify_scene(self, gridded_scene, rgb_composite_products, composite_name="rgb_composite",
                      composite_data_kind="rgb", share_mask=True, fill_value=None, **kwargs):
         if composite_name in gridded_scene:
             LOG.error("Cannot create composite product '%s', it already exists." % (composite_name,))
             raise ValueError("Cannot create composite product '%s', it already exists." % (composite_name,))
         available_products = set(gridded_scene.keys())
-        desired_products = set(composite_products)
+        desired_products = set(rgb_composite_products)
         missing_products = desired_products - (available_products & desired_products)
         if missing_products:
             LOG.error("Not all bands available to create RGB composite. Missing:\n\t%s", "\n\t".join(missing_products))
             raise RuntimeError("Not all bands available to create RGB composite")
 
         if fill_value is None:
-            fill_value = gridded_scene[composite_products[0]]["fill_value"]
+            fill_value = gridded_scene[rgb_composite_products[0]]["fill_value"]
 
         fn = composite_name + ".dat"
 
         try:
-            comp_data = self.joined_array(gridded_scene, composite_products)
+            comp_data = self.joined_array(gridded_scene, rgb_composite_products)
 
             if share_mask:
-                bad_mask = self.shared_mask(gridded_scene, composite_products)
-                comp_data[bad_mask, :] = fill_value
-                del bad_mask
+                print rgb_composite_products
+                comp_data[:, self.shared_mask(gridded_scene, rgb_composite_products)] = fill_value
 
             comp_data.tofile(fn)
-            base_product = gridded_scene[composite_products[0]]
+            base_product = gridded_scene[rgb_composite_products[0]]
             base_product["data_kind"] = composite_data_kind
             gridded_scene[composite_name] = self._create_gridded_product(composite_name, fn, base_product=base_product)
         except StandardError:
@@ -173,10 +171,7 @@ class TrueColorCompositor(RGBCompositor):
 
             if share_mask:
                 LOG.debug("Sharing missing value mask between bands and using fill value %r", fill_value)
-                # comp_data[:, self.shared_mask(gridded_scene, all_products)] = fill_value
-                shared_mask = self.shared_mask(gridded_scene, all_products)
-                print shared_mask.shape
-                comp_data[:, shared_mask] = fill_value
+                comp_data[:, self.shared_mask(gridded_scene, all_products)] = fill_value
 
             LOG.debug("True color array has shape %r", comp_data.shape)
             LOG.info("Saving true color image to filename '%s'", fn)
@@ -252,9 +247,17 @@ class FalseColorCompositor(TrueColorCompositor):
         return gridded_scene
 
 
-def add_rgb_compositor_argument_groups(parser, num_compositors=1):
-    # By adding a number to this we can have more than one compositor at a time...I think that'll work
-    pass
+def add_rgb_compositor_argument_groups(parser):
+    from argparse import SUPPRESS
+    group = parser.add_argument_group(title="rgb Initialization")
+    group = parser.add_argument_group(title="rgb Modification")
+    group.add_argument("--rgb-composite-products", dest="rgb_composite_products", nargs="+", default=SUPPRESS,
+                       help="Specify what bands to look for to make true color images")
+    group.add_argument("--rgb-name", dest="composite_name", default="rgb_composite",
+                       help="specify alternate name for rgb product")
+    group.add_argument("--rgb-kind", dest="composite_data_kind", default="rgb",
+                       help="specify alternate 'data_kind' for rgb product (useful in rescaling)")
+    return ["rgb Initialization", "rgb Modification"]
 
 
 def add_true_color_compositor_argument_groups(parser):
