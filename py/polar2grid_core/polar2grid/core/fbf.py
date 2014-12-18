@@ -1,164 +1,53 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2013 Space Science and Engineering Center (SSEC),
-# University of Wisconsin-Madison.
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+#  University of Wisconsin-Madison.
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # This file is part of the polar2grid software package. Polar2grid takes
 # satellite observation data, remaps it, and writes it to a file format for
-#     input into another program.
+# input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-# Written by David Hoese    January 2013
-# University of Wisconsin-Madison
-# Space Science and Engineering Center
-# 1225 West Dayton Street
-# Madison, WI  53706
-# david.hoese@ssec.wisc.edu
-""" Flat binary file utilities
+#     Written by David Hoese    December 2014
+#     University of Wisconsin-Madison
+#     Space Science and Engineering Center
+#     1225 West Dayton Street
+#     Madison, WI  53706
+#     david.hoese@ssec.wisc.edu
+"""Flat binary file utilities
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
+:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:date:         Dec 2014
 :license:      GNU GPLv3
-
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.dtype import str2dtype
-
 import numpy
-
-import os
 import logging
-from glob import glob
 
-log = logging.getLogger(__name__)
-
-
-def check_stem(stem_name):
-    """Helper function to tell a user if a stem name will conflict with
-    another file in the current working directory.
-    """
-    log.debug("Checking stem '%s'" % (stem_name,))
-    if len(glob(stem_name + ".*")) != 0:
-        msg = "Flat binary file with stem '%s' already exists, please remove and try again" % (stem_name,)
-        log.error(msg)
-        raise ValueError(msg)
+LOG = logging.getLogger(__name__)
 
 
-class Workspace(object):
-    """Wrapper object around ``numpy.fromfile()`` method to treat a directory as a
-    workspace of flat binary files.
-
-    :attention: Replaces rayg's ``keoni.fbf.Workspace``
-    """
-    def __init__(self, dir='.'):
-        self._dir=dir
-
-    def _parse_attr_name(self, name):
-        """Take a FBF formatted filename and parse out the binary data
-        details such as number of rows/cols and data type.
-
-        :Parameters:
-            name : str
-                Flat binary formatted name (ex. image_I01.real4.6400.10167).
-        """
-        fullpath = os.path.abspath(name)
-        filename = os.path.split(fullpath)[1]
-        parts = filename.split(".")
-        if len(parts) != 4 and len(parts) != 5:
-            log.error("Found filename %s with incorrect format, need 4 or 5 parts" % filename)
-            raise ValueError("Found filename %s with incorrect format, need 4 or 5 parts" % filename)
-
-        attr_name = parts[0]
-        type = parts[1]
-        shape = parts[2:][::-1] # Flip shape order, fbf is minor to major, numpy is major to minor
-        if type not in str2dtype:
-            log.error("Don't know how to interpret data type %s from %s" % (type,filename))
-            raise ValueError("Don't know how to interpret data type %s from %s" % (type,filename))
-        dtype = str2dtype[type]
-
-        try:
-            shape = tuple(list( int(x) for x in shape ))
-        except ValueError:
-            log.error("Shape must be integers not (%r)" % (shape,))
-            raise ValueError("Shape must be integers not (%r)" % (shape,))
-
-        return attr_name,dtype,shape
-
-    def var(self, name, wildcard='.*', mode='c'):
-        """Return a memory map from the current workspace directory
-
-        Does the heavy lifting for `__getattr__` and `__getitem__`.
-
-        The default mode for the created memory map is copy-on-write ('c').
-        """
-        g = glob(os.path.join(self._dir, name+wildcard))
-        if len(g)==1:
-            stem,dtype,shape = self._parse_attr_name(g[0])
-            
-            # See if we have the stem already
-            try:
-                return self.__getattribute__(stem)
-            except AttributeError:
-                mmap_arr = numpy.memmap(g[0], dtype=dtype, mode=mode, shape=shape)
-                setattr(self, stem, mmap_arr)
-                return mmap_arr
-        elif len(g) > 1:
-            raise AttributeError("Found too many instances for %s in workspace" % name)
-        else:
-            raise AttributeError("%s not in workspace" % name)
-
-    def __getattr__(self, name):
-        """Get a workspace memory map from a stem name
-        """
-        return self.var(name)
-    
-    def vars(self):
-        for path in os.listdir(self._dir):
-            try:
-                fullpath = os.path.join(self._dir, path)
-                stemname,_,_ = self._parse_attr_name(fullpath)
-                yield stemname, self.__getattr__(stemname)
-            except:
-                pass
-            
-    def variables(self):
-        return dict(self.vars())
-
-    def __getitem__(self, name):
-        """Get a workspace memory map from a filename or a stem name
-
-        Using the bracket/getitem syntax you can get a specific filename or
-        stem. Stem names can not contain periods.
-        """
-        if '.' in name:
-            wildcard = ''
-        else:
-            wildcard = '.*'
-        return self.var(name, wildcard=wildcard)
-
-class array_appender(object):
+class ArrayAppender(object):
     """wrapper for a numpy array object which gives it a binary data append usable with "catenate"
     """
-    A = None
-    shape = (0,0)
-    def __init__(self, nparray = None):
+    def __init__(self, nparray=None):
         if nparray:
             self.A = nparray
             self.shape = nparray.shape
@@ -171,18 +60,16 @@ class array_appender(object):
         else:
             self.A = numpy.concatenate((self.A, data))
             self.shape = self.A.shape
-        log.debug('array shape is now %s' % repr(self.A.shape))
+        LOG.debug('array shape is now %s' % repr(self.A.shape))
 
 
 class FileAppender(object):
     """wrapper for a file object which gives it a binary data append usable with "catenate"
     """
-    file_obj = None
-    shape = (0, 0)
-
     def __init__(self, file_obj, dtype):
         self.file_obj = file_obj
         self.dtype = dtype
+        self.shape = (0, 0)
 
     def append(self, data):
         # append new rows to the data
@@ -190,6 +77,5 @@ class FileAppender(object):
             return
         inform = data.astype(self.dtype) if self.dtype != data.dtype else data
         inform.tofile(self.file_obj)
-        self.shape = (self.shape[0] + inform.shape[0], ) + data.shape[1:]
-        log.debug('%d rows in output file' % self.shape[0])
-file_appender = FileAppender
+        self.shape = (self.shape[0] + inform.shape[0],) + data.shape[1:]
+        LOG.debug('%d rows in output file' % self.shape[0])

@@ -43,20 +43,17 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import roles
-from polar2grid.core.time_utils import utc_now
 from polar2grid.core.rescale import Rescaler
 from polar2grid.core.dtype import clip_to_data_type, dtype_to_str, DTYPE_UINT8
 from libtiff import libtiff_ctypes as libtiff
 from libtiff.libtiff_ctypes import TIFF, TIFFFieldInfo, TIFFDataType, FIELD_CUSTOM, add_tags
-# from .ninjo_config import _create_config_id, load_grid_config, load_band_config,\
-#     DEFAULT_GRID_CONFIG_FILE, DEFAULT_BAND_CONFIG_FILE
-# from polar2grid.proj import Proj
 import numpy
 
 import os
 import sys
 import logging
 import calendar
+from datetime import datetime
 
 LOG = logging.getLogger(__name__)
 
@@ -359,7 +356,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
         LOG.error("NinJo description must be less than 1000 characters")
         raise ValueError("NinJo description must be less than 1000 characters")
 
-    file_dt = utc_now()
+    file_dt = datetime.utc_now()
     file_epoch = calendar.timegm(file_dt.timetuple())
     image_epoch = calendar.timegm(image_dt.timetuple())
 

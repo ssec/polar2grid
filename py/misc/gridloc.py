@@ -13,14 +13,13 @@ from polar2grid.proj import Proj
 
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import Workspace
 import numpy
 
-import os
 import sys
 import logging
 
 log = logging.getLogger(__name__)
+
 
 def parse_geotiff(gtiff_file):
     """Read a geotiff file and return the grid information in it.
@@ -36,6 +35,7 @@ def parse_geotiff(gtiff_file):
     width = g.RasterXSize
     height = g.RasterYSize
     return proj4_str,width,height,origin_x,origin_y,x_psize,y_psize
+
 
 def create_nav_binaries(lon_fn, lat_fn, proj4_str, width, height,
         origin_x, origin_y,
@@ -61,6 +61,7 @@ def create_nav_binaries(lon_fn, lat_fn, proj4_str, width, height,
             lons,lats = p(grid_x, grid_y, inverse=True)
             lon_file[row] = lons[:]
             lat_file[row] = lats[:]
+
 
 def main():
     from argparse import ArgumentParser

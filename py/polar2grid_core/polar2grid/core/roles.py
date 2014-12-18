@@ -39,13 +39,13 @@
 """
 __docformat__ = "restructuredtext en"
 
-from .time_utils import utc_now
 from polar2grid.core.dtype import dtype_to_str
 
 import os
 import sys
 import logging
 import re
+from datetime import datetime
 from StringIO import StringIO
 from ConfigParser import SafeConfigParser, Error as ConfigParserError
 from abc import ABCMeta, abstractmethod, abstractproperty
@@ -544,7 +544,7 @@ class BackendRole(object):
 
         # Convert begin time and end time
         if begin_time_dt is None and end_time_dt is None:
-            begin_time_dt = end_time_dt = utc_now()
+            begin_time_dt = end_time_dt = datetime.utc_now()
         elif begin_time_dt is None:
             begin_time_dt = end_time_dt
         elif end_time_dt is None:
