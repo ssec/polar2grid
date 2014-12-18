@@ -28,8 +28,9 @@ HDRS =
 
 all : fornav
 
+#	$(CC) $(CFLAGS) -o fornav fornav.o $(LIBS)
 fornav: fornav.o
-	$(CC) $(CFLAGS) -o fornav fornav.o $(LIBS)
+	$(CC) -O3 -o fornav fornav.o
 	$(CP) fornav $(BINDIR)
 
 clean:
