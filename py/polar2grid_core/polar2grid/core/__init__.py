@@ -43,7 +43,6 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from .constants  import *
 from .time_utils import UTC
 from .fbf        import Workspace
 from .fbf        import array_appender

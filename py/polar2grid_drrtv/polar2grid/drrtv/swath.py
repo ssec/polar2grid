@@ -86,17 +86,12 @@ import os
 import sys
 import logging
 import re
-import uuid
 from datetime import datetime
-from collections import namedtuple
 from functools import partial
-from pprint import pformat
 from scipy import interpolate
 
-from polar2grid.core.roles import FrontendRoleOld, FrontendRole
+from polar2grid.core.roles import FrontendRole
 from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
-# from polar2grid.core.dtype import str2dtype
-# from polar2grid.core.constants import *
 from polar2grid.core import meta
 
 LOG = logging.getLogger(__name__)

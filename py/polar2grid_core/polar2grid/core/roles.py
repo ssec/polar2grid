@@ -1,45 +1,44 @@
 #!/usr/bin/env python
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
-# University of Wisconsin-Madison.
+#  University of Wisconsin-Madison.
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # This file is part of the polar2grid software package. Polar2grid takes
 # satellite observation data, remaps it, and writes it to a file format for
-#     input into another program.
+# input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-# Written by David Hoese    October 2014
-# University of Wisconsin-Madison
-# Space Science and Engineering Center
-# 1225 West Dayton Street
-# Madison, WI  53706
-# david.hoese@ssec.wisc.edu
+#     Written by David Hoese    December 2014
+#     University of Wisconsin-Madison
+#     Space Science and Engineering Center
+#     1225 West Dayton Street
+#     Madison, WI  53706
+#     david.hoese@ssec.wisc.edu
 """Abstract Base Classes for polar2grid components
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Oct 2014
+:date:         Dec 2014
 :license:      GNU GPLv3
 
 """
 __docformat__ = "restructuredtext en"
 
-from .constants import *
 from .time_utils import utc_now
 from polar2grid.core.dtype import dtype_to_str
 
@@ -53,16 +52,13 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 try:
     # try getting setuptools/distribute's version of resource retrieval first
-    import pkg_resources
-    get_resource_string = pkg_resources.resource_string
+    from pkg_resources import resource_string as get_resource_string
 except ImportError:
-    import pkgutil
-    get_resource_string = pkgutil.get_data
+    from pkgutil import get_data as get_resource_string
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
-### Copied and modified from patch to allow abstractclassmethods in Python 2.7 ###
-### URL: http://bugs.python.org/issue5867 ###
+
 class abstractclassmethod(classmethod):
     """A decorator indicating abstract classmethods.
 
@@ -74,6 +70,8 @@ class abstractclassmethod(classmethod):
             @abstractclassmethod
             def my_abstract_classmethod(cls, ...):
 
+    ### Copied and modified from patch to allow abstractclassmethods in Python 2.7 ###
+    ### URL: http://bugs.python.org/issue5867 ###
     """
     __isabstractmethod__ = True
 
@@ -93,14 +91,14 @@ class abstractstaticmethod(staticmethod):
             @abstractstaticmethod
             def my_abstract_staticmethod(...):
 
+    ### Copied and modified from patch to allow abstractclassmethods in Python 2.7 ###
+    ### URL: http://bugs.python.org/issue5867 ###
     """
     __isabstractmethod__ = True
 
     def __init__(self, callable):
         callable.__isabstractmethod__ = True
         super(abstractstaticmethod, self).__init__(callable)
-
-### End of Copy ###
 
 
 class INIConfigReader(object):
@@ -116,7 +114,7 @@ class INIConfigReader(object):
 
     def __init__(self, *config_files, **kwargs):
         if self.id_fields is None:
-            log.error("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
+            LOG.error("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
             raise RuntimeError("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
 
         self.section_prefix = kwargs.pop("section_prefix", None)
@@ -145,10 +143,10 @@ class INIConfigReader(object):
                 try:
                     self.config_parser.readfp(fo, fp)
                 except ConfigParserError:
-                    log.warning("Could not parse config file: %s", fp)
+                    LOG.warning("Could not parse config file: %s", fp)
         self.load_config()
         if not self.config:
-            log.error("No valid configuration sections found with prefix '%s'", self.section_prefix)
+            LOG.error("No valid configuration sections found with prefix '%s'", self.section_prefix)
             raise ValueError("No valid configuration sections found")
 
     def open_config_file(self, config_file):
@@ -168,14 +166,14 @@ class INIConfigReader(object):
                     config_file = open(config_file, 'r')
                 else:
                     # they have specified a package provided file
-                    log.info("Loading package provided configuration file: '%s'" % (config_file,))
+                    LOG.info("Loading package provided configuration file: '%s'" % (config_file,))
                     try:
                         parts = config_file.split(":")
                         mod_part, file_part = parts if len(parts) == 2 else ("", parts[0])
                         mod_part = mod_part or self.__module__
                         config_str = get_resource_string(mod_part, file_part)
                     except StandardError:
-                        log.error("Configuration file '%s' was not found" % (config_file,))
+                        LOG.error("Configuration file '%s' was not found" % (config_file,))
                         raise
                     config_file = StringIO(config_str)
             else:
@@ -202,7 +200,7 @@ class INIConfigReader(object):
             try:
                 this_regex_obj = re.compile(id_regex)
             except re.error:
-                log.error("Invalid configuration identifying information (not a valid regular expression): '%s'" % (str(id_regex),))
+                LOG.error("Invalid configuration identifying information (not a valid regular expression): '%s'" % (str(id_regex),))
                 raise ValueError("Invalid configuration identifying information (not a valid regular expression): '%s'" % (str(id_regex),))
 
             # Just need to know what section I should look in
@@ -214,33 +212,33 @@ class INIConfigReader(object):
 
     def get_config_section(self, **kwargs):
         if len(kwargs) != len(self.id_fields):
-            log.error("Incorrect number of identifying arguments, expected %d, got %d" % (len(self.id_fields), len(kwargs)))
-            log.debug("Got %r; Expected %r", kwargs, self.id_fields)
+            LOG.error("Incorrect number of identifying arguments, expected %d, got %d" % (len(self.id_fields), len(kwargs)))
+            LOG.debug("Got %r; Expected %r", kwargs, self.id_fields)
             raise ValueError("Incorrect number of identifying arguments, expected %d, got %d" % (len(self.id_fields), len(kwargs)))
 
         id_key = self.sep_char.join(str(kwargs.get(k, None)) for k in self.id_fields)
         for num_wildcards, regex_obj, section in self.config:
             if regex_obj.match(id_key):
-                log.debug("Key '%s' matched config regular expression '%s'", id_key, regex_obj.pattern)
+                LOG.debug("Key '%s' matched config regular expression '%s'", id_key, regex_obj.pattern)
                 return section
-        log.debug("No match found in config for key: %s", id_key)
+        LOG.debug("No match found in config for key: %s", id_key)
         return None
 
     def get_config_options(self, **kwargs):
         allow_default = kwargs.pop("allow_default", True)
         section = self.get_config_section(**kwargs)
         if section is not None:
-            log.debug("Using configuration section: %s", section)
+            LOG.debug("Using configuration section: %s", section)
             section_options = dict((k, self.config_parser.get(section, k)) for k in self.config_parser.options(section))
             # gotta get the defaults too
             for k, v in self.config_parser.defaults().items():
                 if k not in section_options:
                     section_options[k] = v
         elif allow_default:
-            log.debug("Using default configuration section")
+            LOG.debug("Using default configuration section")
             section_options = self.config_parser.defaults().copy()
         else:
-            log.error("No configuration section found")
+            LOG.error("No configuration section found")
             raise RuntimeError("No configuration section found")
 
         # Convert values
@@ -317,11 +315,11 @@ class CSVConfigReader(object):
                     config_file = open(config_file, 'r')
                 else:
                     # they have specified a package provided file
-                    log.info("Loading package provided rescale config: '%s'" % (config_file,))
+                    LOG.info("Loading package provided rescale config: '%s'" % (config_file,))
                     try:
                         config_str = get_resource_string(self.__module__, config_file)
                     except StandardError:
-                        log.error("Rescale config '%s' was not found" % (config_file,))
+                        LOG.error("Rescale config '%s' was not found" % (config_file,))
                         raise
                     config_file = StringIO(config_str)
             else:
@@ -341,7 +339,7 @@ class CSVConfigReader(object):
 
     def parse_config_parts(self, parts):
         if len(parts) < self.min_num_elements:
-            log.error("Line does not have correct number of elements: '%s'" % (str(parts),))
+            LOG.error("Line does not have correct number of elements: '%s'" % (str(parts),))
             if self.ignore_bad_lines: return
             raise ValueError("Line does not have correct number of elements: '%s'" % (str(parts),))
 
@@ -355,7 +353,7 @@ class CSVConfigReader(object):
             entry_info = self.parse_entry_parts(entry_parts)
         except StandardError:
             if self.ignore_bad_lines: return
-            log.error("Bad configuration line: '%s'" % (str(parts),))
+            LOG.error("Bad configuration line: '%s'" % (str(parts),))
             raise
 
         self.config_storage.append((id_regex_obj,entry_info))
@@ -374,7 +372,7 @@ class CSVConfigReader(object):
         try:
             this_regex_obj = re.compile(this_regex)
         except re.error:
-            log.error("Invalid configuration identifying information (not valid regular expression): '%s'" % (str(id_parts),))
+            LOG.error("Invalid configuration identifying information (not valid regular expression): '%s'" % (str(id_parts),))
             raise ValueError("Invalid configuration identifying information (not valid regular expression): '%s'" % (str(id_parts),))
 
         return this_regex_obj
@@ -420,13 +418,14 @@ class CSVConfigReader(object):
         as ``NUM_ID_ELEMENTS``.
         """
         if len(args) != self.NUM_ID_ELEMENTS:
-            log.error("Incorrect number of identifying elements when searching configuration")
+            LOG.error("Incorrect number of identifying elements when searching configuration")
             raise ValueError("Incorrect number of identifying elements when searching configuration")
 
-        search_id = "_".join([ (x is not None and x) or "" for x in args ])
-        for regex_pattern,entry_info in self.config_storage:
+        search_id = "_".join([(x is not None and x) or "" for x in args])
+        for regex_pattern, entry_info in self.config_storage:
             m = regex_pattern.match(search_id)
-            if m is None: continue
+            if m is None:
+                continue
 
             entry_info = self.prepare_config_entry(entry_info, args)
             return entry_info
@@ -440,14 +439,15 @@ class CSVConfigReader(object):
         as ``NUM_ID_ELEMENTS``.
         """
         if len(args) != self.NUM_ID_ELEMENTS:
-            log.error("Incorrect number of identifying elements when searching configuration")
+            LOG.error("Incorrect number of identifying elements when searching configuration")
             raise ValueError("Incorrect number of identifying elements when searching configuration")
 
-        search_id = "_".join([ (x is not None and x) or "" for x in args ])
+        search_id = "_".join([(x is not None and x) or "" for x in args])
         matching_entries = []
-        for regex_pattern,entry_info in self.config_storage:
+        for regex_pattern, entry_info in self.config_storage:
             m = regex_pattern.match(search_id)
-            if m is None: continue
+            if m is None:
+                continue
 
             matching_entries.append(self.prepare_config_entry(entry_info, args))
 
@@ -455,82 +455,6 @@ class CSVConfigReader(object):
             return matching_entries
         else:
             raise ValueError("No config entry found matching: '%s'" % (search_id,))
-
-
-class RescalerRole(CSVConfigReader):
-    __metaclass__ = ABCMeta
-
-    # Fill values in the input and to set in the output
-    DEFAULT_FILL_IN  = DEFAULT_FILL_VALUE
-    DEFAULT_FILL_OUT = DEFAULT_FILL_VALUE
-
-    NUM_ID_ELEMENTS = 6
-
-    @abstractproperty
-    def default_config_dir(self):
-        """Return the default search path to find a configuration file if
-        the configuration file provided is not an absolute path and the
-        configuration filename was not found in the current working
-        directory.
-
-        This does not work in subclasses since they will be called the
-        function that 'lives' in this file.  Copying and pasting this
-        function is the simplest solution until pkg_resources.
-        """
-        return os.path.split(os.path.realpath(__file__))[0]
-
-    @abstractproperty
-    def known_rescale_kinds(self):
-        """Return a dictionary mapping rescaling kind to scaling
-        function.  This will be used during configuration file parsing
-        to decide if the line is valid.
-
-        A good strategy is to define the dictionary outside this
-        function/property and return a pointer to that class attribute.
-        This way the dictionary isn't created everytime it is accessed, but
-        the property is still read only.
-        """
-        return {}
-
-    def __init__(self, *config_files, **kwargs):
-        """Load the initial configuration file and any other information
-        needed for later rescaling.
-        """
-        self.fill_in = kwargs.pop("fill_in", self.DEFAULT_FILL_IN)
-        self.fill_out = kwargs.pop("fill_out", self.DEFAULT_FILL_OUT)
-        kwargs["min_num_elements"] = kwargs.get("min_num_elements", self.NUM_ID_ELEMENTS+1) # ID + scaling func
-        super(RescalerRole, self).__init__(*config_files, **kwargs)
-
-    def parse_id_parts(self, parts):
-        # Make sure we know the data_kind
-        parts = super(RescalerRole, self).parse_id_parts(parts)
-        return parts
-
-    def parse_entry_parts(self, parts):
-        # Make sure we know the scale kind
-        if parts[0] not in self.known_rescale_kinds:
-            log.error("Rescaling doesn't know the rescaling kind '%s'" % parts[0])
-            if self.ignore_bad_lines:
-                return
-            raise ValueError("Rescaling doesn't know the rescaling kind '%s'" % parts[0])
-        parts = list(parts)
-        parts[0] = self.known_rescale_kinds[parts[0]]
-
-        # FUTURE: Check argument lengths and maybe values per rescale kind 
-
-        parts = super(RescalerRole, self).parse_entry_parts(parts)
-        args = []
-        for x in parts[1:]:
-            if x == "none" or x == "None":
-                args.append(None)
-            else:
-                args.append(float(x))
-
-        return (parts[0], args)
-
-    @abstractmethod
-    def __call__(self, sat, instrument, nav_set_uid, kind, band, data_kind, data):
-        raise NotImplementedError("This function has not been implemented")
 
 
 class BackendRole(object):
@@ -590,9 +514,10 @@ class BackendRole(object):
 
         >>> from datetime import datetime
         >>> pattern = "%(satellite)s_%(instrument)s_%(product_name)s_%(data_kind)s_%(grid_name)s_%(start_time)s.%(data_type)s.%(columns)s.%(rows)s"
-        >>> class FakeBackend(BackendRoleOld):
-        ...     def create_product(self, *args): pass
-        ...     def can_handle_inputs(self, *args): pass
+        >>> class FakeBackend(BackendRole):
+        ...     def create_output_from_product(self, gridded_product, **kwargs): pass
+        ...     @property
+        ...     def known_grids(self): return None
         >>> backend = FakeBackend()
         >>> filename = backend.create_output_filename(pattern,
         ...     "npp",
@@ -659,7 +584,7 @@ class BackendRole(object):
                 **kwargs
             )
         except KeyError as e:
-            log.error("Unknown output pattern key: '%s'" % (e.message,))
+            LOG.error("Unknown output pattern key: '%s'" % (e.message,))
             raise
 
         return output_filename
@@ -679,10 +604,10 @@ class BackendRole(object):
                 output_fn = self.create_output_from_product(gridded_product, **kwargs)
                 output_filenames.append(output_fn)
             except StandardError:
-                log.error("Could not create output for '%s'", product_name)
+                LOG.error("Could not create output for '%s'", product_name)
                 if self.exit_on_error:
                     raise
-                log.debug("Backend exception: ", exc_info=True)
+                LOG.debug("Backend exception: ", exc_info=True)
                 continue
         return output_filenames
 
@@ -712,7 +637,7 @@ class FrontendRole(object):
         self.exit_on_error = exit_on_error
         self.search_paths = search_paths
         if not self.search_paths:
-            log.info("No files or paths provided as input, will search the current directory...")
+            LOG.info("No files or paths provided as input, will search the current directory...")
             self.search_paths = ['.']
 
     @abstractproperty
@@ -757,7 +682,7 @@ class FrontendRole(object):
         search_paths = search_paths if search_paths is not None else self.search_paths
         for p in search_paths:
             if os.path.isdir(p):
-                log.debug("Searching '%s' for useful files", p)
+                LOG.debug("Searching '%s' for useful files", p)
                 for fn in os.listdir(p):
                     fp = os.path.join(p, fn)
                     ext = os.path.splitext(fp)[1]
@@ -768,9 +693,9 @@ class FrontendRole(object):
                 if ext in extensions:
                     yield os.path.realpath(p)
                 elif warn_invalid:
-                    log.warning("File is not a valid file for this frontend: %s", p)
+                    LOG.warning("File is not a valid file for this frontend: %s", p)
             else:
-                log.error("File or directory does not exist: %s", p)
+                LOG.error("File or directory does not exist: %s", p)
 
     def loadable_products(self, desired_products):
         orig_products = set(desired_products)
@@ -779,84 +704,18 @@ class FrontendRole(object):
         doable_products = orig_products & set(available_products)
         for p in (orig_products - doable_products):
             if p not in all_products:
-                log.error("Unknown product name: %s", p)
+                LOG.error("Unknown product name: %s", p)
                 raise RuntimeError("Unknown product name: %s" % (p,))
             else:
-                log.warning("Missing proper data files to create product: %s", p)
+                LOG.warning("Missing proper data files to create product: %s", p)
         products = list(doable_products)
         if not products:
-            log.debug("Original Products:\n\t%r", orig_products)
-            log.debug("Available Products:\n\t%r", available_products)
-            log.debug("Doable (final) Products:\n\t%r", products)
-            log.error("Can not create any of the requested products (missing required data files)")
+            LOG.debug("Original Products:\n\t%r", orig_products)
+            LOG.debug("Available Products:\n\t%r", available_products)
+            LOG.debug("Doable (final) Products:\n\t%r", products)
+            LOG.error("Can not create any of the requested products (missing required data files)")
             raise RuntimeError("Can not create any of the requested products (missing required data files)")
         return products
-
-
-class FrontendRoleOld(object):
-    """Polar2grid role for data providing frontends. When provided satellite
-    observation data the frontend should create binary files for each of the
-    bands to be processed and their corresponding navigation data.
-    """
-    __metaclass__ = ABCMeta
-
-    @abstractclassmethod
-    def parse_datetimes_from_filepaths(cls, filepaths):
-        """Class method for providing datetimes for each of the input filepaths.
-
-        This method is used by glue scripts to find the proper datetime to
-        timestamp logs with (usually the earliest). It must ignore (without
-        logging an error/warning) any file that it does not understand since
-        some glue scripts allow an entire directories listing to go to the
-        frontend.
-        """
-        raise NotImplementedError("This function has not been implemented")
-
-    @abstractclassmethod
-    def sort_files_by_nav_uid(cls, filepaths):
-        """Class method for sorting input filepaths.
-
-        This method is used by glue scripts to organize filepaths into
-        navigation sets that can be used by the `make_swaths` method. It must
-        ignore (without logging an error/warning) any file that it does not
-        understand since some glue scripts
-        allow an entire directories listing to go to the frontend.
-
-        :param filepaths: Absolute paths to input satellite instrument names
-        :type filepaths: list
-        :returns: dictionary of dictionaries. First key is the `nav_set_uid`
-            for that `navigation_set`. Second key is file identifier that
-            can be any arbitrary string. Some frontends use a file pattern
-            as the file identifier. Each file identifier maps to a list
-            of filepaths. Sorted and uniqueness is not guaranteed and is
-            up to the frontend.
-        :rtype: dict( dict( list ) )
-        """
-        raise NotImplementedError("This function has not been implemented")
-
-    @abstractmethod
-    def make_swaths(self, nav_set_uid, filepaths_dict, **kwargs):
-        """Given satellite instrument data files, create flat binary files
-        for all image data and navigation data. This method should only be
-        called once per navigation set. Navigation filepaths will be derived
-        from the information in the data files and are expected to be in the
-        same directory as the files.
-
-        :param filepaths_dict:
-            absolute paths to satellite instrument data files keyed by a file
-            identifier, where the file identifier is provided by the
-            `sort_files_by_nav_uid` class method of the same frontend.
-        :type filepaths: dict( list )
-
-        :returns:
-            Information describing the data provided that will
-            be used by other polar2grid components. See the
-            Developer's Guide in the official documentation
-            for information on what the meta data dictionary
-            should contain.
-        :rtype: dict
-        """
-        raise NotImplementedError("This function has not been implemented")
 
 
 class CartographerRole(object):
@@ -933,7 +792,7 @@ class CompositorRole(object):
 
         if base_product.get("grid_definition") is None:
             msg = "No grid definition provided to base composite on (use `base_product` or `grid_definition`)"
-            log.error(msg)
+            LOG.error(msg)
             raise ValueError(msg)
 
         return GriddedProduct(**base_product)
@@ -951,4 +810,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -48,20 +48,11 @@ it will attempt to call the proper programs to convert the files. The required c
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import roles
-from polar2grid.core.constants import *
-from polar2grid.core.fbf import file_appender,check_stem
-# from polar2grid.viirs import viirs_guidebook
-from polar2grid.modis.modis_geo_interp_250 import interpolate_geolocation
 from pyhdf import SD
-import h5py
-from . import guidebook
 import numpy
 
 from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
 from polar2grid.core import meta
-from polar2grid.modis.modis_to_swath import PRODUCT_1000M_LON, PRODUCT_1000M_LAT,\
-    PRODUCT_500M_LON, PRODUCT_500M_LAT,\
-    PRODUCT_250M_LON, PRODUCT_250M_LAT
 import polar2grid.modis.modis_to_swath as modis_module
 import polar2grid.modis.modis_guidebook as modis_guidebook
 import polar2grid.viirs.swath as viirs_module
@@ -72,7 +63,6 @@ import os
 import sys
 import logging
 from datetime import datetime, timedelta
-from pprint import pprint
 
 LOG = logging.getLogger(__name__)
 

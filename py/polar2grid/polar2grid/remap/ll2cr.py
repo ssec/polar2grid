@@ -42,7 +42,6 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import Workspace
-from polar2grid.core.constants import DEFAULT_FILL_VALUE
 from polar2grid.proj import Proj
 import numpy
 
@@ -220,7 +219,7 @@ def ll2cr_old(lon_arr, lat_arr, proj4_str,
 
     origin_lon,origin_lat are the grids origins
     """
-    lon_fill_in = lon_fill_in or fill_in or DEFAULT_FILL_VALUE
+    lon_fill_in = lon_fill_in or fill_in or -999.0
     lat_fill_in = lat_fill_in or lon_fill_in
 
     ### Parameter check ###

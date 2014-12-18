@@ -40,15 +40,8 @@ VCSID = '$Id$'
 # Much of this is from metahoard.iasi.tools
 
 import numpy as np, glob, os, sys, logging
-from collections import namedtuple, defaultdict
-import calendar, re
-from datetime import datetime
-from collections import defaultdict
-from pprint import pformat
-from numpy import exp,log,array,arange,empty,float32,float64,sin,linspace,concatenate,repeat,reshape,rollaxis
+from numpy import exp, log, float32, float64, sin
 
-from polar2grid.core.roles import FrontendRoleOld
-# from polar2grid.core.constants import SAT_NPP, BKIND_IR, BKIND_I, BKIND_M, BID_13, BID_15, BID_16, BID_5, STATUS_SUCCESS, STATUS_FRONTEND_FAIL
 import polar2grid.iasi.tools as iasi
 
 LOG = logging.getLogger(__name__)
@@ -422,33 +415,8 @@ def generate_metadata(swath, bands):
     """
     return metadata dictionary summarizing the granule and generated bands, compatible with frontend output
     """
+    # XXX: This was going to be called by an IasiSdrFrontend, but was never implemented (see polar2grid.iasi.tools.make_swaths for example usage)
     raise NotImplementedError('generate_metadata not implemented')
-
-
-# FUTURE: add a way to configure which slices to produce, or all by default
-class IasiSdrFrontendOld(FrontendRoleOld):
-    """
-    """
-    info = None
-
-    def __init__(self, **kwargs):
-        self.info = {}
-
-    def make_swaths(self, filepaths, **kwargs):
-        """
-        load the swath from the input dir/files
-        extract BT slices
-        write BT slices to flat files in cwd
-        write GEO arrays to flat files in cwd
-        """
-        swath = cris_swath(*filepaths, **kwargs)
-        bands = cris_bt_slices(swath.rad_lw, swath.rad_mw, swath.rad_sw)
-        bands.update({ 'Latitude': swath.lat, 'Longitude': swath.lon })
-        write_arrays_to_fbf(latlon.items())
-        write_arrays_to_fbf(bands.items())
-        self.info = generate_metadata(swath, bands)
-        return self.info
-
 
 
 #

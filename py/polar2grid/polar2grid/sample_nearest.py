@@ -13,10 +13,11 @@ in a data set defined by some binary files.
 __docformat__ = "restructuredtext en"
 
 import numpy as numpy
-from polar2grid.core           import Workspace
-from polar2grid.core.constants import DEFAULT_FILL_VALUE
+from polar2grid.core import Workspace
 
 import os
+
+DEFAULT_FILL_VALUE = -999.0
 
 def _load_data_from_file(file_name, workspace='.',
                 fill_value=DEFAULT_FILL_VALUE):

@@ -1,5 +1,32 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+#  University of Wisconsin-Madison.
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+# input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+#     Written by David Hoese    December 2014
+#     University of Wisconsin-Madison
+#     Space Science and Engineering Center
+#     1225 West Dayton Street
+#     Madison, WI  53706
+#     david.hoese@ssec.wisc.edu
 """Functions for prescaling data.  Scaling that occurs after the raw
 data is loaded, but before the data is provided to the user.  These
 functions should not create any new bands (see `polar2grid.viirs.pseudo`),
@@ -11,54 +38,20 @@ returned values are up to the rest of the VIIRs frontend calling them.
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
+:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:date:         Dec 2014
 :license:      GNU GPLv3
-
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
-
 """
 __docformat__ = "restructuredtext en"
 
 import numpy
 from polar2grid.core.histogram import local_histogram_equalization, histogram_equalization
-from polar2grid.core.constants import DEFAULT_FILL_VALUE
-from polar2grid.core import Workspace
 
 # from mpl_toolkits.basemap import maskoceans
 
-import os
-import sys
-from glob import glob
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 DEFAULT_HIGH_ANGLE = 100
 DEFAULT_LOW_ANGLE  = 88
@@ -102,10 +95,10 @@ def _make_day_night_masks(image, solarZenithAngle, fillValue,
         steps[-1] = highAngleCutoff
     steps = zip(steps, steps[1:])
     for i, j in steps:
-        log.debug("Processing step %d to %d" % (i, j))
+        LOG.debug("Processing step %d to %d" % (i, j))
         tmp = (solarZenithAngle > i) & (solarZenithAngle <= j) & good_mask
         if tmp.any():
-            log.debug("Adding step %d to %d" % (i, j))
+            LOG.debug("Adding step %d to %d" % (i, j))
             # log.debug("Points to process in this range: " + str(numpy.sum(tmp)))
             mixed_mask.append(tmp)
         del tmp
@@ -161,7 +154,7 @@ def _calculate_average_moon_illumination (moonIlluminatonFraction,
 #     return temp.mask
 
 
-def adaptive_dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None, lunarZenithAngle=None,
+def adaptive_dnb_scale(img, fillValue=-999.0, solarZenithAngle=None, lunarZenithAngle=None,
                        moonIllumFraction=None, highAngleCutoff=None, lowAngleCutoff=None, waterMask=None, out=None):
     """This scaling method uses histogram equalization to flatten the image
     levels across the day and night regions.
@@ -179,13 +172,13 @@ def adaptive_dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
     If `out` is provided it must be a writable copy of the original DNB data.
     """
     if img is out:
-        log.error("Out array can not be the same as the input array")
+        LOG.error("Out array can not be the same as the input array")
         raise ValueError("Out array can not be the same as the input array")
     if out is None:
         out = numpy.zeros_like(img)
 
     # build the day and night area masks
-    log.debug("Generating day, night, and mixed region masks...")
+    LOG.debug("Generating day, night, and mixed region masks...")
     day_mask, mixed_mask, night_mask, good_mask = \
         _make_day_night_masks(img, solarZenithAngle,
                               fillValue,
@@ -195,19 +188,19 @@ def adaptive_dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
     night_water = None # a mask of water at night
 
     if day_mask is not None and day_mask.any():
-        log.debug("  scaling DNB in day mask")
+        LOG.debug("  scaling DNB in day mask")
         if has_multi_times:
             local_histogram_equalization(img, day_mask, valid_data_mask=good_mask, local_radius_px=400, out=out)
         else:
             histogram_equalization(img, day_mask, out=out)
 
     if mixed_mask is not None and len(mixed_mask) > 0:
-        log.debug("  scaling DNB in twilight mask")
+        LOG.debug("  scaling DNB in twilight mask")
         for mask in mixed_mask:
             local_histogram_equalization(img, mask, valid_data_mask=good_mask, local_radius_px=100, out=out)
 
     if night_mask is not None and night_mask.any():
-        log.debug("  scaling DNB in night mask")
+        LOG.debug("  scaling DNB in night mask")
         # log.debug("Moon Illumination, before angle weighting: " + str(moonIllumFraction))
         # weightedMoonIllumFract = _calculate_average_moon_illumination (moonIllumFraction,
         #                                                                lunarZenithAngle,
@@ -244,7 +237,7 @@ def adaptive_dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
     return out
 
 
-def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
+def dnb_scale(img, fillValue=-999.0, solarZenithAngle=None,
               highAngleCutoff=None, lowAngleCutoff=None, out=None):
     """
     This scaling method uses histogram equalization to flatten the image
@@ -260,7 +253,7 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
         out = numpy.zeros_like(img)
 
     # build the day and night area masks
-    log.debug("Generating day, night, and mixed region masks...")
+    LOG.debug("Generating day, night, and mixed region masks...")
     day_mask, mixed_mask, night_mask, good_mask = \
                                        _make_day_night_masks(img, solarZenithAngle,
                                                              fillValue,
@@ -269,16 +262,16 @@ def dnb_scale(img, fillValue=DEFAULT_FILL_VALUE, solarZenithAngle=None,
     # has_multi_times = (mixed_mask is not None) and (len(mixed_mask) > 0)
 
     if day_mask is not None and day_mask.any():
-        log.debug("  scaling DNB in day mask")
+        LOG.debug("  scaling DNB in day mask")
         histogram_equalization(img, day_mask, out=out)
 
     if mixed_mask is not None and (len(mixed_mask) > 0):
-        log.debug("  scaling DNB in twilight mask")
+        LOG.debug("  scaling DNB in twilight mask")
         for mask in mixed_mask:
             histogram_equalization(img, mask, out=out)
 
     if night_mask is not None and night_mask.any():
-        log.debug("  scaling DNB in night mask")
+        LOG.debug("  scaling DNB in night mask")
         histogram_equalization(img, night_mask, out=out)
 
     # set any data that's not in the good areas to fill

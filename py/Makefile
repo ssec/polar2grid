@@ -34,9 +34,8 @@ MAIN_PKG_DIR   = polar2grid
 
 # Make sure target names are just the dir name with a suffix
 # See targets for substitution
-ALL_PKG_DIRS   = polar2grid_core polar2grid_viirs polar2grid_modis polar2grid_crefl polar2grid_mirs polar2grid_drrtv polar2grid_cris polar2grid_iasi $(MAIN_PKG_DIR)
+ALL_PKG_DIRS   = polar2grid_core polar2grid_viirs polar2grid_modis polar2grid_crefl polar2grid_mirs polar2grid_drrtv polar2grid_iasi $(MAIN_PKG_DIR)
 ALL_PKG_SDIST  = $(ALL_PKG_DIRS:=_sdist)
-#ALL_PKG_DEV    = polar2grid_core_dev polar2grid_viirs_dev polar2grid_modis_dev polar2grid_crefl_dev polar2grid_drrtv_dev polar2grid_dev
 ALL_PKG_DEV    = $(ALL_PKG_DIRS:=_dev)
 DOC_DIR        = /var/apache/www/htdocs/software/polar2grid
 

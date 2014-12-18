@@ -59,7 +59,7 @@ setup(
     namespace_packages=["polar2grid"],
     include_package_data=True,
     zip_safe=True,
-    install_requires=['numpy', 'netCDF4', 'polar2grid.core'],
+    install_requires=['numpy', 'h5py', 'polar2grid.core'],
     dependency_links=['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points={
         'console_scripts': [],

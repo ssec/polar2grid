@@ -41,18 +41,7 @@ Provide information about ADL product files for a variety of uses.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import UTC
-from polar2grid.core.constants import *
-import numpy as np
-
-import os
-import sys
-import logging
 from collections import namedtuple
-
-log = logging.getLogger(__name__)
-UTC = UTC()
-
 
 # TODO: Move this to a more appropriate place
 # We define the types of files we know about to organize the files
@@ -84,9 +73,6 @@ FILE_TYPE_GMTCO = "FT_GMTCO"
 FILE_TYPE_GIMGO = "FT_GIMGO"
 FILE_TYPE_GMODO = "FT_GMODO"
 
-# For future use:
-# FILE_TYPE_SST = "FT_SST"
-# TODO: Copy information from guidebook or move this to the guidebook
 FILE_TYPES = {
     FILE_TYPE_I01: None,
     FILE_TYPE_I02: None,
@@ -116,11 +102,6 @@ FILE_TYPES = {
     FILE_TYPE_GIMGO: None,
     FILE_TYPE_GMODO: None,
 }
-
-
-
-
-
 
 
 K_LATITUDE = "latitude"
@@ -158,39 +139,6 @@ K_NORTH_COORD = "north_coordinate"
 K_SOUTH_COORD = "south_coordinate"
 K_SATELLITE = "satellite_name"
 K_DATA_PATH = "data_path"
-
-# File Regexes
-# FUTURE: Put in a config file
-I01_REGEX = r'SVI01_(?P<satellite>[^_]*)_.*\.h5'
-I02_REGEX = r'SVI02_(?P<satellite>[^_]*)_.*\.h5'
-I03_REGEX = r'SVI03_(?P<satellite>[^_]*)_.*\.h5'
-I04_REGEX = r'SVI04_(?P<satellite>[^_]*)_.*\.h5'
-I05_REGEX = r'SVI05_(?P<satellite>[^_]*)_.*\.h5'
-M01_REGEX = r'SVM01_(?P<satellite>[^_]*)_.*\.h5'
-M02_REGEX = r'SVM02_(?P<satellite>[^_]*)_.*\.h5'
-M03_REGEX = r'SVM03_(?P<satellite>[^_]*)_.*\.h5'
-M04_REGEX = r'SVM04_(?P<satellite>[^_]*)_.*\.h5'
-M05_REGEX = r'SVM05_(?P<satellite>[^_]*)_.*\.h5'
-M06_REGEX = r'SVM06_(?P<satellite>[^_]*)_.*\.h5'
-M07_REGEX = r'SVM07_(?P<satellite>[^_]*)_.*\.h5'
-M08_REGEX = r'SVM08_(?P<satellite>[^_]*)_.*\.h5'
-M09_REGEX = r'SVM09_(?P<satellite>[^_]*)_.*\.h5'
-M10_REGEX = r'SVM10_(?P<satellite>[^_]*)_.*\.h5'
-M11_REGEX = r'SVM11_(?P<satellite>[^_]*)_.*\.h5'
-M12_REGEX = r'SVM12_(?P<satellite>[^_]*)_.*\.h5'
-M13_REGEX = r'SVM13_(?P<satellite>[^_]*)_.*\.h5'
-M14_REGEX = r'SVM14_(?P<satellite>[^_]*)_.*\.h5'
-M15_REGEX = r'SVM15_(?P<satellite>[^_]*)_.*\.h5'
-M16_REGEX = r'SVM16_(?P<satellite>[^_]*)_.*\.h5'
-DNB_REGEX = r'SVDNB_(?P<satellite>[^_]*)_.*\.h5'
-SST_REGEX = r'VSSTO_(?P<satellite>[^_]*)_.*\.h5'
-# Geolocation regexes
-I_GEO_REGEX = r'GIMGO_(?P<satellite>[^_]*)_.*\.h5'
-I_GEO_TC_REGEX = r'GITCO_(?P<satellite>[^_]*)_.*\.h5'
-M_GEO_REGEX = r'GMODO_(?P<satellite>[^_]*)_.*\.h5'
-M_GEO_TC_REGEX = r'GMTCO_(?P<satellite>[^_]*)_.*\.h5'
-DNB_GEO_REGEX = r'GDNBO_(?P<satellite>[^_]*)_.*\.h5'
-DNB_GEO_TC_REGEX = r'GDNBO_(?P<satellite>[^_]*)_.*\.h5'  # FUTURE: Fix when TC DNB geolocation is available
 
 
 # Structure to help with complex variables that require more than just a variable path
@@ -306,8 +254,6 @@ FILE_TYPES[FILE_TYPE_GIMGO] = create_geo_file_info("IMG", "")
 FILE_TYPES[FILE_TYPE_GMTCO] = create_geo_file_info("MOD", "-TC")
 FILE_TYPES[FILE_TYPE_GMODO] = create_geo_file_info("MOD", "")
 FILE_TYPES[FILE_TYPE_GDNBO] = create_geo_file_info("DNB", "")
-# TODO:
-# FILE_TYPES[FILE_TYPE_GDNBO_TC] = create_geo_file_info("DNB", "")
 
 FILE_TYPES[FILE_TYPE_I01] = create_im_file_info("I", "1")
 FILE_TYPES[FILE_TYPE_I02] = create_im_file_info("I", "2")
@@ -333,43 +279,4 @@ FILE_TYPES[FILE_TYPE_M16] = create_im_file_info("M", "16")
 FILE_TYPES[FILE_TYPE_DNB] = create_im_file_info("DNB", "")
 
 DATA_PATHS = dict((v[K_DATA_PATH], k) for k, v in FILE_TYPES.items())
-
-# TODO:
-# FILE_TYPES[FILE_TYPE_SST] = create_im_file_info("SST", ""),
-
-# GEO_FILE_GUIDE = {
-#     I_GEO_TC_REGEX: create_geo_file_info("IMG", "-TC"),
-#     I_GEO_REGEX: create_geo_file_info("IMG", ""),
-#     M_GEO_TC_REGEX: create_geo_file_info("MOD", "-TC"),
-#     M_GEO_REGEX: create_geo_file_info("MOD", ""),
-#     DNB_GEO_REGEX: create_geo_file_info("DNB", ""),
-# }
-#
-#
-# SV_FILE_GUIDE = {
-#     I01_REGEX: create_im_file_info("I", "1"),
-#     I02_REGEX: create_im_file_info("I", "2"),
-#     I03_REGEX: create_im_file_info("I", "3"),
-#     I04_REGEX: create_im_file_info("I", "4"),
-#     I05_REGEX: create_im_file_info("I", "5"),
-#     M01_REGEX: create_im_file_info("M", "1"),
-#     M02_REGEX: create_im_file_info("M", "2"),
-#     M03_REGEX: create_im_file_info("M", "3"),
-#     M04_REGEX: create_im_file_info("M", "4"),
-#     M05_REGEX: create_im_file_info("M", "5"),
-#     M06_REGEX: create_im_file_info("M", "6"),
-#     M07_REGEX: create_im_file_info("M", "7"),
-#     M08_REGEX: create_im_file_info("M", "8"),
-#     M09_REGEX: create_im_file_info("M", "9"),
-#     M10_REGEX: create_im_file_info("M", "10"),
-#     M11_REGEX: create_im_file_info("M", "11"),
-#     M12_REGEX: create_im_file_info("M", "12"),
-#     M13_REGEX: create_im_file_info("M", "13"),
-#     M14_REGEX: create_im_file_info("M", "14"),
-#     M15_REGEX: create_im_file_info("M", "15"),
-#     M16_REGEX: create_im_file_info("M", "16"),
-#     DNB_REGEX: create_im_file_info("DNB", ""),
-#     SST_REGEX: create_edr_file_info("SST", ""),
-# }
-
 
