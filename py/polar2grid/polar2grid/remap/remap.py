@@ -159,7 +159,7 @@ class Remapper(object):
         try:
             rows_arr = numpy.memmap(rows_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
             cols_arr = numpy.memmap(cols_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
-            points_in_grid, _, _ = gator.ll2cr(lon_arr, lat_arr, grid_definition,
+            points_in_grid, _, _ = gator.python_ll2cr(lon_arr, lat_arr, grid_definition,
                                                fill_in=swath_definition["fill_value"],
                                                cols_out=cols_arr, rows_out=rows_arr)
         except StandardError:

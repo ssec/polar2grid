@@ -149,12 +149,9 @@ typedef int bool;
 typedef unsigned char byte1;
 typedef unsigned short int byte2;
 typedef unsigned int byte4;
-typedef unsigned long long NSIDCbyte8;
 
-typedef char int1;
 typedef short int int2;
 typedef int int4;
-typedef long long NSIDCint8;
 // End define.h copy
 
 typedef struct {
@@ -212,7 +209,7 @@ static void DisplayInvalidParameter(char *param)
   DisplayUsage();
 }
 
-static int IsFill(float val, float fill) {
+static inline int IsFill(float val, float fill) {
     return !isfinite(val) || val == fill;
 }
 
@@ -713,6 +710,9 @@ bool ComputeEwa(image *uimg, image *vimg,
             got_fills[chan] = FALSE;
             this_buf = this_swath->buf[0];
             switch (this_swath->data_type) {
+            case TYPE_FLOAT:
+              *this_swath_chanp = *((float *)this_buf + swath_offset);
+              break;
             case TYPE_BYTE:
               *this_swath_chanp = *((byte1 *)this_buf + swath_offset);
               break;
@@ -728,15 +728,9 @@ bool ComputeEwa(image *uimg, image *vimg,
             case TYPE_SINT4:
               *this_swath_chanp = *((int4 *)this_buf + swath_offset);
               break;
-            case TYPE_FLOAT:
-              *this_swath_chanp = *((float *)this_buf + swath_offset);
-              // Handle NaN properly
-              if (IsFill(*this_swath_chanp++, *this_swath_fillp++)) {
-                got_fills[chan] = TRUE;
-              }
-              break;
             }
-            if (this_swath->data_type != TYPE_FLOAT && IsFill(*this_swath_chanp++, *this_swath_fillp++)) {
+            // Handle NaN properly
+            if (IsFill(*this_swath_chanp++, *this_swath_fillp++)) {
               got_fills[chan] = TRUE;
             }
           } /* for (chan = 0; chan < chan_count; chan++, this_swath++) */

@@ -2,5 +2,4 @@ include polar2grid/awips/*.ini
 include polar2grid/ninjo/*.ini
 include polar2grid/awips/ncml/*.ncml
 include polar2grid/grids/*.conf
-include polar2grid/*.conf
 

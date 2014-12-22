@@ -38,9 +38,16 @@
 """
 __docformat__ = "restructuredtext en"
 from setuptools import setup, find_packages
+from distutils.extension import Extension
+from Cython.Build import cythonize
+import numpy
 
 classifiers = ""
 version = '1.2.1'
+
+extensions = [
+    Extension("_ll2cr", sources=["polar2grid/remap/_ll2cr.pyx"], extra_compile_args=["-Wno-unused-function"])
+]
 
 setup(
     name='polar2grid',
@@ -52,10 +59,14 @@ setup(
     author_email='david.hoese@ssec.wisc.edu',
     license='GPLv3',
     url='http://www.ssec.wisc.edu/software/polar2grid/',
+
+    ext_modules=cythonize(extensions),
+    include_dirs=[numpy.get_include()],
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
+
     namespace_packages=["polar2grid"],
     include_package_data=True,
-    package_data={'polar2grid': ["grids/*.gpd","grids/*.ncml","*.conf"]},
+    package_data={'polar2grid': ["awips/ncml/*.ncml", "awips/*.ini", "grids/*.conf", "ninjo/*.ini"]},
     zip_safe=False,
     install_requires=[
         'numpy',

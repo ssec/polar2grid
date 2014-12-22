@@ -6,32 +6,15 @@
 #========================================================================
 RCSID = $Header: /disks/megadune/data/tharan/ms2gth/src/fornav/Makefile,v 1.6 2007/05/07 18:09:57 tharan Exp $
 
-include ../../Makefile.inc
-
-#------------------------------------------------------------------------
-# configuration section
-
-#
-#	archive file name
-#
-TARFILE = fornav.tar
-
-#
-# end configuration section
-#------------------------------------------------------------------------
-
-CFLAGS += $(getconf LFS_CFLAGS)
+CFLAGS += -O3 $(getconf LFS_CFLAGS)
 
 SRCS = fornav.c
 OBJS = fornav.o
-HDRS = 
 
 all : fornav
 
-#	$(CC) $(CFLAGS) -o fornav fornav.o $(LIBS)
-fornav: fornav.o
-	$(CC) -O3 -o fornav fornav.o
-	$(CP) fornav $(BINDIR)
+fornav: fornav.c
+	$(CC) $(CFLAGS) -o $@ $< -lm
 
 clean:
 	- $(RM) $(OBJS) fornav
@@ -41,24 +24,6 @@ tar:
 	$(TAR) cvf $(TARFILE) Makefile $(SRCS) $(HDRS)
 	$(RM) $(TARFILE).gz
 	$(COMPRESS) $(TARFILE)
-
-depend:
-	- $(CO) $(SRCS) $(HDRS)
-	$(MAKEDEPEND) -I$(INCDIR) \
-		-- $(CFLAGS) -- $(SRCS)
-
-.SUFFIXES : .c,v .h,v
-
-.c,v.o :
-	$(CO) $<
-	$(CC) $(CFLAGS) -c $*.c
-	- $(RM) $*.c
-
-.c,v.c :
-	$(CO) $<
-
-.h,v.h :
-	$(CO) $<
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
