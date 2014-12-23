@@ -50,12 +50,18 @@ import sys
 import logging
 import signal
 from collections import defaultdict
-import multiprocessing
 from itertools import izip
 
 import numpy
 from scipy.interpolate.interpnd import _ndim_coords_from_arrays
 from scipy.spatial import cKDTree
+
+try:
+    import psutil
+    get_free_memory = lambda: psutil.phymem_usage().free
+except ImportError:
+    psutil = None
+    get_free_memory = lambda: None
 
 LOG = logging.getLogger(__name__)
 
@@ -108,6 +114,55 @@ class Remapper(object):
             # given a single product
             swath_def = swath_scene_or_product["swath_definition"]
         return swath_def
+
+    def split_products(self, swath_scene, grid_def, use_memory=False, by_scans=False, default_group_size=4,
+                       grid_multiplier=3, swath_multiplier=1, geo_multiplier=2, additional_used=1024*1024*512):
+        """Split a swath scene in to reasonably sized groups based on shared geolocation.
+
+        If `use_memory` is True and available memory is known then the groups are split based on number of bytes.
+
+        Default items in a group is 5.
+        """
+        product_groups = defaultdict(list)
+        max_group_sizes = defaultdict(lambda: None)
+        free_memory_bytes = get_free_memory()
+        for product_name, swath_product in swath_scene.items():
+            swath_def = swath_product["swath_definition"]
+            geo_id = swath_def["swath_name"]
+            if geo_id in max_group_sizes:
+                max_group_size = max_group_sizes[geo_id]
+            elif use_memory and free_memory_bytes is not None:
+                itemsize = numpy.dtype(swath_def["data_type"]).itemsize
+                LOG.debug("Item size taken from swath definition: %d", itemsize)
+                cols = swath_def["swath_columns"]
+                if by_scans:
+                    # bytes in one scan line loaded at a time (how fornav works)
+                    swath_size = swath_def.get("rows_per_scan", 1) * cols * itemsize
+                else:
+                    swath_size = swath_def["swath_rows"] * cols * itemsize
+
+                grid_size = grid_def["height"] * grid_def["width"] * 4  # assume 32 bit floats for now
+                # After we load geolocation and the output grid, how much do we have left for products?
+                grid_effect = grid_size * grid_multiplier
+                geo_effect = swath_size * geo_multiplier
+                swath_effect = swath_size * swath_multiplier
+                max_group_size = int((free_memory_bytes - geo_effect - additional_used) / (grid_effect + swath_effect))
+                max_group_size = max(max_group_size, 1)
+                LOG.debug("Max group size calculated to be %d (free: %d, grid: %d, geo: %d, swath: %d)",
+                          max_group_size, free_memory_bytes, grid_effect, geo_effect, swath_effect)
+                max_group_sizes[geo_id] = max_group_size
+            else:
+                max_group_size = default_group_size
+                max_group_sizes[geo_id] = max_group_size
+
+            id_suffix = 2
+            while len(product_groups[geo_id]) >= max_group_size:
+                geo_id = swath_def["swath_name"] + str(id_suffix)
+                id_suffix += 1
+            LOG.debug("Assigning product '%s' to group '%s' with max group size %d",
+                      product_name, geo_id, max_group_size)
+            product_groups[geo_id].append(product_name)
+        return product_groups
 
     def remap_scene(self, swath_scene, grid_name, **kwargs):
         method = kwargs.pop("remap_method", "ewa")
@@ -195,21 +250,21 @@ class Remapper(object):
                         LOG.warning("Could not remove intermediate files that aren't needed anymore.")
                         LOG.debug("Intermediate output file remove exception:", exc_info=True)
 
+    def _clear_ll2cr_cache(self):
+        # Remove ll2cr files now that we are done with them
+        for cols_fn, rows_fn in self.ll2cr_cache.values():
+            self._safe_remove(rows_fn, cols_fn)
+
     def _remap_scene_ewa(self, swath_scene, grid_def, share_dynamic_grids=True, **kwargs):
         # TODO: Make methods more flexible than just a function call
         gridded_scene = GriddedScene()
         grid_name = grid_def["grid_name"]
 
         # Group products together that shared the same geolocation
-        product_groups = defaultdict(list)
-        for product_name, swath_product in swath_scene.items():
-            swath_def = swath_product["swath_definition"]
-            geo_id = swath_def["swath_name"]
-            product_groups[geo_id].append(product_name)
-
+        # I thought fornav only loaded a scan at a time, but it actually loads all of it
+        # and only processes one at a time
+        product_groups = self.split_products(swath_scene, grid_def, use_memory=True, by_scans=False)
         for geo_id, product_names in product_groups.items():
-            # TODO: Move into it's own function if this gets complicated
-            # TODO: Add some multiprocessing
             try:
                 LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
@@ -272,8 +327,8 @@ class Remapper(object):
                 )
             except StandardError:
                 LOG.error("Remapping error")
-                self._safe_remove(rows_fn, cols_fn, *fornav_filepaths)
                 if self.exit_on_error:
+                    self._clear_ll2cr_cache()
                     raise
                 continue
 
@@ -287,9 +342,7 @@ class Remapper(object):
                 gridded_product["grid_data"] = fornav_fp
                 gridded_scene[product_name] = gridded_product
 
-            # Remove ll2cr files now that we are done with them
-            self._safe_remove(rows_fn, cols_fn)
-
+        self._clear_ll2cr_cache()
         return gridded_scene
 
     def _remap_scene_nearest(self, swath_scene, grid_def, share_dynamic_grids=True, **kwargs):
