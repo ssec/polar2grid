@@ -133,6 +133,9 @@ static const char fornav_c_rcsid[] = "$Header: /disks/megadune/data/tharan/ms2gt
 
 #define EPSILON (1e-8)
 
+// Calculate the array offset for the specified row (r) and column (c) given that there are `tc` total columns
+#define RC_OFFSET(r,c,tc) r * tc + c
+
 // Copied from define.h for all-in-one fornav
 #ifndef FALSE
 #define FALSE 0
@@ -166,7 +169,7 @@ typedef struct {
   int   cols;
   int   rows;
   int   bytes_per_row;
-  void  **buf;
+  void  *buf;
 } image;
 
 typedef struct {
@@ -233,39 +236,16 @@ static inline int IsFill(float val, float fill) {
  *
  * Copied from matrix.c of the mapx library for future optimizations (all fornav in one file)
  *------------------------------------------------------------------------*/
-void **matrix(int rows, int cols, int bytes, int zero)
+void *matrix(int rows, int cols, size_t bytes, int zero)
 {
-  register int irow;
-  void **matrix_ptr;
-  char *block_ptr, **row_ptr;
-  size_t row_size, row_ptr_size;
+  void *matrix_ptr;
 
-/*
- *	allocate row pointer storage followed by data storage
- *	make sure the data storage is suitably alligned
- */
-  row_size = cols*bytes;
-  row_ptr_size = rows * sizeof(void *);
-  row_ptr_size = ceil((double)row_ptr_size/bytes) * bytes;
-  block_ptr = (char *)malloc(row_ptr_size + rows*row_size);
-  if (NULL == block_ptr) { perror("matrix"); return(NULL); }
-
-/*
- *	assign row pointers
- */
-  matrix_ptr = (void **)block_ptr;
-  row_ptr = (char **)matrix_ptr;
-  block_ptr += row_ptr_size;
-  for (irow = 0; irow < rows; irow++)
-  { *row_ptr = block_ptr;
-    block_ptr += row_size;
-    ++row_ptr;
+  if (zero) {
+    matrix_ptr = calloc(rows * cols, bytes);
+  } else {
+    matrix_ptr = malloc(rows * cols * bytes);
   }
-
-/*
- *	clear data area
- */
-  if (zero) memset(matrix_ptr[0], 0, rows*row_size);
+  if (NULL == matrix_ptr) { perror("matrix"); return(NULL); }
 
   return(matrix_ptr);
 }
@@ -369,13 +349,13 @@ static void ReadImage(image *ip, float offset)
 
   if (very_verbose)
     fprintf(stderr, "Reading %s\n", ip->file);
-  if (fread(ip->buf[0], ip->bytes_per_row, ip->rows, ip->fp) != ip->rows) {
+  if (fread(ip->buf, ip->bytes_per_row, ip->rows, ip->fp) != ip->rows) {
     fprintf(stderr, "fornav: ReadImage: error reading %s\n", ip->file);
     perror("fornav");
     exit(ABORT);
   }
   if (offset) {
-    ptr = (float *)(ip->buf[0]);
+    ptr = (float *)(ip->buf);
     n = ip->cols * ip->rows;
     for (i = 0; i < n; i++)
       *ptr++ -= offset;
@@ -509,13 +489,13 @@ static void ComputeEwaParameters(image *uimg, image *vimg, ewa_weight *ewaw,
   qmax = ewaw->qmax;
   distance_max = ewaw->distance_max;
   delta_max = ewaw->delta_max;
-  u_frst_row_this_col = (float *)(uimg->buf[0]) + 1;
-  u_last_row_this_col = (float *)(uimg->buf[rowsm1]) + 1;
-  v_frst_row_this_col = (float *)(vimg->buf[0]) + 1;
-  v_last_row_this_col = (float *)(vimg->buf[rowsm1]) + 1;
-  u_midl_row_prev_col = (float *)(uimg->buf[rowsov2]);
+  u_frst_row_this_col = (float *)(uimg->buf) + 1;
+  u_last_row_this_col = (float *)(uimg->buf) + rowsm1 * uimg->cols + 1;
+  v_frst_row_this_col = (float *)(vimg->buf) + 1;
+  v_last_row_this_col = (float *)(vimg->buf) + rowsm1 * uimg->cols + 1;
+  u_midl_row_prev_col = (float *)(uimg->buf) + rowsov2 * uimg->cols;
   u_midl_row_next_col = u_midl_row_prev_col + 2;
-  v_midl_row_prev_col = (float *)(vimg->buf[rowsov2]);
+  v_midl_row_prev_col = (float *)(vimg->buf) + rowsov2 * uimg->cols;
   v_midl_row_next_col = v_midl_row_prev_col + 2;
   for (col = 1, this_ewap = ewap + 1;
        col < colsm1;
@@ -600,7 +580,7 @@ bool ComputeEwa(image *uimg, image *vimg,
   float *u0p;
   float *v0p;
   float *wtab;
-  float *weightp;
+//  float *weightp;
   float *this_weightp;
   float *swath_chanp;
   float *swath_fillp;
@@ -672,13 +652,13 @@ bool ComputeEwa(image *uimg, image *vimg,
   this_grid_fillp  = grid_fillp;
   for (chan = 0; chan < chan_count; chan++) {
     *this_swath_fillp++ = (this_swath++)->fill;
-    *this_grid_chanpp++ = (float *)((this_grid)->buf[0]);
+    *this_grid_chanpp++ = (float *)((this_grid)->buf);
     *this_grid_fillp++ = (this_grid++)->fill;
   }
   got_point = FALSE;
   for (row = 0; row < rows; row++) {
-    u0p = (float *)(uimg->buf[row]);
-    v0p = (float *)(vimg->buf[row]);
+    u0p = ((float *)uimg->buf + RC_OFFSET(row,0,cols));
+    v0p = ((float *)vimg->buf + RC_OFFSET(row,0,cols));
     for (col = 0, this_ewap = ewap;
          col < cols;
          col++, this_ewap++) {
@@ -702,13 +682,13 @@ bool ComputeEwa(image *uimg, image *vimg,
         if (iu1 < grid_cols && iu2 >= 0 &&
             iv1 < grid_rows && iv2 >= 0) {
           got_point = TRUE;
-          swath_offset = col + row * cols;
+          swath_offset = RC_OFFSET(row,col,cols);
           this_swath = swath_chan_image;
           this_swath_chanp = swath_chanp;
           this_swath_fillp = swath_fillp;
           for (chan = 0; chan < chan_count; chan++, this_swath++) {
             got_fills[chan] = FALSE;
-            this_buf = this_swath->buf[0];
+            this_buf = this_swath->buf;
             switch (this_swath->data_type) {
             case TYPE_FLOAT:
               *this_swath_chanp = *((float *)this_buf + swath_offset);
@@ -753,14 +733,14 @@ bool ComputeEwa(image *uimg, image *vimg,
                 if (iw >= weight_count)
                   iw = weight_count - 1;
                 weight = wtab[iw];
-                grid_offset = iu + iv * grid_cols;
+                grid_offset = RC_OFFSET(iv, iu, grid_cols);
                 this_grid_weight_image = grid_weight_images;
                 this_swath_chanp = swath_chanp;
                 this_grid_fillp  = grid_fillp;
                 this_grid_chanpp = grid_chanpp;
                 if (maximum_weight_mode) {
                   for (chan = 0; chan < chan_count; chan++) {
-                    this_weightp = ((float *)this_grid_weight_image->buf[0]) + grid_offset;
+                    this_weightp = ((float *)this_grid_weight_image->buf + grid_offset);
                     if (weight > *this_weightp) {
                       *this_weightp = weight;
                       if (got_fills[chan]) {
@@ -778,7 +758,7 @@ bool ComputeEwa(image *uimg, image *vimg,
                 } else {
                   for (chan = 0; chan < chan_count; chan++) {
                     if (got_fills[chan] == FALSE) {
-                      this_weightp = ((float *)this_grid_weight_image->buf[0]) + grid_offset;
+                      this_weightp = ((float *)this_grid_weight_image->buf + grid_offset);
                       *this_weightp += weight;
                       *(*this_grid_chanpp + grid_offset) += *this_swath_chanp * weight;
                     }
@@ -806,9 +786,9 @@ int WriteGridImage(image *ip, image *wp,
                    bool maximum_weight_mode, float weight_sum_min,
                    image *iop)
 {
-  float **chanpp;
+  float *chanpp;
   float *this_chanp;
-  float **weightpp;
+  float *weightpp;
   float *this_weightp;
   float fill;
   float chanf;
@@ -828,9 +808,11 @@ int WriteGridImage(image *ip, image *wp,
 
   if (very_verbose)
     fprintf(stderr, "Writing %s\n", iop->file);
-  chanpp = (float **)(ip->buf);
-  weightpp = (float **)(wp->buf);
-  chanp_out = iop->buf[0];
+  chanpp = (float *)(ip->buf);
+  this_chanp = chanpp;
+  weightpp = (float *)(wp->buf);
+  this_weightp = weightpp;
+  chanp_out = iop->buf;
   bytes_per_cell = iop->bytes_per_cell;
   bytes_per_row = iop->bytes_per_row;
   rows_out = iop->rows;
@@ -843,9 +825,10 @@ int WriteGridImage(image *ip, image *wp,
     weight_sum_min = EPSILON;
   roundoff = (data_type == TYPE_FLOAT) ? 0.0 : 0.5;
   fill_count = 0;
+//  for (row = 0; row < rows; row++, this_chanp++, this_weightp++) {
   for (row = 0; row < rows; row++) {
-    this_chanp = *chanpp++;
-    this_weightp = *weightpp++;
+//    this_chanp = *chanpp++;
+//    this_weightp = *weightpp++;
     this_chanp_out = (byte1 *)chanp_out;
     for (col = 0;
          col < cols;
@@ -1287,7 +1270,7 @@ int main (int argc, char *argv[])
     InitializeImage(&grid_weight_images[i], name, "", "f4",
                     grid_cols, grid_rows, 0);
     n = grid_cols * grid_rows;
-    fptr =&(**((float **)grid_chan_image[i].buf));
+    fptr =(float *)grid_chan_image[i].buf;
     fill = grid_chan_io_image[i].fill;
     for (j = 0; j < n; j++)
       /*

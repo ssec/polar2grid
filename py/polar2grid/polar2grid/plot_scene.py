@@ -39,6 +39,7 @@
 """
 __docformat__ = "restructuredtext en"
 
+import os
 import numpy
 import matplotlib
 matplotlib.use('agg')
@@ -60,6 +61,20 @@ def plot_binary(arr, output_fn, dpi_to_use=DEFAULT_DPI, vmin=None, vmax=None):
     plt.close()
 
 
+def _parse_binary_info(parts):
+    from polar2grid.core.dtype import str_to_dtype
+    fn = parts[0]
+    if not os.path.exists(fn):
+        raise ValueError("File '%s' does not exist" % (fn,))
+
+    dtype = str_to_dtype(parts[1])
+    rows = int(parts[2])
+    cols = int(parts[3])
+    fill = float(parts[4])
+    arr = numpy.memmap(fn, dtype=dtype, mode='r', shape=(rows, cols))
+    return (fn, numpy.ma.masked_array(arr, numpy.isnan(arr) | (arr == fill)))
+
+
 def main():
     from argparse import ArgumentParser
     description = """
@@ -72,11 +87,21 @@ Plot binary files using matplotlib.
             help="Specify maximum brightness value. Defaults to maximum value of data.")
     parser.add_argument("scene_files", nargs="*",
             help="list of scene json files to be plotted in the current directory")
+    parser.add_argument("--binary", nargs=5, dest="binary_array",
+                        help="Specify a binary file and its information instead of a scene (<fn> <dtype> <rows> <cols> <fill value>")
     parser.add_argument('-d', '--dpi', dest="dpi", default=DEFAULT_DPI, type=float,
             help="Specify the dpi for the resulting figure, higher dpi will result in larger figures and longer run times")
     parser.add_argument("-p", "--products", dest="products", nargs="*", default=None,
                         help="Specify frontend products to process")
     args = parser.parse_args()
+    args.binary_array = _parse_binary_info(args.binary_array) if args.binary_array is not None else None
+
+    if args.binary_array is not None:
+        print("Plotting binary file instead of scene...")
+        fn, arr = args.binary_array
+        output_fn = "plot_product.%s.png" % (os.path.splitext(os.path.basename(fn))[0],)
+        plot_binary(arr, output_fn, dpi_to_use=args.dpi, vmin=args.vmin, vmax=args.vmax)
+        return
 
     for scene_fn in args.scene_files:
         try:
@@ -111,6 +136,4 @@ Plot binary files using matplotlib.
 
 if __name__ == "__main__":
     import sys
-
     sys.exit(main())
-
