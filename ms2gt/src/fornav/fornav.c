@@ -573,10 +573,10 @@ bool ComputeEwa(image *uimg, image *vimg,
                        int grid_col_start, int grid_row_start,
                        image *grid_chan_image, image *grid_weight_images)
 {
-  int   row;
-  int   rows;
-  int   col;
-  int   cols;
+  unsigned int   row;
+  unsigned int   rows;
+  unsigned int   col;
+  unsigned int   cols;
   float *u0p;
   float *v0p;
   float *wtab;
@@ -656,14 +656,12 @@ bool ComputeEwa(image *uimg, image *vimg,
     *this_grid_fillp++ = (this_grid++)->fill;
   }
   got_point = FALSE;
-  for (row = 0; row < rows; row++) {
-    u0p = ((float *)uimg->buf + RC_OFFSET(row,0,cols));
-    v0p = ((float *)vimg->buf + RC_OFFSET(row,0,cols));
+  u0p = (float *)uimg->buf;
+  v0p = (float *)vimg->buf;
+  for (row=0, swath_offset=0, u0=*u0p++, v0=*v0p++; row < rows; row++) {
     for (col = 0, this_ewap = ewap;
          col < cols;
-         col++, this_ewap++) {
-      u0 = *u0p++;
-      v0 = *v0p++;
+          col++, this_ewap++, swath_offset++, u0=*u0p++, v0=*v0p++) {
       if (u0 >= col_row_min && v0 >= col_row_min) {
         u0 -= grid_col_start;
         v0 -= grid_row_start;
@@ -682,7 +680,6 @@ bool ComputeEwa(image *uimg, image *vimg,
         if (iu1 < grid_cols && iu2 >= 0 &&
             iv1 < grid_rows && iv2 >= 0) {
           got_point = TRUE;
-          swath_offset = RC_OFFSET(row,col,cols);
           this_swath = swath_chan_image;
           this_swath_chanp = swath_chanp;
           this_swath_fillp = swath_fillp;
