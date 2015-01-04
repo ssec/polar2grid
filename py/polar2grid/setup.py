@@ -37,17 +37,42 @@
 :license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"
+import os
 from setuptools import setup, find_packages
 from distutils.extension import Extension
-from Cython.Build import cythonize
 import numpy
+
+extensions = [
+    Extension("_ll2cr", sources=["polar2grid/remap/_ll2cr.pyx"], extra_compile_args=["-Wno-unused-function"]),
+    Extension("_fornav", sources=["polar2grid/remap/_fornav.pyx"], extra_compile_args=["-Wno-unused-function"])
+]
+
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    cythonize = None
+
+if os.getenv("NO_CYTHONIZE", False) or cythonize is None:
+    def cythonize(extensions, **_ignore):
+        """Fake function to compile from C/C++ files instead of compiling .pyx files with cython.
+        """
+        for extension in extensions:
+            sources = []
+            for sfile in extension.sources:
+                path, ext = os.path.splitext(sfile)
+                if ext in ('.pyx', '.py'):
+                    if extension.language == 'c++':
+                        ext = '.cpp'
+                    else:
+                        ext = '.c'
+                    sfile = path + ext
+                sources.append(sfile)
+            extension.sources[:] = sources
+        return extensions
 
 classifiers = ""
 version = '1.2.1'
 
-extensions = [
-    Extension("_ll2cr", sources=["polar2grid/remap/_ll2cr.pyx"], extra_compile_args=["-Wno-unused-function"])
-]
 
 setup(
     name='polar2grid',
