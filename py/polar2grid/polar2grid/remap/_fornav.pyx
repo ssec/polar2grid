@@ -1,3 +1,4 @@
+# cython: profile=True
 # copyright (c) 2014 space science and engineering center (ssec),
 # university of wisconsin-madison.
 #
@@ -40,6 +41,34 @@ from libc.math cimport log, exp, sqrt, isnan, NAN
 cdef double EPSILON = 1e-8
 cdef double double_nan = <double>NAN
 
+cdef extern from "_fornav_templates.h":
+    cdef int test_cpp_templates[CR_TYPE, IMAGE_TYPE](CR_TYPE x, IMAGE_TYPE y)
+
+    cdef int compute_ewa[CR_TYPE, IMAGE_TYPE](size_t chan_count, bint maximum_weight_mode,
+        size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows,
+        CR_TYPE *uimg, CR_TYPE *vimg, CR_TYPE cr_fill,
+        IMAGE_TYPE **images, IMAGE_TYPE img_fill, double **grid_accums, double **grid_weights,
+        ewa_weight *ewaw, ewa_parameters *ewap)
+
+    ctypedef struct ewa_parameters:
+        double a
+        double b
+        double c
+        double f
+        double u_del
+        double v_del
+
+    ctypedef struct ewa_weight:
+        int count
+        double min
+        double distance_max
+        double delta_max
+        double sum_min
+        double alpha
+        double qmax
+        double qfactor
+        double *wtab
+
 ctypedef fused cr_dtype:
     numpy.float32_t
     numpy.float64_t
@@ -58,24 +87,11 @@ ctypedef fused grid_dtype:
 ctypedef fused grid_weight_dtype:
     numpy.float32_t
 
-cdef struct ewa_parameters:
-    double a
-    double b
-    double c
-    double f
-    double u_del
-    double v_del
+def call_cpp_test(int x, int y):
+    return test_cpp_templates(x, y)
 
-cdef struct ewa_weight:
-    int count
-    double min
-    double distance_max
-    double delta_max
-    double sum_min
-    double alpha
-    double qmax
-    double qfactor
-    double *wtab
+def call_cpp_test_npy(numpy.uint8_t x, numpy.int8_t y):
+    return test_cpp_templates(x, y)
 
 @cython.cdivision(True)
 cdef int initialize_weight(size_t chan_count, unsigned int weight_count, double weight_min, double weight_distance_max,
@@ -205,106 +221,6 @@ cdef int compute_ewa_parameters(size_t swath_cols, size_t swath_rows,
     ewap[0].v_del = ewap[1].v_del
 
     return 0
-
-@cython.cdivision(True)
-cdef int compute_ewa(size_t chan_count, bint maximum_weight_mode,
-                      size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows,
-                      cr_dtype *uimg, cr_dtype *vimg, cr_dtype cr_fill,
-                      image_dtype **images, image_dtype img_fill,
-                      double **grid_accums, double **grid_weights, ewa_weight *ewaw, ewa_parameters *ewap):
-    cdef bint got_point = 0
-    cdef unsigned int row
-    cdef unsigned int col
-    cdef ewa_parameters this_ewap
-    cdef cr_dtype u0
-    cdef cr_dtype v0
-    cdef int iu1
-    cdef int iu2
-    cdef int iv1
-    cdef int iv2
-    cdef int iu
-    cdef int iv
-    cdef double ddq
-    cdef double dq
-    cdef double u
-    cdef double v
-    cdef double a2up1
-    cdef double au2
-    cdef double bu
-    cdef int iw
-    cdef double weight
-    cdef image_dtype this_val
-    cdef unsigned int swath_offset
-    cdef unsigned int grid_offset
-    for row in range(swath_rows):
-        for col in range(swath_cols):
-            this_ewap = ewap[col]
-            swath_offset = row * swath_cols + col
-            u0 = uimg[swath_offset]
-            v0 = vimg[swath_offset]
-            # XXX: I don't like this part of the algorithm, why are we completely ignoring pixels out of the grid (shouldn't they affect the output?)
-            if u0 < 0 or v0 < 0:
-                continue
-            iu1 = <int>(u0 - this_ewap.u_del)
-            iu2 = <int>(u0 + this_ewap.u_del)
-            iv1 = <int>(v0 - this_ewap.v_del)
-            iv2 = <int>(v0 + this_ewap.v_del)
-
-            if iu1 < 0:
-                iu1 = 0
-            if iu2 >= grid_cols:
-                iu2 = grid_cols - 1
-            if iv1 < 0:
-                iv1 = 0
-            if iv2 >= grid_rows:
-                iv2 = grid_rows - 1
-            if iu1 < grid_cols and iu2 >= 0 and iv1 < grid_rows and iv2 >= 0:
-                # Do the main work
-                got_point = 1
-                ddq = 2.0 * this_ewap.a
-                u = iu1 - u0
-                a2up1 = this_ewap.a * (2.0 * u + 1.0)
-                bu = this_ewap.b * u
-                au2 = this_ewap.a * u * u
-                for iv from iv1 <= iv <= iv2:
-                    v = iv - v0
-                    dq = a2up1 + this_ewap.b * v
-                    q = (this_ewap.c * v + bu) * v + au2
-                    for iu from iu1 <= iu <= iu2:
-                        if 0 <= q < this_ewap.f:
-                            iw = <int>(q * ewaw.qfactor)
-                            if iw >= ewaw.count:
-                                iw = ewaw.count - 1
-                            weight = ewaw.wtab[iw]
-                            grid_offset = iv * grid_cols + iu
-                            for chan in range(chan_count):
-                                this_val = images[chan][swath_offset]
-                                if maximum_weight_mode:
-                                    if weight > grid_weights[chan][grid_offset]:
-                                        grid_weights[chan][grid_offset] = weight
-                                        if image_dtype is numpy.float32_t or image_dtype is numpy.float64_t:
-                                            if this_val == img_fill or isnan(this_val):
-                                                grid_accums[chan][grid_offset] = double_nan
-                                            else:
-                                                grid_accums[chan][grid_offset] = this_val
-                                        else:
-                                            if this_val == img_fill:
-                                                grid_accums[chan][grid_offset] = double_nan
-                                            else:
-                                                grid_accums[chan][grid_offset] = this_val
-                                else:
-                                    if image_dtype is numpy.float32_t or image_dtype is numpy.float64_t:
-                                        if this_val != img_fill and not isnan(this_val):
-                                            grid_weights[chan][grid_offset] += weight
-                                            grid_accums[chan][grid_offset] += this_val * weight
-                                    else:
-                                        if this_val != img_fill:
-                                            grid_weights[chan][grid_offset] += weight
-                                            grid_accums[chan][grid_offset] += this_val * weight
-                        q += dq
-                        dq += ddq
-
-    return got_point
 
 @cython.cdivision(True)
 cdef int write_grid_image(size_t grid_cols, size_t grid_rows,
