@@ -49,7 +49,7 @@ import numpy
 LOG = logging.getLogger(__name__)
 
 
-def fornav(cols_array, rows_array, rows_per_scan, input_arrays, cr_fill=numpy.nan, input_fill=numpy.nan,
+def fornav(cols_array, rows_array, rows_per_scan, input_arrays, input_fill=numpy.nan,
            output_arrays=None, output_fill=None, grid_cols=None, grid_rows=None,
            weight_count=10000, weight_min=0.01, weight_distance_max=1.0, weight_delta_max=10.0,
            weight_sum_min=-1.0, maximum_weight_mode=False):
@@ -64,7 +64,7 @@ def fornav(cols_array, rows_array, rows_per_scan, input_arrays, cr_fill=numpy.na
         output_fill = input_fill
 
     got_points = _fornav.fornav_wrapper(cols_array, rows_array, input_arrays, output_arrays,
-                          cr_fill, input_fill, output_fill, rows_per_scan,
+                          input_fill, output_fill, rows_per_scan,
                           weight_count=weight_count, weight_min=weight_min, weight_distance_max=weight_distance_max,
                           weight_delta_max=weight_delta_max, weight_sum_min=weight_sum_min,
                           maximum_weight_mode=maximum_weight_mode)

@@ -27,7 +27,7 @@ extern int test_cpp_templates(CR_TYPE, IMAGE_TYPE);
 
 template<typename CR_TYPE, typename IMAGE_TYPE>
 extern int compute_ewa(size_t chan_count, int maximum_weight_mode,
-        size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows, CR_TYPE *uimg, CR_TYPE *vimg, CR_TYPE cr_fill,
+        size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows, CR_TYPE *uimg, CR_TYPE *vimg,
         IMAGE_TYPE **images, IMAGE_TYPE img_fill, double **grid_accums, double **grid_weights, ewa_weight *ewaw, ewa_parameters *ewap);
 
 #endif

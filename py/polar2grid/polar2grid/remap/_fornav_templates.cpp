@@ -19,10 +19,9 @@ template int test_cpp_templates<npy_uint8, npy_int8>(npy_uint8, npy_int8);
 
 template<typename CR_TYPE, typename IMAGE_TYPE>
 int compute_ewa(size_t chan_count, int maximum_weight_mode,
-        size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows, CR_TYPE *uimg, CR_TYPE *vimg, CR_TYPE cr_fill,
+        size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows, CR_TYPE *uimg, CR_TYPE *vimg,
         IMAGE_TYPE **images, IMAGE_TYPE img_fill, double **grid_accums, double **grid_weights, ewa_weight *ewaw, ewa_parameters *ewap) {
   // This was originally copied from a cython C file for 32-bit float inputs (that explains some of the weird parens and other syntax
-  // TODO: Make `this_ewap` a pointer to the structure, I think the copying to the stack might actually be wasting time
   int got_point;
   unsigned int row;
   unsigned int col;
@@ -133,10 +132,10 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
 }
 
 // Col/Row as 32-bit floats
-template int compute_ewa<npy_float32, npy_float32>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_float32, npy_float32**, npy_float32, double**, double**, ewa_weight*, ewa_parameters*);
-template int compute_ewa<npy_float32, npy_float64>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_float32, npy_float64**, npy_float64, double**, double**, ewa_weight*, ewa_parameters*);
-template int compute_ewa<npy_float32, npy_int8>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_float32, npy_int8**, npy_int8, double**, double**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float32, npy_float32>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_float32**, npy_float32, double**, double**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float32, npy_float64>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_float64**, npy_float64, double**, double**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float32, npy_int8>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_int8**, npy_int8, double**, double**, ewa_weight*, ewa_parameters*);
 // Col/Row as 64-bit floats
-template int compute_ewa<npy_float64, npy_float32>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_float64, npy_float32**, npy_float32, double**, double**, ewa_weight*, ewa_parameters*);
-template int compute_ewa<npy_float64, npy_float64>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_float64, npy_float64**, npy_float64, double**, double**, ewa_weight*, ewa_parameters*);
-template int compute_ewa<npy_float64, npy_int8>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_float64, npy_int8**, npy_int8, double**, double**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float64, npy_float32>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_float32**, npy_float32, double**, double**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float64, npy_float64>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_float64**, npy_float64, double**, double**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float64, npy_int8>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_int8**, npy_int8, double**, double**, ewa_weight*, ewa_parameters*);

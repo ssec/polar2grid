@@ -1,43 +1,11 @@
-# cython: profile=True
-# copyright (c) 2014 space science and engineering center (ssec),
-# university of wisconsin-madison.
-#
-#     this program is free software: you can redistribute it and/or modify
-#     it under the terms of the gnu general public license as published by
-#     the free software foundation, either version 3 of the license, or
-#     (at your option) any later version.
-#
-#     this program is distributed in the hope that it will be useful,
-#     but without any warranty; without even the implied warranty of
-#     merchantability or fitness for a particular purpose.  see the
-#     gnu general public license for more details.
-#
-#     you should have received a copy of the gnu general public license
-#     along with this program.  if not, see <http://www.gnu.org/licenses/>.
-#
-# this file is part of the polar2grid software package. polar2grid takes
-# satellite observation data, remaps it, and writes it to a file format for
-# input into another program.
-# documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     written by david hoese    december 2014
-#     university of wisconsin-madison
-#     space science and engineering center
-#     1225 west dayton street
-#     madison, wi  53706
-#     david.hoese@ssec.wisc.edu
-
-import sys
 import cython
 cimport cython
 import numpy
 cimport numpy
 cimport cpython
 from libc.stdlib cimport calloc, malloc, free
-# from libc.stdio cimport fprintf, printf
 from libc.math cimport log, exp, sqrt, isnan, NAN
 
-# cdef float EPSILON = 1e-8
 cdef double EPSILON = 1e-8
 cdef double double_nan = <double>NAN
 
@@ -46,7 +14,7 @@ cdef extern from "_fornav_templates.h":
 
     cdef int compute_ewa[CR_TYPE, IMAGE_TYPE](size_t chan_count, bint maximum_weight_mode,
         size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows,
-        CR_TYPE *uimg, CR_TYPE *vimg, CR_TYPE cr_fill,
+        CR_TYPE *uimg, CR_TYPE *vimg,
         IMAGE_TYPE **images, IMAGE_TYPE img_fill, double **grid_accums, double **grid_weights,
         ewa_weight *ewaw, ewa_parameters *ewap)
 
@@ -368,7 +336,7 @@ cdef void deinitialize_grids(size_t chan_count, double **grids):
 cdef int fornav(size_t chan_count, size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows,
             cr_dtype *cols_pointer, cr_dtype *rows_pointer,
            image_dtype **input_arrays, grid_dtype **output_arrays,
-            cr_dtype cr_fill, image_dtype input_fill, grid_dtype output_fill, size_t rows_per_scan,
+           image_dtype input_fill, grid_dtype output_fill, size_t rows_per_scan,
            unsigned int weight_count, double weight_min, double weight_distance_max, double weight_delta_max,
            double weight_sum_min, bint maximum_weight_mode) except -1:
     cdef unsigned int row_idx
@@ -432,11 +400,8 @@ cdef int fornav(size_t chan_count, size_t swath_cols, size_t swath_rows, size_t 
         # NOTE: In the C version this is where the image array data is loaded
         tmp_got_point = compute_ewa(chan_count, maximum_weight_mode,
                     swath_cols, rows_per_scan, grid_cols, grid_rows,
-                    tmp_cols_pointer, tmp_rows_pointer, cr_fill,
+                    tmp_cols_pointer, tmp_rows_pointer,
                     input_images, input_fill, grid_accums, grid_weights, &ewaw, ewap)
-        # test_data_types(chan_count, <bint>maximum_weight_mode,
-        #                 swath_cols, swath_rows, grid_cols, grid_rows,
-        #                 col_pointer, row_pointer, cr_fill, input_images, input_fill, grid_accums, ewap)
 
         got_point = got_point or tmp_got_point
 
@@ -463,7 +428,7 @@ cdef int fornav(size_t chan_count, size_t swath_cols, size_t swath_rows, size_t 
 @cython.wraparound(False)
 def fornav_wrapper(numpy.ndarray[cr_dtype, ndim=2, mode='c'] cols_array,
            numpy.ndarray[cr_dtype, ndim=2, mode='c'] rows_array,
-           tuple input_arrays, tuple output_arrays, cr_dtype cr_fill, input_fill, output_fill,
+           tuple input_arrays, tuple output_arrays, input_fill, output_fill,
            size_t rows_per_scan,
            unsigned int weight_count=10000, double weight_min=0.01, double weight_distance_max=1.0, double weight_delta_max=10.0, double weight_sum_min=-1.0,
            cpython.bool maximum_weight_mode=False):
@@ -501,17 +466,6 @@ def fornav_wrapper(numpy.ndarray[cr_dtype, ndim=2, mode='c'] cols_array,
     cdef cr_dtype *rows_pointer = &rows_array[0, 0]
     cdef int ret = 0
 
-    # for i in range(num_items):
-    #     tmp_arr_f32 = input_arrays[i]
-    #     input_pointer[i] = &tmp_arr_f32[0, 0]
-    #     tmp_arr_f32 = output_arrays[i]
-    #     output_pointer[i] = &tmp_arr_f32[0, 0]
-    # ret = fornav(num_items, swath_cols, swath_rows, grid_cols, grid_rows, cols_pointer, rows_pointer,
-    #              <numpy.float32_t **>input_pointer, <numpy.float32_t **>output_pointer,
-    #              cr_fill, <numpy.float32_t>input_fill, <numpy.float32_t>output_fill, rows_per_scan,
-    #              weight_count, weight_min, weight_distance_max, weight_delta_max, weight_sum_min,
-    #              <bint>maximum_weight_mode)
-
     if in_type == numpy.float32:
         for i in range(num_items):
             tmp_arr_f32 = input_arrays[i]
@@ -520,7 +474,7 @@ def fornav_wrapper(numpy.ndarray[cr_dtype, ndim=2, mode='c'] cols_array,
             output_pointer[i] = &tmp_arr_f32[0, 0]
         ret = fornav(num_items, swath_cols, swath_rows, grid_cols, grid_rows, cols_pointer, rows_pointer,
                      <numpy.float32_t **>input_pointer, <numpy.float32_t **>output_pointer,
-                     cr_fill, <numpy.float32_t>input_fill, <numpy.float32_t>output_fill, rows_per_scan,
+                     <numpy.float32_t>input_fill, <numpy.float32_t>output_fill, rows_per_scan,
                      weight_count, weight_min, weight_distance_max, weight_delta_max, weight_sum_min,
                      <bint>maximum_weight_mode)
     elif in_type == numpy.float64:
@@ -531,7 +485,7 @@ def fornav_wrapper(numpy.ndarray[cr_dtype, ndim=2, mode='c'] cols_array,
             output_pointer[i] = &tmp_arr_f64[0, 0]
         ret = fornav(num_items, swath_cols, swath_rows, grid_cols, grid_rows, cols_pointer, rows_pointer,
                      <numpy.float64_t **>input_pointer, <numpy.float64_t **>output_pointer,
-                     cr_fill, <numpy.float64_t>input_fill, <numpy.float64_t>output_fill, rows_per_scan,
+                     <numpy.float64_t>input_fill, <numpy.float64_t>output_fill, rows_per_scan,
                      weight_count, weight_min, weight_distance_max, weight_delta_max, weight_sum_min,
                      <bint>maximum_weight_mode)
     elif in_type == numpy.int8:
@@ -542,7 +496,7 @@ def fornav_wrapper(numpy.ndarray[cr_dtype, ndim=2, mode='c'] cols_array,
             output_pointer[i] = &tmp_arr_i8[0, 0]
         ret = fornav(num_items, swath_cols, swath_rows, grid_cols, grid_rows, cols_pointer, rows_pointer,
                      <numpy.int8_t **>input_pointer, <numpy.int8_t **>output_pointer,
-                     cr_fill, <numpy.int8_t>input_fill, <numpy.int8_t>output_fill, rows_per_scan,
+                     <numpy.int8_t>input_fill, <numpy.int8_t>output_fill, rows_per_scan,
                      weight_count, weight_min, weight_distance_max, weight_delta_max, weight_sum_min,
                      <bint>maximum_weight_mode)
     else:
