@@ -26,7 +26,7 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
   int got_point;
   unsigned int row;
   unsigned int col;
-  ewa_parameters this_ewap;
+  ewa_parameters *this_ewap;
   CR_TYPE u0;
   CR_TYPE v0;
   int iu1;
@@ -37,6 +37,7 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
   int iv;
   double ddq;
   double dq;
+  double q;
   double u;
   double v;
   double a2up1;
@@ -47,26 +48,23 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
   IMAGE_TYPE this_val;
   unsigned int swath_offset;
   unsigned int grid_offset;
-  double q;
   size_t chan;
 
   got_point = 0;
-  for (row = 0; row < swath_rows; row+=1) {
-    for (col = 0; col < swath_cols; col+=1) {
-      this_ewap = (ewap[col]);
-      swath_offset = ((row * swath_cols) + col);
+  for (row = 0, swath_offset=0; row < swath_rows; row+=1) {
+    for (col = 0, this_ewap = ewap; col < swath_cols; col+=1, this_ewap++, swath_offset++) {
 
-      u0 = (uimg[swath_offset]);
-      v0 = (vimg[swath_offset]);
+      u0 = uimg[swath_offset];
+      v0 = vimg[swath_offset];
 
       if ((u0 < 0.0) || (v0 < 0.0)) {
         continue;
       }
 
-      iu1 = ((int)(u0 - this_ewap.u_del));
-      iu2 = ((int)(u0 + this_ewap.u_del));
-      iv1 = ((int)(v0 - this_ewap.v_del));
-      iv2 = ((int)(v0 + this_ewap.v_del));
+      iu1 = ((int)(u0 - this_ewap->u_del));
+      iu2 = ((int)(u0 + this_ewap->u_del));
+      iv1 = ((int)(v0 - this_ewap->v_del));
+      iv2 = ((int)(v0 + this_ewap->v_del));
 
       if (iu1 < 0) {
         iu1 = 0;
@@ -81,21 +79,21 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
         iv2 = (grid_rows - 1);
       }
 
-      if ((iu1 < grid_cols) && (iu2 >= 0) && (iv1 < grid_rows) && (iv2 >= 0)) {
+      if (iu1 < grid_cols && iu2 >= 0 && iv1 < grid_rows && iv2 >= 0) {
         got_point = 1;
-        ddq = (2.0 * this_ewap.a);
+        ddq = (2.0 * this_ewap->a);
 
         u = (iu1 - u0);
-        a2up1 = (this_ewap.a * ((2.0 * u) + 1.0));
-        bu = (this_ewap.b * u);
-        au2 = ((this_ewap.a * u) * u);
+        a2up1 = (this_ewap->a * ((2.0 * u) + 1.0));
+        bu = (this_ewap->b * u);
+        au2 = ((this_ewap->a * u) * u);
 
         for (iv = iv1; iv <= iv2; iv++) {
           v = (iv - v0);
-          dq = (a2up1 + (this_ewap.b * v));
-          q = ((((this_ewap.c * v) + bu) * v) + au2);
+          dq = (a2up1 + (this_ewap->b * v));
+          q = ((((this_ewap->c * v) + bu) * v) + au2);
           for (iu = iu1; iu <= iu2; iu++) {
-            if ((q >= 0.0) && (q < this_ewap.f)) {
+            if ((q >= 0.0) && (q < this_ewap->f)) {
               iw = ((int)(q * ewaw->qfactor));
               if (iw >= ewaw->count) {
                 iw = (ewaw->count - 1);
@@ -111,13 +109,13 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
                     if ((this_val == img_fill) || (isnan(this_val))) {
                       ((grid_accums[chan])[grid_offset]) = (double)NAN;
                     } else {
-                      ((grid_accums[chan])[grid_offset]) = this_val;
+                      ((grid_accums[chan])[grid_offset]) = (double)this_val;
                     }
                   }
                 } else {
                   if ((this_val != img_fill) && !(isnan(this_val))) {
                     ((grid_weights[chan])[grid_offset]) += weight;
-                    ((grid_accums[chan])[grid_offset]) += this_val * weight;
+                    ((grid_accums[chan])[grid_offset]) += (double)this_val * weight;
                   }
                 }
               }
