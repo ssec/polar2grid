@@ -811,34 +811,34 @@ typedef struct __pyx_defaults3 __pyx_defaults3;
 struct __pyx_defaults {
   PyBoolObject *__pyx_arg_maximum_weight_mode;
   unsigned int __pyx_arg_weight_count;
-  double __pyx_arg_weight_min;
-  double __pyx_arg_weight_distance_max;
-  double __pyx_arg_weight_delta_max;
-  double __pyx_arg_weight_sum_min;
+  weight_type __pyx_arg_weight_min;
+  weight_type __pyx_arg_weight_distance_max;
+  weight_type __pyx_arg_weight_delta_max;
+  weight_type __pyx_arg_weight_sum_min;
 };
 struct __pyx_defaults1 {
   PyBoolObject *__pyx_arg_maximum_weight_mode;
   unsigned int __pyx_arg_weight_count;
-  double __pyx_arg_weight_min;
-  double __pyx_arg_weight_distance_max;
-  double __pyx_arg_weight_delta_max;
-  double __pyx_arg_weight_sum_min;
+  weight_type __pyx_arg_weight_min;
+  weight_type __pyx_arg_weight_distance_max;
+  weight_type __pyx_arg_weight_delta_max;
+  weight_type __pyx_arg_weight_sum_min;
 };
 struct __pyx_defaults2 {
   PyBoolObject *__pyx_arg_maximum_weight_mode;
   unsigned int __pyx_arg_weight_count;
-  double __pyx_arg_weight_min;
-  double __pyx_arg_weight_distance_max;
-  double __pyx_arg_weight_delta_max;
-  double __pyx_arg_weight_sum_min;
+  weight_type __pyx_arg_weight_min;
+  weight_type __pyx_arg_weight_distance_max;
+  weight_type __pyx_arg_weight_delta_max;
+  weight_type __pyx_arg_weight_sum_min;
 };
 struct __pyx_defaults3 {
   PyBoolObject *__pyx_arg_maximum_weight_mode;
   unsigned int __pyx_arg_weight_count;
-  double __pyx_arg_weight_min;
-  double __pyx_arg_weight_distance_max;
-  double __pyx_arg_weight_delta_max;
-  double __pyx_arg_weight_sum_min;
+  weight_type __pyx_arg_weight_min;
+  weight_type __pyx_arg_weight_distance_max;
+  weight_type __pyx_arg_weight_delta_max;
+  weight_type __pyx_arg_weight_sum_min;
 };
 
 /* "polar2grid/remap/_fornav.pyx":429
@@ -1125,15 +1125,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject
 
 static PyObject *__Pyx_GetBuiltinName(PyObject *name);
 
-static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
-    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
-
-static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
-
-static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[], \
-    PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args, \
-    const char* function_name);
-
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
 #else
@@ -1144,6 +1135,15 @@ static CYTHON_INLINE void __Pyx_ErrRestore(PyObject *type, PyObject *value, PyOb
 static CYTHON_INLINE void __Pyx_ErrFetch(PyObject **type, PyObject **value, PyObject **tb);
 
 static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
+
+static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
+    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
+
+static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
+
+static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[], \
+    PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args, \
+    const char* function_name);
 
 static CYTHON_INLINE void __Pyx_ExceptionSave(PyObject **type, PyObject **value, PyObject **tb);
 static void __Pyx_ExceptionReset(PyObject *type, PyObject *value, PyObject *tb);
@@ -1510,12 +1510,6 @@ typedef struct {
 static Py_ssize_t __Pyx_zeros[] = {0, 0, 0, 0, 0, 0, 0, 0};
 static Py_ssize_t __Pyx_minusones[] = {-1, -1, -1, -1, -1, -1, -1, -1};
 
-static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
-
-static CYTHON_INLINE npy_uint8 __Pyx_PyInt_As_npy_uint8(PyObject *);
-
-static CYTHON_INLINE npy_int8 __Pyx_PyInt_As_npy_int8(PyObject *);
-
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
 
 static CYTHON_INLINE size_t __Pyx_PyInt_As_size_t(PyObject *);
@@ -1524,11 +1518,13 @@ static CYTHON_INLINE unsigned int __Pyx_PyInt_As_unsigned_int(PyObject *);
 
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_unsigned_int(unsigned int value);
 
-static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value);
-
 static CYTHON_INLINE char __Pyx_PyInt_As_char(PyObject *);
 
 static CYTHON_INLINE int __Pyx_BytesContains(PyObject* bytes, char character);
+
+static CYTHON_INLINE npy_int8 __Pyx_PyInt_As_npy_int8(PyObject *);
+
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value);
 
 #if CYTHON_CCOMPLEX
   #ifdef __cplusplus
@@ -1627,6 +1623,8 @@ static CYTHON_INLINE __pyx_t_double_complex __pyx_t_double_complex_from_parts(do
         static CYTHON_INLINE __pyx_t_double_complex __Pyx_c_pow(__pyx_t_double_complex, __pyx_t_double_complex);
     #endif
 #endif
+
+static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
 
 static int __pyx_memviewslice_is_contig(const __Pyx_memviewslice *mvs,
                                         char order, int ndim);
@@ -1812,29 +1810,27 @@ static PyTypeObject *__pyx_array_type = 0;
 static PyTypeObject *__pyx_MemviewEnum_type = 0;
 static PyTypeObject *__pyx_memoryview_type = 0;
 static PyTypeObject *__pyx_memoryviewslice_type = 0;
-static double __pyx_v_10polar2grid_5remap_7_fornav_EPSILON;
-static double __pyx_v_10polar2grid_5remap_7_fornav_double_nan;
 static PyObject *generic = 0;
 static PyObject *strided = 0;
 static PyObject *indirect = 0;
 static PyObject *contiguous = 0;
 static PyObject *indirect_contiguous = 0;
-static int __pyx_f_10polar2grid_5remap_7_fornav_initialize_weight(size_t, unsigned int, double, double, double, double, ewa_weight *); /*proto*/
+static int __pyx_f_10polar2grid_5remap_7_fornav_initialize_weight(size_t, unsigned int, weight_type, weight_type, weight_type, weight_type, ewa_weight *); /*proto*/
 static void __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_weight(ewa_weight *); /*proto*/
-static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size_t, size_t, size_t); /*proto*/
-static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(size_t, size_t, size_t); /*proto*/
-static void __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(size_t, double **); /*proto*/
+static accum_type **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size_t, size_t, size_t); /*proto*/
+static weight_type **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(size_t, size_t, size_t); /*proto*/
+static void __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(size_t, void **); /*proto*/
 static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_parameters(size_t, size_t, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t *, ewa_weight *, ewa_parameters *); /*proto*/
 static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_parameters(size_t, size_t, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t *, ewa_weight *, ewa_parameters *); /*proto*/
-static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t, size_t, double *, double *, int, double, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t); /*proto*/
-static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t, size_t, double *, double *, int, double, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t); /*proto*/
-static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t, size_t, double *, double *, int, double, __pyx_t_5numpy_int8_t *, __pyx_t_5numpy_int8_t); /*proto*/
-static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t **, __pyx_t_5numpy_float32_t **, __pyx_t_5numpy_float32_t, __pyx_t_5numpy_float32_t, size_t, unsigned int, double, double, double, double, int); /*proto*/
-static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float64_t **, __pyx_t_5numpy_float64_t **, __pyx_t_5numpy_float64_t, __pyx_t_5numpy_float64_t, size_t, unsigned int, double, double, double, double, int); /*proto*/
-static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_int8_t **, __pyx_t_5numpy_int8_t **, __pyx_t_5numpy_int8_t, __pyx_t_5numpy_int8_t, size_t, unsigned int, double, double, double, double, int); /*proto*/
-static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float32_t **, __pyx_t_5numpy_float32_t **, __pyx_t_5numpy_float32_t, __pyx_t_5numpy_float32_t, size_t, unsigned int, double, double, double, double, int); /*proto*/
-static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t **, __pyx_t_5numpy_float64_t **, __pyx_t_5numpy_float64_t, __pyx_t_5numpy_float64_t, size_t, unsigned int, double, double, double, double, int); /*proto*/
-static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_int8_t **, __pyx_t_5numpy_int8_t **, __pyx_t_5numpy_int8_t, __pyx_t_5numpy_int8_t, size_t, unsigned int, double, double, double, double, int); /*proto*/
+static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t, size_t, float *, float *, int, float, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t); /*proto*/
+static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t, size_t, float *, float *, int, float, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t); /*proto*/
+static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t, size_t, float *, float *, int, float, __pyx_t_5numpy_int8_t *, __pyx_t_5numpy_int8_t); /*proto*/
+static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t **, __pyx_t_5numpy_float32_t **, __pyx_t_5numpy_float32_t, __pyx_t_5numpy_float32_t, size_t, unsigned int, float, float, float, float, int); /*proto*/
+static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float64_t **, __pyx_t_5numpy_float64_t **, __pyx_t_5numpy_float64_t, __pyx_t_5numpy_float64_t, size_t, unsigned int, float, float, float, float, int); /*proto*/
+static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_float32_t *, __pyx_t_5numpy_int8_t **, __pyx_t_5numpy_int8_t **, __pyx_t_5numpy_int8_t, __pyx_t_5numpy_int8_t, size_t, unsigned int, float, float, float, float, int); /*proto*/
+static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float32_t **, __pyx_t_5numpy_float32_t **, __pyx_t_5numpy_float32_t, __pyx_t_5numpy_float32_t, size_t, unsigned int, float, float, float, float, int); /*proto*/
+static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t **, __pyx_t_5numpy_float64_t **, __pyx_t_5numpy_float64_t, __pyx_t_5numpy_float64_t, size_t, unsigned int, float, float, float, float, int); /*proto*/
+static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t, size_t, size_t, size_t, size_t, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_float64_t *, __pyx_t_5numpy_int8_t **, __pyx_t_5numpy_int8_t **, __pyx_t_5numpy_int8_t, __pyx_t_5numpy_int8_t, size_t, unsigned int, float, float, float, float, int); /*proto*/
 static struct __pyx_array_obj *__pyx_array_new(PyObject *, Py_ssize_t, char *, char *, char *); /*proto*/
 static void *__pyx_align_pointer(void *, size_t); /*proto*/
 static PyObject *__pyx_memoryview_new(PyObject *, int, int, __Pyx_TypeInfo *); /*proto*/
@@ -1889,17 +1885,15 @@ static PyObject *__pyx_builtin_Ellipsis;
 static PyObject *__pyx_builtin_xrange;
 static PyObject *__pyx_builtin_id;
 static PyObject *__pyx_builtin_IndexError;
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_call_cpp_test(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_x, int __pyx_v_y); /* proto */
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_2call_cpp_test_npy(CYTHON_UNUSED PyObject *__pyx_self, __pyx_t_5numpy_uint8_t __pyx_v_x, __pyx_t_5numpy_int8_t __pyx_v_y); /* proto */
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_4fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_signatures, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs, CYTHON_UNUSED PyObject *__pyx_v_defaults); /* proto */
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_16__defaults__(CYTHON_UNUSED PyObject *__pyx_self); /* proto */
+static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_signatures, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs, CYTHON_UNUSED PyObject *__pyx_v_defaults); /* proto */
+static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_12__defaults__(CYTHON_UNUSED PyObject *__pyx_self); /* proto */
 static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_14fornav_wrapper_genexpr(PyObject *__pyx_self); /* proto */
 static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_14fornav_wrapper_3genexpr(PyObject *__pyx_self); /* proto */
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_6fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_cols_array, PyArrayObject *__pyx_v_rows_array, PyObject *__pyx_v_input_arrays, PyObject *__pyx_v_output_arrays, PyObject *__pyx_v_input_fill, PyObject *__pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, PyBoolObject *__pyx_v_maximum_weight_mode); /* proto */
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_18__defaults__(CYTHON_UNUSED PyObject *__pyx_self); /* proto */
+static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_2fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_cols_array, PyArrayObject *__pyx_v_rows_array, PyObject *__pyx_v_input_arrays, PyObject *__pyx_v_output_arrays, PyObject *__pyx_v_input_fill, PyObject *__pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, weight_type __pyx_v_weight_min, weight_type __pyx_v_weight_distance_max, weight_type __pyx_v_weight_delta_max, weight_type __pyx_v_weight_sum_min, PyBoolObject *__pyx_v_maximum_weight_mode); /* proto */
+static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_14__defaults__(CYTHON_UNUSED PyObject *__pyx_self); /* proto */
 static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_14fornav_wrapper_6genexpr(PyObject *__pyx_self); /* proto */
 static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_14fornav_wrapper_9genexpr(PyObject *__pyx_self); /* proto */
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_8fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_cols_array, PyArrayObject *__pyx_v_rows_array, PyObject *__pyx_v_input_arrays, PyObject *__pyx_v_output_arrays, PyObject *__pyx_v_input_fill, PyObject *__pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, PyBoolObject *__pyx_v_maximum_weight_mode); /* proto */
+static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_4fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_cols_array, PyArrayObject *__pyx_v_rows_array, PyObject *__pyx_v_input_arrays, PyObject *__pyx_v_output_arrays, PyObject *__pyx_v_input_fill, PyObject *__pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, weight_type __pyx_v_weight_min, weight_type __pyx_v_weight_distance_max, weight_type __pyx_v_weight_delta_max, weight_type __pyx_v_weight_sum_min, PyBoolObject *__pyx_v_maximum_weight_mode); /* proto */
 static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
 static int __pyx_array_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
@@ -1959,8 +1953,6 @@ static char __pyx_k_h[] = "h";
 static char __pyx_k_i[] = "i";
 static char __pyx_k_l[] = "l";
 static char __pyx_k_q[] = "q";
-static char __pyx_k_x[] = "x";
-static char __pyx_k_y[] = "y";
 static char __pyx_k_Zd[] = "Zd";
 static char __pyx_k_Zf[] = "Zf";
 static char __pyx_k_Zg[] = "Zg";
@@ -2045,7 +2037,6 @@ static char __pyx_k_cols_pointer[] = "cols_pointer";
 static char __pyx_k_input_arrays[] = "input_arrays";
 static char __pyx_k_rows_pointer[] = "rows_pointer";
 static char __pyx_k_weight_count[] = "weight_count";
-static char __pyx_k_call_cpp_test[] = "call_cpp_test";
 static char __pyx_k_input_pointer[] = "input_pointer";
 static char __pyx_k_output_arrays[] = "output_arrays";
 static char __pyx_k_pyx_getbuffer[] = "__pyx_getbuffer";
@@ -2057,7 +2048,6 @@ static char __pyx_k_weight_sum_min[] = "weight_sum_min";
 static char __pyx_k_allocate_buffer[] = "allocate_buffer";
 static char __pyx_k_dtype_is_object[] = "dtype_is_object";
 static char __pyx_k_weight_delta_max[] = "weight_delta_max";
-static char __pyx_k_call_cpp_test_npy[] = "call_cpp_test_npy";
 static char __pyx_k_strided_and_direct[] = "<strided and direct>";
 static char __pyx_k_maximum_weight_mode[] = "maximum_weight_mode";
 static char __pyx_k_weight_distance_max[] = "weight_distance_max";
@@ -2150,8 +2140,6 @@ static PyObject *__pyx_n_s_args;
 static PyObject *__pyx_n_s_base;
 static PyObject *__pyx_n_s_c;
 static PyObject *__pyx_n_u_c;
-static PyObject *__pyx_n_s_call_cpp_test;
-static PyObject *__pyx_n_s_call_cpp_test_npy;
 static PyObject *__pyx_n_s_class;
 static PyObject *__pyx_n_s_close;
 static PyObject *__pyx_n_s_cols_array;
@@ -2247,9 +2235,7 @@ static PyObject *__pyx_n_s_weight_delta_max;
 static PyObject *__pyx_n_s_weight_distance_max;
 static PyObject *__pyx_n_s_weight_min;
 static PyObject *__pyx_n_s_weight_sum_min;
-static PyObject *__pyx_n_s_x;
 static PyObject *__pyx_n_s_xrange;
-static PyObject *__pyx_n_s_y;
 static PyObject *__pyx_n_s_zip;
 static PyObject *__pyx_int_0;
 static PyObject *__pyx_int_1;
@@ -2307,271 +2293,43 @@ static PyObject *__pyx_tuple__49;
 static PyObject *__pyx_tuple__53;
 static PyObject *__pyx_tuple__54;
 static PyObject *__pyx_tuple__56;
+static PyObject *__pyx_tuple__57;
 static PyObject *__pyx_tuple__58;
+static PyObject *__pyx_tuple__59;
 static PyObject *__pyx_tuple__60;
-static PyObject *__pyx_tuple__61;
-static PyObject *__pyx_tuple__62;
-static PyObject *__pyx_tuple__63;
-static PyObject *__pyx_tuple__64;
 static PyObject *__pyx_codeobj__55;
-static PyObject *__pyx_codeobj__57;
-static PyObject *__pyx_codeobj__59;
-
-/* "polar2grid/remap/_fornav.pyx":58
- *     numpy.float32_t
- * 
- * def call_cpp_test(int x, int y):             # <<<<<<<<<<<<<<
- *     return test_cpp_templates(x, y)
- * 
- */
-
-/* Python wrapper */
-static PyObject *__pyx_pw_10polar2grid_5remap_7_fornav_1call_cpp_test(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_10polar2grid_5remap_7_fornav_1call_cpp_test = {"call_cpp_test", (PyCFunction)__pyx_pw_10polar2grid_5remap_7_fornav_1call_cpp_test, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_10polar2grid_5remap_7_fornav_1call_cpp_test(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  int __pyx_v_x;
-  int __pyx_v_y;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  PyObject *__pyx_r = 0;
-  __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("call_cpp_test (wrapper)", 0);
-  {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_x,&__pyx_n_s_y,0};
-    PyObject* values[2] = {0,0};
-    if (unlikely(__pyx_kwds)) {
-      Py_ssize_t kw_args;
-      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
-      switch (pos_args) {
-        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        case  0: break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-      kw_args = PyDict_Size(__pyx_kwds);
-      switch (pos_args) {
-        case  0:
-        if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_x)) != 0)) kw_args--;
-        else goto __pyx_L5_argtuple_error;
-        case  1:
-        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("call_cpp_test", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-        }
-      }
-      if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "call_cpp_test") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-      }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
-      goto __pyx_L5_argtuple_error;
-    } else {
-      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-    }
-    __pyx_v_x = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_x == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_y = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_y == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-  }
-  goto __pyx_L4_argument_unpacking_done;
-  __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("call_cpp_test", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-  __pyx_L3_error:;
-  __Pyx_AddTraceback("polar2grid.remap._fornav.call_cpp_test", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __Pyx_RefNannyFinishContext();
-  return NULL;
-  __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10polar2grid_5remap_7_fornav_call_cpp_test(__pyx_self, __pyx_v_x, __pyx_v_y);
-
-  /* function exit code */
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_call_cpp_test(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_x, int __pyx_v_y) {
-  PyObject *__pyx_r = NULL;
-  __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("call_cpp_test", 0);
-
-  /* "polar2grid/remap/_fornav.pyx":59
- * 
- * def call_cpp_test(int x, int y):
- *     return test_cpp_templates(x, y)             # <<<<<<<<<<<<<<
- * 
- * def call_cpp_test_npy(numpy.uint8_t x, numpy.int8_t y):
- */
-  __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(test_cpp_templates<int,int>(__pyx_v_x, __pyx_v_y)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
-  goto __pyx_L0;
-
-  /* "polar2grid/remap/_fornav.pyx":58
- *     numpy.float32_t
- * 
- * def call_cpp_test(int x, int y):             # <<<<<<<<<<<<<<
- *     return test_cpp_templates(x, y)
- * 
- */
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("polar2grid.remap._fornav.call_cpp_test", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = NULL;
-  __pyx_L0:;
-  __Pyx_XGIVEREF(__pyx_r);
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-/* "polar2grid/remap/_fornav.pyx":61
- *     return test_cpp_templates(x, y)
- * 
- * def call_cpp_test_npy(numpy.uint8_t x, numpy.int8_t y):             # <<<<<<<<<<<<<<
- *     return test_cpp_templates(x, y)
- * 
- */
-
-/* Python wrapper */
-static PyObject *__pyx_pw_10polar2grid_5remap_7_fornav_3call_cpp_test_npy(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_10polar2grid_5remap_7_fornav_3call_cpp_test_npy = {"call_cpp_test_npy", (PyCFunction)__pyx_pw_10polar2grid_5remap_7_fornav_3call_cpp_test_npy, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_10polar2grid_5remap_7_fornav_3call_cpp_test_npy(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  __pyx_t_5numpy_uint8_t __pyx_v_x;
-  __pyx_t_5numpy_int8_t __pyx_v_y;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  PyObject *__pyx_r = 0;
-  __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("call_cpp_test_npy (wrapper)", 0);
-  {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_x,&__pyx_n_s_y,0};
-    PyObject* values[2] = {0,0};
-    if (unlikely(__pyx_kwds)) {
-      Py_ssize_t kw_args;
-      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
-      switch (pos_args) {
-        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        case  0: break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-      kw_args = PyDict_Size(__pyx_kwds);
-      switch (pos_args) {
-        case  0:
-        if (likely((values[0] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_x)) != 0)) kw_args--;
-        else goto __pyx_L5_argtuple_error;
-        case  1:
-        if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("call_cpp_test_npy", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-        }
-      }
-      if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "call_cpp_test_npy") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-      }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
-      goto __pyx_L5_argtuple_error;
-    } else {
-      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-    }
-    __pyx_v_x = __Pyx_PyInt_As_npy_uint8(values[0]); if (unlikely((__pyx_v_x == (npy_uint8)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_y = __Pyx_PyInt_As_npy_int8(values[1]); if (unlikely((__pyx_v_y == (npy_int8)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-  }
-  goto __pyx_L4_argument_unpacking_done;
-  __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("call_cpp_test_npy", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-  __pyx_L3_error:;
-  __Pyx_AddTraceback("polar2grid.remap._fornav.call_cpp_test_npy", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __Pyx_RefNannyFinishContext();
-  return NULL;
-  __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10polar2grid_5remap_7_fornav_2call_cpp_test_npy(__pyx_self, __pyx_v_x, __pyx_v_y);
-
-  /* function exit code */
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_2call_cpp_test_npy(CYTHON_UNUSED PyObject *__pyx_self, __pyx_t_5numpy_uint8_t __pyx_v_x, __pyx_t_5numpy_int8_t __pyx_v_y) {
-  PyObject *__pyx_r = NULL;
-  __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("call_cpp_test_npy", 0);
-
-  /* "polar2grid/remap/_fornav.pyx":62
- * 
- * def call_cpp_test_npy(numpy.uint8_t x, numpy.int8_t y):
- *     return test_cpp_templates(x, y)             # <<<<<<<<<<<<<<
- * 
- * @cython.cdivision(True)
- */
-  __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(test_cpp_templates<__pyx_t_5numpy_uint8_t,__pyx_t_5numpy_int8_t>(__pyx_v_x, __pyx_v_y)); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 62; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
-  goto __pyx_L0;
-
-  /* "polar2grid/remap/_fornav.pyx":61
- *     return test_cpp_templates(x, y)
- * 
- * def call_cpp_test_npy(numpy.uint8_t x, numpy.int8_t y):             # <<<<<<<<<<<<<<
- *     return test_cpp_templates(x, y)
- * 
- */
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("polar2grid.remap._fornav.call_cpp_test_npy", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = NULL;
-  __pyx_L0:;
-  __Pyx_XGIVEREF(__pyx_r);
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
 
 /* "polar2grid/remap/_fornav.pyx":65
  * 
  * @cython.cdivision(True)
- * cdef int initialize_weight(size_t chan_count, unsigned int weight_count, double weight_min, double weight_distance_max,             # <<<<<<<<<<<<<<
- *                             double weight_delta_max, double weight_sum_min, ewa_weight *ewaw):
+ * cdef int initialize_weight(size_t chan_count, unsigned int weight_count, weight_type weight_min, weight_type weight_distance_max,             # <<<<<<<<<<<<<<
+ *                             weight_type weight_delta_max, weight_type weight_sum_min, ewa_weight *ewaw):
  *     cdef unsigned int idx
  */
 
-static int __pyx_f_10polar2grid_5remap_7_fornav_initialize_weight(CYTHON_UNUSED size_t __pyx_v_chan_count, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, ewa_weight *__pyx_v_ewaw) {
+static int __pyx_f_10polar2grid_5remap_7_fornav_initialize_weight(CYTHON_UNUSED size_t __pyx_v_chan_count, unsigned int __pyx_v_weight_count, weight_type __pyx_v_weight_min, weight_type __pyx_v_weight_distance_max, weight_type __pyx_v_weight_delta_max, weight_type __pyx_v_weight_sum_min, ewa_weight *__pyx_v_ewaw) {
   unsigned int __pyx_v_idx;
-  double *__pyx_v_wptr;
+  weight_type *__pyx_v_wptr;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
-  double *__pyx_t_2;
+  weight_type *__pyx_t_2;
   unsigned int __pyx_t_3;
   unsigned int __pyx_t_4;
   __Pyx_RefNannySetupContext("initialize_weight", 0);
 
   /* "polar2grid/remap/_fornav.pyx":70
- *     cdef double *wptr
+ *     cdef weight_type *wptr
  * 
- *     ewaw.wtab = <double *>calloc(weight_count, sizeof(double))             # <<<<<<<<<<<<<<
+ *     ewaw.wtab = <weight_type *>calloc(weight_count, sizeof(weight_type))             # <<<<<<<<<<<<<<
  *     if ewaw.wtab is NULL:
  *         return -1
  */
-  __pyx_v_ewaw->wtab = ((double *)calloc(__pyx_v_weight_count, (sizeof(double))));
+  __pyx_v_ewaw->wtab = ((weight_type *)calloc(__pyx_v_weight_count, (sizeof(weight_type))));
 
   /* "polar2grid/remap/_fornav.pyx":71
  * 
- *     ewaw.wtab = <double *>calloc(weight_count, sizeof(double))
+ *     ewaw.wtab = <weight_type *>calloc(weight_count, sizeof(weight_type))
  *     if ewaw.wtab is NULL:             # <<<<<<<<<<<<<<
  *         return -1
  * 
@@ -2580,7 +2338,7 @@ static int __pyx_f_10polar2grid_5remap_7_fornav_initialize_weight(CYTHON_UNUSED 
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":72
- *     ewaw.wtab = <double *>calloc(weight_count, sizeof(double))
+ *     ewaw.wtab = <weight_type *>calloc(weight_count, sizeof(weight_type))
  *     if ewaw.wtab is NULL:
  *         return -1             # <<<<<<<<<<<<<<
  * 
@@ -2769,8 +2527,8 @@ static int __pyx_f_10polar2grid_5remap_7_fornav_initialize_weight(CYTHON_UNUSED 
   /* "polar2grid/remap/_fornav.pyx":65
  * 
  * @cython.cdivision(True)
- * cdef int initialize_weight(size_t chan_count, unsigned int weight_count, double weight_min, double weight_distance_max,             # <<<<<<<<<<<<<<
- *                             double weight_delta_max, double weight_sum_min, ewa_weight *ewaw):
+ * cdef int initialize_weight(size_t chan_count, unsigned int weight_count, weight_type weight_min, weight_type weight_distance_max,             # <<<<<<<<<<<<<<
+ *                             weight_type weight_delta_max, weight_type weight_sum_min, ewa_weight *ewaw):
  *     cdef unsigned int idx
  */
 
@@ -2832,19 +2590,19 @@ static void __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_weight(ewa_weight 
  * @cython.cdivision(True)
  * cdef int compute_ewa_parameters(size_t swath_cols, size_t swath_rows,             # <<<<<<<<<<<<<<
  *                                 cr_dtype *uimg, cr_dtype *vimg, ewa_weight *ewaw, ewa_parameters *ewap):
- *     cdef double ux
+ *     cdef ewa_param_type ux
  */
 
 static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_parameters(size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, __pyx_t_5numpy_float32_t *__pyx_v_uimg, __pyx_t_5numpy_float32_t *__pyx_v_vimg, ewa_weight *__pyx_v_ewaw, ewa_parameters *__pyx_v_ewap) {
-  double __pyx_v_ux;
-  double __pyx_v_uy;
-  double __pyx_v_vx;
-  double __pyx_v_vy;
-  double __pyx_v_f_scale;
-  double __pyx_v_d;
-  double __pyx_v_qmax;
-  double __pyx_v_distance_max;
-  double __pyx_v_delta_max;
+  ewa_param_type __pyx_v_ux;
+  ewa_param_type __pyx_v_uy;
+  ewa_param_type __pyx_v_vx;
+  ewa_param_type __pyx_v_vy;
+  ewa_param_type __pyx_v_f_scale;
+  ewa_param_type __pyx_v_d;
+  ewa_param_type __pyx_v_qmax;
+  ewa_param_type __pyx_v_distance_max;
+  ewa_param_type __pyx_v_delta_max;
   unsigned int __pyx_v_rowsm1;
   unsigned int __pyx_v_colsm1;
   unsigned int __pyx_v_rowsov2;
@@ -2852,44 +2610,45 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
   ewa_parameters __pyx_v_this_ewap;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
-  double __pyx_t_1;
+  weight_type __pyx_t_1;
   unsigned int __pyx_t_2;
   unsigned int __pyx_t_3;
   int __pyx_t_4;
+  ewa_param_type __pyx_t_5;
   __Pyx_RefNannySetupContext("__pyx_fuse_0compute_ewa_parameters", 0);
 
   /* "polar2grid/remap/_fornav.pyx":121
- *     cdef double f_scale
- *     cdef double d
- *     cdef double qmax = ewaw.qmax             # <<<<<<<<<<<<<<
- *     cdef double distance_max = ewaw.distance_max
- *     cdef double delta_max = ewaw.delta_max
+ *     cdef ewa_param_type f_scale
+ *     cdef ewa_param_type d
+ *     cdef ewa_param_type qmax = ewaw.qmax             # <<<<<<<<<<<<<<
+ *     cdef ewa_param_type distance_max = ewaw.distance_max
+ *     cdef ewa_param_type delta_max = ewaw.delta_max
  */
   __pyx_t_1 = __pyx_v_ewaw->qmax;
   __pyx_v_qmax = __pyx_t_1;
 
   /* "polar2grid/remap/_fornav.pyx":122
- *     cdef double d
- *     cdef double qmax = ewaw.qmax
- *     cdef double distance_max = ewaw.distance_max             # <<<<<<<<<<<<<<
- *     cdef double delta_max = ewaw.delta_max
- *     cdef double u_del
+ *     cdef ewa_param_type d
+ *     cdef ewa_param_type qmax = ewaw.qmax
+ *     cdef ewa_param_type distance_max = ewaw.distance_max             # <<<<<<<<<<<<<<
+ *     cdef ewa_param_type delta_max = ewaw.delta_max
+ *     cdef ewa_param_type u_del
  */
   __pyx_t_1 = __pyx_v_ewaw->distance_max;
   __pyx_v_distance_max = __pyx_t_1;
 
   /* "polar2grid/remap/_fornav.pyx":123
- *     cdef double qmax = ewaw.qmax
- *     cdef double distance_max = ewaw.distance_max
- *     cdef double delta_max = ewaw.delta_max             # <<<<<<<<<<<<<<
- *     cdef double u_del
- *     cdef double v_del
+ *     cdef ewa_param_type qmax = ewaw.qmax
+ *     cdef ewa_param_type distance_max = ewaw.distance_max
+ *     cdef ewa_param_type delta_max = ewaw.delta_max             # <<<<<<<<<<<<<<
+ *     cdef ewa_param_type u_del
+ *     cdef ewa_param_type v_del
  */
   __pyx_t_1 = __pyx_v_ewaw->delta_max;
   __pyx_v_delta_max = __pyx_t_1;
 
   /* "polar2grid/remap/_fornav.pyx":127
- *     cdef double v_del
+ *     cdef ewa_param_type v_del
  * 
  *     cdef unsigned int rowsm1 = swath_rows - 1             # <<<<<<<<<<<<<<
  *     cdef unsigned int colsm1 = swath_cols - 1
@@ -2987,7 +2746,7 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *             f_scale = EPSILON
  *         f_scale = qmax / f_scale
  */
-    __pyx_t_4 = ((__pyx_v_f_scale < __pyx_v_10polar2grid_5remap_7_fornav_EPSILON) != 0);
+    __pyx_t_4 = ((__pyx_v_f_scale < EPSILON) != 0);
     if (__pyx_t_4) {
 
       /* "polar2grid/remap/_fornav.pyx":152
@@ -2997,7 +2756,7 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *         f_scale = qmax / f_scale
  *         this_ewap.a = (vx * vx + vy * vy) * f_scale
  */
-      __pyx_v_f_scale = __pyx_v_10polar2grid_5remap_7_fornav_EPSILON;
+      __pyx_v_f_scale = EPSILON;
       goto __pyx_L5;
     }
     __pyx_L5:;
@@ -3054,7 +2813,7 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *             d = EPSILON
  *         d = 4.0 * qmax / d
  */
-    __pyx_t_4 = ((__pyx_v_d < __pyx_v_10polar2grid_5remap_7_fornav_EPSILON) != 0);
+    __pyx_t_4 = ((__pyx_v_d < EPSILON) != 0);
     if (__pyx_t_4) {
 
       /* "polar2grid/remap/_fornav.pyx":159
@@ -3064,7 +2823,7 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *         d = 4.0 * qmax / d
  *         this_ewap.f = qmax
  */
-      __pyx_v_d = __pyx_v_10polar2grid_5remap_7_fornav_EPSILON;
+      __pyx_v_d = EPSILON;
       goto __pyx_L6;
     }
     __pyx_L6:;
@@ -3166,8 +2925,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[colsm1].b = ewap[colsm1 - 1].b
  *     ewap[colsm1].c = ewap[colsm1 - 1].c
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).a;
-  (__pyx_v_ewap[__pyx_v_colsm1]).a = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).a;
+  (__pyx_v_ewap[__pyx_v_colsm1]).a = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":175
  *     # *[inserted by cython to avoid comment closer]/
@@ -3176,8 +2935,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[colsm1].c = ewap[colsm1 - 1].c
  *     ewap[colsm1].f = ewap[colsm1 - 1].f
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).b;
-  (__pyx_v_ewap[__pyx_v_colsm1]).b = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).b;
+  (__pyx_v_ewap[__pyx_v_colsm1]).b = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":176
  *     ewap[colsm1].a = ewap[colsm1 - 1].a
@@ -3186,8 +2945,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[colsm1].f = ewap[colsm1 - 1].f
  *     ewap[colsm1].u_del = ewap[colsm1 - 1].u_del
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).c;
-  (__pyx_v_ewap[__pyx_v_colsm1]).c = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).c;
+  (__pyx_v_ewap[__pyx_v_colsm1]).c = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":177
  *     ewap[colsm1].b = ewap[colsm1 - 1].b
@@ -3196,8 +2955,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[colsm1].u_del = ewap[colsm1 - 1].u_del
  *     ewap[colsm1].v_del = ewap[colsm1 - 1].v_del
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).f;
-  (__pyx_v_ewap[__pyx_v_colsm1]).f = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).f;
+  (__pyx_v_ewap[__pyx_v_colsm1]).f = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":178
  *     ewap[colsm1].c = ewap[colsm1 - 1].c
@@ -3206,8 +2965,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[colsm1].v_del = ewap[colsm1 - 1].v_del
  * 
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).u_del;
-  (__pyx_v_ewap[__pyx_v_colsm1]).u_del = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).u_del;
+  (__pyx_v_ewap[__pyx_v_colsm1]).u_del = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":179
  *     ewap[colsm1].f = ewap[colsm1 - 1].f
@@ -3216,8 +2975,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  * 
  *     # /[inserted by cython to avoid comment start]*
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).v_del;
-  (__pyx_v_ewap[__pyx_v_colsm1]).v_del = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).v_del;
+  (__pyx_v_ewap[__pyx_v_colsm1]).v_del = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":184
  *     # *  Copy the parameters from the second column to the first column
@@ -3226,8 +2985,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[0].b = ewap[1].b
  *     ewap[0].c = ewap[1].c
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).a;
-  (__pyx_v_ewap[0]).a = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).a;
+  (__pyx_v_ewap[0]).a = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":185
  *     # *[inserted by cython to avoid comment closer]/
@@ -3236,8 +2995,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[0].c = ewap[1].c
  *     ewap[0].f = ewap[1].f
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).b;
-  (__pyx_v_ewap[0]).b = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).b;
+  (__pyx_v_ewap[0]).b = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":186
  *     ewap[0].a = ewap[1].a
@@ -3246,8 +3005,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[0].f = ewap[1].f
  *     ewap[0].u_del = ewap[1].u_del
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).c;
-  (__pyx_v_ewap[0]).c = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).c;
+  (__pyx_v_ewap[0]).c = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":187
  *     ewap[0].b = ewap[1].b
@@ -3256,8 +3015,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[0].u_del = ewap[1].u_del
  *     ewap[0].v_del = ewap[1].v_del
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).f;
-  (__pyx_v_ewap[0]).f = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).f;
+  (__pyx_v_ewap[0]).f = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":188
  *     ewap[0].c = ewap[1].c
@@ -3266,8 +3025,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[0].v_del = ewap[1].v_del
  * 
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).u_del;
-  (__pyx_v_ewap[0]).u_del = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).u_del;
+  (__pyx_v_ewap[0]).u_del = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":189
  *     ewap[0].f = ewap[1].f
@@ -3276,8 +3035,8 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  * 
  *     return 0
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).v_del;
-  (__pyx_v_ewap[0]).v_del = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).v_del;
+  (__pyx_v_ewap[0]).v_del = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":191
  *     ewap[0].v_del = ewap[1].v_del
@@ -3294,7 +3053,7 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  * @cython.cdivision(True)
  * cdef int compute_ewa_parameters(size_t swath_cols, size_t swath_rows,             # <<<<<<<<<<<<<<
  *                                 cr_dtype *uimg, cr_dtype *vimg, ewa_weight *ewaw, ewa_parameters *ewap):
- *     cdef double ux
+ *     cdef ewa_param_type ux
  */
 
   /* function exit code */
@@ -3304,15 +3063,15 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
 }
 
 static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_parameters(size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, __pyx_t_5numpy_float64_t *__pyx_v_uimg, __pyx_t_5numpy_float64_t *__pyx_v_vimg, ewa_weight *__pyx_v_ewaw, ewa_parameters *__pyx_v_ewap) {
-  double __pyx_v_ux;
-  double __pyx_v_uy;
-  double __pyx_v_vx;
-  double __pyx_v_vy;
-  double __pyx_v_f_scale;
-  double __pyx_v_d;
-  double __pyx_v_qmax;
-  double __pyx_v_distance_max;
-  double __pyx_v_delta_max;
+  ewa_param_type __pyx_v_ux;
+  ewa_param_type __pyx_v_uy;
+  ewa_param_type __pyx_v_vx;
+  ewa_param_type __pyx_v_vy;
+  ewa_param_type __pyx_v_f_scale;
+  ewa_param_type __pyx_v_d;
+  ewa_param_type __pyx_v_qmax;
+  ewa_param_type __pyx_v_distance_max;
+  ewa_param_type __pyx_v_delta_max;
   unsigned int __pyx_v_rowsm1;
   unsigned int __pyx_v_colsm1;
   unsigned int __pyx_v_rowsov2;
@@ -3320,44 +3079,45 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
   ewa_parameters __pyx_v_this_ewap;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
-  double __pyx_t_1;
+  weight_type __pyx_t_1;
   unsigned int __pyx_t_2;
   unsigned int __pyx_t_3;
   int __pyx_t_4;
+  ewa_param_type __pyx_t_5;
   __Pyx_RefNannySetupContext("__pyx_fuse_1compute_ewa_parameters", 0);
 
   /* "polar2grid/remap/_fornav.pyx":121
- *     cdef double f_scale
- *     cdef double d
- *     cdef double qmax = ewaw.qmax             # <<<<<<<<<<<<<<
- *     cdef double distance_max = ewaw.distance_max
- *     cdef double delta_max = ewaw.delta_max
+ *     cdef ewa_param_type f_scale
+ *     cdef ewa_param_type d
+ *     cdef ewa_param_type qmax = ewaw.qmax             # <<<<<<<<<<<<<<
+ *     cdef ewa_param_type distance_max = ewaw.distance_max
+ *     cdef ewa_param_type delta_max = ewaw.delta_max
  */
   __pyx_t_1 = __pyx_v_ewaw->qmax;
   __pyx_v_qmax = __pyx_t_1;
 
   /* "polar2grid/remap/_fornav.pyx":122
- *     cdef double d
- *     cdef double qmax = ewaw.qmax
- *     cdef double distance_max = ewaw.distance_max             # <<<<<<<<<<<<<<
- *     cdef double delta_max = ewaw.delta_max
- *     cdef double u_del
+ *     cdef ewa_param_type d
+ *     cdef ewa_param_type qmax = ewaw.qmax
+ *     cdef ewa_param_type distance_max = ewaw.distance_max             # <<<<<<<<<<<<<<
+ *     cdef ewa_param_type delta_max = ewaw.delta_max
+ *     cdef ewa_param_type u_del
  */
   __pyx_t_1 = __pyx_v_ewaw->distance_max;
   __pyx_v_distance_max = __pyx_t_1;
 
   /* "polar2grid/remap/_fornav.pyx":123
- *     cdef double qmax = ewaw.qmax
- *     cdef double distance_max = ewaw.distance_max
- *     cdef double delta_max = ewaw.delta_max             # <<<<<<<<<<<<<<
- *     cdef double u_del
- *     cdef double v_del
+ *     cdef ewa_param_type qmax = ewaw.qmax
+ *     cdef ewa_param_type distance_max = ewaw.distance_max
+ *     cdef ewa_param_type delta_max = ewaw.delta_max             # <<<<<<<<<<<<<<
+ *     cdef ewa_param_type u_del
+ *     cdef ewa_param_type v_del
  */
   __pyx_t_1 = __pyx_v_ewaw->delta_max;
   __pyx_v_delta_max = __pyx_t_1;
 
   /* "polar2grid/remap/_fornav.pyx":127
- *     cdef double v_del
+ *     cdef ewa_param_type v_del
  * 
  *     cdef unsigned int rowsm1 = swath_rows - 1             # <<<<<<<<<<<<<<
  *     cdef unsigned int colsm1 = swath_cols - 1
@@ -3455,7 +3215,7 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *             f_scale = EPSILON
  *         f_scale = qmax / f_scale
  */
-    __pyx_t_4 = ((__pyx_v_f_scale < __pyx_v_10polar2grid_5remap_7_fornav_EPSILON) != 0);
+    __pyx_t_4 = ((__pyx_v_f_scale < EPSILON) != 0);
     if (__pyx_t_4) {
 
       /* "polar2grid/remap/_fornav.pyx":152
@@ -3465,7 +3225,7 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *         f_scale = qmax / f_scale
  *         this_ewap.a = (vx * vx + vy * vy) * f_scale
  */
-      __pyx_v_f_scale = __pyx_v_10polar2grid_5remap_7_fornav_EPSILON;
+      __pyx_v_f_scale = EPSILON;
       goto __pyx_L5;
     }
     __pyx_L5:;
@@ -3522,7 +3282,7 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *             d = EPSILON
  *         d = 4.0 * qmax / d
  */
-    __pyx_t_4 = ((__pyx_v_d < __pyx_v_10polar2grid_5remap_7_fornav_EPSILON) != 0);
+    __pyx_t_4 = ((__pyx_v_d < EPSILON) != 0);
     if (__pyx_t_4) {
 
       /* "polar2grid/remap/_fornav.pyx":159
@@ -3532,7 +3292,7 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *         d = 4.0 * qmax / d
  *         this_ewap.f = qmax
  */
-      __pyx_v_d = __pyx_v_10polar2grid_5remap_7_fornav_EPSILON;
+      __pyx_v_d = EPSILON;
       goto __pyx_L6;
     }
     __pyx_L6:;
@@ -3634,8 +3394,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[colsm1].b = ewap[colsm1 - 1].b
  *     ewap[colsm1].c = ewap[colsm1 - 1].c
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).a;
-  (__pyx_v_ewap[__pyx_v_colsm1]).a = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).a;
+  (__pyx_v_ewap[__pyx_v_colsm1]).a = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":175
  *     # *[inserted by cython to avoid comment closer]/
@@ -3644,8 +3404,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[colsm1].c = ewap[colsm1 - 1].c
  *     ewap[colsm1].f = ewap[colsm1 - 1].f
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).b;
-  (__pyx_v_ewap[__pyx_v_colsm1]).b = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).b;
+  (__pyx_v_ewap[__pyx_v_colsm1]).b = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":176
  *     ewap[colsm1].a = ewap[colsm1 - 1].a
@@ -3654,8 +3414,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[colsm1].f = ewap[colsm1 - 1].f
  *     ewap[colsm1].u_del = ewap[colsm1 - 1].u_del
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).c;
-  (__pyx_v_ewap[__pyx_v_colsm1]).c = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).c;
+  (__pyx_v_ewap[__pyx_v_colsm1]).c = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":177
  *     ewap[colsm1].b = ewap[colsm1 - 1].b
@@ -3664,8 +3424,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[colsm1].u_del = ewap[colsm1 - 1].u_del
  *     ewap[colsm1].v_del = ewap[colsm1 - 1].v_del
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).f;
-  (__pyx_v_ewap[__pyx_v_colsm1]).f = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).f;
+  (__pyx_v_ewap[__pyx_v_colsm1]).f = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":178
  *     ewap[colsm1].c = ewap[colsm1 - 1].c
@@ -3674,8 +3434,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[colsm1].v_del = ewap[colsm1 - 1].v_del
  * 
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).u_del;
-  (__pyx_v_ewap[__pyx_v_colsm1]).u_del = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).u_del;
+  (__pyx_v_ewap[__pyx_v_colsm1]).u_del = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":179
  *     ewap[colsm1].f = ewap[colsm1 - 1].f
@@ -3684,8 +3444,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  * 
  *     # /[inserted by cython to avoid comment start]*
  */
-  __pyx_t_1 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).v_del;
-  (__pyx_v_ewap[__pyx_v_colsm1]).v_del = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[(__pyx_v_colsm1 - 1)]).v_del;
+  (__pyx_v_ewap[__pyx_v_colsm1]).v_del = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":184
  *     # *  Copy the parameters from the second column to the first column
@@ -3694,8 +3454,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[0].b = ewap[1].b
  *     ewap[0].c = ewap[1].c
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).a;
-  (__pyx_v_ewap[0]).a = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).a;
+  (__pyx_v_ewap[0]).a = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":185
  *     # *[inserted by cython to avoid comment closer]/
@@ -3704,8 +3464,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[0].c = ewap[1].c
  *     ewap[0].f = ewap[1].f
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).b;
-  (__pyx_v_ewap[0]).b = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).b;
+  (__pyx_v_ewap[0]).b = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":186
  *     ewap[0].a = ewap[1].a
@@ -3714,8 +3474,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[0].f = ewap[1].f
  *     ewap[0].u_del = ewap[1].u_del
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).c;
-  (__pyx_v_ewap[0]).c = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).c;
+  (__pyx_v_ewap[0]).c = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":187
  *     ewap[0].b = ewap[1].b
@@ -3724,8 +3484,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[0].u_del = ewap[1].u_del
  *     ewap[0].v_del = ewap[1].v_del
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).f;
-  (__pyx_v_ewap[0]).f = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).f;
+  (__pyx_v_ewap[0]).f = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":188
  *     ewap[0].c = ewap[1].c
@@ -3734,8 +3494,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  *     ewap[0].v_del = ewap[1].v_del
  * 
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).u_del;
-  (__pyx_v_ewap[0]).u_del = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).u_del;
+  (__pyx_v_ewap[0]).u_del = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":189
  *     ewap[0].f = ewap[1].f
@@ -3744,8 +3504,8 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  * 
  *     return 0
  */
-  __pyx_t_1 = (__pyx_v_ewap[1]).v_del;
-  (__pyx_v_ewap[0]).v_del = __pyx_t_1;
+  __pyx_t_5 = (__pyx_v_ewap[1]).v_del;
+  (__pyx_v_ewap[0]).v_del = __pyx_t_5;
 
   /* "polar2grid/remap/_fornav.pyx":191
  *     ewap[0].v_del = ewap[1].v_del
@@ -3762,7 +3522,7 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  * @cython.cdivision(True)
  * cdef int compute_ewa_parameters(size_t swath_cols, size_t swath_rows,             # <<<<<<<<<<<<<<
  *                                 cr_dtype *uimg, cr_dtype *vimg, ewa_weight *ewaw, ewa_parameters *ewap):
- *     cdef double ux
+ *     cdef ewa_param_type ux
  */
 
   /* function exit code */
@@ -3775,13 +3535,13 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_compute_ewa_paramete
  * 
  * @cython.cdivision(True)
  * cdef int write_grid_image(size_t grid_cols, size_t grid_rows,             # <<<<<<<<<<<<<<
- *                           double *grid_accum, double *grid_weights, bint maximum_weight_mode, double weight_sum_min,
+ *                           accum_type *grid_accum, weight_type *grid_weights, bint maximum_weight_mode, weight_type weight_sum_min,
  *                           grid_dtype *output_image, grid_dtype fill):
  */
 
-static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, double *__pyx_v_grid_accum, double *__pyx_v_grid_weights, int __pyx_v_maximum_weight_mode, double __pyx_v_weight_sum_min, __pyx_t_5numpy_float32_t *__pyx_v_output_image, __pyx_t_5numpy_float32_t __pyx_v_fill) {
-  double __pyx_v_this_weightp;
-  double __pyx_v_chanf;
+static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, float *__pyx_v_grid_accum, float *__pyx_v_grid_weights, int __pyx_v_maximum_weight_mode, float __pyx_v_weight_sum_min, __pyx_t_5numpy_float32_t *__pyx_v_output_image, __pyx_t_5numpy_float32_t __pyx_v_fill) {
+  accum_type __pyx_v_chanf;
+  weight_type __pyx_v_this_weightp;
   unsigned int __pyx_v_col;
   int __pyx_v_fill_count;
   int __pyx_r;
@@ -3793,7 +3553,7 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
   __Pyx_RefNannySetupContext("__pyx_fuse_0write_grid_image", 0);
 
   /* "polar2grid/remap/_fornav.pyx":200
- *     cdef double chanf
+ *     cdef weight_type this_weightp;
  *     cdef unsigned int col
  *     cdef int fill_count = 0             # <<<<<<<<<<<<<<
  * 
@@ -3818,7 +3578,7 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  * 
  *     for col in range(grid_cols * grid_rows):
  */
-    __pyx_v_weight_sum_min = __pyx_v_10polar2grid_5remap_7_fornav_EPSILON;
+    __pyx_v_weight_sum_min = EPSILON;
     goto __pyx_L3;
   }
   __pyx_L3:;
@@ -3856,7 +3616,7 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  *         # The fill value for the weight and accumulation arrays is static at NaN
  *         if grid_dtype is numpy.float32_t or grid_dtype is numpy.float64_t:
  *             if this_weightp < weight_sum_min or isnan(chanf):             # <<<<<<<<<<<<<<
- *                 chanf = double_nan
+ *                 chanf = <accum_type>NAN
  *             elif maximum_weight_mode:
  */
     __pyx_t_4 = ((__pyx_v_this_weightp < __pyx_v_weight_sum_min) != 0);
@@ -3873,17 +3633,17 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
       /* "polar2grid/remap/_fornav.pyx":214
  *         if grid_dtype is numpy.float32_t or grid_dtype is numpy.float64_t:
  *             if this_weightp < weight_sum_min or isnan(chanf):
- *                 chanf = double_nan             # <<<<<<<<<<<<<<
+ *                 chanf = <accum_type>NAN             # <<<<<<<<<<<<<<
  *             elif maximum_weight_mode:
  *                 # keep the current value
  */
-      __pyx_v_chanf = __pyx_v_10polar2grid_5remap_7_fornav_double_nan;
+      __pyx_v_chanf = ((accum_type)NAN);
       goto __pyx_L6;
     }
 
     /* "polar2grid/remap/_fornav.pyx":215
  *             if this_weightp < weight_sum_min or isnan(chanf):
- *                 chanf = double_nan
+ *                 chanf = <accum_type>NAN
  *             elif maximum_weight_mode:             # <<<<<<<<<<<<<<
  *                 # keep the current value
  *                 chanf = chanf
@@ -3983,7 +3743,7 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  * 
  *     return fill_count             # <<<<<<<<<<<<<<
  * 
- * cdef double **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
+ * cdef accum_type **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
  */
   __pyx_r = __pyx_v_fill_count;
   goto __pyx_L0;
@@ -3992,7 +3752,7 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  * 
  * @cython.cdivision(True)
  * cdef int write_grid_image(size_t grid_cols, size_t grid_rows,             # <<<<<<<<<<<<<<
- *                           double *grid_accum, double *grid_weights, bint maximum_weight_mode, double weight_sum_min,
+ *                           accum_type *grid_accum, weight_type *grid_weights, bint maximum_weight_mode, weight_type weight_sum_min,
  *                           grid_dtype *output_image, grid_dtype fill):
  */
 
@@ -4002,9 +3762,9 @@ static int __pyx_fuse_0__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
   return __pyx_r;
 }
 
-static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, double *__pyx_v_grid_accum, double *__pyx_v_grid_weights, int __pyx_v_maximum_weight_mode, double __pyx_v_weight_sum_min, __pyx_t_5numpy_float64_t *__pyx_v_output_image, __pyx_t_5numpy_float64_t __pyx_v_fill) {
-  double __pyx_v_this_weightp;
-  double __pyx_v_chanf;
+static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, float *__pyx_v_grid_accum, float *__pyx_v_grid_weights, int __pyx_v_maximum_weight_mode, float __pyx_v_weight_sum_min, __pyx_t_5numpy_float64_t *__pyx_v_output_image, __pyx_t_5numpy_float64_t __pyx_v_fill) {
+  accum_type __pyx_v_chanf;
+  weight_type __pyx_v_this_weightp;
   unsigned int __pyx_v_col;
   int __pyx_v_fill_count;
   int __pyx_r;
@@ -4016,7 +3776,7 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
   __Pyx_RefNannySetupContext("__pyx_fuse_1write_grid_image", 0);
 
   /* "polar2grid/remap/_fornav.pyx":200
- *     cdef double chanf
+ *     cdef weight_type this_weightp;
  *     cdef unsigned int col
  *     cdef int fill_count = 0             # <<<<<<<<<<<<<<
  * 
@@ -4041,7 +3801,7 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  * 
  *     for col in range(grid_cols * grid_rows):
  */
-    __pyx_v_weight_sum_min = __pyx_v_10polar2grid_5remap_7_fornav_EPSILON;
+    __pyx_v_weight_sum_min = EPSILON;
     goto __pyx_L3;
   }
   __pyx_L3:;
@@ -4079,7 +3839,7 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  *         # The fill value for the weight and accumulation arrays is static at NaN
  *         if grid_dtype is numpy.float32_t or grid_dtype is numpy.float64_t:
  *             if this_weightp < weight_sum_min or isnan(chanf):             # <<<<<<<<<<<<<<
- *                 chanf = double_nan
+ *                 chanf = <accum_type>NAN
  *             elif maximum_weight_mode:
  */
     __pyx_t_4 = ((__pyx_v_this_weightp < __pyx_v_weight_sum_min) != 0);
@@ -4096,17 +3856,17 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
       /* "polar2grid/remap/_fornav.pyx":214
  *         if grid_dtype is numpy.float32_t or grid_dtype is numpy.float64_t:
  *             if this_weightp < weight_sum_min or isnan(chanf):
- *                 chanf = double_nan             # <<<<<<<<<<<<<<
+ *                 chanf = <accum_type>NAN             # <<<<<<<<<<<<<<
  *             elif maximum_weight_mode:
  *                 # keep the current value
  */
-      __pyx_v_chanf = __pyx_v_10polar2grid_5remap_7_fornav_double_nan;
+      __pyx_v_chanf = ((accum_type)NAN);
       goto __pyx_L6;
     }
 
     /* "polar2grid/remap/_fornav.pyx":215
  *             if this_weightp < weight_sum_min or isnan(chanf):
- *                 chanf = double_nan
+ *                 chanf = <accum_type>NAN
  *             elif maximum_weight_mode:             # <<<<<<<<<<<<<<
  *                 # keep the current value
  *                 chanf = chanf
@@ -4206,7 +3966,7 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  * 
  *     return fill_count             # <<<<<<<<<<<<<<
  * 
- * cdef double **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
+ * cdef accum_type **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
  */
   __pyx_r = __pyx_v_fill_count;
   goto __pyx_L0;
@@ -4215,7 +3975,7 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  * 
  * @cython.cdivision(True)
  * cdef int write_grid_image(size_t grid_cols, size_t grid_rows,             # <<<<<<<<<<<<<<
- *                           double *grid_accum, double *grid_weights, bint maximum_weight_mode, double weight_sum_min,
+ *                           accum_type *grid_accum, weight_type *grid_weights, bint maximum_weight_mode, weight_type weight_sum_min,
  *                           grid_dtype *output_image, grid_dtype fill):
  */
 
@@ -4225,9 +3985,9 @@ static int __pyx_fuse_1__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
   return __pyx_r;
 }
 
-static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, double *__pyx_v_grid_accum, double *__pyx_v_grid_weights, int __pyx_v_maximum_weight_mode, double __pyx_v_weight_sum_min, CYTHON_UNUSED __pyx_t_5numpy_int8_t *__pyx_v_output_image, CYTHON_UNUSED __pyx_t_5numpy_int8_t __pyx_v_fill) {
-  double __pyx_v_this_weightp;
-  double __pyx_v_chanf;
+static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, float *__pyx_v_grid_accum, float *__pyx_v_grid_weights, int __pyx_v_maximum_weight_mode, float __pyx_v_weight_sum_min, CYTHON_UNUSED __pyx_t_5numpy_int8_t *__pyx_v_output_image, CYTHON_UNUSED __pyx_t_5numpy_int8_t __pyx_v_fill) {
+  accum_type __pyx_v_chanf;
+  weight_type __pyx_v_this_weightp;
   unsigned int __pyx_v_col;
   int __pyx_v_fill_count;
   int __pyx_r;
@@ -4238,7 +3998,7 @@ static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
   __Pyx_RefNannySetupContext("__pyx_fuse_2write_grid_image", 0);
 
   /* "polar2grid/remap/_fornav.pyx":200
- *     cdef double chanf
+ *     cdef weight_type this_weightp;
  *     cdef unsigned int col
  *     cdef int fill_count = 0             # <<<<<<<<<<<<<<
  * 
@@ -4263,7 +4023,7 @@ static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  * 
  *     for col in range(grid_cols * grid_rows):
  */
-    __pyx_v_weight_sum_min = __pyx_v_10polar2grid_5remap_7_fornav_EPSILON;
+    __pyx_v_weight_sum_min = EPSILON;
     goto __pyx_L3;
   }
   __pyx_L3:;
@@ -4301,7 +4061,7 @@ static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  *                 chanf = chanf / this_weightp
  *         else:
  *             if this_weightp < weight_sum_min:             # <<<<<<<<<<<<<<
- *                 chanf = double_nan
+ *                 chanf = <accum_type>NAN
  *             elif maximum_weight_mode:
  */
     __pyx_t_1 = ((__pyx_v_this_weightp < __pyx_v_weight_sum_min) != 0);
@@ -4310,17 +4070,17 @@ static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
       /* "polar2grid/remap/_fornav.pyx":224
  *         else:
  *             if this_weightp < weight_sum_min:
- *                 chanf = double_nan             # <<<<<<<<<<<<<<
+ *                 chanf = <accum_type>NAN             # <<<<<<<<<<<<<<
  *             elif maximum_weight_mode:
  *                 # keep the current value
  */
-      __pyx_v_chanf = __pyx_v_10polar2grid_5remap_7_fornav_double_nan;
+      __pyx_v_chanf = ((accum_type)NAN);
       goto __pyx_L6;
     }
 
     /* "polar2grid/remap/_fornav.pyx":225
  *             if this_weightp < weight_sum_min:
- *                 chanf = double_nan
+ *                 chanf = <accum_type>NAN
  *             elif maximum_weight_mode:             # <<<<<<<<<<<<<<
  *                 # keep the current value
  *                 chanf = chanf
@@ -4388,7 +4148,7 @@ static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  * 
  *     return fill_count             # <<<<<<<<<<<<<<
  * 
- * cdef double **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
+ * cdef accum_type **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
  */
   __pyx_r = __pyx_v_fill_count;
   goto __pyx_L0;
@@ -4397,7 +4157,7 @@ static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
  * 
  * @cython.cdivision(True)
  * cdef int write_grid_image(size_t grid_cols, size_t grid_rows,             # <<<<<<<<<<<<<<
- *                           double *grid_accum, double *grid_weights, bint maximum_weight_mode, double weight_sum_min,
+ *                           accum_type *grid_accum, weight_type *grid_weights, bint maximum_weight_mode, weight_type weight_sum_min,
  *                           grid_dtype *output_image, grid_dtype fill):
  */
 
@@ -4410,15 +4170,15 @@ static int __pyx_fuse_2__pyx_f_10polar2grid_5remap_7_fornav_write_grid_image(siz
 /* "polar2grid/remap/_fornav.pyx":301
  *     return fill_count
  * 
- * cdef double **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):             # <<<<<<<<<<<<<<
- *     cdef double **grid_accums = <double **>malloc(chan_count * sizeof(double *))
+ * cdef accum_type **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):             # <<<<<<<<<<<<<<
+ *     cdef accum_type **grid_accums = <accum_type **>malloc(chan_count * sizeof(accum_type *))
  *     cdef unsigned int i
  */
 
-static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size_t __pyx_v_chan_count, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows) {
-  double **__pyx_v_grid_accums;
+static accum_type **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size_t __pyx_v_chan_count, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows) {
+  accum_type **__pyx_v_grid_accums;
   unsigned int __pyx_v_i;
-  double **__pyx_r;
+  accum_type **__pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   size_t __pyx_t_2;
@@ -4427,12 +4187,12 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size
 
   /* "polar2grid/remap/_fornav.pyx":302
  * 
- * cdef double **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
- *     cdef double **grid_accums = <double **>malloc(chan_count * sizeof(double *))             # <<<<<<<<<<<<<<
+ * cdef accum_type **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
+ *     cdef accum_type **grid_accums = <accum_type **>malloc(chan_count * sizeof(accum_type *))             # <<<<<<<<<<<<<<
  *     cdef unsigned int i
  * 
  */
-  __pyx_v_grid_accums = ((double **)malloc((__pyx_v_chan_count * (sizeof(double *)))));
+  __pyx_v_grid_accums = ((accum_type **)malloc((__pyx_v_chan_count * (sizeof(accum_type *)))));
 
   /* "polar2grid/remap/_fornav.pyx":305
  *     cdef unsigned int i
@@ -4449,7 +4209,7 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size
  *     if not grid_accums:
  *         return NULL             # <<<<<<<<<<<<<<
  *     for i in range(chan_count):
- *         grid_accums[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))
+ *         grid_accums[i] = <accum_type *>calloc(grid_cols * grid_rows, sizeof(accum_type))
  */
     __pyx_r = NULL;
     goto __pyx_L0;
@@ -4459,7 +4219,7 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size
  *     if not grid_accums:
  *         return NULL
  *     for i in range(chan_count):             # <<<<<<<<<<<<<<
- *         grid_accums[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))
+ *         grid_accums[i] = <accum_type *>calloc(grid_cols * grid_rows, sizeof(accum_type))
  *         if not grid_accums[i]:
  */
   __pyx_t_2 = __pyx_v_chan_count;
@@ -4469,15 +4229,15 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size
     /* "polar2grid/remap/_fornav.pyx":308
  *         return NULL
  *     for i in range(chan_count):
- *         grid_accums[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))             # <<<<<<<<<<<<<<
+ *         grid_accums[i] = <accum_type *>calloc(grid_cols * grid_rows, sizeof(accum_type))             # <<<<<<<<<<<<<<
  *         if not grid_accums[i]:
  *             return NULL
  */
-    (__pyx_v_grid_accums[__pyx_v_i]) = ((double *)calloc((__pyx_v_grid_cols * __pyx_v_grid_rows), (sizeof(double))));
+    (__pyx_v_grid_accums[__pyx_v_i]) = ((accum_type *)calloc((__pyx_v_grid_cols * __pyx_v_grid_rows), (sizeof(accum_type))));
 
     /* "polar2grid/remap/_fornav.pyx":309
  *     for i in range(chan_count):
- *         grid_accums[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))
+ *         grid_accums[i] = <accum_type *>calloc(grid_cols * grid_rows, sizeof(accum_type))
  *         if not grid_accums[i]:             # <<<<<<<<<<<<<<
  *             return NULL
  * 
@@ -4486,7 +4246,7 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size
     if (__pyx_t_1) {
 
       /* "polar2grid/remap/_fornav.pyx":310
- *         grid_accums[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))
+ *         grid_accums[i] = <accum_type *>calloc(grid_cols * grid_rows, sizeof(accum_type))
  *         if not grid_accums[i]:
  *             return NULL             # <<<<<<<<<<<<<<
  * 
@@ -4502,7 +4262,7 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size
  * 
  *     return grid_accums             # <<<<<<<<<<<<<<
  * 
- * cdef double **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):
+ * cdef weight_type **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):
  */
   __pyx_r = __pyx_v_grid_accums;
   goto __pyx_L0;
@@ -4510,8 +4270,8 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size
   /* "polar2grid/remap/_fornav.pyx":301
  *     return fill_count
  * 
- * cdef double **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):             # <<<<<<<<<<<<<<
- *     cdef double **grid_accums = <double **>malloc(chan_count * sizeof(double *))
+ * cdef accum_type **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):             # <<<<<<<<<<<<<<
+ *     cdef accum_type **grid_accums = <accum_type **>malloc(chan_count * sizeof(accum_type *))
  *     cdef unsigned int i
  */
 
@@ -4524,15 +4284,15 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_accums(size
 /* "polar2grid/remap/_fornav.pyx":314
  *     return grid_accums
  * 
- * cdef double **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):             # <<<<<<<<<<<<<<
- *     cdef double **grid_weights = <double **>malloc(chan_count * sizeof(double *))
+ * cdef weight_type **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):             # <<<<<<<<<<<<<<
+ *     cdef weight_type **grid_weights = <weight_type **>malloc(chan_count * sizeof(weight_type *))
  *     cdef unsigned int i
  */
 
-static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(size_t __pyx_v_chan_count, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows) {
-  double **__pyx_v_grid_weights;
+static weight_type **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(size_t __pyx_v_chan_count, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows) {
+  weight_type **__pyx_v_grid_weights;
   unsigned int __pyx_v_i;
-  double **__pyx_r;
+  weight_type **__pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   size_t __pyx_t_2;
@@ -4541,12 +4301,12 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(siz
 
   /* "polar2grid/remap/_fornav.pyx":315
  * 
- * cdef double **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):
- *     cdef double **grid_weights = <double **>malloc(chan_count * sizeof(double *))             # <<<<<<<<<<<<<<
+ * cdef weight_type **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):
+ *     cdef weight_type **grid_weights = <weight_type **>malloc(chan_count * sizeof(weight_type *))             # <<<<<<<<<<<<<<
  *     cdef unsigned int i
  * 
  */
-  __pyx_v_grid_weights = ((double **)malloc((__pyx_v_chan_count * (sizeof(double *)))));
+  __pyx_v_grid_weights = ((weight_type **)malloc((__pyx_v_chan_count * (sizeof(weight_type *)))));
 
   /* "polar2grid/remap/_fornav.pyx":318
  *     cdef unsigned int i
@@ -4563,7 +4323,7 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(siz
  *     if not grid_weights:
  *         return NULL             # <<<<<<<<<<<<<<
  *     for i in range(chan_count):
- *         grid_weights[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))
+ *         grid_weights[i] = <weight_type *>calloc(grid_cols * grid_rows, sizeof(weight_type))
  */
     __pyx_r = NULL;
     goto __pyx_L0;
@@ -4573,7 +4333,7 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(siz
  *     if not grid_weights:
  *         return NULL
  *     for i in range(chan_count):             # <<<<<<<<<<<<<<
- *         grid_weights[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))
+ *         grid_weights[i] = <weight_type *>calloc(grid_cols * grid_rows, sizeof(weight_type))
  *         if not grid_weights[i]:
  */
   __pyx_t_2 = __pyx_v_chan_count;
@@ -4583,15 +4343,15 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(siz
     /* "polar2grid/remap/_fornav.pyx":321
  *         return NULL
  *     for i in range(chan_count):
- *         grid_weights[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))             # <<<<<<<<<<<<<<
+ *         grid_weights[i] = <weight_type *>calloc(grid_cols * grid_rows, sizeof(weight_type))             # <<<<<<<<<<<<<<
  *         if not grid_weights[i]:
  *             return NULL
  */
-    (__pyx_v_grid_weights[__pyx_v_i]) = ((double *)calloc((__pyx_v_grid_cols * __pyx_v_grid_rows), (sizeof(double))));
+    (__pyx_v_grid_weights[__pyx_v_i]) = ((weight_type *)calloc((__pyx_v_grid_cols * __pyx_v_grid_rows), (sizeof(weight_type))));
 
     /* "polar2grid/remap/_fornav.pyx":322
  *     for i in range(chan_count):
- *         grid_weights[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))
+ *         grid_weights[i] = <weight_type *>calloc(grid_cols * grid_rows, sizeof(weight_type))
  *         if not grid_weights[i]:             # <<<<<<<<<<<<<<
  *             return NULL
  * 
@@ -4600,7 +4360,7 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(siz
     if (__pyx_t_1) {
 
       /* "polar2grid/remap/_fornav.pyx":323
- *         grid_weights[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))
+ *         grid_weights[i] = <weight_type *>calloc(grid_cols * grid_rows, sizeof(weight_type))
  *         if not grid_weights[i]:
  *             return NULL             # <<<<<<<<<<<<<<
  * 
@@ -4616,7 +4376,7 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(siz
  * 
  *     return grid_weights             # <<<<<<<<<<<<<<
  * 
- * cdef void deinitialize_grids(size_t chan_count, double **grids):
+ * cdef void deinitialize_grids(size_t chan_count, void **grids):
  */
   __pyx_r = __pyx_v_grid_weights;
   goto __pyx_L0;
@@ -4624,8 +4384,8 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(siz
   /* "polar2grid/remap/_fornav.pyx":314
  *     return grid_accums
  * 
- * cdef double **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):             # <<<<<<<<<<<<<<
- *     cdef double **grid_weights = <double **>malloc(chan_count * sizeof(double *))
+ * cdef weight_type **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):             # <<<<<<<<<<<<<<
+ *     cdef weight_type **grid_weights = <weight_type **>malloc(chan_count * sizeof(weight_type *))
  *     cdef unsigned int i
  */
 
@@ -4638,12 +4398,12 @@ static double **__pyx_f_10polar2grid_5remap_7_fornav_initialize_grid_weights(siz
 /* "polar2grid/remap/_fornav.pyx":327
  *     return grid_weights
  * 
- * cdef void deinitialize_grids(size_t chan_count, double **grids):             # <<<<<<<<<<<<<<
+ * cdef void deinitialize_grids(size_t chan_count, void **grids):             # <<<<<<<<<<<<<<
  *     cdef unsigned int i
  *     for i in range(chan_count):
  */
 
-static void __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(size_t __pyx_v_chan_count, double **__pyx_v_grids) {
+static void __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(size_t __pyx_v_chan_count, void **__pyx_v_grids) {
   unsigned int __pyx_v_i;
   __Pyx_RefNannyDeclarations
   size_t __pyx_t_1;
@@ -4652,7 +4412,7 @@ static void __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(size_t __pyx
   __Pyx_RefNannySetupContext("deinitialize_grids", 0);
 
   /* "polar2grid/remap/_fornav.pyx":329
- * cdef void deinitialize_grids(size_t chan_count, double **grids):
+ * cdef void deinitialize_grids(size_t chan_count, void **grids):
  *     cdef unsigned int i
  *     for i in range(chan_count):             # <<<<<<<<<<<<<<
  *         if grids[i]:
@@ -4697,7 +4457,7 @@ static void __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(size_t __pyx
   /* "polar2grid/remap/_fornav.pyx":327
  *     return grid_weights
  * 
- * cdef void deinitialize_grids(size_t chan_count, double **grids):             # <<<<<<<<<<<<<<
+ * cdef void deinitialize_grids(size_t chan_count, void **grids):             # <<<<<<<<<<<<<<
  *     cdef unsigned int i
  *     for i in range(chan_count):
  */
@@ -4714,7 +4474,7 @@ static void __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(size_t __pyx
  *            image_dtype **input_arrays, grid_dtype **output_arrays,
  */
 
-static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float32_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float32_t *__pyx_v_rows_pointer, __pyx_t_5numpy_float32_t **__pyx_v_input_arrays, __pyx_t_5numpy_float32_t **__pyx_v_output_arrays, __pyx_t_5numpy_float32_t __pyx_v_input_fill, __pyx_t_5numpy_float32_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
+static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float32_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float32_t *__pyx_v_rows_pointer, __pyx_t_5numpy_float32_t **__pyx_v_input_arrays, __pyx_t_5numpy_float32_t **__pyx_v_output_arrays, __pyx_t_5numpy_float32_t __pyx_v_input_fill, __pyx_t_5numpy_float32_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, float __pyx_v_weight_min, float __pyx_v_weight_distance_max, float __pyx_v_weight_delta_max, float __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
   unsigned int __pyx_v_row_idx;
   unsigned int __pyx_v_idx;
   int __pyx_v_got_point;
@@ -4727,8 +4487,8 @@ static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   __pyx_t_5numpy_float32_t **__pyx_v_input_images;
   ewa_weight __pyx_v_ewaw;
   ewa_parameters *__pyx_v_ewap;
-  double **__pyx_v_grid_accums;
-  double **__pyx_v_grid_weights;
+  accum_type **__pyx_v_grid_accums;
+  weight_type **__pyx_v_grid_weights;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -4819,7 +4579,7 @@ static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":366
  *     # Allocate location for storing the sum of all of the pixels involved in each grid cell
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_accums is NULL:
  *         raise MemoryError()
  */
@@ -4827,19 +4587,19 @@ static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":367
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  */
   __pyx_t_1 = ((__pyx_v_grid_accums == NULL) != 0);
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":368
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  */
     PyErr_NoMemory(); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 368; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -4848,7 +4608,7 @@ static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":369
  *     if grid_accums is NULL:
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_weights is NULL:
  *         raise MemoryError()
  */
@@ -4856,7 +4616,7 @@ static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":370
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
  *     # Allocate memory for the parameters specific to each column
@@ -4865,7 +4625,7 @@ static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":371
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
  *     # Allocate memory for the parameters specific to each column
@@ -5157,32 +4917,32 @@ static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
  * 
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  */
   __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_weight((&__pyx_v_ewaw));
 
   /* "polar2grid/remap/_fornav.pyx":423
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_accums);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_accums));
 
   /* "polar2grid/remap/_fornav.pyx":424
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)             # <<<<<<<<<<<<<<
  *     return fill_count
  * 
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_weights);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_weights));
 
   /* "polar2grid/remap/_fornav.pyx":425
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count             # <<<<<<<<<<<<<<
  * 
  * @cython.boundscheck(False)
@@ -5208,7 +4968,7 @@ static int __pyx_fuse_0_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   return __pyx_r;
 }
 
-static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float32_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float32_t *__pyx_v_rows_pointer, __pyx_t_5numpy_float64_t **__pyx_v_input_arrays, __pyx_t_5numpy_float64_t **__pyx_v_output_arrays, __pyx_t_5numpy_float64_t __pyx_v_input_fill, __pyx_t_5numpy_float64_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
+static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float32_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float32_t *__pyx_v_rows_pointer, __pyx_t_5numpy_float64_t **__pyx_v_input_arrays, __pyx_t_5numpy_float64_t **__pyx_v_output_arrays, __pyx_t_5numpy_float64_t __pyx_v_input_fill, __pyx_t_5numpy_float64_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, float __pyx_v_weight_min, float __pyx_v_weight_distance_max, float __pyx_v_weight_delta_max, float __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
   unsigned int __pyx_v_row_idx;
   unsigned int __pyx_v_idx;
   int __pyx_v_got_point;
@@ -5221,8 +4981,8 @@ static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   __pyx_t_5numpy_float64_t **__pyx_v_input_images;
   ewa_weight __pyx_v_ewaw;
   ewa_parameters *__pyx_v_ewap;
-  double **__pyx_v_grid_accums;
-  double **__pyx_v_grid_weights;
+  accum_type **__pyx_v_grid_accums;
+  weight_type **__pyx_v_grid_weights;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -5313,7 +5073,7 @@ static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":366
  *     # Allocate location for storing the sum of all of the pixels involved in each grid cell
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_accums is NULL:
  *         raise MemoryError()
  */
@@ -5321,19 +5081,19 @@ static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":367
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  */
   __pyx_t_1 = ((__pyx_v_grid_accums == NULL) != 0);
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":368
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  */
     PyErr_NoMemory(); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 368; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -5342,7 +5102,7 @@ static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":369
  *     if grid_accums is NULL:
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_weights is NULL:
  *         raise MemoryError()
  */
@@ -5350,7 +5110,7 @@ static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":370
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
  *     # Allocate memory for the parameters specific to each column
@@ -5359,7 +5119,7 @@ static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":371
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
  *     # Allocate memory for the parameters specific to each column
@@ -5651,32 +5411,32 @@ static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
  * 
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  */
   __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_weight((&__pyx_v_ewaw));
 
   /* "polar2grid/remap/_fornav.pyx":423
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_accums);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_accums));
 
   /* "polar2grid/remap/_fornav.pyx":424
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)             # <<<<<<<<<<<<<<
  *     return fill_count
  * 
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_weights);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_weights));
 
   /* "polar2grid/remap/_fornav.pyx":425
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count             # <<<<<<<<<<<<<<
  * 
  * @cython.boundscheck(False)
@@ -5702,7 +5462,7 @@ static int __pyx_fuse_0_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   return __pyx_r;
 }
 
-static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float32_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float32_t *__pyx_v_rows_pointer, __pyx_t_5numpy_int8_t **__pyx_v_input_arrays, __pyx_t_5numpy_int8_t **__pyx_v_output_arrays, __pyx_t_5numpy_int8_t __pyx_v_input_fill, __pyx_t_5numpy_int8_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
+static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float32_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float32_t *__pyx_v_rows_pointer, __pyx_t_5numpy_int8_t **__pyx_v_input_arrays, __pyx_t_5numpy_int8_t **__pyx_v_output_arrays, __pyx_t_5numpy_int8_t __pyx_v_input_fill, __pyx_t_5numpy_int8_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, float __pyx_v_weight_min, float __pyx_v_weight_distance_max, float __pyx_v_weight_delta_max, float __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
   unsigned int __pyx_v_row_idx;
   unsigned int __pyx_v_idx;
   int __pyx_v_got_point;
@@ -5715,8 +5475,8 @@ static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   __pyx_t_5numpy_int8_t **__pyx_v_input_images;
   ewa_weight __pyx_v_ewaw;
   ewa_parameters *__pyx_v_ewap;
-  double **__pyx_v_grid_accums;
-  double **__pyx_v_grid_weights;
+  accum_type **__pyx_v_grid_accums;
+  weight_type **__pyx_v_grid_weights;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -5807,7 +5567,7 @@ static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":366
  *     # Allocate location for storing the sum of all of the pixels involved in each grid cell
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_accums is NULL:
  *         raise MemoryError()
  */
@@ -5815,19 +5575,19 @@ static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":367
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  */
   __pyx_t_1 = ((__pyx_v_grid_accums == NULL) != 0);
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":368
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  */
     PyErr_NoMemory(); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 368; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -5836,7 +5596,7 @@ static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":369
  *     if grid_accums is NULL:
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_weights is NULL:
  *         raise MemoryError()
  */
@@ -5844,7 +5604,7 @@ static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":370
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
  *     # Allocate memory for the parameters specific to each column
@@ -5853,7 +5613,7 @@ static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":371
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
  *     # Allocate memory for the parameters specific to each column
@@ -6145,32 +5905,32 @@ static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
  * 
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  */
   __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_weight((&__pyx_v_ewaw));
 
   /* "polar2grid/remap/_fornav.pyx":423
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_accums);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_accums));
 
   /* "polar2grid/remap/_fornav.pyx":424
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)             # <<<<<<<<<<<<<<
  *     return fill_count
  * 
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_weights);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_weights));
 
   /* "polar2grid/remap/_fornav.pyx":425
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count             # <<<<<<<<<<<<<<
  * 
  * @cython.boundscheck(False)
@@ -6196,7 +5956,7 @@ static int __pyx_fuse_0_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   return __pyx_r;
 }
 
-static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float64_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float64_t *__pyx_v_rows_pointer, __pyx_t_5numpy_float32_t **__pyx_v_input_arrays, __pyx_t_5numpy_float32_t **__pyx_v_output_arrays, __pyx_t_5numpy_float32_t __pyx_v_input_fill, __pyx_t_5numpy_float32_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
+static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float64_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float64_t *__pyx_v_rows_pointer, __pyx_t_5numpy_float32_t **__pyx_v_input_arrays, __pyx_t_5numpy_float32_t **__pyx_v_output_arrays, __pyx_t_5numpy_float32_t __pyx_v_input_fill, __pyx_t_5numpy_float32_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, float __pyx_v_weight_min, float __pyx_v_weight_distance_max, float __pyx_v_weight_delta_max, float __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
   unsigned int __pyx_v_row_idx;
   unsigned int __pyx_v_idx;
   int __pyx_v_got_point;
@@ -6209,8 +5969,8 @@ static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   __pyx_t_5numpy_float32_t **__pyx_v_input_images;
   ewa_weight __pyx_v_ewaw;
   ewa_parameters *__pyx_v_ewap;
-  double **__pyx_v_grid_accums;
-  double **__pyx_v_grid_weights;
+  accum_type **__pyx_v_grid_accums;
+  weight_type **__pyx_v_grid_weights;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -6301,7 +6061,7 @@ static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":366
  *     # Allocate location for storing the sum of all of the pixels involved in each grid cell
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_accums is NULL:
  *         raise MemoryError()
  */
@@ -6309,19 +6069,19 @@ static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":367
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  */
   __pyx_t_1 = ((__pyx_v_grid_accums == NULL) != 0);
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":368
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  */
     PyErr_NoMemory(); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 368; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -6330,7 +6090,7 @@ static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":369
  *     if grid_accums is NULL:
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_weights is NULL:
  *         raise MemoryError()
  */
@@ -6338,7 +6098,7 @@ static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":370
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
  *     # Allocate memory for the parameters specific to each column
@@ -6347,7 +6107,7 @@ static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":371
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
  *     # Allocate memory for the parameters specific to each column
@@ -6639,32 +6399,32 @@ static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
  * 
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  */
   __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_weight((&__pyx_v_ewaw));
 
   /* "polar2grid/remap/_fornav.pyx":423
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_accums);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_accums));
 
   /* "polar2grid/remap/_fornav.pyx":424
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)             # <<<<<<<<<<<<<<
  *     return fill_count
  * 
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_weights);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_weights));
 
   /* "polar2grid/remap/_fornav.pyx":425
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count             # <<<<<<<<<<<<<<
  * 
  * @cython.boundscheck(False)
@@ -6690,7 +6450,7 @@ static int __pyx_fuse_1_0_0__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   return __pyx_r;
 }
 
-static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float64_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float64_t *__pyx_v_rows_pointer, __pyx_t_5numpy_float64_t **__pyx_v_input_arrays, __pyx_t_5numpy_float64_t **__pyx_v_output_arrays, __pyx_t_5numpy_float64_t __pyx_v_input_fill, __pyx_t_5numpy_float64_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
+static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float64_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float64_t *__pyx_v_rows_pointer, __pyx_t_5numpy_float64_t **__pyx_v_input_arrays, __pyx_t_5numpy_float64_t **__pyx_v_output_arrays, __pyx_t_5numpy_float64_t __pyx_v_input_fill, __pyx_t_5numpy_float64_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, float __pyx_v_weight_min, float __pyx_v_weight_distance_max, float __pyx_v_weight_delta_max, float __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
   unsigned int __pyx_v_row_idx;
   unsigned int __pyx_v_idx;
   int __pyx_v_got_point;
@@ -6703,8 +6463,8 @@ static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   __pyx_t_5numpy_float64_t **__pyx_v_input_images;
   ewa_weight __pyx_v_ewaw;
   ewa_parameters *__pyx_v_ewap;
-  double **__pyx_v_grid_accums;
-  double **__pyx_v_grid_weights;
+  accum_type **__pyx_v_grid_accums;
+  weight_type **__pyx_v_grid_weights;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -6795,7 +6555,7 @@ static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":366
  *     # Allocate location for storing the sum of all of the pixels involved in each grid cell
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_accums is NULL:
  *         raise MemoryError()
  */
@@ -6803,19 +6563,19 @@ static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":367
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  */
   __pyx_t_1 = ((__pyx_v_grid_accums == NULL) != 0);
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":368
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  */
     PyErr_NoMemory(); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 368; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -6824,7 +6584,7 @@ static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":369
  *     if grid_accums is NULL:
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_weights is NULL:
  *         raise MemoryError()
  */
@@ -6832,7 +6592,7 @@ static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":370
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
  *     # Allocate memory for the parameters specific to each column
@@ -6841,7 +6601,7 @@ static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":371
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
  *     # Allocate memory for the parameters specific to each column
@@ -7133,32 +6893,32 @@ static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
  * 
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  */
   __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_weight((&__pyx_v_ewaw));
 
   /* "polar2grid/remap/_fornav.pyx":423
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_accums);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_accums));
 
   /* "polar2grid/remap/_fornav.pyx":424
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)             # <<<<<<<<<<<<<<
  *     return fill_count
  * 
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_weights);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_weights));
 
   /* "polar2grid/remap/_fornav.pyx":425
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count             # <<<<<<<<<<<<<<
  * 
  * @cython.boundscheck(False)
@@ -7184,7 +6944,7 @@ static int __pyx_fuse_1_1_1__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   return __pyx_r;
 }
 
-static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float64_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float64_t *__pyx_v_rows_pointer, __pyx_t_5numpy_int8_t **__pyx_v_input_arrays, __pyx_t_5numpy_int8_t **__pyx_v_output_arrays, __pyx_t_5numpy_int8_t __pyx_v_input_fill, __pyx_t_5numpy_int8_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
+static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __pyx_v_chan_count, size_t __pyx_v_swath_cols, size_t __pyx_v_swath_rows, size_t __pyx_v_grid_cols, size_t __pyx_v_grid_rows, __pyx_t_5numpy_float64_t *__pyx_v_cols_pointer, __pyx_t_5numpy_float64_t *__pyx_v_rows_pointer, __pyx_t_5numpy_int8_t **__pyx_v_input_arrays, __pyx_t_5numpy_int8_t **__pyx_v_output_arrays, __pyx_t_5numpy_int8_t __pyx_v_input_fill, __pyx_t_5numpy_int8_t __pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, float __pyx_v_weight_min, float __pyx_v_weight_distance_max, float __pyx_v_weight_delta_max, float __pyx_v_weight_sum_min, int __pyx_v_maximum_weight_mode) {
   unsigned int __pyx_v_row_idx;
   unsigned int __pyx_v_idx;
   int __pyx_v_got_point;
@@ -7197,8 +6957,8 @@ static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   __pyx_t_5numpy_int8_t **__pyx_v_input_images;
   ewa_weight __pyx_v_ewaw;
   ewa_parameters *__pyx_v_ewap;
-  double **__pyx_v_grid_accums;
-  double **__pyx_v_grid_weights;
+  accum_type **__pyx_v_grid_accums;
+  weight_type **__pyx_v_grid_weights;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -7289,7 +7049,7 @@ static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":366
  *     # Allocate location for storing the sum of all of the pixels involved in each grid cell
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_accums is NULL:
  *         raise MemoryError()
  */
@@ -7297,19 +7057,19 @@ static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":367
  *     # XXX: Do these need to be initialized to a fill value?
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  */
   __pyx_t_1 = ((__pyx_v_grid_accums == NULL) != 0);
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":368
- *     cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+ *     cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
  *     if grid_accums is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  */
     PyErr_NoMemory(); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 368; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -7318,7 +7078,7 @@ static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   /* "polar2grid/remap/_fornav.pyx":369
  *     if grid_accums is NULL:
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)             # <<<<<<<<<<<<<<
  *     if grid_weights is NULL:
  *         raise MemoryError()
  */
@@ -7326,7 +7086,7 @@ static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
 
   /* "polar2grid/remap/_fornav.pyx":370
  *         raise MemoryError()
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:             # <<<<<<<<<<<<<<
  *         raise MemoryError()
  *     # Allocate memory for the parameters specific to each column
@@ -7335,7 +7095,7 @@ static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
   if (__pyx_t_1) {
 
     /* "polar2grid/remap/_fornav.pyx":371
- *     cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+ *     cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
  *     if grid_weights is NULL:
  *         raise MemoryError()             # <<<<<<<<<<<<<<
  *     # Allocate memory for the parameters specific to each column
@@ -7627,32 +7387,32 @@ static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
  * 
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  */
   __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_weight((&__pyx_v_ewaw));
 
   /* "polar2grid/remap/_fornav.pyx":423
  *     # free(grid_accums)
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)             # <<<<<<<<<<<<<<
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_accums);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_accums));
 
   /* "polar2grid/remap/_fornav.pyx":424
  *     deinitialize_weight(&ewaw)
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)             # <<<<<<<<<<<<<<
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)             # <<<<<<<<<<<<<<
  *     return fill_count
  * 
  */
-  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, __pyx_v_grid_weights);
+  __pyx_f_10polar2grid_5remap_7_fornav_deinitialize_grids(__pyx_v_chan_count, ((void **)__pyx_v_grid_weights));
 
   /* "polar2grid/remap/_fornav.pyx":425
- *     deinitialize_grids(chan_count, grid_accums)
- *     deinitialize_grids(chan_count, grid_weights)
+ *     deinitialize_grids(chan_count, <void **>grid_accums)
+ *     deinitialize_grids(chan_count, <void **>grid_weights)
  *     return fill_count             # <<<<<<<<<<<<<<
  * 
  * @cython.boundscheck(False)
@@ -7687,9 +7447,9 @@ static int __pyx_fuse_1_2_2__pyx_f_10polar2grid_5remap_7_fornav_fornav(size_t __
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10polar2grid_5remap_7_fornav_5fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_10polar2grid_5remap_7_fornav_5fornav_wrapper = {"fornav_wrapper", (PyCFunction)__pyx_pw_10polar2grid_5remap_7_fornav_5fornav_wrapper, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_10polar2grid_5remap_7_fornav_5fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_10polar2grid_5remap_7_fornav_1fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_10polar2grid_5remap_7_fornav_1fornav_wrapper = {"fornav_wrapper", (PyCFunction)__pyx_pw_10polar2grid_5remap_7_fornav_1fornav_wrapper, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_10polar2grid_5remap_7_fornav_1fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_signatures = 0;
   PyObject *__pyx_v_args = 0;
   PyObject *__pyx_v_kwargs = 0;
@@ -7759,14 +7519,14 @@ static PyObject *__pyx_pw_10polar2grid_5remap_7_fornav_5fornav_wrapper(PyObject 
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10polar2grid_5remap_7_fornav_4fornav_wrapper(__pyx_self, __pyx_v_signatures, __pyx_v_args, __pyx_v_kwargs, __pyx_v_defaults);
+  __pyx_r = __pyx_pf_10polar2grid_5remap_7_fornav_fornav_wrapper(__pyx_self, __pyx_v_signatures, __pyx_v_args, __pyx_v_kwargs, __pyx_v_defaults);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_4fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_signatures, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs, CYTHON_UNUSED PyObject *__pyx_v_defaults) {
+static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_signatures, PyObject *__pyx_v_args, PyObject *__pyx_v_kwargs, CYTHON_UNUSED PyObject *__pyx_v_defaults) {
   PyObject *__pyx_v_dest_sig = NULL;
   PyObject *__pyx_v_ndarray = 0;
   PyObject *__pyx_v_numpy = NULL;
@@ -8330,7 +8090,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_4fornav_wrapper(CYTHON_UN
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_16__defaults__(CYTHON_UNUSED PyObject *__pyx_self) {
+static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_12__defaults__(CYTHON_UNUSED PyObject *__pyx_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -8403,9 +8163,9 @@ static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_16__defaults__(CYTHON_UNU
 }
 
 /* Python wrapper */
-static PyObject *__pyx_fuse_0__pyx_pw_10polar2grid_5remap_7_fornav_7fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_fuse_0__pyx_mdef_10polar2grid_5remap_7_fornav_7fornav_wrapper = {"__pyx_fuse_0fornav_wrapper", (PyCFunction)__pyx_fuse_0__pyx_pw_10polar2grid_5remap_7_fornav_7fornav_wrapper, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_fuse_0__pyx_pw_10polar2grid_5remap_7_fornav_7fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_fuse_0__pyx_pw_10polar2grid_5remap_7_fornav_3fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_fuse_0__pyx_mdef_10polar2grid_5remap_7_fornav_3fornav_wrapper = {"__pyx_fuse_0fornav_wrapper", (PyCFunction)__pyx_fuse_0__pyx_pw_10polar2grid_5remap_7_fornav_3fornav_wrapper, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_fuse_0__pyx_pw_10polar2grid_5remap_7_fornav_3fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_cols_array = 0;
   PyArrayObject *__pyx_v_rows_array = 0;
   PyObject *__pyx_v_input_arrays = 0;
@@ -8414,10 +8174,10 @@ static PyObject *__pyx_fuse_0__pyx_pw_10polar2grid_5remap_7_fornav_7fornav_wrapp
   PyObject *__pyx_v_output_fill = 0;
   size_t __pyx_v_rows_per_scan;
   unsigned int __pyx_v_weight_count;
-  double __pyx_v_weight_min;
-  double __pyx_v_weight_distance_max;
-  double __pyx_v_weight_delta_max;
-  double __pyx_v_weight_sum_min;
+  weight_type __pyx_v_weight_min;
+  weight_type __pyx_v_weight_distance_max;
+  weight_type __pyx_v_weight_delta_max;
+  weight_type __pyx_v_weight_sum_min;
   PyBoolObject *__pyx_v_maximum_weight_mode = 0;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -8551,22 +8311,22 @@ static PyObject *__pyx_fuse_0__pyx_pw_10polar2grid_5remap_7_fornav_7fornav_wrapp
       __pyx_v_weight_count = __pyx_dynamic_args->__pyx_arg_weight_count;
     }
     if (values[8]) {
-      __pyx_v_weight_min = __pyx_PyFloat_AsDouble(values[8]); if (unlikely((__pyx_v_weight_min == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_weight_min = __pyx_PyFloat_AsFloat(values[8]); if (unlikely((__pyx_v_weight_min == (weight_type)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_weight_min = __pyx_dynamic_args->__pyx_arg_weight_min;
     }
     if (values[9]) {
-      __pyx_v_weight_distance_max = __pyx_PyFloat_AsDouble(values[9]); if (unlikely((__pyx_v_weight_distance_max == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_weight_distance_max = __pyx_PyFloat_AsFloat(values[9]); if (unlikely((__pyx_v_weight_distance_max == (weight_type)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_weight_distance_max = __pyx_dynamic_args->__pyx_arg_weight_distance_max;
     }
     if (values[10]) {
-      __pyx_v_weight_delta_max = __pyx_PyFloat_AsDouble(values[10]); if (unlikely((__pyx_v_weight_delta_max == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_weight_delta_max = __pyx_PyFloat_AsFloat(values[10]); if (unlikely((__pyx_v_weight_delta_max == (weight_type)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_weight_delta_max = __pyx_dynamic_args->__pyx_arg_weight_delta_max;
     }
     if (values[11]) {
-      __pyx_v_weight_sum_min = __pyx_PyFloat_AsDouble(values[11]); if (unlikely((__pyx_v_weight_sum_min == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_weight_sum_min = __pyx_PyFloat_AsFloat(values[11]); if (unlikely((__pyx_v_weight_sum_min == (weight_type)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_weight_sum_min = __pyx_dynamic_args->__pyx_arg_weight_sum_min;
     }
@@ -8585,7 +8345,7 @@ static PyObject *__pyx_fuse_0__pyx_pw_10polar2grid_5remap_7_fornav_7fornav_wrapp
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_input_arrays), (&PyTuple_Type), 1, "input_arrays", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 431; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_output_arrays), (&PyTuple_Type), 1, "output_arrays", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 431; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_maximum_weight_mode), __pyx_ptype_7cpython_4bool_bool, 1, "maximum_weight_mode", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 434; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_10polar2grid_5remap_7_fornav_6fornav_wrapper(__pyx_self, __pyx_v_cols_array, __pyx_v_rows_array, __pyx_v_input_arrays, __pyx_v_output_arrays, __pyx_v_input_fill, __pyx_v_output_fill, __pyx_v_rows_per_scan, __pyx_v_weight_count, __pyx_v_weight_min, __pyx_v_weight_distance_max, __pyx_v_weight_delta_max, __pyx_v_weight_sum_min, __pyx_v_maximum_weight_mode);
+  __pyx_r = __pyx_pf_10polar2grid_5remap_7_fornav_2fornav_wrapper(__pyx_self, __pyx_v_cols_array, __pyx_v_rows_array, __pyx_v_input_arrays, __pyx_v_output_arrays, __pyx_v_input_fill, __pyx_v_output_fill, __pyx_v_rows_per_scan, __pyx_v_weight_count, __pyx_v_weight_min, __pyx_v_weight_distance_max, __pyx_v_weight_delta_max, __pyx_v_weight_sum_min, __pyx_v_maximum_weight_mode);
 
   /* function exit code */
   goto __pyx_L0;
@@ -8848,7 +8608,7 @@ static PyObject *__pyx_gb_10polar2grid_5remap_7_fornav_14fornav_wrapper_5generat
  *            tuple input_arrays, tuple output_arrays, input_fill, output_fill,
  */
 
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_6fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_cols_array, PyArrayObject *__pyx_v_rows_array, PyObject *__pyx_v_input_arrays, PyObject *__pyx_v_output_arrays, PyObject *__pyx_v_input_fill, PyObject *__pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, PyBoolObject *__pyx_v_maximum_weight_mode) {
+static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_2fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_cols_array, PyArrayObject *__pyx_v_rows_array, PyObject *__pyx_v_input_arrays, PyObject *__pyx_v_output_arrays, PyObject *__pyx_v_input_fill, PyObject *__pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, weight_type __pyx_v_weight_min, weight_type __pyx_v_weight_distance_max, weight_type __pyx_v_weight_delta_max, weight_type __pyx_v_weight_sum_min, PyBoolObject *__pyx_v_maximum_weight_mode) {
   struct __pyx_obj_10polar2grid_5remap_7_fornav___pyx_scope_struct____pyx_fuse_0fornav_wrapper *__pyx_cur_scope;
   size_t __pyx_v_num_items;
   size_t __pyx_v_num_outputs;
@@ -8958,7 +8718,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_6fornav_wrapper(CYTHON_UN
   __pyx_pybuffernd_rows_array.diminfo[0].strides = __pyx_pybuffernd_rows_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_rows_array.diminfo[0].shape = __pyx_pybuffernd_rows_array.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_rows_array.diminfo[1].strides = __pyx_pybuffernd_rows_array.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_rows_array.diminfo[1].shape = __pyx_pybuffernd_rows_array.rcbuffer->pybuffer.shape[1];
 
   /* "polar2grid/remap/_fornav.pyx":435
- *            unsigned int weight_count=10000, double weight_min=0.01, double weight_distance_max=1.0, double weight_delta_max=10.0, double weight_sum_min=-1.0,
+ *            unsigned int weight_count=10000, weight_type weight_min=0.01, weight_type weight_distance_max=1.0, weight_type weight_delta_max=10.0, weight_type weight_sum_min=-1.0,
  *            cpython.bool maximum_weight_mode=False):
  *     cdef size_t num_items = len(input_arrays)             # <<<<<<<<<<<<<<
  *     cdef size_t num_outputs = len(output_arrays)
@@ -9805,8 +9565,6 @@ static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_6fornav_wrapper(CYTHON_UN
  *     free(output_pointer)
  * 
  *     return ret             # <<<<<<<<<<<<<<
- * 
- * # cdef test_data_types2(cr_dtype **cols_arrays):
  */
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_ret); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 508; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -9854,7 +9612,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_6fornav_wrapper(CYTHON_UN
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_18__defaults__(CYTHON_UNUSED PyObject *__pyx_self) {
+static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_14__defaults__(CYTHON_UNUSED PyObject *__pyx_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -9927,9 +9685,9 @@ static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_18__defaults__(CYTHON_UNU
 }
 
 /* Python wrapper */
-static PyObject *__pyx_fuse_1__pyx_pw_10polar2grid_5remap_7_fornav_9fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_fuse_1__pyx_mdef_10polar2grid_5remap_7_fornav_9fornav_wrapper = {"__pyx_fuse_1fornav_wrapper", (PyCFunction)__pyx_fuse_1__pyx_pw_10polar2grid_5remap_7_fornav_9fornav_wrapper, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_fuse_1__pyx_pw_10polar2grid_5remap_7_fornav_9fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_fuse_1__pyx_pw_10polar2grid_5remap_7_fornav_5fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_fuse_1__pyx_mdef_10polar2grid_5remap_7_fornav_5fornav_wrapper = {"__pyx_fuse_1fornav_wrapper", (PyCFunction)__pyx_fuse_1__pyx_pw_10polar2grid_5remap_7_fornav_5fornav_wrapper, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_fuse_1__pyx_pw_10polar2grid_5remap_7_fornav_5fornav_wrapper(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_cols_array = 0;
   PyArrayObject *__pyx_v_rows_array = 0;
   PyObject *__pyx_v_input_arrays = 0;
@@ -9938,10 +9696,10 @@ static PyObject *__pyx_fuse_1__pyx_pw_10polar2grid_5remap_7_fornav_9fornav_wrapp
   PyObject *__pyx_v_output_fill = 0;
   size_t __pyx_v_rows_per_scan;
   unsigned int __pyx_v_weight_count;
-  double __pyx_v_weight_min;
-  double __pyx_v_weight_distance_max;
-  double __pyx_v_weight_delta_max;
-  double __pyx_v_weight_sum_min;
+  weight_type __pyx_v_weight_min;
+  weight_type __pyx_v_weight_distance_max;
+  weight_type __pyx_v_weight_delta_max;
+  weight_type __pyx_v_weight_sum_min;
   PyBoolObject *__pyx_v_maximum_weight_mode = 0;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -10075,22 +9833,22 @@ static PyObject *__pyx_fuse_1__pyx_pw_10polar2grid_5remap_7_fornav_9fornav_wrapp
       __pyx_v_weight_count = __pyx_dynamic_args->__pyx_arg_weight_count;
     }
     if (values[8]) {
-      __pyx_v_weight_min = __pyx_PyFloat_AsDouble(values[8]); if (unlikely((__pyx_v_weight_min == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_weight_min = __pyx_PyFloat_AsFloat(values[8]); if (unlikely((__pyx_v_weight_min == (weight_type)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_weight_min = __pyx_dynamic_args->__pyx_arg_weight_min;
     }
     if (values[9]) {
-      __pyx_v_weight_distance_max = __pyx_PyFloat_AsDouble(values[9]); if (unlikely((__pyx_v_weight_distance_max == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_weight_distance_max = __pyx_PyFloat_AsFloat(values[9]); if (unlikely((__pyx_v_weight_distance_max == (weight_type)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_weight_distance_max = __pyx_dynamic_args->__pyx_arg_weight_distance_max;
     }
     if (values[10]) {
-      __pyx_v_weight_delta_max = __pyx_PyFloat_AsDouble(values[10]); if (unlikely((__pyx_v_weight_delta_max == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_weight_delta_max = __pyx_PyFloat_AsFloat(values[10]); if (unlikely((__pyx_v_weight_delta_max == (weight_type)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_weight_delta_max = __pyx_dynamic_args->__pyx_arg_weight_delta_max;
     }
     if (values[11]) {
-      __pyx_v_weight_sum_min = __pyx_PyFloat_AsDouble(values[11]); if (unlikely((__pyx_v_weight_sum_min == (double)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+      __pyx_v_weight_sum_min = __pyx_PyFloat_AsFloat(values[11]); if (unlikely((__pyx_v_weight_sum_min == (weight_type)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 433; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
     } else {
       __pyx_v_weight_sum_min = __pyx_dynamic_args->__pyx_arg_weight_sum_min;
     }
@@ -10109,7 +9867,7 @@ static PyObject *__pyx_fuse_1__pyx_pw_10polar2grid_5remap_7_fornav_9fornav_wrapp
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_input_arrays), (&PyTuple_Type), 1, "input_arrays", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 431; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_output_arrays), (&PyTuple_Type), 1, "output_arrays", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 431; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_maximum_weight_mode), __pyx_ptype_7cpython_4bool_bool, 1, "maximum_weight_mode", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 434; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_10polar2grid_5remap_7_fornav_8fornav_wrapper(__pyx_self, __pyx_v_cols_array, __pyx_v_rows_array, __pyx_v_input_arrays, __pyx_v_output_arrays, __pyx_v_input_fill, __pyx_v_output_fill, __pyx_v_rows_per_scan, __pyx_v_weight_count, __pyx_v_weight_min, __pyx_v_weight_distance_max, __pyx_v_weight_delta_max, __pyx_v_weight_sum_min, __pyx_v_maximum_weight_mode);
+  __pyx_r = __pyx_pf_10polar2grid_5remap_7_fornav_4fornav_wrapper(__pyx_self, __pyx_v_cols_array, __pyx_v_rows_array, __pyx_v_input_arrays, __pyx_v_output_arrays, __pyx_v_input_fill, __pyx_v_output_fill, __pyx_v_rows_per_scan, __pyx_v_weight_count, __pyx_v_weight_min, __pyx_v_weight_distance_max, __pyx_v_weight_delta_max, __pyx_v_weight_sum_min, __pyx_v_maximum_weight_mode);
 
   /* function exit code */
   goto __pyx_L0;
@@ -10372,7 +10130,7 @@ static PyObject *__pyx_gb_10polar2grid_5remap_7_fornav_14fornav_wrapper_11genera
  *            tuple input_arrays, tuple output_arrays, input_fill, output_fill,
  */
 
-static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_8fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_cols_array, PyArrayObject *__pyx_v_rows_array, PyObject *__pyx_v_input_arrays, PyObject *__pyx_v_output_arrays, PyObject *__pyx_v_input_fill, PyObject *__pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, double __pyx_v_weight_min, double __pyx_v_weight_distance_max, double __pyx_v_weight_delta_max, double __pyx_v_weight_sum_min, PyBoolObject *__pyx_v_maximum_weight_mode) {
+static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_4fornav_wrapper(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_cols_array, PyArrayObject *__pyx_v_rows_array, PyObject *__pyx_v_input_arrays, PyObject *__pyx_v_output_arrays, PyObject *__pyx_v_input_fill, PyObject *__pyx_v_output_fill, size_t __pyx_v_rows_per_scan, unsigned int __pyx_v_weight_count, weight_type __pyx_v_weight_min, weight_type __pyx_v_weight_distance_max, weight_type __pyx_v_weight_delta_max, weight_type __pyx_v_weight_sum_min, PyBoolObject *__pyx_v_maximum_weight_mode) {
   struct __pyx_obj_10polar2grid_5remap_7_fornav___pyx_scope_struct_3___pyx_fuse_1fornav_wrapper *__pyx_cur_scope;
   size_t __pyx_v_num_items;
   size_t __pyx_v_num_outputs;
@@ -10482,7 +10240,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_8fornav_wrapper(CYTHON_UN
   __pyx_pybuffernd_rows_array.diminfo[0].strides = __pyx_pybuffernd_rows_array.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_rows_array.diminfo[0].shape = __pyx_pybuffernd_rows_array.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_rows_array.diminfo[1].strides = __pyx_pybuffernd_rows_array.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_rows_array.diminfo[1].shape = __pyx_pybuffernd_rows_array.rcbuffer->pybuffer.shape[1];
 
   /* "polar2grid/remap/_fornav.pyx":435
- *            unsigned int weight_count=10000, double weight_min=0.01, double weight_distance_max=1.0, double weight_delta_max=10.0, double weight_sum_min=-1.0,
+ *            unsigned int weight_count=10000, weight_type weight_min=0.01, weight_type weight_distance_max=1.0, weight_type weight_delta_max=10.0, weight_type weight_sum_min=-1.0,
  *            cpython.bool maximum_weight_mode=False):
  *     cdef size_t num_items = len(input_arrays)             # <<<<<<<<<<<<<<
  *     cdef size_t num_outputs = len(output_arrays)
@@ -11329,8 +11087,6 @@ static PyObject *__pyx_pf_10polar2grid_5remap_7_fornav_8fornav_wrapper(CYTHON_UN
  *     free(output_pointer)
  * 
  *     return ret             # <<<<<<<<<<<<<<
- * 
- * # cdef test_data_types2(cr_dtype **cols_arrays):
  */
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_ret); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 508; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -25447,8 +25203,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_base, __pyx_k_base, sizeof(__pyx_k_base), 0, 0, 1, 1},
   {&__pyx_n_s_c, __pyx_k_c, sizeof(__pyx_k_c), 0, 0, 1, 1},
   {&__pyx_n_u_c, __pyx_k_c, sizeof(__pyx_k_c), 0, 1, 0, 1},
-  {&__pyx_n_s_call_cpp_test, __pyx_k_call_cpp_test, sizeof(__pyx_k_call_cpp_test), 0, 0, 1, 1},
-  {&__pyx_n_s_call_cpp_test_npy, __pyx_k_call_cpp_test_npy, sizeof(__pyx_k_call_cpp_test_npy), 0, 0, 1, 1},
   {&__pyx_n_s_class, __pyx_k_class, sizeof(__pyx_k_class), 0, 0, 1, 1},
   {&__pyx_n_s_close, __pyx_k_close, sizeof(__pyx_k_close), 0, 0, 1, 1},
   {&__pyx_n_s_cols_array, __pyx_k_cols_array, sizeof(__pyx_k_cols_array), 0, 0, 1, 1},
@@ -25544,9 +25298,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_weight_distance_max, __pyx_k_weight_distance_max, sizeof(__pyx_k_weight_distance_max), 0, 0, 1, 1},
   {&__pyx_n_s_weight_min, __pyx_k_weight_min, sizeof(__pyx_k_weight_min), 0, 0, 1, 1},
   {&__pyx_n_s_weight_sum_min, __pyx_k_weight_sum_min, sizeof(__pyx_k_weight_sum_min), 0, 0, 1, 1},
-  {&__pyx_n_s_x, __pyx_k_x, sizeof(__pyx_k_x), 0, 0, 1, 1},
   {&__pyx_n_s_xrange, __pyx_k_xrange, sizeof(__pyx_k_xrange), 0, 0, 1, 1},
-  {&__pyx_n_s_y, __pyx_k_y, sizeof(__pyx_k_y), 0, 0, 1, 1},
   {&__pyx_n_s_zip, __pyx_k_zip, sizeof(__pyx_k_zip), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
@@ -26116,30 +25868,6 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__53);
   __Pyx_GIVEREF(__pyx_tuple__53);
 
-  /* "polar2grid/remap/_fornav.pyx":58
- *     numpy.float32_t
- * 
- * def call_cpp_test(int x, int y):             # <<<<<<<<<<<<<<
- *     return test_cpp_templates(x, y)
- * 
- */
-  __pyx_tuple__54 = PyTuple_Pack(2, __pyx_n_s_x, __pyx_n_s_y); if (unlikely(!__pyx_tuple__54)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__54);
-  __Pyx_GIVEREF(__pyx_tuple__54);
-  __pyx_codeobj__55 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_davidh_repos_git_polar2gr, __pyx_n_s_call_cpp_test, 58, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__55)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-
-  /* "polar2grid/remap/_fornav.pyx":61
- *     return test_cpp_templates(x, y)
- * 
- * def call_cpp_test_npy(numpy.uint8_t x, numpy.int8_t y):             # <<<<<<<<<<<<<<
- *     return test_cpp_templates(x, y)
- * 
- */
-  __pyx_tuple__56 = PyTuple_Pack(2, __pyx_n_s_x, __pyx_n_s_y); if (unlikely(!__pyx_tuple__56)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__56);
-  __Pyx_GIVEREF(__pyx_tuple__56);
-  __pyx_codeobj__57 = (PyObject*)__Pyx_PyCode_New(2, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_davidh_repos_git_polar2gr, __pyx_n_s_call_cpp_test_npy, 61, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__57)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-
   /* "polar2grid/remap/_fornav.pyx":429
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
@@ -26147,10 +25875,10 @@ static int __Pyx_InitCachedConstants(void) {
  *            numpy.ndarray[cr_dtype, ndim=2, mode='c'] rows_array,
  *            tuple input_arrays, tuple output_arrays, input_fill, output_fill,
  */
-  __pyx_tuple__58 = PyTuple_Pack(33, __pyx_n_s_cols_array, __pyx_n_s_rows_array, __pyx_n_s_input_arrays, __pyx_n_s_output_arrays, __pyx_n_s_input_fill, __pyx_n_s_output_fill, __pyx_n_s_rows_per_scan, __pyx_n_s_weight_count, __pyx_n_s_weight_min, __pyx_n_s_weight_distance_max, __pyx_n_s_weight_delta_max, __pyx_n_s_weight_sum_min, __pyx_n_s_maximum_weight_mode, __pyx_n_s_num_items, __pyx_n_s_num_outputs, __pyx_n_s_swath_cols, __pyx_n_s_swath_rows, __pyx_n_s_grid_cols, __pyx_n_s_grid_rows, __pyx_n_s_i, __pyx_n_s_in_type, __pyx_n_s_out_type, __pyx_n_s_input_pointer, __pyx_n_s_output_pointer, __pyx_n_s_tmp_arr_f32, __pyx_n_s_tmp_arr_f64, __pyx_n_s_tmp_arr_i8, __pyx_n_s_cols_pointer, __pyx_n_s_rows_pointer, __pyx_n_s_ret, __pyx_n_s_genexpr, __pyx_n_s_genexpr, __pyx_n_s_genexpr); if (unlikely(!__pyx_tuple__58)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__58);
-  __Pyx_GIVEREF(__pyx_tuple__58);
-  __pyx_codeobj__59 = (PyObject*)__Pyx_PyCode_New(13, 0, 33, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__58, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_davidh_repos_git_polar2gr, __pyx_n_s_fornav_wrapper, 429, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__59)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__54 = PyTuple_Pack(33, __pyx_n_s_cols_array, __pyx_n_s_rows_array, __pyx_n_s_input_arrays, __pyx_n_s_output_arrays, __pyx_n_s_input_fill, __pyx_n_s_output_fill, __pyx_n_s_rows_per_scan, __pyx_n_s_weight_count, __pyx_n_s_weight_min, __pyx_n_s_weight_distance_max, __pyx_n_s_weight_delta_max, __pyx_n_s_weight_sum_min, __pyx_n_s_maximum_weight_mode, __pyx_n_s_num_items, __pyx_n_s_num_outputs, __pyx_n_s_swath_cols, __pyx_n_s_swath_rows, __pyx_n_s_grid_cols, __pyx_n_s_grid_rows, __pyx_n_s_i, __pyx_n_s_in_type, __pyx_n_s_out_type, __pyx_n_s_input_pointer, __pyx_n_s_output_pointer, __pyx_n_s_tmp_arr_f32, __pyx_n_s_tmp_arr_f64, __pyx_n_s_tmp_arr_i8, __pyx_n_s_cols_pointer, __pyx_n_s_rows_pointer, __pyx_n_s_ret, __pyx_n_s_genexpr, __pyx_n_s_genexpr, __pyx_n_s_genexpr); if (unlikely(!__pyx_tuple__54)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__54);
+  __Pyx_GIVEREF(__pyx_tuple__54);
+  __pyx_codeobj__55 = (PyObject*)__Pyx_PyCode_New(13, 0, 33, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__54, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_davidh_repos_git_polar2gr, __pyx_n_s_fornav_wrapper, 429, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__55)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   /* "View.MemoryView":276
  *         return self.name
@@ -26159,9 +25887,9 @@ static int __Pyx_InitCachedConstants(void) {
  * cdef strided = Enum("<strided and direct>") # default
  * cdef indirect = Enum("<strided and indirect>")
  */
-  __pyx_tuple__60 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct_or_indirect); if (unlikely(!__pyx_tuple__60)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 276; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__60);
-  __Pyx_GIVEREF(__pyx_tuple__60);
+  __pyx_tuple__56 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct_or_indirect); if (unlikely(!__pyx_tuple__56)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 276; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__56);
+  __Pyx_GIVEREF(__pyx_tuple__56);
 
   /* "View.MemoryView":277
  * 
@@ -26170,9 +25898,9 @@ static int __Pyx_InitCachedConstants(void) {
  * cdef indirect = Enum("<strided and indirect>")
  * 
  */
-  __pyx_tuple__61 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct); if (unlikely(!__pyx_tuple__61)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__61);
-  __Pyx_GIVEREF(__pyx_tuple__61);
+  __pyx_tuple__57 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct); if (unlikely(!__pyx_tuple__57)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__57);
+  __Pyx_GIVEREF(__pyx_tuple__57);
 
   /* "View.MemoryView":278
  * cdef generic = Enum("<strided and direct or indirect>")
@@ -26181,9 +25909,9 @@ static int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__62 = PyTuple_Pack(1, __pyx_kp_s_strided_and_indirect); if (unlikely(!__pyx_tuple__62)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__62);
-  __Pyx_GIVEREF(__pyx_tuple__62);
+  __pyx_tuple__58 = PyTuple_Pack(1, __pyx_kp_s_strided_and_indirect); if (unlikely(!__pyx_tuple__58)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__58);
+  __Pyx_GIVEREF(__pyx_tuple__58);
 
   /* "View.MemoryView":281
  * 
@@ -26192,9 +25920,9 @@ static int __Pyx_InitCachedConstants(void) {
  * cdef indirect_contiguous = Enum("<contiguous and indirect>")
  * 
  */
-  __pyx_tuple__63 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_direct); if (unlikely(!__pyx_tuple__63)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 281; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__63);
-  __Pyx_GIVEREF(__pyx_tuple__63);
+  __pyx_tuple__59 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_direct); if (unlikely(!__pyx_tuple__59)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 281; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__59);
+  __Pyx_GIVEREF(__pyx_tuple__59);
 
   /* "View.MemoryView":282
  * 
@@ -26203,9 +25931,9 @@ static int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__64 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_indirect); if (unlikely(!__pyx_tuple__64)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__64);
-  __Pyx_GIVEREF(__pyx_tuple__64);
+  __pyx_tuple__60 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_indirect); if (unlikely(!__pyx_tuple__60)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__60);
+  __Pyx_GIVEREF(__pyx_tuple__60);
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -26390,52 +26118,10 @@ PyMODINIT_FUNC PyInit__fornav(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_numpy, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 3; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "polar2grid/remap/_fornav.pyx":9
- * from libc.math cimport log, exp, sqrt, isnan, NAN
- * 
- * cdef double EPSILON = 1e-8             # <<<<<<<<<<<<<<
- * cdef double double_nan = <double>NAN
- * 
- */
-  __pyx_v_10polar2grid_5remap_7_fornav_EPSILON = 1e-8;
-
-  /* "polar2grid/remap/_fornav.pyx":10
- * 
- * cdef double EPSILON = 1e-8
- * cdef double double_nan = <double>NAN             # <<<<<<<<<<<<<<
- * 
- * cdef extern from "_fornav_templates.h":
- */
-  __pyx_v_10polar2grid_5remap_7_fornav_double_nan = ((double)NAN);
-
-  /* "polar2grid/remap/_fornav.pyx":58
- *     numpy.float32_t
- * 
- * def call_cpp_test(int x, int y):             # <<<<<<<<<<<<<<
- *     return test_cpp_templates(x, y)
- * 
- */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10polar2grid_5remap_7_fornav_1call_cpp_test, NULL, __pyx_n_s_polar2grid_remap__fornav); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_call_cpp_test, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 58; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "polar2grid/remap/_fornav.pyx":61
- *     return test_cpp_templates(x, y)
- * 
- * def call_cpp_test_npy(numpy.uint8_t x, numpy.int8_t y):             # <<<<<<<<<<<<<<
- *     return test_cpp_templates(x, y)
- * 
- */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_10polar2grid_5remap_7_fornav_3call_cpp_test_npy, NULL, __pyx_n_s_polar2grid_remap__fornav); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_call_cpp_test_npy, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 61; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
   /* "polar2grid/remap/_fornav.pyx":433
  *            tuple input_arrays, tuple output_arrays, input_fill, output_fill,
  *            size_t rows_per_scan,
- *            unsigned int weight_count=10000, double weight_min=0.01, double weight_distance_max=1.0, double weight_delta_max=10.0, double weight_sum_min=-1.0,             # <<<<<<<<<<<<<<
+ *            unsigned int weight_count=10000, weight_type weight_min=0.01, weight_type weight_distance_max=1.0, weight_type weight_delta_max=10.0, weight_type weight_sum_min=-1.0,             # <<<<<<<<<<<<<<
  *            cpython.bool maximum_weight_mode=False):
  *     cdef size_t num_items = len(input_arrays)
  */
@@ -26452,7 +26138,7 @@ PyMODINIT_FUNC PyInit__fornav(void)
 
   /* "polar2grid/remap/_fornav.pyx":434
  *            size_t rows_per_scan,
- *            unsigned int weight_count=10000, double weight_min=0.01, double weight_distance_max=1.0, double weight_delta_max=10.0, double weight_sum_min=-1.0,
+ *            unsigned int weight_count=10000, weight_type weight_min=0.01, weight_type weight_distance_max=1.0, weight_type weight_delta_max=10.0, weight_type weight_sum_min=-1.0,
  *            cpython.bool maximum_weight_mode=False):             # <<<<<<<<<<<<<<
  *     cdef size_t num_items = len(input_arrays)
  *     cdef size_t num_outputs = len(output_arrays)
@@ -26489,13 +26175,13 @@ PyMODINIT_FUNC PyInit__fornav(void)
   __pyx_t_6 = 0;
   __pyx_t_6 = PyDict_New(); if (unlikely(!__pyx_t_6)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = __pyx_FusedFunction_NewEx(&__pyx_fuse_0__pyx_mdef_10polar2grid_5remap_7_fornav_7fornav_wrapper, 0, __pyx_n_s_fornav_wrapper, NULL, __pyx_n_s_polar2grid_remap__fornav, __pyx_d, ((PyObject *)__pyx_codeobj__59)); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = __pyx_FusedFunction_NewEx(&__pyx_fuse_0__pyx_mdef_10polar2grid_5remap_7_fornav_3fornav_wrapper, 0, __pyx_n_s_fornav_wrapper, NULL, __pyx_n_s_polar2grid_remap__fornav, __pyx_d, ((PyObject *)__pyx_codeobj__55)); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   if (!__Pyx_CyFunction_InitDefaults(__pyx_t_5, sizeof(__pyx_defaults2), 1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   /* "polar2grid/remap/_fornav.pyx":434
  *            size_t rows_per_scan,
- *            unsigned int weight_count=10000, double weight_min=0.01, double weight_distance_max=1.0, double weight_delta_max=10.0, double weight_sum_min=-1.0,
+ *            unsigned int weight_count=10000, weight_type weight_min=0.01, weight_type weight_distance_max=1.0, weight_type weight_delta_max=10.0, weight_type weight_sum_min=-1.0,
  *            cpython.bool maximum_weight_mode=False):             # <<<<<<<<<<<<<<
  *     cdef size_t num_items = len(input_arrays)
  *     cdef size_t num_outputs = len(output_arrays)
@@ -26512,7 +26198,7 @@ PyMODINIT_FUNC PyInit__fornav(void)
   __Pyx_CyFunction_Defaults(__pyx_defaults2, __pyx_t_5)->__pyx_arg_weight_delta_max = 10.0;
   __Pyx_CyFunction_Defaults(__pyx_defaults2, __pyx_t_5)->__pyx_arg_weight_sum_min = -1.0;
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_5, __pyx_t_7);
-  __Pyx_CyFunction_SetDefaultsGetter(__pyx_t_5, __pyx_pf_10polar2grid_5remap_7_fornav_16__defaults__);
+  __Pyx_CyFunction_SetDefaultsGetter(__pyx_t_5, __pyx_pf_10polar2grid_5remap_7_fornav_12__defaults__);
   if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_float32_t, __pyx_t_5) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
@@ -26523,13 +26209,13 @@ PyMODINIT_FUNC PyInit__fornav(void)
  *            numpy.ndarray[cr_dtype, ndim=2, mode='c'] rows_array,
  *            tuple input_arrays, tuple output_arrays, input_fill, output_fill,
  */
-  __pyx_t_5 = __pyx_FusedFunction_NewEx(&__pyx_fuse_1__pyx_mdef_10polar2grid_5remap_7_fornav_9fornav_wrapper, 0, __pyx_n_s_fornav_wrapper, NULL, __pyx_n_s_polar2grid_remap__fornav, __pyx_d, ((PyObject *)__pyx_codeobj__59)); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = __pyx_FusedFunction_NewEx(&__pyx_fuse_1__pyx_mdef_10polar2grid_5remap_7_fornav_5fornav_wrapper, 0, __pyx_n_s_fornav_wrapper, NULL, __pyx_n_s_polar2grid_remap__fornav, __pyx_d, ((PyObject *)__pyx_codeobj__55)); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   if (!__Pyx_CyFunction_InitDefaults(__pyx_t_5, sizeof(__pyx_defaults3), 1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   /* "polar2grid/remap/_fornav.pyx":434
  *            size_t rows_per_scan,
- *            unsigned int weight_count=10000, double weight_min=0.01, double weight_distance_max=1.0, double weight_delta_max=10.0, double weight_sum_min=-1.0,
+ *            unsigned int weight_count=10000, weight_type weight_min=0.01, weight_type weight_distance_max=1.0, weight_type weight_delta_max=10.0, weight_type weight_sum_min=-1.0,
  *            cpython.bool maximum_weight_mode=False):             # <<<<<<<<<<<<<<
  *     cdef size_t num_items = len(input_arrays)
  *     cdef size_t num_outputs = len(output_arrays)
@@ -26546,7 +26232,7 @@ PyMODINIT_FUNC PyInit__fornav(void)
   __Pyx_CyFunction_Defaults(__pyx_defaults3, __pyx_t_5)->__pyx_arg_weight_delta_max = 10.0;
   __Pyx_CyFunction_Defaults(__pyx_defaults3, __pyx_t_5)->__pyx_arg_weight_sum_min = -1.0;
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_5, __pyx_t_7);
-  __Pyx_CyFunction_SetDefaultsGetter(__pyx_t_5, __pyx_pf_10polar2grid_5remap_7_fornav_18__defaults__);
+  __Pyx_CyFunction_SetDefaultsGetter(__pyx_t_5, __pyx_pf_10polar2grid_5remap_7_fornav_14__defaults__);
   if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_float64_t, __pyx_t_5) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
@@ -26557,10 +26243,10 @@ PyMODINIT_FUNC PyInit__fornav(void)
  *            numpy.ndarray[cr_dtype, ndim=2, mode='c'] rows_array,
  *            tuple input_arrays, tuple output_arrays, input_fill, output_fill,
  */
-  __pyx_t_5 = __pyx_FusedFunction_NewEx(&__pyx_mdef_10polar2grid_5remap_7_fornav_5fornav_wrapper, 0, __pyx_n_s_fornav_wrapper, NULL, __pyx_n_s_polar2grid_remap__fornav, __pyx_d, ((PyObject *)__pyx_codeobj__59)); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_5 = __pyx_FusedFunction_NewEx(&__pyx_mdef_10polar2grid_5remap_7_fornav_1fornav_wrapper, 0, __pyx_n_s_fornav_wrapper, NULL, __pyx_n_s_polar2grid_remap__fornav, __pyx_d, ((PyObject *)__pyx_codeobj__55)); if (unlikely(!__pyx_t_5)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_5, __pyx_t_7);
-  __Pyx_CyFunction_SetDefaultsGetter(__pyx_t_5, __pyx_pf_10polar2grid_5remap_7_fornav_16__defaults__);
+  __Pyx_CyFunction_SetDefaultsGetter(__pyx_t_5, __pyx_pf_10polar2grid_5remap_7_fornav_12__defaults__);
   ((__pyx_FusedFunctionObject *) __pyx_t_5)->__signatures__ = __pyx_t_6;
   __Pyx_GIVEREF(__pyx_t_6);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_fornav_wrapper, __pyx_t_5) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 429; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -26597,7 +26283,7 @@ PyMODINIT_FUNC PyInit__fornav(void)
  * cdef strided = Enum("<strided and direct>") # default
  * cdef indirect = Enum("<strided and indirect>")
  */
-  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject *)__pyx_MemviewEnum_type)), __pyx_tuple__60, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 276; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject *)__pyx_MemviewEnum_type)), __pyx_tuple__56, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 276; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_XGOTREF(generic);
   __Pyx_DECREF_SET(generic, __pyx_t_4);
@@ -26611,7 +26297,7 @@ PyMODINIT_FUNC PyInit__fornav(void)
  * cdef indirect = Enum("<strided and indirect>")
  * 
  */
-  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject *)__pyx_MemviewEnum_type)), __pyx_tuple__61, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject *)__pyx_MemviewEnum_type)), __pyx_tuple__57, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 277; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_XGOTREF(strided);
   __Pyx_DECREF_SET(strided, __pyx_t_4);
@@ -26625,7 +26311,7 @@ PyMODINIT_FUNC PyInit__fornav(void)
  * 
  * 
  */
-  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject *)__pyx_MemviewEnum_type)), __pyx_tuple__62, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject *)__pyx_MemviewEnum_type)), __pyx_tuple__58, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_XGOTREF(indirect);
   __Pyx_DECREF_SET(indirect, __pyx_t_4);
@@ -26639,7 +26325,7 @@ PyMODINIT_FUNC PyInit__fornav(void)
  * cdef indirect_contiguous = Enum("<contiguous and indirect>")
  * 
  */
-  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject *)__pyx_MemviewEnum_type)), __pyx_tuple__63, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 281; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject *)__pyx_MemviewEnum_type)), __pyx_tuple__59, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 281; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_XGOTREF(contiguous);
   __Pyx_DECREF_SET(contiguous, __pyx_t_4);
@@ -26653,7 +26339,7 @@ PyMODINIT_FUNC PyInit__fornav(void)
  * 
  * 
  */
-  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject *)__pyx_MemviewEnum_type)), __pyx_tuple__64, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)((PyObject *)__pyx_MemviewEnum_type)), __pyx_tuple__60, NULL); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[2]; __pyx_lineno = 282; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_XGOTREF(indirect_contiguous);
   __Pyx_DECREF_SET(indirect_contiguous, __pyx_t_4);
@@ -26750,145 +26436,6 @@ static PyObject *__Pyx_GetBuiltinName(PyObject *name) {
 #endif
     }
     return result;
-}
-
-static void __Pyx_RaiseArgtupleInvalid(
-    const char* func_name,
-    int exact,
-    Py_ssize_t num_min,
-    Py_ssize_t num_max,
-    Py_ssize_t num_found)
-{
-    Py_ssize_t num_expected;
-    const char *more_or_less;
-    if (num_found < num_min) {
-        num_expected = num_min;
-        more_or_less = "at least";
-    } else {
-        num_expected = num_max;
-        more_or_less = "at most";
-    }
-    if (exact) {
-        more_or_less = "exactly";
-    }
-    PyErr_Format(PyExc_TypeError,
-                 "%.200s() takes %.8s %" CYTHON_FORMAT_SSIZE_T "d positional argument%.1s (%" CYTHON_FORMAT_SSIZE_T "d given)",
-                 func_name, more_or_less, num_expected,
-                 (num_expected == 1) ? "" : "s", num_found);
-}
-
-static void __Pyx_RaiseDoubleKeywordsError(
-    const char* func_name,
-    PyObject* kw_name)
-{
-    PyErr_Format(PyExc_TypeError,
-        #if PY_MAJOR_VERSION >= 3
-        "%s() got multiple values for keyword argument '%U'", func_name, kw_name);
-        #else
-        "%s() got multiple values for keyword argument '%s'", func_name,
-        PyString_AsString(kw_name));
-        #endif
-}
-
-static int __Pyx_ParseOptionalKeywords(
-    PyObject *kwds,
-    PyObject **argnames[],
-    PyObject *kwds2,
-    PyObject *values[],
-    Py_ssize_t num_pos_args,
-    const char* function_name)
-{
-    PyObject *key = 0, *value = 0;
-    Py_ssize_t pos = 0;
-    PyObject*** name;
-    PyObject*** first_kw_arg = argnames + num_pos_args;
-    while (PyDict_Next(kwds, &pos, &key, &value)) {
-        name = first_kw_arg;
-        while (*name && (**name != key)) name++;
-        if (*name) {
-            values[name-argnames] = value;
-            continue;
-        }
-        name = first_kw_arg;
-        #if PY_MAJOR_VERSION < 3
-        if (likely(PyString_CheckExact(key)) || likely(PyString_Check(key))) {
-            while (*name) {
-                if ((CYTHON_COMPILING_IN_PYPY || PyString_GET_SIZE(**name) == PyString_GET_SIZE(key))
-                        && _PyString_Eq(**name, key)) {
-                    values[name-argnames] = value;
-                    break;
-                }
-                name++;
-            }
-            if (*name) continue;
-            else {
-                PyObject*** argname = argnames;
-                while (argname != first_kw_arg) {
-                    if ((**argname == key) || (
-                            (CYTHON_COMPILING_IN_PYPY || PyString_GET_SIZE(**argname) == PyString_GET_SIZE(key))
-                             && _PyString_Eq(**argname, key))) {
-                        goto arg_passed_twice;
-                    }
-                    argname++;
-                }
-            }
-        } else
-        #endif
-        if (likely(PyUnicode_Check(key))) {
-            while (*name) {
-                int cmp = (**name == key) ? 0 :
-                #if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION >= 3
-                    (PyUnicode_GET_SIZE(**name) != PyUnicode_GET_SIZE(key)) ? 1 :
-                #endif
-                    PyUnicode_Compare(**name, key);
-                if (cmp < 0 && unlikely(PyErr_Occurred())) goto bad;
-                if (cmp == 0) {
-                    values[name-argnames] = value;
-                    break;
-                }
-                name++;
-            }
-            if (*name) continue;
-            else {
-                PyObject*** argname = argnames;
-                while (argname != first_kw_arg) {
-                    int cmp = (**argname == key) ? 0 :
-                    #if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION >= 3
-                        (PyUnicode_GET_SIZE(**argname) != PyUnicode_GET_SIZE(key)) ? 1 :
-                    #endif
-                        PyUnicode_Compare(**argname, key);
-                    if (cmp < 0 && unlikely(PyErr_Occurred())) goto bad;
-                    if (cmp == 0) goto arg_passed_twice;
-                    argname++;
-                }
-            }
-        } else
-            goto invalid_keyword_type;
-        if (kwds2) {
-            if (unlikely(PyDict_SetItem(kwds2, key, value))) goto bad;
-        } else {
-            goto invalid_keyword;
-        }
-    }
-    return 0;
-arg_passed_twice:
-    __Pyx_RaiseDoubleKeywordsError(function_name, key);
-    goto bad;
-invalid_keyword_type:
-    PyErr_Format(PyExc_TypeError,
-        "%.200s() keywords must be strings", function_name);
-    goto bad;
-invalid_keyword:
-    PyErr_Format(PyExc_TypeError,
-    #if PY_MAJOR_VERSION < 3
-        "%.200s() got an unexpected keyword argument '%.200s'",
-        function_name, PyString_AsString(key));
-    #else
-        "%s() got an unexpected keyword argument '%U'",
-        function_name, key);
-    #endif
-bad:
-    return -1;
 }
 
 #if CYTHON_COMPILING_IN_CPYTHON
@@ -27097,6 +26644,145 @@ bad:
     return;
 }
 #endif
+
+static void __Pyx_RaiseArgtupleInvalid(
+    const char* func_name,
+    int exact,
+    Py_ssize_t num_min,
+    Py_ssize_t num_max,
+    Py_ssize_t num_found)
+{
+    Py_ssize_t num_expected;
+    const char *more_or_less;
+    if (num_found < num_min) {
+        num_expected = num_min;
+        more_or_less = "at least";
+    } else {
+        num_expected = num_max;
+        more_or_less = "at most";
+    }
+    if (exact) {
+        more_or_less = "exactly";
+    }
+    PyErr_Format(PyExc_TypeError,
+                 "%.200s() takes %.8s %" CYTHON_FORMAT_SSIZE_T "d positional argument%.1s (%" CYTHON_FORMAT_SSIZE_T "d given)",
+                 func_name, more_or_less, num_expected,
+                 (num_expected == 1) ? "" : "s", num_found);
+}
+
+static void __Pyx_RaiseDoubleKeywordsError(
+    const char* func_name,
+    PyObject* kw_name)
+{
+    PyErr_Format(PyExc_TypeError,
+        #if PY_MAJOR_VERSION >= 3
+        "%s() got multiple values for keyword argument '%U'", func_name, kw_name);
+        #else
+        "%s() got multiple values for keyword argument '%s'", func_name,
+        PyString_AsString(kw_name));
+        #endif
+}
+
+static int __Pyx_ParseOptionalKeywords(
+    PyObject *kwds,
+    PyObject **argnames[],
+    PyObject *kwds2,
+    PyObject *values[],
+    Py_ssize_t num_pos_args,
+    const char* function_name)
+{
+    PyObject *key = 0, *value = 0;
+    Py_ssize_t pos = 0;
+    PyObject*** name;
+    PyObject*** first_kw_arg = argnames + num_pos_args;
+    while (PyDict_Next(kwds, &pos, &key, &value)) {
+        name = first_kw_arg;
+        while (*name && (**name != key)) name++;
+        if (*name) {
+            values[name-argnames] = value;
+            continue;
+        }
+        name = first_kw_arg;
+        #if PY_MAJOR_VERSION < 3
+        if (likely(PyString_CheckExact(key)) || likely(PyString_Check(key))) {
+            while (*name) {
+                if ((CYTHON_COMPILING_IN_PYPY || PyString_GET_SIZE(**name) == PyString_GET_SIZE(key))
+                        && _PyString_Eq(**name, key)) {
+                    values[name-argnames] = value;
+                    break;
+                }
+                name++;
+            }
+            if (*name) continue;
+            else {
+                PyObject*** argname = argnames;
+                while (argname != first_kw_arg) {
+                    if ((**argname == key) || (
+                            (CYTHON_COMPILING_IN_PYPY || PyString_GET_SIZE(**argname) == PyString_GET_SIZE(key))
+                             && _PyString_Eq(**argname, key))) {
+                        goto arg_passed_twice;
+                    }
+                    argname++;
+                }
+            }
+        } else
+        #endif
+        if (likely(PyUnicode_Check(key))) {
+            while (*name) {
+                int cmp = (**name == key) ? 0 :
+                #if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION >= 3
+                    (PyUnicode_GET_SIZE(**name) != PyUnicode_GET_SIZE(key)) ? 1 :
+                #endif
+                    PyUnicode_Compare(**name, key);
+                if (cmp < 0 && unlikely(PyErr_Occurred())) goto bad;
+                if (cmp == 0) {
+                    values[name-argnames] = value;
+                    break;
+                }
+                name++;
+            }
+            if (*name) continue;
+            else {
+                PyObject*** argname = argnames;
+                while (argname != first_kw_arg) {
+                    int cmp = (**argname == key) ? 0 :
+                    #if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION >= 3
+                        (PyUnicode_GET_SIZE(**argname) != PyUnicode_GET_SIZE(key)) ? 1 :
+                    #endif
+                        PyUnicode_Compare(**argname, key);
+                    if (cmp < 0 && unlikely(PyErr_Occurred())) goto bad;
+                    if (cmp == 0) goto arg_passed_twice;
+                    argname++;
+                }
+            }
+        } else
+            goto invalid_keyword_type;
+        if (kwds2) {
+            if (unlikely(PyDict_SetItem(kwds2, key, value))) goto bad;
+        } else {
+            goto invalid_keyword;
+        }
+    }
+    return 0;
+arg_passed_twice:
+    __Pyx_RaiseDoubleKeywordsError(function_name, key);
+    goto bad;
+invalid_keyword_type:
+    PyErr_Format(PyExc_TypeError,
+        "%.200s() keywords must be strings", function_name);
+    goto bad;
+invalid_keyword:
+    PyErr_Format(PyExc_TypeError,
+    #if PY_MAJOR_VERSION < 3
+        "%.200s() got an unexpected keyword argument '%.200s'",
+        function_name, PyString_AsString(key));
+    #else
+        "%s() got an unexpected keyword argument '%U'",
+        function_name, key);
+    #endif
+bad:
+    return -1;
+}
 
 static CYTHON_INLINE void __Pyx_ExceptionSave(PyObject **type, PyObject **value, PyObject **tb) {
 #if CYTHON_COMPILING_IN_CPYTHON
@@ -30009,313 +29695,7 @@ static void __Pyx_ReleaseBuffer(Py_buffer *view) {
 #endif
 
 
-                #define __PYX_VERIFY_RETURN_INT(target_type, func_type, func_value)       \
-    {                                                                     \
-        func_type value = func_value;                                     \
-        if (sizeof(target_type) < sizeof(func_type)) {                    \
-            if (unlikely(value != (func_type) (target_type) value)) {     \
-                func_type zero = 0;                                       \
-                if (is_unsigned && unlikely(value < zero))                \
-                    goto raise_neg_overflow;                              \
-                else                                                      \
-                    goto raise_overflow;                                  \
-            }                                                             \
-        }                                                                 \
-        return (target_type) value;                                       \
-    }
-
-#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
- #if CYTHON_USE_PYLONG_INTERNALS
-  #include "longintrepr.h"
- #endif
-#endif
-
-static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *x) {
-    const int neg_one = (int) -1, const_zero = 0;
-    const int is_unsigned = neg_one > const_zero;
-#if PY_MAJOR_VERSION < 3
-    if (likely(PyInt_Check(x))) {
-        if (sizeof(int) < sizeof(long)) {
-            __PYX_VERIFY_RETURN_INT(int, long, PyInt_AS_LONG(x))
-        } else {
-            long val = PyInt_AS_LONG(x);
-            if (is_unsigned && unlikely(val < 0)) {
-                goto raise_neg_overflow;
-            }
-            return (int) val;
-        }
-    } else
-#endif
-    if (likely(PyLong_Check(x))) {
-        if (is_unsigned) {
-#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
- #if CYTHON_USE_PYLONG_INTERNALS
-            switch (Py_SIZE(x)) {
-                case  0: return 0;
-                case  1: __PYX_VERIFY_RETURN_INT(int, digit, ((PyLongObject*)x)->ob_digit[0]);
-            }
- #endif
-#endif
-            if (unlikely(Py_SIZE(x) < 0)) {
-                goto raise_neg_overflow;
-            }
-            if (sizeof(int) <= sizeof(unsigned long)) {
-                __PYX_VERIFY_RETURN_INT(int, unsigned long, PyLong_AsUnsignedLong(x))
-            } else if (sizeof(int) <= sizeof(unsigned long long)) {
-                __PYX_VERIFY_RETURN_INT(int, unsigned long long, PyLong_AsUnsignedLongLong(x))
-            }
-        } else {
-#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
- #if CYTHON_USE_PYLONG_INTERNALS
-            switch (Py_SIZE(x)) {
-                case  0: return 0;
-                case  1: __PYX_VERIFY_RETURN_INT(int,  digit, +(((PyLongObject*)x)->ob_digit[0]));
-                case -1: __PYX_VERIFY_RETURN_INT(int, sdigit, -(sdigit) ((PyLongObject*)x)->ob_digit[0]);
-            }
- #endif
-#endif
-            if (sizeof(int) <= sizeof(long)) {
-                __PYX_VERIFY_RETURN_INT(int, long, PyLong_AsLong(x))
-            } else if (sizeof(int) <= sizeof(long long)) {
-                __PYX_VERIFY_RETURN_INT(int, long long, PyLong_AsLongLong(x))
-            }
-        }
-        {
-#if CYTHON_COMPILING_IN_PYPY && !defined(_PyLong_AsByteArray)
-            PyErr_SetString(PyExc_RuntimeError,
-                            "_PyLong_AsByteArray() not available in PyPy, cannot convert large numbers");
-#else
-            int val;
-            PyObject *v = __Pyx_PyNumber_Int(x);
- #if PY_MAJOR_VERSION < 3
-            if (likely(v) && !PyLong_Check(v)) {
-                PyObject *tmp = v;
-                v = PyNumber_Long(tmp);
-                Py_DECREF(tmp);
-            }
- #endif
-            if (likely(v)) {
-                int one = 1; int is_little = (int)*(unsigned char *)&one;
-                unsigned char *bytes = (unsigned char *)&val;
-                int ret = _PyLong_AsByteArray((PyLongObject *)v,
-                                              bytes, sizeof(val),
-                                              is_little, !is_unsigned);
-                Py_DECREF(v);
-                if (likely(!ret))
-                    return val;
-            }
-#endif
-            return (int) -1;
-        }
-    } else {
-        int val;
-        PyObject *tmp = __Pyx_PyNumber_Int(x);
-        if (!tmp) return (int) -1;
-        val = __Pyx_PyInt_As_int(tmp);
-        Py_DECREF(tmp);
-        return val;
-    }
-raise_overflow:
-    PyErr_SetString(PyExc_OverflowError,
-        "value too large to convert to int");
-    return (int) -1;
-raise_neg_overflow:
-    PyErr_SetString(PyExc_OverflowError,
-        "can't convert negative value to int");
-    return (int) -1;
-}
-
-static CYTHON_INLINE npy_uint8 __Pyx_PyInt_As_npy_uint8(PyObject *x) {
-    const npy_uint8 neg_one = (npy_uint8) -1, const_zero = 0;
-    const int is_unsigned = neg_one > const_zero;
-#if PY_MAJOR_VERSION < 3
-    if (likely(PyInt_Check(x))) {
-        if (sizeof(npy_uint8) < sizeof(long)) {
-            __PYX_VERIFY_RETURN_INT(npy_uint8, long, PyInt_AS_LONG(x))
-        } else {
-            long val = PyInt_AS_LONG(x);
-            if (is_unsigned && unlikely(val < 0)) {
-                goto raise_neg_overflow;
-            }
-            return (npy_uint8) val;
-        }
-    } else
-#endif
-    if (likely(PyLong_Check(x))) {
-        if (is_unsigned) {
-#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
- #if CYTHON_USE_PYLONG_INTERNALS
-            switch (Py_SIZE(x)) {
-                case  0: return 0;
-                case  1: __PYX_VERIFY_RETURN_INT(npy_uint8, digit, ((PyLongObject*)x)->ob_digit[0]);
-            }
- #endif
-#endif
-            if (unlikely(Py_SIZE(x) < 0)) {
-                goto raise_neg_overflow;
-            }
-            if (sizeof(npy_uint8) <= sizeof(unsigned long)) {
-                __PYX_VERIFY_RETURN_INT(npy_uint8, unsigned long, PyLong_AsUnsignedLong(x))
-            } else if (sizeof(npy_uint8) <= sizeof(unsigned long long)) {
-                __PYX_VERIFY_RETURN_INT(npy_uint8, unsigned long long, PyLong_AsUnsignedLongLong(x))
-            }
-        } else {
-#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
- #if CYTHON_USE_PYLONG_INTERNALS
-            switch (Py_SIZE(x)) {
-                case  0: return 0;
-                case  1: __PYX_VERIFY_RETURN_INT(npy_uint8,  digit, +(((PyLongObject*)x)->ob_digit[0]));
-                case -1: __PYX_VERIFY_RETURN_INT(npy_uint8, sdigit, -(sdigit) ((PyLongObject*)x)->ob_digit[0]);
-            }
- #endif
-#endif
-            if (sizeof(npy_uint8) <= sizeof(long)) {
-                __PYX_VERIFY_RETURN_INT(npy_uint8, long, PyLong_AsLong(x))
-            } else if (sizeof(npy_uint8) <= sizeof(long long)) {
-                __PYX_VERIFY_RETURN_INT(npy_uint8, long long, PyLong_AsLongLong(x))
-            }
-        }
-        {
-#if CYTHON_COMPILING_IN_PYPY && !defined(_PyLong_AsByteArray)
-            PyErr_SetString(PyExc_RuntimeError,
-                            "_PyLong_AsByteArray() not available in PyPy, cannot convert large numbers");
-#else
-            npy_uint8 val;
-            PyObject *v = __Pyx_PyNumber_Int(x);
- #if PY_MAJOR_VERSION < 3
-            if (likely(v) && !PyLong_Check(v)) {
-                PyObject *tmp = v;
-                v = PyNumber_Long(tmp);
-                Py_DECREF(tmp);
-            }
- #endif
-            if (likely(v)) {
-                int one = 1; int is_little = (int)*(unsigned char *)&one;
-                unsigned char *bytes = (unsigned char *)&val;
-                int ret = _PyLong_AsByteArray((PyLongObject *)v,
-                                              bytes, sizeof(val),
-                                              is_little, !is_unsigned);
-                Py_DECREF(v);
-                if (likely(!ret))
-                    return val;
-            }
-#endif
-            return (npy_uint8) -1;
-        }
-    } else {
-        npy_uint8 val;
-        PyObject *tmp = __Pyx_PyNumber_Int(x);
-        if (!tmp) return (npy_uint8) -1;
-        val = __Pyx_PyInt_As_npy_uint8(tmp);
-        Py_DECREF(tmp);
-        return val;
-    }
-raise_overflow:
-    PyErr_SetString(PyExc_OverflowError,
-        "value too large to convert to npy_uint8");
-    return (npy_uint8) -1;
-raise_neg_overflow:
-    PyErr_SetString(PyExc_OverflowError,
-        "can't convert negative value to npy_uint8");
-    return (npy_uint8) -1;
-}
-
-static CYTHON_INLINE npy_int8 __Pyx_PyInt_As_npy_int8(PyObject *x) {
-    const npy_int8 neg_one = (npy_int8) -1, const_zero = 0;
-    const int is_unsigned = neg_one > const_zero;
-#if PY_MAJOR_VERSION < 3
-    if (likely(PyInt_Check(x))) {
-        if (sizeof(npy_int8) < sizeof(long)) {
-            __PYX_VERIFY_RETURN_INT(npy_int8, long, PyInt_AS_LONG(x))
-        } else {
-            long val = PyInt_AS_LONG(x);
-            if (is_unsigned && unlikely(val < 0)) {
-                goto raise_neg_overflow;
-            }
-            return (npy_int8) val;
-        }
-    } else
-#endif
-    if (likely(PyLong_Check(x))) {
-        if (is_unsigned) {
-#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
- #if CYTHON_USE_PYLONG_INTERNALS
-            switch (Py_SIZE(x)) {
-                case  0: return 0;
-                case  1: __PYX_VERIFY_RETURN_INT(npy_int8, digit, ((PyLongObject*)x)->ob_digit[0]);
-            }
- #endif
-#endif
-            if (unlikely(Py_SIZE(x) < 0)) {
-                goto raise_neg_overflow;
-            }
-            if (sizeof(npy_int8) <= sizeof(unsigned long)) {
-                __PYX_VERIFY_RETURN_INT(npy_int8, unsigned long, PyLong_AsUnsignedLong(x))
-            } else if (sizeof(npy_int8) <= sizeof(unsigned long long)) {
-                __PYX_VERIFY_RETURN_INT(npy_int8, unsigned long long, PyLong_AsUnsignedLongLong(x))
-            }
-        } else {
-#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
- #if CYTHON_USE_PYLONG_INTERNALS
-            switch (Py_SIZE(x)) {
-                case  0: return 0;
-                case  1: __PYX_VERIFY_RETURN_INT(npy_int8,  digit, +(((PyLongObject*)x)->ob_digit[0]));
-                case -1: __PYX_VERIFY_RETURN_INT(npy_int8, sdigit, -(sdigit) ((PyLongObject*)x)->ob_digit[0]);
-            }
- #endif
-#endif
-            if (sizeof(npy_int8) <= sizeof(long)) {
-                __PYX_VERIFY_RETURN_INT(npy_int8, long, PyLong_AsLong(x))
-            } else if (sizeof(npy_int8) <= sizeof(long long)) {
-                __PYX_VERIFY_RETURN_INT(npy_int8, long long, PyLong_AsLongLong(x))
-            }
-        }
-        {
-#if CYTHON_COMPILING_IN_PYPY && !defined(_PyLong_AsByteArray)
-            PyErr_SetString(PyExc_RuntimeError,
-                            "_PyLong_AsByteArray() not available in PyPy, cannot convert large numbers");
-#else
-            npy_int8 val;
-            PyObject *v = __Pyx_PyNumber_Int(x);
- #if PY_MAJOR_VERSION < 3
-            if (likely(v) && !PyLong_Check(v)) {
-                PyObject *tmp = v;
-                v = PyNumber_Long(tmp);
-                Py_DECREF(tmp);
-            }
- #endif
-            if (likely(v)) {
-                int one = 1; int is_little = (int)*(unsigned char *)&one;
-                unsigned char *bytes = (unsigned char *)&val;
-                int ret = _PyLong_AsByteArray((PyLongObject *)v,
-                                              bytes, sizeof(val),
-                                              is_little, !is_unsigned);
-                Py_DECREF(v);
-                if (likely(!ret))
-                    return val;
-            }
-#endif
-            return (npy_int8) -1;
-        }
-    } else {
-        npy_int8 val;
-        PyObject *tmp = __Pyx_PyNumber_Int(x);
-        if (!tmp) return (npy_int8) -1;
-        val = __Pyx_PyInt_As_npy_int8(tmp);
-        Py_DECREF(tmp);
-        return val;
-    }
-raise_overflow:
-    PyErr_SetString(PyExc_OverflowError,
-        "value too large to convert to npy_int8");
-    return (npy_int8) -1;
-raise_neg_overflow:
-    PyErr_SetString(PyExc_OverflowError,
-        "can't convert negative value to npy_int8");
-    return (npy_int8) -1;
-}
-
-static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
+                static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
     const long neg_one = (long) -1, const_zero = 0;
     const int is_unsigned = neg_one > const_zero;
     if (is_unsigned) {
@@ -30340,6 +29720,27 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
                                      little, !is_unsigned);
     }
 }
+
+#define __PYX_VERIFY_RETURN_INT(target_type, func_type, func_value)       \
+    {                                                                     \
+        func_type value = func_value;                                     \
+        if (sizeof(target_type) < sizeof(func_type)) {                    \
+            if (unlikely(value != (func_type) (target_type) value)) {     \
+                func_type zero = 0;                                       \
+                if (is_unsigned && unlikely(value < zero))                \
+                    goto raise_neg_overflow;                              \
+                else                                                      \
+                    goto raise_overflow;                                  \
+            }                                                             \
+        }                                                                 \
+        return (target_type) value;                                       \
+    }
+
+#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
+ #if CYTHON_USE_PYLONG_INTERNALS
+  #include "longintrepr.h"
+ #endif
+#endif
 
 static CYTHON_INLINE size_t __Pyx_PyInt_As_size_t(PyObject *x) {
     const size_t neg_one = (size_t) -1, const_zero = 0;
@@ -30557,32 +29958,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_From_unsigned_int(unsigned int value)
     }
 }
 
-static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value) {
-    const int neg_one = (int) -1, const_zero = 0;
-    const int is_unsigned = neg_one > const_zero;
-    if (is_unsigned) {
-        if (sizeof(int) < sizeof(long)) {
-            return PyInt_FromLong((long) value);
-        } else if (sizeof(int) <= sizeof(unsigned long)) {
-            return PyLong_FromUnsignedLong((unsigned long) value);
-        } else if (sizeof(int) <= sizeof(unsigned long long)) {
-            return PyLong_FromUnsignedLongLong((unsigned long long) value);
-        }
-    } else {
-        if (sizeof(int) <= sizeof(long)) {
-            return PyInt_FromLong((long) value);
-        } else if (sizeof(int) <= sizeof(long long)) {
-            return PyLong_FromLongLong((long long) value);
-        }
-    }
-    {
-        int one = 1; int little = (int)*(unsigned char *)&one;
-        unsigned char *bytes = (unsigned char *)&value;
-        return _PyLong_FromByteArray(bytes, sizeof(int),
-                                     little, !is_unsigned);
-    }
-}
-
 static CYTHON_INLINE char __Pyx_PyInt_As_char(PyObject *x) {
     const char neg_one = (char) -1, const_zero = 0;
     const int is_unsigned = neg_one > const_zero;
@@ -30686,6 +30061,127 @@ static CYTHON_INLINE int __Pyx_BytesContains(PyObject* bytes, char character) {
         if (character == pos[0]) return 1;
     }
     return 0;
+}
+
+static CYTHON_INLINE npy_int8 __Pyx_PyInt_As_npy_int8(PyObject *x) {
+    const npy_int8 neg_one = (npy_int8) -1, const_zero = 0;
+    const int is_unsigned = neg_one > const_zero;
+#if PY_MAJOR_VERSION < 3
+    if (likely(PyInt_Check(x))) {
+        if (sizeof(npy_int8) < sizeof(long)) {
+            __PYX_VERIFY_RETURN_INT(npy_int8, long, PyInt_AS_LONG(x))
+        } else {
+            long val = PyInt_AS_LONG(x);
+            if (is_unsigned && unlikely(val < 0)) {
+                goto raise_neg_overflow;
+            }
+            return (npy_int8) val;
+        }
+    } else
+#endif
+    if (likely(PyLong_Check(x))) {
+        if (is_unsigned) {
+#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
+ #if CYTHON_USE_PYLONG_INTERNALS
+            switch (Py_SIZE(x)) {
+                case  0: return 0;
+                case  1: __PYX_VERIFY_RETURN_INT(npy_int8, digit, ((PyLongObject*)x)->ob_digit[0]);
+            }
+ #endif
+#endif
+            if (unlikely(Py_SIZE(x) < 0)) {
+                goto raise_neg_overflow;
+            }
+            if (sizeof(npy_int8) <= sizeof(unsigned long)) {
+                __PYX_VERIFY_RETURN_INT(npy_int8, unsigned long, PyLong_AsUnsignedLong(x))
+            } else if (sizeof(npy_int8) <= sizeof(unsigned long long)) {
+                __PYX_VERIFY_RETURN_INT(npy_int8, unsigned long long, PyLong_AsUnsignedLongLong(x))
+            }
+        } else {
+#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
+ #if CYTHON_USE_PYLONG_INTERNALS
+            switch (Py_SIZE(x)) {
+                case  0: return 0;
+                case  1: __PYX_VERIFY_RETURN_INT(npy_int8,  digit, +(((PyLongObject*)x)->ob_digit[0]));
+                case -1: __PYX_VERIFY_RETURN_INT(npy_int8, sdigit, -(sdigit) ((PyLongObject*)x)->ob_digit[0]);
+            }
+ #endif
+#endif
+            if (sizeof(npy_int8) <= sizeof(long)) {
+                __PYX_VERIFY_RETURN_INT(npy_int8, long, PyLong_AsLong(x))
+            } else if (sizeof(npy_int8) <= sizeof(long long)) {
+                __PYX_VERIFY_RETURN_INT(npy_int8, long long, PyLong_AsLongLong(x))
+            }
+        }
+        {
+#if CYTHON_COMPILING_IN_PYPY && !defined(_PyLong_AsByteArray)
+            PyErr_SetString(PyExc_RuntimeError,
+                            "_PyLong_AsByteArray() not available in PyPy, cannot convert large numbers");
+#else
+            npy_int8 val;
+            PyObject *v = __Pyx_PyNumber_Int(x);
+ #if PY_MAJOR_VERSION < 3
+            if (likely(v) && !PyLong_Check(v)) {
+                PyObject *tmp = v;
+                v = PyNumber_Long(tmp);
+                Py_DECREF(tmp);
+            }
+ #endif
+            if (likely(v)) {
+                int one = 1; int is_little = (int)*(unsigned char *)&one;
+                unsigned char *bytes = (unsigned char *)&val;
+                int ret = _PyLong_AsByteArray((PyLongObject *)v,
+                                              bytes, sizeof(val),
+                                              is_little, !is_unsigned);
+                Py_DECREF(v);
+                if (likely(!ret))
+                    return val;
+            }
+#endif
+            return (npy_int8) -1;
+        }
+    } else {
+        npy_int8 val;
+        PyObject *tmp = __Pyx_PyNumber_Int(x);
+        if (!tmp) return (npy_int8) -1;
+        val = __Pyx_PyInt_As_npy_int8(tmp);
+        Py_DECREF(tmp);
+        return val;
+    }
+raise_overflow:
+    PyErr_SetString(PyExc_OverflowError,
+        "value too large to convert to npy_int8");
+    return (npy_int8) -1;
+raise_neg_overflow:
+    PyErr_SetString(PyExc_OverflowError,
+        "can't convert negative value to npy_int8");
+    return (npy_int8) -1;
+}
+
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value) {
+    const int neg_one = (int) -1, const_zero = 0;
+    const int is_unsigned = neg_one > const_zero;
+    if (is_unsigned) {
+        if (sizeof(int) < sizeof(long)) {
+            return PyInt_FromLong((long) value);
+        } else if (sizeof(int) <= sizeof(unsigned long)) {
+            return PyLong_FromUnsignedLong((unsigned long) value);
+        } else if (sizeof(int) <= sizeof(unsigned long long)) {
+            return PyLong_FromUnsignedLongLong((unsigned long long) value);
+        }
+    } else {
+        if (sizeof(int) <= sizeof(long)) {
+            return PyInt_FromLong((long) value);
+        } else if (sizeof(int) <= sizeof(long long)) {
+            return PyLong_FromLongLong((long long) value);
+        }
+    }
+    {
+        int one = 1; int little = (int)*(unsigned char *)&one;
+        unsigned char *bytes = (unsigned char *)&value;
+        return _PyLong_FromByteArray(bytes, sizeof(int),
+                                     little, !is_unsigned);
+    }
 }
 
 #if CYTHON_CCOMPLEX
@@ -30927,6 +30423,101 @@ static CYTHON_INLINE int __Pyx_BytesContains(PyObject* bytes, char character) {
         }
     #endif
 #endif
+
+static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *x) {
+    const int neg_one = (int) -1, const_zero = 0;
+    const int is_unsigned = neg_one > const_zero;
+#if PY_MAJOR_VERSION < 3
+    if (likely(PyInt_Check(x))) {
+        if (sizeof(int) < sizeof(long)) {
+            __PYX_VERIFY_RETURN_INT(int, long, PyInt_AS_LONG(x))
+        } else {
+            long val = PyInt_AS_LONG(x);
+            if (is_unsigned && unlikely(val < 0)) {
+                goto raise_neg_overflow;
+            }
+            return (int) val;
+        }
+    } else
+#endif
+    if (likely(PyLong_Check(x))) {
+        if (is_unsigned) {
+#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
+ #if CYTHON_USE_PYLONG_INTERNALS
+            switch (Py_SIZE(x)) {
+                case  0: return 0;
+                case  1: __PYX_VERIFY_RETURN_INT(int, digit, ((PyLongObject*)x)->ob_digit[0]);
+            }
+ #endif
+#endif
+            if (unlikely(Py_SIZE(x) < 0)) {
+                goto raise_neg_overflow;
+            }
+            if (sizeof(int) <= sizeof(unsigned long)) {
+                __PYX_VERIFY_RETURN_INT(int, unsigned long, PyLong_AsUnsignedLong(x))
+            } else if (sizeof(int) <= sizeof(unsigned long long)) {
+                __PYX_VERIFY_RETURN_INT(int, unsigned long long, PyLong_AsUnsignedLongLong(x))
+            }
+        } else {
+#if CYTHON_COMPILING_IN_CPYTHON && PY_MAJOR_VERSION >= 3
+ #if CYTHON_USE_PYLONG_INTERNALS
+            switch (Py_SIZE(x)) {
+                case  0: return 0;
+                case  1: __PYX_VERIFY_RETURN_INT(int,  digit, +(((PyLongObject*)x)->ob_digit[0]));
+                case -1: __PYX_VERIFY_RETURN_INT(int, sdigit, -(sdigit) ((PyLongObject*)x)->ob_digit[0]);
+            }
+ #endif
+#endif
+            if (sizeof(int) <= sizeof(long)) {
+                __PYX_VERIFY_RETURN_INT(int, long, PyLong_AsLong(x))
+            } else if (sizeof(int) <= sizeof(long long)) {
+                __PYX_VERIFY_RETURN_INT(int, long long, PyLong_AsLongLong(x))
+            }
+        }
+        {
+#if CYTHON_COMPILING_IN_PYPY && !defined(_PyLong_AsByteArray)
+            PyErr_SetString(PyExc_RuntimeError,
+                            "_PyLong_AsByteArray() not available in PyPy, cannot convert large numbers");
+#else
+            int val;
+            PyObject *v = __Pyx_PyNumber_Int(x);
+ #if PY_MAJOR_VERSION < 3
+            if (likely(v) && !PyLong_Check(v)) {
+                PyObject *tmp = v;
+                v = PyNumber_Long(tmp);
+                Py_DECREF(tmp);
+            }
+ #endif
+            if (likely(v)) {
+                int one = 1; int is_little = (int)*(unsigned char *)&one;
+                unsigned char *bytes = (unsigned char *)&val;
+                int ret = _PyLong_AsByteArray((PyLongObject *)v,
+                                              bytes, sizeof(val),
+                                              is_little, !is_unsigned);
+                Py_DECREF(v);
+                if (likely(!ret))
+                    return val;
+            }
+#endif
+            return (int) -1;
+        }
+    } else {
+        int val;
+        PyObject *tmp = __Pyx_PyNumber_Int(x);
+        if (!tmp) return (int) -1;
+        val = __Pyx_PyInt_As_int(tmp);
+        Py_DECREF(tmp);
+        return val;
+    }
+raise_overflow:
+    PyErr_SetString(PyExc_OverflowError,
+        "value too large to convert to int");
+    return (int) -1;
+raise_neg_overflow:
+    PyErr_SetString(PyExc_OverflowError,
+        "can't convert negative value to int");
+    return (int) -1;
+}
 
 static int
 __pyx_memviewslice_is_contig(const __Pyx_memviewslice *mvs,

@@ -3,24 +3,11 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "_fornav_templates.h"
-template<typename CR_TYPE, typename IMAGE_TYPE>
-int test_cpp_templates(CR_TYPE x, IMAGE_TYPE y) {
-    if (x) {
-        return 0;
-    } else if (y) {
-        return 1;
-    } else {
-        return 2;
-    }
-}
-
-template int test_cpp_templates<int, int>(int, int);
-template int test_cpp_templates<npy_uint8, npy_int8>(npy_uint8, npy_int8);
 
 template<typename CR_TYPE, typename IMAGE_TYPE>
 int compute_ewa(size_t chan_count, int maximum_weight_mode,
         size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows, CR_TYPE *uimg, CR_TYPE *vimg,
-        IMAGE_TYPE **images, IMAGE_TYPE img_fill, double **grid_accums, double **grid_weights, ewa_weight *ewaw, ewa_parameters *ewap) {
+        IMAGE_TYPE **images, IMAGE_TYPE img_fill, accum_type **grid_accums, weight_type **grid_weights, ewa_weight *ewaw, ewa_parameters *ewap) {
   // This was originally copied from a cython C file for 32-bit float inputs (that explains some of the weird parens and other syntax
   int got_point;
   unsigned int row;
@@ -34,16 +21,16 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
   int iv2;
   int iu;
   int iv;
-  double ddq;
-  double dq;
-  double q;
-  double u;
-  double v;
-  double a2up1;
-  double au2;
-  double bu;
+  weight_type ddq;
+  weight_type dq;
+  weight_type q;
+  weight_type u;
+  weight_type v;
+  weight_type a2up1;
+  weight_type au2;
+  weight_type bu;
   int iw;
-  double weight;
+  weight_type weight;
   IMAGE_TYPE this_val;
   unsigned int swath_offset;
   unsigned int grid_offset;
@@ -106,15 +93,15 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
                   if (weight > grid_weights[chan][grid_offset]) {
                     ((grid_weights[chan])[grid_offset]) = weight;
                     if ((this_val == img_fill) || (isnan(this_val))) {
-                      ((grid_accums[chan])[grid_offset]) = (double)NAN;
+                      ((grid_accums[chan])[grid_offset]) = (accum_type)NAN;
                     } else {
-                      ((grid_accums[chan])[grid_offset]) = (double)this_val;
+                      ((grid_accums[chan])[grid_offset]) = (accum_type)this_val;
                     }
                   }
                 } else {
                   if ((this_val != img_fill) && !(isnan(this_val))) {
                     ((grid_weights[chan])[grid_offset]) += weight;
-                    ((grid_accums[chan])[grid_offset]) += (double)this_val * weight;
+                    ((grid_accums[chan])[grid_offset]) += (accum_type)this_val * weight;
                   }
                 }
               }
@@ -132,10 +119,10 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
 }
 
 // Col/Row as 32-bit floats
-template int compute_ewa<npy_float32, npy_float32>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_float32**, npy_float32, double**, double**, ewa_weight*, ewa_parameters*);
-template int compute_ewa<npy_float32, npy_float64>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_float64**, npy_float64, double**, double**, ewa_weight*, ewa_parameters*);
-template int compute_ewa<npy_float32, npy_int8>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_int8**, npy_int8, double**, double**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float32, npy_float32>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_float32**, npy_float32, accum_type**, weight_type**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float32, npy_float64>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_float64**, npy_float64, accum_type**, weight_type**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float32, npy_int8>(size_t, int, size_t, size_t, size_t, size_t, npy_float32*, npy_float32*, npy_int8**, npy_int8, accum_type**, weight_type**, ewa_weight*, ewa_parameters*);
 // Col/Row as 64-bit floats
-template int compute_ewa<npy_float64, npy_float32>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_float32**, npy_float32, double**, double**, ewa_weight*, ewa_parameters*);
-template int compute_ewa<npy_float64, npy_float64>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_float64**, npy_float64, double**, double**, ewa_weight*, ewa_parameters*);
-template int compute_ewa<npy_float64, npy_int8>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_int8**, npy_int8, double**, double**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float64, npy_float32>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_float32**, npy_float32, accum_type**, weight_type**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float64, npy_float64>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_float64**, npy_float64, accum_type**, weight_type**, ewa_weight*, ewa_parameters*);
+template int compute_ewa<npy_float64, npy_int8>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_int8**, npy_int8, accum_type**, weight_type**, ewa_weight*, ewa_parameters*);

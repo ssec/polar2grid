@@ -6,36 +6,42 @@ cimport cpython
 from libc.stdlib cimport calloc, malloc, free
 from libc.math cimport log, exp, sqrt, isnan, NAN
 
-cdef double EPSILON = 1e-8
-cdef double double_nan = <double>NAN
-
 cdef extern from "_fornav_templates.h":
+    ctypedef float weight_type
+    ctypedef float ewa_param_type
+    ctypedef float accum_type
+    cdef float EPSILON
+    #ctypedef double weight_type
+    #ctypedef double ewa_param_type
+    #ctypedef double accum_type
+    #cdef double EPSILON
+
     cdef int test_cpp_templates[CR_TYPE, IMAGE_TYPE](CR_TYPE x, IMAGE_TYPE y)
 
     cdef int compute_ewa[CR_TYPE, IMAGE_TYPE](size_t chan_count, bint maximum_weight_mode,
         size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows,
         CR_TYPE *uimg, CR_TYPE *vimg,
-        IMAGE_TYPE **images, IMAGE_TYPE img_fill, double **grid_accums, double **grid_weights,
+        IMAGE_TYPE **images, IMAGE_TYPE img_fill, accum_type **grid_accums, weight_type **grid_weights,
         ewa_weight *ewaw, ewa_parameters *ewap)
 
     ctypedef struct ewa_parameters:
-        double a
-        double b
-        double c
-        double f
-        double u_del
-        double v_del
+        ewa_param_type a
+        ewa_param_type b
+        ewa_param_type c
+        ewa_param_type f
+        ewa_param_type u_del
+        ewa_param_type v_del
 
     ctypedef struct ewa_weight:
         int count
-        double min
-        double distance_max
-        double delta_max
-        double sum_min
-        double alpha
-        double qmax
-        double qfactor
-        double *wtab
+        weight_type min
+        weight_type distance_max
+        weight_type delta_max
+        weight_type sum_min
+        weight_type alpha
+        weight_type qmax
+        weight_type qfactor
+        weight_type *wtab
 
 ctypedef fused cr_dtype:
     numpy.float32_t
@@ -55,19 +61,13 @@ ctypedef fused grid_dtype:
 ctypedef fused grid_weight_dtype:
     numpy.float32_t
 
-def call_cpp_test(int x, int y):
-    return test_cpp_templates(x, y)
-
-def call_cpp_test_npy(numpy.uint8_t x, numpy.int8_t y):
-    return test_cpp_templates(x, y)
-
 @cython.cdivision(True)
-cdef int initialize_weight(size_t chan_count, unsigned int weight_count, double weight_min, double weight_distance_max,
-                            double weight_delta_max, double weight_sum_min, ewa_weight *ewaw):
+cdef int initialize_weight(size_t chan_count, unsigned int weight_count, weight_type weight_min, weight_type weight_distance_max,
+                            weight_type weight_delta_max, weight_type weight_sum_min, ewa_weight *ewaw):
     cdef unsigned int idx
-    cdef double *wptr
+    cdef weight_type *wptr
 
-    ewaw.wtab = <double *>calloc(weight_count, sizeof(double))
+    ewaw.wtab = <weight_type *>calloc(weight_count, sizeof(weight_type))
     if ewaw.wtab is NULL:
         return -1
 
@@ -112,17 +112,17 @@ cdef void deinitialize_weight(ewa_weight *ewaw):
 @cython.cdivision(True)
 cdef int compute_ewa_parameters(size_t swath_cols, size_t swath_rows,
                                 cr_dtype *uimg, cr_dtype *vimg, ewa_weight *ewaw, ewa_parameters *ewap):
-    cdef double ux
-    cdef double uy
-    cdef double vx
-    cdef double vy
-    cdef double f_scale
-    cdef double d
-    cdef double qmax = ewaw.qmax
-    cdef double distance_max = ewaw.distance_max
-    cdef double delta_max = ewaw.delta_max
-    cdef double u_del
-    cdef double v_del
+    cdef ewa_param_type ux
+    cdef ewa_param_type uy
+    cdef ewa_param_type vx
+    cdef ewa_param_type vy
+    cdef ewa_param_type f_scale
+    cdef ewa_param_type d
+    cdef ewa_param_type qmax = ewaw.qmax
+    cdef ewa_param_type distance_max = ewaw.distance_max
+    cdef ewa_param_type delta_max = ewaw.delta_max
+    cdef ewa_param_type u_del
+    cdef ewa_param_type v_del
 
     cdef unsigned int rowsm1 = swath_rows - 1
     cdef unsigned int colsm1 = swath_cols - 1
@@ -192,10 +192,10 @@ cdef int compute_ewa_parameters(size_t swath_cols, size_t swath_rows,
 
 @cython.cdivision(True)
 cdef int write_grid_image(size_t grid_cols, size_t grid_rows,
-                          double *grid_accum, double *grid_weights, bint maximum_weight_mode, double weight_sum_min,
+                          accum_type *grid_accum, weight_type *grid_weights, bint maximum_weight_mode, weight_type weight_sum_min,
                           grid_dtype *output_image, grid_dtype fill):
-    cdef double this_weightp;
-    cdef double chanf
+    cdef accum_type chanf
+    cdef weight_type this_weightp;
     cdef unsigned int col
     cdef int fill_count = 0
 
@@ -211,7 +211,7 @@ cdef int write_grid_image(size_t grid_cols, size_t grid_rows,
         # The fill value for the weight and accumulation arrays is static at NaN
         if grid_dtype is numpy.float32_t or grid_dtype is numpy.float64_t:
             if this_weightp < weight_sum_min or isnan(chanf):
-                chanf = double_nan
+                chanf = <accum_type>NAN
             elif maximum_weight_mode:
                 # keep the current value
                 chanf = chanf
@@ -221,7 +221,7 @@ cdef int write_grid_image(size_t grid_cols, size_t grid_rows,
                 chanf = chanf / this_weightp
         else:
             if this_weightp < weight_sum_min:
-                chanf = double_nan
+                chanf = <accum_type>NAN
             elif maximum_weight_mode:
                 # keep the current value
                 chanf = chanf
@@ -298,33 +298,33 @@ cdef int write_grid_image(size_t grid_cols, size_t grid_rows,
 
     return fill_count
 
-cdef double **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
-    cdef double **grid_accums = <double **>malloc(chan_count * sizeof(double *))
+cdef accum_type **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
+    cdef accum_type **grid_accums = <accum_type **>malloc(chan_count * sizeof(accum_type *))
     cdef unsigned int i
 
     if not grid_accums:
         return NULL
     for i in range(chan_count):
-        grid_accums[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))
+        grid_accums[i] = <accum_type *>calloc(grid_cols * grid_rows, sizeof(accum_type))
         if not grid_accums[i]:
             return NULL
 
     return grid_accums
 
-cdef double **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):
-    cdef double **grid_weights = <double **>malloc(chan_count * sizeof(double *))
+cdef weight_type **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):
+    cdef weight_type **grid_weights = <weight_type **>malloc(chan_count * sizeof(weight_type *))
     cdef unsigned int i
 
     if not grid_weights:
         return NULL
     for i in range(chan_count):
-        grid_weights[i] = <double *>calloc(grid_cols * grid_rows, sizeof(double))
+        grid_weights[i] = <weight_type *>calloc(grid_cols * grid_rows, sizeof(weight_type))
         if not grid_weights[i]:
             return NULL
 
     return grid_weights
 
-cdef void deinitialize_grids(size_t chan_count, double **grids):
+cdef void deinitialize_grids(size_t chan_count, void **grids):
     cdef unsigned int i
     for i in range(chan_count):
         if grids[i]:
@@ -337,8 +337,8 @@ cdef int fornav(size_t chan_count, size_t swath_cols, size_t swath_rows, size_t 
             cr_dtype *cols_pointer, cr_dtype *rows_pointer,
            image_dtype **input_arrays, grid_dtype **output_arrays,
            image_dtype input_fill, grid_dtype output_fill, size_t rows_per_scan,
-           unsigned int weight_count, double weight_min, double weight_distance_max, double weight_delta_max,
-           double weight_sum_min, bint maximum_weight_mode) except -1:
+           unsigned int weight_count, weight_type weight_min, weight_type weight_distance_max, weight_type weight_delta_max,
+           weight_type weight_sum_min, bint maximum_weight_mode) except -1:
     cdef unsigned int row_idx
     cdef unsigned int idx
     cdef bint got_point = 0
@@ -363,10 +363,10 @@ cdef int fornav(size_t chan_count, size_t swath_cols, size_t swath_rows, size_t 
 
     # Allocate location for storing the sum of all of the pixels involved in each grid cell
     # XXX: Do these need to be initialized to a fill value?
-    cdef double **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
+    cdef accum_type **grid_accums = initialize_grid_accums(chan_count, grid_cols, grid_rows)
     if grid_accums is NULL:
         raise MemoryError()
-    cdef double **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
+    cdef weight_type **grid_weights = initialize_grid_weights(chan_count, grid_cols, grid_rows)
     if grid_weights is NULL:
         raise MemoryError()
     # Allocate memory for the parameters specific to each column
@@ -420,8 +420,8 @@ cdef int fornav(size_t chan_count, size_t swath_cols, size_t swath_rows, size_t 
 
     # free(grid_accums)
     deinitialize_weight(&ewaw)
-    deinitialize_grids(chan_count, grid_accums)
-    deinitialize_grids(chan_count, grid_weights)
+    deinitialize_grids(chan_count, <void **>grid_accums)
+    deinitialize_grids(chan_count, <void **>grid_weights)
     return fill_count
 
 @cython.boundscheck(False)
@@ -430,7 +430,7 @@ def fornav_wrapper(numpy.ndarray[cr_dtype, ndim=2, mode='c'] cols_array,
            numpy.ndarray[cr_dtype, ndim=2, mode='c'] rows_array,
            tuple input_arrays, tuple output_arrays, input_fill, output_fill,
            size_t rows_per_scan,
-           unsigned int weight_count=10000, double weight_min=0.01, double weight_distance_max=1.0, double weight_delta_max=10.0, double weight_sum_min=-1.0,
+           unsigned int weight_count=10000, weight_type weight_min=0.01, weight_type weight_distance_max=1.0, weight_type weight_delta_max=10.0, weight_type weight_sum_min=-1.0,
            cpython.bool maximum_weight_mode=False):
     cdef size_t num_items = len(input_arrays)
     cdef size_t num_outputs = len(output_arrays)
@@ -506,51 +506,3 @@ def fornav_wrapper(numpy.ndarray[cr_dtype, ndim=2, mode='c'] cols_array,
     free(output_pointer)
 
     return ret
-
-# cdef test_data_types2(cr_dtype **cols_arrays):
-#     if cr_dtype is numpy.float32_t:
-#         print "We have a 32 bit float"
-#     elif cr_dtype is numpy.float64_t:
-#         print "We have a 64 bit float"
-#     else:
-#         print "We don't know what the data type is"
-
-
-# def test_data_types2_wrapper2(cr_dtype one_val):
-#     if cr_dtype is numpy.float32_t:
-#         print "We have a 32 bit float"
-#     elif cr_dtype is numpy.float64_t:
-#         print "We have a 64 bit float"
-#     else:
-#         print "We don't know what the data type is"
-
-# def test_data_types2_wrapper3(numpy.ndarray[cr_dtype, ndim=2] one_array):
-#     if cr_dtype is numpy.float32_t:
-#         print "We have a 32 bit float"
-#     elif cr_dtype is numpy.float64_t:
-#         print "We have a 64 bit float"
-#     else:
-#         print "We don't know what the data type is"
-
-# cdef int test_range(size_t end1, int end2, unsigned int end3):
-#     cdef unsigned int i
-#     cdef size_t step1 = 2
-#     cdef int step2 = 3
-#     cdef unsigned int step3 = 4
-#     for i in range(0, end1, -2):
-#         pass
-#     for i in range(0, 10, step2):
-#         pass
-#     for i in range(0, end3, step3):
-#         pass
-#     for i from 0 <= i < end3 by step3:
-#         pass
-#     return 0
-
-# cdef bint test_data_types(size_t chan_count, bint maximum_weight_mode,
-#                           size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows,
-#                           cr_dtype *uimg, cr_dtype *vimg, cr_dtype cr_fill,
-#                           image_dtype **images, image_dtype img_fill,
-#                           double **grid_accums, ewa_parameters *ewap):
-#     return 0
-
