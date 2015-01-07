@@ -16,14 +16,6 @@ cdef extern from "_fornav_templates.h":
     #ctypedef double accum_type
     #cdef double EPSILON
 
-    cdef int test_cpp_templates[CR_TYPE, IMAGE_TYPE](CR_TYPE x, IMAGE_TYPE y)
-
-    cdef int compute_ewa[CR_TYPE, IMAGE_TYPE](size_t chan_count, bint maximum_weight_mode,
-        size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows,
-        CR_TYPE *uimg, CR_TYPE *vimg,
-        IMAGE_TYPE **images, IMAGE_TYPE img_fill, accum_type **grid_accums, weight_type **grid_weights,
-        ewa_weight *ewaw, ewa_parameters *ewap)
-
     ctypedef struct ewa_parameters:
         ewa_param_type a
         ewa_param_type b
@@ -43,6 +35,36 @@ cdef extern from "_fornav_templates.h":
         weight_type qfactor
         weight_type *wtab
 
+    cdef int initialize_weight(size_t chan_count, unsigned int weight_count, weight_type weight_min, weight_type weight_distance_max,
+        weight_type weight_delta_max, weight_type weight_sum_min, ewa_weight *ewaw)
+    cdef void deinitialize_weight(ewa_weight *ewaw)
+    cdef accum_type **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows)
+    cdef weight_type **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows)
+    cdef void deinitialize_grids(size_t chan_count, void **grids)
+
+    cdef int compute_ewa_parameters[CR_TYPE](size_t swath_cols, size_t swath_rows,
+        CR_TYPE *uimg, CR_TYPE *vimg, ewa_weight *ewaw, ewa_parameters *ewap)
+
+    cdef int compute_ewa[CR_TYPE, IMAGE_TYPE](size_t chan_count, bint maximum_weight_mode,
+        size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows,
+        CR_TYPE *uimg, CR_TYPE *vimg,
+        IMAGE_TYPE **images, IMAGE_TYPE img_fill, accum_type **grid_accums, weight_type **grid_weights,
+        ewa_weight *ewaw, ewa_parameters *ewap)
+
+    # For some reason cython can't deduce the type when using the template
+    #cdef int write_grid_image[GRID_TYPE](GRID_TYPE *output_image, GRID_TYPE fill, size_t grid_cols, size_t grid_rows,
+    #    accum_type *grid_accum, weight_type *grid_weights,
+    #    int maximum_weight_mode, weight_type weight_sum_min)
+    cdef int write_grid_image(numpy.float32_t *output_image, numpy.float32_t fill, size_t grid_cols, size_t grid_rows,
+        accum_type *grid_accum, weight_type *grid_weights,
+        int maximum_weight_mode, weight_type weight_sum_min)
+    cdef int write_grid_image(numpy.float64_t *output_image, numpy.float64_t fill, size_t grid_cols, size_t grid_rows,
+        accum_type *grid_accum, weight_type *grid_weights,
+        int maximum_weight_mode, weight_type weight_sum_min)
+    cdef int write_grid_image(numpy.int8_t *output_image, numpy.int8_t fill, size_t grid_cols, size_t grid_rows,
+        accum_type *grid_accum, weight_type *grid_weights,
+        int maximum_weight_mode, weight_type weight_sum_min)
+
 ctypedef fused cr_dtype:
     numpy.float32_t
     numpy.float64_t
@@ -57,279 +79,6 @@ ctypedef fused grid_dtype:
     numpy.float32_t
     numpy.float64_t
     numpy.int8_t
-
-ctypedef fused grid_weight_dtype:
-    numpy.float32_t
-
-@cython.cdivision(True)
-cdef int initialize_weight(size_t chan_count, unsigned int weight_count, weight_type weight_min, weight_type weight_distance_max,
-                            weight_type weight_delta_max, weight_type weight_sum_min, ewa_weight *ewaw):
-    cdef unsigned int idx
-    cdef weight_type *wptr
-
-    ewaw.wtab = <weight_type *>calloc(weight_count, sizeof(weight_type))
-    if ewaw.wtab is NULL:
-        return -1
-
-    ewaw.count = weight_count
-    ewaw.min = weight_min
-    ewaw.distance_max = weight_distance_max
-    ewaw.delta_max = weight_delta_max
-    ewaw.sum_min = weight_sum_min
-
-    if weight_count < 2:
-        # must be at least 2
-        return -1
-    if weight_min <= 0.0:
-        # must be greater than 0
-        return -1
-    if weight_distance_max <= 0.0:
-        # must be greater than 0
-        return -1
-
-    ewaw.qmax = ewaw.distance_max * ewaw.distance_max
-    ewaw.alpha = -log(ewaw.min) / ewaw.qmax
-    wptr = ewaw.wtab
-    for idx in range(weight_count):
-        wptr[idx] = exp(-ewaw.alpha * ewaw.qmax * idx / (ewaw.count - 1))
-
-    # /*
-    # *  Use i = (int)(q * ewaw->qfactor) to get element number i of wtab
-    # *  corresponding to q.
-    # *  Then for 0 < q < ewaw->qmax
-    #     *    we have:
-    # *      0   < i              <= ewaw->count - 1
-    # *      1.0 > ewaw->wtab[i]  >= ewaw->min
-    # */
-
-    ewaw.qfactor = ewaw.count / ewaw.qmax
-    return 0
-
-cdef void deinitialize_weight(ewa_weight *ewaw):
-    if ewaw.wtab:
-        free(ewaw.wtab)
-
-@cython.cdivision(True)
-cdef int compute_ewa_parameters(size_t swath_cols, size_t swath_rows,
-                                cr_dtype *uimg, cr_dtype *vimg, ewa_weight *ewaw, ewa_parameters *ewap):
-    cdef ewa_param_type ux
-    cdef ewa_param_type uy
-    cdef ewa_param_type vx
-    cdef ewa_param_type vy
-    cdef ewa_param_type f_scale
-    cdef ewa_param_type d
-    cdef ewa_param_type qmax = ewaw.qmax
-    cdef ewa_param_type distance_max = ewaw.distance_max
-    cdef ewa_param_type delta_max = ewaw.delta_max
-    cdef ewa_param_type u_del
-    cdef ewa_param_type v_del
-
-    cdef unsigned int rowsm1 = swath_rows - 1
-    cdef unsigned int colsm1 = swath_cols - 1
-    cdef unsigned int rowsov2 = swath_rows / 2
-    cdef unsigned int col
-    cdef ewa_parameters this_ewap
-
-    for col in range(1, colsm1):
-        # this_ewap = ewap[col]
-        # Follow the middle row surrounding the pixel we are analyzing
-        ux = (uimg[col - 1 + rowsov2 * swath_cols + 2] - uimg[col - 1 + rowsov2 * swath_cols]) / 2 * distance_max
-        vx = (vimg[col - 1 + rowsov2 * swath_cols + 2] - vimg[col - 1 + rowsov2 * swath_cols]) / 2 * distance_max
-        # ux = (*u_midl_row_next_col++ - *u_midl_row_prev_col++) / 2 * distance_max
-        # vx = (*v_midl_row_next_col++ - *v_midl_row_prev_col++) / 2 * distance_max
-        # Follow the first and last rows
-        uy = (uimg[col + rowsm1 * swath_cols] - uimg[col]) / rowsm1 * distance_max
-        vy = (vimg[col + rowsm1 * swath_cols] - vimg[col]) / rowsm1 * distance_max
-        # uy = (*u_last_row_this_col++ - *u_frst_row_this_col++) / rowsm1 * distance_max
-        # vy = (*v_last_row_this_col++ - *v_frst_row_this_col++) / rowsm1 * distance_max
-
-        # /*
-        # *  scale a, b, c, and f equally so that f = qmax
-        #                                             */
-        f_scale = ux * vy - uy * vx
-        f_scale *= f_scale
-        if f_scale < EPSILON:
-            f_scale = EPSILON
-        f_scale = qmax / f_scale
-        this_ewap.a = (vx * vx + vy * vy) * f_scale
-        this_ewap.b = -2.0 * (ux * vx + uy * vy) * f_scale
-        this_ewap.c = (ux * ux + uy * uy) * f_scale
-        d = 4.0 * this_ewap.a * this_ewap.c - this_ewap.b * this_ewap.b
-        if d < EPSILON:
-            d = EPSILON
-        d = 4.0 * qmax / d
-        this_ewap.f = qmax
-        this_ewap.u_del = sqrt(this_ewap.c * d)
-        this_ewap.v_del = sqrt(this_ewap.a * d)
-        if this_ewap.u_del > delta_max:
-            this_ewap.u_del = delta_max
-        if this_ewap.v_del > delta_max:
-            this_ewap.v_del = delta_max
-
-        ewap[col] = this_ewap
-
-    # /*
-    # *  Copy the parameters from the penultimate column to the last column
-    # */
-    ewap[colsm1].a = ewap[colsm1 - 1].a
-    ewap[colsm1].b = ewap[colsm1 - 1].b
-    ewap[colsm1].c = ewap[colsm1 - 1].c
-    ewap[colsm1].f = ewap[colsm1 - 1].f
-    ewap[colsm1].u_del = ewap[colsm1 - 1].u_del
-    ewap[colsm1].v_del = ewap[colsm1 - 1].v_del
-
-    # /*
-    # *  Copy the parameters from the second column to the first column
-    # */
-    ewap[0].a = ewap[1].a
-    ewap[0].b = ewap[1].b
-    ewap[0].c = ewap[1].c
-    ewap[0].f = ewap[1].f
-    ewap[0].u_del = ewap[1].u_del
-    ewap[0].v_del = ewap[1].v_del
-
-    return 0
-
-@cython.cdivision(True)
-cdef int write_grid_image(size_t grid_cols, size_t grid_rows,
-                          accum_type *grid_accum, weight_type *grid_weights, bint maximum_weight_mode, weight_type weight_sum_min,
-                          grid_dtype *output_image, grid_dtype fill):
-    cdef accum_type chanf
-    cdef weight_type this_weightp;
-    cdef unsigned int col
-    cdef int fill_count = 0
-
-    if (weight_sum_min <= 0.0):
-        weight_sum_min = EPSILON
-
-    for col in range(grid_cols * grid_rows):
-        chanf = grid_accum[col]
-        this_weightp = grid_weights[col]
-        # chanf = output_image[col]  # Used to be += bytes_per_cell, but that shouldn't be needed anymore
-
-        # Calculate the elliptical weighted average value for each cell (float -> not-float needs rounding)
-        # The fill value for the weight and accumulation arrays is static at NaN
-        if grid_dtype is numpy.float32_t or grid_dtype is numpy.float64_t:
-            if this_weightp < weight_sum_min or isnan(chanf):
-                chanf = <accum_type>NAN
-            elif maximum_weight_mode:
-                # keep the current value
-                chanf = chanf
-            elif chanf >= 0.0:
-                chanf = chanf / this_weightp
-            else:
-                chanf = chanf / this_weightp
-        else:
-            if this_weightp < weight_sum_min:
-                chanf = <accum_type>NAN
-            elif maximum_weight_mode:
-                # keep the current value
-                chanf = chanf
-            elif chanf >= 0.0:
-                chanf = chanf / this_weightp + 0.5
-            else:
-                chanf = chanf / this_weightp - 0.5
-
-        if grid_dtype is numpy.uint8_t:
-            if isnan(chanf):
-                fill_count += 1
-                output_image[col] = fill
-            elif chanf < 0.0:
-                output_image[col] = 0
-            elif chanf > 255.0:
-                output_image[col] = 255
-            else:
-                output_image[col] = <grid_dtype>chanf
-        elif grid_dtype is numpy.uint16_t:
-            if isnan(chanf):
-                fill_count += 1
-                output_image[col] = fill
-            elif chanf < 0.0:
-                output_image[col] = 0
-            elif chanf > 65535.0:
-                output_image[col] = 65535
-            else:
-                output_image[col] = <grid_dtype>chanf
-        elif grid_dtype is numpy.int16_t:
-            if isnan(chanf):
-                fill_count += 1
-                output_image[col] = fill
-            elif chanf < -32768.0:
-                output_image[col] = -32768
-            elif chanf > 32767.0:
-                output_image[col] = 32767
-            else:
-                output_image[col] = <grid_dtype>chanf
-        elif grid_dtype is numpy.uint32_t:
-            if isnan(chanf):
-                fill_count += 1
-                output_image[col] = fill
-            elif chanf < 0.0:
-                output_image[col] = 0
-            elif chanf > 4294967295.0:
-                output_image[col] = 4294967295
-            else:
-                output_image[col] = <grid_dtype>chanf
-        elif grid_dtype is numpy.int32_t:
-            if isnan(chanf):
-                fill_count += 1
-                output_image[col] = fill
-            elif chanf < -2147483648.0:
-                output_image[col] = -2147483648
-            elif chanf > 2147483647.0:
-                output_image[col] = 2147483647
-            else:
-                output_image[col] = <grid_dtype>chanf
-        elif grid_dtype is numpy.float32_t:
-            if isnan(chanf):
-                fill_count += 1
-                output_image[col] = fill
-            else:
-                output_image[col] = <grid_dtype>chanf
-        elif grid_dtype is numpy.float64_t:
-            if isnan(chanf):
-                fill_count += 1
-                output_image[col] = fill
-            else:
-                output_image[col] = <grid_dtype>chanf
-        else:
-            # We don't know how to handle this type yet
-            return -1
-
-    return fill_count
-
-cdef accum_type **initialize_grid_accums(size_t chan_count, size_t grid_cols, size_t grid_rows):
-    cdef accum_type **grid_accums = <accum_type **>malloc(chan_count * sizeof(accum_type *))
-    cdef unsigned int i
-
-    if not grid_accums:
-        return NULL
-    for i in range(chan_count):
-        grid_accums[i] = <accum_type *>calloc(grid_cols * grid_rows, sizeof(accum_type))
-        if not grid_accums[i]:
-            return NULL
-
-    return grid_accums
-
-cdef weight_type **initialize_grid_weights(size_t chan_count, size_t grid_cols, size_t grid_rows):
-    cdef weight_type **grid_weights = <weight_type **>malloc(chan_count * sizeof(weight_type *))
-    cdef unsigned int i
-
-    if not grid_weights:
-        return NULL
-    for i in range(chan_count):
-        grid_weights[i] = <weight_type *>calloc(grid_cols * grid_rows, sizeof(weight_type))
-        if not grid_weights[i]:
-            return NULL
-
-    return grid_weights
-
-cdef void deinitialize_grids(size_t chan_count, void **grids):
-    cdef unsigned int i
-    for i in range(chan_count):
-        if grids[i]:
-            free(grids[i])
-    free(grids)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -412,8 +161,8 @@ cdef int fornav(size_t chan_count, size_t swath_cols, size_t swath_rows, size_t 
         raise RuntimeError("EWA Resampling: No swath pixels found inside grid to be resampled")
 
     for idx in range(chan_count):
-        tmp_fill_count = write_grid_image(grid_cols, grid_rows, grid_accums[idx], grid_weights[idx], maximum_weight_mode,
-                         weight_sum_min, output_arrays[idx], output_fill)
+        tmp_fill_count = write_grid_image(output_arrays[idx], output_fill, grid_cols, grid_rows,
+                                          grid_accums[idx], grid_weights[idx], maximum_weight_mode, weight_sum_min)
         if tmp_fill_count < 0:
             raise RuntimeError("Could not write result to output arrays")
         fill_count += tmp_fill_count
