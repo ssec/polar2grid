@@ -211,8 +211,6 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
 //  double weight;
 //  double qfactor;
 
-
-
   int iw;
   IMAGE_TYPE this_val;
   unsigned int swath_offset;
@@ -222,7 +220,6 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
   got_point = 0;
   for (row = 0, swath_offset=0; row < swath_rows; row+=1) {
     for (col = 0, this_ewap = ewap; col < swath_cols; col++, this_ewap++, swath_offset++) {
-
       u0 = uimg[swath_offset];
       v0 = vimg[swath_offset];
 
@@ -250,12 +247,12 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
 
       if (iu1 < grid_cols && iu2 >= 0 && iv1 < grid_rows && iv2 >= 0) {
         got_point = 1;
-        ddq = (2.0 * this_ewap->a);
+        ddq = 2.0 * this_ewap->a;
 
         u = (iu1 - u0);
         a2up1 = (this_ewap->a * ((2.0 * u) + 1.0));
-        bu = (this_ewap->b * u);
-        au2 = ((this_ewap->a * u) * u);
+        bu = this_ewap->b * u;
+        au2 = this_ewap->a * u * u;
 
         for (iv = iv1; iv <= iv2; iv++) {
           v = (iv - v0);
@@ -312,7 +309,7 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
 //  }
 //}
 
-static void write_grid_pixel(npy_int8 *output_image, accum_type chanf) {
+inline void write_grid_pixel(npy_int8 *output_image, accum_type chanf) {
   if (chanf < -128.0) {
     *output_image = -128;
   } else if (chanf > 127.0) {
@@ -362,11 +359,11 @@ static void write_grid_pixel(npy_int8 *output_image, accum_type chanf) {
 //  }
 //}
 
-static void write_grid_pixel(npy_float32 *output_image, accum_type chanf) {
+inline void write_grid_pixel(npy_float32 *output_image, accum_type chanf) {
   *output_image = (npy_float32)chanf;
 }
 
-static void write_grid_pixel(npy_float64 *output_image, accum_type chanf) {
+inline void write_grid_pixel(npy_float64 *output_image, accum_type chanf) {
   *output_image = (npy_float64)chanf;
 }
 // End of overload functions for `write_grid_image`
@@ -388,10 +385,8 @@ template<typename GRID_TYPE>
 int write_grid_image(GRID_TYPE *output_image, GRID_TYPE fill, size_t grid_cols, size_t grid_rows,
         accum_type *grid_accum, weight_type *grid_weights,
         int maximum_weight_mode, weight_type weight_sum_min) {
-  accum_type *chanp;
   accum_type chanf;
-  weight_type *this_weightp;
-  GRID_TYPE *this_output;
+//  GRID_TYPE *this_output;
   unsigned int i;
   int fill_count = 0;
   size_t grid_size = grid_cols * grid_rows;
@@ -400,26 +395,26 @@ int write_grid_image(GRID_TYPE *output_image, GRID_TYPE fill, size_t grid_cols, 
     weight_sum_min = EPSILON;
   }
 
-  for (i=0, chanp=grid_accum, this_weightp=grid_weights, this_output=output_image; i < grid_size;
-       i++, chanp++, this_weightp++, this_output++) {
+  for (i=0; i < grid_size;
+       i++, grid_accum++, grid_weights++, output_image++) {
     // Calculate the elliptical weighted average value for each cell (float -> not-float needs rounding)
     // The fill value for the weight and accumulation arrays is static at NaN
-    if (*this_weightp < weight_sum_min or isnan(*chanp)) {
+    if (*grid_weights < weight_sum_min or isnan(*grid_accum)) {
       chanf = (accum_type)NAN;
     } else if (maximum_weight_mode) {
       // keep the current value
-      chanf = *chanp;
+      chanf = *grid_accum;
     } else if (chanf >= 0.0) {
-      chanf = *chanp / *this_weightp + get_rounding(output_image);
+      chanf = *grid_accum / *grid_weights + get_rounding(output_image);
     } else {
-      chanf = *chanp / *this_weightp - get_rounding(output_image);
+      chanf = *grid_accum / *grid_weights - get_rounding(output_image);
     }
 
     if (isnan(chanf)) {
       fill_count++;
-      *this_output = (GRID_TYPE)fill;
+      *output_image = (GRID_TYPE)fill;
     } else {
-      write_grid_pixel(this_output, chanf);
+      write_grid_pixel(output_image, chanf);
     }
   }
 
