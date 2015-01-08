@@ -11,6 +11,8 @@ static const char fornav_c_rcsid[] = "$Header: /disks/megadune/data/tharan/ms2gt
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #define USAGE \
 "$Revision: 1.32 $\n" \
@@ -214,7 +216,7 @@ static void DisplayInvalidParameter(char *param)
 }
 
 static inline int IsFill(float val, float fill) {
-    return !isfinite(val) || val == fill;
+    return isnan(val) || val == fill;
 }
 
 static void InitializeImage(image *ip, char *name, char *open_type_str,
@@ -300,11 +302,14 @@ static void InitializeGridImage(image *ip, char *name,
     fprintf(stderr, "Initializing %s\n", name);
   ip->name = strdup(name);
   ip->open_type_str = strdup("mmap");
-    if ((ip->fp = fopen(ip->file, "r+")) == NULL) {
+
+  int fd = open(ip->file, O_CREAT | O_RDWR | O_TRUNC, 0644);
+  ip->fp = fdopen(fd, "r+");
+  if (fd < 0 || ip->fp == NULL) {
       fprintf(stderr, "fornav: InitializeImage: error opening %s\n", ip->file);
       perror("fornav");
       exit(ABORT);
-    }
+  }
   ip->data_type_str = strdup(data_type_str);
   if (!strcmp(ip->data_type_str, "u1"))
     ip->data_type = TYPE_BYTE;
@@ -343,8 +348,18 @@ static void InitializeGridImage(image *ip, char *name,
   ip->cols = cols;
   ip->rows = rows;
   ip->bytes_per_row = ip->bytes_per_cell * cols;
-  ip->buf = mmap(NULL, cols * rows * ip->bytes_per_cell, PROT_WRITE, MAP_SHARED, fileno(ip->fp), 0);
-  if (ip->buf == (void *)-1) {
+  if (lseek(fd, cols * rows * ip->bytes_per_cell - 1, SEEK_SET) == -1) {
+	close(fd);
+	perror("fornav");
+	exit(ABORT);
+  }
+  if (write(fd, "", 1) != 1) {
+	close(fd);
+	perror("fornav");
+	exit(ABORT);
+  }
+  ip->buf = mmap(NULL, cols * rows * ip->bytes_per_cell, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  if (ip->buf == MAP_FAILED) {
     perror("grid mmap allocation");
     exit(ABORT);
   }
