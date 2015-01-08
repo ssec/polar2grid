@@ -293,14 +293,16 @@ class ProductDict(dict):
     def get_product_dependents(self, starting_products):
         """Recursively determine what products (secondary) can be made from the products provided.
         """
+        possible_products = set(starting_products[:])
+
         # FUTURE: Make this non-recursive since that takes longer (could even be list comprehension)
         def _these_dependents(pname):
-            my_dependents = set(self[pname].dependents)
+            # we want dependents that are completely secondary or if they are raw they must actually be possible already
+            my_dependents = set(x for x in self[pname].dependents if not self.is_raw(x) or x in possible_products)
             for p in self[pname].dependents:
                 my_dependents |= _these_dependents(p)
             return my_dependents
 
-        possible_products = set(starting_products[:])
         for product_name in starting_products:
             possible_products |= _these_dependents(product_name)
 
