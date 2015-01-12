@@ -453,7 +453,7 @@ class NinjoGridConfigReader(roles.INIConfigReader):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("float_kwargs", ("xres", "yres"))
-        kwargs.setdefault("section_prefix", "ninjo_grid")
+        kwargs.setdefault("section_prefix", "ninjo_grid:")
         super(NinjoGridConfigReader, self).__init__(*args, **kwargs)
 
     @property
@@ -473,7 +473,7 @@ class NinjoBandConfigReader(roles.INIConfigReader):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("int_kwargs", ("satellite_id", "band_id"))
-        kwargs.setdefault("section_prefix", "ninjo_product")
+        kwargs.setdefault("section_prefix", "ninjo_product:")
         super(NinjoBandConfigReader, self).__init__(*args, **kwargs)
 
 

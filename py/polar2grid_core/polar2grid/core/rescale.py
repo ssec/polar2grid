@@ -361,7 +361,7 @@ class Rescaler(roles.INIConfigReader):
     }
 
     def __init__(self, *rescale_configs, **kwargs):
-        kwargs["section_prefix"] = kwargs.get("section_prefix", "rescale_")
+        kwargs["section_prefix"] = kwargs.get("section_prefix", "rescale:")
         # kwargs["default_keyword_type"] = lambda: float
         # set defaults for the config reader (these will get passed to the scaling function)
         # kwargs["fill_in"] = kwargs.get("fill_in", "nan")

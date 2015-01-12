@@ -66,24 +66,29 @@ P2G_FRONTEND_ARGS_EP = "polar2grid.frontend_arguments"
 P2G_BACKEND_CLS_EP = "polar2grid.backend_class"
 P2G_BACKEND_ARGS_EP = "polar2grid.backend_arguments"
 
-FRONTENDS = {frontend_ep.name: frontend_ep.dist for frontend_ep in pkg_resources.iter_entry_points(P2G_FRONTEND_CLS_EP)}
-BACKENDS = {backend_ep.name: backend_ep.dist for backend_ep in pkg_resources.iter_entry_points(P2G_BACKEND_CLS_EP)}
+
+def available_frontends(entry_point=P2G_FRONTEND_CLS_EP):
+    return {frontend_ep.name: frontend_ep.dist for frontend_ep in pkg_resources.iter_entry_points(entry_point)}
 
 
-def get_frontend_argument_func(name):
-    return pkg_resources.load_entry_point(FRONTENDS[name], P2G_FRONTEND_ARGS_EP, name)
+def available_backends(entry_point=P2G_BACKEND_CLS_EP):
+    return {backend_ep.name: backend_ep.dist for backend_ep in pkg_resources.iter_entry_points(entry_point)}
 
 
-def get_frontend_class(name):
-    return pkg_resources.load_entry_point(FRONTENDS[name], P2G_FRONTEND_CLS_EP, name)
+def get_frontend_argument_func(frontends, name, entry_point=P2G_FRONTEND_ARGS_EP):
+    return pkg_resources.load_entry_point(frontends[name], entry_point, name)
 
 
-def get_backend_argument_func(name):
-    return pkg_resources.load_entry_point(BACKENDS[name], P2G_BACKEND_ARGS_EP, name)
+def get_frontend_class(frontends, name, entry_point=P2G_FRONTEND_CLS_EP):
+    return pkg_resources.load_entry_point(frontends[name], entry_point, name)
 
 
-def get_backend_class(name):
-    return pkg_resources.load_entry_point(BACKENDS[name], P2G_BACKEND_CLS_EP, name)
+def get_backend_argument_func(backends, name, entry_point=P2G_BACKEND_ARGS_EP):
+    return pkg_resources.load_entry_point(backends[name], entry_point, name)
+
+
+def get_backend_class(backends, name, entry_point=P2G_BACKEND_CLS_EP):
+    return pkg_resources.load_entry_point(backends[name], entry_point, name)
 
 
 def main(argv=sys.argv[1:]):
@@ -91,11 +96,13 @@ def main(argv=sys.argv[1:]):
     # init_parser = ArgumentParser(description="Extract swath data, remap it, and write it to a new file format")
     from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
     from polar2grid.compositors import available_compositors, get_compositor_class, get_compositor_argument_func
+    frontends = available_frontends()
+    backends = available_backends()
     compositors = available_compositors()
     parser = create_basic_parser(description="Extract swath data, remap it, and write it to a new file format")
-    parser.add_argument("frontend", choices=sorted(FRONTENDS.keys()),
+    parser.add_argument("frontend", choices=sorted(frontends.keys()),
                         help="Specify the swath extractor to use to read data (additional arguments are determined after this is specified)")
-    parser.add_argument("backend", choices=sorted(BACKENDS.keys()),
+    parser.add_argument("backend", choices=sorted(backends.keys()),
                         help="Specify the backend to use to write data output (additional arguments are determined after this is specified)")
     # Hack: argparse doesn't let you use choices and nargs=* on a positional argument
     parser.add_argument("compositors", choices=sorted(compositors.keys()) + [[]], nargs="*",
@@ -107,10 +114,10 @@ def main(argv=sys.argv[1:]):
     LOG = logging.getLogger(glue_name)
 
     # load the actual components we need
-    farg_func = get_frontend_argument_func(args.frontend)
-    fcls = get_frontend_class(args.frontend)
-    barg_func = get_backend_argument_func(args.backend)
-    bcls = get_backend_class(args.backend)
+    farg_func = get_frontend_argument_func(frontends, args.frontend)
+    fcls = get_frontend_class(frontends, args.frontend)
+    barg_func = get_backend_argument_func(backends, args.backend)
+    bcls = get_backend_class(backends, args.backend)
 
     # add_frontend_arguments(parser)
     subgroup_titles = []
