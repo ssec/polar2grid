@@ -9,7 +9,7 @@ SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3-Linux-x86_64-201402
 BASE_REPOS_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PY_DIR="$BASE_REPOS_DIR"/py
 VCREFL_DIR="$BASE_REPOS_DIR"/viirs_crefl
-MS2GT_DIR="$BASE_REPOS_DIR"/ms2gt
+MS2GT_DIR="$BASE_REPOS_DIR"/ms2gt/src/fornav
 DEBUG=true
 
 oops() {
@@ -137,10 +137,9 @@ mkdir -p bin
 echo "Building ms2gt"
 cd "$MS2GT_DIR"
 make clean
-make || oops "Could not build ms2gt source"
+make || oops "Could not build fornav from source"
 echo "Copying ms2gt to development bin directory"
-cp bin/ll2cr "$DEV_DIR/bin/"
-cp bin/fornav "$DEV_DIR/bin/"
+cp fornav "$DEV_DIR/bin/"
 
 # Install python packages
 echo "Creating 'python' directory in development environment where python packages will be installed"
