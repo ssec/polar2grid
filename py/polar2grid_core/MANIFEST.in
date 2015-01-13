@@ -1,5 +1,2 @@
-include polar2grid/core/rescale_configs/*.conf
 include polar2grid/core/rescale_configs/*.ini
-include polar2grid/core/*.conf
-include polar2grid/core/*.ini
 

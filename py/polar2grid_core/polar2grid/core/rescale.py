@@ -56,7 +56,7 @@ import logging
 import numpy
 
 LOG = logging.getLogger(__name__)
-DEFAULT_RCONFIG = "rescale_configs/rescale.ini"
+DEFAULT_RCONFIG = "polar2grid.core:rescale_configs/rescale.ini"
 
 
 def mask_helper(img, fill_value):

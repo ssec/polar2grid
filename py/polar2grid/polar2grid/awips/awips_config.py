@@ -48,17 +48,12 @@ import logging
 
 log = logging.getLogger(__name__)
 
-script_dir = os.path.split(os.path.realpath(__file__))[0]
-# Default config file if none is specified
-DEFAULT_CONFIG_FILE = "awips_backend.ini"
-# Default search directory for any awips configuration files
-DEFAULT_CONFIG_DIR = script_dir
 # Default search directory for NCML files
+script_dir = os.path.split(os.path.realpath(__file__))[0]
 DEFAULT_NCML_DIR = os.path.join(script_dir, "ncml")
 
 # Get configuration file locations
-CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", DEFAULT_CONFIG_FILE)
-CONFIG_DIR = os.environ.get("AWIPS_CONFIG_DIR", DEFAULT_CONFIG_DIR)
+CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", "polar2grid.awips:awips_backend.ini")
 NCML_DIR = os.environ.get("AWIPS_NCML_DIR", DEFAULT_NCML_DIR)
 
 
