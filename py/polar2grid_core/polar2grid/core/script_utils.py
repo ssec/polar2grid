@@ -242,6 +242,7 @@ class ArgumentParser(argparse.ArgumentParser):
         subgroup_titles = kwargs.pop("subgroup_titles", [])
         global_keywords = kwargs.pop("global_keywords", [])
         args = super(ArgumentParser, self).parse_args(*args, **kwargs)
+        args.global_kwargs = {kw: getattr(args, kw) for kw in global_keywords}
         # a dictionary that holds arguments from the specified subgroups (defaultdict for easier user by caller)
         args.subgroup_args = defaultdict(dict)
         for subgroup_title in subgroup_titles:

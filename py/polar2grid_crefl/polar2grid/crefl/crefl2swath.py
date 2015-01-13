@@ -784,15 +784,7 @@ def add_frontend_argument_groups(parser):
     from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # Set defaults for other components that may be used in polar2grid processing
     # FIXME: These should probably be changed depending on what instrument is being dealt with...currently not possible in polar2grid
-    parser.set_defaults(fornav_D=40, fornav_d=2,
-                        tc_red_products=[PRODUCT_VCR01, PRODUCT_MCR01_1000M],
-                        tc_green_products=[PRODUCT_VCR04, PRODUCT_MCR04_1000M],
-                        tc_blue_products=[PRODUCT_VCR03, PRODUCT_MCR03_1000M],
-                        tc_hires_products=[PRODUCT_VCR08, PRODUCT_MCR01_250M],
-                        fc_red_products=[PRODUCT_VCR07, PRODUCT_MCR07_1000M],
-                        fc_green_products=[PRODUCT_VCR02, PRODUCT_MCR02_1000M],
-                        fc_blue_products=[PRODUCT_VCR01, PRODUCT_MCR01_1000M],
-                        fc_hires_products=[PRODUCT_VCR08, PRODUCT_MCR01_250M])
+    parser.set_defaults(fornav_D=40, fornav_d=2)
 
     # Use the append_const action to handle adding products to the list
     group_title = "Frontend Initialization"

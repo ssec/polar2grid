@@ -51,47 +51,45 @@ LOG = logging.getLogger(__name__)
 
 class RGBCompositor(roles.CompositorRole):
     def __init__(self, **kwargs):
+        self.composite_name = kwargs.get("composite_name", "rgb_composite")
+        self.composite_data_kind = kwargs.get("composite_data_kind", "rgb")
+        self.share_mask = kwargs.get("share_mask", True)
         super(RGBCompositor, self).__init__(**kwargs)
 
     def shared_mask(self, gridded_scene, product_names, axis=0):
         return numpy.any([gridded_scene[pname].get_data_mask() for pname in product_names], axis=axis)
 
     def joined_array(self, gridded_scene, product_names):
-        # the_stuff = [gridded_scene[pname].get_data_array() for pname in product_names]
-        # print [x.shape for x in the_stuff]
-        # return numpy.array(the_stuff)
         return numpy.array([gridded_scene[pname].get_data_array() for pname in product_names])
 
-    def modify_scene(self, gridded_scene, rgb_composite_products, composite_name="rgb_composite",
-                     composite_data_kind="rgb", share_mask=True, fill_value=None, **kwargs):
-        if composite_name in gridded_scene:
-            LOG.error("Cannot create composite product '%s', it already exists." % (composite_name,))
-            raise ValueError("Cannot create composite product '%s', it already exists." % (composite_name,))
+    def modify_scene(self, gridded_scene, fill_value=None, **kwargs):
+        if self.composite_name in gridded_scene:
+            LOG.error("Cannot create composite product '%s', it already exists." % (self.composite_name,))
+            raise ValueError("Cannot create composite product '%s', it already exists." % (self.composite_name,))
         available_products = set(gridded_scene.keys())
-        desired_products = set(rgb_composite_products)
+        desired_products = set(self.composite_products)
         missing_products = desired_products - (available_products & desired_products)
         if missing_products:
             LOG.error("Not all bands available to create RGB composite. Missing:\n\t%s", "\n\t".join(missing_products))
             raise RuntimeError("Not all bands available to create RGB composite")
 
         if fill_value is None:
-            fill_value = gridded_scene[rgb_composite_products[0]]["fill_value"]
+            fill_value = gridded_scene[self.composite_products[0]]["fill_value"]
 
-        fn = composite_name + ".dat"
+        fn = self.composite_name + ".dat"
 
         try:
-            comp_data = self.joined_array(gridded_scene, rgb_composite_products)
+            comp_data = self.joined_array(gridded_scene, self.composite_products)
 
-            if share_mask:
-                print rgb_composite_products
-                comp_data[:, self.shared_mask(gridded_scene, rgb_composite_products)] = fill_value
+            if self.share_mask:
+                comp_data[:, self.shared_mask(gridded_scene, self.composite_products)] = fill_value
 
             comp_data.tofile(fn)
-            base_product = gridded_scene[rgb_composite_products[0]]
-            base_product["data_kind"] = composite_data_kind
-            gridded_scene[composite_name] = self._create_gridded_product(composite_name, fn, base_product=base_product)
+            base_product = gridded_scene[self.composite_products[0]]
+            base_product["data_kind"] = self.composite_data_kind
+            gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn, base_product=base_product)
         except StandardError:
-            LOG.error("Could not create composite product with name '%s'", composite_name)
+            LOG.error("Could not create composite product with name '%s'", self.composite_name)
             if os.path.isfile(fn):
                 os.remove(fn)
             raise
@@ -102,11 +100,15 @@ class RGBCompositor(roles.CompositorRole):
 class TrueColorCompositor(RGBCompositor):
     default_compare_index = 0
 
-    def __init__(self, tc_red_products, tc_green_products, tc_blue_products, tc_hires_products, **kwargs):
-        self.red_products = tc_red_products
-        self.green_products = tc_green_products
-        self.blue_products = tc_blue_products
-        self.hires_products = tc_hires_products
+    def __init__(self, red_products, green_products, blue_products, hires_products, **kwargs):
+        self.red_products = red_products if not isinstance(red_products, (str, unicode)) else red_products.split(",")
+        self.green_products = green_products if not isinstance(green_products, (str, unicode)) else green_products.split(",")
+        self.blue_products = blue_products if not isinstance(blue_products, (str, unicode)) else blue_products.split(",")
+        self.hires_products = hires_products if not isinstance(hires_products, (str, unicode)) else hires_products.split(",")
+        self.sharpen_rgb = kwargs.pop("sharpen_rgb", True)
+        kwargs.setdefault("composite_name", "true_color")
+        kwargs.setdefault("composite_data_kind", "crefl_true_color")
+        kwargs.setdefault("share_mask", True)
         super(TrueColorCompositor, self).__init__(**kwargs)
 
     def _get_first_available_product(self, gridded_scene, desired_products):
@@ -138,11 +140,10 @@ class TrueColorCompositor(RGBCompositor):
         for idx in lowres_band_indexes:
             rgb_data[idx, :] *= ratio
 
-    def modify_scene(self, gridded_scene, composite_name="true_color", composite_data_kind="crefl_true_color",
-                     share_mask=True, fill_value=None, sharpen_rgb=True, **kwargs):
-        if composite_name in gridded_scene:
-            LOG.error("Cannot create composite product '%s', it already exists." % (composite_name,))
-            raise ValueError("Cannot create composite product '%s', it already exists." % (composite_name,))
+    def modify_scene(self, gridded_scene, fill_value=None, **kwargs):
+        if self.composite_name in gridded_scene:
+            LOG.error("Cannot create composite product '%s', it already exists." % (self.composite_name,))
+            raise ValueError("Cannot create composite product '%s', it already exists." % (self.composite_name,))
 
         # GROSS:
         red_product, green_product, blue_product = self._get_first_available_products(gridded_scene,
@@ -154,22 +155,22 @@ class TrueColorCompositor(RGBCompositor):
         if fill_value is None:
             fill_value = gridded_scene[red_product]["fill_value"]
 
-        fn = composite_name + ".dat"
+        fn = self.composite_name + ".dat"
 
         try:
             all_products = [red_product, green_product, blue_product]
             sharp_red_product = self._get_first_available_product(gridded_scene, self.hires_products)
-            if sharpen_rgb and not sharp_red_product:
+            if self.sharpen_rgb and not sharp_red_product:
                 LOG.info("No high resolution products were found so true color sharpening will not be done")
                 LOG.debug("Will attempt to create a true color image using: %s", ",".join(all_products))
                 comp_data = self.joined_array(gridded_scene, all_products)
-            elif sharpen_rgb:
+            elif self.sharpen_rgb:
                 all_products.append(sharp_red_product)
                 LOG.debug("Will attempt to create a true color image using: %s", ",".join(all_products))
                 comp_data = self.joined_array(gridded_scene, (sharp_red_product, green_product, blue_product))
                 self.ratio_sharpen(gridded_scene[red_product].get_data_array(), comp_data)
 
-            if share_mask:
+            if self.share_mask:
                 LOG.debug("Sharing missing value mask between bands and using fill value %r", fill_value)
                 comp_data[:, self.shared_mask(gridded_scene, all_products)] = fill_value
 
@@ -177,10 +178,11 @@ class TrueColorCompositor(RGBCompositor):
             LOG.info("Saving true color image to filename '%s'", fn)
             comp_data.tofile(fn)
             base_product = gridded_scene[all_products[0]]
-            base_product["data_kind"] = composite_data_kind
-            gridded_scene[composite_name] = self._create_gridded_product(composite_name, fn, base_product=base_product)
+            base_product["data_kind"] = self.composite_data_kind
+            gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn,
+                                                                              base_product=base_product)
         except StandardError:
-            LOG.error("Could not create composite product with name '%s'", composite_name)
+            LOG.error("Could not create composite product with name '%s'", self.composite_name)
             if os.path.isfile(fn):
                 os.remove(fn)
             raise
@@ -193,17 +195,18 @@ class FalseColorCompositor(TrueColorCompositor):
     default_compare_index = 2
 
     def __init__(self, fc_red_products, fc_green_products, fc_blue_products, fc_hires_products, **kwargs):
+        kwargs.setdefault("composite_name", "false_color")
+        kwargs.setdefault("composite_data_kind", "crefl_false_color")
         super(FalseColorCompositor, self).__init__(fc_red_products,
                                                    fc_green_products,
                                                    fc_blue_products,
                                                    fc_hires_products,
                                                    **kwargs)
 
-    def modify_scene(self, gridded_scene, composite_name="false_color", composite_data_kind="crefl_false_color",
-                     share_mask=True, fill_value=None, sharpen_rgb=True, **kwargs):
-        if composite_name in gridded_scene:
-            LOG.error("Cannot create composite product '%s', it already exists." % (composite_name,))
-            raise ValueError("Cannot create composite product '%s', it already exists." % (composite_name,))
+    def modify_scene(self, gridded_scene, fill_value=None, **kwargs):
+        if self.composite_name in gridded_scene:
+            LOG.error("Cannot create composite product '%s', it already exists." % (self.composite_name,))
+            raise ValueError("Cannot create composite product '%s', it already exists." % (self.composite_name,))
 
         red_product, green_product, blue_product = self._get_first_available_products(gridded_scene,
                                                                                       ("red", "green", "blue"),
@@ -213,98 +216,36 @@ class FalseColorCompositor(TrueColorCompositor):
         if fill_value is None:
             fill_value = gridded_scene[red_product]["fill_value"]
 
-        fn = composite_name + ".dat"
+        fn = self.composite_name + ".dat"
 
         try:
             all_products = [red_product, green_product, blue_product]
             sharp_blue_product = self._get_first_available_product(gridded_scene, self.hires_products)
 
-            if sharpen_rgb and not sharp_blue_product:
+            if self.sharpen_rgb and not sharp_blue_product:
                 LOG.info("No high resolution products were found so false color sharpening will not be done")
                 LOG.debug("Will attempt to create a false color image using: %s", ",".join(all_products))
                 comp_data = self.joined_array(gridded_scene, all_products)
-            elif sharpen_rgb:
+            elif self.sharpen_rgb:
                 all_products.append(sharp_blue_product)
                 LOG.debug("Will attempt to create a false color image using: %s", ",".join(all_products))
                 comp_data = self.joined_array(gridded_scene, (red_product, green_product, sharp_blue_product))
                 self.ratio_sharpen(gridded_scene[blue_product].get_data_array(), comp_data)
 
-            if share_mask:
+            if self.share_mask:
                 comp_data[:, self.shared_mask(gridded_scene, all_products)] = fill_value
 
             LOG.debug("False color array has shape %r", comp_data.shape)
             LOG.info("Saving false color image to filename '%s'", fn)
             comp_data.tofile(fn)
             base_product = gridded_scene[all_products[0]]
-            base_product["data_kind"] = composite_data_kind
-            gridded_scene[composite_name] = self._create_gridded_product(composite_name, fn, base_product=base_product)
+            base_product["data_kind"] = self.composite_data_kind
+            gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn,
+                                                                              base_product=base_product)
         except StandardError:
-            LOG.error("Could not create composite product with name '%s'", composite_name)
+            LOG.error("Could not create composite product with name '%s'", self.composite_name)
             if os.path.isfile(fn):
                 os.remove(fn)
             raise
 
         return gridded_scene
-
-
-def add_rgb_compositor_argument_groups(parser):
-    from argparse import SUPPRESS
-    group = parser.add_argument_group(title="rgb Initialization")
-    group = parser.add_argument_group(title="rgb Modification")
-    group.add_argument("--rgb-composite-products", dest="rgb_composite_products", nargs="+", default=SUPPRESS,
-                       help="Specify what bands to look for to make true color images")
-    group.add_argument("--rgb-name", dest="composite_name", default="rgb_composite",
-                       help="specify alternate name for rgb product")
-    group.add_argument("--rgb-kind", dest="composite_data_kind", default="rgb",
-                       help="specify alternate 'data_kind' for rgb product (useful in rescaling)")
-    return ["rgb Initialization", "rgb Modification"]
-
-
-def add_true_color_compositor_argument_groups(parser):
-    from argparse import SUPPRESS
-    group = parser.add_argument_group(title="true_color Initialization")
-    group.add_argument("--true-color-red", dest="tc_red_products", nargs="+", default=SUPPRESS,
-                       help="Specify what bands to look for to make true color images")
-    group.add_argument("--true-color-green", dest="tc_green_products", nargs="+", default=SUPPRESS,
-                       help="Specify what bands to look for to make true color images")
-    group.add_argument("--true-color-blue", dest="tc_blue_products", nargs="+", default=SUPPRESS,
-                       help="Specify what bands to look for to make true color images")
-    group.add_argument("--true-color-hires", dest="tc_hires_products", nargs="+", default=SUPPRESS,
-                       help="Specify what bands to look for to sharpen true color images (red color)")
-    group = parser.add_argument_group(title="true_color Modification")
-    group.add_argument("--true-color-name", dest="composite_name", default="true_color",
-                       help="specify alternate name for true color product")
-    group.add_argument("--true-color-kind", dest="composite_data_kind", default="crefl_true_color",
-                       help="specify alternate 'data_kind' for true color product (useful in rescaling)")
-    group.add_argument("--true-color-no-sharpen", dest="sharpen_rgb", action="store_false",
-                       help="Don't use the high resolution band to sharpen the other bands")
-    return ["true_color Initialization", "true_color Modification"]
-
-
-def add_false_color_compositor_argument_groups(parser):
-    from argparse import SUPPRESS
-    group = parser.add_argument_group(title="false_color Initialization")
-    group.add_argument("--false-color-red", dest="fc_red_products", nargs="+", default=SUPPRESS,
-                       help="Specify what bands to look for to make false color images")
-    group.add_argument("--false-color-green", dest="fc_green_products", nargs="+", default=SUPPRESS,
-                       help="Specify what bands to look for to make false color images")
-    group.add_argument("--false-color-blue", dest="fc_blue_products", nargs="+", default=SUPPRESS,
-                       help="Specify what bands to look for to make false color images")
-    group.add_argument("--false-color-hires", dest="fc_hires_products", nargs="+", default=SUPPRESS,
-                       help="Specify what bands to look for to sharpen false color images (red color)")
-    group = parser.add_argument_group(title="false_color Modification")
-    group.add_argument("--false-color-name", dest="composite_name", default="false_color",
-                       help="specify alternate name for false color product")
-    group.add_argument("--false-color-kind", dest="composite_data_kind", default="crefl_false_color",
-                       help="specify alternate 'data_kind' for false color product (useful in rescaling)")
-    group.add_argument("--false-color-no-sharpen", dest="sharpen_rgb", action="store_false",
-                       help="Don't use the high resolution band to sharpen the other bands")
-    return ["false_color Initialization", "false_color Modification"]
-
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    sys.exit(main())

@@ -92,26 +92,28 @@ def get_backend_class(backends, name, entry_point=P2G_BACKEND_CLS_EP):
 
 
 def main(argv=sys.argv[1:]):
-    # from argparse import ArgumentParser
-    # init_parser = ArgumentParser(description="Extract swath data, remap it, and write it to a new file format")
     from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
-    from polar2grid.compositors import available_compositors, get_compositor_class, get_compositor_argument_func
+    from polar2grid.compositors import CompositorManager
     frontends = available_frontends()
     backends = available_backends()
-    compositors = available_compositors()
     parser = create_basic_parser(description="Extract swath data, remap it, and write it to a new file format")
     parser.add_argument("frontend", choices=sorted(frontends.keys()),
                         help="Specify the swath extractor to use to read data (additional arguments are determined after this is specified)")
     parser.add_argument("backend", choices=sorted(backends.keys()),
                         help="Specify the backend to use to write data output (additional arguments are determined after this is specified)")
-    # Hack: argparse doesn't let you use choices and nargs=* on a positional argument
-    parser.add_argument("compositors", choices=sorted(compositors.keys()) + [[]], nargs="*",
-                        help="Specify the compositors to apply to the provided scene (additional arguments are determined after this is specified)")
+    parser.add_argument("--compositor-configs", nargs="*", default=None,
+                        help="Specify alternative configuration file(s) for compositors")
     # don't include the help flag
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
     args, remaining_args = parser.parse_known_args(argv_without_help)
     glue_name = args.frontend + "2" + args.backend
     LOG = logging.getLogger(glue_name)
+
+    # Load compositor information (we can't know the compositor choices until we've loaded the configuration)
+    compositor_manager = CompositorManager(config_files=args.compositor_configs)
+    # Hack: argparse doesn't let you use choices and nargs=* on a positional argument
+    parser.add_argument("compositors", choices=compositor_manager.keys() + [[]], nargs="*",
+                        help="Specify the compositors to apply to the provided scene (additional arguments are determined after this is specified)")
 
     # load the actual components we need
     farg_func = get_frontend_argument_func(frontends, args.frontend)
@@ -124,14 +126,6 @@ def main(argv=sys.argv[1:]):
     subgroup_titles += farg_func(parser)
     subgroup_titles += add_remap_argument_groups(parser)
     subgroup_titles += barg_func(parser)
-    compositor_classes = {}
-    for c in args.compositors:
-        carg_func = get_compositor_argument_func(compositors, c)
-        ccls = get_compositor_class(compositors, c)
-        compositor_classes[c] = ccls
-
-        # add_frontend_arguments(parser)
-        subgroup_titles += carg_func(parser)
 
     parser.add_argument('-f', dest='data_files', nargs="+", default=[], action=ExtendAction,
                         help="List of files or directories to extract data from")
@@ -157,6 +151,12 @@ def main(argv=sys.argv[1:]):
 
     # Keep track of things going wrong to tell the user what went wrong (we want to create as much as possible)
     status_to_return = STATUS_SUCCESS
+
+    # Compositor validation
+    for c in args.compositors:
+        if c not in compositor_manager:
+            LOG.error("Compositor '%s' is unknown" % (c,))
+            raise RuntimeError("Compositor '%s' is unknown" % (c,))
 
     # Frontend
     try:
@@ -194,9 +194,10 @@ def main(argv=sys.argv[1:]):
         return STATUS_BACKEND_FAIL
 
     try:
+        LOG.info("Initializing compositor objects...")
         compositor_objects = {}
-        for c, ccls in compositor_classes.items():
-            compositor_objects[c] = ccls(**args.subgroup_args[c + " Initialization"])
+        for c in args.compositors:
+            compositor_objects[c] = compositor_manager.get_compositor(c, **args.global_kwargs)
     except StandardError:
         LOG.debug("Compositor initialization exception: ", exc_info=True)
         LOG.error("Compositor initialization failed (see log for details)")
