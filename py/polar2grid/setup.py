@@ -126,6 +126,7 @@ setup(
             'hdf5=polar2grid.hdf5_backend:add_backend_argument_groups',
         ],
         'polar2grid.compositor_class': [
+            'rgb=polar2grid.compositors.rgb:RGBCompositor',
             'true_color=polar2grid.compositors.rgb:TrueColorCompositor',
             'false_color=polar2grid.compositors.rgb:FalseColorCompositor',
         ],

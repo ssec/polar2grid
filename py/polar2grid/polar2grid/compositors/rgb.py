@@ -54,6 +54,9 @@ class RGBCompositor(roles.CompositorRole):
         self.composite_name = kwargs.get("composite_name", "rgb_composite")
         self.composite_data_kind = kwargs.get("composite_data_kind", "rgb")
         self.share_mask = kwargs.get("share_mask", True)
+        self.composite_products = kwargs.get("composite_products", "")
+        if isinstance(self.composite_products, (str, unicode)):
+            self.composite_products = self.composite_products.split(",")
         super(RGBCompositor, self).__init__(**kwargs)
 
     def shared_mask(self, gridded_scene, product_names, axis=0):
