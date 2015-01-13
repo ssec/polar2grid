@@ -72,6 +72,30 @@ def mask_helper(arr, fill):
 
 
 def ll2cr(lon_arr, lat_arr, grid_info, fill_in=numpy.nan, inplace=True):
+    """Project longitude and latitude points to columns and rows in the specified grid in place
+
+    :param lon_arr: Numpy array of longitude floats
+    :param lat_arr: Numpy array of latitude floats
+    :param grid_info: dictionary of grid information (see below)
+    :param fill_in: Fill value for input longitude and latitude arrays and used for output
+    :returns: tuple(points_in_grid, cols_out, rows_out)
+
+    The provided grid info must have the following parameters (optional grids mean dynamic):
+
+        - proj4_definition
+        - cell_width
+        - cell_height
+        - width (optional/None)
+        - height (optional/None)
+        - origin_x (optional/None)
+        - origin_y (optional/None)
+
+    Steps taken in this function:
+
+        1. Convert (lon, lat) points to (X, Y) points in the projection space
+        2. If grid is missing some parameters (dynamic grid), then fill them in
+        3. Convert (X, Y) points to (column, row) points in the grid space
+    """
     p = grid_info["proj4_definition"]
     cw = grid_info["cell_width"]
     ch = grid_info["cell_height"]
@@ -84,20 +108,21 @@ def ll2cr(lon_arr, lat_arr, grid_info, fill_in=numpy.nan, inplace=True):
     # C code requires 64-bit floats and to do in place it must be writeable, otherwise we need to make a copy
     is_double = lon_arr.dtype == numpy.float64 and lon_arr.dtype == numpy.float64
     is_writeable = lon_arr.flags.writeable and lat_arr.flags.writeable
-    if not inplace or not is_double or not is_writeable:
+    lon_orig = lon_arr
+    lat_orig = lat_arr
+    copy_result = False
+    # XXX: Check that automatic casting can't be done on the C side
+    if not is_double or not is_writeable:
         LOG.debug("Copying longitude and latitude arrays because inplace processing could not be done")
-        print("Copying longitude and latitude arrays because inplace processing could not be done")
+        copy_result = True
         lon_arr = lon_arr.astype(numpy.float64)
         lat_arr = lat_arr.astype(numpy.float64)
 
     if is_static:
         LOG.debug("Running static version of ll2cr...")
-        print("Running static version of ll2cr...")
         points_in_grid = _ll2cr.ll2cr_static(lon_arr, lat_arr, fill_in, p, cw, ch, w, h, ox, oy)
-        return points_in_grid, lon_arr, lat_arr
     else:
         LOG.debug("Running dynamic version of ll2cr...")
-        print("Running dynamic version of ll2cr...")
         results = _ll2cr.ll2cr_dynamic(lon_arr, lat_arr, fill_in, p, cw, ch,
                                     width=w, height=h, origin_x=ox, origin_y=oy)
         points_in_grid, lon_arr, lat_arr, origin_x, origin_y, width, height = results
@@ -106,8 +131,14 @@ def ll2cr(lon_arr, lat_arr, grid_info, fill_in=numpy.nan, inplace=True):
         grid_info["origin_y"] = origin_y
         grid_info["width"] = width
         grid_info["height"] = height
-        return points_in_grid, lon_arr, lat_arr
 
+    if copy_result and inplace:
+        LOG.debug("Copying result arrays back to provided inplace array")
+        print("Copying result arrays back to provided inplace array")
+        lon_orig[:] = lon_arr[:]
+        lat_orig[:] = lat_arr[:]
+
+    return points_in_grid, lon_orig, lat_orig
 
 
 def python_ll2cr(lon_arr, lat_arr, grid_info, fill_in=numpy.nan, fill_out=None, cols_out=None, rows_out=None):

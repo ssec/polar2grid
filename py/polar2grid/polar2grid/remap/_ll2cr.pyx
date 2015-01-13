@@ -50,10 +50,14 @@ cimport numpy
 from libc.math cimport isnan
 
 # DTYPE = numpy.float32
-DTYPE = numpy.float64
-
+# DTYPE = numpy.float64
 # ctypedef numpy.float32_t DTYPE_t
-ctypedef numpy.float64_t DTYPE_t
+
+# column and rows can only be doubles for now until the PROJ.4 is linked directly so float->double casting can be done
+# inside the loop
+ctypedef fused cr_dtype:
+    # numpy.float32_t
+    numpy.float64_t
 
 # @cython.boundscheck(False)
 # @cython.wraparound(False)
@@ -121,8 +125,8 @@ def projection_circumference(p):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-def ll2cr_dynamic(numpy.ndarray[DTYPE_t, ndim=2] lon_arr, numpy.ndarray[DTYPE_t, ndim=2] lat_arr,
-                  DTYPE_t fill_in, str proj4_definition,
+def ll2cr_dynamic(numpy.ndarray[cr_dtype, ndim=2] lon_arr, numpy.ndarray[cr_dtype, ndim=2] lat_arr,
+                  cr_dtype fill_in, str proj4_definition,
                   double cell_width, double cell_height,
                   width=None, height=None,
                   origin_x=None, origin_y=None):
@@ -158,8 +162,8 @@ def ll2cr_dynamic(numpy.ndarray[DTYPE_t, ndim=2] lon_arr, numpy.ndarray[DTYPE_t,
 
     # Pyproj currently makes a copy so we don't have to do anything special here
     cdef tuple projected_tuple = p(lon_arr, lat_arr)
-    cdef DTYPE_t [:, ::1] rows_out = projected_tuple[1]
-    cdef DTYPE_t [:, ::1] cols_out = projected_tuple[0]
+    cdef cr_dtype [:, ::1] rows_out = projected_tuple[1]
+    cdef cr_dtype [:, ::1] cols_out = projected_tuple[0]
     cdef double proj_circum = projection_circumference(p)
     cdef unsigned int w
     cdef unsigned int h
@@ -172,12 +176,12 @@ def ll2cr_dynamic(numpy.ndarray[DTYPE_t, ndim=2] lon_arr, numpy.ndarray[DTYPE_t,
     # index bounds
     cdef unsigned int num_rows = lon_arr.shape[0]
     cdef unsigned int num_cols = lon_arr.shape[1]
-    cdef DTYPE_t xmin = cols_out[0, 0]
-    cdef DTYPE_t xmax = cols_out[0, 0]
-    cdef DTYPE_t ymin = rows_out[0, 0]
-    cdef DTYPE_t ymax = cols_out[0, 0]
-    cdef DTYPE_t x_tmp
-    cdef DTYPE_t y_tmp
+    cdef cr_dtype xmin = cols_out[0, 0]
+    cdef cr_dtype xmax = cols_out[0, 0]
+    cdef cr_dtype ymin = rows_out[0, 0]
+    cdef cr_dtype ymax = cols_out[0, 0]
+    cdef cr_dtype x_tmp
+    cdef cr_dtype y_tmp
     cdef unsigned int points_in_grid = 0
     for row in range(num_rows):
         for col in range(num_cols):
@@ -254,8 +258,8 @@ def ll2cr_dynamic(numpy.ndarray[DTYPE_t, ndim=2] lon_arr, numpy.ndarray[DTYPE_t,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-def ll2cr_static(numpy.ndarray[DTYPE_t, ndim=2] lon_arr, numpy.ndarray[DTYPE_t, ndim=2] lat_arr,
-                      DTYPE_t fill_in, str proj4_definition,
+def ll2cr_static(numpy.ndarray[cr_dtype, ndim=2] lon_arr, numpy.ndarray[cr_dtype, ndim=2] lat_arr,
+                      cr_dtype fill_in, str proj4_definition,
                       double cell_width, double cell_height,
                       unsigned int width, unsigned int height,
                       double origin_x, double origin_y):
@@ -263,36 +267,27 @@ def ll2cr_static(numpy.ndarray[DTYPE_t, ndim=2] lon_arr, numpy.ndarray[DTYPE_t, 
 
     :param lon_arr: Numpy array of longitude floats
     :param lat_arr: Numpy array of latitude floats
-    :param grid_info: dictionary of grid information (see below)
     :param fill_in: Fill value for input longitude and latitude arrays and used for output
+    :param cell_width: Pixel resolution in the X direction in projection space
+    :param cell_height: Pixel resolution in the Y direction in projection space
+    :param width: Number of pixels in the X direction in the final output grid
+    :param height: Number of pixels in the Y direction in the final output grid
+    :param origin_x:
     :returns: tuple(points_in_grid, cols_out, rows_out)
-
-    The provided grid info must have the following parameters (optional grids mean dynamic):
-
-        - proj4_definition
-        - cell_width
-        - cell_height
-        - width (optional/None)
-        - height (optional/None)
-        - origin_x (optional/None)
-        - origin_y (optional/None)
 
     Steps taken in this function:
 
         1. Convert (lon, lat) points to (X, Y) points in the projection space
-        2. If grid is missing some parameters (dynamic grid), then fill them in
-        3. Convert (X, Y) points to (column, row) points in the grid space
+        2. Convert (X, Y) points to (column, row) points in the grid space
+
     """
     # pure python stuff for now
     p = MyProj(proj4_definition)
-    # when we update this to not make copies we can probably just make this a view
-    # rows_arr = numpy.empty_like(lat_arr)
-    # cols_arr = numpy.empty_like(lon_arr)
 
     # Pyproj currently makes a copy so we don't have to do anything special here
     cdef tuple projected_tuple = p(lon_arr, lat_arr)
-    cdef DTYPE_t [:, ::1] rows_out = projected_tuple[1]
-    cdef DTYPE_t [:, ::1] cols_out = projected_tuple[0]
+    cdef cr_dtype [:, ::1] rows_out = projected_tuple[1]
+    cdef cr_dtype [:, ::1] cols_out = projected_tuple[0]
     cdef double proj_circum = projection_circumference(p)
 
     # indexes
@@ -301,8 +296,8 @@ def ll2cr_static(numpy.ndarray[DTYPE_t, ndim=2] lon_arr, numpy.ndarray[DTYPE_t, 
     # index bounds
     cdef unsigned int num_rows = lon_arr.shape[0]
     cdef unsigned int num_cols = lon_arr.shape[1]
-    cdef DTYPE_t x_tmp
-    cdef DTYPE_t y_tmp
+    cdef cr_dtype x_tmp
+    cdef cr_dtype y_tmp
     cdef unsigned int points_in_grid = 0
 
     for row in range(num_rows):
