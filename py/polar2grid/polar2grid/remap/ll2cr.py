@@ -134,7 +134,6 @@ def ll2cr(lon_arr, lat_arr, grid_info, fill_in=numpy.nan, inplace=True):
 
     if copy_result and inplace:
         LOG.debug("Copying result arrays back to provided inplace array")
-        print("Copying result arrays back to provided inplace array")
         lon_orig[:] = lon_arr[:]
         lat_orig[:] = lat_arr[:]
 

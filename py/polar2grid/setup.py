@@ -71,7 +71,7 @@ if os.getenv("NO_CYTHONIZE", False) or cythonize is None:
         return extensions
 
 classifiers = ""
-version = '1.2.1'
+version = '2.0.0'
 
 
 setup(
@@ -107,10 +107,7 @@ setup(
         ],
     dependency_links=['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points={
-        'console_scripts': [
-            'viirs2awips = polar2grid.viirs2awips:main',
-            'modis2awips = polar2grid.modis2awips:main'
-        ],
+        'console_scripts': [],
         'polar2grid.backend_class': [
             'gtiff=polar2grid.gtiff_backend:Backend',
             'awips=polar2grid.awips.awips_netcdf:Backend',

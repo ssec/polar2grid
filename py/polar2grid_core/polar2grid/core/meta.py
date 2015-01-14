@@ -649,6 +649,18 @@ class SwathDefinition(GeographicDefinition, BaseProduct):
         cols = self["swath_columns"]
         return super(SwathDefinition, self).get_data_array("latitude", rows, cols, dtype)
 
+    def copy_longitude_array(self, filename=None, read_only=True):
+        dtype = self["data_type"]
+        rows = self["swath_rows"]
+        cols = self["swath_columns"]
+        return super(SwathDefinition, self).copy_array("longitude", rows, cols, dtype, filename, read_only)
+
+    def copy_latitude_array(self, filename=None, read_only=True):
+        dtype = self["data_type"]
+        rows = self["swath_rows"]
+        cols = self["swath_columns"]
+        return super(SwathDefinition, self).copy_array("latitude", rows, cols, dtype, filename, read_only)
+
     def get_longitude_mask(self, item="longitude"):
         return super(SwathDefinition, self).get_data_mask(item, fill_key="fill_value")
 

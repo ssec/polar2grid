@@ -37,12 +37,11 @@
 :license:      GNU GPLv3
 
 """
-from polar2grid.remap import ms2gt
-
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.meta import GriddedProduct, GriddedScene, SwathScene
-from polar2grid.remap import ll2cr as gator  # gridinator
+from polar2grid.remap import ll2cr as ll2cr  # gridinator
+from polar2grid.remap import fornav
 from polar2grid.grids.grids import Cartographer
 
 import os
@@ -55,13 +54,6 @@ from itertools import izip
 import numpy
 from scipy.interpolate.interpnd import _ndim_coords_from_arrays
 from scipy.spatial import cKDTree
-
-try:
-    import psutil
-    get_free_memory = lambda: psutil.phymem_usage().free
-except ImportError:
-    psutil = None
-    get_free_memory = lambda: None
 
 LOG = logging.getLogger(__name__)
 
@@ -81,15 +73,6 @@ def init_worker():
     process is Ctrl+C'd out of existence.
     """
     signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-
-def run_fornav_c(*args, **kwargs):
-    proc_pool = kwargs.pop("pool", None)
-    if proc_pool is None:
-        result = ms2gt.fornav(*args, **kwargs)
-    else:
-        result = proc_pool.apply_async(ms2gt.fornav, args=args, kwds=kwargs)
-    return result
 
 
 class Remapper(object):
@@ -115,55 +98,6 @@ class Remapper(object):
             swath_def = swath_scene_or_product["swath_definition"]
         return swath_def
 
-    def split_products(self, swath_scene, grid_def, use_memory=False, by_scans=False, default_group_size=4,
-                       grid_multiplier=3, swath_multiplier=1, geo_multiplier=2, additional_used=1024*1024*512):
-        """Split a swath scene in to reasonably sized groups based on shared geolocation.
-
-        If `use_memory` is True and available memory is known then the groups are split based on number of bytes.
-
-        Default items in a group is 5.
-        """
-        product_groups = defaultdict(list)
-        max_group_sizes = defaultdict(lambda: None)
-        free_memory_bytes = get_free_memory()
-        for product_name, swath_product in swath_scene.items():
-            swath_def = swath_product["swath_definition"]
-            geo_id = swath_def["swath_name"]
-            if geo_id in max_group_sizes:
-                max_group_size = max_group_sizes[geo_id]
-            elif use_memory and free_memory_bytes is not None:
-                itemsize = numpy.dtype(swath_def["data_type"]).itemsize
-                LOG.debug("Item size taken from swath definition: %d", itemsize)
-                cols = swath_def["swath_columns"]
-                if by_scans:
-                    # bytes in one scan line loaded at a time (how fornav works)
-                    swath_size = swath_def.get("rows_per_scan", 1) * cols * itemsize
-                else:
-                    swath_size = swath_def["swath_rows"] * cols * itemsize
-
-                grid_size = grid_def["height"] * grid_def["width"] * 4  # assume 32 bit floats for now
-                # After we load geolocation and the output grid, how much do we have left for products?
-                grid_effect = grid_size * grid_multiplier
-                geo_effect = swath_size * geo_multiplier
-                swath_effect = swath_size * swath_multiplier
-                max_group_size = int((free_memory_bytes - geo_effect - additional_used) / (grid_effect + swath_effect))
-                max_group_size = max(max_group_size, 1)
-                LOG.debug("Max group size calculated to be %d (free: %d, grid: %d, geo: %d, swath: %d)",
-                          max_group_size, free_memory_bytes, grid_effect, geo_effect, swath_effect)
-                max_group_sizes[geo_id] = max_group_size
-            else:
-                max_group_size = default_group_size
-                max_group_sizes[geo_id] = max_group_size
-
-            id_suffix = 2
-            while len(product_groups[geo_id]) >= max_group_size:
-                geo_id = swath_def["swath_name"] + str(id_suffix)
-                id_suffix += 1
-            LOG.debug("Assigning product '%s' to group '%s' with max group size %d",
-                      product_name, geo_id, max_group_size)
-            product_groups[geo_id].append(product_name)
-        return product_groups
-
     def remap_scene(self, swath_scene, grid_name, **kwargs):
         method = kwargs.pop("remap_method", "ewa")
         LOG.debug("Remap scene being run with method '%s'", method)
@@ -180,14 +114,14 @@ class Remapper(object):
             best_swath_def = self.highest_resolution_swath_definition(swath_scene)
             LOG.debug("Running ll2cr on the highest resolution swath to determine if it fits")
             try:
-                self.ll2cr(best_swath_def, grid_def)
+                self.run_ll2cr(best_swath_def, grid_def)
             except StandardError:
                 LOG.error("Remapping error")
                 raise
 
         return func(swath_scene, grid_def, **kwargs)
 
-    def ll2cr(self, swath_definition, grid_definition):
+    def run_ll2cr(self, swath_definition, grid_definition):
         geo_id = swath_definition["swath_name"]
         grid_name = grid_definition["grid_name"]
         if (geo_id, grid_name) in self.ll2cr_cache:
@@ -196,8 +130,8 @@ class Remapper(object):
 
         rows_fn = "ll2cr_rows_%s_%s.dat" % (grid_name, geo_id)
         cols_fn = "ll2cr_cols_%s_%s.dat" % (grid_name, geo_id)
-        lon_arr = swath_definition.get_longitude_array()
-        lat_arr = swath_definition.get_latitude_array()
+        # lon_arr = swath_definition.get_longitude_array()
+        # lat_arr = swath_definition.get_latitude_array()
 
         if os.path.isfile(rows_fn):
             if not self.overwrite_existing:
@@ -212,11 +146,15 @@ class Remapper(object):
             else:
                 LOG.warning("Intermediate remapping file already exists, will overwrite: %s", cols_fn)
         try:
-            rows_arr = numpy.memmap(rows_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
-            cols_arr = numpy.memmap(cols_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
-            points_in_grid, _, _ = gator.python_ll2cr(lon_arr, lat_arr, grid_definition,
-                                               fill_in=swath_definition["fill_value"],
-                                               cols_out=cols_arr, rows_out=rows_arr)
+            rows_arr = swath_definition.copy_latitude_array(filename=rows_fn, read_only=False)
+            cols_arr = swath_definition.copy_longitude_array(filename=cols_fn, read_only=False)
+            points_in_grid, _, _ = ll2cr.ll2cr(cols_arr, rows_arr, grid_definition,
+                                               fill_in=swath_definition["fill_value"])
+            # rows_arr = numpy.memmap(rows_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
+            # cols_arr = numpy.memmap(cols_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
+            # points_in_grid, _, _ = ll2cr.ll2cr(lon_arr, lat_arr, grid_definition,
+            #                                    fill_in=swath_definition["fill_value"],
+            #                                    cols_out=cols_arr, rows_out=rows_arr)
         except StandardError:
             LOG.error("Unexpected error encountered during ll2cr gridding for %s -> %s", geo_id, grid_name)
             LOG.debug("ll2cr error exception: ", exc_info=True)
@@ -261,17 +199,20 @@ class Remapper(object):
         grid_name = grid_def["grid_name"]
 
         # Group products together that shared the same geolocation
-        # I thought fornav only loaded a scan at a time, but it actually loads all of it
-        # and only processes one at a time
-        product_groups = self.split_products(swath_scene, grid_def, use_memory=True, by_scans=False)
+        product_groups = defaultdict(list)
+        for product_name, swath_product in swath_scene.items():
+            swath_def = swath_product["swath_definition"]
+            geo_id = swath_def["swath_name"]
+            product_groups[geo_id].append(product_name)
+
         for geo_id, product_names in product_groups.items():
             try:
                 LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
                 if not share_dynamic_grids:
-                    cols_fn, rows_fn = self.ll2cr(swath_def, grid_def.copy())
+                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def.copy())
                 else:
-                    cols_fn, rows_fn = self.ll2cr(swath_def, grid_def)
+                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def)
             except StandardError:
                 LOG.error("Remapping error")
                 if self.exit_on_error:
@@ -303,29 +244,49 @@ class Remapper(object):
                     LOG.debug("Fornav 'D' option dynamically set to %f", fornav_D)
 
             try:
-                run_fornav_c(
-                    len(product_filepaths),
-                    swath_def["swath_columns"],
-                    swath_def["swath_rows"]/rows_per_scan,
-                    rows_per_scan,
-                    cols_fn,
-                    rows_fn,
-                    product_filepaths,
-                    grid_def["width"],
-                    grid_def["height"],
-                    fornav_filepaths,
-                    swath_data_type_1="f4",
-                    swath_fill_1=swath_scene.get_fill_value(product_names),
-                    grid_fill_1=numpy.nan,
-                    weight_delta_max=fornav_D,
-                    weight_distance_max=kwargs.get("fornav_d", None),
-                    maximum_weight_mode=kwargs.get("maximum_weight_mode", None),
-                    # We only specify start_scan for the 'image'/channel
-                    # data because ll2cr is not 'forced' so it only writes
-                    # useful data to the output cols/rows files
-                    start_scan=(0, 0),
+                # fornav.ms2gt_fornav(
+                #     len(product_filepaths),
+                #     swath_def["swath_columns"],
+                #     swath_def["swath_rows"]/rows_per_scan,
+                #     rows_per_scan,
+                #     cols_fn,
+                #     rows_fn,
+                #     product_filepaths,
+                #     grid_def["width"],
+                #     grid_def["height"],
+                #     fornav_filepaths,
+                #     swath_data_type_1="f4",
+                #     swath_fill_1=swath_scene.get_fill_value(product_names),
+                #     grid_fill_1=numpy.nan,
+                #     weight_delta_max=fornav_D,
+                #     weight_distance_max=kwargs.get("fornav_d", None),
+                #     maximum_weight_mode=kwargs.get("maximum_weight_mode", None),
+                #     start_scan=(0, 0),
+                # )
+                cols_array = numpy.memmap(cols_fn, dtype=numpy.float32, mode='r', shape=(swath_def["swath_rows"], swath_def["swath_columns"]))
+                rows_array = numpy.memmap(rows_fn, dtype=numpy.float32, mode='r', shape=(swath_def["swath_rows"], swath_def["swath_columns"]))
+                # Assumed that all share the same fill value and data type
+                input_dtype = [swath_scene[pn]["data_type"] for pn in product_names]
+                input_fill = [swath_scene[pn]["fill_value"] for pn in product_names]
+                got_points = fornav.fornav(cols_array,
+                              rows_array,
+                              rows_per_scan,
+                              product_filepaths,
+                              input_dtype=input_dtype,
+                              input_fill=input_fill,
+                              output_arrays=fornav_filepaths,
+                              grid_cols=grid_def["width"],
+                              grid_rows=grid_def["height"],
+                              weight_delta_max=fornav_D,
+                              weight_distance_max=kwargs.get("fornav_d", 1.0),
+                              maximum_weight_mode=kwargs.get("maximum_weight_mode", False),
+                              use_group_size=True
                 )
+                if not got_points:
+                    LOG.error("EWA resampling found 0 points inside the requested grid")
+                    raise RuntimeError("EWA resampling found 0 points inside the requested grid")
             except StandardError:
+                LOG.debug("Remapping exception: ", exc_info=True)
                 LOG.error("Remapping error")
                 if self.exit_on_error:
                     self._clear_ll2cr_cache()
@@ -367,9 +328,9 @@ class Remapper(object):
             try:
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
                 if not share_dynamic_grids:
-                    cols_fn, rows_fn = self.ll2cr(swath_def, grid_def.copy())
+                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def.copy())
                 else:
-                    cols_fn, rows_fn = self.ll2cr(swath_def, grid_def)
+                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def)
             except StandardError:
                 LOG.error("Remapping error")
                 if self.exit_on_error:
@@ -470,7 +431,7 @@ def add_remap_argument_groups(parser):
     group.add_argument('--maximum-weight-mode', dest="maximum_weight_mode", default=SUPPRESS, action="store_true",
                        help="Use maximum weight mode in fornav (-m)")
     group.add_argument("--distance-upper-bound", dest="distance_upper_bound", type=float, default=None,
-                       help="Nearest neighbor search distance upper bound")
+                       help="Nearest neighbor search distance upper bound in units of grid cell")
     group.add_argument("--no-share-grid", dest="share_dynamic_grid", action="store_false",
                        help="Calculate dynamic grid attributes for every grid (instead of sharing highest resolution)")
     return ["Remapping Initialization", "Remapping"]
