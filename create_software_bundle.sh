@@ -112,11 +112,9 @@ ln -s ../ms2gt/bin/fornav bin/fornav
 # Create python packages
 echo "Creating python packages..."
 cd "$PY_DIR"
-make clean_sdist
-make all_sdist
-# Pip is probably better, but ShellB3 doesn't use it yet
-echo "Installing python packages into ShellB3 environment..."
-${SB_NAME}/ShellB3/bin/python -m easy_install dist/*.tar.gz || oops "Could not install python packages"
+make clean
+# Have to use 'python setup.py install' because using easy_install on source tarballs doesn't compile extensions for some reason
+NO_CYTHON=TRUE CFLAGS="-fno-strict-aliasing -L${SB_NAME}/ShellB3/lib" INSTALL_DIR="${SB_NAME}/ShellB3" make all_install
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
