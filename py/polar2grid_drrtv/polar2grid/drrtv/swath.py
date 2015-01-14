@@ -298,28 +298,28 @@ def _write_var_to_binary_file(filename, h5_files, var_name, pressure=None):
     return data.shape
 
 
-PRODUCT_CAPE = "cape"
-PRODUCT_CO2_AMOUNT = "co2_amount"
-PRODUCT_COT = "cot"
-PRODUCT_CTP = "ctp"
-PRODUCT_CTT = "ctt"
-PRODUCT_CLOUD_EMISSIVITY = "cloud_emissivity"
-PRODUCT_CMASK = "cloud_mask"
-PRODUCT_LI = "lifted_index"
-PRODUCT_SURFPRES = "surface_pressure"
-PRODUCT_TSURF = "surface_temperature"
-PRODUCT_TOT_WATER = "total_water"
-PRODUCT_TOT_OZONE = "total_ozone"
+PRODUCT_CAPE = "CAPE"
+PRODUCT_CO2_AMOUNT = "CO2_Amount"
+PRODUCT_COT = "COT"
+PRODUCT_CTP = "CTP"
+PRODUCT_CTT = "CTT"
+PRODUCT_CLOUD_EMISSIVITY = "CldEmis"
+PRODUCT_CMASK = "Cmask"
+PRODUCT_LI = "Lifted_Index"
+PRODUCT_SURFPRES = "SurfPres"
+PRODUCT_TSURF = "TSurf"
+PRODUCT_TOT_WATER = "totH2O"
+PRODUCT_TOT_OZONE = "totO3"
 # Handle products with multiple levels later on when creating the product definitions
-PRODUCT_DEWPOINT = "dewpoint"
-PRODUCT_WATER_MMR = "water_mrr"
-PRODUCT_OZONE_VMR = "ozone_vmr"
-PRODUCT_RELHUM = "relative_humidity"
-PRODUCT_TAIR = "tair"
+PRODUCT_DEWPOINT = "Dewpnt"
+PRODUCT_WATER_MMR = "H2OMMR"
+PRODUCT_OZONE_VMR = "O3VMR"
+PRODUCT_RELHUM = "RelHum"
+PRODUCT_TAIR = "TAir"
 # geo products
 # This assumes that we will never process more than one instrument at a time
-PRODUCT_LON = "longitude"
-PRODUCT_LAT = "latitude"
+PRODUCT_LON = "Longitude"
+PRODUCT_LAT = "Latitude"
 
 GEO_PAIRS = GeoPairDict()
 BASE_PAIR = "drrtv_nav"
