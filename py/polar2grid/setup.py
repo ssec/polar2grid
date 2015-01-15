@@ -52,7 +52,8 @@ try:
 except ImportError:
     cythonize = None
 
-if os.getenv("NO_CYTHONIZE", False) or cythonize is None:
+if not os.getenv("USE_CYTHON", False) or cythonize is None:
+    print("Cython will not be used. Use environment variable 'USE_CYTHON=True' to use it")
     def cythonize(extensions, **_ignore):
         """Fake function to compile from C/C++ files instead of compiling .pyx files with cython.
         """

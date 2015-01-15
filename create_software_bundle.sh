@@ -115,7 +115,7 @@ export PATH=${SB_NAME}/ShellB3/bin:$PATH
 cd "$PY_DIR"
 make clean
 # Have to use 'python setup.py install' because using easy_install on source tarballs doesn't compile extensions for some reason
-NO_CYTHONIZE=TRUE CFLAGS="-fno-strict-aliasing -L${SB_NAME}/ShellB3/lib" INSTALL_DIR="${SB_NAME}/ShellB3" make all_install
+CFLAGS="-fno-strict-aliasing -L${SB_NAME}/ShellB3/lib" INSTALL_DIR="${SB_NAME}/ShellB3" make all_install
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
