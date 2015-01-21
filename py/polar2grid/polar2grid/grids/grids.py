@@ -43,7 +43,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     david.hoese@ssec.wisc.edu
 
 """
-from polar2grid.proj import Proj
+from polar2grid.core.proj import Proj
 # from pyproj import pj_ellps
 
 __docformat__ = "restructuredtext en"

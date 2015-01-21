@@ -41,11 +41,10 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     david.hoese@ssec.wisc.edu
 
 """
-from polar2grid.proj import Proj
+from polar2grid.core.proj import Proj
 
 __docformat__ = "restructuredtext en"
 
-import os
 import sys
 
 #grid_name,proj4, proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y

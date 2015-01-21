@@ -36,25 +36,50 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 __docformat__ = "restructuredtext en"
 from setuptools import setup, find_packages
 
-classifiers = ""
-version = '1.2.0'
+version = '2.0.0'
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 2",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 2 :: Only",  # Working on it, I swear
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: POSIX :: Linux",  # Not sure if it works on Windows, since we don't normally support it, needs testing
+    "Operating System :: MacOS :: MacOS X",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: GIS",
+    ]
+
+def readme():
+    with open("README.rst", "r") as f:
+        return f.read()
+
+extra_requires = {
+    "remap": ["pyproj"],
+}
+extras_require["all"] = [x for y in extras_require.values() for x in y]
 
 setup(
     name='polar2grid.core',
     version=version,
-    description="Library and scripts to aggregate VIIRS data and get associated metadata",
-    classifiers=filter(None, classifiers.split("\n")),
-    keywords='',
     author='David Hoese, SSEC',
     author_email='david.hoese@ssec.wisc.edu',
     license='GPLv3',
+    description="Library and scripts to aggregate VIIRS data and get associated metadata",
+    long_description=readme(),
+    classifiers=classifiers,
+    keywords='',
     url='http://www.ssec.wisc.edu/software/polar2grid/',
+    download_url="http://larch.ssec.wisc.edu/simple/polar2grid",
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     namespace_packages=["polar2grid"],
     include_package_data=True,
+    package_data={'polar2grid.core': ["core/rescale_configs.ini"]}
     zip_safe=True,
-    install_requires=['numpy'],
-    dependency_links = ['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
+    install_requires=["numpy"],
     entry_points = {'console_scripts' : [ ]}
 )
 

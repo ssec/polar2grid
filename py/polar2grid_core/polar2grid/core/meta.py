@@ -39,16 +39,19 @@
 """
 __docformat__ = "restructuredtext en"
 
-import numpy
-from polar2grid.core.time_utils import iso8601
-from polar2grid.core.dtype import str_to_dtype, dtype_to_str
-
 import os
 import sys
 import json
 import shutil
 import logging
 from datetime import datetime
+
+import numpy
+
+from polar2grid.core.time_utils import iso8601
+from polar2grid.core.dtype import str_to_dtype, dtype_to_str
+from polar2grid.core.proj import Proj
+
 
 LOG = logging.getLogger(__name__)
 
@@ -703,7 +706,6 @@ class GridDefinition(GeographicDefinition):
     @property
     def proj(self):
         if self.p is None:
-            from polar2grid.proj import Proj
             self.p = Proj(self["proj4_definition"])
         return self.p
 
@@ -721,7 +723,6 @@ class GridDefinition(GeographicDefinition):
     def cell_width_meters(self):
         """Estimation of what a latlong cell width would be in meters.
         """
-        from polar2grid.proj import Proj
         proj4_dict = self.proj4_dict
         lon0 = proj4_dict.get("lon0", 0.0)
         lat0 = proj4_dict.get("lat0", 0.0)

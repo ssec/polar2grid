@@ -1,2 +1,4 @@
+include README.rst
+include COPYING
 include polar2grid/core/rescale_configs/*.ini
 

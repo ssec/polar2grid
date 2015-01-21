@@ -16,12 +16,17 @@ can be found on the `documentation site <http://www.ssec.wisc.edu/software/polar
 
 Source code can be found on GitHub: https://github.com/davidh-ssec/polar2grid
 
-Polar2Grid Main Package
+Polar2Grid Core Package
 -----------------------
 
-The main `polar2grid` package contains objects and tools for remapping as well as various backends. It's main purpose
-to command line users is as a glue script via the `polar2grid.glue` module. This script automates the common
-operation of `Frontend -> Remapping -> [Compositors] -> Backend`.
+The `polar2grid.core` package contains objects and tools used by most (if not all) other polar2grid packages. It
+includes python objects and functions for handling polar2grid's intermediate JSON and binary formats. It also includes
+helper functions and classes like the following:
+
+ - Base classes for common roles in polar2grid like frontends, backends, and .ini configuration files (`polar2grid.core.roles`)
+ - Scripting utilities for making polar2grid components easier to access from the command line (`polar2grid.core.script_utils`)
+ - Frontend utilities for defining products and file reader base classes (`polar2grid.core.frontend_utils`)
+ - Rescaling functions for scaling gridded data before writing it to an output file in backends (`polar2grid.core.rescale`)
 
 Installation
 ------------
@@ -58,5 +63,4 @@ Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 

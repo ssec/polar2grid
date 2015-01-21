@@ -75,7 +75,6 @@ if not os.getenv("USE_CYTHON", False) or cythonize is None:
 
 version = '2.0.0'
 
-# FIXME: Add symlinks to the licensing files and other documents in the package root
 def readme():
     with open("README.rst", "r") as f:
         return f.read()
@@ -109,6 +108,7 @@ extras_require = {
     "remap": ["pyproj"],
     "utils": ["matplotlib"],
 }
+extras_require["all"] = [x for y in extras_require.values() for x in y]
 
 entry_points = {
     'console_scripts': [],
@@ -145,11 +145,9 @@ setup(
     keywords='',
     url="http://www.ssec.wisc.edu/software/polar2grid/",
     download_url="http://larch.ssec.wisc.edu/simple/polar2grid",
-
     ext_modules=cythonize(extensions),
     include_dirs=[numpy.get_include()],
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-
     namespace_packages=["polar2grid"],
     include_package_data=True,
     package_data={'polar2grid': ["compositors/*.ini", "awips/ncml/*.ncml", "awips/*.ini", "grids/*.conf", "ninjo/*.ini"]},
@@ -157,7 +155,7 @@ setup(
     install_requires=[
         'setuptools>=0.7',       # reading configuration files
         'numpy',
-        'polar2grid.core',  # Almost everything touches this in some way
+        'polar2grid.core[all]',  # Almost everything touches this in some way
         ],
     extras_require=extras_require,
     entry_points=entry_points

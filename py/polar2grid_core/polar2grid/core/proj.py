@@ -42,11 +42,18 @@ handles any projection string that `pyproj` can handle (like 'latlong' which the
 """
 __docformat__ = "restructuredtext en"
 
-import pyproj
 import sys
 
+try:
+    from pyproj import Proj
+except ImportError:
+    # This module is loaded by meta.py which could be all a user needs so we shouldn't fail if they don't have pyproj
+    import warnings
+    warnings.warn("Package 'pyproj' could not be imported. Some functionality will be missing")
+    Proj = object
 
-class Proj(pyproj.Proj):
+
+class Proj(Proj):
     def __call__(self, data1, data2, **kwargs):
         if self.is_latlong():
             return data1, data2
