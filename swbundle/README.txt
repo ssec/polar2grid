@@ -1,8 +1,7 @@
-polar2grid software bundle
+Polar2Grid software bundle
 ==========================
 
-Copyright (C) 2014 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
+Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,7 +21,7 @@ satellite observation data, remaps it, and writes it to a file format for
 input into another program.
 Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
-    Written by David Hoese    January 2014
+    Written by David Hoese    January 2015
     University of Wisconsin-Madison 
     Space Science and Engineering Center
     1225 West Dayton Street
@@ -37,6 +36,7 @@ distributed consistent with their licensing terms.
 
 Installation
 ============
+
 1. Untar the tarball:
     # if you're reading this, this step is probably complete already
     tar -xzf polar2grid-swbundle-<version>.tar.gz
@@ -44,7 +44,8 @@ Installation
     export POLAR2GRID_HOME=/path/to/untarred-swbundle-dir
 
 To run a polar2grid glue script
-==========================
+===============================
+
 The polar2grid scripts are usually part of a larger system, but if you want
 to run a script manually:
 
@@ -56,3 +57,5 @@ or
 
 for more help.
 
+Polar2Grid Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+CSPP Home Page: http://cimss.ssec.wisc.edu/cspp/
