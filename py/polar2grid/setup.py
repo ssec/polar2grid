@@ -27,7 +27,9 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Script for installing the polar2grid package.
+"""Script for installing the polar2grid package. See the documentation site for more information:
+
+http://www.ssec.wisc.edu/software/polar2grid/
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -71,20 +73,78 @@ if not os.getenv("USE_CYTHON", False) or cythonize is None:
             extension.sources[:] = sources
         return extensions
 
-classifiers = ""
 version = '2.0.0'
 
+# FIXME: Add symlinks to the licensing files and other documents in the package root
+def readme():
+    with open("README.rst", "r") as f:
+        return f.read()
+
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 2",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 2 :: Only",  # Working on it, I swear
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: POSIX :: Linux",  # Not sure if it works on Windows, since we don't normally support it, needs testing
+    "Operating System :: MacOS :: MacOS X",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+
+extras_require = {
+    # Backends:
+    "awips": ["netCDF4"],
+    "gtiff": ["gdal"],
+    "ninjo": ["pylibtiff"],
+    "hdf5": ["h5py"],
+    # Frontends (included separately):
+    # Other:
+    # FIXME: technically polar2grid.core.meta uses this through the polar2grid.proj module
+    "remap": ["pyproj"],
+    "utils": ["matplotlib"],
+}
+
+entry_points = {
+    'console_scripts': [],
+    'polar2grid.backend_class': [
+        'gtiff=polar2grid.gtiff_backend:Backend',
+        'awips=polar2grid.awips.awips_netcdf:Backend',
+        'binary=polar2grid.binary:Backend',
+        'ninjo=polar2grid.ninjo:Backend',
+        'hdf5=polar2grid.hdf5_backend:Backend',
+        ],
+    'polar2grid.backend_arguments': [
+        'gtiff=polar2grid.gtiff_backend:add_backend_argument_groups',
+        'awips=polar2grid.awips.awips_netcdf:add_backend_argument_groups',
+        'binary=polar2grid.binary:add_backend_argument_groups',
+        'ninjo=polar2grid.ninjo:add_backend_argument_groups',
+        'hdf5=polar2grid.hdf5_backend:add_backend_argument_groups',
+        ],
+    'polar2grid.compositor_class': [
+        'rgb=polar2grid.compositors.rgb:RGBCompositor',
+        'true_color=polar2grid.compositors.rgb:TrueColorCompositor',
+        'false_color=polar2grid.compositors.rgb:FalseColorCompositor',
+        ],
+    }
 
 setup(
     name='polar2grid',
     version=version,
-    description="Library and scripts to remap imager data to a grid",
-    classifiers=filter(None, classifiers.split("\n")),
-    keywords='',
     author='David Hoese, SSEC',
     author_email='david.hoese@ssec.wisc.edu',
     license='GPLv3',
-    url='http://www.ssec.wisc.edu/software/polar2grid/',
+    description="Library and scripts to remap imager data to a grid",
+    long_description=readme(),
+    classifiers=classifiers,
+    keywords='',
+    url="http://www.ssec.wisc.edu/software/polar2grid/",
+    download_url="http://larch.ssec.wisc.edu/simple/polar2grid",
 
     ext_modules=cythonize(extensions),
     include_dirs=[numpy.get_include()],
@@ -92,42 +152,14 @@ setup(
 
     namespace_packages=["polar2grid"],
     include_package_data=True,
-    package_data={'polar2grid': ["awips/ncml/*.ncml", "awips/*.ini", "grids/*.conf", "ninjo/*.ini"]},
-    zip_safe=False,
+    package_data={'polar2grid': ["compositors/*.ini", "awips/ncml/*.ncml", "awips/*.ini", "grids/*.conf", "ninjo/*.ini"]},
+    zip_safe=True,
     install_requires=[
+        'setuptools>=0.7',       # reading configuration files
         'numpy',
-        'matplotlib',
-        'netCDF4',          # AWIPS backend
-        'pyproj',           # Python ll2cr, grids
-        'gdal',             # Geotiff backend
-        'shapely',          # Grid determination
-        'pylibtiff',
-        'polar2grid.core',
-        'polar2grid.viirs',
-        'polar2grid.modis'
+        'polar2grid.core',  # Almost everything touches this in some way
         ],
-    dependency_links=['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
-    entry_points={
-        'console_scripts': [],
-        'polar2grid.backend_class': [
-            'gtiff=polar2grid.gtiff_backend:Backend',
-            'awips=polar2grid.awips.awips_netcdf:Backend',
-            'binary=polar2grid.binary:Backend',
-            'ninjo=polar2grid.ninjo:Backend',
-            'hdf5=polar2grid.hdf5_backend:Backend',
-        ],
-        'polar2grid.backend_arguments': [
-            'gtiff=polar2grid.gtiff_backend:add_backend_argument_groups',
-            'awips=polar2grid.awips.awips_netcdf:add_backend_argument_groups',
-            'binary=polar2grid.binary:add_backend_argument_groups',
-            'ninjo=polar2grid.ninjo:add_backend_argument_groups',
-            'hdf5=polar2grid.hdf5_backend:add_backend_argument_groups',
-        ],
-        'polar2grid.compositor_class': [
-            'rgb=polar2grid.compositors.rgb:RGBCompositor',
-            'true_color=polar2grid.compositors.rgb:TrueColorCompositor',
-            'false_color=polar2grid.compositors.rgb:FalseColorCompositor',
-        ],
-    }
+    extras_require=extras_require,
+    entry_points=entry_points
 )
 
