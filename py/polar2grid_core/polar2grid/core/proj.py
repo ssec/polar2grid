@@ -18,7 +18,7 @@
 #
 # This file is part of the polar2grid software package. Polar2grid takes
 # satellite observation data, remaps it, and writes it to a file format for
-#     input into another program.
+# input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
 # Written by David Hoese    March 2013
