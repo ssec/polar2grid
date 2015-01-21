@@ -6,8 +6,8 @@ remapping it to uniform grids, and finally writing that gridded data to a new fi
 Polar2Grid is created by scientists and software developers at the Space Science and Engineering Center (SSEC) at
 the University of Wisconsin - Madison. It is distributed as part of the
 `Community Satellite Processing Package (CSPP) <http://cimss.ssec.wisc.edu/cspp/>`_ for
-processing of data received via direct broadcast antennas. Although this is why Polar2Grid was created it can be used
-for most archived (non-DB) data files. See the documentation for specific functionality.
+processing of data received via direct broadcast antennas. Although this is why Polar2Grid was created, it can be used
+on most archived (non-DB) data files. See the documentation for specific functionality.
 
 `Documentation <http://www.ssec.wisc.edu/software/polar2grid/>`_
 
@@ -30,13 +30,11 @@ for various processing algorithms.
 To make it easier to create our CSPP distribution (aka the software bundle) and for any pure python users we provide
 the source for some of these executables in the root of the repository.
 
- - py: Contains all of the python code. Due to the modularity of Polar2Grid there are multiple python packages to allow
-        users to only install portions of Polar2Grid.
- - swbundle: Helper scripts and other files provided in the Polar2Grid Software Bundle released by the CSPP team.
- - modis_crefl: Copy of the MODIS Corrected Reflectance software (CREFL) that includes updates for building with Makefile
- - viirs_crefl: Copy of the VIIRS Corrected Reflectance software (CREFL) that includes updates for building with Makefile
- - ms2gt: Custom version of the `ms2gt <http://nsidc.org/data/modis/ms2gt/>`_ software package with bug fixes and
-        optimizations. This is not used as of P2Gv2.0 and will be removed in future revisions.
+- py: Contains all of the python code. Due to the modularity of Polar2Grid there are multiple python packages to allow users to only install portions of Polar2Grid.
+- swbundle: Helper scripts and other files provided in the Polar2Grid Software Bundle released by the CSPP team.
+- modis_crefl: Copy of the MODIS Corrected Reflectance software (CREFL) that includes updates for building with Makefile
+- viirs_crefl: Copy of the VIIRS Corrected Reflectance software (CREFL) that includes updates for building with Makefile
+- ms2gt: Custom version of the `ms2gt <http://nsidc.org/data/modis/ms2gt/>`_ software package with bug fixes and optimizations. This is not used as of P2Gv2.0 and will be removed in future revisions.
 
 Branching Model
 ---------------
