@@ -29,7 +29,7 @@
 # david.hoese@ssec.wisc.edu
 """Script for installing this polar2grid.drrtv package.
 
-See http://packages.python.org/distribute/ for use details.
+See http://www.ssec.wisc.edu/software/polar2grid/ for details.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -42,25 +42,46 @@ See http://packages.python.org/distribute/ for use details.
 __docformat__ = "restructuredtext en"
 from setuptools import setup, find_packages
 
-classifiers = ""
-version = '0.2'
+
+def readme():
+    with open("README.rst", "r") as f:
+        return f.read()
+
+
+version = '2.0.0'
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 2",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 2 :: Only",  # Working on it, I swear
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: POSIX :: Linux",  # Not sure if it works on Windows, since we don't normally support it, needs testing
+    "Operating System :: MacOS :: MacOS X",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: GIS",
+    ]
 
 setup(
     name='polar2grid.drrtv',
     version=version,
-    description="Library and scripts to aggregate Dual Regression Retrieval data and get associated metadata",
-    classifiers=filter(None, classifiers.split("\n")),
-    keywords='',
     author='Ray Garcia, SSEC',
     author_email='rayg@ssec.wisc.edu',
+    description="Library and scripts to aggregate Dual Regression Retrieval data and get associated metadata",
+    long_description=readme(),
+    classifiers=classifiers,
+    keywords='',
     license='GPLv3',
     url='http://www.ssec.wisc.edu/software/polar2grid/',
+    download_url="http://larch.ssec.wisc.edu/simple/polar2grid",
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     namespace_packages=["polar2grid"],
     include_package_data=True,
     zip_safe=True,
     install_requires=['numpy', 'h5py', 'polar2grid.core'],
-    dependency_links=['http://larch.ssec.wisc.edu/cgi-bin/repos.cgi'],
     entry_points={
         'console_scripts': [],
         'polar2grid.frontend_class': ['drrtv=polar2grid.drrtv:Frontend'],

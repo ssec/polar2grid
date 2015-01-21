@@ -75,6 +75,7 @@ if not os.getenv("USE_CYTHON", False) or cythonize is None:
 
 version = '2.0.0'
 
+
 def readme():
     with open("README.rst", "r") as f:
         return f.read()
@@ -139,7 +140,7 @@ setup(
     author='David Hoese, SSEC',
     author_email='david.hoese@ssec.wisc.edu',
     license='GPLv3',
-    description="Library and scripts to remap imager data to a grid",
+    description="Library and scripts to remap satellite data to a grid",
     long_description=readme(),
     classifiers=classifiers,
     keywords='',

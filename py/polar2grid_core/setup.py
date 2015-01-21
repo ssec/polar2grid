@@ -31,9 +31,22 @@
 
 See http://packages.python.org/distribute/ for use details.
 
+:author:       David Hoese (davidh)
+:contact:      david.hoese@ssec.wisc.edu
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2015 University of Wisconsin SSEC. All rights reserved.
+:date:         Jan 2015
+:license:      GNU GPLv3
+
 """
 __docformat__ = "restructuredtext en"
 from setuptools import setup, find_packages
+
+
+def readme():
+    with open("README.rst", "r") as f:
+        return f.read()
+
 
 version = '2.0.0'
 classifiers = [
@@ -51,11 +64,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Atmospheric Science",
     "Topic :: Scientific/Engineering :: GIS",
     ]
-
-
-def readme():
-    with open("README.rst", "r") as f:
-        return f.read()
 
 extras_require = {
     "remap": ["pyproj"],
