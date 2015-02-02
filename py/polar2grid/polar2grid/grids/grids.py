@@ -349,7 +349,7 @@ class Cartographer(roles.CartographerRole):
                   internal to the `Cartographer`.
 
         """
-        from polar2grid.core.meta import GridDefinition
+        from polar2grid.core.containers import GridDefinition
         grid_info = self.get_grid_info(grid_name)
         return GridDefinition(
             grid_name=grid_name,

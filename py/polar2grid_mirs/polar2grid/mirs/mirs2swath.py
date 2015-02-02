@@ -49,7 +49,7 @@ from netCDF4 import Dataset
 
 from polar2grid.core import roles
 from polar2grid.core.fbf import FileAppender
-from polar2grid.core import meta
+from polar2grid.core import containers
 
 LOG = logging.getLogger(__name__)
 
@@ -477,7 +477,7 @@ class Frontend(roles.FrontendRole):
                 raise RuntimeError("Longitude and latitude products do not have equal attributes: %s" % (k,))
 
         swath_name = lon_product["product_name"] + "_" + lat_product["product_name"]
-        swath_definition = meta.SwathDefinition(
+        swath_definition = containers.SwathDefinition(
             swath_name=swath_name, longitude=lon_product["swath_data"], latitude=lat_product["swath_data"],
             data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
             swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["rows_per_scan"],
@@ -515,7 +515,7 @@ class Frontend(roles.FrontendRole):
             LOG.debug("Extraction exception: ", exc_info=True)
             raise
 
-        one_swath = meta.SwathProduct(
+        one_swath = containers.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
             satellite=file_reader.satellite, instrument=file_reader.instrument,
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
@@ -545,7 +545,7 @@ class Frontend(roles.FrontendRole):
 
         LOG.debug("Extracting data to create the following products:\n\t%s", "\n\t".join(products))
 
-        scene = meta.SwathScene()
+        scene = containers.SwathScene()
 
         # Figure out any dependencies
         raw_products = []

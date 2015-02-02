@@ -45,7 +45,7 @@ __docformat__ = "restructuredtext en"
 from . import guidebook
 # FIXME: Actually use the Geo Readers
 from .io import VIIRSSDRMultiReader, HDF5Reader
-from polar2grid.core import meta, histogram, roles
+from polar2grid.core import containers, histogram, roles
 from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
 from .prescale import adaptive_dnb_scale, dnb_scale
 import numpy
@@ -338,7 +338,7 @@ class Frontend(roles.FrontendRole):
                 raise RuntimeError("Longitude and latitude products do not have equal attributes: %s" % (k,))
 
         swath_name = GEO_PAIRS[product_def.geo_pair_name].name
-        swath_definition = meta.SwathDefinition(
+        swath_definition = containers.SwathDefinition(
             swath_name=swath_name, longitude=lon_product["swath_data"], latitude=lat_product["swath_data"],
             data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
             swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["rows_per_scan"],
@@ -388,7 +388,7 @@ class Frontend(roles.FrontendRole):
             LOG.debug("Extraction exception: ", exc_info=True)
             raise
 
-        one_swath = meta.SwathProduct(
+        one_swath = containers.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
             satellite=file_reader.satellite, instrument=file_reader.instrument,
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
@@ -406,7 +406,7 @@ class Frontend(roles.FrontendRole):
         filepaths = sorted(set([filepath for swath in dep_objects for filepath in swath["source_filenames"]]))
 
         s = dep_objects[0]
-        one_swath = meta.SwathProduct(
+        one_swath = containers.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
             satellite=s["satellite"], instrument=s["instrument"],
             begin_time=s["begin_time"], end_time=s["end_time"],
@@ -451,7 +451,7 @@ class Frontend(roles.FrontendRole):
                 raise ValueError("Product (secondary or extra processing) required, but not sure how to make it: '%s'" % (p,))
 
         # final scene object we'll be providing to the caller
-        scene = meta.SwathScene()
+        scene = containers.SwathScene()
         # Dictionary of all products created so far (local variable so we don't hold on to any product objects)
         products_created = {}
         swath_definitions = {}

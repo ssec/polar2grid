@@ -21,6 +21,8 @@ Roadmap to Version 2.1
   * Frontend's could choose logical default (VIIRS should probably write to disk, DR-RTV should stay in memory)
   * Glue script can use memory analysis to come up with default but can be forced by command line argument
 
+* Python 3 Compatibility
+
 Version 2.0 (Coming Soon)
 -------------------------
 

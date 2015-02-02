@@ -45,7 +45,7 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
-from polar2grid.core.meta import BaseP2GObject, BaseProduct, BaseScene
+from polar2grid.core.containers import BaseP2GObject, BaseProduct, BaseScene
 
 DEFAULT_FILL_VALUE   = numpy.nan
 DEFAULT_DPI          = 150

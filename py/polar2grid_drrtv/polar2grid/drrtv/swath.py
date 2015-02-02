@@ -92,7 +92,7 @@ from scipy import interpolate
 
 from polar2grid.core.roles import FrontendRole
 from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
-from polar2grid.core import meta
+from polar2grid.core import containers
 
 LOG = logging.getLogger(__name__)
 
@@ -445,7 +445,7 @@ class Frontend(FrontendRole):
             LOG.debug("Extraction exception: ", exc_info=True)
             raise
 
-        one_swath = meta.SwathProduct(
+        one_swath = containers.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
             satellite=self.satellite, instrument=self.instrument,
             begin_time=self.begin_time, end_time=self.end_time,
@@ -468,7 +468,7 @@ class Frontend(FrontendRole):
                 raise RuntimeError("Longitude and latitude products do not have equal attributes: %s" % (k,))
 
         swath_name = GEO_PAIRS[product_def.geo_pair_name].name
-        swath_definition = meta.SwathDefinition(
+        swath_definition = containers.SwathDefinition(
             swath_name=swath_name, longitude=lon_product["swath_data"], latitude=lat_product["swath_data"],
             data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
             swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["rows_per_scan"],
@@ -503,7 +503,7 @@ class Frontend(FrontendRole):
         raw_products_needed = products_needed
 
         # final scene object we'll be providing to the caller
-        scene = meta.SwathScene()
+        scene = containers.SwathScene()
         # Dictionary of all products created so far (local variable so we don't hold on to any product objects)
         products_created = {}
 

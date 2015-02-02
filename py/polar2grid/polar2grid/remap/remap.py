@@ -39,7 +39,7 @@
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.meta import GriddedProduct, GriddedScene, SwathScene
+from polar2grid.core.containers import GriddedProduct, GriddedScene, SwathScene
 from polar2grid.remap import ll2cr as ll2cr  # gridinator
 from polar2grid.remap import fornav
 from polar2grid.grids.grids import Cartographer
@@ -439,7 +439,7 @@ def add_remap_argument_groups(parser):
 
 def main():
     from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
-    from polar2grid.core.meta import SwathScene
+    from polar2grid.core.containers import SwathScene
     parser = create_basic_parser(description="Remap a SwathScene to the provided grids")
     subgroup_titles = add_remap_argument_groups(parser)
     parser.add_argument("--scene", required=True,

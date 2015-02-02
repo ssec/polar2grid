@@ -162,7 +162,7 @@ def get_compositor_class(compositors, name):
 
 def main(argv=sys.argv):
     from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler
-    from polar2grid.core.meta import GriddedScene
+    from polar2grid.core.containers import GriddedScene
     parser = create_basic_parser(description="Extract swath data, remap it, and write it to a new file format")
     parser.add_argument("--compositor-configs", nargs="*", default=None,
                         help="Specify alternative configuration file(s) for compositors")

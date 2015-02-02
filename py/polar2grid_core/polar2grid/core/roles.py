@@ -781,7 +781,7 @@ class CompositorRole(object):
         self.exit_on_error = exit_on_error
 
     def _create_gridded_product(self, product_name, grid_data, base_product=None, **kwargs):
-        from polar2grid.core.meta import GriddedProduct
+        from polar2grid.core.containers import GriddedProduct
         if base_product is None:
             base_product = kwargs
         else:
