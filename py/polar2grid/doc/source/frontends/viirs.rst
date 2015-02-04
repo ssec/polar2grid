@@ -72,3 +72,8 @@ Local Histogram Equalization (Adaptive)
 
 TODO
 
+.. argparse::
+    :module: polar2grid.viirs.swath
+    :func: add_frontend_argument_groups
+    :prog: polar2grid.viirs
+    :passparser:

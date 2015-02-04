@@ -398,6 +398,7 @@ class Rescaler(roles.INIConfigReader):
 
         :param data_type: Desired data type of the output data
         :param inc_by_one: After rescaling should 1 be added to all data values to leave the minumum value as the fill
+
         FUTURE: dec_by_one (mutually exclusive to inc_by_one)
 
         """

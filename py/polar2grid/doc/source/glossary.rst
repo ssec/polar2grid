@@ -4,74 +4,56 @@ Glossary
 .. glossary::
     :sorted:
 
-    bundle script
-    bundle scripts
-        A bash script provided with the polar2grid software bundle that
-        sets up the environment to use the software bundle. This eases
-        the use and installation process when using the software bundle.
-
-    the chain
-        The common set of library calls making up glue scripts. These include
-        frontend, remapping, and backend functions. See
-        :doc:`chain` for more detailed information.
-
     data kind
     data kinds
         Descriptive term for what the data measures. Common data kinds are
-        brightness temperature, reflectance, or radiance. Polar2grid uses
-        constant values for data kinds and any command line flags that accept
-        a data kind should expect the value of the constant. See the
-        :ref:`constants <constants_data_kinds>`
-        module for their current values. Data kinds are different from
-        :term:`data types`. Data kind constants are prefixed
-        with ``DKIND_``.
-
-    data set
-    data sets
-        Generic term for a set of data files for a specific product,
-        :term:`data kind`, band, or :term:`navigation set`.
+        brightness temperature, reflectance, or radiance. Data kinds are
+        created and set by the frontend. While most frontends have the
+        same descriptive term for a product, it is not required and in some
+        cases may not be desired. Note that Data kinds are different from
+        :term:`data types`.
 
     data type
     data types
         Size or format of the binary representation of the data. For example
-        an 8-bit unsigned integer versus a 32-bit float. Polar2grid uses
-        constant values for data types and any command line flags that accept
-        a data type should expect the value of the constant. See the
-        :ref:`constants <constants_data_types>`
-        module for their current values. Data types are different from
-        :term:`data kinds`. Data type constants are prefixed
-        with ``DTYPE_``.
+        an 8-bit unsigned integer versus a 32-bit floating point number.
+        Data types are different from :term:`data kinds`. Data types consist
+        of two parts: the format of the data and the number of bytes used.
+        The current set of available data types can be found in the
+        :py:mod:`polar2grid.core.dtype` module.
+
 
     glue script
     glue scripts
         The script connecting every component together.  A glue script connects
-        the frontend, grid determiner, remapper, and backend.  There is one
-        glue script per task, so one for every frontend to backend connection.
-
-    grid job
-    grid jobs
-        A collection of information mapping a grid and the bands that should
-        be mapped to that grid. Usually created by a grid determination
-        component and then passed to remapping for processing.
+        a frontend, the remapper, compositors, and a backend. There is only one
+        actual glue script in the python source code, but it has access to all
+        the possible components that can be used. In the CSPP tarball, the
+        individual glue bash scripts (ex. viirs2gtiff.sh) are just simple wrappers
+        around the python call `python -m polar2grid.glue <frontend> <backend> -vv ...`,
+        except for in rare cases where specific defaults are needed.
 
     grid determination
         Process of determining what grids intersect the data being processed.
-        This is normally done by describing the data area and grids as
-        polygons and computing the area of the intersection of the two.
+        This is done as part of remapping when gridding the data. If no data
+        points are found within the grid area then the data is considered to
+        not fall in the grid and remapping will not continue.
 
-    job
-        Loosely used term to mean an incremental step in polar2grid processing.
+    raw product
+    raw products
+        Product created by a frontend requiring little more than reading the data from
+        a data file. It is common for raw products to require scaling from the raw
+        data stored in the file using a scaling factor and offset. There are also a few
+        cases where raw products require additional masking (ex. cloud clearing) that
+        requires another product. In this way, raw products are sometimes treated as
+        :term:`secondary products`. To allow for more flexibility when raw products
+        require extra processing, frontends should consider having access to the
+        original raw product and a secondary product created from that original product,
+        rather than one single product. Obviously this depends on the usefulness of
+        the original product to potential uses.
 
-    pseudoband
-    pseudobands
-        Band created by processing 'raw' data from satellite files that is not
-        directly available from the 'raw' data and must be calculated. See :ref:`chain_pseudoband` for a detailed explanation.
-
-    prescaling
-        The scaling of data done in a frontend before it provides it to any
-        other polar2grid components. See :ref:`chain_prescaling` for a detailed explanation.
-
-    navigation set
-    nav set
-        A set of data files or jobs that share the same navigation data.
-
+    secondary product
+    secondary products
+        Producted created by a frontend requiring one or more other products and some
+        extra processing. Secondary products may require :term:`raw products` or other
+        secondary products.

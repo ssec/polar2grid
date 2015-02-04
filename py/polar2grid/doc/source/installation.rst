@@ -1,89 +1,82 @@
 Installation
 ============
 
-The polar2grid python package can be installed in 2 types of environments,
-as an individually installed python package or as part of the polar2grid
-software bundle.  The software bundle is the preferred, recommended,
-and intended method of installing the polar2grid software for
-non-developmental use.
+Polar2Grid is released as python packages and as an all-in-one tarball for
+enterprise linux systems. The tarball, or software bundle, provided by the CSPP team
+includes a python runtime and all of the necessary third-party software
+to run the features provided by Polar2Grid. This is the most convenient way
+to run Polar2Grid for people not familiar with python packaging or python software development.
 
-Polar2grid provides unit tests for most of its components including sample
-datasets that can be run and verified against expected output. For more
-information on unit tests, verifying your installation, and running the
-tests see the :doc:`tests/index` page.
+The other instructions below should be used by others who want more control over their
+environment, want to modify polar2grid source code, or want to run Polar2Grid on a platform
+not supported by the CSPP tarball. The instructions below assume some basic
+knowledge about python and python packaging.
 
-Software Bundle Install
------------------------
+Each installation method provides the same set of features except for
+the CSPP tarball. The tarball comes with bash scripts for conveniently
+calling the python command line tools or utilities provided by third-party
+vendors. The main difference is that calling `viirs2gtiff.sh ...` from the
+tarball installation is normally called as `python -m polar2grid.glue viirs gtiff ...`
+in a normal python installation.
 
-The polar2grid software bundle is a pre-compiled set of software required
-to run the polar2grid scripts.  It includes a minimal python 2.7 install,
-with the various packages required by the polar2grid python package. It is
-self-contained except for minimal system dependencies (system libraries that
-come with most Linux operating systems). Besides the python
-packages used with polar2grid and the libraries those depend on, the software
-bundle provides statically compiled ms2gt utilities. The ms2gt utilities will
-operate on a wider range of systems because they are statically compiled.
-The software bundle is only
-supported on x86_64 RHEL systems, but may work on other Linux systems as well.
+Polar2Grid is used and tested on Linux and Mac systems. It may work on Windows systems,
+but is not actively tested at this time. Polar2Grid is only Python 2 compatible, but
+Python 3 compatibility is planned for a future release.
 
-Once the software bundle tarball is on the destination system it can be
-installed first by untarring it::
+CSPP Software Bundle
+--------------------
+
+The CSPP team provides a tarball with a python runtime and
+all third-party software required to run Polar2Grid. The tarball
+can be found on the
+`CSPP team's website <http://cimss.ssec.wisc.edu/cspp/>`_.
+
+The software bundle is only supported on x86_64 RHEL systems, but may work on other Linux
+systems as well. Once the software bundle tarball is on the destination system it can be
+installed by simply untarring it::
 
     tar -xzf polar2grid_softwarebundle.tar.gz
 
-Next, add this line to your ``.bash_profile``::
+This will create a Polar2Grid software bundle directory. To simplify scripts included in
+the bundle the following line should be added to your ``.bash_profile``::
 
     export POLAR2GRID_HOME=/path/to/softwarebundle
 
-Without any other work, polar2grid :term:`bundle scripts` (as opposed to the
-python package scripts) must be used to run any processing of
-satellite data to gridded data format. These :term:`bundle scripts` setup the
-rest of the environment and provide command line defaults.
+The scripts that come with the Polar2Grid software bundle load all other environment
+information when they are run.
 
-See :doc:`Glue Scripts <glue_scripts/index>` for more information on running polar2grid.
-The glue script documentation assumes the above for command line examples, but
-to reduce typing the following can also be added to your ``.bash_profile``::
+See :ref:`Getting Started <getting_started_bundle>` for more information on running polar2grid.
+To simplify calling scripts even more, the following line can be added below the
+``export POLAR2GRID_HOME`` line in your ``.bash_profile``::
 
     export PATH=$POLAR2GRID_HOME/bin:$PATH
 
-which allows you to remove the ``$POLAR2GRID_HOME/bin/`` portion of the
+Including this line allows you to remove the ``$POLAR2GRID_HOME/bin/`` portion of the
 command line examples.
-
-See the :doc:`Developer's Guide <dev_guide/index>` for python package installing or
-other options for running polar2grid scripts.
-
-Software Bundle Uninstall/Upgrade
----------------------------------
-
-To uninstall the polar2grid software bundle, simply remove the software
-bundle directory that was originally created::
-
-    rm -r /path/to/softwarebundle
-
-If you are permanently removing polar2grid you should also remove the
-``POLAR2GRID_HOME`` line from your ``.bash_profile`` file.
-
-If you are updating polar2grid first uninstall polar2grid by removing the
-directory as above, then follow the installation instructions making sure
-to update the ``POLAR2GRID_HOME`` line in your ``.bash_profile`` to point to
-the new software bundle directory.
 
 Python Package Install
 ----------------------
 
-If you would like more control over your python/polar2grid environment
-you can install the polar2grid python package like any basic python egg:
+Polar2Grid can be installed to an existing python environment by
+running the following commands::
 
-    ``easy_install -f http://larch.ssec.wisc.edu/cgi-bin/repos.cgi polar2grid``
+    pip install -i http://larch.ssec.wisc.edu/simple/ polar2grid[all]
 
-Installing polar2grid in this way does require, however, that the ms2gt
-utilities ``ll2cr`` and ``fornav`` must be in your ``$PATH`` environment
-variable. The newest version of ms2gt used by polar2grid is available
-`here <http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/>`_. Once
-untarred (``tar -xzf <tar.gz file>``), the binaries are located in the
-``bin`` directory.
-The polar2grid python package also has python package dependencies, but those
-will be installed automatically.
+This will install the main set of Polar2Grid features and their dependencies.
+However, due to the modular design of Polar2Grid some frontends, backends, or
+other features may need to be installed separately. Some packages have their
+own set of dependencies or special installation instructions, see the
+associated page for more information. By substituting the
+following package names for `polar2grid[all]` in the above command you can
+install the associated component:
+
+ - :doc:`polar2grid.acspo <frontends/acspo>`
+ - :doc:`polar2grid.crefl <frontends/crefl>`
+ - :doc:`polar2grid.drrtv <frontends/drrtv>`
+ - :doc:`polar2grid.mirs <frontends/mirs>`
+ - :doc:`polar2grid.modis <frontends/modis>`
+ - :doc:`polar2grid.viirs <frontends/viirs>`
+
 
 Installing from Source
 ----------------------
@@ -95,12 +88,4 @@ code is the same method used by developers of polar2grid and as such the
 instructions mention contributing to the project, but this is entirely
 optional.
 
-This method is the only way to run polar2grid on non-Linux systems since the
-software bundle is only available for Linux. This means that there will be
-no wrapper shell scripts (`viirs2gtiff.sh`), but that python modules must
-be called directly,
-ex. :doc:`python -m polar2grid.viirs2gtiff <glue_scripts/index>`.
-This also means that dependencies will have to be installed by the user since
-ShellB3 is Linux only.
-
-Instruction can be found here: :doc:`dev_guide/dev_env`
+Instructions can be found here: :doc:`dev_guide/dev_env`

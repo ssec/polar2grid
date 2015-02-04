@@ -1,6 +1,10 @@
 Development Environment
 =======================
 
+..
+
+    TODO: Add mention of non-Linux installations for installing third-party dependencies.
+
 Before adding components to polar2grid you will need to set up a polar2grid
 development environment.  This will make it easier to get the newest updates
 from other developers and vice versa. Creating a development environment does
