@@ -20,7 +20,9 @@ Contributing
 
 Feel free to submit issues and pull requests on Github or contact us (see above) about more involved feature requests.
 We do ask that before you add features yourself or fix complex issues that you contact us in some way. Polar2Grid is
-in active development and features and fixes are added all the time.
+in active development and features and fixes are added all the time. Developers should see the
+`Developer's Guide <http://www.ssec.wisc.edu/software/polar2grid/dev_guide/>`_ for more information on the internals
+of Polar2Grid.
 
 Directories
 -----------

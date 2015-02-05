@@ -39,9 +39,26 @@ Glossary
         points are found within the grid area then the data is considered to
         not fall in the grid and remapping will not continue.
 
+    product
+    products
+        A swath of instrument data. When from a Polar2Grid Frontend a product is considered
+        a :term:`swath product`. After a swath product has been remapped it is considered
+        a :term:`gridded product`.
+
+    swath product
+    swath products
+        :term:`Products <products>` representing the direct observations of a satellite
+        instrument. Swath products are not guaranteed to be uniformly spaced and are usually
+        not.
+
+    gridded product
+    gridded products
+        :term:`Products <products>` that have been mapped to a uniform grid. These are usually
+        created from :term:`swath products` by remapping.
+
     raw product
     raw products
-        Product created by a frontend requiring little more than reading the data from
+        :term:`Swath product <swath product>` created by a frontend requiring little more than reading the data from
         a data file. It is common for raw products to require scaling from the raw
         data stored in the file using a scaling factor and offset. There are also a few
         cases where raw products require additional masking (ex. cloud clearing) that
@@ -54,6 +71,6 @@ Glossary
 
     secondary product
     secondary products
-        Producted created by a frontend requiring one or more other products and some
+        :term:Swath product <swath product>` created by a frontend requiring one or more other products and some
         extra processing. Secondary products may require :term:`raw products` or other
         secondary products.

@@ -6,11 +6,11 @@ Polar2Grid
 
 Polar2Grid is a set of tools for extracting swath data from earth-observing satellite instruments,
 remapping it to uniform grids, and writing that gridded data to a new file format.
-Polar2Grid was created by scientists and software developers at the Space Science and Engineering Center (SSEC) at
-the University of Wisconsin - Madison. It is distributed as part of the
-`Community Satellite Processing Package (CSPP) <http://cimss.ssec.wisc.edu/cspp/>`_ for
-processing of data received via direct broadcast (DB) antennas. Although Polar2Grid was created for DB, it can be used
-on most archived (non-DB) data files.
+Polar2Grid was created by scientists and software developers at the
+`SSEC <http://www.ssec.wisc.edu>`_. It is distributed as part of the
+`CSPP project <http://cimss.ssec.wisc.edu/cspp/>`_ for
+processing of data received via direct broadcast antennas. Although Polar2Grid was created to serve the direct
+broadcast community, it can be used on most archived data files.
 
 The features provided by Polar2Grid are accessible via bash scripts, command line tools, and a set of python packages.
 These methods give scientists and programmers options for using Polar2Grid in a way most comfortable to them.
@@ -46,30 +46,25 @@ Contents
     rescaling
     utilscripts
     NEWS
-    glossary
-
-Grids
------
-
-.. toctree::
-    :maxdepth: 3
-
     grids
+    glossary
 
 Developer's Guide
 -----------------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :numbered:
 
     Introduction <dev_guide/index>
     dev_guide/dev_env
+    dev_guide/containers
     dev_guide/glue_scripts
     dev_guide/frontends
     dev_guide/grids
     dev_guide/remapping
     dev_guide/backends
+    dev_guide/compositors
     dev_guide/rescaling
     dev_guide/swbundle
 
@@ -77,7 +72,7 @@ API
 ---
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 1
    
     api/polar2grid
     api/polar2grid.viirs

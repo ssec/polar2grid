@@ -22,6 +22,8 @@ be added to your ``.bash_profile`` to simplify calling Polar2Grid scripts.
 This line allows you to remove the ``$POLAR2GRID_HOME/bin/`` portion of the
 commands mentioned elsewhere in the documentation.
 
+::
+
     export PATH=$POLAR2GRID_HOME/bin:$PATH
 
 The majority of the scripts in the software bundle are wrappers around python command line tools.

@@ -38,7 +38,7 @@ ALL_PKG_DIRS   = polar2grid_core polar2grid_viirs polar2grid_modis polar2grid_cr
 ALL_PKG_INSTALL  = $(ALL_PKG_DIRS:=_install)
 ALL_PKG_SDIST  = $(ALL_PKG_DIRS:=_sdist)
 ALL_PKG_DEV    = $(ALL_PKG_DIRS:=_dev)
-DOC_DIR        = /var/apache/www/htdocs/software/polar2grid
+DOC_DIR        ?= /var/apache/www/htdocs/software/polar2grid
 
 EGG_REPOS_MACHINE = birch
 EGG_REPOS_DIR = /var/apache/larch/htdocs/eggs/repos/polar2grid/

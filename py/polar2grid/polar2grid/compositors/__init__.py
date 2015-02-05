@@ -160,7 +160,7 @@ def get_compositor_class(compositors, name):
     return pkg_resources.load_entry_point(compositors[name], P2G_COMP_CLS_EP, name)
 
 
-def main(argv=sys.argv):
+def main(argv=sys.argv[1:]):
     from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler
     from polar2grid.core.containers import GriddedScene
     parser = create_basic_parser(description="Extract swath data, remap it, and write it to a new file format")

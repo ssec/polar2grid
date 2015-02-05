@@ -37,5 +37,5 @@ fi
 source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
 # Call the script
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.proj "$@"
+$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.core.proj "$@"
 

@@ -1,25 +1,23 @@
 Frontends
 =========
 
-Frontends are the input readers of polar2grid. Their main responsibility is
-to convert input satellite imager data into binary files. By using frontends,
+Frontends are the input readers of Polar2Grid. Their main responsibility is
+to extract input satellite imager data and the associated metadata. By using frontends,
 polar2grid can easily read data from multiple sources regardless of format.
-Besides converting the imager data, frontends may also create additional
-bands that weren't provided in the incoming formats, called
-:term:`pseudobands`. Psuedoband creation is only meant to be used if it
-requires simple and quick calculations to create. More complex calculations
-should be done in a separate piece of software and provided to polar2grid
-through another frontend. Frontends may also scale data before providing it to
-other polar2grid components, this is known as :term:`prescaling`. See the
-documentation for specific frontends for examples of pseudobands and
-prescaling.
+The data that frontends distribute to other Polar2Grid components are called
+:term:`swath products`. Sometimes frontends perform additional calculations or
+filtering on :term:`raw products` to create complex products called
+:term:`secondary products`.
 
 Below is a list of currently available frontends for polar2grid.
 
 .. toctree::
     :maxdepth: 1
 
-    viirs
-    modis
+    acspo
     crefl
+    drrtv
+    mirs
+    modis
+    viirs
 

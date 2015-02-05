@@ -48,11 +48,13 @@ Code repository: https://github.com/davidh-ssec/polar2grid
 **Developer's Guide Components:**
 
  - :doc:`dev_env`
+ - :doc:`containers`
  - :doc:`glue_scripts`
  - :doc:`frontends`
  - :doc:`grids`
  - :doc:`remapping`
  - :doc:`backends`
+ - :doc:`compositors`
  - :doc:`rescaling`
  - :doc:`swbundle`
 
