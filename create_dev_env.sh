@@ -152,7 +152,7 @@ INSTALL_DIR="$DEV_DIR/python" make all_dev || oops "Couldn't install python pack
 
 # Checking that python packages were installed
 echo "Running simple import test to make sure packages can be imported"
-python -c "from polar2grid import viirs2awips" || oops "Couldn't import python package"
+python -c "from polar2grid import glue" || oops "Couldn't import python package"
 echo "Simple import test passed"
 
 # Compile VIIRS CREFL code
