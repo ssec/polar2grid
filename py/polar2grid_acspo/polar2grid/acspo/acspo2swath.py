@@ -386,6 +386,8 @@ class Frontend(roles.FrontendRole):
         for file_type, file_reader in self.file_readers.items():
             if not len(file_reader):
                 del self.file_readers[file_type]
+            else:
+                self.file_readers[file_type].finalize_files()
 
         if not self.file_readers:
             LOG.error("No useable files loaded")

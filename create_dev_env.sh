@@ -9,6 +9,7 @@ SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3-Linux-x86_64-201402
 BASE_REPOS_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PY_DIR="$BASE_REPOS_DIR"/py
 VCREFL_DIR="$BASE_REPOS_DIR"/viirs_crefl
+MCREFL_DIR="$BASE_REPOS_DIR"/modis_crefl
 MS2GT_DIR="$BASE_REPOS_DIR"/ms2gt/src/fornav
 DEBUG=true
 
@@ -183,7 +184,7 @@ fi
 
 if ${BUILD_MODIS_CREFL}; then
     echo "Building MODIS CREFL"
-    cd "$VCREFL_DIR"
+    cd "$MCREFL_DIR"
 
     if [ -z "$LDFLAGS" ] && ${USE_SHELLB3}; then
         echo "Will use libaries from ShellB3 for linking MODIS CREFL"

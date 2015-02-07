@@ -66,8 +66,7 @@ install: tbase.hdf crefl run_modis_crefl.sh
 	mkdir -p $(PREFIX)/bin; \
 	cp $^ $(PREFIX)/bin; \
 	chmod u+x $(PREFIX)/bin/crefl; \
-	chmod u+x $(PREFIX)/bin/h5SDS_transfer_rename; \
-	chmod u+x $(PREFIX)/bin/run_viirs_crefl.sh
+	chmod u+x $(PREFIX)/bin/run_modis_crefl.sh
 
 prebuilt_crefl:
 	wget http://www.ssec.wisc.edu/~davidh/polar2grid/modis_crefl/crefl
