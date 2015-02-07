@@ -70,8 +70,10 @@ def calculate_group_size(swath_cols, swath_rows, grid_cols, grid_rows, default_g
     Default items in a group is 5.
     """
     free_memory_bytes = get_free_memory()
-    if free_memory_bytes is None or DEFAULT_GROUP_SIZE is not None:
-        return int(default_group_size) or 4
+    if free_memory_bytes is None:
+        if default_group_size is None:
+            return 4
+        return int(default_group_size)
 
     # Assumes input and output of 32-bit float type
     item_size = 4
