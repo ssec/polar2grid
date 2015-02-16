@@ -356,7 +356,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
         LOG.error("NinJo description must be less than 1000 characters")
         raise ValueError("NinJo description must be less than 1000 characters")
 
-    file_dt = datetime.utc_now()
+    file_dt = datetime.utcnow()
     file_epoch = calendar.timegm(file_dt.timetuple())
     image_epoch = calendar.timegm(image_dt.timetuple())
 
