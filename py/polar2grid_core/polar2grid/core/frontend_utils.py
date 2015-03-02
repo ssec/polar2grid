@@ -564,6 +564,9 @@ class BaseMultiFileReader(object):
         else:
             return individual_items
 
+    def get_swath_data(self, item):
+        return numpy.concatenate([fr.get_swath_data(item) for fr in self.file_readers])
+
     def get_fill_value(self, item):
         return self.file_readers[0].get_fill_value(item)
 

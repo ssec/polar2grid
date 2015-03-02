@@ -233,6 +233,9 @@ class Remapper(object):
                         LOG.warning("Intermediate remapping file already exists, will overwrite: %s", fp)
 
             rows_per_scan = swath_def.get("rows_per_scan", 0) or 2
+            if rows_per_scan < 2:
+                LOG.warning("Data has less than 2 rows per scan, this is not optimal for the EWA resampling algorithm. 2 rows per scan will be used instead")
+                rows_per_scan = 2
             edge_res = swath_def.get("limb_resolution", None)
             fornav_D = kwargs.get("fornav_D", None)
             if fornav_D is None:
@@ -242,6 +245,8 @@ class Remapper(object):
                     else:
                         fornav_D = (edge_res / 2) / grid_def["cell_width"]
                     LOG.debug("Fornav 'D' option dynamically set to %f", fornav_D)
+                else:
+                    fornav_D = 10.0
 
             try:
                 # fornav.ms2gt_fornav(
@@ -288,6 +293,7 @@ class Remapper(object):
             except StandardError:
                 LOG.debug("Remapping exception: ", exc_info=True)
                 LOG.error("Remapping error")
+                self._safe_remove(*fornav_filepaths)
                 if self.exit_on_error:
                     self._clear_ll2cr_cache()
                     raise
