@@ -16,7 +16,7 @@ can be found on the `documentation site <http://www.ssec.wisc.edu/software/polar
 
 Source code can be found on GitHub: https://github.com/davidh-ssec/polar2grid
 
-Polar2Grid ACSPO Package
+Polar2Grid AVHRR Package
 ------------------------
 
 The `polar2grid.avhrr` package contains objects and tools for extracting swath data from files for the
