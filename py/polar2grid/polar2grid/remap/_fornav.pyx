@@ -192,6 +192,8 @@ def fornav_wrapper(numpy.ndarray[cr_dtype, ndim=2, mode='c'] cols_array,
         raise ValueError("Must have same number of inputs and outputs")
     if num_items <= 0:
         raise ValueError("No input arrays given")
+    if rows_per_scan < 2 or swath_rows % rows_per_scan != 0:
+        raise ValueError("EWA requires 2 or more rows_per_scan and must be a factor of the total number of input rows")
 
     cdef numpy.dtype in_type = input_arrays[0].dtype
     cdef numpy.dtype out_type = output_arrays[0].dtype
