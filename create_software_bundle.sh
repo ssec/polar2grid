@@ -77,6 +77,7 @@ cd bin
 # Create ms2gt binaries (use prebuilt milliCentOS5)
 echo "Downloading ms2gt prebuilt binaries and placing them in 'bin'..."
 wget ${MS2GT_DOWNLOAD} || oops "Could now download ms2gt"
+chmod a+x fornav
 
 # Create the VIIRS CREFL utilities
 echo "Getting prebuilt VIIRS CREFL binaries..."
@@ -105,9 +106,6 @@ chmod a+x "$SB_NAME"/bin/run_modis_crefl.sh
 echo "Copying bash scripts to software bundle bin"
 cd "$SB_NAME"
 cp ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/
-echo "Linking to ms2gt binaries..."
-ln -s ../ms2gt/bin/ll2cr bin/ll2cr
-ln -s ../ms2gt/bin/fornav bin/fornav
 
 # Create python packages
 echo "Creating python packages..."

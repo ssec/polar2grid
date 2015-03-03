@@ -41,6 +41,8 @@ if [ -z "$POLAR2GRID_REV" ]; then
     export PATH=$POLAR2GRID_HOME/ShellB3/bin:$PATH
     # Don't let someone else's PYTHONPATH mess us up
     unset PYTHONPATH
+    # Point gdal utilities to the proper data location
+    export GDAL_DATA=$POLAR2GRID_HOME/ShellB3/share/gdal
 
     export POLAR2GRID_REV="$Id$"
 fi
