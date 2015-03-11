@@ -387,14 +387,14 @@ class BaseProduct(BaseP2GObject):
             data = data.reshape((rows, cols))
         return data
 
-    def get_data_array(self, item, rows, cols, dtype):
+    def get_data_array(self, item, rows, cols, dtype, mode="r"):
         """Get FBF item as a numpy array.
 
         File is loaded from disk as a memory mapped file if needed.
         """
         data = self[item]
         if isinstance(data, (str, unicode)):
-            data = self._memmap(data, dtype, rows, cols, "r")
+            data = self._memmap(data, dtype, rows, cols, mode)
 
         return data
 
@@ -501,11 +501,11 @@ class SwathProduct(BaseProduct):
     def shape(self):
         return (self["swath_rows"], self["swath_columns"])
 
-    def get_data_array(self, item="swath_data"):
+    def get_data_array(self, item="swath_data", mode="r"):
         dtype = self["data_type"]
         rows = self["swath_rows"]
         cols = self["swath_columns"]
-        return super(SwathProduct, self).get_data_array(item, rows, cols, dtype)
+        return super(SwathProduct, self).get_data_array(item, rows, cols, dtype, mode=mode)
 
     def get_data_mask(self, item="swath_data"):
         return super(SwathProduct, self).get_data_mask(item, fill_key="fill_value")
@@ -570,7 +570,7 @@ class GriddedProduct(BaseProduct):
             if k in swath_product:
                 self[k] = swath_product[k]
 
-    def get_data_array(self, item="grid_data"):
+    def get_data_array(self, item="grid_data", mode="r"):
         """Get FBF item as a numpy array.
 
         File is loaded from disk as a memory mapped file if needed.
@@ -578,7 +578,7 @@ class GriddedProduct(BaseProduct):
         dtype = self["data_type"]
         rows = self["grid_definition"]["height"]
         cols = self["grid_definition"]["width"]
-        return super(GriddedProduct, self).get_data_array(item, rows, cols, dtype)
+        return super(GriddedProduct, self).get_data_array(item, rows, cols, dtype, mode=mode)
 
     def get_data_mask(self, item="grid_data"):
         return super(GriddedProduct, self).get_data_mask(item, fill_key="fill_value")
