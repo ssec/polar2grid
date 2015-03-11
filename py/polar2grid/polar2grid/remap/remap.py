@@ -207,7 +207,7 @@ class Remapper(object):
 
         for geo_id, product_names in product_groups.items():
             try:
-                LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(product_names))
+                LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(sorted(product_names)))
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
                 if not share_dynamic_grids:
                     cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def.copy())
@@ -220,7 +220,7 @@ class Remapper(object):
                 continue
 
             # Run fornav for all of the products at once
-            LOG.info("Running fornav for the following products:\n\t%s", "\n\t".join(product_names))
+            LOG.info("Running fornav for the following products:\n\t%s", "\n\t".join(sorted(product_names)))
             # XXX: May have to do something smarter if there are float products and integer products together (is_category property on SwathProduct?)
             product_filepaths = list(swath_scene.get_data_filepaths(product_names))
             fornav_filepaths = self._add_prefix("grid_%s_" % (grid_name,), *product_filepaths)
