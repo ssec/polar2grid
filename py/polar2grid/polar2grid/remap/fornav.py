@@ -55,7 +55,8 @@ except ImportError:
     psutil = None
     get_free_memory = lambda: None
 
-DEFAULT_GROUP_SIZE = os.getenv("P2G_EWA_GROUP_SIZE", None)
+DEFAULT_GROUP_SIZE = os.getenv("P2G_EWA_DEF_GROUP_SIZE", None)
+GROUP_SIZE = os.getenv("P2G_EWA_GROUP_SIZE", None)
 
 
 LOG = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ def calculate_group_size(swath_cols, swath_rows, grid_cols, grid_rows, default_g
     free_memory_bytes = get_free_memory()
     if free_memory_bytes is None:
         if default_group_size is None:
-            return 4
+            return None
         return int(default_group_size)
 
     # Assumes input and output of 32-bit float type
@@ -155,14 +156,21 @@ def fornav(cols_array, rows_array, rows_per_scan, input_arrays, input_dtype=None
         output_fill = input_fill
 
     if use_group_size:
-        group_size = calculate_group_size(cols_array.shape[1], cols_array.shape[0], grid_cols, grid_rows)
-    else:
+        if GROUP_SIZE is not None:
+            group_size = GROUP_SIZE
+        else:
+            group_size = None
+            # It seems like this could be a smart way of handling this is we were using multiprocessing, but
+            # a lot of testing is required to verify that assumption. The proper way to handle this or make it faster
+            # in general is to have parrallel operations inside fornav (OpenMP or OpenCL/GPU).
+            # group_size = calculate_group_size(cols_array.shape[1], cols_array.shape[0], grid_cols, grid_rows)
+    if group_size is None:
         group_size = len(input_arrays)
 
     got_points = False
     for in_arrays, out_arrays in group_iter(input_arrays, cols_array.shape[1], cols_array.shape[0], input_dtype,
                                             output_arrays, grid_cols, grid_rows, group_size):
-        LOG.debug("Group size %d: Processing %d input arrays", group_size, len(in_arrays))
+        LOG.debug("Processing %d of %d input arrays", len(in_arrays), len(input_arrays))
         tmp_got_points = _fornav.fornav_wrapper(cols_array, rows_array, in_arrays, out_arrays,
                               input_fill, output_fill, rows_per_scan,
                               weight_count=weight_count, weight_min=weight_min, weight_distance_max=weight_distance_max,
