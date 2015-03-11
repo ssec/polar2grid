@@ -131,6 +131,7 @@ entry_points = {
         'rgb=polar2grid.compositors.rgb:RGBCompositor',
         'true_color=polar2grid.compositors.rgb:TrueColorCompositor',
         'false_color=polar2grid.compositors.rgb:FalseColorCompositor',
+        'crefl_sharpen=polar2grid.compositors.rgb:CreflRGBSharpenCompositor',
         ],
     }
 

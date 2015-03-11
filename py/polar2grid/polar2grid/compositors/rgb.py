@@ -49,6 +49,69 @@ import logging
 LOG = logging.getLogger(__name__)
 
 
+class CreflRGBSharpenCompositor(roles.CompositorRole):
+    """Compositor filter that sharpens all other products based on the ratio of a high resolution product to a low
+    resolution product.
+    """
+
+    def __init__(self, lores_products, hires_products, **kwargs):
+        self.share_mask = kwargs.get("share_mask", True)
+        self.remove_lores = kwargs.get("remove_lores", True)
+        self.lores_products = lores_products if not isinstance(lores_products, (str, unicode)) else lores_products.split(",")
+        self.hires_products = lores_products if not isinstance(hires_products, (str, unicode)) else hires_products.split(",")
+
+    def shared_mask(self, gridded_scene, product_names, axis=0):
+        return numpy.any([gridded_scene[pname].get_data_mask() for pname in product_names], axis=axis)
+
+    def _get_first_available_product(self, gridded_scene, desired_products):
+        LOG.debug("Checking if any of the following are in the scene: %s", desired_products)
+        for pn in desired_products:
+            if pn in gridded_scene:
+                LOG.debug("Found '%s' in the scene", pn)
+                return pn
+
+        return None
+
+    def modify_scene(self, gridded_scene, fill_value=None, **kwargs):
+        lores_product_name = self._get_first_available_product(gridded_scene, self.lores_products)
+        hires_product_name = self._get_first_available_product(gridded_scene, self.hires_products)
+        other_product_names = list(set(gridded_scene.keys()) - {lores_product_name, hires_product_name})
+
+        if fill_value is None:
+            fill_value = gridded_scene[hires_product_name]["fill_value"]
+
+        try:
+            lores_data = gridded_scene[lores_product_name].get_data_array(mode="r+")
+            hires_data = gridded_scene[hires_product_name].get_data_array(mode="r+")
+            ratio = hires_data / lores_data
+
+            if self.share_mask:
+                LOG.debug("Sharing missing value mask between bands and using fill value %r", fill_value)
+                shared_mask = self.shared_mask(gridded_scene, gridded_scene.keys())
+                # mask the hires product then update the product
+                lores_data[shared_mask] = fill_value
+                hires_data[shared_mask] = fill_value
+            else:
+                shared_mask = None
+
+            # For each of the other products mask them accordingly
+            for pname in other_product_names:
+                # opening in this mode will do inplace modifications (flushed on object deletion)
+                other_data = gridded_scene[pname].get_data_array(mode="r+")
+                other_data *= ratio
+                if shared_mask is not None:
+                    other_data[shared_mask] = fill_value
+                gridded_scene[pname]["sharpened"] = True
+
+            if self.remove_lores:
+                del gridded_scene[lores_product_name]
+        except StandardError:
+            LOG.error("Could not sharpen products")
+            raise
+
+        return gridded_scene
+
+
 class RGBCompositor(roles.CompositorRole):
     def __init__(self, **kwargs):
         self.composite_name = kwargs.get("composite_name", "rgb_composite")
