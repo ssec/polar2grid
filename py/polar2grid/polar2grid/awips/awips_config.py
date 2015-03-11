@@ -45,6 +45,7 @@ from polar2grid.core import roles
 import os
 import sys
 import logging
+from ConfigParser import SafeConfigParser, NoSectionError
 
 log = logging.getLogger(__name__)
 
@@ -76,6 +77,39 @@ def _rel_to_abs(filename, default_base_path):
         raise ValueError("File '%s' could not be found" % (filename,))
 
     return filename
+
+
+class AWIPS2ConfigReader(roles.SimpleINIConfigReader):
+    SECTION_PREFIX = "awips:"
+    SOURCE_SECTION = SECTION_PREFIX + "source"
+    PRODUCT_SECTION_PREFIX = SECTION_PREFIX + "product:"
+    GRID_SECTION_PREFIX = SECTION_PREFIX + "grid:"
+    SAT_SECTION_PREFIX = SECTION_PREFIX + "satellite:"
+
+    def __init__(self, *config_files, **kwargs):
+        super(AWIPS2ConfigReader, self).__init__(*config_files, **kwargs)
+
+    @property
+    def known_grids(self):
+        return [x.split(":")[-1] for x in self.config_parser.sections() if x.startswith(self.GRID_SECTION_PREFIX)]
+
+    def get_filename_format(self):
+        return self.config_parser.get(self.SOURCE_SECTION, "filename_scheme")
+
+    def get_source_name(self):
+        return self.config_parser.get(self.SOURCE_SECTION, "source_name")
+
+    def get_depictor_name(self, grid_def):
+        return self.config_parser.get(self.GRID_SECTION_PREFIX + grid_def["grid_name"], "depictor_name")
+
+    def get_product_info(self, product_definition):
+        info = {}
+        product_section = self.PRODUCT_SECTION_PREFIX + product_definition["product_name"]
+        sat_section = self.SAT_SECTION_PREFIX + product_definition["satellite"] + ":" + product_definition["instrument"]
+        info["channel"] = self.config_parser.get(product_section, "channel")
+        info["satellite"] = self.config_parser.get(sat_section, "satellite_name") or product_definition["satellite"]
+        info["source_name"] = self.get_source_name()
+        return info
 
 
 class AWIPSConfigReader(roles.INIConfigReader):

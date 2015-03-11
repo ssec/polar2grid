@@ -46,7 +46,8 @@ from polar2grid.core import roles
 from polar2grid.nc import create_nc_from_ncml
 from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
 from polar2grid.core.dtype import clip_to_data_type, DTYPE_UINT8
-from .awips_config import AWIPSConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG
+from .awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, NoSectionError
+from netCDF4 import Dataset
 
 import os
 import sys
@@ -99,11 +100,34 @@ def create_netcdf(nc_name, image, template, start_dt, channel, source, sat_name)
     LOG.debug("Data transferred into NC file correctly")
 
 
+def create_awips2_netcdf3(filename, image, start_dt, depictor_name, channel, source, satellite_name):
+    nc_name = os.path.abspath(filename)
+    nc = Dataset(nc_name, mode='w', format="NETCDF3_CLASSIC")
+    y_dim = nc.createDimension("y", size=image.shape[0])
+    x_dim = nc.createDimension("x", size=image.shape[1])
+
+    time_var = nc.createVariable("validTime", "f8")
+    time_var[:] = float(calendar.timegm(start_dt.utctimetuple())) + float(start_dt.microsecond)/1e6
+
+    image_var = nc.createVariable("image", "i1", ("y", "x"))
+    image_var.set_auto_maskandscale(False)
+    image_var[:] = clip_to_data_type(image, DTYPE_UINT8)
+
+    nc.depictorName = depictor_name
+    nc.channel = channel
+    nc.source = source
+    nc.satelliteName = satellite_name
+
+    nc.sync()
+    nc.close()
+    LOG.debug("Data transferred into NC file correctly")
+
+
 class Backend(roles.BackendRole):
     def __init__(self, backend_configs=None, rescale_configs=None, **kwargs):
         backend_configs = backend_configs or [DEFAULT_AWIPS_CONFIG]
         rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
-        self.awips_config_reader = AWIPSConfigReader(*backend_configs)
+        self.awips_config_reader = AWIPS2ConfigReader(*backend_configs)
         self.rescaler = Rescaler(*rescale_configs, **kwargs)
         super(Backend, self).__init__(**kwargs)
 
@@ -111,12 +135,34 @@ class Backend(roles.BackendRole):
     def known_grids(self):
         return self.awips_config_reader.known_grids
 
-    def create_output_from_product(self, gridded_product, ncml_template=None, **kwargs):
+    def create_output_from_product(self, gridded_product, **kwargs):
         data_type = DTYPE_UINT8
         inc_by_one = False
         fill_value = 0
-        awips_info = self.awips_config_reader.get_product_options(gridded_product)
-        output_filename = gridded_product["begin_time"].strftime(awips_info["filename_format"])
+        grid_def = gridded_product["grid_definition"]
+
+        # awips_info = self.awips_config_reader.get_product_options(gridded_product)
+        try:
+            awips_info = self.awips_config_reader.get_product_info(gridded_product)
+        except NoSectionError as e:
+            LOG.error("Could not get information on product from backend configuration file")
+            # NoSectionError is not a "StandardError" so it won't be caught normally
+            raise RuntimeError(e.message)
+
+        try:
+            awips_info["depictor_name"] = self.awips_config_reader.get_depictor_name(grid_def)
+        except NoSectionError as e:
+            LOG.error("Could not get information on grid from backend configuration file")
+            # NoSectionError is not a "StandardError" so it won't be caught normally
+            raise RuntimeError(e.msg)
+
+        fn_format = self.awips_config_reader.get_filename_format()
+        print grid_def
+        output_filename = self.create_output_filename2(fn_format,
+                                                       grid_name=grid_def["grid_name"],
+                                                       rows=grid_def["height"],
+                                                       columns=grid_def["width"],
+                                                       **gridded_product)
 
         if os.path.isfile(output_filename):
             if not self.overwrite_existing:
@@ -132,9 +178,8 @@ class Backend(roles.BackendRole):
                                                  inc_by_one=inc_by_one, fill_value=fill_value)
 
             LOG.info("Writing product %s to AWIPS NetCDF file", gridded_product["product_name"])
-            create_netcdf(output_filename, data, ncml_template or awips_info["ncml_template"],
-                          gridded_product["begin_time"], awips_info["awips2_channel"],
-                          awips_info["awips2_source"], awips_info["awips2_satellite_name"])
+            create_awips2_netcdf3(output_filename, data, gridded_product["begin_time"], awips_info["depictor_name"],
+                                  awips_info["channel"], awips_info["source_name"], awips_info["satellite"])
         except StandardError:
             LOG.error("Error while filling in NC file with data: %s", output_filename)
             if not self.keep_intermediate and os.path.isfile(output_filename):
@@ -150,9 +195,9 @@ def add_backend_argument_groups(parser):
                        help="alternative backend configuration files")
     group.add_argument("--rescale-configs", nargs="*", dest="rescale_configs",
                        help="alternative rescale configuration files")
-    group = parser.add_argument_group(title="Backend Output Creation")
-    group.add_argument("--ncml-template",
-                       help="alternative AWIPS ncml template file from what is configured")
+    # group = parser.add_argument_group(title="Backend Output Creation")
+    # group.add_argument("--ncml-template",
+    #                    help="alternative AWIPS ncml template file from what is configured")
     return ["Backend Initialization"]
 
 

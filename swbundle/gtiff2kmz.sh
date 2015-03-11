@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # encoding: utf-8
-# Usage: gtiff2kmz.sh input.tif output.kmz
+# Usage: gtiff2kmz.sh input.tif [output.kmz]
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -37,4 +37,34 @@ fi
 source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
 # Call the python module to do the processing, passing all arguments
-$POLAR2GRID_HOME/ShellB3/bin/gdal_translate -of KMLSUPEROVERLAY -co FORMAT=JPEG $@
+# Similar, but not as nice of an image:
+# $POLAR2GRID_HOME/ShellB3/bin/gdal_translate -of KMLSUPEROVERLAY -co FORMAT=JPEG $@
+
+if [ $# -eq 1 ]; then
+    input_fn=$1
+    tile_dir=${input_fn/.tif/}
+    output_fn=${input_fn/.tif/.kmz}
+elif [ $# -eq 2 ]; then
+    input_fn=$1
+    output_fn=$2
+    tile_dir=${input_fn/.tif/}
+else
+    echo "Usage: gtiff2kmz.sh input.tif [output.kmz]"
+    exit 1
+fi
+
+# Create a tiled KML directory
+echo "Creating temporary tiled KML directory..."
+$POLAR2GRID_HOME/ShellB3/bin/gdal2tiles.py -p geodetic $input_fn $tile_dir || { echo "ERROR: Could not create tiled KML"; exit 1; }
+
+# Zip the KML directory in to a KMZ file
+echo "Zipping KML directory in to a KMZ..."
+cd $tile_dir
+zip -r $output_fn * || { echo "ERROR: Could not create zipped KMZ"; exit 1; }
+mv $output_fn ../
+cd ..
+
+echo "Removing temporary tiled KML directory"
+rm -r $tile_dir
+
+echo "Done"
