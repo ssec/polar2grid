@@ -101,39 +101,21 @@ class abstractstaticmethod(staticmethod):
         super(abstractstaticmethod, self).__init__(callable)
 
 
-class INIConfigReader(object):
-    """Base class for INI configuration file readers.
+class SimpleINIConfigReader(object):
+    """Simple object for reading .ini files.
 
-    Basic .ini file format, but certain fields are identifying fields that identify the product being configured.
+    Main purpose is to make it easier to read multiple config files including those that
+    may be included from inside a package.
 
-    Class attribute `id_fields` is used to read in certain section options as identifying fields. The values should be
-    a conversion function to go from the read-in string to the proper type.
+    Access config reader object directly via the `config_parser` attribute.
     """
-    id_fields = None
-    sep_char = ":"
-
     def __init__(self, *config_files, **kwargs):
-        if self.id_fields is None:
-            LOG.error("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
-            raise RuntimeError("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
-
-        self.section_prefix = kwargs.pop("section_prefix", None)
-        self.config = []
         self.config_files = config_files
         file_objs = set([f for f in self.config_files if not isinstance(f, (str, unicode))])
         filepaths = set([f for f in self.config_files if isinstance(f, (str, unicode))])
 
-        # defaults to string (meaning nothing happens)
-        # this only affects non-ID fields
-        # self.keyword_types = defaultdict(kwargs.pop("default_keyword_type", str))
-        self.float_kwargs = kwargs.pop("float_kwargs", [])
-        self.int_kwargs = kwargs.pop("int_kwargs", [])
-        self.boolean_kwargs = kwargs.pop("boolean_kwargs", [])
-
-        # Need to have defaults for id fields
-        for k in self.id_fields:
-            kwargs.setdefault(k, None)
         self.config_parser = SafeConfigParser(kwargs, allow_no_value=True)
+
         if file_objs:
             for fp in file_objs:
                 self.config_parser.readfp(fp)
@@ -144,10 +126,6 @@ class INIConfigReader(object):
                     self.config_parser.readfp(fo, fp)
                 except ConfigParserError:
                     LOG.warning("Could not parse config file: %s", fp)
-        self.load_config()
-        if not self.config:
-            LOG.error("No valid configuration sections found with prefix '%s'", self.section_prefix)
-            raise ValueError("No valid configuration sections found")
 
     def open_config_file(self, config_file):
         """Load one configuration file into internal storage.
@@ -179,6 +157,44 @@ class INIConfigReader(object):
             else:
                 config_file = open(config_file, 'r')
         return config_file
+
+
+class INIConfigReader(SimpleINIConfigReader):
+    """Base class for INI configuration file readers.
+
+    Basic .ini file format, but certain fields are identifying fields that identify the product being configured.
+
+    Class attribute `id_fields` is used to read in certain section options as identifying fields. The values should be
+    a conversion function to go from the read-in string to the proper type.
+    """
+    id_fields = None
+    sep_char = ":"
+
+    def __init__(self, *config_files, **kwargs):
+        if self.id_fields is None:
+            LOG.error("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
+            raise RuntimeError("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
+
+        self.section_prefix = kwargs.pop("section_prefix", None)
+        self.config = []
+
+        # defaults to string (meaning nothing happens)
+        # this only affects non-ID fields
+        # self.keyword_types = defaultdict(kwargs.pop("default_keyword_type", str))
+        self.float_kwargs = kwargs.pop("float_kwargs", [])
+        self.int_kwargs = kwargs.pop("int_kwargs", [])
+        self.boolean_kwargs = kwargs.pop("boolean_kwargs", [])
+
+        # Need to have defaults for id fields
+        for k in self.id_fields:
+            kwargs.setdefault(k, None)
+
+        super(INIConfigReader, self).__init__(*config_files, **kwargs)
+
+        self.load_config()
+        if not self.config:
+            LOG.error("No valid configuration sections found with prefix '%s'", self.section_prefix)
+            raise ValueError("No valid configuration sections found")
 
     def load_config(self):
         # Organize rescaling configuration sections
@@ -476,6 +492,119 @@ class BackendRole(object):
         """
         return None
 
+    def create_output_filename2(self, pattern, satellite, instrument, product_name, grid_name, **kwargs):
+        """Helper function that will take common meta data and put it into
+        the output filename pattern provided. If either of the keyword arguments
+        ``begin_time`` or ``end_time`` are not specified the other is used
+        in its place.  If neither are specified the current time in UTC is
+        taken.
+
+        Some arguments are handled in special ways:
+            - begin_time : begin_time is converted into 5 different strings
+                that can each be individually specified in the pattern:
+                    * begin_time     : YYYYMMDD_HHMMSS
+                    * begin_YYYYMMDD : YYYYMMDD
+                    * begin_YYMMDD   : YYMMDD
+                    * begin_HHMMSS   : HHMMSS
+                    * begin_HHMM     : HHMM
+            - end_time   : Same as begin_time
+
+        If a keyword is provided that is not recognized it will be provided
+        to the pattern after running through a `str` filter.
+
+        Possible pattern keywords (\*created internally in this function):
+            - satellite       : identifier for the instrument's satellite
+            - instrument      : name of the instrument
+            - product_name    : name of the product in the output
+            - data_kind       : kind of data (brightness temperature, radiance, reflectance, etc.)
+            - data_type       : data type name of data in-memory (ex. uint1, int4, real4)
+            - grid_name       : name of the grid the data was mapped to
+            - columns         : number of columns in the data
+            - rows            : number of rows in the data
+            - begin_time      : begin time of the first scan (YYYYMMDD_HHMMSS)
+            - begin_YYYYMMDD\* : begin date of the first scan
+            - begin_YYMMDD\*   : begin date of the first scan
+            - begin_HHMMSS\*   : begin time of the first scan
+            - begin_HHMM\*     : begin time of the first scan
+            - end_time        : end time of the first scan. Same keywords as start_time.
+
+        >>> from datetime import datetime
+        >>> pattern = "{satellite}_{instrument}_{product_name}_{data_kind}_{grid_name}_{start_time}.{data_type}.{columns}.{rows}"
+        >>> class FakeBackend(BackendRole):
+        ...     def create_output_from_product(self, gridded_product, **kwargs): pass
+        ...     @property
+        ...     def known_grids(self): return None
+        >>> backend = FakeBackend()
+        >>> filename = backend.create_output_filename(pattern,
+        ...     "npp",
+        ...     "viirs",
+        ...     "i04",
+        ...     data_kind="btemp",
+        ...     grid_name="wgs84_fit",
+        ...     data_type="uint1",
+        ...     columns = 2500, rows=3000, begin_time=datetime(2012, 11, 10, 9, 8, 7))
+        >>> print filename
+        npp_viirs_i04_btemp_wgs84_fit_20121110_090807.uint1.2500.3000
+
+        """
+        # Keyword arguments
+        data_type = kwargs.pop("data_type", None)
+        data_kind = kwargs.pop("data_kind", None)
+        columns = kwargs.pop("columns", None)
+        rows = kwargs.pop("rows", None)
+        begin_time_dt = kwargs.pop("begin_time", None)
+        end_time_dt = kwargs.pop("end_time", None)
+
+        if data_type and not isinstance(data_type, (str, unicode)):
+            data_type = dtype_to_str(data_type)
+
+        # Convert begin time and end time
+        if begin_time_dt is None and end_time_dt is None:
+            begin_time_dt = end_time_dt = datetime.utc_now()
+        elif begin_time_dt is None:
+            begin_time_dt = end_time_dt
+        elif end_time_dt is None:
+            end_time_dt   = begin_time_dt
+
+        begin_time = begin_time_dt.strftime("%Y%m%d_%H%M%S")
+        begin_YYYYMMDD = begin_time_dt.strftime("%Y%m%d")
+        begin_YYMMDD = begin_time_dt.strftime("%y%m%d")
+        begin_HHMMSS = begin_time_dt.strftime("%H%M%S")
+        begin_HHMM = begin_time_dt.strftime("%H%M")
+        end_time = end_time_dt.strftime("%Y%m%d_%H%M%S")
+        end_YYYYMMDD = end_time_dt.strftime("%Y%m%d")
+        end_YYMMDD = end_time_dt.strftime("%y%m%d")
+        end_HHMMSS = end_time_dt.strftime("%H%M%S")
+        end_HHMM = end_time_dt.strftime("%H%M")
+
+        try:
+            output_filename = pattern.format(**dict(
+                satellite=satellite,
+                instrument=instrument,
+                product_name=product_name,
+                data_kind=data_kind,
+                data_type=data_type,
+                grid_name=grid_name,
+                columns=columns,
+                rows=rows,
+                begin_time=begin_time,
+                begin_YYYYMMDD=begin_YYYYMMDD,
+                begin_YYMMDD=begin_YYMMDD,
+                begin_HHMMSS=begin_HHMMSS,
+                begin_HHMM=begin_HHMM,
+                end_time=end_time,
+                end_YYYYMMDD=end_YYYYMMDD,
+                end_YYMMDD=end_YYMMDD,
+                end_HHMMSS=end_HHMMSS,
+                end_HHMM=end_HHMM,
+                **kwargs
+            ))
+        except KeyError as e:
+            LOG.error("Unknown output pattern key: '%s'" % (e.message,))
+            raise
+
+        return output_filename
+
     def create_output_filename(self, pattern, satellite, instrument, product_name, grid_name, **kwargs):
         """Helper function that will take common meta data and put it into
         the output filename pattern provided. If either of the keyword arguments
@@ -588,7 +717,6 @@ class BackendRole(object):
             raise
 
         return output_filename
-        pass
 
     def create_output_from_scene(self, gridded_scene, **kwargs):
         """Create output files for each product in the scene.
