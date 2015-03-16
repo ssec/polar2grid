@@ -155,6 +155,9 @@ class Remapper(object):
             # points_in_grid, _, _ = ll2cr.ll2cr(lon_arr, lat_arr, grid_definition,
             #                                    fill_in=swath_definition["fill_value"],
             #                                    cols_out=cols_arr, rows_out=rows_arr)
+
+            grid_str = str(grid_definition).replace("\n", "\n\t")
+            LOG.debug("Grid information after ll2cr:\n\t%s", grid_str)
         except StandardError:
             LOG.error("Unexpected error encountered during ll2cr gridding for %s -> %s", geo_id, grid_name)
             LOG.debug("ll2cr error exception: ", exc_info=True)

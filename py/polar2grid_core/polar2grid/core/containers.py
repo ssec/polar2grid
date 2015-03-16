@@ -703,6 +703,9 @@ class GridDefinition(GeographicDefinition):
             kwargs["proj4_definition"] = str(kwargs["proj4_definition"])
         super(GridDefinition, self).__init__(*args, **kwargs)
 
+    def __str__(self):
+        return "\n".join("%s: %s" % (k, self[k]) for k in self.keys())
+
     @property
     def proj(self):
         if self.p is None:
@@ -737,6 +740,11 @@ class GridDefinition(GeographicDefinition):
         return self.proj(x_ll, y_ll, inverse=True)
 
     @property
+    def lonlat_lowerright(self):
+        x_ll, y_ll = self.xy_lowerright
+        return self.proj(x_ll, y_ll, inverse=True)
+
+    @property
     def lonlat_upperright(self):
         x_ur, y_ur = self.xy_upperright
         return self.proj(x_ur, y_ur, inverse=True)
@@ -745,6 +753,12 @@ class GridDefinition(GeographicDefinition):
     def lonlat_upperleft(self):
         x_ur, y_ur = self["origin_x"], self["origin_y"]
         return self.proj(x_ur, y_ur, inverse=True)
+
+    @property
+    def xy_lowerright(self):
+        y_ll = self["origin_y"] + self["cell_height"] * self["height"]
+        x_ll = self["origin_x"] + self["cell_width"] * self["width"]
+        return x_ll, y_ll
 
     @property
     def xy_lowerleft(self):
