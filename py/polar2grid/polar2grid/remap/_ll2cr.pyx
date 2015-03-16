@@ -211,6 +211,7 @@ def ll2cr_dynamic(numpy.ndarray[cr_dtype, ndim=2] lon_arr, numpy.ndarray[cr_dtyp
                 x_tmp = cols_out[row, col]
                 if x_tmp < 0:
                     x_tmp += proj_circum
+                    cols_out[row, col] = x_tmp
                     # xmax won't increase unless we've added the circumference
                     if x_tmp > xmax:
                         xmax = x_tmp
