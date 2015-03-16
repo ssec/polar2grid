@@ -48,6 +48,7 @@ from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
 from polar2grid.core.dtype import clip_to_data_type, DTYPE_UINT8
 from .awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, NoSectionError
 from netCDF4 import Dataset
+import numpy
 
 import os
 import sys
@@ -100,13 +101,47 @@ def create_netcdf(nc_name, image, template, start_dt, channel, source, sat_name)
     LOG.debug("Data transferred into NC file correctly")
 
 
-def create_awips2_netcdf3(filename, image, start_dt, depictor_name, channel, source, satellite_name):
+# INI files ignore case on options, so we have to do this
+GRID_ATTR_NAME = {
+    "projname": "projName",
+    "projindex": "projIndex",
+    "lat00": "lat00",
+    "lon00": "lon00",
+    "latnxny": "latNxNy",
+    "lonnxny": "lonNxNy",
+    "centrallat": "centralLat",
+    "centrallon": "centralLon",
+    "latdxdy": "latDxDy",
+    "londxdy": "lonDxDy",
+    "dykm": "dyKm",
+    "dxkm": "dxKm",
+    "rotation": "rotation",
+}
+GRID_ATTR_TYPE = {
+    "projindex": numpy.int32,
+    "lat00": numpy.float32,
+    "lon00": numpy.float32,
+    "latnxny": numpy.float32,
+    "lonnxny": numpy.float32,
+    "centrallat": numpy.float32,
+    "centrallon": numpy.float32,
+    "latdxdy": numpy.float32,
+    "londxdy": numpy.float32,
+    "dykm": numpy.float32,
+    "dxkm": numpy.float32,
+    "rotation": numpy.float32,
+    }
+
+def create_awips2_netcdf3(filename, image, start_dt,
+                          depictor_name, channel, source_name, satellite_name,
+                          **grid_info):
     nc_name = os.path.abspath(filename)
     nc = Dataset(nc_name, mode='w', format="NETCDF3_CLASSIC")
     y_dim = nc.createDimension("y", size=image.shape[0])
     x_dim = nc.createDimension("x", size=image.shape[1])
 
     time_var = nc.createVariable("validTime", "f8")
+    time_var.units = "seconds since 1970-1-1 00:00:00.00 0:00"
     time_var[:] = float(calendar.timegm(start_dt.utctimetuple())) + float(start_dt.microsecond)/1e6
 
     image_var = nc.createVariable("image", "i1", ("y", "x"))
@@ -115,8 +150,16 @@ def create_awips2_netcdf3(filename, image, start_dt, depictor_name, channel, sou
 
     nc.depictorName = depictor_name
     nc.channel = channel
-    nc.source = source
+    nc.source = source_name
     nc.satelliteName = satellite_name
+
+    for k, v in grid_info.items():
+        attr_name = GRID_ATTR_NAME.get(k, k)
+        attr_type = GRID_ATTR_TYPE.get(k, None)
+        LOG.debug("Setting grid information for NetCDF file: %s -> %s", attr_name, v)
+        if attr_type is not None:
+            v = attr_type(v)
+        setattr(nc, attr_name, v)
 
     nc.sync()
     nc.close()
@@ -150,14 +193,18 @@ class Backend(roles.BackendRole):
             raise RuntimeError(e.message)
 
         try:
-            awips_info["depictor_name"] = self.awips_config_reader.get_depictor_name(grid_def)
+            awips_info.update(self.awips_config_reader.get_grid_info(grid_def))
         except NoSectionError as e:
             LOG.error("Could not get information on grid from backend configuration file")
             # NoSectionError is not a "StandardError" so it won't be caught normally
             raise RuntimeError(e.msg)
 
-        fn_format = self.awips_config_reader.get_filename_format()
-        print grid_def
+        if "filename_scheme" in awips_info:
+            # Let individual products have special names if needed (mostly for weird product naming)
+            fn_format = awips_info.pop("filename_scheme")
+        else:
+            fn_format = self.awips_config_reader.get_filename_format()
+
         output_filename = self.create_output_filename2(fn_format,
                                                        grid_name=grid_def["grid_name"],
                                                        rows=grid_def["height"],
@@ -178,8 +225,7 @@ class Backend(roles.BackendRole):
                                                  inc_by_one=inc_by_one, fill_value=fill_value)
 
             LOG.info("Writing product %s to AWIPS NetCDF file", gridded_product["product_name"])
-            create_awips2_netcdf3(output_filename, data, gridded_product["begin_time"], awips_info["depictor_name"],
-                                  awips_info["channel"], awips_info["source_name"], awips_info["satellite"])
+            create_awips2_netcdf3(output_filename, data, gridded_product["begin_time"], **awips_info)
         except StandardError:
             LOG.error("Error while filling in NC file with data: %s", output_filename)
             if not self.keep_intermediate and os.path.isfile(output_filename):
