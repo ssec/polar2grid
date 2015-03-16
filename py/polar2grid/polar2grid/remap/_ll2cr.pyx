@@ -179,7 +179,7 @@ def ll2cr_dynamic(numpy.ndarray[cr_dtype, ndim=2] lon_arr, numpy.ndarray[cr_dtyp
     cdef cr_dtype xmin = cols_out[0, 0]
     cdef cr_dtype xmax = cols_out[0, 0]
     cdef cr_dtype ymin = rows_out[0, 0]
-    cdef cr_dtype ymax = cols_out[0, 0]
+    cdef cr_dtype ymax = rows_out[0, 0]
     cdef cr_dtype x_tmp
     cdef cr_dtype y_tmp
     cdef unsigned int points_in_grid = 0

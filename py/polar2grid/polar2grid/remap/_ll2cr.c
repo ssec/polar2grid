@@ -4116,7 +4116,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_6ll2cr_dynamic(CYTHON_UNUS
  *     cdef cr_dtype xmin = cols_out[0, 0]
  *     cdef cr_dtype xmax = cols_out[0, 0]             # <<<<<<<<<<<<<<
  *     cdef cr_dtype ymin = rows_out[0, 0]
- *     cdef cr_dtype ymax = cols_out[0, 0]
+ *     cdef cr_dtype ymax = rows_out[0, 0]
  */
   __pyx_t_9 = 0;
   __pyx_t_10 = 0;
@@ -4126,7 +4126,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_6ll2cr_dynamic(CYTHON_UNUS
  *     cdef cr_dtype xmin = cols_out[0, 0]
  *     cdef cr_dtype xmax = cols_out[0, 0]
  *     cdef cr_dtype ymin = rows_out[0, 0]             # <<<<<<<<<<<<<<
- *     cdef cr_dtype ymax = cols_out[0, 0]
+ *     cdef cr_dtype ymax = rows_out[0, 0]
  *     cdef cr_dtype x_tmp
  */
   __pyx_t_11 = 0;
@@ -4136,13 +4136,13 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_6ll2cr_dynamic(CYTHON_UNUS
   /* "polar2grid/remap/_ll2cr.pyx":182
  *     cdef cr_dtype xmax = cols_out[0, 0]
  *     cdef cr_dtype ymin = rows_out[0, 0]
- *     cdef cr_dtype ymax = cols_out[0, 0]             # <<<<<<<<<<<<<<
+ *     cdef cr_dtype ymax = rows_out[0, 0]             # <<<<<<<<<<<<<<
  *     cdef cr_dtype x_tmp
  *     cdef cr_dtype y_tmp
  */
   __pyx_t_13 = 0;
   __pyx_t_14 = 0;
-  __pyx_v_ymax = (*((__pyx_t_5numpy_float64_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5numpy_float64_t *) ( /* dim=0 */ (__pyx_v_cols_out.data + __pyx_t_13 * __pyx_v_cols_out.strides[0]) )) + __pyx_t_14)) )));
+  __pyx_v_ymax = (*((__pyx_t_5numpy_float64_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5numpy_float64_t *) ( /* dim=0 */ (__pyx_v_rows_out.data + __pyx_t_13 * __pyx_v_rows_out.strides[0]) )) + __pyx_t_14)) )));
 
   /* "polar2grid/remap/_ll2cr.pyx":185
  *     cdef cr_dtype x_tmp
