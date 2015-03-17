@@ -153,6 +153,7 @@ setup(
     include_package_data=True,
     package_data={'polar2grid': ["compositors/*.ini", "awips/ncml/*.ncml", "awips/*.ini", "grids/*.conf", "ninjo/*.ini"]},
     zip_safe=True,
+    test_suite="polar2grid.tests.__init__",
     install_requires=[
         'setuptools',       # reading configuration files
         'numpy',

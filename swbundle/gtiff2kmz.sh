@@ -60,8 +60,7 @@ $POLAR2GRID_HOME/ShellB3/bin/gdal2tiles.py -p geodetic $input_fn $tile_dir || { 
 # Zip the KML directory in to a KMZ file
 echo "Zipping KML directory in to a KMZ..."
 cd $tile_dir
-zip -r $output_fn * || { echo "ERROR: Could not create zipped KMZ"; exit 1; }
-mv $output_fn ../
+zip -r ../$output_fn * || { echo "ERROR: Could not create zipped KMZ"; exit 1; }
 cd ..
 
 echo "Removing temporary tiled KML directory"
