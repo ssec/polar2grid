@@ -8,4 +8,4 @@ install:
 - cd py/polar2grid
 - pip install -e ".[remap]"
 - cd ../../
-script: python setup.py test
+script: python -m polar2grid.tests
