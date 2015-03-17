@@ -27,7 +27,7 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Tests for polar2grid.
+"""Run tests for polar2grid from the command line.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -39,22 +39,7 @@
 """
 __docformat__ = "restructuredtext en"
 
-import os
-import sys
-import logging
-import unittest
-
-LOG = logging.getLogger(__name__)
-
-
-def load_tests(loaders, tests, pattern):
-    testsuite = unittest.TestLoader().discover(os.path.dirname(os.path.abspath(__file__)))
-    return testsuite
-
-
-def main():
-    return unittest.main()
-
-
 if __name__ == "__main__":
+    import sys
+    from polar2grid.tests import main, load_tests
     sys.exit(main())

@@ -45,6 +45,8 @@ import os
 import sys
 import logging
 
+# from test_ll2cr import LL2CRDynamicTestCase, LL2CRStaticTestCase
+
 LOG = logging.getLogger(__name__)
 
 
@@ -68,11 +70,3 @@ def create_test_latitude(start, stop, shape, twist_factor=0.0, dtype=numpy.float
     lat_array = numpy.repeat(lat_col, shape[1], axis=1)
     lat_array += twist_array
     return lat_array
-
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    sys.exit(main())
