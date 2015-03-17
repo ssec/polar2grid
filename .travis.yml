@@ -1,11 +1,19 @@
 language: python
 python:
-- '2.7'
+ - '2.7'
+virtualenv:
+  system_site_packages: true
+before_install:
+ - sudo add-apt-repository ppa:ubuntugis/ppa -y
+ - sudo apt-get update -qq
+ - sudo apt-get install -y -qq libgdal1h proj
+ - sudo apt-get install -qq python-scipy python-numpy python-pyproj
 install:
-- cd py/polar2grid_core
-- pip install -e ".[all]"
-- cd ../../
-- cd py/polar2grid
-- pip install -e ".[remap]"
-- cd ../../
-script: python -m polar2grid.tests
+ - cd py/polar2grid_core
+ - pip install -e ".[all]"
+ - cd ../../
+ - cd py/polar2grid
+ - pip install -e ".[remap]"
+ - cd ../../
+script:
+  python -m polar2grid.tests
