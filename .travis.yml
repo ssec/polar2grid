@@ -1,0 +1,11 @@
+language: python
+python:
+- '2.7'
+install:
+- cd py/polar2grid_core
+- pip install -e ".[all]"
+- cd ../../
+- cd py/polar2grid
+- pip install -e ".[remap]"
+- cd ../../
+script: python setup.py test
