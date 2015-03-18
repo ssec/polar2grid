@@ -77,14 +77,14 @@ PRODUCT_LSMASK = "land_sea_mask"
 PRODUCT_SZA = "solar_zenith_angle"
 
 # Need land mask clearing and cloud clearing
-PRODUCT_SST = "sea_surface_temperature"
-PRODUCT_LST = "land_surface_temperature"
-PRODUCT_SLST = "summer_land_surface_temperature"
-PRODUCT_NDVI = "ndvi"
-PRODUCT_CLEAR_SST = "sea_surface_temperature_cleared"
-PRODUCT_CLEAR_LST = "land_surface_temperature_cleared"
-PRODUCT_CLEAR_SLST = "summer_land_surface_temperature_cleared"
-PRODUCT_CLEAR_NDVI = "ndvi_cleared"
+PRODUCT_SST = "sea_surface_temperature_uncleared"
+PRODUCT_LST = "land_surface_temperature_uncleared"
+PRODUCT_SLST = "summer_land_surface_temperature_uncleared"
+PRODUCT_NDVI = "ndvi_uncleared"
+PRODUCT_CLEAR_SST = "sea_surface_temperature"
+PRODUCT_CLEAR_LST = "land_surface_temperature"
+PRODUCT_CLEAR_SLST = "summer_land_surface_temperature"
+PRODUCT_CLEAR_NDVI = "ndvi"
 
 PRODUCT_IST = "ice_surface_temperature"
 PRODUCT_INV = "inversion_strength"
@@ -130,8 +130,8 @@ PAIR_MOD07 = "mod07_nav"
 GEO_PAIRS.add_pair(PAIR_1000M, PRODUCT_1000M_LON, PRODUCT_1000M_LAT, 10)
 GEO_PAIRS.add_pair(PAIR_500M, PRODUCT_500M_LON, PRODUCT_500M_LAT, 20)
 GEO_PAIRS.add_pair(PAIR_250M, PRODUCT_250M_LON, PRODUCT_250M_LAT, 40)
-GEO_PAIRS.add_pair(PAIR_MOD06, PRODUCT_MOD06_LON, PRODUCT_MOD06_LAT, 10)
-GEO_PAIRS.add_pair(PAIR_MOD07, PRODUCT_MOD07_LON, PRODUCT_MOD07_LAT, 10)
+GEO_PAIRS.add_pair(PAIR_MOD06, PRODUCT_MOD06_LON, PRODUCT_MOD06_LAT, 2)
+GEO_PAIRS.add_pair(PAIR_MOD07, PRODUCT_MOD07_LON, PRODUCT_MOD07_LAT, 2)
 
 # TODO: Add description and units
 PRODUCTS.add_product(PRODUCT_1000M_LON, PAIR_1000M, "longitude", guidebook.FT_GEO, guidebook.K_LONGITUDE)
