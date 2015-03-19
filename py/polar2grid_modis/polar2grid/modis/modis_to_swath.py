@@ -74,6 +74,7 @@ PRODUCT_BT31 = "brightness_temperature_31"
 
 PRODUCT_CMASK = "cloud_mask"
 PRODUCT_LSMASK = "land_sea_mask"
+PRODUCT_SIMASK = "snow_ice_mask"
 PRODUCT_SZA = "solar_zenith_angle"
 
 # Need land mask clearing and cloud clearing
@@ -158,6 +159,7 @@ PRODUCTS.add_product(PRODUCT_IR27, PAIR_1000M, "radiance", guidebook.FT_1000M, g
 PRODUCTS.add_product(PRODUCT_IR31, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR31)
 PRODUCTS.add_product(PRODUCT_CMASK, PAIR_1000M, "category", (guidebook.FT_MASK_BYTE1, guidebook.FT_MOD35), guidebook.K_CMASK)
 PRODUCTS.add_product(PRODUCT_LSMASK, PAIR_1000M, "category", guidebook.FT_MASK_BYTE1, guidebook.K_LSMASK)
+PRODUCTS.add_product(PRODUCT_SIMASK, PAIR_1000M, "category", guidebook.FT_MASK_BYTE1, guidebook.K_SIMASK)
 PRODUCTS.add_product(PRODUCT_SST, PAIR_1000M, "sea_surface_temperature", guidebook.FT_MOD28, guidebook.K_SST)
 PRODUCTS.add_product(PRODUCT_LST, PAIR_1000M, "land_surface_temperature", guidebook.FT_MODLST, guidebook.K_LST)
 PRODUCTS.add_product(PRODUCT_NDVI, PAIR_1000M, "ndvi", guidebook.FT_NDVI_1000M, guidebook.K_NDVI)
@@ -175,7 +177,7 @@ PRODUCTS.add_product(PRODUCT_BT27, PAIR_1000M, "brightness_temperature", depende
 PRODUCTS.add_product(PRODUCT_BT31, PAIR_1000M, "brightness_temperature", dependencies=(PRODUCT_IR31,))
 PRODUCTS.add_product(PRODUCT_FOG, PAIR_1000M, "temperature_difference", dependencies=(PRODUCT_BT31, PRODUCT_BT20, PRODUCT_SZA))
 # cloud clear and land/sea mask cleared
-PRODUCTS.add_product(PRODUCT_CLEAR_SST, PAIR_1000M, "sea_surface_temperature", dependencies=(PRODUCT_SST, PRODUCT_CMASK, PRODUCT_LSMASK))
+PRODUCTS.add_product(PRODUCT_CLEAR_SST, PAIR_1000M, "sea_surface_temperature", dependencies=(PRODUCT_SST, PRODUCT_CMASK, PRODUCT_LSMASK, PRODUCT_SIMASK))
 PRODUCTS.add_product(PRODUCT_CLEAR_LST, PAIR_1000M, "land_surface_temperature", dependencies=(PRODUCT_LST, PRODUCT_CMASK, PRODUCT_LSMASK))
 PRODUCTS.add_product(PRODUCT_CLEAR_SLST, PAIR_1000M, "summer_land_surface_temperature", dependencies=(PRODUCT_CLEAR_LST,))
 PRODUCTS.add_product(PRODUCT_CLEAR_NDVI, PAIR_1000M, "ndvi", dependencies=(PRODUCT_NDVI, PRODUCT_CMASK, PRODUCT_LSMASK))
@@ -377,10 +379,9 @@ class Frontend(roles.FrontendRole):
                 LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
         try:
-            # TODO: Do something with data type
-            shape = file_reader.write_var_to_flat_binary(file_key, filename)
             data_type = file_reader.get_data_type(file_key)
             fill_value = file_reader.get_fill_value(file_key)
+            shape = file_reader.write_var_to_flat_binary(file_key, filename, dtype=data_type)
             rows_per_scan = GEO_PAIRS[product_def.get_geo_pair_name(self.available_file_types)].rows_per_scan
         except StandardError:
             LOG.error("Could not extract data from file")
@@ -654,21 +655,32 @@ class Frontend(roles.FrontendRole):
         return one_swath
 
     def create_cloud_land_cleared(self, product_name, swath_definition, products_created,
-                                  cloud_values_to_clear=[1, 2], lsmask_values_to_clear=[1, 2]):
+                                  cloud_values_to_clear=[1, 2], lsmask_values_to_clear=[3, 4], simask_values_to_clear=[1]):
         product_def = PRODUCTS[product_name]
         deps = product_def.dependencies
-        if len(deps) != 3:
-            LOG.error("Expected 1 dependencies to create cleared product, got %d" % (len(deps),))
-            raise RuntimeError("Expected 1 dependencies to create cleared product, got %d" % (len(deps),))
+        if len(deps) == 4:
+            base_product_name = deps[0]
+            cmask_product_name = deps[1]
+            lsmask_product_name = deps[2]
+            simask_product_name = deps[3]
+        elif len(deps) == 3:
+            base_product_name = deps[0]
+            cmask_product_name = deps[1]
+            lsmask_product_name = deps[2]
+            simask_product_name = None
+        else:
+            LOG.error("Expected 3 or 4 dependencies to create cleared product, got %d" % (len(deps),))
+            raise RuntimeError("Expected 3 or 4 dependencies to create cleared product, got %d" % (len(deps),))
 
-        base_product_name = deps[0]
-        cmask_product_name = deps[1]
-        lsmask_product_name = deps[2]
         base_product = products_created[base_product_name]
         fill = base_product["fill_value"]
         base_mask = base_product.get_data_mask()
         cmask = products_created[cmask_product_name].get_data_array()
         lsmask = products_created[lsmask_product_name].get_data_array()
+        if simask_product_name is not None:
+            simask = products_created[simask_product_name].get_data_array()
+        else:
+            simask = None
         filename = product_name + ".dat"
         if os.path.isfile(filename):
             if not self.overwrite_existing:
@@ -682,6 +694,9 @@ class Frontend(roles.FrontendRole):
             # in1d operates on 1 dimensional arrays so we need to reshape it back to the swath shape
             shape = (base_product["swath_rows"], base_product["swath_columns"])
             clearable_mask = base_mask | numpy.in1d(cmask, cloud_values_to_clear).reshape(shape) | numpy.in1d(lsmask, lsmask_values_to_clear).reshape(shape)
+            if simask is not None:
+                LOG.debug("Clearing {!r} Snow/Ice values from {}".format(simask_values_to_clear, product_name))
+                clearable_mask |= numpy.in1d(simask, simask_values_to_clear).reshape(shape)
             output_data[clearable_mask] = fill
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
@@ -695,7 +710,7 @@ class Frontend(roles.FrontendRole):
 
     def create_cloud_sea_cleared(self, product_name, swath_definition, products_created):
         return self.create_cloud_land_cleared(product_name, swath_definition, products_created,
-                                              lsmask_values_to_clear=[2, 3, 4])
+                                              lsmask_values_to_clear=[1])
 
     def _get_day_percentage(self, sza_swath):
         if "day_percentage" not in sza_swath:

@@ -45,7 +45,7 @@ from polar2grid.core import roles
 import os
 import sys
 import logging
-from ConfigParser import SafeConfigParser, NoSectionError
+from ConfigParser import NoSectionError
 
 LOG = logging.getLogger(__name__)
 
@@ -119,7 +119,10 @@ class AWIPS2ConfigReader(roles.SimpleINIConfigReader):
         product_section = self.PRODUCT_SECTION_PREFIX + product_definition["product_name"]
         sat_section = self.SAT_SECTION_PREFIX + product_definition["satellite"] + ":" + product_definition["instrument"]
         info["channel"] = self.config_parser.get(product_section, "channel")
-        info["satellite_name"] = self.config_parser.get(sat_section, "satellite_name") or product_definition["satellite"]
+        try:
+            info["satellite_name"] = self.config_parser.get(sat_section, "satellite_name")
+        except NoSectionError:
+            info["satellite_name"] = product_definition["satellite"].upper()
         info["source_name"] = self.get_source_name()
         return info
 

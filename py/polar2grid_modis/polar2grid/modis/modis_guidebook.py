@@ -67,6 +67,7 @@ K_IR27 = "ir27_var"
 K_IR31 = "ir31_var"
 K_CMASK = "cloud_mask_var"
 K_LSMASK = "land_sea_mask_var"
+K_SIMASK = "snow_ice_mask_var"
 K_SST = "sst_var"
 K_LST = "lst_var"
 K_SLST = "slst_var"
@@ -522,6 +523,7 @@ FILE_TYPES[FT_MOD35] = {
 FILE_TYPES[FT_MASK_BYTE1] = {
     K_CMASK: FileInfo("MODIS_Cloud_Mask", data_type=numpy.int32),
     K_LSMASK: FileInfo("MODIS_Simple_LandSea_Mask", data_type=numpy.int32),
+    K_SIMASK: FileInfo("MODIS_Snow_Ice_Flag", data_type=numpy.int32),
 }
 FILE_TYPES[FT_MODLST] = {
     K_LST: FileInfo("LST", range_attr_name=None, offset_attr_name=None, fill_attr_name="missing_value"),
