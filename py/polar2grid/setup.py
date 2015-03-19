@@ -106,7 +106,7 @@ extras_require = {
     # Frontends (included separately):
     # Other:
     # FIXME: technically polar2grid.core.meta uses this through the polar2grid.proj module
-    "remap": ["pyproj"],
+    "remap": ["pyproj", "scipy"],
     "utils": ["matplotlib"],
 }
 extras_require["all"] = [x for y in extras_require.values() for x in y]
@@ -154,6 +154,7 @@ setup(
     include_package_data=True,
     package_data={'polar2grid': ["compositors/*.ini", "awips/ncml/*.ncml", "awips/*.ini", "grids/*.conf", "ninjo/*.ini"]},
     zip_safe=True,
+    test_suite="polar2grid.tests.__init__",
     install_requires=[
         'setuptools',       # reading configuration files
         'numpy',

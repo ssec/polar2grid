@@ -1,6 +1,9 @@
 Polar2Grid
 ==========
 
+.. image:: https://travis-ci.org/davidh-ssec/polar2grid.svg
+    :target: https://travis-ci.org/davidh-ssec/polar2grid
+
 Polar2Grid is a set of tools for extracting swath data from earth-observing satellite instruments,
 remapping it to uniform grids, and finally writing that gridded data to a new file format.
 Polar2Grid is created by scientists and software developers at the Space Science and Engineering Center (SSEC) at
