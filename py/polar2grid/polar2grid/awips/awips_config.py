@@ -122,7 +122,8 @@ class AWIPS2ConfigReader(roles.SimpleINIConfigReader):
         try:
             info["satellite_name"] = self.config_parser.get(sat_section, "satellite_name")
         except NoSectionError:
-            info["satellite_name"] = product_definition["satellite"].upper()
+            # default if the configuration file isn't set
+            info["satellite_name"] = product_definition["instrument"].upper()
         info["source_name"] = self.get_source_name()
         return info
 
