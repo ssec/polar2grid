@@ -247,10 +247,9 @@ class Frontend(roles.FrontendRole):
                 LOG.warning("Binary file already exists, will overwrite: %s", filename)
 
         try:
-            # TODO: Do something with data type
-            shape = file_reader.write_var_to_flat_binary(file_key, filename)
             data_type = file_reader.get_data_type(file_key)
             fill_value = file_reader.get_fill_value(file_key)
+            shape = file_reader.write_var_to_flat_binary(file_key, filename, dtype=data_type)
             rows_per_scan = GEO_PAIRS[product_def.get_geo_pair_name(self.available_file_types)].rows_per_scan
         except StandardError:
             LOG.error("Could not extract data from file")

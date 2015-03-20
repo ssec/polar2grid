@@ -475,9 +475,9 @@ def get_band_3_mask(data_reader, chn, calib_type):
     return numpy.expand_dims((data_reader["scnlinbit"] & 1) == 1, 1)
 
 
-class VarInfo(namedtuple("FileVar", ["var_name", "index", "scale_factor", "calibrate_func", "calibrate_level"])):
-    def __new__(cls, var_name, index=(0,), scale_factor=None, calibrate_func=None, calibrate_level=1):
-        return super(VarInfo, cls).__new__(cls, var_name, index, scale_factor, calibrate_func, calibrate_level)
+class VarInfo(namedtuple("FileVar", ["var_name", "index", "scale_factor", "calibrate_func", "calibrate_level", "data_type"])):
+    def __new__(cls, var_name, index=(0,), scale_factor=None, calibrate_func=None, calibrate_level=1, data_type=numpy.float32):
+        return super(VarInfo, cls).__new__(cls, var_name, index, scale_factor, calibrate_func, calibrate_level, data_type)
 
 # TODO: Add lat/lon interpolation (this module probably)
 
@@ -502,7 +502,7 @@ FILE_TYPES[FT_AAPP] = {
     K_BAND3b: VarInfo("hrpt", 0, None, _ir_calibrate), # + 2 to channel number in IR calibration functions
     K_BAND4: VarInfo("hrpt", 1, None, _ir_calibrate),
     K_BAND5: VarInfo("hrpt", 2, None, _ir_calibrate),
-    K_BAND3_MASK: VarInfo("scnlinbit", None, None, get_band_3_mask),
+    K_BAND3_MASK: VarInfo("scnlinbit", None, None, get_band_3_mask, data_type=numpy.int32),
 }
 
 
