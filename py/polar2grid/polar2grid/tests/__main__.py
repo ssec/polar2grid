@@ -41,5 +41,5 @@ __docformat__ = "restructuredtext en"
 
 if __name__ == "__main__":
     import sys
-    from polar2grid.tests import main, load_tests
+    from polar2grid.tests import main
     sys.exit(main())

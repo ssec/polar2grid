@@ -39,11 +39,10 @@
 """
 __docformat__ = "restructuredtext en"
 
-import os
 import sys
 import logging
-import unittest
 import numpy
+import pytest
 
 from polar2grid.remap import ll2cr
 from polar2grid.tests.test_remap import create_test_longitude, create_test_latitude
@@ -63,40 +62,40 @@ dynamic_wgs84 = {
 }
 
 
-class LL2CRStaticTestCase(unittest.TestCase):
+class TestLL2CRStatic(object):
     def test_latlong_basic1(self):
         pass
 
 
-class LL2CRDynamicTestCase(unittest.TestCase):
+class TestLL2CRDynamic(object):
     def test_latlong_basic1(self):
         lon_arr = create_test_longitude(-95.0, -75.0, (50, 100))
         lat_arr = create_test_latitude(15.0, 30.0, (50, 100))
         grid_info = dynamic_wgs84.copy()
         ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
-        self.assertEqual(lon_arr[0, 0], 0, "ll2cr returned the wrong result for a dynamic latlong grid")
-        self.assertEqual(lat_arr[-1, 0], 0, "ll2cr returned the wrong result for a dynamic latlong grid")
+        assert lon_arr[0, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid"
+        assert lat_arr[-1, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid"
 
     def test_latlong_basic2(self):
         lon_arr = create_test_longitude(-95.0, -75.0, (50, 100), twist_factor=0.6)
         lat_arr = create_test_latitude(15.0, 30.0, (50, 100), twist_factor=-0.1)
         grid_info = dynamic_wgs84.copy()
         ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
-        self.assertEqual(lon_arr[0, 0], 0, "ll2cr returned the wrong result for a dynamic latlong grid")
-        self.assertEqual(lat_arr[-1, 0], 0, "ll2cr returned the wrong result for a dynamic latlong grid")
+        assert lon_arr[0, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid"
+        assert lat_arr[-1, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid"
 
     def test_latlong_dateline1(self):
         lon_arr = create_test_longitude(165.0, -165.0, (50, 100), twist_factor=0.6)
         lat_arr = create_test_latitude(15.0, 30.0, (50, 100), twist_factor=-0.1)
         grid_info = dynamic_wgs84.copy()
         ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
-        self.assertEqual(lon_arr[0, 0], 0, "ll2cr returned the wrong result for a dynamic latlong grid over the dateline")
-        self.assertEqual(lat_arr[-1, 0], 0, "ll2cr returned the wrong result for a dynamic latlong grid over the dateline")
-        self.assertTrue(numpy.all(numpy.diff(lon_arr[0]) >= 0), "ll2cr didn't return monotonic columns over the dateline")
+        assert lon_arr[0, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid over the dateline"
+        assert lat_arr[-1, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid over the dateline"
+        assert numpy.all(numpy.diff(lon_arr[0]) >= 0), "ll2cr didn't return monotonic columns over the dateline"
 
 
 def main():
-    return unittest.main()
+    return pytest.main()
 
 
 if __name__ == "__main__":

@@ -41,14 +41,6 @@ __docformat__ = "restructuredtext en"
 
 import numpy
 
-import os
-import sys
-import logging
-
-# from test_ll2cr import LL2CRDynamicTestCase, LL2CRStaticTestCase
-
-LOG = logging.getLogger(__name__)
-
 
 def create_test_longitude(start, stop, shape, twist_factor=0.0, dtype=numpy.float32):
     if start > stop:

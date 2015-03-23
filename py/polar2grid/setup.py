@@ -40,7 +40,7 @@ http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 import os
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Command
 from distutils.extension import Extension
 import numpy
 
@@ -74,6 +74,22 @@ if not os.getenv("USE_CYTHON", False) or cythonize is None:
         return extensions
 
 version = '2.0.0'
+
+
+class PyTest(Command):
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        import subprocess
+        import sys
+        errno = subprocess.call([sys.executable, 'runtests.py'])
+        raise SystemExit(errno)
 
 
 def readme():
@@ -152,9 +168,10 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     namespace_packages=["polar2grid"],
     include_package_data=True,
-    package_data={'polar2grid': ["compositors/*.ini", "awips/ncml/*.ncml", "awips/*.ini", "grids/*.conf", "ninjo/*.ini"]},
+    package_data={'polar2grid': ["compositors/*.ini", "awips/*.ini", "grids/*.conf", "ninjo/*.ini"]},
     zip_safe=True,
-    test_suite="polar2grid.tests.__init__",
+    tests_require=['py.test'],
+    cmdclass={'test': PyTest},
     install_requires=[
         'setuptools',       # reading configuration files
         'numpy',
