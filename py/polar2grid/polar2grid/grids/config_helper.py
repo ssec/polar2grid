@@ -1,5 +1,32 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# Copyright (C) 2013-2015 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    March 2015
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
 """Helper script for creating valid grid configuration lines. The user
 provides a center longitude and latitude, along with other grid parameters,
 and a configuration line is printed to stdout that can be added to a user's
@@ -8,43 +35,14 @@ own grid configuration file.
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         April 2013
+:copyright:    Copyright (c) 2015 University of Wisconsin SSEC. All rights reserved.
+:date:         Mar 2015
 :license:      GNU GPLv3
 
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    April 2013
-    University of Wisconsin-Madison 
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
-
 """
-from polar2grid.core.proj import Proj
-
 __docformat__ = "restructuredtext en"
 
+from polar2grid.core.proj import Proj
 import sys
 
 #grid_name,proj4, proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y

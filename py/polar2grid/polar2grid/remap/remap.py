@@ -42,7 +42,7 @@ __docformat__ = "restructuredtext en"
 from polar2grid.core.containers import GriddedProduct, GriddedScene, SwathScene
 from polar2grid.remap import ll2cr as ll2cr  # gridinator
 from polar2grid.remap import fornav
-from polar2grid.grids.grids import Cartographer
+from polar2grid.grids import GridManager
 
 import os
 import sys
@@ -78,7 +78,7 @@ def init_worker():
 class Remapper(object):
     def __init__(self, grid_configs=[],
                  overwrite_existing=False, keep_intermediate=False, exit_on_error=True, **kwargs):
-        self.cart = Cartographer(*grid_configs)
+        self.grid_manager = GridManager(*grid_configs)
         self.overwrite_existing = overwrite_existing
         self.keep_intermediate = keep_intermediate
         self.exit_on_error = exit_on_error
@@ -105,7 +105,7 @@ class Remapper(object):
             LOG.error("Unknown remapping method '%s'", method)
             raise ValueError("Unknown remapping method '%s'" % (method,))
 
-        grid_def = self.cart.get_grid_definition(grid_name)
+        grid_def = self.grid_manager.get_grid_definition(grid_name)
         func = self.methods[method]
 
         # FUTURE: Make this a keyword and add the logic to support it

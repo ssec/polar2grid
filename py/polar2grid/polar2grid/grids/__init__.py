@@ -38,3 +38,5 @@
 
 """
 __docformat__ = "restructuredtext en"
+
+from polar2grid.grids.manager import GridManager

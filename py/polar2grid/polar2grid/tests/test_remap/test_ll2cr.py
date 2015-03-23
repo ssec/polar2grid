@@ -61,10 +61,36 @@ dynamic_wgs84 = {
     "proj4_definition": "+proj=latlong +datum=WGS84 +ellps=WGS84 +no_defs",
 }
 
+static_lcc = {
+    "grid_name": "test_lcc",
+    "origin_x": -1950510.636800,
+    "origin_y": 4368587.226913,
+    "width": 5120,
+    "height": 5120,
+    "cell_width": 1015.9,
+    "cell_height": -1015.9,
+    "proj4_definition": "+proj=lcc +a=6371200 +b=6371200 +lat_0=25 +lat_1=25 +lon_0=-95 +units=m +no_defs",
+}
+
 
 class TestLL2CRStatic(object):
-    def test_latlong_basic1(self):
-        pass
+    def test_lcc_basic1(self):
+        lon_arr = create_test_longitude(-95.0, -75.0, (50, 100))
+        lat_arr = create_test_latitude(18.0, 40.0, (50, 100))
+        grid_info = static_lcc.copy()
+        points_in_grid, lon_res, lat_res = ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
+        assert points_in_grid == lon_arr.size, "all these test points should fall in this grid"
+        assert lon_arr is lon_res
+        assert lat_arr is lat_res
+
+    def test_lcc_fail1(self):
+        lon_arr = create_test_longitude(-15.0, 15.0, (50, 100))
+        lat_arr = create_test_latitude(18.0, 40.0, (50, 100))
+        grid_info = static_lcc.copy()
+        points_in_grid, lon_res, lat_res = ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
+        assert points_in_grid == 0, "none of these test points should fall in this grid"
+        assert lon_arr is lon_res
+        assert lat_arr is lat_res
 
 
 class TestLL2CRDynamic(object):
@@ -72,7 +98,10 @@ class TestLL2CRDynamic(object):
         lon_arr = create_test_longitude(-95.0, -75.0, (50, 100))
         lat_arr = create_test_latitude(15.0, 30.0, (50, 100))
         grid_info = dynamic_wgs84.copy()
-        ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
+        points_in_grid, lon_res, lat_res = ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
+        assert points_in_grid == lon_arr.size, "all points should be contained in a dynamic grid"
+        assert lon_arr is lon_res
+        assert lat_arr is lat_res
         assert lon_arr[0, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid"
         assert lat_arr[-1, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid"
 
@@ -80,7 +109,10 @@ class TestLL2CRDynamic(object):
         lon_arr = create_test_longitude(-95.0, -75.0, (50, 100), twist_factor=0.6)
         lat_arr = create_test_latitude(15.0, 30.0, (50, 100), twist_factor=-0.1)
         grid_info = dynamic_wgs84.copy()
-        ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
+        points_in_grid, lon_res, lat_res = ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
+        assert points_in_grid == lon_arr.size, "all points should be contained in a dynamic grid"
+        assert lon_arr is lon_res
+        assert lat_arr is lat_res
         assert lon_arr[0, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid"
         assert lat_arr[-1, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid"
 
@@ -88,14 +120,18 @@ class TestLL2CRDynamic(object):
         lon_arr = create_test_longitude(165.0, -165.0, (50, 100), twist_factor=0.6)
         lat_arr = create_test_latitude(15.0, 30.0, (50, 100), twist_factor=-0.1)
         grid_info = dynamic_wgs84.copy()
-        ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
+        points_in_grid, lon_res, lat_res = ll2cr.ll2cr(lon_arr, lat_arr, grid_info)
+        assert points_in_grid == lon_arr.size, "all points should be contained in a dynamic grid"
+        assert lon_arr is lon_res
+        assert lat_arr is lat_res
         assert lon_arr[0, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid over the dateline"
         assert lat_arr[-1, 0] == 0, "ll2cr returned the wrong result for a dynamic latlong grid over the dateline"
         assert numpy.all(numpy.diff(lon_arr[0]) >= 0), "ll2cr didn't return monotonic columns over the dateline"
 
 
 def main():
-    return pytest.main()
+    import os
+    return pytest.main([os.dirname(os.path.realpath(__file__))])
 
 
 if __name__ == "__main__":

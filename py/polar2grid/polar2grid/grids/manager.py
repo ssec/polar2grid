@@ -1,53 +1,46 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# Copyright (C) 2013-2015 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    March 2015
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
 """Utilities and accessor functions to grids and projections used in
 polar2grid.
-
-Note: The term 'fit grid' corresponds to any grid that doesn't have all of
-its parameters specified in the grid configuration.  Meaning it is likely used
-to make a grid that "fits" the data.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
+:copyright:    Copyright (c) 2015 University of Wisconsin SSEC. All rights reserved.
+:date:         Mar 2015
 :license:      GNU GPLv3
 
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
-
 """
-from polar2grid.core.proj import Proj
-# from pyproj import pj_ellps
-
 __docformat__ = "restructuredtext en"
 
+from polar2grid.core.proj import Proj
 from polar2grid.core import roles
 
 import os
@@ -61,7 +54,7 @@ except ImportError:
 
 LOG = logging.getLogger(__name__)
 
-script_dir = os.path.split(os.path.realpath(__file__))[0]
+script_dir = os.path.dirname(os.path.realpath(__file__))
 GRIDS_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
 
 
@@ -273,7 +266,7 @@ def read_grids_config(config_filepath):
     return read_grids_config_str(config_str)
 
 
-class Cartographer(roles.CartographerRole):
+class GridManager(roles.CartographerRole):
     """Object that holds grid information about the grids added
     to it. This Cartographer can handle PROJ4 and GPD grids.
     """
@@ -304,43 +297,11 @@ class Cartographer(roles.CartographerRole):
         self.grid_information.update(**grid_information)
 
     def add_proj4_grid_info(self, grid_name, proj4_str,
-                            width, height, pixel_size_x, pixel_size_y, origin_x, origin_y):
+                            width, height, cell_width, cell_height, origin_x, origin_y):
         # Trick the parse function to think this came from a config line
         parts = (grid_name, "proj4", proj4_str,
-                 width, height, pixel_size_x, pixel_size_y, origin_x, origin_y)
+                 width, height, cell_width, cell_height, origin_x, origin_y)
         self.grid_information[grid_name] = parse_proj4_config_line(grid_name, parts)
-
-    def get_all_grid_info(self):
-        # We need to make sure we copy the entire thing so the user can't
-        # change things
-        ret_ginfo = {grid_name: info.copy() for grid_name, info in self.grid_information.items()}
-        return ret_ginfo
-
-    def get_static_grid_info(self):
-        ret_ginfo = {grid_name: info.copy() for grid_name, info in self.grid_information.items() if info["static"]}
-        return ret_ginfo
-
-    def get_dynamic_grid_info(self):
-        ret_ginfo = {grid_name: info.copy() for grid_name, info in self.grid_information.items() if not info["static"]}
-        return ret_ginfo
-
-    def get_all_grid_names(self, static=False):
-        return [k for k in self.grid_information.keys() if not static or self.grid_information[k]["static"]]
-
-    def calculate_grid_corners(self, grid_name):
-        LOG.debug("Calculating corners for '%s'" % (grid_name,))
-        grid_info = self.grid_information[grid_name]
-
-        if not grid_info["static"]:
-            LOG.debug("Won't calculate corners for a dynamic grid: '%s'" % (grid_name,))
-
-        p = Proj(grid_info["proj4_str"])
-        right_x = grid_info["grid_origin_x"] + grid_info["pixel_size_x"] * grid_info["grid_width"]
-        bottom_y = grid_info["grid_origin_y"] + grid_info["pixel_size_y"] * grid_info["grid_height"]
-        grid_info["ul_corner"] = p(grid_info["grid_origin_x"], grid_info["grid_origin_y"], inverse=True)
-        grid_info["ur_corner"] = p(right_x, grid_info["grid_origin_y"], inverse=True)
-        grid_info["lr_corner"] = p(right_x, bottom_y, inverse=True)
-        grid_info["ll_corner"] = p(grid_info["grid_origin_x"], bottom_y, inverse=True)
 
     def get_grid_definition(self, grid_name):
         """Return a standard `GridDefinition` object for the specified grid.
@@ -361,27 +322,3 @@ class Cartographer(roles.CartographerRole):
             origin_x=grid_info["grid_origin_x"],
             origin_y=grid_info["grid_origin_y"]
         )
-
-    def get_grid_info(self, grid_name, with_corners=False):
-        """Return a grid information dictionary about the ``grid_name``
-        specified. If the ``with_corners`` keyword is specified and the
-        corners have not already been calculated they will be calculated
-        and stored in the information as (lon,lat) tuples with keys
-        ``ul_corner``, ``ur_corner``, ``ll_corner``, and ``lr_corner``.
-
-        The information returned will always be a copy of the information
-        stored internally in this object. So a change to the dictionary
-        returned does NOT affect the internal information.
-
-        :raises ValueError: if ``grid_name`` does not exist
-
-        """
-        if grid_name in self.grid_information:
-            if with_corners:
-                if "ul_corner" not in self.grid_information[grid_name]:
-                    # The grid doesn't have the corners calculated yet
-                    self.calculate_grid_corners(grid_name)
-            return self.grid_information[grid_name].copy()
-        else:
-            LOG.error("Unknown grid '%s'" % (grid_name,))
-            raise ValueError("Unknown grid '%s'" % (grid_name,))
