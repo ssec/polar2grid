@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
-#  University of Wisconsin-Madison.
+# Copyright (C) 2015 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
@@ -21,31 +21,21 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-#     Written by David Hoese    December 2014
+#     Written by David Hoese    March 2015
 #     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Tests for polar2grid.
+"""Grid subpackage tests
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2014
+:copyright:    Copyright (c) 2015 University of Wisconsin SSEC. All rights reserved.
+:date:         Mar 2015
 :license:      GNU GPLv3
 
 """
 __docformat__ = "restructuredtext en"
 
-
-def main():
-    import os
-    import pytest
-    return pytest.main([os.path.dirname(os.path.realpath(__file__))])
-
-
-if __name__ == "__main__":
-    import sys
-    sys.exit(main())

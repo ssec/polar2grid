@@ -131,7 +131,7 @@ class TestLL2CRDynamic(object):
 
 def main():
     import os
-    return pytest.main([os.dirname(os.path.realpath(__file__))])
+    return pytest.main([os.path.dirname(os.path.realpath(__file__))])
 
 
 if __name__ == "__main__":

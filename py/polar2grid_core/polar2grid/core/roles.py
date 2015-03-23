@@ -855,41 +855,6 @@ class CartographerRole(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def get_all_grid_info(self):
-        """Return grid information for all grids (static and dynamic)
-        as a python dictionary, mapping ``grid_name`` to a dictionary
-        of grid information. Exact information returned depends on the
-        type of the grid and whether that grid dynamically fits the data
-        being mapped or is a static size, resolution, and location.
-        """
-        raise NotImplementedError("Child class must implement this method")
-
-    @abstractmethod
-    def get_static_grid_info(self):
-        """Like ``CartographerRole.get_all_grid_info`` but only returns
-        static grids.
-        """
-        raise NotImplementedError("Child class must implement this method")
-
-    @abstractmethod
-    def get_dynamic_grid_info(self):
-        """Like ``CartographerRole.get_all_grid_info`` but only returns
-        dynamic grids.
-        """
-        raise NotImplementedError("Child class must implement this method")
-
-    @abstractmethod
-    def get_grid_info(self, grid_name):
-        """Return grid information as a python dictionary for the
-        ``grid_name`` provided. Exact information returned depends on the
-        type of the grid and whether that grid dynamically fits the data
-        being mapped or is a static size, resolution, and location.
-
-        :raises ValueError: if ``grid_name`` does not exist
-        """
-        raise NotImplementedError("Child class must implement this method")
-
-    @abstractmethod
     def add_grid_config(self, grid_config_filename):
         """Add the grids and their information to this objects internal
         store of grid information. The format of the grid configuration

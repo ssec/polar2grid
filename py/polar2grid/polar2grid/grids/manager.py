@@ -322,3 +322,19 @@ class GridManager(roles.CartographerRole):
             origin_x=grid_info["grid_origin_x"],
             origin_y=grid_info["grid_origin_y"]
         )
+
+    def get_grid_info(self, grid_name):
+        """Return a grid information dictionary about the ``grid_name`` specified.
+
+        The information returned will always be a copy of the information
+        stored internally in this object. So a change to the dictionary
+        returned does NOT affect the internal information.
+
+        :raises ValueError: if ``grid_name`` does not exist
+
+        """
+        if grid_name in self.grid_information:
+            return self.grid_information[grid_name].copy()
+        else:
+            LOG.error("Unknown grid '%s'" % (grid_name,))
+            raise ValueError("Unknown grid '%s'" % (grid_name,))
