@@ -139,6 +139,7 @@ class CompositorManager(dict):
         comp_cls_name = kwargs.pop("compositor_class")
         comp_cls = self.load_compositor_class(comp_cls_name)
 
+        LOG.debug("Initializing compositor '%s' with %r", name, kwargs)
         return comp_cls(**kwargs)
 
     def create_compositor(self, name):

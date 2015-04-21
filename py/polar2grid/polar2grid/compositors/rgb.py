@@ -260,13 +260,13 @@ class FalseColorCompositor(TrueColorCompositor):
     # see TrueColorCompositor.ratio_sharpen()
     default_compare_index = 2
 
-    def __init__(self, fc_red_products, fc_green_products, fc_blue_products, fc_hires_products, **kwargs):
+    def __init__(self, red_products, green_products, blue_products, hires_products, **kwargs):
         kwargs.setdefault("composite_name", "false_color")
         kwargs.setdefault("composite_data_kind", "crefl_false_color")
-        super(FalseColorCompositor, self).__init__(fc_red_products,
-                                                   fc_green_products,
-                                                   fc_blue_products,
-                                                   fc_hires_products,
+        super(FalseColorCompositor, self).__init__(red_products,
+                                                   green_products,
+                                                   blue_products,
+                                                   hires_products,
                                                    **kwargs)
 
     def modify_scene(self, gridded_scene, fill_value=None, **kwargs):

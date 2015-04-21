@@ -226,7 +226,7 @@ def add_backend_argument_groups(parser):
     group.add_argument('--rescale-configs', nargs="*", dest="rescale_configs",
                        help="alternative rescale configuration files")
     group = parser.add_argument_group(title="Backend Output Creation")
-    group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
+    group.add_argument("--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
                        help="output filenaming pattern")
     group.add_argument('--dont-inc', dest="inc_by_one", default=True, action="store_false",
                        help="do not increment data by one (ex. 0-254 -> 1-255 with 0 being fill)")

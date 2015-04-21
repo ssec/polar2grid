@@ -59,8 +59,8 @@ LOG = logging.getLogger(__name__)
 # FUTURE: Add a register function to register custom P2G objects so no imports and short __class__ names
 # FUTURE: Handling duplicate sub-objects better (ex. geolocation)
 class P2GJSONDecoder(json.JSONDecoder):
-    def __init__(self, *args, **kargs):
-        super(P2GJSONDecoder, self).__init__(object_hook=self.dict_to_object, *args, **kargs)
+    def __init__(self, *args, **kwargs):
+        super(P2GJSONDecoder, self).__init__(object_hook=self.dict_to_object, *args, **kwargs)
 
     @staticmethod
     def _jsonclass_to_pyclass(json_class_name):
@@ -92,7 +92,8 @@ class P2GJSONDecoder(json.JSONDecoder):
                     pass
 
         if "__class__" not in obj:
-            LOG.warning("No '__class__' element in JSON file. Using BaseP2GObject by default.")
+            LOG.warning("No '__class__' element in JSON file. Using BaseP2GObject by default for now.")
+            obj["__class__"] = "BaseP2GObject"
             return BaseP2GObject(**obj)
 
         cls = self._jsonclass_to_pyclass(obj["__class__"])
@@ -178,7 +179,7 @@ class P2GJSONEncoder(json.JSONEncoder):
             mod_str = str(obj.__class__.__module__)
             mod_str = mod_str + "." if mod_str != __name__ else ""
             cls_str = str(obj.__class__.__name__)
-            obj = obj.copy()
+            obj = obj.copy(as_dict=True)
             # object should now be a builtin dict
             obj["__class__"] = mod_str + cls_str
             return obj
@@ -202,9 +203,15 @@ class BaseP2GObject(dict):
     required_kwargs = tuple()
     loadable_kwargs = tuple()
     cleanup_kwargs = tuple()
+    child_object_types = {}
 
     def __init__(self, *args, **kwargs):
-        if kwargs.pop("__class__", None):
+        cls = kwargs.pop("__class__", None)
+        super(BaseP2GObject, self).__init__(*args, **kwargs)
+        self.load_loadable_kwargs()
+        self._initialize_children()
+
+        if cls:
             # this is being loaded from a serialized/JSON copy
             # we don't have the 'right' to delete any binary files associated with it
             self.set_persist(True)
@@ -212,9 +219,6 @@ class BaseP2GObject(dict):
         else:
             self.set_persist(False)
 
-        super(BaseP2GObject, self).__init__(*args, **kwargs)
-
-        self.load_loadable_kwargs()
 
     def __del__(self):
         self.cleanup()
@@ -261,15 +265,45 @@ class BaseP2GObject(dict):
 
         for kw in self.loadable_kwargs:
             if kw in self and isinstance(self[kw], (str, unicode)):
-                LOG.debug("Loading associated JSON file: '%s'", self[kw])
-                self[kw] = SwathProduct.load(self[kw])
+                LOG.debug("Loading associated JSON file from key {}: '{}'".format(kw, self[kw]))
+                self[kw] = BaseP2GObject.load(self[kw])
 
     @classmethod
-    def load(cls, filename):
+    def load(cls, filename, object_class=None):
         """Open a JSON file representing a Polar2Grid object.
         """
-        inst = json.load(open(filename, "r"), cls=P2GJSONDecoder)
+        # Allow the caller to specify the preferred object class if one is not specified in the JSON
+        if object_class is None:
+            object_class = cls
+        if isinstance(filename, (str, unicode)):
+            # we are dealing with a string filename
+            file_obj = open(filename, "r")
+        else:
+            # we are dealing with a file-like object
+            file_obj = filename
+
+        inst = json.load(file_obj, cls=P2GJSONDecoder)
+
+        if not isinstance(inst, object_class):
+            # Need to tell the class that we are loading something from a file so it can take care of persist and such
+            inst["__class__"] = object_class.__name__
+            return object_class(**inst)
         return inst
+
+    def _initialize_children(self):
+        # LOG.debug("Initializing children for {}".format(self.__class__.__name__))
+        for child_key, child_type in self.child_object_types.items():
+            if child_key is None:
+                # Child key being None, means that all children should be of this type
+                for ck in self.keys():
+                    if self.get(ck, None) and not isinstance(self[ck], child_type):
+                        LOG.debug("Reinitializing child {} to {}".format(ck, child_type.__name__))
+                        self[ck] = child_type(**self[ck])
+                continue
+
+            if self.get(child_key, None) and not isinstance(self[child_key], child_type):
+                LOG.debug("Reinitializing child {} to {}".format(child_key, child_type.__name__))
+                self[child_key] = child_type(**self[child_key])
 
     def save(self, filename):
         """Write the JSON representation of this class to a file.
@@ -278,7 +312,6 @@ class BaseP2GObject(dict):
         try:
             json.dump(self, f, cls=P2GJSONEncoder, indent=4, sort_keys=True)
             self.set_persist()
-            self.persist = True
         except TypeError:
             LOG.error("Could not write P2G object to JSON file: '%s'", filename, exc_info=True)
             f.close()
@@ -294,83 +327,22 @@ class BaseP2GObject(dict):
             self.set_persist()
         return json.dumps(self, cls=P2GJSONEncoder, indent=4, sort_keys=True)
 
+    def copy(self, as_dict=False):
+        """Copy this object in to a separate object.
 
-class BaseScene(BaseP2GObject):
-    """Base scene class mapping product name to product metadata object.
-    """
-    # special value when every key is loadable
-    loadable_kwargs = None
+        .. note::
 
-    def get_fill_value(self, products=None):
-        """Get the fill value shared by the products specified (all products by default).
+            Any on-disk files or external references must be handled separately.
+
         """
-        products = products or self.keys()
-        fills = [self[product].get("fill_value", numpy.nan) for product in products]
-        if numpy.isnan(fills[0]):
-            fills_same = numpy.isnan(fills).all()
+        if as_dict:
+            return dict.copy(self)
         else:
-            fills_same = all(f == fills[0] for f in fills)
-        if not fills_same:
-            raise RuntimeError("Scene's products don't all share the same fill value")
-        return fills[0]
-
-    def get_begin_time(self):
-        """Get the begin time shared by all products in the scene.
-        """
-        products = self.keys()
-        return self[products[0]]["begin_time"]
-
-    def get_end_time(self):
-        """Get the end time shared by all products in the scene.
-        """
-        products = self.keys()
-        return self[products[0]]["end_time"]
+            return self.__class__(dict.copy(self))
 
 
-class SwathScene(BaseScene):
-    """Container for `SwathProduct` objects.
-
-    Products in a `SwathScene` use latitude and longitude coordinates to define their pixel locations. These pixels
-    are typically not on a uniform grid. Products in a `SwathScene` are observed at the same times and over the
-    same geographic area, but may be measured or displayed at varying resolutions. The common use case for a
-    `SwathScene` is for swaths extracted from satellite imagery files.
-
-    .. note::
-
-        When stored on disk as a JSON file, a `SwathScene's` values may be filenames of a saved `SwathProduct` object.
-
-    .. seealso::
-
-        `GriddedScene`: Scene object for gridded products.
-
-    """
-    def get_data_filepaths(self, product_names=None, data_key=None):
-        """Generator of filepaths for each product provided or all products by default.
-        """
-        product_names = product_names if product_names is not None else self.keys()
-        data_key = data_key if data_key is not None else self.values()[0].cleanup_kwargs[0]
-        for pname in product_names:
-            fp = self[pname][data_key]
-            if not isinstance(fp, (str, unicode)):
-                LOG.warning("Non-string filepath being provided from product")
-            yield fp
-
-
-class GriddedScene(BaseScene):
-    """Container for `GriddedProduct` objects.
-
-    Products in a `GriddedScene` are mapped to a uniform grid specified by a projection, grid size, grid origin,
-    and pixel size. All products in a `GriddedScene` should use the same grid.
-
-    .. note::
-
-        When stored on disk as a JSON file, a `GriddedScene's` values may be filenames of a saved `GriddedProduct`
-        object.
-
-    .. seealso::
-
-        `SwathScene`: Scene object for geographic longitude/latitude products.
-
+class GeographicDefinition(BaseP2GObject):
+    """Base class for objects that define a geographic area.
     """
     pass
 
@@ -440,167 +412,36 @@ class BaseProduct(BaseP2GObject):
             return data.copy()
 
 
-class SwathProduct(BaseProduct):
-    """Swath product class for image products geolocated using longitude and latitude points.
-
-    Required Information:
-        - product_name (string): Name of the product this swath represents
-        - satellite (string): Name of the satellite the data came from
-        - instrument (string): Name of the instrument on the satellite from which the data was observed
-        - begin_time (datetime): Datetime object representing the best known start of observation for this product's data
-        - end_time (datetime): Datetime object representing the best known end of observation for this product's data
-        - swath_definition (`SwathDefinition` object): definition of the geographic area covered by this swath (None is not applicable)
-        - data_type (numpy.dtype): Data type of image data or if on disk on of (real4, int1, uint1, etc)
-        - swath_rows (int): Number of rows in the main 2D data array
-        - swath_columns (int): Number of columns in the main 2D data array
-        - swath_data (array): Binary filename or numpy array for the main data array
-
-    Optional Information:
-        - description (string): Basic description of the product (empty string by default)
-        - source_filenames (list of strings): Unordered list of source files that made up this product ([] by default)
-        - data_kind (string): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
-        - rows_per_scan (int): Number of swath rows making up one scan of the sensor (0 if not applicable or not specified)
-        - units (string): Image data units (empty string by default)
-        - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
-
-    .. note::
-
-        When datetime objects are written to disk as JSON they are converted to ISO8601 strings.
-
-    .. seealso::
-
-        `GriddedProduct`: Product object for gridded products.
-
+class BaseScene(BaseP2GObject):
+    """Base scene class mapping product name to product metadata object.
     """
-    # Validate required keys when loaded from disk
-    required_kwargs = (
-        "product_name",
-        "satellite",
-        "instrument",
-        "begin_time",
-        "end_time",
-        "swath_definition",
-        "swath_rows",
-        "swath_columns",
-        "data_type",
-        "swath_data",
-    )
+    # special value when every key is loadable
+    loadable_kwargs = None
 
-    loadable_kwargs = (
-        "swath_definition",
-    )
-
-    cleanup_kwargs = (
-        "swath_data",
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(SwathProduct, self).__init__(*args, **kwargs)
-
-    @property
-    def shape(self):
-        return (self["swath_rows"], self["swath_columns"])
-
-    def get_data_array(self, item="swath_data", mode="r"):
-        dtype = self["data_type"]
-        rows = self["swath_rows"]
-        cols = self["swath_columns"]
-        return super(SwathProduct, self).get_data_array(item, rows, cols, dtype, mode=mode)
-
-    def get_data_mask(self, item="swath_data"):
-        return super(SwathProduct, self).get_data_mask(item, fill_key="fill_value")
-
-    def copy_array(self, item="swath_data", filename=None, read_only=True):
-        dtype = self["data_type"]
-        rows = self["swath_rows"]
-        cols = self["swath_columns"]
-        return super(SwathProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
-
-
-class GriddedProduct(BaseProduct):
-    """Gridded product class for image products on a uniform, projected grid.
-
-    Required Information:
-        - product_name: Name of the product this swath represents
-        - satellite: Name of the satellite the data came from
-        - instrument: Name of the instrument on the satellite from which the data was observed
-        - begin_time: Datetime object representing the best known start of observation for this product's data
-        - end_time: Datetime object represnting the best known end of observation for this product's data
-        - data_type (string): Data type of image data (real4, uint1, int1, etc)
-        - grid_data: Binary filename or numpy array for the main data array
-
-    Optional Information:
-        - description (string): Basic description of the product (empty string by default)
-        - source_filenames (list of strings): Unordered list of source files that made up this product ([] by default)
-        - data_kind (string): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
-        - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
-
-    .. seealso::
-
-        `SwathProduct`: Product object for products using longitude and latitude for geolocation.
-
-    """
-    # Validate required keys when loaded from disk
-    required_kwargs = (
-        "product_name",
-        "satellite",
-        "instrument",
-        "begin_time",
-        "end_time",
-        "grid_definition",
-        "grid_data",
-    )
-
-    loadable_kwargs = (
-        "grid_definition",
-    )
-
-    cleanup_kwargs = (
-        "grid_data",
-    )
-
-    @property
-    def shape(self):
-        return (self["grid_definition"]["height"], self["grid_definition"]["width"])
-
-    def from_swath_product(self, swath_product):
-        for k in ["product_name", "satellite", "instrument",
-                  "begin_time", "end_time", "data_type", "data_kind",
-                  "description", "source_filenames"]:
-            if k in swath_product:
-                self[k] = swath_product[k]
-
-    def get_data_array(self, item="grid_data", mode="r"):
-        """Get FBF item as a numpy array.
-
-        File is loaded from disk as a memory mapped file if needed.
+    def get_fill_value(self, products=None):
+        """Get the fill value shared by the products specified (all products by default).
         """
-        dtype = self["data_type"]
-        rows = self["grid_definition"]["height"]
-        cols = self["grid_definition"]["width"]
-        return super(GriddedProduct, self).get_data_array(item, rows, cols, dtype, mode=mode)
+        products = products or self.keys()
+        fills = [self[product].get("fill_value", numpy.nan) for product in products]
+        if numpy.isnan(fills[0]):
+            fills_same = numpy.isnan(fills).all()
+        else:
+            fills_same = all(f == fills[0] for f in fills)
+        if not fills_same:
+            raise RuntimeError("Scene's products don't all share the same fill value")
+        return fills[0]
 
-    def get_data_mask(self, item="grid_data"):
-        return super(GriddedProduct, self).get_data_mask(item, fill_key="fill_value")
-
-    def copy_array(self, item="grid_data", filename=None, read_only=True):
-        """Copy the array item of this swath.
-
-        If the `filename` keyword is passed the data will be written to that file. The copy returned
-        will be a memory map. If `read_only` is False, the memory map will be opened with mode "r+".
-
-        The 'read_only' keyword is ignored if `filename` is None.
+    def get_begin_time(self):
+        """Get the begin time shared by all products in the scene.
         """
-        dtype = self["data_type"]
-        rows = self["grid_definition"]["height"]
-        cols = self["grid_definition"]["width"]
-        return super(GriddedProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
+        products = self.keys()
+        return self[products[0]]["begin_time"]
 
-
-class GeographicDefinition(BaseP2GObject):
-    """Base class for objects that define a geographic area.
-    """
-    pass
+    def get_end_time(self):
+        """Get the end time shared by all products in the scene.
+        """
+        products = self.keys()
+        return self[products[0]]["end_time"]
 
 
 class SwathDefinition(GeographicDefinition, BaseProduct):
@@ -825,6 +666,225 @@ class GridDefinition(GeographicDefinition):
         LOG.debug("Passing basemap the following keywords from PROJ.4: %r", proj4_dict)
         LOG.debug("Lower-left corner: (%f, %f); Upper-right corner: (%f, %f)", lon_ll, lat_ll, lon_ur, lat_ur)
         return Basemap(llcrnrlon=lon_ll, llcrnrlat=lat_ll, urcrnrlon=lon_ur, urcrnrlat=lat_ur, **proj4_dict)
+
+
+class SwathProduct(BaseProduct):
+    """Swath product class for image products geolocated using longitude and latitude points.
+
+    Required Information:
+        - product_name (string): Name of the product this swath represents
+        - satellite (string): Name of the satellite the data came from
+        - instrument (string): Name of the instrument on the satellite from which the data was observed
+        - begin_time (datetime): Datetime object representing the best known start of observation for this product's data
+        - end_time (datetime): Datetime object representing the best known end of observation for this product's data
+        - swath_definition (`SwathDefinition` object): definition of the geographic area covered by this swath (None is not applicable)
+        - data_type (numpy.dtype): Data type of image data or if on disk on of (real4, int1, uint1, etc)
+        - swath_rows (int): Number of rows in the main 2D data array
+        - swath_columns (int): Number of columns in the main 2D data array
+        - swath_data (array): Binary filename or numpy array for the main data array
+
+    Optional Information:
+        - description (string): Basic description of the product (empty string by default)
+        - source_filenames (list of strings): Unordered list of source files that made up this product ([] by default)
+        - data_kind (string): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
+        - rows_per_scan (int): Number of swath rows making up one scan of the sensor (0 if not applicable or not specified)
+        - units (string): Image data units (empty string by default)
+        - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
+
+    .. note::
+
+        When datetime objects are written to disk as JSON they are converted to ISO8601 strings.
+
+    .. seealso::
+
+        `GriddedProduct`: Product object for gridded products.
+
+    """
+    # Validate required keys when loaded from disk
+    required_kwargs = (
+        "product_name",
+        "satellite",
+        "instrument",
+        "begin_time",
+        "end_time",
+        "data_type",
+        "swath_data",
+        "swath_definition",
+    )
+
+    loadable_kwargs = (
+        "swath_definition",
+    )
+
+    cleanup_kwargs = (
+        "swath_data",
+    )
+
+    child_object_types = {
+        "swath_definition": SwathDefinition,
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(SwathProduct, self).__init__(*args, **kwargs)
+
+    @property
+    def shape(self):
+        return (self["swath_rows"], self["swath_columns"])
+
+    def get_data_array(self, item="swath_data", mode="r"):
+        dtype = self["data_type"]
+        rows = self["swath_definition"]["swath_rows"]
+        cols = self["swath_definition"]["swath_columns"]
+        return super(SwathProduct, self).get_data_array(item, rows, cols, dtype, mode=mode)
+
+    def get_data_mask(self, item="swath_data"):
+        return super(SwathProduct, self).get_data_mask(item, fill_key="fill_value")
+
+    def copy_array(self, item="swath_data", filename=None, read_only=True):
+        dtype = self["data_type"]
+        rows = self["swath_rows"]
+        cols = self["swath_columns"]
+        return super(SwathProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
+
+
+class GriddedProduct(BaseProduct):
+    """Gridded product class for image products on a uniform, projected grid.
+
+    Required Information:
+        - product_name: Name of the product this swath represents
+        - satellite: Name of the satellite the data came from
+        - instrument: Name of the instrument on the satellite from which the data was observed
+        - begin_time: Datetime object representing the best known start of observation for this product's data
+        - end_time: Datetime object represnting the best known end of observation for this product's data
+        - data_type (string): Data type of image data (real4, uint1, int1, etc)
+        - grid_data: Binary filename or numpy array for the main data array
+
+    Optional Information:
+        - description (string): Basic description of the product (empty string by default)
+        - source_filenames (list of strings): Unordered list of source files that made up this product ([] by default)
+        - data_kind (string): Name for the type of the measurement (ex. btemp, reflectance, radiance, etc.)
+        - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
+
+    .. seealso::
+
+        `SwathProduct`: Product object for products using longitude and latitude for geolocation.
+
+    """
+    # Validate required keys when loaded from disk
+    required_kwargs = (
+        "product_name",
+        "satellite",
+        "instrument",
+        "begin_time",
+        "end_time",
+        "data_type",
+        "grid_data",
+        "grid_definition",
+    )
+
+    loadable_kwargs = (
+        "grid_definition",
+    )
+
+    cleanup_kwargs = (
+        "grid_data",
+    )
+
+    child_object_types = {
+        "grid_definition": GridDefinition,
+        }
+
+    @property
+    def shape(self):
+        return (self["grid_definition"]["height"], self["grid_definition"]["width"])
+
+    def from_swath_product(self, swath_product):
+        for k in ["product_name", "satellite", "instrument",
+                  "begin_time", "end_time", "data_type", "data_kind",
+                  "description", "source_filenames"]:
+            if k in swath_product:
+                self[k] = swath_product[k]
+
+    def get_data_array(self, item="grid_data", mode="r"):
+        """Get FBF item as a numpy array.
+
+        File is loaded from disk as a memory mapped file if needed.
+        """
+        dtype = self["data_type"]
+        rows = self["grid_definition"]["height"]
+        cols = self["grid_definition"]["width"]
+        return super(GriddedProduct, self).get_data_array(item, rows, cols, dtype, mode=mode)
+
+    def get_data_mask(self, item="grid_data"):
+        return super(GriddedProduct, self).get_data_mask(item, fill_key="fill_value")
+
+    def copy_array(self, item="grid_data", filename=None, read_only=True):
+        """Copy the array item of this swath.
+
+        If the `filename` keyword is passed the data will be written to that file. The copy returned
+        will be a memory map. If `read_only` is False, the memory map will be opened with mode "r+".
+
+        The 'read_only' keyword is ignored if `filename` is None.
+        """
+        dtype = self["data_type"]
+        rows = self["grid_definition"]["height"]
+        cols = self["grid_definition"]["width"]
+        return super(GriddedProduct, self).copy_array(item, rows, cols, dtype, filename, read_only)
+
+
+class SwathScene(BaseScene):
+    """Container for `SwathProduct` objects.
+
+    Products in a `SwathScene` use latitude and longitude coordinates to define their pixel locations. These pixels
+    are typically not on a uniform grid. Products in a `SwathScene` are observed at the same times and over the
+    same geographic area, but may be measured or displayed at varying resolutions. The common use case for a
+    `SwathScene` is for swaths extracted from satellite imagery files.
+
+    .. note::
+
+        When stored on disk as a JSON file, a `SwathScene's` values may be filenames of a saved `SwathProduct` object.
+
+    .. seealso::
+
+        `GriddedScene`: Scene object for gridded products.
+
+    """
+    child_object_types = {
+        None: SwathProduct,
+    }
+
+    def get_data_filepaths(self, product_names=None, data_key=None):
+        """Generator of filepaths for each product provided or all products by default.
+        """
+        product_names = product_names if product_names is not None else self.keys()
+        data_key = data_key if data_key is not None else self.values()[0].cleanup_kwargs[0]
+        for pname in product_names:
+            fp = self[pname][data_key]
+            if not isinstance(fp, (str, unicode)):
+                LOG.warning("Non-string filepath being provided from product")
+            yield fp
+
+
+class GriddedScene(BaseScene):
+    """Container for `GriddedProduct` objects.
+
+    Products in a `GriddedScene` are mapped to a uniform grid specified by a projection, grid size, grid origin,
+    and pixel size. All products in a `GriddedScene` should use the same grid.
+
+    .. note::
+
+        When stored on disk as a JSON file, a `GriddedScene's` values may be filenames of a saved `GriddedProduct`
+        object.
+
+    .. seealso::
+
+        `SwathScene`: Scene object for geographic longitude/latitude products.
+
+    """
+    child_object_types = {
+        None: GriddedProduct,
+    }
+
 
 
 def remove_json(json_filename, binary_only=False):

@@ -878,7 +878,7 @@ class CompositorRole(object):
         if base_product is None:
             base_product = kwargs
         else:
-            base_product = base_product.copy()
+            base_product = base_product.copy(as_dict=True)
             base_product.update(kwargs)
         base_product["product_name"] = product_name
         base_product["grid_data"] = grid_data
