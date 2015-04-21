@@ -584,6 +584,9 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
+    # FIXME: This may not be true for all instruments handled by MIRS. Proper fix is to have remapping controlled by configuration files.
+    parser.set_defaults(fornav_D=40, fornav_d=2)
+
     group_title = "Frontend Initialization"
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
     group.add_argument("--list-products", dest="list_products", action="store_true",
