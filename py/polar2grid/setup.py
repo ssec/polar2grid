@@ -128,7 +128,13 @@ extras_require = {
 extras_require["all"] = [x for y in extras_require.values() for x in y]
 
 entry_points = {
-    'console_scripts': [],
+    'console_scripts': [
+        'p2g_glue=polar2grid.glue:main',
+        'p2g_frontend=polar2grid.glue:main_frontend',
+        'p2g_backend=polar2grid.glue:main_backend',
+        'p2g_remap=polar2grid.remap.__main__:main',
+        'p2g_composite=polar2grid.compositors:main',
+    ],
     'polar2grid.backend_class': [
         'gtiff=polar2grid.gtiff_backend:Backend',
         'awips=polar2grid.awips.awips_netcdf:Backend',

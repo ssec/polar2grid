@@ -50,72 +50,91 @@ from netCDF4 import Dataset
 from polar2grid.core import roles
 from polar2grid.core.fbf import FileAppender
 from polar2grid.core import containers
+from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader, ProductDict, GeoPairDict
 
 LOG = logging.getLogger(__name__)
 
 # File types (only one for now)
 FT_IMG = "MIRS_IMG"
 # File variables
-RR_VAR = "rr"
-BT_90_VAR = "bt_90"
-FREQ_VAR = "freq"
-LAT_VAR = "latitude"
-LON_VAR = "longitude"
+RR_VAR = "rr_var"
+BT_90_VAR = "bt_90_var"
+FREQ_VAR = "freq_var"
+LAT_VAR = "latitude_var"
+LON_VAR = "longitude_var"
 BT_VARS = [BT_90_VAR]
 
 ### PRODUCT DEFINITIONS ###
 # FIXME: Move ProductDefiniton to polar2grid.core
-class ProductDefinition(object):
-    def __init__(self, name, data_kind, dependencies=None, description=None, units=None):
-        self.name = name
-        self.data_kind = data_kind
-        self.dependencies = dependencies or []
-        self.description = description or ""
-        self.units = units or ""
-
-
-class MIRSProductDefiniton(ProductDefinition):
-    def __init__(self, name, data_kind, file_type, file_key, dependencies=None, description=None, units=None,
-                 is_geoproduct=False):
-        self.file_type = file_type
-        self.file_key = file_key
-        self.is_geoproduct = is_geoproduct
-        super(MIRSProductDefiniton, self).__init__(name, data_kind,
-                                                   dependencies=dependencies, description=description, units=units)
-
-
-class ProductDict(dict):
-    def __init__(self, base_class=ProductDefinition):
-        self.base_class = base_class
-        super(ProductDict, self).__init__()
-
-    def add_product(self, *args, **kwargs):
-        pd = self.base_class(*args, **kwargs)
-        self[pd.name] = pd
+# class ProductDefinition(object):
+#     def __init__(self, name, data_kind, dependencies=None, description=None, units=None):
+#         self.name = name
+#         self.data_kind = data_kind
+#         self.dependencies = dependencies or []
+#         self.description = description or ""
+#         self.units = units or ""
+#
+#
+# class MIRSProductDefiniton(ProductDefinition):
+#     def __init__(self, name, data_kind, file_type, file_key, dependencies=None, description=None, units=None,
+#                  is_geoproduct=False):
+#         self.file_type = file_type
+#         self.file_key = file_key
+#         self.is_geoproduct = is_geoproduct
+#         super(MIRSProductDefiniton, self).__init__(name, data_kind,
+#                                                    dependencies=dependencies, description=description, units=units)
+#
+#
+# class ProductDict(dict):
+#     def __init__(self, base_class=ProductDefinition):
+#         self.base_class = base_class
+#         super(ProductDict, self).__init__()
+#
+#     def add_product(self, *args, **kwargs):
+#         pd = self.base_class(*args, **kwargs)
+#         self[pd.name] = pd
 
 PRODUCT_RAIN_RATE = "mirs_rain_rate"
 PRODUCT_BT_90 = "mirs_btemp_90"
 PRODUCT_LATITUDE = "mirs_latitude"
 PRODUCT_LONGITUDE = "mirs_longitude"
 
-PRODUCTS = ProductDict(base_class=MIRSProductDefiniton)
-# FUTURE: Add a "geoproduct_pair" field and have a second geoproduct list for the pairs
-PRODUCTS.add_product(PRODUCT_LATITUDE, "latitude", FT_IMG, LAT_VAR,
-                     description="Latitude", units="degrees", is_geoproduct=True)
-PRODUCTS.add_product(PRODUCT_LONGITUDE, "longitude", FT_IMG, LON_VAR,
-                     description="Longitude", units="degrees", is_geoproduct=True)
-PRODUCTS.add_product(PRODUCT_RAIN_RATE, "rain_rate", FT_IMG, RR_VAR,
-                     description="Rain Rate", units="mm/hr")
-PRODUCTS.add_product(PRODUCT_BT_90, "brightness_temperature", FT_IMG, BT_90_VAR,
-                     description="Channel Brightness Temperature at 88.2GHz", units="K")
-GEO_PAIRS = (
-    (PRODUCT_LONGITUDE, PRODUCT_LATITUDE),
-)
+PAIR_MIRS_NAV = "mirs_nav"
+
+PRODUCTS = ProductDict()
+PRODUCTS.add_product(PRODUCT_LATITUDE, PAIR_MIRS_NAV, "latitude", FT_IMG, LAT_VAR, description="Latitude", units="degrees")
+PRODUCTS.add_product(PRODUCT_LONGITUDE, PAIR_MIRS_NAV, "longitude", FT_IMG, LON_VAR, description="Longitude", units="degrees")
+PRODUCTS.add_product(PRODUCT_RAIN_RATE, PAIR_MIRS_NAV, "rain_rate", FT_IMG, RR_VAR, description="Rain Rate", units="mm/hr")
+PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_90_VAR, description="Channel Brightness Temperature at 88.2GHz", units="K")
+
+GEO_PAIRS = GeoPairDict()
+GEO_PAIRS.add_pair(PAIR_MIRS_NAV, PRODUCT_LONGITUDE, PRODUCT_LATITUDE, 0)
 
 ### I/O Operations ###
 
+FILE_STRUCTURE = {
+    RR_VAR: ("RR", "scale", None, None),
+    BT_90_VAR: ("BT", "scale", None, 88.2),
+    FREQ_VAR: ("Freq", None, None, None),
+    LAT_VAR: ("Latitude", None, None, None),
+    LON_VAR: ("Longitude", None, None, None),
+    }
 
-class MIRSFileReader(object):
+
+class NetCDFFileReader(object):
+    def __init__(self, filepath):
+        self.filename = os.path.basename(filepath)
+        self.filepath = os.path.realpath(filepath)
+        self.nc_obj = Dataset(self.filepath, "r")
+
+    def __getattr__(self, item):
+        return getattr(self.nc_obj, item)
+
+    def __getitem__(self, item):
+        return self.nc_obj.variables[item]
+
+
+class MIRSFileReader(BaseFileReader):
     """Basic MIRS file reader.
 
     If there are alternate formats/structures for MIRS files then new classes should be made.
@@ -124,13 +143,6 @@ class MIRSFileReader(object):
 
     GLOBAL_FILL_ATTR_NAME = "missing_value"
     # Constant -> (var_name, scale_attr_name, fill_attr_name, frequency)
-    FILE_STRUCTURE = {
-        RR_VAR: ("RR", "scale", None, None),
-        BT_90_VAR: ("BT", "scale", None, 88.2),
-        FREQ_VAR: ("Freq", None, None, None),
-        LAT_VAR: ("Latitude", None, None, None),
-        LON_VAR: ("Longitude", None, None, None),
-    }
 
     # best case nadir resolutions in meters (could be made per band):
     INST_NADIR_RESOLUTION = {
@@ -142,20 +154,18 @@ class MIRSFileReader(object):
         "atms": 323100,
     }
 
-    def __init__(self, filepath):
-        self.filename = os.path.basename(filepath)
-        self.filepath = os.path.realpath(filepath)
-        self.nc_obj = Dataset(self.filepath, "r")
+    def __init__(self, filepath, file_type_info):
+        super(MIRSFileReader, self).__init__(NetCDFFileReader(filepath), file_type_info)
         # Not supported in older version of NetCDF4 library
-        #self.nc_obj.set_auto_maskandscale(False)
-        if not self.handles_file(self.nc_obj):
+        #self.file_handle.set_auto_maskandscale(False)
+        if not self.handles_file(self.file_handle):
             LOG.error("Unknown file format for file %s" % (self.filename,))
             raise ValueError("Unknown file format for file %s" % (self.filename,))
 
-        self.satellite = self.nc_obj.satellite_name.lower()
-        self.instrument = self.nc_obj.instrument_name.lower()
-        self.begin_time = datetime.strptime(self.nc_obj.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
-        self.end_time = datetime.strptime(self.nc_obj.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
+        self.satellite = self.file_handle.satellite_name.lower()
+        self.instrument = self.file_handle.instrument_name.lower()
+        self.begin_time = datetime.strptime(self.file_handle.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
+        self.end_time = datetime.strptime(self.file_handle.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
 
         if self.instrument in self.INST_NADIR_RESOLUTION:
             self.nadir_resolution = self.INST_NADIR_RESOLUTION[self.instrument]
@@ -173,7 +183,7 @@ class MIRSFileReader(object):
         """
         try:
             if isinstance(fn_or_nc_obj, str):
-                nc_obj = Dataset(fn_or_nc_obj, "r")
+                nc_obj = NetCDFFileReader(fn_or_nc_obj, "r")
             else:
                 nc_obj = fn_or_nc_obj
 
@@ -186,33 +196,35 @@ class MIRSFileReader(object):
             return False
 
     def __getitem__(self, item):
-        if item in self.FILE_STRUCTURE:
-            var_name = self.FILE_STRUCTURE[item][0]
-            nc_var = self.nc_obj.variables[var_name]
-            nc_var.set_auto_maskandscale(False)
-            return nc_var
-        return self.nc_obj.variables[item]
+        known_item = self.file_type_info.get(item, item)
+        if known_item is None:
+            raise KeyError("Key 'None' was not found")
+
+        LOG.debug("Loading %s from %s", known_item[0], self.filename)
+        nc_var = self.file_handle[known_item[0]]
+        nc_var.set_auto_maskandscale(False)
+        return nc_var
 
     def get_fill_value(self, item):
         fill_value = None
-        if item in self.FILE_STRUCTURE:
-            var_name = self.FILE_STRUCTURE[item][0]
-            fill_attr_name = self.FILE_STRUCTURE[item][2]
+        if item in FILE_STRUCTURE:
+            var_name = FILE_STRUCTURE[item][0]
+            fill_attr_name = FILE_STRUCTURE[item][2]
             if fill_attr_name:
-                fill_value = getattr(self.nc_obj.variables[var_name], fill_attr_name)
+                fill_value = getattr(self.file_handle[var_name], fill_attr_name)
         if fill_value is None:
-            fill_value = getattr(self.nc_obj, self.GLOBAL_FILL_ATTR_NAME, None)
+            fill_value = getattr(self.file_handle, self.GLOBAL_FILL_ATTR_NAME, None)
 
         LOG.debug("File fill value for '%s' is '%f'", item, float(fill_value))
         return fill_value
 
     def get_scale_value(self, item):
         scale_value = None
-        if item in self.FILE_STRUCTURE:
-            var_name = self.FILE_STRUCTURE[item][0]
-            scale_attr_name = self.FILE_STRUCTURE[item][1]
+        if item in FILE_STRUCTURE:
+            var_name = FILE_STRUCTURE[item][0]
+            scale_attr_name = FILE_STRUCTURE[item][1]
             if scale_attr_name:
-                scale_value = float(self.nc_obj.variables[var_name].getncattr(scale_attr_name))
+                scale_value = float(self.file_handle[var_name].getncattr(scale_attr_name))
                 LOG.debug("File scale value for '%s' is '%f'", item, float(scale_value))
         return scale_value
 
@@ -234,7 +246,7 @@ class MIRSFileReader(object):
         """Get swath data from the file. Usually requires special processing.
         """
         var_data = self[item][:].astype(dtype)
-        freq = self.FILE_STRUCTURE[item][3]
+        freq = FILE_STRUCTURE[item][3]
         if freq:
             var_data = self.filter_by_frequency(item, var_data, freq)
 
@@ -254,89 +266,14 @@ class MIRSFileReader(object):
 
         return var_data
 
-    def _compare(self, other, method):
-        try:
-            return method(self.begin_time, other.start_time)
-        except AttributeError:
-            raise NotImplemented
 
-    def __lt__(self, other):
-        return self._compare(other, lambda s, o: s < o)
-
-    def __le__(self, other):
-        return self._compare(other, lambda s, o: s <= o)
-
-    def __eq__(self, other):
-        return self._compare(other, lambda s, o: s == o)
-
-    def __ge__(self, other):
-        return self._compare(other, lambda s, o: s >= o)
-
-    def __gt__(self, other):
-        return self._compare(other, lambda s, o: s > o)
-
-    def __ne__(self, other):
-        return self._compare(other, lambda s, o: s != o)
-
-
-class MIRSMultiReader(object):
-    SINGLE_FILE_CLASS = MIRSFileReader
-    FILE_TYPE = SINGLE_FILE_CLASS.FILE_TYPE
-
+class MIRSMultiReader(BaseMultiFileReader):
     def __init__(self, filenames=None):
-        self.file_readers = []
-        self._files_finalized = False
-        if filenames:
-            self.add_files(filenames)
-            self.finalize_files()
-
-    def __len__(self):
-        return len(self.file_readers)
+        super(MIRSMultiReader, self).__init__(FILE_STRUCTURE, MIRSFileReader)
 
     @classmethod
     def handles_file(cls, fn_or_nc_obj):
-        return cls.SINGLE_FILE_CLASS.handles_file(fn_or_nc_obj)
-
-    def add_file(self, fn):
-        if self._files_finalized:
-            LOG.error("File reader has been finalized and no more files can be added")
-            raise RuntimeError("File reader has been finalized and no more files can be added")
-        self.file_readers.append(self.SINGLE_FILE_CLASS(fn))
-
-    def add_files(self, filenames):
-        for fn in filenames:
-            self.add_file(fn)
-
-    def finalize_files(self):
-        self.file_readers = sorted(self.file_readers)
-        if not all(fr.instrument == self.file_readers[0].instrument for fr in self.file_readers):
-            LOG.error("Can't concatenate files because they are not for the same instrument")
-            raise RuntimeError("Can't concatenate files because they are not for the same instrument")
-        if not all(fr.satellite == self.file_readers[0].satellite for fr in self.file_readers):
-            LOG.error("Can't concatenate files because they are not for the same satellite")
-            raise RuntimeError("Can't concatenate files because they are not for the same satellite")
-        self._files_finalized = True
-
-    def write_var_to_flat_binary(self, item, filename, dtype=numpy.float32):
-        """Write the data from multiple files to one flat binary file.
-
-        :param item: Variable name to retrieve
-        :param filename: Filename filename if the file should follow traditional FBF naming conventions
-        """
-        LOG.info("Writing binary data for %s to file %s", item, filename)
-        try:
-            with open(filename, "w") as file_obj:
-                file_appender = FileAppender(file_obj, dtype)
-                for file_reader in self.file_readers:
-                    single_array = file_reader.get_swath_data(item)
-                    file_appender.append(single_array)
-        except StandardError:
-            if os.path.isfile(filename):
-                os.remove(filename)
-            raise
-
-        LOG.debug("File %s has shape %r", filename, file_appender.shape)
-        return file_appender.shape
+        return MIRSFileReader.handles_file(fn_or_nc_obj)
 
     @property
     def satellite(self):
@@ -389,23 +326,26 @@ def get_file_type(filepath):
 class Frontend(roles.FrontendRole):
     """Polar2Grid Frontend object for handling MIRS files.
     """
+    FILE_EXTENSIONS = [".nc"]
+
     def __init__(self, **kwargs):
         super(Frontend, self).__init__(**kwargs)
-        self._load_files()
+        self._load_files(self.find_files_with_extensions())
 
-    def _load_files(self):
-        recognized_files = {}
-        for file_kind, filepath in self.find_all_files(self.search_paths):
-            if file_kind not in recognized_files:
-                recognized_files[file_kind] = []
-            recognized_files[file_kind].append(filepath)
-
+    def _load_files(self, filepaths):
         self.file_readers = {}
-        for file_type, filepaths in recognized_files.items():
-            file_reader_class = FILE_CLASSES[file_type]
-            file_reader = file_reader_class(filenames=filepaths)
-            if len(file_reader):
-                self.file_readers[file_reader.FILE_TYPE] = file_reader
+        for filepath in filepaths:
+            file_type = get_file_type(filepath)
+            if file_type is None:
+                LOG.debug("Unrecognized file: %s", filepath)
+                continue
+
+            if file_type in self.file_readers:
+                file_reader = self.file_readers[file_type]
+            else:
+                self.file_readers[file_type] = file_reader = FILE_CLASSES[file_type]()
+                self.file_readers[file_type]
+            file_reader.add_file(filepath)
 
         # Get rid of the readers we aren't using
         for file_type, file_reader in self.file_readers.items():
@@ -425,35 +365,38 @@ class Frontend(roles.FrontendRole):
             LOG.debug("File types and number of files:\n\t%s", ft_str)
             raise RuntimeError("Corrupt directory: Varying number of files for each type")
 
-    def find_all_files(self, search_paths):
-        for p in search_paths:
-            if os.path.isdir(p):
-                LOG.debug("Searching '%s' for useful files", p)
-                for fn in os.listdir(p):
-                    fp = os.path.join(p, fn)
-                    file_type = get_file_type(fp)
-                    if file_type is not None:
-                        LOG.debug("Recognize file %s as file type %s", fp, file_type)
-                        yield (file_type, os.path.realpath(fp))
-            elif os.path.isfile(p):
-                file_type = get_file_type(p)
-                if file_type is not None:
-                    LOG.debug("Recognize file %s as file type %s", p, file_type)
-                    yield (file_type, os.path.realpath(p))
-                else:
-                    LOG.error("File is not a valid MIRS file: %s", p)
-            else:
-                LOG.error("File or directory does not exist: %s", p)
+        self.available_file_types = self.file_readers.keys()
 
     @property
     def available_product_names(self):
-        # Right now there is only one type of file that has all products in it, so all products are available
-        # in the future this might have to change
-        return [k for k, v in PRODUCTS.items() if not v.dependencies and not v.is_geoproduct]
+        raw_products = [p for p in PRODUCTS.all_raw_products if self.raw_product_available(p)]
+        return sorted(PRODUCTS.get_product_dependents(raw_products))
+
+    def raw_product_available(self, product_name):
+        """Is it possible to load the provided product with the files provided to the `Frontend`.
+
+        :returns: True if product can be loaded, False otherwise (including if product is not a raw product)
+        """
+        product_def = PRODUCTS[product_name]
+        if product_def.is_raw:
+            if isinstance(product_def.file_type, str):
+                file_type = product_def.file_type
+            else:
+                return any(ft in self.file_readers for ft in product_def.file_type)
+
+            return file_type in self.file_readers
+        return False
 
     @property
     def all_product_names(self):
         return PRODUCTS.keys()
+
+    @property
+    def default_products(self):
+        if os.getenv("P2G_MIRS_DEFAULTS", None):
+            return os.getenv("P2G_MIRS_DEFAULTS")
+
+        return [PRODUCT_RAIN_RATE, PRODUCT_BT_90]
 
     @property
     def begin_time(self):
@@ -511,6 +454,7 @@ class Frontend(roles.FrontendRole):
 
         # TODO: Get the data type from the data or allow the user to specify
         try:
+            print product_def.name, product_def.data_kind, product_def.geo_pair_name, product_def.file_type, product_def.file_key
             shape = file_reader.write_var_to_flat_binary(product_def.file_key, filename)
         except StandardError:
             LOG.error("Could not extract data from file")
@@ -531,44 +475,40 @@ class Frontend(roles.FrontendRole):
         if nprocs != 1:
             raise NotImplementedError("The MIRS frontend does not support multiple processes yet")
         if products is None:
-            products = self.available_product_names
-        orig_products = set(products)
-        available_products = self.available_product_names
-        doable_products = orig_products & set(available_products)
-        for p in (orig_products - doable_products):
-            LOG.warning("Missing proper data files to create product: %s", p)
-        products = list(doable_products)
-        if not products:
-            LOG.debug("Original Products:\n\t%r", orig_products)
-            LOG.debug("Available Products:\n\t%r", available_products)
-            LOG.debug("Doable (final) Products:\n\t%r", products)
-            LOG.error("Can not create any of the requested products (missing required data files)")
-            raise RuntimeError("Can not create any of the requested products (missing required data files)")
+            LOG.info("No products specified to frontend, will try to load logical defaults")
+            products = self.default_products
+
+        # Do we actually have all of the files needed to create the requested products?
+        products = self.loadable_products(products)
+
+        # Needs to be ordered (least-depended product -> most-depended product)
+        products_needed = PRODUCTS.dependency_ordered_products(products)
+        geo_pairs_needed = PRODUCTS.geo_pairs_for_products(products_needed, self.available_file_types)
+        # both lists below include raw products that need extra processing/masking
+        raw_products_needed = (p for p in products_needed if PRODUCTS.is_raw(p, geo_is_raw=True))
+        secondary_products_needed = [p for p in products_needed if PRODUCTS.needs_processing(p)]
+        for p in secondary_products_needed:
+            if p not in self.secondary_product_functions:
+                msg = "Product (secondary or extra processing) required, but not sure how to make it: '%s'" % (p,)
+                LOG.error(msg)
+                raise ValueError(msg)
 
         LOG.debug("Extracting data to create the following products:\n\t%s", "\n\t".join(products))
-
+        # final scene object we'll be providing to the caller
         scene = containers.SwathScene()
-
-        # Figure out any dependencies
-        raw_products = []
-        for product_name in products:
-            if product_name not in PRODUCTS:
-                LOG.error("Unknown product name: %s", product_name)
-                raise ValueError("Unknown product name: %s" % (product_name,))
-            if PRODUCTS[product_name].dependencies:
-                raise NotImplementedError("Don't know how to handle products dependent on other products")
-            raw_products.append(product_name)
-
-        # Load geographic products - every product needs a geo-product
+        # Dictionary of all products created so far (local variable so we don't hold on to any product objects)
         products_created = {}
         swath_definitions = {}
-        for geo_product_pair in GEO_PAIRS:
-            lon_product_name, lat_product_name = geo_product_pair
+
+        # Load geographic products - every product needs a geo-product
+        for geo_pair_name in geo_pairs_needed:
+            lon_product_name = GEO_PAIRS[geo_pair_name].lon_product
+            lat_product_name = GEO_PAIRS[geo_pair_name].lat_product
             # longitude
             if lon_product_name not in products_created:
                 one_lon_swath = self.create_raw_swath_object(lon_product_name, None)
                 products_created[lon_product_name] = one_lon_swath
-                if lon_product_name in raw_products:
+                if lon_product_name in products:
                     # only process the geolocation product if the user requested it that way
                     scene[lon_product_name] = one_lon_swath
             else:
@@ -578,28 +518,33 @@ class Frontend(roles.FrontendRole):
             if lat_product_name not in products_created:
                 one_lat_swath = self.create_raw_swath_object(lat_product_name, None)
                 products_created[lat_product_name] = one_lat_swath
-                if lat_product_name in raw_products:
+                if lat_product_name in products:
                     # only process the geolocation product if the user requested it that way
                     scene[lat_product_name] = one_lat_swath
             else:
                 one_lat_swath = products_created[lat_product_name]
 
-            swath_definitions[geo_product_pair] = self.create_swath_definition(one_lon_swath, one_lat_swath)
+            swath_definitions[geo_pair_name] = self.create_swath_definition(one_lon_swath, one_lat_swath)
 
-        # Load raw products
-        for raw_product in raw_products:
-            # FUTURE: Get this info from the product definition
-            geo_pair = GEO_PAIRS[0]
-            if raw_product not in products_created:
-                try:
-                    one_lat_swath = self.create_raw_swath_object(raw_product, swath_definitions[geo_pair])
-                    products_created[raw_product] = one_lat_swath
-                    scene[raw_product] = one_lat_swath
-                except StandardError:
-                    LOG.error("Could not create raw product '%s'", raw_product)
-                    if self.exit_on_error:
-                        raise
-                    continue
+        # Create each raw products (products that are loaded directly from the file)
+        for product_name in raw_products_needed:
+            if product_name in products_created:
+                # already created
+                continue
+
+            try:
+                LOG.info("Creating data product '%s'", product_name)
+                swath_def = swath_definitions[PRODUCTS[product_name].get_geo_pair_name(self.available_file_types)]
+                one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
+            except StandardError:
+                LOG.error("Could not create raw product '%s'", product_name)
+                if self.exit_on_error:
+                    raise
+                continue
+
+            if product_name in products:
+                # the user wants this product
+                scene[product_name] = one_swath
 
         return scene
 

@@ -103,9 +103,9 @@ GEO_PAIRS = (
 
 
 class FileReader(object):
-    """Basic MIRS file reader.
+    """Basic ACSPO file reader.
 
-    If there are alternate formats/structures for MIRS files then new classes should be made.
+    If there are alternate formats/structures for ACSPO files then new classes should be made.
     """
     FILE_TYPE = FT_BASIC
 
@@ -354,7 +354,7 @@ def get_file_type(filepath):
 
 
 class Frontend(roles.FrontendRole):
-    """Polar2Grid Frontend object for handling MIRS files.
+    """Polar2Grid Frontend object for handling ACSPO files.
     """
     def __init__(self, search_paths=None,
                  overwrite_existing=False, keep_intermediate=False, exit_on_error=False, **kwargs):
@@ -416,7 +416,7 @@ class Frontend(roles.FrontendRole):
                     LOG.debug("Recognize file %s as file type %s", p, file_type)
                     yield (file_type, os.path.realpath(p))
                 else:
-                    LOG.error("File is not a valid MIRS file: %s", p)
+                    LOG.error("File is not a valid ACSPO file: %s", p)
             else:
                 LOG.error("File or directory does not exist: %s", p)
 
@@ -504,7 +504,7 @@ class Frontend(roles.FrontendRole):
 
     def create_scene(self, products=None, nprocs=1, **kwargs):
         if nprocs != 1:
-            raise NotImplementedError("The MIRS frontend does not support multiple processes yet")
+            raise NotImplementedError("The ACSPO frontend does not support multiple processes yet")
         if products is None:
             products = self.available_product_names
         orig_products = set(products)

@@ -195,6 +195,7 @@ class Remapper(object):
         # Remove ll2cr files now that we are done with them
         for cols_fn, rows_fn in self.ll2cr_cache.values():
             self._safe_remove(rows_fn, cols_fn)
+        self.ll2cr_cache = {}
 
     def _remap_scene_ewa(self, swath_scene, grid_def, share_dynamic_grids=True, **kwargs):
         # TODO: Make methods more flexible than just a function call
@@ -453,6 +454,8 @@ def main():
     subgroup_titles = add_remap_argument_groups(parser)
     parser.add_argument("--scene", required=True,
                         help="JSON SwathScene filename to be remapped")
+    parser.add_argument('-o', dest="output_filename", default="gridded_scene_{grid_name}.json",
+                        help="Output filename for JSON scene (default is to 'gridded_scene_{grid_name}.json')")
     global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
     args = parser.parse_args(subgroup_titles=subgroup_titles, global_keywords=global_keywords)
 
@@ -461,16 +464,22 @@ def main():
     sys.excepthook = create_exc_handler(LOG.name)
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
+    if args.output_filename and args.output_filename != "-" and os.path.isfile(args.output_filename):
+            LOG.error("JSON file '%s' already exists, will not overwrite." % (args.output_filename,))
+            raise RuntimeError("JSON file '%s' already exists, will not overwrite." % (args.output_filename,))
+
     scene = SwathScene.load(args.scene)
 
     remapper = Remapper(**args.subgroup_args["Remapping Initialization"])
     remap_kwargs = args.subgroup_args["Remapping"]
-    for grid_name in remap_kwargs.pop("forced_grids"):
+    for grid_name in remap_kwargs.pop("forced_grids", ["wgs84_fit"]):
         gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
-        # FIXME: Either allow only 1 grid or find a nice way to output multiple gridded scenes as JSON to stdout
-        fn = "gridded_scene_%s.json" % (grid_name,)
-        LOG.info("Saving gridded scene to file: %s", fn)
-        gridded_scene.save(fn)
+        if args.output_filename is None or args.output_filename == "-":
+            print(gridded_scene.dumps(persist=True))
+        else:
+            fn = args.output_filename.format(grid_name=grid_name)
+            LOG.info("Saving gridded scene to file: %s", fn)
+            gridded_scene.save(fn)
 
 if __name__ == "__main__":
     sys.exit(main())

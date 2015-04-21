@@ -201,11 +201,10 @@ class Frontend(roles.FrontendRole):
         does *not* recursively search directories.
 
         :param search_paths: A list of paths to search for usable files
+        :param use_terrain_corrected: Look for terrain-corrected files instead of non-TC files (default True)
         """
-        super(Frontend, self).__init__(**kwargs)
         self.use_terrain_corrected = use_terrain_corrected
-        if kwargs.get("frontend_configs", None) is not None:
-            raise NotImplementedError("Specifying frontend configuration files is not supported for this frontend yet.")
+        super(Frontend, self).__init__(**kwargs)
 
         # Load and sort all files
         self._load_files(self.find_files_with_extensions())

@@ -91,6 +91,98 @@ def get_backend_class(backends, name, entry_point=P2G_BACKEND_CLS_EP):
     return pkg_resources.load_entry_point(backends[name], entry_point, name)
 
 
+def main_frontend(argv=sys.argv[1:]):
+    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
+    frontends = available_frontends()
+    parser = create_basic_parser(description="Extract swath data using the generic Polar2Grid frontend command line arguments (see specific frontend for other features)")
+    parser.add_argument("frontend", choices=sorted(frontends.keys()),
+                        help="Specify the swath extractor to use to read data (additional arguments are determined after this is specified)")
+    parser.add_argument('-o', dest="output_filename", default=None,
+                        help="Output filename for JSON scene (default is to stdout)")
+    parser.add_argument('-f', dest='data_files', nargs="+", default=[], action=ExtendAction,
+                        help="List of files or directories to extract data from")
+    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
+
+    # don't include the help flag
+    argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
+    args, remaining_args = parser.parse_known_args(argv_without_help)
+    LOG = logging.getLogger(args.frontend)
+    farg_func = get_frontend_argument_func(frontends, args.frontend)
+    fcls = get_frontend_class(frontends, args.frontend)
+
+    subgroup_titles = []
+    subgroup_titles += farg_func(parser)
+    args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=subgroup_titles)
+
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
+    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
+
+    list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
+    f = fcls(search_paths=args.data_files, **args.subgroup_args["Frontend Initialization"])
+
+    if list_products:
+        print("\n".join(f.available_product_names))
+        return 0
+
+    scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
+    json_str = scene.dumps(persist=True)
+    if args.output_filename:
+        with open(args.output_filename, 'w') as output_file:
+            output_file.write(json_str)
+    else:
+        print(json_str)
+    return 0
+
+
+def main_backend(argv=sys.argv[1:]):
+    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
+    from polar2grid.core.containers import GriddedScene, GriddedProduct
+    backends = available_backends()
+    parser = create_basic_parser(description="Create image/output file from provided gridded scene using a typical Polar2Grid backend (see specific backend for other features)")
+    parser.add_argument("backend", choices=sorted(backends.keys()),
+                        help="Specify the output generator to use (additional arguments are determined after this is specified)")
+    parser.add_argument("--scene", required=True, help="JSON GriddedScene filename")
+    parser.add_argument('-o', dest="output_filename", default=None,
+                        help="Output filename for JSON scene (default is to stdout)")
+    parser.add_argument('-f', dest='data_files', nargs="+", default=[], action=ExtendAction,
+                        help="List of files or directories to extract data from")
+    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
+
+    # don't include the help flag
+    argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
+    args, remaining_args = parser.parse_known_args(argv_without_help)
+    LOG = logging.getLogger(args.backend)
+    barg_func = get_backend_argument_func(backends, args.backend)
+    bcls = get_backend_class(backends, args.backend)
+
+    subgroup_titles = []
+    subgroup_titles += barg_func(parser)
+    args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=subgroup_titles)
+
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
+    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
+
+    LOG.info("Loading scene or product...")
+    gridded_scene = GriddedScene.load(args.scene)
+
+    LOG.info("Initializing backend...")
+    backend = bcls(**args.subgroup_args["Backend Initialization"])
+    if isinstance(gridded_scene, GriddedScene):
+        result = backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
+    elif isinstance(gridded_scene, GriddedProduct):
+        result = backend.create_output_from_product(gridded_scene, **args.subgroup_args["Backend Output Creation"])
+    else:
+        raise ValueError("Unknown Polar2Grid object provided")
+
+    import json
+    print(json.dumps(result))
+    return 0
+
+
 def main(argv=sys.argv[1:]):
     from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
     from polar2grid.compositors import CompositorManager
