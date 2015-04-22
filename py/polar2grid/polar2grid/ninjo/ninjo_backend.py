@@ -472,9 +472,21 @@ class NinjoBandConfigReader(roles.INIConfigReader):
     )
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("int_kwargs", ("satellite_id", "band_id"))
+        kwargs.setdefault("int_kwargs", ("band_id",))
         kwargs.setdefault("section_prefix", "ninjo_product:")
         super(NinjoBandConfigReader, self).__init__(*args, **kwargs)
+
+
+class NinJoSatConfigReader(roles.SimpleINIConfigReader):
+    def __init__(self, *config_files, **kwargs):
+        self.section_prefix = kwargs.pop("section_prefix", "ninjo_satellite:")
+        super(NinJoSatConfigReader, self).__init__(*config_files, **kwargs)
+
+    def get_satellite_id(self, product_info):
+        section_name = self.section_prefix + product_info["satellite"]
+        if self.config_parser.has_section(section_name):
+            return self.config_parser.getint(section_name, "satellite_id")
+        raise RuntimeError("No satellite section for the provided product with satellite: {}".format(product_info["satellite"]))
 
 
 class Backend(roles.BackendRole):
@@ -484,6 +496,7 @@ class Backend(roles.BackendRole):
         self.rescaler = Rescaler(*self.rescale_configs)
         self.band_config_reader = NinjoBandConfigReader(*self.backend_configs)
         self.grid_config_reader = NinjoGridConfigReader(*self.backend_configs)
+        self.sat_config_reader = NinJoSatConfigReader(*self.backend_configs)
         super(Backend, self).__init__(**kwargs)
 
     @property
@@ -506,6 +519,7 @@ class Backend(roles.BackendRole):
             data_kind=gridded_product["data_kind"],
             allow_default=False,
         )
+        band_config_info["satellite_id"] = self.sat_config_reader.get_satellite_id(gridded_product)
 
         if not output_pattern:
             output_pattern = DEFAULT_OUTPUT_PATTERN

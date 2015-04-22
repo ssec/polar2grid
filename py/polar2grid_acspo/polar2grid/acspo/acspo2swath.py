@@ -56,7 +56,7 @@ LOG = logging.getLogger(__name__)
 # File types (only one for now)
 FT_BASIC = "ACSPO_BASIC"  # need more?
 # File variables
-SST_VAR = "sea_surface_temperature"
+SST_VAR = "sst"
 LAT_VAR = "latitude"
 LON_VAR = "longitude"
 

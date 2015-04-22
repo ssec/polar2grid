@@ -59,18 +59,28 @@ GEO_PAIRS = GeoPairDict()
 
 ### PRODUCT KEYS ###
 # PRODUCT_VIS01_1000m = "visible_01_1000m"  # if someone wants to have both the 250m and the 1000m version
-PRODUCT_VIS01 = "visible_01"
-PRODUCT_VIS02 = "visible_02"
-PRODUCT_VIS07 = "visible_07"
-PRODUCT_VIS26 = "visible_26"
+PRODUCT_VIS01 = "vis01"
+PRODUCT_VIS02 = "vis02"
+PRODUCT_VIS03 = "vis03"
+PRODUCT_VIS04 = "vis04"
+PRODUCT_VIS05 = "vis05"
+PRODUCT_VIS06 = "vis06"
+PRODUCT_VIS07 = "vis07"
+PRODUCT_VIS26 = "vis26"
 
 # need to be converted to BTs:
-PRODUCT_IR20 = "infrared_20"
-PRODUCT_IR27 = "infrared_27"
-PRODUCT_IR31 = "infrared_31"
-PRODUCT_BT20 = "brightness_temperature_20"
-PRODUCT_BT27 = "brightness_temperature_27"
-PRODUCT_BT31 = "brightness_temperature_31"
+PRODUCT_IR20 = "ir20"
+PRODUCT_IR21 = "ir21"
+PRODUCT_IR22 = "ir22"
+PRODUCT_IR27 = "ir27"
+PRODUCT_IR31 = "ir31"
+PRODUCT_IR32 = "ir32"
+PRODUCT_BT20 = "bt20"
+PRODUCT_BT21 = "bt21"
+PRODUCT_BT22 = "bt22"
+PRODUCT_BT27 = "bt27"
+PRODUCT_BT31 = "bt31"
+PRODUCT_BT32 = "bt32"
 
 PRODUCT_CMASK = "cloud_mask"
 PRODUCT_LSMASK = "land_sea_mask"
@@ -78,27 +88,27 @@ PRODUCT_SIMASK = "snow_ice_mask"
 PRODUCT_SZA = "solar_zenith_angle"
 
 # Need land mask clearing and cloud clearing
-PRODUCT_SST = "sea_surface_temperature_uncleared"
-PRODUCT_LST = "land_surface_temperature_uncleared"
-PRODUCT_SLST = "summer_land_surface_temperature_uncleared"
+PRODUCT_SST = "sst_uncleared"
+PRODUCT_LST = "lst_uncleared"
+PRODUCT_SLST = "slst_uncleared"
 PRODUCT_NDVI = "ndvi_uncleared"
-PRODUCT_CLEAR_SST = "sea_surface_temperature"
-PRODUCT_CLEAR_LST = "land_surface_temperature"
-PRODUCT_CLEAR_SLST = "summer_land_surface_temperature"
+PRODUCT_CLEAR_SST = "sst"
+PRODUCT_CLEAR_LST = "lst"
+PRODUCT_CLEAR_SLST = "slst"
 PRODUCT_CLEAR_NDVI = "ndvi"
 
-PRODUCT_IST = "ice_surface_temperature"
+PRODUCT_IST = "ist"
 PRODUCT_INV = "inversion_strength"
 PRODUCT_IND = "inversion_depth"
 PRODUCT_ICON = "ice_concentration"
-PRODUCT_CTT = "cloud_top_temperature"
-PRODUCT_TPW = "total_precipitable_water"
+PRODUCT_CTT = "ctt"
+PRODUCT_TPW = "tpw"
 # secondary products
 PRODUCT_FOG = "fog"
 # Adaptive BT Products
-PRODUCT_ADAPTIVE_BT20 = "adaptive_brightness_temperature_20"
-PRODUCT_ADAPTIVE_BT27 = "adaptive_brightness_temperature_27"
-PRODUCT_ADAPTIVE_BT31 = "adaptive_brightness_temperature_31"
+PRODUCT_ADAPTIVE_BT20 = "adaptive_bt20"
+PRODUCT_ADAPTIVE_BT27 = "adaptive_bt27"
+PRODUCT_ADAPTIVE_BT31 = "adaptive_bt31"
 # Geolocation "Products"
 PRODUCT_1000M_LAT = "latitude_1000m"
 PRODUCT_1000M_LON = "longitude_1000m"
@@ -152,11 +162,18 @@ PRODUCTS.add_product(PRODUCT_SZA, PAIR_1000M, "solar_zenith_angle", guidebook.FT
 # PRODUCTS.add_product(PRODUCT_VIS01_1000M, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS01)
 PRODUCTS.add_product(PRODUCT_VIS01, (PAIR_250M, PAIR_1000M), "reflectance", (guidebook.FT_250M, guidebook.FT_1000M), guidebook.K_VIS01, dependencies=(PRODUCT_SZA,))
 PRODUCTS.add_product(PRODUCT_VIS02, PAIR_250M, "reflectance", guidebook.FT_250M, guidebook.K_VIS02, dependencies=(PRODUCT_SZA,))
+PRODUCTS.add_product(PRODUCT_VIS03, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS03, dependencies=(PRODUCT_SZA,))
+PRODUCTS.add_product(PRODUCT_VIS04, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS04, dependencies=(PRODUCT_SZA,))
+PRODUCTS.add_product(PRODUCT_VIS05, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS05, dependencies=(PRODUCT_SZA,))
+PRODUCTS.add_product(PRODUCT_VIS06, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS06, dependencies=(PRODUCT_SZA,))
 PRODUCTS.add_product(PRODUCT_VIS07, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS07, dependencies=(PRODUCT_SZA,))
 PRODUCTS.add_product(PRODUCT_VIS26, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS26, dependencies=(PRODUCT_SZA,))
 PRODUCTS.add_product(PRODUCT_IR20, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR20)
+PRODUCTS.add_product(PRODUCT_IR21, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR21)
+PRODUCTS.add_product(PRODUCT_IR22, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR22)
 PRODUCTS.add_product(PRODUCT_IR27, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR27)
 PRODUCTS.add_product(PRODUCT_IR31, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR31)
+PRODUCTS.add_product(PRODUCT_IR32, PAIR_1000M, "radiance", guidebook.FT_1000M, guidebook.K_IR32)
 PRODUCTS.add_product(PRODUCT_CMASK, PAIR_1000M, "category", (guidebook.FT_MASK_BYTE1, guidebook.FT_MOD35), guidebook.K_CMASK)
 PRODUCTS.add_product(PRODUCT_LSMASK, PAIR_1000M, "category", guidebook.FT_MASK_BYTE1, guidebook.K_LSMASK)
 PRODUCTS.add_product(PRODUCT_SIMASK, PAIR_1000M, "category", guidebook.FT_MASK_BYTE1, guidebook.K_SIMASK)
@@ -173,8 +190,11 @@ PRODUCTS.add_product(PRODUCT_TPW, PAIR_MOD07, "total_precipitable_water", guideb
 PRODUCTS.add_product(PRODUCT_SLST, PAIR_1000M, "summer_land_surface_temperature", dependencies=(PRODUCT_LST,))
 # radiance -> brightness temperature
 PRODUCTS.add_product(PRODUCT_BT20, PAIR_1000M, "brightness_temperature", dependencies=(PRODUCT_IR20,))
+PRODUCTS.add_product(PRODUCT_BT21, PAIR_1000M, "brightness_temperature", dependencies=(PRODUCT_IR21,))
+PRODUCTS.add_product(PRODUCT_BT22, PAIR_1000M, "brightness_temperature", dependencies=(PRODUCT_IR22,))
 PRODUCTS.add_product(PRODUCT_BT27, PAIR_1000M, "brightness_temperature", dependencies=(PRODUCT_IR27,))
 PRODUCTS.add_product(PRODUCT_BT31, PAIR_1000M, "brightness_temperature", dependencies=(PRODUCT_IR31,))
+PRODUCTS.add_product(PRODUCT_BT32, PAIR_1000M, "brightness_temperature", dependencies=(PRODUCT_IR32,))
 PRODUCTS.add_product(PRODUCT_FOG, PAIR_1000M, "temperature_difference", dependencies=(PRODUCT_BT31, PRODUCT_BT20, PRODUCT_SZA))
 # cloud clear and land/sea mask cleared
 PRODUCTS.add_product(PRODUCT_CLEAR_SST, PAIR_1000M, "sea_surface_temperature", dependencies=(PRODUCT_SST, PRODUCT_CMASK, PRODUCT_LSMASK, PRODUCT_SIMASK))
@@ -197,8 +217,11 @@ class Frontend(roles.FrontendRole):
         self.secondary_product_functions = {
             PRODUCT_SLST: self.create_slst,
             PRODUCT_BT20: self.create_bt_from_ir,
+            PRODUCT_BT21: self.create_bt_from_ir,
+            PRODUCT_BT22: self.create_bt_from_ir,
             PRODUCT_BT27: self.create_bt_from_ir,
             PRODUCT_BT31: self.create_bt_from_ir,
+            PRODUCT_BT32: self.create_bt_from_ir,
             PRODUCT_ADAPTIVE_BT20: self.create_adaptive_btemp,
             PRODUCT_ADAPTIVE_BT27: self.create_adaptive_btemp,
             PRODUCT_ADAPTIVE_BT31: self.create_adaptive_btemp,
@@ -559,7 +582,7 @@ class Frontend(roles.FrontendRole):
         try:
             output_data = ir_product.copy_array(filename=filename, read_only=False)
             sat = ir_product["satellite"]
-            band_number = {PRODUCT_BT20: 20, PRODUCT_BT27: 27, PRODUCT_BT31: 31}[product_name]
+            band_number = {PRODUCT_BT20: 20, PRODUCT_BT21: 21, PRODUCT_BT22: 22, PRODUCT_BT27: 27, PRODUCT_BT31: 31, PRODUCT_BT32: 32}[product_name]
             # since the input and output fill value and the invalid calculation value are all NaN we don't have to do
             # any extra calculations
             output_data[~ir_mask] = bright_shift(sat.title(), output_data[~ir_mask], band_number)

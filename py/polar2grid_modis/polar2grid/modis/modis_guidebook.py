@@ -60,11 +60,18 @@ K_LONGITUDE_250 = "longitude250_var"
 K_LATITUDE_250 = "latitude250_var"
 K_VIS01 = "vis01_var"
 K_VIS02 = "vis02_var"
+K_VIS03 = "vis03_var"
+K_VIS04 = "vis04_var"
+K_VIS05 = "vis05_var"
+K_VIS06 = "vis06_var"
 K_VIS07 = "vis07_var"
 K_VIS26 = "vis26_var"
 K_IR20 = "ir20_var"
+K_IR21 = "ir21_var"
+K_IR22 = "ir22_var"
 K_IR27 = "ir27_var"
 K_IR31 = "ir31_var"
+K_IR32 = "ir32_var"
 K_CMASK = "cloud_mask_var"
 K_LSMASK = "land_sea_mask_var"
 K_SIMASK = "snow_ice_mask_var"
@@ -486,11 +493,18 @@ FILE_TYPES[FT_MOD03] = {
 }
 FILE_TYPES[FT_MOD021KM] = {
     K_VIS01: FileInfo("EV_250_Aggr1km_RefSB", 0, "reflectance_scales", "reflectance_offsets"),
+    K_VIS03: FileInfo("EV_500_Aggr1km_RefSB", 0, "reflectance_scales", "reflectance_offsets"),
+    K_VIS04: FileInfo("EV_500_Aggr1km_RefSB", 1, "reflectance_scales", "reflectance_offsets"),
+    K_VIS05: FileInfo("EV_500_Aggr1km_RefSB", 2, "reflectance_scales", "reflectance_offsets"),
+    K_VIS06: FileInfo("EV_500_Aggr1km_RefSB", 3, "reflectance_scales", "reflectance_offsets"),
     K_VIS07: FileInfo("EV_500_Aggr1km_RefSB", 4, "reflectance_scales", "reflectance_offsets"),
     K_VIS26: FileInfo("EV_Band26", None, "reflectance_scales", "reflectance_offsets"),
     K_IR20: FileInfo("EV_1KM_Emissive", 0, "radiance_scales", "radiance_offsets"),
+    K_IR21: FileInfo("EV_1KM_Emissive", 1, "radiance_scales", "radiance_offsets"),
+    K_IR22: FileInfo("EV_1KM_Emissive", 2, "radiance_scales", "radiance_offsets"),
     K_IR27: FileInfo("EV_1KM_Emissive", 6, "radiance_scales", "radiance_offsets"),
     K_IR31: FileInfo("EV_1KM_Emissive", 10, "radiance_scales", "radiance_offsets"),
+    K_IR32: FileInfo("EV_1KM_Emissive", 11, "radiance_scales", "radiance_offsets"),
 }
 FILE_TYPES[FT_MOD02HKM] = {}
 FILE_TYPES[FT_MOD02QKM] = {
