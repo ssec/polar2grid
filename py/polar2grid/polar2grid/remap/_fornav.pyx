@@ -82,7 +82,7 @@ ctypedef fused grid_dtype:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int fornav(size_t chan_count, size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows,
+cdef bint fornav(size_t chan_count, size_t swath_cols, size_t swath_rows, size_t grid_cols, size_t grid_rows,
             cr_dtype *cols_pointer, cr_dtype *rows_pointer,
            image_dtype **input_arrays, grid_dtype **output_arrays,
            image_dtype input_fill, grid_dtype output_fill, size_t rows_per_scan,
@@ -171,7 +171,7 @@ cdef int fornav(size_t chan_count, size_t swath_cols, size_t swath_rows, size_t 
     deinitialize_weight(&ewaw)
     deinitialize_grids(chan_count, <void **>grid_accums)
     deinitialize_grids(chan_count, <void **>grid_weights)
-    return fill_count
+    return got_point
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -215,7 +215,7 @@ def fornav_wrapper(numpy.ndarray[cr_dtype, ndim=2, mode='c'] cols_array,
     cdef numpy.ndarray[numpy.int8_t, ndim=2] tmp_arr_i8
     cdef cr_dtype *cols_pointer = &cols_array[0, 0]
     cdef cr_dtype *rows_pointer = &rows_array[0, 0]
-    cdef int ret = 0
+    cdef bint ret = 0
 
     if in_type == numpy.float32:
         for i in range(num_items):
