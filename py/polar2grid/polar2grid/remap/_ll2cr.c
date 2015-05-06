@@ -5604,7 +5604,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_10ll2cr_static(CYTHON_UNUS
   PyObject *__pyx_v_projected_tuple = 0;
   __Pyx_memviewslice __pyx_v_rows_out = { 0, 0, { 0 }, { 0 }, { 0 } };
   __Pyx_memviewslice __pyx_v_cols_out = { 0, 0, { 0 }, { 0 }, { 0 } };
-  CYTHON_UNUSED double __pyx_v_proj_circum;
+  double __pyx_v_proj_circum;
   unsigned int __pyx_v_row;
   unsigned int __pyx_v_col;
   unsigned int __pyx_v_num_rows;
@@ -5911,7 +5911,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_10ll2cr_static(CYTHON_UNUS
  *                 cols_out[row, col] = fill_in
  *                 rows_out[row, col] = fill_in             # <<<<<<<<<<<<<<
  *                 continue
- * 
+ *             elif proj_circum != 0 and abs(x_tmp - origin_x) >= (0.75 * proj_circum):
  */
         __pyx_t_19 = __pyx_v_row;
         __pyx_t_20 = __pyx_v_col;
@@ -5921,14 +5921,44 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_10ll2cr_static(CYTHON_UNUS
  *                 cols_out[row, col] = fill_in
  *                 rows_out[row, col] = fill_in
  *                 continue             # <<<<<<<<<<<<<<
- * 
- *             x_tmp = (x_tmp - origin_x) / cell_width
+ *             elif proj_circum != 0 and abs(x_tmp - origin_x) >= (0.75 * proj_circum):
+ *                 # if x is more than 75% around the projection space, it is probably crossing the anti-meridian
  */
         goto __pyx_L5_continue;
       }
 
-      /* "polar2grid/remap/_ll2cr.pyx":313
+      /* "polar2grid/remap/_ll2cr.pyx":312
+ *                 rows_out[row, col] = fill_in
  *                 continue
+ *             elif proj_circum != 0 and abs(x_tmp - origin_x) >= (0.75 * proj_circum):             # <<<<<<<<<<<<<<
+ *                 # if x is more than 75% around the projection space, it is probably crossing the anti-meridian
+ *                 x_tmp += proj_circum
+ */
+      __pyx_t_21 = ((__pyx_v_proj_circum != 0.0) != 0);
+      if (__pyx_t_21) {
+      } else {
+        __pyx_t_16 = __pyx_t_21;
+        goto __pyx_L8_bool_binop_done;
+      }
+      __pyx_t_21 = ((fabs((__pyx_v_x_tmp - __pyx_v_origin_x)) >= (0.75 * __pyx_v_proj_circum)) != 0);
+      __pyx_t_16 = __pyx_t_21;
+      __pyx_L8_bool_binop_done:;
+      if (__pyx_t_16) {
+
+        /* "polar2grid/remap/_ll2cr.pyx":314
+ *             elif proj_circum != 0 and abs(x_tmp - origin_x) >= (0.75 * proj_circum):
+ *                 # if x is more than 75% around the projection space, it is probably crossing the anti-meridian
+ *                 x_tmp += proj_circum             # <<<<<<<<<<<<<<
+ * 
+ *             x_tmp = (x_tmp - origin_x) / cell_width
+ */
+        __pyx_v_x_tmp = (__pyx_v_x_tmp + __pyx_v_proj_circum);
+        goto __pyx_L7;
+      }
+      __pyx_L7:;
+
+      /* "polar2grid/remap/_ll2cr.pyx":316
+ *                 x_tmp += proj_circum
  * 
  *             x_tmp = (x_tmp - origin_x) / cell_width             # <<<<<<<<<<<<<<
  *             y_tmp = (y_tmp - origin_y) / cell_height
@@ -5936,7 +5966,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_10ll2cr_static(CYTHON_UNUS
  */
       __pyx_v_x_tmp = ((__pyx_v_x_tmp - __pyx_v_origin_x) / __pyx_v_cell_width);
 
-      /* "polar2grid/remap/_ll2cr.pyx":314
+      /* "polar2grid/remap/_ll2cr.pyx":317
  * 
  *             x_tmp = (x_tmp - origin_x) / cell_width
  *             y_tmp = (y_tmp - origin_y) / cell_height             # <<<<<<<<<<<<<<
@@ -5945,7 +5975,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_10ll2cr_static(CYTHON_UNUS
  */
       __pyx_v_y_tmp = ((__pyx_v_y_tmp - __pyx_v_origin_y) / __pyx_v_cell_height);
 
-      /* "polar2grid/remap/_ll2cr.pyx":315
+      /* "polar2grid/remap/_ll2cr.pyx":318
  *             x_tmp = (x_tmp - origin_x) / cell_width
  *             y_tmp = (y_tmp - origin_y) / cell_height
  *             if x_tmp >= -1 and x_tmp <= width + 1 and y_tmp >= -1 and y_tmp <= height + 1:             # <<<<<<<<<<<<<<
@@ -5956,26 +5986,26 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_10ll2cr_static(CYTHON_UNUS
       if (__pyx_t_21) {
       } else {
         __pyx_t_16 = __pyx_t_21;
-        goto __pyx_L9_bool_binop_done;
+        goto __pyx_L11_bool_binop_done;
       }
       __pyx_t_21 = ((__pyx_v_x_tmp <= (__pyx_v_width + 1)) != 0);
       if (__pyx_t_21) {
       } else {
         __pyx_t_16 = __pyx_t_21;
-        goto __pyx_L9_bool_binop_done;
+        goto __pyx_L11_bool_binop_done;
       }
       __pyx_t_21 = ((__pyx_v_y_tmp >= -1.0) != 0);
       if (__pyx_t_21) {
       } else {
         __pyx_t_16 = __pyx_t_21;
-        goto __pyx_L9_bool_binop_done;
+        goto __pyx_L11_bool_binop_done;
       }
       __pyx_t_21 = ((__pyx_v_y_tmp <= (__pyx_v_height + 1)) != 0);
       __pyx_t_16 = __pyx_t_21;
-      __pyx_L9_bool_binop_done:;
+      __pyx_L11_bool_binop_done:;
       if (__pyx_t_16) {
 
-        /* "polar2grid/remap/_ll2cr.pyx":316
+        /* "polar2grid/remap/_ll2cr.pyx":319
  *             y_tmp = (y_tmp - origin_y) / cell_height
  *             if x_tmp >= -1 and x_tmp <= width + 1 and y_tmp >= -1 and y_tmp <= height + 1:
  *                 points_in_grid += 1             # <<<<<<<<<<<<<<
@@ -5983,11 +6013,11 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_10ll2cr_static(CYTHON_UNUS
  *             rows_out[row, col] = y_tmp
  */
         __pyx_v_points_in_grid = (__pyx_v_points_in_grid + 1);
-        goto __pyx_L8;
+        goto __pyx_L10;
       }
-      __pyx_L8:;
+      __pyx_L10:;
 
-      /* "polar2grid/remap/_ll2cr.pyx":317
+      /* "polar2grid/remap/_ll2cr.pyx":320
  *             if x_tmp >= -1 and x_tmp <= width + 1 and y_tmp >= -1 and y_tmp <= height + 1:
  *                 points_in_grid += 1
  *             cols_out[row, col] = x_tmp             # <<<<<<<<<<<<<<
@@ -5998,7 +6028,7 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_10ll2cr_static(CYTHON_UNUS
       __pyx_t_23 = __pyx_v_col;
       *((__pyx_t_5numpy_float64_t *) ( /* dim=1 */ ((char *) (((__pyx_t_5numpy_float64_t *) ( /* dim=0 */ (__pyx_v_cols_out.data + __pyx_t_22 * __pyx_v_cols_out.strides[0]) )) + __pyx_t_23)) )) = __pyx_v_x_tmp;
 
-      /* "polar2grid/remap/_ll2cr.pyx":318
+      /* "polar2grid/remap/_ll2cr.pyx":321
  *                 points_in_grid += 1
  *             cols_out[row, col] = x_tmp
  *             rows_out[row, col] = y_tmp             # <<<<<<<<<<<<<<
@@ -6012,13 +6042,13 @@ static PyObject *__pyx_pf_10polar2grid_5remap_6_ll2cr_10ll2cr_static(CYTHON_UNUS
     }
   }
 
-  /* "polar2grid/remap/_ll2cr.pyx":321
+  /* "polar2grid/remap/_ll2cr.pyx":324
  * 
  *     # return points_in_grid, x_arr, y_arr
  *     return points_in_grid             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_unsigned_int(__pyx_v_points_in_grid); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 321; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_From_unsigned_int(__pyx_v_points_in_grid); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 324; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;

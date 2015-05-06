@@ -309,6 +309,9 @@ def ll2cr_static(numpy.ndarray[cr_dtype, ndim=2] lon_arr, numpy.ndarray[cr_dtype
                 cols_out[row, col] = fill_in
                 rows_out[row, col] = fill_in
                 continue
+            elif proj_circum != 0 and abs(x_tmp - origin_x) >= (0.75 * proj_circum):
+                # if x is more than 75% around the projection space, it is probably crossing the anti-meridian
+                x_tmp += proj_circum
 
             x_tmp = (x_tmp - origin_x) / cell_width
             y_tmp = (y_tmp - origin_y) / cell_height
