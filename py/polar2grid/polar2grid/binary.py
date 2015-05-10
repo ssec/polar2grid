@@ -50,7 +50,7 @@ import shutil
 import logging
 
 LOG = logging.getLogger(__name__)
-DEFAULT_OUTPUT_PATTERN = "%(satellite)s_%(instrument)s_%(product_name)s_%(begin_time)s_%(grid_name)s.dat"
+DEFAULT_OUTPUT_PATTERN = "{satellite}_{instrument}_{product_name}_{begin_time}_{grid_name}.dat"
 
 
 class Backend(roles.BackendRole):
@@ -77,7 +77,7 @@ class Backend(roles.BackendRole):
         grid_def = gridded_product["grid_definition"]
         if not output_pattern:
             output_pattern = DEFAULT_OUTPUT_PATTERN
-        if "%" in output_pattern:
+        if "{" in output_pattern:
             # format the filename
             of_kwargs = gridded_product.copy()
             of_kwargs["data_type"] = data_type
@@ -130,7 +130,7 @@ def add_backend_argument_groups(parser):
     group.add_argument('--rescale-configs', nargs="*", dest="rescale_configs",
                        help="alternative rescale configuration files")
     group = parser.add_argument_group(title="Backend Output Creation")
-    group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
+    group.add_argument("--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
                        help="output filenaming pattern")
     group.add_argument('--dont-inc', dest="inc_by_one", default=True, action="store_false",
                        help="do not increment data by one (ex. 0-254 -> 1-255 with 0 being fill)")

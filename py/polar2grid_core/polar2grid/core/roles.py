@@ -111,6 +111,11 @@ class SimpleINIConfigReader(object):
     """
     def __init__(self, *config_files, **kwargs):
         self.config_files = config_files
+        # Not commonly used by config readers, but we don't want to pass these to the config parser
+        self.overwrite_existing = kwargs.pop("overwrite_existing", False)
+        self.keep_intermediate = kwargs.pop("keep_intermediate", False)
+        self.exit_on_error = kwargs.pop("exit_on_error", True)
+
         file_objs = set([f for f in self.config_files if not isinstance(f, (str, unicode))])
         filepaths = set([f for f in self.config_files if isinstance(f, (str, unicode))])
 
@@ -492,7 +497,7 @@ class BackendRole(object):
         """
         return None
 
-    def create_output_filename2(self, pattern, satellite, instrument, product_name, grid_name, **kwargs):
+    def create_output_filename(self, pattern, satellite, instrument, product_name, grid_name, **kwargs):
         """Helper function that will take common meta data and put it into
         the output filename pattern provided. If either of the keyword arguments
         ``begin_time`` or ``end_time`` are not specified the other is used
@@ -605,7 +610,7 @@ class BackendRole(object):
 
         return output_filename
 
-    def create_output_filename(self, pattern, satellite, instrument, product_name, grid_name, **kwargs):
+    def create_output_filename_old(self, pattern, satellite, instrument, product_name, grid_name, **kwargs):
         """Helper function that will take common meta data and put it into
         the output filename pattern provided. If either of the keyword arguments
         ``begin_time`` or ``end_time`` are not specified the other is used
@@ -648,7 +653,7 @@ class BackendRole(object):
         ...     @property
         ...     def known_grids(self): return None
         >>> backend = FakeBackend()
-        >>> filename = backend.create_output_filename(pattern,
+        >>> filename = backend.create_output_filename_old(pattern,
         ...     "npp",
         ...     "viirs",
         ...     "i04",

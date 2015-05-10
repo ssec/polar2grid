@@ -59,7 +59,7 @@ LOG = logging.getLogger(__name__)
 
 DEFAULT_NINJO_RCONFIG = "polar2grid.ninjo:rescale_ninjo.ini"
 DEFAULT_NINJO_CONFIG = "ninjo_backend.ini"
-DEFAULT_OUTPUT_PATTERN = "%(satellite)s_%(instrument)s_%(product_name)s_%(begin_time)s_%(grid_name)s.tif"
+DEFAULT_OUTPUT_PATTERN = "{satellite}_{instrument}_{product_name}_{begin_time}_{grid_name}.tif"
 
 ninjo_tags = []
 ninjo_tags.append(TIFFFieldInfo(33922, 6, 6, TIFFDataType.TIFF_DOUBLE, FIELD_CUSTOM, True, False, "ModelTiePoint"))
@@ -523,7 +523,7 @@ class Backend(roles.BackendRole):
 
         if not output_pattern:
             output_pattern = DEFAULT_OUTPUT_PATTERN
-        if "%" in output_pattern:
+        if "{" in output_pattern:
             # format the filename
             of_kwargs = gridded_product.copy()
             of_kwargs["data_type"] = dtype_to_str(data_type)
@@ -826,7 +826,7 @@ def add_backend_argument_groups(parser):
     group.add_argument('--backend-configs', nargs="*", dest="rescale_configs",
                        help="alternative backend configuration files")
     group = parser.add_argument_group(title="Backend Output Creation")
-    group.add_argument("-o", "--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
+    group.add_argument("--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
                        help="output filenaming pattern")
     # group.add_argument('--dont-inc', dest="inc_by_one", default=True, action="store_false",
     #                    help="do not increment data by one (ex. 0-254 -> 1-255 with 0 being fill)")

@@ -445,7 +445,8 @@ class Rescaler(roles.INIConfigReader):
             if inc_by_one:
                 LOG.debug("Incrementing data by 1 so 0 acts as a fill value")
                 # need to recalculate mask here in case the rescaling method assigned some new fill values
-                data[mask_helper(data, fill_value)] += 1
+                good_data_mask = ~mask_helper(data, fill_value)
+                data[good_data_mask] += 1
         except StandardError:
             LOG.error("Unexpected error during rescaling")
             raise
@@ -455,8 +456,6 @@ class Rescaler(roles.INIConfigReader):
         # Only perform this calculation if it will be shown, its very time consuming
         if log_level <= logging.DEBUG:
             try:
-                if good_data_mask is None:
-                    good_data_mask = ~gridded_product.get_data_mask("grid_data")
                 LOG.debug("Data min: %f, max: %f" % (data[good_data_mask].min(), data[good_data_mask].max()))
             except StandardError:
                 LOG.debug("Couldn't get min/max values for %s (all fill data?)", gridded_product["product_name"])

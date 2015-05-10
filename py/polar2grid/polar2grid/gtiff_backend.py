@@ -56,7 +56,7 @@ LOG = logging.getLogger(__name__)
 
 gtiff_driver = gdal.GetDriverByName("GTIFF")
 
-DEFAULT_OUTPUT_PATTERN = "%(satellite)s_%(instrument)s_%(product_name)s_%(begin_time)s_%(grid_name)s.tif"
+DEFAULT_OUTPUT_PATTERN = "{satellite}_{instrument}_{product_name}_{begin_time}_{grid_name}.tif"
 
 
 def _proj4_to_srs(proj4_str):
@@ -183,7 +183,7 @@ class Backend(roles.BackendRole):
         grid_def = gridded_product["grid_definition"]
         if not output_pattern:
             output_pattern = DEFAULT_OUTPUT_PATTERN
-        if "%" in output_pattern:
+        if "{" in output_pattern:
             # format the filename
             of_kwargs = gridded_product.copy()
             of_kwargs["data_type"] = data_type

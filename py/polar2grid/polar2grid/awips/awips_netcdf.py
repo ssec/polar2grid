@@ -205,7 +205,7 @@ class Backend(roles.BackendRole):
         else:
             fn_format = self.awips_config_reader.get_filename_format()
 
-        output_filename = self.create_output_filename2(fn_format,
+        output_filename = self.create_output_filename(fn_format,
                                                        grid_name=grid_def["grid_name"],
                                                        rows=grid_def["height"],
                                                        columns=grid_def["width"],
