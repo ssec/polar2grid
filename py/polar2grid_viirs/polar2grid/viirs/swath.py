@@ -717,9 +717,26 @@ class Frontend(roles.FrontendRole):
         try:
             output_data = dnb_product.copy_array(filename=filename, read_only=False)
 
-            # From Steve Miller and Curtis Seaman
+            ### From Steve Miller and Curtis Seaman
             # maxval = 10.^(-1.7 - (((2.65+moon_factor1+moon_factor2))*(1+erf((solar_zenith-95.)/(5.*sqrt(2.0))))))
             # minval = 10.^(-4. - ((2.95+moon_factor2)*(1+erf((solar_zenith-95.)/(5.*sqrt(2.0))))))
+            # scaled_radiance = (radiance - minval) / (maxval - minval)
+            # radiance = sqrt(scaled_radiance)
+
+            ### Update to method from Curtis Seaman
+            # maxval = 10.^(-1.7 - (((2.65+moon_factor1+moon_factor2))*(1+erf((solar_zenith-95.)/(5.*sqrt(2.0))))))
+            # minval = 10.^(-4. - ((2.95+moon_factor2)*(1+erf((solar_zenith-95.)/(5.*sqrt(2.0))))))
+            # saturated_pixels = where(radiance gt maxval, nsatpx)
+            # saturation_pct = float(nsatpx)/float(n_elements(radiance))
+            # print, 'Saturation (%) = ', saturation_pct
+            #
+            # while saturation_pct gt 0.005 do begin
+            #   maxval = maxval*1.1
+            #   saturated_pixels = where(radiance gt maxval, nsatpx)
+            #   saturation_pct = float(nsatpx)/float(n_elements(radiance))
+            #   print, saturation_pct
+            # endwhile
+            #
             # scaled_radiance = (radiance - minval) / (maxval - minval)
             # radiance = sqrt(scaled_radiance)
 
@@ -728,6 +745,15 @@ class Frontend(roles.FrontendRole):
             erf_portion = 1 + erf((sza_data - 95.0) / (5.0 * numpy.sqrt(2.0)))
             max_val = numpy.power(10, -1.7 - (2.65 + moon_factor1 + moon_factor2) * erf_portion)
             min_val = numpy.power(10, -4.0 - (2.95 + moon_factor2) * erf_portion)
+
+            # Update from Curtis Seaman, increase max radiance curve until less than 0.5% is saturated
+            saturation_pct = float(numpy.count_nonzero(dnb_data > max_val)) / dnb_data.size
+            LOG.debug("Dynamic DNB saturation percentage: %f", saturation_pct)
+            while saturation_pct > 0.005:
+                max_val *= 1.1
+                saturation_pct = float(numpy.count_nonzero(dnb_data > max_val)) / dnb_data.size
+                LOG.debug("Dynamic DNB saturation percentage: %f", saturation_pct)
+
             numpy.sqrt((dnb_data - min_val) / (max_val - min_val), out=output_data)
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
