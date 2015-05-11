@@ -50,7 +50,7 @@ import sys
 import logging
 
 LOG = logging.getLogger(__name__)
-DEFAULT_OUTPUT_PATTERN = "%(satellite)s_%(instrument)s_%(begin_time)s.h5"
+DEFAULT_OUTPUT_PATTERN = "{satellite}_{instrument}_{begin_time}.h5"
 
 
 class Backend(roles.BackendRole):
