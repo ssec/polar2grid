@@ -754,7 +754,10 @@ class Frontend(roles.FrontendRole):
                 saturation_pct = float(numpy.count_nonzero(dnb_data > max_val)) / dnb_data.size
                 LOG.debug("Dynamic DNB saturation percentage: %f", saturation_pct)
 
-            numpy.sqrt((dnb_data - min_val) / (max_val - min_val), out=output_data)
+            inner_sqrt = (dnb_data - min_val) / (max_val - min_val)
+            # clip negative values to 0 before the sqrt
+            inner_sqrt[inner_sqrt < 0] = 0
+            numpy.sqrt(inner_sqrt, out=output_data)
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            dnb_product["data_type"], products_created)
