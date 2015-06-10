@@ -46,7 +46,7 @@ import numpy
 
 extensions = [
     Extension("polar2grid.remap._ll2cr", sources=["polar2grid/remap/_ll2cr.pyx"], extra_compile_args=["-O3", "-Wno-unused-function"]),
-    Extension("polar2grid.remap._fornav", sources=["polar2grid/remap/_fornav.pyx", "polar2grid/remap/_fornav_templates.cpp"], extra_compile_args=["-O3", "-Wno-unused-function"], language="c++")
+    Extension("polar2grid.remap._fornav", sources=["polar2grid/remap/_fornav.pyx", "polar2grid/remap/_fornav_templates.cpp"], language="c++", extra_compile_args=["-O3", "-Wno-unused-function"])
 ]
 
 try:

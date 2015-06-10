@@ -382,13 +382,12 @@ template<> inline accum_type get_rounding(npy_float64 *output_image) {
 }
 
 template<typename GRID_TYPE>
-int write_grid_image(GRID_TYPE *output_image, GRID_TYPE fill, size_t grid_cols, size_t grid_rows,
+unsigned int write_grid_image(GRID_TYPE *output_image, GRID_TYPE fill, size_t grid_cols, size_t grid_rows,
         accum_type *grid_accum, weight_type *grid_weights,
         int maximum_weight_mode, weight_type weight_sum_min) {
   accum_type chanf;
-//  GRID_TYPE *this_output;
   unsigned int i;
-  int fill_count = 0;
+  unsigned int valid_count = 0;
   size_t grid_size = grid_cols * grid_rows;
 
   if (weight_sum_min <= 0.0) {
@@ -411,14 +410,14 @@ int write_grid_image(GRID_TYPE *output_image, GRID_TYPE fill, size_t grid_cols, 
     }
 
     if (isnan(chanf)) {
-      fill_count++;
       *output_image = (GRID_TYPE)fill;
     } else {
+      valid_count++;
       write_grid_pixel(output_image, chanf);
     }
   }
 
-  return fill_count;
+  return valid_count;
 }
 
 
@@ -436,6 +435,6 @@ template int compute_ewa<npy_float64, npy_float64>(size_t, int, size_t, size_t, 
 template int compute_ewa<npy_float64, npy_int8>(size_t, int, size_t, size_t, size_t, size_t, npy_float64*, npy_float64*, npy_int8**, npy_int8, accum_type**, weight_type**, ewa_weight*, ewa_parameters*);
 
 // Output Grid types
-template int write_grid_image<npy_float32>(npy_float32*, npy_float32, size_t, size_t, accum_type*, weight_type*, int, weight_type);
-template int write_grid_image<npy_float64>(npy_float64*, npy_float64, size_t, size_t, accum_type*, weight_type*, int, weight_type);
-template int write_grid_image<npy_int8>(npy_int8*, npy_int8, size_t, size_t, accum_type*, weight_type*, int, weight_type);
+template unsigned int write_grid_image<npy_float32>(npy_float32*, npy_float32, size_t, size_t, accum_type*, weight_type*, int, weight_type);
+template unsigned int write_grid_image<npy_float64>(npy_float64*, npy_float64, size_t, size_t, accum_type*, weight_type*, int, weight_type);
+template unsigned int write_grid_image<npy_int8>(npy_int8*, npy_int8, size_t, size_t, accum_type*, weight_type*, int, weight_type);
