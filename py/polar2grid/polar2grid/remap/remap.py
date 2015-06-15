@@ -56,6 +56,8 @@ from scipy.interpolate.interpnd import _ndim_coords_from_arrays
 from scipy.spatial import cKDTree
 
 LOG = logging.getLogger(__name__)
+SWATH_USAGE = os.environ.get("P2G_SWATH_USAGE", 0)
+GRID_COVERAGE = os.environ.get("P2G_GRID_COVERAGE", 0.1)
 
 
 def mask_helper(arr, fill):
@@ -114,14 +116,14 @@ class Remapper(object):
             best_swath_def = self.highest_resolution_swath_definition(swath_scene)
             LOG.debug("Running ll2cr on the highest resolution swath to determine if it fits")
             try:
-                self.run_ll2cr(best_swath_def, grid_def)
+                self.run_ll2cr(best_swath_def, grid_def, swath_usage=kwargs.get("swath_usage", SWATH_USAGE))
             except StandardError:
                 LOG.error("Remapping error")
                 raise
 
         return func(swath_scene, grid_def, **kwargs)
 
-    def run_ll2cr(self, swath_definition, grid_definition):
+    def run_ll2cr(self, swath_definition, grid_definition, swath_usage=SWATH_USAGE):
         geo_id = swath_definition["swath_name"]
         grid_name = grid_definition["grid_name"]
         if (geo_id, grid_name) in self.ll2cr_cache:
@@ -166,8 +168,8 @@ class Remapper(object):
 
         # if 5% of the grid will have data in it then it fits
         fraction_in = points_in_grid / float(rows_arr.size)
-        fits_grid = fraction_in >= 0.05
-        if not fits_grid and not os.getenv("P2G_FITS_GRID", None):
+        swath_used = fraction_in > swath_usage
+        if not swath_used:
             self._safe_remove(rows_fn, cols_fn)
             LOG.error("Data does not fit in grid %s because it only %f%% of the swath is used" % (grid_name, fraction_in * 100))
             raise RuntimeError("Data does not fit in grid %s" % (grid_name,))
@@ -214,9 +216,11 @@ class Remapper(object):
                 LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(sorted(product_names)))
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
                 if not share_dynamic_grids:
-                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def.copy())
+                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def.copy(),
+                                                      swath_usage=kwargs.get("swath_usage", SWATH_USAGE))
                 else:
-                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def)
+                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def,
+                                                      swath_usage=kwargs.get("swath_usage", SWATH_USAGE))
             except StandardError:
                 LOG.error("Remapping error")
                 if self.exit_on_error:
@@ -277,7 +281,7 @@ class Remapper(object):
                 # Assumed that all share the same fill value and data type
                 input_dtype = [swath_scene[pn]["data_type"] for pn in product_names]
                 input_fill = [swath_scene[pn]["fill_value"] for pn in product_names]
-                got_points = fornav.fornav(cols_array,
+                valid_points = fornav.fornav(cols_array,
                               rows_array,
                               rows_per_scan,
                               product_filepaths,
@@ -291,9 +295,15 @@ class Remapper(object):
                               maximum_weight_mode=kwargs.get("maximum_weight_mode", False),
                               use_group_size=True
                 )
-                if not got_points:
-                    LOG.error("EWA resampling found 0 points inside the requested grid")
-                    raise RuntimeError("EWA resampling found 0 points inside the requested grid")
+                grid_coverage = kwargs.get("grid_coverage", GRID_COVERAGE)
+                grid_covered_ratio = valid_points / float(grid_def["width"] * grid_def["height"])
+                grid_covered = grid_covered_ratio > grid_coverage
+                if not grid_covered:
+                    msg = "EWA resampling only found %f%% of the grid covered (need %f%%)" % (grid_covered_ratio * 100, grid_coverage * 100)
+                    LOG.error(msg)
+                    raise RuntimeError(msg)
+                else:
+                    LOG.debug("EWA resampling found %f%% of the grid covered" % (grid_covered_ratio * 100,))
             except StandardError:
                 LOG.debug("Remapping exception: ", exc_info=True)
                 LOG.error("Remapping error")
@@ -434,6 +444,10 @@ def add_remap_argument_groups(parser):
                        help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
     group.add_argument("--method", dest="remap_method", default=SUPPRESS, choices=["ewa", "nearest"],
                        help="Remapping algorithm to use")
+    group.add_argument('--swath-usage', dest="swath_usage", default=0, type=float,
+                       help="Fraction of swath that must be used to continue remapping/processing (default 0)")
+    group.add_argument('--grid-coverage', dest="grid_coverage", default=0.1, type=float,
+                       help="Fraction of grid that must be covered with valid data to continue processing (default 0.1)")
     group.add_argument('--fornav-D', dest='fornav_D', default=SUPPRESS, type=float,
                        help="Specify the -D option for fornav")
     group.add_argument('--fornav-d', dest='fornav_d', default=SUPPRESS, type=float,
