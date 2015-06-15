@@ -376,6 +376,9 @@ class Remapper(object):
             cols_array = numpy.memmap(cols_fn, shape=shape, dtype=swath_def["data_type"])
             rows_array = numpy.memmap(rows_fn, shape=shape, dtype=swath_def["data_type"])
             good_mask = ~mask_helper(cols_array, swath_def["fill_value"])
+            for product_name in product_names:
+                LOG.debug("Combining data masks before building KDTree for nearest neighbor: %s", product_name)
+                good_mask &= ~swath_scene[product_name].get_data_mask().ravel()
             x = _ndim_coords_from_arrays((cols_array[good_mask], rows_array[good_mask]))
             xi = _ndim_coords_from_arrays((grid_y, grid_x))
             dist, i = cKDTree(x).query(xi, distance_upper_bound=kwargs["distance_upper_bound"])
