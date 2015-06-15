@@ -77,7 +77,7 @@ class Backend(roles.BackendRole):
             output_pattern = DEFAULT_OUTPUT_PATTERN
         if "{" in output_pattern:
             # format the filename
-            of_kwargs = gridded_product.copy()
+            of_kwargs = gridded_product.copy(as_dict=True)
             # of_kwargs["data_type"] = data_type
             output_filename = self.create_output_filename(output_pattern,
                                                           grid_name=grid_def["grid_name"],
@@ -109,6 +109,7 @@ class Backend(roles.BackendRole):
 
             for product_name, gridded_product in gridded_scene.items():
                 try:
+                    LOG.info("Creating HDF5 output for product: %s", product_name)
                     self.create_output_from_product(gridded_product, parent=h5_group, **kwargs)
                 except StandardError:
                     LOG.error("Could not create output for '%s'", product_name)
@@ -192,7 +193,7 @@ class Backend(roles.BackendRole):
             ds.attrs["begin_time"] = gridded_product["begin_time"].isoformat()
             ds.attrs["end_time"] = gridded_product["end_time"].isoformat()
         except StandardError:
-            if not self.keep_intermediate and os.path.isfile(output_filename):
+            if not self.keep_intermediate and output_filename and os.path.isfile(output_filename):
                 os.remove(output_filename)
             raise
 
@@ -223,7 +224,7 @@ def add_backend_argument_groups(parser):
 def main():
     from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
     from polar2grid.core.containers import GriddedScene, GriddedProduct
-    parser = create_basic_parser(description="Create geotiff files from provided gridded scene or product data")
+    parser = create_basic_parser(description="Create HDF5 files from provided gridded scene or product data")
     subgroup_titles = add_backend_argument_groups(parser)
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")
     global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")

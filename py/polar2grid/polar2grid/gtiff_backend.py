@@ -185,7 +185,7 @@ class Backend(roles.BackendRole):
             output_pattern = DEFAULT_OUTPUT_PATTERN
         if "{" in output_pattern:
             # format the filename
-            of_kwargs = gridded_product.copy()
+            of_kwargs = gridded_product.copy(as_dict=True)
             of_kwargs["data_type"] = data_type
             output_filename = self.create_output_filename(output_pattern,
                                                           grid_name=grid_def["grid_name"],

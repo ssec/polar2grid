@@ -158,7 +158,7 @@ class AWIPSConfigReader(roles.INIConfigReader):
         return list(set(self.config_parser.get(section_name, "grid_name") for section_name in sections))
 
     def get_product_options(self, gridded_product):
-        all_meta = gridded_product["grid_definition"].copy()
+        all_meta = gridded_product["grid_definition"].copy(as_dict=True)
         all_meta.update(**gridded_product)
         kwargs = dict((k, all_meta.get(k, None)) for k in self.id_fields)
         try:

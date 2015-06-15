@@ -403,7 +403,7 @@ class Rescaler(roles.INIConfigReader):
         FUTURE: dec_by_one (mutually exclusive to inc_by_one)
 
         """
-        all_meta = gridded_product["grid_definition"].copy()
+        all_meta = gridded_product["grid_definition"].copy(as_dict=True)
         all_meta.update(**gridded_product)
         kwargs = dict((k, all_meta.get(k, None)) for k in self.id_fields)
         # we don't want the product's current data_type, we want what the output will be
