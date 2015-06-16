@@ -152,8 +152,8 @@ class RGBCompositor(roles.CompositorRole):
 
             comp_data.tofile(fn)
             base_product = gridded_scene[self.composite_products[0]]
-            base_product["data_kind"] = self.composite_data_kind
-            gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn, base_product=base_product)
+            gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn, base_product=base_product,
+                                                                              data_kind=self.composite_data_kind)
         except StandardError:
             LOG.error("Could not create composite product with name '%s'", self.composite_name)
             if os.path.isfile(fn):

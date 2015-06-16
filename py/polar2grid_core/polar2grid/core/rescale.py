@@ -392,6 +392,33 @@ class Rescaler(roles.INIConfigReader):
     def register_rescale_method(self, name, func, **kwargs):
         self.rescale_methods[name] = (func, kwargs)
 
+    def _rescale_data(self, method, data, good_data_mask, rescale_options, fill_value, clip=True, inc_by_one=False):
+        try:
+            LOG.debug("Scaling data with method %s and arguments %r", method, rescale_options)
+            rescale_func = self.rescale_methods[method]
+            good_data = data[good_data_mask]
+            good_data = rescale_func(good_data, **rescale_options)
+
+            # Note: If the output fill value is anything that is affected by clipping or incrementing then
+            # certain scalings may fail if they decided some values could not be calculated
+            if clip:
+                LOG.debug("Clipping data between %f and %f", rescale_options["min_out"], rescale_options["max_out"])
+                good_data = numpy.clip(good_data, rescale_options["min_out"], rescale_options["max_out"], out=good_data)
+
+            data[good_data_mask] = good_data
+            data[~good_data_mask] = fill_value
+
+            if inc_by_one:
+                LOG.debug("Incrementing data by 1 so 0 acts as a fill value")
+                # need to recalculate mask here in case the rescaling method assigned some new fill values
+                good_data_mask = ~mask_helper(data, fill_value)
+                data[good_data_mask] += 1
+
+            return data
+        except StandardError:
+            LOG.error("Unexpected error during rescaling")
+            raise
+
     def rescale_product(self, gridded_product, data_type, inc_by_one=False, fill_value=None):
         """Rescale a gridded product based on how the rescaler is configured.
 
@@ -417,7 +444,6 @@ class Rescaler(roles.INIConfigReader):
         LOG.debug("Product %s found in rescale config: %r", gridded_product["product_name"], rescale_options)
 
         method = rescale_options.pop("method")
-        rescale_func = self.rescale_methods[method]
         # if the configuration file didn't force these then provide a logical default
         clip = rescale_options.pop("clip", True)
         min_out, max_out = dtype2range[kwargs["data_type"]]
@@ -426,37 +452,23 @@ class Rescaler(roles.INIConfigReader):
         rescale_options.setdefault("units", gridded_product.get("units", "kelvin"))
         rescale_options["fill_out"] = fill_value
 
-        try:
-            LOG.debug("Scaling data with method %s and arguments %r", method, rescale_options)
-            data = gridded_product.copy_array(read_only=False)
-            good_data_mask = ~gridded_product.get_data_mask()
-            good_data = data[good_data_mask]
-            good_data = rescale_func(good_data, **rescale_options)
-
-            # Note: If the output fill value is anything that is affected by clipping or incrementing then
-            # certain scalings may fail if they decided some values could not be calculated
-            if clip:
-                LOG.debug("Clipping data between %f and %f", rescale_options["min_out"], rescale_options["max_out"])
-                good_data = numpy.clip(good_data, rescale_options["min_out"], rescale_options["max_out"], out=good_data)
-
-            data[good_data_mask] = good_data
-            data[~good_data_mask] = fill_value
-
-            if inc_by_one:
-                LOG.debug("Incrementing data by 1 so 0 acts as a fill value")
-                # need to recalculate mask here in case the rescaling method assigned some new fill values
-                good_data_mask = ~mask_helper(data, fill_value)
-                data[good_data_mask] += 1
-        except StandardError:
-            LOG.error("Unexpected error during rescaling")
-            raise
-
+        data = gridded_product.copy_array(read_only=False)
+        good_data_mask = ~gridded_product.get_data_mask()
+        if rescale_options.get("separate_rgb", True) and data.ndim == 3:
+            data = numpy.concatenate((
+                [self._rescale_data(method, data[0], good_data_mask[0], rescale_options, fill_value, clip=clip, inc_by_one=inc_by_one)],
+                [self._rescale_data(method, data[1], good_data_mask[1], rescale_options, fill_value, clip=clip, inc_by_one=inc_by_one)],
+                [self._rescale_data(method, data[2], good_data_mask[2], rescale_options, fill_value, clip=clip, inc_by_one=inc_by_one)],
+            ))
+        else:
+            data = self._rescale_data(method, data, good_data_mask, rescale_options, fill_value, clip=clip, inc_by_one=inc_by_one)
 
         log_level = logging.getLogger('').handlers[0].level or 0
         # Only perform this calculation if it will be shown, its very time consuming
         if log_level <= logging.DEBUG:
             try:
-                LOG.debug("Data min: %f, max: %f" % (data[good_data_mask].min(), data[good_data_mask].max()))
+                # assumes NaN fill value
+                LOG.debug("Data min: %f, max: %f" % (numpy.nanmin(data), numpy.nanmax(data)))
             except StandardError:
                 LOG.debug("Couldn't get min/max values for %s (all fill data?)", gridded_product["product_name"])
 

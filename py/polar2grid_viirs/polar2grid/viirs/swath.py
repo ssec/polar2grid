@@ -121,6 +121,31 @@ ADAPTIVE_BT_PRODUCTS = [
     PRODUCT_ADAPTIVE_I04, PRODUCT_ADAPTIVE_I05,
     PRODUCT_ADAPTIVE_M12, PRODUCT_ADAPTIVE_M13, PRODUCT_ADAPTIVE_M14, PRODUCT_ADAPTIVE_M15, PRODUCT_ADAPTIVE_M16
 ]
+I_PRODUCTS = [
+    PRODUCT_I01,
+    PRODUCT_I02,
+    PRODUCT_I03,
+    PRODUCT_I04,
+    PRODUCT_I05,
+]
+M_PRODUCTS = [
+    PRODUCT_M01,
+    PRODUCT_M02,
+    PRODUCT_M03,
+    PRODUCT_M04,
+    PRODUCT_M05,
+    PRODUCT_M06,
+    PRODUCT_M07,
+    PRODUCT_M08,
+    PRODUCT_M09,
+    PRODUCT_M10,
+    PRODUCT_M11,
+    PRODUCT_M12,
+    PRODUCT_M13,
+    PRODUCT_M14,
+    PRODUCT_M15,
+    PRODUCT_M16,
+]
 
 PRODUCTS = ProductDict()
 GEO_PAIRS = GeoPairDict()
@@ -826,6 +851,10 @@ def add_frontend_argument_groups(parser):
                        help="Create adaptively scaled brightness temperature bands")
     group.add_argument('--include-dnb', dest='products', action="append_const", const=PRODUCT_DNB,
                        help="Add unscaled DNB product to list of products")
+    group.add_argument('--i-bands', dest='products', action=ExtendConstAction, const=I_PRODUCTS,
+                       help="Add all I-band raw products to list of products")
+    group.add_argument('--m-bands', dest='products', action=ExtendConstAction, const=M_PRODUCTS,
+                       help="Add all M-band raw products to list of products")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
 
 
