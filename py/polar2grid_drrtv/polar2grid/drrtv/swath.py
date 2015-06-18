@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -27,53 +27,65 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""
-CrIS EDR front end for polar2grid, which extracts band-pass slices of brightness temperature data.
+"""The Dual Regression Retrieval (DR-RTV) frontend reads HDF5 files created by DR-RTV software
+created by Bill Smith Sr., Elisabeth Wiessz, and Nadia Smith at the Space Science and Engineering Center.
 
-:author:       Ray Garcia (rayg)
-:author:       David Hoese (davidh)
-:contact:      rayg@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2014
-:license:      GNU GPLv3
-
-Note that Dual Regression products are indexed strangely:
+Note that Dual Regression products are indexed differently than other satellite-based products:
   [in-track, cross-track] for 2D variables
   [level, in-track, cross-track] for 3D variables
 
-Example:
-[(u'CAPE', (84, 60)),
- (u'CO2_Amount', (84, 60)),
- (u'COT', (84, 60)),
- (u'CTP', (84, 60)),
- (u'CTT', (84, 60)),
- (u'Channel_Index', (7021,)),
- (u'CldEmis', (84, 60)),
- (u'Cmask', (84, 60)),
- (u'Dewpnt', (101, 84, 60)),
- (u'GDAS_RelHum', (101, 84, 60)),
- (u'GDAS_TAir', (101, 84, 60)),
- (u'H2OMMR', (101, 84, 60)),
- (u'H2Ohigh', (84, 60)),
- (u'H2Olow', (84, 60)),
- (u'H2Omid', (84, 60)),
- (u'Latitude', (84, 60)),
- (u'Lifted_Index', (84, 60)),
- (u'Longitude', (84, 60)),
- (u'O3VMR', (101, 84, 60)),
- (u'Plevs', (101,)),
- (u'Qflag1', (84, 60)),
- (u'Qflag2', (84, 60)),
- (u'Qflag3', (84, 60)),
- (u'RelHum', (101, 84, 60)),
- (u'SurfEmis', (8461, 84, 60)),
- (u'SurfEmis_Wavenumbers', (8461,)),
- (u'SurfPres', (84, 60)),
- (u'TAir', (101, 84, 60)),
- (u'TSurf', (84, 60)),
- (u'totH2O', (84, 60)),
- (u'totO3', (84, 60))]
+The frontend provides the products listed below. Some products are extracted per pressure level and has special
+suffixes. Suffixes are "_100mb", "_200mb", "_300mb", "_400mb", "_500mb", "_600mb", "_700mb", and "_800mb".
+
+
+    +--------------------+--------------------------------------------+
+    | Product Name       | Description                                |
+    +====================+============================================+
+    | CAPE               | Convective Available Potential Energy      |
+    +--------------------+--------------------------------------------+
+    | CO2_Amount         | Carbon Dioxide Amount                      |
+    +--------------------+--------------------------------------------+
+    | COT                | Cloud Optical Thickness                    |
+    +--------------------+--------------------------------------------+
+    | CTP                | Cloud Top Pressure                         |
+    +--------------------+--------------------------------------------+
+    | CTT                | Cloud Top Temperature                      |
+    +--------------------+--------------------------------------------+
+    | CldEmis            | Cloud Emissivity                           |
+    +--------------------+--------------------------------------------+
+    | Cmask              | Cloud Mask                                 |
+    +--------------------+--------------------------------------------+
+    | Lifted_Index       | Lifted Index                               |
+    +--------------------+--------------------------------------------+
+    | SurfPres           | Surface Pressure                           |
+    +--------------------+--------------------------------------------+
+    | TSurf              | Surface Temperature                        |
+    +--------------------+--------------------------------------------+
+    | totH2O             | Total Water                                |
+    +--------------------+--------------------------------------------+
+    | totO3              | Total Ozone                                |
+    +--------------------+--------------------------------------------+
+    | *Level based products*                                          |
+    +--------------------+--------------------------------------------+
+    | Dewpnt_100mb       | Dewpoint Temperature                       |
+    +--------------------+--------------------------------------------+
+    | H2OMMR_100mb       | Water Mixing Ratio                         |
+    +--------------------+--------------------------------------------+
+    | O3VMR_100mb        | Ozone Mixing Ratio                         |
+    +--------------------+--------------------------------------------+
+    | RelHum_100mb       | Relative Humidity                          |
+    +--------------------+--------------------------------------------+
+    | TAir_100mb         | Air Temperature                            |
+    +--------------------+--------------------------------------------+
+
+|
+
+:author:       Ray Garcia (rayg)
+:author:       David Hoese (davidh)
+:organization: Space Science and Engineering Center (SSEC)
+:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
+:date:         Nov 2014
+:license:      GNU GPLv3
 
 
 """

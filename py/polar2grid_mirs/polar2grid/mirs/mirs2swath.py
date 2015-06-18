@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -27,13 +27,22 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Polar2Grid frontend for extracting data and metadata from files processed by the
-Microwave Integrated Retrieval System (MIRS).
+"""The MIRS frontend extracts data from files created by the Microwave Integrated Retrieval System (MIRS).
+The frontend offers the following products:
+
+    +--------------------+--------------------------------------------+
+    | Product Name       | Description                                |
+    +====================+============================================+
+    | mirs_rain_rate     | Rain Rate                                  |
+    +--------------------+--------------------------------------------+
+    | mirs_btemp_90      | Brightness Temperature at 88.2GHz          |
+    +--------------------+--------------------------------------------+
+
+|
 
 :author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
 :date:         Sept 2014
 :license:      GNU GPLv3
 
@@ -48,7 +57,6 @@ import numpy
 from netCDF4 import Dataset
 
 from polar2grid.core import roles
-from polar2grid.core.fbf import FileAppender
 from polar2grid.core import containers
 from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader, ProductDict, GeoPairDict
 
@@ -64,35 +72,6 @@ LAT_VAR = "latitude_var"
 LON_VAR = "longitude_var"
 BT_VARS = [BT_90_VAR]
 
-### PRODUCT DEFINITIONS ###
-# FIXME: Move ProductDefiniton to polar2grid.core
-# class ProductDefinition(object):
-#     def __init__(self, name, data_kind, dependencies=None, description=None, units=None):
-#         self.name = name
-#         self.data_kind = data_kind
-#         self.dependencies = dependencies or []
-#         self.description = description or ""
-#         self.units = units or ""
-#
-#
-# class MIRSProductDefiniton(ProductDefinition):
-#     def __init__(self, name, data_kind, file_type, file_key, dependencies=None, description=None, units=None,
-#                  is_geoproduct=False):
-#         self.file_type = file_type
-#         self.file_key = file_key
-#         self.is_geoproduct = is_geoproduct
-#         super(MIRSProductDefiniton, self).__init__(name, data_kind,
-#                                                    dependencies=dependencies, description=description, units=units)
-#
-#
-# class ProductDict(dict):
-#     def __init__(self, base_class=ProductDefinition):
-#         self.base_class = base_class
-#         super(ProductDict, self).__init__()
-#
-#     def add_product(self, *args, **kwargs):
-#         pd = self.base_class(*args, **kwargs)
-#         self[pd.name] = pd
 
 PRODUCT_RAIN_RATE = "mirs_rain_rate"
 PRODUCT_BT_90 = "mirs_btemp_90"

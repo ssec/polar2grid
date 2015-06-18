@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -27,14 +27,80 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Read one or more contiguous in-order HDF4 MODIS granules
-Write out Swath binary files used by ms2gt tools.
+"""The MODIS Frontend operates on HDF4 Level 1B files from the Moderate Resolution
+Imaging Spectroradiometer (MODIS) instruments on the Aqua and Terra
+satellites. The frontend is designed to work with files created by the IMAPP
+direct broadcast processing system, but may support other types of L1B files. The
+frontend can be specified to the ``p2g_glue`` script by using the frontend name ``modis``.
+It provides the following products:
+
+    +--------------------+--------------------------------------------+
+    | Product Name       | Description                                |
+    +====================+============================================+
+    | vis01              | Visible 1 Band                             |
+    +--------------------+--------------------------------------------+
+    | vis02              | Visible 2 Band                             |
+    +--------------------+--------------------------------------------+
+    | vis03              | Visible 3 Band                             |
+    +--------------------+--------------------------------------------+
+    | vis04              | Visible 4 Band                             |
+    +--------------------+--------------------------------------------+
+    | vis05              | Visible 5 Band                             |
+    +--------------------+--------------------------------------------+
+    | vis06              | Visible 6 Band                             |
+    +--------------------+--------------------------------------------+
+    | vis07              | Visible 7 Band                             |
+    +--------------------+--------------------------------------------+
+    | vis26              | Visible 26 Band                            |
+    +--------------------+--------------------------------------------+
+    | bt20               | Brightness Temperature Band 20             |
+    +--------------------+--------------------------------------------+
+    | bt21               | Brightness Temperature Band 21             |
+    +--------------------+--------------------------------------------+
+    | bt22               | Brightness Temperature Band 22             |
+    +--------------------+--------------------------------------------+
+    | bt27               | Brightness Temperature Band 27             |
+    +--------------------+--------------------------------------------+
+    | bt31               | Brightness Temperature Band 31             |
+    +--------------------+--------------------------------------------+
+    | bt32               | Brightness Temperature Band 32             |
+    +--------------------+--------------------------------------------+
+    | cloud_mask         | Cloud Mask                                 |
+    +--------------------+--------------------------------------------+
+    | land_sea_mask      | Land Sea Mask                              |
+    +--------------------+--------------------------------------------+
+    | snow_ice_mask      | Snow Ice Mask                              |
+    +--------------------+--------------------------------------------+
+    | sst                | Sea Surface Temperature                    |
+    +--------------------+--------------------------------------------+
+    | lst                | Land Surface Temperature                   |
+    +--------------------+--------------------------------------------+
+    | slst               | Summer Land Surface Temperature            |
+    +--------------------+--------------------------------------------+
+    | ndvi               | Normalized Difference Vegetation Index     |
+    +--------------------+--------------------------------------------+
+    | ist                | Ice Surface Temperature                    |
+    +--------------------+--------------------------------------------+
+    | inversion_strength | Inversion Strength                         |
+    +--------------------+--------------------------------------------+
+    | inversion_depth    | Inversion Depth                            |
+    +--------------------+--------------------------------------------+
+    | ice_concentration  | Ice Concentration                          |
+    +--------------------+--------------------------------------------+
+    | ctt                | Cloud Top Temperature                      |
+    +--------------------+--------------------------------------------+
+    | tpw                | Total Precipitable Water                   |
+    +--------------------+--------------------------------------------+
+    | fog                | Temperature Difference between BT31        |
+    |                    | and BT20                                   |
+    +--------------------+--------------------------------------------+
+
+|
 
 :author:       David Hoese (davidh)
 :author:       Eva Schiffer (evas)
-:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
 :date:         Dec 2014
 :license:      GNU GPLv3
 

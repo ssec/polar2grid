@@ -97,6 +97,7 @@ with the frontend name ``viirs``.
     | ifog               | Temperature difference between I05 and I04 |
     +--------------------+--------------------------------------------+
 
+|
 
 .. note::
 

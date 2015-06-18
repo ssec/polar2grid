@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -27,21 +27,106 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Read one or more contiguous in-order HDF4 VIIRS or MODIS corrected reflectance product
-granules and aggregate them into one swath per band.
-Write out Swath binary files used by other polar2grid components.
+"""The Corrected Reflectance Frontend operates on corrected reflectance files created from
+VIIRS Science Data Record (SDR) files or MODIS Level 1B (L1B) files. Currently corrected reflectance
+files are created by third part software developed by NASA.The ``CREFL_SPA`` algorithm
+for MODIS and ``CVIIRS_SPA`` algorithm for VIIRS can be found here:
+http://directreadout.sci.gsfc.nasa.gov/?id=software
 
-The crefl frontend accepts output from MODIS and VIIRS corrected reflectance processing. If provided with SDR files
+Polar2Grid uses its own patched version of the CREFL processing code for VIIRS data. This code is available in
+the main code repository and fixes a few bugs that were not fixed in the original CREFL code at the time of writing.
+After processing the output can be provided to Polar2Grid to create true color images or other RGB images.
+
+.. versionadded:: 2.0
+
+    CREFL software is automatically called when the CREFL frontend is provided SDR or L1B files.
+
+.. note::
+
+    The ``crefl2gtiff.sh`` script is hardcoded to create true color images by default since this is the most common
+    use case for the CREFL frontend. This is equivalent to ``p2g_glue crefl gtiff true_color ...`` since the products
+    needed for true color are created by default.
+
+The CREFL frontend accepts output from MODIS and VIIRS corrected reflectance processing. If provided with SDR files
 it will attempt to call the proper programs to convert the files. The required commands that must be available are:
 
  - h5SDS_transfer_rename
  - cviirs (for VIIRS corrected reflectance)
- - crefl.1.7.1 (for MODIS corrected reflectance)
+ - crefl (for MODIS corrected reflectance)
+
+The CREFL software also requires ancillary data in the form of ``tbase.hdf`` and ``CMGDEM.hdf`` files for the
+MODIS and VIIRS processing respectively. These files are provided in the CSPP software bundle and are automatically
+detected by the software. Alternate locations can be specified with the ``P2G_CMODIS_ANCPATH`` and
+``P2G_CVIIRS_ANCPATH`` environment variables.
+
+The following products are provided by this frontend:
+
+
+    +--------------------+--------------------------------------------+
+    | Product Name       | Description                                |
+    +====================+============================================+
+    | viirs_crefl01      | Corrected Reflectance from VIIRS M05 Band  |
+    +--------------------+--------------------------------------------+
+    | viirs_crefl02      | Corrected Reflectance from VIIRS M07 Band  |
+    +--------------------+--------------------------------------------+
+    | viirs_crefl03      | Corrected Reflectance from VIIRS M03 Band  |
+    +--------------------+--------------------------------------------+
+    | viirs_crefl04      | Corrected Reflectance from VIIRS M04 Band  |
+    +--------------------+--------------------------------------------+
+    | viirs_crefl05      | Corrected Reflectance from VIIRS M08 Band  |
+    +--------------------+--------------------------------------------+
+    | viirs_crefl06      | Corrected Reflectance from VIIRS M10 Band  |
+    +--------------------+--------------------------------------------+
+    | viirs_crefl07      | Corrected Reflectance from VIIRS M11 Band  |
+    +--------------------+--------------------------------------------+
+    | viirs_crefl08      | Corrected Reflectance from VIIRS I01 Band  |
+    +--------------------+--------------------------------------------+
+    | viirs_crefl09      | Corrected Reflectance from VIIRS I02 Band  |
+    +--------------------+--------------------------------------------+
+    | viirs_crefl10      | Corrected Reflectance from VIIRS I03 Band  |
+    +--------------------+--------------------------------------------+
+    | modis_crefl01_1000m| Corrected Reflectance from MODIS Band 1    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl02_1000m| Corrected Reflectance from MODIS Band 2    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl03_1000m| Corrected Reflectance from MODIS Band 3    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl04_1000m| Corrected Reflectance from MODIS Band 4    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl05_1000m| Corrected Reflectance from MODIS Band 5    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl06_1000m| Corrected Reflectance from MODIS Band 6    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl07_1000m| Corrected Reflectance from MODIS Band 7    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl01_500m | Corrected Reflectance from MODIS Band 1    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl02_500m | Corrected Reflectance from MODIS Band 2    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl03_500m | Corrected Reflectance from MODIS Band 3    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl04_500m | Corrected Reflectance from MODIS Band 4    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl05_500m | Corrected Reflectance from MODIS Band 5    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl06_500m | Corrected Reflectance from MODIS Band 6    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl07_500m | Corrected Reflectance from MODIS Band 7    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl01_250m | Corrected Reflectance from MODIS Band 1    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl02_250m | Corrected Reflectance from MODIS Band 2    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl03_250m | Corrected Reflectance from MODIS Band 3    |
+    +--------------------+--------------------------------------------+
+    | modis_crefl04_250m | Corrected Reflectance from MODIS Band 4    |
+    +--------------------+--------------------------------------------+
+
+|
 
 :author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
 :date:         Dec 2014
 :license:      GNU GPLv3
 """
