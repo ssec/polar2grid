@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -27,13 +27,22 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Polar2Grid frontend for extracting data and metadata from files processed by the
-Advanced Clear-Sky Processor for Oceans (ACSPO) system.
+"""The ACSPO frontend is for reading files created by the Advanced Clear-Sky Processor for Oceans (ACSPO) system.
+The frontend is contained in the `polar2grid.acspo` python package. The ACSPO system typically produces NetCDF4
+files. The frontend can be specified with the ``p2g_glue`` command using the ``acspo`` frontend name.
+The ACSPO frontend provides the following products:
+
+    +--------------------+--------------------------------------------+
+    | Product Name       | Description                                |
+    +====================+============================================+
+    | sst                | Sea Surface Temperature                    |
+    +--------------------+--------------------------------------------+
+
+|
 
 :author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
 :date:         Nov 2014
 :license:      GNU GPLv3
 
@@ -56,9 +65,9 @@ LOG = logging.getLogger(__name__)
 # File types (only one for now)
 FT_BASIC = "ACSPO_BASIC"  # need more?
 # File variables
-SST_VAR = "sst"
-LAT_VAR = "latitude"
-LON_VAR = "longitude"
+SST_VAR = "sst_var"
+LAT_VAR = "latitude_var"
+LON_VAR = "longitude_var"
 
 
 class ProductDefinition(object):
@@ -83,9 +92,9 @@ class ProductDict(dict):
         pd = self.base_class(*args, **kwargs)
         self[pd.name] = pd
 
-PRODUCT_SST = "acspo_sst"
-PRODUCT_LATITUDE = "acspo_latitude"
-PRODUCT_LONGITUDE = "acspo_longitude"
+PRODUCT_SST = "sst"
+PRODUCT_LATITUDE = "latitude"
+PRODUCT_LONGITUDE = "longitude"
 
 PRODUCTS = ProductDict(base_class=ProductDefinition)
 # FUTURE: Add a "geoproduct_pair" field and have a second geoproduct list for the pairs

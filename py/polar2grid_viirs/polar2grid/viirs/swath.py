@@ -27,15 +27,87 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""
-Read one or more contiguous in-order HDF5 VIIRS imager granules in any aggregation
-Write out Swath binary files used by ms2gt tools.
+"""The VIIRS Frontend operates on Science Data Record (SDR) and Environmental Data Record (EDR) files from
+the Suomi National Polar-orbiting Partnership's (NPP) Visible/Infrared
+Imager Radiometer Suite (VIIRS) instrument. The VIIRS frontend ignores filenames and uses internal
+file content to determine the type of file being provided, but SDR and EDR HDF5 files are typically named as below
+and have corresponding geolocation files::
+
+    SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
+
+The VIIRS frontend supports all basic SDR bands created by the instrument. These are identified as the products shown
+below. It supports terrain corrected or non-terrain corrected navigation files. Geolocation files must be included
+when specifying filepaths to frontends and glue scripts. The VIIRS frontend can be specified to the ``p2g_glue`` script
+with the frontend name ``viirs``.
+
+    +--------------------+--------------------------------------------+
+    | Product Name       | Description                                |
+    +====================+============================================+
+    | i01                | I01 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | i02                | I02 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | i03                | I03 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | i04                | I04 Brightness Temperature Band            |
+    +--------------------+--------------------------------------------+
+    | i05                | I05 Brightness Temperature Band            |
+    +--------------------+--------------------------------------------+
+    | m01                | M01 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m02                | M02 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m03                | M03 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m04                | M04 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m05                | M05 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m06                | M06 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m07                | M07 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m08                | M08 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m09                | M09 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m10                | M10 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m11                | M11 Reflectance Band                       |
+    +--------------------+--------------------------------------------+
+    | m12                | M12 Brightness Temperature Band            |
+    +--------------------+--------------------------------------------+
+    | m13                | M13 Brightness Temperature Band            |
+    +--------------------+--------------------------------------------+
+    | m14                | M14 Brightness Temperature Band            |
+    +--------------------+--------------------------------------------+
+    | m15                | M15 Brightness Temperature Band            |
+    +--------------------+--------------------------------------------+
+    | m16                | M16 Brightness Temperature Band            |
+    +--------------------+--------------------------------------------+
+    | dnb                | Raw DNB Band (not useful for images)       |
+    +--------------------+--------------------------------------------+
+    | histogram_dnb      | Histogram Equalized DNB Band               |
+    +--------------------+--------------------------------------------+
+    | adaptive_dnb       | Adaptive Histogram Equalized DNB Band      |
+    +--------------------+--------------------------------------------+
+    | dynamic_dnb        | Dynamic DNB Band from Steve Miller and     |
+    |                    | Curtis Seaman. Uses erf to scale the data. |
+    +--------------------+--------------------------------------------+
+    | ifog               | Temperature difference between I05 and I04 |
+    +--------------------+--------------------------------------------+
+
+
+.. note::
+
+    Terrain corrected geolocation for the DNB band has recently been added and is included in the non-TC file (GDNBO).
+    This may cause some confusion to users as the VIIRS frontend currently only checks for terrain corrected data. To
+    use non-TC data use the ``--no-tc`` flag (described below).
 
 :author:       David Hoese (davidh)
 :author:       Ray Garcia (rayg)
-:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
+:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
 :date:         Oct 2014
 :license:      GNU GPLv3
 
@@ -844,13 +916,13 @@ def add_frontend_argument_groups(parser):
                        help="Specify frontend products to process")
     # group.add_argument('--no-pseudo', dest='create_pseudo', default=True, action='store_false',
     #                     help="Don't create pseudo bands")
-    group.add_argument('--adaptive-dnb', dest='products', action="append_const", const=PRODUCT_ADAPTIVE_DNB,
-                       help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
-                            "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
+    # group.add_argument('--adaptive-dnb', dest='products', action="append_const", const=PRODUCT_ADAPTIVE_DNB,
+    #                    help="Create DNB output that is pre-scaled using adaptive tile sizes if provided DNB data; " +
+    #                         "the normal single-region pre-scaled version of DNB will also be created if you specify this argument")
     group.add_argument('--adaptive-bt', dest='products', action=ExtendConstAction, const=ADAPTIVE_BT_PRODUCTS,
                        help="Create adaptively scaled brightness temperature bands")
-    group.add_argument('--include-dnb', dest='products', action="append_const", const=PRODUCT_DNB,
-                       help="Add unscaled DNB product to list of products")
+    # group.add_argument('--include-dnb', dest='products', action="append_const", const=PRODUCT_DNB,
+    #                    help="Add unscaled DNB product to list of products")
     group.add_argument('--i-bands', dest='products', action=ExtendConstAction, const=I_PRODUCTS,
                        help="Add all I-band raw products to list of products")
     group.add_argument('--m-bands', dest='products', action=ExtendConstAction, const=M_PRODUCTS,

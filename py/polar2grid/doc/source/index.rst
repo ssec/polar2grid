@@ -29,6 +29,12 @@ with their licensing terms.
 
 `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`_
 
+.. note::
+
+    The collaboration with the PyTroll team will change a majority of the low-level code in future versions of
+    Polar2Grid. However, the bash scripts will still be available to provide the same functionality with which
+    users are familiar.
+
 Contents
 --------
 

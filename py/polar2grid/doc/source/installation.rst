@@ -7,16 +7,16 @@ includes a python runtime and all of the necessary third-party software
 to run the features provided by Polar2Grid. This is the most convenient way
 to run Polar2Grid for people not familiar with python packaging or python software development.
 
-The other instructions below should be used by others who want more control over their
+The other remaining sections below should be used by those who want more control over their
 environment, want to modify polar2grid source code, or want to run Polar2Grid on a platform
-not supported by the CSPP tarball. The instructions below assume some basic
+not supported by the CSPP tarball. These sections assume some basic
 knowledge about python and python packaging.
 
 Each installation method provides the same set of features except for
 the CSPP tarball. The tarball comes with bash scripts for conveniently
 calling the python command line tools or utilities provided by third-party
 vendors. The main difference is that calling `viirs2gtiff.sh ...` from the
-tarball installation is normally called as `python -m polar2grid.glue viirs gtiff ...`
+tarball installation is normally called as `p2g_glue viirs gtiff ...`
 in a normal python installation.
 
 Polar2Grid is used and tested on Linux and Mac systems. It may work on Windows systems,

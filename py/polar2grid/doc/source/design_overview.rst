@@ -2,7 +2,7 @@ Design Overview
 ===============
 
 The primary goal of Polar2Grid is to allow scientists to convert satellite
-imager data in to a format that they can view using forecasting tools with
+imager data in to a format that they can view using the forecasting tools with
 which they are most comfortable. Due to the way most satellite instruments
 operate, raw satellite data is typically represented as a non-uniform swath
 of pixels where each pixel has a corresponding longitude and latitude. This
@@ -14,7 +14,8 @@ to a grid, and writing the gridded data to a new file format for viewing.
 
 Polar2Grid has a modular design to ease development of features added in
 the future. It operates on the idea of satellite "products"; data observed
-by a satellite instrument. These products can be anything, like temperatures,
+by a satellite instrument. These products can be any type of raster data,
+such as temperatures,
 reflectances, radiances, or any other value that may be recorded by or calculated
 from an instrument. As shown below there are 4 main components of Polar2Grid
 used to work with these products: the Frontend, Backend, Compositor,
