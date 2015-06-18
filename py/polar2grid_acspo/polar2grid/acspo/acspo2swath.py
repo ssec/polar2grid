@@ -232,9 +232,9 @@ class FileReader(object):
 
     def _compare(self, other, method):
         try:
-            return method(self.begin_time, other.start_time)
+            return method(self.begin_time, other.end_time)
         except AttributeError:
-            raise NotImplemented
+            raise NotImplementedError("Can't compare %r and %r" % (self, other))
 
     def __lt__(self, other):
         return self._compare(other, lambda s, o: s < o)
