@@ -1,49 +1,84 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""
-Fill in AWIPS-compatible NetCDF template files with image data.  Also contains
-the main AWIPS backend to the `polar2grid.viirs2awips` script.
+# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    October 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
+"""The AWIPS backend is used to create AWIPS compatible NetCDF files.
+The Advanced Weather Interactive Processing System (AWIPS) is a program used
+by the United States National Weather Service (NWS) and others to view
+different forms of weather imagery. Once AWIPS is configured for specific products
+the AWIPS NetCDF backend can be used to provide compatible products to the
+system. The files created by this backend are compatible with AWIPS II (AWIPS I is no
+longer supported).
+
+The AWIPS NetCDF backend takes remapped binary image data and creates an
+AWIPS-compatible NetCDF 3 file.  To accomplish this the backend must rescale
+the image data to a 0-255 range, where 0 is a fill/invalid value.  AWIPS
+requires unsigned byte integers for its data which results in this range.
+It then fills in a NetCDF file template with the rescaled image data.
+
+Rescaling will attempt to fit the provided data in the best visual range for
+AWIPS, but can not always do this for outliers.  To correct for this the
+AWIPS NetCDF backend also clips any post-rescaling values above 255 to 255
+and any values below 0 to 0.  This could result in "washed out" portions of
+data in the AWIPS NetCDF file.
+
+Both the AWIPS backend and the AWIPS client must be configured to handle certain
+products over certain grids. By default the AWIPS backend is configured with the
+`AWIPS configuration file <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/awips/awips_grids.conf>`_
+that comes with Polar2Grid. This allows for the following grids to get created:
+
+    +-------------+----------------------------+
+    | Grid Name   | Description                |
+    +=============+============================+
+    | 211e        | East CONUS                 |
+    +-------------+----------------------------+
+    | 211w        | West CONUS                 |
+    +-------------+----------------------------+
+    | 203         | Alaska                     |
+    +-------------+----------------------------+
+    | 204         | Hawaii                     |
+    +-------------+----------------------------+
+
+ .. warning::
+
+     The AWIPS backend does not default to using any grid. Therefore, it is recommended to specify
+     one or more grids for remapping by using the `-g` flag.
 
 :author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
+:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
 :date:         Jan 2013
 :license:      GNU GPLv3
-
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison 
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
 
 """
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core import roles
-from polar2grid.nc import create_nc_from_ncml
 from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
 from polar2grid.core.dtype import clip_to_data_type, DTYPE_UINT8
 from .awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, NoSectionError
@@ -56,50 +91,6 @@ import logging
 import calendar
 
 LOG = logging.getLogger(__name__)
-
-
-def create_netcdf(nc_name, image, template, start_dt, channel, source, sat_name):
-    """Copy a template file to destination and fill it
-    with the provided image data.
-
-    WARNING: Timing information is not added
-    """
-    nc_name = os.path.abspath(nc_name)
-    template = os.path.abspath(template)
-    if not os.path.exists(template):
-        LOG.error("Template does not exist %s" % template)
-        raise ValueError("Template does not exist %s" % template)
-
-    try:
-        nc = create_nc_from_ncml(nc_name, template, format="NETCDF3_CLASSIC")
-    except StandardError:
-        LOG.error("Could not create base netcdf from template %s" % template)
-        raise
-
-    if nc.file_format != "NETCDF3_CLASSIC":
-        LOG.warning("Expected file format NETCDF3_CLASSIC got %s" % (nc.file_format,))
-
-    image_var = nc.variables["image"]
-    if image_var.shape != image.shape:
-        LOG.error("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape), str(image.shape)))
-        raise ValueError("Image shapes aren't equal, expected %s got %s" % (str(image_var.shape), str(image.shape)))
-
-    # Convert to signed byte keeping large values large
-    image = clip_to_data_type(image, DTYPE_UINT8)
-
-    image_var[:] = image
-    time_var = nc.variables["validTime"]
-    time_var[:] = float(calendar.timegm(start_dt.utctimetuple())) + float(start_dt.microsecond)/1e6
-
-    # Add AWIPS 2 global attributes
-    nc.channel = channel
-    nc.source = source
-    nc.satelliteName = sat_name
-
-    nc.sync()  # Just in case
-    nc.close()
-    LOG.debug("Data transferred into NC file correctly")
-
 
 # INI files ignore case on options, so we have to do this
 GRID_ATTR_NAME = {

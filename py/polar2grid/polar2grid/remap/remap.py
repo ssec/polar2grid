@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -27,12 +27,55 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Interface to remapping polar2grid data.
+"""Remapping is the process of mapping satellite data swaths to a uniform grid. Mapping
+data to a uniform grid makes it easier to view, manipulate, and store the data.
+In Polar2Grid, this is usually done using a 2-step process.
+
+Gridding
+--------
+
+The first step is called 'll2cr' which stands for "longitude/latitude to
+column/row". This step maps the pixel location (lon/lat space) into grid
+space. Polar2Grid uses grids defined by a PROJ.4 projection specification.
+Other parameters that define a grid like its width and height can be
+determined dynamically during this step. A grid is defined by the following parameters:
+
+ - Grid Name
+ - PROJ.4 String (either lat/lon or metered projection space)
+ - Width (number of pixels in the X direction)
+ - Height (number of pixels in the Y direction)
+ - Cell Width (pixel size in the X direction in grid units)
+ - Cell Height (pixel size in the Y direction in grid units)
+ - X Origin (upper-left X coordinate in grid units)
+ - Y Origin (upper-left Y coordinate in grid units)
+
+Polar2Grid supports static and dynamic grids. Grids are static if they have all of the
+above attributes defined. Grids are dynamic if some of the attributes are not defined.
+These attributes are then computed at run time based on the data being remapped. Only
+width/height and x/y origin can be unspecified in dynamic grids.
+
+For information on defining your own custom grids see the :doc:`Developer's Guide <dev_guide/grids>`.
+
+Resampling
+----------
+
+The second step of remapping is
+to resample the input swath pixels to each output grid pixel. Polar2Grid
+provides an 'elliptical weight averaging' or 'EWA' resampling method as
+well as the traditional nearest neighbor method, with other algorithms
+planned for future releases. In the past both of these steps were handled
+by third-party software, but have been rewritten to be directly accessed
+from python.
+
+.. note::
+
+    The nearest neighbor resampling method (nearest) is experimental and will be
+    replaced by a more stable implementation in future releases.
+
 
 :author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
+:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
 :date:         Oct 2014
 :license:      GNU GPLv3
 

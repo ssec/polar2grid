@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -27,11 +27,11 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""polar2grid backend to take polar-orbitting satellite data arrays
-and place it into a geotiff.
+"""The Geotiff backend puts gridded image data into a standard geotiff file.  It
+uses the GDAL python API to create the geotiff files. It can handle any grid that
+can be described by PROJ.4 and understand by Geotiff.
 
 :author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
 :date:         Nov 2014

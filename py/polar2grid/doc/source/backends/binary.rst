@@ -1,7 +1,14 @@
 Binary
 ======
 
-The binary backend is a very simple backend that outputs the gridded data in
-a flat binary file for each band of data.  The binary backend can handle any
-grid, gpd or PROJ.4.
+.. automodule:: polar2grid.binary
+
+Command Line Arguments
+----------------------
+
+.. argparse::
+    :module: polar2grid.binary
+    :func: add_backend_argument_groups
+    :prog: p2g_glue <frontend> binary
+    :passparser:
 
