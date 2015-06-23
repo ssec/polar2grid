@@ -61,17 +61,22 @@ class Proj(Proj):
         return super(Proj, self).__call__(data1, data2, **kwargs)
 
 
-def main():
+def get_parser():
     from argparse import ArgumentParser
     parser = ArgumentParser(description="Convert lon/lat points to X/Y values")
     parser.add_argument("-i", "--inverse", dest="inv", action="store_true", default=False,
-            help="Convert X/Y values to lon/lat")
+                        help="Convert X/Y values to lon/lat")
     parser.add_argument("proj4_str",
-            help="PROJ.4 projection string (in quotes)")
+                        help="PROJ.4 projection string (in quotes)")
     parser.add_argument("lon_point", type=float,
-            help="Longitude of the point to be converted (single value only)")
+                        help="Longitude of the point to be converted (single value only)")
     parser.add_argument("lat_point", type=float,
-            help="Latitude of the point to be converted (single value only)")
+                        help="Latitude of the point to be converted (single value only)")
+    return parser
+
+
+def main():
+    parser = get_parser()
     args = parser.parse_args()
 
     p = Proj(args.proj4_str)

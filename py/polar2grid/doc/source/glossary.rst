@@ -33,12 +33,6 @@ Glossary
         around the python call `python -m polar2grid.glue <frontend> <backend> -vv ...`,
         except for in rare cases where specific defaults are needed.
 
-    grid determination
-        Process of determining what grids intersect the data being processed.
-        This is done as part of remapping when gridding the data. If no data
-        points are found within the grid area then the data is considered to
-        not fall in the grid and remapping will not continue.
-
     product
     products
         A swath of instrument data. When from a Polar2Grid Frontend a product is considered

@@ -149,24 +149,31 @@ def rough_compare (path1, path2, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DP
     fig = _plt_basic_imshow_fig(diff, numpy.min(diff), numpy.max(diff), title="difference, restricted", cmap=cm.Spectral)
     fig.savefig("plot_ncdata.diff_r.png", dpi=dpi_to_use)
     plt.close()
-    
 
-def main():
+
+def get_parser():
     from argparse import ArgumentParser
-    description = "Plot AWIPS compatible NetCDF3 files using matplotlib."
+    description = """This script will read a series of NetCDF3 files created using the AWIPS
+backend and plot the data on a b/w color scale.  It searches for any NetCDF
+files with the prefix ``SSEC_AWIPS_``."""
     parser = ArgumentParser(description=description)
     parser.add_argument('--vmin', dest="vmin", default=None, type=int,
-            help="Specify minimum brightness value. Defaults to minimum value of data.")
+                        help="Specify minimum brightness value. Defaults to minimum value of data.")
     parser.add_argument('--vmax', dest="vmax", default=None, type=int,
-            help="Specify maximum brightness value. Defaults to maximum value of data.")
+                        help="Specify maximum brightness value. Defaults to maximum value of data.")
     parser.add_argument('-p', '--pat', dest="base_pat", default=DEF_PAT,
-            help="Specify the glob pattern of NetCDF files to look for. Defaults to '%s'" % DEF_PAT)
+                        help="Specify the glob pattern of NetCDF files to look for. Defaults to '%s'" % DEF_PAT)
     parser.add_argument('-d', '--dpi', dest="dpi", default=100, type=float,
-            help="Specify the dpi for the resulting figure, higher dpi will result in larger figures and longer run times")
+                        help="Specify the dpi for the resulting figure, higher dpi will result in larger figures and longer run times")
     parser.add_argument('-c', dest="do_compare", default=False, action="store_true",
-            help="Include this flag if you wish to compare two specific files")
+                        help="Include this flag if you wish to compare two specific files")
     parser.add_argument('search_dir', default=None, nargs="*",
-            help="Directory to search for NetCDF3 files")
+                        help="Directory to search for NetCDF3 files, default is '.'")
+    return parser
+
+
+def main():
+    parser = get_parser()
     args = parser.parse_args()
     sys.excepthook=exc_handler
     

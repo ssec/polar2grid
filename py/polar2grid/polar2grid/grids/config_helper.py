@@ -66,34 +66,40 @@ def determine_projection(center_lon, center_lat, proj4_str=None):
     return proj4_str
 
 
-def main():
+def get_parser():
     from argparse import ArgumentParser, SUPPRESS
-    description = """Print out valid grid configuration line given grid
-parameters. A default projection will be used based on the location of the
-grid. A different projection can be specified if desired. The default
-projection is referenced at the center lon/lat provided by the user."""
+    description = """This script is meant to help those unfamiliar with PROJ.4 and projections
+in general. By providing a few grid parameters this script will provide a
+grid configuration line that can be added to a user's custom grid
+configuration. Based on a center longitude and latitude, the script will
+choose an appropriate projection."""
     parser = ArgumentParser(description=description)
     parser.add_argument('grid_name', type=str,
-            help="Unique grid name")
+                        help="Unique grid name")
     parser.add_argument('center_longitude', type=float,
-            help="Decimal longitude value for center of grid (-180 to 180)")
+                        help="Decimal longitude value for center of grid (-180 to 180)")
     parser.add_argument('center_latitude', type=float,
-            help="Decimal latitude value for center of grid (-90 to 90)")
+                        help="Decimal latitude value for center of grid (-90 to 90)")
     parser.add_argument('pixel_size_x', type=float,
-            help="""Size of each pixel in the X direction in grid units,
+                        help="""Size of each pixel in the X direction in grid units,
 meters for default projections.""")
     parser.add_argument('pixel_size_y', type=float,
-            help="""Size of each pixel in the Y direction in grid units,
+                        help="""Size of each pixel in the Y direction in grid units,
 meters for default projections.""")
     parser.add_argument('grid_width', type=int,
-            help="Grid width in number of pixels")
+                        help="Grid width in number of pixels")
     parser.add_argument('grid_height', type=int,
-            help="Grid height in number of pixels")
+                        help="Grid height in number of pixels")
     parser.add_argument('-p', dest="proj_str", default=None,
-            help="PROJ.4 projection string to override the default")
+                        help="PROJ.4 projection string to override the default")
     # Don't force Y pixel size to be negative (for expert use only)
     parser.add_argument('--dont-touch-ysize', dest="dont_touch_ysize", action='store_true', default=False,
-            help=SUPPRESS)
+                        help=SUPPRESS)
+    return parser
+
+
+def main():
+    parser = get_parser()
     args = parser.parse_args()
 
     grid_name = args.grid_name

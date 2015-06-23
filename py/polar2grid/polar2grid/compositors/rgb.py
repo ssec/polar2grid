@@ -27,10 +27,60 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Common RGB compositors.
+"""
+RGB Compositors
+---------------
+
+The following are common compositors that create RGB images.
+
+True Color
+^^^^^^^^^^
+
+The True Color Compositor is intended for corrected reflectance data from the CREFL (crefl) frontend.
+By default it is configured to work with the crefl products, but may be customized with a compositor configuration
+file. The True Color Compositor expects a red, green, and blue product that are pan sharpened using an
+additional high-resolution red product. This compositor works for VIIRS and MODIS corrected reflectance
+products and produces a new product called "true_color".
+
+False Color
+^^^^^^^^^^^
+
+The False Color Compositor is intended for corrected reflectance data from the CREFL (crefl) frontend.
+It operates similarly to the True Color Compositor described above, but with different bands to use
+by default. It expects a red, green, and blue product that are then pan sharpened using an additional
+high-resolution blue product. This compositor works for VIIRS and MODIS corrected reflectance products
+and produces a new product called "false_color".
+
+RGB
+^^^
+
+The RGB Compositor is a generic compositor for creating RGB products. It should be configured in a custom
+configuration file. The following steps will walk you through creating a custom RGB product and using it
+with the a software bundle glue script.
+
+1. Decide on products to use in the RGB. This example uses ``m05``, ``m07``, and ``m15`` from the VIIRS frontend
+   and will create a geotiff.
+2. Create a "my_composites.conf" file with the following contents::
+
+    [compositor:my_rgb]
+    composite_name=my_rgb_name
+    composite_products=m05,m07,m15
+
+3. Run the following command::
+
+    viirs2gtiff.sh my_rgb --compositor-configs my_composites.conf -f /path/to/files -p m05 m07 m15
+
+.. note::
+
+    The "-p m05 m07 m15" is optional since those products are created by default, but since no other products are needed we request only these 3.
+
+4. The command above will create a file named "npp_viirs_my_rgb_name_20120225_180540_wgs84_fit.tif" by default.
+   The default scaling is linear with dynamic limits per band. To create nicer looking images a custom rescaling
+   configuration would be required.
+
+|
 
 :author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
 :copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
 :date:         Dec 2014

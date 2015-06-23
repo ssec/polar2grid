@@ -88,8 +88,8 @@ update_doc: build_doc_html
 	cd $(MAIN_PKG_DIR)/doc/build/html; \
 	echo $(FN); \
 	tar -czf $(FN) *; \
-	scp $(FN) birch:/tmp/; \
-	ssh birch "cd '$(DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
+	scp $(FN) birch.ssec.wisc.edu:/tmp/; \
+	ssh birch.ssec.wisc.edu "cd '$(DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
 
 ### Clean up what we've done ###
 clean_sdist:

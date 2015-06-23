@@ -1,4 +1,0 @@
-False Color Compositor
-======================
-
-TODO

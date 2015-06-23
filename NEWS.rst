@@ -4,6 +4,13 @@ Release Notes
 Roadmap to Version 2.1
 ----------------------
 
+* Collaboration with the PyTroll project will change almost everything...again.
+
+    * The PyTroll and Polar2Grid teams have been working on a new interface for the mpop package that will allow greater
+      flexibility and easier use by Polar2Grid.
+    * Most python code in Polar2Grid will be absorbed by mpop (either added or use existing).
+    * The remaining roadmap bullets are subject to change based on the PyTroll/Polar2Grid merger.
+
 * Further fornav updates
 
   * Move all module logic to C++ and remove cython dependency for this module (simple one function cython wrapper should be easy to remove)
@@ -39,6 +46,9 @@ Version 2.0 (Coming Soon)
 * GPD grids and support for them has been removed. PROJ.4 is more flexible, more widely used, and can actually support the AWIPS grids better.
 * Python setup.py files updated to better meet common practice of other python projects (READMEs, classifiers, etc)
 * Major changes to rescaling so that it can be specified independent of output data type and "increment_by_one"
+* Removed AWIPS I support due to National Weather Service using AWIPS II from now on
+* Added basic ACSPO and MIRS frontends
+* Added HDF5 backend
 
 Version 1.2 (2014-08-16)
 ------------------------

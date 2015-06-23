@@ -31,9 +31,9 @@ with their licensing terms.
 
 .. note::
 
-    The collaboration with the PyTroll team will change a majority of the low-level code in future versions of
-    Polar2Grid. However, the bash scripts will still be available to provide the same functionality with which
-    users are familiar.
+    A collaboration between the Polar2Grid and PyTroll team will change a majority of the low-level code in
+    future versions of Polar2Grid.
+    However, the bash scripts will still be available to provide the same functionality with which users are familiar.
 
 Contents
 --------
@@ -48,7 +48,7 @@ Contents
     frontends/index
     remapping
     backends/index
-    compositors/index
+    compositors
     rescaling
     utilscripts
     NEWS
@@ -73,18 +73,6 @@ Developer's Guide
     dev_guide/compositors
     dev_guide/rescaling
     dev_guide/swbundle
-
-API
----
-
-.. toctree::
-    :maxdepth: 1
-   
-    api/polar2grid
-    api/polar2grid.viirs
-    api/polar2grid.modis
-    api/polar2grid.crefl
-    api/polar2grid.core
 
 
 Indices and tables

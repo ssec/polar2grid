@@ -18,13 +18,9 @@ creating true color images is already the default for the ``crefl2gtiff.sh`` scr
 Compositors can be used from the python command line access by either calling the glue
 script::
 
-    python -m polar2grid.glue <frontend> <backend> [<compositor> ...] ...
+    p2g_glue <frontend> <backend> [<compositor> ...] ...
 
-Or from the :py:mod:`polar2grid.compositors` module directly::
-
-    python -m polar2grid.compositors <compositor> ... --scene gridded_scene.json
-
-Both methods for using compositors can be customized with a configuration file specified
+What compositors are available can be customized with a configuration file specified
 with the ``--compositor-configs`` flag.
 
 .. note::
@@ -32,10 +28,13 @@ with the ``--compositor-configs`` flag.
     Compositor's require a specific set of products to complete their calculations. If any required information
     is missing then the compositor will fail.
 
-Below is a list of the compositors that come with Polar2Grid.
+Compositors that come with Polar2Grid are described below. For information on creating your own
+custom RGB see the :doc:`Developer's Guide <dev_guide/compositors>`.
 
-.. toctree::
-    :maxdepth: 1
+.. note::
 
-    false_color
-    true_color
+    Compositors and the way they are implemented will change in future releases after collaboration with the PyTroll
+    team.
+
+.. automodule:: polar2grid.compositors.rgb
+

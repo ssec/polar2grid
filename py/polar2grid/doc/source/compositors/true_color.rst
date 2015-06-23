@@ -1,4 +1,0 @@
-True Color Compositor
-=====================
-
-TODO

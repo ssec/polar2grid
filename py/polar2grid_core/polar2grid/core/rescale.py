@@ -107,9 +107,6 @@ def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, flip=
         computed. Note that this could add a considerable amount of time to
         the calculation.
     - If you know the limits, specify the output and input ranges.
-    - If you want to flip the data range (ex. -16 to 40 data becomes 237 to 0
-        data) then specify the ranges as needed (ex. min_out=237, max_out=0,
-        min_in=-16, max_in=40). The flip happens automatically.
     - If the data needs to be clipped to the output range, specify 1 or 0 for
         the "clip" keyword. Note that most backends will do this to fit the
         data type of the output format.
@@ -302,7 +299,7 @@ def lst_scale(img, min_out, max_out, min_in, max_in, fill_out, **kwargs):
 
 
 def ctt_scale(img, min_out, max_out, min_in, max_in, flip=True, **kwargs):
-    """The original cloud top temperature scaling.
+    """cloud top temperature scaling.
 
     The original was for unsigned 8-bit files from 10 to 250.
     """
