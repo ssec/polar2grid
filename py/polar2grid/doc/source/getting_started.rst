@@ -43,7 +43,7 @@ list of the available command line arguments provide the ``-h`` argument to a sc
 :doc:`backends documentation <backends/index>` for available backends. Some of the more advanced features
 provided by Polar2Grid are decribed in the below sections. It is recommended that users searching
 for a feature not explained on this page look at the rest of the Polar2Grid documentation. For users
-looking to make their own custom RGB products, see the :doc:`Compositor's documentation <compositors/index>`.
+looking to make their own custom RGB products, see the :doc:`Compositor's documentation <compositors>`.
 
 Creating True Color as Geotiffs and KML/KMZ
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -66,13 +66,13 @@ command and ``output_true_color.kmz`` is the name of the KMZ file to create.
 
 For more information see the documentation for the
 :doc:`CREFL Frontend <frontends/crefl>`, the :doc:`Geotiff Backend <backends/gtiff>`, and the
-:doc:`True Color Compositor <compositors/true_color>`.
+:doc:`True Color Compositor <compositors>`.
 
 Creating False Color as Geotiffs and KML/KMZ
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A false color image is any combination of 3 bands that isn't a true color image, but by default
-Polar2Grid uses a default set of bands. See the :doc:`False Color Compositor <compositors/false_color>`
+Polar2Grid uses a default set of bands. See the :doc:`False Color Compositor <compositors>`
 for more information on those defaults. To make a false color image geotiff run::
 
     $POLAR2GRID_HOME/bin/crefl2gtiff.sh false_color --false-color -f /path/to/my_sdrs/

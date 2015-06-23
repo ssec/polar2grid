@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -27,12 +27,33 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Polar2Grid frontend for extracting data and metadata from files for AVHRR instruments.
+"""The AVHRR frontend is for reading AAPP L1B files for the AVHRR instrument.
+The frontend is contained in the `polar2grid.avhrr` python package. These files are
+a custom binary format. The frontend can be specified with the ``p2g_glue`` command
+using the ``avhrr`` frontend name.
+The AVHRR frontend provides the following products:
+
++--------------------+--------------------------------------------+
+| Product Name       | Description                                |
++====================+============================================+
+| band1_vis          | Band 1 Visible                             |
++--------------------+--------------------------------------------+
+| band2_vis          | Band 2 Visible                             |
++--------------------+--------------------------------------------+
+| band3a_vis         | Band 3A Visible                            |
++--------------------+--------------------------------------------+
+| band3b_bt          | Band 3B Brightness Temperature             |
++--------------------+--------------------------------------------+
+| band4_vis          | Band 4 Brightness Temperature              |
++--------------------+--------------------------------------------+
+| band5_vis          | Band 5 Brightness Temperature              |
++--------------------+--------------------------------------------+
+
+|
 
 :author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
+:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
 :date:         Nov 2014
 :license:      GNU GPLv3
 

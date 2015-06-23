@@ -28,8 +28,8 @@ with the ``--compositor-configs`` flag.
     Compositor's require a specific set of products to complete their calculations. If any required information
     is missing then the compositor will fail.
 
-Compositors that come with Polar2Grid are described below. For information on creating your own
-custom RGB see the :doc:`Developer's Guide <dev_guide/compositors>`.
+Compositors that come with Polar2Grid are described below. Instructions for creating your own
+custom RGB composite are also below.
 
 .. note::
 

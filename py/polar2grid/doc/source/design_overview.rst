@@ -42,9 +42,7 @@ for easy transfer of data through Polar2Grid whether it's used from Python
 or from the command line. They
 can be stored on-disk as one or more JSON files referencing one or more binary
 data arrays. In memory, the containers are represented as python dictionaries with
-numpy memory-mapped files or data arrays. For more information about the specifics
-of the containers provided in Polar2Grid
-see the :doc:`Developer's Guide <dev_guide/containers>`.
+numpy memory-mapped files or data arrays.
 
 Frontends
 ---------
@@ -56,9 +54,7 @@ previous section). In more advanced cases a Frontend may choose to provide
 products that require extra processing; from masking bad values to creating
 a new product from the combination of others. The
 :doc:`frontends documentation <frontends/index>` has more details on
-the current frontends available. The
-:doc:`Developer's Guide <dev_guide/frontends>` also includes information
-for creating your own frontend.
+the current frontends available.
 
 Remapping
 ---------
@@ -90,8 +86,8 @@ not be created by the Frontend. Usually this means combining multiple
 products to create a new one. The most common case is creating color images
 (RGB) like true color or false colors images which are the combination
 of 3 products. Customizing the behavior of Compositors is considered an
-advanced topic. More information can be found in the
-:doc:`Developer's Guide <dev_guide/compositors>`.
+advanced topic. More information can be found on the
+:doc:`Compositors documentation <compositors>`.
 
 Backends
 --------
@@ -105,5 +101,3 @@ prefer unsigned 8-bit integers (0 - 255). To best represent the data in the file
 the Backend must scale the real-world value to a value that can be written to
 the output file(s), whether that be with a simple linear transformation or something
 more complex. For more information, see the :doc:`Backends documentation <backends/index>`.
-For information on writing your own Backend, see the
-:doc:`Developer's Guide <dev_guide/backends>`.
