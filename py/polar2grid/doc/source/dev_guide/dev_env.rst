@@ -1,14 +1,12 @@
 Development Environment
 =======================
 
-..
-
-    TODO: Add mention of non-Linux installations for installing third-party dependencies.
-
 Before adding components to polar2grid you will need to set up a polar2grid
 development environment.  This will make it easier to get the newest updates
 from other developers and vice versa. Creating a development environment does
-not provide the :term:`bundle scripts` since they depend on a software bundle.
+not provide the bash wrapper scripts since they depend on a software bundle.
+It is recommended that you contact the Polar2Grid team before adding/developing
+any new features to coordinate efforts.
 
 The main code repository for polar2grid can be found on github at
 https://github.com/davidh-ssec/polar2grid.
@@ -63,13 +61,6 @@ process this script is the place to start.
     command. This command uses viirs2awips, but any other :term:`glue script` or polar2grid utility
     should follow the same basic calling sequence::
 
-        python -m polar2grid.viirs2awips -vvv -g 211e -f /path/to/test/data/files/SVI01*
+        p2g_glue viirs awips -vvv -g 211e -f /path/to/test/data/files/SVI01*
         # for more options run
-        python -m polar2grid.viirs2awips -h
-
-.. note::
-
-    When updating your git repository via ``git pull`` you may need to reinstall or recompile secondary components
-    to get the new features. Running step #2 again **may** do this for you depending on the feature.
-
-
+        p2g_glue viirs awips -h

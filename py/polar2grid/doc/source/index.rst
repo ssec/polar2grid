@@ -64,14 +64,7 @@ Developer's Guide
 
     Introduction <dev_guide/index>
     dev_guide/dev_env
-    dev_guide/containers
-    dev_guide/glue_scripts
-    dev_guide/frontends
     dev_guide/grids
-    dev_guide/remapping
-    dev_guide/backends
-    dev_guide/compositors
-    dev_guide/rescaling
     dev_guide/swbundle
 
 

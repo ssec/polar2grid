@@ -1,4 +1,0 @@
-Compositors
-===========
-
-TODO
