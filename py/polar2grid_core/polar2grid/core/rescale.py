@@ -330,6 +330,11 @@ def ndvi_scale(img, min_out, max_out, min_in=-1.0, max_in=1.0, threshold=0.0, th
 
     return img
 
+def debug_scale(img, min_out, max_out, min_in=0, max_in=1.0, percent=0.5, **kwargs):
+    # Put all valid at the top of the output scale
+    LOG.debug("Running debug scale")
+    new_range = (max_out - min_out) * percent
+    return linear_flexible_scale(img, max_out - new_range, max_out, min_in=min_in, max_in=max_in, **kwargs)
 
 class Rescaler(roles.INIConfigReader):
     # Fields used to match a product object to it's correct configuration
@@ -356,6 +361,7 @@ class Rescaler(roles.INIConfigReader):
         'ndvi': ndvi_scale,
         'unlinear': unlinear_scale,
         'lookup': lookup_scale,
+        'debug': debug_scale,
     }
 
     def __init__(self, *rescale_configs, **kwargs):
@@ -384,6 +390,7 @@ class Rescaler(roles.INIConfigReader):
         args.remove("table_name")  # string
         args.add("min_out")
         args.add("max_out")
+        args.add("percent")
         return args
 
     def register_rescale_method(self, name, func, **kwargs):
@@ -403,12 +410,13 @@ class Rescaler(roles.INIConfigReader):
                 good_data = numpy.clip(good_data, rescale_options["min_out"], rescale_options["max_out"], out=good_data)
 
             data[good_data_mask] = good_data
+            # need to recalculate mask here in case the rescaling method assigned some new fill values
+            # rescaling functions should set NaN for invalid values
+            good_data_mask &= ~mask_helper(data, numpy.nan)
             data[~good_data_mask] = fill_value
 
             if inc_by_one:
                 LOG.debug("Incrementing data by 1 so 0 acts as a fill value")
-                # need to recalculate mask here in case the rescaling method assigned some new fill values
-                good_data_mask = ~mask_helper(data, fill_value)
                 data[good_data_mask] += 1
 
             return data
