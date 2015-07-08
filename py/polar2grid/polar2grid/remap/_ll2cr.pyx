@@ -187,21 +187,24 @@ def ll2cr_dynamic(numpy.ndarray[cr_dtype, ndim=2] lon_arr, numpy.ndarray[cr_dtyp
         for col in range(num_cols):
             x_tmp = cols_out[row, col]
             y_tmp = rows_out[row, col]
+
             if x_tmp >= 1e30:
                 # pyproj library should have set both x and y to the fill value
                 # we technically don't ever check for the fill value, but if fill values are valid lon/lats then WTF
                 continue
-            elif x_tmp < xmin:
+            elif x_tmp < xmin or isnan(xmin):
                 xmin = x_tmp
-            elif x_tmp > xmax:
+            elif x_tmp > xmax or isnan(xmax):
+                # Note: technically 2 valid points are required to get here if there are a lot of NaNs
                 xmax = x_tmp
 
-            if y_tmp < ymin:
+            if y_tmp < ymin or isnan(ymin):
                 ymin = y_tmp
-            elif y_tmp > ymax:
+            elif y_tmp > ymax or isnan(ymax):
+                # Note: technically 2 valid points are required to get here if there are a lot of NaNs
                 ymax = y_tmp
 
-    # We know we're static, so check if we cross the antimeridian
+    # Check if we cross the antimeridian
     if proj_circum != 0 and xmax - xmin >= proj_circum * .75:
         # xmax will increase, but we need to reset xmin so that it gets properly detected
         if xmin < 0:
