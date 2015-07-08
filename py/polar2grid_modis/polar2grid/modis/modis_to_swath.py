@@ -804,8 +804,10 @@ class Frontend(roles.FrontendRole):
     def _get_day_percentage(self, sza_swath):
         if "day_percentage" not in sza_swath:
             sza_data = sza_swath.get_data_array()
-            day_mask = (sza_data < 90) & ~sza_swath.get_data_mask()
-            sza_swath["day_percentage"] = (numpy.count_nonzero(day_mask) / sza_data.size) * 100.0
+            invalid_mask = sza_swath.get_data_mask()
+            valid_day_mask = (sza_data < 90) & ~invalid_mask
+            fraction_day = numpy.count_nonzero(valid_day_mask) / (float(sza_data.size) - numpy.count_nonzero(invalid_mask))
+            sza_swath["day_percentage"] = fraction_day * 100.0
         else:
             LOG.debug("Day percentage found in SZA swath already")
         return sza_swath["day_percentage"]

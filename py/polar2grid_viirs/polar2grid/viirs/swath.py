@@ -871,8 +871,7 @@ class Frontend(roles.FrontendRole):
             sza_data = sza_swath.get_data_array()
             invalid_mask = sza_swath.get_data_mask()
             valid_day_mask = (sza_data < 100) & ~invalid_mask
-            day_mask = (sza_data < 100) & ~sza_swath.get_data_mask()
-            fraction_day = numpy.count_nonzero(valid_day_mask) / (sza_data.size - numpy.count_nonzero(invalid_mask))
+            fraction_day = numpy.count_nonzero(valid_day_mask) / (float(sza_data.size) - numpy.count_nonzero(invalid_mask))
             sza_swath["day_percentage"] = fraction_day * 100.0
         else:
             LOG.debug("Day percentage found in SZA swath already")
