@@ -46,7 +46,7 @@ import numpy
 from polar2grid.viirs import guidebook
 from polar2grid.core.fbf import FileAppender
 from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader
-from polar2grid.viirs.guidebook import K_DATA_PATH
+from polar2grid.viirs.guidebook import K_DATA_PATH, K_MOONILLUM
 
 import os
 import sys
@@ -236,3 +236,12 @@ class VIIRSSDRMultiReader(BaseMultiFileReader):
             orbit_rows.append(current_num_rows)
 
         return orbit_rows
+
+    def __getitem__(self, item):
+        val = super(VIIRSSDRMultiReader, self).__getitem__(item)
+        if item == K_MOONILLUM:
+            # special case for handling moon illumination fraction
+            if isinstance(val, (list, tuple)) and isinstance(val[0], numpy.ndarray):
+                # flatten out the structure if the VIIRS file had multiple granules
+                val = [single_val for file_vals in val for single_val in file_vals]
+        return val
