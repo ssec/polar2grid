@@ -114,6 +114,10 @@ K_REFLECTANCE = "reflectance"
 K_BTEMP = "brightness_temperature"
 K_SOLARZENITH = "solar_zenith_angle"
 K_LUNARZENITH = "lunar_zenith_angle"
+K_SOLARAZIMUTH = "solar_azimuth_angle"
+K_LUNARAZIMUTH = "lunar_azimuth_angle"
+K_SATZENITH = "satellite_zenith_angle"
+K_SATAZIMUTH = "satellite_azimuth_angle"
 K_MOONILLUM = "lunar_illumination"
 K_ALTITUDE = "altitude"
 K_RADIANCE_FACTORS = "radiance_factors"
@@ -173,7 +177,11 @@ def create_geo_file_info(file_kind, file_band, **kwargs):
         K_AGGR_ENDTIME: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Aggr.AggregateEndingTime',
         K_AGGR_ENDDATE: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Aggr.AggregateEndingDate',
         K_SOLARZENITH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/SolarZenithAngle', **kwargs),
+        K_SOLARAZIMUTH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/SolarAzimuthAngle', **kwargs),
         K_LUNARZENITH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/LunarZenithAngle', **kwargs),
+        K_LUNARAZIMUTH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/LunarAzimuthAngle', **kwargs),
+        K_SATZENITH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/SatelliteZenithAngle', **kwargs),
+        K_SATAZIMUTH: FileVar('/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/SatelliteAzimuthAngle', **kwargs),
         K_MOONILLUM: '/All_Data/VIIRS-{file_kind}-GEO{file_band}_All/MoonIllumFraction',
         K_LAT_G_RING: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.G-Ring_Latitude',
         K_LON_G_RING: '/Data_Products/VIIRS-{file_kind}-GEO{file_band}/VIIRS-{file_kind}-GEO{file_band}_Gran_0.G-Ring_Longitude',

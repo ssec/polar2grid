@@ -144,6 +144,12 @@ PRODUCT_I02 = "i02"
 PRODUCT_I03 = "i03"
 PRODUCT_I04 = "i04"
 PRODUCT_I05 = "i05"
+PRODUCT_I01_RAD = "i01_rad"
+PRODUCT_I02_RAD = "i02_rad"
+PRODUCT_I03_RAD = "i03_rad"
+PRODUCT_I04_RAD = "i04_rad"
+PRODUCT_I05_RAD = "i05_rad"
+
 PRODUCT_M01 = "m01"
 PRODUCT_M02 = "m02"
 PRODUCT_M03 = "m03"
@@ -160,13 +166,37 @@ PRODUCT_M13 = "m13"
 PRODUCT_M14 = "m14"
 PRODUCT_M15 = "m15"
 PRODUCT_M16 = "m16"
+PRODUCT_M01_RAD = "m01_rad"
+PRODUCT_M02_RAD = "m02_rad"
+PRODUCT_M03_RAD = "m03_rad"
+PRODUCT_M04_RAD = "m04_rad"
+PRODUCT_M05_RAD = "m05_rad"
+PRODUCT_M06_RAD = "m06_rad"
+PRODUCT_M07_RAD = "m07_rad"
+PRODUCT_M08_RAD = "m08_rad"
+PRODUCT_M09_RAD = "m09_rad"
+PRODUCT_M10_RAD = "m10_rad"
+PRODUCT_M11_RAD = "m11_rad"
+PRODUCT_M12_RAD = "m12_rad"
+PRODUCT_M13_RAD = "m13_rad"
+PRODUCT_M14_RAD = "m14_rad"
+PRODUCT_M15_RAD = "m15_rad"
+PRODUCT_M16_RAD = "m16_rad"
 PRODUCT_DNB = "dnb"
 PRODUCT_DNB_SZA = "dnb_solar_zenith_angle"
+PRODUCT_DNB_SAA = "dnb_solar_azimuth_angle"
+PRODUCT_DNB_SAT_ZA = "dnb_sat_zenith_angle"
+PRODUCT_DNB_SAT_AA = "dnb_sat_azimuth_angle"
 PRODUCT_DNB_LZA = "dnb_lunar_zenith_angle"
+PRODUCT_DNB_LAA = "dnb_lunar_azimuth_angle"
 PRODUCT_M_SZA = "m_solar_zenith_angle"
-PRODUCT_M_LZA = "m_lunar_zenith_angle"
+PRODUCT_M_SAA = "m_solar_azimuth_angle"
+PRODUCT_M_SAT_ZA = "m_sat_zenith_angle"
+PRODUCT_M_SAT_AA = "m_sat_azimuth_angle"
 PRODUCT_I_SZA = "i_solar_zenith_angle"
-PRODUCT_I_LZA = "i_lunar_zenith_angle"
+PRODUCT_I_SAA = "i_solar_azimuth_angle"
+PRODUCT_I_SAT_ZA = "i_sat_zenith_angle"
+PRODUCT_I_SAT_AA = "i_sat_azimuth_angle"
 PRODUCT_IFOG = "ifog"
 PRODUCT_HISTOGRAM_DNB = "histogram_dnb"
 PRODUCT_ADAPTIVE_DNB = "adaptive_dnb"
@@ -219,6 +249,51 @@ M_PRODUCTS = [
     PRODUCT_M15,
     PRODUCT_M16,
 ]
+DNB_ANGLE_PRODUCTS = [
+    PRODUCT_DNB_SZA,
+    PRODUCT_DNB_SAA,
+    PRODUCT_DNB_LZA,
+    PRODUCT_DNB_LAA,
+    PRODUCT_DNB_SAT_ZA,
+    PRODUCT_DNB_SAT_AA,
+]
+I_ANGLE_PRODUCTS = [
+    PRODUCT_I_SZA,
+    PRODUCT_I_SAA,
+    PRODUCT_I_SAT_ZA,
+    PRODUCT_I_SAT_AA,
+]
+M_ANGLE_PRODUCTS = [
+    PRODUCT_M_SZA,
+    PRODUCT_M_SAA,
+    PRODUCT_M_SAT_ZA,
+    PRODUCT_M_SAT_AA,
+]
+I_RAD_PRODUCTS = [
+    PRODUCT_I01_RAD,
+    PRODUCT_I02_RAD,
+    PRODUCT_I03_RAD,
+    PRODUCT_I04_RAD,
+    PRODUCT_I05_RAD,
+]
+M_RAD_PRODUCTS = [
+    PRODUCT_M01_RAD,
+    PRODUCT_M02_RAD,
+    PRODUCT_M03_RAD,
+    PRODUCT_M04_RAD,
+    PRODUCT_M05_RAD,
+    PRODUCT_M06_RAD,
+    PRODUCT_M07_RAD,
+    PRODUCT_M08_RAD,
+    PRODUCT_M09_RAD,
+    PRODUCT_M10_RAD,
+    PRODUCT_M11_RAD,
+    PRODUCT_M12_RAD,
+    PRODUCT_M13_RAD,
+    PRODUCT_M14_RAD,
+    PRODUCT_M15_RAD,
+    PRODUCT_M16_RAD,
+]
 
 PRODUCTS = ProductDict()
 GEO_PAIRS = GeoPairDict()
@@ -240,12 +315,20 @@ PRODUCTS.add_product(PRODUCT_DNB_LON, PAIR_DNBNAV, "longitude", (guidebook.FILE_
 PRODUCTS.add_product(PRODUCT_DNB_LAT, PAIR_DNBNAV, "latitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLATITUDE, guidebook.K_LATITUDE))
 
 PRODUCTS.add_product(PRODUCT_DNB_SZA, PAIR_DNBNAV, "solar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SOLARZENITH)
-PRODUCTS.add_product(PRODUCT_I_SZA, PAIR_INAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARZENITH)
-PRODUCTS.add_product(PRODUCT_M_SZA, PAIR_MNAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_DNB_SAA, PAIR_DNBNAV, "solar_azimuth_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SOLARAZIMUTH)
 PRODUCTS.add_product(PRODUCT_DNB_LZA, PAIR_DNBNAV, "lunar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_LUNARZENITH)
-PRODUCTS.add_product(PRODUCT_I_LZA, PAIR_INAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LUNARZENITH)
+PRODUCTS.add_product(PRODUCT_DNB_LAA, PAIR_DNBNAV, "lunar_azimuth_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_LUNARAZIMUTH)
+PRODUCTS.add_product(PRODUCT_DNB_SAT_ZA, PAIR_DNBNAV, "satellite_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SATZENITH)
+PRODUCTS.add_product(PRODUCT_DNB_SAT_AA, PAIR_DNBNAV, "satellite_azimuth_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SATAZIMUTH)
+PRODUCTS.add_product(PRODUCT_I_SZA, PAIR_INAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_I_SAA, PAIR_INAV, "solar_azimuth_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARAZIMUTH)
+PRODUCTS.add_product(PRODUCT_I_SAT_ZA, PAIR_INAV, "satellite_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SATZENITH)
+PRODUCTS.add_product(PRODUCT_I_SAT_AA, PAIR_INAV, "satellite_azimuth_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SATAZIMUTH)
+PRODUCTS.add_product(PRODUCT_M_SZA, PAIR_MNAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_M_SAA, PAIR_MNAV, "solar_azimuth_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARAZIMUTH)
+PRODUCTS.add_product(PRODUCT_M_SAT_ZA, PAIR_MNAV, "satellite_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SATZENITH)
+PRODUCTS.add_product(PRODUCT_M_SAT_AA, PAIR_MNAV, "satellite_azimuth_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SATAZIMUTH)
 
-PRODUCTS.add_product(PRODUCT_M_LZA, PAIR_MNAV, "lunar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LUNARZENITH)
 PRODUCTS.add_product(PRODUCT_I01, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I01, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))
 PRODUCTS.add_product(PRODUCT_I02, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I02, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))
 PRODUCTS.add_product(PRODUCT_I03, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I03, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))
@@ -268,7 +351,29 @@ PRODUCTS.add_product(PRODUCT_M14, PAIR_MNAV, "brightness_temperature", guidebook
 PRODUCTS.add_product(PRODUCT_M15, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M15, guidebook.K_BTEMP)
 PRODUCTS.add_product(PRODUCT_M16, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M16, guidebook.K_BTEMP)
 PRODUCTS.add_product(PRODUCT_DNB, PAIR_DNBNAV, "radiance", guidebook.FILE_TYPE_DNB, guidebook.K_RADIANCE)
-# PRODUCTS.add_raw_product(PRODUCT_SST, PAIR_MNAV, "btemp", guidebook.FILE_TYPE_SST, guidebook.K_BTEMP, (None,))
+
+# Special Radiance Versions of the products
+PRODUCTS.add_product(PRODUCT_I01_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I01, guidebook.K_RADIANCE, dependencies=(PRODUCT_I_SZA,))
+PRODUCTS.add_product(PRODUCT_I02_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I02, guidebook.K_RADIANCE, dependencies=(PRODUCT_I_SZA,))
+PRODUCTS.add_product(PRODUCT_I03_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I03, guidebook.K_RADIANCE, dependencies=(PRODUCT_I_SZA,))
+PRODUCTS.add_product(PRODUCT_I04_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I04, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_I05_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I05, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M01_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M01, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M02_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M02, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M03_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M03, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M04_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M04, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M05_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M05, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M06_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M06, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M07_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M07, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M08_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M08, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M09_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M09, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M10_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M10, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M11_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M11, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M12_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M12, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M13_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M13, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M14_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M14, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M15_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M15, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M16_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M16, guidebook.K_RADIANCE)
 
 PRODUCTS.add_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", dependencies=(PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA))
 PRODUCTS.add_product(PRODUCT_HISTOGRAM_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA))
@@ -323,6 +428,8 @@ class Frontend(roles.FrontendRole):
         }
         for p, p_def in PRODUCTS.items():
             if p_def.data_kind == "reflectance" and p_def.dependencies:
+                self.secondary_product_functions[p] = self.day_check_reflectance
+            elif p_def.data_kind == "radiance" and p_def.dependencies and p_def.geo_pair_name in [PAIR_MNAV, PAIR_INAV]:
                 self.secondary_product_functions[p] = self.day_check_reflectance
 
 
@@ -927,6 +1034,16 @@ def add_frontend_argument_groups(parser):
                        help="Add all I-band raw products to list of products")
     group.add_argument('--m-bands', dest='products', action=ExtendConstAction, const=M_PRODUCTS,
                        help="Add all M-band raw products to list of products")
+    group.add_argument('--dnb-angle-products', dest='products', action=ExtendConstAction, const=DNB_ANGLE_PRODUCTS,
+                       help="Add DNB-band geolocation 'angle' products to list of products")
+    group.add_argument('--i-angle-products', dest='products', action=ExtendConstAction, const=I_ANGLE_PRODUCTS,
+                       help="Add I-band geolocation 'angle' products to list of products")
+    group.add_argument('--m-angle-products', dest='products', action=ExtendConstAction, const=M_ANGLE_PRODUCTS,
+                       help="Add M-band geolocation 'angle' products to list of products")
+    group.add_argument('--m-rad-products', dest='products', action=ExtendConstAction, const=M_RAD_PRODUCTS,
+                       help="Add M-band geolocation radiance products to list of products")
+    group.add_argument('--i-rad-products', dest='products', action=ExtendConstAction, const=I_RAD_PRODUCTS,
+                       help="Add I-band geolocation radiance products to list of products")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
 
 
