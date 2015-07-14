@@ -69,9 +69,19 @@ K_VIS26 = "vis26_var"
 K_IR20 = "ir20_var"
 K_IR21 = "ir21_var"
 K_IR22 = "ir22_var"
+K_IR23 = "ir23_var"
+K_IR24 = "ir24_var"
+K_IR25 = "ir25_var"
 K_IR27 = "ir27_var"
+K_IR28 = "ir28_var"
+K_IR29 = "ir29_var"
+K_IR30 = "ir30_var"
 K_IR31 = "ir31_var"
 K_IR32 = "ir32_var"
+K_IR33 = "ir33_var"
+K_IR34 = "ir34_var"
+K_IR35 = "ir35_var"
+K_IR36 = "ir36_var"
 K_CMASK = "cloud_mask_var"
 K_LSMASK = "land_sea_mask_var"
 K_SIMASK = "snow_ice_mask_var"
@@ -502,9 +512,19 @@ FILE_TYPES[FT_MOD021KM] = {
     K_IR20: FileInfo("EV_1KM_Emissive", 0, "radiance_scales", "radiance_offsets"),
     K_IR21: FileInfo("EV_1KM_Emissive", 1, "radiance_scales", "radiance_offsets"),
     K_IR22: FileInfo("EV_1KM_Emissive", 2, "radiance_scales", "radiance_offsets"),
+    K_IR23: FileInfo("EV_1KM_Emissive", 3, "radiance_scales", "radiance_offsets"),
+    K_IR24: FileInfo("EV_1KM_Emissive", 4, "radiance_scales", "radiance_offsets"),
+    K_IR25: FileInfo("EV_1KM_Emissive", 5, "radiance_scales", "radiance_offsets"),
     K_IR27: FileInfo("EV_1KM_Emissive", 6, "radiance_scales", "radiance_offsets"),
+    K_IR28: FileInfo("EV_1KM_Emissive", 7, "radiance_scales", "radiance_offsets"),
+    K_IR29: FileInfo("EV_1KM_Emissive", 8, "radiance_scales", "radiance_offsets"),
+    K_IR30: FileInfo("EV_1KM_Emissive", 9, "radiance_scales", "radiance_offsets"),
     K_IR31: FileInfo("EV_1KM_Emissive", 10, "radiance_scales", "radiance_offsets"),
     K_IR32: FileInfo("EV_1KM_Emissive", 11, "radiance_scales", "radiance_offsets"),
+    K_IR33: FileInfo("EV_1KM_Emissive", 12, "radiance_scales", "radiance_offsets"),
+    K_IR34: FileInfo("EV_1KM_Emissive", 13, "radiance_scales", "radiance_offsets"),
+    K_IR35: FileInfo("EV_1KM_Emissive", 14, "radiance_scales", "radiance_offsets"),
+    K_IR36: FileInfo("EV_1KM_Emissive", 15, "radiance_scales", "radiance_offsets"),
 }
 FILE_TYPES[FT_MOD02HKM] = {}
 FILE_TYPES[FT_MOD02QKM] = {

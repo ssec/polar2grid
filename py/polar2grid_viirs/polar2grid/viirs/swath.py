@@ -97,6 +97,11 @@ with the frontend name ``viirs``.
     | ifog               | Temperature difference between I05 and I04 |
     +--------------------+--------------------------------------------+
 
+
+For reflectance/visible products a check is done to make sure that at least
+10% of the swath is day time. Data is considered day time where solar zenith
+angle is less than 100 degrees.
+
 |
 
 .. note::
