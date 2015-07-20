@@ -366,7 +366,7 @@ class FileReader(BaseFileReader):
     """
     # Special values (not verified, but this is what I was told) because who would store special values in a file
     # these are used in reflectance band 1 and 2
-    SATURATION_VALUE = 65535
+    SATURATION_VALUE = 65533
     # if a value couldn't be aggregated from 250m/500m to 1km then we should clip those too
     CANT_AGGR_VALUE = 65528
 
@@ -414,19 +414,27 @@ class FileReader(BaseFileReader):
         data = data.astype(var_info.data_type)
 
         # Get the fill value
-        if var_info.fill_attr_name:
+        if var_info.fill_attr_name and isinstance(var_info.fill_attr_name, (str, unicode)):
             fill_value = self[var_info.var_name + "." + var_info.fill_attr_name]
+            mask = data == fill_value
+        elif var_info.fill_attr_name:
+            fill_value = var_info.fill_attr_name
+            mask = data >= fill_value
         else:
             fill_value = -999.0
-        mask = mask_helper(data, fill_value)
+            mask = data == fill_value
 
         # Get the valid_min and valid_max
         valid_min, valid_max = None, None
         if var_info.range_attr_name:
-            valid_min, valid_max = self[var_info.var_name + "." + var_info.range_attr_name]
+            if isinstance(var_info.range_attr_name, (str, unicode)):
+                valid_min, valid_max = self[var_info.var_name + "." + var_info.range_attr_name]
+            else:
+                valid_min, valid_max = var_info.range_attr_name
 
         # Certain data need to have special values clipped
         if var_info.clip_saturated and valid_max is not None:
+            LOG.debug("Setting any saturation or \"can't aggregate\" values to valid maximum")
             data[(data == self.CANT_AGGR_VALUE) | (data == self.SATURATION_VALUE)] = valid_max
 
         # Get the scaling factors

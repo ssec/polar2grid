@@ -177,14 +177,14 @@ K_CREFL10 = "crefl10_fk"
 
 # File Info for CREFL files
 
-class FileInfo(object):
-    def __init__(self, var_name, scale_attr_name="scale_factor", offset_attr_name="add_offset",
-                 fill_attr_name="_FillValue", data_type=numpy.float32):
-        self.var_name = var_name
-        self.data_type = data_type
-        self.scale_attr_name = scale_attr_name
-        self.offset_attr_name = offset_attr_name
-        self.fill_attr_name = fill_attr_name
+class FileInfo(modis_guidebook.FileInfo):
+    def __init__(self, *args, **kwargs):
+        # I think (from reading source code) that 32767 is fill, 32766 is missing, 32765 is saturated
+        # The saturated pixels then should therefore already be at the top of the range
+        kwargs.setdefault("range_attr_name", (0, 32765))
+        kwargs.setdefault("fill_attr_name", 32766)
+        # kwargs.setdefault("clip_saturated", True)  # not needed since the sat value is the top value
+        super(FileInfo, self).__init__(*args, **kwargs)
 
 FILE_TYPES = {}
 FILE_TYPES[FT_CREFL_1000M] = {
@@ -230,45 +230,7 @@ FILE_TYPES[FT_CREFL_I] = {
 
 
 class MODISFileReader(modis_guidebook.FileReader):
-    def get_swath_data(self, item, fill=None):
-        if fill is None:
-            fill = self.get_fill_value(item)
-
-        var_info = self.file_type_info[item]
-        var_name = var_info.var_name
-        scale_factor_attr_name = var_info.scale_attr_name
-        scale_offset_attr_name = var_info.offset_attr_name
-        fill_attr_name = var_info.fill_attr_name
-
-        # Get the band data from the file
-        variable = self[var_name]
-        data = variable.get()
-
-        if fill_attr_name:
-            input_fill_value = self[var_name + "." + fill_attr_name]
-            LOG.debug("Using fill value attribute '%s' (%s) to filter bad data", fill_attr_name, str(input_fill_value))
-            input_fill_value = 16000
-            LOG.debug("Ignoring fill value and using '%s' instead", str(input_fill_value))
-            fill_mask = data > input_fill_value
-        else:
-            fill_mask = numpy.zeros_like(data).astype(numpy.bool)
-
-        if isinstance(scale_factor_attr_name, float):
-            scale_factor = scale_factor_attr_name
-        elif scale_factor_attr_name is not None:
-            scale_factor = self[var_name + "." + scale_factor_attr_name]
-
-        if isinstance(scale_offset_attr_name, float):
-            scale_offset = scale_offset_attr_name
-        elif scale_offset_attr_name is not None:
-            scale_offset = self[var_name + "." + scale_offset_attr_name]
-
-        # Scale the data
-        if scale_factor_attr_name is not None and scale_offset_attr_name is not None:
-            data = data * scale_factor + scale_offset
-        data[fill_mask] = fill
-
-        return data
+    pass
 
 
 class VIIRSCreflReader(modis_guidebook.HDFReader):

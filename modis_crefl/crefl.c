@@ -78,6 +78,7 @@ Revision history:
 #define REFSDS	SOLZ
 #define MISSING	-2
 #define SATURATED	-3
+#define CANTAGGR	-8
 #define MAXSOLZ 86.5
 #define MAXAIRMASS 18
 #define	SCALEHEIGHT 8000
@@ -831,6 +832,8 @@ if (MOD02QKMfile) printf("MOD/MYD02QKMfile = %s\n", MOD02QKMfile);
 						l1bdata[ib][idx] < 0 ) {	/* L1B is read as int16, not uint16, so faulty is negative */
 						if (l1bdata[ib][idx] == MISSING)
 							((int16 *)outsds[ib].data)[idx] = 32768 + MISSING;
+						else if (l1bdata[ib][idx] == CANTAGGR)
+							((int16 *)outsds[ib].data)[idx] = 32768 + SATURATED;
 						else if (l1bdata[ib][idx] == SATURATED)
 							((int16 *)outsds[ib].data)[idx] = 32768 + SATURATED;
 						else
