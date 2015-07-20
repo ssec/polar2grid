@@ -76,7 +76,8 @@ def _open_file_and_get_var_data (file_name, var_name, var_type=uint8) :
     
     return data
 
-def _plt_basic_imshow_fig (data, vmin, vmax, cmap=cm.bone, title="image") :
+
+def _plt_basic_imshow_fig (data, vmin, vmax, cmap=cm.bone, title="image", background_color='white'):
     """
     plot a basic imshow figure using the given data,
     bounds, and colormap
@@ -84,7 +85,7 @@ def _plt_basic_imshow_fig (data, vmin, vmax, cmap=cm.bone, title="image") :
     
     # Create a new figure everytime so things don't get shared
     figure = plt.figure()
-    axes   = figure.add_subplot(111)
+    axes = figure.add_subplot(111, axisbg=background_color)
 
     # Plot the data
     print data.min(), data.max()
@@ -102,7 +103,8 @@ def exc_handler(exc_type, exc_value, traceback):
     print "Uncaught error creating png images"
     raise # this is wrong, but I need to see these errors, not silence them
 
-def plot_file_patterns(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DPI):
+
+def plot_file_patterns(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DPI, background_color='white'):
     glob_pat = os.path.join(base_dir, base_pat)
     for nc_name in glob(glob_pat):
         nc_name = os.path.split(nc_name)[1]
@@ -112,7 +114,7 @@ def plot_file_patterns(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=DEF_VMIN, vmax=D
         data = _open_file_and_get_var_data(nc_name, "image")
         
         # plot and save our figure
-        figure = _plt_basic_imshow_fig(data, vmin, vmax, title=nc_name)
+        figure = _plt_basic_imshow_fig(data, vmin, vmax, title=nc_name, background_color=background_color)
         figure.savefig("plot_ncdata.%s.png" % nc_name, dpi=dpi_to_use)
         plt.close()
 
@@ -167,6 +169,8 @@ files with the prefix ``SSEC_AWIPS_``."""
                         help="Specify the dpi for the resulting figure, higher dpi will result in larger figures and longer run times")
     parser.add_argument('-c', dest="do_compare", default=False, action="store_true",
                         help="Include this flag if you wish to compare two specific files")
+    parser.add_argument('--background-color', default='white',
+                        help="Specify a background color to easier see transparent values")
     parser.add_argument('search_dir', default=None, nargs="*",
                         help="Directory to search for NetCDF3 files, default is '.'")
     return parser
@@ -188,8 +192,8 @@ def main():
         print "ERROR: 0, 1, or 2 arguments are allowed for 'search_dir', not %d" % len(args.search_dir)
         return -1
 
-    if files_temp is None :
-        return plot_file_patterns(base_dir=base_dir, base_pat=args.base_pat,
+    if files_temp is None:
+        return plot_file_patterns(base_dir=base_dir, base_pat=args.base_pat, background_color=args.background_color,
                     vmin=args.vmin, vmax=args.vmax, dpi_to_use=args.dpi)
     else :
         return rough_compare(files_temp[0], files_temp[1],
