@@ -234,7 +234,14 @@ class MIRSFileReader(BaseFileReader):
 
         bad_mask = None
         if file_fill:
-            bad_mask = var_data == file_fill
+            if item == LON_VAR:
+                # Because appaarently -999.79999877929688 is a fill value now
+                bad_mask = (var_data == file_fill) | (var_data < -180) | (var_data > 180)
+            elif item == LAT_VAR:
+                # Because appaarently -999.79999877929688 is a fill value now
+                bad_mask = (var_data == file_fill) | (var_data < -90) | (var_data > 90)
+            else:
+                bad_mask = var_data == file_fill
             var_data[bad_mask] = fill
         if file_scale:
             var_data = var_data.astype(dtype)

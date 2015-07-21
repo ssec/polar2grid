@@ -481,17 +481,18 @@ class SwathDefinition(GeographicDefinition, BaseProduct):
         "latitude",
     )
 
-    def get_longitude_array(self):
+    def get_data_array(self, item, mode="r"):
+        # Need this because otherwise get_data_mask won't work properly
         dtype = self["data_type"]
         rows = self["swath_rows"]
         cols = self["swath_columns"]
-        return super(SwathDefinition, self).get_data_array("longitude", rows, cols, dtype)
+        return super(SwathDefinition, self).get_data_array(item, rows, cols, dtype)
+
+    def get_longitude_array(self):
+        return self.get_data_array("longitude")
 
     def get_latitude_array(self):
-        dtype = self["data_type"]
-        rows = self["swath_rows"]
-        cols = self["swath_columns"]
-        return super(SwathDefinition, self).get_data_array("latitude", rows, cols, dtype)
+        return self.get_data_array("latitude")
 
     def copy_longitude_array(self, filename=None, read_only=True):
         dtype = self["data_type"]
@@ -506,10 +507,10 @@ class SwathDefinition(GeographicDefinition, BaseProduct):
         return super(SwathDefinition, self).copy_array("latitude", rows, cols, dtype, filename, read_only)
 
     def get_longitude_mask(self, item="longitude"):
-        return super(SwathDefinition, self).get_data_mask(item, fill_key="fill_value")
+        return self.get_data_mask(item)
 
     def get_latitude_mask(self, item="latitude"):
-        return super(SwathDefinition, self).get_data_mask(item, fill_key="fill_value")
+        return self.get_data_mask(item)
 
 
 class GridDefinition(GeographicDefinition):
