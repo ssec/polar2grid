@@ -397,7 +397,7 @@ class Frontend(roles.FrontendRole):
     FILE_EXTENSIONS = [".h5"]
     DEFAULT_FILE_READER = VIIRSSDRMultiReader
 
-    def __init__(self, use_terrain_corrected=True, **kwargs):
+    def __init__(self, use_terrain_corrected=True, day_fraction=0.10, night_fraction=0.10, sza_threshold=100, **kwargs):
         """Initialize the frontend.
 
         For each search path, check if it exists and that it is
@@ -412,6 +412,12 @@ class Frontend(roles.FrontendRole):
         :param use_terrain_corrected: Look for terrain-corrected files instead of non-TC files (default True)
         """
         self.use_terrain_corrected = use_terrain_corrected
+        LOG.debug("Day fraction set to %f", day_fraction)
+        self.day_fraction = day_fraction
+        LOG.debug("Night fraction set to %f", night_fraction)
+        self.night_fraction = night_fraction
+        LOG.debug("SZA threshold set to %f", sza_threshold)
+        self.sza_threshold = sza_threshold
         super(Frontend, self).__init__(**kwargs)
 
         # Load and sort all files
@@ -858,7 +864,7 @@ class Frontend(roles.FrontendRole):
         right_mask = products_created[right_term_name].get_data_mask()
         sza_data = products_created[sza_product_name].get_data_array()
         sza_mask = products_created[sza_product_name].get_data_mask()
-        night_mask = sza_data >= 100
+        night_mask = sza_data >= self.sza_threshold
         # night_percentage = (numpy.count_nonzero(night_mask) / sza_data.size) * 100.0
         # LOG.debug("Fog product's scene has %f%% night data", night_percentage)
         # if night_percentage < 5.0:
@@ -878,7 +884,7 @@ class Frontend(roles.FrontendRole):
             valid_night_mask = night_mask & ~invalid_mask
             # get the fraction of the data that is valid night data from all valid data
             fraction_night = numpy.count_nonzero(valid_night_mask) / (sza_data.size - numpy.count_nonzero(invalid_mask))
-            if fraction_night < 0.10:
+            if fraction_night < self.night_fraction:
                 LOG.info("Less than 10%% of the data is at night, will not create '%s' product", product_name)
                 return None
 
@@ -982,7 +988,7 @@ class Frontend(roles.FrontendRole):
         if "day_percentage" not in sza_swath:
             sza_data = sza_swath.get_data_array()
             invalid_mask = sza_swath.get_data_mask()
-            valid_day_mask = (sza_data < 100) & ~invalid_mask
+            valid_day_mask = (sza_data < self.sza_threshold) & ~invalid_mask
             fraction_day = numpy.count_nonzero(valid_day_mask) / (float(sza_data.size) - numpy.count_nonzero(invalid_mask))
             sza_swath["day_percentage"] = fraction_day * 100.0
         else:
@@ -999,7 +1005,7 @@ class Frontend(roles.FrontendRole):
         sza_swath = products_created[deps[0]]
         day_percentage = self._get_day_percentage(sza_swath)
         LOG.debug("Reflectance product's scene has %f%% day data", day_percentage)
-        if day_percentage < 10.0:
+        if day_percentage < (self.day_fraction * 100):
             LOG.info("Will not create product '%s' because there is less than 10%% of day data", product_name)
             return None
         return products_created[product_name]
@@ -1021,6 +1027,12 @@ def add_frontend_argument_groups(parser):
                        help="List available frontend products and exit")
     group.add_argument("--no-tc", dest="use_terrain_corrected", action="store_false",
                        help="Don't use terrain-corrected navigation")
+    group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
+                       help="Fraction of day required to produce reflectance products (default 0.10)")
+    group.add_argument("--night-fraction", dest="night_fraction", type=float, default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
+                       help="Fraction of night required to product products like fog (default 0.10)")
+    group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
+                       help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     # FIXME: Probably need some proper defaults
