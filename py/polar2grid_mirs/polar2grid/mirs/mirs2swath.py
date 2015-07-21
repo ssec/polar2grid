@@ -440,7 +440,6 @@ class Frontend(roles.FrontendRole):
 
         # TODO: Get the data type from the data or allow the user to specify
         try:
-            print product_def.name, product_def.data_kind, product_def.geo_pair_name, product_def.file_type, product_def.file_key
             shape = file_reader.write_var_to_flat_binary(product_def.file_key, filename)
         except StandardError:
             LOG.error("Could not extract data from file")
