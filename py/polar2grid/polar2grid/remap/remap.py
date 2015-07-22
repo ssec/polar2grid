@@ -367,6 +367,12 @@ class Remapper(object):
                 gridded_scene[product_name] = gridded_product
 
         self._clear_ll2cr_cache()
+
+        if not gridded_scene:
+            self._safe_remove(*fornav_filepaths)
+            self._clear_ll2cr_cache()
+            raise RuntimeError("EWA resampling could not remap any of the data to grid '%s'", grid_name)
+
         return gridded_scene
 
     def _remap_scene_nearest(self, swath_scene, grid_def, share_dynamic_grids=True, **kwargs):
