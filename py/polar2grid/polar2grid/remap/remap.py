@@ -324,7 +324,7 @@ class Remapper(object):
                 # Assumed that all share the same fill value and data type
                 input_dtype = [swath_scene[pn]["data_type"] for pn in product_names]
                 input_fill = [swath_scene[pn]["fill_value"] for pn in product_names]
-                valid_points = fornav.fornav(cols_array,
+                valid_list = fornav.fornav(cols_array,
                               rows_array,
                               rows_per_scan,
                               product_filepaths,
@@ -338,15 +338,6 @@ class Remapper(object):
                               maximum_weight_mode=kwargs.get("maximum_weight_mode", False),
                               use_group_size=True
                 )
-                grid_coverage = kwargs.get("grid_coverage", GRID_COVERAGE)
-                grid_covered_ratio = valid_points / float(grid_def["width"] * grid_def["height"])
-                grid_covered = grid_covered_ratio > grid_coverage
-                if not grid_covered:
-                    msg = "EWA resampling only found %f%% of the grid covered (need %f%%)" % (grid_covered_ratio * 100, grid_coverage * 100)
-                    LOG.error(msg)
-                    raise RuntimeError(msg)
-                else:
-                    LOG.debug("EWA resampling found %f%% of the grid covered" % (grid_covered_ratio * 100,))
             except StandardError:
                 LOG.debug("Remapping exception: ", exc_info=True)
                 LOG.error("Remapping error")
@@ -357,13 +348,22 @@ class Remapper(object):
                 continue
 
             # Give the gridded product ownership of the remapped data
-            for product_name, fornav_fp in zip(product_names, fornav_filepaths):
+            for product_name, fornav_fp, valid_points in zip(product_names, fornav_filepaths, valid_list):
                 swath_product = swath_scene[product_name]
                 gridded_product = GriddedProduct()
                 gridded_product.from_swath_product(swath_product)
                 gridded_product["grid_definition"] = grid_def
                 gridded_product["fill_value"] = numpy.nan
                 gridded_product["grid_data"] = fornav_fp
+
+                grid_coverage = kwargs.get("grid_coverage", GRID_COVERAGE)
+                grid_covered_ratio = valid_points / float(grid_def["width"] * grid_def["height"])
+                grid_covered = grid_covered_ratio > grid_coverage
+                if not grid_covered:
+                    msg = "EWA resampling only found %f%% of the grid covered (need %f%%) for %s" % (grid_covered_ratio * 100, grid_coverage * 100, product_name)
+                    LOG.warning(msg)
+                else:
+                    LOG.debug("EWA resampling found %f%% of the grid covered for %s" % (grid_covered_ratio * 100, product_name))
                 gridded_scene[product_name] = gridded_product
 
         self._clear_ll2cr_cache()

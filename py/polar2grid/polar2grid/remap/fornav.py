@@ -167,20 +167,22 @@ def fornav(cols_array, rows_array, rows_per_scan, input_arrays, input_dtype=None
     if group_size is None:
         group_size = len(input_arrays)
 
-    valid_points = 0
+    valid_list = []
     for in_arrays, out_arrays in group_iter(input_arrays, cols_array.shape[1], cols_array.shape[0], input_dtype,
                                             output_arrays, grid_cols, grid_rows, group_size):
         LOG.debug("Processing %d of %d input arrays", len(in_arrays), len(input_arrays))
-        valid_points = _fornav.fornav_wrapper(cols_array, rows_array, in_arrays, out_arrays,
+        tmp_valid_list = _fornav.fornav_wrapper(cols_array, rows_array, in_arrays, out_arrays,
                               input_fill, output_fill, rows_per_scan,
                               weight_count=weight_count, weight_min=weight_min, weight_distance_max=weight_distance_max,
                               weight_delta_max=weight_delta_max, weight_sum_min=weight_sum_min,
                               maximum_weight_mode=maximum_weight_mode)
 
+        valid_list.extend(tmp_valid_list)
+
     if include_output:
-        return valid_points, output_arrays
+        return valid_list, output_arrays
     else:
-        return valid_points
+        return valid_list
 
 
 def ms2gt_fornav(*args, **kwargs):
