@@ -362,8 +362,8 @@ class Remapper(object):
                 if not grid_covered:
                     msg = "EWA resampling only found %f%% of the grid covered (need %f%%) for %s" % (grid_covered_ratio * 100, grid_coverage * 100, product_name)
                     LOG.warning(msg)
-                else:
-                    LOG.debug("EWA resampling found %f%% of the grid covered for %s" % (grid_covered_ratio * 100, product_name))
+                    continue
+                LOG.debug("EWA resampling found %f%% of the grid covered for %s" % (grid_covered_ratio * 100, product_name))
                 gridded_scene[product_name] = gridded_product
 
         self._clear_ll2cr_cache()
