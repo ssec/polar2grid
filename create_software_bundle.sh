@@ -111,6 +111,18 @@ cp ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/
 echo "Creating python packages..."
 export PATH=${SB_NAME}/ShellB3/bin:$PATH
 cd "$PY_DIR"
+
+# Install some PyPI dependencies
+GTP_DIR="${BASE_P2G_DIR}/../python-geotiepoints"
+if [ -d "${GTP_DIR}" ]; then
+    echo "Installing python-geotiepoints from git clone..."
+    curr_dir=`pwd`
+    cd $GTP_DIR
+    python setup.py install
+    cd $curr_dir
+    #python -m easy_install "`dirname ${SB_NAME}`/python-geotiepoints-v0.1.0.tar.gz"
+fi
+
 make clean
 # Have to use 'python setup.py install' because using easy_install on source tarballs doesn't compile extensions for some reason
 CFLAGS="-fno-strict-aliasing -L${SB_NAME}/ShellB3/lib" INSTALL_DIR="${SB_NAME}/ShellB3" make all_install

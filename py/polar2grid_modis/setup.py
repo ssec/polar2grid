@@ -82,7 +82,7 @@ setup(
     namespace_packages=["polar2grid"],
     include_package_data=True,
     zip_safe=True,
-    install_requires=['numpy', 'pyhdf', 'polar2grid.core'],
+    install_requires=['numpy', 'pyhdf', 'polar2grid.core', 'python_geotiepoints'],
     entry_points={
         'console_scripts': [],
         'polar2grid.frontend_class': ['modis=polar2grid.modis:Frontend'],

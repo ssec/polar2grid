@@ -40,7 +40,8 @@
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.frontend_utils import BaseFileReader, BaseMultiFileReader
-from polar2grid.modis.modis_geo_interp_250 import interpolate_geolocation
+#from polar2grid.modis.modis_geo_interp_250 import interpolate_geolocation
+from geotiepoints import modis1kmto250m
 
 import os
 import logging
@@ -379,6 +380,8 @@ class FileReader(BaseFileReader):
         self.satellite = self.file_handle.satellite.lower()
         self.begin_time = self.file_handle.begin_time
         self.end_time = self.file_handle.end_time
+        # special hack for storing the 250m resolution navigation
+        self.nav_interpolation = {"250": [None, None]}
 
     def __getitem__(self, item):
         known_item = self.file_type_info.get(item, item)
@@ -466,11 +469,45 @@ class FileReader(BaseFileReader):
 
         # Special case: 250m Resolution
         if var_info.interpolate:
-            LOG.debug("Interpolating to higher resolution: %s" % (var_info.var_name,))
             if mask is not None:
                 data[mask] = numpy.nan
-            data = interpolate_geolocation(data)
-            data[numpy.isnan(data)] = fill
+
+            if None not in self.nav_interpolation["250"]:
+                LOG.debug("Returning previously interpolated 250m resolution geolocation data")
+                data = self.nav_interpolation["250"][not (item == K_LONGITUDE_250)]
+                self.nav_interpolation["250"] = [None, None]
+                return data
+
+            if item == K_LONGITUDE_250:
+                self.nav_interpolation["250"][0] = data
+            else:
+                self.nav_interpolation["250"][1] = data
+
+            if None in self.nav_interpolation["250"]:
+                # We don't have the other coordinate data yet
+                self.get_swath_data(K_LONGITUDE_250 if item == K_LATITUDE_250 else K_LATITUDE_250, fill=fill)
+            else:
+                # We already have the other coordinate variable, the user isn't asking for this item so just return
+                LOG.debug("Returning 'None' because this instance of the function shouldn't have been called by the user")
+                return None
+
+            LOG.info("Interpolating to higher resolution: %s" % (var_info.var_name,))
+            lon_data, lat_data = self.nav_interpolation["250"]
+
+            if (lon_data.max() - lon_data.min()) > 180.0:
+                # we must be crossing the dateline or a pole, use the long running interpolation
+                LOG.info("Data crosses the dateline, interpolation will take longer than usual...")
+                new_lon_data, new_lat_data = modis1kmto250m(lon_data, lat_data)
+            else:
+                new_lon_data = interpolate_geolocation(lon_data)
+                new_lat_data = interpolate_geolocation(lat_data)
+
+            new_lon_data[numpy.isnan(new_lon_data)] = fill
+            new_lat_data[numpy.isnan(new_lat_data)] = fill
+            # Cache the results when the user requests the other coordinate
+            self.nav_interpolation["250"] = [new_lon_data, new_lat_data]
+
+            data = new_lon_data if item == K_LONGITUDE_250 else new_lat_data
         elif mask is not None:
             data[mask] = fill
 
