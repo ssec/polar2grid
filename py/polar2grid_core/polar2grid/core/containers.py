@@ -231,7 +231,7 @@ class BaseP2GObject(dict):
                 # Do we not want to delete this file because someone tried to save the state of this object
                 if hasattr(self, "persist") and not self.persist:
                     try:
-                        LOG.info("Removing associated file that is no longer needed: '%s'", self[kw])
+                        LOG.debug("Removing associated file that is no longer needed: '%s'", self[kw])
                         os.remove(self[kw])
                     except StandardError as e:
                         if hasattr(e, "errno") and e.errno == 2:
@@ -546,7 +546,14 @@ class GridDefinition(GeographicDefinition):
         super(GridDefinition, self).__init__(*args, **kwargs)
 
     def __str__(self):
-        return "\n".join("%s: %s" % (k, self[k]) for k in self.keys())
+        keys = sorted(self.keys())
+        keys.insert(0, keys.pop(keys.index("height")))
+        keys.insert(0, keys.pop(keys.index("width")))
+        keys.insert(0, keys.pop(keys.index("cell_height")))
+        keys.insert(0, keys.pop(keys.index("cell_width")))
+        keys.insert(0, keys.pop(keys.index("proj4_definition")))
+        keys.insert(0, keys.pop(keys.index("grid_name")))
+        return "\n".join("%s: %s" % (k, self[k]) for k in keys)
 
     @property
     def proj(self):

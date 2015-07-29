@@ -277,12 +277,12 @@ class GridManager(roles.CartographerRole):
         load_defaults = not kwargs.pop("no_defaults", False)
 
         if len(grid_configs) == 0 and load_defaults:
-            LOG.info("Using default grid configuration: '%s' " % (GRIDS_CONFIG_FILEPATH,))
+            LOG.debug("Using default grid configuration: '%s' " % (GRIDS_CONFIG_FILEPATH,))
             grid_configs = (GRIDS_CONFIG_FILEPATH,)
 
         if len(grid_configs) != 0:
             for grid_config in grid_configs:
-                LOG.info("Loading grid configuration '%s'" % (grid_config,))
+                LOG.debug("Loading grid configuration '%s'" % (grid_config,))
                 self.add_grid_config(grid_config)
 
     def add_grid_config(self, grid_config_filename):

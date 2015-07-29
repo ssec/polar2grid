@@ -372,7 +372,7 @@ class Rescaler(roles.INIConfigReader):
         # kwargs["fill_out"] = kwargs.get("fill_out", "nan")
         kwargs["float_kwargs"] = self._float_kwargs()
         kwargs["boolean_kwargs"] = self._bool_kwargs()
-        LOG.info("Loading rescale configuration files:\n\t%s", "\n\t".join(rescale_configs))
+        LOG.debug("Loading rescale configuration files:\n\t%s", "\n\t".join(rescale_configs))
         super(Rescaler, self).__init__(*rescale_configs, **kwargs)
 
     def _bool_kwargs(self):

@@ -279,7 +279,7 @@ class ProductDict(dict):
                 LOG.debug("Product Dependency: Additional processing will be required for product '%s'", product_name)
                 continue
 
-            LOG.info("Product Dependency: To create '%s', '%s' must be created first", product_name, dependency_product)
+            LOG.debug("Product Dependency: To create '%s', '%s' must be created first", product_name, dependency_product)
             _dependencies.append(dependency_product)
             _dependencies.extend(self.get_product_dependencies(dependency_product))
 

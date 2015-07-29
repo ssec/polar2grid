@@ -203,7 +203,7 @@ class Backend(roles.BackendRole):
                 LOG.warning("Geotiff file already exists, will overwrite: %s", output_filename)
 
         try:
-            LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
+            LOG.debug("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
             data = self.rescaler.rescale_product(gridded_product, data_type,
                                                  inc_by_one=inc_by_one, fill_value=fill_value)
 

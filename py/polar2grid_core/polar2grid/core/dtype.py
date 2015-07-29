@@ -144,7 +144,7 @@ def clip_to_data_type(data, data_type):
         raise ValueError("Unknown data_type '%s', don't know how to convert data" % (data_type,))
 
     rmin, rmax = dtype2range[data_type]
-    log.info("Clipping data to a %d - %d data range" % (rmin, rmax))
+    log.debug("Clipping data to a %d - %d data range" % (rmin, rmax))
     numpy.clip(data, rmin, rmax, out=data)
 
     return convert_to_data_type(data, data_type)

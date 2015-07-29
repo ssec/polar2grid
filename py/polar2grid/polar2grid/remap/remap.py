@@ -160,6 +160,8 @@ class Remapper(object):
             LOG.debug("Running ll2cr on the highest resolution swath to determine if it fits")
             try:
                 self.run_ll2cr(best_swath_def, grid_def, swath_usage=kwargs.get("swath_usage", SWATH_USAGE))
+                grid_str = str(grid_def).replace("\n", "\n\t")
+                LOG.info("Grid information:\n\t%s", grid_str)
             except StandardError:
                 LOG.error("Remapping error")
                 raise
@@ -202,7 +204,7 @@ class Remapper(object):
             #                                    cols_out=cols_arr, rows_out=rows_arr)
 
             grid_str = str(grid_definition).replace("\n", "\n\t")
-            LOG.debug("Grid information after ll2cr:\n\t%s", grid_str)
+            LOG.debug("Grid information:\n\t%s", grid_str)
         except StandardError:
             LOG.error("Unexpected error encountered during ll2cr gridding for %s -> %s", geo_id, grid_name)
             LOG.debug("ll2cr error exception: ", exc_info=True)
@@ -230,7 +232,7 @@ class Remapper(object):
             for fp in filepaths:
                 if os.path.isfile(fp):
                     try:
-                        LOG.info("Removing intermediate file '%s'...", fp)
+                        LOG.debug("Removing intermediate file '%s'...", fp)
                         os.remove(fp)
                     except OSError:
                         LOG.warning("Could not remove intermediate files that aren't needed anymore.")
@@ -256,7 +258,7 @@ class Remapper(object):
 
         for geo_id, product_names in product_groups.items():
             try:
-                LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(sorted(product_names)))
+                LOG.debug("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(sorted(product_names)))
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
                 if not share_dynamic_grids:
                     cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def.copy(),
@@ -271,7 +273,7 @@ class Remapper(object):
                 continue
 
             # Run fornav for all of the products at once
-            LOG.info("Running fornav for the following products:\n\t%s", "\n\t".join(sorted(product_names)))
+            LOG.debug("Running fornav for the following products:\n\t%s", "\n\t".join(sorted(product_names)))
             # XXX: May have to do something smarter if there are float products and integer products together (is_category property on SwathProduct?)
             product_filepaths = list(swath_scene.get_data_filepaths(product_names))
             fornav_filepaths = self._add_prefix("grid_%s_" % (grid_name,), *product_filepaths)
@@ -389,7 +391,7 @@ class Remapper(object):
 
         for geo_id, product_names in product_groups.items():
             pp_names = "\n\t".join(product_names)
-            LOG.info("Running ll2cr on the geolocation data for the following products:\n\t%s", pp_names)
+            LOG.debug("Running ll2cr on the geolocation data for the following products:\n\t%s", pp_names)
             LOG.debug("Swath name: %s", geo_id)
 
             # TODO: Move into it's own function if this gets complicated
@@ -406,7 +408,7 @@ class Remapper(object):
                     raise
                 continue
 
-            LOG.info("Running nearest neighbor for the following products:\n\t%s", "\n\t".join(product_names))
+            LOG.debug("Running nearest neighbor for the following products:\n\t%s", "\n\t".join(product_names))
             edge_res = swath_def.get("limb_resolution", None)
             if kwargs.get("distance_upper_bound", None) is None:
                 if edge_res is not None:

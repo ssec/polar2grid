@@ -127,7 +127,7 @@ def rename_log_file(new_filename):
     root_logger.addHandler(file_handler)
     traceback_log.addHandler(file_handler)
 
-    LOG.info("Log renamed from '%s' to '%s'", fn, new_filename)
+    LOG.debug("Log renamed from '%s' to '%s'", fn, new_filename)
 
 
 def create_exc_handler(glue_name):
@@ -158,7 +158,7 @@ def _force_symlink(dst, linkname):
             Filename of the symbolic link being created or overwritten.
     """
     if os.path.exists(linkname):
-        LOG.info("Removing old file %s" % linkname)
+        LOG.debug("Removing old file %s" % linkname)
         os.remove(linkname)
     LOG.debug("Symlinking %s -> %s" % (linkname, dst))
     os.symlink(dst, linkname)
@@ -173,7 +173,7 @@ def _safe_remove(fn):
             Filename of the file to be removed.
     """
     try:
-        LOG.info("Removing %s" % fn)
+        LOG.debug("Removing %s" % fn)
         os.remove(fn)
     except StandardError:
         LOG.error("Could not remove %s" % fn)
