@@ -358,22 +358,22 @@ PRODUCTS.add_product(PRODUCT_M16, PAIR_MNAV, "brightness_temperature", guidebook
 PRODUCTS.add_product(PRODUCT_DNB, PAIR_DNBNAV, "radiance", guidebook.FILE_TYPE_DNB, guidebook.K_RADIANCE)
 
 # Special Radiance Versions of the products
-PRODUCTS.add_product(PRODUCT_I01_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I01, guidebook.K_RADIANCE, dependencies=(PRODUCT_I_SZA,))
-PRODUCTS.add_product(PRODUCT_I02_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I02, guidebook.K_RADIANCE, dependencies=(PRODUCT_I_SZA,))
-PRODUCTS.add_product(PRODUCT_I03_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I03, guidebook.K_RADIANCE, dependencies=(PRODUCT_I_SZA,))
+PRODUCTS.add_product(PRODUCT_I01_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I01, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_I02_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I02, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_I03_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I03, guidebook.K_RADIANCE)
 PRODUCTS.add_product(PRODUCT_I04_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I04, guidebook.K_RADIANCE)
 PRODUCTS.add_product(PRODUCT_I05_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I05, guidebook.K_RADIANCE)
-PRODUCTS.add_product(PRODUCT_M01_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M01, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M02_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M02, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M03_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M03, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M04_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M04, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M05_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M05, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M06_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M06, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M07_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M07, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M08_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M08, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M09_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M09, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M10_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M10, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M11_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M11, guidebook.K_RADIANCE, dependencies=(PRODUCT_M_SZA,))
+PRODUCTS.add_product(PRODUCT_M01_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M01, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M02_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M02, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M03_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M03, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M04_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M04, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M05_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M05, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M06_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M06, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M07_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M07, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M08_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M08, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M09_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M09, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M10_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M10, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_M11_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M11, guidebook.K_RADIANCE)
 PRODUCTS.add_product(PRODUCT_M12_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M12, guidebook.K_RADIANCE)
 PRODUCTS.add_product(PRODUCT_M13_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M13, guidebook.K_RADIANCE)
 PRODUCTS.add_product(PRODUCT_M14_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M14, guidebook.K_RADIANCE)
@@ -439,8 +439,6 @@ class Frontend(roles.FrontendRole):
         }
         for p, p_def in PRODUCTS.items():
             if p_def.data_kind == "reflectance" and p_def.dependencies:
-                self.secondary_product_functions[p] = self.day_check_reflectance
-            elif p_def.data_kind == "radiance" and p_def.dependencies and p_def.geo_pair_name in [PAIR_MNAV, PAIR_INAV]:
                 self.secondary_product_functions[p] = self.day_check_reflectance
 
 
