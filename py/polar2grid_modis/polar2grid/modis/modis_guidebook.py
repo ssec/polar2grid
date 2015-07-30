@@ -40,8 +40,7 @@
 __docformat__ = "restructuredtext en"
 
 from polar2grid.core.frontend_utils import BaseFileReader, BaseMultiFileReader
-#from polar2grid.modis.modis_geo_interp_250 import interpolate_geolocation
-from geotiepoints import modis1kmto250m
+from polar2grid.modis.modis_geo_interp_250 import interpolate_geolocation_cartesian
 
 import os
 import logging
@@ -472,7 +471,7 @@ class FileReader(BaseFileReader):
             if mask is not None:
                 data[mask] = numpy.nan
 
-            if None not in self.nav_interpolation["250"]:
+            if self.nav_interpolation["250"][0] is not None and self.nav_interpolation["250"][1] is not None:
                 LOG.debug("Returning previously interpolated 250m resolution geolocation data")
                 data = self.nav_interpolation["250"][not (item == K_LONGITUDE_250)]
                 self.nav_interpolation["250"] = [None, None]
@@ -483,7 +482,7 @@ class FileReader(BaseFileReader):
             else:
                 self.nav_interpolation["250"][1] = data
 
-            if None in self.nav_interpolation["250"]:
+            if self.nav_interpolation["250"][0] is None or self.nav_interpolation["250"][1] is None:
                 # We don't have the other coordinate data yet
                 self.get_swath_data(K_LONGITUDE_250 if item == K_LATITUDE_250 else K_LATITUDE_250, fill=fill)
             else:
@@ -494,13 +493,7 @@ class FileReader(BaseFileReader):
             LOG.info("Interpolating to higher resolution: %s" % (var_info.var_name,))
             lon_data, lat_data = self.nav_interpolation["250"]
 
-            if (lon_data.max() - lon_data.min()) > 180.0:
-                # we must be crossing the dateline or a pole, use the long running interpolation
-                LOG.info("Data crosses the dateline, interpolation will take longer than usual...")
-                new_lon_data, new_lat_data = modis1kmto250m(lon_data, lat_data)
-            else:
-                new_lon_data = interpolate_geolocation(lon_data)
-                new_lat_data = interpolate_geolocation(lat_data)
+            new_lon_data, new_lat_data = interpolate_geolocation_cartesian(lon_data, lat_data)
 
             new_lon_data[numpy.isnan(new_lon_data)] = fill
             new_lat_data[numpy.isnan(new_lat_data)] = fill
