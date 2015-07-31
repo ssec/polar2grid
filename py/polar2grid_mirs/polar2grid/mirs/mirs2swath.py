@@ -305,7 +305,7 @@ def get_file_type(filepath):
         if file_class.handles_file(nc_obj):
             return file_kind
 
-    LOG.info("File doesn't match any known file types: %s", filepath)
+    LOG.debug("File doesn't match any known file types: %s", filepath)
     return None
 
 
@@ -460,7 +460,7 @@ class Frontend(roles.FrontendRole):
         if nprocs != 1:
             raise NotImplementedError("The MIRS frontend does not support multiple processes yet")
         if products is None:
-            LOG.info("No products specified to frontend, will try to load logical defaults")
+            LOG.debug("No products specified to frontend, will try to load logical defaults")
             products = self.default_products
 
         # Do we actually have all of the files needed to create the requested products?

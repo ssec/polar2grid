@@ -928,11 +928,6 @@ class Frontend(roles.FrontendRole):
         sza_data = products_created[sza_product_name].get_data_array()
         sza_mask = products_created[sza_product_name].get_data_mask()
         night_mask = sza_data >= self.sza_threshold
-        # night_percentage = (numpy.count_nonzero(night_mask) / sza_data.size) * 100.0
-        # LOG.debug("Fog product's scene has %f%% night data", night_percentage)
-        # if night_percentage < 5.0:
-        #     LOG.info("Less than 5%% of the data is at night, will not create '%s' product", product_name)
-        #     return None
 
         filename = product_name + ".dat"
         if os.path.isfile(filename):

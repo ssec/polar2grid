@@ -299,7 +299,7 @@ class MultiReader(object):
         :param item: Variable name to retrieve
         :param filename: Filename filename if the file should follow traditional FBF naming conventions
         """
-        LOG.info("Writing binary data for %s to file %s", item, filename)
+        LOG.debug("Writing binary data for %s to file %s", item, filename)
         try:
             with open(filename, "w") as file_obj:
                 file_appender = FileAppender(file_obj, dtype)
@@ -358,7 +358,7 @@ def get_file_type(filepath):
         if file_class.handles_file(nc_obj):
             return file_kind
 
-    LOG.info("File doesn't match any known file types: %s", filepath)
+    LOG.debug("File doesn't match any known file types: %s", filepath)
     return None
 
 
@@ -372,7 +372,7 @@ class Frontend(roles.FrontendRole):
         self.keep_intermediate = keep_intermediate
         self.exit_on_error = exit_on_error
         if not search_paths:
-            LOG.info("No files or paths provided as input, will search the current directory...")
+            LOG.debug("No files or paths provided as input, will search the current directory...")
             search_paths = ['.']
 
         self._load_files(search_paths)

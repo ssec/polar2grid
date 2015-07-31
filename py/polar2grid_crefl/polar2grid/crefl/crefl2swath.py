@@ -562,7 +562,7 @@ class Frontend(roles.FrontendRole):
                 raise RuntimeError("Can not create MODIS crefl files with out 1000m files")
 
             # Use the MODIS Frontend to determine if we have enough day time data
-            LOG.info("Loading the MODIS frontend to check for daytime data")
+            LOG.debug("Loading the MODIS frontend to check for daytime data")
             f = modis_module.Frontend(search_paths=self.file_readers[FT_GEO].filepaths)
             scene = f.create_scene(products=[modis_module.PRODUCT_SZA])
             day_percentage = f._get_day_percentage(scene[modis_module.PRODUCT_SZA])
@@ -603,7 +603,7 @@ class Frontend(roles.FrontendRole):
             geo_files = self.file_readers[ft].filepaths
 
             # Use the VIIRS Frontend to determine if we have enough day time data
-            LOG.info("Loading the VIIRS frontend to check for daytime data")
+            LOG.debug("Loading the VIIRS frontend to check for daytime data")
             f = viirs_module.Frontend(search_paths=geo_files)
             scene = f.create_scene(products=[viirs_module.PRODUCT_M_SZA])
             day_percentage = f._get_day_percentage(scene[viirs_module.PRODUCT_M_SZA])
@@ -712,7 +712,7 @@ class Frontend(roles.FrontendRole):
         file_reader = self.file_readers[file_type]
         LOG.debug("Using file type '%s' and getting file key '%s' for product '%s'", file_type, file_key, product_name)
 
-        LOG.info("Writing product '%s' data to binary file", product_name)
+        LOG.debug("Writing product '%s' data to binary file", product_name)
         filename = product_name + ".dat"
         if os.path.isfile(filename):
             if not self.overwrite_existing:
@@ -745,10 +745,10 @@ class Frontend(roles.FrontendRole):
         pass
 
     def create_scene(self, products=None, **kwargs):
-        LOG.info("Loading scene data...")
+        LOG.debug("Loading scene data...")
         # If the user didn't provide the products they want, figure out which ones we can create
         if products is None:
-            LOG.info("No products specified to frontend, will try to load logical defaults products")
+            LOG.debug("No products specified to frontend, will try to load logical defaults products")
             products = self.default_products
 
         # Do we actually have all of the files needed to create the requested products?

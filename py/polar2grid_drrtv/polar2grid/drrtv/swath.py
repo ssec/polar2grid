@@ -439,7 +439,7 @@ class Frontend(FrontendRole):
         pressure = getattr(product_def, "pressure", None)
         LOG.debug("Getting file key '%s' for product '%s'", file_key, product_name)
 
-        LOG.info("Writing product '%s' data to binary file", product_name)
+        LOG.debug("Writing product '%s' data to binary file", product_name)
         filename = product_name + ".dat"
         if os.path.isfile(filename):
             if not self.overwrite_existing:
@@ -500,10 +500,10 @@ class Frontend(FrontendRole):
         return swath_definition
 
     def create_scene(self, products=None, **kwargs):
-        LOG.info("Loading scene data...")
+        LOG.debug("Loading scene data...")
         # If the user didn't provide the products they want, figure out which ones we can create
         if products is None:
-            LOG.info("No products specified to frontend, will try to load logical defaults products")
+            LOG.debug("No products specified to frontend, will try to load logical defaults products")
             products = self.default_products
 
         # Do we actually have all of the files needed to create the requested products?

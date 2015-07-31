@@ -149,7 +149,7 @@ class AWIPSConfigReader(roles.INIConfigReader):
 
     def __init__(self, *config_files, **kwargs):
         kwargs["section_prefix"] = kwargs.get("section_prefix", "awips:")
-        LOG.info("Loading AWIPS configuration files:\n\t%s", "\n\t".join(config_files))
+        LOG.debug("Loading AWIPS configuration files:\n\t%s", "\n\t".join(config_files))
         super(AWIPSConfigReader, self).__init__(*config_files, **kwargs)
 
     @property

@@ -211,7 +211,7 @@ class Backend(roles.BackendRole):
 
         # Create the netcdf file
         try:
-            LOG.info("Scaling %s data to fit in netcdf file...", gridded_product["product_name"])
+            LOG.debug("Scaling %s data to fit in netcdf file...", gridded_product["product_name"])
             data = self.rescaler.rescale_product(gridded_product, data_type,
                                                  inc_by_one=inc_by_one, fill_value=fill_value)
 

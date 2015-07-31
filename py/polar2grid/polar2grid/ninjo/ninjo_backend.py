@@ -292,7 +292,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
         KeyError :
             if required keyword is not provided
     """
-    LOG.info("Creating output file '%s'" % (output_fn,))
+    LOG.debug("Creating NinJo TIFF file '%s'" % (output_fn,))
     out_tiff = TIFF.open(output_fn, "w")
 
     image_data = clip_to_data_type(image_data, DTYPE_UINT8)
@@ -376,7 +376,7 @@ def create_ninjo_tiff(image_data, output_fn, **kwargs):
     image_epoch = calendar.timegm(image_dt.timetuple())
 
     def _write_oneres(image_data, pixel_xres, pixel_yres, subfile=False):
-        LOG.info("Writing tag data for a resolution of the output file '%s'" % (output_fn,))
+        LOG.debug("Writing tag data for a resolution of the output file '%s'" % (output_fn,))
 
         ### Write Tag Data ###
         # Built ins
@@ -558,7 +558,7 @@ class Backend(roles.BackendRole):
                 LOG.warning("NinJo TIFF file already exists, will overwrite: %s", output_filename)
 
         try:
-            LOG.info("Extracting additional information from grid projection")
+            LOG.debug("Extracting additional information from grid projection")
             map_origin_lon, map_origin_lat = grid_def.lonlat_upperleft
             proj_dict = grid_def.proj4_dict
             equ_radius = proj_dict["a"]
@@ -566,7 +566,7 @@ class Backend(roles.BackendRole):
             central_meridian = proj_dict.get("lon_0", None)
             ref_lat1 = proj_dict.get("lat_ts", None)
 
-            LOG.info("Scaling %s data to fit in ninjotiff...", gridded_product["product_name"])
+            LOG.debug("Scaling %s data to fit in ninjotiff...", gridded_product["product_name"])
             data = self.rescaler.rescale_product(gridded_product, data_type,
                                                  inc_by_one=inc_by_one, fill_value=fill_value)
 

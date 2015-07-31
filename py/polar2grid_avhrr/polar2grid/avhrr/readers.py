@@ -285,7 +285,7 @@ def _vis_calibrate(data_reader, chn, calib_type, pre_launch_coeffs=False):
     else:
         # check that coeffs are valid
         if numpy.all(data_reader["calvis"][:, chn, 0, 4] == 0):
-            LOG.info("No valid operational coefficients, fall back to pre-launch")
+            LOG.debug("No valid operational coefficients, fall back to pre-launch")
             coeff_idx = 2
         else:
             coeff_idx = 0

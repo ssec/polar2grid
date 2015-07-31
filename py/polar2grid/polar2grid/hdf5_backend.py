@@ -176,10 +176,6 @@ class Backend(roles.BackendRole):
             parent = self.create_hdf5_file(output_filename, append=append)
 
         try:
-            # LOG.info("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
-            # data = self.rescaler.rescale_product(gridded_product, data_type,
-            #                                      inc_by_one=inc_by_one, fill_value=fill_value)
-
             # Create the dataset
             data = gridded_product.get_data_array()
             product_name = gridded_product["product_name"]
