@@ -593,7 +593,7 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    # FIXME: This may not be true for all instruments handled by MIRS. Proper fix is to have remapping controlled by configuration files.
+    # FIXME: This may not be true for all instruments handled by ACSPO. Proper fix is to have remapping controlled by configuration files.
     parser.set_defaults(fornav_D=40, fornav_d=2)
 
     group_title = "Frontend Initialization"

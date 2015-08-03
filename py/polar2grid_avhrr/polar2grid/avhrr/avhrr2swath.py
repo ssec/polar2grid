@@ -93,7 +93,7 @@ PRODUCTS.add_product(PRODUCT_BAND4_BT, PAIR_1KM, "brightness_temperature", reade
 PRODUCTS.add_product(PRODUCT_BAND5_BT, PAIR_1KM, "brightness_temperature", readers.FT_AAPP, readers.K_BAND5, description="AVHRR Band 5 brightness temperature", units="Kelvin")
 
 GEO_PAIRS = GeoPairDict()
-GEO_PAIRS.add_pair(PAIR_1KM, PRODUCT_LONGITUDE, PRODUCT_LATITUDE, 1)
+GEO_PAIRS.add_pair(PAIR_1KM, PRODUCT_LONGITUDE, PRODUCT_LATITUDE, 0)
 
 
 class Frontend(roles.FrontendRole):
@@ -283,7 +283,8 @@ class Frontend(roles.FrontendRole):
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
             swath_definition=swath_definition, fill_value=fill_value,
             swath_rows=shape[0], swath_columns=shape[1], data_type=data_type, swath_data=filename,
-            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=rows_per_scan
+            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind,
+            rows_per_scan=rows_per_scan or shape[0],
         )
         return one_swath
 
@@ -444,7 +445,8 @@ def add_frontend_argument_groups(parser):
     """
     from polar2grid.core.script_utils import ExtendAction
     # Set defaults for other components that may be used in polar2grid processing
-    parser.set_defaults(remap_method="nearest")
+    # parser.set_defaults(remap_method="nearest")
+    parser.set_defaults(remap_method="ewa", fornav_D=10, fornav_d=1)
 
     group_title = "Frontend Initialization"
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
