@@ -306,7 +306,7 @@ PRODUCTS.add_product(PRODUCT_SZA, PAIR_1000M, "solar_zenith_angle", guidebook.FT
 # if in the future someone needs both the 250M version and the 1000M version add uncomment this line
 # PRODUCTS.add_product(PRODUCT_VIS01_1000M, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS01)
 PRODUCTS.add_product(PRODUCT_VIS01, (PAIR_250M, PAIR_1000M), "reflectance", (guidebook.FT_250M, guidebook.FT_1000M), guidebook.K_VIS01, dependencies=(PRODUCT_SZA,))
-PRODUCTS.add_product(PRODUCT_VIS02, PAIR_250M, "reflectance", guidebook.FT_250M, guidebook.K_VIS02, dependencies=(PRODUCT_SZA,))
+PRODUCTS.add_product(PRODUCT_VIS02, (PAIR_250M, PAIR_1000M), "reflectance", (guidebook.FT_250M, guidebook.FT_1000M), guidebook.K_VIS02, dependencies=(PRODUCT_SZA,))
 PRODUCTS.add_product(PRODUCT_VIS03, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS03, dependencies=(PRODUCT_SZA,))
 PRODUCTS.add_product(PRODUCT_VIS04, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS04, dependencies=(PRODUCT_SZA,))
 PRODUCTS.add_product(PRODUCT_VIS05, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS05, dependencies=(PRODUCT_SZA,))

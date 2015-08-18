@@ -541,6 +541,7 @@ FILE_TYPES[FT_MOD03] = {
 }
 FILE_TYPES[FT_MOD021KM] = {
     K_VIS01: FileInfo("EV_250_Aggr1km_RefSB", 0, "reflectance_scales", "reflectance_offsets"),
+    K_VIS02: FileInfo("EV_250_Aggr1km_RefSB", 1, "reflectance_scales", "reflectance_offsets", clip_saturated=True),
     K_VIS03: FileInfo("EV_500_Aggr1km_RefSB", 0, "reflectance_scales", "reflectance_offsets"),
     K_VIS04: FileInfo("EV_500_Aggr1km_RefSB", 1, "reflectance_scales", "reflectance_offsets"),
     K_VIS05: FileInfo("EV_500_Aggr1km_RefSB", 2, "reflectance_scales", "reflectance_offsets"),
