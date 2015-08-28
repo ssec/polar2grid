@@ -372,12 +372,11 @@ class Remapper(object):
 
         if not gridded_scene:
             self._safe_remove(*fornav_filepaths)
-            self._clear_ll2cr_cache()
             raise RuntimeError("EWA resampling could not remap any of the data to grid '%s'" % (grid_name,))
 
         return gridded_scene
 
-    def _remap_scene_nearest(self, swath_scene, grid_def, share_dynamic_grids=True, **kwargs):
+    def _remap_scene_nearest(self, swath_scene, grid_def, share_dynamic_grids=True, share_remap_mask=True, **kwargs):
         # TODO: Make methods more flexible than just a function call
         gridded_scene = GriddedScene()
         grid_name = grid_def["grid_name"]
@@ -421,18 +420,27 @@ class Remapper(object):
                     distance_upper_bound = 3.0
                 kwargs["distance_upper_bound"] = distance_upper_bound
 
-            grid_x, grid_y = numpy.mgrid[:grid_def["height"], :grid_def["width"]]
-            # we need flattened versions of these
-            shape = (swath_def["swath_rows"] * swath_def["swath_columns"],)
-            cols_array = numpy.memmap(cols_fn, shape=shape, dtype=swath_def["data_type"])
-            rows_array = numpy.memmap(rows_fn, shape=shape, dtype=swath_def["data_type"])
-            good_mask = ~mask_helper(cols_array, swath_def["fill_value"])
-            for product_name in product_names:
-                LOG.debug("Combining data masks before building KDTree for nearest neighbor: %s", product_name)
-                good_mask &= ~swath_scene[product_name].get_data_mask().ravel()
-            x = _ndim_coords_from_arrays((cols_array[good_mask], rows_array[good_mask]))
-            xi = _ndim_coords_from_arrays((grid_y, grid_x))
-            dist, i = cKDTree(x).query(xi, distance_upper_bound=kwargs["distance_upper_bound"])
+            try:
+                grid_x, grid_y = numpy.mgrid[:grid_def["height"], :grid_def["width"]]
+                # we need flattened versions of these
+                shape = (swath_def["swath_rows"] * swath_def["swath_columns"],)
+                cols_array = numpy.memmap(cols_fn, shape=shape, dtype=swath_def["data_type"])
+                rows_array = numpy.memmap(rows_fn, shape=shape, dtype=swath_def["data_type"])
+                good_mask = ~mask_helper(cols_array, swath_def["fill_value"])
+                if share_remap_mask:
+                    for product_name in product_names:
+                        LOG.debug("Combining data masks before building KDTree for nearest neighbor: %s", product_name)
+                        good_mask &= ~swath_scene[product_name].get_data_mask().ravel()
+                x = _ndim_coords_from_arrays((cols_array[good_mask], rows_array[good_mask]))
+                xi = _ndim_coords_from_arrays((grid_y, grid_x))
+                dist, i = cKDTree(x).query(xi, distance_upper_bound=kwargs["distance_upper_bound"])
+            except StandardError:
+                LOG.debug("Remapping exception: ", exc_info=True)
+                LOG.error("Remapping error")
+                if self.exit_on_error:
+                    self._clear_ll2cr_cache()
+                    raise
+                continue
 
             product_filepaths = swath_scene.get_data_filepaths(product_names)
             output_filepaths = self._add_prefix("grid_%s_" % (grid_name,), *product_filepaths)
@@ -468,17 +476,20 @@ class Remapper(object):
                 except StandardError:
                     LOG.debug("Remapping exception: ", exc_info=True)
                     LOG.error("Remapping error")
-                    self._safe_remove(rows_fn, cols_fn, output_fn)
-                    if not self.keep_intermediate and os.path.isfile(output_fn):
-                        os.remove(output_fn)
+                    self._safe_remove(output_fn)
                     if self.exit_on_error:
+                        self._clear_ll2cr_cache()
                         raise
                     continue
 
                 LOG.debug("Done running nearest neighbor on '%s'", product_name)
 
-            # Remove ll2cr files now that we are done with them
-            self._safe_remove(rows_fn, cols_fn)
+
+        # Remove ll2cr files now that we are done with them
+        self._clear_ll2cr_cache()
+
+        if not gridded_scene:
+            raise RuntimeError("Nearest neighbor resampling could not remap any of the data to grid '%s'" % (grid_name,))
 
         return gridded_scene
 
@@ -510,6 +521,8 @@ def add_remap_argument_groups(parser):
                        help="Use maximum weight mode in fornav (-m)")
     group.add_argument("--distance-upper-bound", dest="distance_upper_bound", type=float, default=None,
                        help="Nearest neighbor search distance upper bound in units of grid cell")
+    group.add_argument("--no-share-mask", dest="share_remap_mask", action="store_false",
+                       help="Don't share invalid masks between nearest neighbor resampling (slow)")
     group.add_argument("--no-share-grid", dest="share_dynamic_grid", action="store_false",
                        help="Calculate dynamic grid attributes for every grid (instead of sharing highest resolution)")
     return ["Remapping Initialization", "Remapping"]

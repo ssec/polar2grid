@@ -360,9 +360,34 @@ DEWPOINT_PRODUCTS = []
 WATER_MMR_PRODUCTS = []
 OZONE_VMR_PRODUCTS = []
 RELHUM_PRODUCTS = []
+# All levels
+all_lvl_ranges = [
+    0.005, 0.0161, 0.0384, 0.0769, 0.137, 0.2244, 0.3454, 0.5064, 0.714,
+    0.9753, 1.2972, 1.6872, 2.1526, 2.7009, 3.3398, 4.077, 4.9204,
+    5.8776, 6.9567, 8.1655, 9.5119, 11.0038, 12.6492, 14.4559, 16.4318,
+    18.5847, 20.9224, 23.4526, 26.1829, 29.121, 32.2744, 35.6505,
+    39.2566, 43.1001, 47.1882, 51.5278, 56.126, 60.9895, 66.1253,
+    71.5398, 77.2396, 83.231, 89.5204, 96.1138, 103.017, 110.237,
+    117.777, 125.646, 133.846, 142.385, 151.266, 160.496, 170.078,
+    180.018, 190.32, 200.989, 212.028, 223.441, 235.234, 247.408,
+    259.969, 272.919, 286.262, 300, 314.137, 328.675, 343.618, 358.966,
+    374.724, 390.893, 407.474, 424.47, 441.882, 459.712, 477.961,
+    496.63, 515.72, 535.232, 555.167, 575.525, 596.306, 617.511, 639.14,
+    661.192, 683.667, 706.565, 729.886, 753.628, 777.79, 802.371,
+    827.371, 852.788, 878.62, 904.866, 931.524, 958.591, 986.067,
+    1013.95, 1042.23, 1070.92, 1100
+]
+# Every 100
 lvl_range = [100, 200, 300, 400, 500, 600, 700, 800]
+# lvl_range = all_lvl_ranges
+
 for lvl_num in lvl_range:
-    suffix = "_%dmb" % (lvl_num,)
+    if lvl_num < 5.0:
+        # Rounding doesn't work when there are multiple pressure levels per integer
+        suffix = "_%0.03fmb" % (lvl_num,)
+    else:
+        suffix = "_%dmb" % (lvl_num,)
+
     PRODUCTS.add_product(PRODUCT_TAIR + suffix, BASE_PAIR, "air_temperature", FT_DRRTV, "TAir", pressure=lvl_num)
     PRODUCTS.add_product(PRODUCT_DEWPOINT + suffix, BASE_PAIR, "dewpoint_temperature", FT_DRRTV, "Dewpnt", pressure=lvl_num)
     PRODUCTS.add_product(PRODUCT_WATER_MMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "H2OMMR", pressure=lvl_num)
@@ -571,7 +596,7 @@ def add_frontend_argument_groups(parser):
     from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # Set defaults for other components that may be used in polar2grid processing
     # remapping microwave data with EWA doesn't look very good, so default to nearest neighbor
-    parser.set_defaults(fornav_D=40, fornav_d=2, remap_method="nearest")
+    parser.set_defaults(fornav_D=40, fornav_d=2, share_remap_mask=False, remap_method="nearest")
 
     # Use the append_const action to handle adding products to the list
     group_title = "Frontend Initialization"
