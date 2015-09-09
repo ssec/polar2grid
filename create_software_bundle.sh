@@ -4,7 +4,6 @@
 # Creates a software bundle directory and a tarball of that directory
 
 SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3-Linux-x86_64-20140212-r840-core-cspp.tar.gz"
-MS2GT_DOWNLOAD="http://www.ssec.wisc.edu/~davidh/polar2grid/ms2gt/fornav"
 BASE_P2G_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PY_DIR="$BASE_P2G_DIR"/py
 BUNDLE_SCRIPTS_DIR="$BASE_P2G_DIR"/swbundle
@@ -73,11 +72,6 @@ echo "Creating software bundle bin directory..."
 cd "$SB_NAME"
 mkdir bin
 cd bin
-
-# Create ms2gt binaries (use prebuilt milliCentOS5)
-echo "Downloading ms2gt prebuilt binaries and placing them in 'bin'..."
-wget ${MS2GT_DOWNLOAD} || oops "Could now download ms2gt"
-chmod a+x fornav
 
 # Create the VIIRS CREFL utilities
 echo "Getting prebuilt VIIRS CREFL binaries..."
