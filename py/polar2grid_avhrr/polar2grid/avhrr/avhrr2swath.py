@@ -406,7 +406,7 @@ class Frontend(roles.FrontendRole):
         # Get the file reader for this product (make sure to check all available file readers for the best match)
         file_reader = self.file_readers[product_def.get_file_type(self.file_readers.keys())]
         # mask is True if band is 3b, False if 3a
-        band_mask = file_reader.get_swath_data(readers.K_BAND3_MASK)
+        band_mask = file_reader.get_swath_data(readers.K_BAND3_MASK)[:, 0]
         base_product = products_created[product_name]
         shape = (base_product["swath_rows"], base_product["swath_columns"])
         # inplace data modifications (not a usual case so not supported by SwathProduct object)
@@ -430,7 +430,8 @@ class Frontend(roles.FrontendRole):
 
             # where the data is for 3A or the value is less than 0.1 then mask it with a NaN fill value
             # Note: this logic was taken from the mpop aapp1b.py module
-            product_data[(band_mask == 0) | (product_data < 0.1)] = numpy.nan
+            product_data[band_mask == 0] = numpy.nan
+            product_data[product_data < 0.1] = numpy.nan
 
         # best way to close the memmap?
         del product_data
