@@ -462,7 +462,8 @@ class Frontend(roles.FrontendRole):
     FILE_EXTENSIONS = [".h5"]
     DEFAULT_FILE_READER = VIIRSSDRMultiReader
 
-    def __init__(self, use_terrain_corrected=True, day_fraction=0.10, night_fraction=0.10, sza_threshold=100, **kwargs):
+    def __init__(self, use_terrain_corrected=True, day_fraction=0.10, night_fraction=0.10, sza_threshold=100,
+                 dnb_saturation_correction=False, **kwargs):
         """Initialize the frontend.
 
         For each search path, check if it exists and that it is
@@ -483,6 +484,7 @@ class Frontend(roles.FrontendRole):
         self.night_fraction = night_fraction
         LOG.debug("SZA threshold set to %f", sza_threshold)
         self.sza_threshold = sza_threshold
+        self.dnb_saturation_correction = dnb_saturation_correction
         super(Frontend, self).__init__(**kwargs)
 
         # Load and sort all files
@@ -974,8 +976,7 @@ class Frontend(roles.FrontendRole):
         file_type = PRODUCTS[lon_product_name].get_file_type(index=index)
         geo_file_reader = self.file_readers[file_type]
         # convert to decimal instead of %
-        # XXX: Operate on each fraction separately?
-        moon_illum_fraction = sum(geo_file_reader[guidebook.K_MOONILLUM]) / (100.0 * len(geo_file_reader))
+        moon_illum_fraction = numpy.mean(geo_file_reader[guidebook.K_MOONILLUM]) * 0.01
         dnb_product = products_created[dnb_product_name]
         dnb_data = dnb_product.get_data_array()
         sza_data = products_created[sza_product_name].get_data_array()
@@ -1021,12 +1022,13 @@ class Frontend(roles.FrontendRole):
             min_val = numpy.power(10, -4.0 - (2.95 + moon_factor2) * erf_portion)
 
             # Update from Curtis Seaman, increase max radiance curve until less than 0.5% is saturated
-            saturation_pct = float(numpy.count_nonzero(dnb_data > max_val)) / dnb_data.size
-            LOG.debug("Dynamic DNB saturation percentage: %f", saturation_pct)
-            while saturation_pct > 0.005:
-                max_val *= 1.1
+            if self.dnb_saturation_correction:
                 saturation_pct = float(numpy.count_nonzero(dnb_data > max_val)) / dnb_data.size
                 LOG.debug("Dynamic DNB saturation percentage: %f", saturation_pct)
+                while saturation_pct > 0.005:
+                    max_val *= 1.1
+                    saturation_pct = float(numpy.count_nonzero(dnb_data > max_val)) / dnb_data.size
+                    LOG.debug("Dynamic DNB saturation percentage: %f", saturation_pct)
 
             inner_sqrt = (dnb_data - min_val) / (max_val - min_val)
             # clip negative values to 0 before the sqrt
@@ -1091,6 +1093,8 @@ def add_frontend_argument_groups(parser):
                        help="Fraction of night required to product products like fog (default 0.10)")
     group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
                        help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
+    group.add_argument("--dnb-saturation-correction", action="store_true",
+                       help="Enable dynamic DNB saturation correction (normally used for aurora scenes)")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     # FIXME: Probably need some proper defaults
