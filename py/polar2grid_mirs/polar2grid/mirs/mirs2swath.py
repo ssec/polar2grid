@@ -92,8 +92,8 @@ GEO_PAIRS.add_pair(PAIR_MIRS_NAV, PRODUCT_LONGITUDE, PRODUCT_LATITUDE, 0)
 ### I/O Operations ###
 
 FILE_STRUCTURE = {
-    RR_VAR: ("RR", "scale", None, None),
-    BT_90_VAR: ("BT", "scale", None, 88.2),
+    RR_VAR: ("RR", ("scale", "scale_factor"), None, None),
+    BT_90_VAR: ("BT", ("scale", "scale_factor"), None, 88.2),
     FREQ_VAR: ("Freq", None, None, None),
     LAT_VAR: ("Latitude", None, None, None),
     LON_VAR: ("Longitude", None, None, None),
@@ -203,8 +203,15 @@ class MIRSFileReader(BaseFileReader):
             var_name = FILE_STRUCTURE[item][0]
             scale_attr_name = FILE_STRUCTURE[item][1]
             if scale_attr_name:
-                scale_value = float(self.file_handle[var_name].getncattr(scale_attr_name))
-                LOG.debug("File scale value for '%s' is '%f'", item, float(scale_value))
+                if isinstance(scale_attr_name, (str, unicode)):
+                    scale_attr_name = [scale_attr_name]
+                for x in scale_attr_name:
+                    try:
+                        scale_value = float(self.file_handle[var_name].getncattr(x))
+                        LOG.debug("File scale value for '%s' is '%f'", item, float(scale_value))
+                        break
+                    except AttributeError:
+                        pass
         return scale_value
 
     def filter_by_frequency(self, item, arr, freq):
