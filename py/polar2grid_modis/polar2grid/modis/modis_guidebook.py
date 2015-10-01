@@ -319,42 +319,44 @@ class HDFEOSReader(HDFReader):
 
         # handle meta data
         try:
-            try:
-                metadata_str = self["." + self.METADATA_ATTR_NAME]
-                self.meta = HDFEOSMetadata(metadata_str)
+            # Kept the begin and end time for the file
+            fn = os.path.basename(filename)
+            if fn[0] == "M":
+                # archive filenaming:
+                self.satellite = "aqua" if fn[:3] == "MYD" else "terra"
+                self.instrument = "modis"
+                parts = fn.split(".")
+                self.begin_time = datetime.strptime(parts[1][1:] + parts[2], "%Y%j%H%M")
+                # we don't know the end time from the filename
+                self.end_time = self.begin_time
+                self.file_type = self.MODIS2FILETYPE[parts[0][3:]]
+            else:
+                self.satellite = "aqua" if fn[0] == "a" else "terra"
+                self.instrument = "modis"
+                parts = fn.split(".")
+                self.begin_time = datetime.strptime(parts[1] + parts[2], "%y%j%H%M")
+                # we don't know the end time from the filename
+                self.end_time = self.begin_time
+                file_type_str = ".".join(parts[3:-1])
+                self.file_type = self.MODIS2FILETYPE[file_type_str]
 
-                begin_time_str = self.meta[self.METADATA_SDATE] + self.meta[self.METADATA_STIME]
-                end_time_str = self.meta[self.METADATA_EDATE] + self.meta[self.METADATA_ETIME]
-                self.begin_time = datetime.strptime(begin_time_str.split(".")[0], "%Y-%m-%d%H:%M:%S")
-                self.begin_time.replace(microsecond=int(begin_time_str.split(".")[1]))
-                self.end_time = datetime.strptime(end_time_str.split(".")[0], "%Y-%m-%d%H:%M:%S")
-                self.end_time.replace(microsecond=int(end_time_str.split(".")[1]))
-                self.instrument = self.meta[self.METADATA_INSTRUMENT]
-                file_type_str = self.meta[self.METADATA_FILE_TYPE]
-                self.file_type = self.MODIS2FILETYPE[file_type_str[3:]]
-                self.satellite = "aqua" if file_type_str.startswith("MYD") else "terra"
-            except KeyError:
-                LOG.debug("Could not use meta data for '%s', will try using the filename", filename, exc_info=True)
-                self.meta = None
-                fn = os.path.basename(filename)
-                if fn[0] == "M":
-                    # archive filenaming:
-                    self.satellite = "aqua" if fn[:3] == "MYD" else "terra"
-                    self.instrument = "modis"
-                    parts = fn.split(".")
-                    self.begin_time = datetime.strptime(parts[1][1:] + parts[2], "%Y%j%H%M")
-                    # we don't know the end time from the filename
-                    self.end_time = self.begin_time
-                    self.file_type = self.MODIS2FILETYPE[parts[0][3:]]
-                else:
-                    self.satellite = "aqua" if fn[0] == "a" else "terra"
-                    self.instrument = "modis"
-                    parts = fn.split(".")
-                    self.begin_time = datetime.strptime(parts[1] + parts[2], "%y%j%H%M")
-                    # we don't know the end time from the filename
-                    self.end_time = self.begin_time
-                    file_type_str = ".".join(parts[3:-1])
-                    self.file_type = self.MODIS2FILETYPE[file_type_str]
+            # Get file type and satellite from the information in the file
+            # try:
+            #     metadata_str = self["." + self.METADATA_ATTR_NAME]
+            #     self.meta = HDFEOSMetadata(metadata_str)
+            #
+            #     # begin_time_str = self.meta[self.METADATA_SDATE] + self.meta[self.METADATA_STIME]
+            #     # end_time_str = self.meta[self.METADATA_EDATE] + self.meta[self.METADATA_ETIME]
+            #     # self.begin_time = datetime.strptime(begin_time_str.split(".")[0], "%Y-%m-%d%H:%M:%S")
+            #     # self.begin_time.replace(microsecond=int(begin_time_str.split(".")[1]))
+            #     # self.end_time = datetime.strptime(end_time_str.split(".")[0], "%Y-%m-%d%H:%M:%S")
+            #     # self.end_time.replace(microsecond=int(end_time_str.split(".")[1]))
+            #     self.instrument = self.meta[self.METADATA_INSTRUMENT]
+            #     file_type_str = self.meta[self.METADATA_FILE_TYPE]
+            #     self.file_type = self.MODIS2FILETYPE[file_type_str[3:]]
+            #     self.satellite = "aqua" if file_type_str.startswith("MYD") else "terra"
+            # except KeyError:
+            #     pass
         except StandardError:
             LOG.debug("Could not parse HDF-EOS file", exc_info=True)
             raise RuntimeError("Could not parse HDF-EOS file (see debug log for details)")
