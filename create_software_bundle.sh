@@ -110,6 +110,10 @@ make clean
 # Have to use 'python setup.py install' because using easy_install on source tarballs doesn't compile extensions for some reason
 CFLAGS="-fno-strict-aliasing -L${SB_NAME}/ShellB3/lib" INSTALL_DIR="${SB_NAME}/ShellB3" make all_install
 
+# FIXME: Hack to get libproj in to ShellB3 from the system (until it gets provided by ShellB3)
+cd "$SB_NAME"/lib64/
+cp /usr/lib64/libproj* .
+
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
 cd "$SB_NAME"/..
