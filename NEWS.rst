@@ -1,10 +1,13 @@
 Release Notes
 =============
 
-Current Version: 2.0.1 (2015-10-19)
+Version 2.0.1 (2015-10-19)
+--------------------------
 
-Version 2.0 (2015-10-13)
-------------------------
+* Fixed small bug in ll2cr where NaNs in navigation would cause a dynamic grid to never "fit"
+
+Version 2.0.0 (2015-10-13)
+--------------------------
 
 * Rewrite of entire internal structure and behavior of polar2grid (Frontends, Backends, Remapping)
 * Most frontends (VIIRS, MODIS, etc) are filename independent and try to determine type of file by internal structure
@@ -22,9 +25,6 @@ Version 2.0 (2015-10-13)
 * Removed AWIPS I support due to National Weather Service using AWIPS II from now on
 * Added basic ACSPO and MIRS frontends
 * Added HDF5 backend
-* Version 2.0.1 (2015-10-19)
-
-  * Fixed small bug in ll2cr where NaNs in navigation would cause a dynamic grid to never "fit"
 
 Roadmap to Version 2.1
 ----------------------
@@ -55,8 +55,8 @@ Roadmap to Version 2.1
 
 * Python 3 Compatibility
 
-Version 1.2 (2014-08-16)
-------------------------
+Version 1.2.0 (2014-08-16)
+--------------------------
 
 * Fixed VIIRS CREFL C code and added custom version to repository (viirs_crefl)
 * Added ability to use 'deg' units on grid origin definitions
@@ -64,31 +64,35 @@ Version 1.2 (2014-08-16)
 * Added `wgs84_fit_250` grid
 * AWIPS grids "fixed" to actually align properly in AWIPS. The grid specification says ellipsoid earth, but my results say spherical.
 
-Version 1.1 (2013-02-13)
-------------------------
+Version 1.1.7 (2013-07-07)
+--------------------------
+
+* Non-TC geolocation used as backup option for VIIRS Frontend
+* Fixed major bug when creating true colors (Issue #81). If the high resolution data resolved to a different dynamic grid than the low resolution data then a true color could not be made.
+
+Version 1.1.6 (2013-05-31)
+--------------------------
+
+* Fixed frontends handling of symbolic links for files
+
+Version 1.1.5 (2013-05-28)
+--------------------------
+
+* Various CREFL fixes
+* Added MODIS geotiffs
+* Added MODIS 250m bands
+
+Version 1.1.0 (2013-02-13)
+--------------------------
 
 * Added MODIS Frontend (limited number of bands)
 * Added CREFL Frontend (including true color glue script)
 * Changed default geotiff data type to unsigned 8-bit integer
 * Added option to provide user created grid configuration files
 * NinJo backend added for DWD added
-* Version 1.1.7 (2013-07-07)
 
-  * Non-TC geolocation used as backup option for VIIRS Frontend
-  * Fixed major bug when creating true colors (Issue #81). If the high resolution data resolved to a different dynamic grid than the low resolution data then a true color could not be made.
-
-* Version 1.1.6 (2013-05-31)
-
-  * Fixed frontends handling of symbolic links for files
-
-* Version 1.1.5 (2013-05-28)
-
-  * Various CREFL fixes
-  * Added MODIS geotiffs
-  * Added MODIS 250m bands
-
-Version 1.0 (2013-01-25)
-------------------------
+Version 1.0.0 (2013-01-25)
+--------------------------
 
 * Object oriented Frontend, Backend, and Rescaling
 * Python version of ll2cr (still uses ms2gt fornav)
