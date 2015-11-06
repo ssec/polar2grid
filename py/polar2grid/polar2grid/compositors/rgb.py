@@ -64,6 +64,7 @@ with the a software bundle glue script.
 
     [compositor:my_rgb]
     composite_name=my_rgb_name
+    compositor_class=rgb
     composite_products=m05,m07,m15
 
 3. Run the following command::
