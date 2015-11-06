@@ -39,7 +39,7 @@
 """
 __docformat__ = "restructuredtext en"
 
-from .ninjo_backend import main
+from polar2grid.ninjo.ninjo_backend import main
 import sys
 
 if __name__ == '__main__':

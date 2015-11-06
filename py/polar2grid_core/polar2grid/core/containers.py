@@ -603,6 +603,11 @@ class GridDefinition(GeographicDefinition):
         x_ur, y_ur = self["origin_x"], self["origin_y"]
         return self.proj(x_ur, y_ur, inverse=True)
 
+    def get_lonlat(self, x_pixel, y_pixel):
+        x = self["origin_x"] + x_pixel * self["cell_width"]
+        y = self["origin_y"] + y_pixel * self["cell_height"]
+        return self.proj(x, y, inverse=True)
+
     @property
     def xy_lowerright(self):
         y_ll = self["origin_y"] + self["cell_height"] * self["height"]
