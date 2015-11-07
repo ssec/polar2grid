@@ -80,6 +80,7 @@ dkind2mpop_physical = {
     "reflectance": "%",
     # our P2G scaling always makes them celsius even if they are Kelvin
     "brightness_temperature": "C",
+    "crefl_true_color": "Unknown",
 }
 
 dkind2physical = {
