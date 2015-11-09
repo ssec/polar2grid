@@ -81,6 +81,8 @@ dkind2mpop_physical = {
     # our P2G scaling always makes them celsius even if they are Kelvin
     "brightness_temperature": "C",
     "crefl_true_color": "Unknown",
+    "crefl_false_color": "Unknown",
+    "corrected_reflectance": "Unknown",
 }
 
 dkind2physical = {
@@ -93,6 +95,9 @@ dkind2grad = {
         "equalized_radiance": (1.0, 0.0),
         "reflectance": (0.490196,0.0),
         "brightness_temperature": (-0.5, 40.0),
+        "crefl_true_color": (1.0, 0.0),
+        "crefl_false_color": (1.0, 0.0),
+        "corrected_reflectance": (1.0, 0.0),
 }
 
 
@@ -472,6 +477,10 @@ def save(data, grid_def, filename, ninjo_product_name=None, **kwargs):
     kwargs['is_calibrated'] = True
     kwargs['ninjo_product_name'] = kwargs.pop("product_name")
 
+    # reorder data to (Y, X, 3) from (3, Y, X)
+    if data.ndim > 2:
+        data = numpy.dstack(data)
+
     ninjo_write(data, filename, area_def, ninjo_product_name, **kwargs)
 
 
@@ -531,7 +540,7 @@ class Backend(roles.BackendRole):
         return self.grid_config_reader.known_grids
 
     def create_output_from_product(self, gridded_product, output_pattern=None,
-                                   data_type=None, inc_by_one=None, fill_value=-999.0, **kwargs):
+                                   data_type=None, inc_by_one=None, fill_value=0, **kwargs):
         # FIXME: Previous version had -999.0 as the fill value...really?
         grid_def = gridded_product["grid_definition"]
         grid_name = grid_def["grid_name"]
