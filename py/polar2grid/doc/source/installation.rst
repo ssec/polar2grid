@@ -60,7 +60,7 @@ Python Package Install
 Polar2Grid can be installed to an existing python environment by
 running the following commands::
 
-    pip install -i http://larch.ssec.wisc.edu/simple/ polar2grid[all]
+    pip install --user --trusted-host larch.ssec.wisc.edu --extra-index-url http://larch.ssec.wisc.edu/simple/ polar2grid[awips,gtiff,remap,utils]
 
 This will install the main set of Polar2Grid features and their dependencies.
 However, due to the modular design of Polar2Grid some frontends, backends, or
