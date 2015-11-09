@@ -553,20 +553,25 @@ def write(image_data, output_fn, area_def, product_name=None, **kwargs):
         
     options['meridian_west'] = upper_left[0]
     options['meridian_east'] = lower_right[0]
-    if area_def.proj_dict.has_key('lat_0'):        
-        options['ref_lat1'] = area_def.proj_dict['lat_0']
-        options['ref_lat2'] = 0
-    if area_def.proj_dict.has_key('lon_0'):        
+    if kwargs['projection'].endswith("POL"):
+        if 'lat_ts' in area_def.proj_dict:
+            options['ref_lat1'] = area_def.proj_dict['lat_ts']
+            options['ref_lat2'] = 0
+    else:
+        if 'lat_0' in area_def.proj_dict:
+            options['ref_lat1'] = area_def.proj_dict['lat_0']
+            options['ref_lat2'] = 0
+    if 'lon_0' in area_def.proj_dict:
         options['central_meridian'] = area_def.proj_dict['lon_0']
-    if area_def.proj_dict.has_key('a'):        
+    if 'a' in area_def.proj_dict:
         options['radius_a'] = area_def.proj_dict['a']
-    if area_def.proj_dict.has_key('b'):        
+    if 'b' in area_def.proj_dict:
         options['radius_b'] = area_def.proj_dict['b']
     options['origin_lon'] = upper_left[0]
     options['origin_lat'] = upper_left[1]
     options['min_gray_val'] = image_data.min()
     options['max_gray_val'] = image_data.max()
-    options.update(kwargs) # Update/overwrite with passed arguments
+    options.update(kwargs)  # Update/overwrite with passed arguments
 
     _write(image_data, output_fn, write_rgb=write_rgb, **options)
 
