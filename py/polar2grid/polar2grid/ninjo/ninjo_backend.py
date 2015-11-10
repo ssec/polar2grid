@@ -445,11 +445,13 @@ class FakeAreaDef(object):
 
     @property
     def pixel_size_x(self):
-        return self.grid_def["cell_width"]
+        # mpop requires that pixel size must always be positive
+        return abs(self.grid_def["cell_width"])
 
     @property
     def pixel_size_y(self):
-        return self.grid_def["cell_height"]
+        # mpop requires that pixel size must always be positive
+        return abs(self.grid_def["cell_height"])
 
 
 def save(data, grid_def, filename, ninjo_product_name=None, **kwargs):
