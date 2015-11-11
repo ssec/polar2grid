@@ -117,7 +117,7 @@ extras_require = {
     # Backends:
     "awips": ["netCDF4"],
     "gtiff": ["gdal"],
-    "ninjo": ["pylibtiff"],
+    "ninjo": [],
     "hdf5": ["h5py"],
     # Frontends (included separately):
     # Other:

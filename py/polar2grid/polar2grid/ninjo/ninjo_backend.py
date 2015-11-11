@@ -66,8 +66,6 @@ import numpy
 import os
 import sys
 import logging
-import calendar
-from datetime import datetime
 
 LOG = logging.getLogger(__name__)
 
