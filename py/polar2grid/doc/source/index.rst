@@ -66,6 +66,7 @@ Developer's Guide
     dev_guide/dev_env
     dev_guide/grids
     dev_guide/swbundle
+    dev_guide/json_input
 
 
 Indices and tables
