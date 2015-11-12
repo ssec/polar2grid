@@ -180,22 +180,26 @@ class VIIRSSDRReader(BaseFileReader):
         except KeyError:
             LOG.debug("No scaling factors for %s", item)
 
+        mask = numpy.zeros(data.shape, dtype=numpy.bool)
+
+        # Filter with quality flags
+        if var_info.qflag1 is not None:
+            qflag_data = self[var_info.qflag1][:]
+            if var_info.qflag1_mask is not None:
+                mask |= (qflag_data & var_info.qflag1_mask) != var_info.qflag1_eq
+
         # Get the mask for the data (based on unscaled data)
-        mask = None
         if scaling_factors is not None and var_info.scaling_mask_func is not None:
-            mask = var_info.scaling_mask_func(data)
+            mask |= var_info.scaling_mask_func(data)
         elif scaling_factors is None and var_info.nonscaling_mask_func is not None:
-            mask = var_info.nonscaling_mask_func(data)
+            mask |= var_info.nonscaling_mask_func(data)
 
         # Scale the data
-        scaling_mask = None
         if scaling_factors is not None:
             data, scaling_mask = self.scale_swath_data(data, scaling_factors)
+            mask |= scaling_mask
 
-        if mask is not None:
-            if scaling_factors is not None:
-                mask |= scaling_mask
-            data[mask] = fill
+        data[mask] = fill
 
         return data
 

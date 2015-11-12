@@ -168,17 +168,19 @@ K_AOD_1240 = "aod_1240nm_var"
 K_AOD_1610 = "aod_1610nm_var"
 K_AOD_2250 = "aod_2250nm_var"
 K_AVG_COT = "avg_cot_var"
+K_QF1_AERO = "qf1_aerosol"
 
 
 # Structure to help with complex variables that require more than just a variable path
-class FileVar(namedtuple("FileVar", ["var_path", "scaling_path", "scaling_mask_func", "nonscaling_mask_func"])):
+class FileVar(namedtuple("FileVar", ["var_path", "scaling_path", "scaling_mask_func", "nonscaling_mask_func", "qflag1", "qflag1_mask", "qflag1_eq"])):
     def __new__(cls, var_path, scaling_path=None,
-                scaling_mask_func=lambda a: a >= 65528, nonscaling_mask_func=lambda a: a <= -999.0, **kwargs):
+                scaling_mask_func=lambda a: a >= 65528, nonscaling_mask_func=lambda a: a <= -999.0,
+                qflag1=None, qflag1_mask=None, qflag1_eq=None, **kwargs):
         # add default values
         var_path = var_path.format(**kwargs)
         if scaling_path:
             scaling_path = scaling_path.format(**kwargs)
-        return super(FileVar, cls).__new__(cls, var_path, scaling_path, scaling_mask_func, nonscaling_mask_func)
+        return super(FileVar, cls).__new__(cls, var_path, scaling_path, scaling_mask_func, nonscaling_mask_func, qflag1, qflag1_mask, qflag1_eq)
 
 
 def create_geo_file_info(file_kind, file_band, **kwargs):
@@ -272,6 +274,7 @@ def create_edr_file_info(file_kind, file_band, **kwargs):
                            '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/COTFactors', **kwargs),
         K_QF3: '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/QF3_VIIRSSSTEDR',
         K_QF1: '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/QF1_VIIRSSSTEDR',
+        K_QF1_AERO: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/QF1_VIIRSAEROEDR', **kwargs),
         K_AGGR_STARTTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateBeginningTime',
         K_AGGR_STARTDATE: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateBeginningDate',
         K_AGGR_ENDTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateEndingTime',
@@ -294,7 +297,8 @@ def create_edr_file_info(file_kind, file_band, **kwargs):
             (K_AOD_2250, 2250),
     ):
         d[k] = FileVar('/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/AerosolOpticalDepth_at_%dnm' % (depth,),
-                       '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/AerosolOpticalDepthFactors', **kwargs)
+                       '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/AerosolOpticalDepthFactors',
+                       qflag1=K_QF1_AERO, qflag1_mask=0b11, qflag1_eq=0b11, **kwargs)
 
     for k, v in d.items():
         if not isinstance(v, (str, unicode)):
