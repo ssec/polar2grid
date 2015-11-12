@@ -109,9 +109,9 @@ FILE_TYPES = {
     FILE_TYPE_GMODO: None,
     # EDR:
     FILE_TYPE_VAOOO: None,
-    # FILE_TYPE_VCOTO: None,
+    FILE_TYPE_VCOTO: None,
     FILE_TYPE_GAERO: None,
-    # FILE_TYPE_GCLDO: None,
+    FILE_TYPE_GCLDO: None,
 }
 
 
@@ -167,6 +167,7 @@ K_AOD_865 = "aod_865nm_var"
 K_AOD_1240 = "aod_1240nm_var"
 K_AOD_1610 = "aod_1610nm_var"
 K_AOD_2250 = "aod_2250nm_var"
+K_AVG_COT = "avg_cot_var"
 
 
 # Structure to help with complex variables that require more than just a variable path
@@ -267,6 +268,8 @@ def create_edr_file_info(file_kind, file_band, **kwargs):
     d = {
         K_BTEMP: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/SkinSST',
                          '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/SkinSSTFactors', **kwargs),
+        K_AVG_COT: FileVar('/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/AverageCloudOpticalThickness',
+                           '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/COTFactors', **kwargs),
         K_QF3: '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/QF3_VIIRSSSTEDR',
         K_QF1: '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/QF1_VIIRSSSTEDR',
         K_AGGR_STARTTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateBeginningTime',
@@ -332,6 +335,8 @@ FILE_TYPES[FILE_TYPE_DNB] = create_im_file_info("DNB", "")
 # EDR
 FILE_TYPES[FILE_TYPE_VAOOO] = create_edr_file_info("Aeros", "")
 FILE_TYPES[FILE_TYPE_GAERO] = create_geo_file_info("Aeros-EDR", "")
+FILE_TYPES[FILE_TYPE_VCOTO] = create_edr_file_info("COT", "")
+FILE_TYPES[FILE_TYPE_GCLDO] = create_geo_file_info("CLD-AGG", "")
 
 DATA_PATHS = dict((v[K_DATA_PATH], k) for k, v in FILE_TYPES.items())
 

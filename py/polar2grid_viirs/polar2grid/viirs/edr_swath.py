@@ -45,6 +45,8 @@ with the frontend name ``viirs``.
     +===========================+============================================+
     | aod_555nm                 | Aerosol Optical Depth at 550nm             |
     +---------------------------+--------------------------------------------+
+    | cot                       | Average Cloud Optical Thickness            |
+    +---------------------------+--------------------------------------------+
 
 |
 
@@ -79,28 +81,39 @@ LOG = logging.getLogger(__name__)
 
 ### PRODUCT KEYS ###
 PRODUCT_AOD_555 = "aod_555nm"
+PRODUCT_AVG_COT = "cot"
 
 # Geolocation "Products"
 # These products aren't really products at the moment and should only be used as navigation for the above products
 PRODUCT_AERO_LAT = "aero_latitude"
 PRODUCT_AERO_LON = "aero_longitude"
+PRODUCT_COT_LAT = "cloud_latitude"
+PRODUCT_COT_LON = "cloud_longitude"
 
 AOD_PRODUCTS = [
     PRODUCT_AOD_555,
+]
+COT_PRODUCTS = [
+    PRODUCT_AVG_COT,
 ]
 
 PRODUCTS = ProductDict()
 GEO_PAIRS = GeoPairDict()
 
 PAIR_AERO_NAV = "aeronav"
+PAIR_COT_NAV = "cotnav"
 # Cool, there's no way to get rows per scan from the file
 GEO_PAIRS.add_pair(PAIR_AERO_NAV, PRODUCT_AERO_LON, PRODUCT_AERO_LAT, 2)
+GEO_PAIRS.add_pair(PAIR_COT_NAV, PRODUCT_COT_LON, PRODUCT_COT_LAT, 2)
 
 # TODO: Add description and units
 PRODUCTS.add_product(PRODUCT_AERO_LON, PAIR_AERO_NAV, "longitude", (guidebook.FILE_TYPE_GAERO, guidebook.FILE_TYPE_GAERO), guidebook.K_LONGITUDE)
 PRODUCTS.add_product(PRODUCT_AERO_LAT, PAIR_AERO_NAV, "latitude", (guidebook.FILE_TYPE_GAERO, guidebook.FILE_TYPE_GAERO), guidebook.K_LATITUDE)
+PRODUCTS.add_product(PRODUCT_COT_LON, PAIR_COT_NAV, "longitude", (guidebook.FILE_TYPE_GCLDO, guidebook.FILE_TYPE_GCLDO), guidebook.K_LONGITUDE)
+PRODUCTS.add_product(PRODUCT_COT_LAT, PAIR_COT_NAV, "latitude", (guidebook.FILE_TYPE_GCLDO, guidebook.FILE_TYPE_GCLDO), guidebook.K_LATITUDE)
 
 PRODUCTS.add_product(PRODUCT_AOD_555, PAIR_AERO_NAV, "optical_depth", guidebook.FILE_TYPE_VAOOO, guidebook.K_AOD_555)
+PRODUCTS.add_product(PRODUCT_AVG_COT, PAIR_COT_NAV, "cloud_optical_thickness", guidebook.FILE_TYPE_VCOTO, guidebook.K_AVG_COT)
 
 
 class EDRFrontend(SDRFrontend):
@@ -140,49 +153,6 @@ class EDRFrontend(SDRFrontend):
         self.secondary_product_functions = {
         }
 
-    def _load_files(self, file_paths):
-        """Sort files by 'file type' and create objects to help load the data later.
-
-        This method should not be called by the user.
-        """
-        self.file_readers = {}
-        for file_type, file_type_info in guidebook.FILE_TYPES.items():
-            cls = file_type_info.get("file_type_class", self.DEFAULT_FILE_READER)
-            self.file_readers[file_type] = cls(file_type_info)
-        # Don't modify the passed list (we use in place operations)
-        file_paths_left = []
-        for fp in file_paths:
-            h = HDF5Reader(fp)
-            for data_path, file_type in guidebook.DATA_PATHS.items():
-                if data_path in h:
-                    self.file_readers[file_type].add_file(h)
-                    break
-            else:
-                file_paths_left.append(fp)
-
-
-        # Log what files we were given that we didn't understand
-        for fp in file_paths_left:
-            LOG.debug("Unrecognized file: %s", fp)
-
-        # Get rid of the readers we aren't using
-        for file_type, file_reader in self.file_readers.items():
-            if not len(file_reader):
-                del self.file_readers[file_type]
-            else:
-                self.file_readers[file_type].finalize_files()
-
-        if not self.file_readers:
-            LOG.error("No useable files loaded")
-            raise ValueError("No useable files loaded")
-
-        first_length = len(self.file_readers[self.file_readers.keys()[0]])
-        if not all(len(x) == first_length for x in self.file_readers.values()):
-            LOG.error("Corrupt directory: Varying number of files for each type")
-            ft_str = "\n\t".join("%s: %d" % (ft, len(fr)) for ft, fr in self.file_readers.items())
-            LOG.debug("File types and number of files:\n\t%s", ft_str)
-            raise RuntimeError("Corrupt directory: Varying number of files for each type")
-
     @property
     def default_products(self):
         if os.getenv("P2G_VIIRS_EDR_DEFAULTS", None):
@@ -190,6 +160,7 @@ class EDRFrontend(SDRFrontend):
 
         defaults = [
             PRODUCT_AOD_555,
+            PRODUCT_AVG_COT,
         ]
         return defaults
 
