@@ -73,6 +73,12 @@ FILE_TYPE_GMTCO = "FT_GMTCO"
 FILE_TYPE_GIMGO = "FT_GIMGO"
 FILE_TYPE_GMODO = "FT_GMODO"
 
+# EDR/Level 2 Files
+FILE_TYPE_VAOOO = "FT_VAOOO"
+FILE_TYPE_VCOTO = "FT_VCOTO"
+FILE_TYPE_GAERO = "FT_GAERO"
+FILE_TYPE_GCLDO = "FT_GCLDO"
+
 FILE_TYPES = {
     FILE_TYPE_I01: None,
     FILE_TYPE_I02: None,
@@ -101,6 +107,11 @@ FILE_TYPES = {
     FILE_TYPE_GMTCO: None,
     FILE_TYPE_GIMGO: None,
     FILE_TYPE_GMODO: None,
+    # EDR:
+    FILE_TYPE_VAOOO: None,
+    # FILE_TYPE_VCOTO: None,
+    FILE_TYPE_GAERO: None,
+    # FILE_TYPE_GCLDO: None,
 }
 
 
@@ -143,6 +154,19 @@ K_NORTH_COORD = "north_coordinate"
 K_SOUTH_COORD = "south_coordinate"
 K_SATELLITE = "satellite_name"
 K_DATA_PATH = "data_path"
+
+# EDR Specific variables:
+K_AOD_412 = "aod_412nm_var"
+K_AOD_445 = "aod_445nm_var"
+K_AOD_488 = "aod_488nm_var"
+K_AOD_550 = "aod_550nm_var"
+K_AOD_555 = "aod_555nm_var"
+K_AOD_672 = "aod_672nm_var"
+K_AOD_746 = "aod_746nm_var"
+K_AOD_865 = "aod_865nm_var"
+K_AOD_1240 = "aod_1240nm_var"
+K_AOD_1610 = "aod_1610nm_var"
+K_AOD_2250 = "aod_2250nm_var"
 
 
 # Structure to help with complex variables that require more than just a variable path
@@ -249,7 +273,26 @@ def create_edr_file_info(file_kind, file_band, **kwargs):
         K_AGGR_STARTDATE: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateBeginningDate',
         K_AGGR_ENDTIME: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateEndingTime',
         K_AGGR_ENDDATE: '/Data_Products/VIIRS-{file_kind}{file_band}-EDR/VIIRS-{file_kind}{file_band}-EDR_Aggr.AggregateEndingDate',
+        K_SATELLITE: ".Platform_Short_Name",
+        K_DATA_PATH: '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All',
     }
+    # Add all the AOD variables
+    for k, depth in (
+            (K_AOD_412, 412),
+            (K_AOD_445, 445),
+            (K_AOD_488, 488),
+            (K_AOD_550, 550),
+            (K_AOD_555, 555),
+            (K_AOD_672, 672),
+            (K_AOD_746, 746),
+            (K_AOD_865, 865),
+            (K_AOD_1240, 1240),
+            (K_AOD_1610, 1610),
+            (K_AOD_2250, 2250),
+    ):
+        d[k] = FileVar('/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/AerosolOpticalDepth_at_%dnm' % (depth,),
+                       '/All_Data/VIIRS-{file_kind}{file_band}-EDR_All/AerosolOpticalDepthFactors', **kwargs)
+
     for k, v in d.items():
         if not isinstance(v, (str, unicode)):
             continue
@@ -285,6 +328,10 @@ FILE_TYPES[FILE_TYPE_M14] = create_im_file_info("M", "14")
 FILE_TYPES[FILE_TYPE_M15] = create_im_file_info("M", "15")
 FILE_TYPES[FILE_TYPE_M16] = create_im_file_info("M", "16")
 FILE_TYPES[FILE_TYPE_DNB] = create_im_file_info("DNB", "")
+
+# EDR
+FILE_TYPES[FILE_TYPE_VAOOO] = create_edr_file_info("Aeros", "")
+FILE_TYPES[FILE_TYPE_GAERO] = create_geo_file_info("Aeros-EDR", "")
 
 DATA_PATHS = dict((v[K_DATA_PATH], k) for k, v in FILE_TYPES.items())
 

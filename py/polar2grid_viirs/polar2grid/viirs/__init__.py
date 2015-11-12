@@ -40,6 +40,7 @@
 __docformat__ = "restructuredtext en"
 
 from polar2grid.viirs.swath import Frontend, add_frontend_argument_groups
+from polar2grid.viirs.edr_swath import EDRFrontend, add_frontend_argument_groups as add_frontend_argument_groups_edr
 
 # Configure a null handler in case someone is using this as a library (i.e. no warning about not configuring logging)
 import logging

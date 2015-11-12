@@ -89,8 +89,9 @@ setup(
     tests_require=['mock'],
     entry_points={
         'console_scripts': [],
-        'polar2grid.frontend_class': ['viirs=polar2grid.viirs:Frontend'],
-        'polar2grid.frontend_arguments': ['viirs=polar2grid.viirs:add_frontend_argument_groups'],
+        'polar2grid.frontend_class': ['viirs=polar2grid.viirs:Frontend', 'viirsedr=polar2grid.viirs:EDRFrontend'],
+        'polar2grid.frontend_arguments': ['viirs=polar2grid.viirs:add_frontend_argument_groups',
+                                          'viirsedr=polar2grid.viirs:add_frontend_argument_groups_edr'],
     }
 )
 

@@ -461,6 +461,8 @@ PRODUCTS.add_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_brightness_temp
 class Frontend(roles.FrontendRole):
     FILE_EXTENSIONS = [".h5"]
     DEFAULT_FILE_READER = VIIRSSDRMultiReader
+    PRODUCTS = PRODUCTS
+    GEO_PAIRS = GEO_PAIRS
 
     def __init__(self, use_terrain_corrected=True, day_fraction=0.10, night_fraction=0.10, sza_threshold=100,
                  dnb_saturation_correction=False, **kwargs):
@@ -504,7 +506,7 @@ class Frontend(roles.FrontendRole):
             PRODUCT_ADAPTIVE_M16: self.create_adaptive_btemp,
             PRODUCT_DYNAMIC_DNB: self.create_dynamic_dnb,
         }
-        for p, p_def in PRODUCTS.items():
+        for p, p_def in self.PRODUCTS.items():
             if p_def.data_kind == "reflectance" and p_def.dependencies:
                 self.secondary_product_functions[p] = self.day_check_reflectance
 
@@ -564,12 +566,12 @@ class Frontend(roles.FrontendRole):
 
     @property
     def available_product_names(self):
-        raw_products = [p for p in PRODUCTS.all_raw_products if self.raw_product_available(p)]
-        return sorted(PRODUCTS.get_product_dependents(raw_products))
+        raw_products = [p for p in self.PRODUCTS.all_raw_products if self.raw_product_available(p)]
+        return sorted(self.PRODUCTS.get_product_dependents(raw_products))
 
     @property
     def all_product_names(self):
-        return PRODUCTS.keys()
+        return self.PRODUCTS.keys()
 
     @property
     def default_products(self):
@@ -602,11 +604,11 @@ class Frontend(roles.FrontendRole):
         return defaults
 
     def create_swath_definition(self, lon_product, lat_product):
-        product_def = PRODUCTS[lon_product["product_name"]]
+        product_def = self.PRODUCTS[lon_product["product_name"]]
         index = 0 if self.use_terrain_corrected else 1
         file_type = product_def.get_file_type(index=index)
         lon_file_reader = self.file_readers[file_type]
-        product_def = PRODUCTS[lat_product["product_name"]]
+        product_def = self.PRODUCTS[lat_product["product_name"]]
         file_type = product_def.get_file_type(index=index)
         lat_file_reader = self.file_readers[file_type]
 
@@ -619,7 +621,7 @@ class Frontend(roles.FrontendRole):
                 LOG.error("Longitude and latitude products do not have equal attributes: %s", k)
                 raise RuntimeError("Longitude and latitude products do not have equal attributes: %s" % (k,))
 
-        swath_name = GEO_PAIRS[product_def.geo_pair_name].name
+        swath_name = self.GEO_PAIRS[product_def.geo_pair_name].name
         swath_definition = containers.SwathDefinition(
             swath_name=swath_name, longitude=lon_product["swath_data"], latitude=lat_product["swath_data"],
             data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
@@ -642,7 +644,7 @@ class Frontend(roles.FrontendRole):
         return swath_definition
 
     def create_raw_swath_object(self, product_name, swath_definition):
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         index = 0 if self.use_terrain_corrected else 1
         file_type = product_def.get_file_type(index=index)
         file_key = product_def.get_file_key(index=index)
@@ -664,7 +666,7 @@ class Frontend(roles.FrontendRole):
         try:
             # TODO: Do something with data type
             shape = file_reader.write_var_to_flat_binary(file_key, filename)
-            rows_per_scan = GEO_PAIRS[product_def.geo_pair_name].rows_per_scan
+            rows_per_scan = self.GEO_PAIRS[product_def.geo_pair_name].rows_per_scan
         except StandardError:
             LOG.error("Could not extract data from file. Use '--no-tc' flag if terrain-corrected data is not available")
             LOG.debug("Extraction exception: ", exc_info=True)
@@ -683,7 +685,7 @@ class Frontend(roles.FrontendRole):
         return one_swath
 
     def create_secondary_swath_object(self, product_name, swath_definition, filename, data_type, products_created):
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         dep_objects = [products_created[dep_name] for dep_name in product_def.dependencies]
         filepaths = sorted(set([filepath for swath in dep_objects for filepath in swath["source_filenames"]]))
 
@@ -704,7 +706,7 @@ class Frontend(roles.FrontendRole):
 
         :returns: True if product can be loaded, False otherwise (including if product is not a raw product)
         """
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         if product_def.is_raw:
             # First element is terrain corrected, second element is non-TC
             file_type = product_def.get_file_type(index=0 if self.use_terrain_corrected else 1)
@@ -722,11 +724,11 @@ class Frontend(roles.FrontendRole):
         products = self.loadable_products(products)
 
         # Needs to be ordered (least-depended product -> most-depended product)
-        products_needed = PRODUCTS.dependency_ordered_products(products)
-        geo_pairs_needed = PRODUCTS.geo_pairs_for_products(products_needed)
+        products_needed = self.PRODUCTS.dependency_ordered_products(products)
+        geo_pairs_needed = self.PRODUCTS.geo_pairs_for_products(products_needed)
         # both lists below include raw products that need extra processing/masking
-        raw_products_needed = (p for p in products_needed if PRODUCTS.is_raw(p, geo_is_raw=False))
-        secondary_products_needed = [p for p in products_needed if PRODUCTS.needs_processing(p)]
+        raw_products_needed = (p for p in products_needed if self.PRODUCTS.is_raw(p, geo_is_raw=False))
+        secondary_products_needed = [p for p in products_needed if self.PRODUCTS.needs_processing(p)]
         for p in secondary_products_needed:
             if p not in self.secondary_product_functions:
                 LOG.error("Product (secondary or extra processing) required, but not sure how to make it: '%s'", p)
@@ -741,14 +743,14 @@ class Frontend(roles.FrontendRole):
         # Load geolocation files
         for geo_pair_name in geo_pairs_needed:
             ### Lon Product ###
-            lon_product_name = GEO_PAIRS[geo_pair_name].lon_product
+            lon_product_name = self.GEO_PAIRS[geo_pair_name].lon_product
             LOG.info("Creating navigation product '%s'", lon_product_name)
             lon_swath = products_created[lon_product_name] = self.create_raw_swath_object(lon_product_name, None)
             if lon_product_name in products:
                 scene[lon_product_name] = lon_swath
 
             ### Lat Product ###
-            lat_product_name = GEO_PAIRS[geo_pair_name].lat_product
+            lat_product_name = self.GEO_PAIRS[geo_pair_name].lat_product
             LOG.info("Creating navigation product '%s'", lat_product_name)
             lat_swath = products_created[lat_product_name] = self.create_raw_swath_object(lat_product_name, None)
             if lat_product_name in products:
@@ -766,7 +768,7 @@ class Frontend(roles.FrontendRole):
 
             try:
                 LOG.info("Creating data product '%s'", product_name)
-                swath_def = swath_definitions[PRODUCTS[product_name].geo_pair_name]
+                swath_def = swath_definitions[self.PRODUCTS[product_name].geo_pair_name]
                 one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
             except StandardError:
                 LOG.error("Could not create raw product '%s'", product_name)
@@ -781,7 +783,7 @@ class Frontend(roles.FrontendRole):
         # Dependent products and Special cases (i.e. non-raw products that need further processing)
         for product_name in reversed(secondary_products_needed):
             product_func = self.secondary_product_functions[product_name]
-            swath_def = swath_definitions[PRODUCTS[product_name].geo_pair_name]
+            swath_def = swath_definitions[self.PRODUCTS[product_name].geo_pair_name]
 
             try:
                 LOG.info("Creating secondary product '%s'", product_name)
@@ -808,7 +810,7 @@ class Frontend(roles.FrontendRole):
 
     ### Secondary Product Functions
     def create_histogram_dnb(self, product_name, swath_definition, products_created, fill=numpy.nan):
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         deps = product_def.dependencies
         if len(deps) != 2:
             LOG.error("Expected 2 dependencies to create adaptive DNB product, got %d" % (len(deps),))
@@ -841,7 +843,7 @@ class Frontend(roles.FrontendRole):
         return one_swath
 
     def create_adaptive_dnb(self, product_name, swath_definition, products_created, fill=numpy.nan):
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         deps = product_def.dependencies
         if len(deps) != 3:
             LOG.error("Expected 3 dependencies to create adaptive DNB product, got %d" % (len(deps),))
@@ -850,9 +852,9 @@ class Frontend(roles.FrontendRole):
         dnb_product_name = deps[0]
         sza_product_name = deps[1]
         lza_product_name = deps[2]
-        lon_product_name = GEO_PAIRS[product_def.geo_pair_name].lon_product
+        lon_product_name = self.GEO_PAIRS[product_def.geo_pair_name].lon_product
         index = 0 if self.use_terrain_corrected else 1
-        file_type = PRODUCTS[lon_product_name].get_file_type(index=index)
+        file_type = self.PRODUCTS[lon_product_name].get_file_type(index=index)
         geo_file_reader = self.file_readers[file_type]
         moon_illum_fraction = sum(geo_file_reader[guidebook.K_MOONILLUM]) / (100.0 * len(geo_file_reader))
         dnb_product = products_created[dnb_product_name]
@@ -882,7 +884,7 @@ class Frontend(roles.FrontendRole):
         return one_swath
 
     def create_adaptive_btemp(self, product_name, swath_definition, products_created, fill=numpy.nan):
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         deps = product_def.dependencies
         if len(deps) != 1:
             LOG.error("Expected 1 dependencies to create adaptive BT product, got %d" % (len(deps),))
@@ -914,7 +916,7 @@ class Frontend(roles.FrontendRole):
         return one_swath
 
     def create_ifog(self, product_name, swath_definition, products_created, fill=numpy.nan):
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         deps = product_def.dependencies
         if len(deps) != 3:
             LOG.error("Expected 3 dependencies to create FOG/temperature difference product, got %d" % (len(deps),))
@@ -962,7 +964,7 @@ class Frontend(roles.FrontendRole):
         return one_swath
 
     def create_dynamic_dnb(self, product_name, swath_definition, products_created, fill=numpy.nan):
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         deps = product_def.dependencies
         if len(deps) != 3:
             LOG.error("Expected 3 dependencies to create dynamic DNB product, got %d" % (len(deps),))
@@ -971,9 +973,9 @@ class Frontend(roles.FrontendRole):
         dnb_product_name = deps[0]
         sza_product_name = deps[1]
         lza_product_name = deps[2]
-        lon_product_name = GEO_PAIRS[product_def.geo_pair_name].lon_product
+        lon_product_name = self.GEO_PAIRS[product_def.geo_pair_name].lon_product
         index = 0 if self.use_terrain_corrected else 1
-        file_type = PRODUCTS[lon_product_name].get_file_type(index=index)
+        file_type = self.PRODUCTS[lon_product_name].get_file_type(index=index)
         geo_file_reader = self.file_readers[file_type]
         # convert to decimal instead of %
         moon_illum_fraction = numpy.mean(geo_file_reader[guidebook.K_MOONILLUM]) * 0.01
@@ -1056,7 +1058,7 @@ class Frontend(roles.FrontendRole):
         return sza_swath["day_percentage"]
 
     def day_check_reflectance(self, product_name, swath_definition, products_created, fill=numpy.nan):
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         deps = product_def.dependencies
         if len(deps) != 1:
             LOG.error("Expected 1 dependencies to check night mask, got %d" % (len(deps),))
