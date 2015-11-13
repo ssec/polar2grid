@@ -396,7 +396,7 @@ class Rescaler(roles.INIConfigReader):
     def register_rescale_method(self, name, func, **kwargs):
         self.rescale_methods[name] = (func, kwargs)
 
-    def _rescale_data(self, method, data, good_data_mask, rescale_options, fill_value, clip=True, inc_by_one=False):
+    def _rescale_data(self, method, data, good_data_mask, rescale_options, fill_value, clip=True, mask_clip=None, inc_by_one=False):
         try:
             LOG.debug("Scaling data with method %s and arguments %r", method, rescale_options)
             rescale_func = self.rescale_methods[method]
@@ -407,6 +407,11 @@ class Rescaler(roles.INIConfigReader):
             # certain scalings may fail if they decided some values could not be calculated
             if clip:
                 LOG.debug("Clipping data between %f and %f", rescale_options["min_out"], rescale_options["max_out"])
+                if mask_clip in ["both", "min", True]:
+                    good_data[good_data < rescale_options["min_out"]] = numpy.nan
+                if mask_clip in ["both", "max", True]:
+                    good_data[good_data > rescale_options["max_out"]] = numpy.nan
+
                 good_data = numpy.clip(good_data, rescale_options["min_out"], rescale_options["max_out"], out=good_data)
 
             data[good_data_mask] = good_data
@@ -451,6 +456,7 @@ class Rescaler(roles.INIConfigReader):
         method = rescale_options.pop("method")
         # if the configuration file didn't force these then provide a logical default
         clip = rescale_options.pop("clip", True)
+        mask_clip = rescale_options.pop("mask_clip", None)
         min_out, max_out = dtype2range[kwargs["data_type"]]
         rescale_options.setdefault("min_out", min_out)
         rescale_options.setdefault("max_out", max_out - 1 if inc_by_one else max_out)
@@ -461,12 +467,12 @@ class Rescaler(roles.INIConfigReader):
         good_data_mask = ~gridded_product.get_data_mask()
         if rescale_options.get("separate_rgb", True) and data.ndim == 3:
             data = numpy.concatenate((
-                [self._rescale_data(method, data[0], good_data_mask[0], rescale_options, fill_value, clip=clip, inc_by_one=inc_by_one)],
-                [self._rescale_data(method, data[1], good_data_mask[1], rescale_options, fill_value, clip=clip, inc_by_one=inc_by_one)],
-                [self._rescale_data(method, data[2], good_data_mask[2], rescale_options, fill_value, clip=clip, inc_by_one=inc_by_one)],
+                [self._rescale_data(method, data[0], good_data_mask[0], rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one)],
+                [self._rescale_data(method, data[1], good_data_mask[1], rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one)],
+                [self._rescale_data(method, data[2], good_data_mask[2], rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one)],
             ))
         else:
-            data = self._rescale_data(method, data, good_data_mask, rescale_options, fill_value, clip=clip, inc_by_one=inc_by_one)
+            data = self._rescale_data(method, data, good_data_mask, rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one)
 
         log_level = logging.getLogger('').handlers[0].level or 0
         # Only perform this calculation if it will be shown, its very time consuming
