@@ -113,6 +113,11 @@ CFLAGS="-fno-strict-aliasing -L${SB_NAME}/ShellB3/lib" INSTALL_DIR="${SB_NAME}/S
 # Copy the release notes to the tarball
 cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 
+# Create a wmsupload.sh script
+cd $SB_NAME/bin
+wget http://realearth.ssec.wisc.edu/wmsupload -O wmsupload.sh || oops "Couldn't download and create wmsupload.sh script"
+chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
+
 # FIXME: Hack to get libproj in to ShellB3 from the system (until it gets provided by ShellB3)
 cd "$SB_NAME"/ShellB3/lib64/
 cp -P /usr/lib64/libproj* .
