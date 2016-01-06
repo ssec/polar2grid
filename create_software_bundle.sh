@@ -115,7 +115,7 @@ cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy rele
 
 # Create a wmsupload.sh script
 cd $SB_NAME/bin
-wget http://realearth.ssec.wisc.edu/wmsupload -O wmsupload.sh || oops "Couldn't download and create wmsupload.sh script"
+wget http://realearth.ssec.wisc.edu/upload/re_upload -O wmsupload.sh || oops "Couldn't download and create wmsupload.sh script"
 chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
 
 # FIXME: Hack to get libproj in to ShellB3 from the system (until it gets provided by ShellB3)
