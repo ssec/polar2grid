@@ -377,33 +377,37 @@ all_lvl_ranges = [
     827.371, 852.788, 878.62, 904.866, 931.524, 958.591, 986.067,
     1013.95, 1042.23, 1070.92, 1100
 ]
+# Index 45 to 97
+#lvl_range = all_lvl_ranges[45:98]
 # Every 100
-lvl_range = [100, 200, 300, 400, 500, 600, 700, 800]
+#lvl_range = [100, 200, 300, 400, 500, 600, 700, 800]
 # lvl_range = all_lvl_ranges
 
-for lvl_num in lvl_range:
-    if lvl_num < 5.0:
-        # Rounding doesn't work when there are multiple pressure levels per integer
-        suffix = "_%0.03fmb" % (lvl_num,)
-    else:
-        suffix = "_%dmb" % (lvl_num,)
+def _add_level_based_products(lvl_range):
+    for lvl_num in lvl_range:
+        if lvl_num < 5.0:
+            # Rounding doesn't work when there are multiple pressure levels per integer
+            suffix = "_%0.03fmb" % (lvl_num,)
+        else:
+            suffix = "_%dmb" % (lvl_num,)
 
-    PRODUCTS.add_product(PRODUCT_TAIR + suffix, BASE_PAIR, "air_temperature", FT_DRRTV, "TAir", pressure=lvl_num)
-    PRODUCTS.add_product(PRODUCT_DEWPOINT + suffix, BASE_PAIR, "dewpoint_temperature", FT_DRRTV, "Dewpnt", pressure=lvl_num)
-    PRODUCTS.add_product(PRODUCT_WATER_MMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "H2OMMR", pressure=lvl_num)
-    PRODUCTS.add_product(PRODUCT_OZONE_VMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "O3VMR", pressure=lvl_num)
-    PRODUCTS.add_product(PRODUCT_RELHUM + suffix, BASE_PAIR, "relative_humidity", FT_DRRTV, "RelHum", pressure=lvl_num)
-    TAIR_PRODUCTS.append(PRODUCT_TAIR + suffix)
-    DEWPOINT_PRODUCTS.append(PRODUCT_DEWPOINT + suffix)
-    WATER_MMR_PRODUCTS.append(PRODUCT_WATER_MMR + suffix)
-    OZONE_VMR_PRODUCTS.append(PRODUCT_OZONE_VMR + suffix)
-    RELHUM_PRODUCTS.append(PRODUCT_RELHUM + suffix)
+        PRODUCTS.add_product(PRODUCT_TAIR + suffix, BASE_PAIR, "air_temperature", FT_DRRTV, "TAir", pressure=lvl_num)
+        PRODUCTS.add_product(PRODUCT_DEWPOINT + suffix, BASE_PAIR, "dewpoint_temperature", FT_DRRTV, "Dewpnt", pressure=lvl_num)
+        PRODUCTS.add_product(PRODUCT_WATER_MMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "H2OMMR", pressure=lvl_num)
+        PRODUCTS.add_product(PRODUCT_OZONE_VMR + suffix, BASE_PAIR, "mixing_ratio", FT_DRRTV, "O3VMR", pressure=lvl_num)
+        PRODUCTS.add_product(PRODUCT_RELHUM + suffix, BASE_PAIR, "relative_humidity", FT_DRRTV, "RelHum", pressure=lvl_num)
+        TAIR_PRODUCTS.append(PRODUCT_TAIR + suffix)
+        DEWPOINT_PRODUCTS.append(PRODUCT_DEWPOINT + suffix)
+        WATER_MMR_PRODUCTS.append(PRODUCT_WATER_MMR + suffix)
+        OZONE_VMR_PRODUCTS.append(PRODUCT_OZONE_VMR + suffix)
+        RELHUM_PRODUCTS.append(PRODUCT_RELHUM + suffix)
 
 
 class Frontend(FrontendRole):
     FILE_EXTENSIONS = (".h5",)
 
-    def __init__(self, **kwargs):
+    def __init__(self, level_index_range=(45, 98), **kwargs):
+        _add_level_based_products(all_lvl_ranges[level_index_range[0]: level_index_range[1]])
         super(Frontend, self).__init__(**kwargs)
         self._load_files(self.find_files_with_extensions())
 
@@ -603,6 +607,8 @@ def add_frontend_argument_groups(parser):
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
     group.add_argument("--list-products", dest="list_products", action="store_true",
                        help="List available frontend products and exit")
+    group.add_argument("--level-index-range", nargs=2, type=int, default=(45, 98),
+                       help="Start(inclusive) and end(exclusive) index for level ranges to make available (0 -1 for all)")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
