@@ -201,6 +201,7 @@ def local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None, 
                         # figure out which adjacent tile we're processing (in overall tile coordinates instead of relative to our current tile)
                         calculated_row = num_row_tile - 1 + weight_row
                         calculated_col = num_col_tile - 1 + weight_col
+                        tmp_tile_weights = tile_weights[weight_row, weight_col][numpy.where(temp_mask_to_equalize)]
                         
                         # if we're inside the tile array and the tile we're processing has a histogram equalization for us to use, process it
                         if ( (calculated_row >= 0) and (calculated_row < row_tiles) and
@@ -212,13 +213,13 @@ def local_histogram_equalization (data, mask_to_equalize, valid_data_mask=None, 
                             temp_equalized_data = numpy.interp(temp_all_valid_data,
                                                                all_bin_information[calculated_row][calculated_col][:-1],
                                                                all_cumulative_dist_functions[calculated_row][calculated_col])
-                            temp_equalized_data = temp_equalized_data[temp_mask_to_equalize[temp_all_valid_data_mask]]
+                            temp_equalized_data = temp_equalized_data[numpy.where(temp_mask_to_equalize[temp_all_valid_data_mask])]
                             
                             # add the contribution for the tile we're processing to our weighted sum
-                            temp_sum += (temp_equalized_data * tile_weights[weight_row, weight_col][temp_mask_to_equalize])
+                            temp_sum += (temp_equalized_data * tmp_tile_weights)
                             
                         else : # if the tile we're processing doesn't exist, hang onto the weight we would have used for it so we can correct that later
-                            unused_weight -= tile_weights[weight_row, weight_col][temp_mask_to_equalize]
+                            unused_weight -= tmp_tile_weights
 
                 # if we have unused weights, scale our values to correct for that
                 if unused_weight.any():
