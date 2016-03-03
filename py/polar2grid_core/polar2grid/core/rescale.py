@@ -148,6 +148,9 @@ def sqrt_scale(img, min_out, max_out, inner_mult=None, outer_mult=None, min_in=0
     LOG.debug("Running 'sqrt_scale'...")
     if min_out != 0 and min_in != 0:
         raise RuntimeError("'sqrt_scale' does not support a `min_out` or `min_in` not equal to 0")
+    if kwargs.get("units", None) == "%":
+        LOG.debug("Sqrt scale detected percentage units, will adjust max_input values")
+        max_in *= 100.0
     inner_mult = inner_mult if inner_mult is not None else (100.0 / max_in)
     outer_mult = outer_mult if outer_mult is not None else max_out / numpy.sqrt(inner_mult * max_in)
     LOG.debug("Sqrt scaling using 'inner_mult'=%f and 'outer_mult'=%f", inner_mult, outer_mult)
