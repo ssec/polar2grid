@@ -155,6 +155,12 @@ entry_points = {
         'false_color=polar2grid.compositors.rgb:FalseColorCompositor',
         'crefl_sharpen=polar2grid.compositors.rgb:CreflRGBSharpenCompositor',
         ],
+    'polar2grid.frontend_class': [
+        'viirs_l1b=polar2grid.readers.viirs_l1b:Frontend',
+        ],
+    'polar2grid.frontend_arguments': [
+        'viirs_l1b=polar2grid.viirs:add_frontend_argument_groups',
+        ],
     }
 
 setup(
