@@ -814,7 +814,7 @@ class GriddedProduct(BaseProduct):
     def from_swath_product(self, swath_product):
         for k in ["product_name", "satellite", "instrument",
                   "begin_time", "end_time", "data_type", "data_kind",
-                  "description", "source_filenames"]:
+                  "description", "source_filenames", "units"]:
             if k in swath_product:
                 self[k] = swath_product[k]
 
