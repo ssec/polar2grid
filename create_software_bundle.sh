@@ -3,7 +3,8 @@
 # Usage: ./create_software_bundle.sh <bundle directory> [ShellB3 URL]
 # Creates a software bundle directory and a tarball of that directory
 
-SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3-Linux-x86_64-20140212-r840-core-cspp.tar.gz"
+#SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3-Linux-x86_64-20140212-r840-core-cspp.tar.gz"
+SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/shellb27.tar.gz"
 BASE_P2G_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PY_DIR="$BASE_P2G_DIR"/py
 BUNDLE_SCRIPTS_DIR="$BASE_P2G_DIR"/swbundle
@@ -49,7 +50,7 @@ if [ "${SHELLB3_URL:0:3}" == "ftp" ] || [ "${SHELLB3_URL:0:4}" == "http" ]; then
     echo "Downloading ShellB3..."
     wget ${SHELLB3_URL} || oops "Could not download ShellB3"
     echo "Extracting ShellB3 tarball..."
-    tar -xzf "$(basename "$SHELLB3_URL")" || oops "Could not extract ShellB3"
+    tar -xf "$(basename "$SHELLB3_URL")" || oops "Could not extract ShellB3"
     echo "Removing downloaded ShellB3 tarball"
     rm -r "$(basename "$SHELLB3_URL")"
 elif [ "${SHELLB3_URL:(-7)}" == ".tar.gz" ]; then
@@ -121,6 +122,13 @@ chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
 # FIXME: Hack to get libproj in to ShellB3 from the system (until it gets provided by ShellB3)
 cd "$SB_NAME"/ShellB3/lib64/
 cp -P /usr/lib64/libproj* .
+
+# Temporary fix for including pytroll packages
+$SB_NAME/ShellB3/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/configobj-5.0.6.tar.gz
+$SB_NAME/ShellB3/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollsift-0.1.1.tar.gz
+$SB_NAME/ShellB3/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollimage-0.4.0.tar.gz
+$SB_NAME/ShellB3/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyresample-1.1.5.tar.gz
+$SB_NAME/ShellB3/bin/python -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/satpy-2.0.0a1.tar.gz
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
