@@ -48,7 +48,7 @@ def readme():
         return f.read()
 
 
-version = '2.0.0'
+version = '2.1.0a'
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",

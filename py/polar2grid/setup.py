@@ -73,7 +73,7 @@ if not os.getenv("USE_CYTHON", False) or cythonize is None:
             extension.sources[:] = sources
         return extensions
 
-version = '2.0.1'
+version = '2.1.0a'
 
 
 class PyTest(Command):
