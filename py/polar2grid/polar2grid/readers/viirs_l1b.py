@@ -98,8 +98,8 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
     filename = info["id"].name + ".dat"
     p2g_metadata = {
         "product_name": info["id"].name,
-        "satellite": info["platform"],
-        "instrument": info["sensor"],
+        "satellite": info["platform"].lower(),
+        "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
         "data_kind": info["standard_name"],
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
@@ -190,6 +190,9 @@ class Frontend(roles.FrontendRole):
             LOG.debug("No products specified to frontend, will try to load logical defaults products")
             products = self.default_products
 
+        kwargs.pop("overwrite_existing")
+        kwargs.pop("exit_on_error")
+        kwargs.pop("keep_intermediate")
         self.scene.load(products, **kwargs)
 
         p2g_scene = containers.SwathScene()
