@@ -27,7 +27,7 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""SatPy compatible readers and legacy P2G frontends to wrap them.
+"""Legacy P2G frontend wrapping the SatPy NUCAPS reader.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -47,32 +47,13 @@ LOG = logging.getLogger(__name__)
 
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = [".nc"]
-    DEFAULT_READER_NAME = "viirs_l1b"
-    DEFAULT_DATASETS = [
-        "I01",
-        "I02",
-        "I03",
-        "I04",
-        "I05",
-        "M01",
-        "M02",
-        "M03",
-        "M04",
-        "M05",
-        "M06",
-        "M07",
-        "M08",
-        "M09",
-        "M10",
-        "M11",
-        "M12",
-        "M13",
-        "M14",
-        "M15",
-        "M16",
-        # "histogram_dnb",
-        # "adaptive_dnb"
-    ]
+    DEFAULT_READER_NAME = "nucaps"
+    DEFAULT_DATASETS = []
+
+    def __init__(self, *args, **kwargs):
+        super(Frontend, self).__init__(*args, **kwargs)
+        reader = self.scene.readers[self.reader_name]
+        self.DEFAULT_DATASETS = reader.pressure_dataset_names["Temperature"]
 
 
 def add_frontend_argument_groups(parser):
@@ -82,42 +63,20 @@ def add_frontend_argument_groups(parser):
     """
     from polar2grid.core.script_utils import ExtendAction
     # Set defaults for other components that may be used in polar2grid processing
-    parser.set_defaults(fornav_D=40, fornav_d=2)
+    parser.set_defaults(fornav_D=40, fornav_d=2, share_remap_mask=False, remap_method="nearest")
 
     # Use the append_const action to handle adding products to the list
     group_title = "Frontend Initialization"
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
     group.add_argument("--list-products", dest="list_products", action="store_true",
                        help="List available frontend products and exit")
-    # group.add_argument("--no-tc", dest="use_terrain_corrected", action="store_false",
-    #                    help="Don't use terrain-corrected navigation")
-    # group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
-    #                    help="Fraction of day required to produce reflectance products (default 0.10)")
-    # group.add_argument("--night-fraction", dest="night_fraction", type=float, default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
-    #                    help="Fraction of night required to product products like fog (default 0.10)")
-    # group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
-    #                    help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
-    # group.add_argument("--dnb-saturation-correction", action="store_true",
-    #                    help="Enable dynamic DNB saturation correction (normally used for aurora scenes)")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     # FIXME: Probably need some proper defaults
     group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
                        help="Specify frontend products to process")
-    # group.add_argument('--i-bands', dest='products', action=ExtendConstAction, const=I_PRODUCTS,
-    #                    help="Add all I-band raw products to list of products")
-    # group.add_argument('--m-bands', dest='products', action=ExtendConstAction, const=M_PRODUCTS,
-    #                    help="Add all M-band raw products to list of products")
-    # group.add_argument('--dnb-angle-products', dest='products', action=ExtendConstAction, const=DNB_ANGLE_PRODUCTS,
-    #                    help="Add DNB-band geolocation 'angle' products to list of products")
-    # group.add_argument('--i-angle-products', dest='products', action=ExtendConstAction, const=I_ANGLE_PRODUCTS,
-    #                    help="Add I-band geolocation 'angle' products to list of products")
-    # group.add_argument('--m-angle-products', dest='products', action=ExtendConstAction, const=M_ANGLE_PRODUCTS,
-    #                    help="Add M-band geolocation 'angle' products to list of products")
-    # group.add_argument('--m-rad-products', dest='products', action=ExtendConstAction, const=M_RAD_PRODUCTS,
-    #                    help="Add M-band geolocation radiance products to list of products")
-    # group.add_argument('--i-rad-products', dest='products', action=ExtendConstAction, const=I_RAD_PRODUCTS,
-    #                    help="Add I-band geolocation radiance products to list of products")
+    group.add_argument("--pressure-levels", nargs=2, type=float, default=(110., 987.0),
+                       help="Min and max pressure value to make available")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
 
 if __name__ == "__main__":
