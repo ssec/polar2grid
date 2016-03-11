@@ -53,7 +53,22 @@ class Frontend(ReaderWrapper):
     def __init__(self, *args, **kwargs):
         super(Frontend, self).__init__(*args, **kwargs)
         reader = self.scene.readers[self.reader_name]
-        self.DEFAULT_DATASETS = reader.pressure_dataset_names["Temperature"]
+        self.DEFAULT_DATASETS = []
+        for base_name in ["Temperature"]:
+            self.DEFAULT_DATASETS.extend(reader.pressure_dataset_names[base_name])
+
+    def create_scene(self, products=None, **kwargs):
+        # P2G can't handle 3D sets so we know if they have non-pressure separated dataset names
+        # they mean all of them
+        if products:
+            old_products = products
+            products = []
+            for product in old_products:
+                if not product.endswith("mb"):
+                    products.extend(self.scene.readers[self.reader_name].pressure_dataset_names[product])
+                else:
+                    products.append(product)
+        return super(Frontend, self).create_scene(products=products, **kwargs)
 
 
 def add_frontend_argument_groups(parser):
