@@ -596,7 +596,7 @@ class Frontend(roles.FrontendRole):
                     "m07_files", "m03_files", "m04_files", "m08_files",
                     "m10_files", "m11_files"]
         try:
-            ft = FT_GMTCO if self.use_terrain_corrected else FT_GIMGO
+            ft = FT_GMTCO if self.use_terrain_corrected else FT_GMODO
             if ft not in self.file_readers:
                 LOG.error("M-band geolocation is required for crefl processing")
                 raise RuntimeError("M-band geolocation is required for crefl processing")
@@ -604,7 +604,7 @@ class Frontend(roles.FrontendRole):
 
             # Use the VIIRS Frontend to determine if we have enough day time data
             LOG.debug("Loading the VIIRS frontend to check for daytime data")
-            f = viirs_module.Frontend(search_paths=geo_files)
+            f = viirs_module.Frontend(search_paths=geo_files, use_terrain_corrected=self.use_terrain_corrected)
             scene = f.create_scene(products=[viirs_module.PRODUCT_M_SZA])
             day_percentage = f._get_day_percentage(scene[viirs_module.PRODUCT_M_SZA])
             if day_percentage < 10:
