@@ -138,7 +138,6 @@ class ReaderWrapper(roles.FrontendRole):
     DEFAULT_READER_NAME = None
     DEFAULT_DATASETS = []
 
-
     def __init__(self, **kwargs):
         self.reader_name = kwargs.pop("reader_name", self.DEFAULT_READER_NAME)
         super(ReaderWrapper, self).__init__(**kwargs)
@@ -158,11 +157,11 @@ class ReaderWrapper(roles.FrontendRole):
 
     @property
     def available_product_names(self):
-        return sorted(set(k.name for k in self.scene.readers[self.reader_name].datasets.keys()))
+        return self.scene.available_datasets(reader_name=self.reader_name)
 
     @property
     def all_product_names(self):
-        return sorted(set(k.name for k in self.scene.readers[self.reader_name].datasets.keys()))
+        return self.scene.all_datasets(reader_name=self.reader_name)
 
     @property
     def default_products(self):
