@@ -41,6 +41,7 @@ __docformat__ = "restructuredtext en"
 
 import pkg_resources
 from polar2grid.remap import Remapper, add_remap_argument_groups
+import numpy as np
 
 import sys
 import logging
@@ -363,6 +364,30 @@ def main(argv=sys.argv[1:]):
                 LOG.error("Could not properly modify scene using compositor '%s'" % (c,))
                 if args.exit_on_error:
                     raise RuntimeError("Could not properly modify scene using compositor '%s'" % (c,))
+
+        # HACK: Create SatPy composites that were either separated before
+        # resampling or needed resampling to be created
+        rgbs = {}
+        for product_name in gridded_scene.keys():
+            rgb_name = product_name[:-6]
+            if product_name.endswith("rgb_0") or product_name.endswith("rgb_1") or product_name.endswith("rgb_2"):
+                if rgb_name not in rgbs:
+                    rgbs[rgb_name] = [None, None, None]
+                chn_idx = int(product_name[-1])
+                rgbs[rgb_name][chn_idx] = product_name
+        for rgb_name, v in rgbs.items():
+            r = gridded_scene.pop(v[0])
+            g = gridded_scene.pop(v[1])
+            b = gridded_scene.pop(v[2])
+            new_info = r.copy()
+            new_info["grid_data"] = new_info["grid_data"].replace(v[0], rgb_name)
+            new_info["product_name"] = rgb_name
+            data = np.memmap(new_info["grid_data"], dtype=new_info["data_type"],
+                             mode="w+", shape=(3, new_info["grid_definition"]["height"], new_info["grid_definition"]["width"]))
+            data[0] = r.get_data_array()[:]
+            data[1] = g.get_data_array()[:]
+            data[2] = b.get_data_array()[:]
+            gridded_scene[rgb_name] = new_info
 
         # Backend
         try:

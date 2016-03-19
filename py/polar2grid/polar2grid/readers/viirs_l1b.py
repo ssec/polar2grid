@@ -70,8 +70,8 @@ class Frontend(ReaderWrapper):
         "M14",
         "M15",
         "M16",
-        # "histogram_dnb",
-        # "adaptive_dnb"
+        "histogram_dnb",
+        "adaptive_dnb"
     ]
 
 
