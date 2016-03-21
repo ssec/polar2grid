@@ -117,6 +117,7 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
 
     p2g_metadata = {
         "product_name": info["id"].name,
+        "id": info["id"],
         "satellite": info["platform"].lower(),
         "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
         "data_kind": info["standard_name"],
@@ -162,6 +163,56 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
             p2g_arr[:] = ds.data[chn_idx]
             p2g_arr[ds.mask[chn_idx]] = np.nan
             yield containers.SwathProduct(**tmp_info)
+
+
+def dataset_to_gridded_product(ds, overwrite_existing=False):
+    info = ds.info.copy()
+    info.pop("area", None)
+    if ds.ndim == 3:
+        # RGB composite
+        if ds.shape[0] in [3, 4]:
+            channels = ds.shape[0]
+        else:
+            # unpreferred array orientation
+            channels = ds.shape[-1]
+            ds = np.rollaxis(ds, 2)
+    else:
+        channels = 1
+
+    if ds.ndim == 1:
+        rows, cols = ds.shape[-2], 1
+    else:
+        rows, cols = ds.shape[-2:]
+
+    p2g_metadata = {
+        "product_name": info["id"].name,
+        "satellite": info["platform"].lower(),
+        "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
+        "data_kind": info["standard_name"],
+        "begin_time": info["start_time"],
+        "end_time": info["end_time"],
+        "fill_value": np.nan,
+        # "swath_columns": cols,
+        # "swath_rows": rows,
+        "rows_per_scan": info["rows_per_scan"],
+        "data_type": ds.dtype,
+        "channels": channels,
+    }
+    info.update(p2g_metadata)
+
+    filename = info["id"].name + ".dat"
+    info["grid_data"] = filename
+    if os.path.isfile(filename):
+        if not overwrite_existing:
+            LOG.error("Binary file already exists: %s" % (filename,))
+            raise RuntimeError("Binary file already exists: %s" % (filename,))
+        else:
+            LOG.warning("Binary file already exists, will overwrite: %s", filename)
+    p2g_arr = np.memmap(filename, mode="w+", dtype=ds.dtype, shape=ds.shape)
+    p2g_arr[:] = ds.data
+    p2g_arr[ds.mask] = np.nan
+    return containers.GriddedProduct(**info)
+
 
 class ReaderWrapper(roles.FrontendRole):
     FILE_EXTENSIONS = []
@@ -221,6 +272,7 @@ class ReaderWrapper(roles.FrontendRole):
                 p2g_scene[swath_product["product_name"]] = swath_product
 
         # Delete the satpy scene so memory is cleared out
+        self.wishlist = self.scene.wishlist
         self.scene = None
         return p2g_scene
 

@@ -41,6 +41,7 @@ __docformat__ = "restructuredtext en"
 
 import pkg_resources
 from polar2grid.remap import Remapper, add_remap_argument_groups
+from polar2grid.readers import ReaderWrapper
 import numpy as np
 
 import sys
@@ -365,29 +366,65 @@ def main(argv=sys.argv[1:]):
                 if args.exit_on_error:
                     raise RuntimeError("Could not properly modify scene using compositor '%s'" % (c,))
 
-        # HACK: Create SatPy composites that were either separated before
-        # resampling or needed resampling to be created
-        rgbs = {}
-        for product_name in gridded_scene.keys():
-            rgb_name = product_name[:-6]
-            if product_name.endswith("rgb_0") or product_name.endswith("rgb_1") or product_name.endswith("rgb_2"):
-                if rgb_name not in rgbs:
-                    rgbs[rgb_name] = [None, None, None]
-                chn_idx = int(product_name[-1])
-                rgbs[rgb_name][chn_idx] = product_name
-        for rgb_name, v in rgbs.items():
-            r = gridded_scene.pop(v[0])
-            g = gridded_scene.pop(v[1])
-            b = gridded_scene.pop(v[2])
-            new_info = r.copy()
-            new_info["grid_data"] = new_info["grid_data"].replace(v[0], rgb_name)
-            new_info["product_name"] = rgb_name
-            data = np.memmap(new_info["grid_data"], dtype=new_info["data_type"],
-                             mode="w+", shape=(3, new_info["grid_definition"]["height"], new_info["grid_definition"]["width"]))
-            data[0] = r.get_data_array()[:]
-            data[1] = g.get_data_array()[:]
-            data[2] = b.get_data_array()[:]
-            gridded_scene[rgb_name] = new_info
+        if isinstance(f, ReaderWrapper):
+            this_grid_definition = None
+            # HACK: Create SatPy composites that were either separated before
+            # resampling or needed resampling to be created
+            rgbs = {}
+            for product_name in gridded_scene.keys():
+                rgb_name = product_name[:-6]
+                # Keep track of one of the grid definitions
+                if this_grid_definition is None:
+                    this_grid_definition = gridded_scene[product_name]["grid_definition"]
+
+                if product_name.endswith("rgb_0") or product_name.endswith("rgb_1") or product_name.endswith("rgb_2"):
+                    if rgb_name not in rgbs:
+                        rgbs[rgb_name] = [None, None, None]
+                    chn_idx = int(product_name[-1])
+                    rgbs[rgb_name][chn_idx] = product_name
+            for rgb_name, v in rgbs.items():
+                r = gridded_scene.pop(v[0])
+                g = gridded_scene.pop(v[1])
+                b = gridded_scene.pop(v[2])
+                new_info = r.copy()
+                new_info["grid_data"] = new_info["grid_data"].replace(v[0], rgb_name)
+                new_info["product_name"] = rgb_name
+                data = np.memmap(new_info["grid_data"], dtype=new_info["data_type"],
+                                 mode="w+", shape=(3, new_info["grid_definition"]["height"], new_info["grid_definition"]["width"]))
+                data[0] = r.get_data_array()[:]
+                data[1] = g.get_data_array()[:]
+                data[2] = b.get_data_array()[:]
+                gridded_scene[rgb_name] = new_info
+
+            # Create composites that satpy couldn't complete until after remapping
+            from satpy.scene import Scene, load_compositors, DatasetID
+            from satpy.projectable import Projectable
+            from polar2grid.readers import dataset_to_gridded_product
+            tmp_scene = Scene()
+            for k, v in gridded_scene.items():
+                tmp_scene[v["id"]] = Projectable(v.get_data_array(), **v)
+                tmp_scene[v["id"]].info["area"] = this_grid_definition.to_satpy_area()
+                # tmp_scene[v["id"]].info = {}
+                if v["sensor"] not in tmp_scene.info["sensor"]:
+                    tmp_scene.info["sensor"].append(v["sensor"])
+            # Overwrite the wishlist that will include the above assigned datasets
+            tmp_scene.wishlist = f.wishlist
+            composite_names = [x for x in f.wishlist if not isinstance(x, DatasetID)]
+            tmp_scene.compositors.update(load_compositors(composite_names, list(tmp_scene.info["sensor"])[0],
+                                                     ppp_config_dir=tmp_scene.ppp_config_dir))
+            tmp_scene.compute()
+            tmp_scene.unload()
+            # Add any new Datasets to our P2G Scene if SatPy created them
+            for ds in tmp_scene:
+                if ds.info["id"].name not in gridded_scene:
+                    LOG.debug("Adding Dataset from SatPy Commpositing: %s", ds.info["id"])
+                    gridded_scene[ds.info["id"].name] = dataset_to_gridded_product(ds)
+                    gridded_scene[ds.info["id"].name]["grid_definition"] = this_grid_definition
+            # Remove any Products from P2G Scene that SatPy decided it didn't need anymore
+            for k, v in list(gridded_scene.items()):
+                if v["id"].name not in tmp_scene:
+                    LOG.debug("Removing Dataset that is no longer used: %s", k)
+                    del gridded_scene[k]
 
         # Backend
         try:

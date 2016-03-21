@@ -680,6 +680,18 @@ class GridDefinition(GeographicDefinition):
         LOG.debug("Lower-left corner: (%f, %f); Upper-right corner: (%f, %f)", lon_ll, lat_ll, lon_ur, lat_ur)
         return Basemap(llcrnrlon=lon_ll, llcrnrlat=lat_ll, urcrnrlon=lon_ur, urcrnrlat=lat_ur, **proj4_dict)
 
+    def to_satpy_area(self):
+        from pyresample.geometry import AreaDefinition
+        return AreaDefinition(
+            self["grid_name"],
+            self["grid_name"],
+            self["grid_name"],
+            self.proj4_dict,
+            self["width"],
+            self["height"],
+            area_extent=self.xy_lowerleft + self.xy_upperright,
+        )
+
 
 class SwathProduct(BaseProduct):
     """Swath product class for image products geolocated using longitude and latitude points.
@@ -812,11 +824,15 @@ class GriddedProduct(BaseProduct):
         return (self["grid_definition"]["height"], self["grid_definition"]["width"])
 
     def from_swath_product(self, swath_product):
-        for k in ["product_name", "satellite", "instrument",
-                  "begin_time", "end_time", "data_type", "data_kind",
-                  "description", "source_filenames", "units"]:
-            if k in swath_product:
-                self[k] = swath_product[k]
+        # for k in ["product_name", "satellite", "instrument",
+        #           "begin_time", "end_time", "data_type", "data_kind",
+        #           "description", "source_filenames", "units"]:
+        #     if k in swath_product:
+        #         self[k] = swath_product[k]
+        info = swath_product.copy(as_dict=True)
+        for k in ["swath_rows", "swath_cols", "swath_data"]:
+            info.pop(k, None)
+        self.update(**swath_product)
 
     def get_data_array(self, item="grid_data", mode="r"):
         """Get FBF item as a numpy array.
