@@ -402,11 +402,12 @@ def main(argv=sys.argv[1:]):
             from polar2grid.readers import dataset_to_gridded_product
             tmp_scene = Scene()
             for k, v in gridded_scene.items():
+                v["sensor"] = set([v["sensor"]])  # turn sensor back in to a set to match satpy usage
                 tmp_scene[v["id"]] = Projectable(v.get_data_array(), **v)
                 tmp_scene[v["id"]].info["area"] = this_grid_definition.to_satpy_area()
                 # tmp_scene[v["id"]].info = {}
                 if v["sensor"] not in tmp_scene.info["sensor"]:
-                    tmp_scene.info["sensor"].append(v["sensor"])
+                    tmp_scene.info["sensor"].extend(v["sensor"])
             # Overwrite the wishlist that will include the above assigned datasets
             tmp_scene.wishlist = f.wishlist
             composite_names = [x for x in f.wishlist if not isinstance(x, DatasetID)]

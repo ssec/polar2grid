@@ -111,7 +111,7 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
         channels = 1
 
     if ds.ndim == 1:
-        rows, cols = ds.shape[-2], 1
+        rows, cols = ds.shape[0], 1
     else:
         rows, cols = ds.shape[-2:]
 

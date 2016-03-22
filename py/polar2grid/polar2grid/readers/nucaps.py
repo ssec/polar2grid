@@ -54,7 +54,7 @@ class Frontend(ReaderWrapper):
         super(Frontend, self).__init__(*args, **kwargs)
         reader = self.scene.readers[self.reader_name]
         self.DEFAULT_DATASETS = []
-        for base_name in ["Temperature"]:
+        for base_name in ["Temperature", "H2O_MR"]:
             self.DEFAULT_DATASETS.extend(reader.pressure_dataset_names[base_name])
 
     def create_scene(self, products=None, **kwargs):
