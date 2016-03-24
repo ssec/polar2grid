@@ -43,6 +43,10 @@ import pkg_resources
 from polar2grid.remap import Remapper, add_remap_argument_groups
 from polar2grid.readers import ReaderWrapper
 import numpy as np
+from datetime import datetime
+from satpy.scene import Scene, load_compositors, DatasetID
+from satpy.projectable import Projectable
+from polar2grid.readers import dataset_to_gridded_product
 
 import sys
 import logging
@@ -382,6 +386,7 @@ def main(argv=sys.argv[1:]):
                         rgbs[rgb_name] = [None, None, None]
                     chn_idx = int(product_name[-1])
                     rgbs[rgb_name][chn_idx] = product_name
+            LOG.debug("Putting RGBs back together again")
             for rgb_name, v in rgbs.items():
                 r = gridded_scene.pop(v[0])
                 g = gridded_scene.pop(v[1])
@@ -397,35 +402,33 @@ def main(argv=sys.argv[1:]):
                 gridded_scene[rgb_name] = new_info
 
             # Create composites that satpy couldn't complete until after remapping
-            from satpy.scene import Scene, load_compositors, DatasetID
-            from satpy.projectable import Projectable
-            from polar2grid.readers import dataset_to_gridded_product
-            tmp_scene = Scene()
-            for k, v in gridded_scene.items():
-                v["sensor"] = set([v["sensor"]])  # turn sensor back in to a set to match satpy usage
-                tmp_scene[v["id"]] = Projectable(v.get_data_array(), **v)
-                tmp_scene[v["id"]].info["area"] = this_grid_definition.to_satpy_area()
-                # tmp_scene[v["id"]].info = {}
-                if v["sensor"] not in tmp_scene.info["sensor"]:
-                    tmp_scene.info["sensor"].extend(v["sensor"])
-            # Overwrite the wishlist that will include the above assigned datasets
-            tmp_scene.wishlist = f.wishlist
             composite_names = [x for x in f.wishlist if not isinstance(x, DatasetID)]
-            tmp_scene.compositors.update(load_compositors(composite_names, list(tmp_scene.info["sensor"])[0],
-                                                     ppp_config_dir=tmp_scene.ppp_config_dir))
-            tmp_scene.compute()
-            tmp_scene.unload()
-            # Add any new Datasets to our P2G Scene if SatPy created them
-            for ds in tmp_scene:
-                if ds.info["id"].name not in gridded_scene:
-                    LOG.debug("Adding Dataset from SatPy Commpositing: %s", ds.info["id"])
-                    gridded_scene[ds.info["id"].name] = dataset_to_gridded_product(ds)
-                    gridded_scene[ds.info["id"].name]["grid_definition"] = this_grid_definition
-            # Remove any Products from P2G Scene that SatPy decided it didn't need anymore
-            for k, v in list(gridded_scene.items()):
-                if v["id"].name not in tmp_scene:
-                    LOG.debug("Removing Dataset that is no longer used: %s", k)
-                    del gridded_scene[k]
+            if composite_names:
+                tmp_scene = Scene()
+                for k, v in gridded_scene.items():
+                    v["sensor"] = set([v["sensor"]])  # turn sensor back in to a set to match satpy usage
+                    tmp_scene[v["id"]] = Projectable(v.get_data_array(), **v)
+                    tmp_scene[v["id"]].info["area"] = this_grid_definition.to_satpy_area()
+                    # tmp_scene[v["id"]].info = {}
+                    if v["sensor"] not in tmp_scene.info["sensor"]:
+                        tmp_scene.info["sensor"].extend(v["sensor"])
+                # Overwrite the wishlist that will include the above assigned datasets
+                tmp_scene.wishlist = f.wishlist
+                tmp_scene.compositors.update(load_compositors(composite_names, list(tmp_scene.info["sensor"])[0],
+                                                         ppp_config_dir=tmp_scene.ppp_config_dir))
+                tmp_scene.compute()
+                tmp_scene.unload()
+                # Add any new Datasets to our P2G Scene if SatPy created them
+                for ds in tmp_scene:
+                    if ds.info["id"].name not in gridded_scene:
+                        LOG.debug("Adding Dataset from SatPy Commpositing: %s", ds.info["id"])
+                        gridded_scene[ds.info["id"].name] = dataset_to_gridded_product(ds)
+                        gridded_scene[ds.info["id"].name]["grid_definition"] = this_grid_definition
+                # Remove any Products from P2G Scene that SatPy decided it didn't need anymore
+                for k, v in list(gridded_scene.items()):
+                    if v["id"].name not in tmp_scene:
+                        LOG.debug("Removing Dataset that is no longer used: %s", k)
+                        del gridded_scene[k]
 
         # Backend
         try:
