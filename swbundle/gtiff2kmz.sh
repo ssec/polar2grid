@@ -38,7 +38,7 @@ source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
 # Call the python module to do the processing, passing all arguments
 # Similar, but not as nice of an image:
-# $POLAR2GRID_HOME/ShellB3/bin/gdal_translate -of KMLSUPEROVERLAY -co FORMAT=JPEG $@
+# ${P2G_SHELLB3_DIR}/bin/gdal_translate -of KMLSUPEROVERLAY -co FORMAT=JPEG $@
 
 if [ $# -eq 1 ]; then
     input_fn=$1
@@ -55,7 +55,7 @@ fi
 
 # Create a tiled KML directory
 echo "Creating temporary tiled KML directory..."
-$POLAR2GRID_HOME/ShellB3/bin/gdal2tiles.py -p geodetic $input_fn $tile_dir || { echo "ERROR: Could not create tiled KML"; exit 1; }
+${P2G_SHELLB3_DIR}/bin/gdal2tiles.py -p geodetic $input_fn $tile_dir || { echo "ERROR: Could not create tiled KML"; exit 1; }
 
 # Zip the KML directory in to a KMZ file
 echo "Zipping KML directory in to a KMZ..."

@@ -36,4 +36,4 @@ fi
 source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
 # Call the python module to do the processing, passing all arguments
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.glue acspo gtiff $@ -vv
+${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue acspo gtiff $@ -vv

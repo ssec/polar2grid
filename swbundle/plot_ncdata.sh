@@ -42,7 +42,7 @@ fi
 source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 
 # Generate NC product images
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.plot_ncdata $@ || oops "Could not generate png images from NC files."
+${P2G_SHELLB3_DIR}/bin/python -m polar2grid.plot_ncdata $@ || oops "Could not generate png images from NC files."
 
 # End of all tests
 echo "SUCCESS"

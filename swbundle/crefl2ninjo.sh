@@ -39,4 +39,4 @@ source $POLAR2GRID_HOME/bin/polar2grid_env.sh
 export ANCPATH=${ANCPATH:-$POLAR2GRID_HOME/bin}
 # Call the python module to do the processing, passing all arguments
 # Defaults to always trying to create true color images
-$POLAR2GRID_HOME/ShellB3/bin/python -m polar2grid.glue crefl ninjo true_color $@ -vv
+${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue crefl ninjo true_color $@ -vv

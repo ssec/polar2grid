@@ -35,14 +35,23 @@ if [ -z "$POLAR2GRID_REV" ]; then
       export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
     fi
 
+    export P2G_SHELLB3_DIR=$POLAR2GRID_HOME/common/ShellB3
+
     # Add all polar2grid scripts to PATH
     export PATH=$POLAR2GRID_HOME/bin:$PATH
     # Add ShellB3 to PATH
-    export PATH=$POLAR2GRID_HOME/ShellB3/bin:$PATH
+    export PATH=$SHELLB3_DIR/bin:$PATH
     # Don't let someone else's PYTHONPATH mess us up
     unset PYTHONPATH
     # Point gdal utilities to the proper data location
-    export GDAL_DATA=$POLAR2GRID_HOME/ShellB3/share/gdal
+    export GDAL_DATA=$SHELLB3_DIR/share/gdal
+
+    # insurance
+    export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib64
+    export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib:${LD_LIBRARY_PATH}
+    export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common:${LD_LIBRARY_PATH}
+    export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/local/lib64:${LD_LIBRARY_PATH}
+    export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/local/lib:${LD_LIBRARY_PATH}
 
     export POLAR2GRID_REV="$Id$"
 fi

@@ -4,7 +4,7 @@
 # Creates a software bundle directory and a tarball of that directory
 
 #SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3-Linux-x86_64-20140212-r840-core-cspp.tar.gz"
-SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/shellb27.tar.gz"
+SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/ssec/davidh/cspp_common_py27.tar.gz"
 BASE_P2G_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PY_DIR="$BASE_P2G_DIR"/py
 BUNDLE_SCRIPTS_DIR="$BASE_P2G_DIR"/swbundle
@@ -61,8 +61,9 @@ else
     cp -r "$SHELLB3_URL" ./ShellB3 || oops "Could not copy ShellB3 from filesystem"
 fi
 # PATCH: ShellB3 includes some links it shouldn't
-rm -f "ShellB3/README.txt"
-rm -f "ShellB3/tests"
+SHELLB3_DIR="${SB_NAME}/common/ShellB3"
+rm -f "${SHELLB3_DIR}/README.txt"
+rm -f "${SHELLB3_DIR}/tests"
 
 # Copy the grid directory
 echo "Copying user grid directory to software bundle"
@@ -104,12 +105,12 @@ cp ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/
 
 # Create python packages
 echo "Creating python packages..."
-export PATH=${SB_NAME}/ShellB3/bin:$PATH
+export PATH=${SHELLB3_DIR}/bin:$PATH
 cd "$PY_DIR"
 
 make clean
 # Have to use 'python setup.py install' because using easy_install on source tarballs doesn't compile extensions for some reason
-CFLAGS="-fno-strict-aliasing -L${SB_NAME}/ShellB3/lib" INSTALL_DIR="${SB_NAME}/ShellB3" make all_install
+CFLAGS="-fno-strict-aliasing -L${SHELLB3_DIR}/lib" INSTALL_DIR="${SHELLB3_DIR}" make all_install
 
 # Copy the release notes to the tarball
 cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
@@ -120,15 +121,15 @@ wget http://realearth.ssec.wisc.edu/upload/re_upload -O wmsupload.sh || oops "Co
 chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
 
 # FIXME: Hack to get libproj in to ShellB3 from the system (until it gets provided by ShellB3)
-cd "$SB_NAME"/ShellB3/lib64/
+cd "${SHELLB3_DIR}"/lib64/
 cp -P /usr/lib64/libproj* .
 
 # Temporary fix for including pytroll packages
-$SB_NAME/ShellB3/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/configobj-5.0.6.tar.gz
-$SB_NAME/ShellB3/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollsift-0.1.1.tar.gz
-$SB_NAME/ShellB3/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollimage-0.4.0.tar.gz
-$SB_NAME/ShellB3/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyresample-1.1.5.tar.gz
-$SB_NAME/ShellB3/bin/python -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/satpy-2.0.0a1.tar.gz
+${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/configobj-5.0.6.tar.gz
+${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollsift-0.1.1.tar.gz
+${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollimage-0.4.0.tar.gz
+${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyresample-1.1.5.tar.gz
+${SHELLB3_DIR}/bin/python -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/satpy-2.0.0a1.tar.gz
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
