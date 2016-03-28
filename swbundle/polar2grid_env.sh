@@ -45,6 +45,8 @@ if [ -z "$POLAR2GRID_REV" ]; then
     unset PYTHONPATH
     # Point gdal utilities to the proper data location
     export GDAL_DATA=$SHELLB3_DIR/share/gdal
+    # Let SatPy know where we put things
+    export SATPY_ANCPATH=$POLAR2GRID_HOME/bin
 
     # insurance
     export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib64
