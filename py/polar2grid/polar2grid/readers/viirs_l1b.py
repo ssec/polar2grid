@@ -45,33 +45,46 @@ from polar2grid.readers import ReaderWrapper, main
 LOG = logging.getLogger(__name__)
 
 
+I_PRODUCTS = [
+    "I01",
+    "I02",
+    "I03",
+    "I04",
+    "I05",
+]
+M_PRODUCTS = [
+    "M01",
+    "M02",
+    "M03",
+    "M04",
+    "M05",
+    "M06",
+    "M07",
+    "M08",
+    "M09",
+    "M10",
+    "M11",
+    "M12",
+    "M13",
+    "M14",
+    "M15",
+    "M16",
+]
+TRUE_COLOR_PRODUCTS = [
+    "true_color"
+]
+FALSE_COLOR_PRODUCTS = [
+    "false_color"
+]
+
+
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = [".nc"]
     DEFAULT_READER_NAME = "viirs_l1b"
-    DEFAULT_DATASETS = [
-        "I01",
-        "I02",
-        "I03",
-        "I04",
-        "I05",
-        "M01",
-        "M02",
-        "M03",
-        "M04",
-        "M05",
-        "M06",
-        "M07",
-        "M08",
-        "M09",
-        "M10",
-        "M11",
-        "M12",
-        "M13",
-        "M14",
-        "M15",
-        "M16",
+    DEFAULT_DATASETS = I_PRODUCTS + M_PRODUCTS + [
         "histogram_dnb",
-        "adaptive_dnb"
+        "adaptive_dnb",
+        "dynamic_dnb",
     ]
 
 
@@ -80,7 +93,7 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    from polar2grid.core.script_utils import ExtendAction
+    from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # Set defaults for other components that may be used in polar2grid processing
     parser.set_defaults(fornav_D=40, fornav_d=2)
 
@@ -104,10 +117,14 @@ def add_frontend_argument_groups(parser):
     # FIXME: Probably need some proper defaults
     group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
                        help="Specify frontend products to process")
-    # group.add_argument('--i-bands', dest='products', action=ExtendConstAction, const=I_PRODUCTS,
-    #                    help="Add all I-band raw products to list of products")
-    # group.add_argument('--m-bands', dest='products', action=ExtendConstAction, const=M_PRODUCTS,
-    #                    help="Add all M-band raw products to list of products")
+    group.add_argument('--i-bands', dest='products', action=ExtendConstAction, const=I_PRODUCTS,
+                       help="Add all I-band raw products to list of products")
+    group.add_argument('--m-bands', dest='products', action=ExtendConstAction, const=M_PRODUCTS,
+                       help="Add all M-band raw products to list of products")
+    group.add_argument("--true-color", dest='products', action=ExtendConstAction, const=TRUE_COLOR_PRODUCTS,
+                       help="Add the True Color product to the list of products")
+    group.add_argument("--false-color", dest='products', action=ExtendConstAction, const=FALSE_COLOR_PRODUCTS,
+                       help="Add the False Color product to the list of products")
     # group.add_argument('--dnb-angle-products', dest='products', action=ExtendConstAction, const=DNB_ANGLE_PRODUCTS,
     #                    help="Add DNB-band geolocation 'angle' products to list of products")
     # group.add_argument('--i-angle-products', dest='products', action=ExtendConstAction, const=I_ANGLE_PRODUCTS,
