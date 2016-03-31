@@ -47,6 +47,7 @@ if [ -z "$POLAR2GRID_REV" ]; then
     export GDAL_DATA=$SHELLB3_DIR/share/gdal
     # Let SatPy know where we put things
     export SATPY_ANCPATH=$POLAR2GRID_HOME/bin
+    export PPP_CONFIG_DIR=$POLAR2GRID_HOME/etc
 
     # insurance
     export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib64

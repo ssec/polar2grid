@@ -124,6 +124,9 @@ chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
 cd "${SHELLB3_DIR}"/lib64/
 cp -P /usr/lib64/libproj* .
 
+# Copy SatPy configurations
+cp -r $BASE_P2G_DIR/etc $SB_NAME/ || oops "Couldn't copy configuration 'etc' directory"
+
 # Temporary fix for including pytroll packages
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/configobj-5.0.6.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollsift-0.1.1.tar.gz
