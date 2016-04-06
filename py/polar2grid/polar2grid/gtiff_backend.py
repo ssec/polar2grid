@@ -161,6 +161,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
 np2etype = {
     numpy.uint16: gdal.GDT_UInt16,
     numpy.uint8: gdal.GDT_Byte,
+    numpy.float32: gdal.GDT_Float32,
 }
 
 
@@ -203,9 +204,13 @@ class Backend(roles.BackendRole):
                 LOG.warning("Geotiff file already exists, will overwrite: %s", output_filename)
 
         try:
-            LOG.debug("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
-            data = self.rescaler.rescale_product(gridded_product, data_type,
-                                                 inc_by_one=inc_by_one, fill_value=fill_value)
+            if numpy.issubdtype(data_type, numpy.floating):
+                # assume they don't want to scale floating point
+                data = gridded_product.get_data_array()
+            else:
+                LOG.debug("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
+                data = self.rescaler.rescale_product(gridded_product, data_type,
+                                                     inc_by_one=inc_by_one, fill_value=fill_value)
 
             # Create the geotiff
             # X and Y rotation are 0 in most cases so we just hard-code it
