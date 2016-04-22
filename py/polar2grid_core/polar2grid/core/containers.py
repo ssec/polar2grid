@@ -682,6 +682,10 @@ class GridDefinition(GeographicDefinition):
 
     def to_satpy_area(self):
         from pyresample.geometry import AreaDefinition
+        xy_ll = self.xy_lowerleft
+        xy_ll = (xy_ll[0] - self["cell_width"]/2., xy_ll[1] + self["cell_height"]/2.)
+        xy_ur = self.xy_upperright
+        xy_ur = (xy_ur[0] + self["cell_width"]/2., xy_ur[1] - self["cell_height"]/2.)
         return AreaDefinition(
             self["grid_name"],
             self["grid_name"],
@@ -689,7 +693,7 @@ class GridDefinition(GeographicDefinition):
             self.proj4_dict,
             self["width"],
             self["height"],
-            area_extent=self.xy_lowerleft + self.xy_upperright,
+            area_extent=xy_ll + xy_ur,
         )
 
 
