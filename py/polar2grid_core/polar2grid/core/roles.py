@@ -820,11 +820,11 @@ class FrontendRole(object):
                     fp = os.path.join(p, fn)
                     ext = os.path.splitext(fp)[1]
                     if ext in extensions:
-                        yield os.path.realpath(fp)
+                        yield os.path.abspath(fp)
             elif os.path.isfile(p):
                 ext = os.path.splitext(p)[1]
                 if ext in extensions:
-                    yield os.path.realpath(p)
+                    yield os.path.abspath(p)
                 elif warn_invalid:
                     LOG.warning("File is not a valid file for this frontend: %s", p)
             else:
