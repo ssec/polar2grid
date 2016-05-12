@@ -834,7 +834,7 @@ class GriddedProduct(BaseProduct):
         #     if k in swath_product:
         #         self[k] = swath_product[k]
         info = swath_product.copy(as_dict=True)
-        for k in ["swath_rows", "swath_cols", "swath_data"]:
+        for k in ["swath_rows", "swath_cols", "swath_data", "swath_definition"]:
             info.pop(k, None)
         self.update(**swath_product)
 
