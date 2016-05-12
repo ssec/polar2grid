@@ -197,12 +197,6 @@ class Remapper(object):
             cols_arr = swath_definition.copy_longitude_array(filename=cols_fn, read_only=False)
             points_in_grid, _, _ = ll2cr.ll2cr(cols_arr, rows_arr, grid_definition,
                                                fill_in=swath_definition["fill_value"])
-            # rows_arr = numpy.memmap(rows_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
-            # cols_arr = numpy.memmap(cols_fn, dtype=lat_arr.dtype, mode="w+", shape=lat_arr.shape)
-            # points_in_grid, _, _ = ll2cr.ll2cr(lon_arr, lat_arr, grid_definition,
-            #                                    fill_in=swath_definition["fill_value"],
-            #                                    cols_out=cols_arr, rows_out=rows_arr)
-
             grid_str = str(grid_definition).replace("\n", "\n\t")
             LOG.debug("Grid information:\n\t%s", grid_str)
         except StandardError:
@@ -256,16 +250,18 @@ class Remapper(object):
             geo_id = swath_def["swath_name"]
             product_groups[geo_id].append(product_name)
 
+        # keep a copy of the original grid definition
+        # if a shared grid definition isn't used then
+        # we start from the original
+        orig_grid_def = grid_def
         for geo_id, product_names in product_groups.items():
             try:
                 LOG.debug("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(sorted(product_names)))
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
                 if not share_dynamic_grids:
-                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def.copy(),
-                                                      swath_usage=kwargs.get("swath_usage", SWATH_USAGE))
-                else:
-                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def,
-                                                      swath_usage=kwargs.get("swath_usage", SWATH_USAGE))
+                    grid_def = orig_grid_def.copy()
+                cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def,
+                                                  swath_usage=kwargs.get("swath_usage", SWATH_USAGE))
             except StandardError:
                 LOG.error("Remapping error")
                 if self.exit_on_error:
@@ -388,6 +384,7 @@ class Remapper(object):
             geo_id = swath_def["swath_name"]
             product_groups[geo_id].append(product_name)
 
+        orig_grid_def = grid_def
         for geo_id, product_names in product_groups.items():
             pp_names = "\n\t".join(product_names)
             LOG.debug("Running ll2cr on the geolocation data for the following products:\n\t%s", pp_names)
@@ -398,9 +395,8 @@ class Remapper(object):
             try:
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
                 if not share_dynamic_grids:
-                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def.copy())
-                else:
-                    cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def)
+                    grid_def = orig_grid_def.copy()
+                cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def)
             except StandardError:
                 LOG.error("Remapping error")
                 if self.exit_on_error:
@@ -523,7 +519,7 @@ def add_remap_argument_groups(parser):
                        help="Nearest neighbor search distance upper bound in units of grid cell")
     group.add_argument("--no-share-mask", dest="share_remap_mask", action="store_false",
                        help="Don't share invalid masks between nearest neighbor resampling (slow)")
-    group.add_argument("--no-share-grid", dest="share_dynamic_grid", action="store_false",
+    group.add_argument("--no-share-grid", dest="share_dynamic_grids", action="store_false",
                        help="Calculate dynamic grid attributes for every grid (instead of sharing highest resolution)")
     return ["Remapping Initialization", "Remapping"]
 
