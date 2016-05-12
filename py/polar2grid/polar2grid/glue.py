@@ -406,7 +406,8 @@ def main(argv=sys.argv[1:]):
             if composite_names:
                 tmp_scene = Scene()
                 for k, v in gridded_scene.items():
-                    v["sensor"] = set([v["sensor"]])  # turn sensor back in to a set to match satpy usage
+                    if not isinstance(v["sensor"], set):
+                        v["sensor"] = set([v["sensor"]])  # turn sensor back in to a set to match satpy usage
                     tmp_scene[v["id"]] = Projectable(v.get_data_array(), **v)
                     tmp_scene[v["id"]].info["area"] = this_grid_definition.to_satpy_area()
                     # tmp_scene[v["id"]].info = {}
