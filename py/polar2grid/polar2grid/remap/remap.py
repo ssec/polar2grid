@@ -82,10 +82,11 @@ from python.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.containers import GriddedProduct, GriddedScene, SwathScene
+from polar2grid.core.containers import GriddedProduct, GriddedScene, SwathScene, GridDefinition
 from polar2grid.remap import ll2cr as ll2cr  # gridinator
 from polar2grid.remap import fornav
 from polar2grid.grids import GridManager
+from satpy import Scene
 
 import os
 import sys
@@ -101,6 +102,8 @@ from scipy.spatial import cKDTree
 LOG = logging.getLogger(__name__)
 SWATH_USAGE = os.environ.get("P2G_SWATH_USAGE", 0)
 GRID_COVERAGE = os.environ.get("P2G_GRID_COVERAGE", 0.1)
+# resampling 'methods' that accept satpy Scenes instead of P2G scenes
+SATPY_RESAMPLERS = ["sensor"]
 
 
 def mask_helper(arr, fill):
@@ -130,6 +133,7 @@ class Remapper(object):
         self.methods = {
             "ewa": self._remap_scene_ewa,
             "nearest": self._remap_scene_nearest,
+            "sensor": self._remap_scene_sensor,
         }
         self.ll2cr_cache = {}
 
@@ -150,11 +154,18 @@ class Remapper(object):
             LOG.error("Unknown remapping method '%s'", method)
             raise ValueError("Unknown remapping method '%s'" % (method,))
 
-        grid_def = self.grid_manager.get_grid_definition(grid_name)
+        if method == "sensor":
+            if grid_name != "sensor":
+                raise ValueError("'sensor' resampling only supports the 'sensor' grid")
+            else:
+                # grid def isn't used by 'sensor' resampling
+                grid_def = None
+        else:
+            grid_def = self.grid_manager.get_grid_definition(grid_name)
         func = self.methods[method]
 
         # FUTURE: Make this a keyword and add the logic to support it
-        if kwargs.get("share_dynamic_grids", True):
+        if kwargs.get("share_dynamic_grids", True) and method != "sensor":
             # Let's run ll2cr to fill in any parameters we need to and decide if the data fits in the grid
             best_swath_def = self.highest_resolution_swath_definition(swath_scene)
             LOG.debug("Running ll2cr on the highest resolution swath to determine if it fits")
@@ -489,6 +500,22 @@ class Remapper(object):
 
         return gridded_scene
 
+    def _remap_scene_sensor(self, swath_scene, grid_def, **kwargs):
+        if not isinstance(swath_scene, Scene):
+            raise ValueError("'sensor' resampling only supports SatPy scenes")
+
+        new_scn = None
+        print(swath_scene.wishlist)
+        for area_obj, ds_list in swath_scene.iter_by_area():
+            _new_scn = swath_scene.resample(area_obj, datasets=ds_list)
+            if new_scn is None:
+                new_scn = _new_scn
+            for ds in _new_scn:
+                new_scn[ds.info["id"]] = ds
+            print(_new_scn.wishlist)
+
+        return new_scn
+
     def remap_product(self, product, grid_name):
         raise NotImplementedError("Single product remapping is not implemented yet")
 
@@ -503,7 +530,7 @@ def add_remap_argument_groups(parser):
     group = parser.add_argument_group(title="Remapping")
     group.add_argument('-g', '--grids', dest='forced_grids', nargs="+", default=SUPPRESS,
                        help="Force remapping to only some grids, defaults to 'wgs84_fit', use 'all' for determination")
-    group.add_argument("--method", dest="remap_method", default=SUPPRESS, choices=["ewa", "nearest"],
+    group.add_argument("--method", dest="remap_method", default=SUPPRESS, choices=["ewa", "nearest", "sensor"],
                        help="Remapping algorithm to use")
     group.add_argument('--swath-usage', dest="swath_usage", default=0, type=float,
                        help="Fraction of swath that must be used to continue remapping/processing (default 0)")

@@ -39,4 +39,4 @@
 """
 __docformat__ = "restructuredtext en"
 
-from .remap import Remapper, add_remap_argument_groups
+from .remap import Remapper, add_remap_argument_groups, SATPY_RESAMPLERS

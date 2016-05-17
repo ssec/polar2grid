@@ -40,8 +40,8 @@
 __docformat__ = "restructuredtext en"
 
 import pkg_resources
-from polar2grid.remap import Remapper, add_remap_argument_groups
-from polar2grid.readers import ReaderWrapper
+from polar2grid.remap import Remapper, add_remap_argument_groups, SATPY_RESAMPLERS
+from polar2grid.readers import ReaderWrapper, convert_satpy_to_p2g_swath, convert_satpy_to_p2g_gridded
 import numpy as np
 from datetime import datetime
 from satpy.scene import Scene, load_compositors, DatasetID
@@ -304,13 +304,31 @@ def main(argv=sys.argv[1:]):
     try:
         LOG.info("Extracting swaths from data files available...")
         scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
-        if not scene:
-            LOG.error("No products were returned by the frontend")
-            raise RuntimeError("No products were returned by the frontend")
-        if args.keep_intermediate:
-            filename = glue_name + "_swath_scene.json"
-            LOG.info("Saving intermediate swath scene as '%s'", filename)
-            scene.save(filename)
+
+        # Determine if we have a satpy scene if we should convert it to
+        # a P2G Scene to continue processing
+        resample_method = args.subgroup_args["Remapping"].get("remap_method")
+        is_satpy_resample_method = resample_method in SATPY_RESAMPLERS
+        if is_satpy_resample_method and not isinstance(scene, Scene):
+            raise RuntimeError("Resampling method '{}' only supports 'satpy' readers".format(resample_method))
+        elif not is_satpy_resample_method and isinstance(scene, Scene):
+            # convert satpy scene to P2G Scene to be compatible with old P2G resamplers
+            scene = convert_satpy_to_p2g_swath(f, scene)
+
+        if isinstance(scene, Scene):
+            if not scene.datasets:
+                LOG.error("No products were returned by the frontend")
+                raise RuntimeError("No products were returned by the frontend")
+            if args.keep_intermediate:
+                raise RuntimeError("satpy readers do not currently support saving intermediate files")
+        else:
+            if (isinstance(scene, Scene) and not scene.datasets) or not scene:
+                LOG.error("No products were returned by the frontend")
+                raise RuntimeError("No products were returned by the frontend")
+            if args.keep_intermediate:
+                filename = glue_name + "_swath_scene.json"
+                LOG.info("Saving intermediate swath scene as '%s'", filename)
+                scene.save(filename)
     except StandardError:
         LOG.debug("Frontend data extraction exception: ", exc_info=True)
         LOG.error("Frontend data extraction failed (see log for details)")
@@ -321,6 +339,9 @@ def main(argv=sys.argv[1:]):
     LOG.debug("Backend known grids: %r", known_grids)
     grids = remap_kwargs.pop("forced_grids", None)
     LOG.debug("Forced Grids: %r", grids)
+    if resample_method == "sensor" and grids != ["sensor"]:
+        LOG.error("'sensor' resampling method only supports the 'sensor' grid")
+        return STATUS_GDETER_FAIL
     if not grids and not known_grids:
         # the user didn't ask for any grids and the backend doesn't have specific defaults
         LOG.error("No grids specified and no known defaults")
@@ -339,8 +360,8 @@ def main(argv=sys.argv[1:]):
     # Remap
     gridded_scenes = {}
     for grid_name in grids:
+        LOG.info("Remapping to grid %s", grid_name)
         try:
-            LOG.info("Remapping to grid %s", grid_name)
             gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
             gridded_scenes[grid_name] = gridded_scene
             if args.keep_intermediate:
@@ -355,22 +376,23 @@ def main(argv=sys.argv[1:]):
                 return status_to_return
             continue
 
-        # Composition
-        for c, comp in compositor_objects.items():
-            try:
-                LOG.info("Running gridded scene through '%s' compositor", c)
-                gridded_scene = comp.modify_scene(gridded_scene, **args.subgroup_args[c + " Modification"])
-                if args.keep_intermediate:
-                    filename = glue_name + "_gridded_scene_" + grid_name + ".json"
-                    LOG.debug("Updating saved intermediate gridded scene (%s) after compositor", filename)
-                    gridded_scene.save(filename)
-            except StandardError:
-                LOG.debug("Compositor Error: ", exc_info=True)
-                LOG.error("Could not properly modify scene using compositor '%s'" % (c,))
-                if args.exit_on_error:
-                    raise RuntimeError("Could not properly modify scene using compositor '%s'" % (c,))
+        if not isinstance(scene, Scene):
+            # Composition
+            for c, comp in compositor_objects.items():
+                try:
+                    LOG.info("Running gridded scene through '%s' compositor", c)
+                    gridded_scene = comp.modify_scene(gridded_scene, **args.subgroup_args[c + " Modification"])
+                    if args.keep_intermediate:
+                        filename = glue_name + "_gridded_scene_" + grid_name + ".json"
+                        LOG.debug("Updating saved intermediate gridded scene (%s) after compositor", filename)
+                        gridded_scene.save(filename)
+                except StandardError:
+                    LOG.debug("Compositor Error: ", exc_info=True)
+                    LOG.error("Could not properly modify scene using compositor '%s'" % (c,))
+                    if args.exit_on_error:
+                        raise RuntimeError("Could not properly modify scene using compositor '%s'" % (c,))
 
-        if isinstance(f, ReaderWrapper):
+        if isinstance(f, ReaderWrapper) and not isinstance(gridded_scene, Scene):
             this_grid_definition = None
             # HACK: Create SatPy composites that were either separated before
             # resampling or needed resampling to be created
@@ -430,6 +452,11 @@ def main(argv=sys.argv[1:]):
                     if v["id"].name not in tmp_scene:
                         LOG.debug("Removing Dataset that is no longer used: %s", k)
                         del gridded_scene[k]
+
+        if isinstance(gridded_scene, Scene):
+            LOG.debug("Converting satpy Scene to P2G Gridded Scene")
+            # Convert it to P2G Gridded Scene
+            gridded_scene = convert_satpy_to_p2g_gridded(f, gridded_scene)
 
         # Backend
         try:

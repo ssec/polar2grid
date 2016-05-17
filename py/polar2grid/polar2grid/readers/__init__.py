@@ -44,6 +44,7 @@ import logging
 
 import numpy as np
 from satpy.scene import Scene
+from pyresample.geometry import AreaDefinition
 
 from polar2grid.core import containers, roles
 
@@ -94,6 +95,34 @@ def area_to_swath_def(area, overwrite_existing=False):
     lat_arr[:] = lats.data
     lat_arr[lats.mask] = np.nan
     return containers.SwathDefinition(**info)
+
+
+def area_to_grid_definition(area, overwrite_existing=False):
+    if isinstance(area, AreaDefinition):
+        return containers.GridDefinition(
+            grid_name=area.name,
+            proj4_definition=area.proj4_string,
+            cell_width=area.pixel_size_x,
+            cell_height=-abs(area.pixel_size_y),
+            width=area.x_size,
+            height=area.y_size,
+            origin_x=area.area_extent[0] + area.pixel_size_x / 2.,
+            origin_y=area.area_extent[3] - area.pixle_size_y / 2.,
+        )
+    else:
+        # assume we have a SwathDefinition, in which case we are
+        # estimating a grid definition
+        lons, lats = area.get_lonlats()
+        return containers.GridDefinition(
+            grid_name="sensor",
+            proj4_definition="+proj=latlong +datum=WGS84 +ellps=WGS84 +no_defs",
+            cell_width=lons[0, 1] - lons[0, 0],
+            cell_height=-abs(lats[1, 0] - lats[0, 0]),
+            width=lons.shape[1],
+            height=lons.shape[0],
+            origin_x=lons[0, 0],
+            origin_y=lats[0, 0],
+        )
 
 
 def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
@@ -165,7 +194,7 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
             yield containers.SwathProduct(**tmp_info)
 
 
-def dataset_to_gridded_product(ds, overwrite_existing=False):
+def dataset_to_gridded_product(ds, grid_def, overwrite_existing=False):
     info = ds.info.copy()
     info.pop("area", None)
     if ds.ndim == 3:
@@ -197,6 +226,7 @@ def dataset_to_gridded_product(ds, overwrite_existing=False):
         "rows_per_scan": info["rows_per_scan"],
         "data_type": ds.dtype,
         "channels": channels,
+        "grid_definition": grid_def,
     }
     info.update(p2g_metadata)
 
@@ -212,6 +242,39 @@ def dataset_to_gridded_product(ds, overwrite_existing=False):
     p2g_arr[:] = ds.data
     p2g_arr[ds.mask] = np.nan
     return containers.GriddedProduct(**info)
+
+
+def convert_satpy_to_p2g_swath(frontend, scene):
+    p2g_scene = containers.SwathScene()
+    overwrite_existing = frontend.overwrite_existing
+    areas = {}
+    for ds in scene:
+        if ds.info["area"].name in areas:
+            swath_def = areas[ds.info["area"].name]
+        else:
+            areas[ds.info["area"].name] = swath_def = area_to_swath_def(ds.info["area"], overwrite_existing=overwrite_existing)
+
+        for swath_product in dataset_to_swath_product(ds, swath_def, overwrite_existing=overwrite_existing):
+            p2g_scene[swath_product["product_name"]] = swath_product
+
+    return p2g_scene
+
+
+def convert_satpy_to_p2g_gridded(frontend, scene):
+    p2g_scene = containers.GriddedScene()
+    overwrite_existing = frontend.overwrite_existing
+    areas = {}
+    for ds in scene:
+        if ds.info["area"].name in areas:
+            grid_def = areas[ds.info["area"].name]
+        else:
+            areas[ds.info["area"].name] = grid_def = area_to_grid_definition(ds.info["area"],
+                                                                             overwrite_existing=overwrite_existing)
+
+        gridded_product = dataset_to_gridded_product(ds, grid_def, overwrite_existing=overwrite_existing)
+        p2g_scene[gridded_product["name"]] = gridded_product
+
+    return p2g_scene
 
 
 class ReaderWrapper(roles.FrontendRole):
@@ -259,22 +322,12 @@ class ReaderWrapper(roles.FrontendRole):
         kwargs.pop("exit_on_error")
         kwargs.pop("keep_intermediate")
         self.scene.load(products, **kwargs)
-
-        p2g_scene = containers.SwathScene()
-        areas = {}
-        for ds in self.scene:
-            if ds.info["area"].name in areas:
-                swath_def = areas[ds.info["area"].name]
-            else:
-                areas[ds.info["area"].name] = swath_def = area_to_swath_def(ds.info["area"], overwrite_existing=self.overwrite_existing)
-
-            for swath_product in dataset_to_swath_product(ds, swath_def, overwrite_existing=self.overwrite_existing):
-                p2g_scene[swath_product["product_name"]] = swath_product
-
-        # Delete the satpy scene so memory is cleared out
+        # Delete the satpy scene so memory is cleared out if it isn't used by the caller
         self.wishlist = self.scene.wishlist
+        scene = self.scene
         self.scene = None
-        return p2g_scene
+        return scene
+
 
 
 def main(description=None, add_argument_groups=None):
