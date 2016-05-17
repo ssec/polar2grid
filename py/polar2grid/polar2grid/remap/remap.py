@@ -505,14 +505,12 @@ class Remapper(object):
             raise ValueError("'sensor' resampling only supports SatPy scenes")
 
         new_scn = None
-        print(swath_scene.wishlist)
         for area_obj, ds_list in swath_scene.iter_by_area():
             _new_scn = swath_scene.resample(area_obj, datasets=ds_list)
             if new_scn is None:
                 new_scn = _new_scn
             for ds in _new_scn:
                 new_scn[ds.info["id"]] = ds
-            print(_new_scn.wishlist)
 
         return new_scn
 
