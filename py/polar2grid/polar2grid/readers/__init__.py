@@ -239,8 +239,7 @@ def dataset_to_gridded_product(ds, grid_def, overwrite_existing=False):
         else:
             LOG.warning("Binary file already exists, will overwrite: %s", filename)
     p2g_arr = np.memmap(filename, mode="w+", dtype=ds.dtype, shape=ds.shape)
-    p2g_arr[:] = ds.data
-    p2g_arr[ds.mask] = np.nan
+    p2g_arr[:] = ds.filled(np.nan).astype(np.float32)
     return containers.GriddedProduct(**info)
 
 
@@ -270,6 +269,7 @@ def convert_satpy_to_p2g_gridded(frontend, scene):
         else:
             areas[ds.info["area"].name] = grid_def = area_to_grid_definition(ds.info["area"],
                                                                              overwrite_existing=overwrite_existing)
+        # import ipdb; ipdb.set_trace()
 
         gridded_product = dataset_to_gridded_product(ds, grid_def, overwrite_existing=overwrite_existing)
         p2g_scene[gridded_product["name"]] = gridded_product
