@@ -9,6 +9,9 @@ before_install:
  - sudo apt-get install -y -qq libgdal1h proj
  - sudo apt-get install -qq python-scipy python-numpy python-pyproj
 install:
+ - cd py/polar2grid
+ - pip install -r requirements.txt
+ - cd ../../
  - cd py/polar2grid_core
  - pip install -e ".[all]"
  - cd ../../
