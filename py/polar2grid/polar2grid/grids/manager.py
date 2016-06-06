@@ -80,12 +80,20 @@ def get_proj4_info(proj4_str):
     parts = [x.replace("+", "") for x in proj4_str.split(" ")]
     if "no_defs" in parts:
         parts.remove("no_defs")
+    if "over" in parts:
+        add_over = True
+        parts.remove("over")
+    else:
+        add_over = False
 
     proj4_dict = dict(p.split("=") for p in parts)
     # Convert numeric parameters to floats
     for k in ["lat_0", "lat_1", "lat_2", "lat_ts", "lat_b", "lat_t", "lon_0", "lon_1", "lon_2", "lonc", "a", "b", "es"]:
         if k in proj4_dict:
             proj4_dict[k] = float(proj4_dict[k])
+
+    if add_over:
+        proj4_dict["over"] = True
 
     return proj4_dict
 

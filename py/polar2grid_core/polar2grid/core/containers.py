@@ -603,6 +603,12 @@ class GridDefinition(GeographicDefinition):
         x_ur, y_ur = self["origin_x"], self["origin_y"]
         return self.proj(x_ur, y_ur, inverse=True)
 
+    @property
+    def lonlat_center(self):
+        x_pixel = self["width"] / 2
+        y_pixel = self["height"] / 2
+        return self.get_lonlat(x_pixel, y_pixel)
+
     def get_lonlat(self, x_pixel, y_pixel):
         x = self["origin_x"] + x_pixel * self["cell_width"]
         y = self["origin_y"] + y_pixel * self["cell_height"]
@@ -631,16 +637,36 @@ class GridDefinition(GeographicDefinition):
         if "no_defs" in parts:
             parts.remove("no_defs")
             no_defs = True
+        over = False
+        if "over" in parts:
+            parts.remove("over")
+            over = True
 
         proj4_dict = dict(p.split("=") for p in parts)
         # Convert numeric parameters to floats
-        for k in ["lat_0", "lat_1", "lat_2", "lat_ts", "lat_b", "lat_t", "lon_0", "lon_1", "lon_2", "lonc", "a", "b", "es"]:
+        for k in ["lat_0", "lat_1", "lat_2", "lat_ts", "lat_b", "lat_t", "lon_0", "lon_1", "lon_2", "lonc", "a", "b", "f", "es", "h"]:
             if k in proj4_dict:
                 proj4_dict[k] = float(proj4_dict[k])
+
+        # load information from PROJ.4 about the ellipsis if possible
+        if "ellps" in proj4_dict and "a" not in proj4_dict or "b" not in proj4_dict:
+            import pyproj
+            ellps = pyproj.pj_ellps[proj4_dict["ellps"]]
+            proj4_dict["a"] = ellps["a"]
+            if "b" not in ellps and "rf" in ellps:
+                proj4_dict["f"] = 1. / ellps["rf"]
+            else:
+                proj4_dict["b"] = ellps["b"]
+
+        if "a" in proj4_dict and "f" in proj4_dict and "b" not in proj4_dict:
+            # add a "b" attribute back in if they used "f" instead
+            proj4_dict["b"] = proj4_dict["a"] * (1 - proj4_dict["f"])
 
         # Add removed keywords back in
         if no_defs:
             proj4_dict["no_defs"] = True
+        if over:
+            proj4_dict["over"] = True
 
         return proj4_dict
 
@@ -648,14 +674,18 @@ class GridDefinition(GeographicDefinition):
     def gdal_geotransform(self):
         return self["origin_x"], self["cell_width"], 0, self["origin_y"], 0, self["cell_height"]
 
+    def get_xy_arrays(self):
+        # the [None] indexing adds a dimension to the array
+        x = self["origin_x"] + numpy.repeat(numpy.arange(self["width"])[None] * self["cell_width"], self["height"], axis=0)
+        y = self["origin_y"] + numpy.repeat(numpy.arange(self["height"])[:, None] * self["cell_height"], self["width"], axis=1)
+        return x, y
+
     def get_geolocation_arrays(self):
         """Calculate longitude and latitude arrays for the grid.
 
         :returns: (longitude array, latitude array)
         """
-        # the [None] indexing adds a dimension to the array
-        x = self["origin_x"] + numpy.repeat(numpy.arange(self["width"])[None] * self["cell_width"], self["height"], axis=0)
-        y = self["origin_y"] + numpy.repeat(numpy.arange(self["height"])[:, None] * self["cell_height"], self["width"], axis=1)
+        x, y = self.get_xy_arrays()
         return self.proj(x, y, inverse=True)
 
     def to_basemap_object(self):

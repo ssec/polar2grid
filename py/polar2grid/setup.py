@@ -141,6 +141,7 @@ entry_points = {
         'binary=polar2grid.binary:Backend',
         'ninjo=polar2grid.ninjo:Backend',
         'hdf5=polar2grid.hdf5_backend:Backend',
+        'scmi=polar2grid.awips.scmi_backend:Backend',
         ],
     'polar2grid.backend_arguments': [
         'gtiff=polar2grid.gtiff_backend:add_backend_argument_groups',
@@ -148,6 +149,7 @@ entry_points = {
         'binary=polar2grid.binary:add_backend_argument_groups',
         'ninjo=polar2grid.ninjo:add_backend_argument_groups',
         'hdf5=polar2grid.hdf5_backend:add_backend_argument_groups',
+        'scmi=polar2grid.awips.scmi_backend:add_backend_argument_groups',
         ],
     'polar2grid.compositor_class': [
         'rgb=polar2grid.compositors.rgb:RGBCompositor',
