@@ -513,6 +513,7 @@ class SCMI_writer(object):
     _include_geo = False
     _include_fgf = True
     _include_rad = False
+    _fill_value = 0.0
     row_dim_name, col_dim_name = 'y', 'x'
     y_var_name, x_var_name = 'y', 'x'
     bt_var_name = 'Sectorized_CMI'
@@ -682,13 +683,13 @@ class SCMI_writer(object):
             # note: autoscaling will be applied to make int16
             # self.bt[:,:] = np.ma.fix_invalid(np.require(bt, dtype=np.float32), fill_value=self.missing)
             assert(hasattr(bt, 'mask'))
-            self.bt[:,:] = np.require(bt, dtype=np.float32)
+            self.bt[:,:] = np.require(bt.filled(self._fill_value), dtype=np.float32)
         if alb is not None and self.alb is not None:
             LOG.info('writing albedo')
             # note: autoscaling will be applied to make int16
             # self.alb[:,:] = np.ma.fix_invalid(np.require(alb, dtype=np.float32), fill_value=self.fmissing) # FUTURE: scaled ints
             assert(hasattr(alb, 'mask'))
-            self.alb[:,:] = np.require(alb, dtype=np.float32)
+            self.alb[:, :] = np.require(alb.filled(self._fill_value), dtype=np.float32)
 
 
     def set_projection_attrs(self, grid_def):
