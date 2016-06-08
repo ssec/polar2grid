@@ -69,6 +69,7 @@ import re
 import sys
 import logging
 import calendar
+import math
 from datetime import datetime, timedelta
 from collections import namedtuple
 
@@ -305,9 +306,7 @@ class AttributeHelper(object):
         self.offset = offset
         self.tile_count = tile_count
         self.scene_shape = scene_shape
-        self.tile_shape = (scene_shape[0] / tile_count[0], scene_shape[1] / tile_count[1])
-        if (scene_shape[0] % tile_count[0] != 0) or (scene_shape[1] % tile_count[1] != 0):
-            raise ValueError('tile shape %r does not fit evenly into scene shape %r' % (self.tile_shape, scene_shape))
+        self.tile_shape = (int(scene_shape[0] / tile_count[0]), int(scene_shape[1] / tile_count[1]))
 
     def apply_attributes(self, nc, table, prefix=''):
         """
@@ -400,15 +399,10 @@ class AttributeHelper(object):
         # FIXME: resolve whether we need half-pixel offset
         row = self._global_tile_row_offset() + self.tile_shape[0]/2
         col = self._global_tile_column_offset() + self.tile_shape[1]/2
-        # if we're not getting proper nav from the file, substitute nominal values
-        args = dict(HCAST_DEFAULT_NAV) if self._file_nav_is_incomplete else {}
-        nav = self.hsd.geo(line_offset=row, column_offset=col, lines=1, columns=1, **args)
-        LOG.debug('tile_center is {}'.format(nav))
-        return nav
+        return self.hsd.gridded_product["grid_definition"].get_lonlat(row, col)
 
     def _global_tile_center_longitude(self): # = None, # 88.0022078322,
-        nav = self._tile_center()
-        return np.float32(nav.longitude[0][0])
+        return np.float32(self._tile_center()[0])
 
     def _global_product_rows(self):
         return self.scene_shape[0]
@@ -423,8 +417,7 @@ class AttributeHelper(object):
         return self.offset[1] * self.tile_shape[1]
 
     def _global_tile_center_latitude(self): # = None, # 88.0022078322,
-        nav = self._tile_center()
-        return np.float32(nav.latitude[0][0])
+        return np.float32(self._tile_center()[1])
 
     def _global_bit_depth(self):
         band = self.hsd.metadata.band
@@ -604,49 +597,22 @@ class SCMI_writer(object):
         if self.lon is not None:
             self.lon[:,:] = np.ma.fix_invalid(lon, fill_value=self.missing)
 
-    def set_fgf(self, grid_def, downsample_factor=1):
-        proj4_info = grid_def.proj4_dict
+    def set_fgf(self, x, mx, bx, y, my, by, units='meters', downsample_factor=1):
+        # assign values before scale factors to avoid implicit scale reversal
+        LOG.debug('y variable shape is {}'.format(self.fgf_y.shape))
+        self.fgf_y.scale_factor = np.float32(my * float(downsample_factor))
+        self.fgf_y.add_offset = np.float32(by)
+        self.fgf_y.units = units
+        self.fgf_y.standard_name = "projection_y_coordinate"
+        self.fgf_y.long_name = "CGMS N/S fixed grid viewing angle (not interchangeable with GOES y)"
+        self.fgf_y[:] = y
 
-        if self.fgf_y is not None and self.fgf_y is not None:
-            x, y = grid_def.get_xy_arrays()
-            x = x[0].squeeze()  # all rows should have the same coordinates
-            y = y[:, 0].squeeze()  # all columns should have the same coordinates
-            # scale the X and Y arrays to fit in the file for 16-bit integers
-            bx = x.min()
-            mx = (x.max() - x.min()) / (2**16 - 1)
-            # FIXME: This should be done automatically below if we set scale attributes before assigning
-            x -= bx
-            x /= mx
-            by = y.min()
-            my = (y.max() - y.min()) / (2**16 - 1)
-            y -= by
-            y /= my
-
-            if proj4_info["proj"] == "geos":
-                units = "microradian"
-                micro_factor = 1e6
-            else:
-                units = "meters"
-                micro_factor = 1
-
-            # sf, ao = XY_SF_AO[(self._resolution, 'y')]
-            # self.fgf_y.scale_factor = sf
-            # self.fgf_y.add_offset = ao
-            # assign values before scale factors to avoid implicit scale reversal
-            LOG.debug('y variable shape is {}'.format(self.fgf_y.shape))
-            self.fgf_y.units = units
-            self.fgf_y.standard_name = "projection_y_coordinate"
-            self.fgf_y.long_name = "CGMS N/S fixed grid viewing angle (not interchangeable with GOES y)"
-            self.fgf_y[:] = y
-            self.fgf_y.scale_factor = np.float32(my * float(downsample_factor) * int(micro_factor))
-            self.fgf_y.add_offset = np.float32(by * int(micro_factor))
-
-            self.fgf_x.units = units
-            self.fgf_x.standard_name = "projection_x_coordinate"
-            self.fgf_x.long_name = "CGMS E/W fixed grid viewing angle (not interchangeable with GOES x)"
-            self.fgf_x[:] = x
-            self.fgf_x.scale_factor = np.float32(mx * float(downsample_factor) * int(micro_factor))
-            self.fgf_x.add_offset = np.float32(bx * int(micro_factor))
+        self.fgf_x.scale_factor = np.float32(mx * float(downsample_factor))
+        self.fgf_x.add_offset = np.float32(bx)
+        self.fgf_x.units = units
+        self.fgf_x.standard_name = "projection_x_coordinate"
+        self.fgf_x.long_name = "CGMS E/W fixed grid viewing angle (not interchangeable with GOES x)"
+        self.fgf_x[:] = x
 
     def set_rad_attrs(self, cal):
         self.rad.scale_factor = cal.rad_m
@@ -817,12 +783,12 @@ class FakeHimawariScene(object):
             satellite_id="{}-{}".format(self.gridded_product["satellite"].upper(), self.gridded_product["instrument"].upper())
         )
 
-    def geo(self, line_offset, column_offset, lines, columns, **args):
-        lons, lats = self.gridded_product["grid_definition"].get_geolocation_arrays()
-        return _AttrDict(
-            longitude=lons[line_offset:line_offset+lines, column_offset:column_offset+columns],
-            latitude=lats[line_offset:line_offset+lines, column_offset:column_offset+columns]
-        )
+    # def geo(self, line_offset, column_offset, lines, columns, **args):
+    #     lons, lats = self.gridded_product["grid_definition"].get_geolocation_arrays()
+    #     return _AttrDict(
+    #         longitude=lons[line_offset:line_offset+lines, column_offset:column_offset+columns],
+    #         latitude=lats[line_offset:line_offset+lines, column_offset:column_offset+columns]
+    #     )
 
     # @property
     # def fgf(self):
@@ -853,7 +819,7 @@ class Backend(roles.BackendRole):
     def known_grids(self):
         return None
 
-    def create_output_from_product(self, gridded_product, **kwargs):
+    def create_output_from_product(self, gridded_product, tile_count=(1, 1), **kwargs):
         data_type = DTYPE_UINT8
         inc_by_one = False
         fill_value = 0
@@ -910,19 +876,79 @@ class Backend(roles.BackendRole):
             #     distance_from_earth_center_to_virtual_satellite=gridded_product["grid_definition"].proj4_dict["h"],
             # )
             fake_scene = FakeHimawariScene(gridded_product)
-            # fake_scene.navigation = nav
-            attr_helper = AttributeHelper(fake_scene, (0, 0), (1, 1), data.shape)
-            band = 2
-            nc = SCMI_writer(output_filename, 10, (0, 0), data.shape, 'albedo', band, include_rad=False, helper=attr_helper)
-            nc.create_dimensions()
-            sfao = IMG_SF_AO[band]
-            nc.create_variables(*sfao)
-            nc.set_global_attrs(fake_scene.metadata, None)
-            nc.set_projection_attrs(gridded_product["grid_definition"])
-            nc.set_image_data(alb=data)
-            # FIXME: Adjust for each tile
-            nc.set_fgf(gridded_product["grid_definition"])
-            nc.close()
+            tile_shape = (int(data.shape[0] / tile_count[0]), int(data.shape[1] / tile_count[1]))
+            tmp_tile = np.ma.zeros(tile_shape, dtype=np.float32)
+            tmp_tile.set_fill_value(0)
+
+            # Get X/Y
+            # Since our tiles may go over the edge of the original "grid" we
+            # need to make sure we calculate X/Y to the edge of all of the tiles
+            imaginary_data_size = (tile_shape[0] * tile_count[0], tile_shape[1] * tile_count[1])
+            imaginary_grid_def = gridded_product["grid_definition"].copy()
+            imaginary_grid_def["height"] = imaginary_data_size[0]
+            imaginary_grid_def["width"] = imaginary_data_size[1]
+            proj4_info = grid_def.proj4_dict
+            if proj4_info["proj"] == "geos":
+                xy_units = "microradian"
+                micro_factor = 1e6
+            else:
+                xy_units = "meters"
+                micro_factor = 1
+
+            x, y = imaginary_grid_def.get_xy_arrays()
+            x = x[0].squeeze()  # all rows should have the same coordinates
+            y = y[:, 0].squeeze()  # all columns should have the same coordinates
+            # scale the X and Y arrays to fit in the file for 16-bit integers
+            bx = x.min()
+            mx = (x.max() - x.min()) / (2**16 - 1)
+            bx *= micro_factor
+            mx *= micro_factor
+            # x -= bx
+            # x /= mx
+            by = y.min()
+            my = (y.max() - y.min()) / (2**16 - 1)
+            by *= micro_factor
+            my *= micro_factor
+            # y -= by
+            # y /= my
+
+            creation_str = datetime.utcnow().strftime('%Y%j%H%M%S')
+            start_str = gridded_product["begin_time"].strftime('%Y%j%H%M%S')
+            for ty in range(tile_count[0]):
+                for tx in range(tile_count[1]):
+                    # store tile data to an intermediate array
+                    tmp_tile[:] = fill_value
+                    tile_number = ty * tile_count[1] + tx + 1
+                    tmp_tile[:] = data[ty * tile_shape[0]: (ty + 1) * tile_shape[0], tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
+                    output_filename = "OR_HFD-010-B11-M1C03-T{:03d}_GH8_s{}_c{}.nc".format(tile_number, start_str, creation_str)
+
+                    if tmp_tile.mask.all():
+                        LOG.info("Tile %d contains all masked data, skipping...", tile_number)
+                        continue
+                    LOG.info("Writing tile %d to %s", tile_number, output_filename)
+
+                    tmp_x = x[tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
+                    tmp_y = y[ty * tile_shape[0]: (ty + 1) * tile_shape[0]]
+
+                    # fake_scene.navigation = nav
+                    attr_helper = AttributeHelper(fake_scene, (ty, tx), tile_count, data.shape)
+                    # attr_helper = AttributeHelper(fake_scene, (0, 0), (1, 1), tmp_tile.shape)
+                    band = 2
+                    nc = SCMI_writer(output_filename, 10, (ty, tx), tile_shape, 'albedo', band, include_rad=False, helper=attr_helper)
+                    LOG.debug("Creating dimensions...")
+                    nc.create_dimensions()
+                    sfao = IMG_SF_AO[band]
+                    LOG.debug("Creating variables...")
+                    nc.create_variables(*sfao)
+                    LOG.debug("Creating global attributes...")
+                    nc.set_global_attrs(fake_scene.metadata, None)
+                    LOG.debug("Creating projection attributes...")
+                    nc.set_projection_attrs(gridded_product["grid_definition"])
+                    LOG.debug("Writing image data...")
+                    nc.set_image_data(alb=tmp_tile)
+                    LOG.debug("Writing X/Y navigation data...")
+                    nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units=xy_units)
+                    nc.close()
         except StandardError:
             LOG.error("Error while filling in NC file with data: %s", output_filename)
             if not self.keep_intermediate and os.path.isfile(output_filename):
@@ -938,10 +964,12 @@ def add_backend_argument_groups(parser):
                        help="alternative backend configuration files")
     group.add_argument("--rescale-configs", nargs="*", dest="rescale_configs",
                        help="alternative rescale configuration files")
-    # group = parser.add_argument_group(title="Backend Output Creation")
+    group = parser.add_argument_group(title="Backend Output Creation")
     # group.add_argument("--ncml-template",
     #                    help="alternative AWIPS ncml template file from what is configured")
-    return ["Backend Initialization"]
+    group.add_argument("--tiles", dest="tile_count", nargs=2, type=int, default=[1, 1],
+                       help="Number of tiles to produce in Y (rows) and X (cols) direction respectively")
+    return ["Backend Initialization", "Backend Output Creation"]
 
 
 def main():
