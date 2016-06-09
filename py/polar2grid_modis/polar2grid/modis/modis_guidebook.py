@@ -90,6 +90,7 @@ K_LST = "lst_var"
 K_SLST = "slst_var"
 K_NDVI = "ndvi_var"
 K_SZA = "sza_var"
+K_SenZA = "senza_var"
 K_IST = "ist_var"
 K_INV = "inv_var"
 K_IND = "ind_var"
@@ -540,6 +541,7 @@ FILE_TYPES[FT_MOD03] = {
     K_LONGITUDE_250: FileInfo("Longitude", interpolate=True),
     K_LATITUDE_250: FileInfo("Latitude", interpolate=True),
     K_SZA: FileInfo("SolarZenith", offset_attr_name=None),
+    K_SenZA: FileInfo("SensorZenith", offset_attr_name=None),
 }
 FILE_TYPES[FT_MOD021KM] = {
     K_VIS01: FileInfo("EV_250_Aggr1km_RefSB", 0, "reflectance_scales", "reflectance_offsets"),

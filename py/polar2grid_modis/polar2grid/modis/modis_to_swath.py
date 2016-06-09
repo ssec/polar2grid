@@ -231,6 +231,7 @@ PRODUCT_CMASK = "cloud_mask"
 PRODUCT_LSMASK = "land_sea_mask"
 PRODUCT_SIMASK = "snow_ice_mask"
 PRODUCT_SZA = "solar_zenith_angle"
+PRODUCT_SenZA = "satellite_zenith_angle"
 
 # Need land mask clearing and cloud clearing
 PRODUCT_SST = "sst_uncleared"
@@ -303,6 +304,7 @@ PRODUCTS.add_product(PRODUCT_MOD07_LON, PAIR_MOD07, "longitude", guidebook.FT_MO
 PRODUCTS.add_product(PRODUCT_MOD07_LAT, PAIR_MOD07, "latitude", guidebook.FT_MOD07, guidebook.K_LATITUDE)
 
 PRODUCTS.add_product(PRODUCT_SZA, PAIR_1000M, "solar_zenith_angle", guidebook.FT_GEO, guidebook.K_SZA)
+PRODUCTS.add_product(PRODUCT_SenZA, PAIR_1000M, "satellite_zenith_angle", guidebook.FT_GEO, guidebook.K_SenZA)
 # if in the future someone needs both the 250M version and the 1000M version add uncomment this line
 # PRODUCTS.add_product(PRODUCT_VIS01_1000M, PAIR_1000M, "reflectance", guidebook.FT_1000M, guidebook.K_VIS01)
 PRODUCTS.add_product(PRODUCT_VIS01, (PAIR_250M, PAIR_1000M), "reflectance", (guidebook.FT_250M, guidebook.FT_1000M), guidebook.K_VIS01, dependencies=(PRODUCT_SZA,))
