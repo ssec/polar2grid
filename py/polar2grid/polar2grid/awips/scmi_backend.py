@@ -208,7 +208,7 @@ AHI_CENTRAL_WAVELENGTH = [
 # zy_xxxx-rrr-Bnn-MnCnn-Tnnn_Gnn_sYYYYDDDhhmmss _cYYYYDDDhhmmss.nc
 # OR_HFD-020-B14-M1C07-T055_GH8_s2015181030000_c2015181031543
 # ref Table 3.3.4.1.2-1 Sectorized CMI File Naming Convention Fields on NOAA VLAB wiki
-FMT_SCMI_NAME="{environment:1s}{data_type:1s}_{region:s}-{resolution:3s}-B{bits:02d}-M{mode:1d}C{channel:02d}-T{tile:03d}_G{satellite:2s}_s{scene_time:13s}_c{creation_time:13s}.nc"
+FMT_SCMI_NAME="{environment:1s}{data_type:1s}_{region:s}-{resolution:3s}-B{bits:02d}-M{mode:1d}C{channel}-T{tile:03d}_G{satellite:2s}_s{scene_time:13s}_c{creation_time:13s}.nc"
 
 
 def scmi_product(
@@ -218,8 +218,8 @@ def scmi_product(
         mode=1,           # ABI mode
         channel=0,
         **kwargs):       # channel number, 1..16
-    bits = _ahi_bit_depth(channel) if bits==0 else bits
-    return "{region:s}-{resolution:3s}-B{bits:02d}-M{mode:1d}C{channel:02d}".format(**locals())
+    channel = "{:02d}" if not isinstance(channel, str) else channel
+    return "{region:s}-{resolution:3s}-B{bits:02d}-M{mode:1d}C{channel}".format(**locals())
 
 
 def scmi_filename(
@@ -238,8 +238,9 @@ def scmi_filename(
     if creation_time is None:
         creation_time = datetime.utcnow()
     creation_time = creation_time.strftime('%Y%j%H%M%S')
-    assert(1<=channel<=16)
-    bits = _ahi_bit_depth(channel) if bits==0 else bits
+    channel = "{:02d}" if not isinstance(channel, str) else channel
+    # assert(1<=channel<=16)
+    # bits = _ahi_bit_depth(channel) if bits==0 else bits
     return FMT_SCMI_NAME.format(**locals())
 
 
@@ -352,6 +353,7 @@ class AttributeHelper(object):
     def _filename(self):
         satellite = self.hsd.gridded_product["satellite"].upper()
         return scmi_filename(satellite=satellite,
+                             bits=self.hsd.metadata.bit_depth,
                              channel=self.hsd.metadata.band, scene_time=self._scene_time(), tile=self._tile_number())
 
     def _product_name(self):
@@ -371,6 +373,7 @@ class AttributeHelper(object):
         # channel=0,
         # **kwargs):       # channel number, 1..16
         return scmi_product(channel=self.hsd.metadata.band, scene_time=self._scene_time(),
+                            bits=self.hsd.metadata.bit_depth,
                             region=region)
 
     def _global_product_tile_height(self):  # = None, # 1100,
@@ -420,8 +423,7 @@ class AttributeHelper(object):
         return np.float32(self._tile_center()[1])
 
     def _global_bit_depth(self):
-        band = self.hsd.metadata.band
-        return _ahi_bit_depth(band)
+        return self.hsd.metadata.bit_depth
 
     def _global_satellite_altitude(self):
         """ABI grid based satellite altitude used by L1b processing.
@@ -441,13 +443,13 @@ class AttributeHelper(object):
             return None
 
     def _data_standard_name(self):
-        return STANDARD_NAMES[self.hsd.kind]
+        return self.hsd.metadata.standard_name
 
     def _global_product_name(self):
         return self._product_name()
 
     def _global_channel_id(self):
-        return self.hsd.metadata.band
+        return self.hsd.metadata.channel_id
 
     def _global_pixel_x_size(self):
         # rez = RESOLUTION_FROM_WIDTH[self.hsd.extents[1]]
@@ -477,7 +479,7 @@ class AttributeHelper(object):
         return 0
 
     def _data_valid_max(self):
-        bit_depth = _ahi_bit_depth(self.hsd.metadata.band)
+        bit_depth = self.hsd.metadata.bit_depth
         return 2**bit_depth - 1
 
 
@@ -506,7 +508,7 @@ class SCMI_writer(object):
     _include_geo = False
     _include_fgf = True
     _include_rad = False
-    _fill_value = 0.0
+    _fill_value = 0
     row_dim_name, col_dim_name = 'y', 'x'
     y_var_name, x_var_name = 'y', 'x'
     bt_var_name = 'Sectorized_CMI'
@@ -737,7 +739,7 @@ class SCMI_writer(object):
         # self._nc.start_time_unix = meta.start_time.unix_time
         # self._nc.end_time_unix = meta.end_time.unix_time
         # self._nc.observation_timeline = meta.observation_timeline
-        self._nc.central_wavelength = AHI_CENTRAL_WAVELENGTH[meta.band - 1]  # meta.central_wavelength * 1e6  # meters to microns
+        self._nc.central_wavelength = self.helper.hsd.metadata.central_wavelength
         # self._nc.distance_from_earth_center_to_satellite = nav.distance_from_earth_center_to_satellite
         self._nc.creator = "UW SSEC libHimawari scmi.py"
         self._nc.creation_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
@@ -778,9 +780,13 @@ class FakeHimawariScene(object):
             columns_res_meters=self.gridded_product["grid_definition"]["cell_width"],
             start_time=self.gridded_product["begin_time"] + timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0))),  # FIXME
             # FIXME:
-            band=2,
+            band=self.gridded_product["product_name"],
+            channel_id=0,
             band_type=self.kind,
-            satellite_id="{}-{}".format(self.gridded_product["satellite"].upper(), self.gridded_product["instrument"].upper())
+            standard_name='toa_bidirectional_reflectance' if self.gridded_product["data_kind"] in ["reflectance", "albedo"] else 'brightness_temperature',
+            bit_depth=self.gridded_product["bit_depth"],
+            central_wavelength=self.gridded_product.get("wavelength", self.gridded_product.get("central_wavelength", -1)),
+            satellite_id="{}-{}".format(self.gridded_product["satellite"].upper(), self.gridded_product["instrument"].upper()),
         )
 
     # def geo(self, line_offset, column_offset, lines, columns, **args):
@@ -878,7 +884,7 @@ class Backend(roles.BackendRole):
             fake_scene = FakeHimawariScene(gridded_product)
             tile_shape = (int(data.shape[0] / tile_count[0]), int(data.shape[1] / tile_count[1]))
             tmp_tile = np.ma.zeros(tile_shape, dtype=np.float32)
-            tmp_tile.set_fill_value(0)
+            tmp_tile.set_fill_value(fill_value)
 
             # Get X/Y
             # Since our tiles may go over the edge of the original "grid" we
@@ -912,6 +918,42 @@ class Backend(roles.BackendRole):
             # y -= by
             # y /= my
 
+            # FIXME: Make this part of the reader/frontend
+            gridded_product["central_wavelength"] = {
+                "i01": 0.640,
+                "i02": 0.865,
+                "i03": 1.610,
+                "i04": 3.740,
+                "i05": 11.450,
+                "m01": 0.412,
+                "m02": 0.445,
+                "m03": 0.488,
+                "m04": 0.555,
+                "m05": 0.672,
+                "m06": 0.746,
+                "m07": 0.865,
+                "m08": 1.242,
+                "m09": 1.378,
+                "m10": 1.610,
+                "m11": 2.250,
+                "m12": 3.700,
+                "m13": 4.050,
+                "m14": 8.550,
+                "m15": 10.763,
+                "m16": 12.013,
+            }.get(gridded_product["product_name"], -1.)
+            gridded_product["bit_depth"] = bit_depth = 12
+            #gridded_product["bit_depth"] = bit_depth = 12
+            # FIXME: Get information from configuration file
+            valid_min = gridded_product.get("valid_min", -0.011764705898 if gridded_product["data_kind"] == "reflectance" else 69.)
+            gridded_product["valid_min"] = valid_min
+            valid_max = gridded_product.get("valid_max", 1.192352914276 if gridded_product["data_kind"] == "reflectance" else 320.)
+            gridded_product["valid_max"] = valid_max
+            factor = (valid_max - valid_min) / float(2**bit_depth - 1)
+            offset = valid_min
+            # print(bit_depth, valid_min, valid_max, factor, offset)
+            # import ipdb; ipdb.set_trace()
+
             creation_str = datetime.utcnow().strftime('%Y%j%H%M%S')
             start_str = gridded_product["begin_time"].strftime('%Y%j%H%M%S')
             for ty in range(tile_count[0]):
@@ -920,7 +962,7 @@ class Backend(roles.BackendRole):
                     tmp_tile[:] = fill_value
                     tile_number = ty * tile_count[1] + tx + 1
                     tmp_tile[:] = data[ty * tile_shape[0]: (ty + 1) * tile_shape[0], tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
-                    output_filename = "OR_HFD-010-B11-M1C03-T{:03d}_GH8_s{}_c{}.nc".format(tile_number, start_str, creation_str)
+                    # output_filename = "OR_HFD-010-B11-M1C03-T{:03d}_GH8_s{}_c{}.nc".format(tile_number, start_str, creation_str)
 
                     if tmp_tile.mask.all():
                         LOG.info("Tile %d contains all masked data, skipping...", tile_number)
@@ -932,20 +974,24 @@ class Backend(roles.BackendRole):
 
                     # fake_scene.navigation = nav
                     attr_helper = AttributeHelper(fake_scene, (ty, tx), tile_count, data.shape)
+                    output_filename = attr_helper._filename()
+                    output_filename = output_filename.replace("DT_", "OR_")
                     # attr_helper = AttributeHelper(fake_scene, (0, 0), (1, 1), tmp_tile.shape)
-                    band = 2
-                    nc = SCMI_writer(output_filename, 10, (ty, tx), tile_shape, 'albedo', band, include_rad=False, helper=attr_helper)
+
+                    nc = SCMI_writer(output_filename, 10, (ty, tx), tile_shape, fake_scene.kind, gridded_product["product_name"], include_rad=False, helper=attr_helper)
                     LOG.debug("Creating dimensions...")
                     nc.create_dimensions()
-                    sfao = IMG_SF_AO[band]
                     LOG.debug("Creating variables...")
-                    nc.create_variables(*sfao)
+                    nc.create_variables(factor, offset)
                     LOG.debug("Creating global attributes...")
                     nc.set_global_attrs(fake_scene.metadata, None)
                     LOG.debug("Creating projection attributes...")
                     nc.set_projection_attrs(gridded_product["grid_definition"])
                     LOG.debug("Writing image data...")
-                    nc.set_image_data(alb=tmp_tile)
+                    if gridded_product["data_kind"] == "reflectance":
+                        nc.set_image_data(alb=tmp_tile)
+                    else:
+                        nc.set_image_data(bt=tmp_tile)
                     LOG.debug("Writing X/Y navigation data...")
                     nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units=xy_units)
                     nc.close()
