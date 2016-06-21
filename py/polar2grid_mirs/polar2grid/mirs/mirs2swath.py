@@ -126,11 +126,13 @@ class MIRSFileReader(BaseFileReader):
     # best case nadir resolutions in meters (could be made per band):
     INST_NADIR_RESOLUTION = {
         "atms": 15800,
+        "mhs": 20300,
     }
 
     # worst case nadir resolutions in meters (could be made per band):
     INST_LIMB_RESOLUTION = {
         "atms": 323100,
+        "mhs": 323100,
     }
 
     def __init__(self, filepath, file_type_info):
@@ -141,10 +143,23 @@ class MIRSFileReader(BaseFileReader):
             LOG.error("Unknown file format for file %s" % (self.filename,))
             raise ValueError("Unknown file format for file %s" % (self.filename,))
 
-        self.satellite = self.file_handle.satellite_name.lower()
-        self.instrument = self.file_handle.instrument_name.lower()
-        self.begin_time = datetime.strptime(self.file_handle.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
-        self.end_time = datetime.strptime(self.file_handle.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
+        # IMG_SX.M1.D15238.S1614.E1627.B0000001.WE.HR.ORB.nc
+        fn_parts = self.file_handle.filename.split(".")
+        try:
+            self.satellite = self.file_handle.satellite_name.lower()
+            self.instrument = self.file_handle.instrument_name.lower()
+            self.begin_time = datetime.strptime(self.file_handle.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
+            self.end_time = datetime.strptime(self.file_handle.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
+        except AttributeError:
+            self.satellite = {
+                "M1": "metopa",
+                "M2": "metopb",
+                "NN": "noaa18",
+                "NP": "noaa19",
+            }[fn_parts[1]]
+            self.instrument = "mhs"  # actually combination of mhs and amsu
+            self.begin_time = datetime.strptime(fn_parts[2][1:] + fn_parts[3][1:], "%y%j%H%M")
+            self.end_time = datetime.strptime(fn_parts[2][1:] + fn_parts[4][1:], "%y%j%H%M")
 
         if self.instrument in self.INST_NADIR_RESOLUTION:
             self.nadir_resolution = self.INST_NADIR_RESOLUTION[self.instrument]
@@ -166,9 +181,6 @@ class MIRSFileReader(BaseFileReader):
             else:
                 nc_obj = fn_or_nc_obj
 
-            assert(hasattr(nc_obj, "project") and nc_obj.project == "Microwave Integrated Retrieval System")
-            assert(hasattr(nc_obj, "title") and nc_obj.title == "MIRS IMG")
-            #assert(hasattr(nc_obj, "data_model") and nc_obj.data_model == "NETCDF4")
             return True
         except AssertionError:
             LOG.debug("File Validation Exception Information: ", exc_info=True)
@@ -217,8 +229,11 @@ class MIRSFileReader(BaseFileReader):
     def filter_by_frequency(self, item, arr, freq):
         freq_var = self[FREQ_VAR]
         freq_idx = numpy.nonzero(freq_var[:] == freq)[0]
+        # try getting something close
+        if not freq_idx:
+            freq_idx = numpy.nonzero(numpy.isclose(freq_var[:], freq, atol=1))
         if freq_idx:
-            freq_idx = freq_idx[0]
+            freq_idx = freq_idx[0][:1]  # take the first axis results and only the first element
         else:
             LOG.error("Frequency %f for variable %s does not exist" % (freq, item))
             raise ValueError("Frequency %f for variable %s does not exist" % (freq, item))
@@ -253,9 +268,9 @@ class MIRSFileReader(BaseFileReader):
         if file_scale:
             var_data = var_data.astype(dtype)
             if bad_mask is not None:
-                var_data[~bad_mask] = var_data[~bad_mask] / file_scale
+                var_data[~bad_mask] = var_data[~bad_mask] * file_scale
             else:
-                var_data = var_data / file_scale
+                var_data = var_data * file_scale
 
         return var_data
 
@@ -418,7 +433,7 @@ class Frontend(roles.FrontendRole):
         swath_definition = containers.SwathDefinition(
             swath_name=swath_name, longitude=lon_product["swath_data"], latitude=lat_product["swath_data"],
             data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
-            swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["rows_per_scan"],
+            swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["swath_rows"],
             source_filenames=sorted(set(lon_file_reader.filepaths + lat_file_reader.filepaths)),
             nadir_resolution=lon_file_reader.nadir_resolution, limb_resolution=lat_file_reader.limb_resolution,
             fill_value=lon_product["fill_value"],
@@ -459,7 +474,7 @@ class Frontend(roles.FrontendRole):
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
             swath_definition=swath_definition, fill_value=numpy.nan,
             swath_rows=shape[0], swath_columns=shape[1], data_type=numpy.float32, swath_data=filename,
-            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=0
+            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=shape[0],
         )
         return one_swath
 
