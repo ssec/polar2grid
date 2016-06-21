@@ -230,10 +230,10 @@ class MIRSFileReader(BaseFileReader):
         freq_var = self[FREQ_VAR]
         freq_idx = numpy.nonzero(freq_var[:] == freq)[0]
         # try getting something close
-        if not freq_idx:
-            freq_idx = numpy.nonzero(numpy.isclose(freq_var[:], freq, atol=1))
-        if freq_idx:
-            freq_idx = freq_idx[0][:1]  # take the first axis results and only the first element
+        if freq_idx.shape[0] == 0:
+            freq_idx = numpy.nonzero(numpy.isclose(freq_var[:], freq, atol=1))[0]
+        if freq_idx.shape[0] != 0:
+            freq_idx = freq_idx[0]
         else:
             LOG.error("Frequency %f for variable %s does not exist" % (freq, item))
             raise ValueError("Frequency %f for variable %s does not exist" % (freq, item))
