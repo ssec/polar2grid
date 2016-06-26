@@ -53,12 +53,18 @@ import os
 import sys
 import logging
 from datetime import datetime, timedelta
-import numpy
+import numpy as np
 from netCDF4 import Dataset
 
 from polar2grid.core import roles
 from polar2grid.core import containers
 from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader, ProductDict, GeoPairDict
+
+try:
+    # try getting setuptools/distribute's version of resource retrieval first
+    from pkg_resources import resource_string as get_resource_string
+except ImportError:
+    from pkgutil import get_data as get_resource_string
 
 LOG = logging.getLogger(__name__)
 
@@ -70,6 +76,7 @@ BT_90_VAR = "bt_90_var"
 FREQ_VAR = "freq_var"
 LAT_VAR = "latitude_var"
 LON_VAR = "longitude_var"
+
 BT_VARS = [BT_90_VAR]
 
 
@@ -98,6 +105,61 @@ FILE_STRUCTURE = {
     LAT_VAR: ("Latitude", None, None, None),
     LON_VAR: ("Longitude", None, None, None),
     }
+
+
+LIMB_SEA_FILE = os.environ.get("ATMS_LIMB_SEA", "polar2grid.mirs:limball_atmssea.txt")
+LIMB_LAND_FILE = os.environ.get("ATMS_LIMB_LAND", "polar2grid.mirs:limball_atmsland.txt")
+
+
+def read_atms_limb_correction_coefficients(fn):
+    if os.path.isfile(fn):
+        coeff_str = open(fn, "r").readlines()
+    else:
+        parts = fn.split(":")
+        mod_part, file_part = parts if len(parts) == 2 else ("", parts[0])
+        mod_part = mod_part or __package__  # self.__module__
+        coeff_str = get_resource_string(mod_part, file_part).split("\n")
+    # make it a generator
+    coeff_str = (line.strip() for line in coeff_str)
+
+    all_coeffs = np.zeros((22, 96, 22), dtype=np.float32)
+    all_amean = np.zeros((22, 96, 22), dtype=np.float32)
+    all_dmean = np.zeros(22, dtype=np.float32)
+    all_nchx = np.zeros(22, dtype=np.int32)
+    all_nchanx = np.zeros((22, 22), dtype=np.int32)
+    all_nchanx[:] = -1
+    # There should be 22 sections
+    for chan_idx in range(22):
+        # blank line at the start of each section
+        _ = next(coeff_str)
+
+        # section header
+        nx, nchx, dmean = [x.strip() for x in next(coeff_str).split(" ") if x]
+        nx = int(nx)
+        all_nchx[chan_idx] = nchx = int(nchx)
+        all_dmean[chan_idx] = float(dmean)
+
+        # coeff locations (indexes to put the future coefficients in)
+        locations = [int(x.strip()) for x in next(coeff_str).split(" ") if x]
+        assert(len(locations) == nchx)
+        for x in range(nchx):
+            all_nchanx[chan_idx, x] = locations[x] - 1
+
+        # Read 'nchx' coefficients for each of 96 FOV
+        for fov_idx in range(96):
+            # chan_num, fov_num, *coefficients, error
+            coeff_line_parts = [x.strip() for x in next(coeff_str).split(" ") if x][2:]
+            coeffs = [float(x) for x in coeff_line_parts[:nchx]]
+            ameans = [float(x) for x in coeff_line_parts[nchx:-1]]
+            error_val = float(coeff_line_parts[-1])
+            for x in range(nchx):
+                all_coeffs[chan_idx, fov_idx, all_nchanx[chan_idx, x]] = coeffs[x]
+                all_amean[all_nchanx[chan_idx, x], fov_idx, chan_idx] = ameans[x]
+
+    return all_dmean, all_coeffs, all_amean, all_nchx, all_nchanx
+
+def apply_atms_limb_correction(datasets):
+    pass
 
 
 class NetCDFFileReader(object):
@@ -228,10 +290,10 @@ class MIRSFileReader(BaseFileReader):
 
     def filter_by_frequency(self, item, arr, freq):
         freq_var = self[FREQ_VAR]
-        freq_idx = numpy.nonzero(freq_var[:] == freq)[0]
+        freq_idx = np.nonzero(freq_var[:] == freq)[0]
         # try getting something close
         if freq_idx.shape[0] == 0:
-            freq_idx = numpy.nonzero(numpy.isclose(freq_var[:], freq, atol=1))[0]
+            freq_idx = np.nonzero(np.isclose(freq_var[:], freq, atol=1))[0]
         if freq_idx.shape[0] != 0:
             freq_idx = freq_idx[0]
         else:
@@ -243,7 +305,7 @@ class MIRSFileReader(BaseFileReader):
         idx_obj[freq_dim_idx] = freq_idx
         return arr[idx_obj]
 
-    def get_swath_data(self, item, dtype=numpy.float32, fill=numpy.nan):
+    def get_swath_data(self, item, dtype=np.float32, fill=np.nan):
         """Get swath data from the file. Usually requires special processing.
         """
         var_data = self[item][:].astype(dtype)
@@ -423,7 +485,7 @@ class Frontend(roles.FrontendRole):
         # sanity check
         for k in ["data_type", "swath_rows", "swath_columns", "rows_per_scan", "fill_value"]:
             if lon_product[k] != lat_product[k]:
-                if k == "fill_value" and numpy.isnan(lon_product[k]) and numpy.isnan(lat_product[k]):
+                if k == "fill_value" and np.isnan(lon_product[k]) and np.isnan(lat_product[k]):
                     # NaN special case: NaNs can't be compared normally
                     continue
                 LOG.error("Longitude and latitude products do not have equal attributes: %s", k)
@@ -472,8 +534,8 @@ class Frontend(roles.FrontendRole):
             product_name=product_name, description=product_def.description, units=product_def.units,
             satellite=file_reader.satellite, instrument=file_reader.instrument,
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
-            swath_definition=swath_definition, fill_value=numpy.nan,
-            swath_rows=shape[0], swath_columns=shape[1], data_type=numpy.float32, swath_data=filename,
+            swath_definition=swath_definition, fill_value=np.nan,
+            swath_rows=shape[0], swath_columns=shape[1], data_type=np.float32, swath_data=filename,
             source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=shape[0],
         )
         return one_swath
