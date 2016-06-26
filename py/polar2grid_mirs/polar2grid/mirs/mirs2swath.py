@@ -77,6 +77,7 @@ BT_ALL_VARS = "bt_var"
 FREQ_VAR = "freq_var"
 LAT_VAR = "latitude_var"
 LON_VAR = "longitude_var"
+SURF_TYPE_VAR = "surface_type_var"
 
 BT_VARS = [BT_90_VAR]
 
@@ -86,6 +87,7 @@ PRODUCT_BT_90 = "mirs_btemp_90"
 PRODUCT_BT_CHANS = "mirs_btemp_channels"
 PRODUCT_LATITUDE = "mirs_latitude"
 PRODUCT_LONGITUDE = "mirs_longitude"
+PRODUCT_SURF_TYPE = "surface_type"
 
 PAIR_MIRS_NAV = "mirs_nav"
 
@@ -93,8 +95,9 @@ PRODUCTS = ProductDict()
 PRODUCTS.add_product(PRODUCT_LATITUDE, PAIR_MIRS_NAV, "latitude", FT_IMG, LAT_VAR, description="Latitude", units="degrees")
 PRODUCTS.add_product(PRODUCT_LONGITUDE, PAIR_MIRS_NAV, "longitude", FT_IMG, LON_VAR, description="Longitude", units="degrees")
 PRODUCTS.add_product(PRODUCT_RAIN_RATE, PAIR_MIRS_NAV, "rain_rate", FT_IMG, RR_VAR, description="Rain Rate", units="mm/hr")
+PRODUCTS.add_product(PRODUCT_SURF_TYPE, PAIR_MIRS_NAV, "mask", FT_IMG, SURF_TYPE_VAR, description="Surface Type: type of surface:0-ocean,1-sea ice,2-land,3-snow")
 PRODUCTS.add_product(PRODUCT_BT_CHANS, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_ALL_VARS, description="Channel Brightness Temperature for every channel", units="K")
-PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_90_VAR, description="Channel Brightness Temperature at 88.2GHz", units="K", frequency=88.2, dependencies=(PRODUCT_BT_CHANS,))
+PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_90_VAR, description="Channel Brightness Temperature at 88.2GHz", units="K", frequency=88.2, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE))
 
 GEO_PAIRS = GeoPairDict()
 GEO_PAIRS.add_pair(PAIR_MIRS_NAV, PRODUCT_LONGITUDE, PRODUCT_LATITUDE, 0)
@@ -108,6 +111,7 @@ FILE_STRUCTURE = {
     FREQ_VAR: ("Freq", None, None, None),
     LAT_VAR: ("Latitude", None, None, None),
     LON_VAR: ("Longitude", None, None, None),
+    SURF_TYPE_VAR: ("Sfc_type", None, None, None),
     }
 
 
@@ -711,18 +715,25 @@ class Frontend(roles.FrontendRole):
 
         product_def = self.PRODUCTS[product_name]
         deps = product_def.dependencies
-        if len(deps) != 1:
+        if len(deps) != 2:
             LOG.error("Expected 1 dependencies to create corrected BT product, got %d" % (len(deps),))
             raise ValueError("Expected 1 dependencies to create corrected BT product, got %d" % (len(deps),))
 
         full_bt_product_name = deps[0]
         full_bt_product = products_created[full_bt_product_name]
         full_bt_data = full_bt_product.get_data_array("swath_data")
+        surf_type_name = deps[1]
+        surf_type_product = products_created[surf_type_name]
+        surf_type_mask = surf_type_product.get_data_array("swath_data")
+
         bt_data = bt_product.get_data_array("swath_data", mode="r+")
-        # coeff_results = read_atms_limb_correction_coefficients(LIMB_SEA_FILE)
-        coeff_results = read_atms_limb_correction_coefficients(LIMB_LAND_FILE)
-        new_bt_data = apply_atms_limb_correction(full_bt_data, *coeff_results)
-        bt_data[:] = new_bt_data[bt_product["channel_index"]]
+        sea_coeff_results = read_atms_limb_correction_coefficients(LIMB_SEA_FILE)
+        new_sea_bt_data = apply_atms_limb_correction(full_bt_data, *sea_coeff_results)
+        land_coeff_results = read_atms_limb_correction_coefficients(LIMB_LAND_FILE)
+        new_land_bt_data = apply_atms_limb_correction(full_bt_data, *land_coeff_results)
+        is_sea = (surf_type_mask == 0)
+        bt_data[is_sea] = new_sea_bt_data[bt_product["channel_index"]][is_sea]
+        bt_data[~is_sea] = new_land_bt_data[bt_product["channel_index"]][~is_sea]
 
         # return the same original swath object since we modified the data in place
         return products_created[product_name]
