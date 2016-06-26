@@ -73,6 +73,7 @@ FT_IMG = "MIRS_IMG"
 # File variables
 RR_VAR = "rr_var"
 BT_90_VAR = "bt_90_var"
+BT_ALL_VARS = "bt_var"
 FREQ_VAR = "freq_var"
 LAT_VAR = "latitude_var"
 LON_VAR = "longitude_var"
@@ -82,6 +83,7 @@ BT_VARS = [BT_90_VAR]
 
 PRODUCT_RAIN_RATE = "mirs_rain_rate"
 PRODUCT_BT_90 = "mirs_btemp_90"
+PRODUCT_BT_CHANS = "mirs_btemp_channels"
 PRODUCT_LATITUDE = "mirs_latitude"
 PRODUCT_LONGITUDE = "mirs_longitude"
 
@@ -91,7 +93,8 @@ PRODUCTS = ProductDict()
 PRODUCTS.add_product(PRODUCT_LATITUDE, PAIR_MIRS_NAV, "latitude", FT_IMG, LAT_VAR, description="Latitude", units="degrees")
 PRODUCTS.add_product(PRODUCT_LONGITUDE, PAIR_MIRS_NAV, "longitude", FT_IMG, LON_VAR, description="Longitude", units="degrees")
 PRODUCTS.add_product(PRODUCT_RAIN_RATE, PAIR_MIRS_NAV, "rain_rate", FT_IMG, RR_VAR, description="Rain Rate", units="mm/hr")
-PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_90_VAR, description="Channel Brightness Temperature at 88.2GHz", units="K")
+PRODUCTS.add_product(PRODUCT_BT_CHANS, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_ALL_VARS, description="Channel Brightness Temperature for every channel", units="K")
+PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_90_VAR, description="Channel Brightness Temperature at 88.2GHz", units="K", frequency=88.2, dependencies=(PRODUCT_BT_CHANS,))
 
 GEO_PAIRS = GeoPairDict()
 GEO_PAIRS.add_pair(PAIR_MIRS_NAV, PRODUCT_LONGITUDE, PRODUCT_LATITUDE, 0)
@@ -101,6 +104,7 @@ GEO_PAIRS.add_pair(PAIR_MIRS_NAV, PRODUCT_LONGITUDE, PRODUCT_LATITUDE, 0)
 FILE_STRUCTURE = {
     RR_VAR: ("RR", ("scale", "scale_factor"), None, None),
     BT_90_VAR: ("BT", ("scale", "scale_factor"), None, 88.2),
+    BT_ALL_VARS: ("BT", ("scale", "scale_factor"), None, None),
     FREQ_VAR: ("Freq", None, None, None),
     LAT_VAR: ("Latitude", None, None, None),
     LON_VAR: ("Longitude", None, None, None),
@@ -127,7 +131,7 @@ def read_atms_limb_correction_coefficients(fn):
     all_dmean = np.zeros(22, dtype=np.float32)
     all_nchx = np.zeros(22, dtype=np.int32)
     all_nchanx = np.zeros((22, 22), dtype=np.int32)
-    all_nchanx[:] = -1
+    all_nchanx[:] = 9999
     # There should be 22 sections
     for chan_idx in range(22):
         # blank line at the start of each section
@@ -158,8 +162,24 @@ def read_atms_limb_correction_coefficients(fn):
 
     return all_dmean, all_coeffs, all_amean, all_nchx, all_nchanx
 
-def apply_atms_limb_correction(datasets):
-    pass
+
+def apply_atms_limb_correction(datasets, dmean, coeffs, amean, nchx, nchanx):
+    all_new_ds = []
+    sum = np.zeros(datasets.shape[1], dtype=datasets[0].dtype)
+    for channel_idx in range(datasets.shape[0]):
+        ds = datasets[channel_idx]
+        new_ds = ds.copy()
+        all_new_ds.append(new_ds)
+        for fov_idx in range(96):
+            sum[:] = 0
+            for k in range(nchx[channel_idx]):
+                coef = coeffs[channel_idx, fov_idx, nchanx[channel_idx, k]] * (
+                    datasets[nchanx[channel_idx, k], :, fov_idx] -
+                    amean[nchanx[channel_idx, k], fov_idx, channel_idx])
+                sum += coef
+            new_ds[:, fov_idx] = sum + dmean[channel_idx]
+
+    return all_new_ds
 
 
 class NetCDFFileReader(object):
@@ -288,7 +308,7 @@ class MIRSFileReader(BaseFileReader):
                         pass
         return scale_value
 
-    def filter_by_frequency(self, item, arr, freq):
+    def get_channel_index(self, freq):
         freq_var = self[FREQ_VAR]
         freq_idx = np.nonzero(freq_var[:] == freq)[0]
         # try getting something close
@@ -299,7 +319,11 @@ class MIRSFileReader(BaseFileReader):
         else:
             LOG.error("Frequency %f for variable %s does not exist" % (freq, item))
             raise ValueError("Frequency %f for variable %s does not exist" % (freq, item))
+        return freq_idx
 
+    def filter_by_frequency(self, item, arr, freq):
+        freq_idx = self.get_channel_index(freq)
+        freq_var = self[FREQ_VAR]
         freq_dim_idx = self[item].dimensions.index(freq_var.dimensions[0])
         idx_obj = [slice(x) for x in arr.shape]
         idx_obj[freq_dim_idx] = freq_idx
@@ -312,6 +336,26 @@ class MIRSFileReader(BaseFileReader):
         freq = FILE_STRUCTURE[item][3]
         if freq:
             var_data = self.filter_by_frequency(item, var_data, freq)
+        elif item == BT_ALL_VARS:
+            # import ipdb; ipdb.set_trace()
+            # special case, make sure dimension order is channel, scan, fov
+            channel_dim_name = "Channel"
+            scan_dim_name = "Scanline"
+            fov_dim_name = "Field_of_view"
+            dims = list(self[item].dimensions)
+            if dims[0] != channel_dim_name:
+                idx = dims.index(channel_dim_name)
+                var_data = np.swapaxes(var_data, 0, idx)
+                # reorder the dimension names
+                swap_name = dims[0]
+                dims[0] = channel_dim_name
+                dims[idx] = swap_name
+            if dims[1] != scan_dim_name:
+                idx = dims.index(scan_dim_name)
+                var_data = np.swapaxes(var_data, 1, idx)
+                swap_name = dims[1]
+                dims[1] = scan_dim_name
+                dims[idx] = swap_name
 
         file_fill = self.get_fill_value(item)
         file_scale = self.get_scale_value(item)
@@ -344,6 +388,9 @@ class MIRSMultiReader(BaseMultiFileReader):
     @classmethod
     def handles_file(cls, fn_or_nc_obj):
         return MIRSFileReader.handles_file(fn_or_nc_obj)
+
+    def get_channel_index(self, freq):
+        return self.file_readers[0].get_channel_index(freq)
 
     @property
     def satellite(self):
@@ -397,9 +444,14 @@ class Frontend(roles.FrontendRole):
     """Polar2Grid Frontend object for handling MIRS files.
     """
     FILE_EXTENSIONS = [".nc"]
+    PRODUCTS = PRODUCTS
+    GEO_PAIRS = GEO_PAIRS
 
     def __init__(self, **kwargs):
         super(Frontend, self).__init__(**kwargs)
+        self.secondary_product_functions = {
+            PRODUCT_BT_90: self.limb_correct_atms_bt,
+        }
         self._load_files(self.find_files_with_extensions())
 
     def _load_files(self, filepaths):
@@ -439,15 +491,15 @@ class Frontend(roles.FrontendRole):
 
     @property
     def available_product_names(self):
-        raw_products = [p for p in PRODUCTS.all_raw_products if self.raw_product_available(p)]
-        return sorted(PRODUCTS.get_product_dependents(raw_products))
+        raw_products = [p for p in self.PRODUCTS.all_raw_products if self.raw_product_available(p)]
+        return sorted(self.PRODUCTS.get_product_dependents(raw_products))
 
     def raw_product_available(self, product_name):
         """Is it possible to load the provided product with the files provided to the `Frontend`.
 
         :returns: True if product can be loaded, False otherwise (including if product is not a raw product)
         """
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         if product_def.is_raw:
             if isinstance(product_def.file_type, str):
                 file_type = product_def.file_type
@@ -459,7 +511,7 @@ class Frontend(roles.FrontendRole):
 
     @property
     def all_product_names(self):
-        return PRODUCTS.keys()
+        return self.PRODUCTS.keys()
 
     @property
     def default_products(self):
@@ -477,9 +529,9 @@ class Frontend(roles.FrontendRole):
         return self.file_readers[self.file_readers.keys()[0]].end_time
 
     def create_swath_definition(self, lon_product, lat_product):
-        product_def = PRODUCTS[lon_product["product_name"]]
+        product_def = self.PRODUCTS[lon_product["product_name"]]
         lon_file_reader = self.file_readers[product_def.file_type]
-        product_def = PRODUCTS[lat_product["product_name"]]
+        product_def = self.PRODUCTS[lat_product["product_name"]]
         lat_file_reader = self.file_readers[product_def.file_type]
 
         # sanity check
@@ -512,7 +564,7 @@ class Frontend(roles.FrontendRole):
         return swath_definition
 
     def create_raw_swath_object(self, product_name, swath_definition):
-        product_def = PRODUCTS[product_name]
+        product_def = self.PRODUCTS[product_name]
         file_reader = self.file_readers[product_def.file_type]
         filename = product_name + ".dat"
         if os.path.isfile(filename):
@@ -530,6 +582,11 @@ class Frontend(roles.FrontendRole):
             LOG.debug("Extraction exception: ", exc_info=True)
             raise
 
+        kwargs = {}
+        if hasattr(product_def, "frequency"):
+            channel_index = file_reader.get_channel_index(product_def.frequency)
+            kwargs["channel_index"] = channel_index
+            kwargs["frequency"] = product_def.frequency
         one_swath = containers.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
             satellite=file_reader.satellite, instrument=file_reader.instrument,
@@ -537,6 +594,7 @@ class Frontend(roles.FrontendRole):
             swath_definition=swath_definition, fill_value=np.nan,
             swath_rows=shape[0], swath_columns=shape[1], data_type=np.float32, swath_data=filename,
             source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=shape[0],
+            **kwargs
         )
         return one_swath
 
@@ -551,11 +609,11 @@ class Frontend(roles.FrontendRole):
         products = self.loadable_products(products)
 
         # Needs to be ordered (least-depended product -> most-depended product)
-        products_needed = PRODUCTS.dependency_ordered_products(products)
-        geo_pairs_needed = PRODUCTS.geo_pairs_for_products(products_needed, self.available_file_types)
+        products_needed = self.PRODUCTS.dependency_ordered_products(products)
+        geo_pairs_needed = self.PRODUCTS.geo_pairs_for_products(products_needed, self.available_file_types)
         # both lists below include raw products that need extra processing/masking
-        raw_products_needed = (p for p in products_needed if PRODUCTS.is_raw(p, geo_is_raw=True))
-        secondary_products_needed = [p for p in products_needed if PRODUCTS.needs_processing(p)]
+        raw_products_needed = (p for p in products_needed if self.PRODUCTS.is_raw(p, geo_is_raw=True))
+        secondary_products_needed = [p for p in products_needed if self.PRODUCTS.needs_processing(p)]
         for p in secondary_products_needed:
             if p not in self.secondary_product_functions:
                 msg = "Product (secondary or extra processing) required, but not sure how to make it: '%s'" % (p,)
@@ -571,8 +629,8 @@ class Frontend(roles.FrontendRole):
 
         # Load geographic products - every product needs a geo-product
         for geo_pair_name in geo_pairs_needed:
-            lon_product_name = GEO_PAIRS[geo_pair_name].lon_product
-            lat_product_name = GEO_PAIRS[geo_pair_name].lat_product
+            lon_product_name = self.GEO_PAIRS[geo_pair_name].lon_product
+            lat_product_name = self.GEO_PAIRS[geo_pair_name].lat_product
             # longitude
             if lon_product_name not in products_created:
                 one_lon_swath = self.create_raw_swath_object(lon_product_name, None)
@@ -603,7 +661,7 @@ class Frontend(roles.FrontendRole):
 
             try:
                 LOG.info("Creating data product '%s'", product_name)
-                swath_def = swath_definitions[PRODUCTS[product_name].get_geo_pair_name(self.available_file_types)]
+                swath_def = swath_definitions[self.PRODUCTS[product_name].get_geo_pair_name(self.available_file_types)]
                 one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
             except StandardError:
                 LOG.error("Could not create raw product '%s'", product_name)
@@ -615,7 +673,59 @@ class Frontend(roles.FrontendRole):
                 # the user wants this product
                 scene[product_name] = one_swath
 
+        # Dependent products and Special cases (i.e. non-raw products that need further processing)
+        for product_name in reversed(secondary_products_needed):
+            product_func = self.secondary_product_functions[product_name]
+            swath_def = swath_definitions[self.PRODUCTS[product_name].geo_pair_name]
+
+            try:
+                LOG.info("Creating secondary product '%s'", product_name)
+                one_swath = product_func(product_name, swath_def, products_created)
+            except StandardError:
+                LOG.error("Could not create product (unexpected error): '%s'", product_name)
+                LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
+                if self.exit_on_error:
+                    raise
+                continue
+
+            if one_swath is None:
+                LOG.debug("Secondary product function did not produce a swath product")
+                if product_name in scene:
+                    LOG.debug("Removing original swath that was created before")
+                    del scene[product_name]
+                continue
+            products_created[product_name] = one_swath
+            if product_name in products:
+                # the user wants this product
+                scene[product_name] = one_swath
+
         return scene
+
+    def limb_correct_atms_bt(self, product_name, swath_definition, products_created, fill=np.nan):
+        bt_product = products_created[product_name]
+        if bt_product["instrument"].lower() != "atms":
+            LOG.info("Limb Correction will not be applied to non-ATMS BTs")
+            return products_created[product_name]
+
+        LOG.info("Starting ATMS Limb Correction...")
+
+        product_def = self.PRODUCTS[product_name]
+        deps = product_def.dependencies
+        if len(deps) != 1:
+            LOG.error("Expected 1 dependencies to create corrected BT product, got %d" % (len(deps),))
+            raise ValueError("Expected 1 dependencies to create corrected BT product, got %d" % (len(deps),))
+
+        full_bt_product_name = deps[0]
+        full_bt_product = products_created[full_bt_product_name]
+        full_bt_data = full_bt_product.get_data_array("swath_data")
+        bt_data = bt_product.get_data_array("swath_data", mode="r+")
+        # coeff_results = read_atms_limb_correction_coefficients(LIMB_SEA_FILE)
+        coeff_results = read_atms_limb_correction_coefficients(LIMB_LAND_FILE)
+        new_bt_data = apply_atms_limb_correction(full_bt_data, *coeff_results)
+        bt_data[:] = new_bt_data[bt_product["channel_index"]]
+
+        # return the same original swath object since we modified the data in place
+        return products_created[product_name]
 
 
 def add_frontend_argument_groups(parser):
