@@ -79,9 +79,6 @@ LAT_VAR = "latitude_var"
 LON_VAR = "longitude_var"
 SURF_TYPE_VAR = "surface_type_var"
 
-BT_VARS = [BT_90_VAR]
-
-
 PRODUCT_RAIN_RATE = "mirs_rain_rate"
 PRODUCT_BT_90 = "mirs_btemp_90"
 PRODUCT_BT_CHANS = "mirs_btemp_channels"
@@ -99,6 +96,13 @@ PRODUCTS.add_product(PRODUCT_SURF_TYPE, PAIR_MIRS_NAV, "mask", FT_IMG, SURF_TYPE
 PRODUCTS.add_product(PRODUCT_BT_CHANS, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_ALL_VARS, description="Channel Brightness Temperature for every channel", units="K")
 PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_90_VAR, description="Channel Brightness Temperature at 88.2GHz", units="K", frequency=88.2, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE))
 
+# Add all ATMS BT channels
+BT_CHANNEL_PRODUCTS = []
+for i in range(22):
+    pname = "btemp_{:02d}".format(i + 1)
+    PRODUCTS.add_product(pname, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, "bt_var_{:02d}".format(i + 1), description="Channel Brightness Temperature", units="K", channel_index=i, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE))
+    BT_CHANNEL_PRODUCTS.append(pname)
+
 GEO_PAIRS = GeoPairDict()
 GEO_PAIRS.add_pair(PAIR_MIRS_NAV, PRODUCT_LONGITUDE, PRODUCT_LATITUDE, 0)
 
@@ -113,6 +117,9 @@ FILE_STRUCTURE = {
     LON_VAR: ("Longitude", None, None, None),
     SURF_TYPE_VAR: ("Sfc_type", None, None, None),
     }
+
+for i in range(22):
+    FILE_STRUCTURE["bt_var_{:02d}".format(i + 1)] = ("BT", ("scale", "scale_factor"), None, i)
 
 
 LIMB_SEA_FILE = os.environ.get("ATMS_LIMB_SEA", "polar2grid.mirs:limball_atmssea.txt")
@@ -333,12 +340,23 @@ class MIRSFileReader(BaseFileReader):
         idx_obj[freq_dim_idx] = freq_idx
         return arr[idx_obj]
 
+    def filter_by_channel(self, item, arr, idx):
+        freq_var = self[FREQ_VAR]
+        freq_dim_idx = self[item].dimensions.index(freq_var.dimensions[0])
+        idx_obj = [slice(x) for x in arr.shape]
+        idx_obj[freq_dim_idx] = idx
+        return arr[idx_obj]
+
     def get_swath_data(self, item, dtype=np.float32, fill=np.nan):
         """Get swath data from the file. Usually requires special processing.
         """
         var_data = self[item][:].astype(dtype)
         freq = FILE_STRUCTURE[item][3]
-        if freq:
+        if isinstance(freq, int):
+            # filter by channel index
+            var_data = self.filter_by_channel(item, var_data, freq)
+        elif freq:
+            # filter by float channel frequency
             var_data = self.filter_by_frequency(item, var_data, freq)
         elif item == BT_ALL_VARS:
             # import ipdb; ipdb.set_trace()
@@ -456,6 +474,9 @@ class Frontend(roles.FrontendRole):
         self.secondary_product_functions = {
             PRODUCT_BT_90: self.limb_correct_atms_bt,
         }
+        for pname in BT_CHANNEL_PRODUCTS:
+            self.secondary_product_functions[pname] = self.limb_correct_atms_bt
+
         self._load_files(self.find_files_with_extensions())
 
     def _load_files(self, filepaths):
@@ -522,7 +543,7 @@ class Frontend(roles.FrontendRole):
         if os.getenv("P2G_MIRS_DEFAULTS", None):
             return os.getenv("P2G_MIRS_DEFAULTS")
 
-        return [PRODUCT_RAIN_RATE, PRODUCT_BT_90]
+        return [PRODUCT_RAIN_RATE] + BT_CHANNEL_PRODUCTS
 
     @property
     def begin_time(self):
@@ -587,7 +608,11 @@ class Frontend(roles.FrontendRole):
             raise
 
         kwargs = {}
-        if hasattr(product_def, "frequency"):
+        if hasattr(product_def, "channel_index"):
+            kwargs["channel_index"] = product_def.channel_index
+            # frequencies should be the same for each file (if multiple loaded) so just take the first (0) one
+            kwargs["frequency"] = file_reader[FREQ_VAR][0][product_def.channel_index]
+        elif hasattr(product_def, "frequency"):
             channel_index = file_reader.get_channel_index(product_def.frequency)
             kwargs["channel_index"] = channel_index
             kwargs["frequency"] = product_def.frequency
@@ -669,6 +694,7 @@ class Frontend(roles.FrontendRole):
                 one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
             except StandardError:
                 LOG.error("Could not create raw product '%s'", product_name)
+                LOG.debug("Debug: ", exc_info=True)
                 if self.exit_on_error:
                     raise
                 continue
@@ -744,6 +770,7 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
+    from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # parser.set_defaults(remap_method="ewa", fornav_D=100, fornav_d=1, maximum_weight_mode=True)
     parser.set_defaults(remap_method="ewa", fornav_D=100, fornav_d=1)
 
@@ -751,6 +778,8 @@ def add_frontend_argument_groups(parser):
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
     group.add_argument("--list-products", dest="list_products", action="store_true",
                         help="List available frontend products")
+    group.add_argument("--bt-channels", dest="products", action=ExtendConstAction, const=BT_CHANNEL_PRODUCTS,
+                       help="Add all BT channels to the list of requested products")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     group.add_argument("-p", "--products", dest="products", nargs="*", default=None, choices=PRODUCTS.keys(),
