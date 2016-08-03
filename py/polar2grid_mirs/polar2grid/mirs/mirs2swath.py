@@ -99,7 +99,7 @@ PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_
 # Add all ATMS BT channels
 BT_CHANNEL_PRODUCTS = []
 for i in range(22):
-    pname = "btemp_{:02d}".format(i + 1)
+    pname = "mirs_btemp_{:02d}".format(i + 1)
     PRODUCTS.add_product(pname, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, "bt_var_{:02d}".format(i + 1), description="Channel Brightness Temperature", units="K", channel_index=i, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE))
     BT_CHANNEL_PRODUCTS.append(pname)
 
