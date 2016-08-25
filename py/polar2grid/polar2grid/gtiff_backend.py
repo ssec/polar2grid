@@ -42,7 +42,7 @@ __docformat__ = "restructuredtext en"
 
 from osgeo import gdal
 import osr
-import numpy
+import numpy as np
 
 from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
 from polar2grid.core import roles
@@ -139,9 +139,9 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
         # do a linear scaling. No one should be scaling data to outside these
         # ranges anyway
         if etype == gdal.GDT_UInt16:
-            band_data = clip_to_data_type(band_data, numpy.uint16)
+            band_data = clip_to_data_type(band_data, np.uint16)
         elif etype == gdal.GDT_Byte:
-            band_data = clip_to_data_type(band_data, numpy.uint8)
+            band_data = clip_to_data_type(band_data, np.uint8)
         if log_level <= logging.DEBUG:
             LOG.debug("Data min: %f, max: %f" % (band_data.min(), band_data.max()))
 
@@ -159,9 +159,9 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
 
 
 np2etype = {
-    numpy.uint16: gdal.GDT_UInt16,
-    numpy.uint8: gdal.GDT_Byte,
-    numpy.float32: gdal.GDT_Float32,
+    np.uint16: gdal.GDT_UInt16,
+    np.uint8: gdal.GDT_Byte,
+    np.float32: gdal.GDT_Float32,
 }
 
 
@@ -178,7 +178,7 @@ class Backend(roles.BackendRole):
 
     def create_output_from_product(self, gridded_product, output_pattern=None,
                                    data_type=None, inc_by_one=None, fill_value=0, **kwargs):
-        data_type = data_type or numpy.uint8
+        data_type = data_type or np.uint8
         etype = np2etype[data_type]
         inc_by_one = inc_by_one or False
         grid_def = gridded_product["grid_definition"]
@@ -204,7 +204,7 @@ class Backend(roles.BackendRole):
                 LOG.warning("Geotiff file already exists, will overwrite: %s", output_filename)
 
         try:
-            if numpy.issubdtype(data_type, numpy.floating):
+            if np.issubdtype(data_type, np.floating):
                 # assume they don't want to scale floating point
                 data = gridded_product.get_data_array()
             else:
