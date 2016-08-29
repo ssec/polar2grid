@@ -432,7 +432,27 @@ class Rescaler(roles.INIConfigReader):
             LOG.error("Unexpected error during rescaling")
             raise
 
-    def rescale_product(self, gridded_product, data_type, inc_by_one=False, fill_value=None):
+    def get_rescale_options(self, gridded_product, data_type, inc_by_one=False, fill_value=None):
+        all_meta = gridded_product["grid_definition"].copy(as_dict=True)
+        all_meta.update(**gridded_product)
+        kwargs = dict((k, all_meta.get(k, None)) for k in self.id_fields)
+        # we don't want the product's current data_type, we want what the output will be
+        kwargs["data_type"] = dtype_to_str(data_type)
+        kwargs["inc_by_one"] = inc_by_one
+        rescale_options = self.get_config_options(**kwargs)
+        if "method" not in rescale_options:
+            LOG.error("No rescaling method found and no default method configured for %s", gridded_product["product_name"])
+            raise ValueError("No rescaling method configured for %s" % (gridded_product["product_name"],))
+        LOG.debug("Product %s found in rescale config: %r", gridded_product["product_name"], rescale_options)
+
+        min_out, max_out = dtype2range[kwargs["data_type"]]
+        rescale_options.setdefault("min_out", min_out)
+        rescale_options.setdefault("max_out", max_out - 1 if rescale_options["inc_by_one"] else max_out)
+        rescale_options.setdefault("units", gridded_product.get("units", "kelvin"))
+        rescale_options["fill_out"] = fill_value
+        return rescale_options
+
+    def rescale_product(self, gridded_product, data_type, inc_by_one=False, fill_value=None, rescale_options=None):
         """Rescale a gridded product based on how the rescaler is configured.
 
         The caller should know if it wants to increment the output data by 1 (`inc_by_one` keyword).
@@ -443,28 +463,14 @@ class Rescaler(roles.INIConfigReader):
         FUTURE: dec_by_one (mutually exclusive to inc_by_one)
 
         """
-        all_meta = gridded_product["grid_definition"].copy(as_dict=True)
-        all_meta.update(**gridded_product)
-        kwargs = dict((k, all_meta.get(k, None)) for k in self.id_fields)
-        # we don't want the product's current data_type, we want what the output will be
-        kwargs["data_type"] = dtype_to_str(data_type)
-        kwargs["inc_by_one"] = inc_by_one
-        rescale_options = self.get_config_options(**kwargs)
-        inc_by_one = rescale_options.pop("inc_by_one")
-        if "method" not in rescale_options:
-            LOG.error("No rescaling method found and no default method configured for %s", gridded_product["product_name"])
-            raise ValueError("No rescaling method configured for %s" % (gridded_product["product_name"],))
-        LOG.debug("Product %s found in rescale config: %r", gridded_product["product_name"], rescale_options)
+        if rescale_options is None:
+            rescale_options = self.get_rescale_options(gridded_product, data_type, inc_by_one, fill_value)
 
         method = rescale_options.pop("method")
         # if the configuration file didn't force these then provide a logical default
         clip = rescale_options.pop("clip", True)
         mask_clip = rescale_options.pop("mask_clip", None)
-        min_out, max_out = dtype2range[kwargs["data_type"]]
-        rescale_options.setdefault("min_out", min_out)
-        rescale_options.setdefault("max_out", max_out - 1 if inc_by_one else max_out)
-        rescale_options.setdefault("units", gridded_product.get("units", "kelvin"))
-        rescale_options["fill_out"] = fill_value
+        inc_by_one = rescale_options.pop("inc_by_one")
 
         data = gridded_product.copy_array(read_only=False)
         good_data_mask = ~gridded_product.get_data_mask()

@@ -156,6 +156,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
         png_driver.CreateCopy(png_filename, gtiff)
 
     # Garbage collection/destructor should close the file properly
+    return gtiff
 
 
 np2etype = {
@@ -207,16 +208,25 @@ class Backend(roles.BackendRole):
             if np.issubdtype(data_type, np.floating):
                 # assume they don't want to scale floating point
                 data = gridded_product.get_data_array()
+                rescale_options = {}
             else:
                 LOG.debug("Scaling %s data to fit in geotiff...", gridded_product["product_name"])
-                data = self.rescaler.rescale_product(gridded_product, data_type,
-                                                     inc_by_one=inc_by_one, fill_value=fill_value)
+                rescale_options = self.rescaler.get_rescale_options(gridded_product,
+                                                                    data_type,
+                                                                    inc_by_one=inc_by_one,
+                                                                    fill_value=fill_value)
+                data = self.rescaler.rescale_product(gridded_product, data_type, rescale_options=rescale_options.copy())
 
             # Create the geotiff
             # X and Y rotation are 0 in most cases so we just hard-code it
             geotransform = gridded_product["grid_definition"].gdal_geotransform
-            create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform,
-                           etype=etype, **kwargs)
+            gtiff = create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform,
+                                   etype=etype, **kwargs)
+
+            if rescale_options.get("method") == "linear" and "min_in" in rescale_options and "max_in" in rescale_options:
+                LOG.debug("Setting geotiff metadata for linear min/max values")
+                gtiff.SetMetadataItem("min_in", str(rescale_options["min_in"]))
+                gtiff.SetMetadataItem("max_in", str(rescale_options["max_in"]))
         except StandardError:
             if not self.keep_intermediate and os.path.isfile(output_filename):
                 os.remove(output_filename)
