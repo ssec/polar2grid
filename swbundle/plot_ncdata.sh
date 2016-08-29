@@ -39,7 +39,7 @@ oops() {
 if [ -z "$POLAR2GRID_HOME" ]; then
     oops "POLAR2GRID_HOME needs to be defined"
 fi
-source $POLAR2GRID_HOME/bin/polar2grid_env.sh
+source $POLAR2GRID_HOME/bin/env.sh
 
 # Generate NC product images
 ${P2G_SHELLB3_DIR}/bin/python -m polar2grid.plot_ncdata $@ || oops "Could not generate png images from NC files."

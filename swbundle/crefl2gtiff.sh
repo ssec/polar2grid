@@ -33,7 +33,7 @@ if [ -z "$POLAR2GRID_HOME" ]; then
 fi
 
 # Setup necessary environments
-source $POLAR2GRID_HOME/bin/polar2grid_env.sh
+source $POLAR2GRID_HOME/bin/env.sh
 
 # The cviirs and crefl executables require base HDF files which by default are in the bin directory
 export ANCPATH=${ANCPATH:-$POLAR2GRID_HOME/bin}

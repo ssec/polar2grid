@@ -34,7 +34,7 @@ if [ -z "$POLAR2GRID_HOME" ]; then
 fi
 
 # Setup necessary environments
-source $POLAR2GRID_HOME/bin/polar2grid_env.sh
+source $POLAR2GRID_HOME/bin/env.sh
 
 # Call the python module to do the processing, passing all arguments
 ${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue mirs gtiff $@ -vv

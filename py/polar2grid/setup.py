@@ -160,10 +160,12 @@ entry_points = {
     'polar2grid.frontend_class': [
         'viirs_l1b=polar2grid.readers.viirs_l1b:Frontend',
         'nucaps=polar2grid.readers.nucaps:Frontend',
+        'amsr2_l1b=polar2grid.readers.amsr2_l1b:Frontend',
         ],
     'polar2grid.frontend_arguments': [
         'viirs_l1b=polar2grid.readers.viirs_l1b:add_frontend_argument_groups',
         'nucaps=polar2grid.readers.nucaps:add_frontend_argument_groups',
+        'amsr2_l1b=polar2grid.readers.amsr2_l1b:add_frontend_argument_groups',
         ],
     }
 

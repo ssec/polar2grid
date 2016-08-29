@@ -44,6 +44,7 @@ import logging
 
 import numpy as np
 from satpy.scene import Scene
+from satpy.readers.yaml_reader import YAMLBasedReader
 from pyresample.geometry import AreaDefinition
 
 from polar2grid.core import containers, roles
@@ -155,7 +156,7 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
         "fill_value": np.nan,
         "swath_columns": cols,
         "swath_rows": rows,
-        "rows_per_scan": info["rows_per_scan"],
+        "rows_per_scan": info.get("rows_per_scan", ds.shape[0]),
         "data_type": ds.dtype,
         "swath_definition": swath_def,
         "channels": channels,
@@ -252,6 +253,7 @@ def convert_satpy_to_p2g_swath(frontend, scene):
             swath_def = areas[ds.info["area"].name]
         else:
             areas[ds.info["area"].name] = swath_def = area_to_swath_def(ds.info["area"], overwrite_existing=overwrite_existing)
+            swath_def.setdefault("rows_per_scan", ds.info.get("rows_per_scan", ds.shape[0]))
 
         for swath_product in dataset_to_swath_product(ds, swath_def, overwrite_existing=overwrite_existing):
             p2g_scene[swath_product["product_name"]] = swath_product
@@ -281,15 +283,17 @@ class ReaderWrapper(roles.FrontendRole):
     FILE_EXTENSIONS = []
     DEFAULT_READER_NAME = None
     DEFAULT_DATASETS = []
+    # This is temporary until a better solution is found for loading start/end time on init
+    PRIMARY_FILE_TYPE = None
 
     def __init__(self, **kwargs):
-        self.reader_name = kwargs.pop("reader_name", self.DEFAULT_READER_NAME)
+        self.reader = kwargs.pop("reader", self.DEFAULT_READER_NAME)
         super(ReaderWrapper, self).__init__(**kwargs)
         pathnames = self.find_files_with_extensions()
         # Create a satpy Scene object
-        self.scene = Scene(reader_name=self.reader_name, filenames=pathnames)
-        self._begin_time = min(fr.start_time for fr in self.scene.readers[self.reader_name].file_readers.values())
-        self._end_time = min(fr.end_time for fr in self.scene.readers[self.reader_name].file_readers.values())
+        self.scene = Scene(reader=self.reader, filenames=pathnames)
+        self._begin_time = self.scene.start_time
+        self._end_time = self.scene.end_time
 
     @property
     def begin_time(self):
@@ -301,11 +305,11 @@ class ReaderWrapper(roles.FrontendRole):
 
     @property
     def available_product_names(self):
-        return self.scene.available_datasets(reader_name=self.reader_name)
+        return self.scene.available_datasets(reader_name=self.reader)
 
     @property
     def all_product_names(self):
-        return self.scene.all_datasets(reader_name=self.reader_name)
+        return self.scene.all_datasets(reader_name=self.reader)
 
     @property
     def default_products(self):
