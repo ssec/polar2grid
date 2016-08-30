@@ -70,7 +70,7 @@ def add_frontend_argument_groups(parser):
     """
     from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # Set defaults for other components that may be used in polar2grid processing
-    parser.set_defaults(fornav_D=10, fornav_d=1, method="nearest")
+    parser.set_defaults(fornav_D=10, fornav_d=1, method="nearest", distance_upper_bound=12)
 
     # Use the append_const action to handle adding products to the list
     group_title = "Frontend Initialization"
