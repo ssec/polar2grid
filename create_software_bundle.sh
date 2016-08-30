@@ -81,6 +81,7 @@ rm -f "${SHELLB3_DIR}/tests"
 echo "Copying user grid directory to software bundle"
 cp -r ${BUNDLE_SCRIPTS_DIR}/grid_configs .
 cp -r ${BUNDLE_SCRIPTS_DIR}/colormaps .
+cp -r ${BUNDLE_SCRIPTS_DIR}/rescale_configs .
 
 # Download GSHHG Data shapefiles
 mkdir -p gshhg_data || oops "Could not make GSHHG data directory"
