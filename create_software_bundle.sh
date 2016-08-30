@@ -25,7 +25,7 @@ cached_download() {
     if [ ! -f $cache_path ]; then
         wget $1 || oops "Could not download $1"
     fi
-    popd $CACHE_DIR
+    popd
     cp $cache_path . || oops "Could not copy cached download ${cache_path}"
 }
 
