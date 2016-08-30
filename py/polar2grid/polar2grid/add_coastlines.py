@@ -112,74 +112,75 @@ def main():
 
     parser.add_argument("--shapes-dir", default=PYCOAST_DIR,
                         help="Specify alternative directory for coastline shape files (default: GSHSS_DATA_ROOT)")
-    parser.add_argument("-o", "--output", dest="output_filename",
+    parser.add_argument("-o", "--output", dest="output_filename", nargs="+",
                         help="Specify the output filename (default replace '.tif' with '.png')")
-    parser.add_argument("input_tiff",
-                        help="Input geotiff to process")
+    parser.add_argument("input_tiff", nargs="+",
+                        help="Input geotiff(s) to process")
     args = parser.parse_args()
 
     if args.output_filename is None:
-        args.output_filename = args.input_tiff[:-3] + "png"
+        args.output_filename = [x[:-3] + "png" for x in args.input_tiff]
 
-    gtiff = gdal.Open(args.input_tiff)
-    proj4_str = osr.SpatialReference(gtiff.GetProjection()).ExportToProj4()
-    ul_x, res_x, _, ul_y, _, res_y = gtiff.GetGeoTransform()
-    half_pixel_x = res_x / 2.
-    half_pixel_y = res_y / 2.
-    area_extent = (
-        ul_x - half_pixel_x,  # lower-left X
-        ul_y + res_y * gtiff.RasterYSize - half_pixel_y,  # lower-left Y
-        ul_x + res_x * gtiff.RasterXSize + half_pixel_x,  # upper-right X
-        ul_y + half_pixel_y,  # upper-right Y
-    )
-    p = Proj(proj4_str)
-    if p.is_latlong():
-        # convert lat/lons to radians
-        area_extent = p(area_extent[0], area_extent[1]) + p(area_extent[2], area_extent[3])
-    img = Image.open(args.input_tiff).convert('RGB')
-    area_def = (proj4_str, area_extent)
+    for input_tiff, output_filename in zip(args.input_tiff, args.output_filename):
+        gtiff = gdal.Open(input_tiff)
+        proj4_str = osr.SpatialReference(gtiff.GetProjection()).ExportToProj4()
+        ul_x, res_x, _, ul_y, _, res_y = gtiff.GetGeoTransform()
+        half_pixel_x = res_x / 2.
+        half_pixel_y = res_y / 2.
+        area_extent = (
+            ul_x - half_pixel_x,  # lower-left X
+            ul_y + res_y * gtiff.RasterYSize - half_pixel_y,  # lower-left Y
+            ul_x + res_x * gtiff.RasterXSize + half_pixel_x,  # upper-right X
+            ul_y + half_pixel_y,  # upper-right Y
+        )
+        p = Proj(proj4_str)
+        if p.is_latlong():
+            # convert lat/lons to radians
+            area_extent = p(area_extent[0], area_extent[1]) + p(area_extent[2], area_extent[3])
+        img = Image.open(args.input_tiff).convert('RGB')
+        area_def = (proj4_str, area_extent)
 
-    cw = ContourWriter(args.shapes_dir)
+        cw = ContourWriter(args.shapes_dir)
 
-    if args.add_coastlines:
-        outline = args.coastlines_outline[0] if len(args.coastlines_outline) == 1 else tuple(int(x) for x in args.coastlines_outline)
-        if args.coastlines_fill:
-            fill = args.coastlines_fill[0] if len(args.coastlines_fill) == 1 else tuple(int(x) for x in args.coastlines_fill)
-        else:
-            fill = None
-        cw.add_coastlines(img, area_def, resolution=args.coastlines_resolution, level=args.coastlines_level,
-                          outline=outline, fill=fill)
+        if args.add_coastlines:
+            outline = args.coastlines_outline[0] if len(args.coastlines_outline) == 1 else tuple(int(x) for x in args.coastlines_outline)
+            if args.coastlines_fill:
+                fill = args.coastlines_fill[0] if len(args.coastlines_fill) == 1 else tuple(int(x) for x in args.coastlines_fill)
+            else:
+                fill = None
+            cw.add_coastlines(img, area_def, resolution=args.coastlines_resolution, level=args.coastlines_level,
+                              outline=outline, fill=fill)
 
-    if args.add_rivers:
-        outline = args.rivers_outline[0] if len(args.rivers_outline) == 1 else tuple(int(x) for x in args.rivers_outline)
-        cw.add_rivers(img, area_def,
-                      resolution=args.rivers_resolution, level=args.rivers_level,
-                      outline=outline)
+        if args.add_rivers:
+            outline = args.rivers_outline[0] if len(args.rivers_outline) == 1 else tuple(int(x) for x in args.rivers_outline)
+            cw.add_rivers(img, area_def,
+                          resolution=args.rivers_resolution, level=args.rivers_level,
+                          outline=outline)
 
-    if args.add_borders:
-        outline = args.borders_outline[0] if len(args.borders_outline) == 1 else tuple(int(x) for x in args.borders_outline)
-        cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline)
+        if args.add_borders:
+            outline = args.borders_outline[0] if len(args.borders_outline) == 1 else tuple(int(x) for x in args.borders_outline)
+            cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline)
 
-    if args.add_grid:
-        import matplotlib
-        mpl_data_dir = matplotlib.get_data_path()
-        if not os.path.exists(args.grid_font):
-            font_path = os.path.join(mpl_data_dir, "fonts", "ttf", args.grid_font)
-            if not os.path.exists(font_path):
-                raise ValueError("Font path does not exist: {}".format(font_path))
-        else:
-            font_path = args.grid_font
+        if args.add_grid:
+            import matplotlib
+            mpl_data_dir = matplotlib.get_data_path()
+            if not os.path.exists(args.grid_font):
+                font_path = os.path.join(mpl_data_dir, "fonts", "ttf", args.grid_font)
+                if not os.path.exists(font_path):
+                    raise ValueError("Font path does not exist: {}".format(font_path))
+            else:
+                font_path = args.grid_font
 
-        font = ImageFont.truetype(font_path, args.grid_text_size)
-        outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
-        minor_outline = args.grid_minor_outline[0] if len(args.grid_minor_outline) == 1 else tuple(int(x) for x in args.grid_minor_outline)
-        fill = args.grid_fill[0] if len(args.grid_fill) == 1 else tuple(int(x) for x in args.grid_fill)
-        cw.add_grid(img, area_def, args.grid_D, args.grid_d, font,
-                    fill=fill, outline=outline, minor_outline=minor_outline,
-                    lon_placement=args.grid_lon_placement,
-                    lat_placement=args.grid_lat_placement)
+            font = ImageFont.truetype(font_path, args.grid_text_size)
+            outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
+            minor_outline = args.grid_minor_outline[0] if len(args.grid_minor_outline) == 1 else tuple(int(x) for x in args.grid_minor_outline)
+            fill = args.grid_fill[0] if len(args.grid_fill) == 1 else tuple(int(x) for x in args.grid_fill)
+            cw.add_grid(img, area_def, args.grid_D, args.grid_d, font,
+                        fill=fill, outline=outline, minor_outline=minor_outline,
+                        lon_placement=args.grid_lon_placement,
+                        lat_placement=args.grid_lat_placement)
 
-    img.save(args.output_filename)
+        img.save(output_filename)
 
 if __name__ == "__main__":
     sys.exit(main())
