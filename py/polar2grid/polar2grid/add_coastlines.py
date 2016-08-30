@@ -140,7 +140,7 @@ def main():
         if p.is_latlong():
             # convert lat/lons to radians
             area_extent = p(area_extent[0], area_extent[1]) + p(area_extent[2], area_extent[3])
-        img = Image.open(args.input_tiff).convert('RGB')
+        img = Image.open(input_tiff).convert('RGB')
         area_def = (proj4_str, area_extent)
 
         cw = ContourWriter(args.shapes_dir)
