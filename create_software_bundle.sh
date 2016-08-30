@@ -10,11 +10,23 @@ PY_DIR="$BASE_P2G_DIR"/py
 BUNDLE_SCRIPTS_DIR="$BASE_P2G_DIR"/swbundle
 VCREFL_DIR="$BASE_P2G_DIR"/viirs_crefl
 MCREFL_DIR="$BASE_P2G_DIR"/modis_crefl
+CACHE_DIR="/tmp"
 
 oops() {
     echo "OOPS: $*"
     echo "FAILURE"
     exit 1
+}
+
+cached_download() {
+    fn=`basename $1`
+    cache_path="${CACHE_DIR}/$fn"
+    pushd $CACHE_DIR
+    if [ ! -f $cache_path ]; then
+        wget $1 || oops "Could not download $1"
+    fi
+    popd $CACHE_DIR
+    cp $cache_path . || oops "Could not copy cached download ${cache_path}"
 }
 
 # Command line arguments
@@ -48,7 +60,7 @@ cd "$SB_NAME"
 # Get the ShellB3 install or copy it if it's already on the system
 if [ "${SHELLB3_URL:0:3}" == "ftp" ] || [ "${SHELLB3_URL:0:4}" == "http" ]; then
     echo "Downloading ShellB3..."
-    wget ${SHELLB3_URL} || oops "Could not download ShellB3"
+    cached_download $SHELLB3_URL
     echo "Extracting ShellB3 tarball..."
     tar -xf "$(basename "$SHELLB3_URL")" || oops "Could not extract ShellB3"
     echo "Removing downloaded ShellB3 tarball"
@@ -69,6 +81,14 @@ rm -f "${SHELLB3_DIR}/tests"
 echo "Copying user grid directory to software bundle"
 cp -r ${BUNDLE_SCRIPTS_DIR}/grid_configs .
 cp -r ${BUNDLE_SCRIPTS_DIR}/colormaps .
+
+# Download GSHHG Data shapefiles
+mkdir -p gshhg_data || oops "Could not make GSHHG data directory"
+pushd gshhg_data
+echo "Downloading GSHHG shapefiles"
+cached_download http://www.soest.hawaii.edu/pwessel/gshhg/gshhg-shp-2.3.6.zip
+unzip gshhg-shp-2.3.6.zip || oops "Could not unpack GSHHG shapefiles"
+popd
 
 # Create the 'bin' directory
 echo "Creating software bundle bin directory..."
@@ -133,7 +153,11 @@ ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollsift-0.1.1.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollimage-0.4.0.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyresample-1.1.5.tar.gz
+${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/PyYAML-3.12.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/satpy-2.0.0a1.tar.gz
+# Pycoast
+${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyshp-1.2.3.tar.gz
+${SHELLB3_DIR}/bin/python -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pycoast-0.5.2.tar.gz
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
