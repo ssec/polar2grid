@@ -120,8 +120,11 @@ def main():
 
     if args.output_filename is None:
         args.output_filename = [x[:-3] + "png" for x in args.input_tiff]
+    else:
+        assert args.output_filename == args.input_tiff, "Output filenames must be equal to number of input tiffs"
 
     for input_tiff, output_filename in zip(args.input_tiff, args.output_filename):
+        LOG.info("Creating {} from {}".format(output_filename, input_tiff))
         gtiff = gdal.Open(input_tiff)
         proj4_str = osr.SpatialReference(gtiff.GetProjection()).ExportToProj4()
         ul_x, res_x, _, ul_y, _, res_y = gtiff.GetGeoTransform()
