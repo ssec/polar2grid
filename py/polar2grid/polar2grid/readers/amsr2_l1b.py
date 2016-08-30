@@ -45,8 +45,8 @@ from polar2grid.readers import ReaderWrapper, main
 LOG = logging.getLogger(__name__)
 
 DEFAULT_CHANNELS = [
-    "btemp_10.7v",
-    "btemp_10.7h",
+    # "btemp_10.7v",
+    # "btemp_10.7h",
     "btemp_36.5v",
     "btemp_36.5h",
     "btemp_89.0av",
