@@ -540,7 +540,7 @@ def add_remap_argument_groups(parser):
                        help="Specify the -d option for fornav")
     group.add_argument('--maximum-weight-mode', dest="maximum_weight_mode", default=SUPPRESS, action="store_true",
                        help="Use maximum weight mode in fornav (-m)")
-    group.add_argument("--distance-upper-bound", dest="distance_upper_bound", type=float, default=None,
+    group.add_argument("--distance-upper-bound", dest="distance_upper_bound", type=float, default=SUPPRESS,
                        help="Nearest neighbor search distance upper bound in units of grid cell")
     group.add_argument("--no-share-mask", dest="share_remap_mask", action="store_false",
                        help="Don't share invalid masks between nearest neighbor resampling (slow)")
