@@ -68,6 +68,7 @@ rm -f "${SHELLB3_DIR}/tests"
 # Copy the grid directory
 echo "Copying user grid directory to software bundle"
 cp -r ${BUNDLE_SCRIPTS_DIR}/grid_configs .
+cp -r ${BUNDLE_SCRIPTS_DIR}/colormaps .
 
 # Create the 'bin' directory
 echo "Creating software bundle bin directory..."
