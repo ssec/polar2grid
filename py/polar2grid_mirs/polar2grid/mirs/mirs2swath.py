@@ -78,6 +78,9 @@ FREQ_VAR = "freq_var"
 LAT_VAR = "latitude_var"
 LON_VAR = "longitude_var"
 SURF_TYPE_VAR = "surface_type_var"
+SICE_VAR = "sea_ice_var"
+SNOWCOVER_VAR = "snow_cover_var"
+TPW_VAR = "tpw_var"
 
 PRODUCT_RAIN_RATE = "mirs_rain_rate"
 PRODUCT_BT_90 = "mirs_btemp_90"
@@ -85,6 +88,9 @@ PRODUCT_BT_CHANS = "mirs_btemp_channels"
 PRODUCT_LATITUDE = "mirs_latitude"
 PRODUCT_LONGITUDE = "mirs_longitude"
 PRODUCT_SURF_TYPE = "surface_type"
+PRODUCT_SICE = "sea_ice"
+PRODUCT_SNOW_COVER = "snow_cover"
+PRODUCT_TPW = "tpw"
 
 PAIR_MIRS_NAV = "mirs_nav"
 
@@ -95,6 +101,9 @@ PRODUCTS.add_product(PRODUCT_RAIN_RATE, PAIR_MIRS_NAV, "rain_rate", FT_IMG, RR_V
 PRODUCTS.add_product(PRODUCT_SURF_TYPE, PAIR_MIRS_NAV, "mask", FT_IMG, SURF_TYPE_VAR, description="Surface Type: type of surface:0-ocean,1-sea ice,2-land,3-snow")
 PRODUCTS.add_product(PRODUCT_BT_CHANS, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_ALL_VARS, description="Channel Brightness Temperature for every channel", units="K")
 PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_90_VAR, description="Channel Brightness Temperature at 88.2GHz", units="K", frequency=88.2, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE))
+PRODUCTS.add_product(PRODUCT_SICE, PAIR_MIRS_NAV, "sea_ice", FT_IMG, SICE_VAR, description="Sea Ice", units="%")
+PRODUCTS.add_product(PRODUCT_SNOW_COVER, PAIR_MIRS_NAV, "snow_cover", FT_IMG, SNOWCOVER_VAR, description="Snow Cover", units="1")
+PRODUCTS.add_product(PRODUCT_TPW, PAIR_MIRS_NAV, "tpw", FT_IMG, TPW_VAR, description="Total Precipitable Water", units="mm")
 
 # Add all ATMS BT channels
 BT_CHANNEL_PRODUCTS = []
@@ -116,6 +125,9 @@ FILE_STRUCTURE = {
     LAT_VAR: ("Latitude", None, None, None),
     LON_VAR: ("Longitude", None, None, None),
     SURF_TYPE_VAR: ("Sfc_type", None, None, None),
+    SICE_VAR: ("SIce", ("scale", "scale_factor"), None, None),
+    SNOWCOVER_VAR: ("Snow", ("scale", "scale_factor"), None, None),
+    TPW_VAR: ("TPW", ("scale", "scale_factor"), None, None),
     }
 
 for i in range(22):
@@ -543,7 +555,7 @@ class Frontend(roles.FrontendRole):
         if os.getenv("P2G_MIRS_DEFAULTS", None):
             return os.getenv("P2G_MIRS_DEFAULTS")
 
-        return [PRODUCT_RAIN_RATE] + BT_CHANNEL_PRODUCTS
+        return [PRODUCT_RAIN_RATE, PRODUCT_BT_90]
 
     @property
     def begin_time(self):
@@ -778,10 +790,10 @@ def add_frontend_argument_groups(parser):
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
     group.add_argument("--list-products", dest="list_products", action="store_true",
                         help="List available frontend products")
-    group.add_argument("--bt-channels", dest="products", action=ExtendConstAction, const=BT_CHANNEL_PRODUCTS,
-                       help="Add all BT channels to the list of requested products")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
+    group.add_argument("--bt-channels", dest="products", action=ExtendConstAction, const=BT_CHANNEL_PRODUCTS,
+                       help="Add all BT channels to the list of requested products")
     group.add_argument("-p", "--products", dest="products", nargs="*", default=None, choices=PRODUCTS.keys(),
                        help="Specify frontend products to process")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
