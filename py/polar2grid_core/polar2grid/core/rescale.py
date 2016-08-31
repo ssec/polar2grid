@@ -198,18 +198,28 @@ pw_255_lookup_table = numpy.array([0,   3,   7,  10,  14,  18,  21,  25,  28,  3
        250, 251, 251, 252, 252, 253, 253, 254, 255], dtype=numpy.float32)
 
 lookup_tables = {
-    "crefl": pw_255_lookup_table,
+    "crefl": (numpy.array((0., 25., 55., 100., 255.)), numpy.array((0., 90., 140., 175., 255.))),
+    "crefl_old": pw_255_lookup_table,
 }
 
 
 def lookup_scale(img, min_out, max_out, min_in, max_in, table_name="crefl", **kwargs):
     lut = lookup_tables[table_name]
-    tmp_max_out = lut.shape[0] - 1
-    LOG.debug("Running 'lookup_scale' with LUT '%s' which has %d elements...", table_name, tmp_max_out + 1)
-    img = linear_flexible_scale(img, 0, tmp_max_out, min_in, max_in)
-    numpy.clip(img, 0, tmp_max_out, out=img)
-    img = lut[img.astype(numpy.uint32)]
-    img = linear_flexible_scale(img, min_out, max_out, lut.min(), lut.max(), **kwargs)
+    if isinstance(lut, tuple):
+        interp_in = lut[0]
+        interp_out = lut[1]
+        LOG.debug("Running 'lookup_scale' with LUT '%s'", table_name)
+        img = linear_flexible_scale(img, interp_in.min(), interp_in.max(), min_in, max_in)
+        numpy.clip(img, interp_in.min(), interp_in.max(), out=img)
+        img = numpy.interp(img, interp_in, interp_out)
+        img = linear_flexible_scale(img, min_out, max_out, interp_out.min(), interp_out.max(), **kwargs)
+    else:
+        tmp_max_out = lut.shape[0] - 1
+        LOG.debug("Running 'lookup_scale' with LUT '%s'", table_name)
+        img = linear_flexible_scale(img, 0, tmp_max_out, min_in, max_in)
+        numpy.clip(img, 0, tmp_max_out, out=img)
+        img = lut[img.astype(numpy.uint32)]
+        img = linear_flexible_scale(img, min_out, max_out, lut.min(), lut.max(), **kwargs)
     return img
 
 
