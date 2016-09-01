@@ -82,7 +82,7 @@ def _proj4_to_srs(proj4_str):
 
 
 def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GDT_UInt16, compress=None,
-                   quicklook=False, **kwargs):
+                   quicklook=False, tiled=False, blockxsize=None, blockysize=None, **kwargs):
     """Function that creates a geotiff from the information provided.
     """
     log_level = logging.getLogger('').handlers[0].level or 0
@@ -112,6 +112,12 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
 
     if compress is not None and compress != "NONE":
         options.append("COMPRESS=%s" % (compress,))
+    if tiled:
+        options.append("TILED=YES")
+    if blockxsize is not None:
+        options.append("BLOCKXSIZE=%d" % (blockxsize,))
+    if blockysize is not None:
+        options.append("BLOCKYSIZE=%d" % (blockysize,))
 
     # Creating the file will truncate any pre-existing file
     LOG.debug("Creation Geotiff with options %r", options)
@@ -178,7 +184,8 @@ class Backend(roles.BackendRole):
         return None
 
     def create_output_from_product(self, gridded_product, output_pattern=None,
-                                   data_type=None, inc_by_one=None, fill_value=0, **kwargs):
+                                   data_type=None, inc_by_one=None, fill_value=0,
+                                   tiled=False, blockxsize=None, blockysize=None, **kwargs):
         data_type = data_type or np.uint8
         etype = np2etype[data_type]
         inc_by_one = inc_by_one or False
@@ -221,7 +228,8 @@ class Backend(roles.BackendRole):
             # X and Y rotation are 0 in most cases so we just hard-code it
             geotransform = gridded_product["grid_definition"].gdal_geotransform
             gtiff = create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform,
-                                   etype=etype, **kwargs)
+                                   etype=etype, tiled=tiled, blockxsize=blockxsize, blockysize=blockysize,
+                                   **kwargs)
 
             if rescale_options.get("method") == "linear" and "min_in" in rescale_options and "max_in" in rescale_options:
                 LOG.debug("Setting geotiff metadata for linear min/max values")
@@ -251,6 +259,12 @@ def add_backend_argument_groups(parser):
                        help="Create a PNG version of the created geotiff")
     group.add_argument("--dtype", dest="data_type", type=str_to_dtype, default=None,
                         help="specify the data type for the backend to output")
+    group.add_argument('--tiled', action='store_true',
+                       help="Create tiled geotiffs")
+    group.add_argument('--blockxsize', default=None, type=int,
+                       help="Set tile block X size")
+    group.add_argument('--blockysize', default=None, type=int,
+                       help="Set tile block Y size")
     return ["Backend Initialization", "Backend Output Creation"]
 
 
