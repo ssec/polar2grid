@@ -543,17 +543,17 @@ class SCMI_writer(object):
         fgf_coords = "%s %s" % (self.y_var_name, self.x_var_name)
 
         if self._include_rad:
-            self.rad = self._nc.createVariable(self.rad_var_name, 'u2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.imissing)
+            self.rad = self._nc.createVariable(self.rad_var_name, 'u2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.imissing, zlib=self._compress)
             self.rad.coordinates = geo_coords if self._include_geo else fgf_coords
             self.rad.units = 'W m-2 sr-1 um-1'
         else:
             if self._kind == 'brightness_temp':
-                self.bt = self._nc.createVariable(self.bt_var_name, 'i2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.missing)
+                self.bt = self._nc.createVariable(self.bt_var_name, 'i2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.missing, zlib=self._compress)
                 self.bt.coordinates = geo_coords if self._include_geo else fgf_coords
                 self.bt.units = 'kelvin'
                 dv = self.bt
             elif self._kind == 'albedo':
-                self.alb = self._nc.createVariable(self.alb_var_name, 'i2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.missing)
+                self.alb = self._nc.createVariable(self.alb_var_name, 'i2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.missing, zlib=self._compress)
                 self.alb.coordinates = geo_coords if self._include_geo else fgf_coords
                 self.alb.units = '1'
                 dv = self.alb
@@ -563,24 +563,24 @@ class SCMI_writer(object):
             self.helper.apply_attributes(dv, SCMI_DATA_ATT, '_data_')
 
         if self._include_fgf:
-            self.fgf_y = self._nc.createVariable(self.y_var_name, 'i2', dimensions=(self.row_dim_name,))
+            self.fgf_y = self._nc.createVariable(self.y_var_name, 'i2', dimensions=(self.row_dim_name,), zlib=self._compress)
 
-            self.fgf_x = self._nc.createVariable(self.x_var_name, 'i2', dimensions=(self.col_dim_name,))
+            self.fgf_x = self._nc.createVariable(self.x_var_name, 'i2', dimensions=(self.col_dim_name,), zlib=self._compress)
 
             # FUTURE: include compatibility 'y' and 'x', though there's a nonlinear transformation from CGMS to GOES y/x angles.
             # This requires that the scale_factor and add_offset are 1.0 and 0.0 respectively,
             # which violates some uses that use the line/column unscaled form expected by some applications.
 
         if self._include_geo:
-            self.lat = self._nc.createVariable(self.lat_var_name, 'f4', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.fmissing)
+            self.lat = self._nc.createVariable(self.lat_var_name, 'f4', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.fmissing, zlib=self._compress)
             self.lat.units = 'degrees_north'
-            self.lon = self._nc.createVariable(self.lon_var_name, 'f4', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.fmissing)
+            self.lon = self._nc.createVariable(self.lon_var_name, 'f4', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.fmissing, zlib=self._compress)
             self.lon.units = 'degrees_east'
         self.line_time = None # self._nc.createVariable(self.line_time_var_name, 'f8', dimensions=(self.row_dim_name,))
         # self.line_time.units = 'seconds POSIX'
         # self.line_time.long_name = "POSIX epoch seconds elapsed since base_time for image line"
 
-    def __init__(self, filename, resolution, offset, shape, kind, band, include_geo=False, include_fgf=True, include_rad=True, helper=None):
+    def __init__(self, filename, resolution, offset, shape, kind, band, include_geo=False, include_fgf=True, include_rad=True, helper=None, compress=False):
         self._nc = Dataset(filename, 'w')
         self._resolution = resolution
         self._shape = shape
@@ -590,6 +590,7 @@ class SCMI_writer(object):
         self._include_rad = include_rad
         self._include_fgf = include_fgf
         self._band = band
+        self._compress = compress
         self.rad_var_name = "RAD" # "ABI_Scaled_b%02d" % band if (band not in BAND_NAME_OVERRIDES) else BAND_NAME_OVERRIDES[band]
         self.helper = helper
 
@@ -814,10 +815,11 @@ class FakeHimawariScene(object):
 
 
 class Backend(roles.BackendRole):
-    def __init__(self, backend_configs=None, rescale_configs=None, **kwargs):
+    def __init__(self, backend_configs=None, rescale_configs=None, compress=False, **kwargs):
         backend_configs = backend_configs or [DEFAULT_AWIPS_CONFIG]
         rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
         self.awips_config_reader = AWIPS2ConfigReader(*backend_configs)
+        self.compress = compress
         # self.rescaler = Rescaler(*rescale_configs, **kwargs)
         super(Backend, self).__init__(**kwargs)
 
@@ -978,7 +980,9 @@ class Backend(roles.BackendRole):
                     output_filename = output_filename.replace("DT_", "OR_")
                     # attr_helper = AttributeHelper(fake_scene, (0, 0), (1, 1), tmp_tile.shape)
 
-                    nc = SCMI_writer(output_filename, 10, (ty, tx), tile_shape, fake_scene.kind, gridded_product["product_name"], include_rad=False, helper=attr_helper)
+                    nc = SCMI_writer(output_filename, 10, (ty, tx), tile_shape,
+                                     fake_scene.kind, gridded_product["product_name"],
+                                     include_rad=False, helper=attr_helper, compress=self.compress)
                     LOG.debug("Creating dimensions...")
                     nc.create_dimensions()
                     LOG.debug("Creating variables...")
@@ -1010,6 +1014,8 @@ def add_backend_argument_groups(parser):
                        help="alternative backend configuration files")
     group.add_argument("--rescale-configs", nargs="*", dest="rescale_configs",
                        help="alternative rescale configuration files")
+    group.add_argument("--compress", action="store_true",
+                       help="zlib compress each netcdf file")
     group = parser.add_argument_group(title="Backend Output Creation")
     # group.add_argument("--ncml-template",
     #                    help="alternative AWIPS ncml template file from what is configured")
