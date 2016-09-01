@@ -97,7 +97,7 @@ def passive_scale(img, **kwargs):
     return img
 
 
-def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, flip=False, **kwargs):
+def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, flip=False, offset=0, **kwargs):
     """Flexible linear scaling by specifying what you want output, not the parameters of the linear equation.
 
     This scaling function stops humans from doing math...let the computers do it.
@@ -112,6 +112,9 @@ def linear_flexible_scale(img, min_out, max_out, min_in=None, max_in=None, flip=
         data type of the output format.
     """
     LOG.debug("Running 'linear_flexible_scale' with (min_out: %f, max_out: %f)..." % (min_out, max_out))
+
+    if offset != 0:
+        min_out += offset
 
     min_in = numpy.nanmin(img) if min_in is None else min_in
     max_in = numpy.nanmax(img) if max_in is None else max_in
