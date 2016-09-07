@@ -302,8 +302,8 @@ class AttributeHelper(object):
     tile_shape = (0,0)  # wy, wx height and width of tile in pixels
     scene_shape = (0,0)  # sy, sx height and width of scene in pixels
 
-    def __init__(self, hsd, offset, tile_count, scene_shape):
-        self.hsd = hsd
+    def __init__(self, dataset, offset, tile_count, scene_shape):
+        self.dataset = dataset
         self.offset = offset
         self.tile_count = tile_count
         self.scene_shape = scene_shape
@@ -330,19 +330,7 @@ class AttributeHelper(object):
                     LOG.info('no routine matching %s' % funcname)
 
     def _scene_time(self):
-        # # FIXME this is what we want:
-        # # timeline_hhmm = time(int(self.hsd.metadata.observation_timeline/100), int(self.hsd.metadata.observation_timeline%100))
-        # # mot = self.hsd.metadata.start_time
-        # # timeline_yyyymmdd = datetime(mot.year, mot.month, mot.day, mot.hour, mot.minute, mot.second)
-        # # timeline_time = timeline_yyyymmdd  # but we use this instead
-        # # return timeline_time
-        # # but observation_time not provided by HCAST data so we just use start_time; so instead
-        # # FIXME FUGLYSAURUS REX only to be used on HCAST not HSD, let's get some metadata from the filename... T^T
-        # fn = os.path.split(self.hsd.path)[-1]
-        # # e.g. IMG_DK01B07_201507241500
-        # ymdhm, = re.findall(r'_(2\d{11})', fn) # strip out 201507241500
-        # return datetime.strptime(ymdhm, '%Y%m%d%H%M')
-        return self.hsd.metadata.start_time
+        return self.dataset["begin_time"] + timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0)))
 
     def _tile_number(self):
         # e.g.
@@ -351,13 +339,13 @@ class AttributeHelper(object):
         return self.offset[0] * self.tile_count[1] + self.offset[1] + 1
 
     def _filename(self):
-        satellite = self.hsd.gridded_product["satellite"].upper()
+        satellite = self.dataset["satellite"].upper()
         return scmi_filename(satellite=satellite,
-                             bits=self.hsd.metadata.bit_depth,
-                             channel=self.hsd.metadata.band, scene_time=self._scene_time(), tile=self._tile_number())
+                             bits=self.dataset["bit_depth"],
+                             channel=self.dataset["product_name"], scene_time=self._scene_time(), tile=self._tile_number())
 
     def _product_name(self):
-        grid_def = self.hsd.gridded_product["grid_definition"]
+        grid_def = self.dataset["grid_definition"]
         if "himawari" in grid_def["grid_name"]:
             region = "HFD"
         elif grid_def.proj4_dict["proj"] == "lcc":
@@ -372,8 +360,8 @@ class AttributeHelper(object):
         # mode=1,           # ABI mode
         # channel=0,
         # **kwargs):       # channel number, 1..16
-        return scmi_product(channel=self.hsd.metadata.band, scene_time=self._scene_time(),
-                            bits=self.hsd.metadata.bit_depth,
+        return scmi_product(channel=self.dataset["product_name"], scene_time=self._scene_time(),
+                            bits=self.dataset["bit_depth"],
                             region=region)
 
     def _global_product_tile_height(self):  # = None, # 1100,
@@ -386,11 +374,11 @@ class AttributeHelper(object):
         return self.tile_count[0] * self.tile_count[1]
 
     def _global_satellite_id(self):
-        return self.hsd.metadata.satellite_id
+        return "{}-{}".format(self.dataset["satellite"].upper(), self.dataset["instrument"].upper())
 
     @property
     def _file_nav_is_incomplete(self):
-        n = self.hsd.gridded_product["grid_definition"]
+        n = self.dataset["grid_definition"]
         b = n.proj4_dict["b"]
         inc = np.isnan(b) or b <= 0
         if inc:
@@ -402,7 +390,7 @@ class AttributeHelper(object):
         # FIXME: resolve whether we need half-pixel offset
         row = self._global_tile_row_offset() + self.tile_shape[0]/2
         col = self._global_tile_column_offset() + self.tile_shape[1]/2
-        return self.hsd.gridded_product["grid_definition"].get_lonlat(row, col)
+        return self.dataset["grid_definition"].get_lonlat(row, col)
 
     def _global_tile_center_longitude(self): # = None, # 88.0022078322,
         return np.float32(self._tile_center()[0])
@@ -423,7 +411,7 @@ class AttributeHelper(object):
         return np.float32(self._tile_center()[1])
 
     def _global_bit_depth(self):
-        return self.hsd.metadata.bit_depth
+        return self.dataset["bit_depth"]
 
     def _global_satellite_altitude(self):
         """ABI grid based satellite altitude used by L1b processing.
@@ -433,28 +421,33 @@ class AttributeHelper(object):
         float or None
             Height of satellite in meters or None
         """
-        return self.hsd.gridded_product["grid_definition"].proj4_dict.get("h")
+        return self.dataset["grid_definition"].proj4_dict.get("h")
 
     def _global_satellite_longitude(self): # = None, # 35785.863,
-        proj4_dict = self.hsd.gridded_product["grid_definition"].proj4_dict
+        proj4_dict = self.dataset["grid_definition"].proj4_dict
         if "h" in proj4_dict:
             return np.float32(proj4_dict["lon_0"])  # float32 needed?
         else:
             return None
 
     def _data_standard_name(self):
-        return self.hsd.metadata.standard_name
+        if "standard_name" in self.dataset:
+            return self.dataset["standard_name"]
+        elif self.dataset["data_kind"] in ["reflectance", "albedo"]:
+            return "toa_bidirectional_reflectance"
+        else:
+            return self.dataset["data_kind"]
 
     def _global_product_name(self):
         return self._product_name()
 
     def _global_channel_id(self):
-        return self.hsd.metadata.channel_id
+        return self.dataset.get("channel_id", 0)
 
     def _global_pixel_x_size(self):
         # rez = RESOLUTION_FROM_WIDTH[self.hsd.extents[1]]
         # return float(rez)/10.0
-        return self.hsd.metadata.columns_res_meters / 1000.
+        return self.dataset["grid_definition"]["cell_width"] / 1000.
 
     _global_request_spatial_resolution = _global_source_spatial_resolution = _global_pixel_y_size = _global_pixel_x_size
 
@@ -468,19 +461,18 @@ class AttributeHelper(object):
         return when.strftime('%Y%j%H%M%S')
 
     def _global_product_center_longitude(self):
-        grid_def = self.hsd.gridded_product["grid_definition"]
+        grid_def = self.dataset["grid_definition"]
         return grid_def.lonlat_center[0]
 
     def _global_product_center_latitude(self):
-        grid_def = self.hsd.gridded_product["grid_definition"]
+        grid_def = self.dataset["grid_definition"]
         return grid_def.lonlat_center[1]
 
     def _data_valid_min(self):
         return 0
 
     def _data_valid_max(self):
-        bit_depth = self.hsd.metadata.bit_depth
-        return 2**bit_depth - 1
+        return 2**self.dataset["bit_depth"] - 1
 
 
     def _global_production_location(self):
@@ -512,7 +504,6 @@ class SCMI_writer(object):
     row_dim_name, col_dim_name = 'y', 'x'
     y_var_name, x_var_name = 'y', 'x'
     bt_var_name = 'Sectorized_CMI'
-    rad_var_name = None
     alb_var_name = 'Sectorized_CMI'
     lat_var_name = 'latitude'
     lon_var_name = 'longitude'
@@ -530,6 +521,18 @@ class SCMI_writer(object):
     missing = np.int16(-1.0)
     imissing = np.uint16(32767)
 
+    def __init__(self, filename, resolution, offset, shape, kind, band, include_geo=False, include_fgf=True, include_rad=True, helper=None, compress=False):
+        self._nc = Dataset(filename, 'w')
+        self._resolution = resolution
+        self._shape = shape
+        self._offset = offset
+        self._kind = kind
+        self._include_geo = include_geo
+        self._include_rad = include_rad
+        self._include_fgf = include_fgf
+        self._band = band
+        self._compress = compress
+        self.helper = helper
 
     def create_dimensions(self):
         # Create Dimensions
@@ -543,7 +546,7 @@ class SCMI_writer(object):
         fgf_coords = "%s %s" % (self.y_var_name, self.x_var_name)
 
         if self._include_rad:
-            self.rad = self._nc.createVariable(self.rad_var_name, 'u2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.imissing, zlib=self._compress)
+            self.rad = self._nc.createVariable("RAD", 'u2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.imissing, zlib=self._compress)
             self.rad.coordinates = geo_coords if self._include_geo else fgf_coords
             self.rad.units = 'W m-2 sr-1 um-1'
         else:
@@ -579,20 +582,6 @@ class SCMI_writer(object):
         self.line_time = None # self._nc.createVariable(self.line_time_var_name, 'f8', dimensions=(self.row_dim_name,))
         # self.line_time.units = 'seconds POSIX'
         # self.line_time.long_name = "POSIX epoch seconds elapsed since base_time for image line"
-
-    def __init__(self, filename, resolution, offset, shape, kind, band, include_geo=False, include_fgf=True, include_rad=True, helper=None, compress=False):
-        self._nc = Dataset(filename, 'w')
-        self._resolution = resolution
-        self._shape = shape
-        self._offset = offset
-        self._kind = kind
-        self._include_geo = include_geo
-        self._include_rad = include_rad
-        self._include_fgf = include_fgf
-        self._band = band
-        self._compress = compress
-        self.rad_var_name = "RAD" # "ABI_Scaled_b%02d" % band if (band not in BAND_NAME_OVERRIDES) else BAND_NAME_OVERRIDES[band]
-        self.helper = helper
 
     def set_geo(self, lat, lon):
         if self.lat is not None:
@@ -740,9 +729,9 @@ class SCMI_writer(object):
         # self._nc.start_time_unix = meta.start_time.unix_time
         # self._nc.end_time_unix = meta.end_time.unix_time
         # self._nc.observation_timeline = meta.observation_timeline
-        self._nc.central_wavelength = self.helper.hsd.metadata.central_wavelength
+        self._nc.central_wavelength = self.helper.dataset["wavelength"]
         # self._nc.distance_from_earth_center_to_satellite = nav.distance_from_earth_center_to_satellite
-        self._nc.creator = "UW SSEC libHimawari scmi.py"
+        self._nc.creator = "UW SSEC - CSPP Polar2Grid"
         self._nc.creation_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
         self.helper.apply_attributes(self._nc, SCMI_GLOBAL_ATT, '_global_')
 
@@ -756,62 +745,40 @@ class SCMI_writer(object):
         self._nc = None
 
 
-class _AttrDict(object):
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-class FakeHimawariScene(object):
-    def __init__(self, gridded_product):
-        self.gridded_product = gridded_product
-
-    @property
-    def kind(self):
-        return {
-            'reflectance': 'albedo',
-            'brightness_temperature': 'brightness_temp',
-        }.get(self.gridded_product["data_kind"])
-
-    @property
-    def metadata(self):
-        return _AttrDict(
-            lines=self.gridded_product["grid_definition"]["height"],
-            columns=self.gridded_product["grid_definition"]["width"],
-            lines_res_meters=self.gridded_product["grid_definition"]["cell_height"],
-            columns_res_meters=self.gridded_product["grid_definition"]["cell_width"],
-            start_time=self.gridded_product["begin_time"] + timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0))),  # FIXME
-            # FIXME:
-            band=self.gridded_product["product_name"],
-            channel_id=0,
-            band_type=self.kind,
-            standard_name='toa_bidirectional_reflectance' if self.gridded_product["data_kind"] in ["reflectance", "albedo"] else 'brightness_temperature',
-            bit_depth=self.gridded_product["bit_depth"],
-            central_wavelength=self.gridded_product.get("wavelength", self.gridded_product.get("central_wavelength", -1)),
-            satellite_id="{}-{}".format(self.gridded_product["satellite"].upper(), self.gridded_product["instrument"].upper()),
-        )
-
-    # def geo(self, line_offset, column_offset, lines, columns, **args):
-    #     lons, lats = self.gridded_product["grid_definition"].get_geolocation_arrays()
-    #     return _AttrDict(
-    #         longitude=lons[line_offset:line_offset+lines, column_offset:column_offset+columns],
-    #         latitude=lats[line_offset:line_offset+lines, column_offset:column_offset+columns]
-    #     )
-
-    # @property
-    # def fgf(self):
-    #     x, y = self.gridded_product["grid_definition"].get_xy_arrays()
-    #     x = x[0].squeeze()  # all rows should have the same coordinates
-    #     y = y[:, 0].squeeze()  # all columns should have the same coordinates
-    #     # scale the X and Y arrays to fit in the file for 16-bit integers
-    #     bx = x.min()
-    #     mx = (x.max() - x.min()) / (2**16 - 1)
-    #     x -= bx
-    #     x /= mx
-    #     by = y.min()
-    #     my = (y.max() - y.min()) / (2**16 - 1)
-    #     y -= by
-    #     y /= my
-    #     return fgf_yxmb(x=x, y=y, mx=mx, bx=bx, my=my, by=by)
+# class _AttrDict(object):
+#     def __init__(self, **kwargs):
+#         for k, v in kwargs.items():
+#             setattr(self, k, v)
+#
+#
+# class FakeHimawariScene(object):
+#     def __init__(self, gridded_product):
+#         self.gridded_product = gridded_product
+#
+#     @property
+#     def kind(self):
+#         return {
+#             'reflectance': 'albedo',
+#             'brightness_temperature': 'brightness_temp',
+#         }.get(self.gridded_product["data_kind"])
+#
+#     # @property
+#     # def metadata(self):
+#     #     return _AttrDict(
+#     #         #lines=self.gridded_product["grid_definition"]["height"],
+#     #         #columns=self.gridded_product["grid_definition"]["width"],
+#     #         #lines_res_meters=self.gridded_product["grid_definition"]["cell_height"],
+#     #         #columns_res_meters=self.gridded_product["grid_definition"]["cell_width"],
+#     #         # start_time=self.gridded_product["begin_time"] + timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0))),  # FIXME
+#     #         # FIXME:
+#     #         # band=self.gridded_product["product_name"],
+#     #         # channel_id=0,
+#     #         # band_type=self.kind,
+#     #         # standard_name='toa_bidirectional_reflectance' if self.gridded_product["data_kind"] in ["reflectance", "albedo"] else 'brightness_temperature',
+#     #         # bit_depth=self.gridded_product["bit_depth"],
+#     #         # central_wavelength=self.gridded_product.get("wavelength", self.gridded_product.get("central_wavelength", -1)),
+#     #         # satellite_id="{}-{}".format(self.gridded_product["satellite"].upper(), self.gridded_product["instrument"].upper()),
+#     #     )
 
 
 class Backend(roles.BackendRole):
@@ -876,14 +843,6 @@ class Backend(roles.BackendRole):
             data = np.ma.masked_array(data, mask=mask)
 
             LOG.info("Writing product %s to AWIPS NetCDF file", gridded_product["product_name"])
-            # create_awips2_netcdf3(output_filename, data, gridded_product["begin_time"], **awips_info)
-            # nav = _AttrDict(
-            #     earth_equatorial_radius=gridded_product["grid_definition"].proj4_dict["a"],
-            #     earth_polar_radius=gridded_product["grid_definition"].proj4_dict["b"],
-            #     sub_lon=gridded_product["grid_definition"].proj4_dict["lon_0"],
-            #     distance_from_earth_center_to_virtual_satellite=gridded_product["grid_definition"].proj4_dict["h"],
-            # )
-            fake_scene = FakeHimawariScene(gridded_product)
             tile_shape = (int(data.shape[0] / tile_count[0]), int(data.shape[1] / tile_count[1]))
             tmp_tile = np.ma.zeros(tile_shape, dtype=np.float32)
             tmp_tile.set_fill_value(fill_value)
@@ -921,29 +880,30 @@ class Backend(roles.BackendRole):
             # y /= my
 
             # FIXME: Make this part of the reader/frontend
-            gridded_product["central_wavelength"] = {
-                "i01": 0.640,
-                "i02": 0.865,
-                "i03": 1.610,
-                "i04": 3.740,
-                "i05": 11.450,
-                "m01": 0.412,
-                "m02": 0.445,
-                "m03": 0.488,
-                "m04": 0.555,
-                "m05": 0.672,
-                "m06": 0.746,
-                "m07": 0.865,
-                "m08": 1.242,
-                "m09": 1.378,
-                "m10": 1.610,
-                "m11": 2.250,
-                "m12": 3.700,
-                "m13": 4.050,
-                "m14": 8.550,
-                "m15": 10.763,
-                "m16": 12.013,
-            }.get(gridded_product["product_name"], -1.)
+            gridded_product.setdefault("wavelength", gridded_product.get("central_wavelength", -1.))
+            # gridded_product["central_wavelength"] = {
+            #     "i01": 0.640,
+            #     "i02": 0.865,
+            #     "i03": 1.610,
+            #     "i04": 3.740,
+            #     "i05": 11.450,
+            #     "m01": 0.412,
+            #     "m02": 0.445,
+            #     "m03": 0.488,
+            #     "m04": 0.555,
+            #     "m05": 0.672,
+            #     "m06": 0.746,
+            #     "m07": 0.865,
+            #     "m08": 1.242,
+            #     "m09": 1.378,
+            #     "m10": 1.610,
+            #     "m11": 2.250,
+            #     "m12": 3.700,
+            #     "m13": 4.050,
+            #     "m14": 8.550,
+            #     "m15": 10.763,
+            #     "m16": 12.013,
+            # }.get(gridded_product["product_name"], -1.)
             gridded_product["bit_depth"] = bit_depth = 12
             #gridded_product["bit_depth"] = bit_depth = 12
             # FIXME: Get information from configuration file
@@ -953,11 +913,7 @@ class Backend(roles.BackendRole):
             gridded_product["valid_max"] = valid_max
             factor = (valid_max - valid_min) / float(2**bit_depth - 1)
             offset = valid_min
-            # print(bit_depth, valid_min, valid_max, factor, offset)
-            # import ipdb; ipdb.set_trace()
 
-            creation_str = datetime.utcnow().strftime('%Y%j%H%M%S')
-            start_str = gridded_product["begin_time"].strftime('%Y%j%H%M%S')
             for ty in range(tile_count[0]):
                 for tx in range(tile_count[1]):
                     # store tile data to an intermediate array
@@ -974,21 +930,23 @@ class Backend(roles.BackendRole):
                     tmp_x = x[tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
                     tmp_y = y[ty * tile_shape[0]: (ty + 1) * tile_shape[0]]
 
-                    # fake_scene.navigation = nav
-                    attr_helper = AttributeHelper(fake_scene, (ty, tx), tile_count, data.shape)
+                    attr_helper = AttributeHelper(gridded_product, (ty, tx), tile_count, data.shape)
                     output_filename = attr_helper._filename()
                     output_filename = output_filename.replace("DT_", "OR_")
-                    # attr_helper = AttributeHelper(fake_scene, (0, 0), (1, 1), tmp_tile.shape)
 
+                    kind = {
+                        'reflectance': 'albedo',
+                        'brightness_temperature': 'brightness_temp',
+                    }.get(gridded_product["data_kind"], gridded_product["data_kind"])
                     nc = SCMI_writer(output_filename, 10, (ty, tx), tile_shape,
-                                     fake_scene.kind, gridded_product["product_name"],
+                                     kind, gridded_product["product_name"],
                                      include_rad=False, helper=attr_helper, compress=self.compress)
                     LOG.debug("Creating dimensions...")
                     nc.create_dimensions()
                     LOG.debug("Creating variables...")
                     nc.create_variables(factor, offset)
                     LOG.debug("Creating global attributes...")
-                    nc.set_global_attrs(fake_scene.metadata, None)
+                    nc.set_global_attrs(None, None)
                     LOG.debug("Creating projection attributes...")
                     nc.set_projection_attrs(gridded_product["grid_definition"])
                     LOG.debug("Writing image data...")
