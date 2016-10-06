@@ -333,6 +333,7 @@ class Remapper(object):
                 # Assumed that all share the same fill value and data type
                 input_dtype = [swath_scene[pn]["data_type"] for pn in product_names]
                 input_fill = [swath_scene[pn]["fill_value"] for pn in product_names]
+                LOG.debug("Running fornav with D={} and d={}".format(fornav_D, kwargs.get('fornav_d', 1.0)))
                 valid_list = fornav.fornav(cols_array,
                               rows_array,
                               rows_per_scan,
