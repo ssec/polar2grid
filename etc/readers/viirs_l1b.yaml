@@ -1,0 +1,68 @@
+# This overwrites and updates the configuration provided in satpy
+# The main purpose is to rename the bands to lowercase names to match
+# the VIIRS SDR reader
+datasets:
+  I01:
+    name: i01
+    file_key: observation_data/I01
+  I02:
+    name: i02
+    file_key: observation_data/I02
+  I03:
+    name: i03
+    file_key: observation_data/I03
+  I04:
+    name: i04
+    file_key: observation_data/I04
+  I05:
+    name: i05
+    file_key: observation_data/I05
+  M01:
+    name: m01
+    file_key: observation_data/M01
+  M02:
+    name: m02
+    file_key: observation_data/M02
+  M03:
+    name: m03
+    file_key: observation_data/M03
+  M04:
+    name: m04
+    file_key: observation_data/M04
+  M05:
+    name: m05
+    file_key: observation_data/M05
+  M06:
+    name: m06
+    file_key: observation_data/M06
+  M07:
+    name: m07
+    file_key: observation_data/M07
+  M08:
+    name: m08
+    file_key: observation_data/M08
+  M09:
+    name: m09
+    file_key: observation_data/M09
+  M10:
+    name: m10
+    file_key: observation_data/M10
+  M11:
+    name: m11
+    file_key: observation_data/M11
+  M12:
+    name: m12
+    file_key: observation_data/M12
+  M13:
+    name: m13
+    file_key: observation_data/M13
+  M14:
+    name: m14
+    file_key: observation_data/M14
+  M15:
+    name: m15
+    file_key: observation_data/M15
+  M16:
+    name: m16
+    file_key: observation_data/M16
+
