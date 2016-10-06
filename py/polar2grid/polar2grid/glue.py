@@ -43,8 +43,7 @@ import pkg_resources
 from polar2grid.remap import Remapper, add_remap_argument_groups, SATPY_RESAMPLERS
 from polar2grid.readers import ReaderWrapper, convert_satpy_to_p2g_swath, convert_satpy_to_p2g_gridded
 import numpy as np
-from datetime import datetime
-from satpy.scene import Scene, load_compositors, DatasetID
+from satpy.scene import Scene, DatasetID
 from satpy.projectable import Projectable
 from polar2grid.readers import dataset_to_gridded_product
 
@@ -437,8 +436,8 @@ def main(argv=sys.argv[1:]):
                         tmp_scene.info["sensor"].extend(v["sensor"])
                 # Overwrite the wishlist that will include the above assigned datasets
                 tmp_scene.wishlist = f.wishlist
-                tmp_scene.compositors.update(load_compositors(composite_names, list(tmp_scene.info["sensor"])[0],
-                                                         ppp_config_dir=tmp_scene.ppp_config_dir))
+                for cname in composite_names:
+                    tmp_scene.compositors[cname] = tmp_scene.cpl.load_compositor(cname, tmp_scene.info["sensor"])
                 tmp_scene.compute()
                 tmp_scene.unload()
                 # Add any new Datasets to our P2G Scene if SatPy created them

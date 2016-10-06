@@ -44,7 +44,6 @@ import logging
 
 import numpy as np
 from satpy.scene import Scene
-from satpy.readers.yaml_reader import YAMLBasedReader
 from pyresample.geometry import AreaDefinition
 
 from polar2grid.core import containers, roles
