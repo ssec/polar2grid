@@ -85,8 +85,8 @@ PAIR_1KM = "1km_nav"
 PRODUCTS = ProductDict()
 PRODUCTS.add_product(PRODUCT_LONGITUDE, PAIR_1KM, "longitude", readers.FT_AAPP, readers.K_LONGITUDE, description="Longitude", units="degrees")
 PRODUCTS.add_product(PRODUCT_LATITUDE, PAIR_1KM, "latitude", readers.FT_AAPP, readers.K_LATITUDE, description="Latitude", units="degrees")
-PRODUCTS.add_product(PRODUCT_BAND1_VIS, PAIR_1KM, "reflectance", readers.FT_AAPP, readers.K_BAND1, description="AVHRR Band 1 visible", units="percent")
-PRODUCTS.add_product(PRODUCT_BAND2_VIS, PAIR_1KM, "reflectance", readers.FT_AAPP, readers.K_BAND2, description="AVHRR Band 2 visible", units="percent")
+PRODUCTS.add_product(PRODUCT_BAND1_VIS, PAIR_1KM, "reflectance", readers.FT_AAPP, readers.K_BAND1, description="AVHRR Band 1 visible", units="percent", dependencies=(None,))
+PRODUCTS.add_product(PRODUCT_BAND2_VIS, PAIR_1KM, "reflectance", readers.FT_AAPP, readers.K_BAND2, description="AVHRR Band 2 visible", units="percent", dependencies=(None,))
 PRODUCTS.add_product(PRODUCT_BAND3A_VIS, PAIR_1KM, "reflectance", readers.FT_AAPP, readers.K_BAND3a, description="AVHRR Band 3A visible", units="percent", dependencies=(None,))
 PRODUCTS.add_product(PRODUCT_BAND3B_BT, PAIR_1KM, "brightness_temperature", readers.FT_AAPP, readers.K_BAND3b, description="AVHRR Band 3B brightness temperature", units="Kelvin", dependencies=(None,))
 PRODUCTS.add_product(PRODUCT_BAND4_BT, PAIR_1KM, "brightness_temperature", readers.FT_AAPP, readers.K_BAND4, description="AVHRR Band 4 brightness temperature", units="Kelvin")
@@ -101,13 +101,20 @@ class Frontend(roles.FrontendRole):
     """
     FILE_EXTENSIONS = [".l1b"]
 
-    def __init__(self, **kwargs):
+    def __init__(self, day_fraction=0.10, sza_threshold=100, **kwargs):
         super(Frontend, self).__init__(**kwargs)
+        LOG.debug("Day fraction set to %f", day_fraction)
+        self.day_fraction = day_fraction
+        LOG.debug("SZA threshold set to %f", sza_threshold)
+        self.sza_threshold = sza_threshold
+        self._day_percentage = {}
         self.load_files(self.find_files_with_extensions())
 
         self.secondary_product_functions = {
             PRODUCT_BAND3A_VIS: self._mask_band3,
             PRODUCT_BAND3B_BT: self._mask_band3,
+            PRODUCT_BAND1_VIS: self.day_check_reflectance,
+            PRODUCT_BAND2_VIS: self.day_check_reflectance,
         }
 
     def load_files(self, file_paths):
@@ -421,6 +428,12 @@ class Frontend(roles.FrontendRole):
 
             # where the data is for 3B make it invalid with a NaN fill value
             product_data[band_mask] = numpy.nan
+
+            # best way to close the memmap?
+            del product_data
+
+            # do a daytime check for this reflectance band
+            return self.day_check_reflectance(product_name, swath_def, products_created)
         else:
             # band 3b products
             # if every pixel we have is a band 3A pixel then we don't want to create this product
@@ -433,9 +446,32 @@ class Frontend(roles.FrontendRole):
             product_data[band_mask == 0] = numpy.nan
             product_data[product_data < 0.1] = numpy.nan
 
-        # best way to close the memmap?
-        del product_data
+            # best way to close the memmap?
+            del product_data
 
+            return products_created[product_name]
+
+    def _get_day_percentage(self, refl_swath):
+        swath_name = refl_swath["swath_definition"]["swath_name"]
+        if swath_name not in self._day_percentage:
+            from pyorbital import astronomy
+            lons = refl_swath["swath_definition"].get_longitude_array()
+            lats = refl_swath["swath_definition"].get_latitude_array()
+            invalid_mask = refl_swath.get_data_mask()
+            sza_data = astronomy.sun_zenith_angle(refl_swath["begin_time"], lons, lats)
+            valid_day_mask = (sza_data < self.sza_threshold) & ~invalid_mask
+            fraction_day = numpy.count_nonzero(valid_day_mask) / (float(sza_data.size) - numpy.count_nonzero(invalid_mask))
+            self._day_percentage[swath_name] = fraction_day * 100.0
+        else:
+            LOG.debug("Using cached day percentage")
+        return self._day_percentage[swath_name]
+
+    def day_check_reflectance(self, product_name, swath_definition, products_created, fill=numpy.nan):
+        day_percentage = self._get_day_percentage(products_created[product_name])
+        LOG.debug("Reflectance product's scene has %f%% day data", day_percentage)
+        if day_percentage < (self.day_fraction * 100):
+            LOG.info("Will not create product '%s' because there is less than 10%% of day data", product_name)
+            return None
         return products_created[product_name]
 
 
@@ -451,6 +487,10 @@ def add_frontend_argument_groups(parser):
 
     group_title = "Frontend Initialization"
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
+    group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
+                       help="Fraction of day required to produce reflectance products (default 0.10)")
+    group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
+                       help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
     group.add_argument("--list-products", dest="list_products", action="store_true",
                         help="List available frontend products")
     group_title = "Frontend Swath Extraction"
