@@ -396,6 +396,7 @@ class Remapper(object):
             geo_id = swath_def["swath_name"]
             product_groups[geo_id].append(product_name)
 
+        grid_coverage = kwargs.get("grid_coverage", GRID_COVERAGE)
         orig_grid_def = grid_def
         for geo_id, product_names in product_groups.items():
             pp_names = "\n\t".join(product_names)
@@ -477,6 +478,17 @@ class Remapper(object):
                     gridded_product["grid_definition"] = grid_def
                     gridded_product["fill_value"] = fill_value
                     gridded_product["grid_data"] = output_fn
+
+                    # Check grid coverage
+                    valid_points = numpy.count_nonzero(~gridded_product.get_data_mask())
+                    grid_covered_ratio = valid_points / float(grid_def["width"] * grid_def["height"])
+                    grid_covered = grid_covered_ratio > grid_coverage
+                    if not grid_covered:
+                        msg = "Nearest neighbor resampling only found %f%% of the grid covered (need %f%%) for %s" % (grid_covered_ratio * 100, grid_coverage * 100, product_name)
+                        LOG.warning(msg)
+                        continue
+                    LOG.debug("Nearest neighbor resampling found %f%% of the grid covered for %s" % (grid_covered_ratio * 100, product_name))
+
                     gridded_scene[product_name] = gridded_product
 
                     # hopefully force garbage collection
@@ -491,7 +503,6 @@ class Remapper(object):
                     continue
 
                 LOG.debug("Done running nearest neighbor on '%s'", product_name)
-
 
         # Remove ll2cr files now that we are done with them
         self._clear_ll2cr_cache()
