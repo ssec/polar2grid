@@ -46,8 +46,6 @@ LOG = logging.getLogger(__name__)
 
 # MODIS has 10 rows of data in the array for every scan line
 ROWS_PER_SCAN = 10
-# If we are going from 1000m to 250m we have 4 times the size of the original
-RES_FACTOR = 4
 EARTH_RADIUS = 6370997.0
 
 # FUTURE: Add this to the pytroll python-geotiepoints package if it can be more generalized
@@ -74,7 +72,7 @@ def get_lats_from_cartesian(x__, y__, z__, thr=0.8):
     return lats
 
 
-def interpolate_geolocation_cartesian(lon_array, lat_array):
+def interpolate_geolocation_cartesian(lon_array, lat_array, res_factor=4):
     """Interpolate MODIS navigation from 1000m resolution to 250m.
 
     Python rewrite of the IDL function ``MODIS_GEO_INTERP_250`` but converts to cartesian (X, Y, Z) coordinates
@@ -83,6 +81,9 @@ def interpolate_geolocation_cartesian(lon_array, lat_array):
     :param nav_array: MODIS 1km latitude array or 1km longitude array
 
     :returns: MODIS 250m latitude array or 250m longitude array
+
+    If we are going from 1000m to 250m we have 4 times the size of the original
+    If we are going from 1000m to 250m we have 2 times the size of the original
     """
     num_rows,num_cols = lon_array.shape
     num_scans = num_rows / ROWS_PER_SCAN
@@ -94,12 +95,13 @@ def interpolate_geolocation_cartesian(lon_array, lat_array):
     z_in = EARTH_RADIUS * np.sin(lats_rad)
 
     # Create an array of indexes that we want our result to have
-    x = np.arange(RES_FACTOR * num_cols, dtype=np.float32) * 0.25
-    y = np.arange(RES_FACTOR * ROWS_PER_SCAN, dtype=np.float32) * 0.25 - 0.375
+    x = np.arange(res_factor * num_cols, dtype=np.float32) * (1./res_factor)
+    # 0.375 for 250m, 0.25 for 500m
+    y = np.arange(res_factor * ROWS_PER_SCAN, dtype=np.float32) * (1./res_factor) - (res_factor * (1./16) + (1./8))
     x,y = np.meshgrid(x,y)
     coordinates = np.array([y,x]) # Used by map_coordinates, major optimization
 
-    new_x = np.empty( (num_rows * RES_FACTOR, num_cols * RES_FACTOR), dtype=np.float32 )
+    new_x = np.empty((num_rows * res_factor, num_cols * res_factor), dtype=np.float32)
     new_y = new_x.copy()
     new_z = new_x.copy()
     nav_arrays = [(x_in, new_x), (y_in, new_y), (z_in, new_z)]
@@ -109,24 +111,36 @@ def interpolate_geolocation_cartesian(lon_array, lat_array):
         # Calculate indexes
         j0 = ROWS_PER_SCAN              * scan_idx
         j1 = j0 + ROWS_PER_SCAN
-        k0 = ROWS_PER_SCAN * RES_FACTOR * scan_idx
-        k1 = k0 + ROWS_PER_SCAN * RES_FACTOR
+        k0 = ROWS_PER_SCAN * res_factor * scan_idx
+        k1 = k0 + ROWS_PER_SCAN * res_factor
 
         for nav_array, result_array in nav_arrays:
             # Use bilinear interpolation for all 250 meter pixels
             map_coordinates(nav_array[ j0:j1, : ], coordinates, output=result_array[ k0:k1, : ], order=1, mode='nearest')
 
-            # Use linear extrapolation for the first two 250 meter pixels along track
-            m = (result_array[ k0 + 5, : ] - result_array[ k0 + 2, : ]) / (y[5,0] - y[2,0])
-            b = result_array[ k0 + 5, : ] - m * y[5,0]
-            result_array[ k0 + 0, : ] = m * y[0,0] + b
-            result_array[ k0 + 1, : ] = m * y[1,0] + b
+            if res_factor == 4:
+                # Use linear extrapolation for the first two 250 meter pixels along track
+                m = (result_array[ k0 + 5, : ] - result_array[ k0 + 2, : ]) / (y[5,0] - y[2,0])
+                b = result_array[ k0 + 5, : ] - m * y[5,0]
+                result_array[ k0 + 0, : ] = m * y[0,0] + b
+                result_array[ k0 + 1, : ] = m * y[1,0] + b
 
-            # Use linear extrapolation for the last  two 250 meter pixels along track
-            m = (result_array[ k0 + 37, : ] - result_array[ k0 + 34, : ]) / (y[37,0] - y[34,0])
-            b = result_array[ k0 + 37, : ] - m * y[37,0]
-            result_array[ k0 + 38, : ] = m * y[38,0] + b
-            result_array[ k0 + 39, : ] = m * y[39,0] + b
+                # Use linear extrapolation for the last  two 250 meter pixels along track
+                m = (result_array[ k0 + 37, : ] - result_array[ k0 + 34, : ]) / (y[37,0] - y[34,0])
+                b = result_array[ k0 + 37, : ] - m * y[37,0]
+                result_array[ k0 + 38, : ] = m * y[38,0] + b
+                result_array[ k0 + 39, : ] = m * y[39,0] + b
+            else:
+                # 500m
+                # Use linear extrapolation for the first two 250 meter pixels along track
+                m = (result_array[ k0 + 2, : ] - result_array[ k0 + 1, : ]) / (y[2,0] - y[1,0])
+                b = result_array[ k0 + 2, : ] - m * y[2,0]
+                result_array[ k0 + 0, : ] = m * y[0,0] + b
+
+                # Use linear extrapolation for the last  two 250 meter pixels along track
+                m = (result_array[ k0 + 18, : ] - result_array[ k0 + 17, : ]) / (y[18,0] - y[17,0])
+                b = result_array[ k0 + 18, : ] - m * y[18,0]
+                result_array[ k0 + 19, : ] = m * y[19,0] + b
 
     # Convert from cartesian to lat/lon space
     new_lons = get_lons_from_cartesian(new_x, new_y)
@@ -148,9 +162,9 @@ def interpolate_geolocation(nav_array):
     num_scans = num_rows / ROWS_PER_SCAN
 
     # Make a resulting array that is the right size for the new resolution
-    result_array = np.empty( (num_rows * RES_FACTOR, num_cols * RES_FACTOR), dtype=np.float32 )
-    x = np.arange(RES_FACTOR * num_cols, dtype=np.float32) * 0.25
-    y = np.arange(RES_FACTOR * ROWS_PER_SCAN, dtype=np.float32) * 0.25 - 0.375
+    result_array = np.empty((num_rows * res_factor, num_cols * res_factor), dtype=np.float32)
+    x = np.arange(res_factor * num_cols, dtype=np.float32) * 0.25
+    y = np.arange(res_factor * ROWS_PER_SCAN, dtype=np.float32) * 0.25 - 0.375
     x,y = np.meshgrid(x,y)
     coordinates = np.array([y,x]) # Used by map_coordinates, major optimization
 
@@ -159,8 +173,8 @@ def interpolate_geolocation(nav_array):
         # Calculate indexes
         j0 = ROWS_PER_SCAN              * scan_idx
         j1 = j0 + ROWS_PER_SCAN
-        k0 = ROWS_PER_SCAN * RES_FACTOR * scan_idx
-        k1 = k0 + ROWS_PER_SCAN * RES_FACTOR
+        k0 = ROWS_PER_SCAN * res_factor * scan_idx
+        k1 = k0 + ROWS_PER_SCAN * res_factor
 
         # Use bilinear interpolation for all 250 meter pixels
         map_coordinates(nav_array[ j0:j1, : ], coordinates, output=result_array[ k0:k1, : ], order=1, mode='nearest')

@@ -383,7 +383,10 @@ class FileReader(BaseFileReader):
         self.begin_time = self.file_handle.begin_time
         self.end_time = self.file_handle.end_time
         # special hack for storing the 250m resolution navigation
-        self.nav_interpolation = {"250": [None, None]}
+        self.nav_interpolation = {
+            "250": [None, None],
+            "500": [None, None],
+        }
 
     def __getitem__(self, item):
         known_item = self.file_type_info.get(item, item)
@@ -474,36 +477,46 @@ class FileReader(BaseFileReader):
             if mask is not None:
                 data[mask] = numpy.nan
 
-            if self.nav_interpolation["250"][0] is not None and self.nav_interpolation["250"][1] is not None:
-                LOG.debug("Returning previously interpolated 250m resolution geolocation data")
-                data = self.nav_interpolation["250"][not (item == K_LONGITUDE_250)]
-                self.nav_interpolation["250"] = [None, None]
+            if item in [K_LONGITUDE_250, K_LATITUDE_250]:
+                cache_key = "250"
+                lon_key = K_LONGITUDE_250
+                lat_key = K_LATITUDE_250
+                res_factor = 4
+            elif item in [K_LONGITUDE_500, K_LATITUDE_500]:
+                cache_key = "500"
+                lon_key = K_LONGITUDE_500
+                lat_key = K_LATITUDE_500
+                res_factor = 2
+            else:
+                raise ValueError("Don't know how to interpolate item '%s'" % (item,))
+
+            if self.nav_interpolation[cache_key][0] is not None and self.nav_interpolation[cache_key][1] is not None:
+                LOG.debug("Returning previously interpolated %sm resolution geolocation data", cache_key)
+                data = self.nav_interpolation[cache_key][not (item == lon_key)]
+                self.nav_interpolation[cache_key] = [None, None]
                 return data
 
-            if item == K_LONGITUDE_250:
-                self.nav_interpolation["250"][0] = data
-            else:
-                self.nav_interpolation["250"][1] = data
+            self.nav_interpolation[cache_key][not (item == lon_key)] = data
 
-            if self.nav_interpolation["250"][0] is None or self.nav_interpolation["250"][1] is None:
+            if self.nav_interpolation[cache_key][0] is None or self.nav_interpolation[cache_key][1] is None:
                 # We don't have the other coordinate data yet
-                self.get_swath_data(K_LONGITUDE_250 if item == K_LATITUDE_250 else K_LATITUDE_250, fill=fill)
+                self.get_swath_data(lon_key if item == lat_key else lat_key, fill=fill)
             else:
                 # We already have the other coordinate variable, the user isn't asking for this item so just return
                 LOG.debug("Returning 'None' because this instance of the function shouldn't have been called by the user")
                 return None
 
             LOG.info("Interpolating to higher resolution: %s" % (var_info.var_name,))
-            lon_data, lat_data = self.nav_interpolation["250"]
+            lon_data, lat_data = self.nav_interpolation[cache_key]
 
-            new_lon_data, new_lat_data = interpolate_geolocation_cartesian(lon_data, lat_data)
+            new_lon_data, new_lat_data = interpolate_geolocation_cartesian(lon_data, lat_data,
+                                                                           res_factor=res_factor)
 
             new_lon_data[numpy.isnan(new_lon_data)] = fill
             new_lat_data[numpy.isnan(new_lat_data)] = fill
             # Cache the results when the user requests the other coordinate
-            self.nav_interpolation["250"] = [new_lon_data, new_lat_data]
-
-            data = new_lon_data if item == K_LONGITUDE_250 else new_lat_data
+            self.nav_interpolation[cache_key] = [new_lon_data, new_lat_data]
+            data = new_lon_data if item == lon_key else new_lat_data
         elif mask is not None:
             data[mask] = fill
 
@@ -540,6 +553,8 @@ FILE_TYPES[FT_MOD03] = {
     K_LATITUDE: FileInfo("Latitude", scale_attr_name=None, offset_attr_name=None),
     K_LONGITUDE_250: FileInfo("Longitude", interpolate=True),
     K_LATITUDE_250: FileInfo("Latitude", interpolate=True),
+    K_LONGITUDE_500: FileInfo("Longitude", interpolate=True),
+    K_LATITUDE_500: FileInfo("Latitude", interpolate=True),
     K_SZA: FileInfo("SolarZenith", offset_attr_name=None),
     K_SenZA: FileInfo("SensorZenith", offset_attr_name=None),
 }
@@ -569,7 +584,15 @@ FILE_TYPES[FT_MOD021KM] = {
     K_IR35: FileInfo("EV_1KM_Emissive", 14, "radiance_scales", "radiance_offsets"),
     K_IR36: FileInfo("EV_1KM_Emissive", 15, "radiance_scales", "radiance_offsets"),
 }
-FILE_TYPES[FT_MOD02HKM] = {}
+FILE_TYPES[FT_MOD02HKM] = {
+    K_VIS01: FileInfo("EV_250_Aggr500_RefSB", 0, "reflectance_scales", "reflectance_offsets"),
+    K_VIS02: FileInfo("EV_250_Aggr500_RefSB", 1, "reflectance_scales", "reflectance_offsets", clip_saturated=True),
+    K_VIS03: FileInfo("EV_500_RefSB", 0, "reflectance_scales", "reflectance_offsets"),
+    K_VIS04: FileInfo("EV_500_RefSB", 1, "reflectance_scales", "reflectance_offsets"),
+    K_VIS05: FileInfo("EV_500_RefSB", 2, "reflectance_scales", "reflectance_offsets"),
+    K_VIS06: FileInfo("EV_500_RefSB", 3, "reflectance_scales", "reflectance_offsets"),
+    K_VIS07: FileInfo("EV_500_RefSB", 4, "reflectance_scales", "reflectance_offsets"),
+}
 FILE_TYPES[FT_MOD02QKM] = {
     K_VIS01: FileInfo("EV_250_RefSB", 0, "reflectance_scales", "reflectance_offsets"),
     K_VIS02: FileInfo("EV_250_RefSB", 1, "reflectance_scales", "reflectance_offsets", clip_saturated=True),
