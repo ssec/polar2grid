@@ -42,7 +42,9 @@ rst_epilog = """
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.graphviz', 'sphinx.ext.todo', 'sphinx.ext.coverage',
-              'sphinx.ext.pngmath', 'sphinx.ext.ifconfig', 'sphinx.ext.viewcode', 'sphinxarg.ext']
+              'sphinx.ext.imgmath', 'sphinx.ext.ifconfig', 'sphinx.ext.viewcode', 'sphinxarg.ext']
+
+graphviz_dot = '/opt/local/bin/dot'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

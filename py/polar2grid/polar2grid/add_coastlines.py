@@ -51,7 +51,7 @@ LOG = logging.getLogger(__name__)
 PYCOAST_DIR = os.environ.get("GSHHS_DATA_ROOT")
 
 
-def main():
+def get_parser():
     import argparse
     parser = argparse.ArgumentParser(description="Convert a geotiff to PNG and add coastlines and borders")
     group = parser.add_argument_group("coastlines")
@@ -116,6 +116,12 @@ def main():
                         help="Specify the output filename (default replace '.tif' with '.png')")
     parser.add_argument("input_tiff", nargs="+",
                         help="Input geotiff(s) to process")
+
+    return parser
+
+
+def main():
+    parser = get_parser()
     args = parser.parse_args()
 
     if args.output_filename is None:

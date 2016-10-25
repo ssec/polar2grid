@@ -26,6 +26,22 @@ The above example creates a grid named 'my_grid_name' at a 250m resolution,
 and 56.3 degrees latitude. The projection is a lambert conic conformal
 projection chosen based on the center longitude and latitude.
 
+Add Coastlines
+--------------
+
+.. argparse::
+    :module: polar2grid.add_coastlines
+    :func: get_parser
+    :prog: add_coastlines.sh
+
+Add Colormap
+------------
+
+.. argparse::
+    :module: polar2grid.add_colormap
+    :func: get_parser
+    :prog: add_colormap.sh
+
 .. _util_p2g_proj:
 
 Python Proj

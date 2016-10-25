@@ -97,13 +97,18 @@ def add_colortable(gtiff, ct):
         gtiff.GetRasterBand(band_num + 1).SetColorTable(ct)
 
 
-def main():
+def get_parser():
     import argparse
     parser = argparse.ArgumentParser(description="Add colortable to existing geotiff")
     parser.add_argument("ct_file",
                         help="Color table file to apply (CSV of (int, R, G, B, A)")
     parser.add_argument("geotiffs", nargs="+",
                         help="Geotiff files to apply the color table to")
+    return parser
+
+
+def main():
+    parser = get_parser()
     args = parser.parse_args()
 
     ct = create_colortable(args.ct_file)

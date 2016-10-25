@@ -22,7 +22,7 @@ This built-in configuration file can be found in the source on github
 If you wish to add your own grids as a replacement for or in addition to the
 provided set you'll have to make your own grid configuration file.
 
-Glue scripts provide the :option:`--grid-configs` command line option
+Glue scripts provide the ``--grid-configs`` command line option
 to specify user-created grid configurations. Multiple files can be listed with this command
 line flag (space separated). If you would like to add your grids in addition
 to the package provided set of grids you must specify "grids.conf" as one of
