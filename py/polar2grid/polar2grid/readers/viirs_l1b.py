@@ -27,14 +27,106 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""SatPy compatible readers and legacy P2G frontends to wrap them.
+"""The VIIRS Level 1B Reader operates on NASA L1B files from
+the Suomi National Polar-orbiting Partnership's (NPP) Visible/Infrared
+Imager Radiometer Suite (VIIRS) instrument. The VIIRS L1B frontend analyzes
+the user provided filenames to determine if a file is useful. Files usually
+have the following naming scheme::
 
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2016 University of Wisconsin SSEC. All rights reserved.
-:date:         Mar 2016
-:license:      GNU GPLv3
+    VL1BI_snpp_d20160101_t185400_c20160301041812.nc
+
+The VIIRS L1B frontend supports all basic bands created by the instrument.
+These are identified as the products shown below.
+Geolocation files must be included when specifying filepaths to frontends and
+glue scripts. The VIIRS L1B frontend can be specified to the Polar2Grid glue
+script with the frontend name ``viirs_l1b``.
+
++---------------------------+-----------------------------------------------------+
+| Product Name              | Description                                         |
++===========================+=====================================================+
+| i01                       | I01 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| i02                       | I02 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| i03                       | I03 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| i04                       | I04 Brightness Temperature Band                     |
++---------------------------+-----------------------------------------------------+
+| i05                       | I05 Brightness Temperature Band                     |
++---------------------------+-----------------------------------------------------+
+| m01                       | M01 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m02                       | M02 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m03                       | M03 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m04                       | M04 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m05                       | M05 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m06                       | M06 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m07                       | M07 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m08                       | M08 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m09                       | M09 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m10                       | M10 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m11                       | M11 Reflectance Band                                |
++---------------------------+-----------------------------------------------------+
+| m12                       | M12 Brightness Temperature Band                     |
++---------------------------+-----------------------------------------------------+
+| m13                       | M13 Brightness Temperature Band                     |
++---------------------------+-----------------------------------------------------+
+| m14                       | M14 Brightness Temperature Band                     |
++---------------------------+-----------------------------------------------------+
+| m15                       | M15 Brightness Temperature Band                     |
++---------------------------+-----------------------------------------------------+
+| m16                       | M16 Brightness Temperature Band                     |
++---------------------------+-----------------------------------------------------+
+| DNB                       | Raw DNB Band (not useful for images)                |
++---------------------------+-----------------------------------------------------+
+| histogram_dnb             | Histogram Equalized DNB Band                        |
++---------------------------+-----------------------------------------------------+
+| adaptive_dnb              | Adaptive Histogram Equalized DNB Band               |
++---------------------------+-----------------------------------------------------+
+| dynamic_dnb               | Dynamic DNB Band from Steve Miller and              |
+|                           | Curtis Seaman. Uses erf to scale the data.          |
++---------------------------+-----------------------------------------------------+
+| ifog                      | Temperature difference between I05 and I04          |
++---------------------------+-----------------------------------------------------+
+| i_solar_zenith_angle      | I Band Solar Zenith Angle                           |
++---------------------------+-----------------------------------------------------+
+| i_solar_azimuth_angle     | I Band Solar Azimuth Angle                          |
++---------------------------+-----------------------------------------------------+
+| i_satellite_zenith_angle  | I Band Satellite Zenith Angle                       |
++---------------------------+-----------------------------------------------------+
+| i_satellite_azimuth_angle | I Band Satellite Azimuth Angle                      |
++---------------------------+-----------------------------------------------------+
+| solar_zenith_angle        | M Band Solar Zenith Angle                           |
++---------------------------+-----------------------------------------------------+
+| solar_azimuth_angle       | M Band Solar Azimuth Angle                          |
++---------------------------+-----------------------------------------------------+
+| satellite_zenith_angle    | M Band Satellite Zenith Angle                       |
++---------------------------+-----------------------------------------------------+
+| satellite_azimuth_angle   | M Band Satellite Azimuth Angle                      |
++---------------------------+-----------------------------------------------------+
+| DNB_SZA                   | DNB Band Solar Zenith Angle                         |
++---------------------------+-----------------------------------------------------+
+| DNB_LZA                   | DNB Band Lunar Zenith Angle                         |
++---------------------------+-----------------------------------------------------+
+| true_color                | Ratio sharpened rayleigh corrected true color       |
++---------------------------+-----------------------------------------------------+
+| false_color               | Ratio sharpened rayleigh corrected natural color    |
++---------------------------+-----------------------------------------------------+
+
+
+For reflectance/visible products a check is done to make sure that at least
+10% of the swath is day time. Data is considered day time where solar zenith
+angle is less than 100 degrees.
+
 """
 __docformat__ = "restructuredtext en"
 

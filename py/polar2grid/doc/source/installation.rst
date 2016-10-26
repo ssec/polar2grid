@@ -75,7 +75,7 @@ install the associated component:
  - :doc:`polar2grid.drrtv <frontends/drrtv>`
  - :doc:`polar2grid.mirs <frontends/mirs>`
  - :doc:`polar2grid.modis <frontends/modis>`
- - :doc:`polar2grid.viirs <frontends/viirs>`
+ - :doc:`polar2grid.viirs <frontends/viirs_sdr>`
 
 
 Installing from Source

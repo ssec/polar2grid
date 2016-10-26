@@ -180,13 +180,6 @@ angle is less than 100 degrees.
     This may cause some confusion to users as the VIIRS frontend currently only checks for terrain corrected data. To
     use non-TC data use the ``--no-tc`` flag (described below).
 
-:author:       David Hoese (davidh)
-:author:       Ray Garcia (rayg)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Oct 2014
-:license:      GNU GPLv3
-
 """
 __docformat__ = "restructuredtext en"
 
