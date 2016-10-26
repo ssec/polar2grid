@@ -32,7 +32,7 @@ composites:
     standard_name: true_color
 
   true_color:
-    compositor: !!python/name:satpy.composites.viirs.VIIRSSharpTrueColor
+    compositor: !!python/name:satpy.composites.viirs.RatioSharpenedRGB
     prerequisites:
     - name: m05
       modifiers: [sunz_corrector, rayleigh_corrector]
@@ -45,6 +45,38 @@ composites:
       modifiers: [sunz_corrector, rayleigh_corrector]
     standard_name: true_color
     high_resolution_band: red
+
+
+  # copy of natural_color
+  false_color:
+    compositor: !!python/name:satpy.composites.viirs.RatioSharpenedRGB
+    prerequisites:
+    - name: m11
+      modifiers: [sunz_corrector, rayleigh_corrector]
+    - name: m07
+      modifiers: [sunz_corrector, rayleigh_corrector]
+    - name: m05
+      modifiers: [sunz_corrector, rayleigh_corrector]
+    optional_prerequisites:
+    - name: i01
+      modifiers: [sunz_corrector, rayleigh_corrector]
+    standard_name: false_color
+    high_resolution_band: blue
+
+  natural_color:
+    compositor: !!python/name:satpy.composites.viirs.RatioSharpenedRGB
+    prerequisites:
+    - name: m11
+      modifiers: [sunz_corrector, rayleigh_corrector]
+    - name: m07
+      modifiers: [sunz_corrector, rayleigh_corrector]
+    - name: m05
+      modifiers: [sunz_corrector, rayleigh_corrector]
+    optional_prerequisites:
+    - name: i01
+      modifiers: [sunz_corrector, rayleigh_corrector]
+    standard_name: natural_color
+    high_resolution_band: blue
 
   true_color_raw:
     compositor: !!python/name:satpy.composites.RGBCompositor
@@ -73,35 +105,9 @@ composites:
     - m15
     standard_name: night_microphysics
 
-  fog:
+  ifog:
     compositor: !!python/name:satpy.composites.viirs.VIIRSFog
     prerequisites:
     - i05
     - i04
     standard_name: temperature_difference
-  histogram_dnb:
-    compositor: !!python/name:satpy.composites.viirs.HistogramDNB
-    prerequisites:
-    - DNB
-    - DNB_SZA
-    standard_name: equalized_radiance
-    units: "1"
-  adaptive_dnb:
-    compositor: !!python/name:satpy.composites.viirs.AdaptiveDNB
-    prerequisites:
-    - DNB
-    - DNB_SZA
-    adaptive_day: multiple
-    adaptive_mixed: always
-    adaptive_night: never
-    standard_name: equalized_radiance
-    units: "1"
-  dynamic_dnb:
-    compositor: !!python/name:satpy.composites.viirs.ERFDNB
-    prerequisites:
-    - DNB
-    - DNB_SZA
-    - DNB_LZA
-    - dnb_moon_illumination_fraction
-    standard_name: equalized_radiance
-    units: "1"
