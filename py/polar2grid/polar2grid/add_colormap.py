@@ -43,11 +43,50 @@ import gdal
 
 
 def parse_color_table_file(f):
+    """Colormap files are comma-separated 'integer,R,G,B,A' text files.
+
+    A basic greyscale example for an 8-bit geotiff would be::
+
+        0,0,0,0,255
+        1,1,1,1,255
+        ...
+        254,254,254,254,255
+        255,255,255,255,255
+
+    Where the `...` represents the lines in between, meaning every input
+    geotiff value has a corresponding RGBA value specified. The first value
+    is the input geotiff value, followed by R (red), G (green), B (blue),
+    and A (alpha).
+
+    This script will also linearly interpolate between two values.
+    So the above colormap file could also be written in just two lines::
+
+        0,0,0,0,255
+        255,255,255,255,255
+
+    Often times you may want to have the 0 value as a transparent 'fill' value
+    and continue the colormap after that. This can be done by doing the
+    following::
+
+        # 0 is a fill value
+        0,0,0,0,0
+        # 1 starts at bright red
+        1,255,0,0,255
+        # and we end with black at the end
+        255,0,0,0,255
+
+    .. note::
+
+        Not all image viewers will obey the transparent (alpha) settings
+
+    Blank lines are allowed as well as spaces between line elements.
+
+    """
     ct = []
     with open(f, "r") as ct_file:
         prev_idx = None
         for line in ct_file:
-            if line.startswith("#"):
+            if line.startswith("#") or not line:
                 continue
             parts = [int(x.strip()) for x in line.split(",")]
             assert len(parts) == 5
@@ -99,7 +138,8 @@ def add_colortable(gtiff, ct):
 
 def get_parser():
     import argparse
-    parser = argparse.ArgumentParser(description="Add colortable to existing geotiff")
+    description = "Add a geotiff colortable to an existing single-band geotiff"
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("ct_file",
                         help="Color table file to apply (CSV of (int, R, G, B, A)")
     parser.add_argument("geotiffs", nargs="+",
