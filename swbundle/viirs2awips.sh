@@ -33,9 +33,6 @@ if [ -z "$POLAR2GRID_HOME" ]; then
   export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 fi
 
-# Setup necessary environments
-source $POLAR2GRID_HOME/bin/env.sh
-
 # Call the python module to do the processing, passing all arguments
-${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue viirs awips -vv $@
+${POLAR2GRID_HOME}/bin/polar2grid.sh viirs_sdr awips $@
 
