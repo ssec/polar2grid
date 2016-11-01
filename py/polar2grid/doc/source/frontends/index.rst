@@ -20,6 +20,7 @@ Below is a list of currently available frontends for polar2grid.
     drrtv
     mirs
     modis
+    nucaps
     viirs_sdr
     viirs_l1b
 

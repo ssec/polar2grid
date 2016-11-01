@@ -27,14 +27,29 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Legacy P2G frontend wrapping the SatPy NUCAPS reader.
+"""Reader for NUCAPS Retrieval output.
 
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2016 University of Wisconsin SSEC. All rights reserved.
-:date:         Mar 2016
-:license:      GNU GPLv3
+Files for this reader should follow the naming scheme:
+
+    NUCAPS-EDR_v1r0_npp_s201603011158009_e201603011158307_c201603011222270.nc
+
+This reader can provide the following products:
+
++---------------------------+-----------------------------------------------------+
+| Product Name              | Description                                         |
++===========================+=====================================================+
+| Temperature_Xmb           | Temperature at various pressure levels              |
++---------------------------+-----------------------------------------------------+
+| H2O_MR_Xmb                | Water Mixing Ratio at various pressure levels       |
++---------------------------+-----------------------------------------------------+
+
+Pressure based datasets are specified by the pressure level desired in millibars.
+If the pressure is less than 5mb then it should have three decimal places,
+`Temperature_0.016`. If greater than 5mb then it should not contain any decimals
+and should use the integer rounded version of the pressure level,
+`Temperature_1071`. All pressure levels for a dataset can be requested using the
+base name of the dataset, `Temperature`.
+
 """
 __docformat__ = "restructuredtext en"
 
