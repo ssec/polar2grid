@@ -130,8 +130,10 @@ angle is less than 100 degrees.
 """
 __docformat__ = "restructuredtext en"
 
+import os
 import sys
 import logging
+import numpy as np
 from polar2grid.readers import ReaderWrapper, main
 
 LOG = logging.getLogger(__name__)
@@ -179,6 +181,70 @@ class Frontend(ReaderWrapper):
         "dynamic_dnb",
     ]
 
+    def __init__(self, *args, **kwargs):
+        self.day_fraction = kwargs.pop('day_fraction', 0.1)
+        LOG.debug("Day fraction set to %f", self.day_fraction)
+        self.night_fraction = kwargs.pop('night_fraction', 0.1)
+        LOG.debug("Night fraction set to %f", self.night_fraction)
+        self.sza_threshold = kwargs.pop('sza_threshold', 100.)
+        LOG.debug("SZA threshold set to %f", self.sza_threshold)
+        self.dnb_saturation_correction = kwargs.pop('dnb_saturation_correction')
+        self.fraction_day_scene = None
+        self.fraction_night_scene = None
+        super(Frontend, self).__init__(*args, **kwargs)
+
+    def _calc_percent_day(self, scene):
+        if 'solar_zenith_angle' in scene:
+            sza_data = scene['solar_zenith_angle']
+        elif 'i_solar_zenith_angle' in scene:
+            sza_data = scene['i_solar_zenith_angle']
+        elif 'dnb_solar_zenith_angle' in scene:
+            sza_data = scene['dnb_solar_zenith_angle']
+        else:
+            for sza_name in ('solar_zenith_angle', 'i_solar_zenith_angle', 'dnb_solar_zenith_angle'):
+                scene.load([sza_name])
+                if sza_name not in scene:
+                    continue
+                sza_data = scene[sza_name]
+                del scene[sza_name]
+                break
+            else:
+                raise ValueError("Could not check day or night time percentage without SZA data")
+
+        invalid_mask = sza_data.mask
+        valid_day_mask = (sza_data < self.sza_threshold) & ~invalid_mask
+        valid_night_mask = (sza_data >= self.sza_threshold) & ~invalid_mask
+        self.fraction_day_scene = np.count_nonzero(valid_day_mask) / (float(sza_data.size) - np.count_nonzero(invalid_mask))
+        self.fraction_night_scene = np.count_nonzero(valid_night_mask) / (float(sza_data.size) - np.count_nonzero(invalid_mask))
+        LOG.debug("Fraction of scene that is valid day pixels: %f%%", self.fraction_day_scene * 100.)
+        LOG.debug("Fraction of scene that is valid night pixels: %f%%", self.fraction_night_scene * 100.)
+
+    def filter(self, scene):
+        self.filter_daytime(scene)
+        self.filter_nighttime(scene)
+
+    def filter_daytime(self, scene):
+        if self.fraction_day_scene is None:
+            self._calc_percent_day(scene)
+        # make a copy of the scene list so we can edit it later
+        for ds in list(scene):
+            if ds.info['standard_name'] in ('toa_bidirectional_reflectance', 'false_color', 'true_color') and \
+                            self.fraction_day_scene <= self.day_fraction:
+                LOG.info("Will not create product '%s' because there is less than %f%% of day data",
+                         ds.info['name'], self.day_fraction * 100.)
+                del scene[ds.info['id']]
+
+    def filter_nighttime(self, scene):
+        if self.fraction_day_scene is None:
+            self._calc_percent_day(scene)
+        # make a copy of the scene list so we can edit it later
+        for ds in list(scene):
+            if ds.info['name'] in ('ifog') and \
+                            self.fraction_night_scene <= self.night_fraction:
+                LOG.info("Will not create product '%s' because there is less than %f%% of night data",
+                         ds.info['name'], self.night_fraction * 100.)
+                del scene[ds.info['id']]
+
 
 def add_frontend_argument_groups(parser):
     """Add command line arguments to an existing parser.
@@ -187,23 +253,21 @@ def add_frontend_argument_groups(parser):
     """
     from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # Set defaults for other components that may be used in polar2grid processing
-    parser.set_defaults(fornav_D=40, fornav_d=2)
+    parser.set_defaults(fornav_D=40, fornav_d=1)
 
     # Use the append_const action to handle adding products to the list
     group_title = "Frontend Initialization"
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
     group.add_argument("--list-products", dest="list_products", action="store_true",
                        help="List available frontend products and exit")
-    # group.add_argument("--no-tc", dest="use_terrain_corrected", action="store_false",
-    #                    help="Don't use terrain-corrected navigation")
-    # group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
-    #                    help="Fraction of day required to produce reflectance products (default 0.10)")
-    # group.add_argument("--night-fraction", dest="night_fraction", type=float, default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
-    #                    help="Fraction of night required to product products like fog (default 0.10)")
-    # group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
-    #                    help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
-    # group.add_argument("--dnb-saturation-correction", action="store_true",
-    #                    help="Enable dynamic DNB saturation correction (normally used for aurora scenes)")
+    group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
+                       help="Fraction of day required to produce reflectance products (default 0.10)")
+    group.add_argument("--night-fraction", dest="night_fraction", type=float, default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
+                       help="Fraction of night required to product products like fog (default 0.10)")
+    group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
+                       help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
+    group.add_argument("--dnb-saturation-correction", action="store_true",
+                       help="Enable dynamic DNB saturation correction (normally used for aurora scenes)")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     # FIXME: Probably need some proper defaults

@@ -314,6 +314,9 @@ class ReaderWrapper(roles.FrontendRole):
     def default_products(self):
         return self.DEFAULT_DATASETS
 
+    def filter(self, scene):
+        pass
+
     def create_scene(self, products=None, **kwargs):
         LOG.debug("Loading scene data...")
         # If the user didn't provide the products they want, figure out which ones we can create
@@ -325,8 +328,12 @@ class ReaderWrapper(roles.FrontendRole):
         kwargs.pop("exit_on_error")
         kwargs.pop("keep_intermediate")
         self.scene.load(products, **kwargs)
-        # Delete the satpy scene so memory is cleared out if it isn't used by the caller
         self.wishlist = self.scene.wishlist
+
+        # Apply Filters
+        self.filter(self.scene)
+
+        # Delete the satpy scene so memory is cleared out if it isn't used by the caller
         scene = self.scene
         self.scene = None
         return scene
