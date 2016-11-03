@@ -73,7 +73,7 @@ if not os.getenv("USE_CYTHON", False) or cythonize is None:
             extension.sources[:] = sources
         return extensions
 
-version = '2.1.0a'
+version = '2.1.0'
 
 
 class PyTest(Command):
@@ -124,6 +124,7 @@ extras_require = {
     # FIXME: technically polar2grid.core.meta uses this through the polar2grid.proj module
     "remap": ["pyproj", "scipy"],
     "utils": ["matplotlib"],
+    "docs": ["sphinx", "rst2pdf"],
 }
 extras_require["all"] = [x for y in extras_require.values() for x in y]
 
