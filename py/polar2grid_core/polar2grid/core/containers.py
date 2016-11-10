@@ -678,7 +678,8 @@ class GridDefinition(GeographicDefinition):
         # center of the pixel
         half_pixel_x = self['cell_width'] / 2.
         half_pixel_y = self['cell_height'] / 2.
-        return self["origin_x"] - half_pixel_x, self["cell_width"], 0, self["origin_y"] + half_pixel_y, 0, self["cell_height"]
+        # cell_height is negative so we need to substract instead of add
+        return self["origin_x"] - half_pixel_x, self["cell_width"], 0, self["origin_y"] - half_pixel_y, 0, self["cell_height"]
 
     def get_xy_arrays(self):
         # the [None] indexing adds a dimension to the array
