@@ -47,6 +47,18 @@ from pycoast import ContourWriter
 from PIL import Image, ImageFont
 from pyproj import Proj
 
+
+try:
+    # try getting setuptools/distribute's version of resource retrieval first
+    from pkg_resources import resource_filename as get_resource_filename
+except ImportError:
+    print("WARNING: Missing 'pkg_resources' dependency")
+
+    def get_resource_filename(mod_name, resource_name):
+        if mod_name != 'polar2grid.fonts':
+            raise ValueError('Can only import resources from polar2grid (missing pkg_resources dependency)')
+        return os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'fonts', resource_name)
+
 LOG = logging.getLogger(__name__)
 PYCOAST_DIR = os.environ.get("GSHHS_DATA_ROOT")
 
@@ -84,7 +96,7 @@ def get_parser():
     group.add_argument("--grid-text-size", default=32, type=int,
                        help="Lat/lon grid text font size")
     group.add_argument("--grid-font", default="Vera.ttf",
-                       help="Path to TTF font (matplotlib provided or custom path)")
+                       help="Path to TTF font (polar2grid provided or custom path)")
     group.add_argument("--grid-fill", nargs="*", default=["cyan"],
                        help="Color of grid text (color name or 3 RGB integers)")
     group.add_argument("--grid-outline", nargs="*", default=["cyan"],
@@ -114,6 +126,8 @@ def get_parser():
                         help="Specify alternative directory for coastline shape files (default: GSHSS_DATA_ROOT)")
     parser.add_argument("-o", "--output", dest="output_filename", nargs="+",
                         help="Specify the output filename (default replace '.tif' with '.png')")
+    parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
+                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_argument("input_tiff", nargs="+",
                         help="Input geotiff(s) to process")
 
@@ -124,10 +138,17 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
 
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    logging.basicConfig(level=levels[min(3, args.verbosity)])
+
     if args.output_filename is None:
         args.output_filename = [x[:-3] + "png" for x in args.input_tiff]
     else:
         assert args.output_filename == args.input_tiff, "Output filenames must be equal to number of input tiffs"
+
+    if not (args.add_borders or args.add_coastlines or args.add_grid or args.add_rivers):
+        LOG.error("Please specify one of the '--add-X' options to modify the image")
+        return -1
 
     for input_tiff, output_filename in zip(args.input_tiff, args.output_filename):
         LOG.info("Creating {} from {}".format(output_filename, input_tiff))
@@ -171,10 +192,8 @@ def main():
             cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline)
 
         if args.add_grid:
-            import matplotlib
-            mpl_data_dir = matplotlib.get_data_path()
             if not os.path.exists(args.grid_font):
-                font_path = os.path.join(mpl_data_dir, "fonts", "ttf", args.grid_font)
+                font_path = get_resource_filename('polar2grid.fonts', args.grid_font)
                 if not os.path.exists(font_path):
                     raise ValueError("Font path does not exist: {}".format(font_path))
             else:

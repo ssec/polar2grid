@@ -6,3 +6,4 @@ include polar2grid/compositors/*.ini
 include polar2grid/awips/ncml/*.ncml
 include polar2grid/grids/*.conf
 include polar2grid/remap/*.h
+include polar2grid/fonts/*.ttf
