@@ -89,6 +89,7 @@ pushd gshhg_data
 echo "Downloading GSHHG shapefiles"
 cached_download http://www.soest.hawaii.edu/pwessel/gshhg/gshhg-shp-2.3.6.zip
 unzip gshhg-shp-2.3.6.zip || oops "Could not unpack GSHHG shapefiles"
+rm gshhg-shp-2.3.6.zip || oops "Could not delete the GSHHG zip file"
 popd
 
 # Create the 'bin' directory
