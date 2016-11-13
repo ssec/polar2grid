@@ -192,14 +192,14 @@ def main():
             cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline)
 
         if args.add_grid:
-            if not os.path.exists(args.grid_font):
+            try:
+                font = ImageFont.truetype(args.grid_font, args.grid_text_size)
+            except IOError:
                 font_path = get_resource_filename('polar2grid.fonts', args.grid_font)
                 if not os.path.exists(font_path):
                     raise ValueError("Font path does not exist: {}".format(font_path))
-            else:
-                font_path = args.grid_font
+                font = ImageFont.truetype(font_path, args.grid_text_size)
 
-            font = ImageFont.truetype(font_path, args.grid_text_size)
             outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
             minor_outline = args.grid_minor_outline[0] if len(args.grid_minor_outline) == 1 else tuple(int(x) for x in args.grid_minor_outline)
             fill = args.grid_fill[0] if len(args.grid_fill) == 1 else tuple(int(x) for x in args.grid_fill)
