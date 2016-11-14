@@ -1,6 +1,61 @@
 Release Notes
 =============
 
+Version 2.1 (2016-11-25)
+------------------------
+
+* Start using PyTroll SatPy library for various features
+* Add ability to output float geotiffs
+* Add ability to store geotiff tiles instead of strips
+* Fix fornav bug for non-float inputs (unused in most cases)
+* Add `add_colormap.sh` script for adding color tables to geotiffs
+* Add `add_coastlines.sh` script for adding borders, coastlines, rivers, etc to geotiffs
+* Add basic NUCAPS reader (via SatPy)
+* Add VIIRS L1B reader (via SatPy)
+* Add AMSR2 L1B reader (via SatPy)
+* Add MIRS reader
+* Change default `fornav-d` flag in most glue scripts to `1`
+* Adjust true/false color scaling to be more continuous (similar result)
+* Add AWIPS Puerto Rico Grid (210)
+* Add `polar_alaska` dynamic grid
+* New version of ShellB3 for C/python dependencies
+
+Roadmap to Version 3.0
+----------------------
+
+* Collaboration with the PyTroll project and the creation of the new SatPy
+  library will result in large internal changes to Polar2Grid.
+
+    * SatPy is a replacement for the internals of Polar2Grid and a replacement
+      for the PyTroll mpop package.
+    * Migrate Polar2Grid frontends to SatPy readers.
+    * Use SatPy for resampling and output writers, not just some readers.
+    * Rename frontends to readers, backends to writers, products to datasets.
+    * The remaining roadmap bullets are subject to change based on the PyTroll/Polar2Grid merger.
+
+* Create new grid file format for more flexibility
+
+* Allow resampling parameters to be configured based on dataset identifiers (satellite, instrument, etc)
+
+* Further fornav updates
+
+  * Move all module logic to C++ and remove cython dependency for this module (simple one function cython wrapper should be easy to remove)
+  * Try rewriting in either opencl or use openmp for multiprocess work, but we're getting to the point that fornav is not the slowest part of fornav (intermediate disk use)
+
+* Consider linking directly to PROJ.4 C library for ll2cr (removing pyproj dependency for ll2cr) to make it faster
+
+* Update rescaling with cython wrapper (test performance before committing to this)
+
+  * Needs change of clipping and masking logic so that its a decorator and can be easily excluded from cython code (which would use internal logic for those steps)
+
+* Add proper handling for product data being kept in memory (should speed up quite a few things)
+
+  * For better handling of in-memory data, should either let the user choose or determine it based on available memory
+  * Frontend's could choose logical default (VIIRS should probably write to disk, DR-RTV should stay in memory)
+  * Glue script can use memory analysis to come up with default but can be forced by command line argument
+
+* Python 3 Compatibility
+
 Version 2.0.1 (2015-10-19)
 --------------------------
 
@@ -25,35 +80,6 @@ Version 2.0.0 (2015-10-13)
 * Removed AWIPS I support due to National Weather Service using AWIPS II from now on
 * Added basic ACSPO and MIRS frontends
 * Added HDF5 backend
-
-Roadmap to Version 2.1
-----------------------
-
-* Collaboration with the PyTroll project will change almost everything...again.
-
-    * The PyTroll and Polar2Grid teams have been working on a new interface for the mpop package that will allow greater
-      flexibility and easier use by Polar2Grid.
-    * Most python code in Polar2Grid will be absorbed by mpop (either added or use existing).
-    * The remaining roadmap bullets are subject to change based on the PyTroll/Polar2Grid merger.
-
-* Further fornav updates
-
-  * Move all module logic to C++ and remove cython dependency for this module (simple one function cython wrapper should be easy to remove)
-  * Try rewriting in either opencl or use openmp for multiprocess work, but we're getting to the point that fornav is not the slowest part of fornav (intermediate disk use)
-
-* Consider linking directly to PROJ.4 C library for ll2cr (removing pyproj dependency for ll2cr) to make it faster
-
-* Update rescaling with cython wrapper (test performance before committing to this)
-
-  * Needs change of clipping and masking logic so that its a decorator and can be easily excluded from cython code (which would use internal logic for those steps)
-
-* Add proper handling for product data being kept in memory (should speed up quite a few things)
-
-  * For better handling of in-memory data, should either let the user choose or determine it based on available memory
-  * Frontend's could choose logical default (VIIRS should probably write to disk, DR-RTV should stay in memory)
-  * Glue script can use memory analysis to come up with default but can be forced by command line argument
-
-* Python 3 Compatibility
 
 Version 1.2.0 (2014-08-16)
 --------------------------
