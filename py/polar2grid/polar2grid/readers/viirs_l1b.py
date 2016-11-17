@@ -266,8 +266,8 @@ def add_frontend_argument_groups(parser):
                        help="Fraction of night required to product products like fog (default 0.10)")
     group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
                        help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
-    group.add_argument("--dnb-saturation-correction", action="store_true",
-                       help="Enable dynamic DNB saturation correction (normally used for aurora scenes)")
+    # group.add_argument("--dnb-saturation-correction", action="store_true",
+    #                    help="Enable dynamic DNB saturation correction (normally used for aurora scenes)")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     # FIXME: Probably need some proper defaults
