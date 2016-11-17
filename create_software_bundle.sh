@@ -65,17 +65,21 @@ if [ "${SHELLB3_URL:0:3}" == "ftp" ] || [ "${SHELLB3_URL:0:4}" == "http" ]; then
     tar -xf "$(basename "$SHELLB3_URL")" || oops "Could not extract ShellB3"
     echo "Removing downloaded ShellB3 tarball"
     rm -r "$(basename "$SHELLB3_URL")"
-elif [ "${SHELLB3_URL:(-7)}" == ".tar.gz" ]; then
+elif [ "${SHELLB3_URL:(-7)}" == ".tar.gz" ] || [ "${SHELLB3_URL:(-7)}" == ".tar.xz" ]; then
     echo "Extracting ShellB3 tarball from filesystem..."
-    tar -xzf "$SHELLB3_URL" || oops "Could not extract ShellB3"
+    tar -xf "$SHELLB3_URL" || oops "Could not extract ShellB3"
 else
     echo "Copying ShellB3 directory from filesystem..."
     cp -r "$SHELLB3_URL" ./ShellB3 || oops "Could not copy ShellB3 from filesystem"
 fi
 # PATCH: ShellB3 includes some links it shouldn't
+if [ ! -d ${SB_NAME}/common/ShellB3 ]; then
+    mkdir -p common || oops "Couldn't make 'common' directory"
+    mv ShellB3 common/ || oops "Couldn't move ShellB3 to 'common' directory"
+fi
 SHELLB3_DIR="${SB_NAME}/common/ShellB3"
-rm -f "${SHELLB3_DIR}/README.txt"
-rm -f "${SHELLB3_DIR}/tests"
+#rm -f "${SHELLB3_DIR}/README.txt"
+#rm -f "${SHELLB3_DIR}/tests"
 
 # Copy the grid directory
 echo "Copying user grid directory to software bundle"
@@ -134,6 +138,10 @@ cd "$PY_DIR"
 make clean
 # Have to use 'python setup.py install' because using easy_install on source tarballs doesn't compile extensions for some reason
 CFLAGS="-fno-strict-aliasing -L${SHELLB3_DIR}/lib" INSTALL_DIR="${SHELLB3_DIR}" make all_install
+${SHELLB3_DIR}/bin/python -c 'import polar2grid'
+if [ $? -ne 0 ]; then
+    oops "Couldn't install polar2grid"
+fi
 
 # Copy the release notes to the tarball
 cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
