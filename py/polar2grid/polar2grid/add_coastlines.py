@@ -65,7 +65,8 @@ PYCOAST_DIR = os.environ.get("GSHHS_DATA_ROOT")
 
 def get_parser():
     import argparse
-    parser = argparse.ArgumentParser(description="Convert a geotiff to PNG and add coastlines and borders")
+    parser = argparse.ArgumentParser(description="Convert a geotiff to PNG and add coastlines and borders",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_argument_group("coastlines")
     group.add_argument("--add-coastlines", action="store_true",
                        help="Add coastlines")
@@ -116,11 +117,11 @@ def get_parser():
     group.add_argument("--add-borders", action="store_true",
                        help="Add country and/or region borders")
     group.add_argument("--borders-resolution", choices="clihf", default='i',
-                       help="Resolution of rivers to add (crude, low, intermediate, high, full)")
+                       help="Resolution of borders to add (crude, low, intermediate, high, full)")
     group.add_argument("--borders-level", choices=range(1, 4), default=2, type=int,
                        help="Level of detail for border lines")
     group.add_argument("--borders-outline", default=['white'], nargs="*",
-                       help="Color of river lines (color name or 3 RGB integers)")
+                       help="Color of border lines (color name or 3 RGB integers)")
 
     parser.add_argument("--shapes-dir", default=PYCOAST_DIR,
                         help="Specify alternative directory for coastline shape files (default: GSHSS_DATA_ROOT)")
