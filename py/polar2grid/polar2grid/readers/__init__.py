@@ -304,11 +304,11 @@ class ReaderWrapper(roles.FrontendRole):
 
     @property
     def available_product_names(self):
-        return self.scene.available_datasets(reader_name=self.reader)
+        return self.scene.available_dataset_names(reader_name=self.reader)
 
     @property
     def all_product_names(self):
-        return self.scene.all_datasets(reader_name=self.reader)
+        return self.scene.all_dataset_names(reader_name=self.reader)
 
     @property
     def default_products(self):
