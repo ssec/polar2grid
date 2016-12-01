@@ -27,14 +27,30 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""SatPy compatible readers and legacy P2G frontends to wrap them.
+"""AMSR2 L1B Reader is accessed via the SatPy python package.
 
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2016 University of Wisconsin SSEC. All rights reserved.
-:date:         Mar 2016
-:license:      GNU GPLv3
+Files usually have the following naming scheme::
+
+    GW1AM2_201607201808_128A_L1DLBTBR_1110110.h5
+
+Currently the reader only provides the following datasets:
+
++---------------------------+-----------------------------------------------------+
+| Product Name              | Description                                         |
++===========================+=====================================================+
+| btemp_36.5v               | Brightness Temperature 36.5GHz Polarization V       |
++---------------------------+-----------------------------------------------------+
+| btemp_36.5h               | Brightness Temperature 36.5GHz Polarization H       |
++---------------------------+-----------------------------------------------------+
+| btemp_89.0av              | Brightness Temperature 89.0GHz A Polarization V     |
++---------------------------+-----------------------------------------------------+
+| btemp_89.0ah              | Brightness Temperature 89.0GHz A Polarization H     |
++---------------------------+-----------------------------------------------------+
+| btemp_89.0bv              | Brightness Temperature 89.0GHz B Polarization V     |
++---------------------------+-----------------------------------------------------+
+| btemp_89.0bh              | Brightness Temperature 89.0GHz B Polarization H     |
++---------------------------+-----------------------------------------------------+
+
 """
 __docformat__ = "restructuredtext en"
 
