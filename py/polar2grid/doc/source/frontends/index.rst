@@ -14,7 +14,6 @@ Below is a list of currently available frontends for polar2grid.
 .. toctree::
     :maxdepth: 1
 
-    acspo
     amsr2_l1b
     avhrr
     crefl
