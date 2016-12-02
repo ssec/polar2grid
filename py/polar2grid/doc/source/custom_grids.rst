@@ -1,8 +1,7 @@
-Grids
-=====
+Custom Grids
+============
 
-The :py:mod:`grids <polar2grid.grids.grids>` module is where grid information
-is made available to :term:`glue scripts` and developers. Currently, you can
+Currently, you can
 provide grids with PROJ.4 projections to the polar2grid system.
 Grids can be static, meaning the grid definition specifies the
 projection, pixel size, origin, and grid size. Grids can also be
@@ -59,7 +58,7 @@ to the built-in grids:
 Grid Configuration File Format
 ------------------------------
 
-Example Grid Configuration File: :download:`grid_example.conf <../../../../../swbundle/grid_configs/grid_example.conf>`
+Example Grid Configuration File: :download:`grid_example.conf <../../../../swbundle/grid_configs/grid_example.conf>`
 
 Grid configuration files are comma-separated text files.
 Comments can be added by prefixing lines

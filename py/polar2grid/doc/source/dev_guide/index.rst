@@ -20,7 +20,6 @@ Code repository: https://github.com/davidh-ssec/polar2grid
 **Developer's Guide Components:**
 
  - :doc:`dev_env`
- - :doc:`grids`
  - :doc:`swbundle`
  - :doc:`json_input`
 

@@ -60,8 +60,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'polar2grid'
-copyright = u'2012, University of Wisconsin SSEC'
+project = u'Polar2Grid'
+copyright = u'2012-2017, University of Wisconsin SSEC'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -199,23 +199,23 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    'preamble': '\\setcounter{tocdepth}{1}',
+    'classoptions': ',openany,oneside',
+    'babel': '\\usepackage[english]{babel}',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'polar2grid.tex', u'polar2grid Documentation',
-   u'David Hoese', 'manual'),
+  ('index', 'Polar2Grid_Documentation_{}.tex'.format(version), u'Polar2Grid Documentation',
+   u'CSPP/IMAPP Team', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-#latex_logo = None
+latex_logo = '_static/SSEC_logo_small24.png'
 
-# For "manual" documents, if this is true, then toplevel headings are parts,
-# not chapters.
-#latex_use_parts = False
+# latex_toplevel_sectioning = 'section'
 
 # If true, show page references after internal links.
 #latex_show_pagerefs = False
@@ -227,7 +227,7 @@ latex_documents = [
 #latex_appendices = []
 
 # If false, no module index is generated.
-#latex_domain_indices = True
+latex_domain_indices = False
 
 
 # -- Options for manual page output --------------------------------------------

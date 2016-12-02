@@ -1,13 +1,13 @@
-Grids
-=====
+Provided Grids
+==============
 
 Polar2grid is capable of handling PROJ.4 strings to describe the grids being mapped to.
 For more details on each grid see the package provided
 `Grids Configuration File <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/grids/grids.conf>`_.
-If you would like to add your own grid see the :doc:`dev_guide/grids` section
-of the Developer's Guide. There are additional grids provided in Polar2Grid that
-aren't listed here. Some exist for a specific backend (like AWIPS grids), but can be used
-for other backends as well.
+If you would like to add your own grid see the :doc:`custom_grids`
+documentation. There are additional grids provided in Polar2Grid that
+aren't listed here. Some were provided for a specific backend
+(like AWIPS grids), but can be used for other backends as well.
 
 The following grids are used with the PROJ.4 library (using pyproj bindings)
 through the "ll2cr" step of remapping.  See

@@ -4,41 +4,26 @@
 Polar2Grid
 ==========
 
-Polar2Grid is a set of tools for extracting swath data from earth-observing satellite instruments,
-remapping it to uniform grids, and writing that gridded data to a new file format.
+Polar2Grid is a set of command line tools for extracting swath data from
+earth-observing satellite instruments, remapping it to uniform grids,
+and writing that gridded data to a new file format.
 Polar2Grid was created by scientists and software developers at the
 `SSEC <http://www.ssec.wisc.edu>`_. It is distributed as part of the
 `CSPP project <http://cimss.ssec.wisc.edu/cspp/>`_ for
-processing of data received via direct broadcast antennas. Although Polar2Grid was created to serve the direct
+processing of data received via direct broadcast antennas. Although
+Polar2Grid was created to serve the direct
 broadcast community, it can be used on most archived data files.
 
-The features provided by Polar2Grid are accessible via bash scripts, command line tools, and a set of python packages.
-These methods give scientists and programmers options for using Polar2Grid in a way most comfortable to them.
+The features provided by Polar2Grid are accessible via bash scripts and binary
+command line tools. This is meant to give scientists an easy way to use and
+access features that typically involve complicated programming interfaces.
 
-License and Disclaimer
-----------------------
+Polar2Grid Version 2.1 is now available. For a description of what's new see
+the :doc:`NEWS` section.
 
-Original scripts and automation included as part of this package are
-distributed under the
-:download:`GNU GENERAL PUBLIC LICENSE agreement version 3 <../../../../COPYING>`.
-Software included as part of this software package are copyrighted
-and licensed by their respective organizations, and distributed consistent
-with their licensing terms.
+.. only:: not html
 
-The University of Wisconsin-Madison Space Science and Engineering
-Center (SSEC) makes no warranty of any kind with regard to the CSPP and/or
-IMAPP Polar2Grid software or any accompanying documentation, including but
-not limited to the implied warranties of merchantability and fitness for a
-particular purpose. SSEC does not indemnify any infringement of copyright,
-patent, or trademark through the use or modification of this software.
-
-There is no expressed or implied warranty made to anyone as to the
-suitability of this software for any purpose. All risk of use is assumed by
-the user. Users agree not to hold SSEC, the University of Wisconsin-Madison,
-or any of its employees or assigns liable for any consequences resulting from
-the use of the CSPP and/or IMAPP Polar2Grid software.
-
-.. Documentation <http://www.ssec.wisc.edu/software/polar2grid/>
+    `Documentation Website <http://www.ssec.wisc.edu/software/polar2grid/>`_
 
 `GitHub Repository <https://github.com/davidh-ssec/polar2grid>`_
 
@@ -46,17 +31,17 @@ the use of the CSPP and/or IMAPP Polar2Grid software.
 
 .. note::
 
-    A collaboration between the Polar2Grid and PyTroll team will change a majority of the low-level code in
-    future versions of Polar2Grid.
-    However, the bash scripts will still be available to provide the same functionality with which users are familiar.
-
-Contents
---------
+    A collaboration between the Polar2Grid and PyTroll team will change a
+    majority of the low-level code in future versions of Polar2Grid.
+    However, the bash scripts will still be available to provide the same
+    functionality with which users are familiar.
 
 .. toctree::
     :maxdepth: 1
     :numbered:
 
+    disclaimer
+    system_requirements
     installation
     design_overview
     getting_started
@@ -68,27 +53,28 @@ Contents
     utilscripts
     NEWS
     grids
+    custom_grids
     glossary
 
-Developer's Guide
------------------
+.. only:: html
 
-.. toctree::
-    :maxdepth: 1
-    :numbered:
+    Developer's Guide
+    -----------------
 
-    Introduction <dev_guide/index>
-    dev_guide/dev_env
-    dev_guide/grids
-    dev_guide/swbundle
-    dev_guide/json_input
+    .. toctree::
+        :maxdepth: 1
+        :numbered:
 
+        Introduction <dev_guide/index>
+        dev_guide/dev_env
+        dev_guide/swbundle
+        dev_guide/json_input
 
-Indices and tables
-==================
+    Indices and tables
+    ------------------
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+    * :ref:`genindex`
+    * :ref:`modindex`
+    * :ref:`search`
 
 
