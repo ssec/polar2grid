@@ -9,8 +9,6 @@ The data that frontends distribute to other Polar2Grid components are called
 filtering on :term:`raw products` to create complex products called
 :term:`secondary products`.
 
-Below is a list of currently available frontends for polar2grid.
-
 .. toctree::
     :maxdepth: 1
 

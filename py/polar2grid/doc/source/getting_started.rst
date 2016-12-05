@@ -1,30 +1,8 @@
 Getting Started
 ===============
 
-Getting started with Polar2Grid can be simple once you've decided what you actually want to do.
-Polar2Grid comes with a lot of options and there is a lot that can be customized with little work.
-Each section below describes the basic operations that a user should take to achieve their processing
-goals. The information is split in to 3 sections:
-
- - :ref:`getting_started_bundle`
- - :ref:`getting_started_cli`
- - :ref:`getting_started_library`
-
-.. _getting_started_bundle:
-
-For CSPP Software Bundle Users
-------------------------------
-
 Users of the CSPP Software Bundle can find all of the tools they may want
-to use in the ``bin`` directory of the extracted tarball. As mentioned in
-the :doc:`installation instructions <installation>`, the following line can
-be added to your ``.bash_profile`` to simplify calling Polar2Grid scripts.
-This line allows you to remove the ``$POLAR2GRID_HOME/bin/`` portion of the
-commands mentioned elsewhere in the documentation.
-
-::
-
-    export PATH=$POLAR2GRID_HOME/bin:$PATH
+to use in the ``bin`` directory of the extracted tarball.
 
 The majority of the scripts in the software bundle are wrappers around python command line tools.
 Due to the modular design of Polar2Grid a user only needs to decide on a
@@ -97,17 +75,3 @@ a certain longitude and latitude. To run it from the software bundle wrapper run
 
 See the :ref:`script's documentation <util_p2g_grid_helper>` for more information
 on how to use this script and the arguments it accepts.
-
-.. _getting_started_cli:
-
-For Command Line Tool Users
----------------------------
-
-TODO
-
-.. _getting_started_library:
-
-For Python Library Users
-------------------------
-
-TODO

@@ -24,14 +24,22 @@ installed by simply untarring it::
     tar -xzf polar2grid_softwarebundle.tar.gz
 
 This will create a Polar2Grid software bundle directory. To simplify calling
-scripts included in the bundle the following lines should be added to your
+scripts included in the bundle the following line should be added to your
 ``.bash_profile``::
 
     export POLAR2GRID_HOME=/path/to/softwarebundle
-    export PATH=$POLAR2GRID_HOME/bin:$PATH
 
 All other environment information needed to run is automatically loaded by the
-scripts provided by Polar2Grid.
-See :ref:`Getting Started <getting_started_bundle>` for more information on
-running Polar2Grid.
+scripts provided by Polar2Grid. Scripts are typically run using::
+
+    $POLAR2GRID_HOME/bin/script.sh ...
+
+If you want to run commands without including the preceding directory path,
+or if using in a script in its own background environment, then you can source
+the environment script, ``source $POLAR2GRID_HOME/bin/polar2grid_env.sh``.
+Please note that by sourcing the
+script you are also setting specific PYTHONPATH and LD_LIBRARY_PATH variables
+to point to locations within the Polar2Grid package.
+
+See :doc:`getting_started` for more information on running Polar2Grid.
 

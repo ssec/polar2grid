@@ -205,10 +205,10 @@ latex_elements = {
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title, author, documentclass [howto/manual]).
+# (source start file, target name, title, author, documentclass [howto/manual]), toctree_only.
 latex_documents = [
   ('index', 'Polar2Grid_Documentation_{}.tex'.format(version), u'Polar2Grid Documentation',
-   u'CSPP/IMAPP Team', 'manual'),
+   u'CSPP/IMAPP Team', 'manual', False),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

@@ -794,7 +794,7 @@ def add_frontend_argument_groups(parser):
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     group.add_argument("--bt-channels", dest="products", action=ExtendConstAction, const=BT_CHANNEL_PRODUCTS,
                        help="Add all BT channels to the list of requested products")
-    group.add_argument("-p", "--products", dest="products", nargs="*", default=None, choices=PRODUCTS.keys(),
+    group.add_argument("-p", "--products", dest="products", nargs="*", default=None,
                        help="Specify frontend products to process")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
 
