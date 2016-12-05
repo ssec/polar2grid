@@ -101,11 +101,3 @@ Example::
     # Will result in:
     -878781.238459 4482504.91307
 
-Plot AWIPS NC Data
-------------------
-
-.. argparse::
-    :module: polar2grid.plot_ncdata
-    :func: get_parser
-    :prog: plot_ncdata.sh
-
