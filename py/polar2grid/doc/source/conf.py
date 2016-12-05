@@ -17,11 +17,46 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
-print "Adding the following directories to PYTHONPATH:"
+print("Adding the following directories to PYTHONPATH:")
 BASE_PATH = "../../../"
 for dirname in [x for x in os.listdir(BASE_PATH) if os.path.isdir(os.path.join(BASE_PATH, x)) and x.startswith("polar2grid")]:
     print "\t ",os.path.realpath(os.path.join(BASE_PATH, dirname))
     sys.path.insert(0, os.path.abspath(os.path.join(BASE_PATH, dirname)))
+
+# Hack to download example images instead of storing them in git
+import urllib
+import ftplib
+images = (
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_basic/gcom-w1_amsr2_btemp_36.5h_20160719_190300_wgs84_fit.jpg",
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.jpg",
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.basic_overlay_example.png",
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.advanced_overlay.png",
+)
+script_path = os.path.dirname(os.path.realpath(__file__))
+image_dst = os.path.join(script_path, '_static', 'example_images')
+
+try:
+    os.makedirs(image_dst)
+except OSError:
+    # already exists, good
+    pass
+
+for image_url in images:
+    image_fn = os.path.basename(image_url)
+    image_pathname = os.path.join(image_dst, image_fn)
+    if os.path.isfile(image_pathname):
+        continue
+    elif image_url.startswith("http://"):
+        print("Downloading example image: {}".format(image_url))
+        urllib.urlretrieve(image_url, image_pathname)
+    elif image_url.startswith("ftp://"):
+        print("Downloading example image: {}".format(image_url))
+        parts = image_url.split("/")
+        server = parts[2]
+        ftp_fn = "/".join(parts[3:])
+        ftp = ftplib.FTP(server, user='ftp')  # hope for anonymous
+        out_file = open(image_pathname, 'wb')
+        ftp.retrbinary('RETR {}'.format(ftp_fn), out_file.write)
 
 # -- Customize setup -----------------------------------------------------------
 
