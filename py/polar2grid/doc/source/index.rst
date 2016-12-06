@@ -48,8 +48,8 @@ the :doc:`NEWS` section.
     system_requirements
     installation
     design_overview
-    examples/index
     getting_started
+    examples/index
     frontends/index
     remapping
     backends/index
