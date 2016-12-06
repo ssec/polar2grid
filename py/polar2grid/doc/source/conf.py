@@ -80,7 +80,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.graphviz', 'sphinx.ext.todo', 's
               'sphinx.ext.imgmath',
               'sphinx.ext.ifconfig', 'sphinx.ext.viewcode', 'sphinxarg.ext']
 
-graphviz_dot = '/opt/local/bin/dot'
+graphviz_dot = 'dot'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
