@@ -80,7 +80,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.graphviz', 'sphinx.ext.todo', 's
               'sphinx.ext.imgmath',
               'sphinx.ext.ifconfig', 'sphinx.ext.viewcode', 'sphinxarg.ext']
 
-graphviz_dot = 'dot'
+# graphviz_dot = 'dot'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -243,7 +243,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]), toctree_only.
 latex_documents = [
   ('index', 'Polar2Grid_Documentation_{}.tex'.format(version), u'Polar2Grid Documentation',
-   u'CSPP/IMAPP Team', 'manual', False),
+   u'CSPP/IMAPP Team', 'manual', True),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

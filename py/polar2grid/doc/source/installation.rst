@@ -15,17 +15,21 @@ beyond the scope of this documentation. Please
 `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`_
 if you have questions about installation.
 
-The CSPP tarball can be found on the
-`CSPP team's website <http://cimss.ssec.wisc.edu/cspp/>`_.
+Polar2Grid Software
+-------------------
 
-Once the software bundle tarball is on the destination system it can be
-installed by simply untarring it::
+The CSPP tarball can be found on either the CSPP or IMAPP websites:
 
-    tar -xzf polar2grid_softwarebundle.tar.gz
+    http://cimss.ssec.wisc.edu/cspp/
+    http://cimss.ssec.wisc.edu/imapp/
 
-This will create a Polar2Grid software bundle directory. To simplify calling
-scripts included in the bundle the following line should be added to your
-``.bash_profile``::
+Next, unpack the tarball::
+
+    tar xf CSPP_IMAPP_POLAR2GRID_V2.1.tar.gz
+
+This will create a Polar2Grid software bundle directory, ``polar2grid_v_2_1``.
+To simplify calling scripts included in the bundle the following line should
+be added to your ``.bash_profile``::
 
     export POLAR2GRID_HOME=/path/to/softwarebundle
 
@@ -42,4 +46,21 @@ script you are also setting specific PYTHONPATH and LD_LIBRARY_PATH variables
 to point to locations within the Polar2Grid package.
 
 See :doc:`getting_started` for more information on running Polar2Grid.
+
+Polar2Grid Test Data
+--------------------
+
+If you want to run the test case to verify your installation,
+download the following file::
+
+    CSPP_IMAPP_POLAR2GRID_V2.1_TEST_DATA.tar.gz
+
+The test data should be unpacked in a directory separate from the Polar2Grid
+installation::
+
+    cd $HOME
+    tar xf CSPP_IMAPP_POLAR2GRID_V2.1_TEST_DATA.tar.gz
+
+This will create a ``polar2grid_test`` directory containing the test input,
+output, and verification scripts for both MODIS data and VIIRS data.
 

@@ -1,3 +1,38 @@
+Introduction
+============
+
+Overview
+--------
+
+.. include:: overview.rst
+
+What's New?
+-----------
+
+Polar2Grid Version 2.1 is now available. Some key changes in this
+version:
+
+ * Add VIIRS L1B Reader (via SatPy)
+ * Add AMSR2 L1B Reader (via SatPy)
+ * Add float geotiff functionality
+ * Add new builtin grids (``polar_alaska`` and ``210`` AWIPS Puerto Rico Grid)
+ * New version of ShellB3 distributable python environment
+
+For more details on what's new in this version and past versions see the
+:doc:`NEWS` section.
+
+System Requirements
+-------------------
+
+System requirements for the Polar2grid software are as follows:
+ * Intel or AMD CPU with 64-bit instruction support
+ * 8 GB RAM (minimum)
+ * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)
+ * 3 GB disk space (minimum)
+ * GLIBC version 2.7 or higher (execute “/lib64/libc.so.6” to find the version number)
+
+Linux terminal commands included in these instructions assume the bash shell is used.
+
 License and Disclaimer
 ----------------------
 
