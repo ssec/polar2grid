@@ -248,7 +248,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-latex_logo = '_static/SSEC_logo_small24.png'
+latex_logo = '_static/P2G_PDF_Logos.png'
 
 # latex_toplevel_sectioning = 'section'
 
