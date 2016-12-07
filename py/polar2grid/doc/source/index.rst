@@ -12,7 +12,6 @@ Polar2Grid
 
     introduction
     installation
-    design_overview
     getting_started
     examples/index
     frontends/index

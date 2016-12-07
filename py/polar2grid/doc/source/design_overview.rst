@@ -1,5 +1,5 @@
-Design Overview
-===============
+Software Design Overview
+========================
 
 The primary goal of Polar2Grid is to allow scientists to convert satellite
 imager data in to a format that they can view using the forecasting tools with

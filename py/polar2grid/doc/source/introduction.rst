@@ -6,6 +6,37 @@ Overview
 
 .. include:: overview.rst
 
+Software Design
+---------------
+
+Polar2Grid has a modular design operating on the idea of satellite “products”
+or "datasets"; data observed by a satellite instrument. These products can be
+any type of raster data, such as temperatures, reflectances, radiances, or
+any other value that may be recorded by or calculated from an instrument.
+There are 4 main steps or components involved when working with these
+products in Polar2Grid:
+reading (frontend), writing (backend), compositing, and remapping.
+Polar2Grid makes it possible to access and configure these steps via simple
+bash scripts. The script that "glues" these steps together is
+``polar2grid.sh`` and creates gridded versions of the user swath products
+provided to it. More information on accessing Polar2Grid's features and
+running its scripts can be found in the :doc:`getting_started` and
+:doc:`examples/index` sections.
+
+For more information on the design and responsibility of each component
+see the :doc:`design_overview` Appendix.
+
+.. graphviz::
+
+    digraph glue_flow {
+        rankdir = LR;
+        node [shape = rectangle, fillcolor="#C3DCE7:white", gradientangle="90.0", style="filled"];
+        "Frontend" -> "Remapper";
+        "Remapper" -> "Backend";
+        "Remapper" -> "Compositors" [style=dashed];
+        "Compositors" -> "Backend" [style=dashed];
+    }
+
 What's New?
 -----------
 
