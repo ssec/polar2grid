@@ -31,14 +31,12 @@ Polar2Grid
     Developer's Guide
     -----------------
 
-    .. toctree::
-        :maxdepth: 1
-        :numbered:
+    - :doc:`Introduction <dev_guide/index>`
+    - :doc:`dev_guide/dev_env`
+    - :doc:`dev_guide/swbundle`
+    - :doc:`dev_guide/json_input`
 
-        Introduction <dev_guide/index>
-        dev_guide/dev_env
-        dev_guide/swbundle
-        dev_guide/json_input
+.. only:: html
 
     Indices and tables
     ------------------
@@ -46,5 +44,3 @@ Polar2Grid
     * :ref:`genindex`
     * :ref:`modindex`
     * :ref:`search`
-
-
