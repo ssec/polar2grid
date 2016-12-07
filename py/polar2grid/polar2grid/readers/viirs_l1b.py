@@ -188,7 +188,6 @@ class Frontend(ReaderWrapper):
         LOG.debug("Night fraction set to %f", self.night_fraction)
         self.sza_threshold = kwargs.pop('sza_threshold', 100.)
         LOG.debug("SZA threshold set to %f", self.sza_threshold)
-        self.dnb_saturation_correction = kwargs.pop('dnb_saturation_correction')
         self.fraction_day_scene = None
         self.fraction_night_scene = None
         super(Frontend, self).__init__(*args, **kwargs)
