@@ -25,7 +25,7 @@ produces these files in WGS84 (Plate Carrée) projection::
 ``gcom-w1_amsr2_btemp_36.5h_20160719_190300_wgs84_fit.tif`` is displayed below:
 
 .. image:: ../_static/example_images/gcom-w1_amsr2_btemp_36.5h_20160719_190300_wgs84_fit.jpg
-    :scale: 50%
+    :width: 50%
     :align: center
     :alt: gcom-w1_amsr2_btemp_36.5h_20160719_190300_wgs84_fit.jpg
 
@@ -48,6 +48,6 @@ produces these Lambert Conformal Conic (LCC) geotiff files::
 ``gcom-w1_amsr2_btemp_36.5h_20160719_190300_wgs84_fit.tif`` is displayed below:
 
 .. image:: ../_static/example_images/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.jpg
-    :scale: 50%
+    :width: 50%
     :align: center
 
