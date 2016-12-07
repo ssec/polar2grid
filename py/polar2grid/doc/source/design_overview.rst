@@ -27,10 +27,10 @@ together to create gridded versions of the user provided swath products.
     digraph glue_flow {
         rankdir = LR;
         node [shape = rectangle, fillcolor="#C3DCE7:white", gradientangle="90.0", style="filled"];
-        "Frontend" -> "Remapper";
-        "Remapper" -> "Backend";
+        "Reader" -> "Remapper";
+        "Remapper" -> "Writer";
         "Remapper" -> "Compositors" [style=dashed];
-        "Compositors" -> "Backend" [style=dashed];
+        "Compositors" -> "Writer" [style=dashed];
     }
 
 Intermediate Containers

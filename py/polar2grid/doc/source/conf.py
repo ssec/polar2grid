@@ -243,7 +243,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]), toctree_only.
 latex_documents = [
   ('index', 'Polar2Grid_Documentation_{}.tex'.format(version), u'Polar2Grid Documentation',
-   u'CSPP/IMAPP Team', 'manual', True),
+   u'Released under CSPP/IMAPP Projects', 'manual', True),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

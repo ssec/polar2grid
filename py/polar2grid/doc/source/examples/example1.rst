@@ -1,11 +1,11 @@
-Example 1 - GCOMW-1 AMSR2
-=========================
+AMSR2 L1B - Example 1
+---------------------
 
 This example walks through some common tasks when working with
 GCOMW-1 AMSR2 L1B data.
 
 Basic GeoTIFF file creation
----------------------------
+***************************
 
 Ex: ``polar2grid.sh amsr2_l1b gtiff -f {data}``
 
@@ -30,7 +30,7 @@ produces these files in WGS84 (Plate Carrée) projection::
     :alt: gcom-w1_amsr2_btemp_36.5h_20160719_190300_wgs84_fit.jpg
 
 Naval Research Lab (NRL) Image Reproduction
--------------------------------------------
+*******************************************
 
 ::
 

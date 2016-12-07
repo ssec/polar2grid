@@ -15,13 +15,15 @@ any type of raster data, such as temperatures, reflectances, radiances, or
 any other value that may be recorded by or calculated from an instrument.
 There are 4 main steps or components involved when working with these
 products in Polar2Grid:
-reading (frontend), writing (backend), compositing, and remapping.
+reading, writing, compositing, and remapping.
 Polar2Grid makes it possible to access and configure these steps via simple
 bash scripts. The script that "glues" these steps together is
 ``polar2grid.sh`` and creates gridded versions of the user swath products
 provided to it. More information on accessing Polar2Grid's features and
-running its scripts can be found in the :doc:`getting_started` and
-:doc:`examples/index` sections.
+running its scripts can be found in the :doc:`getting_started` section
+or the examples following each reader section. Note that although an
+example may be written for a specific reader the same operations can
+be applied to all readers unless mentioned otherwise.
 
 For more information on the design and responsibility of each component
 see the :doc:`design_overview` Appendix.
@@ -31,26 +33,25 @@ see the :doc:`design_overview` Appendix.
     digraph glue_flow {
         rankdir = LR;
         node [shape = rectangle, fillcolor="#C3DCE7:white", gradientangle="90.0", style="filled"];
-        "Frontend" -> "Remapper";
-        "Remapper" -> "Backend";
+        "Reader" -> "Remapper";
+        "Remapper" -> "Writer";
         "Remapper" -> "Compositors" [style=dashed];
-        "Compositors" -> "Backend" [style=dashed];
+        "Compositors" -> "Writer" [style=dashed];
     }
 
 What's New?
 -----------
 
-Polar2Grid Version 2.1 is now available. Some key changes in this
-version:
+Polar2Grid Version 2.1 is now available. Changes in this
+version include:
 
- * Add VIIRS L1B Reader (via SatPy)
- * Add AMSR2 L1B Reader (via SatPy)
- * Add float geotiff functionality
- * Add new builtin grids (``polar_alaska`` and ``210`` AWIPS Puerto Rico Grid)
- * New version of ShellB3 distributable python environment
+.. include:: NEWS.rst
+    :start-line: 7
+    :end-line: 22
 
 For more details on what's new in this version and past versions see the
-:doc:`NEWS` section.
+`Release Notes <https://www.ssec.wisc.edu/software/polar2grid/release-notes.html>`_
+section on the documentation site.
 
 System Requirements
 -------------------

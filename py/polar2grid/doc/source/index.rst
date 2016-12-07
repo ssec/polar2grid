@@ -13,7 +13,6 @@ Polar2Grid
     introduction
     installation
     getting_started
-    examples/index
     frontends/index
     remapping
     backends/index
@@ -34,6 +33,7 @@ Polar2Grid
     - :doc:`dev_guide/dev_env`
     - :doc:`dev_guide/swbundle`
     - :doc:`dev_guide/json_input`
+    - :doc:`NEWS`
 
 .. only:: html
 
