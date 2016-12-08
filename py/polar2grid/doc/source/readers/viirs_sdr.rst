@@ -9,7 +9,7 @@ Command Line Arguments
 .. argparse::
     :module: polar2grid.viirs.swath
     :func: add_frontend_argument_groups
-    :prog: polar2grid.sh viirs_sdr <backend>
+    :prog: polar2grid.sh viirs_sdr <writer>
     :passparser:
 
 .. versionchanged:: 2.1

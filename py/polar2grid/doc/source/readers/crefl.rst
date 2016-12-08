@@ -9,6 +9,6 @@ Command Line Arguments
 .. argparse::
     :module: polar2grid.crefl.crefl2swath
     :func: add_frontend_argument_groups
-    :prog: polar2grid.sh crefl <backend>
+    :prog: polar2grid.sh crefl <writer>
     :passparser:
 

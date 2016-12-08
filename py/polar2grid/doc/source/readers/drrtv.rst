@@ -9,5 +9,5 @@ Command Line Arguments
 .. argparse::
     :module: polar2grid.drrtv.swath
     :func: add_frontend_argument_groups
-    :prog: polar2grid.sh drrtv <backend>
+    :prog: polar2grid.sh drrtv <writer>
     :passparser:

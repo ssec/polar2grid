@@ -9,6 +9,6 @@ Command Line Arguments
 .. argparse::
     :module: polar2grid.awips.awips_netcdf
     :func: add_backend_argument_groups
-    :prog: polar2grid.sh <frontend> awips
+    :prog: polar2grid.sh <reader> awips
     :passparser:
 

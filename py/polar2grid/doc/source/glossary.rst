@@ -26,12 +26,13 @@ Glossary
     glue script
     glue scripts
         The script connecting every component together.  A glue script connects
-        a frontend, the remapper, compositors, and a backend. There is only one
-        actual glue script in the python source code, but it has access to all
-        the possible components that can be used. In the CSPP tarball, the
-        individual glue bash scripts (ex. viirs2gtiff.sh) are just simple wrappers
-        around the python call `python -m polar2grid.glue <frontend> <backend> -vv ...`,
-        except for in rare cases where specific defaults are needed.
+        a reader, the remapper, compositors, and a writer. The only glue script
+        in Polar2Grid is called ``polar2grid.sh``, but in previous versions
+        there were glue scripts named ``<reader>2<writer>.sh``. The bash script
+        is simply a wrapper around the python call
+        `python -m polar2grid.glue <reader> <writer> -vv ...`,
+        except for in rare cases where specific defaults are needed, such as
+        ``crefl2gtiff.sh``.
 
     product
     products
