@@ -31,7 +31,7 @@
 Imaging Spectroradiometer (MODIS) instruments on the Aqua and Terra
 satellites. The frontend is designed to work with files created by the IMAPP
 direct broadcast processing system, but may support other types of L1B files. The
-frontend can be specified to the ``p2g_glue`` script by using the frontend name ``modis``.
+frontend can be specified to the ``polar2grid.sh`` script by using the frontend name ``modis``.
 It provides the following products:
 
     +--------------------+--------------------------------------------+

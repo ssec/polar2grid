@@ -29,7 +29,7 @@
 # david.hoese@ssec.wisc.edu
 """The ACSPO frontend is for reading files created by the Advanced Clear-Sky Processor for Oceans (ACSPO) system.
 The frontend is contained in the `polar2grid.acspo` python package. The ACSPO system typically produces NetCDF4
-files. The frontend can be specified with the ``p2g_glue`` command using the ``acspo`` frontend name.
+files. The frontend can be specified with the ``polar2grid.sh`` command using the ``acspo`` frontend name.
 The ACSPO frontend provides the following products:
 
     +--------------------+--------------------------------------------+

@@ -44,7 +44,7 @@ After processing the output can be provided to Polar2Grid to create true color i
 .. note::
 
     The ``crefl2gtiff.sh`` script is hardcoded to create true color images by default since this is the most common
-    use case for the CREFL frontend. This is equivalent to ``p2g_glue crefl gtiff true_color ...`` since the products
+    use case for the CREFL frontend. This is equivalent to ``polar2grid.sh crefl gtiff true_color ...`` since the products
     needed for true color are created by default.
 
 The CREFL frontend accepts output from MODIS and VIIRS corrected reflectance processing. If provided with SDR files

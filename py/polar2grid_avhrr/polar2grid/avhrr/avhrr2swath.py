@@ -29,7 +29,7 @@
 # david.hoese@ssec.wisc.edu
 """The AVHRR frontend is for reading AAPP L1B files for the AVHRR instrument.
 The frontend is contained in the `polar2grid.avhrr` python package. These files are
-a custom binary format. The frontend can be specified with the ``p2g_glue`` command
+a custom binary format. The frontend can be specified with the ``polar2grid.sh`` command
 using the ``avhrr`` frontend name.
 The AVHRR frontend provides the following products:
 

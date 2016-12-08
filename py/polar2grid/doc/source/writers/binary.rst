@@ -9,6 +9,6 @@ Command Line Arguments
 .. argparse::
     :module: polar2grid.binary
     :func: add_backend_argument_groups
-    :prog: p2g_glue <frontend> binary
+    :prog: polar2grid.sh <frontend> binary
     :passparser:
 

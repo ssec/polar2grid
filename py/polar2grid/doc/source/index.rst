@@ -13,9 +13,9 @@ Polar2Grid
     introduction
     installation
     getting_started
-    frontends/index
+    readers/index
     remapping
-    backends/index
+    writers/index
     compositors
     rescaling
     utilscripts

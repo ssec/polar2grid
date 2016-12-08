@@ -9,5 +9,5 @@ Command Line Arguments
 .. argparse::
     :module: polar2grid.hdf5_backend
     :func: add_backend_argument_groups
-    :prog: p2g_glue <frontend> hdf5
+    :prog: polar2grid.sh <frontend> hdf5
     :passparser:

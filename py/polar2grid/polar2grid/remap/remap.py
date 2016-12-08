@@ -531,7 +531,7 @@ class Remapper(object):
 
 
 def add_remap_argument_groups(parser):
-    # Let frontends and backends provide defaults, we must "SUPPRESS" the attribute being created
+    # Let readers and backends provide defaults, we must "SUPPRESS" the attribute being created
     from argparse import SUPPRESS
     # , default_grids=None, default_fornav_d=1, default_fornav_D=10):
     group = parser.add_argument_group(title="Remapping Initialization")

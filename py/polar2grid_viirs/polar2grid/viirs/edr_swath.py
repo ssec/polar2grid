@@ -37,7 +37,7 @@ and have corresponding geolocation files::
 
 The VIIRS frontend supports a small amount of EDR files available. The supported products are shown below.
 Geolocation files must be included
-when specifying filepaths to frontends and glue scripts. The VIIRS frontend can be specified to the ``p2g_glue`` script
+when specifying filepaths to frontends and glue scripts. The VIIRS frontend can be specified to the ``polar2grid.sh`` script
 with the frontend name ``viirs``.
 
     +---------------------------+--------------------------------------------+

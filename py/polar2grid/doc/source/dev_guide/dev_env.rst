@@ -61,6 +61,6 @@ process this script is the place to start.
     command. This command uses viirs2awips, but any other :term:`glue script` or polar2grid utility
     should follow the same basic calling sequence::
 
-        p2g_glue viirs awips -vvv -g 211e -f /path/to/test/data/files/SVI01*
+        polar2grid.sh viirs awips -vvv -g 211e -f /path/to/test/data/files/SVI01*
         # for more options run
-        p2g_glue viirs awips -h
+        polar2grid.sh viirs awips -h

@@ -44,17 +44,17 @@ can be stored on-disk as one or more JSON files referencing one or more binary
 data arrays. In memory, the containers are represented as python dictionaries with
 numpy memory-mapped files or data arrays.
 
-Frontends
----------
+Readers
+-------
 
-The frontend, a.k.a. the swath extractor, is responsible for reading provided
+The Reader is responsible for reading provided
 data files to create Polar2Grid swath products. In the simplest case, this means
-reading data from the file and placing it in an intermediate container (see
-previous section). In more advanced cases a Frontend may choose to provide
+reading data from the file and placing it in an intermediate container. In
+more advanced cases a Reader may choose to provide
 products that require extra processing; from masking bad values to creating
 a new product from the combination of others. The
-:doc:`frontends documentation <frontends/index>` has more details on
-the current frontends available.
+:doc:`readers documentation <readers/index>` has more details on
+the current readers available.
 
 Remapping
 ---------
@@ -82,22 +82,22 @@ Compositors
 
 Compositors are an optional component of Polar2Grid that may not be needed
 by most users. The role of a compositor is to create new products that can
-not be created by the Frontend. Usually this means combining multiple
+not be created by the Reader. Usually this means combining multiple
 products to create a new one. The most common case is creating color images
 (RGB) like true color or false colors images which are the combination
 of 3 products. Customizing the behavior of Compositors is considered an
 advanced topic. More information can be found on the
 :doc:`Compositors documentation <compositors>`.
 
-Backends
---------
+Writers
+-------
 
-The Backend's responsibility is to write gridded data to a file format that
+The Writer's responsibility is to write gridded data to a file format that
 can be used for viewing and/or analyzing in another program. This usually involves
 scaling the data to fit the data type used by the file format being written.
 For example, most satellite temperature data is best represented as floating-point
 numbers (200.0K - 320.0K), but many file formats like NetCDF or Geotiff
 prefer unsigned 8-bit integers (0 - 255). To best represent the data in the file,
-the Backend must scale the real-world value to a value that can be written to
+the Writer must scale the real-world value to a value that can be written to
 the output file(s), whether that be with a simple linear transformation or something
-more complex. For more information, see the :doc:`Backends documentation <backends/index>`.
+more complex. For more information, see the :doc:`Writers documentation <writers/index>`.

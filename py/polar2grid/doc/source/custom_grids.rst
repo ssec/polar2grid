@@ -45,8 +45,8 @@ to the built-in grids:
 .. note::
 
     The decision of whether a grid is supported or not is ultimately up to
-    :doc:`the backend <../backends/index>` used by a glue script.
-    Check the :doc:`../backends/index` section for your specific backend.
+    :doc:`the writer <../writers/index>` used by a glue script.
+    Check the :doc:`../writers/index` section for your specific writer.
 
 .. note::
 

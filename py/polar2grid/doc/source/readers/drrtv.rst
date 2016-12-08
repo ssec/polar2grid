@@ -1,13 +1,13 @@
-NUCAPS Frontend
+DR-RTV Frontend
 ===============
 
-.. automodule:: polar2grid.readers.nucaps
+.. automodule:: polar2grid.drrtv.swath
 
 Command Line Arguments
 ----------------------
 
 .. argparse::
-    :module: polar2grid.readers.nucaps
+    :module: polar2grid.drrtv.swath
     :func: add_frontend_argument_groups
-    :prog: p2g_glue nucaps <backend>
+    :prog: polar2grid.sh drrtv <backend>
     :passparser:

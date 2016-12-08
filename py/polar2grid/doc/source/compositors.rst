@@ -2,9 +2,9 @@ Compositors
 ===========
 
 Compositors are optional components of Polar2Grid that can be used after
-:doc:`remapping <../remapping>`, but before a :doc:`backend <../backends/index>`.
+:doc:`remapping <../remapping>`, but before a :doc:`writer <../writers/index>`.
 A compositor can be used to combine multiple Polar2Grid bands to create a new product.
-Normally these types of operations would be done in a :doc:`frontend <../frontends/index>`
+Normally these types of operations would be done in a :doc:`reader <../readers/index>`
 to create a :term:`secondary product`. However, sometimes calculations require combining
 products of different sizes and resolutions or creating a product with multiple levels like
 RGB images. These operations are much easier to handle after remapping, which is where
@@ -18,7 +18,7 @@ creating true color images is already the default for the ``crefl2gtiff.sh`` scr
 Compositors can be used from the python command line access by either calling the glue
 script::
 
-    p2g_glue <frontend> <backend> [<compositor> ...] ...
+    polar2grid.sh <reader> <writer> [<compositor> ...] ...
 
 What compositors are available can be customized with a configuration file specified
 with the ``--compositor-configs`` flag.

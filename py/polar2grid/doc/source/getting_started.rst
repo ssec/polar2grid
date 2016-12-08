@@ -2,32 +2,57 @@ Getting Started
 ===============
 
 Users of the CSPP Software Bundle can find all of the tools they may want
-to use in the ``bin`` directory of the extracted tarball.
+to use in the ``bin`` directory of the extracted tarball. The majority of
+the scripts in the software bundle are wrappers around python
+software.
 
-The majority of the scripts in the software bundle are wrappers around python command line tools.
-Due to the modular design of Polar2Grid a user only needs to decide on a
-:doc:`Frontend <frontends/index>` and a :doc:`Backend <backends/index>` to find the script to run.
-For example, to convert VIIRS SDR files to Geotiffs a user should run the following::
+The most common use of Polar2Grid is to convert satellite data files in to
+gridded image files. This is accomplished through the ``polar2grid.sh``
+script. Due to the modular design of Polar2Grid a user only needs
+to decide on a :doc:`Reader <readers/index>` and a
+:doc:`Writer <writers/index>` and provide them to ``polar2grid.sh``::
 
-    $POLAR2GRID_HOME/bin/viirs2gtiff.sh -f /path/to/my_sdrs/
+    $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f <path to files>/<list of files>
 
-This method of finding and calling scripts applies to all basic Polar2Grid features. Each Frontend
-comes with a logical set of default products to be created. If it can't find all the necessary data
-then it will continue on with what could be created.
+Where ``<list of files>`` includes input calibrated data and geolocation
+files. Each Reader comes with a logical set of default products to be created,
+but this can be configured. If you provide only ``<path to files>``
+or if other processing errors occur Polar2Grid will attempt to make as many
+products as it can.
 
-To see a full
-list of the available command line arguments provide the ``-h`` argument to a script. See the
-:doc:`frontends documentation <frontends/index>` for available frontends and
-:doc:`backends documentation <backends/index>` for available backends. Some of the more advanced features
-provided by Polar2Grid are decribed in the below sections. It is recommended that users searching
-for a feature not explained on this page look at the rest of the Polar2Grid documentation. For users
-looking to make their own custom RGB products, see the :doc:`Compositor's documentation <compositors>`.
+For example, executing the following::
+
+    $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f /home/data/viirs/sdr
+
+Will create 8-bit GeoTIFF files of all M-Band, I-Band, and Day/Night Band
+SDR files it finds in the ``/home/data/viirs/sdr`` directory as long as it
+contains the matching geolocation files. If multiple granules are provided
+to ``polar2grid.sh`` they will be aggregated together.
+
+Additional command line arguments for the ``polar2grid.sh`` script and
+their defaults are described in the related
+:doc:`reader <readers/index>` or :doc:`writer <writers/index>` sections.
+Options that affect remapping are described in the :doc:`remapping` section.
+Additionally all Polar2Grid bash scripts accept a ``-h`` argument to list
+all the available command line arguments.
+
+For information on other scripts and features provided by Polar2Grid see
+the :doc:`utilscripts` or :doc:`misc_recipes` sections or
+the various examples through out the :doc:`reader <readers/index>` and
+:doc:`writer <writers/index>` sections.
+
+.. note::
+
+    In previous versions of Polar2Grid scripts were named
+    ``<reader>2<writer>.sh`` instead of
+    ``polar2grid.sh <reader> <writer>``. These legacy scripts will still
+    work but the new form of calling is preferred.
 
 Creating True Color as Geotiffs and KML/KMZ
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To create a true color image you must first have the SDRs for the proper instrument. Traditional
-true color images are created using the :doc:`CREFL (Corrected Reflectance) Frontend <frontends/crefl>`.
+true color images are created using the :doc:`CREFL (Corrected Reflectance) Frontend <readers/crefl>`.
 See the frontend documentation for which instruments are supported at this
 time (VIIRS and MODIS at the moment). Even if you want a KMZ, a geotiff must be created first::
 
@@ -43,7 +68,7 @@ Where the ``input_true_color.tif`` file is one of the files created from the ``c
 command and ``output_true_color.kmz`` is the name of the KMZ file to create.
 
 For more information see the documentation for the
-:doc:`CREFL Frontend <frontends/crefl>`, the :doc:`Geotiff Backend <backends/gtiff>`, and the
+:doc:`CREFL Frontend <readers/crefl>`, the :doc:`Geotiff Backend <writers/gtiff>`, and the
 :doc:`True Color Compositor <compositors>`.
 
 Creating False Color as Geotiffs and KML/KMZ
