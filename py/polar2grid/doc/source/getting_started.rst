@@ -52,8 +52,8 @@ Creating True Color as Geotiffs and KML/KMZ
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To create a true color image you must first have the SDRs for the proper instrument. Traditional
-true color images are created using the :doc:`CREFL (Corrected Reflectance) Frontend <readers/crefl>`.
-See the frontend documentation for which instruments are supported at this
+true color images are created using the :doc:`CREFL (Corrected Reflectance) Reader <readers/crefl>`.
+See the reader documentation for which instruments are supported at this
 time (VIIRS and MODIS at the moment). Even if you want a KMZ, a geotiff must be created first::
 
     $POLAR2GRID_HOME/bin/crefl2gtiff.sh -f /path/to/my_sdrs/
@@ -68,7 +68,7 @@ Where the ``input_true_color.tif`` file is one of the files created from the ``c
 command and ``output_true_color.kmz`` is the name of the KMZ file to create.
 
 For more information see the documentation for the
-:doc:`CREFL Frontend <readers/crefl>`, the :doc:`Geotiff Backend <writers/gtiff>`, and the
+:doc:`CREFL Reader <readers/crefl>`, the :doc:`Geotiff Writer <writers/gtiff>`, and the
 :doc:`True Color Compositor <compositors>`.
 
 Creating False Color as Geotiffs and KML/KMZ
@@ -81,7 +81,7 @@ for more information on those defaults. To make a false color image geotiff run:
     $POLAR2GRID_HOME/bin/crefl2gtiff.sh false_color --false-color -f /path/to/my_sdrs/
 
 Now while these command arguments may seem redundant there is a good reason for them. The
-``--false-color`` portion of the command tells the frontend that you want the products used
+``--false-color`` portion of the command tells the reader that you want the products used
 in a false color image. The ``false_color`` portion says that you actually want to *make*
 a false color image product. Without the ``false_color`` part, no RGB image would be created.
 

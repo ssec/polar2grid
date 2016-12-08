@@ -1,5 +1,5 @@
-AVHRR Frontend
-==============
+AVHRR Reader
+============
 
 .. automodule:: polar2grid.avhrr.avhrr2swath
 

@@ -1,5 +1,5 @@
-DR-RTV Frontend
-===============
+DR-RTV Reader
+=============
 
 .. automodule:: polar2grid.drrtv.swath
 

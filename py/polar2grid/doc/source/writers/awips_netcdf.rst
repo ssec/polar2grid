@@ -1,5 +1,5 @@
-AWIPS NetCDF
-============
+AWIPS NetCDF Writer
+===================
 
 .. automodule:: polar2grid.awips.awips_netcdf
 

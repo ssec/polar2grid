@@ -1,5 +1,5 @@
-Binary
-======
+Binary Writer
+=============
 
 .. automodule:: polar2grid.binary
 

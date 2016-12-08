@@ -1,14 +1,14 @@
 Rescaling
 =========
 
-Rescaling is a polar2grid component shared by most backends that rescales
+Rescaling is a polar2grid component shared by most writers that rescales
 gridded image data via the ``Rescaler`` object. Rescaling provides simple
 enhancement capabilities to prepare the product data for an image format.
 The following sections describe each scaling function in the rescaling code.
 The defaults provided by Polar2Grid will create nice looking images suitable
 for most users.
 
-The functions described below are intended for use by polar2grid backends via
+The functions described below are intended for use by polar2grid writers via
 the ``Rescaler`` object, but can be used elsewhere if needed.
 These functions ignore any fill/invalid values in the data. Common values
 for an 8-bit (0-255) output are shown as an example. The ``Rescaler``

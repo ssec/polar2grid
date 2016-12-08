@@ -1,5 +1,5 @@
-HDF5 Backend
-============
+HDF5 Writer
+===========
 
 .. automodule:: polar2grid.hdf5_backend
 

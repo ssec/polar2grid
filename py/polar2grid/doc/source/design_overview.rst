@@ -18,7 +18,7 @@ by a satellite instrument. These products can be any type of raster data,
 such as temperatures,
 reflectances, radiances, or any other value that may be recorded by or calculated
 from an instrument. As shown below there are 4 main components of Polar2Grid
-used to work with these products: the Frontend, Backend, Compositor,
+used to work with these products: the Reader, Writer, Compositor,
 and Remapper. Typically these components are ":py:mod:`glued <polar2grid.glue>`"
 together to create gridded versions of the user provided swath products.
 

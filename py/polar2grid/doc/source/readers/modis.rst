@@ -1,5 +1,5 @@
-MODIS Frontend
-==============
+MODIS L1B Reader
+================
 
 .. automodule:: polar2grid.modis.modis_to_swath
 

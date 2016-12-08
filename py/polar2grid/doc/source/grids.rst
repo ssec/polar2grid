@@ -6,8 +6,8 @@ For more details on each grid see the package provided
 `Grids Configuration File <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/grids/grids.conf>`_.
 If you would like to add your own grid see the :doc:`custom_grids`
 documentation. There are additional grids provided in Polar2Grid that
-aren't listed here. Some were provided for a specific backend
-(like AWIPS grids), but can be used for other backends as well.
+aren't listed here. Some were provided for a specific writer
+(like AWIPS grids), but can be used for other writers as well.
 
 The following grids are used with the PROJ.4 library (using pyproj bindings)
 through the "ll2cr" step of remapping.  See

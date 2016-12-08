@@ -1,5 +1,5 @@
-Geotiff
-=======
+Geotiff Writer
+==============
 
 .. automodule:: polar2grid.gtiff_backend
 

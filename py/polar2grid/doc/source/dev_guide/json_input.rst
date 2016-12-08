@@ -132,7 +132,7 @@ flag.
 Create Geotiffs from remapped JSON
 ----------------------------------
 
-Once you have a gridded scene, you can run any Polar2Grid backend on that
+Once you have a gridded scene, you can run any Polar2Grid writer on that
 data. Here is an example of creating a geotiff::
 
     $POLAR2GRID_HOME/ShellB3/bin/p2g_backend gtiff -vv --scene my_grid_scene.json

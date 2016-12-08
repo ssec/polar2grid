@@ -1,8 +1,15 @@
 Developer's Guide
 =================
 
-This guide is intended to ease the development of additional frontends,
-backends, or other components to the polar2grid package. Polar2Grid has
+.. warning::
+
+    Due to the collaboration with the PyTroll team on the SatPy package
+    much of this documentation will change or is inaccurate. Future
+    versions will have better documentation about contributing. For now,
+    please contact the Polar2Grid or PyTroll team.
+
+This guide is intended to ease the development of additional readers,
+writers, or other components to the polar2grid package. Polar2Grid has
 gone through a major redesign process and it is much easier to modify
 existing components and create new components. However, due to some collaboration
 with the PyTroll team a majority (if not all) of the python functionality
@@ -30,8 +37,8 @@ These polar2grid topics should be understood to get the most out of this
 guide:
 
  - The general :doc:`design <../design_overview>` of Polar2Grid
- - The responsibilities of a frontend
- - The responsibilities of a backend
+ - The responsibilities of a reader
+ - The responsibilities of a writer
  - Package hierarchy and dependencies
 
 A developer should be familiar with these concepts to develop a new component

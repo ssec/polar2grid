@@ -1,5 +1,5 @@
-VIIRS L1B Frontend
-==================
+VIIRS L1B Reader
+================
 
 .. automodule:: polar2grid.readers.viirs_l1b
 

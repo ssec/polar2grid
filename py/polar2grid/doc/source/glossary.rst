@@ -8,7 +8,7 @@ Glossary
     data kinds
         Descriptive term for what the data measures. Common data kinds are
         brightness temperature, reflectance, or radiance. Data kinds are
-        created and set by the frontend. While most frontends have the
+        created and set by the reader. While most readers have the
         same descriptive term for a product, it is not required and in some
         cases may not be desired. Note that Data kinds are different from
         :term:`data types`.
@@ -36,7 +36,7 @@ Glossary
 
     product
     products
-        A swath of instrument data. When from a Polar2Grid Frontend a product is considered
+        A swath of instrument data. When from a Polar2Grid Reader a product is considered
         a :term:`swath product`. After a swath product has been remapped it is considered
         a :term:`gridded product`.
 
@@ -53,19 +53,19 @@ Glossary
 
     raw product
     raw products
-        :term:`Swath product <swath product>` created by a frontend requiring little more than reading the data from
+        :term:`Swath product <swath product>` created by a reader requiring little more than reading the data from
         a data file. It is common for raw products to require scaling from the raw
         data stored in the file using a scaling factor and offset. There are also a few
         cases where raw products require additional masking (ex. cloud clearing) that
         requires another product. In this way, raw products are sometimes treated as
         :term:`secondary products`. To allow for more flexibility when raw products
-        require extra processing, frontends should consider having access to the
+        require extra processing, readers should consider having access to the
         original raw product and a secondary product created from that original product,
         rather than one single product. Obviously this depends on the usefulness of
         the original product to potential uses.
 
     secondary product
     secondary products
-        :term:Swath product <swath product>` created by a frontend requiring one or more other products and some
-        extra processing. Secondary products may require :term:`raw products` or other
-        secondary products.
+        :term:Swath product <swath product>` created by a reader requiring one
+        or more other products and some extra processing. Secondary products
+        may require :term:`raw products` or other secondary products.

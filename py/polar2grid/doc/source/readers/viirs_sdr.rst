@@ -1,5 +1,5 @@
-VIIRS SDR Frontend
-==================
+VIIRS SDR Reader
+================
 
 .. automodule:: polar2grid.viirs.swath
 

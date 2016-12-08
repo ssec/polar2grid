@@ -1,5 +1,5 @@
-Corrected Reflectance Frontend
-==============================
+Corrected Reflectance Reader
+============================
 
 .. automodule:: polar2grid.crefl.crefl2swath
 

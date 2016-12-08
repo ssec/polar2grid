@@ -1,5 +1,5 @@
-NinJo
-=====
+NinJo Writer
+============
 
 .. automodule:: polar2grid.ninjo.ninjo_backend
 

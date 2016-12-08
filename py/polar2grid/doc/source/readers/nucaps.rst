@@ -1,5 +1,5 @@
-NUCAPS Frontend
-===============
+NUCAPS Reader
+=============
 
 .. automodule:: polar2grid.readers.nucaps
 

@@ -1,5 +1,5 @@
-MIRS Frontend
-=============
+MIRS Reader
+===========
 
 .. automodule:: polar2grid.mirs.mirs2swath
 
