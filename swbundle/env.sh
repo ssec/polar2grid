@@ -40,11 +40,11 @@ if [ -z "$POLAR2GRID_REV" ]; then
     # Add all polar2grid scripts to PATH
     export PATH=$POLAR2GRID_HOME/bin:$PATH
     # Add ShellB3 to PATH
-    export PATH=$SHELLB3_DIR/bin:$PATH
+    export PATH=$P2G_SHELLB3_DIR/bin:$PATH
     # Don't let someone else's PYTHONPATH mess us up
     unset PYTHONPATH
     # Point gdal utilities to the proper data location
-    export GDAL_DATA=$SHELLB3_DIR/share/gdal
+    export GDAL_DATA=$P2G_SHELLB3_DIR/share/gdal
     # Let SatPy know where we put things
     export SATPY_ANCPATH=$POLAR2GRID_HOME/bin
     export PPP_CONFIG_DIR=$POLAR2GRID_HOME/etc
