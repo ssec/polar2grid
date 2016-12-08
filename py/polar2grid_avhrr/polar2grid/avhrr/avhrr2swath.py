@@ -27,11 +27,10 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""The AVHRR frontend is for reading AAPP L1B files for the AVHRR instrument.
-The frontend is contained in the `polar2grid.avhrr` python package. These files are
-a custom binary format. The frontend can be specified with the ``polar2grid.sh`` command
-using the ``avhrr`` frontend name.
-The AVHRR frontend provides the following products:
+"""The AVHRR reader is for reading AAPP L1B files for the AVHRR instrument.
+These files are a custom binary format. The reader can be specified with
+the ``polar2grid.sh`` command using the ``avhrr`` frontend name.
+The AVHRR reader provides the following products:
 
 +--------------------+--------------------------------------------+
 | Product Name       | Description                                |
@@ -48,14 +47,6 @@ The AVHRR frontend provides the following products:
 +--------------------+--------------------------------------------+
 | band5_vis          | Band 5 Brightness Temperature              |
 +--------------------+--------------------------------------------+
-
-|
-
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2014
-:license:      GNU GPLv3
 
 """
 __docformat__ = "restructuredtext en"

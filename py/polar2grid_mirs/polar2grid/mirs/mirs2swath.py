@@ -37,14 +37,20 @@ The frontend offers the following products:
     +--------------------+--------------------------------------------+
     | mirs_btemp_90      | Brightness Temperature at 88.2GHz          |
     +--------------------+--------------------------------------------+
+    | sea_ice            | Sea Ice in percent                         |
+    +--------------------+--------------------------------------------+
+    | snow_cover         | Snow Cover                                 |
+    +--------------------+--------------------------------------------+
+    | tpw                | Total Precipitable Water                   |
+    +--------------------+--------------------------------------------+
+    | mirs_btemp_X       | Brightness Temperature for channel index X |
+    +--------------------+--------------------------------------------+
 
-|
-
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Sept 2014
-:license:      GNU GPLv3
+For ``mirs_btemp_X`` the ``X`` is the two digit channel number from
+"00" to "21" or however many channels the instrument has. Note that
+only the first 5 products listed in the table above are configured
+in the AWIPS backend. More can be configured, see the
+:doc:`../writers/awips_netcdf` documentation for details.
 
 """
 __docformat__ = "restructuredtext en"

@@ -27,14 +27,14 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""The Dual Regression Retrieval (DR-RTV) frontend reads HDF5 files created by DR-RTV software
+"""The Dual Regression Retrieval (DR-RTV) reader reads HDF5 files created by DR-RTV software
 created by Bill Smith Sr., Elisabeth Wiessz, and Nadia Smith at the Space Science and Engineering Center.
 
 Note that Dual Regression products are indexed differently than other satellite-based products:
   [in-track, cross-track] for 2D variables
   [level, in-track, cross-track] for 3D variables
 
-The frontend provides the products listed below. Some products are extracted per pressure level and has special
+The reader provides the products listed below. Some products are extracted per pressure level and has special
 suffixes. Suffixes are "_100mb", "_200mb", "_300mb", "_400mb", "_500mb", "_600mb", "_700mb", and "_800mb".
 
 
@@ -77,16 +77,6 @@ suffixes. Suffixes are "_100mb", "_200mb", "_300mb", "_400mb", "_500mb", "_600mb
     +--------------------+--------------------------------------------+
     | TAir_100mb         | Air Temperature                            |
     +--------------------+--------------------------------------------+
-
-|
-
-:author:       Ray Garcia (rayg)
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2014
-:license:      GNU GPLv3
-
 
 """
 

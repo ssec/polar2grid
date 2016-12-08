@@ -27,8 +27,8 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Reader for NUCAPS Retrieval output.
-
+"""The NUCAPS Reader supports reading NUCAPS Retrieval files. This reader can be
+used by specifying the name ``nucaps`` to the ``polar2grid.sh`` script.
 Files for this reader should follow the naming scheme:
 
     NUCAPS-EDR_v1r0_npp_s201603011158009_e201603011158307_c201603011222270.nc

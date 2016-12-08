@@ -27,11 +27,11 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The MODIS Frontend operates on HDF4 Level 1B files from the Moderate Resolution
+"""The MODIS Reader operates on HDF4 Level 1B files from the Moderate Resolution
 Imaging Spectroradiometer (MODIS) instruments on the Aqua and Terra
-satellites. The frontend is designed to work with files created by the IMAPP
+satellites. The reader is designed to work with files created by the IMAPP
 direct broadcast processing system, but may support other types of L1B files. The
-frontend can be specified to the ``polar2grid.sh`` script by using the frontend name ``modis``.
+reader can be specified to the ``polar2grid.sh`` script by using the reader name ``modis``.
 It provides the following products:
 
     +--------------------+--------------------------------------------+
@@ -151,16 +151,6 @@ It provides the following products:
 For reflectance/visible products a check is done to make sure that at least
 10% of the swath is day time. Data is considered day time where solar zenith
 angle is less than 90 degrees.
-
-
-|
-
-:author:       David Hoese (davidh)
-:author:       Eva Schiffer (evas)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2014
-:license:      GNU GPLv3
 
 """
 __docformat__ = "restructuredtext en"

@@ -1,10 +1,9 @@
 Getting Started
 ===============
 
-Users of the CSPP Software Bundle can find all of the tools they may want
-to use in the ``bin`` directory of the extracted tarball. The majority of
-the scripts in the software bundle are wrappers around python
-software.
+All of the tools provided by Polar2Grid can be found in the ``bin`` directory
+of the extracted tarball. The majority of the scripts in the software bundle
+are wrappers around python software.
 
 The most common use of Polar2Grid is to convert satellite data files in to
 gridded image files. This is accomplished through the ``polar2grid.sh``
@@ -16,9 +15,10 @@ to decide on a :doc:`Reader <readers/index>` and a
 
 Where ``<list of files>`` includes input calibrated data and geolocation
 files. Each Reader comes with a logical set of default products to be created,
-but this can be configured. If you provide only ``<path to files>``
-or if other processing errors occur Polar2Grid will attempt to make as many
-products as it can.
+but this can be configured. If you provide only ``<path to files>`` the
+path will be searched for the necessary files to make as many products as
+possible. Similarly if processing errors occur Polar2Grid will attempt to
+continue processing to make as many products as it can.
 
 For example, executing the following::
 
@@ -34,7 +34,9 @@ their defaults are described in the related
 :doc:`reader <readers/index>` or :doc:`writer <writers/index>` sections.
 Options that affect remapping are described in the :doc:`remapping` section.
 Additionally all Polar2Grid bash scripts accept a ``-h`` argument to list
-all the available command line arguments.
+all the available command line arguments. Usually readers will share the same
+command line options except when it comes to configuring specific products
+or "shortcut flags" to request a group of products at once.
 
 For information on other scripts and features provided by Polar2Grid see
 the :doc:`utilscripts` or :doc:`misc_recipes` sections or

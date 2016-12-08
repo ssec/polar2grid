@@ -27,18 +27,25 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""The VIIRS Frontend operates on Science Data Record (SDR) and Environmental Data Record (EDR) files from
+"""The VIIRS SDR Reader operates on Science Data Record (SDR) and files from
 the Suomi National Polar-orbiting Partnership's (NPP) Visible/Infrared
-Imager Radiometer Suite (VIIRS) instrument. The VIIRS frontend ignores filenames and uses internal
-file content to determine the type of file being provided, but SDR and EDR HDF5 files are typically named as below
+Imager Radiometer Suite (VIIRS) instrument. The VIIRS SDR reader ignores filenames and uses internal
+file content to determine the type of file being provided, but SDR are typically named as below
 and have corresponding geolocation files::
 
     SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
 
-The VIIRS frontend supports all basic SDR bands created by the instrument. These are identified as the products shown
+The VIIRS reader supports all basic SDR bands created by the instrument. These are identified as the products shown
 below. It supports terrain corrected or non-terrain corrected navigation files. Geolocation files must be included
-when specifying filepaths to frontends and glue scripts. The VIIRS frontend can be specified to the ``polar2grid.sh`` script
-with the frontend name ``viirs``.
+when specifying filepaths to readers and ``polar2grid.sh``. The VIIRS reader can be specified to the ``polar2grid.sh`` script
+with the frontend name ``viirs_sdr``.
+
+.. note::
+
+    This reader used to be named "viirs". Both "viirs_sdr" and "viirs" will
+    work when passed to ``polar2grid.sh``, but in future versions only
+    ``viirs_sdr`` will be supported. The name ``viirs_l1b`` is the only way
+    to access the :doc:`viirs_l1b`.
 
     +---------------------------+--------------------------------------------+
     | Product Name              | Description                                |
@@ -177,7 +184,7 @@ angle is less than 100 degrees.
 .. note::
 
     Terrain corrected geolocation for the DNB band has recently been added and is included in the non-TC file (GDNBO).
-    This may cause some confusion to users as the VIIRS frontend currently only checks for terrain corrected data. To
+    This may cause some confusion to users as the VIIRS SDR reader currently only checks for terrain corrected data. To
     use non-TC data use the ``--no-tc`` flag (described below).
 
 """

@@ -260,6 +260,7 @@ latex_logo = '_static/P2G_PDF_Logos.png'
 
 # Documents to append as an appendix to all manuals.
 latex_appendices = [
+    'misc_recipes',
     'design_overview',
 ]
 

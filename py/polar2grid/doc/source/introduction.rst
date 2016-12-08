@@ -25,8 +25,8 @@ or the examples following each reader section. Note that although an
 example may be written for a specific reader the same operations can
 be applied to all readers unless mentioned otherwise.
 
-For more information on the design and responsibility of each component
-see the :doc:`design_overview` Appendix.
+For more low-level information on the design and responsibility of each
+component see the :doc:`design_overview` Appendix.
 
 .. graphviz::
 

@@ -27,9 +27,9 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The Corrected Reflectance Frontend operates on corrected reflectance files created from
+"""The Corrected Reflectance Reader operates on corrected reflectance files created from
 VIIRS Science Data Record (SDR) files or MODIS Level 1B (L1B) files. Currently corrected reflectance
-files are created by third part software developed by NASA.The ``CREFL_SPA`` algorithm
+files are created by third party software developed by NASA. The ``CREFL_SPA`` algorithm
 for MODIS and ``CVIIRS_SPA`` algorithm for VIIRS can be found here:
 http://directreadout.sci.gsfc.nasa.gov/?id=software
 
@@ -39,27 +39,32 @@ After processing the output can be provided to Polar2Grid to create true color i
 
 .. versionadded:: 2.0
 
-    CREFL software is automatically called when the CREFL frontend is provided SDR or L1B files.
+    CREFL software is automatically called when the CREFL reader is provided SDR or L1B files.
 
 .. note::
 
-    The ``crefl2gtiff.sh`` script is hardcoded to create true color images by default since this is the most common
-    use case for the CREFL frontend. This is equivalent to ``polar2grid.sh crefl gtiff true_color ...`` since the products
-    needed for true color are created by default.
+    The ``crefl2gtiff.sh`` script is hardcoded to create true color images by
+    default since this is the most common use case for the CREFL reader.
+    This is equivalent to ``polar2grid.sh crefl gtiff true_color ...`` since
+    the products needed for true color are created by default. This calling
+    scheme will change to be more flexible in future versions of Polar2Grid.
 
-The CREFL frontend accepts output from MODIS and VIIRS corrected reflectance processing. If provided with SDR files
-it will attempt to call the proper programs to convert the files. The required commands that must be available are:
+The CREFL reader accepts output from MODIS and VIIRS corrected reflectance
+processing. If provided with SDR files it will attempt to call the proper
+programs to convert the files. The required commands that must be available
+are:
 
  - h5SDS_transfer_rename
  - cviirs (for VIIRS corrected reflectance)
  - crefl (for MODIS corrected reflectance)
 
-The CREFL software also requires ancillary data in the form of ``tbase.hdf`` and ``CMGDEM.hdf`` files for the
-MODIS and VIIRS processing respectively. These files are provided in the CSPP software bundle and are automatically
-detected by the software. Alternate locations can be specified with the ``P2G_CMODIS_ANCPATH`` and
-``P2G_CVIIRS_ANCPATH`` environment variables.
+The CREFL software also requires ancillary data in the form of ``tbase.hdf``
+and ``CMGDEM.hdf`` files for the MODIS and VIIRS processing respectively.
+These files are provided in the CSPP software bundle and are automatically
+detected by the software. Alternate locations can be specified with the
+``P2G_CMODIS_ANCPATH`` and ``P2G_CVIIRS_ANCPATH`` environment variables.
 
-The following products are provided by this frontend:
+The following products are provided by this reader:
 
 
     +--------------------+--------------------------------------------+
@@ -122,13 +127,6 @@ The following products are provided by this frontend:
     | modis_crefl04_250m | Corrected Reflectance from MODIS Band 4    |
     +--------------------+--------------------------------------------+
 
-|
-
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2014
-:license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"
 
