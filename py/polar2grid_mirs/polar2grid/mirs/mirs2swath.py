@@ -27,7 +27,13 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""The MIRS frontend extracts data from files created by the Microwave Integrated Retrieval System (MIRS).
+"""The MIRS frontend extracts data from files created by the Microwave
+Integrated Retrieval System (MIRS).
+
+This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
+Averaging resampling. The ``--fornav-D`` option is set to 100 and the
+``--fornav-d`` option is set to 1.
+
 The frontend offers the following products:
 
     +--------------------+--------------------------------------------+

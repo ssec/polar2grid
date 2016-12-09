@@ -47,6 +47,10 @@ with the frontend name ``viirs_sdr``.
     ``viirs_sdr`` will be supported. The name ``viirs_l1b`` is the only way
     to access the :doc:`viirs_l1b`.
 
+This reader's default remapping algorithm is ``ewa`` for Elliptical Weighted
+Averaging resampling. The ``--fornav-D`` parameter set to 40 and the
+``--fornav-d`` parameter set to 1.
+
     +---------------------------+--------------------------------------------+
     | Product Name              | Description                                |
     +===========================+============================================+

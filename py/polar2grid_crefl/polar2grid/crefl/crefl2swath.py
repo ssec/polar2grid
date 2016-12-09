@@ -64,6 +64,14 @@ These files are provided in the CSPP software bundle and are automatically
 detected by the software. Alternate locations can be specified with the
 ``P2G_CMODIS_ANCPATH`` and ``P2G_CVIIRS_ANCPATH`` environment variables.
 
+This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
+Averaging resampling. The ``--fornav-D`` option is set to 40 and the
+``--fornav-d`` option is set to 1. Note that for working with MODIS data
+it may produce lower quality images with these settings so the
+``--fornav-D`` option should be set to 10 on the command line::
+
+    --fornav-D 10
+
 The following products are provided by this reader:
 
 

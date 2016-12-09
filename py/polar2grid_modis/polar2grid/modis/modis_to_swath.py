@@ -32,6 +32,11 @@ Imaging Spectroradiometer (MODIS) instruments on the Aqua and Terra
 satellites. The reader is designed to work with files created by the IMAPP
 direct broadcast processing system, but may support other types of L1B files. The
 reader can be specified to the ``polar2grid.sh`` script by using the reader name ``modis``.
+
+This reader's dfault resampling algorithm is ``ewa`` for Elliptical Weighted
+Averaging resampling. The ``--fornav-D`` parameter is set to 10 and the
+``--fornav-d`` parameter is set to 1.
+
 It provides the following products:
 
     +--------------------+--------------------------------------------+

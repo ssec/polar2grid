@@ -47,6 +47,10 @@ script with the frontend name ``viirs_l1b``.
     Previous and future versions may work for some products, but are not
     guaranteed.
 
+This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
+Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
+``--fornav-d`` parameter is set to 1.
+
 +---------------------------+-----------------------------------------------------+
 | Product Name              | Description                                         |
 +===========================+=====================================================+

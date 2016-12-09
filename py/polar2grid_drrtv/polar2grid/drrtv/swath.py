@@ -31,8 +31,14 @@
 created by Bill Smith Sr., Elisabeth Wiessz, and Nadia Smith at the Space Science and Engineering Center.
 
 Note that Dual Regression products are indexed differently than other satellite-based products:
-  [in-track, cross-track] for 2D variables
-  [level, in-track, cross-track] for 3D variables
+
+ * [in-track, cross-track] for 2D variables
+ *  [level, in-track, cross-track] for 3D variables
+
+This reader's default resampling algorithm is ``nearest`` for Nearest Neighbor
+resampling. The ``--no-share-mask`` option is also set so that invalid values
+are not combined during resampling. The ``--distance-upper-bound`` parameter
+is calculated dynamically based on the resolution of the input data.
 
 The reader provides the products listed below. Some products are extracted per pressure level and has special
 suffixes. Suffixes are "_100mb", "_200mb", "_300mb", "_400mb", "_500mb", "_600mb", "_700mb", and "_800mb".

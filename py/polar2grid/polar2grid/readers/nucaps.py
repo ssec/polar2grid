@@ -33,6 +33,10 @@ Files for this reader should follow the naming scheme:
 
     NUCAPS-EDR_v1r0_npp_s201603011158009_e201603011158307_c201603011222270.nc
 
+This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
+Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
+``--fornav-d`` parameter is set to 1.
+
 This reader can provide the following products:
 
 +---------------------------+-----------------------------------------------------+

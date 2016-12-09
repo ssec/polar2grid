@@ -16,7 +16,6 @@ Polar2Grid
     readers/index
     remapping
     writers/index
-    compositors
     rescaling
     utilscripts
     NEWS

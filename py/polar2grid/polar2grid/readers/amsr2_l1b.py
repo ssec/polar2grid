@@ -34,7 +34,11 @@ Supported files usually have the following naming scheme::
 
     GW1AM2_201607201808_128A_L1DLBTBR_1110110.h5
 
-Currently this reader only provides the following datasets:
+This reader's default remapping algorithm is ``nearest`` for nearest
+neighbor resampling due to the instruments scan pattern and swath shape.
+The ``--distance_upper_bound`` flag defaults to 12.
+
+Currently this reader provides only the following datasets:
 
 +---------------------------+-----------------------------------------------------+
 | Product Name              | Description                                         |

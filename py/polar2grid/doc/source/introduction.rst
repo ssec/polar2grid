@@ -39,6 +39,12 @@ component see the :doc:`design_overview` Appendix.
         "Compositors" -> "Writer" [style=dashed];
     }
 
+.. note::
+
+    Compositors and how they are configured will be changing in future
+    versions of Polar2Grid. Due to this they are no longer documented in this
+    document.
+
 What's New?
 -----------
 

@@ -30,6 +30,11 @@
 """The AVHRR reader is for reading AAPP L1B files for the AVHRR instrument.
 These files are a custom binary format. The reader can be specified with
 the ``polar2grid.sh`` command using the ``avhrr`` frontend name.
+
+This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
+Averaging resampling. The ``--fornav-D`` option is set to 10 and
+``--fornav-d`` is set to 1.
+
 The AVHRR reader provides the following products:
 
 +--------------------+--------------------------------------------+
