@@ -39,4 +39,4 @@ source $POLAR2GRID_HOME/bin/env.sh
 export ANCPATH=${ANCPATH:-$POLAR2GRID_HOME/bin}
 # Call the python module to do the processing, passing all arguments
 # Defaults to always trying to create true color images
-${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue crefl gtiff true_color $@ -vv
+${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue crefl gtiff $@ -vv

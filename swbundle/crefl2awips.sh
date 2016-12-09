@@ -39,4 +39,4 @@ source $POLAR2GRID_HOME/bin/env.sh
 export ANCPATH=${ANCPATH:-$POLAR2GRID_HOME/bin}
 # Call the python module to do the processing, passing all arguments
 # Defaults to always trying to create sharpened true color bands
-${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue crefl awips crefl_sharpen $@ -vv
+${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue crefl awips $@ -vv

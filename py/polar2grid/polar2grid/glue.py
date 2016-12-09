@@ -252,16 +252,21 @@ def main(argv=sys.argv[1:]):
     # Compositor validation
     # XXX: Hack to make `polar2grid.sh crefl gtiff` work like legacy crefl2gtiff.sh script
     if args.subgroup_args['Frontend Swath Extraction'].get('no_compositors'):
+        LOG.debug("Removing all compositors")
         args.compositors = []
     elif args.frontend == 'crefl':
         if not args.compositors:
             if args.backend == 'awips':
+                LOG.debug("Adding 'crefl_sharpen' compositor")
                 args.compositors.append('crefl_sharpen')
             else:
+                LOG.debug("Adding 'true_color' compositor")
                 args.compositors.append('true_color')
         if '--true-color' in sys.argv and 'true_color' not in args.compositors:
-            args.compositors.append('false_color')
+            LOG.debug("Adding 'true_color' compositor")
+            args.compositors.append('true_color')
         if '--false-color' in sys.argv and 'false_color' not in args.compositors:
+            LOG.debug("Adding 'false_color' compositor")
             args.compositors.append('false_color')
 
     # if "--true-color" in
