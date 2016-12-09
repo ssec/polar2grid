@@ -27,7 +27,7 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""AMSR2 L1B files contain various parameters from the GCOMW-1 AMSR2
+"""AMSR2 L1B files contain various parameters from the GCOM-W1 AMSR2
 instrument. This reader can be used by specifying the reader name
 ``amsr2_l1b`` to the ``polar2grid.sh`` script.
 Supported files usually have the following naming scheme::
