@@ -250,6 +250,18 @@ def main(argv=sys.argv[1:]):
     status_to_return = STATUS_SUCCESS
 
     # Compositor validation
+    # XXX: Hack to make `polar2grid.sh crefl gtiff` work like legacy crefl2gtiff.sh script
+    if args.subgroup_args['Frontend Swath Extraction'].get('no_compositors'):
+        args.compositors = []
+    elif args.frontend == 'crefl':
+        if not args.compositors:
+            args.compositors.append('true_color')
+        if '--true-color' in sys.argv and 'true_color' not in args.compositors:
+            args.compositors.append('false_color')
+        if '--false-color' in sys.argv and 'false_color' not in args.compositors:
+            args.compositors.append('false_color')
+
+    # if "--true-color" in
     for c in args.compositors:
         if c not in compositor_manager:
             LOG.error("Compositor '%s' is unknown" % (c,))
@@ -257,7 +269,7 @@ def main(argv=sys.argv[1:]):
 
     # Frontend
     try:
-        LOG.info("Initializing swath extractor...")
+        LOG.info("Initializing reader...")
         list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
         f = fcls(search_paths=args.data_files, **args.subgroup_args["Frontend Initialization"])
     except StandardError:

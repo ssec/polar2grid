@@ -867,6 +867,8 @@ def add_frontend_argument_groups(parser):
                        help="Attempt to extract the products that could be used to create true color images")
     group.add_argument("--false-color", dest="products", const=FALSE_COLOR_PRODUCTS, action=ExtendConstAction,
                        help="Attempt to extract the products that could be used to create false color images")
+    group.add_argument("--no-compositors", dest="no_compositors", action="store_true",
+                       help="Force no compositors to be used during glue script execution")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
 
 
