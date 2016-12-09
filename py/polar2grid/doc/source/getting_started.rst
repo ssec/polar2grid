@@ -43,12 +43,24 @@ the :doc:`utilscripts` or :doc:`misc_recipes` sections or
 the various examples through out the :doc:`reader <readers/index>` and
 :doc:`writer <writers/index>` sections.
 
+The table below is a summary of the possible combinations of readers and
+writers and expectations for the inputs and outputs of ``polar2grid.sh``.
+To access these features provide the "reader" and "writer" names to the
+``polar2grid.sh`` script followed by other script options:
+
+.. code:: bash
+
+    $POLAR2GRID_HOME/bin/polar2grid.sh <reader> <writer> ...
+
 .. note::
 
     In previous versions of Polar2Grid scripts were named
     ``<reader>2<writer>.sh`` instead of
     ``polar2grid.sh <reader> <writer>``. These legacy scripts will still
     work but the new form of calling is preferred.
+
+.. include:: summary_table.rst
+
 
 Creating True Color as Geotiffs and KML/KMZ
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
