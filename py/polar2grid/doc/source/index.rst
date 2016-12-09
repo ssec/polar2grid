@@ -18,7 +18,6 @@ Polar2Grid
     writers/index
     rescaling
     utilscripts
-    NEWS
     grids
     custom_grids
     glossary

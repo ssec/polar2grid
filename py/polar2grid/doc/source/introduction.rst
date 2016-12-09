@@ -56,8 +56,8 @@ version include:
     :end-line: 22
 
 For more details on what's new in this version and past versions see the
-`Release Notes <https://www.ssec.wisc.edu/software/polar2grid/release-notes.html>`_
-section on the documentation site.
+`Release Notes <https://raw.githubusercontent.com/davidh-ssec/polar2grid/master/NEWS.rst>`_
+in the github repository.
 
 System Requirements
 -------------------
