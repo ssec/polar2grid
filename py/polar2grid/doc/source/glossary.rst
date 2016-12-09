@@ -30,9 +30,7 @@ Glossary
         in Polar2Grid is called ``polar2grid.sh``, but in previous versions
         there were glue scripts named ``<reader>2<writer>.sh``. The bash script
         is simply a wrapper around the python call
-        `python -m polar2grid.glue <reader> <writer> -vv ...`,
-        except for in rare cases where specific defaults are needed, such as
-        ``crefl2gtiff.sh``.
+        `python -m polar2grid.glue <reader> <writer> -vv ...`.
 
     product
     products

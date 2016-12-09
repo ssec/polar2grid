@@ -255,7 +255,10 @@ def main(argv=sys.argv[1:]):
         args.compositors = []
     elif args.frontend == 'crefl':
         if not args.compositors:
-            args.compositors.append('true_color')
+            if args.backend == 'awips':
+                args.compositors.append('crefl_sharpen')
+            else:
+                args.compositors.append('true_color')
         if '--true-color' in sys.argv and 'true_color' not in args.compositors:
             args.compositors.append('false_color')
         if '--false-color' in sys.argv and 'false_color' not in args.compositors:

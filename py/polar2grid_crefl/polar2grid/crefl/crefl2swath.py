@@ -41,13 +41,13 @@ After processing the output can be provided to Polar2Grid to create true color i
 
     CREFL software is automatically called when the CREFL reader is provided SDR or L1B files.
 
-.. note::
-
-    The ``crefl2gtiff.sh`` script is hardcoded to create true color images by
-    default since this is the most common use case for the CREFL reader.
-    This is equivalent to ``polar2grid.sh crefl gtiff true_color ...`` since
-    the products needed for true color are created by default. This calling
-    scheme will change to be more flexible in future versions of Polar2Grid.
+The CREFL reader can create True Color and False Color RGB composites when the
+corresponding ``--true-color`` and ``--false-color`` flags are specified. The
+default is to create a True Color image if no parameters are specified.
+However when used with the AWIPS writer the default is to apply a ratio
+sharpening between low and high resolution bands to produce better quality
+single band images since AWIPS does not support 3-dimensional arrays. These
+defaults can all be turned off with the ``--no-compositors`` flag.
 
 The CREFL reader accepts output from MODIS and VIIRS corrected reflectance
 processing. If provided with SDR files it will attempt to call the proper
