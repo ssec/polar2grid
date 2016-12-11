@@ -85,6 +85,23 @@ following::
 
 Blank lines are allowed as well as spaces between line elements.
 
+.. _util_gtiff2kmz:
+
+Geotiff to KMZ
+--------------
+
+The ``gtiff2kmz.sh`` script converts a single geotiff file into a Google Earth
+compatible KMZ file. It is a wrapper around the GDAL tool ``gdal2tiles.py``.
+The script can be executed with:
+
+.. code:: bash
+
+    $POLAR2GRID_HOME/bin/gtiff2kmz.sh input.tif [output.kmz]
+
+Where ``output.kmz`` is an optional parameter specifying the name of the
+output KMZ file. If it isn't specified it defaults to the input
+filename with the extension changed to ``.kmz``.
+
 .. _util_p2g_proj:
 
 Python Proj

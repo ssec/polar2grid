@@ -54,7 +54,8 @@ above attributes defined. Grids are dynamic if some of the attributes are not de
 These attributes are then computed at run time based on the data being remapped. Only
 width/height and x/y origin can be unspecified in dynamic grids.
 
-For information on defining your own custom grids see the :doc:`Developer's Guide <custom_grids>`.
+For information on defining your own custom grids see the
+:doc:`Custom Grid <custom_grids>` documentation.
 
 Resampling
 ----------

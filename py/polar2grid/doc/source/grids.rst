@@ -1,18 +1,21 @@
 Provided Grids
 ==============
 
-Polar2grid is capable of handling PROJ.4 strings to describe the grids being mapped to.
-For more details on each grid see the package provided
-`Grids Configuration File <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/grids/grids.conf>`_.
-If you would like to add your own grid see the :doc:`custom_grids`
-documentation. There are additional grids provided in Polar2Grid that
-aren't listed here. Some were provided for a specific writer
-(like AWIPS grids), but can be used for other writers as well.
+Polar2Grid allows users to remap to one or more projected grids. A grid
+defines the uniform geographic area that an output image covers. Polar2Grid
+comes with various grids to choose from that should suit most users and their
+use cases. Some grids are provided for specific writers (like AWIPS), but
+can be used for other writers as well. For those cases that the provided
+grids aren't enough it is possible to create your own custom grids. See the
+:doc:`custom_grids` documentation for help with this.
 
-The following grids are used with the PROJ.4 library (using pyproj bindings)
-through the "ll2cr" step of remapping.  See
+Below are descriptions for a few of the grids provided with Polar2Grid.
+For information on all of the grids provided by Polar2Grid see the
+`Grids Configuration File <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/grids/grids.conf>`_.
+
+The grids' projections are defined using PROJ.4. Go to
 `PROJ.4 GenParams <http://trac.osgeo.org/proj/wiki/GenParms>`_
-for more information on what each parameter means.
+for more information on what each projection parameter means.
 
 .. note::
 

@@ -5,29 +5,42 @@ All of the tools provided by Polar2Grid can be found in the ``bin`` directory
 of the extracted tarball. The majority of the scripts in the software bundle
 are wrappers around python software.
 
+Basic Usage
+-----------
+
 The most common use of Polar2Grid is to convert satellite data files in to
 gridded image files. This is accomplished through the ``polar2grid.sh``
 script. Due to the modular design of Polar2Grid a user only needs
 to decide on a :doc:`Reader <readers/index>` and a
-:doc:`Writer <writers/index>` and provide them to ``polar2grid.sh``::
+:doc:`Writer <writers/index>` and provide them to ``polar2grid.sh``:
+
+.. code:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f <path to files>/<list of files>
 
-Where ``<list of files>`` includes input calibrated data and geolocation
+where ``<list of files>`` includes input calibrated data and geolocation
 files. Each Reader comes with a logical set of default products to be created,
 but this can be configured. If you provide only ``<path to files>`` the
 path will be searched for the necessary files to make as many products as
 possible. Similarly if processing errors occur Polar2Grid will attempt to
 continue processing to make as many products as it can.
 
-For example, executing the following::
+For example, executing the following:
+
+.. code:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f /home/data/viirs/sdr
 
-Will create 8-bit GeoTIFF files of all M-Band, I-Band, and Day/Night Band
+will create 8-bit GeoTIFF files of all M-Band, I-Band, and Day/Night Band
 SDR files it finds in the ``/home/data/viirs/sdr`` directory as long as it
 contains the matching geolocation files. If multiple granules are provided
 to ``polar2grid.sh`` they will be aggregated together.
+By default the above command resamples the data to a Google Earth compatible
+Platte Carrée projected grid at ~600m resolution, but this can be changed
+with command line arguments.
+
+Common Script Options
+---------------------
 
 Additional command line arguments for the ``polar2grid.sh`` script and
 their defaults are described in the related
@@ -38,10 +51,30 @@ all the available command line arguments. Usually readers will share the same
 command line options except when it comes to configuring specific products
 or "shortcut flags" to request a group of products at once.
 
+Although the available command line arguments may change depending on the
+reader and writer specified, their are a set of common arguments that
+are always available:
+
+.. csv-table:: Common Command Line Options
+
+    "-h", "Print detailed helpful information."
+    "--list-products", "List all possible product options to use with -p from the given input data."
+    "-p", "List of products to create."
+    "-f", "Input files and paths."
+    "--grid-coverage", "Fraction of grid that must be covered by valid data. Default is 0.1."
+    "-g <grid_name>", "Specify the output grid to use. Default is the Platte Carrée projection, also
+ known as the wgs84 coordinate system. See :doc:`grids` and :doc:`custom_grids` for information on
+ possible values."
+    "--debug", "Don’t remove intermediate files upon completion."
+    "-v", "Print detailed log information."
+
 For information on other scripts and features provided by Polar2Grid see
 the :doc:`utilscripts` or :doc:`misc_recipes` sections or
 the various examples through out the :doc:`reader <readers/index>` and
 :doc:`writer <writers/index>` sections.
+
+Reader/Writer Combinations
+--------------------------
 
 The table below is a summary of the possible combinations of readers and
 writers and expectations for the inputs and outputs of ``polar2grid.sh``.
@@ -50,58 +83,18 @@ To access these features provide the "reader" and "writer" names to the
 
 .. code:: bash
 
-    $POLAR2GRID_HOME/bin/polar2grid.sh <reader> <writer> ...
+    $POLAR2GRID_HOME/bin/polar2grid.sh <reader> <writer> <options> -f /path/to/files
 
-.. note::
+In previous versions of Polar2Grid scripts were all named
+``<reader>2<writer>.sh`` instead of
+``polar2grid.sh <reader> <writer>``. These legacy scripts are still available
+and still work but the new form of calling is preferred. For example:
 
-    In previous versions of Polar2Grid scripts were named
-    ``<reader>2<writer>.sh`` instead of
-    ``polar2grid.sh <reader> <writer>``. These legacy scripts will still
-    work but the new form of calling is preferred.
+.. code:: bash
+
+    $POLAR2GRID_HOME/bin/avhrr2awips.sh <options> -f /path/to/files
 
 .. include:: summary_table.rst
-
-
-Creating True Color as Geotiffs and KML/KMZ
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To create a true color image you must first have the SDRs for the proper instrument. Traditional
-true color images are created using the :doc:`CREFL (Corrected Reflectance) Reader <readers/crefl>`.
-See the reader documentation for which instruments are supported at this
-time (VIIRS and MODIS at the moment). Even if you want a KMZ, a geotiff must be created first::
-
-    $POLAR2GRID_HOME/bin/crefl2gtiff.sh -f /path/to/my_sdrs/
-
-This will create a series of geotiff files with the ``.tif`` file extension. To create a KMZ file
-(a compressed KML) to show in Google Earth or other program use the ``gtiff2kmz.sh`` script provided
-in the software bundle::
-
-    $POLAR2GRID_HOME/bin/gtiff2kmz.sh input_true_color.tif output_true_color.kmz
-
-Where the ``input_true_color.tif`` file is one of the files created from the ``crefl2gtiff.sh``
-command and ``output_true_color.kmz`` is the name of the KMZ file to create.
-
-For more information see the documentation for the
-:doc:`CREFL Reader <readers/crefl>`, the :doc:`Geotiff Writer <writers/gtiff>`, and the
-:doc:`True Color Compositor <compositors>`.
-
-Creating False Color as Geotiffs and KML/KMZ
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-A false color image is any combination of 3 bands that isn't a true color image, but by default
-Polar2Grid uses a default set of bands. See the :doc:`False Color Compositor <compositors>`
-for more information on those defaults. To make a false color image geotiff run::
-
-    $POLAR2GRID_HOME/bin/crefl2gtiff.sh false_color --false-color -f /path/to/my_sdrs/
-
-Now while these command arguments may seem redundant there is a good reason for them. The
-``--false-color`` portion of the command tells the reader that you want the products used
-in a false color image. The ``false_color`` portion says that you actually want to *make*
-a false color image product. Without the ``false_color`` part, no RGB image would be created.
-
-Just like for the true color image, use the following to create a KMZ file::
-
-    $POLAR2GRID_HOME/bin/gtiff2kmz.sh input_false_color.tif output_false_color.kmz
 
 Custom Grid Utility
 ^^^^^^^^^^^^^^^^^^^
