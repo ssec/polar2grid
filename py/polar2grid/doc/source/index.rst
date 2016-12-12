@@ -20,7 +20,6 @@ Polar2Grid
     utilscripts
     grids
     custom_grids
-    glossary
 
 .. only:: html
 

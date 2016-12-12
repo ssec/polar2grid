@@ -8,10 +8,14 @@ Glossary
     data kinds
         Descriptive term for what the data measures. Common data kinds are
         brightness temperature, reflectance, or radiance. Data kinds are
-        created and set by the reader. While most readers have the
-        same descriptive term for a product, it is not required and in some
-        cases may not be desired. Note that Data kinds are different from
-        :term:`data types`.
+        created and set by the reader. This is similar to "standard_name"
+        in CF compliance, but is less restrictive.
+        Note that Data kinds are different from :term:`data types`.
+
+    dataset
+    datasets
+        Synonym for :term:`product`. This term is used in the SatPy python
+        library.
 
     data type
     data types
@@ -19,12 +23,8 @@ Glossary
         an 8-bit unsigned integer versus a 32-bit floating point number.
         Data types are different from :term:`data kinds`. Data types consist
         of two parts: the format of the data and the number of bytes used.
-        The current set of available data types can be found in the
-        :py:mod:`polar2grid.core.dtype` module.
-
 
     glue script
-    glue scripts
         The script connecting every component together.  A glue script connects
         a reader, the remapper, compositors, and a writer. The only glue script
         in Polar2Grid is called ``polar2grid.sh``, but in previous versions
