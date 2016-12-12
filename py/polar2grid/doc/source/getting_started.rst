@@ -1,5 +1,5 @@
-Getting Started
-===============
+Polar2Grid Basics
+=================
 
 All of the tools provided by Polar2Grid can be found in the ``bin`` directory
 of the extracted tarball. The majority of the scripts in the software bundle
@@ -19,8 +19,7 @@ to decide on a :doc:`Reader <readers/index>` and a
     $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f <path to files>/<list of files>
 
 where ``<list of files>`` includes input calibrated data and geolocation
-files. Each Reader comes with a logical set of default products to be created,
-but this can be configured. If you provide only ``<path to files>`` the
+files. If you provide only ``<path to files>`` the
 path will be searched for the necessary files to make as many products as
 possible. Similarly if processing errors occur Polar2Grid will attempt to
 continue processing to make as many products as it can.
@@ -31,7 +30,7 @@ For example, executing the following:
 
     $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f /home/data/viirs/sdr
 
-will create 8-bit GeoTIFF files of all M-Band, I-Band, and Day/Night Band
+will create an 8-bit GeoTIFF files of all M-Band, I-Band, and Day/Night Band
 SDR files it finds in the ``/home/data/viirs/sdr`` directory as long as it
 contains the matching geolocation files. If multiple granules are provided
 to ``polar2grid.sh`` they will be aggregated together.
@@ -47,12 +46,9 @@ their defaults are described in the related
 :doc:`reader <readers/index>` or :doc:`writer <writers/index>` sections.
 Options that affect remapping are described in the :doc:`remapping` section.
 Additionally all Polar2Grid bash scripts accept a ``-h`` argument to list
-all the available command line arguments. Usually readers will share the same
-command line options except when it comes to configuring specific products
-or "shortcut flags" to request a group of products at once.
-
+all the available command line arguments.
 Although the available command line arguments may change depending on the
-reader and writer specified, their are a set of common arguments that
+reader and writer specified, there are a set of common arguments that
 are always available:
 
 .. csv-table:: Common Command Line Options

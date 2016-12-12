@@ -4,14 +4,14 @@
     :header-rows: 1
 
     * - Input Source
-      - Filename Pattern
+      - Input Filename Pattern
       - Output Type
       - Reader Name
       - Writer Name
     * - Suomi-NPP VIIRS Sensor Data Records
       - SVI01_npp_*.h5
         GITCO_npp_*.h5
-      - 8 bit single band GeoTIFF
+      - 8-bit single band GeoTIFF
       - viirs_sdr
       - gtiff
     * - "
@@ -28,4 +28,80 @@
       - "
       - Binary
       - viirs_sdr
+      - binary
+    * - "
+      - "
+      - 24-bit true and false color GeoTIFF
+      - crefl
+      - gtiff
+    * - Aqua and Terra MODIS Level 1b (IMAPP or NASA archive files)
+      - MOD021KM*.hdf
+        MOD03*.hdf
+        
+        or
+        
+        t1.*1000m.hdf
+        t1.*.geo.hdf
+      - 8 bit single band GeoTIFF
+      - modis
+      - gtiff
+    * - "
+      - "
+      - AWIPS NetCDF3
+      - modis
+      - awips
+    * - "
+      - "
+      - HDF5
+      - modis
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - modis
+      - binary
+    * - "
+      - "
+      - 24-bit true and false color GeoTIFF
+      - crefl
+      - gtiff
+    * - NOAA-18, NOAA-19, Metop-A and Metop-B AVHRR AAPP Level 1b
+      - hrpt_noaa18_*.l1b
+      - 8 bit single band GeoTIFF
+      - avhrr
+      - gtiff
+    * - "
+      - "
+      - AWIPS NetCDF3
+      - avhrr
+      - awips
+    * - "
+      - "
+      - HDF5
+      - avhrr
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - avhrr
+      - binary
+    * - GCOM-W1 ASMR2 L1B
+      - GW1AM2*L1DLBTBR*.h5
+      - 8 bit single band GeoTIFF
+      - amsr2_l1b
+      - gtiff
+    * - "
+      - "
+      - AWIPS NetCDF3
+      - amsr2_l1b
+      - awips
+    * - "
+      - "
+      - HDF5
+      - amsr2_l1b
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - amsr2_l1b
       - binary

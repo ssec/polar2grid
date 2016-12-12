@@ -42,8 +42,7 @@ component see the :doc:`design_overview` Appendix.
 .. note::
 
     Compositors and how they are configured will be changing in future
-    versions of Polar2Grid. Due to this they are no longer documented in this
-    document.
+    versions of Polar2Grid. Due to this they are no longer documented here.
 
 What's New?
 -----------
@@ -53,7 +52,7 @@ version include:
 
 .. include:: NEWS.rst
     :start-line: 7
-    :end-line: 22
+    :end-line: 23
 
 For more details on what's new in this version and past versions see the
 `Release Notes <https://raw.githubusercontent.com/davidh-ssec/polar2grid/master/NEWS.rst>`_

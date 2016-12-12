@@ -19,6 +19,7 @@ Version 2.1 (2016-11-25)
 * Add AWIPS Puerto Rico Grid (210)
 * Add `polar_alaska` dynamic grid
 * New version of ShellB3 for C/python dependencies
+* Fix geotiff geotransform to fix "off by half-pixel" bug.
 
 Roadmap to Version 3.0
 ----------------------
