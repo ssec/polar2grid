@@ -208,7 +208,7 @@ AHI_CENTRAL_WAVELENGTH = [
 # zy_xxxx-rrr-Bnn-MnCnn-Tnnn_Gnn_sYYYYDDDhhmmss _cYYYYDDDhhmmss.nc
 # OR_HFD-020-B14-M1C07-T055_GH8_s2015181030000_c2015181031543
 # ref Table 3.3.4.1.2-1 Sectorized CMI File Naming Convention Fields on NOAA VLAB wiki
-FMT_SCMI_NAME="{environment:1s}{data_type:1s}_{region:s}-{resolution:3s}-B{bits:02d}-M{mode:1d}C{channel}-T{tile:03d}_G{satellite:2s}_s{scene_time:13s}_c{creation_time:13s}.nc"
+FMT_SCMI_NAME="{environment:1s}{data_type:1s}-T{tile:03d}-{satellite:s}-{instrument:s}-{name:s}-{grid_name:s}_s{scene_time:13s}_c{creation_time:13s}.nc"
 
 
 def scmi_product(
@@ -225,22 +225,22 @@ def scmi_product(
 def scmi_filename(
         environment='D',  # Integrated Test, Development, Operational
         data_type='T',    # Real-time Playback Simulated Test
-        region='HFD',     # HFD / EFD / WFD / ECONUS / WCONUS / HIREGI / PRREG / AKREGI
-        resolution='040', # technically may not be valid to have 4km?
-        bits=0,           # 8..14
-        mode=1,           # ABI mode
-        channel=0,        # channel number, 1..16
         tile=None,           # 001..### upper left to lower right
-        satellite='H8',   # 16, 17, ... H8
+        satellite=None,   # 16, 17, ... H8
+        instrument=None,
+        name=None,
+        grid_name=None,
         scene_time=None,  # datetime object
         creation_time=None): # now, datetime object
-    scene_time = scene_time.strftime('%Y%j%H%M%S')
+    scene_time = scene_time.strftime('%Y%m%d%H%M%S')
     if creation_time is None:
         creation_time = datetime.utcnow()
-    creation_time = creation_time.strftime('%Y%j%H%M%S')
-    channel = "{:02d}" if not isinstance(channel, str) else channel
-    # assert(1<=channel<=16)
-    # bits = _ahi_bit_depth(channel) if bits==0 else bits
+    creation_time = creation_time.strftime('%Y%m%d%H%M%S')
+
+    # make one continuous name for the name and grid
+    name = name.replace('_', '').replace('-', '')
+    grid_name = grid_name.replace('_', '').replace('-', '')
+
     return FMT_SCMI_NAME.format(**locals())
 
 
@@ -338,31 +338,17 @@ class AttributeHelper(object):
         # 005 006 ...
         return self.offset[0] * self.tile_count[1] + self.offset[1] + 1
 
-    def _filename(self):
-        satellite = self.dataset["satellite"].upper()
-        return scmi_filename(satellite=satellite,
-                             bits=self.dataset["bit_depth"],
-                             channel=self.dataset["product_name"], scene_time=self._scene_time(), tile=self._tile_number())
+    def _filename(self, environment='D', data_type='T'):
+        satellite = self.dataset["satellite"]
+        instrument = self.dataset["instrument"]
+        return scmi_filename(satellite=satellite, instrument=instrument,
+                             name=self.dataset["product_name"],
+                             environment=environment, data_type=data_type,
+                             grid_name=self.dataset["grid_definition"]["grid_name"],
+                             scene_time=self._scene_time(), tile=self._tile_number())
 
     def _product_name(self):
-        grid_def = self.dataset["grid_definition"]
-        if "himawari" in grid_def["grid_name"]:
-            region = "HFD"
-        elif grid_def.proj4_dict["proj"] == "lcc":
-            # FIXME: We need to actually know what region it is
-            region = "ECONUS"
-        else:
-            region = "HFD"
-
-        # (region='HFD',     # HFD / EFD / WFD / ECONUS / WCONUS / HIREGI / PRREG / AKREGI
-        # resolution='040', # technically may not be valid to have 4km?
-        # bits=0,           # 8..14
-        # mode=1,           # ABI mode
-        # channel=0,
-        # **kwargs):       # channel number, 1..16
-        return scmi_product(channel=self.dataset["product_name"], scene_time=self._scene_time(),
-                            bits=self.dataset["bit_depth"],
-                            region=region)
+        return self.dataset["product_name"]
 
     def _global_product_tile_height(self):  # = None, # 1100,
         return self.tile_shape[0]
@@ -458,7 +444,7 @@ class AttributeHelper(object):
         # when = datetime(when.year, when.month, when.day, when.hour, when.minute, when.second, when.microsecond)
         # return when.strftime('%Y%m%d') + '%04d' % meta.observation_timeline + '00'
         when = self._scene_time()
-        return when.strftime('%Y%j%H%M%S')
+        return when.strftime('%Y-%m-%dT%H:%M:%S')
 
     def _global_product_center_longitude(self):
         grid_def = self.dataset["grid_definition"]
@@ -724,6 +710,8 @@ class SCMI_writer(object):
             # FIXME: This is an assumption
             self._nc.source_scene = "CONUS"
 
+        self._nc.grid_name = grid_def["grid_name"]
+
     def set_global_attrs(self, meta, nav):
         # self._nc.WMO_SAT_ID = meta.wmo_sat_id
         # self._nc.start_time_unix = meta.start_time.unix_time
@@ -931,8 +919,7 @@ class Backend(roles.BackendRole):
                     tmp_y = y[ty * tile_shape[0]: (ty + 1) * tile_shape[0]]
 
                     attr_helper = AttributeHelper(gridded_product, (ty, tx), tile_count, data.shape)
-                    output_filename = attr_helper._filename()
-                    output_filename = output_filename.replace("DT_", "OR_")
+                    output_filename = attr_helper._filename(environment='O', data_type='R')
 
                     kind = {
                         'reflectance': 'albedo',

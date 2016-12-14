@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<goesrProductDescriptions>
+    <description>
+        <!--
+        OR_T<tile number>_<platform>_<satellite>_<dataset name>_s<start time>_e<end time>_c<creation time>.nc
+        -->
+        <match attribute="dataset_name"
+               pattern="OR-T\d+-\w+-\w+-\w+-\w+_s\d{14}_c\d{14}.nc" />
+        <source attribute="production_location" />
+        <physicalElement attribute="product_name" />
+        <creatingEntity attribute="satellite_id" />
+        <dataTime attribute="start_date_time" dateFormat="yyyy-MM-dd'T'HH:mm:ss" />
+        <sectorID attribute="grid_name" />
+    </description>
+</goesrProductDescriptions>
