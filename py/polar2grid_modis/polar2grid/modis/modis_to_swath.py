@@ -937,7 +937,7 @@ class Frontend(roles.FrontendRole):
             invalid_mask = left_mask | right_mask | sza_mask
             valid_night_mask = night_mask & ~invalid_mask
             # get the fraction of the data that is valid night data from all valid data
-            fraction_night = numpy.count_nonzero(valid_night_mask) / (sza_data.size - numpy.count_nonzero(invalid_mask))
+            fraction_night = numpy.count_nonzero(valid_night_mask) / (float(sza_data.size) - numpy.count_nonzero(invalid_mask))
             if fraction_night < 0.10:
                 LOG.info("Less than 10%% of the data is at night, will not create '%s' product", product_name)
                 return None
