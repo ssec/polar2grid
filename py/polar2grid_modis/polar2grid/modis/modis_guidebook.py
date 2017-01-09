@@ -445,6 +445,9 @@ class FileReader(BaseFileReader):
             LOG.debug("Setting any saturation or \"can't aggregate\" values to valid maximum")
             data[(data == self.CANT_AGGR_VALUE) | (data == self.SATURATION_VALUE)] = valid_max
 
+        if mask is not None and valid_max is not None:
+            mask[(data < valid_min) | (data > valid_max)] = True
+
         # Get the scaling factors
         scale_value = None
         if var_info.scale_attr_name:
