@@ -51,18 +51,18 @@ Although the available command line arguments may change depending on the
 reader and writer specified, there are a set of common arguments that
 are always available:
 
-.. csv-table:: Common Command Line Options
+.. rst-class:: full_width_table
 
-    "-h", "Print detailed helpful information."
-    "--list-products", "List all possible product options to use with -p from the given input data."
-    "-p", "List of products to create."
-    "-f", "Input files and paths."
-    "--grid-coverage", "Fraction of grid that must be covered by valid data. Default is 0.1."
-    "-g <grid_name>", "Specify the output grid to use. Default is the Platte Carrée projection, also
- known as the wgs84 coordinate system. See :doc:`grids` and :doc:`custom_grids` for information on
- possible values."
-    "--debug", "Don’t remove intermediate files upon completion."
-    "-v", "Print detailed log information."
+    -h                    Print detailed helpful information.
+    --list-products       List all possible product options to use with -p from the given input data.
+    -p                    List of products to create.
+    -f                    Input files and paths.
+    --grid-coverage       Fraction of grid that must be covered by valid data. Default is 0.1.
+    -g <grid_name>        Specify the output grid to use. Default is the Platte Carrée projection, also
+                          known as the wgs84 coordinate system. See :doc:`grids` and :doc:`custom_grids`
+                          for information on possible values.
+    --debug               Don’t remove intermediate files upon completion.
+    -v                    Print detailed log information.
 
 For information on other scripts and features provided by Polar2Grid see
 the :doc:`utilscripts` or :doc:`misc_recipes` sections or

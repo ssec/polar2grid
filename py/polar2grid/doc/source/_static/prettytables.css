@@ -9,3 +9,10 @@ table.docutils {
     border-collapse: collapse;
     width: 85%;
 }
+
+/* above is the default, this is the override to go back to normal width */
+table.full-width-table {
+    border: 0;
+    border-collapse: collapse;
+    width: inherit;
+}
