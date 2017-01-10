@@ -51,6 +51,8 @@ The frontend offers the following products:
     +--------------------+--------------------------------------------+
     | mirs_btemp_X       | Brightness Temperature for channel index X |
     +--------------------+--------------------------------------------+
+    | swe                | Snow Water Equivalence                     |
+    +--------------------+--------------------------------------------+
 
 For ``mirs_btemp_X`` the ``X`` is the two digit channel number from
 "00" to "21" or however many channels the instrument has. Note that
@@ -93,6 +95,7 @@ SURF_TYPE_VAR = "surface_type_var"
 SICE_VAR = "sea_ice_var"
 SNOWCOVER_VAR = "snow_cover_var"
 TPW_VAR = "tpw_var"
+SWE_VAR = "swe_var"
 
 PRODUCT_RAIN_RATE = "mirs_rain_rate"
 PRODUCT_BT_90 = "mirs_btemp_90"
@@ -103,6 +106,7 @@ PRODUCT_SURF_TYPE = "surface_type"
 PRODUCT_SICE = "sea_ice"
 PRODUCT_SNOW_COVER = "snow_cover"
 PRODUCT_TPW = "tpw"
+PRODUCT_SWE = "swe"
 
 PAIR_MIRS_NAV = "mirs_nav"
 
@@ -116,6 +120,7 @@ PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_
 PRODUCTS.add_product(PRODUCT_SICE, PAIR_MIRS_NAV, "sea_ice", FT_IMG, SICE_VAR, description="Sea Ice", units="%")
 PRODUCTS.add_product(PRODUCT_SNOW_COVER, PAIR_MIRS_NAV, "snow_cover", FT_IMG, SNOWCOVER_VAR, description="Snow Cover", units="1")
 PRODUCTS.add_product(PRODUCT_TPW, PAIR_MIRS_NAV, "tpw", FT_IMG, TPW_VAR, description="Total Precipitable Water", units="mm")
+PRODUCTS.add_product(PRODUCT_SWE, PAIR_MIRS_NAV, "swe", FT_IMG, SWE_VAR, description="Snow Water Equivalence", units="cm")
 
 # Add all ATMS BT channels
 BT_CHANNEL_PRODUCTS = []
@@ -140,6 +145,7 @@ FILE_STRUCTURE = {
     SICE_VAR: ("SIce", ("scale", "scale_factor"), None, None),
     SNOWCOVER_VAR: ("Snow", ("scale", "scale_factor"), None, None),
     TPW_VAR: ("TPW", ("scale", "scale_factor"), None, None),
+    SWE_VAR: ("SWE", ("scale", "scale_factor"), None, None),
     }
 
 for i in range(22):
