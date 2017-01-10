@@ -8,32 +8,38 @@
       - Output Type
       - Reader Name
       - Writer Name
+      - Legacy Script
     * - Suomi-NPP VIIRS Sensor Data Records
       - SVI01_npp_*.h5
         GITCO_npp_*.h5
       - 8-bit single band GeoTIFF
       - viirs_sdr
       - gtiff
+      - viirs2gtiff.sh
     * - "
       - "
       - AWIPS NetCDF3
       - viirs_sdr
       - awips
+      - viirs2awips.sh
     * - "
       - "
       - HDF5
       - viirs_sdr
       - hdf5
+      - viirs2hdf5.sh
     * - "
       - "
       - Binary
       - viirs_sdr
       - binary
+      - viirs2binary.sh
     * - "
       - "
       - 24-bit true and false color GeoTIFF
       - crefl
       - gtiff
+      - crefl2gtiff.sh
     * - Aqua and Terra MODIS Level 1b (IMAPP or NASA archive files)
       - MOD021KM*.hdf
         MOD03*.hdf
@@ -45,63 +51,76 @@
       - 8 bit single band GeoTIFF
       - modis
       - gtiff
+      - modis2gtiff.sh
     * - "
       - "
       - AWIPS NetCDF3
       - modis
       - awips
+      - modis2awips.sh
     * - "
       - "
       - HDF5
       - modis
       - hdf5
+      - modis2hdf5.sh
     * - "
       - "
       - Binary
       - modis
       - binary
+      - modis2binary.sh
     * - "
       - "
       - 24-bit true and false color GeoTIFF
       - crefl
       - gtiff
+      - crefl2gtiff.sh
     * - NOAA-18, NOAA-19, Metop-A and Metop-B AVHRR AAPP Level 1b
       - hrpt_noaa18_*.l1b
       - 8 bit single band GeoTIFF
       - avhrr
       - gtiff
+      - avhrr2gtiff.sh
     * - "
       - "
       - AWIPS NetCDF3
       - avhrr
       - awips
+      - avhrr2awips.sh
     * - "
       - "
       - HDF5
       - avhrr
       - hdf5
+      - avhrr2hdf5.sh
     * - "
       - "
       - Binary
       - avhrr
       - binary
+      - avhrr2binary.sh
     * - GCOM-W1 ASMR2 L1B
       - GW1AM2*L1DLBTBR*.h5
       - 8 bit single band GeoTIFF
       - amsr2_l1b
       - gtiff
+      - N/A
     * - "
       - "
       - AWIPS NetCDF3
       - amsr2_l1b
       - awips
+      - N/A
     * - "
       - "
       - HDF5
       - amsr2_l1b
       - hdf5
+      - N/A
     * - "
       - "
       - Binary
       - amsr2_l1b
       - binary
+      - N/A

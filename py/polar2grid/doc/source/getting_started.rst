@@ -90,7 +90,17 @@ and still work but the new form of calling is preferred. For example:
 
     $POLAR2GRID_HOME/bin/avhrr2awips.sh <options> -f /path/to/files
 
+.. raw:: latex
+
+    \newpage
+    \begin{landscape}
+
 .. include:: summary_table.rst
+
+.. raw:: latex
+
+    \end{landscape}
+    \newpage
 
 Custom Grid Utility
 ^^^^^^^^^^^^^^^^^^^

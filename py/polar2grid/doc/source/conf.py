@@ -236,7 +236,10 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-    'preamble': '\\setcounter{tocdepth}{1}',
+    'preamble': """
+\\setcounter{tocdepth}{1}
+\\usepackage{pdflscape}
+""",
     'classoptions': ',openany,oneside',
     'babel': '\\usepackage[english]{babel}',
 }

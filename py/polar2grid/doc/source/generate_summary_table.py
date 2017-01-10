@@ -28,18 +28,22 @@ from collections import namedtuple
 script_dir = os.path.realpath(os.path.dirname(__file__))
 output_pathname = os.path.join(script_dir, 'summary_table.rst')
 
-COLUMN_ORDER = ['source', 'input_patterns', 'output_type', 'reader', 'writer']
+COLUMN_ORDER = ['source', 'input_patterns', 'output_type', 'reader', 'writer', 'legacy_script']
 COLUMN_TITLE = {
     'source': 'Input Source',
     'input_patterns': 'Input Filename Pattern',
     'output_type': 'Output Type',
     'reader': 'Reader Name',
     'writer': 'Writer Name',
+    'legacy_script': 'Legacy Script',
 }
 
 
-class TableRow(namedtuple('TableRow', ('source', 'input_patterns', 'output_type', 'reader', 'writer'))):
-    pass
+class TableRow(namedtuple('TableRow', ('source', 'input_patterns', 'output_type', 'reader', 'writer', 'legacy_script'))):
+    def __new__(cls, *args):
+        if len(args) < 6:
+            args = args + ('{reader}2{writer}.sh'.format(reader=args[3], writer=args[4]),)
+        return super(TableRow, cls).__new__(cls, *args)
 
 summary_table = [
     TableRow(
@@ -48,6 +52,7 @@ summary_table = [
         '8-bit single band GeoTIFF',
         'viirs_sdr',
         'gtiff',
+        'viirs2gtiff.sh',
     ),
     TableRow(
         '\"',
@@ -55,6 +60,7 @@ summary_table = [
         'AWIPS NetCDF3',
         'viirs_sdr',
         'awips',
+        'viirs2awips.sh',
     ),
     TableRow(
         '\"',
@@ -62,6 +68,7 @@ summary_table = [
         'HDF5',
         'viirs_sdr',
         'hdf5',
+        'viirs2hdf5.sh',
     ),
     TableRow(
         '\"',
@@ -69,6 +76,7 @@ summary_table = [
         'Binary',
         'viirs_sdr',
         'binary',
+        'viirs2binary.sh',
     ),
     TableRow(
         '\"',
@@ -146,6 +154,7 @@ summary_table = [
         '8 bit single band GeoTIFF',
         'amsr2_l1b',
         'gtiff',
+        'N/A',
     ),
     TableRow(
         '\"',
@@ -153,6 +162,7 @@ summary_table = [
         'AWIPS NetCDF3',
         'amsr2_l1b',
         'awips',
+        'N/A',
     ),
     TableRow(
         '\"',
@@ -160,6 +170,7 @@ summary_table = [
         'HDF5',
         'amsr2_l1b',
         'hdf5',
+        'N/A',
     ),
     TableRow(
         '\"',
@@ -167,6 +178,7 @@ summary_table = [
         'Binary',
         'amsr2_l1b',
         'binary',
+        'N/A',
     ),
 ]
 
