@@ -5,6 +5,7 @@ Version 2.1 (2016-11-25)
 ------------------------
 
 * Start using PyTroll SatPy library for various features
+* Phasing out of legacy <reader><writer>.bash scripts and replacing with polar2grid.sh <reader> <writer> implementation.
 * Add ability to output float geotiffs
 * Add ability to store geotiff tiles instead of strips
 * Fix fornav bug for non-float inputs (unused in most cases)

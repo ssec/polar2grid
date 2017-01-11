@@ -12,13 +12,11 @@ complex products called :term:`secondary products`.
 .. toctree::
     :maxdepth: 1
 
-    amsr2_l1b
-    avhrr
-    crefl
-    drrtv
-    mirs
-    modis
-    nucaps
     viirs_sdr
     viirs_l1b
-
+    modis
+    crefl
+    avhrr
+    amsr2_l1b
+    nucaps
+    mirs

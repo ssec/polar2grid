@@ -17,6 +17,7 @@ Polar2Grid
     remapping
     writers/index
     rescaling
+    examples/index
     utilscripts
     grids
     custom_grids

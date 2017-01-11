@@ -9,20 +9,23 @@ Basic Usage
 -----------
 
 The most common use of Polar2Grid is to convert satellite data files in to
-gridded image files. This is accomplished through the ``polar2grid.sh``
-script. Due to the modular design of Polar2Grid a user only needs
-to decide on a :doc:`Reader <readers/index>` and a
-:doc:`Writer <writers/index>` and provide them to ``polar2grid.sh``:
+gridded image files. In previous versions, this was done primarily through bash shell scripts that explicitly define the reader and writer in the script name.  For example,
+
+.. code:: bash
+
+    $POLAR2GRID_HOME/bin/viirs2gtiff.sh -f <path to files>/<list of files>
+
+can be used to create GeoTIFF single band images of all S-NPP VIIRS imager SDR calibrated data with accompnying geolocation files found in ``<path to files>/<list of files>``. 
+
+In Version 2.1, we encourage users to migrate to an implementation of Polar2Grid where the reader and writer are defined as arguments to the main polar2grid.sh script.  This implementation takes advantage of the modular design of Polar2Grid; a user only needs to decide on a :doc:`Reader <readers/index>` and a :doc:`Writer <writers/index>` and provide them to ``polar2grid.sh``. Creating VIIRS SDR GeoTIFF images from input SDRs using the polar2grid.sh script would look like:
 
 .. code:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f <path to files>/<list of files>
 
-where ``<list of files>`` includes input calibrated data and geolocation
-files. If you provide only ``<path to files>`` the
-path will be searched for the necessary files to make as many products as
-possible. Similarly if processing errors occur Polar2Grid will attempt to
-continue processing to make as many products as it can.
+Future versions of Polar2Grid will not include support for the individual legacy bash shell scripts.  We strongly encourage users to migrate to the polar2grid.sh model.  Please see :ref:`reader_writer_combos` for more information.  
+
+In Polar2Grid the ``<path to files>`` will be searched for the necessary files to make as many products as possible. Similarly if processing errors occur Polar2Grid will attempt to continue processing to make as many products as it can. 
 
 For example, executing the following:
 
@@ -64,10 +67,22 @@ are always available:
     --debug               Don’t remove intermediate files upon completion.
     -v                    Print detailed log information.
 
+Examples:
+
+.. code:: bash
+
+    polar2grid.sh modis gtiff --list-products -f <path to files>/<list of files>
+
+    modis2awips.sh -p vis01 bt20 --grid-coverage=.25 -g 211e -v -f <path to files>
+
+
+
 For information on other scripts and features provided by Polar2Grid see
 the :doc:`utilscripts` or :doc:`misc_recipes` sections or
 the various examples through out the :doc:`reader <readers/index>` and
 :doc:`writer <writers/index>` sections.
+
+.. _reader_writer_combos:
 
 Reader/Writer Combinations
 --------------------------
@@ -102,12 +117,12 @@ and still work but the new form of calling is preferred. For example:
     \end{landscape}
     \newpage
 
-Custom Grid Utility
-^^^^^^^^^^^^^^^^^^^
+Creating Your Own Custom Grids
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Polar2Grid software bundle comes with a wrapper script for the
 :ref:`Custom Grid Utility <util_p2g_grid_helper>` for easily creating Polar2Grid grids over
-a certain longitude and latitude. To run it from the software bundle wrapper run::
+a user determined longitude and latitude region. To run it from the software bundle wrapper run::
 
     $POLAR2GRID_HOME/bin/p2g_grid_helper.sh ...
 
