@@ -15,7 +15,9 @@ Grid Config. Helper
     :prog: p2g_grid_helper.sh
 
 
-Example::
+Example:
+
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/p2g_grid_helper.sh my_grid_name -150.1 56.3 250 -250 1000 1000
     # Will result in:
@@ -94,7 +96,7 @@ The ``gtiff2kmz.sh`` script converts a single geotiff file into a Google Earth
 compatible KMZ file. It is a wrapper around the GDAL tool ``gdal2tiles.py``.
 The script can be executed with:
 
-.. code:: bash
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/gtiff2kmz.sh input.tif [output.kmz]
 
@@ -112,7 +114,9 @@ Python Proj
     :func: get_parser
     :prog: p2g_proj.sh
 
-Example::
+Example:
+
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/p2g_proj.sh "+proj=lcc +datum=NAD83 +ellps=GRS80 +lat_1=25 +lon_0=-95" -105.23 38.5
     # Will result in:

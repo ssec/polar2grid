@@ -7,7 +7,7 @@ GCOM-W1 AMSR2 L1B data.
 Basic GeoTIFF file creation
 ***************************
 
-.. code:: bash
+.. code-block:: bash
 
     polar2grid.sh amsr2_l1b gtiff -f  GW1AM2_201607191903_137A_L1DLBTBR_1110110.h5
 
@@ -31,7 +31,7 @@ produces these files in WGS84 (Plate Carrée) projection:
 Naval Research Lab (NRL) Image Reproduction
 *******************************************
 
-.. code:: bash
+.. code-block:: bash
 
     polar2grid.sh amsr2_l1b gtiff --rescale-configs $POLAR2GRID_HOME/rescale_configs/amsr2_png.ini -g lcc_fit -f ../data/ GW1AM2_201607191903_137A_L1DLBTBR_1110110.h5
 

@@ -19,7 +19,7 @@ To create a true color image you must first have the SDRs for the proper
 instrument. At this time VIIRS and MODIS are supported by this reader. Even
 if you want a KMZ, a geotiff must be created first:
 
-.. code:: bash
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh crefl gtiff -f /path/to/my_sdrs/
 
@@ -27,7 +27,7 @@ This will create a series of geotiff files with the ``.tif`` file extension. To 
 (a compressed KML) to show in Google Earth or other program use the ``gtiff2kmz.sh`` script provided
 in the software bundle:
 
-.. code:: bash
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/gtiff2kmz.sh input_true_color.tif output_true_color.kmz
 
@@ -45,13 +45,13 @@ A false color image is any combination of 3 bands that isn't a true color image,
 Polar2Grid uses a default set of bands. The procedure is almost the same to
 how the true color image was made:
 
-.. code:: bash
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh crefl gtiff --false-color -f /path/to/my_sdrs/
 
 And just like for the true color image, use the following to create a KMZ file:
 
-.. code:: bash
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/gtiff2kmz.sh input_false_color.tif output_false_color.kmz
 

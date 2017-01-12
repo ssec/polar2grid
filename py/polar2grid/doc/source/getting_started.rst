@@ -11,7 +11,7 @@ Basic Usage
 The most common use of Polar2Grid is to convert satellite data files in to
 gridded image files. In previous versions, this was done primarily through bash shell scripts that explicitly define the reader and writer in the script name.  For example,
 
-.. code:: bash
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/viirs2gtiff.sh -f <path to files>/<list of files>
 
@@ -19,7 +19,7 @@ can be used to create GeoTIFF single band images of all S-NPP VIIRS imager SDR c
 
 In Version 2.1, we encourage users to migrate to an implementation of Polar2Grid where the reader and writer are defined as arguments to the main polar2grid.sh script.  This implementation takes advantage of the modular design of Polar2Grid; a user only needs to decide on a :doc:`Reader <readers/index>` and a :doc:`Writer <writers/index>` and provide them to ``polar2grid.sh``. Creating VIIRS SDR GeoTIFF images from input SDRs using the polar2grid.sh script would look like:
 
-.. code:: bash
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f <path to files>/<list of files>
 
@@ -29,7 +29,7 @@ In Polar2Grid the ``<path to files>`` will be searched for the necessary files t
 
 For example, executing the following:
 
-.. code:: bash
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f /home/data/viirs/sdr
 
@@ -69,7 +69,7 @@ are always available:
 
 Examples:
 
-.. code:: bash
+.. code-block:: bash
 
     polar2grid.sh modis gtiff --list-products -f <path to files>/<list of files>
 
@@ -92,16 +92,16 @@ writers and expectations for the inputs and outputs of ``polar2grid.sh``.
 To access these features provide the "reader" and "writer" names to the
 ``polar2grid.sh`` script followed by other script options:
 
-.. code:: bash
+.. code-block:: bash
 
-    $POLAR2GRID_HOME/bin/polar2grid.sh <reader> <writer> <options> -f /path/to/files
+    $POLAR2GRID_HOME/bin/polar2grid.sh <reader> --list-products <writer> <options> -f /path/to/files
 
 In previous versions of Polar2Grid scripts were all named
 ``<reader>2<writer>.sh`` instead of
 ``polar2grid.sh <reader> <writer>``. These legacy scripts are still available
 and still work but the new form of calling is preferred. For example:
 
-.. code:: bash
+.. code-block:: bash
 
     $POLAR2GRID_HOME/bin/avhrr2awips.sh <options> -f /path/to/files
 
