@@ -284,13 +284,6 @@ STANDARD_NAMES = {
     'brightness_temp': 'brightness_temperature'
 }
 
-# FIXME: invalid data is not getting proper sentinel values from libHimawari.HCastFile.
-# For now just focus on decent valid ranges (courtesy Jordan Gerth)
-# Changed to integer unscaled values (see IMG_SF_AO)
-# VALID_RANGE = {
-#     'albedo': (0, 32767),  # (-0.012, 1.192),
-#     'brightness_temp': (0, 32767)  # (164.15, 328.15)
-# }
 
 class AttributeHelper(object):
     """
@@ -489,8 +482,8 @@ class SCMI_writer(object):
     _fill_value = 0
     row_dim_name, col_dim_name = 'y', 'x'
     y_var_name, x_var_name = 'y', 'x'
-    bt_var_name = 'Sectorized_CMI'
-    alb_var_name = 'Sectorized_CMI'
+    bt_var_name = 'data'
+    alb_var_name = 'data'
     lat_var_name = 'latitude'
     lon_var_name = 'longitude'
     line_time_var_name = 'line_time_offset'
@@ -712,61 +705,17 @@ class SCMI_writer(object):
 
         self._nc.grid_name = grid_def["grid_name"]
 
-    def set_global_attrs(self, meta, nav):
-        # self._nc.WMO_SAT_ID = meta.wmo_sat_id
-        # self._nc.start_time_unix = meta.start_time.unix_time
-        # self._nc.end_time_unix = meta.end_time.unix_time
-        # self._nc.observation_timeline = meta.observation_timeline
+    def set_global_attrs(self, meta, nav, fn):
         self._nc.central_wavelength = self.helper.dataset["wavelength"]
-        # self._nc.distance_from_earth_center_to_satellite = nav.distance_from_earth_center_to_satellite
         self._nc.creator = "UW SSEC - CSPP Polar2Grid"
         self._nc.creation_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+        self._nc.dataset_name = fn
         self.helper.apply_attributes(self._nc, SCMI_GLOBAL_ATT, '_global_')
-
-    # def set_time_offsets(self, start_time, time_offsets):
-    #     self.line_time.base_time = start_time
-    #     self.line_time[:] = time_offsets
 
     def close(self):
         self._nc.sync()
         self._nc.close()
         self._nc = None
-
-
-# class _AttrDict(object):
-#     def __init__(self, **kwargs):
-#         for k, v in kwargs.items():
-#             setattr(self, k, v)
-#
-#
-# class FakeHimawariScene(object):
-#     def __init__(self, gridded_product):
-#         self.gridded_product = gridded_product
-#
-#     @property
-#     def kind(self):
-#         return {
-#             'reflectance': 'albedo',
-#             'brightness_temperature': 'brightness_temp',
-#         }.get(self.gridded_product["data_kind"])
-#
-#     # @property
-#     # def metadata(self):
-#     #     return _AttrDict(
-#     #         #lines=self.gridded_product["grid_definition"]["height"],
-#     #         #columns=self.gridded_product["grid_definition"]["width"],
-#     #         #lines_res_meters=self.gridded_product["grid_definition"]["cell_height"],
-#     #         #columns_res_meters=self.gridded_product["grid_definition"]["cell_width"],
-#     #         # start_time=self.gridded_product["begin_time"] + timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0))),  # FIXME
-#     #         # FIXME:
-#     #         # band=self.gridded_product["product_name"],
-#     #         # channel_id=0,
-#     #         # band_type=self.kind,
-#     #         # standard_name='toa_bidirectional_reflectance' if self.gridded_product["data_kind"] in ["reflectance", "albedo"] else 'brightness_temperature',
-#     #         # bit_depth=self.gridded_product["bit_depth"],
-#     #         # central_wavelength=self.gridded_product.get("wavelength", self.gridded_product.get("central_wavelength", -1)),
-#     #         # satellite_id="{}-{}".format(self.gridded_product["satellite"].upper(), self.gridded_product["instrument"].upper()),
-#     #     )
 
 
 class Backend(roles.BackendRole):
@@ -795,33 +744,8 @@ class Backend(roles.BackendRole):
             # NoSectionError is not a "StandardError" so it won't be caught normally
             raise RuntimeError(e.message)
 
-        # try:
-        #     awips_info.update(self.awips_config_reader.get_grid_info(grid_def))
-        # except NoSectionError as e:
-        #     LOG.error("Could not get information on grid from backend configuration file")
-        #     # NoSectionError is not a "StandardError" so it won't be caught normally
-        #     raise RuntimeError(e.message)
-
-        if "filename_scheme" in awips_info:
-            # Let individual products have special names if needed (mostly for weird product naming)
-            fn_format = awips_info.pop("filename_scheme")
-        else:
-            fn_format = self.awips_config_reader.get_filename_format()
-
-        output_filename = self.create_output_filename(fn_format,
-                                                      grid_name=grid_def["grid_name"],
-                                                      rows=grid_def["height"],
-                                                      columns=grid_def["width"],
-                                                      **gridded_product)
-
-        if os.path.isfile(output_filename):
-            if not self.overwrite_existing:
-                LOG.error("AWIPS file already exists: %s", output_filename)
-                raise RuntimeError("AWIPS file already exists: %s" % (output_filename,))
-            else:
-                LOG.warning("AWIPS file already exists, will overwrite: %s", output_filename)
-
         # Create the netcdf file
+        created_files = []
         try:
             LOG.debug("Scaling %s data to fit in netcdf file...", gridded_product["product_name"])
             # data = self.rescaler.rescale_product(gridded_product, data_type,
@@ -869,35 +793,11 @@ class Backend(roles.BackendRole):
 
             # FIXME: Make this part of the reader/frontend
             gridded_product.setdefault("wavelength", gridded_product.get("central_wavelength", -1.))
-            # gridded_product["central_wavelength"] = {
-            #     "i01": 0.640,
-            #     "i02": 0.865,
-            #     "i03": 1.610,
-            #     "i04": 3.740,
-            #     "i05": 11.450,
-            #     "m01": 0.412,
-            #     "m02": 0.445,
-            #     "m03": 0.488,
-            #     "m04": 0.555,
-            #     "m05": 0.672,
-            #     "m06": 0.746,
-            #     "m07": 0.865,
-            #     "m08": 1.242,
-            #     "m09": 1.378,
-            #     "m10": 1.610,
-            #     "m11": 2.250,
-            #     "m12": 3.700,
-            #     "m13": 4.050,
-            #     "m14": 8.550,
-            #     "m15": 10.763,
-            #     "m16": 12.013,
-            # }.get(gridded_product["product_name"], -1.)
             gridded_product["bit_depth"] = bit_depth = 12
-            #gridded_product["bit_depth"] = bit_depth = 12
             # FIXME: Get information from configuration file
-            valid_min = gridded_product.get("valid_min", -0.011764705898 if gridded_product["data_kind"] == "reflectance" else 69.)
+            valid_min = gridded_product.get("valid_min", -0.011764705898 if gridded_product["data_kind"] in ["reflectance", "toa_bidirectional_reflectance"] else 69.)
             gridded_product["valid_min"] = valid_min
-            valid_max = gridded_product.get("valid_max", 1.192352914276 if gridded_product["data_kind"] == "reflectance" else 320.)
+            valid_max = gridded_product.get("valid_max", 1.192352914276 if gridded_product["data_kind"] in ["reflectance", "toa_bidirectional_reflectance"] else 320.)
             gridded_product["valid_max"] = valid_max
             factor = (valid_max - valid_min) / float(2**bit_depth - 1)
             offset = valid_min
@@ -908,18 +808,24 @@ class Backend(roles.BackendRole):
                     tmp_tile[:] = fill_value
                     tile_number = ty * tile_count[1] + tx + 1
                     tmp_tile[:] = data[ty * tile_shape[0]: (ty + 1) * tile_shape[0], tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
-                    # output_filename = "OR_HFD-010-B11-M1C03-T{:03d}_GH8_s{}_c{}.nc".format(tile_number, start_str, creation_str)
 
                     if tmp_tile.mask.all():
                         LOG.info("Tile %d contains all masked data, skipping...", tile_number)
                         continue
-                    LOG.info("Writing tile %d to %s", tile_number, output_filename)
-
                     tmp_x = x[tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
                     tmp_y = y[ty * tile_shape[0]: (ty + 1) * tile_shape[0]]
 
                     attr_helper = AttributeHelper(gridded_product, (ty, tx), tile_count, data.shape)
                     output_filename = attr_helper._filename(environment='O', data_type='R')
+                    if os.path.isfile(output_filename):
+                        if not self.overwrite_existing:
+                            LOG.error("AWIPS file already exists: %s", output_filename)
+                            raise RuntimeError("AWIPS file already exists: %s" % (output_filename,))
+                        else:
+                            LOG.warning("AWIPS file already exists, will overwrite: %s", output_filename)
+                    created_files.append(output_filename)
+
+                    LOG.info("Writing tile %d to %s", tile_number, output_filename)
 
                     kind = {
                         'reflectance': 'albedo',
@@ -933,11 +839,11 @@ class Backend(roles.BackendRole):
                     LOG.debug("Creating variables...")
                     nc.create_variables(factor, offset)
                     LOG.debug("Creating global attributes...")
-                    nc.set_global_attrs(None, None)
+                    nc.set_global_attrs(None, None, output_filename)
                     LOG.debug("Creating projection attributes...")
                     nc.set_projection_attrs(gridded_product["grid_definition"])
                     LOG.debug("Writing image data...")
-                    if gridded_product["data_kind"] == "reflectance":
+                    if gridded_product["data_kind"] in ["reflectance", "toa_bidirectional_reflectance"]:
                         nc.set_image_data(alb=tmp_tile)
                     else:
                         nc.set_image_data(bt=tmp_tile)
@@ -945,12 +851,14 @@ class Backend(roles.BackendRole):
                     nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units=xy_units)
                     nc.close()
         except StandardError:
-            LOG.error("Error while filling in NC file with data: %s", output_filename)
-            if not self.keep_intermediate and os.path.isfile(output_filename):
-                os.remove(output_filename)
+            last_fn = created_files[-1] if created_files else "N/A"
+            LOG.error("Error while filling in NC file with data: %s", last_fn)
+            for fn in created_files:
+                if not self.keep_intermediate and os.path.isfile(fn):
+                    os.remove(fn)
             raise
 
-        return output_filename
+        return created_files[-1]
 
 
 def add_backend_argument_groups(parser):
