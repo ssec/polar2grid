@@ -75,25 +75,6 @@ from collections import namedtuple
 
 LOG = logging.getLogger(__name__)
 
-fgf_yxmb = namedtuple('fgf', ['y', 'x', 'my', 'mx', 'by', 'bx'])
-
-def native_FACOFF(nav):
-    return dict(CFAC=nav.CFAC, LFAC=nav.LFAC, COFF=nav.COFF, LOFF=nav.LOFF)
-#
-# def lookup_FACOFF(band, factor, existing):
-#     if factor==1:
-#         LOG.info("using pre-existing FAC/OFF from scene")
-#         return native_FACOFF(existing)
-#     # check that we actually have what are probably the correct values!
-#     native = FACOFF.get(NATIVE_REZ[band], None)
-#     if not FACOFF_matches(native, existing):
-#         LOG.error("could not match FAC/OFF parameters to support data reduction. cannot assign without a donor file (use -n option)!")
-#         return None
-#     # okay we have confidence in the LUT! figure out what effective nav values unnamed-people expect
-#     LOG.info("using table lookup FAC/OFF values")
-#     key = NATIVE_REZ[band] * factor
-#     return FACOFF.get(key, None)
-
 SCMI_GLOBAL_ATT=dict(
     product_tile_height=None,  # 1100,
     projection=None,
@@ -153,73 +134,7 @@ SCMI_DATA_ATT=dict(
     valid_max=None,  # 2047 for scaled ints
 )
 
-SCMI_FGF_ATT=dict(
-    latitude_of_projection_origin=0.0,
-    perspective_point_height=None,  # 35785863.0,
-    semi_minor=None,  # 6356752.3,
-    # semi_minor_axis=6356752.3,  # CF
-    longitude_of_projection_origin=None, # 140.7,
-    grid_mapping_name='geostationary',
-    semi_major=None,  # 6378137.0,
-    # semi_major_axis=6378137.0,  # CF
-    sweep_angle_axis="x",
-)
-
-def _ahi_bit_depth(channel):
-    return AHI_BIT_DEPTH[channel - 1]
-
-# extracted with
-# for c in `seq 1 16`; do
-#   ccc=$(printf '%02d' c);
-#   fn=$(find . -name "*C${ccc}*.nc" -type f |head -1);
-#   cat <(ncdump -h $fn |grep Sectorized_CMI: |sed -E 's/^.*?://g' |grep -v FillValue) \
-#       <(echo "print '(', $c, ',', add_offset+scale_factor*valid_min, ',', add_offset + scale_factor*valid_max, ')'") |python;
-# done
-AHI_SCMI_CHANNEL_RANGES = [
-    ( 1 , -0.011764705898 , 1.19235294276 ),
-    ( 2 , -0.011764705603 , 1.19235291287 ),
-    ( 3 , -0.0117647057594 , 1.19235292871 ),
-    ( 4 , -0.0117647058027 , 1.1923529331 ),
-    ( 5 , -0.0117647058528 , 1.19235293818 ),
-    ( 6 , -0.0117647058774 , 1.19235294068 ),
-    ( 7 , 99.0 , 400.981567383 ),
-    ( 8 , 69.0 , 321.876464844 ),
-    ( 9 , 69.0 , 321.876464844 ),
-    ( 10 , 69.0 , 320.938476562 ),
-    ( 11 , 69.0 , 330.936035156 ),
-    ( 12 , 69.0 , 330.936035156 ),
-    ( 13 , 69.0 , 331.935791016 ),
-    ( 14 , 69.0 , 331.935791016 ),
-    ( 15 , 70.0 , 331.936035156 ),
-    ( 16 , 70.0 , 332.871582031 )
-]
-
-AHI_BIT_DEPTH = [11, 11, 11, 11,
-                 11, 11, 14, 11,
-                 11, 12, 12, 12,
-                 12, 12, 12, 11]
-
-AHI_CENTRAL_WAVELENGTH = [
-    0.47, 0.51, 0.64, 0.86,
-    1.61, 2.26, 3.89, 6.24,
-    6.94, 7.35, 8.59, 9.64,
-    10.41, 11.24, 12.38, 13.28]
-
-# zy_xxxx-rrr-Bnn-MnCnn-Tnnn_Gnn_sYYYYDDDhhmmss _cYYYYDDDhhmmss.nc
-# OR_HFD-020-B14-M1C07-T055_GH8_s2015181030000_c2015181031543
-# ref Table 3.3.4.1.2-1 Sectorized CMI File Naming Convention Fields on NOAA VLAB wiki
 FMT_SCMI_NAME="{environment:1s}{data_type:1s}-T{tile:03d}-{satellite:s}-{instrument:s}-{name:s}-{grid_name:s}_s{scene_time:13s}_c{creation_time:13s}.nc"
-
-
-def scmi_product(
-        region='HFD',     # HFD / EFD / WFD / ECONUS / WCONUS / HIREGI / PRREG / AKREGI
-        resolution='040', # technically may not be valid to have 4km?
-        bits=0,           # 8..14
-        mode=1,           # ABI mode
-        channel=0,
-        **kwargs):       # channel number, 1..16
-    channel = "{:02d}" if not isinstance(channel, str) else channel
-    return "{region:s}-{resolution:3s}-B{bits:02d}-M{mode:1d}C{channel}".format(**locals())
 
 
 def scmi_filename(
@@ -242,47 +157,6 @@ def scmi_filename(
     grid_name = grid_name.replace('_', '').replace('-', '')
 
     return FMT_SCMI_NAME.format(**locals())
-
-
-RESOLUTION_FROM_WIDTH = {
-    2750: 40,
-    5500: 20,
-    11000: 10,
-    22000: 5
-}
-
-
-# scale factors and add offsets for variables at different resolutions, from inspection
-XY_SF_AO = {
-    (40, 'y'): (-112.0, 153944.0),  # 4km extrapolated from 20,10,5 as m,b=-0.5,15400
-    (40, 'x'): (112.0, -153944.0),
-    (20, 'y'): (-56.0, 153972.0),
-    (20, 'x'): (56.0, -153972.0),
-    (10, 'y'): (-28.0, 153986.0),
-    (10, 'x'): (28.0, -153986.0),
-    (5, 'y'): (-14.0, 153993.0),
-    (5, 'x'): (14.0, -153993.0)
-}
-
-# map 0..32767 to viable content
-# IMG_SF_AO = {
-#     'brightness_temp': (200.0/32767.0, 150.0), # 150K .. 350K
-#     'albedo': (2.0/32767.0, -0.5)  # -0.5 .. 1.5
-# }
-IMG_SF_AO = dict(
-    (channel, ((valid_max-valid_min)/float(2**bit_depth - 1), valid_min)) for ((channel, valid_min, valid_max), bit_depth) in zip(AHI_SCMI_CHANNEL_RANGES, AHI_BIT_DEPTH)
-)
-
-HCAST_DEFAULT_NAV = dict(
-    r_eq = 6378.1690,   # km
-    r_pol = 6356.5838,
-    sat_height = 35785.831,
-)
-
-STANDARD_NAMES = {
-    'albedo': 'toa_bidirectional_reflectance',
-    'brightness_temp': 'brightness_temperature'
-}
 
 
 class AttributeHelper(object):
@@ -355,15 +229,6 @@ class AttributeHelper(object):
     def _global_satellite_id(self):
         return "{}-{}".format(self.dataset["satellite"].upper(), self.dataset["instrument"].upper())
 
-    @property
-    def _file_nav_is_incomplete(self):
-        n = self.dataset["grid_definition"]
-        b = n.proj4_dict["b"]
-        inc = np.isnan(b) or b <= 0
-        if inc:
-            LOG.warning('WARNING: incomplete nav, assuming HCAST H8 AHI ')
-        return inc
-
     def _tile_center(self): # = None, # 88.0022078322,
         # calculate center longitude of tile
         # FIXME: resolve whether we need half-pixel offset
@@ -404,18 +269,10 @@ class AttributeHelper(object):
 
     def _global_satellite_longitude(self): # = None, # 35785.863,
         proj4_dict = self.dataset["grid_definition"].proj4_dict
-        if "h" in proj4_dict:
+        if proj4_dict['proj'] == 'geos':
             return np.float32(proj4_dict["lon_0"])  # float32 needed?
         else:
             return None
-
-    def _data_standard_name(self):
-        if "standard_name" in self.dataset:
-            return self.dataset["standard_name"]
-        elif self.dataset["data_kind"] in ["reflectance", "albedo"]:
-            return "toa_bidirectional_reflectance"
-        else:
-            return self.dataset["data_kind"]
 
     def _global_product_name(self):
         return self._product_name()
@@ -424,18 +281,11 @@ class AttributeHelper(object):
         return self.dataset.get("channel_id", 0)
 
     def _global_pixel_x_size(self):
-        # rez = RESOLUTION_FROM_WIDTH[self.hsd.extents[1]]
-        # return float(rez)/10.0
         return self.dataset["grid_definition"]["cell_width"] / 1000.
 
     _global_request_spatial_resolution = _global_source_spatial_resolution = _global_pixel_y_size = _global_pixel_x_size
 
     def _global_start_date_time(self):
-        # FIXME this is what we want for HSD:
-        # meta = self.hsd.metadata
-        # when = meta.start_time
-        # when = datetime(when.year, when.month, when.day, when.hour, when.minute, when.second, when.microsecond)
-        # return when.strftime('%Y%m%d') + '%04d' % meta.observation_timeline + '00'
         when = self._scene_time()
         return when.strftime('%Y-%m-%dT%H:%M:%S')
 
@@ -446,13 +296,6 @@ class AttributeHelper(object):
     def _global_product_center_latitude(self):
         grid_def = self.dataset["grid_definition"]
         return grid_def.lonlat_center[1]
-
-    def _data_valid_min(self):
-        return 0
-
-    def _data_valid_max(self):
-        return 2**self.dataset["bit_depth"] - 1
-
 
     def _global_production_location(self):
         org = os.environ.get('ORGANIZATION', None)
@@ -478,18 +321,13 @@ class SCMI_writer(object):
     _band = None
     _include_geo = False
     _include_fgf = True
-    _include_rad = False
     _fill_value = 0
     row_dim_name, col_dim_name = 'y', 'x'
     y_var_name, x_var_name = 'y', 'x'
-    bt_var_name = 'data'
-    alb_var_name = 'data'
+    image_var_name = 'data'
     lat_var_name = 'latitude'
     lon_var_name = 'longitude'
     line_time_var_name = 'line_time_offset'
-    bt = None
-    rad = None
-    alb = None
     lat = None
     lon = None
     fgf_y = None
@@ -500,16 +338,12 @@ class SCMI_writer(object):
     missing = np.int16(-1.0)
     imissing = np.uint16(32767)
 
-    def __init__(self, filename, resolution, offset, shape, kind, band, include_geo=False, include_fgf=True, include_rad=True, helper=None, compress=False):
+    def __init__(self, filename, offset, shape, include_geo=False, include_fgf=True, helper=None, compress=False):
         self._nc = Dataset(filename, 'w')
-        self._resolution = resolution
         self._shape = shape
         self._offset = offset
-        self._kind = kind
         self._include_geo = include_geo
-        self._include_rad = include_rad
         self._include_fgf = include_fgf
-        self._band = band
         self._compress = compress
         self.helper = helper
 
@@ -524,25 +358,9 @@ class SCMI_writer(object):
         geo_coords = "%s %s" % (self.lat_var_name, self.lon_var_name)
         fgf_coords = "%s %s" % (self.y_var_name, self.x_var_name)
 
-        if self._include_rad:
-            self.rad = self._nc.createVariable("RAD", 'u2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.imissing, zlib=self._compress)
-            self.rad.coordinates = geo_coords if self._include_geo else fgf_coords
-            self.rad.units = 'W m-2 sr-1 um-1'
-        else:
-            if self._kind == 'brightness_temp':
-                self.bt = self._nc.createVariable(self.bt_var_name, 'i2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.missing, zlib=self._compress)
-                self.bt.coordinates = geo_coords if self._include_geo else fgf_coords
-                self.bt.units = 'kelvin'
-                dv = self.bt
-            elif self._kind == 'albedo':
-                self.alb = self._nc.createVariable(self.alb_var_name, 'i2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.missing, zlib=self._compress)
-                self.alb.coordinates = geo_coords if self._include_geo else fgf_coords
-                self.alb.units = '1'
-                dv = self.alb
-
-            dv.scale_factor = scale_factor
-            dv.add_offset = add_offset
-            self.helper.apply_attributes(dv, SCMI_DATA_ATT, '_data_')
+        self.image_data = self._nc.createVariable(self.image_var_name, 'i2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.missing, zlib=self._compress)
+        self.image_data.coordinates = geo_coords if self._include_geo else fgf_coords
+        self.apply_data_attributes(scale_factor, add_offset)
 
         if self._include_fgf:
             self.fgf_y = self._nc.createVariable(self.y_var_name, 'i2', dimensions=(self.row_dim_name,), zlib=self._compress)
@@ -561,6 +379,22 @@ class SCMI_writer(object):
         self.line_time = None # self._nc.createVariable(self.line_time_var_name, 'f8', dimensions=(self.row_dim_name,))
         # self.line_time.units = 'seconds POSIX'
         # self.line_time.long_name = "POSIX epoch seconds elapsed since base_time for image line"
+
+    def apply_data_attributes(self, scale_factor=None, add_offset=None):
+        # NOTE: grid_mapping is set by `set_projection_attrs`
+        self.image_data.scale_factor = scale_factor
+        self.image_data.add_offset = add_offset
+        self.image_data.units = self.helper.dataset.get('units', '1')
+        # FIXME: does this need to be increased/decreased by 1 to leave room for the fill value?
+        self.image_data.valid_min = 0
+        self.image_data.valid_max = 2 ** self.helper.dataset["bit_depth"] - 1
+
+        if "standard_name" in self.helper.dataset:
+            self.image_data.standard_name = self.helper.dataset["standard_name"]
+        elif self.helper.dataset["data_kind"] in ["reflectance", "albedo"]:
+            self.image_data.standard_name = "toa_bidirectional_reflectance"
+        else:
+            self.image_data.standard_name = self.helper.dataset["data_kind"]
 
     def set_geo(self, lat, lon):
         if self.lat is not None:
@@ -585,49 +419,12 @@ class SCMI_writer(object):
         self.fgf_x.long_name = "CGMS E/W fixed grid viewing angle (not interchangeable with GOES x)"
         self.fgf_x[:] = x
 
-    def set_rad_attrs(self, cal):
-        self.rad.scale_factor = cal.rad_m
-        self.rad.add_offset = cal.rad_b
-        self.rad.c = cal.c
-        self.rad.h = cal.h
-        self.rad.k = cal.k
-        if self._kind == 'albedo':
-            self.rad.cprime = cal.bt_c0_or_albedo_cprime
-        else:
-            self.rad.bt_c0 = cal.bt_c0_or_albedo_cprime
-            self.rad.bt_c1 = cal.bt_c1
-            self.rad.bt_c2 = cal.bt_c2
-
-    def set_image_data(self, counts=None, bt=None, alb=None):
-        if counts is not None:
-            LOG.info('writing radiance counts')
-            # self.rad[:,:] = np.ma.fix_invalid(np.require(rad, dtype=np.float32), fill_value=self.missing)
-            # missing values are being presented as nans
-            # having masked the missing data, now let's replace them with imissing values
-            assert(not np.any(counts<0.0))
-            assert(not np.any(counts>=self.imissing))
-            # we apply rounding in case the counts have been averaged down to lower resolution
-            # using HimawariResample.
-            rad = np.round(counts)
-            # note that HimawariScene is returning masked arrays, typically NaNs as fill!
-            rad = np.ma.fix_invalid(rad, fill_value=self.imissing)
-            # and then convert to uint16 for writing as scaled integer
-            rad = np.require(rad, dtype=np.int16)
-            self.rad[:,:] = rad
-            del rad
-        if bt is not None and self.bt is not None:
-            LOG.info('writing BT')
-            # note: autoscaling will be applied to make int16
-            # self.bt[:,:] = np.ma.fix_invalid(np.require(bt, dtype=np.float32), fill_value=self.missing)
-            assert(hasattr(bt, 'mask'))
-            self.bt[:,:] = np.require(bt.filled(self._fill_value), dtype=np.float32)
-        if alb is not None and self.alb is not None:
-            LOG.info('writing albedo')
-            # note: autoscaling will be applied to make int16
-            # self.alb[:,:] = np.ma.fix_invalid(np.require(alb, dtype=np.float32), fill_value=self.fmissing) # FUTURE: scaled ints
-            assert(hasattr(alb, 'mask'))
-            self.alb[:, :] = np.require(alb.filled(self._fill_value), dtype=np.float32)
-
+    def set_image_data(self, data):
+        LOG.info('writing image data')
+        # note: autoscaling will be applied to make int16
+        # self.bt[:,:] = np.ma.fix_invalid(np.require(bt, dtype=np.float32), fill_value=self.missing)
+        assert(hasattr(data, 'mask'))
+        self.image_data[:, :] = np.require(data.filled(self._fill_value), dtype=np.float32)
 
     def set_projection_attrs(self, grid_def):
         """
@@ -636,45 +433,31 @@ class SCMI_writer(object):
         proj4_info = grid_def.proj4_dict
         if proj4_info["proj"] == "geos":
             p = self.projection = self._nc.createVariable("fixedgrid_projection", 'i4')
-            if self.alb:
-                self.alb.grid_mapping = "fixedgrid_projection"
-            if self.bt:
-                self.bt.grid_mapping = "fixedgrid_projection"
+            self.image_data.grid_mapping = "fixedgrid_projection"
             p.short_name = grid_def["grid_name"]
             p.grid_mapping_name = "geostationary"
             # p.long_name = "Himawari Imagery Projection"
-            p.sweep_angle_axis = proj4_info["sweep"]
+            p.sweep_angle_axis = proj4_info.get("sweep", "x")
             # Projection.units = "radians"
             # calculate invflat 'f' such that rpol = req - req/invflat
             a = proj4_info["a"]
             b = proj4_info["b"]
             h = proj4_info["h"]
             lon_0 = proj4_info["lon_0"]
-            if "f" not in proj4_info:
-                try:
-                    f = 1.0 / (1.0 - b/a)
-                except ZeroDivisionError as hcast_probably_did_this:
-                    f = 0.0
-            else:
-                f = proj4_info["f"]
 
-            if np.isnan(f) or f == 0.0:
-                LOG.warning('invalid projection parameters, hello HimawariCast - using hardcoded values from Harris sample')
-                p.semi_major = p.semi_major_axis = a = HCAST_DEFAULT_NAV['r_eq'] * 1e3  # m
-                p.semi_minor = p.semi_minor_axis = b = HCAST_DEFAULT_NAV['r_pol'] * 1e3
-                f = 1.0 / (1.0 - b/a)
-                # Projection.inverse_flattening = np.float32(f) # 298.2572f ;
-                p.perspective_point_height = HCAST_DEFAULT_NAV['sat_height'] * 1e3
-                p.description = "HimawariCast nominal projection values"
-            else:
-                p.semi_major = a * 1e3 # 6378.137f ;
-                p.semi_minor = b * 1e3  # convert to meters
-                # Projection.inverse_flattening = np.float32(f) # 298.2572f ;
-                p.perspective_point_height = h
-
-            # Projection.latitude_of_projection_origin = np.float32(0.0) ;
+            p.semi_major = a * 1e3  # 6378.137f ;
+            p.semi_minor = b * 1e3  # convert to meters
+            p.perspective_point_height = h
+            p.latitude_of_projection_origin = np.float32(0.0)
             p.longitude_of_projection_origin = np.float32(lon_0)  # is the float32 needed?
-            self.helper.apply_attributes(p, SCMI_FGF_ATT, '_proj_')  # TODO: Generalize
+
+            # if "f" in proj4_info:
+            #     f = proj4_info['f']
+            # elif a != b:
+            #     f = 1.0 / (1.0 - b/a)
+            # else:
+            #     raise ValueError("Only ellipsoid 'geos' projections are supported")
+            # Projection.inverse_flattening = np.float32(f) # 298.2572f ;
 
             # Set globals based on projection
             self._nc.projection = "Fixed_Grid"
@@ -682,10 +465,7 @@ class SCMI_writer(object):
             self._nc.source_scene = "Full Disk"
         elif proj4_info["proj"] == "lcc":
             p = self.projection = self._nc.createVariable("lambert_projection", 'i4')
-            if self.alb:
-                self.alb.grid_mapping = "lambert_projection"
-            if self.bt:
-                self.bt.grid_mapping = "lambert_projection"
+            self.image_data.grid_mapping = "lambert_projection"
             p.short_name = grid_def["grid_name"]
             p.grid_mapping_name = "lambert_conformal_conic"
             if proj4_info["lat_0"] != proj4_info["lat_1"]:
@@ -827,13 +607,9 @@ class Backend(roles.BackendRole):
 
                     LOG.info("Writing tile %d to %s", tile_number, output_filename)
 
-                    kind = {
-                        'reflectance': 'albedo',
-                        'brightness_temperature': 'brightness_temp',
-                    }.get(gridded_product["data_kind"], gridded_product["data_kind"])
-                    nc = SCMI_writer(output_filename, 10, (ty, tx), tile_shape,
-                                     kind, gridded_product["product_name"],
-                                     include_rad=False, helper=attr_helper, compress=self.compress)
+                    nc = SCMI_writer(output_filename, (ty, tx), tile_shape,
+                                     gridded_product["product_name"],
+                                     helper=attr_helper, compress=self.compress)
                     LOG.debug("Creating dimensions...")
                     nc.create_dimensions()
                     LOG.debug("Creating variables...")
@@ -843,10 +619,7 @@ class Backend(roles.BackendRole):
                     LOG.debug("Creating projection attributes...")
                     nc.set_projection_attrs(gridded_product["grid_definition"])
                     LOG.debug("Writing image data...")
-                    if gridded_product["data_kind"] in ["reflectance", "toa_bidirectional_reflectance"]:
-                        nc.set_image_data(alb=tmp_tile)
-                    else:
-                        nc.set_image_data(bt=tmp_tile)
+                    nc.set_image_data(tmp_tile)
                     LOG.debug("Writing X/Y navigation data...")
                     nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units=xy_units)
                     nc.close()
