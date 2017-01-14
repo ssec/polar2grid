@@ -236,9 +236,62 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-    'preamble': """
-\\setcounter{tocdepth}{1}
-\\usepackage{pdflscape}
+    'preamble': r"""
+\setcounter{tocdepth}{1}
+\usepackage{pdflscape}
+
+% Change the title page to look a bit better, and fit in with the fncychap
+% ``Bjarne'' style a bit better.
+%
+\makeatletter
+\renewcommand{\maketitle}{%
+  \let\spx@tempa\relax
+  \ifHy@pageanchor\def\spx@tempa{\Hy@pageanchortrue}\fi
+  \hypersetup{pageanchor=false}% avoid duplicate destination warnings
+  \begin{titlepage}%
+    \let\footnotesize\small
+    \let\footnoterule\relax
+    \noindent\rule{\textwidth}{1pt}\ifsphinxpdfoutput\newline\null\fi\par
+    \ifsphinxpdfoutput
+      \begingroup
+      % These \defs are required to deal with multi-line authors; it
+      % changes \\ to ', ' (comma-space), making it pass muster for
+      % generating document info in the PDF file.
+      \def\\{, }%
+      \def\and{and }%
+      \pdfinfo{
+        /Author (\@author)
+        /Title (\@title)
+      }%
+      \endgroup
+    \fi
+    \begin{flushright}%
+      \sphinxlogo
+      \py@HeaderFamily
+      {\Huge \@title \par}
+      {\itshape\LARGE \py@release\releaseinfo \par}
+      \vfill
+      {\large %changed by davidh, was LARGE
+        \begin{tabular}[t]{c}
+          \@author
+        \end{tabular}
+        \par}
+      \vfill\vfill
+      {\large
+       \@date \par
+       \vfill
+       \py@authoraddress \par
+      }%
+    \end{flushright}%\par
+    \@thanks
+  \end{titlepage}%
+  \setcounter{footnote}{0}%
+  \let\thanks\relax\let\maketitle\relax
+  %\gdef\@thanks{}\gdef\@author{}\gdef\@title{}
+  \if@openright\cleardoublepage\else\clearpage\fi
+  \spx@tempa
+}
+\makeatother
 """,
     'classoptions': ',openany,oneside',
     'babel': '\\usepackage[english]{babel}',
@@ -248,7 +301,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]), toctree_only.
 latex_documents = [
   ('index', 'Polar2Grid_Documentation_{}.tex'.format(version), u'Polar2Grid Documentation',
-   u'Released under CSPP/IMAPP Projects', 'manual', True),
+   u'Co-released through the \\and NOAA Community Satellite Processing Package (CSPP) and \\and NASA International MODIS/AIRS Processing Package (IMAPP)', 'manual', True),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

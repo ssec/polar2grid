@@ -1,6 +1,3 @@
-.. polar2grid documentation master file, created by
-   sphinx-quickstart on Thu Apr 19 23:17:38 2012.
-
 Polar2Grid
 ==========
 
