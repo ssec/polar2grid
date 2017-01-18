@@ -50,6 +50,9 @@ all: all_sdist
 
 all_install: $(ALL_PKG_INSTALL)
 
+all_install2:
+	pip install --no-deps dist/*.tar.gz
+
 all_sdist: $(ALL_PKG_SDIST) clean_sdist_build
 
 all_dev: $(ALL_PKG_DEV)

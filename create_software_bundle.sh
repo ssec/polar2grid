@@ -137,7 +137,8 @@ cd "$PY_DIR"
 
 make clean
 # Have to use 'python setup.py install' because using easy_install on source tarballs doesn't compile extensions for some reason
-CFLAGS="-fno-strict-aliasing -L${SHELLB3_DIR}/lib" INSTALL_DIR="${SHELLB3_DIR}" make all_install
+CFLAGS="-fno-strict-aliasing -L${SHELLB3_DIR}/lib" INSTALL_DIR="${SHELLB3_DIR}" make all_sdist
+CFLAGS="-fno-strict-aliasing -L${SHELLB3_DIR}/lib" INSTALL_DIR="${SHELLB3_DIR}" make all_install2
 ${SHELLB3_DIR}/bin/python -c 'import polar2grid'
 if [ $? -ne 0 ]; then
     oops "Couldn't install polar2grid"
