@@ -63,6 +63,8 @@ that comes with Polar2Grid. This allows for the following grids to get created:
     +-------------+----------------------------+
     | 204         | Hawaii                     |
     +-------------+----------------------------+
+    | 210         | Puerto Rico                |
+    +-------------+----------------------------+
 
  .. warning::
 
