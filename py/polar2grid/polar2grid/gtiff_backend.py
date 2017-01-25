@@ -31,12 +31,6 @@
 uses the GDAL python API to create the geotiff files. It can handle any grid that
 can be described by PROJ.4 and understand by Geotiff.
 
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2014
-:license:      GNU GPLv3
-
 """
 __docformat__ = "restructuredtext en"
 

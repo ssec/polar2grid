@@ -34,12 +34,6 @@ attributes describing the grid it represents. See the command line arguments for
 this backend for information on compressing the HDF5 files and providing longitude
 and latitude datasets in the files.
 
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2014
-:license:      GNU GPLv3
-
 """
 __docformat__ = "restructuredtext en"
 

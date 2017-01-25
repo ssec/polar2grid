@@ -71,12 +71,6 @@ that comes with Polar2Grid. This allows for the following grids to get created:
      The AWIPS backend does not default to using any grid. Therefore, it is recommended to specify
      one or more grids for remapping by using the `-g` flag.
 
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
-:license:      GNU GPLv3
-
 """
 __docformat__ = "restructuredtext en"
 

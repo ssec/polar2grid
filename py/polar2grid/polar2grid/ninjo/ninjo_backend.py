@@ -48,12 +48,6 @@ The NinJo backend must be configured to support a specific grid and is
 currently only configured for the DWD Germany grid (dwd_germany) and the
 Alaska (203) grid.
 
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
-:license:      GNU GPLv3
-
 """
 __docformat__ = "restructuredtext en"
 

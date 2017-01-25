@@ -29,14 +29,6 @@
 # david.hoese@ssec.wisc.edu
 """Functions to read configuration files for the AWIPS backend.
 
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2014
-:license:      GNU GPLv3
-
-
 """
 __docformat__ = "restructuredtext en"
 

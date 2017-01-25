@@ -30,12 +30,6 @@
 """The Binary backend is a very simple backend that outputs the gridded data in
 a flat binary file for each band of data. Since it is writing binary data to a file
 and ignore any geolocation information it supports any grid.
-
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2014
-:license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"
 
