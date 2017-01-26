@@ -152,7 +152,6 @@ It provides the following products:
     |                    | and BT20                                   |
     +--------------------+--------------------------------------------+
 
-
 For reflectance/visible products a check is done to make sure that at least
 10% of the swath is day time. Data is considered day time where solar zenith
 angle is less than 90 degrees.
@@ -337,7 +336,7 @@ PRODUCTS.add_product(PRODUCT_INV, PAIR_1000M, "inversion_strength", guidebook.FT
 PRODUCTS.add_product(PRODUCT_IND, PAIR_1000M, "inversion_depth", guidebook.FT_INV, guidebook.K_IND)
 PRODUCTS.add_product(PRODUCT_ICON, PAIR_1000M, "ice_concentration", guidebook.FT_ICECON, guidebook.K_ICECON)
 PRODUCTS.add_product(PRODUCT_CTT, PAIR_MOD06, "cloud_top_temperature", guidebook.FT_MOD06CT, guidebook.K_CTT)
-PRODUCTS.add_product(PRODUCT_TPW, PAIR_MOD07, "total_precipitable_water", guidebook.FT_MOD07, guidebook.K_TPW)
+PRODUCTS.add_product(PRODUCT_TPW, PAIR_MOD07, "total_precipitable_water", guidebook.FT_MOD07, guidebook.K_TPW, units="cm")
 ### secondary products ###
 PRODUCTS.add_product(PRODUCT_SLST, PAIR_1000M, "summer_land_surface_temperature", dependencies=(PRODUCT_LST,))
 # radiance -> brightness temperature

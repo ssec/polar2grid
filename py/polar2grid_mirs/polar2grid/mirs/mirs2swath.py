@@ -119,8 +119,8 @@ PRODUCTS.add_product(PRODUCT_BT_CHANS, PAIR_MIRS_NAV, "brightness_temperature", 
 PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_90_VAR, description="Channel Brightness Temperature at 88.2GHz", units="K", frequency=88.2, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE))
 PRODUCTS.add_product(PRODUCT_SICE, PAIR_MIRS_NAV, "sea_ice", FT_IMG, SICE_VAR, description="Sea Ice", units="%")
 PRODUCTS.add_product(PRODUCT_SNOW_COVER, PAIR_MIRS_NAV, "snow_cover", FT_IMG, SNOWCOVER_VAR, description="Snow Cover", units="1")
-PRODUCTS.add_product(PRODUCT_TPW, PAIR_MIRS_NAV, "tpw", FT_IMG, TPW_VAR, description="Total Precipitable Water", units="mm")
-PRODUCTS.add_product(PRODUCT_SWE, PAIR_MIRS_NAV, "swe", FT_IMG, SWE_VAR, description="Snow Water Equivalence", units="cm")
+PRODUCTS.add_product(PRODUCT_TPW, PAIR_MIRS_NAV, "total_precipitable_water", FT_IMG, TPW_VAR, description="Total Precipitable Water", units="mm")
+PRODUCTS.add_product(PRODUCT_SWE, PAIR_MIRS_NAV, "snow_water_equivalence", FT_IMG, SWE_VAR, description="Snow Water Equivalence", units="cm")
 
 # Add all ATMS BT channels
 BT_CHANNEL_PRODUCTS = []

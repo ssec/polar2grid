@@ -248,6 +248,7 @@ def brightness_temperature_scale(img, threshold, min_in, max_in, min_out, max_ou
     """
     LOG.debug("Running 'bt_scale'...")
     if units == "celsius":
+        LOG.debug("Adjusting scaling limits to handle Celsius instead of Kelvin...")
         min_in -= 273.15
         max_in -= 273.15
         threshold -= 273.15
@@ -362,6 +363,7 @@ class Rescaler(roles.INIConfigReader):
         "instrument",
         "grid_name",
         "inc_by_one",
+        "units",
     )
 
     rescale_methods = {
@@ -404,6 +406,7 @@ class Rescaler(roles.INIConfigReader):
         args.remove("img")
         args.remove("flip")  # boolean
         args.remove("table_name")  # string
+        args.remove("units")
         args.add("min_out")
         args.add("max_out")
         args.add("percent")
