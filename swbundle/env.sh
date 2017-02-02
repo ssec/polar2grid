@@ -47,6 +47,8 @@ if [ -z "$POLAR2GRID_REV" ]; then
     export GDAL_DATA=$P2G_SHELLB3_DIR/share/gdal
     # Let SatPy know where we put things
     export SATPY_ANCPATH=$POLAR2GRID_HOME/bin
+    # The cviirs and crefl executables require base HDF files which by default are in the bin directory
+    export ANCPATH=$POLAR2GRID_HOME/bin
     export PPP_CONFIG_DIR=$POLAR2GRID_HOME/etc
     export GSHHS_DATA_ROOT=$POLAR2GRID_HOME/gshhg_data
 
