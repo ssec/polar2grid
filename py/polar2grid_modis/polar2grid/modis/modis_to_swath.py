@@ -30,7 +30,10 @@
 """The MODIS Reader operates on HDF4 Level 1B files from the Moderate Resolution
 Imaging Spectroradiometer (MODIS) instruments on the Aqua and Terra
 satellites. The reader is designed to work with files created by the IMAPP
-direct broadcast processing system (file naming conventions such as a1.17006.1855.1000m.hdf), but can support other types of L1B files, including the NASA archived files (file naming conventions such asMOD021KM.A2017004.1732.005.2017023210017.hdf).  The
+direct broadcast processing system (file naming conventions such as 
+a1.17006.1855.1000m.hdf), but can support other types of L1B files, including 
+the NASA archived files (file naming conventions such as 
+MOD021KM.A2017004.1732.005.2017023210017.hdf).  The
 reader can be specified to the ``polar2grid.sh`` script by using the reader name ``modis``.
 
 This reader's dfault resampling algorithm is ``ewa`` for Elliptical Weighted
