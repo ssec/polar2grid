@@ -55,3 +55,26 @@ And just like for the true color image, use the following to create a KMZ file:
 
     $POLAR2GRID_HOME/bin/gtiff2kmz.sh input_false_color.tif output_false_color.kmz
 
+
+More Execution Examples:
+
+.. code-block:: bash
+
+    crefl2gtiff.sh -f /data/modis/level1b
+
+    crefl2gtiff.sh --true-color --false-color -f ../l1b/a1.17006.1855.{250m,500m,1000m,geo}.hdf
+
+    crefl2gtiff.sh -f /data/modis/MOD0{21KM,2HKM,2QKM,3}.*.hdf
+
+    crefl2gtiff.sh --false-color -f ../l1b/a1.17006.1855.{250m,500m,1000m,geo}.hdf
+  
+    polar2grid.sh crefl gtiff -f /imapp/modis/a1.17006.1855.{250m,500m,1000m,geo}.hdf
+
+    crefl2gtiff.sh --true-color -f /data/modis/a1.17006.1855.crefl.250m.hdf /data/modis/a1.17006.1855.crefl.500m.hdf /data/modis/a1.17006.1855.geo.hdf
+
+    polar2grid.sh crefl gtiff --true-color --false-color -f ../crefl/t1.17004.1732.crefl.{250,500,1000}m.hdf ../l1b/MOD03.A2017004.1732.005.2017023210017.hdf
+
+        
+
+       
+
