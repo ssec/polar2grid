@@ -55,7 +55,7 @@ Lambert Conic Conformal Dynamic Fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :Grid Name: lcc_fit
-:Description: 1km East CONUS centered lcc grid
+:Description: 1km East CONUS centered lcc grid (alias: lcc_na)
 :PROJ.4 String: +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=25 +lon_0=-95
 :Grid Width: None
 :Grid Height: None
@@ -74,6 +74,71 @@ High Resolution Lambert Conic Conformal Dynamic Fit
 :Grid Height: None
 :X Pixel Size: 400 meters
 :Y Pixel Size: 400 meters
+:X Origin: None
+:Y Origin: None
+
+Lambert Conic Conformal - South America Centered
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:Grid Name: lcc_sa
+:Description: 1km South America centered lcc grid
+:PROJ.4 String: +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=-25 +lat_1=-25 +lon_0=-55 +units=m +no_defs
+:Grid Width: None
+:Grid Height: None
+:X Pixel Size: 1000 meters
+:Y Pixel Size: 1000 meters
+:X Origin: None
+:Y Origin: None
+
+Lambert Conic Conformal - Europe Centered
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:Grid Name: lcc_eu
+:Description: 1km Europe centered lcc grid
+:PROJ.4 String: +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=25 +lat_1=25 +lon_0=15 +units=m +no_defs
+:Grid Width: None
+:Grid Height: None
+:X Pixel Size: 1000 meters
+:Y Pixel Size: 1000 meters
+:X Origin: None
+:Y Origin: None
+
+Lambert Conic Conformal - South Africa Centered
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:Grid Name: lcc_south_africa
+:Description: 1km South Africa centered lcc grid
+:PROJ.4 String: +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=-25 +lat_1=-25 +lon_0=25 +units=m +no_defs
+:Grid Width: None
+:Grid Height: None
+:X Pixel Size: 1000 meters
+:Y Pixel Size: 1000 meters
+:X Origin: None
+:Y Origin: None
+
+Lambert Conic Conformal - Australia Centered
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:Grid Name: lcc_aus
+:Description: 1km Australia centered lcc grid
+:PROJ.4 String: +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=-25 +lat_1=-25 +lon_0=135 +units=m +no_defs
+:Grid Width: None
+:Grid Height: None
+:X Pixel Size: 1000 meters
+:Y Pixel Size: 1000 meters
+:X Origin: None
+:Y Origin: None
+
+Lambert Conic Conformal - Asia Centered
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:Grid Name: lcc_sa
+:Description: 1km Asia centered lcc grid
+:PROJ.4 String: +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=25 +lat_1=25 +lon_0=105 +units=m +no_defs
+:Grid Width: None
+:Grid Height: None
+:X Pixel Size: 1000 meters
+:Y Pixel Size: 1000 meters
 :X Origin: None
 :Y Origin: None
 
@@ -96,6 +161,45 @@ Polar-Stereographic South Pacific
 :Grid Name: polar_south_pacific
 :Description: 400m Southern Pacific Grid
 :PROJ.4 String: +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=-90 +lat_ts=-45.0 +lon_0=-170
+:Grid Width: None
+:Grid Height: None
+:X Pixel Size: 400 meters
+:Y Pixel Size: 400 meters
+:X Origin: None
+:Y Origin: None
+
+Polar-Stereographic Alaska
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:Grid Name: polar_alaska
+:Description: 400m Northern Grid over Alaska
+:PROJ.4 String: +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=60.0 +lon_0=-150
+:Grid Width: None
+:Grid Height: None
+:X Pixel Size: 400 meters
+:Y Pixel Size: 400 meters
+:X Origin: None
+:Y Origin: None
+
+Polar-Stereographic Canada
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:Grid Name: polar_canada
+:Description: 1km Northern Grid over Canada
+:PROJ.4 String: +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=45.0 +lon_0=-150
+:Grid Width: None
+:Grid Height: None
+:X Pixel Size: 1000 meters
+:Y Pixel Size: 1000 meters
+:X Origin: None
+:Y Origin: None
+
+Polar-Stereographic Russia
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:Grid Name: polar_russia
+:Description: 400m Northern Grid over Russia
+:PROJ.4 String: +proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=45.0 +lon_0=50
 :Grid Width: None
 :Grid Height: None
 :X Pixel Size: 400 meters
