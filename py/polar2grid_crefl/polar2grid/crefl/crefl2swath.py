@@ -28,13 +28,27 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 """The Corrected Reflectance Reader operates on corrected reflectance files created from
-VIIRS Science Data Record (SDR) files or MODIS Level 1B (L1B) files. Currently corrected reflectance
-files are created by third party software developed by NASA. The ``CREFL_SPA`` algorithm
-for MODIS and ``CVIIRS_SPA`` algorithm for VIIRS can be found here:
+VIIRS Science Data Record (SDR) files or MODIS Level 1B (L1B) files, in either IMAPP or
+NASA Archive naming conventions. Currently corrected reflectance files are created by 
+third party software developed by NASA. The ``CREFL_SPA`` algorithm for MODIS and 
+``CVIIRS_SPA`` algorithm for VIIRS can be found here: 
 http://directreadout.sci.gsfc.nasa.gov/?id=software
 
 Polar2Grid uses its own patched version of the CREFL processing code for VIIRS data. This code is available in
-the main code repository and fixes a few bugs that were not fixed in the original CREFL code at the time of writing.
+the main code repository and fixes a few bugs that were not fixed in the original CREFL code at the time of writing.  
+
+Output crefl software HDF4 product naming conventions are
+
+    +-------------------------------------+--------------------------------------------+
+    | MODIS (250m, 500m and 1 km)         | VIIRS  (I and M Bands)                     |
+    +========================+=========================================================+
+    | a1 or t1.YYDDD.HHMM.crefl.1000m.hdf | CREFLI_npp_dYYYYMMDD_tHHMMSSS_eHHMMSSS.hdf |
+    +-------------------------------------+--------------------------------------------+
+    | a1 or t1.YYDDD.HHMM.crefl.500m.hdf  | CREFLM_npp_dYYYYMMDD_tHHMMSSS_eHHMMSSS.hdf |
+    +-------------------------------------+--------------------------------------------+
+    | a1 or t1.YYDDD.HHMM.crefl.250m.hdf  |                                            |
+    +-------------------------------------+--------------------------------------------+
+
 After processing the output can be provided to Polar2Grid to create true color images or other RGB images.
 
 .. versionadded:: 2.0
@@ -50,7 +64,7 @@ single band images since AWIPS does not support 3-dimensional arrays. These
 defaults can all be turned off with the ``--no-compositors`` flag.
 
 The CREFL reader accepts output from MODIS and VIIRS corrected reflectance
-processing. If provided with SDR files it will attempt to call the proper
+processing. If provided with L1B or SDR files it will attempt to call the proper
 programs to convert the files. The required commands that must be available
 are:
 
