@@ -37,17 +37,17 @@ http://directreadout.sci.gsfc.nasa.gov/?id=software
 Polar2Grid uses its own patched version of the CREFL processing code for VIIRS data. This code is available in
 the main code repository and fixes a few bugs that were not fixed in the original CREFL code at the time of writing.  
 
-Output crefl software HDF4 product naming conventions are
+Output CREFL software HDF4 product naming conventions are:
 
-    +-------------------------------------+--------------------------------------------+
-    | MODIS (250m, 500m and 1 km)         | VIIRS  (I and M Bands)                     |
-    +========================+=========================================================+
-    | a1 or t1.YYDDD.HHMM.crefl.1000m.hdf | CREFLI_npp_dYYYYMMDD_tHHMMSSS_eHHMMSSS.hdf |
-    +-------------------------------------+--------------------------------------------+
-    | a1 or t1.YYDDD.HHMM.crefl.500m.hdf  | CREFLM_npp_dYYYYMMDD_tHHMMSSS_eHHMMSSS.hdf |
-    +-------------------------------------+--------------------------------------------+
-    | a1 or t1.YYDDD.HHMM.crefl.250m.hdf  |                                            |
-    +-------------------------------------+--------------------------------------------+
+  +--------------------------------------+--------------------------------------------+
+  | MODIS (250m, 500m and 1 km)          | VIIRS  (I and M Bands)                     |
+  +======================================+============================================+
+  | a1 or t1.YYDDD.HHMM.crefl.1000m.hdf  | CREFLI_npp_dYYYYMMDD_tHHMMSSS_eHHMMSSS.hdf |
+  +--------------------------------------+--------------------------------------------+
+  | a1 or t1.YYDDD.HHMM.crefl.500m.hdf   | CREFLM_npp_dYYYYMMDD_tHHMMSSS_eHHMMSSS.hdf |
+  +--------------------------------------+--------------------------------------------+
+  | a1 or t1.YYDDD.HHMM.crefl.250m.hdf   |                                            |
+  +--------------------------------------+--------------------------------------------+
 
 After processing the output can be provided to Polar2Grid to create true color images or other RGB images.
 
