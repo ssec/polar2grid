@@ -56,7 +56,8 @@ And just like for the true color image, use the following to create a KMZ file:
     $POLAR2GRID_HOME/bin/gtiff2kmz.sh input_false_color.tif output_false_color.kmz
 
 
-More Execution Examples:
+More Execution Examples
+-----------------------
 
 .. code-block:: bash
 
@@ -64,7 +65,9 @@ More Execution Examples:
 
     crefl2gtiff.sh --true-color --false-color -f ../l1b/a1.17006.1855.{250m,500m,1000m,geo}.hdf
 
-    crefl2gtiff.sh -f /data/modis/MOD0{21KM,2HKM,2QKM,3}.*.hdf
+    crefl2gtiff.sh --true-color --false-color -f ../sdr/SV{I01,M03,M04,M05,M07,M11}_*.h5 ../sdr/GMTCO*.h5 ../sdr/GITCO*.h5
+
+    polar2grid.sh crelf gtiff -f /data/modis/MOD0{21KM,2HKM,2QKM,3}.*.hdf
 
     crefl2gtiff.sh --false-color -f ../l1b/a1.17006.1855.{250m,500m,1000m,geo}.hdf
   
@@ -74,7 +77,10 @@ More Execution Examples:
 
     polar2grid.sh crefl gtiff --true-color --false-color -f ../crefl/t1.17004.1732.crefl.{250,500,1000}m.hdf ../l1b/MOD03.A2017004.1732.005.2017023210017.hdf
 
-        
+    polar2grid.sh crefl gtiff --true-color -g wgs84_fit_250 --fornav-D 10 -f MYD021KM.A2017004.1732.006.2017023210017.hdf MYD02HKM.A2017004.1732.005.2017023210017.hdf MYD02QKM.A2017004.1732.005.2017023210017.hdf MYD03.A2017004.1732.005.2017023210017.hdf
 
-       
+    polar2grid.sh crefl awips --grid-coverage=0 -g 211e -f /home/data/t1*.hdf 
 
+    polar2grid.sh crefl awips -g 204 -f /modis/data/MYD*.hdf
+
+    polar2grid.sh crefl awips --true-color --false-color -g 211w -f /viirs/SV*.h5 /viirs/GMTCO*.h5 /viirs/GITCO*.h5
