@@ -434,7 +434,7 @@ class Frontend(roles.FrontendRole):
             # band 3b products
             # if every pixel we have is a band 3A pixel then we don't want to create this product
             if numpy.all(band_mask == 0):
-                LOG.info("No band 3B reflectance data available, will not create the '%s' product", product_name)
+                LOG.info("No band 3B brightness temperature data available, will not create the '%s' product", product_name)
                 return None
 
             # where the data is for 3A or the value is less than 0.1 then mask it with a NaN fill value
