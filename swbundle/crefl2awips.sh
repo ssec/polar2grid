@@ -35,8 +35,6 @@ fi
 # Setup necessary environments
 source $POLAR2GRID_HOME/bin/env.sh
 
-# The cviirs and crefl executables require base HDF files which by default are in the bin directory
-export ANCPATH=${ANCPATH:-$POLAR2GRID_HOME/bin}
 # Call the python module to do the processing, passing all arguments
 # Defaults to always trying to create sharpened true color bands
 ${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue crefl awips $@ -vv
