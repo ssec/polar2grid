@@ -46,7 +46,6 @@ composites:
     standard_name: true_color
     high_resolution_band: red
 
-
   # copy of natural_color
   false_color:
     compositor: !!python/name:satpy.composites.viirs.RatioSharpenedRGB
