@@ -262,12 +262,12 @@ def main(argv=sys.argv[1:]):
             else:
                 LOG.debug("Adding 'true_color' compositor")
                 args.compositors.append('true_color')
-        if '--true-color' in sys.argv and 'true_color' not in args.compositors:
-            LOG.debug("Adding 'true_color' compositor")
-            args.compositors.append('true_color')
-        if '--false-color' in sys.argv and 'false_color' not in args.compositors:
-            LOG.debug("Adding 'false_color' compositor")
-            args.compositors.append('false_color')
+                if '--true-color' in sys.argv and 'true_color' not in args.compositors:
+                    LOG.debug("Adding 'true_color' compositor")
+                    args.compositors.append('true_color')
+                if '--false-color' in sys.argv and 'false_color' not in args.compositors:
+                    LOG.debug("Adding 'false_color' compositor")
+                    args.compositors.append('false_color')
 
     # if "--true-color" in
     for c in args.compositors:
