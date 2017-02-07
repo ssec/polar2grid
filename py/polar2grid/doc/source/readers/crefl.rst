@@ -56,7 +56,7 @@ And just like for the true color image, use the following to create a KMZ file:
     $POLAR2GRID_HOME/bin/gtiff2kmz.sh input_false_color.tif output_false_color.kmz
 
 
-More Execution Examples
+Execution Examples
 -----------------------
 
 .. code-block:: bash
