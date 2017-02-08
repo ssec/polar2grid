@@ -275,8 +275,8 @@ class MIRSFileReader(BaseFileReader):
             self.end_time = datetime.strptime(self.file_handle.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
         except AttributeError:
             self.satellite = {
-                "M1": "metopa",
-                "M2": "metopb",
+                "M1": "metopb",
+                "M2": "metopa",
                 "NN": "noaa18",
                 "NP": "noaa19",
             }[fn_parts[1]]
