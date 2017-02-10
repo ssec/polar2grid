@@ -123,9 +123,9 @@ Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 +---------------------------+-----------------------------------------------------+
 | satellite_azimuth_angle   | M Band Satellite Azimuth Angle                      |
 +---------------------------+-----------------------------------------------------+
-| DNB_SZA                   | DNB Band Solar Zenith Angle                         |
+| dnb_solar_zenith_angle    | DNB Band Solar Zenith Angle                         |
 +---------------------------+-----------------------------------------------------+
-| DNB_LZA                   | DNB Band Lunar Zenith Angle                         |
+| dnb_lunar_zenith_angle    | DNB Band Lunar Zenith Angle                         |
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+
@@ -174,6 +174,11 @@ M_PRODUCTS = [
     "m15",
     "m16",
 ]
+DNB_PRODUCTS = [
+    "histogram_dnb",
+    "adaptive_dnb",
+    "dynamic_dnb",
+]
 TRUE_COLOR_PRODUCTS = [
     "true_color"
 ]
@@ -185,11 +190,7 @@ FALSE_COLOR_PRODUCTS = [
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = [".nc"]
     DEFAULT_READER_NAME = "viirs_l1b"
-    DEFAULT_DATASETS = I_PRODUCTS + M_PRODUCTS + [
-        "histogram_dnb",
-        "adaptive_dnb",
-        "dynamic_dnb",
-    ]
+    DEFAULT_DATASETS = I_PRODUCTS + M_PRODUCTS + DNB_PRODUCTS
 
     def __init__(self, *args, **kwargs):
         self.day_fraction = kwargs.pop('day_fraction', 0.1)
@@ -201,6 +202,16 @@ class Frontend(ReaderWrapper):
         self.fraction_day_scene = None
         self.fraction_night_scene = None
         super(Frontend, self).__init__(*args, **kwargs)
+
+    @property
+    def available_product_names(self):
+        available = set(self.scene.available_dataset_names(reader_name=self.reader, composites=True))
+        return sorted(available & set(self.all_product_names))
+
+    @property
+    def all_product_names(self):
+        # return self.scene.all_dataset_names(reader_name=self.reader, composites=True)
+        return I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS
 
     def _calc_percent_day(self, scene):
         if 'solar_zenith_angle' in scene:
