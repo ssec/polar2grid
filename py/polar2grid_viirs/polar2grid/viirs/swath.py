@@ -27,7 +27,7 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""The VIIRS SDR Reader operates on Science Data Record (SDR) and files from
+"""The VIIRS SDR Reader operates on Science Data Record (SDR) HDF5 files from
 the Suomi National Polar-orbiting Partnership's (NPP) Visible/Infrared
 Imager Radiometer Suite (VIIRS) instrument. The VIIRS SDR reader ignores filenames and uses internal
 file content to determine the type of file being provided, but SDR are typically named as below
@@ -35,9 +35,10 @@ and have corresponding geolocation files::
 
     SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
 
-The VIIRS reader supports all basic SDR bands created by the instrument. These are identified as the products shown
-below. It supports terrain corrected or non-terrain corrected navigation files. Geolocation files must be included
-when specifying filepaths to readers and ``polar2grid.sh``. The VIIRS reader can be specified to the ``polar2grid.sh`` script
+The VIIRS SDR reader supports all instrument spectral bands, identified as
+the products shown below. It supports terrain corrected or non-terrain corrected 
+navigation files. Geolocation files must be included when specifying filepaths to 
+readers and ``polar2grid.sh``. The VIIRS reader can be specified to the ``polar2grid.sh`` script
 with the frontend name ``viirs_sdr``.
 
 .. note::
@@ -180,8 +181,8 @@ Averaging resampling. The ``--fornav-D`` parameter set to 40 and the
 
 
 For reflectance/visible products a check is done to make sure that at least
-10% of the swath is day time. Data is considered day time where solar zenith
-angle is less than 100 degrees.
+10% of the swath is day time. Data is considered day time where the solar 
+zenith angle is less than 100 degrees.
 
 |
 
