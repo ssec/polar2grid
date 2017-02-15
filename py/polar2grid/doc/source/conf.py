@@ -295,6 +295,7 @@ latex_elements = {
 """,
     'classoptions': ',openany,oneside',
     'babel': '\\usepackage[english]{babel}',
+    'printindex': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

@@ -13,7 +13,6 @@ Polar2Grid
     readers/index
     remapping
     writers/index
-    rescaling
     examples/index
     utilscripts
     grids
@@ -28,6 +27,7 @@ Polar2Grid
     - :doc:`dev_guide/dev_env`
     - :doc:`dev_guide/swbundle`
     - :doc:`dev_guide/json_input`
+    - :doc:`rescaling`
     - :doc:`NEWS`
 
 .. only:: html
