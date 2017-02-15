@@ -27,19 +27,19 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The VIIRS Level 1B Reader operates on NASA L1B files from
-the Suomi National Polar-orbiting Partnership's (NPP) Visible/Infrared
+"""The VIIRS Level 1B Reader operates on NASA Level 1B (L1B) NetCDF files 
+from the Suomi National Polar-orbiting Partnership's (NPP) Visible/Infrared
 Imager Radiometer Suite (VIIRS) instrument. The VIIRS L1B reader analyzes
-the user provided filenames to determine if a file is useful. Files usually
+the user provided filenames to determine if a file can be used. Files usually
 have the following naming scheme::
 
     VL1BI_snpp_d20160101_t185400_c20160301041812.nc
 
-The VIIRS L1B reader supports all basic bands created by the instrument.
-These are identified as the products shown below.
-Geolocation files must be included when specifying filepaths to readers and
-``polar2grid.sh``. The VIIRS L1B frontend can be specified to the Polar2Grid glue
-script with the frontend name ``viirs_l1b``.
+The VIIRS L1B reader supports all instrument spectral bands, identified as 
+the products shown below.  Geolocation files must be included when 
+specifying filepaths to readers and ``polar2grid.sh``. The VIIRS L1B 
+frontend can be specified to the Polar2Grid glue script with the 
+frontend name ``viirs_l1b``.
 
 .. note::
 
