@@ -27,8 +27,19 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""The MIRS frontend extracts data from files created by the Microwave
-Integrated Retrieval System (MIRS).
+"""The MIRS frontend extracts data from files created by the Community
+Satellite Processing Package (CSPP) direct broadcast version of the
+NOAA/STAR Microwave Integrated Retrieval System (MIRS). The software
+supports the creation of atmospheric profile and surface parameters from 
+ATMS, AMSU-A, and MHS microwave sensor data. For more information
+on this product, please see the 
+`CSPP MIRS distribution website <http://cimss.ssec.wisc.edu/cspp/mirs_v2.0.shtml>`_.
+
+When executed on Suomi-NPP Advanced Technology Microwave Sounder (ATMS) 
+MIRS product files, a limb correction algorithm is applied for  
+brightness temperatures reprojections for each of the 22 spectral bands.  
+The correction software was provided by Kexin Zhang of NOAA STAR, and
+is applied as part of the MIRS ATMS Polar2grid execution. 
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--fornav-D`` option is set to 100 and the
