@@ -50,6 +50,7 @@ from polar2grid.core import containers, roles
 
 LOG = logging.getLogger(__name__)
 
+
 def area_to_swath_def(area, overwrite_existing=False):
     lons = area.lons
     lats = area.lats
@@ -155,7 +156,7 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
         "fill_value": np.nan,
         "swath_columns": cols,
         "swath_rows": rows,
-        "rows_per_scan": info.get("rows_per_scan", ds.shape[0]),
+        "rows_per_scan": info.get("rows_per_scan", ds.shape[-2]),
         "data_type": ds.dtype,
         "swath_definition": swath_def,
         "channels": channels,
@@ -248,11 +249,17 @@ def convert_satpy_to_p2g_swath(frontend, scene):
     overwrite_existing = frontend.overwrite_existing
     areas = {}
     for ds in scene:
-        if ds.info["area"].name in areas:
-            swath_def = areas[ds.info["area"].name]
+        a = ds.info['area']
+        area_name = getattr(a, 'name', None)
+        if area_name is None:
+            # generate an identifying name
+            # s = '_'.join(map(str, ds.info['area'].shape))
+            a.name = area_name = "{}_{}".format(a.lons.info['name'], a.lats.info['name'])
+        if area_name in areas:
+            swath_def = areas[area_name]
         else:
-            areas[ds.info["area"].name] = swath_def = area_to_swath_def(ds.info["area"], overwrite_existing=overwrite_existing)
-            swath_def.setdefault("rows_per_scan", ds.info.get("rows_per_scan", ds.shape[0]))
+            areas[area_name] = swath_def = area_to_swath_def(ds.info["area"], overwrite_existing=overwrite_existing)
+            swath_def.setdefault("rows_per_scan", ds.info.get("rows_per_scan", ds.shape[-2]))
 
         for swath_product in dataset_to_swath_product(ds, swath_def, overwrite_existing=overwrite_existing):
             p2g_scene[swath_product["product_name"]] = swath_product
