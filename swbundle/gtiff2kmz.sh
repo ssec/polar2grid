@@ -53,6 +53,11 @@ else
     exit 1
 fi
 
+if [ $input_fn = "-h" ] || [ $input_fn = "--help" ] || [ $output_fn = "-h" ] || [ $output_fn = "--help" ]; then
+    echo "Usage: gtiff2kmz.sh input.tif [output.kmz]"
+    exit 1
+fi
+
 # Create a tiled KML directory
 echo "Creating temporary tiled KML directory..."
 ${P2G_SHELLB3_DIR}/bin/gdal2tiles.py -p geodetic $input_fn $tile_dir || { echo "ERROR: Could not create tiled KML"; exit 1; }
