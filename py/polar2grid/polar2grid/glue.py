@@ -43,8 +43,7 @@ import pkg_resources
 from polar2grid.remap import Remapper, add_remap_argument_groups, SATPY_RESAMPLERS
 from polar2grid.readers import ReaderWrapper, convert_satpy_to_p2g_swath, convert_satpy_to_p2g_gridded
 import numpy as np
-from satpy.scene import Scene, DatasetID
-from satpy.projectable import Projectable
+from satpy import Scene, DatasetID, Dataset
 from polar2grid.readers import dataset_to_gridded_product
 
 import sys
@@ -449,7 +448,7 @@ def main(argv=sys.argv[1:]):
                 for k, v in gridded_scene.items():
                     if not isinstance(v["sensor"], set):
                         v["sensor"] = set([v["sensor"]])  # turn sensor back in to a set to match satpy usage
-                    tmp_scene[v["id"]] = Projectable(v.get_data_array(), **v)
+                    tmp_scene[v["id"]] = Dataset(v.get_data_array(), **v)
                     tmp_scene[v["id"]].info["area"] = this_grid_definition.to_satpy_area()
                     # tmp_scene[v["id"]].info = {}
                     if v["sensor"] not in tmp_scene.info["sensor"]:

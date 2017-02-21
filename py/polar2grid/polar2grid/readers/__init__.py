@@ -146,8 +146,7 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
         rows, cols = ds.shape[-2:]
 
     p2g_metadata = {
-        "product_name": info["id"].name,
-        "id": info["id"],
+        "product_name": info["name"],
         "satellite": info["platform"].lower(),
         "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
         "data_kind": info["standard_name"],
@@ -164,7 +163,7 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
     info.update(p2g_metadata)
 
     if channels == 1:
-        filename = info["id"].name + ".dat"
+        filename = info["name"] + ".dat"
         info["swath_data"] = filename
         if os.path.isfile(filename):
             if not overwrite_existing:
@@ -215,7 +214,7 @@ def dataset_to_gridded_product(ds, grid_def, overwrite_existing=False):
         rows, cols = ds.shape[-2:]
 
     p2g_metadata = {
-        "product_name": info["id"].name,
+        "product_name": info["name"],
         "satellite": info["platform"].lower(),
         "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
         "data_kind": info["standard_name"],
@@ -231,7 +230,7 @@ def dataset_to_gridded_product(ds, grid_def, overwrite_existing=False):
     }
     info.update(p2g_metadata)
 
-    filename = info["id"].name + ".dat"
+    filename = info["name"] + ".dat"
     info["grid_data"] = filename
     if os.path.isfile(filename):
         if not overwrite_existing:
