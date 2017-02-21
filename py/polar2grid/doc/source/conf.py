@@ -291,6 +291,8 @@ latex_elements = {
   \if@openright\cleardoublepage\else\clearpage\fi
   \spx@tempa
 }
+\def\ttl@save@mkschap #1{\vspace *{-20\p@ }{\parindent \z@ \raggedright
+    \normalfont \interlinepenalty \@M \DOTIS {#1} \vskip -20\p@ }}
 \makeatother
 """,
     'classoptions': ',openany,oneside',
