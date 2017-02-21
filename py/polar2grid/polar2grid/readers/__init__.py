@@ -155,7 +155,7 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
         "fill_value": np.nan,
         "swath_columns": cols,
         "swath_rows": rows,
-        "rows_per_scan": info.get("rows_per_scan", ds.shape[-2]),
+        "rows_per_scan": info.get("rows_per_scan", rows),
         "data_type": ds.dtype,
         "swath_definition": swath_def,
         "channels": channels,
@@ -258,7 +258,8 @@ def convert_satpy_to_p2g_swath(frontend, scene):
             swath_def = areas[area_name]
         else:
             areas[area_name] = swath_def = area_to_swath_def(ds.info["area"], overwrite_existing=overwrite_existing)
-            swath_def.setdefault("rows_per_scan", ds.info.get("rows_per_scan", ds.shape[-2]))
+            def_rps = ds.shape[0] if ds.ndim <= 2 else ds.shape[-2]
+            swath_def.setdefault("rows_per_scan", ds.info.get("rows_per_scan", def_rps))
 
         for swath_product in dataset_to_swath_product(ds, swath_def, overwrite_existing=overwrite_existing):
             p2g_scene[swath_product["product_name"]] = swath_product
