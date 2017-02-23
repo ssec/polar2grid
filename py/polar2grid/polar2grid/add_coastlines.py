@@ -41,11 +41,12 @@
 import os
 import sys
 import logging
-import gdal
-import osr
 from pycoast import ContourWriter
 from PIL import Image, ImageFont
 from pyproj import Proj
+# XXX: For some reason 'gdal' needs to be imported *after* PIL otherwise we get a segfault
+import gdal
+import osr
 
 
 try:
@@ -145,7 +146,7 @@ def main():
     if args.output_filename is None:
         args.output_filename = [x[:-3] + "png" for x in args.input_tiff]
     else:
-        assert args.output_filename == args.input_tiff, "Output filenames must be equal to number of input tiffs"
+        assert len(args.output_filename) == len(args.input_tiff), "Output filenames must be equal to number of input tiffs"
 
     if not (args.add_borders or args.add_coastlines or args.add_grid or args.add_rivers):
         LOG.error("Please specify one of the '--add-X' options to modify the image")
