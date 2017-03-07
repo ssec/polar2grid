@@ -37,9 +37,14 @@ have the following naming scheme::
 
 The VIIRS L1B reader supports all instrument spectral bands, identified as 
 the products shown below.  Geolocation files must be included when 
-specifying filepaths to readers and ``polar2grid.sh``. The VIIRS L1B 
-frontend can be specified to the Polar2Grid glue script with the 
-frontend name ``viirs_l1b``.
+specifying filepaths to readers and ``polar2grid.sh``.  Therefore, the 
+creation of The VIIRS L1B frontend can be specified to the Polar2Grid 
+glue script with the frontend name ``viirs_l1b``.
+
+The list of supported products includes true and false color imagery. 
+These are created  by means of a python based atmospheric Rayleigh 
+Scattering algorithm that is executed as part of the polar2grid VIIRS L1B 
+reader.  
 
 .. note::
 
