@@ -40,21 +40,21 @@ The ``--distance_upper_bound`` flag defaults to 12.
 
 Currently this reader provides only the following datasets:
 
-+---------------------------+-----------------------------------------------------+
-| Product Name              | Description                                         |
-+===========================+=====================================================+
-| btemp_36.5v               | Brightness Temperature 36.5GHz Polarization V       |
-+---------------------------+-----------------------------------------------------+
-| btemp_36.5h               | Brightness Temperature 36.5GHz Polarization H       |
-+---------------------------+-----------------------------------------------------+
-| btemp_89.0av              | Brightness Temperature 89.0GHz A Polarization V     |
-+---------------------------+-----------------------------------------------------+
-| btemp_89.0ah              | Brightness Temperature 89.0GHz A Polarization H     |
-+---------------------------+-----------------------------------------------------+
-| btemp_89.0bv              | Brightness Temperature 89.0GHz B Polarization V     |
-+---------------------------+-----------------------------------------------------+
-| btemp_89.0bh              | Brightness Temperature 89.0GHz B Polarization H     |
-+---------------------------+-----------------------------------------------------+
++---------------------------+-----------------------------------------------------------+
+| Product Name              | Description                                               |
++===========================+===========================================================+
+| btemp_36.5v               | Brightness Temperature 36.5GHz Polarization Vertical      |
++---------------------------+-----------------------------------------------------------+
+| btemp_36.5h               | Brightness Temperature 36.5GHz Polarization Horizontal    |
++---------------------------+-----------------------------------------------------------+
+| btemp_89.0av              | Brightness Temperature 89.0GHz A Polarization Vertical    |
++---------------------------+-----------------------------------------------------------+
+| btemp_89.0ah              | Brightness Temperature 89.0GHz A Polarization Horizontal  |
++---------------------------+-----------------------------------------------------------+
+| btemp_89.0bv              | Brightness Temperature 89.0GHz B Polarization Vertical    |
++---------------------------+-----------------------------------------------------------+
+| btemp_89.0bh              | Brightness Temperature 89.0GHz B Polarization Horizontal  |
++---------------------------+-----------------------------------------------------------+
 
 Special AMSR2 Naval Research Lab (NRL) PNG Scaling
 --------------------------------------------------
@@ -65,8 +65,9 @@ coastlines. This requires using an alternate non-default scaling configuration
 provided in the tarball. It can be used by providing the
 ``--rescale-configs $POLAR2GRID_HOME/rescale_configs/amsr2_png.ini``
 flag when generating AMSR2 L1B geotiffs.
-Similarly colormap files are provided in ``$POLAR2GRID_HOME/colormaps`` to
-be specified with the `add_colormap.sh` script.
+Once this rescaling has been done, colormap files can be found in 
+``$POLAR2GRID_HOME/colormaps`` which can then be applied using the
+the `add_colormap.sh` script.
 
 See the :ref:`util_add_coastlines` and :ref:`util_add_colormap` documentation
 for more information on generating these NRL-like PNGs.
