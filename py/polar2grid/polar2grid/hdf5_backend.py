@@ -31,7 +31,7 @@
 one HDF5 file with all products in the same file. Products are grouped together in
 HDF5 data groups for the grid that they are remapped to. Each grid data group has
 attributes describing the grid it represents. See the command line arguments for
-this backend for information on compressing the HDF5 files and providing longitude
+this backend for information on compressing the HDF5 files and including longitude
 and latitude datasets in the files.
 
 """
