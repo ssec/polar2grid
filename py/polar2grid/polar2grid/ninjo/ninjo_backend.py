@@ -30,12 +30,11 @@
 """The NinJo backend is used to create NinJo compatible TIFF files, also
 known as NinJoTIFFs. The NinJo Workstation Project is a meteorological
 workstation system for
-viewing various weather images. NinJo in some ways is like AWIPS is to
-the United States Nation Weather Service (NWS), but is used by various
-countries around the world.
+viewing weather data. NinJo is the operational weather visualization 
+and analysis tool used by a number of countries throughout the world.
 
 The NinJo backend for polar2grid was specifically developed to assist the
-"Deutscher Wetterdienst" (DWD) in displaying NPP VIIRS data in NinJo.
+"Deutscher Wetterdienst" (DWD) in displaying Suomi NPP VIIRS data in NinJo.
 This partnership between the DWD and |ssec| lead to a fairly specialized
 system that creates NinJo compatible TIFF images. NinJo allows for
 multiple "readers" or plugins to its system to allow for various formats
