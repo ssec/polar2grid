@@ -50,7 +50,7 @@ data in the AWIPS NetCDF file.
 Both the AWIPS backend and the AWIPS client must be configured to handle certain
 products over certain grids. By default the AWIPS backend is configured with the
 `AWIPS configuration file <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/awips/awips_grids.conf>`_
-that comes with Polar2Grid. This allows for the following grids to get created:
+that comes with Polar2Grid. This following AWIPS grids are supported in Polar2Grid:
 
     +-------------+----------------------------+
     | Grid Name   | Description                |
@@ -68,8 +68,9 @@ that comes with Polar2Grid. This allows for the following grids to get created:
 
  .. warning::
 
-     The AWIPS backend does not default to using any grid. Therefore, it is recommended to specify
-     one or more grids for remapping by using the `-g` flag.
+     The AWIPS backend does not default to using a specfic grid; the software will create
+     reprojected NetCDF files for any AWIPS grid that the data overlays. Therefore, 
+     it is recommended to specify one or more grids for remapping by using the `-g` flag.
 
 """
 __docformat__ = "restructuredtext en"
