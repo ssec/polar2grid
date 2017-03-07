@@ -104,8 +104,7 @@ Where ``output.kmz`` is an optional parameter specifying the name of the
 output KMZ file. If it isn't specified it defaults to the input
 filename with the extension changed to ``.kmz``.
 
-Example Execution
------------------
+Example Execution:
 
 .. code-block:: bash
 
