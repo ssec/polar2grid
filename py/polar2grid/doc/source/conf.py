@@ -31,6 +31,9 @@ images = (
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.jpg",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.basic_overlay_example.png",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.advanced_overlay.png",
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/overlay/npp_viirs_true_color_20170305_193251_lcc_fit_overlay.png",
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/images_basic/npp_viirs_true_color_20170305_193251_lcc_fit.jpg",
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/dnb/VIIRS_DNB_Enhancement_Comparison.png"
 )
 script_path = os.path.dirname(os.path.realpath(__file__))
 image_dst = os.path.join(script_path, '_static', 'example_images')
