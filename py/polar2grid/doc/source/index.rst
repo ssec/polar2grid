@@ -13,8 +13,9 @@ Polar2Grid
     readers/index
     remapping
     writers/index
-    examples/index
     utilscripts
+    viirs_day_night_band
+    examples/index
     grids
     custom_grids
 
