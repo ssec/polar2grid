@@ -40,6 +40,14 @@ Add Coastlines
 
 .. _util_add_colormap:
 
+Execution Examples
+------------------
+
+.. code-block:: bash
+
+    add_coastlines.sh --add-coastlines --add-borders gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.tif
+    add_coastlines.sh --add-coastlines --add-borders --borders-resolution=h --borders-outline='red' --add-grid npp_viirs_true_color_20170305_193251_lcc_fit.tif -o myfile.png
+
 Add Colormap
 ------------
 
