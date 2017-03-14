@@ -56,8 +56,6 @@ if [ -z "$POLAR2GRID_REV" ]; then
     export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib64
     export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib:${LD_LIBRARY_PATH}
     export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common:${LD_LIBRARY_PATH}
-    export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/local/lib64:${LD_LIBRARY_PATH}
-    export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/local/lib:${LD_LIBRARY_PATH}
 
     export POLAR2GRID_REV="$Id$"
 fi
