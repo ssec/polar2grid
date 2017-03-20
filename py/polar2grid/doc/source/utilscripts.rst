@@ -23,10 +23,20 @@ Example:
     # Will result in:
     my_grid_name, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=56.300 +lat_1=56.300 +lon_0=-150.100 +units=m +no_defs, 1000, 1000, 250.000, -250.000, -125000.000, 125000.000
 
-The above example creates a grid named 'my_grid_name' at a 250m resolution,
-1000 pixels wide and heigh, and centered at -150.1 degrees longitude
-and 56.3 degrees latitude. The projection is a lambert conic conformal
-projection chosen based on the center longitude and latitude.
+The above example creates a text grid line named 'my_grid_name' at a 
+250m resolution, 1000 pixels wide and heigh, and centered at 
+-150.1 degrees longitude and 56.3 degrees latitude. The projection 
+is a lambert conic conformal projection which was chosen based on the 
+center longitude and latitude.
+
+Once this text line has been output, it can be added to a text file and
+referenced in any polar2grid command line.  For instance, if I save
+the output text grid line to a the /home/p2g/my_grids.txt, I can create a 
+VIIRS GeoTIFF by executing a command like this:
+
+.. code-block:: bash
+
+   polar2grid.sh viirs_sdr gtiff --grid-configs /home/p2g/my_grids.txt -g my_grid_name -f <path_to_files>
 
 .. _util_add_coastlines:
 
