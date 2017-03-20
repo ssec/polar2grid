@@ -15,6 +15,7 @@ Polar2Grid
     writers/index
     utilscripts
     viirs_day_night_band
+    verification/index
     examples/index
     grids
     custom_grids
