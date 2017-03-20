@@ -4,8 +4,8 @@ Creating MODIS AWIPS Compatible Files
 This example walks through the creation of MODIS
 NetCDF files for display in AWIPS.
 
-Basic MODIS Level 1B GeoTIFF file creation
-******************************************
+Basic MODIS Level 1B AWIPS compatible file creation
+***************************************************
 
 Find the options available when creating MODIS AWIPS files:
 
