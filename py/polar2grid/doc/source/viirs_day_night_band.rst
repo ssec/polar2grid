@@ -1,5 +1,5 @@
 Scaling of the VIIRS Day/Night Band in Polar2Grid
--------------------------------------------------
+=================================================
 
 Scaling of the Day/Night Band is complicated due to the 
 huge range of values that can exist across a given scene. 
