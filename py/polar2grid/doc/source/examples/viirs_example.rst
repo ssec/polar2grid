@@ -9,24 +9,24 @@ Basic VIIRS SDR GeoTIFF file creation
 
 Find the options available when creating VIIRS SDR GeoTIFFs:
 
-    polar2grid.sh viirs gtiff -h
+    ``polar2grid.sh viirs gtiff -h``
 
 List the products that can be created from your VIIRS SDR dataset:
 
-    polar2grid.sh viirs gtiff --list-products -f <path_to_sdr_files>
+    ``polar2grid.sh viirs gtiff --list-products -f <path_to_sdr_files>``
 
 To create VIIRS GeoTIFF files of all bands found in your data set
 and reprojected in default Platte Carrée projection:
 
-    polar2grid.sh viirs gtiff -f <path_to_sdr_files>
+    ``polar2grid.sh viirs gtiff -f <path_to_sdr_files>``
 
 Create a subset of VIIRS I- and M-Band reprojected GeoTIFFs:
 
-    polar2grid.sh viirs gtiff -p i01 i05 m09 m14 -f <path_to_sdr_files>
+    ``polar2grid.sh viirs gtiff -p i01 i05 m09 m14 -f <path_to_sdr_files>``
 
 Create a true color and false color GeoTIFF:
 
-    polar2grid.sh crefl gtiff --true-color --false-color -f <path_to_sdr_files>
+    ``polar2grid.sh crefl gtiff --true-color --false-color -f <path_to_sdr_files>``
     
 Create a true color image from a S-NPP VIIRS pass acquired on 5 March 2016, 19:32 UTC,
 in Lambert Conic Conformal (LCC) projection:
