@@ -35,7 +35,9 @@ images = (
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/images_basic/npp_viirs_true_color_20170305_193251_lcc_fit.jpg",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/dnb/VIIRS_DNB_Enhancement_Comparison.png",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/images_basic/npp_viirs_true_color_20170319_183246_miami.jpg",
-    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/images_basic/terra_modis_false_color_20170319_163000_miami.jpg"  
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/images_basic/terra_modis_false_color_20170319_163000_miami.jpg",
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/SSEC_AWIPS_aqua_modis_bt28_211e_20170308_181800.nc.png",
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/SSEC_AWIPS_aqua_modis_vis02_211e_20170308_181800.nc.png",
 )
 script_path = os.path.dirname(os.path.realpath(__file__))
 image_dst = os.path.join(script_path, '_static', 'example_images')
@@ -192,7 +194,7 @@ html_last_updated_fmt = '%b %d, %Y'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
-#html_use_smartypants = True
+html_use_smartypants = False
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
