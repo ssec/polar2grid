@@ -35,12 +35,19 @@ in Lambert Conic Conformal (LCC) projection:
 
     polar2grid.sh crefl gtiff -g lcc_fit -f /data/sdr/*.h5
 
+.. raw:: latex
+
+    \newpage
+
 .. figure:: ../_static/example_images/npp_viirs_true_color_20170305_193251_lcc_fit.jpg
     :width: 100%
     :align: center
 
     VIIRS True color image in Lambert Conic Conformal (LCC) projection (npp_viirs_true_color_20170305_193251_lcc_fit.tif).
-    
+
+.. raw:: latex
+
+    \newpage
 
 Add coastlines,borders and latitude/longitude grid lines to the image, and write the output to the file "myfile.png":
 
