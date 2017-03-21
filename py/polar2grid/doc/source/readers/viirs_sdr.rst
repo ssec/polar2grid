@@ -33,4 +33,3 @@ Examples:
     polar2grid.sh viirs_sdr hdf5 --compress gzip --m-bands -f ../sdr/*.h5
 
     polar2grid.sh viirs_sdr binary -g lcc_fit -p m15 -f ../sdr/SVM15*.h5 ../sdr/GMTCO*.h5
-
