@@ -1,3 +1,7 @@
+.. raw:: latex
+
+    \newpage
+
 Creating MODIS AWIPS Compatible Files
 -------------------------------------
 
@@ -9,18 +13,20 @@ Basic MODIS Level 1B AWIPS compatible file creation
 
 Find the options available when creating MODIS AWIPS files:
 
-    polar2grid.sh modis awips -h
+    ``polar2grid.sh modis awips -h``
 
 List the products that can be created from your MODIS L1B dataset:
 
-    polar2grid.sh modis awips --list-products -f <path_to_sdr_files>
+    ``polar2grid.sh modis awips --list-products -f <path_to_sdr_files>``
 
 To create MODIS AWIPS NetCDF files of all products found in your data set
 for all AWIPS grids overlaid by your data:
 
-    polar2grid.sh modis awips -f <path_to_sdr_files>
+    ``polar2grid.sh modis awips -f <path_to_sdr_files>``
 
 Create a subset of MODIS reprojected AWIPS products for a specfic AWIPS grid:
+
+.. code-block:: bash
 
     polar2grid.sh modis awips -p bt27 vis02 -g 211e -f <path_to_sdr_files>
 
