@@ -26,7 +26,7 @@ The CSPP tarball can be found on either the CSPP or IMAPP websites:
 
 Next, unpack the tarball::
 
-    tar xf CSPP_IMAPP_POLAR2GRID_V2.1.tar.gz
+    tar xf CSPP_IMAPP_POLAR2GRID_V2.1_BETA.tar.gz
 
 This will create a Polar2Grid software bundle directory, ``polar2grid_v_2_1``.
 To simplify calling scripts included in the bundle the following line should
@@ -41,9 +41,12 @@ scripts provided by Polar2Grid. Scripts are typically run using::
 
 If you want to run commands without including the preceding directory path,
 or if using in a script in its own background environment, then you can source
-the environment script, ``source $POLAR2GRID_HOME/bin/polar2grid_env.sh``.
-Please note that by sourcing the
-script you are also setting specific PYTHONPATH and LD_LIBRARY_PATH variables
+the environment script::
+
+    source $POLAR2GRID_HOME/bin/polar2grid_env.sh
+
+Please note that by sourcing the script you are also setting 
+specific PYTHONPATH and LD_LIBRARY_PATH variables
 to point to locations within the Polar2Grid package.
 
 See :doc:`getting_started` for more information on running Polar2Grid.
@@ -64,4 +67,7 @@ installation::
 
 This will create a ``polar2grid_test`` directory containing the test input,
 output, and verification scripts for both MODIS data and VIIRS data.
+
+See :doc:`verification/index` for instructions on using the verification
+test data.
 
