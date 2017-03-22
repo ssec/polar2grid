@@ -110,6 +110,8 @@ and still work but the new form of calling is preferred. For example:
     \newpage
     \begin{landscape}
 
+.. tabularcolumns:: |L|L|L|l|l|l|
+
 .. include:: summary_table.rst
 
 .. raw:: latex
