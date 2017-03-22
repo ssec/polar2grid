@@ -58,6 +58,10 @@ For more details on what's new in this version and past versions see the
 `Release Notes <https://raw.githubusercontent.com/davidh-ssec/polar2grid/master/NEWS.rst>`_
 in the github repository.
 
+.. raw:: latex
+
+    \newpage
+
 System Requirements
 -------------------
 
