@@ -35,9 +35,9 @@ be added to your ``.bash_profile``::
     export POLAR2GRID_HOME=/path/to/softwarebundle
 
 All other environment information needed to run is automatically loaded by the
-scripts provided by Polar2Grid. Scripts are typically run using::
+scripts provided by Polar2Grid. Scripts are typically invoked using::
 
-    $POLAR2GRID_HOME/bin/script.sh ...
+    $POLAR2GRID_HOME/bin/<p2g_script.sh> ...
 
 If you want to run commands without including the preceding directory path,
 or if using in a script in its own background environment, then you can source
@@ -66,7 +66,7 @@ installation::
     tar xf CSPP_IMAPP_POLAR2GRID_V2.1_TEST_DATA.tar.gz
 
 This will create a ``polar2grid_test`` directory containing the test input,
-output, and verification scripts for both MODIS data and VIIRS data.
+output, and verification scripts for both MODIS and VIIRS instruments.
 
 See :doc:`verification/index` for instructions on using the verification
 test data.
