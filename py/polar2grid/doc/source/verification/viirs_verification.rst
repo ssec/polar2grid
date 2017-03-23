@@ -13,18 +13,20 @@ shown in Section 2.1 and execute the following commands:
 
 The test case consists of 6 input direct broadcast HDF 5 SDR granules 
 for a selection of VIIRS bands from a pass acquired on 19 March 2017
-at 18:32 UTC.. In this test, the polar2grid software 
+at 18:32 UTC. In this test, the polar2grid software 
 is using the example configuration file 
 (${POLAR2GRID_HOME}/grid_configs/grid_example.conf) and the lambert 
 conformal conic (lcc) “miami” grid definition entry located 
-within it. It will first create 6 CREFL I-Band and 3 CREFL M-Band files, 
-and then use those to create one true and one false color image at 
-300 m resolution, 500 lines x 700 elements centered on the US city of 
+within it. It will first create 6 VIIRS Corrected REFLectance 
+(CREFL) I-Band and 6 CREFL M-Band HDF4 files, and then use those to 
+create one true and one false color image at 300 m resolution, 
+500 lines x 700 elements centered on the US city of 
 Miami in the state of Florida. The processing should run in less than 
-2 minutes and create 12 crefl output VIIRS GeoTIFF files, including 
+2 minutes and create 8 crefl output VIIRS GeoTIFF files, including 
 both true and false color output images, and the individual Corrected 
-Reflectance images that went into producing the final products. If 
-the VIIRS polar2grid processing script runs normally, it will return 
+Reflectance images that went into producing the final products. 
+
+If the VIIRS polar2grid processing script runs normally, it will return 
 a status code equal to zero. If the VIIRS polar2grid processing script 
 encounters a fatal error, it will return a non-zero status code.
 
@@ -38,7 +40,7 @@ UW/SSEC, execute the following commands:
     ./p2g_compare_geotiff.sh output work
 
 This script compares the values of all the GeoTIFF files for all 
-VIIRS Bands found. The output from our test system are shown below. 
+VIIRS Bands found. The output from our test system is shown below. 
 
 .. code-block:: bash
 
