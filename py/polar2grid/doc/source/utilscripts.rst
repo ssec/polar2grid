@@ -1,13 +1,13 @@
 Utility Scripts
 ===============
 
-The following are scripts that can be used to help analyze and/or verify
-polar2grid operations.
+The following are scripts that can be used to aid in the 
+the creation of customized Polar2Grid products.
 
 .. _util_p2g_grid_helper:
 
-Grid Config. Helper
--------------------
+Defining Your Own Grids (Grid Configuration Helper)
+---------------------------------------------------
 
 .. argparse::
     :module: polar2grid.grids.config_helper
@@ -50,8 +50,7 @@ Add Coastlines
 
 .. _util_add_colormap:
 
-Execution Examples
-------------------
+Example:
 
 .. code-block:: bash
 
@@ -107,8 +106,8 @@ Blank lines are allowed as well as spaces between line elements.
 
 .. _util_gtiff2kmz:
 
-Geotiff to KMZ
---------------
+GeoTIFF to KMZ Conversion
+-------------------------
 
 The ``gtiff2kmz.sh`` script converts a single geotiff file into a Google Earth
 compatible Keyhole Markup language Zipped (KMZ) file. It is a wrapper around the 
@@ -122,7 +121,7 @@ Where ``output.kmz`` is an optional parameter specifying the name of the
 output KMZ file. If it isn't specified it defaults to the input
 filename with the extension changed to ``.kmz``.
 
-Example Execution:
+Example:
 
 .. code-block:: bash
 
