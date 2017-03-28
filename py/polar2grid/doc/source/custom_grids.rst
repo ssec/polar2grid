@@ -33,6 +33,10 @@ and how it can be provided to ``polar2grid.sh``:
    your grids and not the Polar2Grid provided grids don't include the
    "grids.conf" in the command line option.
 
+Polar2Grid also includes a simple script that can generate the
+required text string when provided with general information about the grid
+you wish to create. See the :ref:`util_p2g_grid_helper` section.
+
 .. note::
 
     The decision of whether a grid is supported or not is ultimately up to
