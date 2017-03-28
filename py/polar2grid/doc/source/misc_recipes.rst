@@ -5,8 +5,8 @@ Third-party tools like those provided by
 the Geospatial Data Abstraction Library (GDAL) can be 
 found in the ``common/ShellB3/bin`` directory.
 
-Merging GeoTIFF Images
-----------------------
+Combining GeoTIFF Images
+------------------------
 
 When working with polar orbiter satellite data, it is often 
 useful to stitch images of neighboring passes together.  
