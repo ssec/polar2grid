@@ -15,23 +15,61 @@ Command Line Arguments
 Example 1 - Create True Color GeoTIFFs and KML/KMZ
 --------------------------------------------------
 
-To create a true color image you must first have the SDRs for the proper
-instrument. At this time VIIRS and MODIS are supported by this reader. Even
-if you want a KMZ, a GeoTIFF must be created first:
+The polar2grid software can create reprojected true
+color and false color GeoTIFF output from
+input VIIRS corrected reflectance (CREFL) HDF4
+input files and VIIRS Geolocation files
+(Terrain Corrected (GITCO* and GMTCO* or
+non-Terrain Corrected (GMODO* and GIMGO*)) as well as
+MODIS Level 1B (L1B) files, in either IMAPP or NASA
+Archive naming conventions.
+
+Polar2grid software creates and combines single
+band CREFL VIIRS Red (M-Band 5), Green (M- Band 4)
+and Blue (M-Band 3) wavelength data or CREFL MODIS
+Red (MODIS Band 1), Green (MODIS Band 4) and Blue
+(MODIS Band 3) wavelength data to create true
+color images. If the VIIRS I-Band 1 data is also present in a
+CREFL file, then it will be used to spatially
+sharpen the image to about 350m resolution.  For
+MODIS, Polar2Grid uses the 1km CREFL file to
+create a true color image, but if the 250m L1B
+CREFL file is available then it will be used to
+spatially sharpen the image to about 250m.
+For the highest quality and resolution MODIS
+images, all three 1km, 500m and 250m input Level
+1B files should be used.
+
+The CREFL software performs a simple atmospheric
+Rayleigh scattering correction but with no
+adjustment for aerosol scattering (smoke and
+aerosols are still visible). 
+
+If no CREFL files are presented to the Polar2Grid
+CREFL reader, the files will automatically be created
+as part of the execution.
+
+In this example, we start with the creation of a 
+true color VIIRS GeoTIFF files. If you are interested in 
+a KMZ formatted file, a GeoTIFF must be created first:
 
 .. code-block:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh crefl gtiff -f /path/to/my_sdrs/
 
-This will create a series of GeoTIFF files with the ``.tif`` file extension. To create a KMZ file
-(a compressed KML) to show in Google Earth or other program use the ``gtiff2kmz.sh`` script provided
-in the software bundle:
+This will create a series of corrected reflectance GeoTIFF files 
+that are used to the produce the final 24 bit true color 
+GeoTIFF with the ``.tif`` file extension. To create a KMZ file
+l
+(a compressed KML) to show in Google Earth or other program 
+use the ``gtiff2kmz.sh`` script provided in the software bundle:
 
 .. code-block:: bash
 
     $POLAR2GRID_HOME/bin/gtiff2kmz.sh input_true_color.tif output_true_color.kmz
 
-Where the ``input_true_color.tif`` file is one of the files created from the ``crefl2gtiff.sh``
+Where the ``input_true_color.tif`` file is one of the files 
+created from the ``crefl2gtiff.sh``
 command and ``output_true_color.kmz`` is the name of the KMZ file to create.
 
 For more information see the documentation for the
@@ -41,20 +79,34 @@ documentation.
 Example 2 - Creating False Color GeoTIFFs and KML/KMZ
 -----------------------------------------------------
 
-A false color image is any combination of 3 bands that isn't a true color image, but by default
-Polar2Grid uses a default set of bands. The procedure is almost the same to
-how the true color image was made:
+A false color image is any combination of 3 bands 
+outside of those used to create a "true color" image.
+The Polar2Grid can also readily create a
+false color Red/Green/Blue 24 bit GeoTIFF using 
+Red:VIIRS M-Band 11 (2.25 μm) or MODIS Band 7 (2.21 μm),
+Green:VIIRS M-Band 7 (.87 μm) or MODIS Band 2 (.86 μm)
+and Blue:VIIRS M-Band 5 (.67 μm) or MODIS Band 1 (.65 μm).
+If the I-Band 1 data is also present in a CREFL file,
+then it will be used to spatially sharpen the image.
+This band combination is very effective at distinguishing
+land/water boundaries as well as burn scars.
+
+To create a Polar2Grid False Color GeoTIFF file, execute
+the following command:
+
 
 .. code-block:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh crefl gtiff --false-color -f /path/to/my_sdrs/
 
-And just like for the true color image, use the following to create a KMZ file:
+And just like the true color image, use the following to create a KMZ file:
 
 .. code-block:: bash
 
     $POLAR2GRID_HOME/bin/gtiff2kmz.sh input_false_color.tif output_false_color.kmz
 
+Further examples of executing the Correct Reflectance Reader 
+follow. 
 
 Execution Examples
 -----------------------
