@@ -471,9 +471,9 @@ class FileReader(BaseFileReader):
         LOG.debug("Variable " + str(var_info.var_name) + " is using scale value " + str(scale_value) + " and offset value " + str(offset_value))
 
         if offset_value is not None:
-            data -= offset_value
+            data -= data.dtype.type(offset_value)
         if scale_value is not None:
-            data *= scale_value
+            data *= data.dtype.type(scale_value)
 
         # Special case: 250m Resolution
         if var_info.interpolate:
