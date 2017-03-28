@@ -60,3 +60,28 @@ Add coastlines,borders and latitude/longitude grid lines to the image, and write
     :align: center
 
     VIIRS True color image with overlays (myfile.png).
+
+Convert the true color GeoTIFF file into a Google Earth compatible 
+Keyhole Markup language Zipped (KMZ) file.
+
+.. code-block:: bash
+
+   gtiff2kmz.sh npp_viirs_true_color_20170305_193251_lcc_fit.tif
+
+which creates the `npp_viirs_true_color_20170305_193251_lcc_fit.kmz`
+file. When displayed in Google Earth this image appears as:
+
+.. raw:: latex
+
+    \newpage
+
+.. figure:: ../_static/example_images/VIIRS_true_color_in_google_earth.jpg
+    :width: 100%
+    :align: center
+
+    VIIRS True color KMZ image displayed in the Google Earth
+    Geobrowser.
+
+.. raw:: latex
+
+    \newpage
