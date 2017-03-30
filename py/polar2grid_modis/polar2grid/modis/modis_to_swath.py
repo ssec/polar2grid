@@ -36,7 +36,7 @@ the NASA archived files (file naming conventions such as
 MOD021KM.A2017004.1732.005.2017023210017.hdf).  The
 reader can be specified to the ``polar2grid.sh`` script by using the reader name ``modis``.
 
-This reader's dfault resampling algorithm is ``ewa`` for Elliptical Weighted
+This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--fornav-D`` parameter is set to 10 and the
 ``--fornav-d`` parameter is set to 1. 
 

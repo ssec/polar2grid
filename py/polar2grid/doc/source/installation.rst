@@ -2,7 +2,7 @@ Installation
 ============
 
 Polar2Grid is released as an all-in-one tarball for
-enterprise linux systems. The tarball, or software bundle, provided by the CSPP team
+Enterprise Linux systems. The tarball, or software bundle, provided by the CSPP team
 includes a python runtime and all of the necessary third-party software
 to run the features provided by Polar2Grid.
 The tarball uses bash scripts for conveniently

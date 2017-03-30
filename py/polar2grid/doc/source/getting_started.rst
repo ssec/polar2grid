@@ -33,7 +33,7 @@ For example, executing the following:
 
     $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f /home/data/viirs/sdr
 
-will create an 8-bit GeoTIFF files of all M-Band, I-Band, and Day/Night Band
+will create 8-bit GeoTIFF files of all M-Band, I-Band, and Day/Night Band
 SDR files it finds in the ``/home/data/viirs/sdr`` directory as long as it
 contains the matching geolocation files. If multiple granules are provided
 to ``polar2grid.sh`` they will be aggregated together.
