@@ -40,8 +40,8 @@ VIIRS GeoTIFF by executing a command like this:
 
 .. _util_add_coastlines:
 
-Add Coastlines
---------------
+Add Overlays (Borders, Coastlines, Grids Lines)
+-----------------------------------------------
 
 .. argparse::
     :module: polar2grid.add_coastlines
