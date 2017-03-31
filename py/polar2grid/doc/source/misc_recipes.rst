@@ -49,7 +49,7 @@ part of Polar2Grid:
 
 The `-n 0` is used to set the background data value so 
 it will not be included in the merge.  This is required 
-because witout it, the black regions that border
+because without it, the black regions that border
 the second WGS84 GeoTIFF will be overlaid on top of the first
 image.  
 
