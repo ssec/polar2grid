@@ -52,7 +52,7 @@ The GeoTIFF image for AMSR2 36.5H GHz band is displayed below.
     :width: 40%
     :align: center
 
-    GCOMW-1 AMSR2 L1B 36.5H GHz brightness temperatures using default scaling.  Data set was observed at 19:19 UTC on 19 July 2016.
+    GCOMW-1 AMSR2 L1B 36.5H GHz brightness temperatures using default scaling.  Data set was observed at 19:03 UTC on 19 July 2016.
 
 Naval Research Lab (NRL) Image Reproductions
 ********************************************
@@ -90,7 +90,7 @@ the rescaled image for AMSR2 89.0A/H GHz band is displayed below.
     :width: 40%
     :align: center
 
-    GCOMW-1 AMSR2 L1B 89.0A/H GHz brightness temperatures reprojected in Lambert Conic Conformal Projection and rescaled.  Data set was observed at 19:19 UTC on 19 July 2016.
+    GCOMW-1 AMSR2 L1B 89.0A/H GHz brightness temperatures reprojected in Lambert Conic Conformal Projection and rescaled.  Data set was observed at 19:03 UTC on 19 July 2016.
 
 To add a Naval Research Lab (NRL) color table to the image, use the following
 command:
@@ -111,4 +111,4 @@ is displayed below:
     :width: 60%
     :align: center
 
-    GCOMW-1 AMSR2 L1B 89.0A/H GHz brightness temperatures reprojected in Lambert Conic Conformal Projection and rescaled and enhanced using the Naval Research Lab color enahcnement.  Data set was observed at 19:19 UTC on 19 July 2016.
+    GCOMW-1 AMSR2 L1B 89.0A/H GHz brightness temperatures reprojected in Lambert Conic Conformal Projection and rescaled and enhanced using the Naval Research Lab color enahcnement.  Data set was observed at 19:03 UTC on 19 July 2016.
