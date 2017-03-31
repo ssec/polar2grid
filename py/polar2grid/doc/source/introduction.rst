@@ -65,7 +65,7 @@ in the github repository.
 System Requirements
 -------------------
 
-System requirements for the Polar2grid software are as follows:
+System requirements for the Polar2Grid software are as follows:
  * Intel or AMD CPU with 64-bit instruction support
  * 8 GB RAM (minimum)
  * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)

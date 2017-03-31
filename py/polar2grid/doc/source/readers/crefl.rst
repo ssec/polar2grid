@@ -15,7 +15,7 @@ Command Line Arguments
 Example 1 - Create True Color GeoTIFFs and KML/KMZ
 --------------------------------------------------
 
-The polar2grid software can create reprojected true
+The Polar2Grid software can create reprojected true
 color and false color GeoTIFF output from
 input VIIRS corrected reflectance (CREFL) HDF4
 input files and VIIRS Geolocation files
@@ -24,7 +24,7 @@ non-Terrain Corrected (GMODO* and GIMGO*)) as well as
 MODIS Level 1B (L1B) files, in either IMAPP or NASA
 Archive naming conventions.
 
-Polar2grid software creates and combines single
+Polar2Grid software creates and combines single
 band CREFL VIIRS Red (M-Band 5), Green (M- Band 4)
 and Blue (M-Band 3) wavelength data or CREFL MODIS
 Red (MODIS Band 1), Green (MODIS Band 4) and Blue
@@ -60,7 +60,6 @@ a KMZ formatted file, a GeoTIFF must be created first:
 This will create a series of corrected reflectance GeoTIFF files 
 that are used to the produce the final 24 bit true color 
 GeoTIFF with the ``.tif`` file extension. To create a KMZ file
-l
 (a compressed KML) to show in Google Earth or other program 
 use the ``gtiff2kmz.sh`` script provided in the software bundle:
 

@@ -31,7 +31,7 @@ This allows us to display day and night data together in one image,
 and make the maximum use of all of the data no matter how many regimes 
 are included in a swath. 
 
-The figure below shows a polar2grid VIIRS Day/Night band 
+The figure below shows a Polar2Grid VIIRS Day/Night band 
 image created using data that includes the transition region 
 between day and night regimes (Scaling option 1 - left panel). 
 This data set was acquired on 22 June 2015. 

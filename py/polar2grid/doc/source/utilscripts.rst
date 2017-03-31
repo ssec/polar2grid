@@ -24,13 +24,13 @@ Example:
     my_grid_name, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=56.300 +lat_1=56.300 +lon_0=-150.100 +units=m +no_defs, 1000, 1000, 250.000, -250.000, -125000.000, 125000.000
 
 The above example creates a text grid line named 'my_grid_name' at a 
-250m resolution, 1000 pixels wide and heigh, and centered at 
+250m resolution, 1000 pixels wide and height, and centered at 
 -150.1 degrees longitude and 56.3 degrees latitude. The projection 
 is a lambert conic conformal projection which was chosen based on the 
 center longitude and latitude.
 
 Once this text line has been output, it can be added to a text file and
-referenced in any polar2grid command line.  For instance, if I save
+referenced in any Polar2Grid command line.  For instance, if I save
 the output text grid line to a the /home/p2g/my_grids.txt, I can create a 
 VIIRS GeoTIFF by executing a command like this:
 
@@ -68,7 +68,7 @@ Add Colormap
 
 Colormap files are comma-separated 'integer,R,G,B,A' text files.
 
-A basic greyscale example for an 8-bit geotiff would be::
+A basic greyscale example for an 8-bit GeoTIFF would be::
 
     0,0,0,0,255
     1,1,1,1,255
@@ -77,8 +77,8 @@ A basic greyscale example for an 8-bit geotiff would be::
     255,255,255,255,255
 
 Where the `...` represents the lines in between, meaning every input
-geotiff value has a corresponding RGBA value specified. The first value
-is the input geotiff value, followed by R (red), G (green), B (blue),
+GeoTIFF value has a corresponding RGBA value specified. The first value
+is the input GeoTIFF value, followed by R (red), G (green), B (blue),
 and A (alpha).
 
 This script will also linearly interpolate between two values.
@@ -109,7 +109,7 @@ Blank lines are allowed as well as spaces between line elements.
 GeoTIFF to KMZ Conversion
 -------------------------
 
-The ``gtiff2kmz.sh`` script converts a single geotiff file into a Google Earth
+The ``gtiff2kmz.sh`` script converts a single GeoTIFF file into a Google Earth
 compatible Keyhole Markup language Zipped (KMZ) file. It is a wrapper around the 
 GDAL tool ``gdal2tiles.py``.  The script can be executed with:
 
