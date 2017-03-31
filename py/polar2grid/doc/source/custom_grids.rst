@@ -22,7 +22,7 @@ and how it can be provided to ``polar2grid.sh``:
 
 1. Create a text file named anything besides "grids.conf". Open it for editing.
    The package includes a ``$POLAR2GRID_HOME/grid_configs`` directory
-   user configuration files can be stored.
+   where user configuration files can be stored.
 2. Add a line to this text file for each grid you would like to add to
    Polar2Grid. Follow the
    :ref:`grid_configuration_format` section below. This section also has
@@ -74,7 +74,7 @@ If you are unfamiliar with projections, try the :ref:`util_p2g_grid_helper` scri
 # grid_name,proj4,proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y
 
  #. **grid_name**:
-     A unique grid name describing the behavior of the grid. Grid name's should not contain spaces.
+     A unique grid name describing the behavior of the grid. Grid names should not contain spaces.
  #. **proj4**:
      A constant value, "proj4" without the quotes. This tells the software
      reading the configuration file that this grid is a PROJ.4 grid.
