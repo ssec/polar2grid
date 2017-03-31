@@ -2,7 +2,7 @@ Software Design Overview
 ========================
 
 The primary goal of Polar2Grid is to allow scientists to convert satellite
-imager data in to a format that they can view using the forecasting tools with
+imager data into a format that they can view using the forecasting tools with
 which they are most comfortable. Due to the way most satellite instruments
 operate, raw satellite data is typically represented as a non-uniform swath
 of pixels where each pixel has a corresponding longitude and latitude. This
@@ -60,7 +60,7 @@ Remapping
 ---------
 
 Remapping is the process of putting satellite data pixels into an
-equidistant grid for easier viewing, manipulation, and storage. Polar2grid
+equidistant grid for easier viewing, manipulation, and storage. Polar2Grid
 currently uses a 2-step remapping process to grid and then resample the data.
 The first step is called 'll2cr' which stands for "longitude/latitude to
 column/row". This step maps the pixel location (lon/lat space) into grid
@@ -96,7 +96,7 @@ The Writer's responsibility is to write gridded data to a file format that
 can be used for viewing and/or analyzing in another program. This usually involves
 scaling the data to fit the data type used by the file format being written.
 For example, most satellite temperature data is best represented as floating-point
-numbers (200.0K - 320.0K), but many file formats like NetCDF or Geotiff
+numbers (200.0K - 320.0K), but many file formats like NetCDF or GeoTIFF
 prefer unsigned 8-bit integers (0 - 255). To best represent the data in the file,
 the Writer must scale the real-world value to a value that can be written to
 the output file(s), whether that be with a simple linear transformation or something
