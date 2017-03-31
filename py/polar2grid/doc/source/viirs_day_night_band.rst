@@ -1,14 +1,15 @@
 Scaling of the VIIRS Day/Night Band in Polar2Grid
 =================================================
 
-Scaling of the Day/Night Band is complicated due to the 
+Scaling of the Day/Night Band (DNB) is complicated due to the 
 huge range of values that can exist across a given scene. 
 The Day/Night Band is centered on .7 microns with a wide 
 spectral response function (half width .505 to .890 microns).  
 Polar2Grid offers the user three different 
 options for enhancing the final image product.  If no 
-specific dnb enhancement is provided to the viirs2gtiff.sh 
-or viirs2awips.sh scripts, three different output products 
+specific DNB enhancement is provided to the viirs2gtiff.sh 
+or viirs2awips.sh (or polar2grid.sh viirs gtiff, polar2grid.sh
+viirs awips) scripts, three different output products 
 will be created for the given scene.  The three options are:
 
 * Histogram Day/Night Band scaling  -  option -p histogram_dnb
@@ -85,7 +86,7 @@ on this technique, please see:
     technique (histogram_dnb), center panel utilizes an adaptive
     histogram equalization technique (adaptive_dnb), and the third
     option (right panel) implements an dynamic error function
-    scaling technique (dynamic_dnb). The data set is for a 
+    scaling technique (dynamic_dnb). 
 
 .. raw:: latex
 
