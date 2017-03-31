@@ -43,7 +43,7 @@ glue script with the frontend name ``viirs_l1b``.
 
 The list of supported products includes true and false color imagery. 
 These are created  by means of a python based atmospheric Rayleigh 
-Scattering algorithm that is executed as part of the polar2grid VIIRS L1B 
+Scattering algorithm that is executed as part of the Polar2Grid VIIRS L1B 
 reader.  
 
 .. note::

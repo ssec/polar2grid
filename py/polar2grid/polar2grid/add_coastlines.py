@@ -66,7 +66,7 @@ PYCOAST_DIR = os.environ.get("GSHHS_DATA_ROOT")
 
 def get_parser():
     import argparse
-    parser = argparse.ArgumentParser(description="Convert a geotiff to PNG and add coastlines and borders",
+    parser = argparse.ArgumentParser(description="Convert a GeoTIFF to PNG and add coastlines and borders",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_argument_group("coastlines")
     group.add_argument("--add-coastlines", action="store_true",

@@ -39,7 +39,7 @@ When executed on Suomi-NPP Advanced Technology Microwave Sounder (ATMS)
 MIRS product files, a limb correction algorithm is applied for  
 brightness temperatures reprojections for each of the 22 spectral bands.  
 The correction software was provided by Kexin Zhang of NOAA STAR, and
-is applied as part of the MIRS ATMS Polar2grid execution. 
+is applied as part of the MIRS ATMS Polar2Grid execution. 
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--fornav-D`` option is set to 100 and the

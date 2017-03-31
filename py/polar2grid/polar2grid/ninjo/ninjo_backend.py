@@ -33,7 +33,7 @@ workstation system for
 viewing weather data. NinJo is the operational weather visualization 
 and analysis tool used by a number of countries throughout the world.
 
-The NinJo backend for polar2grid was specifically developed to assist the
+The NinJo backend for Polar2Grid was specifically developed to assist the
 "Deutscher Wetterdienst" (DWD) in displaying Suomi NPP VIIRS data in NinJo.
 This partnership between the DWD and |ssec| lead to a fairly specialized
 system that creates NinJo compatible TIFF images. NinJo allows for

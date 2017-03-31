@@ -27,7 +27,7 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Add a colortable to an existing geotiff
+"""Add a colortable to an existing GeoTIFF.
 
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
@@ -45,7 +45,7 @@ import gdal
 def parse_color_table_file(f):
     """Colormap files are comma-separated 'integer,R,G,B,A' text files.
 
-    A basic greyscale example for an 8-bit geotiff would be::
+    A basic greyscale example for an 8-bit GeoTIFF would be::
 
         0,0,0,0,255
         1,1,1,1,255
@@ -54,8 +54,8 @@ def parse_color_table_file(f):
         255,255,255,255,255
 
     Where the `...` represents the lines in between, meaning every input
-    geotiff value has a corresponding RGBA value specified. The first value
-    is the input geotiff value, followed by R (red), G (green), B (blue),
+    GeoTIFF value has a corresponding RGBA value specified. The first value
+    is the input GeoTIFF value, followed by R (red), G (green), B (blue),
     and A (alpha).
 
     This script will also linearly interpolate between two values.
@@ -138,7 +138,7 @@ def add_colortable(gtiff, ct):
 
 def get_parser():
     import argparse
-    description = "Add a geotiff colortable to an existing single-band geotiff"
+    description = "Add a GeoTIFF colortable to an existing single-band GeoTIFF."
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("ct_file",
                         help="Color table file to apply (CSV of (int, R, G, B, A)")
