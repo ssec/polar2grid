@@ -107,6 +107,7 @@ SICE_VAR = "sea_ice_var"
 SNOWCOVER_VAR = "snow_cover_var"
 TPW_VAR = "tpw_var"
 SWE_VAR = "swe_var"
+CLW_VAR = "clw_var"
 
 PRODUCT_RAIN_RATE = "mirs_rain_rate"
 PRODUCT_BT_90 = "mirs_btemp_90"
@@ -118,6 +119,7 @@ PRODUCT_SICE = "sea_ice"
 PRODUCT_SNOW_COVER = "snow_cover"
 PRODUCT_TPW = "tpw"
 PRODUCT_SWE = "swe"
+PRODUCT_CLW = "clw"
 
 PAIR_MIRS_NAV = "mirs_nav"
 
@@ -132,6 +134,7 @@ PRODUCTS.add_product(PRODUCT_SICE, PAIR_MIRS_NAV, "sea_ice", FT_IMG, SICE_VAR, d
 PRODUCTS.add_product(PRODUCT_SNOW_COVER, PAIR_MIRS_NAV, "snow_cover", FT_IMG, SNOWCOVER_VAR, description="Snow Cover", units="1")
 PRODUCTS.add_product(PRODUCT_TPW, PAIR_MIRS_NAV, "total_precipitable_water", FT_IMG, TPW_VAR, description="Total Precipitable Water", units="mm")
 PRODUCTS.add_product(PRODUCT_SWE, PAIR_MIRS_NAV, "snow_water_equivalence", FT_IMG, SWE_VAR, description="Snow Water Equivalence", units="cm")
+PRODUCTS.add_product(PRODUCT_CLW, PAIR_MIRS_NAV, "cloud_liquid_water", FT_IMG, CLW_VAR, description="Cloud Liquid Water", units="mm")
 
 # Add all ATMS BT channels
 BT_CHANNEL_PRODUCTS = []
@@ -157,6 +160,7 @@ FILE_STRUCTURE = {
     SNOWCOVER_VAR: ("Snow", ("scale", "scale_factor"), None, None),
     TPW_VAR: ("TPW", ("scale", "scale_factor"), None, None),
     SWE_VAR: ("SWE", ("scale", "scale_factor"), None, None),
+    CLW_VAR: ("CLW", ("scale", "scale_factor"), None, None),
     }
 
 for i in range(22):
