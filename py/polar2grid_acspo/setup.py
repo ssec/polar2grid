@@ -84,8 +84,6 @@ setup(
     install_requires=['numpy', 'netCDF4', 'polar2grid.core'],
     entry_points={
         'console_scripts': [],
-        'polar2grid.frontend_class': ['acspo=polar2grid.acspo:Frontend'],
-        'polar2grid.frontend_arguments': ['acspo=polar2grid.acspo:add_frontend_argument_groups']
     }
 )
 

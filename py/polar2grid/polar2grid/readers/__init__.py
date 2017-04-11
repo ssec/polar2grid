@@ -346,7 +346,6 @@ class ReaderWrapper(roles.FrontendRole):
         return scene
 
 
-
 def main(description=None, add_argument_groups=None):
     from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
     parser = create_basic_parser(description=description)
