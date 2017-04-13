@@ -41,6 +41,7 @@ images = (
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit_color.jpg",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/merge/VIIRS_False_Color_Side_by_Side_Example_P2G.png",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/overlay/VIIRS_true_color_in_google_earth.jpg",
+    "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/merge/my_false_color.jpg",
 )
 script_path = os.path.dirname(os.path.realpath(__file__))
 image_dst = os.path.join(script_path, '_static', 'example_images')
