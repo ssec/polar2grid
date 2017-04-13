@@ -47,29 +47,99 @@ Averaging resampling. The ``--fornav-D`` option is set to 100 and the
 
 The frontend offers the following products:
 
-    +--------------------+--------------------------------------------+
-    | Product Name       | Description                                |
-    +====================+============================================+
-    | rain_rate          | Rain Rate                                  |
-    +--------------------+--------------------------------------------+
-    | btemp_88v          | Brightness Temperature at 88.2GHz          |
-    +--------------------+--------------------------------------------+
-    | sea_ice            | Sea Ice in percent                         |
-    +--------------------+--------------------------------------------+
-    | snow_cover         | Snow Cover                                 |
-    +--------------------+--------------------------------------------+
-    | tpw                | Total Precipitable Water                   |
-    +--------------------+--------------------------------------------+
-    | btemp_X            | Brightness Temperature for channel index X |
-    +--------------------+--------------------------------------------+
-    | swe                | Snow Water Equivalence                     |
-    +--------------------+--------------------------------------------+
+    +--------------------+----------------------------------------------------+
+    | Product Name       | Description                                        |
+    +====================+====================================================+
+    | rain_rate          | Rain Rate                                          |
+    +--------------------+----------------------------------------------------+
+    | sea_ice            | Sea Ice in percent                                 |
+    +--------------------+----------------------------------------------------+
+    | snow_cover         | Snow Cover                                         |
+    +--------------------+----------------------------------------------------+
+    | tpw                | Total Precipitable Water                           |
+    +--------------------+----------------------------------------------------+
+    | swe                | Snow Water Equivalence                             |
+    +--------------------+----------------------------------------------------+
+    | btemp_X            | Brightness Temperature for channel X (see below)   |
+    +--------------------+----------------------------------------------------+
 
-For ``btemp_X`` the ``X`` is the two digit channel number from
-"00" to "21" or however many channels the instrument has. Note that
-only the first 5 products listed in the table above are configured
-in the AWIPS backend. More can be configured, see the
-:doc:`../writers/awips_netcdf` documentation for details.
+For ``btemp_X`` the ``X`` is a combination of the integer frequency and
+polarization of the channel. If there are more than one channel at that
+frequency and polarization a "count" number is added to the end. The available
+ATMS channels are:
+
+.. list-table:: ATMS Brightness Temperature Channels
+    :header-rows: 1
+    
+    * - Frequency (GHz)
+      - Polarization
+      - Dataset Name
+    * - 23.79
+      - V
+      - 23v
+    * - 31.40
+      - V
+      - 31v
+    * - 50.30
+      - H
+      - 50h
+    * - 51.76
+      - H
+      - 51h
+    * - 52.80
+      - H
+      - 52h
+    * - 53.60
+      - H
+      - 53h
+    * - 54.40
+      - H
+      - 54h1
+    * - 54.94
+      - H
+      - 54h2
+    * - 55.50
+      - H
+      - 55h
+    * - 57.29
+      - H
+      - 57h1
+    * - 57.29
+      - H
+      - 57h2
+    * - 57.29
+      - H
+      - 57h3
+    * - 57.29
+      - H
+      - 57h4
+    * - 57.29
+      - H
+      - 57h5
+    * - 57.29
+      - H
+      - 57h6
+    * - 88.20
+      - V
+      - 88v
+    * - 165.50
+      - H
+      - 165h
+    * - 183.31
+      - H
+      - 183h1
+    * - 183.31
+      - H
+      - 183h2
+    * - 183.31
+      - H
+      - 183h3
+    * - 183.31
+      - H
+      - 183h4
+    * - 183.31
+      - H
+      - 183h5
 
 """
 __docformat__ = "restructuredtext en"

@@ -11,6 +11,7 @@ Command Line Arguments
     :func: add_frontend_argument_groups
     :prog: polar2grid.sh amsr2_l1b <writer>
     :passparser:
+
 Examples:
 
 .. code-block:: bash
