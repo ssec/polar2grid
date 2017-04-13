@@ -50,9 +50,9 @@ The frontend offers the following products:
     +--------------------+--------------------------------------------+
     | Product Name       | Description                                |
     +====================+============================================+
-    | mirs_rain_rate     | Rain Rate                                  |
+    | rain_rate          | Rain Rate                                  |
     +--------------------+--------------------------------------------+
-    | mirs_btemp_90      | Brightness Temperature at 88.2GHz          |
+    | btemp_88v          | Brightness Temperature at 88.2GHz          |
     +--------------------+--------------------------------------------+
     | sea_ice            | Sea Ice in percent                         |
     +--------------------+--------------------------------------------+
@@ -60,12 +60,12 @@ The frontend offers the following products:
     +--------------------+--------------------------------------------+
     | tpw                | Total Precipitable Water                   |
     +--------------------+--------------------------------------------+
-    | mirs_btemp_X       | Brightness Temperature for channel index X |
+    | btemp_X            | Brightness Temperature for channel index X |
     +--------------------+--------------------------------------------+
     | swe                | Snow Water Equivalence                     |
     +--------------------+--------------------------------------------+
 
-For ``mirs_btemp_X`` the ``X`` is the two digit channel number from
+For ``btemp_X`` the ``X`` is the two digit channel number from
 "00" to "21" or however many channels the instrument has. Note that
 only the first 5 products listed in the table above are configured
 in the AWIPS backend. More can be configured, see the
@@ -109,11 +109,11 @@ TPW_VAR = "tpw_var"
 SWE_VAR = "swe_var"
 CLW_VAR = "clw_var"
 
-PRODUCT_RAIN_RATE = "mirs_rain_rate"
-PRODUCT_BT_90 = "mirs_btemp_90"
-PRODUCT_BT_CHANS = "mirs_btemp_channels"
-PRODUCT_LATITUDE = "mirs_latitude"
-PRODUCT_LONGITUDE = "mirs_longitude"
+PRODUCT_RAIN_RATE = "rain_rate"
+PRODUCT_BT_90 = "btemp_88v"
+PRODUCT_BT_CHANS = "btemp_channels"
+PRODUCT_LATITUDE = "latitude"
+PRODUCT_LONGITUDE = "longitude"
 PRODUCT_SURF_TYPE = "surface_type"
 PRODUCT_SICE = "sea_ice"
 PRODUCT_SNOW_COVER = "snow_cover"
@@ -139,7 +139,7 @@ PRODUCTS.add_product(PRODUCT_CLW, PAIR_MIRS_NAV, "cloud_liquid_water", FT_IMG, C
 # Add all ATMS BT channels
 BT_CHANNEL_PRODUCTS = []
 for i in range(22):
-    pname = "mirs_btemp_{:02d}".format(i + 1)
+    pname = "btemp_{:02d}".format(i + 1)
     PRODUCTS.add_product(pname, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, "bt_var_{:02d}".format(i + 1), description="Channel Brightness Temperature", units="K", channel_index=i, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE))
     BT_CHANNEL_PRODUCTS.append(pname)
 
@@ -264,13 +264,13 @@ class MIRSFileReader(BaseFileReader):
     # best case nadir resolutions in meters (could be made per band):
     INST_NADIR_RESOLUTION = {
         "atms": 15800,
-        "mhs": 20300,
+        "amsua-mhs": 20300,
     }
 
     # worst case nadir resolutions in meters (could be made per band):
     INST_LIMB_RESOLUTION = {
         "atms": 323100,
-        "mhs": 323100,
+        "amsua-mhs": 323100,
     }
 
     def __init__(self, filepath, file_type_info):
@@ -295,7 +295,7 @@ class MIRSFileReader(BaseFileReader):
                 "NN": "noaa18",
                 "NP": "noaa19",
             }[fn_parts[1]]
-            self.instrument = "mhs"  # actually combination of mhs and amsu
+            self.instrument = "amsua-mhs"  # actually combination of mhs and amsu
             self.begin_time = datetime.strptime(fn_parts[2][1:] + fn_parts[3][1:], "%y%j%H%M")
             self.end_time = datetime.strptime(fn_parts[2][1:] + fn_parts[4][1:], "%y%j%H%M")
 
