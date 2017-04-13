@@ -523,18 +523,18 @@ class Frontend(roles.FrontendRole):
         for idx, (f, p) in enumerate(zip(freq, polo)):
             normal_f = str(int(f))
             normal_p = 'v' if p == POLO_V else 'h'
-            c[normal_f] += 1
+            c[normal_f + normal_p] += 1
             normals.append((idx, f, p, normal_f, normal_p))
 
         c2 = Counter()
         new_names = []
         for idx, f, p, normal_f, normal_p in normals:
-            c2[normal_f] += 1
-            new_name = "btemp_{}{}{}".format(normal_f, normal_p, str(c2[normal_f] if c[normal_f] > 1 else ''))
+            c2[normal_f + normal_p] += 1
+            new_name = "btemp_{}{}{}".format(normal_f, normal_p, str(c2[normal_f + normal_p] if c[normal_f + normal_p] > 1 else ''))
             new_names.append(new_name)
             var_name = 'bt_var_{}'.format(new_name)
             FILE_STRUCTURE[var_name] = ("BT", ("scale", "scale_factor"), None, idx)
-            self.PRODUCTS.add_product(new_name, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, var_name, description="Channel Brightness Temperature at {}GHz".format(f), units="K", frequency=f, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE), channel_index=idx)
+            self.PRODUCTS.add_product(new_name, PAIR_MIRS_NAV, "toa_brightness_temperature", FT_IMG, var_name, description="Channel Brightness Temperature at {}GHz".format(f), units="K", frequency=f, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE), channel_index=idx)
             self.all_bt_channels.append(new_name)
 
     def _load_files(self, filepaths):
