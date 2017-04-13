@@ -92,12 +92,14 @@ except ImportError:
     from pkgutil import get_data as get_resource_string
 
 LOG = logging.getLogger(__name__)
+# 'Polo' variable in MIRS files use these values for H/V polarization
+POLO_H = 3
+POLO_V = 2
 
 # File types (only one for now)
 FT_IMG = "MIRS_IMG"
 # File variables
 RR_VAR = "rr_var"
-BT_90_VAR = "bt_90_var"
 BT_ALL_VARS = "bt_var"
 FREQ_VAR = "freq_var"
 LAT_VAR = "latitude_var"
@@ -110,7 +112,6 @@ SWE_VAR = "swe_var"
 CLW_VAR = "clw_var"
 
 PRODUCT_RAIN_RATE = "rain_rate"
-PRODUCT_BT_90 = "btemp_88v"
 PRODUCT_BT_CHANS = "btemp_channels"
 PRODUCT_LATITUDE = "latitude"
 PRODUCT_LONGITUDE = "longitude"
@@ -129,19 +130,12 @@ PRODUCTS.add_product(PRODUCT_LONGITUDE, PAIR_MIRS_NAV, "longitude", FT_IMG, LON_
 PRODUCTS.add_product(PRODUCT_RAIN_RATE, PAIR_MIRS_NAV, "rain_rate", FT_IMG, RR_VAR, description="Rain Rate", units="mm/hr")
 PRODUCTS.add_product(PRODUCT_SURF_TYPE, PAIR_MIRS_NAV, "mask", FT_IMG, SURF_TYPE_VAR, description="Surface Type: type of surface:0-ocean,1-sea ice,2-land,3-snow")
 PRODUCTS.add_product(PRODUCT_BT_CHANS, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_ALL_VARS, description="Channel Brightness Temperature for every channel", units="K")
-PRODUCTS.add_product(PRODUCT_BT_90, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, BT_90_VAR, description="Channel Brightness Temperature at 88.2GHz", units="K", frequency=88.2, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE))
 PRODUCTS.add_product(PRODUCT_SICE, PAIR_MIRS_NAV, "sea_ice", FT_IMG, SICE_VAR, description="Sea Ice", units="%")
 PRODUCTS.add_product(PRODUCT_SNOW_COVER, PAIR_MIRS_NAV, "snow_cover", FT_IMG, SNOWCOVER_VAR, description="Snow Cover", units="1")
 PRODUCTS.add_product(PRODUCT_TPW, PAIR_MIRS_NAV, "total_precipitable_water", FT_IMG, TPW_VAR, description="Total Precipitable Water", units="mm")
 PRODUCTS.add_product(PRODUCT_SWE, PAIR_MIRS_NAV, "snow_water_equivalence", FT_IMG, SWE_VAR, description="Snow Water Equivalence", units="cm")
 PRODUCTS.add_product(PRODUCT_CLW, PAIR_MIRS_NAV, "cloud_liquid_water", FT_IMG, CLW_VAR, description="Cloud Liquid Water", units="mm")
 
-# Add all ATMS BT channels
-BT_CHANNEL_PRODUCTS = []
-for i in range(22):
-    pname = "btemp_{:02d}".format(i + 1)
-    PRODUCTS.add_product(pname, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, "bt_var_{:02d}".format(i + 1), description="Channel Brightness Temperature", units="K", channel_index=i, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE))
-    BT_CHANNEL_PRODUCTS.append(pname)
 
 GEO_PAIRS = GeoPairDict()
 GEO_PAIRS.add_pair(PAIR_MIRS_NAV, PRODUCT_LONGITUDE, PRODUCT_LATITUDE, 0)
@@ -150,7 +144,6 @@ GEO_PAIRS.add_pair(PAIR_MIRS_NAV, PRODUCT_LONGITUDE, PRODUCT_LATITUDE, 0)
 
 FILE_STRUCTURE = {
     RR_VAR: ("RR", ("scale", "scale_factor"), None, None),
-    BT_90_VAR: ("BT", ("scale", "scale_factor"), None, 88.2),
     BT_ALL_VARS: ("BT", ("scale", "scale_factor"), None, None),
     FREQ_VAR: ("Freq", None, None, None),
     LAT_VAR: ("Latitude", None, None, None),
@@ -162,10 +155,6 @@ FILE_STRUCTURE = {
     SWE_VAR: ("SWE", ("scale", "scale_factor"), None, None),
     CLW_VAR: ("CLW", ("scale", "scale_factor"), None, None),
     }
-
-for i in range(22):
-    FILE_STRUCTURE["bt_var_{:02d}".format(i + 1)] = ("BT", ("scale", "scale_factor"), None, i)
-
 
 LIMB_SEA_FILE = os.environ.get("ATMS_LIMB_SEA", "polar2grid.mirs:limball_atmssea.txt")
 LIMB_LAND_FILE = os.environ.get("ATMS_LIMB_LAND", "polar2grid.mirs:limball_atmsland.txt")
@@ -516,13 +505,37 @@ class Frontend(roles.FrontendRole):
 
     def __init__(self, **kwargs):
         super(Frontend, self).__init__(**kwargs)
-        self.secondary_product_functions = {
-            PRODUCT_BT_90: self.limb_correct_atms_bt,
-        }
-        for pname in BT_CHANNEL_PRODUCTS:
+        self._load_files(self.find_files_with_extensions())
+        self.all_bt_channels = []
+        self.update_dynamic_products()
+
+        self.secondary_product_functions = {}
+        for pname in self.all_bt_channels:
             self.secondary_product_functions[pname] = self.limb_correct_atms_bt
 
-        self._load_files(self.find_files_with_extensions())
+    def update_dynamic_products(self):
+        fh = self.file_readers['MIRS_IMG'].file_readers[0]
+        freq = fh[('Freq',)]
+        polo = fh[('Polo',)]
+        from collections import Counter
+        c = Counter()
+        normals = []
+        for idx, (f, p) in enumerate(zip(freq, polo)):
+            normal_f = str(int(f))
+            normal_p = 'v' if p == POLO_V else 'h'
+            c[normal_f] += 1
+            normals.append((idx, f, p, normal_f, normal_p))
+
+        c2 = Counter()
+        new_names = []
+        for idx, f, p, normal_f, normal_p in normals:
+            c2[normal_f] += 1
+            new_name = "btemp_{}{}{}".format(normal_f, normal_p, str(c2[normal_f] if c[normal_f] > 1 else ''))
+            new_names.append(new_name)
+            var_name = 'bt_var_{}'.format(new_name)
+            FILE_STRUCTURE[var_name] = ("BT", ("scale", "scale_factor"), None, idx)
+            self.PRODUCTS.add_product(new_name, PAIR_MIRS_NAV, "brightness_temperature", FT_IMG, var_name, description="Channel Brightness Temperature at {}GHz".format(f), units="K", frequency=f, dependencies=(PRODUCT_BT_CHANS, PRODUCT_SURF_TYPE), channel_index=idx)
+            self.all_bt_channels.append(new_name)
 
     def _load_files(self, filepaths):
         self.file_readers = {}
@@ -588,7 +601,7 @@ class Frontend(roles.FrontendRole):
         if os.getenv("P2G_MIRS_DEFAULTS", None):
             return os.getenv("P2G_MIRS_DEFAULTS")
 
-        return [PRODUCT_RAIN_RATE, PRODUCT_BT_90]
+        return [PRODUCT_RAIN_RATE, 'btemp_88v']
 
     @property
     def begin_time(self):
@@ -672,12 +685,18 @@ class Frontend(roles.FrontendRole):
         )
         return one_swath
 
-    def create_scene(self, products=None, nprocs=1, **kwargs):
+    def create_scene(self, products=None, nprocs=1, all_bt_channels=False, **kwargs):
         if nprocs != 1:
             raise NotImplementedError("The MIRS frontend does not support multiple processes yet")
         if products is None:
-            LOG.debug("No products specified to frontend, will try to load logical defaults")
-            products = self.default_products
+            if not all_bt_channels:
+                LOG.debug("No products specified to frontend, will try to load logical defaults")
+                products = self.default_products
+            else:
+                products = []
+        if all_bt_channels:
+            products.extend([x for x in self.PRODUCTS.keys() if x.startswith('btemp_') and x != PRODUCT_BT_CHANS])
+            products = list(set(products))
 
         # Do we actually have all of the files needed to create the requested products?
         products = self.loadable_products(products)
@@ -825,7 +844,7 @@ def add_frontend_argument_groups(parser):
                         help="List available frontend products")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
-    group.add_argument("--bt-channels", dest="products", action=ExtendConstAction, const=BT_CHANNEL_PRODUCTS,
+    group.add_argument("--bt-channels", dest="all_bt_channels", action='store_true',
                        help="Add all BT channels to the list of requested products")
     group.add_argument("-p", "--products", dest="products", nargs="*", default=None,
                        help="Specify frontend products to process")
