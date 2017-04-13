@@ -254,19 +254,18 @@ def main(argv=sys.argv[1:]):
         LOG.debug("Removing all compositors")
         args.compositors = []
     elif args.frontend == 'crefl':
-        if not args.compositors:
-            if args.backend == 'awips':
-                LOG.debug("Adding 'crefl_sharpen' compositor")
-                args.compositors.append('crefl_sharpen')
-            else:
+        if args.backend == 'awips':
+            LOG.debug("Adding 'crefl_sharpen' compositor")
+            args.compositors.append('crefl_sharpen')
+        else:
+            LOG.debug("Adding 'true_color' compositor")
+            args.compositors.append('true_color')
+            if '--true-color' in sys.argv and 'true_color' not in args.compositors:
                 LOG.debug("Adding 'true_color' compositor")
                 args.compositors.append('true_color')
-                if '--true-color' in sys.argv and 'true_color' not in args.compositors:
-                    LOG.debug("Adding 'true_color' compositor")
-                    args.compositors.append('true_color')
-                if '--false-color' in sys.argv and 'false_color' not in args.compositors:
-                    LOG.debug("Adding 'false_color' compositor")
-                    args.compositors.append('false_color')
+            if '--false-color' in sys.argv and 'false_color' not in args.compositors:
+                LOG.debug("Adding 'false_color' compositor")
+                args.compositors.append('false_color')
 
     # if "--true-color" in
     for c in args.compositors:
