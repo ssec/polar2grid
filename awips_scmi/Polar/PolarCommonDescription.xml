@@ -1,13 +1,32 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <goesrProductDescriptions>
+    <default>
+        <matches>
+            <match pattern="OR-T\d+-\w+-\w+-\w+-\w+_s\d{14}_c\d{14}.nc">
+                <attribute name="dataset_name" />
+            </match>
+        </matches>
+    </default>
     <description>
-        <match attribute="dataset_name"
-               pattern="OR-T\d+-\w+-\w+-\w+-\w+_s\d{14}_c\d{14}.nc" />
-        <source attribute="production_location" />
-        <physicalElement attribute="product_name" />
-        <creatingEntity attribute="satellite_id" />
-        <dataTime attribute="start_date_time" dateFormat="yyyy-MM-dd'T'HH:mm:ss" />
-        <sectorID attribute="grid_name" />
-        <data variable="data" />
+        <source>
+            <attribute name="production_location" />
+        </source>
+        <physicalElement>
+            <attribute name="product_name" />
+        </physicalElement>
+        <creatingEntity>
+            <attribute name="satellite_id" />
+        </creatingEntity>
+        <dataTime>
+            <formattedRefTime dateFormat="yyyy-MM-dd'T'HH:mm:ss">
+                <attribute name="start_date_time" />
+            </formattedRefTime>
+        </dataTime>
+        <sectorID>
+            <attribute name="grid_name" />
+        </sectorID>
+        <data>
+            <variable name="data" />
+        </data>
     </description>
 </goesrProductDescriptions>
