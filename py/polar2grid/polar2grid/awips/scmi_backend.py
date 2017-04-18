@@ -382,8 +382,8 @@ class SCMI_writer(object):
 
     def apply_data_attributes(self, scale_factor=None, add_offset=None):
         # NOTE: grid_mapping is set by `set_projection_attrs`
-        self.image_data.scale_factor = scale_factor
-        self.image_data.add_offset = add_offset
+        self.image_data.scale_factor = np.float32(scale_factor)
+        self.image_data.add_offset = np.float32(add_offset)
         self.image_data.units = self.helper.dataset.get('units', '1')
         # FIXME: does this need to be increased/decreased by 1 to leave room for the fill value?
         self.image_data.valid_min = 0
@@ -424,7 +424,7 @@ class SCMI_writer(object):
         # note: autoscaling will be applied to make int16
         # self.bt[:,:] = np.ma.fix_invalid(np.require(bt, dtype=np.float32), fill_value=self.missing)
         assert(hasattr(data, 'mask'))
-        self.image_data[:, :] = np.require(data.filled(self._fill_value), dtype=np.float32)
+        self.image_data[:, :] = np.require(data.filled(self.missing), dtype=np.float32)
 
     def set_projection_attrs(self, grid_def):
         """
@@ -499,11 +499,13 @@ class SCMI_writer(object):
 
 
 class Backend(roles.BackendRole):
-    def __init__(self, backend_configs=None, rescale_configs=None, compress=False, **kwargs):
+    def __init__(self, backend_configs=None, rescale_configs=None,
+                 compress=False, fix_awips=False, **kwargs):
         backend_configs = backend_configs or [DEFAULT_AWIPS_CONFIG]
         rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
         self.awips_config_reader = AWIPS2ConfigReader(*backend_configs)
         self.compress = compress
+        self.fix_awips = fix_awips
         # self.rescaler = Rescaler(*rescale_configs, **kwargs)
         super(Backend, self).__init__(**kwargs)
 
@@ -514,7 +516,7 @@ class Backend(roles.BackendRole):
     def create_output_from_product(self, gridded_product, tile_count=(1, 1), **kwargs):
         data_type = DTYPE_UINT8
         inc_by_one = False
-        fill_value = 0
+        fill_value = np.nan
         grid_def = gridded_product["grid_definition"]
 
         try:
@@ -581,6 +583,7 @@ class Backend(roles.BackendRole):
             gridded_product["valid_max"] = valid_max
             factor = (valid_max - valid_min) / float(2**bit_depth - 1)
             offset = valid_min
+            print(valid_min, valid_max, factor, offset, bit_depth, data.min(), data.max())
 
             for ty in range(tile_count[0]):
                 for tx in range(tile_count[1]):
@@ -608,7 +611,6 @@ class Backend(roles.BackendRole):
                     LOG.info("Writing tile %d to %s", tile_number, output_filename)
 
                     nc = SCMI_writer(output_filename, (ty, tx), tile_shape,
-                                     gridded_product["product_name"],
                                      helper=attr_helper, compress=self.compress)
                     LOG.debug("Creating dimensions...")
                     nc.create_dimensions()
@@ -623,6 +625,19 @@ class Backend(roles.BackendRole):
                     LOG.debug("Writing X/Y navigation data...")
                     nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units=xy_units)
                     nc.close()
+
+                    if self.fix_awips:
+                        # hack to get files created by new NetCDF library
+                        # versions to be read by AWIPS buggy java version
+                        # of NetCDF
+                        LOG.info("Modifying SCMI NetCDF file to work with AWIPS")
+                        import h5py
+                        h = h5py.File(output_filename, 'a')
+                        # import ipdb; ipdb.set_trace()
+                        # print(h.attrs.items())
+                        if '_NCProperties' in h.attrs:
+                            del h.attrs['_NCProperties']
+                        h.close()
         except StandardError:
             last_fn = created_files[-1] if created_files else "N/A"
             LOG.error("Error while filling in NC file with data: %s", last_fn)
@@ -642,6 +657,8 @@ def add_backend_argument_groups(parser):
                        help="alternative rescale configuration files")
     group.add_argument("--compress", action="store_true",
                        help="zlib compress each netcdf file")
+    group.add_argument("--fix-awips", action="store_true",
+                       help="modify NetCDF output to work with the old/broken AWIPS NetCDF library")
     group = parser.add_argument_group(title="Backend Output Creation")
     # group.add_argument("--ncml-template",
     #                    help="alternative AWIPS ncml template file from what is configured")
