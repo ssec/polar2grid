@@ -180,6 +180,7 @@ SNOWCOVER_VAR = "snow_cover_var"
 TPW_VAR = "tpw_var"
 SWE_VAR = "swe_var"
 CLW_VAR = "clw_var"
+TSKIN_VAR = "tskin_var"
 
 PRODUCT_RAIN_RATE = "rain_rate"
 PRODUCT_BT_CHANS = "btemp_channels"
@@ -191,6 +192,7 @@ PRODUCT_SNOW_COVER = "snow_cover"
 PRODUCT_TPW = "tpw"
 PRODUCT_SWE = "swe"
 PRODUCT_CLW = "clw"
+PRODUCT_TSKIN = "tskin"
 
 PAIR_MIRS_NAV = "mirs_nav"
 
@@ -205,6 +207,7 @@ PRODUCTS.add_product(PRODUCT_SNOW_COVER, PAIR_MIRS_NAV, "snow_cover", FT_IMG, SN
 PRODUCTS.add_product(PRODUCT_TPW, PAIR_MIRS_NAV, "total_precipitable_water", FT_IMG, TPW_VAR, description="Total Precipitable Water", units="mm")
 PRODUCTS.add_product(PRODUCT_SWE, PAIR_MIRS_NAV, "snow_water_equivalence", FT_IMG, SWE_VAR, description="Snow Water Equivalence", units="cm")
 PRODUCTS.add_product(PRODUCT_CLW, PAIR_MIRS_NAV, "cloud_liquid_water", FT_IMG, CLW_VAR, description="Cloud Liquid Water", units="mm")
+PRODUCTS.add_product(PRODUCT_TSKIN, PAIR_MIRS_NAV, "skin_temperature", FT_IMG, TSKIN_VAR, description="skin temperature", units="K")
 
 
 GEO_PAIRS = GeoPairDict()
@@ -224,6 +227,7 @@ FILE_STRUCTURE = {
     TPW_VAR: ("TPW", ("scale", "scale_factor"), None, None),
     SWE_VAR: ("SWE", ("scale", "scale_factor"), None, None),
     CLW_VAR: ("CLW", ("scale", "scale_factor"), None, None),
+    TSKIN_VAR: ("TSkin", ("scale", "scale_factor"), None, None),
     }
 
 LIMB_SEA_FILE = os.environ.get("ATMS_LIMB_SEA", "polar2grid.mirs:limball_atmssea.txt")
@@ -671,7 +675,8 @@ class Frontend(roles.FrontendRole):
         if os.getenv("P2G_MIRS_DEFAULTS", None):
             return os.getenv("P2G_MIRS_DEFAULTS")
 
-        return [PRODUCT_RAIN_RATE, 'btemp_88v']
+        return list(set([PRODUCT_RAIN_RATE, 'btemp_88v', 'btemp_89v1']) &
+                    set(self.PRODUCTS.keys()))
 
     @property
     def begin_time(self):
