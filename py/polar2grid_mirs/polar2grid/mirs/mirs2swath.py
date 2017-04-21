@@ -63,83 +63,109 @@ The frontend offers the following products:
     | btemp_X            | Brightness Temperature for channel X (see below)   |
     +--------------------+----------------------------------------------------+
 
-For ``btemp_X`` the ``X`` is a combination of the integer frequency and
-polarization of the channel. If there are more than one channel at that
-frequency and polarization a "count" number is added to the end. The available
-ATMS channels are:
+For specific brightness temperature band products, use the ``btemp_X`` option,
+where ``X`` is a combination of the microwave frequency (integer) and
+polarization of the channel. If there is more than one channel at that
+frequency and polarization a "count" number is added to the end. To create
+output files of all available bands, use the ``--bt-channels`` option.
+
+As an example, the ATMS band options are:
 
 .. list-table:: ATMS Brightness Temperature Channels
     :header-rows: 1
     
-    * - Frequency (GHz)
-      - Polarization
-      - Dataset Name
-    * - 23.79
+    * - **Band Number**
+      - **Frequency (GHz)**
+      - **Polarization**
+      - **Polar2Grid Dataset Name**
+    * - 1
+      - 23.79
       - V
-      - 23v
-    * - 31.40
+      - btemp_23v
+    * - 2
+      - 31.40
       - V
-      - 31v
-    * - 50.30
+      - btemp_31v
+    * - 3
+      - 50.30
       - H
-      - 50h
-    * - 51.76
+      - btemp_50h
+    * - 4
+      - 51.76
       - H
-      - 51h
-    * - 52.80
+      - btemp_51h
+    * - 5
+      - 52.80
       - H
-      - 52h
-    * - 53.60
+      - btemp_52h
+    * - 6
+      - 53.59±0.115
       - H
-      - 53h
-    * - 54.40
+      - btemp_53h
+    * - 7
+      - 54.40
       - H
-      - 54h1
-    * - 54.94
+      - btemp_54h1
+    * - 8
+      - 54.94
       - H
-      - 54h2
-    * - 55.50
+      - btemp_54h2
+    * - 9
+      - 55.50
       - H
-      - 55h
-    * - 57.29
+      - btemp_55h
+    * - 10
+      - 57.29
       - H
-      - 57h1
-    * - 57.29
+      - btemp_57h1
+    * - 11
+      - 57.29±2.17
       - H
-      - 57h2
-    * - 57.29
+      - btemp_57h2
+    * - 12
+      - 57.29±0.3222±0.048
       - H
-      - 57h3
-    * - 57.29
+      - btemp_57h3
+    * - 13
+      - 57.29±0.3222±0.022
       - H
-      - 57h4
-    * - 57.29
+      - btemp_57h4
+    * - 14
+      - 57.29±0.3222±0.010
       - H
-      - 57h5
-    * - 57.29
+      - btemp_57h5
+    * - 15
+      - 57.29±0.3222±0.0045
       - H
-      - 57h6
-    * - 88.20
+      - btemp_57h6
+    * - 16
+      - 88.20
       - V
-      - 88v
-    * - 165.50
+      - btemp_88v
+    * - 17
+      - 165.50
       - H
-      - 165h
-    * - 183.31
+      - btemp_165h
+    * - 18
+      - 183.31±7.0
       - H
-      - 183h1
-    * - 183.31
+      - btemp_183h1
+    * - 19
+      - 183.31±4.5
       - H
-      - 183h2
-    * - 183.31
+      - btemp_183h2
+    * - 20
+      - 183.31±3.0
       - H
-      - 183h3
-    * - 183.31
+      - btemp_183h3
+    * - 21
+      - 183.31±1.8
       - H
-      - 183h4
-    * - 183.31
+      - btemp_183h4
+    * - 22
+      - 183.31±1.0
       - H
-      - 183h5
+      - btemp_183h5
 
 """
 __docformat__ = "restructuredtext en"
