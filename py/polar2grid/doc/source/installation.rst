@@ -40,14 +40,10 @@ scripts provided by Polar2Grid. Scripts are typically invoked using::
     $POLAR2GRID_HOME/bin/<p2g_script.sh> ...
 
 If you want to run commands without including the preceding directory path,
-or if using in a script in its own background environment, then you can source
-the environment script::
+or if using in a script in its own background environment, then you can set
+your path to include the /bin directory::
 
-    source $POLAR2GRID_HOME/bin/polar2grid_env.sh
-
-Please note that by sourcing the script you are also setting 
-specific PYTHONPATH and LD_LIBRARY_PATH variables
-to point to locations within the Polar2Grid package.
+    export PATH=$PATH:$POLAR2GRID_HOME/bin
 
 See :doc:`getting_started` for more information on running Polar2Grid.
 
