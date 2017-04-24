@@ -41,7 +41,7 @@ Create true color and false color Aqua MODIS AWIPS NetCDF files from the 1000m, 
 
 .. code-block:: bash
 
-    polar2grid.sh crefl awips --true-color --false-color --fornav-D 10 -g 211e -f ../l1b/a1.17006.1855.1000m.hdf ../l1b/a1.17006.1855.500m.hdf  ../l1b/a1.17006.1855.250m.hdf ../l1b/a1.17006.1855.geo.hdf 
+    polar2grid.sh crefl awips --true-color --false-color --fornav-D 10 -g 211e -f l1b/a1.17067.1818.1000m.hdf l1b/a1.17067.1818.500m.hdf l1b/a1.17067.1818.250m.hdf  l1b/a1.17067.1818.geo.hdf
 
 ..
     .. figure:: ../_static/example_images/npp_viirs_true_color_20170305_193251_lcc_fit_overlay.png
