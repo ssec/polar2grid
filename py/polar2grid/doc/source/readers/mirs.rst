@@ -15,6 +15,10 @@ Command Line Arguments
 Execution Examples
 -----------------------
 
+.. raw:: latex
+
+    \begin{minipage}{\linewidth}
+
 .. code-block:: bash
 
     mirs2gtiff.sh --list-products -f /atms/NPR-MIRS-IMG_v11r1_NPP_s201611111032500_e201611111044016_c201611111121100.nc
@@ -26,3 +30,7 @@ Execution Examples
     polar2grid.sh mirs awips --bt-channels -g 211e 211w  -f ../input/NPR-MIRS-IMG_v11r1_NPP_s201611111032500_e201611111044016_c201611111121100.nc
 
     polar2grid.sh mirs hdf5 --add-geolocation -f ../metop/IMG_SX.M1.D17037.S1648.E1700.B0000001.WE.HR.ORB.nc
+
+.. raw:: latex
+
+    \end{minipage}
