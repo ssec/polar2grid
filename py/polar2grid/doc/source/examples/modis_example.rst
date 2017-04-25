@@ -43,10 +43,9 @@ Create true color and false color Aqua MODIS AWIPS NetCDF files from the 1000m, 
 
     polar2grid.sh crefl awips --true-color --false-color --fornav-D 10 -g 211e -f l1b/a1.17067.1818.1000m.hdf l1b/a1.17067.1818.500m.hdf l1b/a1.17067.1818.250m.hdf  l1b/a1.17067.1818.geo.hdf
 
-..
-    .. figure:: ../_static/example_images/npp_viirs_true_color_20170305_193251_lcc_fit_overlay.png
+
+.. figure:: ../_static/example_images/modis_true_color_awips_20170308_1818.png
     :width: 100%
     :align: center
 
-    Place holder for MODIS true color image in AWIPS-II.
-
+    AWIPS display of Polar2Grid MODIS corrected reflectances combined to create a 24 bit true color image.  Data was collected from a Aqua MODIS pass at 18:18 UTC, 8 March 2017.
