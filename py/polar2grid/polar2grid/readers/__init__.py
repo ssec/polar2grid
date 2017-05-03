@@ -297,7 +297,7 @@ class ReaderWrapper(roles.FrontendRole):
         super(ReaderWrapper, self).__init__(**kwargs)
         pathnames = self.find_files_with_extensions()
         # Create a satpy Scene object
-        self.scene = Scene(reader=self.reader, filenames=pathnames)
+        self.scene = Scene(reader=self.reader, filenames=pathnames, reader_kwargs=kwargs)
         self._begin_time = self.scene.start_time
         self._end_time = self.scene.end_time
 

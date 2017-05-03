@@ -46,6 +46,12 @@ This reader can provide the following products:
 +---------------------------+-----------------------------------------------------+
 | H2O_MR_Xmb                | Water Vapor Mixing Ratio at various pressure levels |
 +---------------------------+-----------------------------------------------------+
+| Topography                | Height at surface                                   |
++---------------------------+-----------------------------------------------------+
+| Surface_Pressure          | Pressure at surface                                 |
++---------------------------+-----------------------------------------------------+
+| Skin_Temperature          | Skin Temperature                                    |
++---------------------------+-----------------------------------------------------+
 
 Pressure based datasets are specified by the pressure level desired in millibars.
 The value used in the product name is listed in the table below for each corresponding
@@ -285,6 +291,8 @@ class Frontend(ReaderWrapper):
         self.DEFAULT_DATASETS = []
         for base_name in ["Temperature", "H2O_MR"]:
             self.DEFAULT_DATASETS.extend(reader.pressure_dataset_names[base_name])
+        self.DEFAULT_DATASETS.extend([
+            "Topography", "Surface_Pressure", "Skin_Temperature"])
 
     def create_scene(self, products=None, **kwargs):
         # P2G can't handle 3D sets so we know if they have non-pressure separated dataset names
@@ -293,8 +301,9 @@ class Frontend(ReaderWrapper):
             old_products = products
             products = []
             for product in old_products:
-                if not product.endswith("mb"):
-                    products.extend(self.scene.readers[self.reader].pressure_dataset_names[product])
+                press_products = self.scene.readers[self.reader].pressure_dataset_names.get(product)
+                if press_products:
+                    products.extend(press_products)
                 else:
                     products.append(product)
         return super(Frontend, self).create_scene(products=products, **kwargs)
@@ -314,6 +323,10 @@ def add_frontend_argument_groups(parser):
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
     group.add_argument("--list-products", dest="list_products", action="store_true",
                        help="List available frontend products and exit")
+    group.add_argument("--no-mask-surface", dest="mask_surface", action="store_false",
+                       help="Don't mask pressure based datasets that go below the surface pressure")
+    group.add_argument("--no-mask-quality", dest="mask_quality", action="store_false",
+                       help="Don't mask datasets based on Quality Flag")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     # FIXME: Probably need some proper defaults
