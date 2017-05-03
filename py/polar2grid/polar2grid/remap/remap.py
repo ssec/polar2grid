@@ -286,10 +286,10 @@ class Remapper(object):
                     else:
                         LOG.warning("Intermediate remapping file already exists, will overwrite: %s", fp)
 
-            rows_per_scan = swath_def.get("rows_per_scan", 0) or 2
+            rows_per_scan = swath_def.get("rows_per_scan", 0)
             if rows_per_scan < 2:
-                LOG.warning("Data has less than 2 rows per scan, this is not optimal for the EWA resampling algorithm. 2 rows per scan will be used instead")
-                rows_per_scan = 2
+                LOG.warning("Data has less than 2 rows per scan, this is not optimal for the EWA resampling algorithm. All rows will be used as one scan")
+                rows_per_scan = swath_def['swath_rows']
             edge_res = swath_def.get("limb_resolution", None)
             fornav_D = kwargs.get("fornav_D", None)
             if fornav_D is None:
