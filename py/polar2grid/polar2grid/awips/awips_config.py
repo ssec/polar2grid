@@ -37,7 +37,7 @@ from polar2grid.core import roles
 import os
 import sys
 import logging
-from ConfigParser import NoSectionError
+from ConfigParser import NoSectionError, NoOptionError
 
 LOG = logging.getLogger(__name__)
 
@@ -85,11 +85,17 @@ class AWIPS2ConfigReader(roles.SimpleINIConfigReader):
     def known_grids(self):
         return [x.split(":")[-1] for x in self.config_parser.sections() if x.startswith(self.GRID_SECTION_PREFIX)]
 
-    def get_filename_format(self):
-        return self.config_parser.get(self.SOURCE_SECTION, "filename_scheme")
+    def get_filename_format(self, default=None):
+        try:
+            return self.config_parser.get(self.SOURCE_SECTION, "filename_scheme")
+        except (NoOptionError, NoSectionError):
+            return default
 
-    def get_source_name(self):
-        return self.config_parser.get(self.SOURCE_SECTION, "source_name")
+    def get_source_name(self, default='SSEC'):
+        try:
+            return self.config_parser.get(self.SOURCE_SECTION, "source_name")
+        except (NoOptionError, NoSectionError):
+            return default
 
     def get_grid_info(self, grid_def):
         info = {}

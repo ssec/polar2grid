@@ -89,6 +89,8 @@ import calendar
 
 LOG = logging.getLogger(__name__)
 
+DEFAULT_OUTPUT_PATTERN = '{source_name}_AWIPS_{satellite}_{instrument}_{product_name}_{grid_name}_{begin_time}.nc'
+
 # INI files ignore case on options, so we have to do this
 GRID_ATTR_NAME = {
     "projname": "projName",
@@ -119,6 +121,7 @@ GRID_ATTR_TYPE = {
     "dxkm": numpy.float32,
     "rotation": numpy.float32,
     }
+
 
 def create_awips2_netcdf3(filename, image, start_dt,
                           depictor_name, channel, source_name, satellite_name,
@@ -166,15 +169,17 @@ class Backend(roles.BackendRole):
     def known_grids(self):
         return self.awips_config_reader.known_grids
 
-    def create_output_from_product(self, gridded_product, **kwargs):
+    def create_output_from_product(self, gridded_product, output_pattern=None,
+                                   source_name=None, **kwargs):
         data_type = DTYPE_UINT8
         inc_by_one = False
         fill_value = 0
         grid_def = gridded_product["grid_definition"]
 
-        # awips_info = self.awips_config_reader.get_product_options(gridded_product)
         try:
             awips_info = self.awips_config_reader.get_product_info(gridded_product)
+            if source_name:
+                awips_info['source_name'] = source_name
         except NoSectionError as e:
             LOG.error("Could not get information on product from backend configuration file")
             # NoSectionError is not a "StandardError" so it won't be caught normally
@@ -187,17 +192,25 @@ class Backend(roles.BackendRole):
             # NoSectionError is not a "StandardError" so it won't be caught normally
             raise RuntimeError(e.msg)
 
-        if "filename_scheme" in awips_info:
-            # Let individual products have special names if needed (mostly for weird product naming)
-            fn_format = awips_info.pop("filename_scheme")
-        else:
-            fn_format = self.awips_config_reader.get_filename_format()
+        if not output_pattern:
+            if "filename_scheme" in awips_info:
+                # Let individual products have special names if needed (mostly for weird product naming)
+                output_pattern = awips_info.pop("filename_scheme")
+            else:
+                output_pattern = self.awips_config_reader.get_filename_format(default=DEFAULT_OUTPUT_PATTERN)
 
-        output_filename = self.create_output_filename(fn_format,
-                                                       grid_name=grid_def["grid_name"],
-                                                       rows=grid_def["height"],
-                                                       columns=grid_def["width"],
-                                                       **gridded_product)
+        if "{" in output_pattern:
+            # format the filename
+            of_kwargs = gridded_product.copy(as_dict=True)
+            of_kwargs["data_type"] = data_type
+            output_filename = self.create_output_filename(output_pattern,
+                                                          grid_name=grid_def["grid_name"],
+                                                          rows=grid_def["height"],
+                                                          columns=grid_def["width"],
+                                                          source_name=awips_info.get('source_name'),
+                                                          **gridded_product)
+        else:
+            output_filename = output_pattern
 
         if os.path.isfile(output_filename):
             if not self.overwrite_existing:
@@ -229,10 +242,14 @@ def add_backend_argument_groups(parser):
                        help="alternative backend configuration files")
     group.add_argument("--rescale-configs", nargs="*", dest="rescale_configs",
                        help="alternative rescale configuration files")
-    # group = parser.add_argument_group(title="Backend Output Creation")
+    group = parser.add_argument_group(title="Backend Output Creation")
     # group.add_argument("--ncml-template",
     #                    help="alternative AWIPS ncml template file from what is configured")
-    return ["Backend Initialization"]
+    group.add_argument("--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
+                       help="output filenaming pattern")
+    group.add_argument("--source-name", default='SSEC',
+                       help="specify processing source name used in attributes and filename (default 'SSEC')")
+    return ["Backend Initialization", "Backend Output Creation"]
 
 
 def main():
