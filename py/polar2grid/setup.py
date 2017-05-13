@@ -128,6 +128,7 @@ extras_require = {
     "viirs_sdr": ['h5py'],
     'modis_l1b': ['pyhdf'],
     'mirs': ['netCDF4'],
+    "drrtv": ['h5py'],
 }
 extras_require["all"] = list(set([x for y in extras_require.values() for x in y]))
 
@@ -165,6 +166,7 @@ entry_points = {
         'viirsedr=polar2grid.viirs:EDRFrontend',
         'modis=polar2grid.modis:Frontend',
         'mirs=polar2grid.mirs:Frontend',
+        'drrtv=polar2grid.drrtv:Frontend',
         ],
     'polar2grid.frontend_arguments': [
         'viirs_l1b=polar2grid.readers.viirs_l1b:add_frontend_argument_groups',
@@ -176,6 +178,7 @@ entry_points = {
         'viirsedr=polar2grid.viirs:add_frontend_argument_groups_edr',
         'modis=polar2grid.modis:add_frontend_argument_groups',
         'mirs=polar2grid.mirs:add_frontend_argument_groups',
+        'drrtv=polar2grid.drrtv:add_frontend_argument_groups',
         ],
     }
 
