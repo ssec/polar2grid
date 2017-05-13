@@ -126,6 +126,7 @@ extras_require = {
     "utils": ["matplotlib"],
     "docs": ["sphinx", "rst2pdf"],
     "viirs_sdr": ['h5py'],
+    'modis_l1b': ['pyhdf'],
 }
 extras_require["all"] = [x for y in extras_require.values() for x in y]
 
