@@ -127,8 +127,9 @@ extras_require = {
     "docs": ["sphinx", "rst2pdf"],
     "viirs_sdr": ['h5py'],
     'modis_l1b': ['pyhdf'],
+    'mirs': ['netCDF4'],
 }
-extras_require["all"] = [x for y in extras_require.values() for x in y]
+extras_require["all"] = list(set([x for y in extras_require.values() for x in y]))
 
 entry_points = {
     'console_scripts': [],
@@ -163,6 +164,7 @@ entry_points = {
         'viirs_sdr=polar2grid.viirs:Frontend',
         'viirsedr=polar2grid.viirs:EDRFrontend',
         'modis=polar2grid.modis:Frontend',
+        'mirs=polar2grid.mirs:Frontend',
         ],
     'polar2grid.frontend_arguments': [
         'viirs_l1b=polar2grid.readers.viirs_l1b:add_frontend_argument_groups',
@@ -173,6 +175,7 @@ entry_points = {
         'viirs_sdr=polar2grid.viirs:add_frontend_argument_groups',
         'viirsedr=polar2grid.viirs:add_frontend_argument_groups_edr',
         'modis=polar2grid.modis:add_frontend_argument_groups',
+        'mirs=polar2grid.mirs:add_frontend_argument_groups',
         ],
     }
 

@@ -1,4 +1,0 @@
-include README.rst
-include COPYING
-include polar2grid/mirs/limball_atms*.txt
-
