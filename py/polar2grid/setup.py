@@ -125,6 +125,7 @@ extras_require = {
     "remap": ["pyproj", "scipy"],
     "utils": ["matplotlib"],
     "docs": ["sphinx", "rst2pdf"],
+    "viirs_sdr": ['h5py'],
 }
 extras_require["all"] = [x for y in extras_require.values() for x in y]
 
@@ -157,12 +158,18 @@ entry_points = {
         'nucaps=polar2grid.readers.nucaps:Frontend',
         'amsr2_l1b=polar2grid.readers.amsr2_l1b:Frontend',
         'acspo=polar2grid.readers.acspo:Frontend',
+        'viirs=polar2grid.viirs:Frontend',
+        'viirs_sdr=polar2grid.viirs:Frontend',
+        'viirsedr=polar2grid.viirs:EDRFrontend'
         ],
     'polar2grid.frontend_arguments': [
         'viirs_l1b=polar2grid.readers.viirs_l1b:add_frontend_argument_groups',
         'nucaps=polar2grid.readers.nucaps:add_frontend_argument_groups',
         'amsr2_l1b=polar2grid.readers.amsr2_l1b:add_frontend_argument_groups',
         'acspo=polar2grid.readers.acspo:add_frontend_argument_groups',
+        'viirs=polar2grid.viirs:add_frontend_argument_groups',
+        'viirs_sdr=polar2grid.viirs:add_frontend_argument_groups',
+        'viirsedr=polar2grid.viirs:add_frontend_argument_groups_edr'
         ],
     }
 

@@ -40,19 +40,15 @@ Simple objects to assist in reading VIIRS data from hdf5 (.h5) files.
 """
 __docformat__ = "restructuredtext en"
 
-import h5py
-import numpy
-
-from polar2grid.viirs import guidebook
-from polar2grid.core.fbf import FileAppender
-from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader
-from polar2grid.viirs.guidebook import K_DATA_PATH, K_MOONILLUM
-
-import os
-import sys
-import re
-import logging
 from datetime import datetime, timedelta
+
+import h5py
+import logging
+import numpy
+import os
+from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader
+from polar2grid.viirs import guidebook
+from polar2grid.viirs.guidebook import K_MOONILLUM
 
 LOG = logging.getLogger(__name__)
 ORBIT_TRANSITION_THRESHOLD = timedelta(seconds=10)

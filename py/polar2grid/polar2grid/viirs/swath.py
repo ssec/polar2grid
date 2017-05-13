@@ -195,18 +195,19 @@ zenith angle is less than 100 degrees.
 """
 __docformat__ = "restructuredtext en"
 
+import sys
+
+import logging
+import numpy
+import os
+from polar2grid.core import containers, histogram, roles
+from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
+from scipy.special import erf
+
 from . import guidebook
 # FIXME: Actually use the Geo Readers
 from .io import VIIRSSDRMultiReader, HDF5Reader
-from polar2grid.core import containers, histogram, roles
-from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
 from .prescale import adaptive_dnb_scale, dnb_scale
-import numpy
-from scipy.special import erf
-
-import os
-import sys
-import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -386,8 +387,10 @@ PRODUCTS.add_product(PRODUCT_I_LON, PAIR_INAV, "longitude", (guidebook.FILE_TYPE
 PRODUCTS.add_product(PRODUCT_I_LAT, PAIR_INAV, "latitude", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_LATITUDE)
 PRODUCTS.add_product(PRODUCT_M_LON, PAIR_MNAV, "longitude", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LONGITUDE)
 PRODUCTS.add_product(PRODUCT_M_LAT, PAIR_MNAV, "latitude", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_LATITUDE)
-PRODUCTS.add_product(PRODUCT_DNB_LON, PAIR_DNBNAV, "longitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLONGITUDE, guidebook.K_LONGITUDE))
-PRODUCTS.add_product(PRODUCT_DNB_LAT, PAIR_DNBNAV, "latitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (guidebook.K_TCLATITUDE, guidebook.K_LATITUDE))
+PRODUCTS.add_product(PRODUCT_DNB_LON, PAIR_DNBNAV, "longitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (
+guidebook.K_TCLONGITUDE, guidebook.K_LONGITUDE))
+PRODUCTS.add_product(PRODUCT_DNB_LAT, PAIR_DNBNAV, "latitude", (guidebook.FILE_TYPE_GDNBO, guidebook.FILE_TYPE_GDNBO), (
+guidebook.K_TCLATITUDE, guidebook.K_LATITUDE))
 
 PRODUCTS.add_product(PRODUCT_DNB_SZA, PAIR_DNBNAV, "solar_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SOLARZENITH)
 PRODUCTS.add_product(PRODUCT_DNB_SAA, PAIR_DNBNAV, "solar_azimuth_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SOLARAZIMUTH)
@@ -395,14 +398,22 @@ PRODUCTS.add_product(PRODUCT_DNB_LZA, PAIR_DNBNAV, "lunar_zenith_angle", guidebo
 PRODUCTS.add_product(PRODUCT_DNB_LAA, PAIR_DNBNAV, "lunar_azimuth_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_LUNARAZIMUTH)
 PRODUCTS.add_product(PRODUCT_DNB_SAT_ZA, PAIR_DNBNAV, "satellite_zenith_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SATZENITH)
 PRODUCTS.add_product(PRODUCT_DNB_SAT_AA, PAIR_DNBNAV, "satellite_azimuth_angle", guidebook.FILE_TYPE_GDNBO, guidebook.K_SATAZIMUTH)
-PRODUCTS.add_product(PRODUCT_I_SZA, PAIR_INAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARZENITH)
-PRODUCTS.add_product(PRODUCT_I_SAA, PAIR_INAV, "solar_azimuth_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARAZIMUTH)
-PRODUCTS.add_product(PRODUCT_I_SAT_ZA, PAIR_INAV, "satellite_zenith_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SATZENITH)
-PRODUCTS.add_product(PRODUCT_I_SAT_AA, PAIR_INAV, "satellite_azimuth_angle", (guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SATAZIMUTH)
-PRODUCTS.add_product(PRODUCT_M_SZA, PAIR_MNAV, "solar_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARZENITH)
-PRODUCTS.add_product(PRODUCT_M_SAA, PAIR_MNAV, "solar_azimuth_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARAZIMUTH)
-PRODUCTS.add_product(PRODUCT_M_SAT_ZA, PAIR_MNAV, "satellite_zenith_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SATZENITH)
-PRODUCTS.add_product(PRODUCT_M_SAT_AA, PAIR_MNAV, "satellite_azimuth_angle", (guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SATAZIMUTH)
+PRODUCTS.add_product(PRODUCT_I_SZA, PAIR_INAV, "solar_zenith_angle", (
+guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_I_SAA, PAIR_INAV, "solar_azimuth_angle", (
+guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SOLARAZIMUTH)
+PRODUCTS.add_product(PRODUCT_I_SAT_ZA, PAIR_INAV, "satellite_zenith_angle", (
+guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SATZENITH)
+PRODUCTS.add_product(PRODUCT_I_SAT_AA, PAIR_INAV, "satellite_azimuth_angle", (
+guidebook.FILE_TYPE_GITCO, guidebook.FILE_TYPE_GIMGO), guidebook.K_SATAZIMUTH)
+PRODUCTS.add_product(PRODUCT_M_SZA, PAIR_MNAV, "solar_zenith_angle", (
+guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARZENITH)
+PRODUCTS.add_product(PRODUCT_M_SAA, PAIR_MNAV, "solar_azimuth_angle", (
+guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SOLARAZIMUTH)
+PRODUCTS.add_product(PRODUCT_M_SAT_ZA, PAIR_MNAV, "satellite_zenith_angle", (
+guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SATZENITH)
+PRODUCTS.add_product(PRODUCT_M_SAT_AA, PAIR_MNAV, "satellite_azimuth_angle", (
+guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SATAZIMUTH)
 
 PRODUCTS.add_product(PRODUCT_I01, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I01, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))
 PRODUCTS.add_product(PRODUCT_I02, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I02, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))

@@ -65,17 +65,15 @@ with the frontend name ``viirs``.
 """
 __docformat__ = "restructuredtext en"
 
-from . import guidebook
-from .io import VIIRSSDRMultiReader, HDF5Reader
-from .swath import Frontend as SDRFrontend
-from polar2grid.core import containers, histogram, roles
-from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
-import numpy
-from scipy.special import erf
-
-import os
 import sys
+
 import logging
+import os
+from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
+
+from . import guidebook
+from .io import VIIRSSDRMultiReader
+from .swath import Frontend as SDRFrontend
 
 LOG = logging.getLogger(__name__)
 
@@ -107,8 +105,10 @@ GEO_PAIRS.add_pair(PAIR_AERO_NAV, PRODUCT_AERO_LON, PRODUCT_AERO_LAT, 2)
 GEO_PAIRS.add_pair(PAIR_COT_NAV, PRODUCT_COT_LON, PRODUCT_COT_LAT, 2)
 
 # TODO: Add description and units
-PRODUCTS.add_product(PRODUCT_AERO_LON, PAIR_AERO_NAV, "longitude", (guidebook.FILE_TYPE_GAERO, guidebook.FILE_TYPE_GAERO), guidebook.K_LONGITUDE)
-PRODUCTS.add_product(PRODUCT_AERO_LAT, PAIR_AERO_NAV, "latitude", (guidebook.FILE_TYPE_GAERO, guidebook.FILE_TYPE_GAERO), guidebook.K_LATITUDE)
+PRODUCTS.add_product(PRODUCT_AERO_LON, PAIR_AERO_NAV, "longitude", (
+guidebook.FILE_TYPE_GAERO, guidebook.FILE_TYPE_GAERO), guidebook.K_LONGITUDE)
+PRODUCTS.add_product(PRODUCT_AERO_LAT, PAIR_AERO_NAV, "latitude", (
+guidebook.FILE_TYPE_GAERO, guidebook.FILE_TYPE_GAERO), guidebook.K_LATITUDE)
 PRODUCTS.add_product(PRODUCT_COT_LON, PAIR_COT_NAV, "longitude", (guidebook.FILE_TYPE_GCLDO, guidebook.FILE_TYPE_GCLDO), guidebook.K_LONGITUDE)
 PRODUCTS.add_product(PRODUCT_COT_LAT, PAIR_COT_NAV, "latitude", (guidebook.FILE_TYPE_GCLDO, guidebook.FILE_TYPE_GCLDO), guidebook.K_LATITUDE)
 
@@ -172,7 +172,7 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
+    from polar2grid.core.script_utils import ExtendAction
     # Set defaults for other components that may be used in polar2grid processing
     parser.set_defaults(fornav_D=40, fornav_d=1)
 
