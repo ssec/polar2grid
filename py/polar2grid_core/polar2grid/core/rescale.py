@@ -415,7 +415,8 @@ class Rescaler(roles.INIConfigReader):
     def register_rescale_method(self, name, func, **kwargs):
         self.rescale_methods[name] = (func, kwargs)
 
-    def _rescale_data(self, method, data, good_data_mask, rescale_options, fill_value, clip=True, mask_clip=None, inc_by_one=False):
+    def _rescale_data(self, method, data, good_data_mask, rescale_options, fill_value, clip=True, mask_clip=None, inc_by_one=False,
+                      clip_zero=False):
         try:
             LOG.debug("Scaling data with method %s and arguments %r", method, rescale_options)
             rescale_func = self.rescale_methods[method]
@@ -431,7 +432,11 @@ class Rescaler(roles.INIConfigReader):
                 if mask_clip in ["both", "max", True]:
                     good_data[good_data > rescale_options["max_out"]] = numpy.nan
 
-                good_data = numpy.clip(good_data, rescale_options["min_out"], rescale_options["max_out"], out=good_data)
+                if clip_zero and rescale_options['min_out'] == 0 and not inc_by_one:
+                    LOG.debug("Additionally clipping data between %f and %f", 1, rescale_options["max_out"])
+                    good_data = numpy.clip(good_data, 1, rescale_options["max_out"], out=good_data)
+                else:
+                    good_data = numpy.clip(good_data, rescale_options["min_out"], rescale_options["max_out"], out=good_data)
 
             data[good_data_mask] = good_data
             # need to recalculate mask here in case the rescaling method assigned some new fill values
@@ -468,7 +473,8 @@ class Rescaler(roles.INIConfigReader):
         rescale_options["fill_out"] = fill_value
         return rescale_options
 
-    def rescale_product(self, gridded_product, data_type, inc_by_one=False, fill_value=None, rescale_options=None):
+    def rescale_product(self, gridded_product, data_type, inc_by_one=False, fill_value=None, rescale_options=None,
+                        clip_zero=False):
         """Rescale a gridded product based on how the rescaler is configured.
 
         The caller should know if it wants to increment the output data by 1 (`inc_by_one` keyword).
@@ -492,12 +498,13 @@ class Rescaler(roles.INIConfigReader):
         good_data_mask = ~gridded_product.get_data_mask()
         if rescale_options.get("separate_rgb", True) and data.ndim == 3:
             data = numpy.concatenate((
-                [self._rescale_data(method, data[0], good_data_mask[0], rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one)],
-                [self._rescale_data(method, data[1], good_data_mask[1], rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one)],
-                [self._rescale_data(method, data[2], good_data_mask[2], rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one)],
+                [self._rescale_data(method, data[0], good_data_mask[0], rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one, clip_zero=clip_zero)],
+                [self._rescale_data(method, data[1], good_data_mask[1], rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one, clip_zero=clip_zero)],
+                [self._rescale_data(method, data[2], good_data_mask[2], rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one, clip_zero=clip_zero)],
             ))
         else:
-            data = self._rescale_data(method, data, good_data_mask, rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one)
+            data = self._rescale_data(method, data, good_data_mask, rescale_options, fill_value,
+                                      clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one, clip_zero=clip_zero)
 
         log_level = logging.getLogger('').handlers[0].level or 0
         # Only perform this calculation if it will be shown, its very time consuming
