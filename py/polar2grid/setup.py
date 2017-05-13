@@ -167,6 +167,7 @@ entry_points = {
         'modis=polar2grid.modis:Frontend',
         'mirs=polar2grid.mirs:Frontend',
         'drrtv=polar2grid.drrtv:Frontend',
+        'avhrr=polar2grid.avhrr:Frontend',
         ],
     'polar2grid.frontend_arguments': [
         'viirs_l1b=polar2grid.readers.viirs_l1b:add_frontend_argument_groups',
@@ -179,6 +180,7 @@ entry_points = {
         'modis=polar2grid.modis:add_frontend_argument_groups',
         'mirs=polar2grid.mirs:add_frontend_argument_groups',
         'drrtv=polar2grid.drrtv:add_frontend_argument_groups',
+        'avhrr=polar2grid.avhrr:add_frontend_argument_groups',
         ],
     }
 
