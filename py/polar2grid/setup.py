@@ -160,7 +160,8 @@ entry_points = {
         'acspo=polar2grid.readers.acspo:Frontend',
         'viirs=polar2grid.viirs:Frontend',
         'viirs_sdr=polar2grid.viirs:Frontend',
-        'viirsedr=polar2grid.viirs:EDRFrontend'
+        'viirsedr=polar2grid.viirs:EDRFrontend',
+        'modis=polar2grid.modis:Frontend',
         ],
     'polar2grid.frontend_arguments': [
         'viirs_l1b=polar2grid.readers.viirs_l1b:add_frontend_argument_groups',
@@ -169,7 +170,8 @@ entry_points = {
         'acspo=polar2grid.readers.acspo:add_frontend_argument_groups',
         'viirs=polar2grid.viirs:add_frontend_argument_groups',
         'viirs_sdr=polar2grid.viirs:add_frontend_argument_groups',
-        'viirsedr=polar2grid.viirs:add_frontend_argument_groups_edr'
+        'viirsedr=polar2grid.viirs:add_frontend_argument_groups_edr',
+        'modis=polar2grid.modis:add_frontend_argument_groups',
         ],
     }
 

@@ -151,22 +151,21 @@ The following products are provided by this reader:
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import roles
-from pyhdf import SD
-import numpy
-
-from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
-from polar2grid.core import containers
-import polar2grid.modis.modis_to_swath as modis_module
-import polar2grid.modis.modis_guidebook as modis_guidebook
-import polar2grid.viirs.swath as viirs_module
-import polar2grid.viirs.io as viirs_io
-import polar2grid.viirs.guidebook as viirs_guidebook
-
-import os
 import sys
-import logging
 from datetime import datetime, timedelta
+from pyhdf import SD
+
+import logging
+import numpy
+import os
+import polar2grid.modis.modis_guidebook as modis_guidebook
+import polar2grid.modis.modis_to_swath as modis_module
+import polar2grid.viirs.guidebook as viirs_guidebook
+import polar2grid.viirs.io as viirs_io
+import polar2grid.viirs.swath as viirs_module
+from polar2grid.core import containers
+from polar2grid.core import roles
+from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
 
 LOG = logging.getLogger(__name__)
 
