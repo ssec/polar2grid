@@ -129,6 +129,7 @@ extras_require = {
     'modis_l1b': ['pyhdf'],
     'mirs': ['netCDF4'],
     "drrtv": ['h5py'],
+    'acspo': ['netCDF4'],
 }
 extras_require["all"] = list(set([x for y in extras_require.values() for x in y]))
 
