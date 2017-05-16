@@ -33,15 +33,15 @@ and ignore any geolocation information it supports any grid.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
-from polar2grid.core import roles
-from polar2grid.core.dtype import str_to_dtype, clip_to_data_type
-import numpy
-
-import os
 import sys
-import shutil
+
 import logging
+import numpy
+import os
+import shutil
+from polar2grid.core import Rescaler, DEFAULT_RCONFIG
+from polar2grid.core import roles
+from polar2grid.core import str_to_dtype, clip_to_data_type
 
 LOG = logging.getLogger(__name__)
 DEFAULT_OUTPUT_PATTERN = "{satellite}_{instrument}_{product_name}_{begin_time}_{grid_name}.dat"
@@ -134,8 +134,8 @@ def add_backend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
-    from polar2grid.core.containers import GriddedScene, GriddedProduct
+    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core import GriddedScene, GriddedProduct
     parser = create_basic_parser(description="Create binary files from provided gridded scene or product data")
     subgroup_titles = add_backend_argument_groups(parser)
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")

@@ -34,11 +34,11 @@ MAIN_PKG_DIR   = polar2grid
 
 # Make sure target names are just the dir name with a suffix
 # See targets for substitution
-ALL_PKG_DIRS   = polar2grid_core polar2grid_viirs polar2grid_modis polar2grid_crefl polar2grid_mirs polar2grid_drrtv polar2grid_avhrr polar2grid_acspo $(MAIN_PKG_DIR)
-ALL_PKG_INSTALL  = $(ALL_PKG_DIRS:=_install)
-ALL_PKG_SDIST  = $(ALL_PKG_DIRS:=_sdist)
-ALL_PKG_DEV    = $(ALL_PKG_DIRS:=_dev)
-DOC_DIR        ?= /var/apache/www/htdocs/software/polar2grid
+ALL_PKG_DIRS = $(MAIN_PKG_DIR)
+ALL_PKG_INSTALL = $(ALL_PKG_DIRS:=_install)
+ALL_PKG_SDIST = $(ALL_PKG_DIRS:=_sdist)
+ALL_PKG_DEV = $(ALL_PKG_DIRS:=_dev)
+DOC_DIR ?= /var/apache/www/htdocs/software/polar2grid
 
 EGG_REPOS_MACHINE = birch
 EGG_REPOS_DIR = /var/apache/larch/htdocs/eggs/repos/polar2grid/

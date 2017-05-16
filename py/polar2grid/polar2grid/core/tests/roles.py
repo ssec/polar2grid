@@ -40,9 +40,9 @@
 __docformat__ = "restructuredtext en"
 
 import sys
+
 import unittest
 from StringIO import StringIO
-
 from polar2grid.core import roles
 
 

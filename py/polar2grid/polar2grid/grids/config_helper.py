@@ -42,8 +42,9 @@ own grid configuration file.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.proj import Proj
 import sys
+
+from polar2grid.core import Proj
 
 #grid_name,proj4, proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y
 CONFIG_LINE_FORMAT = "%(grid_name)s, proj4, %(proj4_str)s, %(width)d, %(height)d, %(pixel_size_x)0.3f, %(pixel_size_y)0.3f, %(origin_x)s, %(origin_y)s"

@@ -162,16 +162,16 @@ angle is less than 90 degrees.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.modis import modis_guidebook as guidebook
+import sys
+
+import logging
+import numpy
+import os
+import shutil
 from polar2grid.core import roles, histogram, containers
 from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
+from polar2grid.modis import modis_guidebook as guidebook
 from polar2grid.modis.bt import bright_shift
-import numpy
-
-import os
-import sys
-import shutil
-import logging
 
 LOG = logging.getLogger(__name__)
 

@@ -44,12 +44,11 @@ returned values are up to the rest of the VIIRs frontend calling them.
 """
 __docformat__ = "restructuredtext en"
 
+import logging
 import numpy
-from polar2grid.core.histogram import local_histogram_equalization, histogram_equalization
+from polar2grid.core import local_histogram_equalization, histogram_equalization
 
 # from mpl_toolkits.basemap import maskoceans
-
-import logging
 
 LOG = logging.getLogger(__name__)
 

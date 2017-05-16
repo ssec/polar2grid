@@ -119,12 +119,11 @@ extras_require = {
     "gtiff": ["gdal"],
     "ninjo": [],
     "hdf5": ["h5py"],
-    # Frontends (included separately):
     # Other:
-    # FIXME: technically polar2grid.core.meta uses this through the polar2grid.proj module
     "remap": ["pyproj", "scipy"],
     "utils": ["matplotlib"],
     "docs": ["sphinx", "rst2pdf"],
+    # Frontends (included separately):
     "viirs_sdr": ['h5py'],
     'modis_l1b': ['pyhdf'],
     'mirs': ['netCDF4'],

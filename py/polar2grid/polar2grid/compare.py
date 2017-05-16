@@ -39,10 +39,10 @@ supported backend's output.
 """
 __docformat__ = "restructuredtext en"
 
-import numpy
-
 import sys
+
 import logging
+import numpy
 
 LOG = logging.getLogger(__name__)
 
@@ -159,7 +159,7 @@ def _file_type(str_val):
 
 def main(argv=sys.argv[1:]):
     from argparse import ArgumentParser
-    from polar2grid.core.dtype import str_to_dtype, str2dtype
+    from polar2grid.core import str_to_dtype
     parser = ArgumentParser(description="Compare two files per pixel")
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
                         help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')

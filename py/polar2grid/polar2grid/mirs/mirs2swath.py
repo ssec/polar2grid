@@ -170,15 +170,15 @@ As an example, the ATMS band options are:
 """
 __docformat__ = "restructuredtext en"
 
-import os
 import sys
-import logging
-from datetime import datetime, timedelta
-import numpy as np
+from datetime import datetime
 from netCDF4 import Dataset
 
-from polar2grid.core import roles
+import logging
+import numpy as np
+import os
 from polar2grid.core import containers
+from polar2grid.core import roles
 from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader, ProductDict, GeoPairDict
 
 try:
@@ -935,7 +935,6 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # parser.set_defaults(remap_method="ewa", fornav_D=100, fornav_d=1, maximum_weight_mode=True)
     parser.set_defaults(remap_method="ewa", fornav_D=100, fornav_d=1)
 

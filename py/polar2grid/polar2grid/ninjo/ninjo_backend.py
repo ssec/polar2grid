@@ -50,15 +50,15 @@ Alaska (203) grid.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import roles
-from polar2grid.core.rescale import Rescaler
-from polar2grid.core.dtype import clip_to_data_type, dtype_to_str, DTYPE_UINT8
-from polar2grid.ninjo.ninjotiff_tifffile import write as ninjo_write
-import numpy
-
-import os
 import sys
+
 import logging
+import numpy
+import os
+from polar2grid.core import Rescaler
+from polar2grid.core import clip_to_data_type, dtype_to_str, DTYPE_UINT8
+from polar2grid.core import roles
+from polar2grid.ninjo.ninjotiff_tifffile import write as ninjo_write
 
 LOG = logging.getLogger(__name__)
 
@@ -278,8 +278,8 @@ def add_backend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
-    from polar2grid.core.containers import GriddedScene, GriddedProduct
+    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core import GriddedScene, GriddedProduct
     parser = create_basic_parser(description="Create NinJo files from provided gridded scene or product data")
     subgroup_titles = add_backend_argument_groups(parser)
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")

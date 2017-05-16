@@ -145,10 +145,11 @@ angle is less than 100 degrees.
 """
 __docformat__ = "restructuredtext en"
 
-import os
 import sys
+
 import logging
 import numpy as np
+import os
 from polar2grid.readers import ReaderWrapper, main
 
 LOG = logging.getLogger(__name__)
@@ -276,7 +277,7 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
+    from polar2grid.core import ExtendAction, ExtendConstAction
     # Set defaults for other components that may be used in polar2grid processing
     parser.set_defaults(fornav_D=40, fornav_d=1)
 

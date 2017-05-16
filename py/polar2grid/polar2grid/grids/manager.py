@@ -40,11 +40,10 @@ polar2grid.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.proj import Proj
-from polar2grid.core import roles
-
-import os
 import logging
+import os
+from polar2grid.core import Proj
+from polar2grid.core import roles
 
 try:
     # try getting setuptools/distribute's version of resource retrieval first
@@ -318,7 +317,7 @@ class GridManager(roles.CartographerRole):
                   internal to the `Cartographer`.
 
         """
-        from polar2grid.core.containers import GridDefinition
+        from polar2grid.core import GridDefinition
         grid_info = self.get_grid_info(grid_name)
         return GridDefinition(
             grid_name=grid_name,

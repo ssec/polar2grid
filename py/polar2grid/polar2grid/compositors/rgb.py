@@ -90,12 +90,10 @@ with the a software bundle glue script.
 """
 __docformat__ = "restructuredtext en"
 
-import numpy
-from polar2grid.core import roles
-
-import os
-import sys
 import logging
+import numpy
+import os
+from polar2grid.core import roles
 
 LOG = logging.getLogger(__name__)
 

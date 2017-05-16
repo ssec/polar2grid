@@ -56,15 +56,15 @@ The AVHRR reader provides the following products:
 """
 __docformat__ = "restructuredtext en"
 
-import os
 import sys
+
 import logging
 import numpy
-
-from polar2grid.core import roles
-from polar2grid.core import containers
-from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
+import os
 from polar2grid.avhrr import readers
+from polar2grid.core import ProductDict, GeoPairDict
+from polar2grid.core import containers
+from polar2grid.core import roles
 
 LOG = logging.getLogger(__name__)
 
@@ -476,7 +476,7 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    from polar2grid.core.script_utils import ExtendAction
+    from polar2grid.core import ExtendAction
     # Set defaults for other components that may be used in polar2grid processing
     # parser.set_defaults(remap_method="nearest")
     parser.set_defaults(remap_method="ewa", fornav_D=10, fornav_d=1)
@@ -497,7 +497,7 @@ def add_frontend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core.script_utils import create_basic_parser, setup_logging, create_exc_handler
+    from polar2grid.core import create_basic_parser, setup_logging, create_exc_handler
     parser = create_basic_parser(description="Extract image data from AVHRR files and print JSON scene dictionary")
     subgroup_titles = add_frontend_argument_groups(parser)
     parser.add_argument('-f', dest='data_files', nargs="+", default=[],

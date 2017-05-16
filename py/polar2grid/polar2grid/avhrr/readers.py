@@ -43,15 +43,15 @@ https://github.com/mraspaud/mpop
 """
 __docformat__ = "restructuredtext en"
 
-import os
+from datetime import datetime, timedelta
+from numpy import arccos, sign, rad2deg, sqrt, arcsin
+
 import logging
 import numpy
-from datetime import datetime, timedelta
+import os
 from collections import namedtuple
-from numpy import arccos, sign, rad2deg, sqrt, arcsin
-from scipy.interpolate import RectBivariateSpline, splrep, splev
-
-from polar2grid.core.frontend_utils import BaseFileReader, BaseMultiFileReader
+from polar2grid.core import BaseFileReader, BaseMultiFileReader
+from scipy.interpolate import splrep, splev
 
 LOG = logging.getLogger(__name__)
 EARTH_RADIUS = 6370997.0

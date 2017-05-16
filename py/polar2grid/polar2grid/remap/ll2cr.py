@@ -38,13 +38,10 @@
 """
 __docformat__ = "restructuredtext en"
 
-import logging
-
-import numpy
-
-from polar2grid.core.proj import Proj
 import _ll2cr
-
+import logging
+import numpy
+from polar2grid.core import Proj
 
 LOG = logging.getLogger(__name__)
 

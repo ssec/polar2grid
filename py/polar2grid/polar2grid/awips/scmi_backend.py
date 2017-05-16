@@ -57,21 +57,18 @@ products over certain grids
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import roles
-from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
-from polar2grid.core.dtype import clip_to_data_type, DTYPE_UINT8
-from .awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, NoSectionError
-from netCDF4 import Dataset
-import numpy as np
-
-import os
-import re
 import sys
-import logging
-import calendar
-import math
 from datetime import datetime, timedelta
-from collections import namedtuple
+from netCDF4 import Dataset
+
+import logging
+import numpy as np
+import os
+from polar2grid.core import DEFAULT_RCONFIG
+from polar2grid.core import DTYPE_UINT8
+from polar2grid.core import roles
+
+from .awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, NoSectionError
 
 LOG = logging.getLogger(__name__)
 
@@ -668,8 +665,8 @@ def add_backend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
-    from polar2grid.core.containers import GriddedScene, GriddedProduct
+    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core import GriddedScene, GriddedProduct
     parser = create_basic_parser(description="Create SCMI AWIPS compatible NetCDF files")
     subgroup_titles = add_backend_argument_groups(parser)
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")

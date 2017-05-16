@@ -38,15 +38,14 @@
 """
 __docformat__ = "restructuredtext en"
 
-import os
 import sys
+
 import logging
-
 import numpy as np
-from satpy.scene import Scene
-from pyresample.geometry import AreaDefinition
-
+import os
 from polar2grid.core import containers, roles
+from pyresample.geometry import AreaDefinition
+from satpy.scene import Scene
 
 LOG = logging.getLogger(__name__)
 
@@ -347,7 +346,7 @@ class ReaderWrapper(roles.FrontendRole):
 
 
 def main(description=None, add_argument_groups=None):
-    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
     parser = create_basic_parser(description=description)
     subgroup_titles = add_argument_groups(parser)
     parser.add_argument('-f', dest='data_files', nargs="+", default=[],

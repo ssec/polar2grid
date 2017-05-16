@@ -274,6 +274,7 @@ __docformat__ = "restructuredtext en"
 # print("\n".join([sep_line, line_fmt.format("Pressure Value", "Name Value"), title_line] + [pressure_lines]))
 
 import sys
+
 import logging
 from polar2grid.readers import ReaderWrapper, main
 
@@ -314,7 +315,7 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    from polar2grid.core.script_utils import ExtendAction
+    from polar2grid.core import ExtendAction
     # Set defaults for other components that may be used in polar2grid processing
     parser.set_defaults(fornav_D=40, fornav_d=1, share_remap_mask=False, remap_method="nearest")
 

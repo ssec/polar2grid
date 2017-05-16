@@ -32,12 +32,12 @@
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core import roles
-
-import os
 import sys
+
 import logging
+import os
 from ConfigParser import NoSectionError, NoOptionError
+from polar2grid.core import roles
 
 LOG = logging.getLogger(__name__)
 

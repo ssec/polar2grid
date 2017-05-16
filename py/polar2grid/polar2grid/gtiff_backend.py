@@ -34,17 +34,16 @@ can be described by PROJ.4 and understand by GeoTIFF.
 """
 __docformat__ = "restructuredtext en"
 
-from osgeo import gdal
-import osr
-import numpy as np
-
-from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
-from polar2grid.core import roles
-from polar2grid.core.dtype import clip_to_data_type, str_to_dtype
-
-import os
 import sys
+from osgeo import gdal
+
 import logging
+import numpy as np
+import os
+import osr
+from polar2grid.core import Rescaler, DEFAULT_RCONFIG
+from polar2grid.core import clip_to_data_type, str_to_dtype
+from polar2grid.core import roles
 
 LOG = logging.getLogger(__name__)
 
@@ -263,8 +262,8 @@ def add_backend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
-    from polar2grid.core.containers import GriddedScene, GriddedProduct
+    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core import GriddedScene, GriddedProduct
     parser = create_basic_parser(description="Create geotiff files from provided gridded scene or product data")
     subgroup_titles = add_backend_argument_groups(parser)
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")

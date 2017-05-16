@@ -48,12 +48,13 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from . import roles
-from polar2grid.core.dtype import dtype_to_str, dtype2range
-
 import sys
+
 import logging
 import numpy
+from polar2grid.core.dtype import dtype_to_str, dtype2range
+
+from . import roles
 
 LOG = logging.getLogger(__name__)
 DEFAULT_RCONFIG = "polar2grid.core:rescale_configs/rescale.ini"

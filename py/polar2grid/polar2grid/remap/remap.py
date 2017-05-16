@@ -76,20 +76,19 @@ from python.
 """
 __docformat__ = "restructuredtext en"
 
-from polar2grid.core.containers import GriddedProduct, GriddedScene, SwathScene, GridDefinition
-from polar2grid.remap import ll2cr as ll2cr  # gridinator
-from polar2grid.remap import fornav
-from polar2grid.grids import GridManager
-from satpy import Scene
-
-import os
-import sys
-import logging
 import signal
-from collections import defaultdict
+import sys
 from itertools import izip
 
+import logging
 import numpy
+import os
+from collections import defaultdict
+from polar2grid.core import GriddedProduct, GriddedScene, SwathScene
+from polar2grid.grids import GridManager
+from polar2grid.remap import fornav
+from polar2grid.remap import ll2cr as ll2cr  # gridinator
+from satpy import Scene
 from scipy.interpolate.interpnd import _ndim_coords_from_arrays
 from scipy.spatial import cKDTree
 
@@ -556,8 +555,8 @@ def add_remap_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
-    from polar2grid.core.containers import SwathScene
+    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core import SwathScene
     parser = create_basic_parser(description="Remap a SwathScene to the provided grids")
     subgroup_titles = add_remap_argument_groups(parser)
     parser.add_argument("--scene", required=True,

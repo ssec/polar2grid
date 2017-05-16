@@ -8,3 +8,4 @@ include polar2grid/grids/*.conf
 include polar2grid/remap/*.h
 include polar2grid/fonts/*.ttf
 include polar2grid/mirs/limball_atms*.txt
+include polar2grid/core/rescale_configs/*.ini
