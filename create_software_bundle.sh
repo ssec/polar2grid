@@ -6,7 +6,7 @@
 #SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3-Linux-x86_64-20140212-r840-core-cspp.tar.gz"
 SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/ssec/davidh/cspp_common_py27.tar.gz"
 BASE_P2G_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PY_DIR="$BASE_P2G_DIR"/py
+PY_DIR="$BASE_P2G_DIR"
 BUNDLE_SCRIPTS_DIR="$BASE_P2G_DIR"/swbundle
 VCREFL_DIR="$BASE_P2G_DIR"/viirs_crefl
 MCREFL_DIR="$BASE_P2G_DIR"/modis_crefl
