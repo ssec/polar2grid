@@ -11,11 +11,6 @@ before_install:
 install:
  - cd py/polar2grid
  - pip install -r requirements.txt
- - cd ../../
- - cd py/polar2grid_core
- - pip install -e ".[all]"
- - cd ../../
- - cd py/polar2grid
  - pip install -e ".[remap]"
 script:
   python -m polar2grid.tests
