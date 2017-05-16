@@ -58,37 +58,30 @@ all_sdist: $(ALL_PKG_SDIST) clean_sdist_build
 all_dev: $(ALL_PKG_DEV)
 
 $(ALL_PKG_INSTALL): $(INSTALL_DIR)
-	cd $(@:_install=); \
 	python setup.py install --prefix=$(INSTALL_DIR)
 
-$(ALL_PKG_SDIST): $(DIST_DIR)
-	cd $(@:_sdist=); \
+$(ALL_PKG_SDIST):
 	python setup.py sdist
-	mv $(@:_sdist=)/dist/*.tar.gz $(DIST_DIR)
 
 $(ALL_PKG_DEV): $(INSTALL_DIR)
-	cd $(@:_dev=); \
 	python setup.py develop $(DEV_FLAGS)
 
 $(INSTALL_DIR):
 	mkdir -p $(INSTALL_DIR)
-
-$(DIST_DIR):
-	mkdir -p $(DIST_DIR)
 
 torepos:
 	scp $(DIST_DIR)/*.tar.gz $(EGG_REPOS_MACHINE):$(EGG_REPOS_DIR)
 
 ### Documentation Stuff ###
 build_doc_html:
-	cd $(MAIN_PKG_DIR)/doc; \
+	cd doc; \
 	make clean; \
 	make html
 
 FN = polar2grid_docs_$(shell date -u +%Y%m%d_%H%M%S).tar.gz
 # Remake documentation and then update the main doc site
 update_doc: build_doc_html
-	cd $(MAIN_PKG_DIR)/doc/build/html; \
+	cd doc/build/html; \
 	echo $(FN); \
 	tar -czf $(FN) *; \
 	scp $(FN) birch.ssec.wisc.edu:/tmp/; \
@@ -100,10 +93,8 @@ clean_sdist:
 
 # This is ugly, but not sure how to make it better
 clean_sdist_build:
-	for pkg_dir in $(ALL_PKG_DIRS); do \
-		rm -rf $$pkg_dir/dist; \
-		rm -rf $$pkg_dir/build; \
-	done
+	rm -rf $$pkg_dir/dist; \
+	rm -rf $$pkg_dir/build;
 
 clean:	clean_sdist	clean_sdist_build
 
