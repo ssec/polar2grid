@@ -9,7 +9,6 @@ before_install:
  - sudo apt-get install -y -qq libgdal1h proj
  - sudo apt-get install -qq python-scipy python-numpy python-pyproj
 install:
- - cd py/polar2grid
  - pip install -r requirements.txt
  - pip install -e ".[remap]"
 script:

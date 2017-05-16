@@ -18,6 +18,20 @@ on most archived (non-DB) data files. See the documentation for specific functio
 
 `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`_
 
+Installation
+------------
+
+It is recommended that users use the official Polar2Grid release compatible
+with RHEL6+ systems whenever possible. This tarball is available through the
+CSPP team's website (see above). To install the Polar2Grid python package
+that provides most of the functionality of Polar2Grid can be installed with::
+
+    pip install -i http://larch.ssec.wisc.edu/simple polar2grid
+
+Or from source::
+
+    python setup.py install
+
 Contributing
 ------------
 
@@ -35,11 +49,12 @@ for various processing algorithms.
 To make it easier to create our CSPP distribution (aka the software bundle) and for any pure python users we provide
 the source for some of these executables in the root of the repository.
 
-- py: Contains all of the python code. Due to the modularity of Polar2Grid there are multiple python packages to allow users to only install portions of Polar2Grid.
+- polar2grid: The Polar2Grid python package.
 - swbundle: Helper scripts and other files provided in the Polar2Grid Software Bundle released by the CSPP team.
 - modis_crefl: Copy of the MODIS Corrected Reflectance software (CREFL) that includes updates for building with Makefile
 - viirs_crefl: Copy of the VIIRS Corrected Reflectance software (CREFL) that includes updates for building with Makefile
 - ms2gt: Custom version of the `ms2gt <http://nsidc.org/data/modis/ms2gt/>`_ software package with bug fixes and optimizations. This is not used as of P2Gv2.0 and will be removed in future revisions.
+- etc: Configuration files used to customize the SatPy package for Polar2Grid users.
 
 Branching Model
 ---------------
@@ -57,7 +72,7 @@ Copyright and License
 
 ::
 
-    Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
+    Copyright (C) 2012-2017 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
