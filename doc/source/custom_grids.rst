@@ -53,7 +53,7 @@ you wish to create. See the :ref:`util_p2g_grid_helper` section.
 Grid Configuration File Format
 ------------------------------
 
-Example Grid Configuration File: :download:`grid_example.conf <../../../../swbundle/grid_configs/grid_example.conf>`
+Example Grid Configuration File: :download:`grid_example.conf <../../swbundle/grid_configs/grid_example.conf>`
 
 Grid configuration files are comma-separated text files.
 Comments can be added by prefixing lines

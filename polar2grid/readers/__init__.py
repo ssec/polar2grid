@@ -347,7 +347,7 @@ class ReaderWrapper(roles.FrontendRole):
 
 
 def main(description=None, add_argument_groups=None):
-    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
     parser = create_basic_parser(description=description)
     subgroup_titles = add_argument_groups(parser)
     parser.add_argument('-f', dest='data_files', nargs="+", default=[],

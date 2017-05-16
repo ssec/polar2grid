@@ -106,7 +106,7 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    from polar2grid.core import ExtendAction
+    from polar2grid.core.script_utils import ExtendAction
     # Set defaults for other components that may be used in polar2grid processing
     parser.set_defaults(fornav_D=10, fornav_d=1, remap_method="nearest", distance_upper_bound=12)
 

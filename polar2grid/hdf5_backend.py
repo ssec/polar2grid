@@ -44,7 +44,7 @@ import h5py
 import logging
 import os
 
-from polar2grid.core import Rescaler, DEFAULT_RCONFIG
+from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
 from polar2grid.core import roles
 
 LOG = logging.getLogger(__name__)
@@ -216,8 +216,8 @@ def add_backend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
-    from polar2grid.core import GriddedScene, GriddedProduct
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core.containers import GriddedScene, GriddedProduct
     parser = create_basic_parser(description="Create HDF5 files from provided gridded scene or product data")
     subgroup_titles = add_backend_argument_groups(parser)
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")

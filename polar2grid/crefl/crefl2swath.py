@@ -859,7 +859,7 @@ def add_frontend_argument_groups(parser):
 
     :returns: list of group titles added
     """
-    from polar2grid.core import ExtendAction, ExtendConstAction
+    from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # Set defaults for other components that may be used in polar2grid processing
     # FIXME: These should probably be changed depending on what instrument is being dealt with...currently not possible in polar2grid
     parser.set_defaults(fornav_D=40, fornav_d=1)
@@ -885,7 +885,7 @@ def add_frontend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
     parser = create_basic_parser(description="Extract VIIRS and MODIS CREFL swath data into binary files")
     subgroup_titles = add_frontend_argument_groups(parser)
     parser.add_argument('-f', dest='data_files', nargs="+", default=[],

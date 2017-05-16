@@ -1145,7 +1145,7 @@ def add_frontend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
     parser = create_basic_parser(description="Extract VIIRS swath data into binary files")
     subgroup_titles = add_frontend_argument_groups(parser)
     parser.add_argument('-f', dest='data_files', nargs="+", default=[],

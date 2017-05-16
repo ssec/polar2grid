@@ -96,7 +96,7 @@ def get_backend_class(backends, name, entry_point=P2G_BACKEND_CLS_EP):
 
 
 def main_frontend(argv=sys.argv[1:]):
-    from polar2grid.core import setup_logging, create_basic_parser, create_exc_handler, ExtendAction
+    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, ExtendAction
     frontends = available_frontends()
     parser = create_basic_parser(description="Extract swath data using the generic Polar2Grid frontend command line arguments (see specific frontend for other features)")
     parser.add_argument("frontend", choices=sorted(frontends.keys()),
@@ -141,8 +141,8 @@ def main_frontend(argv=sys.argv[1:]):
 
 
 def main_backend(argv=sys.argv[1:]):
-    from polar2grid.core import setup_logging, create_basic_parser, create_exc_handler, ExtendAction
-    from polar2grid.core import GriddedScene, GriddedProduct
+    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, ExtendAction
+    from polar2grid.core.containers import GriddedScene, GriddedProduct
     backends = available_backends()
     parser = create_basic_parser(description="Create image/output file from provided gridded scene using a typical Polar2Grid backend (see specific backend for other features)")
     parser.add_argument("backend", choices=sorted(backends.keys()),

@@ -65,8 +65,8 @@ import logging
 import numpy as np
 import os
 
-from polar2grid.core import DEFAULT_RCONFIG
-from polar2grid.core import DTYPE_UINT8
+from polar2grid.core.rescale import DEFAULT_RCONFIG
+from polar2grid.core.dtype import DTYPE_UINT8
 from polar2grid.core import roles
 from .awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, NoSectionError
 
@@ -665,8 +665,8 @@ def add_backend_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
-    from polar2grid.core import GriddedScene, GriddedProduct
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core.containers import GriddedScene, GriddedProduct
     parser = create_basic_parser(description="Create SCMI AWIPS compatible NetCDF files")
     subgroup_titles = add_backend_argument_groups(parser)
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")

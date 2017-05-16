@@ -556,8 +556,8 @@ def add_remap_argument_groups(parser):
 
 
 def main():
-    from polar2grid.core import create_basic_parser, create_exc_handler, setup_logging
-    from polar2grid.core import SwathScene
+    from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
+    from polar2grid.core.containers import SwathScene
     parser = create_basic_parser(description="Remap a SwathScene to the provided grids")
     subgroup_titles = add_remap_argument_groups(parser)
     parser.add_argument("--scene", required=True,

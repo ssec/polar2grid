@@ -13,3 +13,7 @@ install:
  - pip install -e ".[remap]"
 script:
   python -m polar2grid.tests
+  cd doc
+  make html
+#  make clean
+#  make latexpdf

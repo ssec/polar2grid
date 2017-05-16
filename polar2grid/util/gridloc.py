@@ -9,7 +9,7 @@
 :date:         Dec 2012
 :license:      GNU GPLv3
 """
-from polar2grid.core import Proj
+from polar2grid.core.proj import Proj
 
 __docformat__ = "restructuredtext en"
 

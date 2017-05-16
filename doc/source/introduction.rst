@@ -79,7 +79,7 @@ License and Disclaimer
 
 Original scripts and automation included as part of this package are
 distributed under the
-:download:`GNU GENERAL PUBLIC LICENSE agreement version 3 <../../../../COPYING>`.
+:download:`GNU GENERAL PUBLIC LICENSE agreement version 3 <../../COPYING>`.
 Software included as part of this software package are copyrighted
 and licensed by their respective organizations, and distributed consistent
 with their licensing terms.

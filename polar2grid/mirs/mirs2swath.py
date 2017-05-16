@@ -178,8 +178,7 @@ import logging
 import numpy as np
 import os
 
-from polar2grid.core import containers
-from polar2grid.core import roles
+from polar2grid.core import containers, roles
 from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader, ProductDict, GeoPairDict
 
 try:

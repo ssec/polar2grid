@@ -46,7 +46,7 @@ import os
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
-from polar2grid.core import BaseP2GObject, BaseProduct, BaseScene
+from polar2grid.core.containers import BaseP2GObject, BaseProduct, BaseScene
 
 DEFAULT_FILL_VALUE = numpy.nan
 DEFAULT_DPI = 150
@@ -88,7 +88,7 @@ def plot_binary(arr, output_fn, dpi_to_use=None, vmin=None, vmax=None, fill_figu
 
 
 def _parse_binary_info(parts):
-    from polar2grid.core import str_to_dtype
+    from polar2grid.core.dtype import str_to_dtype
     fn = parts[0]
     if not os.path.exists(fn):
         raise ValueError("File '%s' does not exist" % (fn,))

@@ -13,7 +13,7 @@ in a data set defined by some binary files.
 __docformat__ = "restructuredtext en"
 
 import numpy as numpy
-from polar2grid.core import SwathScene
+from polar2grid.core.containers import SwathScene
 
 
 def _find_nearest_data_pt (lonToFind, latToFind, lonData, latData, dataValues):
