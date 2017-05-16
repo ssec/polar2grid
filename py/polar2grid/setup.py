@@ -201,16 +201,14 @@ setup(
     ext_modules=cythonize(extensions),
     include_dirs=[numpy.get_include()],
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-    namespace_packages=["polar2grid"],
     include_package_data=True,
-    package_data={'polar2grid': ["compositors/*.ini", "awips/*.ini", "grids/*.conf", "ninjo/*.ini"]},
+    package_data={'polar2grid': ["compositors/*.ini", "awips/*.ini", "grids/*.conf", "ninjo/*.ini", "core/rescale_configs/*.ini"]},
     zip_safe=True,
     tests_require=['py.test'],
     cmdclass={'test': PyTest},
     install_requires=[
         'setuptools',       # reading configuration files
         'numpy',
-        'polar2grid.core[all]',  # Almost everything touches this in some way
         ],
     extras_require=extras_require,
     entry_points=entry_points

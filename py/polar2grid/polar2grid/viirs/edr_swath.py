@@ -69,7 +69,7 @@ import sys
 
 import logging
 import os
-from polar2grid.core import ProductDict, GeoPairDict
+from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
 
 from . import guidebook
 from .io import VIIRSSDRMultiReader

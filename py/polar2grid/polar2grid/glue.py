@@ -188,7 +188,7 @@ def main_backend(argv=sys.argv[1:]):
 
 
 def main(argv=sys.argv[1:]):
-    from polar2grid.core import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
+    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
     from polar2grid.compositors import CompositorManager
     frontends = available_frontends()
     backends = available_backends()

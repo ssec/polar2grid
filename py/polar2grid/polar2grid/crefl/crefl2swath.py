@@ -163,9 +163,8 @@ import polar2grid.modis.modis_to_swath as modis_module
 import polar2grid.viirs.guidebook as viirs_guidebook
 import polar2grid.viirs.io as viirs_io
 import polar2grid.viirs.swath as viirs_module
-from polar2grid.core import ProductDict, GeoPairDict
-from polar2grid.core import containers
-from polar2grid.core import roles
+from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
+from polar2grid.core import containers, roles
 
 LOG = logging.getLogger(__name__)
 

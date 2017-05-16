@@ -50,7 +50,7 @@ import logging
 import numpy
 import os
 from collections import namedtuple
-from polar2grid.core import BaseFileReader, BaseMultiFileReader
+from polar2grid.core.frontend_utils import BaseFileReader, BaseMultiFileReader
 from scipy.interpolate import splrep, splev
 
 LOG = logging.getLogger(__name__)

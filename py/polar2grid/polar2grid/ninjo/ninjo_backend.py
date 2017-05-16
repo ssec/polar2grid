@@ -55,8 +55,8 @@ import sys
 import logging
 import numpy
 import os
-from polar2grid.core import Rescaler
-from polar2grid.core import clip_to_data_type, dtype_to_str, DTYPE_UINT8
+from polar2grid.core.rescale import Rescaler
+from polar2grid.core.dtype import clip_to_data_type, dtype_to_str, DTYPE_UINT8
 from polar2grid.core import roles
 from polar2grid.ninjo.ninjotiff_tifffile import write as ninjo_write
 

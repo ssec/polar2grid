@@ -46,7 +46,7 @@ import h5py
 import logging
 import numpy
 import os
-from polar2grid.core import BaseMultiFileReader, BaseFileReader
+from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader
 from polar2grid.viirs import guidebook
 from polar2grid.viirs.guidebook import K_MOONILLUM
 

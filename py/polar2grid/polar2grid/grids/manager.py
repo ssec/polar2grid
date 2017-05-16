@@ -42,7 +42,7 @@ __docformat__ = "restructuredtext en"
 
 import logging
 import os
-from polar2grid.core import Proj
+from polar2grid.core.proj import Proj
 from polar2grid.core import roles
 
 try:
@@ -317,7 +317,7 @@ class GridManager(roles.CartographerRole):
                   internal to the `Cartographer`.
 
         """
-        from polar2grid.core import GridDefinition
+        from polar2grid.core.containers import GridDefinition
         grid_info = self.get_grid_info(grid_name)
         return GridDefinition(
             grid_name=grid_name,

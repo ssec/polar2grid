@@ -39,9 +39,9 @@ import logging
 import numpy
 import os
 import shutil
-from polar2grid.core import Rescaler, DEFAULT_RCONFIG
+from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
+from polar2grid.core.dtype import str_to_dtype, clip_to_data_type
 from polar2grid.core import roles
-from polar2grid.core import str_to_dtype, clip_to_data_type
 
 LOG = logging.getLogger(__name__)
 DEFAULT_OUTPUT_PATTERN = "{satellite}_{instrument}_{product_name}_{begin_time}_{grid_name}.dat"

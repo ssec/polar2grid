@@ -98,8 +98,8 @@ import numpy as np
 import os
 import re
 from functools import partial
-from polar2grid.core import FrontendRole
-from polar2grid.core import ProductDict, GeoPairDict
+from polar2grid.core.roles import FrontendRole
+from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
 from polar2grid.core import containers
 
 LOG = logging.getLogger(__name__)

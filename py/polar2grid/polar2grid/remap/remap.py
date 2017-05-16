@@ -84,7 +84,7 @@ import logging
 import numpy
 import os
 from collections import defaultdict
-from polar2grid.core import GriddedProduct, GriddedScene, SwathScene
+from polar2grid.core.containers import GriddedProduct, GriddedScene, SwathScene
 from polar2grid.grids import GridManager
 from polar2grid.remap import fornav
 from polar2grid.remap import ll2cr as ll2cr  # gridinator

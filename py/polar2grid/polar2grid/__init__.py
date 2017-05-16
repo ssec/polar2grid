@@ -42,4 +42,3 @@ convert polar orbiting satellite data and remap it into a known grid.
 :license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"
-__import__('pkg_resources').declare_namespace(__name__)

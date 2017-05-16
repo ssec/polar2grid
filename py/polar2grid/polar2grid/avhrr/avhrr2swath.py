@@ -62,9 +62,8 @@ import logging
 import numpy
 import os
 from polar2grid.avhrr import readers
-from polar2grid.core import ProductDict, GeoPairDict
-from polar2grid.core import containers
-from polar2grid.core import roles
+from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
+from polar2grid.core import containers, roles
 
 LOG = logging.getLogger(__name__)
 

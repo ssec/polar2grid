@@ -82,11 +82,11 @@ import calendar
 import logging
 import numpy
 import os
-from polar2grid.core import Rescaler, DEFAULT_RCONFIG
-from polar2grid.core import clip_to_data_type, DTYPE_UINT8
+from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
+from polar2grid.core.dtype import clip_to_data_type, DTYPE_UINT8
 from polar2grid.core import roles
 
-from .awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, NoSectionError
+from polar2grid.awips.awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, NoSectionError
 
 LOG = logging.getLogger(__name__)
 

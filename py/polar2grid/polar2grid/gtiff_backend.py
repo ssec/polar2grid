@@ -41,8 +41,8 @@ import logging
 import numpy as np
 import os
 import osr
-from polar2grid.core import Rescaler, DEFAULT_RCONFIG
-from polar2grid.core import clip_to_data_type, str_to_dtype
+from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
+from polar2grid.core.dtype import clip_to_data_type, str_to_dtype
 from polar2grid.core import roles
 
 LOG = logging.getLogger(__name__)
