@@ -258,7 +258,7 @@ class Frontend(ReaderWrapper):
                             self.fraction_day_scene <= self.day_fraction:
                 LOG.info("Will not create product '%s' because there is less than %f%% of day data",
                          ds.info['name'], self.day_fraction * 100.)
-                del scene[ds.info['id']]
+                del scene[ds.id]
 
     def filter_nighttime(self, scene):
         if self.fraction_day_scene is None:
@@ -269,7 +269,7 @@ class Frontend(ReaderWrapper):
                             self.fraction_night_scene <= self.night_fraction:
                 LOG.info("Will not create product '%s' because there is less than %f%% of night data",
                          ds.info['name'], self.night_fraction * 100.)
-                del scene[ds.info['id']]
+                del scene[ds.id]
 
 
 def add_frontend_argument_groups(parser):
