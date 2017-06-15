@@ -365,6 +365,7 @@ class Rescaler(roles.INIConfigReader):
         "grid_name",
         "inc_by_one",
         "units",
+        "reader",
     )
 
     rescale_methods = {

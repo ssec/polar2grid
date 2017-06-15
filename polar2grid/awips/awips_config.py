@@ -115,9 +115,15 @@ class AWIPS2ConfigReader(roles.SimpleINIConfigReader):
 
     def get_product_info(self, product_definition):
         info = {}
-        product_section = self.PRODUCT_SECTION_PREFIX + product_definition["product_name"]
         sat_section = self.SAT_SECTION_PREFIX + product_definition["satellite"] + ":" + product_definition["instrument"]
-        info["channel"] = self.config_parser.get(product_section, "channel")
+        try:
+            r = product_definition.get('reader')
+            product_section = '{}{}{}'.format(self.PRODUCT_SECTION_PREFIX, r + ':' if r else '', product_definition['product_name'])
+            info["channel"] = self.config_parser.get(product_section, "channel")
+        except NoSectionError:
+            product_section = self.PRODUCT_SECTION_PREFIX + product_definition["product_name"]
+            info["channel"] = self.config_parser.get(product_section, "channel")
+
         try:
             info["satellite_name"] = self.config_parser.get(sat_section, "satellite_name")
         except NoSectionError:
