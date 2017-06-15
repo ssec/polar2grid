@@ -415,28 +415,28 @@ guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SATZENITH)
 PRODUCTS.add_product(PRODUCT_M_SAT_AA, PAIR_MNAV, "satellite_azimuth_angle", (
 guidebook.FILE_TYPE_GMTCO, guidebook.FILE_TYPE_GMODO), guidebook.K_SATAZIMUTH)
 
-PRODUCTS.add_product(PRODUCT_I01, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I01, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))
-PRODUCTS.add_product(PRODUCT_I02, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I02, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))
-PRODUCTS.add_product(PRODUCT_I03, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I03, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,))
-PRODUCTS.add_product(PRODUCT_I04, PAIR_INAV, "brightness_temperature", guidebook.FILE_TYPE_I04, guidebook.K_BTEMP)
-PRODUCTS.add_product(PRODUCT_I05, PAIR_INAV, "brightness_temperature", guidebook.FILE_TYPE_I05, guidebook.K_BTEMP)
-PRODUCTS.add_product(PRODUCT_M01, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M01, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M02, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M02, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M03, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M03, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M04, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M04, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M05, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M05, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M06, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M06, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M07, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M07, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M08, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M08, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M09, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M09, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M10, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M10, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M11, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M11, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,))
-PRODUCTS.add_product(PRODUCT_M12, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M12, guidebook.K_BTEMP)
-PRODUCTS.add_product(PRODUCT_M13, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M13, guidebook.K_BTEMP)
-PRODUCTS.add_product(PRODUCT_M14, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M14, guidebook.K_BTEMP)
-PRODUCTS.add_product(PRODUCT_M15, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M15, guidebook.K_BTEMP)
-PRODUCTS.add_product(PRODUCT_M16, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M16, guidebook.K_BTEMP)
-PRODUCTS.add_product(PRODUCT_DNB, PAIR_DNBNAV, "radiance", guidebook.FILE_TYPE_DNB, guidebook.K_RADIANCE)
+PRODUCTS.add_product(PRODUCT_I01, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I01, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_I02, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I02, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_I03, PAIR_INAV, "reflectance", guidebook.FILE_TYPE_I03, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_I_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_I04, PAIR_INAV, "brightness_temperature", guidebook.FILE_TYPE_I04, guidebook.K_BTEMP, units='kelvin')
+PRODUCTS.add_product(PRODUCT_I05, PAIR_INAV, "brightness_temperature", guidebook.FILE_TYPE_I05, guidebook.K_BTEMP, units='kelvin')
+PRODUCTS.add_product(PRODUCT_M01, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M01, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M02, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M02, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M03, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M03, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M04, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M04, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M05, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M05, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M06, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M06, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M07, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M07, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M08, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M08, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M09, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M09, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M10, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M10, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M11, PAIR_MNAV, "reflectance", guidebook.FILE_TYPE_M11, guidebook.K_REFLECTANCE, dependencies=(PRODUCT_M_SZA,), units='1')
+PRODUCTS.add_product(PRODUCT_M12, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M12, guidebook.K_BTEMP, units='kelvin')
+PRODUCTS.add_product(PRODUCT_M13, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M13, guidebook.K_BTEMP, units='kelvin')
+PRODUCTS.add_product(PRODUCT_M14, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M14, guidebook.K_BTEMP, units='kelvin')
+PRODUCTS.add_product(PRODUCT_M15, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M15, guidebook.K_BTEMP, units='kelvin')
+PRODUCTS.add_product(PRODUCT_M16, PAIR_MNAV, "brightness_temperature", guidebook.FILE_TYPE_M16, guidebook.K_BTEMP, units='kelvin')
+PRODUCTS.add_product(PRODUCT_DNB, PAIR_DNBNAV, "radiance", guidebook.FILE_TYPE_DNB, guidebook.K_RADIANCE, units='1')
 
 # Special Radiance Versions of the products
 PRODUCTS.add_product(PRODUCT_I01_RAD, PAIR_INAV, "radiance", guidebook.FILE_TYPE_I01, guidebook.K_RADIANCE)
@@ -461,17 +461,17 @@ PRODUCTS.add_product(PRODUCT_M14_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE
 PRODUCTS.add_product(PRODUCT_M15_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M15, guidebook.K_RADIANCE)
 PRODUCTS.add_product(PRODUCT_M16_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M16, guidebook.K_RADIANCE)
 
-PRODUCTS.add_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", dependencies=(PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA))
-PRODUCTS.add_product(PRODUCT_HISTOGRAM_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA))
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA))
-PRODUCTS.add_product(PRODUCT_DYNAMIC_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA))
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_I04, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I04,))
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_I05, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I05,))
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_M12, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M12,))
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_M13, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M13,))
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_M14, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M14,))
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_M15, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M15,))
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M16,))
+PRODUCTS.add_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", dependencies=(PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA), units='kelvin')
+PRODUCTS.add_product(PRODUCT_HISTOGRAM_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA), units='1')
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), units='1')
+PRODUCTS.add_product(PRODUCT_DYNAMIC_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), units='1')
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_I04, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I04,), units='1')
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_I05, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I05,), units='1')
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M12, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M12,), units='1')
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M13, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M13,), units='1')
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M14, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M14,), units='1')
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M15, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M15,), units='1')
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M16,), units='1')
 
 
 class Frontend(roles.FrontendRole):
@@ -526,9 +526,6 @@ class Frontend(roles.FrontendRole):
             if p_def.data_kind == "reflectance" and p_def.dependencies:
                 self.secondary_product_functions[p] = self.day_check_reflectance
 
-
-
-
     def _load_files(self, file_paths):
         """Sort files by 'file type' and create objects to help load the data later.
 
@@ -548,7 +545,6 @@ class Frontend(roles.FrontendRole):
                     break
             else:
                 file_paths_left.append(fp)
-
 
         # Log what files we were given that we didn't understand
         for fp in file_paths_left:

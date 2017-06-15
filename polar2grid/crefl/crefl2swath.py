@@ -342,20 +342,22 @@ GEO_PAIRS[PAIR_500M] = modis_module.GEO_PAIRS[PAIR_500M]
 GEO_PAIRS[PAIR_250M] = modis_module.GEO_PAIRS[PAIR_250M]
 
 # VIIRS CREFL
+vmin = -0.011764705898
+vmax = 1.192352914276
 PRODUCTS[viirs_module.PRODUCT_I_LON] = viirs_module.PRODUCTS[viirs_module.PRODUCT_I_LON]
 PRODUCTS[viirs_module.PRODUCT_I_LAT] = viirs_module.PRODUCTS[viirs_module.PRODUCT_I_LAT]
 PRODUCTS[viirs_module.PRODUCT_M_LON] = viirs_module.PRODUCTS[viirs_module.PRODUCT_M_LON]
 PRODUCTS[viirs_module.PRODUCT_M_LAT] = viirs_module.PRODUCTS[viirs_module.PRODUCT_M_LAT]
-PRODUCTS.add_product(PRODUCT_VCR01, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL01)
-PRODUCTS.add_product(PRODUCT_VCR02, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL02)
-PRODUCTS.add_product(PRODUCT_VCR03, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL03)
-PRODUCTS.add_product(PRODUCT_VCR04, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL04)
-PRODUCTS.add_product(PRODUCT_VCR05, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL05)
-PRODUCTS.add_product(PRODUCT_VCR06, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL06)
-PRODUCTS.add_product(PRODUCT_VCR07, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL07)
-PRODUCTS.add_product(PRODUCT_VCR08, PAIR_INAV, "corrected_reflectance", FT_CREFL_I, K_CREFL08)
-PRODUCTS.add_product(PRODUCT_VCR09, PAIR_INAV, "corrected_reflectance", FT_CREFL_I, K_CREFL09)
-PRODUCTS.add_product(PRODUCT_VCR10, PAIR_INAV, "corrected_reflectance", FT_CREFL_I, K_CREFL10)
+PRODUCTS.add_product(PRODUCT_VCR01, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL01, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_VCR02, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL02, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_VCR03, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL03, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_VCR04, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL04, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_VCR05, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL05, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_VCR06, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL06, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_VCR07, PAIR_MNAV, "corrected_reflectance", FT_CREFL_M, K_CREFL07, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_VCR08, PAIR_INAV, "corrected_reflectance", FT_CREFL_I, K_CREFL08, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_VCR09, PAIR_INAV, "corrected_reflectance", FT_CREFL_I, K_CREFL09, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_VCR10, PAIR_INAV, "corrected_reflectance", FT_CREFL_I, K_CREFL10, units='1', valid_min=vmin, valid_max=vmax)
 
 PRODUCTS[modis_module.PRODUCT_1000M_LON] = modis_module.PRODUCTS[modis_module.PRODUCT_1000M_LON]
 PRODUCTS[modis_module.PRODUCT_1000M_LAT] = modis_module.PRODUCTS[modis_module.PRODUCT_1000M_LAT]
@@ -363,24 +365,24 @@ PRODUCTS[modis_module.PRODUCT_500M_LON] = modis_module.PRODUCTS[modis_module.PRO
 PRODUCTS[modis_module.PRODUCT_500M_LAT] = modis_module.PRODUCTS[modis_module.PRODUCT_500M_LAT]
 PRODUCTS[modis_module.PRODUCT_250M_LON] = modis_module.PRODUCTS[modis_module.PRODUCT_250M_LON]
 PRODUCTS[modis_module.PRODUCT_250M_LAT] = modis_module.PRODUCTS[modis_module.PRODUCT_250M_LAT]
-PRODUCTS.add_product(PRODUCT_MCR01_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL01)
-PRODUCTS.add_product(PRODUCT_MCR02_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL02)
-PRODUCTS.add_product(PRODUCT_MCR03_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL03)
-PRODUCTS.add_product(PRODUCT_MCR04_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL04)
-PRODUCTS.add_product(PRODUCT_MCR05_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL05)
-PRODUCTS.add_product(PRODUCT_MCR06_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL06)
-PRODUCTS.add_product(PRODUCT_MCR07_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL07)
-PRODUCTS.add_product(PRODUCT_MCR01_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL01)
-PRODUCTS.add_product(PRODUCT_MCR02_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL02)
-PRODUCTS.add_product(PRODUCT_MCR03_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL03)
-PRODUCTS.add_product(PRODUCT_MCR04_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL04)
-PRODUCTS.add_product(PRODUCT_MCR05_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL05)
-PRODUCTS.add_product(PRODUCT_MCR06_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL06)
-PRODUCTS.add_product(PRODUCT_MCR07_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL07)
-PRODUCTS.add_product(PRODUCT_MCR01_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL01)
-PRODUCTS.add_product(PRODUCT_MCR02_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL02)
-PRODUCTS.add_product(PRODUCT_MCR03_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL03)
-PRODUCTS.add_product(PRODUCT_MCR04_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL04)
+PRODUCTS.add_product(PRODUCT_MCR01_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL01, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR02_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL02, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR03_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL03, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR04_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL04, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR05_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL05, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR06_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL06, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR07_1000M, PAIR_1000M, "corrected_reflectance", FT_CREFL_1000M, K_CREFL07, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR01_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL01, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR02_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL02, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR03_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL03, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR04_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL04, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR05_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL05, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR06_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL06, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR07_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL07, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR01_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL01, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR02_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL02, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR03_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL03, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR04_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL04, units='1', valid_min=vmin, valid_max=vmax)
 
 # R, G, B, HighRes Red
 VIIRS_TRUE_COLOR_PRODUCTS = [PRODUCT_VCR01, PRODUCT_VCR04, PRODUCT_VCR03, PRODUCT_VCR08]
@@ -757,7 +759,8 @@ class Frontend(roles.FrontendRole):
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
             swath_definition=swath_definition, fill_value=fill_value,
             swath_rows=shape[0], swath_columns=shape[1], data_type=data_type, swath_data=filename,
-            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=rows_per_scan
+            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=rows_per_scan,
+            **product_def.info
         )
         return one_swath
 

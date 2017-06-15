@@ -71,6 +71,8 @@ from polar2grid.core import roles
 from .awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, NoSectionError
 
 LOG = logging.getLogger(__name__)
+# AWIPS 2 seems to not like data values under 0
+AWIPS_USES_NEGATIVES = False
 
 SCMI_GLOBAL_ATT=dict(
     product_tile_height=None,  # 1100,
@@ -177,7 +179,7 @@ class AttributeHelper(object):
         """
         apply fixed attributes, or look up attributes needed and apply them
         """
-        for name, value in table.items():
+        for name, value in sorted(table.items()):
             if name in nc.ncattrs():
                 LOG.debug('already have a value for %s' % name)
                 continue
@@ -351,11 +353,12 @@ class SCMI_writer(object):
         _nc.createDimension(self.row_dim_name, lines)
         _nc.createDimension(self.col_dim_name, columns)
 
-    def create_variables(self, scale_factor=None, add_offset=None):
+    def create_variables(self, scale_factor=None, add_offset=None, fill_value=None):
+        fill_value = self.missing if fill_value is None else fill_value
         geo_coords = "%s %s" % (self.lat_var_name, self.lon_var_name)
         fgf_coords = "%s %s" % (self.y_var_name, self.x_var_name)
 
-        self.image_data = self._nc.createVariable(self.image_var_name, 'i2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.missing, zlib=self._compress)
+        self.image_data = self._nc.createVariable(self.image_var_name, 'u2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=fill_value, zlib=self._compress)
         self.image_data.coordinates = geo_coords if self._include_geo else fgf_coords
         self.apply_data_attributes(scale_factor, add_offset)
 
@@ -383,8 +386,27 @@ class SCMI_writer(object):
         self.image_data.add_offset = np.float32(add_offset)
         self.image_data.units = self.helper.dataset.get('units', '1')
         # FIXME: does this need to be increased/decreased by 1 to leave room for the fill value?
-        self.image_data.valid_min = 0
-        self.image_data.valid_max = 2 ** self.helper.dataset["bit_depth"] - 1
+        file_bitdepth = self.image_data.dtype.itemsize * 8
+        is_unsigned = self.image_data.dtype.kind == 'u'
+        if not AWIPS_USES_NEGATIVES and not is_unsigned:
+            file_bitdepth -= 1
+            is_unsigned = True
+
+        if self.helper.dataset['bit_depth'] >= file_bitdepth:
+            bitdepth = file_bitdepth
+            num_fills = 1
+        else:
+            bitdepth = self.helper.dataset['bit_depth']
+            num_fills = 0
+        if not is_unsigned:
+            # signed data type
+            self.image_data.valid_min = -2**(bitdepth - 1)
+            # 1 less for data type (65535), another 1 less for fill value (fill value = max file value)
+            self.image_data.valid_max = 2**(bitdepth - 1) - 1 - num_fills
+        else:
+            # unsigned data type
+            self.image_data.valid_min = 0
+            self.image_data.valid_max = 2**bitdepth - 1 - num_fills
 
         if "standard_name" in self.helper.dataset:
             self.image_data.standard_name = self.helper.dataset["standard_name"]
@@ -402,26 +424,27 @@ class SCMI_writer(object):
     def set_fgf(self, x, mx, bx, y, my, by, units='meters', downsample_factor=1):
         # assign values before scale factors to avoid implicit scale reversal
         LOG.debug('y variable shape is {}'.format(self.fgf_y.shape))
-        self.fgf_y.scale_factor = np.float32(my * float(downsample_factor))
-        self.fgf_y.add_offset = np.float32(by)
+        self.fgf_y.scale_factor = np.float64(my * float(downsample_factor))
+        self.fgf_y.add_offset = np.float64(by)
         self.fgf_y.units = units
         self.fgf_y.standard_name = "projection_y_coordinate"
-        self.fgf_y.long_name = "CGMS N/S fixed grid viewing angle (not interchangeable with GOES y)"
+        # self.fgf_y.long_name = "CGMS N/S fixed grid viewing angle (not interchangeable with GOES y)"
         self.fgf_y[:] = y
 
-        self.fgf_x.scale_factor = np.float32(mx * float(downsample_factor))
-        self.fgf_x.add_offset = np.float32(bx)
+        self.fgf_x.scale_factor = np.float64(mx * float(downsample_factor))
+        self.fgf_x.add_offset = np.float64(bx)
         self.fgf_x.units = units
         self.fgf_x.standard_name = "projection_x_coordinate"
-        self.fgf_x.long_name = "CGMS E/W fixed grid viewing angle (not interchangeable with GOES x)"
+        # self.fgf_x.long_name = "CGMS E/W fixed grid viewing angle (not interchangeable with GOES x)"
         self.fgf_x[:] = x
 
-    def set_image_data(self, data):
+    def set_image_data(self, data, fill_value=None):
         LOG.info('writing image data')
         # note: autoscaling will be applied to make int16
         # self.bt[:,:] = np.ma.fix_invalid(np.require(bt, dtype=np.float32), fill_value=self.missing)
+        fill_value = self.missing if fill_value is None else fill_value
         assert(hasattr(data, 'mask'))
-        self.image_data[:, :] = np.require(data.filled(self.missing), dtype=np.float32)
+        self.image_data[:, :] = np.require(data.filled(fill_value), dtype=np.float32)
 
     def set_projection_attrs(self, grid_def):
         """
@@ -510,6 +533,40 @@ class Backend(roles.BackendRole):
     def known_grids(self):
         return None
 
+    def _calc_factor_offset(self, data=None, dtype=np.int16, bitdepth=None, min=None, max=None, num_fills=1):
+        if num_fills > 1:
+            raise NotImplementedError("More than one fill value is not implemented yet")
+
+        dtype = np.dtype(dtype)
+        file_bitdepth = dtype.itemsize * 8
+        is_unsigned = dtype.kind == 'u'
+        if not AWIPS_USES_NEGATIVES and not is_unsigned:
+            file_bitdepth -= 1
+            is_unsigned = True
+
+        if bitdepth is None:
+            bitdepth = file_bitdepth
+        if bitdepth >= file_bitdepth:
+            bitdepth = file_bitdepth
+        else:
+            # don't take away from the data bitdepth if there is room in
+            # file data type to allow for extra fill values
+            num_fills = 0
+        if min is None:
+            min = data.min()
+        if max is None:
+            max = data.max()
+        mx = float(max - min) / (2**bitdepth - 1 - num_fills)
+        bx = min
+        if not is_unsigned:
+            bx += 2**(bitdepth - 1) * mx
+            # max value
+            fills = [2**(file_bitdepth - 1) - 1]
+        else:
+            # max value
+            fills = [2**file_bitdepth - 1]
+        return fills, mx, bx
+
     def create_output_from_product(self, gridded_product, tile_count=(1, 1), **kwargs):
         data_type = DTYPE_UINT8
         inc_by_one = False
@@ -557,18 +614,23 @@ class Backend(roles.BackendRole):
             x = x[0].squeeze()  # all rows should have the same coordinates
             y = y[:, 0].squeeze()  # all columns should have the same coordinates
             # scale the X and Y arrays to fit in the file for 16-bit integers
+            # mx, bx = self._calc_factor_offset(x, bitdepth=13, dtype=np.uint16)
+            # AWIPS is dumb and requires the integer values to be 0, 1, 2, 3, 4
+            if x.shape[0] > 2**(16-2):
+                # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
+                raise ValueError("X variable too large for AWIPS-version of 16-bit integer space")
             bx = x.min()
-            mx = (x.max() - x.min()) / (2**16 - 1)
+            mx = gridded_product['grid_definition']['cell_width']
             bx *= micro_factor
             mx *= micro_factor
-            # x -= bx
-            # x /= mx
+            # my, by = self._calc_factor_offset(y, bitdepth=13, dtype=np.uint16)
+            if y.shape[0] > 2**(16-2):
+                # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
+                raise ValueError("Y variable too large for AWIPS-version of 16-bit integer space")
             by = y.min()
-            my = (y.max() - y.min()) / (2**16 - 1)
+            my = gridded_product['grid_definition']['cell_height']
             by *= micro_factor
             my *= micro_factor
-            # y -= by
-            # y /= my
 
             # FIXME: Make this part of the reader/frontend
             gridded_product.setdefault("wavelength", gridded_product.get("central_wavelength", -1.))
@@ -576,11 +638,9 @@ class Backend(roles.BackendRole):
             # FIXME: Get information from configuration file
             valid_min = gridded_product.get("valid_min", -0.011764705898 if gridded_product["data_kind"] in ["reflectance", "toa_bidirectional_reflectance"] else 69.)
             gridded_product["valid_min"] = valid_min
-            valid_max = gridded_product.get("valid_max", 1.192352914276 if gridded_product["data_kind"] in ["reflectance", "toa_bidirectional_reflectance"] else 320.)
+            valid_max = gridded_product.get("valid_max", 1.192352914276 if gridded_product["data_kind"] in ["reflectance", "toa_bidirectional_reflectance"] else 380)
             gridded_product["valid_max"] = valid_max
-            factor = (valid_max - valid_min) / float(2**bit_depth - 1)
-            offset = valid_min
-            print(valid_min, valid_max, factor, offset, bit_depth, data.min(), data.max())
+            fills, factor, offset = self._calc_factor_offset(bitdepth=bit_depth, min=valid_min, max=valid_max, dtype=np.uint16)
 
             for ty in range(tile_count[0]):
                 for tx in range(tile_count[1]):
@@ -612,13 +672,13 @@ class Backend(roles.BackendRole):
                     LOG.debug("Creating dimensions...")
                     nc.create_dimensions()
                     LOG.debug("Creating variables...")
-                    nc.create_variables(factor, offset)
+                    nc.create_variables(factor, offset, fill_value=fills[0])
                     LOG.debug("Creating global attributes...")
                     nc.set_global_attrs(None, None, output_filename)
                     LOG.debug("Creating projection attributes...")
                     nc.set_projection_attrs(gridded_product["grid_definition"])
                     LOG.debug("Writing image data...")
-                    nc.set_image_data(tmp_tile)
+                    nc.set_image_data(tmp_tile, fill_value=fills[0])
                     LOG.debug("Writing X/Y navigation data...")
                     nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units=xy_units)
                     nc.close()
@@ -630,8 +690,6 @@ class Backend(roles.BackendRole):
                         LOG.info("Modifying SCMI NetCDF file to work with AWIPS")
                         import h5py
                         h = h5py.File(output_filename, 'a')
-                        # import ipdb; ipdb.set_trace()
-                        # print(h.attrs.items())
                         if '_NCProperties' in h.attrs:
                             del h.attrs['_NCProperties']
                         h.close()

@@ -254,7 +254,7 @@ def main(argv=sys.argv[1:]):
         LOG.debug("Removing all compositors")
         args.compositors = []
     elif args.frontend == 'crefl':
-        if args.backend == 'awips':
+        if args.backend in ['awips', 'scmi']:
             LOG.debug("Adding 'crefl_sharpen' compositor")
             args.compositors.append('crefl_sharpen')
         else:

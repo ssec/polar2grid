@@ -106,6 +106,7 @@ class ProductDefinition(object):
 
         for k, v in kwargs.items():
             setattr(self, k, v)
+        self.info = kwargs.copy()
 
     @property
     def is_raw(self):
