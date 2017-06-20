@@ -101,7 +101,7 @@ class Backend(roles.BackendRole):
             data = gridded_product.get_data_array()
         else:
             try:
-                LOG.debug("Scaling %s data to fit data type")
+                LOG.debug("Scaling %s data to fit data type", gridded_product["product_name"])
                 data = self.rescaler.rescale_product(gridded_product, data_type,
                                                      inc_by_one=inc_by_one, fill_value=fill_value)
                 data = clip_to_data_type(data, data_type)
