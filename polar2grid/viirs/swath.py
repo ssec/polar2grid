@@ -461,17 +461,17 @@ PRODUCTS.add_product(PRODUCT_M14_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE
 PRODUCTS.add_product(PRODUCT_M15_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M15, guidebook.K_RADIANCE)
 PRODUCTS.add_product(PRODUCT_M16_RAD, PAIR_MNAV, "radiance", guidebook.FILE_TYPE_M16, guidebook.K_RADIANCE)
 
-PRODUCTS.add_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", dependencies=(PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA), units='kelvin')
-PRODUCTS.add_product(PRODUCT_HISTOGRAM_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA), units='1')
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), units='1')
-PRODUCTS.add_product(PRODUCT_DYNAMIC_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), units='1')
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_I04, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I04,), units='1')
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_I05, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I05,), units='1')
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_M12, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M12,), units='1')
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_M13, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M13,), units='1')
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_M14, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M14,), units='1')
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_M15, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M15,), units='1')
-PRODUCTS.add_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M16,), units='1')
+PRODUCTS.add_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", dependencies=(PRODUCT_I05, PRODUCT_I04, PRODUCT_I_SZA), units='kelvin', valid_min=-20, valid_max=20)
+PRODUCTS.add_product(PRODUCT_HISTOGRAM_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA), units='1', valid_min=0, valid_max=1)
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), units='1', valid_min=0, valid_max=1)
+PRODUCTS.add_product(PRODUCT_DYNAMIC_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), units='1', valid_min=0, valid_max=1)
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_I04, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I04,), units='1', valid_min=0, valid_max=1)
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_I05, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I05,), units='1', valid_min=0, valid_max=1)
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M12, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M12,), units='1', valid_min=0, valid_max=1)
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M13, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M13,), units='1', valid_min=0, valid_max=1)
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M14, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M14,), units='1', valid_min=0, valid_max=1)
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M15, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M15,), units='1', valid_min=0, valid_max=1)
+PRODUCTS.add_product(PRODUCT_ADAPTIVE_M16, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M16,), units='1', valid_min=0, valid_max=1)
 
 
 class Frontend(roles.FrontendRole):

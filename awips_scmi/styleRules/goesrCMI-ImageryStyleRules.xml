@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- To be placed in .../edex/data/utility/common_static/site/<site>/styleRules/ -->
+<!-- Or .../edex/data/utility/common_static/user/<user>/styleRules/ -->
+<styleRuleset>
+  <!-- Polar2Grid SCMI Rules -->
+  <styleRule>
+    <paramLevelMatches>
+      <parameter>i04</parameter>
+      <parameter>i05</parameter>
+      <parameter>m12</parameter>
+      <parameter>m13</parameter>
+      <parameter>m14</parameter>
+      <parameter>m15</parameter>
+      <parameter>m16</parameter>
+    </paramLevelMatches>
+    <imageStyle>
+      <displayUnits>C</displayUnits>
+      <range scale="LINEAR">
+        <minValue>55</minValue>
+        <maxValue>-110</maxValue>
+      </range>
+      <defaultColormap>Sat/IR/CIRA (IR Default)</defaultColormap>
+      <colorbarLabeling>
+        <values>55 10 -20 -50 -80</values>
+      </colorbarLabeling>
+    </imageStyle>
+  </styleRule>
+
+  <styleRule>
+    <paramLevelMatches>
+      <parameter>dynamic_dnb</parameter>
+      <parameter>adaptive_dnb</parameter>
+      <parameter>histogram_dnb</parameter>
+    </paramLevelMatches>
+    <imageStyle>
+      <range scale="LINEAR">
+        <minValue>0</minValue>
+        <maxValue>1</maxValue>
+      </range>
+      <defaultColormap>Sat/VIS/Linear</defaultColormap>
+    </imageStyle>
+  </styleRule>
+
+  <styleRule>
+    <paramLevelMatches>
+      <parameter>i01</parameter>
+      <parameter>i02</parameter>
+      <parameter>i03</parameter>
+      <parameter>m01</parameter>
+      <parameter>m02</parameter>
+      <parameter>m03</parameter>
+      <parameter>m04</parameter>
+      <parameter>m05</parameter>
+      <parameter>m06</parameter>
+      <parameter>m07</parameter>
+      <parameter>m08</parameter>
+      <parameter>m09</parameter>
+      <parameter>m10</parameter>
+      <parameter>m11</parameter>
+      <parameter>viirs_crefl01</parameter>
+      <parameter>viirs_crefl03</parameter>
+      <parameter>viirs_crefl04</parameter>
+      <parameter>viirs_crefl08</parameter>
+    </paramLevelMatches>
+    <imageStyle>
+      <displayUnits>%</displayUnits>
+      <range scale="LINEAR">
+        <minValue>0</minValue>
+        <maxValue>100</maxValue>
+      </range>
+      <defaultColormap>GOES-R/VIS/VIS_gray_sq-root-12</defaultColormap>
+    </imageStyle>
+  </styleRule>
+
+
+</styleRuleset>
