@@ -67,7 +67,7 @@ def compare_array(array1, array2, threshold=1.0):
         LOG.error("Data shapes were not equal")
         raise ValueError("Data shapes were not equal")
 
-    total_pixels = array1.shape[0] * array1.shape[1]
+    total_pixels = array1.size
     equal_pixels = numpy.count_nonzero(numpy.isclose(array1, array2, rtol=0, atol=threshold, equal_nan=True))
     diff_pixels = total_pixels - equal_pixels
     if diff_pixels != 0:
@@ -138,12 +138,26 @@ def compare_awips_netcdf(nc1_name, nc2_name, threshold=1.0, **kwargs):
     
     return compare_array(image1_data, image2_data, threshold=threshold)
 
+def compare_netcdf(nc1_name, nc2_name, variables, threshold=1.0, **kwargs):
+    from netCDF4 import Dataset
+    nc1 = Dataset(nc1_name, "r")
+    nc2 = Dataset(nc2_name, "r")
+    num_diff = 0
+    for v in variables:
+        image1_var = nc1[v]
+        image2_var = nc2[v]
+        image1_var.set_auto_maskandscale(False)
+        image2_var.set_auto_maskandscale(False)
+        num_diff += compare_array(image1_var, image2_var, threshold=threshold)
+    return num_diff
+
 type_name_to_compare_func = {
     "binary": compare_binary,
     "gtiff": compare_geotiff,
     "geotiff": compare_geotiff,
     "ninjo": compare_ninjo_tiff,
     "awips": compare_awips_netcdf,
+    "netcdf": compare_netcdf,
 }
 
 
@@ -165,10 +179,12 @@ def main(argv=sys.argv[1:]):
                         help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_argument('--threshold', dest='threshold', type=float, default=1.0,
                         help="specify threshold for comparison differences")
-    parser.add_argument('--shape', dest="shape", type=int, nargs=2,
+    parser.add_argument('--shape', dest="shape", type=int, nargs=2, default=(None, None),
                         help="'rows cols' for binary file comparison only")
-    parser.add_argument('--dtype', dest='dtype', type=str_to_dtype,
+    parser.add_argument('--dtype', type=str_to_dtype,
                         help="Data type for binary file comparison only")
+    parser.add_argument('--variables', nargs='+',
+                        help='NetCDF variables to read and compare')
     parser.add_argument('file_type', type=_file_type,
                         help="type of files being compare")
     parser.add_argument('file1',
@@ -179,7 +195,7 @@ def main(argv=sys.argv[1:]):
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
-    kwargs = {"shape": tuple(args.shape), "dtype": args.dtype}
+    kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, 'variables': args.variables}
 
     num_diff = args.file_type(args.file1, args.file2, threshold=args.threshold, **kwargs)
 
