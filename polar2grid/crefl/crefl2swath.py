@@ -381,8 +381,8 @@ PRODUCTS.add_product(PRODUCT_MCR06_500M, PAIR_500M, "corrected_reflectance", FT_
 PRODUCTS.add_product(PRODUCT_MCR07_500M, PAIR_500M, "corrected_reflectance", FT_CREFL_500M, K_CREFL07, units='1', valid_min=vmin, valid_max=vmax)
 PRODUCTS.add_product(PRODUCT_MCR01_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL01, units='1', valid_min=vmin, valid_max=vmax)
 PRODUCTS.add_product(PRODUCT_MCR02_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL02, units='1', valid_min=vmin, valid_max=vmax)
-PRODUCTS.add_product(PRODUCT_MCR03_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL03, units='1', valid_min=vmin, valid_max=vmax)
-PRODUCTS.add_product(PRODUCT_MCR04_250M, PAIR_250M, "corrected_reflectance", FT_CREFL_250M, K_CREFL04, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR03_250M, PAIR_500M, "corrected_reflectance", FT_CREFL_250M, K_CREFL03, units='1', valid_min=vmin, valid_max=vmax)
+PRODUCTS.add_product(PRODUCT_MCR04_250M, PAIR_500M, "corrected_reflectance", FT_CREFL_250M, K_CREFL04, units='1', valid_min=vmin, valid_max=vmax)
 
 # R, G, B, HighRes Red
 VIIRS_TRUE_COLOR_PRODUCTS = [PRODUCT_VCR01, PRODUCT_VCR04, PRODUCT_VCR03, PRODUCT_VCR08]
