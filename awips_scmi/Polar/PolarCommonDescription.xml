@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!-- To be placed in .../edex/data/utility/common_static/site/<site>/satellite/goesr/descriptions/Polar/ -->
+<!-- Should also have the below regular expression added to .../edex/data/utility/common_static/site/<site>/distribution/goesr.xml -->
+<!-- <regex>SSEC_AWIPS_.*_T\d{3}_\d{8}_\d{4,6}.nc$</regex> -->
 <goesrProductDescriptions>
     <default>
         <matches>
-            <match pattern="OR-T\d+-\w+-\w+-\w+-\w+_s\d{14}_c\d{14}.nc">
+            <match pattern="AWIPS_\w+">
                 <attribute name="dataset_name" />
             </match>
         </matches>
@@ -24,7 +26,7 @@
             </formattedRefTime>
         </dataTime>
         <sectorID>
-            <attribute name="grid_name" />
+            <attribute name="sector_id" />
         </sectorID>
         <data>
             <variable name="data" />

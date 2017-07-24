@@ -73,89 +73,42 @@ from .awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFI
 LOG = logging.getLogger(__name__)
 # AWIPS 2 seems to not like data values under 0
 AWIPS_USES_NEGATIVES = False
+DEFAULT_OUTPUT_PATTERN = '{source_name}_AWIPS_{satellite}_{instrument}_{product_name}_{sector_id}_T{tile_number:03d}_{begin_time:%Y%m%d_%H%M}.nc'
 
 SCMI_GLOBAL_ATT=dict(
     product_tile_height=None,  # 1100,
-    projection=None,
-    periodicity=10,
-    tile_center_longitude=None,  # 88.0022078322,
-    satellite_altitude=None,  # 35785.863,
+    # projection=None,
+    # periodicity=10,
+    # tile_center_longitude=None,  # 88.0022078322,
+    # satellite_altitude=None,  # 35785.863,
     satellite_id=None,  # GOES-H8
     tile_column_offset=None,  # 2750,
     pixel_y_size=None,  # km
-    product_center_latitude=None,
+    # product_center_latitude=None,
     start_date_time=None,  # 2015181030000,  # %Y%j%H%M%S
-    product_columns=None,  # 11000,
-    title="Sectorized Cloud and Moisture Full Disk Imagery",
-    abi_mode=1,
+    # product_columns=None,  # 11000,
+    # title="Sectorized Cloud and Moisture Full Disk Imagery",
+    # abi_mode=1,
     pixel_x_size=None,  # km
-    product_name=None,  # "HFD-010-B11-M1C01",
-    satellite_longitude=None,  # 140.7,
-    source_spatial_resolution=None,  # km
-    central_wavelength=None,  # 0.47063,
+    # product_name=None,  # "HFD-010-B11-M1C01",
+    # satellite_longitude=None,  # 140.7,
+    # source_spatial_resolution=None,  # km
+    # central_wavelength=None,  # 0.47063,
     number_product_tiles=None,  # 76,
-    bit_depth=None,
-    product_rows=None,  # 11000,
-    satellite_latitude=0.0,
-    ICD_version="SE-08_7034704_GS_AWIPS_Ext_ICD_RevB.3",
-    source_scene=None,  # FIXME: handle regionals
+    # bit_depth=None,
+    # product_rows=None,  # 11000,
+    # satellite_latitude=0.0,
+    # ICD_version="SE-08_7034704_GS_AWIPS_Ext_ICD_RevB.3",
+    # source_scene=None,  # FIXME: handle regionals
     production_location=None,  # "MSC",
-    tile_center_latitude=None,  # 62.41709885,
-    Conventions="CF-1.6",
-    channel_id=None,  # 1,
-    product_center_longitude=None,  # 140.7,
+    # tile_center_latitude=None,  # 62.41709885,
+    Conventions="CF-1.7",
+    # channel_id=None,  # 1,
+    # product_center_longitude=None,  # 140.7,
     product_tile_width=None,  # 1375,
-    request_spatial_resolution=None,
+    # request_spatial_resolution=None,
     tile_row_offset=None,  # 0,
 )
-
-SCMI_Y_ATT=dict(
-    units="microradian",
-    standard_name="projection_y_coordinate",
-    scale_factor=None,
-    add_offset=None
-)
-
-SCMI_X_ATT=dict(
-    units="microradian",
-    standard_name="projection_x_coordinate",
-    scale_factor=None,
-    add_offset=None
-)
-
-SCMI_DATA_ATT=dict(
-    grid_mapping="fixedgrid_projection",
-    scale_factor=None,  # 0.000588235294901,
-    standard_name=None,  # toa_bidirectional_reflectance,
-    add_offset=None,  #-0.011764705898,
-    valid_min=None,
-    units=1,
-    valid_max=None,  # 2047 for scaled ints
-)
-
-FMT_SCMI_NAME="{environment:1s}{data_type:1s}-T{tile:03d}-{satellite:s}-{instrument:s}-{name:s}-{grid_name:s}_s{scene_time:13s}_c{creation_time:13s}.nc"
-
-
-def scmi_filename(
-        environment='D',  # Integrated Test, Development, Operational
-        data_type='T',    # Real-time Playback Simulated Test
-        tile=None,           # 001..### upper left to lower right
-        satellite=None,   # 16, 17, ... H8
-        instrument=None,
-        name=None,
-        grid_name=None,
-        scene_time=None,  # datetime object
-        creation_time=None): # now, datetime object
-    scene_time = scene_time.strftime('%Y%m%d%H%M%S')
-    if creation_time is None:
-        creation_time = datetime.utcnow()
-    creation_time = creation_time.strftime('%Y%m%d%H%M%S')
-
-    # make one continuous name for the name and grid
-    name = name.replace('_', '').replace('-', '')
-    grid_name = grid_name.replace('_', '').replace('-', '')
-
-    return FMT_SCMI_NAME.format(**locals())
 
 
 class AttributeHelper(object):
@@ -203,15 +156,6 @@ class AttributeHelper(object):
         # 001 002 003 004
         # 005 006 ...
         return self.offset[0] * self.tile_count[1] + self.offset[1] + 1
-
-    def _filename(self, environment='D', data_type='T'):
-        satellite = self.dataset["satellite"]
-        instrument = self.dataset["instrument"]
-        return scmi_filename(satellite=satellite, instrument=instrument,
-                             name=self.dataset["product_name"],
-                             environment=environment, data_type=data_type,
-                             grid_name=self.dataset["grid_definition"]["grid_name"],
-                             scene_time=self._scene_time(), tile=self._tile_number())
 
     def _product_name(self):
         return self.dataset["product_name"]
@@ -318,30 +262,27 @@ class SCMI_writer(object):
     _offset = None  # offset within source file
     _kind = None  # 'albedo', 'brightness_temp'
     _band = None
-    _include_geo = False
+    # _include_geo = False
     _include_fgf = True
     _fill_value = 0
     row_dim_name, col_dim_name = 'y', 'x'
     y_var_name, x_var_name = 'y', 'x'
     image_var_name = 'data'
-    lat_var_name = 'latitude'
-    lon_var_name = 'longitude'
-    line_time_var_name = 'line_time_offset'
-    lat = None
-    lon = None
+    # lat_var_name = 'latitude'
+    # lon_var_name = 'longitude'
+    # line_time_var_name = 'line_time_offset'
+    # lat = None
+    # lon = None
     fgf_y = None
     fgf_x = None
-    line_time = None
+    # line_time = None
     projection = None
-    fmissing = np.float32(-999.0)
-    missing = np.int16(-1.0)
-    imissing = np.uint16(32767)
 
-    def __init__(self, filename, offset, shape, include_geo=False, include_fgf=True, helper=None, compress=False):
+    def __init__(self, filename, offset, shape, include_fgf=True, helper=None, compress=False):
         self._nc = Dataset(filename, 'w')
         self._shape = shape
         self._offset = offset
-        self._include_geo = include_geo
+        # self._include_geo = include_geo
         self._include_fgf = include_fgf
         self._compress = compress
         self.helper = helper
@@ -353,34 +294,32 @@ class SCMI_writer(object):
         _nc.createDimension(self.row_dim_name, lines)
         _nc.createDimension(self.col_dim_name, columns)
 
-    def create_variables(self, scale_factor=None, add_offset=None, fill_value=None):
-        fill_value = self.missing if fill_value is None else fill_value
-        geo_coords = "%s %s" % (self.lat_var_name, self.lon_var_name)
+    def create_variables(self, fill_value, scale_factor=None, add_offset=None):
+        # geo_coords = "%s %s" % (self.lat_var_name, self.lon_var_name)
         fgf_coords = "%s %s" % (self.y_var_name, self.x_var_name)
 
         self.image_data = self._nc.createVariable(self.image_var_name, 'u2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=fill_value, zlib=self._compress)
-        self.image_data.coordinates = geo_coords if self._include_geo else fgf_coords
+        self.image_data.coordinates = fgf_coords
         self.apply_data_attributes(scale_factor, add_offset)
 
         if self._include_fgf:
             self.fgf_y = self._nc.createVariable(self.y_var_name, 'i2', dimensions=(self.row_dim_name,), zlib=self._compress)
-
             self.fgf_x = self._nc.createVariable(self.x_var_name, 'i2', dimensions=(self.col_dim_name,), zlib=self._compress)
 
             # FUTURE: include compatibility 'y' and 'x', though there's a nonlinear transformation from CGMS to GOES y/x angles.
             # This requires that the scale_factor and add_offset are 1.0 and 0.0 respectively,
             # which violates some uses that use the line/column unscaled form expected by some applications.
 
-        if self._include_geo:
-            self.lat = self._nc.createVariable(self.lat_var_name, 'f4', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.fmissing, zlib=self._compress)
-            self.lat.units = 'degrees_north'
-            self.lon = self._nc.createVariable(self.lon_var_name, 'f4', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.fmissing, zlib=self._compress)
-            self.lon.units = 'degrees_east'
-        self.line_time = None # self._nc.createVariable(self.line_time_var_name, 'f8', dimensions=(self.row_dim_name,))
+        # if self._include_geo:
+        #     self.lat = self._nc.createVariable(self.lat_var_name, 'f4', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.fmissing, zlib=self._compress)
+        #     self.lat.units = 'degrees_north'
+        #     self.lon = self._nc.createVariable(self.lon_var_name, 'f4', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=self.fmissing, zlib=self._compress)
+        #     self.lon.units = 'degrees_east'
+        # self.line_time = None # self._nc.createVariable(self.line_time_var_name, 'f8', dimensions=(self.row_dim_name,))
         # self.line_time.units = 'seconds POSIX'
         # self.line_time.long_name = "POSIX epoch seconds elapsed since base_time for image line"
 
-    def apply_data_attributes(self, scale_factor=None, add_offset=None):
+    def apply_data_attributes(self, bitdepth, scale_factor=None, add_offset=None):
         # NOTE: grid_mapping is set by `set_projection_attrs`
         self.image_data.scale_factor = np.float32(scale_factor)
         self.image_data.add_offset = np.float32(add_offset)
@@ -392,11 +331,11 @@ class SCMI_writer(object):
             file_bitdepth -= 1
             is_unsigned = True
 
-        if self.helper.dataset['bit_depth'] >= file_bitdepth:
+        if bitdepth >= file_bitdepth:
             bitdepth = file_bitdepth
             num_fills = 1
         else:
-            bitdepth = self.helper.dataset['bit_depth']
+            bitdepth = bitdepth
             num_fills = 0
         if not is_unsigned:
             # signed data type
@@ -415,11 +354,11 @@ class SCMI_writer(object):
         else:
             self.image_data.standard_name = self.helper.dataset["data_kind"]
 
-    def set_geo(self, lat, lon):
-        if self.lat is not None:
-            self.lat[:,:] = np.ma.fix_invalid(lat, fill_value=self.missing)
-        if self.lon is not None:
-            self.lon[:,:] = np.ma.fix_invalid(lon, fill_value=self.missing)
+    # def set_geo(self, lat, lon):
+    #     if self.lat is not None:
+    #         self.lat[:,:] = np.ma.fix_invalid(lat, fill_value=self.missing)
+    #     if self.lon is not None:
+    #         self.lon[:,:] = np.ma.fix_invalid(lon, fill_value=self.missing)
 
     def set_fgf(self, x, mx, bx, y, my, by, units='meters', downsample_factor=1):
         # assign values before scale factors to avoid implicit scale reversal
@@ -438,11 +377,9 @@ class SCMI_writer(object):
         # self.fgf_x.long_name = "CGMS E/W fixed grid viewing angle (not interchangeable with GOES x)"
         self.fgf_x[:] = x
 
-    def set_image_data(self, data, fill_value=None):
+    def set_image_data(self, data, fill_value):
         LOG.info('writing image data')
         # note: autoscaling will be applied to make int16
-        # self.bt[:,:] = np.ma.fix_invalid(np.require(bt, dtype=np.float32), fill_value=self.missing)
-        fill_value = self.missing if fill_value is None else fill_value
         assert(hasattr(data, 'mask'))
         self.image_data[:, :] = np.require(data.filled(fill_value), dtype=np.float32)
 
@@ -480,9 +417,7 @@ class SCMI_writer(object):
             # Projection.inverse_flattening = np.float32(f) # 298.2572f ;
 
             # Set globals based on projection
-            self._nc.projection = "Fixed_Grid"
-            # FIXME: Handle other regions
-            self._nc.source_scene = "Full Disk"
+            # self._nc.projection = "Fixed_Grid"
         elif proj4_info["proj"] == "lcc":
             p = self.projection = self._nc.createVariable("lambert_projection", 'i4')
             self.image_data.grid_mapping = "lambert_projection"
@@ -499,17 +434,16 @@ class SCMI_writer(object):
             p.semi_minor = proj4_info["b"]
 
             # Set globals based on projection
-            self._nc.projection = "Lambert Conformal"
-            # FIXME: This is an assumption
-            self._nc.source_scene = "CONUS"
+            # self._nc.projection = "Lambert Conformal"
 
-        self._nc.grid_name = grid_def["grid_name"]
+        # self._nc.grid_name = grid_def["grid_name"]
 
-    def set_global_attrs(self, meta, nav, fn):
-        self._nc.central_wavelength = self.helper.dataset["wavelength"]
+    def set_global_attrs(self, meta, nav, dataset_name, sector_id):
+        # self._nc.central_wavelength = self.helper.dataset["wavelength"]
         self._nc.creator = "UW SSEC - CSPP Polar2Grid"
         self._nc.creation_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
-        self._nc.dataset_name = fn
+        self._nc.dataset_name = dataset_name
+        self._nc.sector_id = sector_id
         self.helper.apply_attributes(self._nc, SCMI_GLOBAL_ATT, '_global_')
 
     def close(self):
@@ -567,9 +501,12 @@ class Backend(roles.BackendRole):
             fills = [2**file_bitdepth - 1]
         return fills, mx, bx
 
-    def create_output_from_product(self, gridded_product, tile_count=(1, 1), **kwargs):
+    def create_output_from_product(self, gridded_product, sector_id=None,
+                                   output_pattern=None,
+                                   tile_count=(1, 1), tile_size=None,
+                                   tile_offset=(0, 0),
+                                   **kwargs):
         data_type = DTYPE_UINT8
-        inc_by_one = False
         fill_value = np.nan
         grid_def = gridded_product["grid_definition"]
 
@@ -579,6 +516,10 @@ class Backend(roles.BackendRole):
             LOG.error("Could not get information on product from backend configuration file")
             # NoSectionError is not a "StandardError" so it won't be caught normally
             raise RuntimeError(e.message)
+
+        # TODO: Remove unnecessary file attributes
+        # TODO: Add configuration to define physical element based on product name
+        # TODO: Add command line flag for region/sector id
 
         # Create the netcdf file
         created_files = []
@@ -591,7 +532,11 @@ class Backend(roles.BackendRole):
             data = np.ma.masked_array(data, mask=mask)
 
             LOG.info("Writing product %s to AWIPS NetCDF file", gridded_product["product_name"])
-            tile_shape = (int(data.shape[0] / tile_count[0]), int(data.shape[1] / tile_count[1]))
+            if tile_size is not None:
+                tile_shape = (int(min(tile_size[0], data.shape[0])), int(min(tile_size[1], data.shape[1])))
+                tile_count = (int(np.ceil(data.shape[0] / tile_shape[0])), int(np.ceil(data.shape[1] / tile_shape[1])))
+            else:
+                tile_shape = (int(data.shape[0] / tile_count[0]), int(data.shape[1] / tile_count[1]))
             tmp_tile = np.ma.zeros(tile_shape, dtype=np.float32)
             tmp_tile.set_fill_value(fill_value)
 
@@ -632,13 +577,14 @@ class Backend(roles.BackendRole):
             by *= micro_factor
             my *= micro_factor
 
-            # FIXME: Make this part of the reader/frontend
-            gridded_product.setdefault("wavelength", gridded_product.get("central_wavelength", -1.))
-            gridded_product["bit_depth"] = bit_depth = 12
-            # FIXME: Get information from configuration file
-            valid_min = gridded_product.get("valid_min", -0.011764705898 if gridded_product["data_kind"] in ["reflectance", "toa_bidirectional_reflectance"] else 69.)
+            bit_depth = gridded_product.get("bit_depth", 16)
+            valid_min = gridded_product.get('valid_min')
+            if valid_min is None:
+                valid_min = np.nanmin(data)
+            valid_max = gridded_product.get('valid_max')
+            if valid_max is None:
+                valid_max = np.nanmax(data)
             gridded_product["valid_min"] = valid_min
-            valid_max = gridded_product.get("valid_max", 1.192352914276 if gridded_product["data_kind"] in ["reflectance", "toa_bidirectional_reflectance"] else 380)
             gridded_product["valid_max"] = valid_max
             fills, factor, offset = self._calc_factor_offset(bitdepth=bit_depth, min=valid_min, max=valid_max, dtype=np.uint16)
 
@@ -655,8 +601,24 @@ class Backend(roles.BackendRole):
                     tmp_x = x[tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
                     tmp_y = y[ty * tile_shape[0]: (ty + 1) * tile_shape[0]]
 
-                    attr_helper = AttributeHelper(gridded_product, (ty, tx), tile_count, data.shape)
-                    output_filename = attr_helper._filename(environment='O', data_type='R')
+                    attr_helper = AttributeHelper(gridded_product, (ty + tile_offset[0], tx + tile_offset[1]), tile_count, data.shape)
+                    tile_number = attr_helper._tile_number()
+                    # output_filename = attr_helper._filename(environment='O', data_type='R')
+                    if "{" in output_pattern:
+                        # format the filename
+                        of_kwargs = gridded_product.copy(as_dict=True)
+                        of_kwargs["data_type"] = data_type
+                        of_kwargs["begin_time"] += timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0)))
+                        output_filename = self.create_output_filename(output_pattern,
+                                                                      grid_name=grid_def["grid_name"],
+                                                                      rows=grid_def["height"],
+                                                                      columns=grid_def["width"],
+                                                                      source_name=awips_info.get('source_name'),
+                                                                      sector_id=sector_id,
+                                                                      tile_number=tile_number,
+                                                                      **of_kwargs)
+                    else:
+                        output_filename = output_pattern
                     if os.path.isfile(output_filename):
                         if not self.overwrite_existing:
                             LOG.error("AWIPS file already exists: %s", output_filename)
@@ -667,18 +629,18 @@ class Backend(roles.BackendRole):
 
                     LOG.info("Writing tile %d to %s", tile_number, output_filename)
 
-                    nc = SCMI_writer(output_filename, (ty, tx), tile_shape,
+                    nc = SCMI_writer(output_filename, (ty + tile_offset[0], tx + tile_offset[1]), tile_shape,
                                      helper=attr_helper, compress=self.compress)
                     LOG.debug("Creating dimensions...")
                     nc.create_dimensions()
                     LOG.debug("Creating variables...")
-                    nc.create_variables(factor, offset, fill_value=fills[0])
+                    nc.create_variables(factor, offset, fills[0])
                     LOG.debug("Creating global attributes...")
-                    nc.set_global_attrs(None, None, output_filename)
+                    nc.set_global_attrs(None, None, "AWIPS_" + gridded_product['product_name'], sector_id)
                     LOG.debug("Creating projection attributes...")
                     nc.set_projection_attrs(gridded_product["grid_definition"])
                     LOG.debug("Writing image data...")
-                    nc.set_image_data(tmp_tile, fill_value=fills[0])
+                    nc.set_image_data(tmp_tile, fills[0])
                     LOG.debug("Writing X/Y navigation data...")
                     nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units=xy_units)
                     nc.close()
@@ -708,8 +670,6 @@ def add_backend_argument_groups(parser):
     group = parser.add_argument_group(title="Backend Initialization")
     group.add_argument("--backend-configs", nargs="*", dest="backend_configs",
                        help="alternative backend configuration files")
-    group.add_argument("--rescale-configs", nargs="*", dest="rescale_configs",
-                       help="alternative rescale configuration files")
     group.add_argument("--compress", action="store_true",
                        help="zlib compress each netcdf file")
     group.add_argument("--fix-awips", action="store_true",
@@ -719,6 +679,16 @@ def add_backend_argument_groups(parser):
     #                    help="alternative AWIPS ncml template file from what is configured")
     group.add_argument("--tiles", dest="tile_count", nargs=2, type=int, default=[1, 1],
                        help="Number of tiles to produce in Y (rows) and X (cols) direction respectively")
+    group.add_argument("--tile-size", dest="tile_size", nargs=2, type=int, default=None,
+                       help="Specify how many pixels are in each tile (overrides '--tiles')")
+    group.add_argument('--tile-offset', nargs=2, default=(0, 0),
+                       help="Start counting tiles from this offset ('row_offset col_offset')")
+    group.add_argument("--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
+                       help="output filenaming pattern")
+    group.add_argument("--source-name", default='SSEC',
+                       help="specify processing source name used in attributes and filename (default 'SSEC')")
+    group.add_argument("--sector-id", required=True,
+                       help="specify name for sector/region used in attributes and filename (example 'LCC')")
     return ["Backend Initialization", "Backend Output Creation"]
 
 

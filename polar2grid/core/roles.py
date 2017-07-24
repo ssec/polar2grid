@@ -569,18 +569,26 @@ class BackendRole(object):
         elif begin_time_dt is None:
             begin_time_dt = end_time_dt
         elif end_time_dt is None:
-            end_time_dt   = begin_time_dt
+            end_time_dt = begin_time_dt
 
-        begin_time = begin_time_dt.strftime("%Y%m%d_%H%M%S")
         begin_YYYYMMDD = begin_time_dt.strftime("%Y%m%d")
         begin_YYMMDD = begin_time_dt.strftime("%y%m%d")
         begin_HHMMSS = begin_time_dt.strftime("%H%M%S")
         begin_HHMM = begin_time_dt.strftime("%H%M")
-        end_time = end_time_dt.strftime("%Y%m%d_%H%M%S")
+        # backwards compatibility: if they didn't specify a format for the
+        #
+        if "begin_time:" not in pattern:
+            begin_time = begin_time_dt.strftime("%Y%m%d_%H%M%S")
+        else:
+            begin_time = begin_time_dt
         end_YYYYMMDD = end_time_dt.strftime("%Y%m%d")
         end_YYMMDD = end_time_dt.strftime("%y%m%d")
         end_HHMMSS = end_time_dt.strftime("%H%M%S")
         end_HHMM = end_time_dt.strftime("%H%M")
+        if "end_time:" not in pattern:
+            end_time = end_time_dt.strftime("%Y%m%d_%H%M%S")
+        else:
+            end_time = end_time_dt
 
         try:
             output_filename = pattern.format(**dict(
