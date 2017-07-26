@@ -181,6 +181,7 @@ class INIConfigReader(SimpleINIConfigReader):
             raise RuntimeError("INIConfigReader not properly setup. Class attribute `id_fields` must be initialized")
 
         self.section_prefix = kwargs.pop("section_prefix", None)
+        self.empty_ok = kwargs.pop("empty_ok", False)
         self.config = []
 
         # defaults to string (meaning nothing happens)
@@ -197,7 +198,7 @@ class INIConfigReader(SimpleINIConfigReader):
         super(INIConfigReader, self).__init__(*config_files, **kwargs)
 
         self.load_config()
-        if not self.config:
+        if not self.config and not self.empty_ok:
             LOG.error("No valid configuration sections found with prefix '%s'", self.section_prefix)
             raise ValueError("No valid configuration sections found")
 

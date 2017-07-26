@@ -68,12 +68,13 @@ import os
 from polar2grid.core.rescale import DEFAULT_RCONFIG
 from polar2grid.core.dtype import DTYPE_UINT8
 from polar2grid.core import roles
-from .awips_config import AWIPS2ConfigReader, CONFIG_FILE as DEFAULT_AWIPS_CONFIG, NoSectionError
+from ConfigParser import NoSectionError, NoOptionError
 
 LOG = logging.getLogger(__name__)
 # AWIPS 2 seems to not like data values under 0
 AWIPS_USES_NEGATIVES = False
 DEFAULT_OUTPUT_PATTERN = '{source_name}_AWIPS_{satellite}_{instrument}_{product_name}_{sector_id}_T{tile_number:03d}_{begin_time:%Y%m%d_%H%M}.nc'
+DEFAULT_CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", "polar2grid.awips:scmi_backend.ini")
 
 SCMI_GLOBAL_ATT=dict(
     product_tile_height=None,  # 1100,
@@ -91,6 +92,38 @@ SCMI_GLOBAL_ATT=dict(
     product_tile_width=None,  # 1375,
     tile_row_offset=None,  # 0,
 )
+
+
+UNIT_CONV = {
+    'micron': 'microm',
+    'mm h-1': 'mm/h',
+    '1': '*1',
+    'none': '*1',
+}
+
+
+class SCMIConfigReader(roles.INIConfigReader):
+    # Fields used to match a product object to it's correct configuration
+    id_fields = (
+        "product_name",
+        "data_kind",
+        "satellite",
+        "instrument",
+        "grid_name",
+        "units",
+        "reader",
+    )
+
+    def __init__(self, *scmi_configs, **kwargs):
+        kwargs["section_prefix"] = kwargs.get("section_prefix", "scmi:")
+        kwargs["float_kwargs"] = set()
+        kwargs["boolean_kwargs"] = set()
+        LOG.debug("Loading SCMI configuration files:\n\t%s", "\n\t".join(scmi_configs))
+        super(SCMIConfigReader, self).__init__(*scmi_configs, **kwargs)
+
+    def get_config_options(self, **kwargs):
+        kwargs = dict((k, kwargs.get(k, None)) for k in self.id_fields)
+        return super(SCMIConfigReader, self).get_config_options(**kwargs)
 
 
 class AttributeHelper(object):
@@ -230,7 +263,6 @@ class SCMI_writer(object):
         _nc.createDimension(self.col_dim_name, columns)
 
     def create_variables(self, bitdepth, fill_value, scale_factor=None, add_offset=None):
-        print(fill_value, scale_factor, add_offset)
         fgf_coords = "%s %s" % (self.y_var_name, self.x_var_name)
 
         self.image_data = self._nc.createVariable(self.image_var_name, 'u2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=fill_value, zlib=self._compress)
@@ -241,11 +273,13 @@ class SCMI_writer(object):
             self.fgf_y = self._nc.createVariable(self.y_var_name, 'i2', dimensions=(self.row_dim_name,), zlib=self._compress)
             self.fgf_x = self._nc.createVariable(self.x_var_name, 'i2', dimensions=(self.col_dim_name,), zlib=self._compress)
 
-    def apply_data_attributes(self, bitdepth, scale_factor, add_offset):
+    def apply_data_attributes(self, bitdepth, scale_factor, add_offset,
+                              valid_min=None, valid_max=None):
         # NOTE: grid_mapping is set by `set_projection_attrs`
         self.image_data.scale_factor = np.float32(scale_factor)
         self.image_data.add_offset = np.float32(add_offset)
-        self.image_data.units = self.helper.dataset.get('units', '1')
+        u = self.helper.dataset.get('units', '1')
+        self.image_data.units = UNIT_CONV.get(u, u)
         file_bitdepth = self.image_data.dtype.itemsize * 8
         is_unsigned = self.image_data.dtype.kind == 'u'
         if not AWIPS_USES_NEGATIVES and not is_unsigned:
@@ -333,9 +367,12 @@ class SCMI_writer(object):
             p.semi_major = proj4_info["a"]
             p.semi_minor = proj4_info["b"]
 
-    def set_global_attrs(self, meta, nav, dataset_name, sector_id):
+    def set_global_attrs(self, product_name, dataset_name, sector_id):
         self._nc.creator = "UW SSEC - CSPP Polar2Grid"
         self._nc.creation_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+        # name as it shows in the product browser (physicalElement)
+        self._nc.product_name = product_name
+        # identifying name to match against AWIPS common descriptions (ex. "AWIPS_product_name")
         self._nc.dataset_name = dataset_name
         self._nc.sector_id = sector_id
         self.helper.apply_attributes(self._nc, SCMI_GLOBAL_ATT, '_global_')
@@ -349,12 +386,10 @@ class SCMI_writer(object):
 class Backend(roles.BackendRole):
     def __init__(self, backend_configs=None, rescale_configs=None,
                  compress=False, fix_awips=False, **kwargs):
-        backend_configs = backend_configs or [DEFAULT_AWIPS_CONFIG]
-        rescale_configs = rescale_configs or [DEFAULT_RCONFIG]
-        self.awips_config_reader = AWIPS2ConfigReader(*backend_configs)
+        backend_configs = backend_configs or [DEFAULT_CONFIG_FILE]
+        self.awips_config_reader = SCMIConfigReader(*backend_configs, empty_ok=True)
         self.compress = compress
         self.fix_awips = fix_awips
-        # self.rescaler = Rescaler(*rescale_configs, **kwargs)
         super(Backend, self).__init__(**kwargs)
 
     @property
@@ -396,7 +431,7 @@ class Backend(roles.BackendRole):
         return fills, mx, bx
 
     def create_output_from_product(self, gridded_product, sector_id=None,
-                                   output_pattern=None,
+                                   source_name=None, output_pattern=None,
                                    tile_count=(1, 1), tile_size=None,
                                    tile_offset=(0, 0),
                                    **kwargs):
@@ -405,22 +440,22 @@ class Backend(roles.BackendRole):
         grid_def = gridded_product["grid_definition"]
 
         try:
-            awips_info = self.awips_config_reader.get_product_info(gridded_product)
+            awips_info = self.awips_config_reader.get_config_options(**gridded_product)
+            physical_element = awips_info.get('physical_element', gridded_product['product_name'])
+            dataset_name = "AWIPS_" + gridded_product['product_name']
+            if source_name:
+                awips_info['source_name'] = source_name
+            if "{" in physical_element:
+                physical_element = physical_element.format(**gridded_product)
         except NoSectionError as e:
             LOG.error("Could not get information on product from backend configuration file")
             # NoSectionError is not a "StandardError" so it won't be caught normally
             raise RuntimeError(e.message)
 
-        # TODO: Remove unnecessary file attributes
-        # TODO: Add configuration to define physical element based on product name
-        # TODO: Add command line flag for region/sector id
-
         # Create the netcdf file
         created_files = []
         try:
             LOG.debug("Scaling %s data to fit in netcdf file...", gridded_product["product_name"])
-            # data = self.rescaler.rescale_product(gridded_product, data_type,
-            #                                      inc_by_one=inc_by_one, fill_value=fill_value)
             data = gridded_product.get_data_array()
             mask = gridded_product.get_data_mask()
             data = np.ma.masked_array(data, mask=mask)
@@ -481,7 +516,25 @@ class Backend(roles.BackendRole):
                 valid_max = np.nanmax(data)
             gridded_product["valid_min"] = valid_min
             gridded_product["valid_max"] = valid_max
-            fills, factor, offset = self._calc_factor_offset(bitdepth=bit_depth, min=valid_min, max=valid_max, dtype=np.uint16)
+            dtype = np.dtype(np.uint16)
+            if np.issubdtype(data.dtype, np.integer) or 'flag_meanings' in gridded_product:
+                data = data.astype(dtype)
+                file_bitdepth = dtype.itemsize * 8
+                is_unsigned = dtype.kind == 'u'
+                if not AWIPS_USES_NEGATIVES and not is_unsigned:
+                    file_bitdepth -= 1
+                    is_unsigned = True
+                if not is_unsigned:
+                    bx += 2 ** (bit_depth - 1) * mx
+                    # max value
+                    fills = [2 ** (file_bitdepth - 1) - 1]
+                else:
+                    # max value
+                    fills = [2 ** file_bitdepth - 1]
+                factor = 0.5  # AWIPS doesn't like Identity conversion
+                offset = 0
+            else:
+                fills, factor, offset = self._calc_factor_offset(bitdepth=bit_depth, min=valid_min, max=valid_max, dtype=dtype)
 
             for ty in range(tile_count[0]):
                 for tx in range(tile_count[1]):
@@ -530,7 +583,7 @@ class Backend(roles.BackendRole):
                     LOG.debug("Creating variables...")
                     nc.create_variables(bit_depth, fills[0], factor, offset)
                     LOG.debug("Creating global attributes...")
-                    nc.set_global_attrs(None, None, "AWIPS_" + gridded_product['product_name'], sector_id)
+                    nc.set_global_attrs(physical_element, dataset_name, sector_id)
                     LOG.debug("Creating projection attributes...")
                     nc.set_projection_attrs(gridded_product["grid_definition"])
                     LOG.debug("Writing image data...")
