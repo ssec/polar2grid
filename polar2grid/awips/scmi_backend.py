@@ -99,6 +99,9 @@ UNIT_CONV = {
     'mm h-1': 'mm/h',
     '1': '*1',
     'none': '*1',
+    'percent': '%',
+    'Kelvin': 'kelvin',
+    'K': 'kelvin',
 }
 
 
@@ -262,12 +265,14 @@ class SCMI_writer(object):
         _nc.createDimension(self.row_dim_name, lines)
         _nc.createDimension(self.col_dim_name, columns)
 
-    def create_variables(self, bitdepth, fill_value, scale_factor=None, add_offset=None):
+    def create_variables(self, bitdepth, fill_value, scale_factor=None, add_offset=None,
+                         valid_min=None, valid_max=None):
         fgf_coords = "%s %s" % (self.y_var_name, self.x_var_name)
 
         self.image_data = self._nc.createVariable(self.image_var_name, 'u2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=fill_value, zlib=self._compress)
         self.image_data.coordinates = fgf_coords
-        self.apply_data_attributes(bitdepth, scale_factor, add_offset)
+        self.apply_data_attributes(bitdepth, scale_factor, add_offset,
+                                   valid_min=valid_min, valid_max=valid_max)
 
         if self._include_fgf:
             self.fgf_y = self._nc.createVariable(self.y_var_name, 'i2', dimensions=(self.row_dim_name,), zlib=self._compress)
@@ -292,7 +297,10 @@ class SCMI_writer(object):
         else:
             bitdepth = bitdepth
             num_fills = 0
-        if not is_unsigned:
+        if valid_min is not None and valid_max is not None:
+            self.image_data.valid_min = valid_min
+            self.image_data.valid_max = valid_max
+        elif not is_unsigned:
             # signed data type
             self.image_data.valid_min = -2**(bitdepth - 1)
             # 1 less for data type (65535), another 1 less for fill value (fill value = max file value)
@@ -367,13 +375,13 @@ class SCMI_writer(object):
             p.semi_major = proj4_info["a"]
             p.semi_minor = proj4_info["b"]
 
-    def set_global_attrs(self, product_name, dataset_name, sector_id):
+    def set_global_attrs(self, physical_element, awips_id, sector_id):
         self._nc.creator = "UW SSEC - CSPP Polar2Grid"
         self._nc.creation_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
         # name as it shows in the product browser (physicalElement)
-        self._nc.product_name = product_name
+        self._nc.physical_element = physical_element
         # identifying name to match against AWIPS common descriptions (ex. "AWIPS_product_name")
-        self._nc.dataset_name = dataset_name
+        self._nc.awips_id = awips_id
         self._nc.sector_id = sector_id
         self.helper.apply_attributes(self._nc, SCMI_GLOBAL_ATT, '_global_')
 
@@ -442,7 +450,7 @@ class Backend(roles.BackendRole):
         try:
             awips_info = self.awips_config_reader.get_config_options(**gridded_product)
             physical_element = awips_info.get('physical_element', gridded_product['product_name'])
-            dataset_name = "AWIPS_" + gridded_product['product_name']
+            awips_id = "AWIPS_" + gridded_product['product_name']
             if source_name:
                 awips_info['source_name'] = source_name
             if "{" in physical_element:
@@ -583,10 +591,11 @@ class Backend(roles.BackendRole):
                     LOG.debug("Creating variables...")
                     nc.create_variables(bit_depth, fills[0], factor, offset)
                     LOG.debug("Creating global attributes...")
-                    nc.set_global_attrs(physical_element, dataset_name, sector_id)
+                    nc.set_global_attrs(physical_element, awips_id, sector_id)
                     LOG.debug("Creating projection attributes...")
                     nc.set_projection_attrs(gridded_product["grid_definition"])
                     LOG.debug("Writing image data...")
+                    np.clip(tmp_tile, valid_min, valid_max, out=tmp_tile)
                     nc.set_image_data(tmp_tile, fills[0])
                     LOG.debug("Writing X/Y navigation data...")
                     nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units=xy_units)

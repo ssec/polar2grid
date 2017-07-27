@@ -777,6 +777,7 @@ class Frontend(roles.FrontendRole):
             kwargs["frequency"] = product_def.frequency
         one_swath = containers.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
+            reader='mirs',
             satellite=file_reader.satellite, instrument=file_reader.instrument,
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
             swath_definition=swath_definition, fill_value=np.nan,

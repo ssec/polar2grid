@@ -233,6 +233,7 @@ class Frontend(roles.FrontendRole):
         swath_name = GEO_PAIRS[product_def.get_geo_pair_name(self.available_file_types)].name
         swath_definition = containers.SwathDefinition(
             swath_name=swath_name, longitude=lon_product["swath_data"], latitude=lat_product["swath_data"],
+            reader='avhrr',
             data_type=lon_product["data_type"], swath_rows=lon_product["swath_rows"],
             swath_columns=lon_product["swath_columns"], rows_per_scan=lon_product["rows_per_scan"],
             source_filenames=sorted(set(lon_file_reader.filepaths + lat_file_reader.filepaths)),

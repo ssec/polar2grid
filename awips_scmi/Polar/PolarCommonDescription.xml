@@ -5,8 +5,8 @@
 <goesrProductDescriptions>
     <default>
         <matches>
-            <match pattern="AWIPS_\w+">
-                <attribute name="dataset_name" />
+            <match pattern="AWIPS_.+">
+                <attribute name="awips_id" />
             </match>
         </matches>
     </default>
@@ -15,7 +15,7 @@
             <attribute name="production_location" />
         </source>
         <physicalElement>
-            <attribute name="product_name" />
+            <attribute name="physical_element" />
         </physicalElement>
         <creatingEntity>
             <attribute name="satellite_id" />
