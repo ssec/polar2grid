@@ -73,7 +73,7 @@ from ConfigParser import NoSectionError, NoOptionError
 LOG = logging.getLogger(__name__)
 # AWIPS 2 seems to not like data values under 0
 AWIPS_USES_NEGATIVES = False
-DEFAULT_OUTPUT_PATTERN = '{source_name}_AWIPS_{satellite}_{instrument}_{product_name}_{sector_id}_T{tile_number:03d}_{begin_time:%Y%m%d_%H%M}.nc'
+DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{satellite}_{instrument}_{product_name}_{sector_id}_T{tile_number:03d}_{begin_time:%Y%m%d_%H%M}.nc'
 DEFAULT_CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", "polar2grid.awips:scmi_backend.ini")
 
 SCMI_GLOBAL_ATT=dict(
@@ -186,9 +186,6 @@ class AttributeHelper(object):
 
     def _global_number_product_tiles(self):
         return self.tile_count[0] * self.tile_count[1]
-
-    def _global_satellite_id(self):
-        return "{}-{}".format(self.dataset["satellite"].upper(), self.dataset["instrument"].upper())
 
     def _global_product_rows(self):
         return self.scene_shape[0]
@@ -375,11 +372,12 @@ class SCMI_writer(object):
             p.semi_major = proj4_info["a"]
             p.semi_minor = proj4_info["b"]
 
-    def set_global_attrs(self, physical_element, awips_id, sector_id):
+    def set_global_attrs(self, physical_element, awips_id, sector_id, creating_entity):
         self._nc.creator = "UW SSEC - CSPP Polar2Grid"
         self._nc.creation_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
         # name as it shows in the product browser (physicalElement)
         self._nc.physical_element = physical_element
+        self._nc.satellite_id = creating_entity
         # identifying name to match against AWIPS common descriptions (ex. "AWIPS_product_name")
         self._nc.awips_id = awips_id
         self._nc.sector_id = sector_id
@@ -455,6 +453,8 @@ class Backend(roles.BackendRole):
                 awips_info['source_name'] = source_name
             if "{" in physical_element:
                 physical_element = physical_element.format(**gridded_product)
+            def_ce = "{}-{}".format(gridded_product["satellite"].upper(), gridded_product["instrument"].upper())
+            creating_entity = awips_info.get('creating_entity', def_ce)
         except NoSectionError as e:
             LOG.error("Could not get information on product from backend configuration file")
             # NoSectionError is not a "StandardError" so it won't be caught normally
@@ -591,7 +591,7 @@ class Backend(roles.BackendRole):
                     LOG.debug("Creating variables...")
                     nc.create_variables(bit_depth, fills[0], factor, offset)
                     LOG.debug("Creating global attributes...")
-                    nc.set_global_attrs(physical_element, awips_id, sector_id)
+                    nc.set_global_attrs(physical_element, awips_id, sector_id, creating_entity)
                     LOG.debug("Creating projection attributes...")
                     nc.set_projection_attrs(gridded_product["grid_definition"])
                     LOG.debug("Writing image data...")

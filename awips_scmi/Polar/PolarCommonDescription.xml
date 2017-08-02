@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!-- To be placed in .../edex/data/utility/common_static/site/<site>/satellite/goesr/descriptions/Polar/ -->
 <!-- Should also have the below regular expression added to .../edex/data/utility/common_static/site/<site>/distribution/goesr.xml -->
-<!-- <regex>SSEC_AWIPS_.*_T\d{3}_\d{8}_\d{4,6}.nc$</regex> -->
+<!-- <regex>SSEC_AII_.*_T\d{3}_\d{8}_\d{4,6}.nc$</regex> -->
 <goesrProductDescriptions>
     <default>
         <matches>

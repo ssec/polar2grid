@@ -91,7 +91,7 @@ with the a software bundle glue script.
 __docformat__ = "restructuredtext en"
 
 import logging
-import numpy
+import numpy as np
 import os
 
 from polar2grid.core import roles
@@ -107,11 +107,12 @@ class CreflRGBSharpenCompositor(roles.CompositorRole):
     def __init__(self, lores_products, hires_products, **kwargs):
         self.share_mask = kwargs.get("share_mask", True)
         self.remove_lores = kwargs.get("remove_lores", True)
+        self.apply_scale = kwargs.get("apply_scale", False)
         self.lores_products = lores_products if not isinstance(lores_products, (str, unicode)) else lores_products.split(",")
         self.hires_products = lores_products if not isinstance(hires_products, (str, unicode)) else hires_products.split(",")
 
     def shared_mask(self, gridded_scene, product_names, axis=0):
-        return numpy.any([gridded_scene[pname].get_data_mask() for pname in product_names], axis=axis)
+        return np.any([gridded_scene[pname].get_data_mask() for pname in product_names], axis=axis)
 
     def _get_first_available_product(self, gridded_scene, desired_products):
         LOG.debug("Checking if any of the following are in the scene: %s", desired_products)
@@ -153,6 +154,40 @@ class CreflRGBSharpenCompositor(roles.CompositorRole):
                     other_data[shared_mask] = fill_value
                 gridded_scene[pname]["sharpened"] = True
 
+                if self.apply_scale:
+                    try:
+                        LOG.debug("Applying ratio-sharpened non-linear scaling...")
+                        from polar2grid.core.rescale import lookup_scale
+                        if shared_mask is not None:
+                            other_data = other_data[~shared_mask]
+                        np.clip(other_data, -0.01, 1.1, out=other_data)
+                        other_data[:] = lookup_scale(other_data, 0., 1., -0.01, 1.1)
+                        gridded_scene[pname]["valid_min"] = 0.
+                        gridded_scene[pname]["valid_max"] = 1.
+                    except ValueError:
+                        LOG.error("Could not apply ratio-sharpened non-linear scaling")
+                        raise
+
+            if self.apply_scale:
+                try:
+                    LOG.debug("Applying ratio-sharpened non-linear scaling...")
+                    from polar2grid.core.rescale import lookup_scale
+                    if shared_mask is not None:
+                        lores_data = lores_data[~shared_mask]
+                        hires_data = hires_data[~shared_mask]
+                    np.clip(lores_data, -0.01, 1.1, out=lores_data)
+                    np.clip(hires_data, -0.01, 1.1, out=hires_data)
+                    lores_data[:] = lookup_scale(lores_data, 0., 1., -0.01, 1.1)
+                    hires_data[:] = lookup_scale(hires_data, 0., 1., -0.01, 1.1)
+                    gridded_scene[lores_product_name]["valid_min"] = 0.
+                    gridded_scene[lores_product_name]["valid_max"] = 1.
+                    gridded_scene[hires_product_name]["valid_min"] = 0.
+                    gridded_scene[hires_product_name]["valid_max"] = 1.
+                except ValueError:
+                    LOG.error("Could not apply ratio-sharpened non-linear scaling")
+                    raise
+
+
             if self.remove_lores:
                 del gridded_scene[lores_product_name]
         except StandardError:
@@ -173,10 +208,10 @@ class RGBCompositor(roles.CompositorRole):
         super(RGBCompositor, self).__init__(**kwargs)
 
     def shared_mask(self, gridded_scene, product_names, axis=0):
-        return numpy.any([gridded_scene[pname].get_data_mask() for pname in product_names], axis=axis)
+        return np.any([gridded_scene[pname].get_data_mask() for pname in product_names], axis=axis)
 
     def joined_array(self, gridded_scene, product_names):
-        return numpy.array([gridded_scene[pname].get_data_array() for pname in product_names])
+        return np.array([gridded_scene[pname].get_data_array() for pname in product_names])
 
     def modify_scene(self, gridded_scene, fill_value=None, **kwargs):
         if self.composite_name in gridded_scene:
