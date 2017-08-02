@@ -101,7 +101,7 @@ class ProductDefinition(object):
         self.file_key = file_key
         self.dependencies = dependencies or []
         self.description = description or ""
-        self.units = units or ""
+        self.units = units or "1"
         self.dependents = []
 
         for k, v in kwargs.items():
