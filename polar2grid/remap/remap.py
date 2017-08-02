@@ -252,14 +252,15 @@ class Remapper(object):
         product_groups = defaultdict(list)
         for product_name, swath_product in swath_scene.items():
             swath_def = swath_product["swath_definition"]
+            is_cat = swath_product.get('flag_meanings') is not None
             geo_id = swath_def["swath_name"]
-            product_groups[geo_id].append(product_name)
+            product_groups[(is_cat, geo_id)].append(product_name)
 
         # keep a copy of the original grid definition
         # if a shared grid definition isn't used then
         # we start from the original
         orig_grid_def = grid_def
-        for geo_id, product_names in product_groups.items():
+        for (is_cat, geo_id), product_names in product_groups.items():
             try:
                 LOG.debug("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(sorted(product_names)))
                 swath_def = swath_scene[product_names[0]]["swath_definition"]
@@ -302,6 +303,11 @@ class Remapper(object):
                 else:
                     fornav_D = 10.0
 
+            mwm = kwargs.get('maximum_weight_mode', False)
+            if is_cat and not mwm:
+                LOG.debug("Turning on maximum weight mode in EWA resampling for category products")
+                mwm = True
+
             try:
                 # fornav.ms2gt_fornav(
                 #     len(product_filepaths),
@@ -339,7 +345,7 @@ class Remapper(object):
                                            grid_rows=grid_def["height"],
                                            weight_delta_max=fornav_D,
                                            weight_distance_max=kwargs.get("fornav_d", 1.0),
-                                           maximum_weight_mode=kwargs.get("maximum_weight_mode", False),
+                                           maximum_weight_mode=mwm,
                                            use_group_size=True
                                            )
             except StandardError:
