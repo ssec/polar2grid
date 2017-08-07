@@ -272,8 +272,8 @@ class SCMI_writer(object):
                                    valid_min=valid_min, valid_max=valid_max)
 
         if self._include_fgf:
-            self.fgf_y = self._nc.createVariable(self.y_var_name, 'u2', dimensions=(self.row_dim_name,), zlib=self._compress)
-            self.fgf_x = self._nc.createVariable(self.x_var_name, 'u2', dimensions=(self.col_dim_name,), zlib=self._compress)
+            self.fgf_y = self._nc.createVariable(self.y_var_name, 'i2', dimensions=(self.row_dim_name,), zlib=self._compress)
+            self.fgf_x = self._nc.createVariable(self.x_var_name, 'i2', dimensions=(self.col_dim_name,), zlib=self._compress)
 
     def apply_data_attributes(self, bitdepth, scale_factor, add_offset,
                               valid_min=None, valid_max=None):
@@ -497,16 +497,16 @@ class Backend(roles.BackendRole):
             y = y[:, 0].squeeze()  # all columns should have the same coordinates
             # scale the X and Y arrays to fit in the file for 16-bit integers
             # AWIPS is dumb and requires the integer values to be 0, 1, 2, 3, 4
-            # Max value of an unsigned 16-bit integer is 65535 meaning
-            # 65536 values. Take away 1 for a fill value leaves 65535 values.
-            if x.shape[0] > 2**16 - 1:
+            # Max value of a signed 16-bit integer is 32767 meaning
+            # 32768 values.
+            if x.shape[0] > 2**15:
                 # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
                 raise ValueError("X variable too large for AWIPS-version of 16-bit integer space")
             bx = x.min()
             mx = gridded_product['grid_definition']['cell_width']
             bx *= micro_factor
             mx *= micro_factor
-            if y.shape[0] > 2**16 - 1:
+            if y.shape[0] > 2**15:
                 # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
                 raise ValueError("Y variable too large for AWIPS-version of 16-bit integer space")
             by = y.min()

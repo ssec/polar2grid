@@ -158,10 +158,14 @@ class CreflRGBSharpenCompositor(roles.CompositorRole):
                     try:
                         LOG.debug("Applying ratio-sharpened non-linear scaling...")
                         from polar2grid.core.rescale import lookup_scale
+                        other_orig = other_data
                         if shared_mask is not None:
+                            # this makes a copy
                             other_data = other_data[~shared_mask]
-                        np.clip(other_data, -0.01, 1.1, out=other_data)
+                        np.clip(other_data, -0.01, 1.1, other_data)
                         other_data[:] = lookup_scale(other_data, 0., 1., -0.01, 1.1)
+                        if shared_mask is not None:
+                            other_orig[~shared_mask] = other_data
                         gridded_scene[pname]["valid_min"] = 0.
                         gridded_scene[pname]["valid_max"] = 1.
                     except ValueError:
@@ -172,13 +176,19 @@ class CreflRGBSharpenCompositor(roles.CompositorRole):
                 try:
                     LOG.debug("Applying ratio-sharpened non-linear scaling...")
                     from polar2grid.core.rescale import lookup_scale
+                    lores_orig = lores_data
+                    hires_orig = hires_data
                     if shared_mask is not None:
+                        # this makes a copy
                         lores_data = lores_data[~shared_mask]
                         hires_data = hires_data[~shared_mask]
-                    np.clip(lores_data, -0.01, 1.1, out=lores_data)
-                    np.clip(hires_data, -0.01, 1.1, out=hires_data)
+                    np.clip(lores_data, -0.01, 1.1, lores_data)
+                    np.clip(hires_data, -0.01, 0.9, hires_data)
                     lores_data[:] = lookup_scale(lores_data, 0., 1., -0.01, 1.1)
                     hires_data[:] = lookup_scale(hires_data, 0., 1., -0.01, 1.1)
+                    if shared_mask is not None:
+                        hires_orig[~shared_mask] = hires_data
+                        lores_orig[~shared_mask] = lores_data
                     gridded_scene[lores_product_name]["valid_min"] = 0.
                     gridded_scene[lores_product_name]["valid_max"] = 1.
                     gridded_scene[hires_product_name]["valid_min"] = 0.
@@ -186,7 +196,6 @@ class CreflRGBSharpenCompositor(roles.CompositorRole):
                 except ValueError:
                     LOG.error("Could not apply ratio-sharpened non-linear scaling")
                     raise
-
 
             if self.remove_lores:
                 del gridded_scene[lores_product_name]
