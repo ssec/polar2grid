@@ -496,9 +496,12 @@ class Backend(roles.BackendRole):
             x = x[0].squeeze()  # all rows should have the same coordinates
             y = y[:, 0].squeeze()  # all columns should have the same coordinates
             # scale the X and Y arrays to fit in the file for 16-bit integers
-            # mx, bx = self._calc_factor_offset(x, bitdepth=13, dtype=np.uint16)
             # AWIPS is dumb and requires the integer values to be 0, 1, 2, 3, 4
-            if x.shape[0] > 2**(16-2):
+            # Max value of a signed 16-bit integer is 32767 meaning 32768
+            # values when including 0 and not using the negative portion
+            # Leave one for the fill value (max value) that still leaves
+            # 32767 possible values (0 to 32766)
+            if x.shape[0] > 2**(16-1) - 1:
                 # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
                 raise ValueError("X variable too large for AWIPS-version of 16-bit integer space")
             bx = x.min()
@@ -506,7 +509,7 @@ class Backend(roles.BackendRole):
             bx *= micro_factor
             mx *= micro_factor
             # my, by = self._calc_factor_offset(y, bitdepth=13, dtype=np.uint16)
-            if y.shape[0] > 2**(16-2):
+            if y.shape[0] > 2**(16-1) - 1:
                 # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
                 raise ValueError("Y variable too large for AWIPS-version of 16-bit integer space")
             by = y.min()
