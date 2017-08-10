@@ -199,10 +199,6 @@ class AttributeHelper(object):
     def _global_tile_column_offset(self):
         return self.offset[1] * self.tile_shape[1]
 
-    # def _global_satellite_altitude(self):
-    #     # NOTE: Is this needed for Geos projections? Doesn't seem needed for LCC?
-    #     return self.dataset["grid_definition"].proj4_dict.get("h")
-
     def _global_product_name(self):
         return self._product_name()
 
@@ -346,31 +342,39 @@ class SCMI_writer(object):
             p.short_name = grid_def["grid_name"]
             p.grid_mapping_name = "geostationary"
             p.sweep_angle_axis = proj4_info.get("sweep", "x")
-            # calculate invflat 'f' such that rpol = req - req/invflat
-            a = proj4_info["a"]
-            b = proj4_info["b"]
-            h = proj4_info["h"]
-            lon_0 = proj4_info["lon_0"]
-
-            p.semi_major = a * 1e3  # 6378.137f ;
-            p.semi_minor = b * 1e3  # convert to meters
-            p.perspective_point_height = h
+            p.perspective_point_height = proj4_info['h']
             p.latitude_of_projection_origin = np.float32(0.0)
-            p.longitude_of_projection_origin = np.float32(lon_0)  # is the float32 needed?
+            p.longitude_of_projection_origin = np.float32(proj4_info.get('lon_0', 0.0))  # is the float32 needed?
         elif proj4_info["proj"] == "lcc":
             p = self.projection = self._nc.createVariable("lambert_projection", 'i4')
             self.image_data.grid_mapping = "lambert_projection"
             p.short_name = grid_def["grid_name"]
             p.grid_mapping_name = "lambert_conformal_conic"
-            if proj4_info["lat_0"] != proj4_info["lat_1"]:
-                raise NotImplementedError("Unsure how to handle two standard parallels for LCC projection")
             p.standard_parallel = proj4_info["lat_0"]  # How do we specify two standard parallels?
             p.longitude_of_central_meridian = proj4_info["lon_0"]
-            p.latitude_of_projection_origion = proj4_info["lat_0"]  # XXX: lat_1?
-            p.false_easting = proj4_info.get("x", 0.0)
-            p.false_northing = proj4_info.get("y", 0.0)
-            p.semi_major = proj4_info["a"]
-            p.semi_minor = proj4_info["b"]
+            p.latitude_of_projection_origion = proj4_info.get('lat_1', proj4_info['lat_0'])  # Correct?
+        elif proj4_info['proj'] == 'stere':
+            p = self.projection = self._nc.createVariable("polar_projection", 'i4')
+            self.image_data.grid_mapping = "polar_projection"
+            p.short_name = grid_def["grid_name"]
+            p.grid_mapping_name = "polar_stereographic"
+            p.standard_parallel = proj4_info["lat_ts"]
+            p.straight_vertical_longitude_from_pole = proj4_info.get("lon_0", 0.0)
+            p.latitude_of_projection_origion = proj4_info["lat_0"]  # ?
+        elif proj4_info['proj'] == 'merc':
+            p = self.projection = self._nc.createVariable("mercator_projection", 'i4')
+            self.image_data.grid_mapping = "mercator_projection"
+            p.short_name = grid_def["grid_name"]
+            p.grid_mapping_name = "mercator"
+            p.standard_parallel = proj4_info.get('lat_ts', proj4_info.get('lat_0', 0.0))
+            p.longitude_of_projection_origin = proj4_info.get("lon_0", 0.0)
+        else:
+            raise ValueError("SCMI can not handle projection '{}'".format(proj4_info['proj']))
+
+        p.semi_major = np.float32(proj4_info["a"])
+        p.semi_minor = np.float32(proj4_info["b"])
+        p.false_easting = np.float32(proj4_info.get("x", 0.0))
+        p.false_northing = np.float32(proj4_info.get("y", 0.0))
 
     def set_global_attrs(self, physical_element, awips_id, sector_id, creating_entity):
         self._nc.creator = "UW SSEC - CSPP Polar2Grid"
@@ -484,13 +488,6 @@ class Backend(roles.BackendRole):
             imaginary_grid_def = gridded_product["grid_definition"].copy()
             imaginary_grid_def["height"] = imaginary_data_size[0]
             imaginary_grid_def["width"] = imaginary_data_size[1]
-            proj4_info = grid_def.proj4_dict
-            if proj4_info["proj"] == "geos":
-                xy_units = "microradian"
-                micro_factor = 1e6
-            else:
-                xy_units = "meters"
-                micro_factor = 1
 
             x, y = imaginary_grid_def.get_xy_arrays()
             x = x[0].squeeze()  # all rows should have the same coordinates
@@ -504,15 +501,12 @@ class Backend(roles.BackendRole):
                 raise ValueError("X variable too large for AWIPS-version of 16-bit integer space")
             bx = x.min()
             mx = gridded_product['grid_definition']['cell_width']
-            bx *= micro_factor
-            mx *= micro_factor
             if y.shape[0] > 2**15:
                 # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
                 raise ValueError("Y variable too large for AWIPS-version of 16-bit integer space")
             by = y.min()
             my = gridded_product['grid_definition']['cell_height']
-            by *= micro_factor
-            my *= micro_factor
+            xy_units = "meters"
 
             # bit_depth = gridded_product.get("bit_depth", 16)
             bit_depth = gridded_product.get("bit_depth", 16)
@@ -533,7 +527,6 @@ class Backend(roles.BackendRole):
                     file_bitdepth -= 1
                     is_unsigned = True
                 if not is_unsigned:
-                    bx += 2 ** (bit_depth - 1) * mx
                     # max value
                     fills = [2 ** (file_bitdepth - 1) - 1]
                 else:
