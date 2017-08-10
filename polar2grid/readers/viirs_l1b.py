@@ -184,6 +184,7 @@ DNB_PRODUCTS = [
     "histogram_dnb",
     "adaptive_dnb",
     "dynamic_dnb",
+    "hncc_dnb",
 ]
 TRUE_COLOR_PRODUCTS = [
     "true_color"

@@ -277,6 +277,7 @@ PRODUCT_IFOG = "ifog"
 PRODUCT_HISTOGRAM_DNB = "histogram_dnb"
 PRODUCT_ADAPTIVE_DNB = "adaptive_dnb"
 PRODUCT_DYNAMIC_DNB = "dynamic_dnb"
+PRODUCT_HNCC_DNB = "hncc_dnb"
 #   adaptive IR
 PRODUCT_ADAPTIVE_I04 = "adaptive_i04"
 PRODUCT_ADAPTIVE_I05 = "adaptive_i05"
@@ -465,6 +466,7 @@ PRODUCTS.add_product(PRODUCT_IFOG, PAIR_INAV, "temperature_difference", dependen
 PRODUCTS.add_product(PRODUCT_HISTOGRAM_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA), units='1', valid_min=0, valid_max=1)
 PRODUCTS.add_product(PRODUCT_ADAPTIVE_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), units='1', valid_min=0, valid_max=1)
 PRODUCTS.add_product(PRODUCT_DYNAMIC_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), units='1', valid_min=0, valid_max=1)
+PRODUCTS.add_product(PRODUCT_HNCC_DNB, PAIR_DNBNAV, "equalized_radiance", dependencies=(PRODUCT_DNB, PRODUCT_DNB_SZA, PRODUCT_DNB_LZA), units='1', valid_min=0, valid_max=0.075)
 PRODUCTS.add_product(PRODUCT_ADAPTIVE_I04, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I04,), units='1', valid_min=0, valid_max=1)
 PRODUCTS.add_product(PRODUCT_ADAPTIVE_I05, PAIR_INAV, "equalized_brightness_temperature", dependencies=(PRODUCT_I05,), units='1', valid_min=0, valid_max=1)
 PRODUCTS.add_product(PRODUCT_ADAPTIVE_M12, PAIR_MNAV, "equalized_brightness_temperature", dependencies=(PRODUCT_M12,), units='1', valid_min=0, valid_max=1)
@@ -521,6 +523,7 @@ class Frontend(roles.FrontendRole):
             PRODUCT_ADAPTIVE_M15: self.create_adaptive_btemp,
             PRODUCT_ADAPTIVE_M16: self.create_adaptive_btemp,
             PRODUCT_DYNAMIC_DNB: self.create_dynamic_dnb,
+            PRODUCT_HNCC_DNB: self.create_hncc_dnb,
         }
         for p, p_def in self.PRODUCTS.items():
             if p_def.data_kind == "reflectance" and p_def.dependencies:
@@ -612,6 +615,7 @@ class Frontend(roles.FrontendRole):
             PRODUCT_HISTOGRAM_DNB,
             PRODUCT_ADAPTIVE_DNB,
             PRODUCT_DYNAMIC_DNB,
+            PRODUCT_HNCC_DNB,
         ]
         return defaults
 
@@ -1057,6 +1061,64 @@ class Frontend(roles.FrontendRole):
             raise
 
         return one_swath
+
+    def create_hncc_dnb(self, product_name, swath_definition, products_created, fill=numpy.nan):
+            product_def = self.PRODUCTS[product_name]
+            deps = product_def.dependencies
+            if len(deps) != 3:
+                LOG.error("Expected 3 dependencies to create dynamic DNB product, got %d" % (len(deps),))
+                raise RuntimeError("Expected 3 dependencies to create dynamic DNB product, got %d" % (len(deps),))
+
+            dnb_product_name = deps[0]
+            sza_product_name = deps[1]
+            lza_product_name = deps[2]
+            lon_product_name = self.GEO_PAIRS[product_def.geo_pair_name].lon_product
+            index = 0 if self.use_terrain_corrected else 1
+            file_type = self.PRODUCTS[lon_product_name].get_file_type(index=index)
+            geo_file_reader = self.file_readers[file_type]
+            moon_illum_fraction = geo_file_reader[guidebook.K_MOONILLUM]
+            dnb_product = products_created[dnb_product_name]
+            dnb_data = dnb_product.get_data_array()
+            # dnb_data = numpy.ma.masked_array(dnb_data, dnb_product.get_data_mask(), copy=False)
+            sza_data = products_created[sza_product_name].get_data_array()
+            # sza_data = numpy.ma.masked_array(sza_data, products_created[sza_product_name].get_data_mask(), copy=False)
+            lza_data = products_created[lza_product_name].get_data_array()
+            # lza_data = numpy.ma.masked_array(lza_data, products_created[lza_product_name].get_data_mask(), copy=False)
+            filename = product_name + ".dat"
+            if os.path.isfile(filename):
+                if not self.overwrite_existing:
+                    LOG.error("Binary file already exists: %s" % (filename,))
+                    raise RuntimeError("Binary file already exists: %s" % (filename,))
+                else:
+                    LOG.warning("Binary file already exists, will overwrite: %s", filename)
+
+            try:
+                output_data = dnb_product.copy_array(filename=filename, read_only=False)
+                # use SatPy to perform the calculations
+                from satpy.composites.viirs import NCCZinke
+                dnb_data.info = {
+                    # 'units': "W m-2 sr-1",
+                    'units': "W cm-2 sr-1",
+                    'calibration': 'radiance',
+                    'wavelength': (0.500, 0.700, 0.900),
+                }
+                compositor = NCCZinke(product_name,
+                                      prequisites=[dnb_product_name,
+                                                   sza_product_name,
+                                                   lza_product_name,
+                                                   'moon_illumination_fraction'])
+                hncc_ds = compositor([dnb_data, sza_data, lza_data, moon_illum_fraction])
+                if hasattr(hncc_ds, 'mask'):
+                    hncc_ds = hncc_ds.filled(numpy.nan)
+                output_data[:] = hncc_ds
+                one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
+                                                               dnb_product["data_type"], products_created)
+            except StandardError:
+                if os.path.isfile(filename):
+                    os.remove(filename)
+                raise
+
+            return one_swath
 
     def _get_day_percentage(self, sza_swath):
         if "day_percentage" not in sza_swath:
