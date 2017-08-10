@@ -688,7 +688,9 @@ class Frontend(roles.FrontendRole):
             raise
 
         one_swath = containers.SwathProduct(
-            product_name=product_name, description=product_def.description, units=product_def.units,
+            product_name=product_name, description=product_def.description,
+            units=product_def.units,
+            valid_min=getattr(product_def, 'valid_min', None), valid_max=getattr(product_def, 'valid_max', None),
             satellite=file_reader.satellite, instrument=file_reader.instrument,
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
             swath_definition=swath_definition, fill_value=numpy.nan,
@@ -707,6 +709,7 @@ class Frontend(roles.FrontendRole):
         s = dep_objects[0]
         one_swath = containers.SwathProduct(
             product_name=product_name, description=product_def.description, units=product_def.units,
+            valid_min=getattr(product_def, 'valid_min', None), valid_max=getattr(product_def, 'valid_max', None),
             satellite=s["satellite"], instrument=s["instrument"],
             begin_time=s["begin_time"], end_time=s["end_time"],
             swath_definition=swath_definition, fill_value=numpy.nan,

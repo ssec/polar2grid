@@ -518,6 +518,7 @@ class Backend(roles.BackendRole):
                 valid_max = np.nanmax(data)
             gridded_product["valid_min"] = valid_min
             gridded_product["valid_max"] = valid_max
+            LOG.debug("Using product valid min {} and valid max {}".format(valid_min, valid_max))
             dtype = np.dtype(np.uint16)
             if np.issubdtype(data.dtype, np.integer) or 'flag_meanings' in gridded_product:
                 data = data.astype(dtype)
