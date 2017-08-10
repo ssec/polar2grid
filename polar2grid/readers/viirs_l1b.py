@@ -218,7 +218,7 @@ class Frontend(ReaderWrapper):
     @property
     def all_product_names(self):
         # return self.scene.all_dataset_names(reader_name=self.reader, composites=True)
-        return I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS
+        return I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS[1:]
 
     def _calc_percent_day(self, scene):
         if 'solar_zenith_angle' in scene:

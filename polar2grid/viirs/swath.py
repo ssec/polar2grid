@@ -612,7 +612,6 @@ class Frontend(roles.FrontendRole):
             PRODUCT_M15,
             PRODUCT_M16,
             PRODUCT_IFOG,
-            PRODUCT_HISTOGRAM_DNB,
             PRODUCT_ADAPTIVE_DNB,
             PRODUCT_DYNAMIC_DNB,
             PRODUCT_HNCC_DNB,
