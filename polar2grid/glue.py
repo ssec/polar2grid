@@ -256,7 +256,7 @@ def main(argv=sys.argv[1:]):
     elif args.frontend == 'crefl':
         if args.backend in ['awips', 'scmi']:
             LOG.debug("Adding 'crefl_sharpen' compositor")
-            args.compositors.append('crefl_sharpen')
+            args.compositors.append('crefl_sharpen' if args.backend == 'scmi' else 'crefl_sharpen_awips')
         else:
             LOG.debug("Adding 'true_color' compositor")
             args.compositors.append('true_color')
