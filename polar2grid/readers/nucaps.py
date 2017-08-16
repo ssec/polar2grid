@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2016 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -287,7 +287,7 @@ class Frontend(ReaderWrapper):
     DEFAULT_DATASETS = []
 
     def __init__(self, *args, **kwargs):
-        super(Frontend, self).__init__(*args, **kwargs)
+        super(Frontend, self).__init__(**kwargs)
         reader = self.scene.readers[self.reader]
         self.DEFAULT_DATASETS = []
         for base_name in ["Temperature", "H2O_MR"]:

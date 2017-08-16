@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """Utility to mimic ms2gt's gridloc program, but for PROJ.4 grids.
 

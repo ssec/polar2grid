@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -191,7 +191,7 @@ class Backend(roles.BackendRole):
         except NoSectionError as e:
             LOG.error("Could not get information on grid from backend configuration file")
             # NoSectionError is not a "StandardError" so it won't be caught normally
-            raise RuntimeError(e.msg)
+            raise RuntimeError(str(e))
 
         if not output_pattern:
             if "filename_scheme" in awips_info:
@@ -228,7 +228,7 @@ class Backend(roles.BackendRole):
 
             LOG.info("Writing product %s to AWIPS NetCDF file", gridded_product["product_name"])
             create_awips2_netcdf3(output_filename, data, gridded_product["begin_time"], **awips_info)
-        except StandardError:
+        except (OSError, ValueError, KeyError):
             LOG.error("Error while filling in NC file with data: %s", output_filename)
             if not self.keep_intermediate and os.path.isfile(output_filename):
                 os.remove(output_filename)

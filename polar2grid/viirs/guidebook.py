@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -221,7 +221,7 @@ def create_geo_file_info(file_kind, file_band, **kwargs):
     }
 
     for k, v in d.items():
-        if not isinstance(v, (str, unicode)):
+        if not isinstance(v, str):
             continue
         d[k] = d[k].format(**kwargs)
 
@@ -255,7 +255,7 @@ def create_im_file_info(file_kind, file_band, **kwargs):
         K_DATA_PATH: '/All_Data/VIIRS-{file_kind}{file_band}-SDR_All',
     }
     for k, v in d.items():
-        if not isinstance(v, (str, unicode)):
+        if not isinstance(v, str):
             continue
         d[k] = d[k].format(**kwargs)
     return d
@@ -301,7 +301,7 @@ def create_edr_file_info(file_kind, file_band, **kwargs):
                        qflag1=K_QF1_AERO, qflag1_mask=0b11, qflag1_eq=0b11, **kwargs)
 
     for k, v in d.items():
-        if not isinstance(v, (str, unicode)):
+        if not isinstance(v, str):
             continue
         d[k] = d[k].format(**kwargs)
     return d

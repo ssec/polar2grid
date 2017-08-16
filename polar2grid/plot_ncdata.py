@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """Simple script to plot AWIPS NetCDF files onto a png file using matplotlib.
 
@@ -40,13 +40,11 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-from numpy import *
-import numpy as numpy
+import numpy as np
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
-import numpy as np
 from netCDF4 import Dataset
 from glob import glob
 import sys
@@ -59,7 +57,7 @@ DEF_VMIN = 0
 DEF_VMAX = 255
 DEF_DPI  = 100
 
-def _open_file_and_get_var_data (file_name, var_name, var_type=uint8) :
+def _open_file_and_get_var_data (file_name, var_name, var_type=np.uint8) :
     """
     open a file and get the variable from it, converting it to var_type
     
@@ -88,7 +86,7 @@ def _plt_basic_imshow_fig (data, vmin, vmax, cmap=cm.bone, title="image", backgr
     axes = figure.add_subplot(111, axisbg=background_color)
 
     # Plot the data
-    print data.min(), data.max()
+    print(data.min(), data.max())
     plt.imshow(data, vmin=vmin, vmax=vmax, cmap=cmap)
 
     # Add a colorbar and force the colormap
@@ -99,16 +97,12 @@ def _plt_basic_imshow_fig (data, vmin, vmax, cmap=cm.bone, title="image", backgr
     
     return figure
 
-def exc_handler(exc_type, exc_value, traceback):
-    print "Uncaught error creating png images"
-    raise # this is wrong, but I need to see these errors, not silence them
-
 
 def plot_file_patterns(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DPI, background_color='white'):
     glob_pat = os.path.join(base_dir, base_pat)
     for nc_name in glob(glob_pat):
         nc_name = os.path.split(nc_name)[1]
-        print "Drawing for NC name %s" % nc_name
+        print("Drawing for NC name %s" % (nc_name,))
         
         # Get the data from the file
         data = _open_file_and_get_var_data(nc_name, "image")
@@ -126,9 +120,9 @@ def rough_compare (path1, path2, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DP
     data1 = _open_file_and_get_var_data(path1, "image")
     data2 = _open_file_and_get_var_data(path2, "image")
     
-    diff    = numpy.zeros(data1.shape, dtype=int32)
+    diff = np.zeros(data1.shape, dtype=np.int32)
     diff[:] = data1[:]
-    diff    = diff - data2
+    diff = diff - data2
     
     # make a picture of the first data set
     fig = _plt_basic_imshow_fig(data1, vmin, vmax, title="data set 1", cmap=cm.Paired)
@@ -141,14 +135,14 @@ def rough_compare (path1, path2, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DP
     plt.close()
     
     # make a picture of the difference
-    fig = _plt_basic_imshow_fig(diff, numpy.min(diff), numpy.max(diff), title="difference", cmap=cm.Spectral)
+    fig = _plt_basic_imshow_fig(diff, np.min(diff), np.max(diff), title="difference", cmap=cm.Spectral)
     fig.savefig("plot_ncdata.diff.png", dpi=dpi_to_use)
     plt.close()
     
     # make a picture of the difference in a more restricted range
     diff[diff >  10.0] =  10.0
     diff[diff < -10.0] = -10.0
-    fig = _plt_basic_imshow_fig(diff, numpy.min(diff), numpy.max(diff), title="difference, restricted", cmap=cm.Spectral)
+    fig = _plt_basic_imshow_fig(diff, np.min(diff), np.max(diff), title="difference, restricted", cmap=cm.Spectral)
     fig.savefig("plot_ncdata.diff_r.png", dpi=dpi_to_use)
     plt.close()
 
@@ -179,9 +173,9 @@ files with the prefix ``SSEC_AWIPS_``."""
 def main():
     parser = get_parser()
     args = parser.parse_args()
-    sys.excepthook=exc_handler
-    
+
     files_temp = None
+    base_dir = None
     if args.search_dir is None or len(args.search_dir) == 0:
         base_dir = DEF_DIR
     elif len(args.search_dir) == 1:
@@ -189,13 +183,13 @@ def main():
     elif len(args.search_dir) == 2:
         files_temp = (args.search_dir[0], args.search_dir[1])
     else:
-        print "ERROR: 0, 1, or 2 arguments are allowed for 'search_dir', not %d" % len(args.search_dir)
+        print("ERROR: 0, 1, or 2 arguments are allowed for 'search_dir', not %d" % (len(args.search_dir),))
         return -1
 
     if files_temp is None:
         return plot_file_patterns(base_dir=base_dir, base_pat=args.base_pat, background_color=args.background_color,
                     vmin=args.vmin, vmax=args.vmax, dpi_to_use=args.dpi)
-    else :
+    else:
         return rough_compare(files_temp[0], files_temp[1],
                     vmin=args.vmin, vmax=args.vmax, dpi_to_use=args.dpi)
 

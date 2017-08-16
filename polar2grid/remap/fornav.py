@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -45,8 +45,7 @@ import logging
 import numpy
 import os
 
-import _fornav
-from polar2grid.remap import ms2gt
+from polar2grid.remap import ms2gt, _fornav
 
 try:
     import psutil
@@ -94,7 +93,7 @@ def group_iter(input_arrays, swath_cols, swath_rows, input_dtype, output_arrays,
     ret_output_arrays = []
 
     for idx, (ia, oa) in enumerate(zip(input_arrays, output_arrays)):
-        if isinstance(ia, (str, unicode)):
+        if isinstance(ia, str):
             ret_input_arrays.append(numpy.memmap(ia, shape=(swath_rows, swath_cols), dtype=input_dtype, mode='r'))
         else:
             ret_input_arrays.append(ia)
@@ -104,7 +103,7 @@ def group_iter(input_arrays, swath_cols, swath_rows, input_dtype, output_arrays,
             ret_output_arrays.append(numpy.empty((grid_rows, grid_cols), dtype=ia.dtype))
             # we should return the numpy arrays in the main function since the user didn't provide any
             output_arrays[idx] = ret_output_arrays[-1]
-        elif isinstance(oa, (str, unicode)):
+        elif isinstance(oa, str):
             ret_output_arrays.append(numpy.memmap(oa, shape=(grid_rows, grid_cols), dtype=input_dtype, mode='w+'))
         else:
             ret_output_arrays.append(oa)
@@ -127,7 +126,7 @@ def fornav(cols_array, rows_array, rows_per_scan, input_arrays, input_dtype=None
     include_output = False
 
     if input_dtype is None:
-        if isinstance(input_arrays[0], (str, unicode)):
+        if isinstance(input_arrays[0], str):
             raise ValueError("Must provide `input_dtype` when using input filenames")
         input_dtype = [ia.dtype for ia in input_arrays if hasattr(ia, "dtype")]
 
@@ -155,6 +154,7 @@ def fornav(cols_array, rows_array, rows_per_scan, input_arrays, input_dtype=None
     if output_fill is None:
         output_fill = input_fill
 
+    group_size = None
     if use_group_size:
         if GROUP_SIZE is not None:
             group_size = GROUP_SIZE
@@ -162,7 +162,7 @@ def fornav(cols_array, rows_array, rows_per_scan, input_arrays, input_dtype=None
             group_size = None
             # It seems like this could be a smart way of handling this is we were using multiprocessing, but
             # a lot of testing is required to verify that assumption. The proper way to handle this or make it faster
-            # in general is to have parrallel operations inside fornav (OpenMP or OpenCL/GPU).
+            # in general is to have parallel operations inside fornav (OpenMP or OpenCL/GPU).
             # group_size = calculate_group_size(cols_array.shape[1], cols_array.shape[0], grid_cols, grid_rows)
     if group_size is None:
         group_size = len(input_arrays)

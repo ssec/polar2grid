@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2013-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -113,10 +113,10 @@ def main():
     grid_height = args.grid_height
 
     if clon < -180 or clon > 180:
-        print "ERROR: Center longitude must be between -180 and 180 degrees"
+        print("ERROR: Center longitude must be between -180 and 180 degrees")
         return -1
     if clat < -90 or clat > 90:
-        print "ERROR: Center latitude must be between -90 and 90 degrees"
+        print("ERROR: Center latitude must be between -90 and 90 degrees")
         return -1
 
     proj_str = determine_projection(clon, clat, args.proj_str)
@@ -142,7 +142,7 @@ def main():
             "width" : grid_width,
             "height" : grid_height,
             }
-    print valid_config_line
+    print(valid_config_line)
 
 if __name__ == "__main__":
     sys.exit(main())

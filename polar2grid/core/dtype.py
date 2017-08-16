@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -111,7 +111,7 @@ def str_to_dtype(dtype_str):
 
 
 def dtype_to_str(numpy_dtype):
-    if isinstance(numpy_dtype, (str, unicode)):
+    if isinstance(numpy_dtype, str):
         # if they gave us a string, make sure it's valid
         return normalize_dtype_string(numpy_dtype)
 
@@ -125,7 +125,7 @@ def convert_to_data_type(data, data_type):
     """Convert a numpy array to a different data type represented by a
     polar2grid data type constant.
     """
-    if isinstance(data_type, (str, unicode)):
+    if isinstance(data_type, str):
         if data_type not in str2dtype:
             log.error("Unknown data_type '%s', don't know how to convert data" % (data_type,))
             raise ValueError("Unknown data_type '%s', don't know how to convert data" % (data_type,))
@@ -137,7 +137,7 @@ def convert_to_data_type(data, data_type):
 
 
 def clip_to_data_type(data, data_type):
-    if not isinstance(data_type, (str, unicode)):
+    if not isinstance(data_type, str):
         data_type = dtype_to_str(data_type)
     if data_type not in str2dtype:
         log.error("Unknown data_type '%s', don't know how to convert data" % (data_type,))

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -78,7 +78,6 @@ __docformat__ = "restructuredtext en"
 
 import signal
 import sys
-from itertools import izip
 
 import logging
 import numpy
@@ -118,9 +117,9 @@ def init_worker():
 
 
 class Remapper(object):
-    def __init__(self, grid_configs=[],
+    def __init__(self, grid_configs=None,
                  overwrite_existing=False, keep_intermediate=False, exit_on_error=True, **kwargs):
-        self.grid_manager = GridManager(*grid_configs)
+        self.grid_manager = GridManager(*(grid_configs or []))
         self.overwrite_existing = overwrite_existing
         self.keep_intermediate = keep_intermediate
         self.exit_on_error = exit_on_error
@@ -167,7 +166,7 @@ class Remapper(object):
                 self.run_ll2cr(best_swath_def, grid_def, swath_usage=kwargs.get("swath_usage", SWATH_USAGE))
                 grid_str = str(grid_def).replace("\n", "\n\t")
                 LOG.info("Grid information:\n\t%s", grid_str)
-            except StandardError:
+            except (RuntimeError, ValueError, OSError):
                 LOG.error("Remapping error")
                 raise
 
@@ -204,7 +203,7 @@ class Remapper(object):
                                                fill_in=swath_definition["fill_value"])
             grid_str = str(grid_definition).replace("\n", "\n\t")
             LOG.debug("Grid information:\n\t%s", grid_str)
-        except StandardError:
+        except (RuntimeError, ValueError, OSError):
             LOG.error("Unexpected error encountered during ll2cr gridding for %s -> %s", geo_id, grid_name)
             LOG.debug("ll2cr error exception: ", exc_info=True)
             self._safe_remove(rows_fn, cols_fn)
@@ -260,6 +259,7 @@ class Remapper(object):
         # if a shared grid definition isn't used then
         # we start from the original
         orig_grid_def = grid_def
+        fornav_filepaths = None  # just in case the loop isn't entered
         for (is_cat, geo_id), product_names in product_groups.items():
             try:
                 LOG.debug("Running ll2cr on the geolocation data for the following products:\n\t%s", "\n\t".join(sorted(product_names)))
@@ -268,7 +268,7 @@ class Remapper(object):
                     grid_def = orig_grid_def.copy()
                 cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def,
                                                   swath_usage=kwargs.get("swath_usage", SWATH_USAGE))
-            except StandardError:
+            except (RuntimeError, ValueError, OSError):
                 LOG.error("Remapping error")
                 if self.exit_on_error:
                     raise
@@ -348,7 +348,7 @@ class Remapper(object):
                                            maximum_weight_mode=mwm,
                                            use_group_size=True
                                            )
-            except StandardError:
+            except (RuntimeError, ValueError, OSError, KeyError):
                 LOG.debug("Remapping exception: ", exc_info=True)
                 LOG.error("Remapping error")
                 self._safe_remove(*fornav_filepaths)
@@ -378,7 +378,7 @@ class Remapper(object):
 
         self._clear_ll2cr_cache()
 
-        if not gridded_scene:
+        if not gridded_scene and fornav_filepaths:
             self._safe_remove(*fornav_filepaths)
             raise RuntimeError("EWA resampling could not remap any of the data to grid '%s'" % (grid_name,))
 
@@ -410,7 +410,7 @@ class Remapper(object):
                 if not share_dynamic_grids:
                     grid_def = orig_grid_def.copy()
                 cols_fn, rows_fn = self.run_ll2cr(swath_def, grid_def)
-            except StandardError:
+            except (RuntimeError, ValueError, OSError, KeyError):
                 LOG.error("Remapping error")
                 if self.exit_on_error:
                     raise
@@ -443,7 +443,7 @@ class Remapper(object):
                 x = _ndim_coords_from_arrays((cols_array[good_mask], rows_array[good_mask]))
                 xi = _ndim_coords_from_arrays((grid_y, grid_x))
                 dist, i = cKDTree(x).query(xi, distance_upper_bound=kwargs["distance_upper_bound"])
-            except StandardError:
+            except (RuntimeError, ValueError, OSError, KeyError):
                 LOG.debug("Remapping exception: ", exc_info=True)
                 LOG.error("Remapping error")
                 if self.exit_on_error:
@@ -456,7 +456,7 @@ class Remapper(object):
 
             # Prepare the products
             fill_value = numpy.nan
-            for product_name, output_fn in izip(product_names, output_filepaths):
+            for product_name, output_fn in zip(product_names, output_filepaths):
                 LOG.debug("Running nearest neighbor on '%s' with search distance %f", product_name, kwargs["distance_upper_bound"])
                 if os.path.isfile(output_fn):
                     if not self.overwrite_existing:
@@ -493,7 +493,7 @@ class Remapper(object):
 
                     # hopefully force garbage collection
                     del output_array
-                except StandardError:
+                except (RuntimeError, ValueError, OSError, KeyError):
                     LOG.debug("Remapping exception: ", exc_info=True)
                     LOG.error("Remapping error")
                     self._safe_remove(output_fn)

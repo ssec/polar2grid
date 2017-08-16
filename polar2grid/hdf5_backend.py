@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -98,7 +98,7 @@ class Backend(roles.BackendRole):
 
         try:
             h = self.create_hdf5_file(output_filename, append=kwargs.get("append", True))
-        except StandardError:
+        except ValueError:
             LOG.error("Could not create hdf5 file: %s", output_filename)
             raise
 
@@ -109,7 +109,7 @@ class Backend(roles.BackendRole):
                 try:
                     LOG.info("Creating HDF5 output for product: %s", product_name)
                     self.create_output_from_product(gridded_product, parent=h5_group, **kwargs)
-                except StandardError:
+                except ValueError:
                     LOG.error("Could not create output for '%s'", product_name)
                     if self.exit_on_error:
                         raise
@@ -186,7 +186,7 @@ class Backend(roles.BackendRole):
                 ds.attrs[a] = gridded_product[a]
             ds.attrs["begin_time"] = gridded_product["begin_time"].isoformat()
             ds.attrs["end_time"] = gridded_product["end_time"].isoformat()
-        except StandardError:
+        except ValueError:
             if not self.keep_intermediate and output_filename and os.path.isfile(output_filename):
                 os.remove(output_filename)
             raise

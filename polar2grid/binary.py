@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -105,7 +105,7 @@ class Backend(roles.BackendRole):
                 data = self.rescaler.rescale_product(gridded_product, data_type,
                                                      inc_by_one=inc_by_one, fill_value=fill_value)
                 data = clip_to_data_type(data, data_type)
-            except StandardError:
+            except ValueError:
                 if not self.keep_intermediate and os.path.isfile(output_filename):
                     os.remove(output_filename)
                 raise

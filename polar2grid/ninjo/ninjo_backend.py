@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -255,7 +255,7 @@ class Backend(roles.BackendRole):
                  begin_time=gridded_product["begin_time"],
                  product_name=gridded_product["product_name"],
                  )
-        except StandardError:
+        except (OSError, RuntimeError, ValueError, KeyError):
             if not self.keep_intermediate and os.path.isfile(output_filename):
                 os.remove(output_filename)
             raise
@@ -280,7 +280,7 @@ def add_backend_argument_groups(parser):
 
 def main():
     from polar2grid.core.script_utils import create_basic_parser, create_exc_handler, setup_logging
-    from polar2grid.core.script_utils import GriddedScene, GriddedProduct
+    from polar2grid.core.containers import GriddedScene, GriddedProduct
     parser = create_basic_parser(description="Create NinJo files from provided gridded scene or product data")
     subgroup_titles = add_backend_argument_groups(parser)
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")

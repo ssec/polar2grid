@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -153,7 +153,6 @@ __docformat__ = "restructuredtext en"
 
 import sys
 from datetime import datetime, timedelta
-from pyhdf import SD
 
 import logging
 import numpy
@@ -253,9 +252,7 @@ class MODISFileReader(modis_guidebook.FileReader):
 
 class VIIRSCreflReader(modis_guidebook.HDFReader):
     def __init__(self, filename):
-        self.filename = os.path.basename(filename)
-        self.filepath = os.path.realpath(filename)
-        self._hdf_handle = SD.SD(self.filepath, SD.SDC.READ)
+        super(VIIRSCreflReader, self).__init__(filename)
         # CREFLM_npp_d20141103_t1758468_e1800112.hdf
         fn = os.path.splitext(self.filename)[0]
         parts = fn.split("_")
@@ -273,7 +270,7 @@ class VIIRSCreflReader(modis_guidebook.HDFReader):
 
 class VIIRSFileReader(MODISFileReader):
     def __init__(self, filename_or_hdf_obj, file_type_info):
-        if isinstance(filename_or_hdf_obj, (str, unicode)):
+        if isinstance(filename_or_hdf_obj, str):
             filename_or_hdf_obj = VIIRSCreflReader(filename_or_hdf_obj)
         super(VIIRSFileReader, self).__init__(filename_or_hdf_obj, file_type_info)
 
@@ -538,7 +535,7 @@ class Frontend(roles.FrontendRole):
                         have_modis = True
                     else:
                         LOG.warning("Unnecessary MODIS file found: %s", fp)
-                except StandardError:
+                except (OSError, ValueError, KeyError):
                     LOG.warning("Could not parse modis HDF4 file: %s", fp)
                     continue
             else:
@@ -608,7 +605,7 @@ class Frontend(roles.FrontendRole):
             have_crefl, _ = self.analyze_hdf4_files(files_created)
             if not have_crefl:
                 raise RuntimeError("crefl completed successfully, but didn't give us any recognizable crefl files")
-        except StandardError:
+        except (ValueError, RuntimeError, OSError):
             LOG.error("Could not create modis crefl files from SDRs")
             raise
 
@@ -647,7 +644,7 @@ class Frontend(roles.FrontendRole):
             have_crefl, _ = self.analyze_hdf4_files(files_created)
             if not have_crefl:
                 raise RuntimeError("cviirs completed successfully, but didn't give us any recognizable crefl files")
-        except StandardError:
+        except (ValueError, RuntimeError, OSError):
             LOG.error("Could not create crefl files from SDRs")
             raise
 
@@ -728,7 +725,7 @@ class Frontend(roles.FrontendRole):
         try:
             file_type = product_def.get_file_type(self.available_file_types)
             file_key = product_def.get_file_key(self.available_file_types)
-        except StandardError:
+        except RuntimeError:
             LOG.error("Could not create product '%s' because some data files are missing" % (product_name,))
             raise RuntimeError("Could not create product '%s' because some data files are missing" % (product_name,))
         file_reader = self.file_readers[file_type]
@@ -748,7 +745,7 @@ class Frontend(roles.FrontendRole):
             data_type = file_reader.get_data_type(file_key)
             fill_value = file_reader.get_fill_value(file_key)
             rows_per_scan = GEO_PAIRS[product_def.get_geo_pair_name(self.available_file_types)].rows_per_scan
-        except StandardError:
+        except (ValueError, RuntimeError):
             LOG.error("Could not extract data from file")
             LOG.debug("Extraction exception: ", exc_info=True)
             raise
@@ -824,7 +821,7 @@ class Frontend(roles.FrontendRole):
                 LOG.info("Creating data product '%s'", product_name)
                 swath_def = swath_definitions[PRODUCTS[product_name].geo_pair_name]
                 one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
-            except StandardError:
+            except (ValueError, RuntimeError):
                 LOG.error("Could not create raw product '%s'", product_name)
                 if self.exit_on_error:
                     raise
@@ -842,7 +839,7 @@ class Frontend(roles.FrontendRole):
             try:
                 LOG.info("Creating secondary product '%s'", product_name)
                 one_swath = product_func(self, product_name, swath_def, products_created)
-            except StandardError:
+            except (ValueError, KeyError, RuntimeError):
                 LOG.error("Could not create product (unexpected error): '%s'", product_name)
                 LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
                 if self.exit_on_error:

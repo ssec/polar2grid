@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2016 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -55,8 +55,6 @@ products over certain grids
 :license:      GNU GPLv3
 
 """
-__docformat__ = "restructuredtext en"
-
 import sys
 from datetime import datetime, timedelta
 from netCDF4 import Dataset
@@ -65,10 +63,9 @@ import logging
 import numpy as np
 import os
 
-from polar2grid.core.rescale import DEFAULT_RCONFIG
 from polar2grid.core.dtype import DTYPE_UINT8
 from polar2grid.core import roles
-from ConfigParser import NoSectionError, NoOptionError
+from configparser import NoSectionError
 
 LOG = logging.getLogger(__name__)
 # AWIPS 2 seems to not like data values under 0
@@ -222,7 +219,7 @@ class AttributeHelper(object):
             return socket.gethostname()  # FUTURE: something more correct but this will do for now
 
 
-class SCMI_writer(object):
+class SCMIWriter(object):
     """
     Write a basic NetCDF4 file with header data mapped to global attributes, and BT/ALB/RAD variables
     FUTURE: optionally add time dimension (CF)
@@ -250,6 +247,7 @@ class SCMI_writer(object):
         self._include_fgf = include_fgf
         self._compress = compress
         self.helper = helper
+        self.image_data = None  # filled in by create_variables later
 
     def create_dimensions(self):
         # Create Dimensions
@@ -319,6 +317,7 @@ class SCMI_writer(object):
         self.fgf_y.standard_name = "projection_y_coordinate"
         self.fgf_y[:] = y
 
+        LOG.debug('x variable shape is {}'.format(self.fgf_x.shape))
         self.fgf_x.scale_factor = np.float64(mx * float(downsample_factor))
         self.fgf_x.add_offset = np.float64(bx)
         self.fgf_x.units = units
@@ -406,7 +405,7 @@ class Backend(roles.BackendRole):
     def known_grids(self):
         return None
 
-    def _calc_factor_offset(self, data=None, dtype=np.int16, bitdepth=None, min=None, max=None, num_fills=1):
+    def _calc_factor_offset(self, data=None, dtype=np.int16, bitdepth=None, vmin=None, vmax=None, num_fills=1):
         if num_fills > 1:
             raise NotImplementedError("More than one fill value is not implemented yet")
 
@@ -425,12 +424,12 @@ class Backend(roles.BackendRole):
             # don't take away from the data bitdepth if there is room in
             # file data type to allow for extra fill values
             num_fills = 0
-        if min is None:
-            min = data.min()
-        if max is None:
-            max = data.max()
-        mx = float(max - min) / (2**bitdepth - 1 - num_fills)
-        bx = min
+        if vmin is None:
+            vmin = data.min()
+        if vmax is None:
+            vmax = data.max()
+        mx = float(vmax - vmin) / (2 ** bitdepth - 1 - num_fills)
+        bx = vmin
         if not is_unsigned:
             bx += 2**(bitdepth - 1) * mx
             # max value
@@ -536,14 +535,16 @@ class Backend(roles.BackendRole):
                 factor = 0.5  # AWIPS doesn't like Identity conversion
                 offset = 0
             else:
-                fills, factor, offset = self._calc_factor_offset(bitdepth=bit_depth, min=valid_min, max=valid_max, dtype=dtype)
+                fills, factor, offset = self._calc_factor_offset(bitdepth=bit_depth, vmin=valid_min, vmax=valid_max, dtype=dtype)
 
             for ty in range(tile_count[0]):
                 for tx in range(tile_count[1]):
                     # store tile data to an intermediate array
                     tmp_tile[:] = fill_value
                     tile_number = ty * tile_count[1] + tx + 1
-                    tmp_tile[:] = data[ty * tile_shape[0]: (ty + 1) * tile_shape[0], tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
+                    max_row_idx = min((ty + 1) * tile_shape[0], data.shape[0]) - (ty * tile_shape[0])
+                    max_col_idx = min((tx + 1) * tile_shape[1], data.shape[1]) - (tx * tile_shape[1])
+                    tmp_tile[:max_row_idx, :max_col_idx] = data[ty * tile_shape[0]: (ty + 1) * tile_shape[0], tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
 
                     if tmp_tile.mask.all():
                         LOG.info("Tile %d contains all masked data, skipping...", tile_number)
@@ -578,8 +579,8 @@ class Backend(roles.BackendRole):
 
                     LOG.info("Writing tile %d to %s", tile_number, output_filename)
 
-                    nc = SCMI_writer(output_filename, (ty + tile_offset[0], tx + tile_offset[1]), tile_shape,
-                                     helper=attr_helper, compress=self.compress)
+                    nc = SCMIWriter(output_filename, (ty + tile_offset[0], tx + tile_offset[1]), tile_shape,
+                                    helper=attr_helper, compress=self.compress)
                     LOG.debug("Creating dimensions...")
                     nc.create_dimensions()
                     LOG.debug("Creating variables...")
@@ -605,7 +606,7 @@ class Backend(roles.BackendRole):
                         if '_NCProperties' in h.attrs:
                             del h.attrs['_NCProperties']
                         h.close()
-        except StandardError:
+        except (ValueError, KeyError, AttributeError):
             last_fn = created_files[-1] if created_files else "N/A"
             LOG.error("Error while filling in NC file with data: %s", last_fn)
             for fn in created_files:

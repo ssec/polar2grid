@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -56,7 +56,7 @@ Usage: python nc_to_template.py <input nc> <output nc>
     args = sys.argv[1:]
     if len(args) != 2:
         LOG.error("Requires 2 arguments: input file and output file")
-        print usage
+        print(usage)
         return -1
 
     input_file = os.path.abspath(args[0])
@@ -74,7 +74,7 @@ Usage: python nc_to_template.py <input nc> <output nc>
     try:
         LOG.debug("Copying input file to output file location")
         shutil.copyfile(input_file, output_file)
-    except StandardError:
+    except OSError:
         LOG.error("Could not move input file to output location", exc_info=1)
         return -1
 
@@ -82,12 +82,12 @@ Usage: python nc_to_template.py <input nc> <output nc>
     try:
         LOG.debug("Opening output file to fill in data")
         nc = Dataset(output_file, "a")#, format="NETCDF3_CLASSIC")
-    except StandardError:
+    except OSError:
         LOG.error("Error trying to open NC file")
         try:
             LOG.debug("Trying to remove file that couldn't be opened %s" % output_file)
             os.remove(output_file)
-        except StandardError:
+        except OSError:
             LOG.warning("Bad output file could not be removed %s" % output_file)
         finally:
             return -1

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """
 
@@ -66,11 +66,11 @@ class fbf_writer(object):
     _files = { } # currently open file objects
     _info = { }  # info on which fields go to which files
 
-    def __init__(self,info,output_directory_name,comment='',ignore=[]):
+    def __init__(self, info, output_directory_name, comment='', ignore=None):
         if not os.path.isdir(output_directory_name): os.makedirs(output_directory_name)
         self._info = info
         self._base = output_directory_name
-        self._ignore = ignore
+        self._ignore = ignore or []
         self._files = { }
         self._create_metadata(comment)
 
@@ -78,10 +78,10 @@ class fbf_writer(object):
         """ write version / tracking / log metadata to the output directory
         """
         if comment:
-            fp = file(os.path.join(self._base,'README.txt'),'wt')
-            print >>fp, VCSID
-            print >>fp, iasi.VCSID
-            print >>fp, comment
+            fp = open(os.path.join(self._base, 'README.txt'), 'wt')
+            print(VCSID, file=fp)
+            print(iasi.VCSID, file=fp)
+            print(comment, file=fp)
 
     @staticmethod
     def endian(ext):
@@ -98,7 +98,7 @@ class fbf_writer(object):
             shape = ''
         filename = os.path.join(self._base, stem + self.endian(ext) + shape)
         LOG.debug("creating %s..." % filename)
-        return file(filename, 'wb')
+        return open(filename, 'wb')
 
     def _append(self,key,data):
         "append a record to the named output key, creating files as needed"
@@ -120,7 +120,7 @@ class fbf_writer(object):
         if stem not in self._files:
             fp = self._create(stem,suffix,data)
             self._files[stem] = fp
-        data.tofile( fp )
+            data.tofile( fp )
 
     def write_ancillary(self,stem,suffix,data):
         "write a single record to a file the first time the file is encountered"
@@ -207,11 +207,11 @@ class iasi_record_fbf_writer(fbf_writer):
 
     IASI_FBF_FILENAMES.update( dict( (s,(None,'.real4',real4sfromarray)) for s in iasi.CLOUD_MASK_PRODUCTS ) )
 
-    def __init__(self,output_directory_name,detector_number,comment='',ignore=[],use_cloud=False,use_clusters=False):
+    def __init__(self,output_directory_name,detector_number,comment='',ignore=None,use_cloud=False,use_clusters=False):
         inventory = dict(self.IASI_FBF_FILENAMES)
         if use_cloud: inventory.update(self.CLOUD_FBF_FILENAMES)
         if use_clusters: inventory.update(self.PAR_MAIA_FBF_FILENAMES)
-        fbf_writer.__init__(self,inventory,output_directory_name,comment,ignore)
+        fbf_writer.__init__(self,inventory,output_directory_name,comment,ignore or [])
         self._detector_number = detector_number
 
     def write_iis(self,iis):
@@ -234,8 +234,8 @@ def cloud_mask_load(pathname):
         from metahoard.iasi.cloud_extract import read_maia_file
         return cloud_mask_dict( vars(x) for x in read_maia_file(pathname) )
     else:
-        from cPickle import load
-        leest = load( file( pathname, 'rb' ) )
+        from pickle import load
+        leest = load(open( pathname, 'rb'))
         return cloud_mask_dict(leest)
 
 def _cloud_mask_has_clusters(cmdict):
@@ -244,7 +244,7 @@ def _cloud_mask_has_clusters(cmdict):
         if 'par_maia' in d: return True
         return False
 
-def extract_sounding(output_directory, detector_number=None, as_scan_lines=True, use_cloud=False, cloud_mask_pathname=None, lines=None, iis_images=False, ignore=[], *filenames):
+def extract_sounding(output_directory, detector_number=None, as_scan_lines=True, use_cloud=False, cloud_mask_pathname=None, lines=None, iis_images=False, ignore=None, *filenames):
     """ iterate through all the records for a given detector for a series of files, writing them to flat binary
     """
     LOG.info("creating %s..." % output_directory)
@@ -253,7 +253,7 @@ def extract_sounding(output_directory, detector_number=None, as_scan_lines=True,
         detector_info = "all detectors"
     else:
         detector_info = "detector %d" % detector_number
-    comment = """Data extraction from %s for %s""" % (`filenames`, detector_info)
+    comment = """Data extraction from %s for %s""" % (repr(filenames), detector_info)
     write = None # delay creation until we have first file open
 
     for filename in filenames:
@@ -276,7 +276,7 @@ def extract_sounding(output_directory, detector_number=None, as_scan_lines=True,
             has_clusters = _cloud_mask_has_clusters(cloud_dict) # check or extended information from par_maia
 
         if write is None:
-            write = iasi_record_fbf_writer(output_directory, detector_number, comment, ignore=ignore, use_cloud=use_cloud, use_clusters=has_clusters)
+            write = iasi_record_fbf_writer(output_directory, detector_number, comment, ignore=ignore or [], use_cloud=use_cloud, use_clusters=has_clusters)
 
         prod = iasi.open_product(filename)
         if not as_scan_lines:
@@ -292,9 +292,9 @@ def extract_sounding(output_directory, detector_number=None, as_scan_lines=True,
             write( record )
             write.write_wavenumbers(record.wavenumbers) # only does it once
             rec_num += 1
-            print 'wrote %5d records..   \r' % rec_num,
+            print('wrote %5d records..   \r' % (rec_num,))
             sys.stdout.flush()
-    print "\ndone!"
+    print("\ndone!")
 
 
 
@@ -328,7 +328,7 @@ FIELD_LIST={'ATMOSPHERIC_TEMPERATURE': ('T', '.real4', real4sfromarray, 2, 'K', 
 class iasi_retrieval_fbf_writer(fbf_writer):
     # FUTURE: move this information to iasi_tools - especially units and scaling factors!
 
-    def __init__(self, output_directory_name, comment='', ignore=[]):
+    def __init__(self, output_directory_name, comment='', ignore=None):
         NFO = dict( (x,y[0:3]) for x,y in FIELD_LIST.items() )
         NFO['lat'] = ('latitude', '.real4', real4sfromarray)
         NFO['lon'] = ('longitude', '.real4', real4sfromarray)
@@ -347,7 +347,7 @@ class iasi_retrieval_fbf_writer(fbf_writer):
         NFO['refTimeMonth'] = ('refTimeMonth', '.int4', int4sfromarray)
         NFO['refTimeYear'] = ('refTimeYear', '.int4', int4sfromarray)
 
-        fbf_writer.__init__(self,NFO,output_directory_name,comment,ignore)
+        fbf_writer.__init__(self,NFO,output_directory_name,comment,ignore or [])
 
     def write_levels(self,ancil):
         self.write_ancillary('T_pressure_levels','.real4',real4sfromarray(ancil['PRESSURE_LEVELS_TEMP']))
@@ -377,11 +377,11 @@ def datetime_shatter( whens ):
 class retrieval_record(object):
     pass
 
-def extract_retrieval(output_directory, ignore=[], *filenames):
-    comment = """Data extraction from %s\nPressure levels are in Pa\n""" % (`filenames`)
+def extract_retrieval(output_directory, ignore=None, *filenames):
+    comment = """Data extraction from %s\nPressure levels are in Pa\n""" % (repr(filenames))
     for (key,(stem,_,_,sf,units,_)) in FIELD_LIST.items():
         comment += '%s (%s): from %s\n' % (stem,units,key)
-    write = iasi_retrieval_fbf_writer(output_directory, comment, ignore=ignore)
+    write = iasi_retrieval_fbf_writer(output_directory, comment, ignore=ignore or [])
     for filename in filenames:
         LOG.info('processing %s...' % filename)
         prod = iasi.open_product(filename)
@@ -457,10 +457,6 @@ Example:
 
     # FUTURE: validating the format strings is advisable
 
-    # make options a globally accessible structure, e.g. OPTS.
-    global OPTS
-    OPTS = options
-
     if options.self_test:
         # FIXME - run any self-tests
         # import doctest
@@ -475,7 +471,7 @@ Example:
         return 9
 
     swath =  cris_swath(*args)
-    if swath == None :
+    if swath is None:
         return 1
     #cris_quicklook(options.output, swath , options.format, options.label)
 

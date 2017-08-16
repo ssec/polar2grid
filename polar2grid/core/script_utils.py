@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -175,7 +175,7 @@ def _safe_remove(fn):
     try:
         LOG.debug("Removing %s" % fn)
         os.remove(fn)
-    except StandardError:
+    except IOError:
         LOG.error("Could not remove %s" % fn)
 
 

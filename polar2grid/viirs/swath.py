@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -554,7 +554,7 @@ class Frontend(roles.FrontendRole):
             LOG.debug("Unrecognized file: %s", fp)
 
         # Get rid of the readers we aren't using
-        for file_type, file_reader in self.file_readers.items():
+        for file_type, file_reader in list(self.file_readers.items()):
             if not len(file_reader):
                 del self.file_readers[file_type]
             else:
@@ -564,7 +564,7 @@ class Frontend(roles.FrontendRole):
             LOG.error("No useable files loaded")
             raise ValueError("No useable files loaded")
 
-        first_length = len(self.file_readers[self.file_readers.keys()[0]])
+        first_length = len(self.file_readers[next(iter(self.file_readers))])
         if not all(len(x) == first_length for x in self.file_readers.values()):
             LOG.error("Corrupt directory: Varying number of files for each type")
             ft_str = "\n\t".join("%s: %d" % (ft, len(fr)) for ft, fr in self.file_readers.items())
@@ -573,11 +573,11 @@ class Frontend(roles.FrontendRole):
 
     @property
     def begin_time(self):
-        return self.file_readers[self.file_readers.keys()[0]].begin_time
+        return self.file_readers[next(iter(self.file_readers))].begin_time
 
     @property
     def end_time(self):
-        return self.file_readers[self.file_readers.keys()[0]].end_time
+        return self.file_readers[next(iter(self.file_readers))].end_time
 
     @property
     def available_product_names(self):
@@ -682,7 +682,7 @@ class Frontend(roles.FrontendRole):
             # TODO: Do something with data type
             shape = file_reader.write_var_to_flat_binary(file_key, filename)
             rows_per_scan = self.GEO_PAIRS[product_def.geo_pair_name].rows_per_scan
-        except StandardError:
+        except (RuntimeError, ValueError, KeyError, OSError):
             LOG.error("Could not extract data from file. Use '--no-tc' flag if terrain-corrected data is not available")
             LOG.debug("Extraction exception: ", exc_info=True)
             raise
@@ -788,7 +788,7 @@ class Frontend(roles.FrontendRole):
                 LOG.info("Creating data product '%s'", product_name)
                 swath_def = swath_definitions[self.PRODUCTS[product_name].geo_pair_name]
                 one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
-            except StandardError:
+            except (RuntimeError, ValueError, KeyError, OSError):
                 LOG.error("Could not create raw product '%s'", product_name)
                 if self.exit_on_error:
                     raise
@@ -806,7 +806,7 @@ class Frontend(roles.FrontendRole):
             try:
                 LOG.info("Creating secondary product '%s'", product_name)
                 one_swath = product_func(product_name, swath_def, products_created)
-            except StandardError:
+            except (RuntimeError, ValueError, KeyError, OSError):
                 LOG.error("Could not create product (unexpected error): '%s'", product_name)
                 LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
                 if self.exit_on_error:
@@ -853,7 +853,7 @@ class Frontend(roles.FrontendRole):
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            dnb_product["data_type"], products_created)
-        except StandardError:
+        except (RuntimeError, ValueError, KeyError, OSError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise
@@ -894,7 +894,7 @@ class Frontend(roles.FrontendRole):
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            dnb_product["data_type"], products_created)
-        except StandardError:
+        except (RuntimeError, ValueError, KeyError, OSError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise
@@ -926,7 +926,7 @@ class Frontend(roles.FrontendRole):
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            bt_product["data_type"], products_created)
-        except StandardError:
+        except (RuntimeError, ValueError, KeyError, OSError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise
@@ -974,7 +974,7 @@ class Frontend(roles.FrontendRole):
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            products_created[left_term_name]["data_type"], products_created)
-        except StandardError:
+        except (RuntimeError, ValueError, KeyError, OSError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise
@@ -1057,7 +1057,7 @@ class Frontend(roles.FrontendRole):
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            dnb_product["data_type"], products_created)
-        except StandardError:
+        except (RuntimeError, ValueError, KeyError, OSError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise
@@ -1115,7 +1115,7 @@ class Frontend(roles.FrontendRole):
                 output_data[:] = hncc_ds
                 one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                                dnb_product["data_type"], products_created)
-            except StandardError:
+            except (RuntimeError, ValueError, KeyError, OSError):
                 if os.path.isfile(filename):
                     os.remove(filename)
                 raise

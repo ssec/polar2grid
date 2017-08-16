@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -44,8 +44,8 @@ import sys
 import logging
 import os
 import pkg_resources
-from ConfigParser import SafeConfigParser, Error as ConfigParserError
-from StringIO import StringIO
+from configparser import ConfigParser, Error as ConfigParserError
+from io import StringIO
 from pkg_resources import resource_string as get_resource_string
 
 LOG = logging.getLogger(__name__)
@@ -57,20 +57,21 @@ P2G_COMP_ARGS_EP = "polar2grid.compositor_arguments"
 
 class CompositorManager(dict):
     def __init__(self, config_files=None, **kwargs):
+        super(CompositorManager, self).__init__()
         self.section_prefix = kwargs.get("section_prefix", "compositor:")
         self.config_files = config_files or (DEFAULT_COMP_CONFIG,)
-        file_objs = set([f for f in self.config_files if not isinstance(f, (str, unicode))])
-        filepaths = set([f for f in self.config_files if isinstance(f, (str, unicode))])
+        file_objs = set([f for f in self.config_files if not isinstance(f, str)])
+        filepaths = set([f for f in self.config_files if isinstance(f, str)])
 
-        self.config_parser = SafeConfigParser(kwargs, allow_no_value=True)
+        self.config_parser = ConfigParser(kwargs, allow_no_value=True)
         if file_objs:
             for fp in file_objs:
-                self.config_parser.readfp(fp)
+                self.config_parser.read_file(fp)
         else:
             for fp in filepaths:
                 fo = self.open_config_file(fp)
                 try:
-                    self.config_parser.readfp(fo, fp)
+                    self.config_parser.read_file(fo, fp)
                 except ConfigParserError:
                     LOG.warning("Could not parse config file: %s", fp)
 
@@ -79,6 +80,7 @@ class CompositorManager(dict):
             LOG.error("No valid configuration sections found with prefix '%s'", self.section_prefix)
             raise ValueError("No valid configuration sections found")
 
+        self.comp_classes = {}
         self.find_compositor_classes()
 
     def open_config_file(self, config_file):
@@ -103,8 +105,8 @@ class CompositorManager(dict):
                         parts = config_file.split(":")
                         mod_part, file_part = parts if len(parts) == 2 else ("", parts[0])
                         mod_part = mod_part or self.__module__
-                        config_str = get_resource_string(mod_part, file_part)
-                    except StandardError:
+                        config_str = get_resource_string(mod_part, file_part).decode()
+                    except ValueError:
                         LOG.error("Configuration file '%s' was not found" % (config_file,))
                         raise
                     config_file = StringIO(config_str)
@@ -173,7 +175,7 @@ def main(argv=sys.argv[1:]):
     # Load compositor information (we can't know the compositor choices until we've loaded the configuration)
     compositor_manager = CompositorManager(config_files=args.compositor_configs)
     # Hack: argparse doesn't let you use choices and nargs=* on a positional argument
-    parser.add_argument("compositors", choices=compositor_manager.keys() + [[]], nargs="*",
+    parser.add_argument("compositors", choices=list(compositor_manager.keys()) + [[]], nargs="*",
                         help="Specify the compositors to apply to the provided scene (additional arguments are determined after this is specified)")
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")
     parser.add_argument("-o", dest="output_filename",
@@ -198,7 +200,7 @@ def main(argv=sys.argv[1:]):
     for c, comp in compositor_objects.items():
         try:
             scene = comp.modify_scene(scene, **args.subgroup_args[c + " Modification"])
-        except StandardError:
+        except (KeyError, ValueError):
             LOG.debug("Compositor Error: ", exc_info=True)
             LOG.error("Could not properly modify scene using compositor '%s'" % (c,))
             if args.exit_on_error:
