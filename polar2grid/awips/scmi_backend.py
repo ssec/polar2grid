@@ -65,21 +65,17 @@ import logging
 import numpy as np
 import os
 
-from polar2grid.core.rescale import DEFAULT_RCONFIG
-from polar2grid.core.dtype import DTYPE_UINT8
 from polar2grid.core import roles
 from ConfigParser import NoSectionError, NoOptionError
 
 LOG = logging.getLogger(__name__)
 # AWIPS 2 seems to not like data values under 0
 AWIPS_USES_NEGATIVES = False
-DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{satellite}_{instrument}_{product_name}_{sector_id}_T{tile_number:03d}_{begin_time:%Y%m%d_%H%M}.nc'
+DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{satellite}_{instrument}_{product_name}_{sector_id}_T{tile_id}_{begin_time:%Y%m%d_%H%M}.nc'
 DEFAULT_CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", "polar2grid.awips:scmi_backend.ini")
 
 SCMI_GLOBAL_ATT=dict(
-    product_tile_height=None,  # 1100,
     satellite_id=None,  # GOES-H8
-    tile_column_offset=None,  # 2750,
     pixel_y_size=None,  # km
     start_date_time=None,  # 2015181030000,  # %Y%j%H%M%S
     product_columns=None,  # 11000,
@@ -89,8 +85,6 @@ SCMI_GLOBAL_ATT=dict(
     product_rows=None,  # 11000,
     production_location=None,  # "MSC",
     Conventions="CF-1.7",
-    product_tile_width=None,  # 1375,
-    tile_row_offset=None,  # 0,
 )
 
 
@@ -103,6 +97,108 @@ UNIT_CONV = {
     'Kelvin': 'kelvin',
     'K': 'kelvin',
 }
+
+
+# Lettered Grids are predefined/static tile grids starting with A
+# in the upper-left cell, going right until all cells are filled
+# Map proj_type -> (upper_left_extent, lower_right_extent, tile_width, tile_height)
+LETTERED_GRIDS = {
+    'lcc': ((-140, 55), (-50, 15), 5000, 5000),
+    'stere': ((130, 80), (-120, 50), 5000, 5000),
+    'mercator': ((-180, 50), (-50, 10), 5000, 5000),
+}
+
+
+class NumberedTileGenerator(object):
+    def __init__(self, grid_definition, data, cell_size=(5000, 5000),
+                 tile_shape=None, tile_count=None):
+        self.grid_definition = grid_definition
+        self.data = data
+        self.cell_size = cell_size
+        self.tile_shape = tile_shape
+        self.tile_count = tile_count
+
+    def get_xy(self):
+        """Get the X/Y coordinate arrays for the full resulting image"""
+        gd = self.grid_definition
+        ts = self.tile_shape
+        tc = self.tile_count
+        # Since our tiles may go over the edge of the original "grid" we
+        # need to make sure we calculate X/Y to the edge of all of the tiles
+        imaginary_data_size = (ts[0] * tc[0], ts[1] * tc[1])
+        imaginary_grid_def = gd.copy()
+        imaginary_grid_def["height"] = imaginary_data_size[0]
+        imaginary_grid_def["width"] = imaginary_data_size[1]
+
+        x, y = imaginary_grid_def.get_xy_arrays()
+        x = x[0].squeeze()  # all rows should have the same coordinates
+        y = y[:, 0].squeeze()  # all columns should have the same coordinates
+        # scale the X and Y arrays to fit in the file for 16-bit integers
+        # AWIPS is dumb and requires the integer values to be 0, 1, 2, 3, 4
+        # Max value of a signed 16-bit integer is 32767 meaning
+        # 32768 values.
+        if x.shape[0] > 2**15:
+            # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
+            raise ValueError("X variable too large for AWIPS-version of 16-bit integer space")
+        bx = x.min()
+        mx = gd['cell_width']
+        if y.shape[0] > 2**15:
+            # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
+            raise ValueError("Y variable too large for AWIPS-version of 16-bit integer space")
+        by = y.min()
+        my = gd['cell_height']
+        return x, mx, bx, y, my, by
+
+    def _tile_number(self, ty, tx):
+        # e.g.
+        # 001 002 003 004
+        # 005 006 ...
+        return ty * self.tile_count[1] + tx + 1
+
+    def _tile_identifier(self, ty, tx):
+        return "T{:03d}".format(self._tile_number(ty, tx))
+
+    def __call__(self, x, y, fill_value=np.nan):
+        ts = self.tile_shape
+        tc = self.tile_count
+        tmp_tile = np.ma.zeros(self.tile_shape, dtype=np.float32)
+        tmp_tile.set_fill_value(fill_value)
+        for ty in range(tc[0]):
+            for tx in range(tc[1]):
+                tile_id = self._tile_identifier(ty, tx)
+                tile_row_offset = ty * ts[0]
+                tile_column_offset = tx * ts[1]
+
+                # store tile data to an intermediate array
+                tmp_tile[:] = fill_value
+                tmp_tile[:] = self.data[
+                              ty * ts[0]: (ty + 1) * ts[0],
+                              tx * ts[1]: (tx + 1) * ts[1]]
+
+                if tmp_tile.mask.all():
+                    LOG.info("Tile %d contains all masked data, skipping...", tile_id)
+                    continue
+                tmp_x = x[tx * ts[1]: (tx + 1) * ts[1]]
+                tmp_y = y[ty * ts[0]: (ty + 1) * ts[0]]
+
+                yield tile_row_offset, tile_column_offset, tile_id, tmp_x, tmp_y, tmp_tile
+
+
+class LetteredTileGenerator(NumberedTileGenerator):
+    def __init__(self, grid_definition, data, num_subtiles=4):
+        super(LetteredTileGenerator, self).__init__(grid_definition, data,
+                                                    num_subtiles=num_subtiles)
+
+    def _create_lcc_grid(self):
+        pass
+
+    def _create_stere_grid(self):
+        pass
+
+    def __call__(self):
+        """Generate individual tiles on lettered grid"""
+        pass
+
 
 
 class SCMIConfigReader(roles.INIConfigReader):
@@ -135,16 +231,13 @@ class AttributeHelper(object):
     """
     tile_count = (0, 0)  # ny, nx
     hsd = None
-    offset = (0, 0)  # ty, tx tile number
     tile_shape = (0, 0)  # wy, wx height and width of tile in pixels
     scene_shape = (0, 0)  # sy, sx height and width of scene in pixels
 
-    def __init__(self, dataset, offset, tile_count, scene_shape):
+    def __init__(self, dataset, tile_count, scene_shape):
         self.dataset = dataset
-        self.offset = offset
         self.tile_count = tile_count
         self.scene_shape = scene_shape
-        self.tile_shape = (int(scene_shape[0] / tile_count[0]), int(scene_shape[1] / tile_count[1]))
 
     def apply_attributes(self, nc, table, prefix=''):
         """
@@ -169,20 +262,8 @@ class AttributeHelper(object):
     def _scene_time(self):
         return self.dataset["begin_time"] + timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0)))
 
-    def _tile_number(self):
-        # e.g.
-        # 001 002 003 004
-        # 005 006 ...
-        return self.offset[0] * self.tile_count[1] + self.offset[1] + 1
-
     def _product_name(self):
         return self.dataset["product_name"]
-
-    def _global_product_tile_height(self):  # = None, # 1100,
-        return self.tile_shape[0]
-
-    def _global_product_tile_width(self):  # = None, # 1100,
-        return self.tile_shape[1]
 
     def _global_number_product_tiles(self):
         return self.tile_count[0] * self.tile_count[1]
@@ -192,12 +273,6 @@ class AttributeHelper(object):
 
     def _global_product_columns(self):
         return self.scene_shape[1]
-
-    def _global_tile_row_offset(self):
-        return self.offset[0] * self.tile_shape[0]
-
-    def _global_tile_column_offset(self):
-        return self.offset[1] * self.tile_shape[1]
 
     def _global_product_name(self):
         return self._product_name()
@@ -230,8 +305,6 @@ class SCMI_writer(object):
 
     """
     _nc = None
-    _shape = None
-    _offset = None  # offset within source file
     _kind = None  # 'albedo', 'brightness_temp'
     _band = None
     _include_fgf = True
@@ -243,17 +316,14 @@ class SCMI_writer(object):
     fgf_x = None
     projection = None
 
-    def __init__(self, filename, offset, shape, include_fgf=True, helper=None, compress=False):
+    def __init__(self, filename, include_fgf=True, helper=None, compress=False):
         self._nc = Dataset(filename, 'w')
-        self._shape = shape
-        self._offset = offset
         self._include_fgf = include_fgf
         self._compress = compress
         self.helper = helper
 
-    def create_dimensions(self):
+    def create_dimensions(self, lines, columns):
         # Create Dimensions
-        lines, columns = self._shape
         _nc = self._nc
         _nc.createDimension(self.row_dim_name, lines)
         _nc.createDimension(self.col_dim_name, columns)
@@ -376,7 +446,9 @@ class SCMI_writer(object):
         p.false_easting = np.float32(proj4_info.get("x", 0.0))
         p.false_northing = np.float32(proj4_info.get("y", 0.0))
 
-    def set_global_attrs(self, physical_element, awips_id, sector_id, creating_entity):
+    def set_global_attrs(self, physical_element, awips_id, sector_id,
+                         creating_entity, tile_row, tile_column,
+                         tile_height, tile_width):
         self._nc.creator = "UW SSEC - CSPP Polar2Grid"
         self._nc.creation_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
         # name as it shows in the product browser (physicalElement)
@@ -385,6 +457,10 @@ class SCMI_writer(object):
         # identifying name to match against AWIPS common descriptions (ex. "AWIPS_product_name")
         self._nc.awips_id = awips_id
         self._nc.sector_id = sector_id
+        self._nc.tile_row_offset = tile_row
+        self._nc.tile_column_offset = tile_column
+        self._nc.product_tile_height = tile_height
+        self._nc.product_tile_width = tile_width
         self.helper.apply_attributes(self._nc, SCMI_GLOBAL_ATT, '_global_')
 
     def close(self):
@@ -406,7 +482,9 @@ class Backend(roles.BackendRole):
     def known_grids(self):
         return None
 
-    def _calc_factor_offset(self, data=None, dtype=np.int16, bitdepth=None, min=None, max=None, num_fills=1):
+    def _calc_factor_offset(self, data=None, dtype=np.int16, bitdepth=None,
+                            min=None, max=None, num_fills=1,
+                            flag_meanings=False):
         if num_fills > 1:
             raise NotImplementedError("More than one fill value is not implemented yet")
 
@@ -429,23 +507,35 @@ class Backend(roles.BackendRole):
             min = data.min()
         if max is None:
             max = data.max()
-        mx = float(max - min) / (2**bitdepth - 1 - num_fills)
-        bx = min
+
         if not is_unsigned:
-            bx += 2**(bitdepth - 1) * mx
             # max value
             fills = [2**(file_bitdepth - 1) - 1]
         else:
             # max value
             fills = [2**file_bitdepth - 1]
-        return fills, mx, bx
+
+        if flag_meanings:
+            data = data.astype(dtype)
+            # AWIPS doesn't like Identity conversion so we can't have
+            # a factor of 1 and an offset of 0
+            mx = 0.5
+            bx = 0
+        else:
+            mx = float(max - min) / (2**bitdepth - 1 - num_fills)
+            bx = min
+            if not is_unsigned:
+                bx += 2**(bitdepth - 1) * mx
+
+        return fills, mx, bx, data
 
     def create_output_from_product(self, gridded_product, sector_id=None,
                                    source_name=None, output_pattern=None,
                                    tile_count=(1, 1), tile_size=None,
-                                   tile_offset=(0, 0),
+                                   # tile_offset=(0, 0),
                                    **kwargs):
-        data_type = DTYPE_UINT8
+        dtype = np.dtype(np.uint16)
+        dtype_str = 'uint2'
         fill_value = np.nan
         grid_def = gridded_product["grid_definition"]
 
@@ -472,139 +562,93 @@ class Backend(roles.BackendRole):
             mask = gridded_product.get_data_mask()
             data = np.ma.masked_array(data, mask=mask)
 
-            LOG.info("Writing product %s to AWIPS NetCDF file", gridded_product["product_name"])
-            if tile_size is not None:
-                tile_shape = (int(min(tile_size[0], data.shape[0])), int(min(tile_size[1], data.shape[1])))
-                tile_count = (int(np.ceil(data.shape[0] / tile_shape[0])), int(np.ceil(data.shape[1] / tile_shape[1])))
-            else:
-                tile_shape = (int(data.shape[0] / tile_count[0]), int(data.shape[1] / tile_count[1]))
-            tmp_tile = np.ma.zeros(tile_shape, dtype=np.float32)
-            tmp_tile.set_fill_value(fill_value)
-
-            # Get X/Y
-            # Since our tiles may go over the edge of the original "grid" we
-            # need to make sure we calculate X/Y to the edge of all of the tiles
-            imaginary_data_size = (tile_shape[0] * tile_count[0], tile_shape[1] * tile_count[1])
-            imaginary_grid_def = gridded_product["grid_definition"].copy()
-            imaginary_grid_def["height"] = imaginary_data_size[0]
-            imaginary_grid_def["width"] = imaginary_data_size[1]
-
-            x, y = imaginary_grid_def.get_xy_arrays()
-            x = x[0].squeeze()  # all rows should have the same coordinates
-            y = y[:, 0].squeeze()  # all columns should have the same coordinates
-            # scale the X and Y arrays to fit in the file for 16-bit integers
-            # AWIPS is dumb and requires the integer values to be 0, 1, 2, 3, 4
-            # Max value of a signed 16-bit integer is 32767 meaning
-            # 32768 values.
-            if x.shape[0] > 2**15:
-                # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
-                raise ValueError("X variable too large for AWIPS-version of 16-bit integer space")
-            bx = x.min()
-            mx = gridded_product['grid_definition']['cell_width']
-            if y.shape[0] > 2**15:
-                # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
-                raise ValueError("Y variable too large for AWIPS-version of 16-bit integer space")
-            by = y.min()
-            my = gridded_product['grid_definition']['cell_height']
-            xy_units = "meters"
-
-            # bit_depth = gridded_product.get("bit_depth", 16)
-            bit_depth = gridded_product.get("bit_depth", 16)
+            bit_depth = gridded_product.setdefault("bit_depth", 16)
             valid_min = gridded_product.get('valid_min')
             if valid_min is None:
                 valid_min = np.nanmin(data)
             valid_max = gridded_product.get('valid_max')
             if valid_max is None:
                 valid_max = np.nanmax(data)
-            gridded_product["valid_min"] = valid_min
-            gridded_product["valid_max"] = valid_max
+
             LOG.debug("Using product valid min {} and valid max {}".format(valid_min, valid_max))
-            dtype = np.dtype(np.uint16)
-            if np.issubdtype(data.dtype, np.integer) or 'flag_meanings' in gridded_product:
-                data = data.astype(dtype)
-                file_bitdepth = dtype.itemsize * 8
-                is_unsigned = dtype.kind == 'u'
-                if not AWIPS_USES_NEGATIVES and not is_unsigned:
-                    file_bitdepth -= 1
-                    is_unsigned = True
-                if not is_unsigned:
-                    # max value
-                    fills = [2 ** (file_bitdepth - 1) - 1]
-                else:
-                    # max value
-                    fills = [2 ** file_bitdepth - 1]
-                factor = 0.5  # AWIPS doesn't like Identity conversion
-                offset = 0
+            fills, factor, offset, data = self._calc_factor_offset(
+                data=data,
+                bitdepth=bit_depth,
+                min=valid_min,
+                max=valid_max,
+                dtype=dtype,
+                flag_meanings='flag_meanings' in gridded_product)
+
+            LOG.info("Writing product %s to AWIPS SCMI NetCDF file", gridded_product["product_name"])
+            if tile_size is not None:
+                tile_shape = (int(min(tile_size[0], data.shape[0])), int(min(tile_size[1], data.shape[1])))
+                tile_count = (int(np.ceil(data.shape[0] / tile_shape[0])), int(np.ceil(data.shape[1] / tile_shape[1])))
             else:
-                fills, factor, offset = self._calc_factor_offset(bitdepth=bit_depth, min=valid_min, max=valid_max, dtype=dtype)
+                tile_shape = (int(data.shape[0] / tile_count[0]), int(data.shape[1] / tile_count[1]))
 
-            for ty in range(tile_count[0]):
-                for tx in range(tile_count[1]):
-                    # store tile data to an intermediate array
-                    tmp_tile[:] = fill_value
-                    tile_number = ty * tile_count[1] + tx + 1
-                    tmp_tile[:] = data[ty * tile_shape[0]: (ty + 1) * tile_shape[0], tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
+            tile_generator = NumberedTileGenerator(
+                gridded_product['grid_definition'],
+                data,
+                tile_shape=tile_shape,
+                tile_count=tile_count,
+            )
+            x, mx, bx, y, my, by = tile_generator.get_xy()
 
-                    if tmp_tile.mask.all():
-                        LOG.info("Tile %d contains all masked data, skipping...", tile_number)
-                        continue
-                    tmp_x = x[tx * tile_shape[1]: (tx + 1) * tile_shape[1]]
-                    tmp_y = y[ty * tile_shape[0]: (ty + 1) * tile_shape[0]]
-
-                    attr_helper = AttributeHelper(gridded_product, (ty + tile_offset[0], tx + tile_offset[1]), tile_count, data.shape)
-                    tile_number = attr_helper._tile_number()
-                    if "{" in output_pattern:
-                        # format the filename
-                        of_kwargs = gridded_product.copy(as_dict=True)
-                        of_kwargs["data_type"] = data_type
-                        of_kwargs["begin_time"] += timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0)))
-                        output_filename = self.create_output_filename(output_pattern,
-                                                                      grid_name=grid_def["grid_name"],
-                                                                      rows=grid_def["height"],
-                                                                      columns=grid_def["width"],
-                                                                      source_name=awips_info.get('source_name'),
-                                                                      sector_id=sector_id,
-                                                                      tile_number=tile_number,
-                                                                      **of_kwargs)
+            for trow, tcol, tile_id, tmp_x, tmp_y, tmp_tile in tile_generator(x, y, fill_value=fill_value):
+                attr_helper = AttributeHelper(gridded_product, tile_count, data.shape)
+                if "{" in output_pattern:
+                    # format the filename
+                    of_kwargs = gridded_product.copy(as_dict=True)
+                    of_kwargs['data_type'] = dtype_str
+                    of_kwargs["begin_time"] += timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0)))
+                    output_filename = self.create_output_filename(output_pattern,
+                                                                  grid_name=grid_def["grid_name"],
+                                                                  rows=grid_def["height"],
+                                                                  columns=grid_def["width"],
+                                                                  source_name=awips_info.get('source_name'),
+                                                                  sector_id=sector_id,
+                                                                  tile_id=tile_id,
+                                                                  **of_kwargs)
+                else:
+                    output_filename = output_pattern
+                if os.path.isfile(output_filename):
+                    if not self.overwrite_existing:
+                        LOG.error("AWIPS file already exists: %s", output_filename)
+                        raise RuntimeError("AWIPS file already exists: %s" % (output_filename,))
                     else:
-                        output_filename = output_pattern
-                    if os.path.isfile(output_filename):
-                        if not self.overwrite_existing:
-                            LOG.error("AWIPS file already exists: %s", output_filename)
-                            raise RuntimeError("AWIPS file already exists: %s" % (output_filename,))
-                        else:
-                            LOG.warning("AWIPS file already exists, will overwrite: %s", output_filename)
-                    created_files.append(output_filename)
+                        LOG.warning("AWIPS file already exists, will overwrite: %s", output_filename)
+                created_files.append(output_filename)
 
-                    LOG.info("Writing tile %d to %s", tile_number, output_filename)
+                LOG.info("Writing tile '%s' to '%s'", tile_id, output_filename)
 
-                    nc = SCMI_writer(output_filename, (ty + tile_offset[0], tx + tile_offset[1]), tile_shape,
-                                     helper=attr_helper, compress=self.compress)
-                    LOG.debug("Creating dimensions...")
-                    nc.create_dimensions()
-                    LOG.debug("Creating variables...")
-                    nc.create_variables(bit_depth, fills[0], factor, offset)
-                    LOG.debug("Creating global attributes...")
-                    nc.set_global_attrs(physical_element, awips_id, sector_id, creating_entity)
-                    LOG.debug("Creating projection attributes...")
-                    nc.set_projection_attrs(gridded_product["grid_definition"])
-                    LOG.debug("Writing image data...")
-                    np.clip(tmp_tile, valid_min, valid_max, out=tmp_tile)
-                    nc.set_image_data(tmp_tile, fills[0])
-                    LOG.debug("Writing X/Y navigation data...")
-                    nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units=xy_units)
-                    nc.close()
+                nc = SCMI_writer(output_filename, helper=attr_helper,
+                                 compress=self.compress)
+                LOG.debug("Creating dimensions...")
+                nc.create_dimensions(data.shape[0], data.shape[1])
+                LOG.debug("Creating variables...")
+                nc.create_variables(bit_depth, fills[0], factor, offset)
+                LOG.debug("Creating global attributes...")
+                nc.set_global_attrs(physical_element, awips_id, sector_id, creating_entity,
+                                    trow, tcol, tmp_tile.shape[0], tmp_tile.shape[1])
+                LOG.debug("Creating projection attributes...")
+                nc.set_projection_attrs(gridded_product["grid_definition"])
+                LOG.debug("Writing image data...")
+                np.clip(tmp_tile, valid_min, valid_max, out=tmp_tile)
+                nc.set_image_data(tmp_tile, fills[0])
+                LOG.debug("Writing X/Y navigation data...")
+                nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units='meters')
+                nc.close()
 
-                    if self.fix_awips:
-                        # hack to get files created by new NetCDF library
-                        # versions to be read by AWIPS buggy java version
-                        # of NetCDF
-                        LOG.info("Modifying SCMI NetCDF file to work with AWIPS")
-                        import h5py
-                        h = h5py.File(output_filename, 'a')
-                        if '_NCProperties' in h.attrs:
-                            del h.attrs['_NCProperties']
-                        h.close()
+                if self.fix_awips:
+                    # hack to get files created by new NetCDF library
+                    # versions to be read by AWIPS buggy java version
+                    # of NetCDF
+                    LOG.info("Modifying SCMI NetCDF file to work with AWIPS")
+                    import h5py
+                    h = h5py.File(output_filename, 'a')
+                    if '_NCProperties' in h.attrs:
+                        del h.attrs['_NCProperties']
+                    h.close()
         except StandardError:
             last_fn = created_files[-1] if created_files else "N/A"
             LOG.error("Error while filling in NC file with data: %s", last_fn)
@@ -629,8 +673,8 @@ def add_backend_argument_groups(parser):
                        help="Number of tiles to produce in Y (rows) and X (cols) direction respectively")
     group.add_argument("--tile-size", dest="tile_size", nargs=2, type=int, default=None,
                        help="Specify how many pixels are in each tile (overrides '--tiles')")
-    group.add_argument('--tile-offset', nargs=2, default=(0, 0),
-                       help="Start counting tiles from this offset ('row_offset col_offset')")
+    # group.add_argument('--tile-offset', nargs=2, default=(0, 0),
+    #                    help="Start counting tiles from this offset ('row_offset col_offset')")
     group.add_argument("--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
                        help="output filenaming pattern")
     group.add_argument("--source-name", default='SSEC',
