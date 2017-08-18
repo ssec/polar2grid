@@ -74,17 +74,14 @@ AWIPS_USES_NEGATIVES = False
 DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{satellite}_{instrument}_{product_name}_{sector_id}_T{tile_id}_{begin_time:%Y%m%d_%H%M}.nc'
 DEFAULT_CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", "polar2grid.awips:scmi_backend.ini")
 
-SCMI_GLOBAL_ATT=dict(
+# misc. global attributes
+SCMI_GLOBAL_ATT = dict(
     satellite_id=None,  # GOES-H8
     pixel_y_size=None,  # km
     start_date_time=None,  # 2015181030000,  # %Y%j%H%M%S
-    product_columns=None,  # 11000,
     pixel_x_size=None,  # km
     product_name=None,  # "HFD-010-B11-M1C01",
-    number_product_tiles=None,  # 76,
-    product_rows=None,  # 11000,
     production_location=None,  # "MSC",
-    Conventions="CF-1.7",
 )
 
 
@@ -110,16 +107,39 @@ LETTERED_GRIDS = {
 
 
 class NumberedTileGenerator(object):
-    def __init__(self, grid_definition, data, cell_size=(5000, 5000),
+    def __init__(self, grid_definition, data,
                  tile_shape=None, tile_count=None):
         self.grid_definition = grid_definition
         self.data = data
-        self.cell_size = cell_size
-        self.tile_shape = tile_shape
-        self.tile_count = tile_count
 
-    def get_xy(self):
-        """Get the X/Y coordinate arrays for the full resulting image"""
+        # get tile shape, number of tiles, etc.
+        self._get_tile_properties(tile_shape, tile_count)
+        # X and Y coordinates of the whole image
+        self.x, self.y = self._get_xy_arrays()
+        # scaling parameters for the overall images X and Y coordinates
+        # they must be the same for all X and Y variables for all tiles
+        # and must be stored in the file as 0, 1, 2, 3, ...
+        # (X factor, X offset, Y factor, Y offset)
+        self.mx, self.bx, self.my, self.by = self._get_xy_scaling_parameters()
+
+    def _get_tile_properties(self, tile_shape, tile_count):
+        if tile_shape is not None:
+            tile_shape = (int(min(tile_shape[0], self.data.shape[0])), int(min(tile_shape[1], self.data.shape[1])))
+            tile_count = (int(np.ceil(self.data.shape[0] / tile_shape[0])), int(np.ceil(self.data.shape[1] / tile_shape[1])))
+        else:
+            tile_shape = (int(np.ceil(self.data.shape[0] / float(tile_count[0]))), int(np.ceil(self.data.shape[1] / float(tile_count[1]))))
+
+        # number of pixels per each tile
+        self.tile_shape = tile_shape
+        # number of tiles in each direction (rows, columns)
+        self.tile_count = tile_count
+        # number of tiles in the entire image
+        self.total_tiles = tile_count[0] * tile_count[1]
+        # number of pixels in the whole image (rows, columns)
+        self.image_shape = (self.tile_shape[0] * self.tile_count[0],
+                            self.tile_shape[1] * self.tile_count[1])
+
+    def _get_xy_arrays(self):
         gd = self.grid_definition
         ts = self.tile_shape
         tc = self.tile_count
@@ -140,14 +160,19 @@ class NumberedTileGenerator(object):
         if x.shape[0] > 2**15:
             # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
             raise ValueError("X variable too large for AWIPS-version of 16-bit integer space")
-        bx = x.min()
-        mx = gd['cell_width']
         if y.shape[0] > 2**15:
             # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
             raise ValueError("Y variable too large for AWIPS-version of 16-bit integer space")
-        by = y.min()
+        return x, y
+
+    def _get_xy_scaling_parameters(self):
+        """Get the X/Y coordinate limits for the full resulting image"""
+        gd = self.grid_definition
+        bx = self.x.min()
+        mx = gd['cell_width']
+        by = self.y.min()
         my = gd['cell_height']
-        return x, mx, bx, y, my, by
+        return mx, bx, my, by
 
     def _tile_number(self, ty, tx):
         # e.g.
@@ -158,10 +183,12 @@ class NumberedTileGenerator(object):
     def _tile_identifier(self, ty, tx):
         return "T{:03d}".format(self._tile_number(ty, tx))
 
-    def __call__(self, x, y, fill_value=np.nan):
+    def __call__(self, fill_value=np.nan):
+        x = self.x
+        y = self.y
         ts = self.tile_shape
         tc = self.tile_count
-        tmp_tile = np.ma.zeros(self.tile_shape, dtype=np.float32)
+        tmp_tile = np.ma.zeros(ts, dtype=np.float32)
         tmp_tile.set_fill_value(fill_value)
         for ty in range(tc[0]):
             for tx in range(tc[1]):
@@ -170,10 +197,14 @@ class NumberedTileGenerator(object):
                 tile_column_offset = tx * ts[1]
 
                 # store tile data to an intermediate array
+                # the tile may be larger than the remaining data, handle that:
+                max_row_idx = min((ty + 1) * ts[0], self.data.shape[0]) - (ty * ts[0])
+                max_col_idx = min((tx + 1) * ts[1], self.data.shape[1]) - (tx * ts[1])
                 tmp_tile[:] = fill_value
-                tmp_tile[:] = self.data[
-                              ty * ts[0]: (ty + 1) * ts[0],
-                              tx * ts[1]: (tx + 1) * ts[1]]
+                tmp_tile[:max_row_idx, :max_col_idx] = self.data[
+                                                       ty * ts[0]: (ty + 1) * ts[0],
+                                                       tx * ts[1]: (tx + 1) * ts[1]
+                                                       ]
 
                 if tmp_tile.mask.all():
                     LOG.info("Tile %d contains all masked data, skipping...", tile_id)
@@ -185,20 +216,151 @@ class NumberedTileGenerator(object):
 
 
 class LetteredTileGenerator(NumberedTileGenerator):
-    def __init__(self, grid_definition, data, num_subtiles=4):
-        super(LetteredTileGenerator, self).__init__(grid_definition, data,
-                                                    num_subtiles=num_subtiles)
+    def __init__(self, grid_definition, data, cell_size=(5000, 5000),
+                 num_subtiles=4):
+        super(LetteredTileGenerator, self).__init__(
+            grid_definition, data, tile_count=(1, 1))
+        self.num_subtiles = num_subtiles
+        self.cell_size = cell_size
+        # lon/lat
+        self.ll_extents = (-135, 20)
+        self.ur_extents = (-60, 60)
 
-    def _create_lcc_grid(self):
-        pass
+    def create_grid(self):
+        gd = self.grid_definition
+        x, y = gd.get_xy()
 
-    def _create_stere_grid(self):
-        pass
+        ll_corner = self.ll_extents
+        ur_corner = self.ur_extents
+        cw = abs(gd['cell_width'])
+        ch = abs(gd['cell_height'])
+        cs = self.cell_size  # column width, row height
+        p = self.grid_definition.proj
+        ll_xy = p(*ll_corner)
+        ur_xy = p(*ur_corner)
+        # Tile numbering/naming starts from the upper left corner
+        ul_xy = (ll_xy[0], ur_xy[1])
 
-    def __call__(self):
-        """Generate individual tiles on lettered grid"""
-        pass
+        # Adjust the upper-left corner to 'perfectly' match the data
+        shift_x = float(x.min() - ll_xy[0]) % cw  # could be negative
+        shift_y = float(y.max() - ll_xy[1]) % ch  # could be negative
+        ul_xy = (ul_xy[0] + shift_x, ul_xy[1] + shift_y)
 
+        # need X/Y for *whole* tiles
+        max_cols = int(np.ceil((ur_xy[0] - ul_xy[0]) / cs[0])) + 1
+        max_rows = int(np.ceil((ul_xy[1] - ll_xy[0]) / cs[1])) + 1
+        min_col = max(int(np.floor((x.min() - ul_xy[0]) / cs[0])), 0)
+        max_col = min(int(np.ceil((x.max() - ul_xy[0]) / cs[0])), max_cols)
+        min_row = max(int(np.floor((ul_xy[1] - y.max()) / cs[1])), 0)
+        max_row = min(int(np.ceil((ul_xy[1] - y.min()) / cs[1])), max_rows)
+        num_cols = max_col - min_col + 1
+        num_rows = max_row - min_row + 1
+
+        # right_extent = ul_xy[0] + num_cols * cs[0]
+        # bottom_extent = ul_xy[1] - num_rows * cs[1]
+        # # the new *actual* extents of the grid based on the upper-left origin
+        # ur_xy = (right_extent, ul_xy[1])
+        # ll_xy = (ul_xy[0], bottom_extent)
+        if num_cols * num_rows > 26:
+            raise ValueError("Too many lettered grid cells. Max 26")
+
+        num_pixels_x = int(np.abs(np.ceil(cs[0] / cw)))
+        num_pixels_y = int(np.abs(np.ceil(cs[1] / ch)))
+
+
+
+
+
+
+        x, y = imaginary_grid_def.get_xy_arrays()
+        x = x[0].squeeze()  # all rows should have the same coordinates
+        y = y[:, 0].squeeze()  # all columns should have the same coordinates
+        # scale the X and Y arrays to fit in the file for 16-bit integers
+        # AWIPS is dumb and requires the integer values to be 0, 1, 2, 3, 4
+        # Max value of a signed 16-bit integer is 32767 meaning
+        # 32768 values.
+        if x.shape[0] > 2**15:
+            # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
+            raise ValueError("X variable too large for AWIPS-version of 16-bit integer space")
+        bx = x.min()
+        mx = gd['cell_width']
+        if y.shape[0] > 2**15:
+            # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
+            raise ValueError("Y variable too large for AWIPS-version of 16-bit integer space")
+        by = y.min()
+        my = gd['cell_height']
+        return x, mx, bx, y, my, by
+
+    def __call__(self, x, y, fill_value=np.nan):
+        cw = abs(self.grid_definition['cell_width'])
+        ch = abs(self.grid_definition['cell_height'])
+        cs = self.cell_size  # column width, row height
+        p = self.grid_definition.proj
+        ll_xy = p(*ll_corner)
+        ur_xy = p(*ur_corner)
+        # Tile numbering/naming starts from the upper left corner
+        ul_xy = (ll_xy[0], ur_xy[1])
+
+        # Adjust the upper-left corner to 'perfectly' match the data
+        shift_x = float(x.min() - ll_xy[0]) % cw  # could be negative
+        shift_y = float(y.max() - ll_xy[1]) % ch  # could be negative
+        ul_xy = (ul_xy[0] + shift_x, ul_xy[1] + shift_y)
+
+        # need X/Y for *whole* tiles
+        max_cols = int(np.ceil((ur_xy[0] - ul_xy[0]) / cs[0])) + 1
+        max_rows = int(np.ceil((ul_xy[1] - ll_xy[0]) / cs[1])) + 1
+        min_col = max(int(np.floor((x.min() - ul_xy[0]) / cs[0])), 0)
+        max_col = min(int(np.ceil((x.max() - ul_xy[0]) / cs[0])), max_cols)
+        min_row = max(int(np.floor((ul_xy[1] - y.max()) / cs[1])), 0)
+        max_row = min(int(np.ceil((ul_xy[1] - y.min()) / cs[1])), max_rows)
+        num_cols = max_col - min_col + 1
+        num_rows = max_row - min_row + 1
+
+        # right_extent = ul_xy[0] + num_cols * cs[0]
+        # bottom_extent = ul_xy[1] - num_rows * cs[1]
+        # # the new *actual* extents of the grid based on the upper-left origin
+        # ur_xy = (right_extent, ul_xy[1])
+        # ll_xy = (ul_xy[0], bottom_extent)
+        if num_cols * num_rows > 26:
+            raise ValueError("Too many lettered grid cells. Max 26")
+
+        num_pixels_x = int(np.abs(np.ceil(cs[0] / cw)))
+        num_pixels_y = int(np.abs(np.ceil(cs[1] / ch)))
+        tmp_tile = np.ma.zeros((num_pixels_y, num_pixels_x), dtype=np.float32)
+        tmp_tile.set_fill_value(fill_value)
+        tmp_x = np.ma.zeros((num_pixels_x,), dtype=np.float32)
+        tmp_y = np.ma.zeros((num_pixels_y,), dtype=np.float32)
+
+        # where does the data fall in our lettered grid
+        for gy in range(min_row, max_row + 1):
+            for gx in range(min_col, max_col + 1):
+                tile_id = self._tile_identifier(gy, gx)
+                x_left = ul_xy[0] + gx * cs[0]
+                x_right = x_left + cs[0]
+                y_top = ul_xy[1] - gy * cs[1]
+                y_bot = y_top - cs[1]
+                x_mask = (x >= x_left) & (x < x_right)
+                y_mask = (y > y_bot) & (y <= y_top)
+                if not x_mask.any() or not y_mask.any():
+                    # no data in this tile
+                    continue
+                x_min_idx = np.argmin(x[x_mask])
+                x_max_idx = np.argmax(x[x_mask])
+                y_min_idx = np.argmin(y[y_mask])
+                y_max_idx = np.argmax(y[y_mask])
+                # theoretically we can precompute the X/Y now
+                # instead of taking the x/y data and mapping it
+                # to the tile
+                tmp_x[:] = np.arange(x_left, x_right, cw)
+                tmp_y[:] = np.arange(y_top, y_bot, -ch)
+                data_x_idx_min = np.nonzero(tmp_x == x[x_min_idx])[0]
+                data_x_idx_max = np.nonzero(tmp_x == x[x_max_idx])[0]
+                data_y_idx_min = np.nonzero(tmp_y == y[y_min_idx])[0]
+                data_y_idx_max = np.nonzero(tmp_y == y[y_max_idx])[0]
+                # now put the data in the grid tile
+                tmp_tile[data_y_idx_max:data_y_idx_min, data_x_idx_min:data_x_idx_max] = self.data[(y_mask, x_mask)]
+
+                yield gy * num_pixels_y, gx * num_pixels_x, tile_id, tmp_x, tmp_y, tmp_tile
 
 
 class SCMIConfigReader(roles.INIConfigReader):
@@ -229,15 +391,8 @@ class AttributeHelper(object):
     """
     helper object which wraps around a HimawariScene to provide SCMI attributes
     """
-    tile_count = (0, 0)  # ny, nx
-    hsd = None
-    tile_shape = (0, 0)  # wy, wx height and width of tile in pixels
-    scene_shape = (0, 0)  # sy, sx height and width of scene in pixels
-
-    def __init__(self, dataset, tile_count, scene_shape):
+    def __init__(self, dataset):
         self.dataset = dataset
-        self.tile_count = tile_count
-        self.scene_shape = scene_shape
 
     def apply_attributes(self, nc, table, prefix=''):
         """
@@ -264,15 +419,6 @@ class AttributeHelper(object):
 
     def _product_name(self):
         return self.dataset["product_name"]
-
-    def _global_number_product_tiles(self):
-        return self.tile_count[0] * self.tile_count[1]
-
-    def _global_product_rows(self):
-        return self.scene_shape[0]
-
-    def _global_product_columns(self):
-        return self.scene_shape[1]
 
     def _global_product_name(self):
         return self._product_name()
@@ -447,8 +593,10 @@ class SCMI_writer(object):
         p.false_northing = np.float32(proj4_info.get("y", 0.0))
 
     def set_global_attrs(self, physical_element, awips_id, sector_id,
-                         creating_entity, tile_row, tile_column,
+                         creating_entity, total_tiles, total_pixels,
+                         tile_row, tile_column,
                          tile_height, tile_width):
+        self._nc.Conventions = "CF-1.7"
         self._nc.creator = "UW SSEC - CSPP Polar2Grid"
         self._nc.creation_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
         # name as it shows in the product browser (physicalElement)
@@ -461,6 +609,10 @@ class SCMI_writer(object):
         self._nc.tile_column_offset = tile_column
         self._nc.product_tile_height = tile_height
         self._nc.product_tile_width = tile_width
+        self._nc.number_product_tiles = total_tiles[0] * total_tiles[1]
+        self._nc.product_rows = total_pixels[0]
+        self._nc.product_columns = total_pixels[1]
+
         self.helper.apply_attributes(self._nc, SCMI_GLOBAL_ATT, '_global_')
 
     def close(self):
@@ -529,10 +681,22 @@ class Backend(roles.BackendRole):
 
         return fills, mx, bx, data
 
+    def _fix_awips_file(self, fn):
+        # hack to get files created by new NetCDF library
+        # versions to be read by AWIPS buggy java version
+        # of NetCDF
+        LOG.info("Modifying SCMI NetCDF file to work with AWIPS")
+        import h5py
+        h = h5py.File(fn, 'a')
+        if '_NCProperties' in h.attrs:
+            del h.attrs['_NCProperties']
+        h.close()
+
     def create_output_from_product(self, gridded_product, sector_id=None,
                                    source_name=None, output_pattern=None,
                                    tile_count=(1, 1), tile_size=None,
                                    # tile_offset=(0, 0),
+                                   lettered_grid=False,
                                    **kwargs):
         dtype = np.dtype(np.uint16)
         dtype_str = 'uint2'
@@ -580,22 +744,22 @@ class Backend(roles.BackendRole):
                 flag_meanings='flag_meanings' in gridded_product)
 
             LOG.info("Writing product %s to AWIPS SCMI NetCDF file", gridded_product["product_name"])
-            if tile_size is not None:
-                tile_shape = (int(min(tile_size[0], data.shape[0])), int(min(tile_size[1], data.shape[1])))
-                tile_count = (int(np.ceil(data.shape[0] / tile_shape[0])), int(np.ceil(data.shape[1] / tile_shape[1])))
+
+            if lettered_grid:
+                tile_gen = LetteredTileGenerator(
+                    gridded_product['grid_definition'],
+                    data,
+                )
             else:
-                tile_shape = (int(data.shape[0] / tile_count[0]), int(data.shape[1] / tile_count[1]))
+                tile_gen = NumberedTileGenerator(
+                    gridded_product['grid_definition'],
+                    data,
+                    tile_shape=tile_size,
+                    tile_count=tile_count,
+                )
 
-            tile_generator = NumberedTileGenerator(
-                gridded_product['grid_definition'],
-                data,
-                tile_shape=tile_shape,
-                tile_count=tile_count,
-            )
-            x, mx, bx, y, my, by = tile_generator.get_xy()
-
-            for trow, tcol, tile_id, tmp_x, tmp_y, tmp_tile in tile_generator(x, y, fill_value=fill_value):
-                attr_helper = AttributeHelper(gridded_product, tile_count, data.shape)
+            attr_helper = AttributeHelper(gridded_product)
+            for trow, tcol, tile_id, tmp_x, tmp_y, tmp_tile in tile_gen(fill_value=fill_value):
                 if "{" in output_pattern:
                     # format the filename
                     of_kwargs = gridded_product.copy(as_dict=True)
@@ -624,11 +788,12 @@ class Backend(roles.BackendRole):
                 nc = SCMI_writer(output_filename, helper=attr_helper,
                                  compress=self.compress)
                 LOG.debug("Creating dimensions...")
-                nc.create_dimensions(data.shape[0], data.shape[1])
+                nc.create_dimensions(tmp_tile.shape[0], tmp_tile.shape[1])
                 LOG.debug("Creating variables...")
                 nc.create_variables(bit_depth, fills[0], factor, offset)
                 LOG.debug("Creating global attributes...")
                 nc.set_global_attrs(physical_element, awips_id, sector_id, creating_entity,
+                                    tile_gen.tile_count, tile_gen.image_shape,
                                     trow, tcol, tmp_tile.shape[0], tmp_tile.shape[1])
                 LOG.debug("Creating projection attributes...")
                 nc.set_projection_attrs(gridded_product["grid_definition"])
@@ -636,19 +801,12 @@ class Backend(roles.BackendRole):
                 np.clip(tmp_tile, valid_min, valid_max, out=tmp_tile)
                 nc.set_image_data(tmp_tile, fills[0])
                 LOG.debug("Writing X/Y navigation data...")
-                nc.set_fgf(tmp_x, mx, bx, tmp_y, my, by, units='meters')
+                nc.set_fgf(tmp_x, tile_gen.mx, tile_gen.bx,
+                           tmp_y, tile_gen.my, tile_gen.by, units='meters')
                 nc.close()
 
                 if self.fix_awips:
-                    # hack to get files created by new NetCDF library
-                    # versions to be read by AWIPS buggy java version
-                    # of NetCDF
-                    LOG.info("Modifying SCMI NetCDF file to work with AWIPS")
-                    import h5py
-                    h = h5py.File(output_filename, 'a')
-                    if '_NCProperties' in h.attrs:
-                        del h.attrs['_NCProperties']
-                    h.close()
+                    self._fix_awips_file(output_filename)
         except StandardError:
             last_fn = created_files[-1] if created_files else "N/A"
             LOG.error("Error while filling in NC file with data: %s", last_fn)
@@ -675,6 +833,8 @@ def add_backend_argument_groups(parser):
                        help="Specify how many pixels are in each tile (overrides '--tiles')")
     # group.add_argument('--tile-offset', nargs=2, default=(0, 0),
     #                    help="Start counting tiles from this offset ('row_offset col_offset')")
+    group.add_argument("--letters", dest="lettered_grid", action='store_true',
+                       help="Create tiles from a static letter-based grid based on the product projection")
     group.add_argument("--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
                        help="output filenaming pattern")
     group.add_argument("--source-name", default='SSEC',
