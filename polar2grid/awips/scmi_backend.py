@@ -71,7 +71,7 @@ from ConfigParser import NoSectionError, NoOptionError
 LOG = logging.getLogger(__name__)
 # AWIPS 2 seems to not like data values under 0
 AWIPS_USES_NEGATIVES = False
-DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{satellite}_{instrument}_{product_name}_{sector_id}_T{tile_id}_{begin_time:%Y%m%d_%H%M}.nc'
+DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{satellite}_{instrument}_{product_name}_{sector_id}_{tile_id}_{begin_time:%Y%m%d_%H%M}.nc'
 DEFAULT_CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", "polar2grid.awips:scmi_backend.ini")
 
 # misc. global attributes
@@ -114,8 +114,6 @@ class NumberedTileGenerator(object):
 
         # get tile shape, number of tiles, etc.
         self._get_tile_properties(tile_shape, tile_count)
-        # X and Y coordinates of the whole image
-        self.x, self.y = self._get_xy_arrays()
         # scaling parameters for the overall images X and Y coordinates
         # they must be the same for all X and Y variables for all tiles
         # and must be stored in the file as 0, 1, 2, 3, ...
@@ -126,8 +124,13 @@ class NumberedTileGenerator(object):
         if tile_shape is not None:
             tile_shape = (int(min(tile_shape[0], self.data.shape[0])), int(min(tile_shape[1], self.data.shape[1])))
             tile_count = (int(np.ceil(self.data.shape[0] / tile_shape[0])), int(np.ceil(self.data.shape[1] / tile_shape[1])))
-        else:
+        elif tile_count:
             tile_shape = (int(np.ceil(self.data.shape[0] / float(tile_count[0]))), int(np.ceil(self.data.shape[1] / float(tile_count[1]))))
+        else:
+            raise ValueError("Either 'tile_count' or 'tile_shape' must be provided")
+
+        # X and Y coordinates of the whole image
+        self.x, self.y = self._get_xy_arrays()
 
         # number of pixels per each tile
         self.tile_shape = tile_shape
@@ -216,151 +219,131 @@ class NumberedTileGenerator(object):
 
 
 class LetteredTileGenerator(NumberedTileGenerator):
-    def __init__(self, grid_definition, data, cell_size=(5000, 5000),
+    def __init__(self, grid_definition, data, cell_size=(2000000, 2000000),
                  num_subtiles=4):
-        super(LetteredTileGenerator, self).__init__(
-            grid_definition, data, tile_count=(1, 1))
         self.num_subtiles = num_subtiles
-        self.cell_size = cell_size
+        self.cell_size = cell_size  # (row tile height, col tile width)
         # lon/lat
         self.ll_extents = (-135, 20)
         self.ur_extents = (-60, 60)
+        super(LetteredTileGenerator, self).__init__(grid_definition, data)
 
-    def create_grid(self):
+    def _get_tile_properties(self, tile_shape, tile_count):
+        # ignore tile_shape and tile_count
+        # they come from the base class, but aren't used here
+
+        # get original image's X/Y
         gd = self.grid_definition
-        x, y = gd.get_xy()
+        p = gd.proj
+        x, y = gd.get_xy_arrays()
+        x = x[0].squeeze()  # all rows should have the same coordinates
+        y = y[:, 0].squeeze()  # all columns should have the same coordinates
 
         ll_corner = self.ll_extents
         ur_corner = self.ur_extents
         cw = abs(gd['cell_width'])
         ch = abs(gd['cell_height'])
-        cs = self.cell_size  # column width, row height
-        p = self.grid_definition.proj
+        cs = self.cell_size  # row height, column width
+        # make tile cell size a factor of pixel size
+        cs = (int(np.ceil(cs[0] / ch) * ch), int(np.ceil(cs[1] / cw) * cw))
         ll_xy = p(*ll_corner)
         ur_xy = p(*ur_corner)
         # Tile numbering/naming starts from the upper left corner
         ul_xy = (ll_xy[0], ur_xy[1])
 
         # Adjust the upper-left corner to 'perfectly' match the data
-        shift_x = float(x.min() - ll_xy[0]) % cw  # could be negative
-        shift_y = float(y.max() - ll_xy[1]) % ch  # could be negative
-        ul_xy = (ul_xy[0] + shift_x, ul_xy[1] + shift_y)
+        # X/Y are center of pixels, adjust by half a pixels to get upper-left pixel corner
+        shift_x = float(ul_xy[0] - (x.min() - cw / 2.)) % cw  # could be negative
+        shift_y = float(ul_xy[1] - (y.max() + ch / 2.)) % ch  # could be negative
+        LOG.debug("Adjusting lettered grid by ({}, {}) so it better matches data X/Y".format(shift_x, shift_y))
+        ul_xy = (ul_xy[0] - shift_x, ul_xy[1] - shift_y)  # outer edge of grid
 
         # need X/Y for *whole* tiles
-        max_cols = int(np.ceil((ur_xy[0] - ul_xy[0]) / cs[0])) + 1
-        max_rows = int(np.ceil((ul_xy[1] - ll_xy[0]) / cs[1])) + 1
-        min_col = max(int(np.floor((x.min() - ul_xy[0]) / cs[0])), 0)
-        max_col = min(int(np.ceil((x.max() - ul_xy[0]) / cs[0])), max_cols)
-        min_row = max(int(np.floor((ul_xy[1] - y.max()) / cs[1])), 0)
-        max_row = min(int(np.ceil((ul_xy[1] - y.min()) / cs[1])), max_rows)
+        fcs_y, fcs_x = float(cs[0]), float(cs[1])
+        max_cols = int(np.ceil((ur_xy[0] - ul_xy[0]) / fcs_x))
+        max_rows = int(np.ceil((ul_xy[1] - ll_xy[1]) / fcs_y))
+        # NOTE: this takes the center of the pixel relative to the upper-left outer edge:
+        min_col = max(int(np.floor((x.min() - ul_xy[0]) / fcs_x)), 0)
+        max_col = min(int(np.ceil((x.max() - ul_xy[0]) / fcs_x)), max_cols)
+        min_row = max(int(np.floor((ul_xy[1] - y.max()) / fcs_y)), 0)
+        max_row = min(int(np.ceil((ul_xy[1] - y.min()) / fcs_y)), max_rows)
         num_cols = max_col - min_col + 1
         num_rows = max_row - min_row + 1
 
-        # right_extent = ul_xy[0] + num_cols * cs[0]
-        # bottom_extent = ul_xy[1] - num_rows * cs[1]
-        # # the new *actual* extents of the grid based on the upper-left origin
-        # ur_xy = (right_extent, ul_xy[1])
-        # ll_xy = (ul_xy[0], bottom_extent)
         if num_cols * num_rows > 26:
             raise ValueError("Too many lettered grid cells. Max 26")
 
-        num_pixels_x = int(np.abs(np.ceil(cs[0] / cw)))
-        num_pixels_y = int(np.abs(np.ceil(cs[1] / ch)))
+        num_pixels_x = int(np.floor(fcs_x / cw))
+        num_pixels_y = int(np.floor(fcs_y / ch))
+        self.tile_shape = (num_pixels_y, num_pixels_x)
+        self.tile_count = (num_rows, num_cols)
+        self.total_tiles = num_rows * num_cols
+        self.image_shape = (num_pixels_y * num_rows, num_pixels_x * num_cols)
+        self.min_col = min_col
+        self.max_col = max_col
+        self.min_row = min_row
+        self.max_row = max_row
+        self.ul_xy = ul_xy
+        self.mx = cw
+        self.bx = ul_xy[0]
+        self.my = -ch
+        self.by = ul_xy[1]
+        self.x = x
+        self.y = y
 
+    def _get_xy_scaling_parameters(self):
+        """Get the X/Y coordinate limits for the full resulting image"""
+        return self.mx, self.bx, self.my, self.by
 
-
-
-
-
-        x, y = imaginary_grid_def.get_xy_arrays()
-        x = x[0].squeeze()  # all rows should have the same coordinates
-        y = y[:, 0].squeeze()  # all columns should have the same coordinates
-        # scale the X and Y arrays to fit in the file for 16-bit integers
-        # AWIPS is dumb and requires the integer values to be 0, 1, 2, 3, 4
-        # Max value of a signed 16-bit integer is 32767 meaning
-        # 32768 values.
-        if x.shape[0] > 2**15:
-            # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
-            raise ValueError("X variable too large for AWIPS-version of 16-bit integer space")
-        bx = x.min()
-        mx = gd['cell_width']
-        if y.shape[0] > 2**15:
-            # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
-            raise ValueError("Y variable too large for AWIPS-version of 16-bit integer space")
-        by = y.min()
-        my = gd['cell_height']
-        return x, mx, bx, y, my, by
-
-    def __call__(self, x, y, fill_value=np.nan):
-        cw = abs(self.grid_definition['cell_width'])
-        ch = abs(self.grid_definition['cell_height'])
-        cs = self.cell_size  # column width, row height
-        p = self.grid_definition.proj
-        ll_xy = p(*ll_corner)
-        ur_xy = p(*ur_corner)
-        # Tile numbering/naming starts from the upper left corner
-        ul_xy = (ll_xy[0], ur_xy[1])
-
-        # Adjust the upper-left corner to 'perfectly' match the data
-        shift_x = float(x.min() - ll_xy[0]) % cw  # could be negative
-        shift_y = float(y.max() - ll_xy[1]) % ch  # could be negative
-        ul_xy = (ul_xy[0] + shift_x, ul_xy[1] + shift_y)
-
-        # need X/Y for *whole* tiles
-        max_cols = int(np.ceil((ur_xy[0] - ul_xy[0]) / cs[0])) + 1
-        max_rows = int(np.ceil((ul_xy[1] - ll_xy[0]) / cs[1])) + 1
-        min_col = max(int(np.floor((x.min() - ul_xy[0]) / cs[0])), 0)
-        max_col = min(int(np.ceil((x.max() - ul_xy[0]) / cs[0])), max_cols)
-        min_row = max(int(np.floor((ul_xy[1] - y.max()) / cs[1])), 0)
-        max_row = min(int(np.ceil((ul_xy[1] - y.min()) / cs[1])), max_rows)
-        num_cols = max_col - min_col + 1
-        num_rows = max_row - min_row + 1
-
-        # right_extent = ul_xy[0] + num_cols * cs[0]
-        # bottom_extent = ul_xy[1] - num_rows * cs[1]
-        # # the new *actual* extents of the grid based on the upper-left origin
-        # ur_xy = (right_extent, ul_xy[1])
-        # ll_xy = (ul_xy[0], bottom_extent)
-        if num_cols * num_rows > 26:
-            raise ValueError("Too many lettered grid cells. Max 26")
-
-        num_pixels_x = int(np.abs(np.ceil(cs[0] / cw)))
-        num_pixels_y = int(np.abs(np.ceil(cs[1] / ch)))
-        tmp_tile = np.ma.zeros((num_pixels_y, num_pixels_x), dtype=np.float32)
+    def __call__(self, fill_value=np.nan):
+        ts = self.tile_shape
+        cs = self.cell_size
+        ul_xy = self.ul_xy
+        x, y = self.x, self.y
+        cw = abs(float(self.grid_definition['cell_width']))
+        ch = abs(float(self.grid_definition['cell_height']))
+        tmp_tile = np.ma.zeros((ts[1], ts[0]), dtype=np.float32)
         tmp_tile.set_fill_value(fill_value)
-        tmp_x = np.ma.zeros((num_pixels_x,), dtype=np.float32)
-        tmp_y = np.ma.zeros((num_pixels_y,), dtype=np.float32)
+        tmp_x = np.ma.zeros((ts[1],), dtype=np.float32)
+        tmp_y = np.ma.zeros((ts[0],), dtype=np.float32)
 
         # where does the data fall in our lettered grid
-        for gy in range(min_row, max_row + 1):
-            for gx in range(min_col, max_col + 1):
+        for gy in range(self.min_row, self.max_row + 1):
+            for gx in range(self.min_col, self.max_col + 1):
                 tile_id = self._tile_identifier(gy, gx)
-                x_left = ul_xy[0] + gx * cs[0]
+                # ul_xy is outer-edge of upper-left corner
+                # x/y are center of each data pixel
+                x_left = ul_xy[0] + gx * cs[1]
                 x_right = x_left + cs[0]
-                y_top = ul_xy[1] - gy * cs[1]
-                y_bot = y_top - cs[1]
-                x_mask = (x >= x_left) & (x < x_right)
-                y_mask = (y > y_bot) & (y <= y_top)
+                y_top = ul_xy[1] - gy * cs[0]
+                y_bot = y_top - cs[0]
+                x_mask = np.nonzero((x >= x_left) & (x < x_right))[0]
+                y_mask = np.nonzero((y > y_bot) & (y <= y_top))[0]
                 if not x_mask.any() or not y_mask.any():
                     # no data in this tile
                     continue
-                x_min_idx = np.argmin(x[x_mask])
-                x_max_idx = np.argmax(x[x_mask])
-                y_min_idx = np.argmin(y[y_mask])
-                y_max_idx = np.argmax(y[y_mask])
+                x_slice = slice(x_mask[0], x_mask[-1] + 1)  # assume it's continuous
+                y_slice = slice(y_mask[0], y_mask[-1] + 1)
+
                 # theoretically we can precompute the X/Y now
                 # instead of taking the x/y data and mapping it
                 # to the tile
-                tmp_x[:] = np.arange(x_left, x_right, cw)
-                tmp_y[:] = np.arange(y_top, y_bot, -ch)
-                data_x_idx_min = np.nonzero(tmp_x == x[x_min_idx])[0]
-                data_x_idx_max = np.nonzero(tmp_x == x[x_max_idx])[0]
-                data_y_idx_min = np.nonzero(tmp_y == y[y_min_idx])[0]
-                data_y_idx_max = np.nonzero(tmp_y == y[y_max_idx])[0]
+                tmp_x[:] = np.arange(x_left + cw / 2., x_right, cw)
+                tmp_y[:] = np.arange(y_top - ch / 2., y_bot, -ch)
+                data_x_idx_min = np.nonzero(np.isclose(tmp_x, x[x_slice.start]))[0][0]
+                data_x_idx_max = np.nonzero(np.isclose(tmp_x, x[x_slice.stop - 1]))[0][0]
+                # I have a half pixel error some where
+                data_y_idx_min = np.nonzero(np.isclose(tmp_y, y[y_slice.start]))[0][0]
+                data_y_idx_max = np.nonzero(np.isclose(tmp_y, y[y_slice.stop - 1]))[0][0]
                 # now put the data in the grid tile
-                tmp_tile[data_y_idx_max:data_y_idx_min, data_x_idx_min:data_x_idx_max] = self.data[(y_mask, x_mask)]
+                tmp_tile[:] = fill_value
+                tmp_tile[data_y_idx_min:data_y_idx_max + 1, data_x_idx_min:data_x_idx_max + 1] = self.data[y_slice, x_slice]
+                if tmp_tile.mask.all():
+                    LOG.info("Tile %d contains all masked data, skipping...", tile_id)
+                    continue
 
-                yield gy * num_pixels_y, gx * num_pixels_x, tile_id, tmp_x, tmp_y, tmp_tile
+
+                yield gy * ts[0], gx * ts[1], tile_id, tmp_x, tmp_y, tmp_tile
 
 
 class SCMIConfigReader(roles.INIConfigReader):
