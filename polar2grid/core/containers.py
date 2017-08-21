@@ -717,12 +717,28 @@ class GridDefinition(GeographicDefinition):
         LOG.debug("Lower-left corner: (%f, %f); Upper-right corner: (%f, %f)", lon_ll, lat_ll, lon_ur, lat_ur)
         return Basemap(llcrnrlon=lon_ll, llcrnrlat=lat_ll, urcrnrlon=lon_ur, urcrnrlat=lat_ur, **proj4_dict)
 
+    @property
+    def ll_extent(self):
+        xy_ll = self.xy_lowerleft
+        return xy_ll[0] - self["cell_width"]/2., xy_ll[1] + self["cell_height"]/2.
+
+    @property
+    def ll_extent_lonlat(self):
+        return self.proj(*self.ll_extent, inverse=True)
+
+    @property
+    def ur_extent(self):
+        xy_ur = self.xy_upperright
+        return xy_ur[0] + self["cell_width"]/2., xy_ur[1] - self["cell_height"]/2.
+
+    @property
+    def ur_extent_lonlat(self):
+        return self.proj(*self.ur_extent, inverse=True)
+
     def to_satpy_area(self):
         from pyresample.geometry import AreaDefinition
-        xy_ll = self.xy_lowerleft
-        xy_ll = (xy_ll[0] - self["cell_width"]/2., xy_ll[1] + self["cell_height"]/2.)
-        xy_ur = self.xy_upperright
-        xy_ur = (xy_ur[0] + self["cell_width"]/2., xy_ur[1] - self["cell_height"]/2.)
+        xy_ll = self.ll_extent
+        xy_ur = self.ur_extent
         return AreaDefinition(
             self["grid_name"],
             self["grid_name"],

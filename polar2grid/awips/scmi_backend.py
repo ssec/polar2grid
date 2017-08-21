@@ -220,14 +220,15 @@ class NumberedTileGenerator(object):
 
 
 class LetteredTileGenerator(NumberedTileGenerator):
-    def __init__(self, grid_definition, data, cell_size=(2000000, 2000000),
+    def __init__(self, grid_definition, data, extents,
+                 cell_size=(2000000, 2000000),
                  num_subtiles=None):
         # (row subtiles, col subtiles)
         self.num_subtiles = num_subtiles or (2, 2)
         self.cell_size = cell_size  # (row tile height, col tile width)
         # lon/lat
-        self.ll_extents = (-135, 20)
-        self.ur_extents = (-60, 60)
+        self.ll_extents = extents[:2]  # (-135, 20)
+        self.ur_extents = extents[2:]  # (-60, 60)
         super(LetteredTileGenerator, self).__init__(grid_definition, data)
 
     def _get_tile_properties(self, tile_shape, tile_count):
@@ -382,6 +383,17 @@ class SCMIConfigReader(roles.INIConfigReader):
     def get_config_options(self, **kwargs):
         kwargs = dict((k, kwargs.get(k, None)) for k in self.id_fields)
         return super(SCMIConfigReader, self).get_config_options(**kwargs)
+
+
+class SCMISectorConfigReader(roles.SimpleINIConfigReader):
+    def get_sector_info(self, sector_id):
+        sname = "scmi:sector:" + sector_id
+        i = {}
+        i['ll_extent'] = [float(x.strip()) for x in self.config_parser.get(sname, 'll_extent').split(',')]
+        i['ur_extent'] = [float(x.strip()) for x in self.config_parser.get(sname, 'ur_extent').split(',')]
+        i['cell_size'] = self.config_parser.getfloat(sname, 'cell_size')
+        i['cell_size'] = (i['cell_size'], i['cell_size'])
+        return i
 
 
 class AttributeHelper(object):
@@ -623,6 +635,7 @@ class Backend(roles.BackendRole):
                  compress=False, fix_awips=False, **kwargs):
         backend_configs = backend_configs or [DEFAULT_CONFIG_FILE]
         self.awips_config_reader = SCMIConfigReader(*backend_configs, empty_ok=True)
+        self.scmi_sector_reader = SCMISectorConfigReader(*backend_configs)
         self.compress = compress
         self.fix_awips = fix_awips
         super(Backend, self).__init__(**kwargs)
@@ -715,6 +728,17 @@ class Backend(roles.BackendRole):
             # NoSectionError is not a "StandardError" so it won't be caught normally
             raise RuntimeError(e.message)
 
+        try:
+            sector_info = self.scmi_sector_reader.get_sector_info(sector_id)
+        except (NoSectionError, NoOptionError):
+            if lettered_grid:
+                LOG.warning("Sector '{}' is unknown, using defaults for lettered grid".format(sector_id))
+                sector_info = {
+                    'll_extent': grid_def.ll_extent_lonlat,
+                    'ur_extent': grid_def.ur_extent_lonlat,
+                    'cell_size': (2000000, 2000000),
+                }
+
         # Create the netcdf file
         created_files = []
         try:
@@ -746,7 +770,9 @@ class Backend(roles.BackendRole):
                 tile_gen = LetteredTileGenerator(
                     gridded_product['grid_definition'],
                     data,
+                    sector_info['ll_extent'] + sector_info['ur_extent'],
                     num_subtiles=num_subtiles,
+                    cell_size=sector_info['cell_size'],
                 )
             else:
                 tile_gen = NumberedTileGenerator(
