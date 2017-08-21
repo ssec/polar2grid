@@ -57,13 +57,14 @@ products over certain grids
 """
 __docformat__ = "restructuredtext en"
 
+import os
+import logging
+import string
 import sys
 from datetime import datetime, timedelta
 from netCDF4 import Dataset
 
-import logging
 import numpy as np
-import os
 
 from polar2grid.core import roles
 from ConfigParser import NoSectionError, NoOptionError
@@ -220,8 +221,9 @@ class NumberedTileGenerator(object):
 
 class LetteredTileGenerator(NumberedTileGenerator):
     def __init__(self, grid_definition, data, cell_size=(2000000, 2000000),
-                 num_subtiles=4):
-        self.num_subtiles = num_subtiles
+                 num_subtiles=None):
+        # (row subtiles, col subtiles)
+        self.num_subtiles = num_subtiles or (2, 2)
         self.cell_size = cell_size  # (row tile height, col tile width)
         # lon/lat
         self.ll_extents = (-135, 20)
@@ -243,9 +245,12 @@ class LetteredTileGenerator(NumberedTileGenerator):
         ur_corner = self.ur_extents
         cw = abs(gd['cell_width'])
         ch = abs(gd['cell_height'])
+        st = self.num_subtiles
         cs = self.cell_size  # row height, column width
         # make tile cell size a factor of pixel size
-        cs = (int(np.ceil(cs[0] / ch) * ch), int(np.ceil(cs[1] / cw) * cw))
+        fcs_y, fcs_x = (np.ceil(float(cs[0]) / st[0] / ch) * ch, np.ceil(float(cs[1]) / st[1] / cw) * cw)
+        # make sure the number of total tiles is a factor of the subtiles
+        # meaning each letter has the full number of subtiles
         ll_xy = p(*ll_corner)
         ur_xy = p(*ur_corner)
         # Tile numbering/naming starts from the upper left corner
@@ -259,9 +264,11 @@ class LetteredTileGenerator(NumberedTileGenerator):
         ul_xy = (ul_xy[0] - shift_x, ul_xy[1] - shift_y)  # outer edge of grid
 
         # need X/Y for *whole* tiles
-        fcs_y, fcs_x = float(cs[0]), float(cs[1])
         max_cols = int(np.ceil((ur_xy[0] - ul_xy[0]) / fcs_x))
         max_rows = int(np.ceil((ul_xy[1] - ll_xy[1]) / fcs_y))
+        max_cols += st[1] - (max_cols % st[1])
+        max_rows += st[0] - (max_rows % st[0])
+
         # NOTE: this takes the center of the pixel relative to the upper-left outer edge:
         min_col = max(int(np.floor((x.min() - ul_xy[0]) / fcs_x)), 0)
         max_col = min(int(np.ceil((x.max() - ul_xy[0]) / fcs_x)), max_cols)
@@ -270,12 +277,13 @@ class LetteredTileGenerator(NumberedTileGenerator):
         num_cols = max_col - min_col + 1
         num_rows = max_row - min_row + 1
 
-        if num_cols * num_rows > 26:
+        if (num_cols * num_rows) / (st[0] * st[1]) > 26:
             raise ValueError("Too many lettered grid cells. Max 26")
 
         num_pixels_x = int(np.floor(fcs_x / cw))
         num_pixels_y = int(np.floor(fcs_y / ch))
         self.tile_shape = (num_pixels_y, num_pixels_x)
+        self.total_tile_count = (max_rows, max_cols)
         self.tile_count = (num_rows, num_cols)
         self.total_tiles = num_rows * num_cols
         self.image_shape = (num_pixels_y * num_rows, num_pixels_x * num_cols)
@@ -295,9 +303,16 @@ class LetteredTileGenerator(NumberedTileGenerator):
         """Get the X/Y coordinate limits for the full resulting image"""
         return self.mx, self.bx, self.my, self.by
 
+    def _tile_identifier(self, ty, tx):
+        st = self.num_subtiles
+        ttc = self.total_tile_count
+        alpha_num = int((ty / st[0]) * (ttc[1] / st[1]) + (tx / st[1]))
+        alpha = string.ascii_uppercase[alpha_num]
+        tile_num = int((ty % st[0]) * st[1] + (tx % st[1])) + 1
+        return "T{}{:02d}".format(alpha, tile_num)
+
     def __call__(self, fill_value=np.nan):
         ts = self.tile_shape
-        cs = self.cell_size
         ul_xy = self.ul_xy
         x, y = self.x, self.y
         cw = abs(float(self.grid_definition['cell_width']))
@@ -313,10 +328,10 @@ class LetteredTileGenerator(NumberedTileGenerator):
                 tile_id = self._tile_identifier(gy, gx)
                 # ul_xy is outer-edge of upper-left corner
                 # x/y are center of each data pixel
-                x_left = ul_xy[0] + gx * cs[1]
-                x_right = x_left + cs[0]
-                y_top = ul_xy[1] - gy * cs[0]
-                y_bot = y_top - cs[0]
+                x_left = ul_xy[0] + gx * ts[1] * cw
+                x_right = x_left + ts[1] * cw
+                y_top = ul_xy[1] - gy * ts[0] * ch
+                y_bot = y_top - ts[0] * ch
                 x_mask = np.nonzero((x >= x_left) & (x < x_right))[0]
                 y_mask = np.nonzero((y > y_bot) & (y <= y_top))[0]
                 if not x_mask.any() or not y_mask.any():
@@ -339,9 +354,8 @@ class LetteredTileGenerator(NumberedTileGenerator):
                 tmp_tile[:] = fill_value
                 tmp_tile[data_y_idx_min:data_y_idx_max + 1, data_x_idx_min:data_x_idx_max + 1] = self.data[y_slice, x_slice]
                 if tmp_tile.mask.all():
-                    LOG.info("Tile %d contains all masked data, skipping...", tile_id)
+                    LOG.info("Tile '%s' contains all masked data, skipping...", tile_id)
                     continue
-
 
                 yield gy * ts[0], gx * ts[1], tile_id, tmp_x, tmp_y, tmp_tile
 
@@ -679,7 +693,7 @@ class Backend(roles.BackendRole):
                                    source_name=None, output_pattern=None,
                                    tile_count=(1, 1), tile_size=None,
                                    # tile_offset=(0, 0),
-                                   lettered_grid=False,
+                                   lettered_grid=False, num_subtiles=None,
                                    **kwargs):
         dtype = np.dtype(np.uint16)
         dtype_str = 'uint2'
@@ -732,6 +746,7 @@ class Backend(roles.BackendRole):
                 tile_gen = LetteredTileGenerator(
                     gridded_product['grid_definition'],
                     data,
+                    num_subtiles=num_subtiles,
                 )
             else:
                 tile_gen = NumberedTileGenerator(
@@ -798,7 +813,11 @@ class Backend(roles.BackendRole):
                     os.remove(fn)
             raise
 
-        return created_files[-1]
+        if not created_files:
+            if lettered_grid:
+                LOG.warning("Data did not fit in to any lettered tile")
+            raise RuntimeError("No SCMI tiles were created")
+        return created_files[-1] if created_files else None
 
 
 def add_backend_argument_groups(parser):
@@ -818,6 +837,8 @@ def add_backend_argument_groups(parser):
     #                    help="Start counting tiles from this offset ('row_offset col_offset')")
     group.add_argument("--letters", dest="lettered_grid", action='store_true',
                        help="Create tiles from a static letter-based grid based on the product projection")
+    group.add_argument("--letter-subtiles", nargs=2, type=int, default=(2, 2),
+                       help="Specify number of subtiles in each lettered tile: \'row col\'")
     group.add_argument("--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
                        help="output filenaming pattern")
     group.add_argument("--source-name", default='SSEC',
