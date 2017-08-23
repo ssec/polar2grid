@@ -69,6 +69,18 @@ import numpy as np
 from polar2grid.core import roles
 from ConfigParser import NoSectionError, NoOptionError
 
+
+try:
+    # try getting setuptools/distribute's version of resource retrieval first
+    from pkg_resources import resource_filename as get_resource_filename
+except ImportError:
+    print("WARNING: Missing 'pkg_resources' dependency")
+
+    def get_resource_filename(mod_name, resource_name):
+        if mod_name != 'polar2grid.fonts':
+            raise ValueError('Can only import resources from polar2grid (missing pkg_resources dependency)')
+        return os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'fonts', resource_name)
+
 LOG = logging.getLogger(__name__)
 # AWIPS 2 seems to not like data values under 0
 AWIPS_USES_NEGATIVES = False
@@ -130,9 +142,6 @@ class NumberedTileGenerator(object):
         else:
             raise ValueError("Either 'tile_count' or 'tile_shape' must be provided")
 
-        # X and Y coordinates of the whole image
-        self.x, self.y = self._get_xy_arrays()
-
         # number of pixels per each tile
         self.tile_shape = tile_shape
         # number of tiles in each direction (rows, columns)
@@ -142,6 +151,9 @@ class NumberedTileGenerator(object):
         # number of pixels in the whole image (rows, columns)
         self.image_shape = (self.tile_shape[0] * self.tile_count[0],
                             self.tile_shape[1] * self.tile_count[1])
+
+        # X and Y coordinates of the whole image
+        self.x, self.y = self._get_xy_arrays()
 
     def _get_xy_arrays(self):
         gd = self.grid_definition
@@ -272,14 +284,14 @@ class LetteredTileGenerator(NumberedTileGenerator):
 
         # NOTE: this takes the center of the pixel relative to the upper-left outer edge:
         min_col = max(int(np.floor((x.min() - ul_xy[0]) / fcs_x)), 0)
-        max_col = min(int(np.ceil((x.max() - ul_xy[0]) / fcs_x)), max_cols)
+        max_col = min(int(np.floor((x.max() - ul_xy[0]) / fcs_x)), max_cols)
         min_row = max(int(np.floor((ul_xy[1] - y.max()) / fcs_y)), 0)
-        max_row = min(int(np.ceil((ul_xy[1] - y.min()) / fcs_y)), max_rows)
+        max_row = min(int(np.floor((ul_xy[1] - y.min()) / fcs_y)), max_rows)
         num_cols = max_col - min_col + 1
         num_rows = max_row - min_row + 1
 
-        if (num_cols * num_rows) / (st[0] * st[1]) > 26:
-            raise ValueError("Too many lettered grid cells. Max 26")
+        if (max_cols * max_rows) / (st[0] * st[1]) > 26:
+            raise ValueError("Too many lettered grid cells (sector cell size too small). Max 26")
 
         num_pixels_x = int(np.floor(fcs_x / cw))
         num_pixels_y = int(np.floor(fcs_y / ch))
@@ -318,7 +330,7 @@ class LetteredTileGenerator(NumberedTileGenerator):
         x, y = self.x, self.y
         cw = abs(float(self.grid_definition['cell_width']))
         ch = abs(float(self.grid_definition['cell_height']))
-        tmp_tile = np.ma.zeros((ts[1], ts[0]), dtype=np.float32)
+        tmp_tile = np.ma.zeros((ts[0], ts[1]), dtype=np.float32)
         tmp_tile.set_fill_value(fill_value)
         tmp_x = np.ma.zeros((ts[1],), dtype=np.float32)
         tmp_y = np.ma.zeros((ts[0],), dtype=np.float32)
@@ -337,6 +349,7 @@ class LetteredTileGenerator(NumberedTileGenerator):
                 y_mask = np.nonzero((y > y_bot) & (y <= y_top))[0]
                 if not x_mask.any() or not y_mask.any():
                     # no data in this tile
+                    LOG.debug("Tile '{}' doesn't have any data in it".format(tile_id))
                     continue
                 x_slice = slice(x_mask[0], x_mask[-1] + 1)  # assume it's continuous
                 y_slice = slice(y_mask[0], y_mask[-1] + 1)
@@ -393,6 +406,7 @@ class SCMISectorConfigReader(roles.SimpleINIConfigReader):
         i['ur_extent'] = [float(x.strip()) for x in self.config_parser.get(sname, 'ur_extent').split(',')]
         i['cell_size'] = self.config_parser.getfloat(sname, 'cell_size')
         i['cell_size'] = (i['cell_size'], i['cell_size'])
+        i['proj'] = self.config_parser.get(sname, 'proj')
         return i
 
 
@@ -738,6 +752,8 @@ class Backend(roles.BackendRole):
                     'ur_extent': grid_def.ur_extent_lonlat,
                     'cell_size': (2000000, 2000000),
                 }
+            else:
+                sector_info = None
 
         # Create the netcdf file
         created_files = []
@@ -846,6 +862,119 @@ class Backend(roles.BackendRole):
         return created_files[-1] if created_files else None
 
 
+def _create_debug_array(sector_id, num_subtiles):
+    from PIL import Image, ImageDraw, ImageFont
+    from pyproj import Proj
+    from polar2grid.core.containers import GridDefinition
+    sector_config = SCMISectorConfigReader('polar2grid.awips:scmi_backend.ini')
+    sector_info = sector_config.get_sector_info(sector_id)
+    size = (1000, 1000)
+    img = Image.new("L", size, 0)
+    draw = ImageDraw.Draw(img)
+
+    font_path = get_resource_filename('polar2grid.fonts', "Vera.ttf")
+    if not os.path.exists(font_path):
+        raise ValueError("Font path does not exist: {}".format(font_path))
+    font = ImageFont.truetype(font_path, 25)
+
+    p = Proj(sector_info['proj'])
+    ll_extent = p(*sector_info['ll_extent'])
+    ur_extent = p(*sector_info['ur_extent'])
+    total_meters_x = ur_extent[0] - ll_extent[0]
+    total_meters_y = ur_extent[1] - ll_extent[1]
+    total_alpha_cells_x = np.ceil(total_meters_x / sector_info['cell_size'][1])
+    total_alpha_cells_y = np.ceil(total_meters_y / sector_info['cell_size'][0])
+    # "round" the total meters up to the number of alpha cells
+    total_meters_x = total_alpha_cells_x * sector_info['cell_size'][1]
+    total_meters_y = total_alpha_cells_y * sector_info['cell_size'][0]
+
+    total_cells_x = total_alpha_cells_x * num_subtiles[1]
+    total_cells_y = total_alpha_cells_y * num_subtiles[0]
+    # Meters per pixel
+    meters_ppx = total_meters_x / float(size[0])
+    meters_ppy = total_meters_y / float(size[1])
+    # Pixels per tile
+    ppt_x = np.ceil(float(size[0]) / total_cells_x)
+    ppt_y = np.ceil(float(size[1]) / total_cells_y)
+    for idx, alpha in enumerate(string.ascii_uppercase):
+        for i in range(4):
+            st_x = i % num_subtiles[1]
+            st_y = int(i / num_subtiles[1])
+            t = "{}{:02d}".format(alpha, i + 1)
+            t_size = font.getsize(t)
+            cell_x = (idx * num_subtiles[1] + st_x) % total_cells_x
+            cell_y = int(idx / (total_cells_x / num_subtiles[1])) * num_subtiles[0] + st_y
+            if cell_x > total_cells_x:
+                continue
+            elif cell_y > total_cells_y:
+                continue
+            half_ppt_x = np.floor(ppt_x / 2.)
+            half_ppt_y = np.floor(ppt_y / 2.)
+            x = ppt_x * cell_x + half_ppt_x
+            y = ppt_y * cell_y + half_ppt_y
+            # draw box around the tile edge
+            # PIL Documentation: "The second point is just outside the drawn rectangle."
+            # we want to be just inside 0 and just inside the outer edge of the tile
+            draw_rectangle(draw,
+                           (x - half_ppt_x, y - half_ppt_y,
+                            x + half_ppt_x, y + half_ppt_y), outline=255, fill=75, width=3)
+            draw.text((x - t_size[0] / 2., y - t_size[1] / 2.), t, fill=255, font=font)
+
+    img.save("test.png")
+
+    grid_def = GridDefinition(
+        grid_name='debug_grid',
+        proj4_definition=sector_info['proj'],
+        height=1000,
+        width=1000,
+        cell_height=-meters_ppy,
+        cell_width=meters_ppx,
+        origin_x=ll_extent[0] + meters_ppx / 2.,
+        origin_y=ur_extent[1] - meters_ppy / 2.,
+    )
+    return grid_def, np.array(img)
+
+
+def draw_rectangle(draw, coordinates, outline=None, fill=None, width=1):
+    for i in range(width):
+        rect_start = (coordinates[0] + i, coordinates[1] + i)
+        rect_end = (coordinates[2] - i, coordinates[3] - i)
+        draw.rectangle((rect_start, rect_end), outline=outline, fill=fill)
+
+
+def create_debug_lettered_tiles(args):
+    from polar2grid.core.containers import GriddedProduct
+    init_args = args.subgroup_args['Backend Initialization']
+    create_args = args.subgroup_args['Backend Output Creation']
+    create_args['lettered_grid'] = True
+    create_args['num_subtiles'] = (2, 2)  # default, don't use command line argument
+    sector_id = create_args['sector_id']
+    grid_def, arr = _create_debug_array(sector_id, create_args['num_subtiles'])
+
+    backend = Backend(**init_args)
+    now = datetime.utcnow()
+    product = GriddedProduct(
+        product_name='debug_{}'.format(sector_id),
+        satellite='DEBUG',
+        instrument='TILES',
+        begin_time=now,
+        end_time=now,
+        data_type=arr.dtype,
+        grid_data=arr,
+        grid_definition=grid_def,
+        fill_value=np.nan,
+        data_kind='reflectance',
+        units='1',
+        valid_min=0,
+        valid_max=255,
+    )
+    created_files = backend.create_output_from_product(
+        product,
+        **create_args
+    )
+    return created_files
+
+
 def add_backend_argument_groups(parser):
     group = parser.add_argument_group(title="Backend Initialization")
     group.add_argument("--backend-configs", nargs="*", dest="backend_configs",
@@ -882,6 +1011,8 @@ def main():
     parser.add_argument("--scene", required=True, help="JSON SwathScene filename to be remapped")
     parser.add_argument("-p", "--products", nargs="*", default=None,
                         help="Specify only certain products from the provided scene")
+    parser.add_argument("--create-debug", action='store_true',
+                        help='Create debug NetCDF files to show tile locations in AWIPS')
     global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
     args = parser.parse_args(subgroup_titles=subgroup_titles, global_keywords=global_keywords)
 
@@ -889,6 +1020,10 @@ def main():
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
     sys.excepthook = create_exc_handler(LOG.name)
+
+    if args.create_debug:
+        create_debug_lettered_tiles(args)
+        return
 
     LOG.info("Loading scene or product...")
     gridded_scene = GriddedScene.load(args.scene)
