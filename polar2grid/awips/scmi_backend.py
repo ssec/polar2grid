@@ -260,8 +260,6 @@ class LetteredTileGenerator(NumberedTileGenerator):
         ch = abs(gd['cell_height'])
         st = self.num_subtiles
         cs = self.cell_size  # row height, column width
-        # make tile cell size a factor of pixel size
-        fcs_y, fcs_x = (np.ceil(float(cs[0]) / st[0] / ch) * ch, np.ceil(float(cs[1]) / st[1] / cw) * cw)
         # make sure the number of total tiles is a factor of the subtiles
         # meaning each letter has the full number of subtiles
         ll_xy = p(*ll_corner)
@@ -275,26 +273,38 @@ class LetteredTileGenerator(NumberedTileGenerator):
         shift_y = float(ul_xy[1] - (y.max() + ch / 2.)) % ch  # could be negative
         LOG.debug("Adjusting lettered grid by ({}, {}) so it better matches data X/Y".format(shift_x, shift_y))
         ul_xy = (ul_xy[0] - shift_x, ul_xy[1] - shift_y)  # outer edge of grid
+        # always keep the same distance between the extents
+        ll_xy = (ul_xy[0], ll_xy[1] - shift_y)
+        ur_xy = (ur_xy[0] - shift_x, ul_xy[1])
 
+        fcs_y, fcs_x = (np.ceil(float(cs[0]) / st[0]), np.ceil(float(cs[1]) / st[1]))
         # need X/Y for *whole* tiles
-        max_cols = int(np.ceil((ur_xy[0] - ul_xy[0]) / fcs_x))
-        max_rows = int(np.ceil((ul_xy[1] - ll_xy[1]) / fcs_y))
-        max_cols += st[1] - (max_cols % st[1])
-        max_rows += st[0] - (max_rows % st[0])
+        max_cols = np.ceil((ur_xy[0] - ul_xy[0]) / fcs_x)
+        max_rows = np.ceil((ul_xy[1] - ll_xy[1]) / fcs_y)
+        # don't create partial alpha-tiles
+        max_cols = int(np.ceil(max_cols / st[1]) * st[1])
+        max_rows = int(np.ceil(max_rows / st[0]) * st[0])
 
+        # make tile cell size a factor of pixel size
+        num_pixels_x = int(np.floor(fcs_x / cw))
+        num_pixels_y = int(np.floor(fcs_y / ch))
+        # NOTE: this does not change the *total* number of columns/rows that
+        # will be produced. This is important because otherwise the number
+        # of alpha tiles could depend on the input data which is not what we
+        # want
+        fcs_x = num_pixels_x * cw
+        fcs_y = num_pixels_y * ch
         # NOTE: this takes the center of the pixel relative to the upper-left outer edge:
         min_col = max(int(np.floor((x.min() - ul_xy[0]) / fcs_x)), 0)
-        max_col = min(int(np.floor((x.max() - ul_xy[0]) / fcs_x)), max_cols)
+        max_col = min(int(np.floor((x.max() - ul_xy[0]) / fcs_x)), max_cols - 1)
         min_row = max(int(np.floor((ul_xy[1] - y.max()) / fcs_y)), 0)
-        max_row = min(int(np.floor((ul_xy[1] - y.min()) / fcs_y)), max_rows)
+        max_row = min(int(np.floor((ul_xy[1] - y.min()) / fcs_y)), max_rows - 1)
         num_cols = max_col - min_col + 1
         num_rows = max_row - min_row + 1
 
         if (max_cols * max_rows) / (st[0] * st[1]) > 26:
             raise ValueError("Too many lettered grid cells (sector cell size too small). Max 26")
 
-        num_pixels_x = int(np.floor(fcs_x / cw))
-        num_pixels_y = int(np.floor(fcs_y / ch))
         self.tile_shape = (num_pixels_y, num_pixels_x)
         self.total_tile_count = (max_rows, max_cols)
         self.tile_count = (num_rows, num_cols)
@@ -882,20 +892,25 @@ def _create_debug_array(sector_id, num_subtiles):
     ur_extent = p(*sector_info['ur_extent'])
     total_meters_x = ur_extent[0] - ll_extent[0]
     total_meters_y = ur_extent[1] - ll_extent[1]
-    total_alpha_cells_x = np.ceil(total_meters_x / sector_info['cell_size'][1])
-    total_alpha_cells_y = np.ceil(total_meters_y / sector_info['cell_size'][0])
-    # "round" the total meters up to the number of alpha cells
-    total_meters_x = total_alpha_cells_x * sector_info['cell_size'][1]
-    total_meters_y = total_alpha_cells_y * sector_info['cell_size'][0]
+    fcs_x = np.ceil(float(sector_info['cell_size'][1]) / num_subtiles[1])
+    fcs_y = np.ceil(float(sector_info['cell_size'][0]) / num_subtiles[0])
+    total_cells_x = np.ceil(total_meters_x / fcs_x)
+    total_cells_y = np.ceil(total_meters_y / fcs_y)
+    total_cells_x = np.ceil(total_cells_x / num_subtiles[1]) * num_subtiles[1]
+    total_cells_y = np.ceil(total_cells_y / num_subtiles[0]) * num_subtiles[0]
+    total_alpha_cells_x = int(total_cells_x / num_subtiles[1])
+    total_alpha_cells_y = int(total_cells_y / num_subtiles[0])
 
-    total_cells_x = total_alpha_cells_x * num_subtiles[1]
-    total_cells_y = total_alpha_cells_y * num_subtiles[0]
-    # Meters per pixel
-    meters_ppx = total_meters_x / float(size[0])
-    meters_ppy = total_meters_y / float(size[1])
+    # "round" the total meters up to the number of alpha cells
+    total_meters_x = total_cells_x * fcs_x
+    total_meters_y = total_cells_y * fcs_y
+
     # Pixels per tile
-    ppt_x = np.ceil(float(size[0]) / total_cells_x)
-    ppt_y = np.ceil(float(size[1]) / total_cells_y)
+    ppt_x = np.floor(float(size[0]) / total_cells_x)
+    ppt_y = np.floor(float(size[1]) / total_cells_y)
+    # Meters per pixel
+    meters_ppx = fcs_x / ppt_x
+    meters_ppy = fcs_y / ppt_y
     for idx, alpha in enumerate(string.ascii_uppercase):
         for i in range(4):
             st_x = i % num_subtiles[1]
