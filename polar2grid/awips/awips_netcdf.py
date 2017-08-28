@@ -209,7 +209,7 @@ class Backend(roles.BackendRole):
                                                           rows=grid_def["height"],
                                                           columns=grid_def["width"],
                                                           source_name=awips_info.get('source_name'),
-                                                          **gridded_product)
+                                                          **of_kwargs)
         else:
             output_filename = output_pattern
 

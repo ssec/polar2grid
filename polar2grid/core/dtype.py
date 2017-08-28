@@ -116,7 +116,7 @@ def dtype_to_str(numpy_dtype):
         return normalize_dtype_string(numpy_dtype)
 
     try:
-        return dtype2str[numpy_dtype]
+        return dtype2str[numpy.dtype(numpy_dtype).type]
     except KeyError:
         raise ValueError("Unsupported numpy data type: %r" % (numpy_dtype,))
 

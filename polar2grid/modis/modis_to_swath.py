@@ -681,7 +681,8 @@ class Frontend(roles.FrontendRole):
             begin_time=file_reader.begin_time, end_time=file_reader.end_time,
             swath_definition=swath_definition, fill_value=fill_value,
             swath_rows=shape[0], swath_columns=shape[1], data_type=data_type, swath_data=filename,
-            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=rows_per_scan
+            source_filenames=file_reader.filepaths, data_kind=product_def.data_kind, rows_per_scan=rows_per_scan,
+            reader='modis',
         )
         return one_swath
 
@@ -697,7 +698,8 @@ class Frontend(roles.FrontendRole):
             begin_time=s["begin_time"], end_time=s["end_time"],
             swath_definition=swath_definition, fill_value=numpy.nan,
             swath_rows=s["swath_rows"], swath_columns=s["swath_columns"], data_type=data_type, swath_data=filename,
-            source_filenames=filepaths, data_kind=product_def.data_kind, rows_per_scan=s["rows_per_scan"]
+            source_filenames=filepaths, data_kind=product_def.data_kind, rows_per_scan=s["rows_per_scan"],
+            reader='modis',
         )
         return one_swath
 
