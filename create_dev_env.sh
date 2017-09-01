@@ -27,14 +27,13 @@ debug() {
 
 # Parameter
 if [ $# -eq 1 ]; then
-    DEV_DIR=$1
+    DEV_DIR=$(realpath "$1")
 else
     echo "ERROR: Invalid Arguments"
     echo "Usage: ./create_dev_env.sh <base directory>"
     exit 1
 fi
-
-echo "Creating development environment directory: $1"
+echo "Creating development environment directory: $DEV_DIR"
 mkdir -p ${DEV_DIR}
 cd ${DEV_DIR}
 
