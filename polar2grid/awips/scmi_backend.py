@@ -136,7 +136,7 @@ class NumberedTileGenerator(object):
     def _get_tile_properties(self, tile_shape, tile_count):
         if tile_shape is not None:
             tile_shape = (int(min(tile_shape[0], self.data.shape[0])), int(min(tile_shape[1], self.data.shape[1])))
-            tile_count = (int(np.ceil(self.data.shape[0] / tile_shape[0])), int(np.ceil(self.data.shape[1] / tile_shape[1])))
+            tile_count = (int(np.ceil(self.data.shape[0] / float(tile_shape[0]))), int(np.ceil(self.data.shape[1] / float(tile_shape[1]))))
         elif tile_count:
             tile_shape = (int(np.ceil(self.data.shape[0] / float(tile_count[0]))), int(np.ceil(self.data.shape[1] / float(tile_count[1]))))
         else:
