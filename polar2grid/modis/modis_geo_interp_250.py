@@ -101,7 +101,7 @@ def interpolate_geolocation_cartesian(lon_array, lat_array, res_factor=4):
     x,y = np.meshgrid(x,y)
     coordinates = np.array([y,x]) # Used by map_coordinates, major optimization
 
-    new_x = np.empty((num_rows * res_factor, num_cols * res_factor), dtype=np.float32)
+    new_x = np.empty((num_rows * res_factor, num_cols * res_factor), dtype=np.float64)
     new_y = new_x.copy()
     new_z = new_x.copy()
     nav_arrays = [(x_in, new_x), (y_in, new_y), (z_in, new_z)]
@@ -146,7 +146,7 @@ def interpolate_geolocation_cartesian(lon_array, lat_array, res_factor=4):
     new_lons = get_lons_from_cartesian(new_x, new_y)
     new_lats = get_lats_from_cartesian(new_x, new_y, new_z)
 
-    return new_lons, new_lats
+    return new_lons.astype(lon_array.dtype), new_lats.astype(lat_array.dtype)
 
 
 def interpolate_geolocation(nav_array):
