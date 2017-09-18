@@ -160,10 +160,15 @@ cp -P /usr/lib64/libproj* .
 cp -r $BASE_P2G_DIR/etc $SB_NAME/ || oops "Couldn't copy configuration 'etc' directory"
 
 # Temporary fix for including pytroll packages
+hacky_install() {
+    pkg_url=$1
+    ${SHELLB3_DIR}/bin/python -m pip install --no-deps --global-option=build_ext --global-option="-L${SHELLB3_DIR}/lib" --global-option="-R\$ORIGIN/../../../.." $pkg_url
+}
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/configobj-5.0.6.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollsift-0.1.1.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollimage-0.4.0.tar.gz
-${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyresample-1.6.1.tar.gz
+#${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyresample-1.6.1.tar.gz
+hacky_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyresample-1.6.1.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/PyYAML-3.12.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyorbital-1.0.1.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/satpy-0.7.2.tar.gz
