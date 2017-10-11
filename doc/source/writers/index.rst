@@ -9,7 +9,7 @@ tool that is optimized for viewing the data.
 .. toctree::
     :maxdepth: 1
 
-    awips_netcdf
+    scmi
     binary
     gtiff
     hdf5

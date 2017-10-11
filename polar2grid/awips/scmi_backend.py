@@ -27,32 +27,52 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""The SCMI AWIPS backend is used to create AWIPS compatible tiled NetCDF
+"""The SCMI AWIPS writer is used to create AWIPS compatible tiled NetCDF4
 files. The Advanced Weather Interactive Processing System (AWIPS) is a
 program used by the United States National Weather Service (NWS) and others
 to view
 different forms of weather imagery. Sectorized Cloud and Moisture Imagery
 (SCMI) is a netcdf format accepted by AWIPS to store one image broken up
 in to one or more "tiles". Once AWIPS is configured for specific products
-the SCMI NetCDF backend can be used to provide compatible products to the
-system. The files created by this backend are compatible with AWIPS II (AWIPS I is no
-longer supported).
+the SCMI NetCDF writer can be used to provide compatible products to the
+system. The files created by this writer are compatible with AWIPS II.
 
-The AWIPS NetCDF backend takes remapped binary image data and creates an
-AWIPS-compatible NetCDF 4 file.
-Both the AWIPS backend and the AWIPS client must be configured to handle certain
-products over certain grids
+The SCMI writer takes remapped image data and creates an
+AWIPS-compatible NetCDF4 file. The SCMI writer and the AWIPS client may
+need to be configured to make things appear the way the user wants in
+the AWIPS client. The SCMI writer can only produce files for datasets mapped
+to areas with specific projections:
+
+    - Lambert Conformal Conic (`+proj=lcc`)
+    - Geostationary (`+proj=geos`)
+    - Mercator (`+proj=merc`)
+    - Polar Stereographic (`+proj=stere`)
+
+This is a limitation of the AWIPS client and not of the SCMI writer.
+
+Numbered versus Lettered Grids
+------------------------------
+
+By default the SCMI writer will save tiles by number starting with '1'
+representing the upper-left image tile. Tile numbers then increase
+along the column and then on to the next row.
+
+By specifying `--lettered` on the command line, tiles can be designated with a
+letter. Lettered grids or sectors are preconfigured in the SCMI writer
+configuration file (`scmi_backend.ini`). The lettered tile locations are static and
+will not change with the data being written to them. Each lettered tile is split
+in to a certain number of subtiles (`--letter-subtiles`), default 2 rows by
+2 columns. Lettered tiles are meant to make it easier for receiving
+AWIPS clients/stations to filter what tiles they receive; saving time,
+bandwidth, and space.
+
+Any tiles (numbered or lettered) not containing any valid data are not
+created.
 
  .. warning::
 
-     The SCMI backend does not default to using any grid. Therefore, it is recommended to specify
+     The SCMI writer does not default to using any grid. Therefore, it is recommended to specify
      one or more grids for remapping by using the `-g` flag.
-
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2012-2016 University of Wisconsin SSEC. All rights reserved.
-:date:         June 2016
-:license:      GNU GPLv3
 
 """
 __docformat__ = "restructuredtext en"
@@ -620,8 +640,8 @@ class SCMI_writer(object):
         else:
             raise ValueError("SCMI can not handle projection '{}'".format(proj4_info['proj']))
 
-        p.semi_major = np.float32(proj4_info["a"])
-        p.semi_minor = np.float32(proj4_info["b"])
+        p.semi_major_axis = np.float64(proj4_info["a"])
+        p.semi_minor_axis = np.float64(proj4_info["b"])
         p.false_easting = np.float32(proj4_info.get("x", 0.0))
         p.false_northing = np.float32(proj4_info.get("y", 0.0))
 
