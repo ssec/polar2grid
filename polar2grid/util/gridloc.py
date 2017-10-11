@@ -71,11 +71,11 @@ grid.
     parser = ArgumentParser(description=description)
     parser.add_argument("--gtiff", dest="gtiff_file",
             help="Specify a geotiff as the starting point instead of the projection")
-    parser.add_argument("--origin", dest="grid_origin", nargs=2,
+    parser.add_argument("--origin", dest="grid_origin", nargs=2, type=float,
             help="Specify the x and y coordinates of the grid origin in projection space")
-    parser.add_argument("--psize", dest="pixel_size", nargs=2,
+    parser.add_argument("--psize", dest="pixel_size", nargs=2, type=float,
             help="Specify the x and y pixel sizes of the grid units in projection units")
-    parser.add_argument("--gsize", dest="grid_size", nargs=2,
+    parser.add_argument("--gsize", dest="grid_size", nargs=2, type=int,
             help="Specify the width and height of the grid in number of pixels")
     parser.add_argument("--proj", dest="proj4_str",
             help="Specify the PROJ.4 string describing the projection")
