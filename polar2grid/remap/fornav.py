@@ -55,8 +55,8 @@ except ImportError:
     psutil = None
     get_free_memory = lambda: None
 
-DEFAULT_GROUP_SIZE = os.getenv("P2G_EWA_DEF_GROUP_SIZE", None)
-GROUP_SIZE = os.getenv("P2G_EWA_GROUP_SIZE", None)
+DEFAULT_GROUP_SIZE = int(os.getenv("P2G_EWA_DEF_GROUP_SIZE", 0)) or None
+GROUP_SIZE = int(os.getenv("P2G_EWA_GROUP_SIZE", 0)) or None
 
 
 LOG = logging.getLogger(__name__)
