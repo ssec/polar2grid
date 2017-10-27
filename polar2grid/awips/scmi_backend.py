@@ -154,6 +154,7 @@ class NumberedTileGenerator(object):
         # and must be stored in the file as 0, 1, 2, 3, ...
         # (X factor, X offset, Y factor, Y offset)
         self.mx, self.bx, self.my, self.by = self._get_xy_scaling_parameters()
+        self._tile_cache = []
 
     def _get_tile_properties(self, tile_shape, tile_count):
         if tile_shape is not None:
@@ -221,11 +222,16 @@ class NumberedTileGenerator(object):
     def _tile_identifier(self, ty, tx):
         return "T{:03d}".format(self._tile_number(ty, tx))
 
-    def __call__(self, fill_value=np.nan):
+    def _generate_tile_info(self):
         x = self.x
         y = self.y
         ts = self.tile_shape
         tc = self.tile_count
+
+        if self._tile_cache:
+            for tile_info in self._tile_cache:
+                yield tile_info
+
         for ty in range(tc[0]):
             for tx in range(tc[1]):
                 tile_id = self._tile_identifier(ty, tx)
@@ -243,7 +249,28 @@ class NumberedTileGenerator(object):
                 tmp_x = x[data_slices[1]]
                 tmp_y = y[data_slices[0]]
 
-                yield tile_row_offset, tile_column_offset, tile_id, tmp_x, tmp_y, tile_slices, data_slices
+                tile_info = (tile_row_offset, tile_column_offset, tile_id, tmp_x, tmp_y, tile_slices, data_slices)
+                self._tile_cache.append(tile_info)
+                yield tile_info
+
+    def __call__(self, data, fill_value=np.nan):
+        ts = self.tile_shape
+        tmp_tile = np.ma.zeros(ts, dtype=np.float32)
+        tmp_tile.set_fill_value(fill_value)
+        tmp_tile[:] = fill_value
+
+        if self._tile_cache:
+            tile_infos = self._tile_cache
+        else:
+            tile_infos = self._generate_tile_info()
+
+        for tile_info in tile_infos:
+            tmp_tile[tile_info[-2]] = data[tile_info[-1]]
+            if tmp_tile.mask.all():
+                LOG.info("Tile {} contains all masked data, skipping...".format(tile_info[2]))
+                continue
+
+            yield tile_info[:-2], tmp_tile
 
 
 class LetteredTileGenerator(NumberedTileGenerator):
@@ -349,14 +376,16 @@ class LetteredTileGenerator(NumberedTileGenerator):
         tile_num = int((ty % st[0]) * st[1] + (tx % st[1])) + 1
         return "T{}{:02d}".format(alpha, tile_num)
 
-    def __call__(self, fill_value=np.nan):
+    def _generate_tile_info(self):
+        if self._tile_cache:
+            for tile_info in self._tile_cache:
+                yield tile_info
+
         ts = self.tile_shape
         ul_xy = self.ul_xy
         x, y = self.x, self.y
         cw = abs(float(self.grid_definition['cell_width']))
         ch = abs(float(self.grid_definition['cell_height']))
-        tmp_x = np.ma.zeros((ts[1],), dtype=np.float32)
-        tmp_y = np.ma.zeros((ts[0],), dtype=np.float32)
 
         # where does the data fall in our lettered grid
         for gy in range(self.min_row, self.max_row + 1):
@@ -380,8 +409,8 @@ class LetteredTileGenerator(NumberedTileGenerator):
                 # theoretically we can precompute the X/Y now
                 # instead of taking the x/y data and mapping it
                 # to the tile
-                tmp_x[:] = np.arange(x_left + cw / 2., x_right, cw)
-                tmp_y[:] = np.arange(y_top - ch / 2., y_bot, -ch)
+                tmp_x = np.arange(x_left + cw / 2., x_right, cw, dtype=np.float32)
+                tmp_y = np.arange(y_top - ch / 2., y_bot, -ch, dtype=np.float32)
                 data_x_idx_min = np.nonzero(np.isclose(tmp_x, x[x_slice.start]))[0][0]
                 data_x_idx_max = np.nonzero(np.isclose(tmp_x, x[x_slice.stop - 1]))[0][0]
                 # I have a half pixel error some where
@@ -393,7 +422,9 @@ class LetteredTileGenerator(NumberedTileGenerator):
                                slice(data_x_idx_min, data_x_idx_max + 1))
                 data_slices = (y_slice, x_slice)
 
-                yield gy * ts[0], gx * ts[1], tile_id, tmp_x, tmp_y, tile_slices, data_slices
+                tile_info = (gy * ts[0], gx * ts[1], tile_id, tmp_x, tmp_y, tile_slices, data_slices)
+                self._tile_cache.append(tile_info)
+                yield tile_info
 
 
 class SCMIConfigReader(roles.INIConfigReader):
@@ -780,14 +811,14 @@ class Backend(roles.BackendRole):
         output_filenames = []
         dtype = np.dtype(np.uint16)
         fill_value = np.nan
-
         for grid_name, grid_def in grids.items():
             tile_gen = self._get_tile_generator(grid_def, lettered_grid, sector_id, num_subtiles, tile_size, tile_count)
-
-            product_kwargs = {}
             for product_name, gridded_product in gridded_scene.items():
                 pkwargs = {}
                 data = gridded_product.get_data_array()
+                mask = gridded_product.get_data_mask()
+                data = np.ma.masked_array(data, mask=mask, copy=False)
+
                 pkwargs['awips_info'] = self._get_awips_info(gridded_product, source_name=source_name)
                 pkwargs['attr_helper'] = AttributeHelper(gridded_product)
 
@@ -819,31 +850,14 @@ class Backend(roles.BackendRole):
                 else:
                     pkwargs['data'] = data
 
-                product_kwargs[product_name] = pkwargs
-
-            tmp_tile = np.ma.zeros(tile_gen.tile_shape, dtype=np.float32)
-            tmp_tile.set_fill_value(fill_value)
-            for trow, tcol, tile_id, tmp_x, tmp_y, tile_slice, data_slice in tile_gen(fill_value=fill_value):
-                for product_name, gridded_product in gridded_scene.items():
-                    data = product_kwargs[product_name]['data']
-                    tmp_tile[:] = fill_value
-                    tmp_tile[tile_slice] = data[data_slice]
-                    # XXX: Do we need to reset the mask to all True?
-                    if np.isnan(gridded_product['fill_value']):
-                        tmp_tile[tile_slice].mask = np.isnan(tmp_tile[tile_slice])
-                    else:
-                        tmp_tile[tile_slice].mask = tmp_tile[tile_slice] == gridded_product['fill_value']
-                    if tmp_tile.mask.all():
-                        LOG.info("Tile %d contains all masked data, skipping...", tile_id)
-                        continue
-
+                for (trow, tcol, tile_id, tmp_x, tmp_y), tmp_tile in tile_gen(data, fill_value=fill_value):
                     try:
                         fn = self.create_tile_output(
                             gridded_product, sector_id,
                             trow, tcol, tile_id, tmp_x, tmp_y, tmp_tile,
                             tile_gen.tile_count, tile_gen.image_shape,
                             tile_gen.mx, tile_gen.bx, tile_gen.my, tile_gen.by,
-                            output_pattern, **product_kwargs[product_name])
+                            output_pattern, **pkwargs)
                         if fn is None:
                             if lettered_grid:
                                 LOG.warning("Data did not fit in to any lettered tile")
