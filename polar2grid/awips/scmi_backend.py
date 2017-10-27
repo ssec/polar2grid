@@ -87,6 +87,7 @@ from netCDF4 import Dataset
 import numpy as np
 
 from polar2grid.core import roles
+from polar2grid.core.containers import GriddedScene
 from ConfigParser import NoSectionError, NoOptionError
 
 
@@ -140,10 +141,11 @@ LETTERED_GRIDS = {
 
 
 class NumberedTileGenerator(object):
-    def __init__(self, grid_definition, data,
+    def __init__(self, grid_definition,
                  tile_shape=None, tile_count=None):
         self.grid_definition = grid_definition
-        self.data = data
+        self._rows = self.grid_definition['height']
+        self._cols = self.grid_definition['width']
 
         # get tile shape, number of tiles, etc.
         self._get_tile_properties(tile_shape, tile_count)
@@ -155,10 +157,10 @@ class NumberedTileGenerator(object):
 
     def _get_tile_properties(self, tile_shape, tile_count):
         if tile_shape is not None:
-            tile_shape = (int(min(tile_shape[0], self.data.shape[0])), int(min(tile_shape[1], self.data.shape[1])))
-            tile_count = (int(np.ceil(self.data.shape[0] / float(tile_shape[0]))), int(np.ceil(self.data.shape[1] / float(tile_shape[1]))))
+            tile_shape = (int(min(tile_shape[0], self._rows)), int(min(tile_shape[1], self._cols)))
+            tile_count = (int(np.ceil(self._rows / float(tile_shape[0]))), int(np.ceil(self._cols / float(tile_shape[1]))))
         elif tile_count:
-            tile_shape = (int(np.ceil(self.data.shape[0] / float(tile_count[0]))), int(np.ceil(self.data.shape[1] / float(tile_count[1]))))
+            tile_shape = (int(np.ceil(self._rows / float(tile_count[0]))), int(np.ceil(self._cols / float(tile_count[1]))))
         else:
             raise ValueError("Either 'tile_count' or 'tile_shape' must be provided")
 
@@ -224,8 +226,6 @@ class NumberedTileGenerator(object):
         y = self.y
         ts = self.tile_shape
         tc = self.tile_count
-        tmp_tile = np.ma.zeros(ts, dtype=np.float32)
-        tmp_tile.set_fill_value(fill_value)
         for ty in range(tc[0]):
             for tx in range(tc[1]):
                 tile_id = self._tile_identifier(ty, tx)
@@ -234,25 +234,20 @@ class NumberedTileGenerator(object):
 
                 # store tile data to an intermediate array
                 # the tile may be larger than the remaining data, handle that:
-                max_row_idx = min((ty + 1) * ts[0], self.data.shape[0]) - (ty * ts[0])
-                max_col_idx = min((tx + 1) * ts[1], self.data.shape[1]) - (tx * ts[1])
-                tmp_tile[:] = fill_value
-                tmp_tile[:max_row_idx, :max_col_idx] = self.data[
-                                                       ty * ts[0]: (ty + 1) * ts[0],
-                                                       tx * ts[1]: (tx + 1) * ts[1]
-                                                       ]
+                max_row_idx = min((ty + 1) * ts[0], self._rows) - (ty * ts[0])
+                max_col_idx = min((tx + 1) * ts[1], self._cols) - (tx * ts[1])
+                tile_slices = (slice(0, max_row_idx), slice(0, max_col_idx))
+                data_slices = (slice(ty * ts[0], (ty + 1) * ts[0]),
+                               slice(tx * ts[1], (tx + 1) * ts[1]))
 
-                if tmp_tile.mask.all():
-                    LOG.info("Tile %d contains all masked data, skipping...", tile_id)
-                    continue
-                tmp_x = x[tx * ts[1]: (tx + 1) * ts[1]]
-                tmp_y = y[ty * ts[0]: (ty + 1) * ts[0]]
+                tmp_x = x[data_slices[1]]
+                tmp_y = y[data_slices[0]]
 
-                yield tile_row_offset, tile_column_offset, tile_id, tmp_x, tmp_y, tmp_tile
+                yield tile_row_offset, tile_column_offset, tile_id, tmp_x, tmp_y, tile_slices, data_slices
 
 
 class LetteredTileGenerator(NumberedTileGenerator):
-    def __init__(self, grid_definition, data, extents,
+    def __init__(self, grid_definition, extents,
                  cell_size=(2000000, 2000000),
                  num_subtiles=None):
         # (row subtiles, col subtiles)
@@ -261,7 +256,7 @@ class LetteredTileGenerator(NumberedTileGenerator):
         # lon/lat
         self.ll_extents = extents[:2]  # (-135, 20)
         self.ur_extents = extents[2:]  # (-60, 60)
-        super(LetteredTileGenerator, self).__init__(grid_definition, data)
+        super(LetteredTileGenerator, self).__init__(grid_definition)
 
     def _get_tile_properties(self, tile_shape, tile_count):
         # ignore tile_shape and tile_count
@@ -360,8 +355,6 @@ class LetteredTileGenerator(NumberedTileGenerator):
         x, y = self.x, self.y
         cw = abs(float(self.grid_definition['cell_width']))
         ch = abs(float(self.grid_definition['cell_height']))
-        tmp_tile = np.ma.zeros((ts[0], ts[1]), dtype=np.float32)
-        tmp_tile.set_fill_value(fill_value)
         tmp_x = np.ma.zeros((ts[1],), dtype=np.float32)
         tmp_y = np.ma.zeros((ts[0],), dtype=np.float32)
 
@@ -395,13 +388,12 @@ class LetteredTileGenerator(NumberedTileGenerator):
                 data_y_idx_min = np.nonzero(np.isclose(tmp_y, y[y_slice.start]))[0][0]
                 data_y_idx_max = np.nonzero(np.isclose(tmp_y, y[y_slice.stop - 1]))[0][0]
                 # now put the data in the grid tile
-                tmp_tile[:] = fill_value
-                tmp_tile[data_y_idx_min:data_y_idx_max + 1, data_x_idx_min:data_x_idx_max + 1] = self.data[y_slice, x_slice]
-                if tmp_tile.mask.all():
-                    LOG.info("Tile '%s' contains all masked data, skipping...", tile_id)
-                    continue
 
-                yield gy * ts[0], gx * ts[1], tile_id, tmp_x, tmp_y, tmp_tile
+                tile_slices = (slice(data_y_idx_min, data_y_idx_max + 1),
+                               slice(data_x_idx_min, data_x_idx_max + 1))
+                data_slices = (y_slice, x_slice)
+
+                yield gy * ts[0], gx * ts[1], tile_id, tmp_x, tmp_y, tile_slices, data_slices
 
 
 class SCMIConfigReader(roles.INIConfigReader):
@@ -722,7 +714,6 @@ class Backend(roles.BackendRole):
             fills = [2**file_bitdepth - 1]
 
         if flag_meanings:
-            data = data.astype(dtype)
             # AWIPS doesn't like Identity conversion so we can't have
             # a factor of 1 and an offset of 0
             mx = 0.5
@@ -733,7 +724,7 @@ class Backend(roles.BackendRole):
             if not is_unsigned:
                 bx += 2**(bitdepth - 1) * mx
 
-        return fills, mx, bx, data
+        return fills, mx, bx
 
     def _fix_awips_file(self, fn):
         # hack to get files created by new NetCDF library
@@ -746,137 +737,207 @@ class Backend(roles.BackendRole):
             del h.attrs['_NCProperties']
         h.close()
 
-    def create_output_from_product(self, gridded_product, sector_id=None,
-                                   source_name=None, output_pattern=None,
-                                   tile_count=(1, 1), tile_size=None,
-                                   # tile_offset=(0, 0),
-                                   lettered_grid=False, num_subtiles=None,
-                                   **kwargs):
-        dtype = np.dtype(np.uint16)
-        dtype_str = 'uint2'
-        fill_value = np.nan
-        grid_def = gridded_product["grid_definition"]
+    def _get_sector_info(self, sector_id, lettered_grid):
+        try:
+            sector_info = self.scmi_sector_reader.get_sector_info(sector_id)
+        except (NoSectionError, NoOptionError):
+            if lettered_grid:
+                raise ValueError("Unknown sector '{}'".format(sector_id))
+            else:
+                sector_info = None
+        return sector_info
 
+    def _get_tile_generator(self, grid_def, lettered_grid, sector_id, num_subtiles, tile_size, tile_count):
+        sector_info = self._get_sector_info(sector_id, lettered_grid)
+        # Create a tile generator for this grid definition
+        if lettered_grid:
+            tile_gen = LetteredTileGenerator(
+                grid_def,
+                sector_info['ll_extent'] + sector_info['ur_extent'],
+                num_subtiles=num_subtiles,
+                cell_size=sector_info['cell_size'],
+                )
+        else:
+            tile_gen = NumberedTileGenerator(
+                grid_def,
+                tile_shape=tile_size,
+                tile_count=tile_count,
+            )
+        return tile_gen
+
+    def create_output_from_product(self, gridded_product, **kwargs):
+        scene = GriddedScene()
+        scene[gridded_product['product_name']] = gridded_product
+        return self.create_output_from_scene(scene, **kwargs)
+
+    def create_output_from_scene(self, gridded_scene, sector_id=None,
+                                 source_name=None, output_pattern=None,
+                                 tile_count=(1, 1), tile_size=None,
+                                 lettered_grid=False, num_subtiles=None,
+                                 **kwargs):
+        # get all of the grids in this gridded scene, should only be one in most cases
+        grids = {x["grid_definition"]["grid_name"]: x["grid_definition"] for x in gridded_scene.values()}
+        output_filenames = []
+        dtype = np.dtype(np.uint16)
+        fill_value = np.nan
+
+        for grid_name, grid_def in grids.items():
+            tile_gen = self._get_tile_generator(grid_def, lettered_grid, sector_id, num_subtiles, tile_size, tile_count)
+
+            product_kwargs = {}
+            for product_name, gridded_product in gridded_scene.items():
+                pkwargs = {}
+                data = gridded_product.get_data_array()
+                pkwargs['awips_info'] = self._get_awips_info(gridded_product, source_name=source_name)
+                pkwargs['attr_helper'] = AttributeHelper(gridded_product)
+
+                LOG.debug("Scaling %s data to fit in netcdf file...", gridded_product["product_name"])
+                bit_depth = gridded_product.setdefault("bit_depth", 16)
+                valid_min = gridded_product.get('valid_min')
+                if valid_min is None:
+                    valid_min = np.nanmin(data)
+                valid_max = gridded_product.get('valid_max')
+                if valid_max is None:
+                    valid_max = np.nanmax(data)
+                pkwargs['valid_min'] = valid_min
+                pkwargs['valid_max'] = valid_max
+                pkwargs['bit_depth'] = bit_depth
+
+                LOG.debug("Using product valid min {} and valid max {}".format(valid_min, valid_max))
+                fills, factor, offset = self._calc_factor_offset(
+                    data=data,
+                    bitdepth=bit_depth,
+                    min=valid_min,
+                    max=valid_max,
+                    dtype=dtype,
+                    flag_meanings='flag_meanings' in gridded_product)
+                pkwargs['fills'] = fills
+                pkwargs['factor'] = factor
+                pkwargs['offset'] = offset
+                if 'flag_meanings' in gridded_product:
+                    pkwargs['data'] = data.astype(dtype)
+                else:
+                    pkwargs['data'] = data
+
+                product_kwargs[product_name] = pkwargs
+
+            tmp_tile = np.ma.zeros(tile_gen.tile_shape, dtype=np.float32)
+            tmp_tile.set_fill_value(fill_value)
+            for trow, tcol, tile_id, tmp_x, tmp_y, tile_slice, data_slice in tile_gen(fill_value=fill_value):
+                for product_name, gridded_product in gridded_scene.items():
+                    data = product_kwargs[product_name]['data']
+                    tmp_tile[:] = fill_value
+                    tmp_tile[tile_slice] = data[data_slice]
+                    # XXX: Do we need to reset the mask to all True?
+                    if np.isnan(gridded_product['fill_value']):
+                        tmp_tile[tile_slice].mask = np.isnan(tmp_tile[tile_slice])
+                    else:
+                        tmp_tile[tile_slice].mask = tmp_tile[tile_slice] == gridded_product['fill_value']
+                    if tmp_tile.mask.all():
+                        LOG.info("Tile %d contains all masked data, skipping...", tile_id)
+                        continue
+
+                    try:
+                        fn = self.create_tile_output(
+                            gridded_product, sector_id,
+                            trow, tcol, tile_id, tmp_x, tmp_y, tmp_tile,
+                            tile_gen.tile_count, tile_gen.image_shape,
+                            tile_gen.mx, tile_gen.bx, tile_gen.my, tile_gen.by,
+                            output_pattern, **product_kwargs[product_name])
+                        if fn is None:
+                            if lettered_grid:
+                                LOG.warning("Data did not fit in to any lettered tile")
+                            raise RuntimeError("No SCMI tiles were created")
+                        output_filenames.append(fn)
+                    except StandardError:
+                        LOG.error("Could not create output for '%s'", product_name)
+                        if self.exit_on_error:
+                            raise
+                        LOG.debug("Backend exception: ", exc_info=True)
+                        continue
+
+        return output_filenames
+
+    def _get_awips_info(self, gridded_product, source_name=None):
         try:
             awips_info = self.awips_config_reader.get_config_options(**gridded_product)
             physical_element = awips_info.get('physical_element', gridded_product['product_name'])
-            awips_id = "AWIPS_" + gridded_product['product_name']
+            awips_info['awips_id'] = "AWIPS_" + gridded_product['product_name']
             if source_name:
                 awips_info['source_name'] = source_name
             if "{" in physical_element:
                 physical_element = physical_element.format(**gridded_product)
             def_ce = "{}-{}".format(gridded_product["satellite"].upper(), gridded_product["instrument"].upper())
-            creating_entity = awips_info.get('creating_entity', def_ce)
+            awips_info.setdefault('creating_entity', def_ce)
+            awips_info['physical_element'] = physical_element
+            return awips_info
         except NoSectionError as e:
             LOG.error("Could not get information on product from backend configuration file")
             # NoSectionError is not a "StandardError" so it won't be caught normally
             raise RuntimeError(e.message)
 
-        try:
-            sector_info = self.scmi_sector_reader.get_sector_info(sector_id)
-        except (NoSectionError, NoOptionError):
-            if lettered_grid:
-                LOG.warning("Sector '{}' is unknown, using defaults for lettered grid".format(sector_id))
-                sector_info = {
-                    'll_extent': grid_def.ll_extent_lonlat,
-                    'ur_extent': grid_def.ur_extent_lonlat,
-                    'cell_size': (2000000, 2000000),
-                }
-            else:
-                sector_info = None
-
+    def create_tile_output(self, gridded_product, sector_id,
+                           trow, tcol, tile_id, tmp_x, tmp_y, tmp_tile,
+                           tile_count, image_shape,
+                           mx, bx, my, by,
+                           output_pattern,
+                           awips_info, attr_helper,
+                           fills, factor, offset, valid_min, valid_max, bit_depth):
         # Create the netcdf file
         created_files = []
+        grid_def = gridded_product["grid_definition"]
         try:
-            LOG.debug("Scaling %s data to fit in netcdf file...", gridded_product["product_name"])
-            data = gridded_product.get_data_array()
-            mask = gridded_product.get_data_mask()
-            data = np.ma.masked_array(data, mask=mask)
-
-            bit_depth = gridded_product.setdefault("bit_depth", 16)
-            valid_min = gridded_product.get('valid_min')
-            if valid_min is None:
-                valid_min = np.nanmin(data)
-            valid_max = gridded_product.get('valid_max')
-            if valid_max is None:
-                valid_max = np.nanmax(data)
-
-            LOG.debug("Using product valid min {} and valid max {}".format(valid_min, valid_max))
-            fills, factor, offset, data = self._calc_factor_offset(
-                data=data,
-                bitdepth=bit_depth,
-                min=valid_min,
-                max=valid_max,
-                dtype=dtype,
-                flag_meanings='flag_meanings' in gridded_product)
 
             LOG.info("Writing product %s to AWIPS SCMI NetCDF file", gridded_product["product_name"])
 
-            if lettered_grid:
-                tile_gen = LetteredTileGenerator(
-                    gridded_product['grid_definition'],
-                    data,
-                    sector_info['ll_extent'] + sector_info['ur_extent'],
-                    num_subtiles=num_subtiles,
-                    cell_size=sector_info['cell_size'],
-                )
+            if "{" in output_pattern:
+                # format the filename
+                of_kwargs = gridded_product.copy(as_dict=True)
+                of_kwargs["begin_time"] += timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0)))
+                output_filename = self.create_output_filename(output_pattern,
+                                                              grid_name=grid_def["grid_name"],
+                                                              rows=grid_def["height"],
+                                                              columns=grid_def["width"],
+                                                              source_name=awips_info.get('source_name'),
+                                                              sector_id=sector_id,
+                                                              tile_id=tile_id,
+                                                              **of_kwargs)
             else:
-                tile_gen = NumberedTileGenerator(
-                    gridded_product['grid_definition'],
-                    data,
-                    tile_shape=tile_size,
-                    tile_count=tile_count,
-                )
-
-            attr_helper = AttributeHelper(gridded_product)
-            for trow, tcol, tile_id, tmp_x, tmp_y, tmp_tile in tile_gen(fill_value=fill_value):
-                if "{" in output_pattern:
-                    # format the filename
-                    of_kwargs = gridded_product.copy(as_dict=True)
-                    of_kwargs['data_type'] = dtype_str
-                    of_kwargs["begin_time"] += timedelta(minutes=int(os.environ.get("DEBUG_TIME_SHIFT", 0)))
-                    output_filename = self.create_output_filename(output_pattern,
-                                                                  grid_name=grid_def["grid_name"],
-                                                                  rows=grid_def["height"],
-                                                                  columns=grid_def["width"],
-                                                                  source_name=awips_info.get('source_name'),
-                                                                  sector_id=sector_id,
-                                                                  tile_id=tile_id,
-                                                                  **of_kwargs)
+                output_filename = output_pattern
+            if os.path.isfile(output_filename):
+                if not self.overwrite_existing:
+                    LOG.error("AWIPS file already exists: %s", output_filename)
+                    raise RuntimeError("AWIPS file already exists: %s" % (output_filename,))
                 else:
-                    output_filename = output_pattern
-                if os.path.isfile(output_filename):
-                    if not self.overwrite_existing:
-                        LOG.error("AWIPS file already exists: %s", output_filename)
-                        raise RuntimeError("AWIPS file already exists: %s" % (output_filename,))
-                    else:
-                        LOG.warning("AWIPS file already exists, will overwrite: %s", output_filename)
-                created_files.append(output_filename)
+                    LOG.warning("AWIPS file already exists, will overwrite: %s", output_filename)
+            created_files.append(output_filename)
 
-                LOG.info("Writing tile '%s' to '%s'", tile_id, output_filename)
+            LOG.info("Writing tile '%s' to '%s'", tile_id, output_filename)
 
-                nc = SCMI_writer(output_filename, helper=attr_helper,
-                                 compress=self.compress)
-                LOG.debug("Creating dimensions...")
-                nc.create_dimensions(tmp_tile.shape[0], tmp_tile.shape[1])
-                LOG.debug("Creating variables...")
-                nc.create_variables(bit_depth, fills[0], factor, offset)
-                LOG.debug("Creating global attributes...")
-                nc.set_global_attrs(physical_element, awips_id, sector_id, creating_entity,
-                                    tile_gen.tile_count, tile_gen.image_shape,
-                                    trow, tcol, tmp_tile.shape[0], tmp_tile.shape[1])
-                LOG.debug("Creating projection attributes...")
-                nc.set_projection_attrs(gridded_product["grid_definition"])
-                LOG.debug("Writing image data...")
-                np.clip(tmp_tile, valid_min, valid_max, out=tmp_tile)
-                nc.set_image_data(tmp_tile, fills[0])
-                LOG.debug("Writing X/Y navigation data...")
-                nc.set_fgf(tmp_x, tile_gen.mx, tile_gen.bx,
-                           tmp_y, tile_gen.my, tile_gen.by, units='meters')
-                nc.close()
+            nc = SCMI_writer(output_filename, helper=attr_helper,
+                             compress=self.compress)
+            LOG.debug("Creating dimensions...")
+            nc.create_dimensions(tmp_tile.shape[0], tmp_tile.shape[1])
+            LOG.debug("Creating variables...")
+            nc.create_variables(bit_depth, fills[0], factor, offset)
+            LOG.debug("Creating global attributes...")
+            nc.set_global_attrs(awips_info['physical_element'],
+                                awips_info['awips_id'], sector_id,
+                                awips_info['creating_entity'],
+                                tile_count, image_shape,
+                                trow, tcol, tmp_tile.shape[0], tmp_tile.shape[1])
+            LOG.debug("Creating projection attributes...")
+            nc.set_projection_attrs(grid_def)
+            LOG.debug("Writing image data...")
+            np.clip(tmp_tile, valid_min, valid_max, out=tmp_tile)
+            nc.set_image_data(tmp_tile, fills[0])
+            LOG.debug("Writing X/Y navigation data...")
+            nc.set_fgf(tmp_x, mx, bx,
+                       tmp_y, my, by, units='meters')
+            nc.close()
 
-                if self.fix_awips:
-                    self._fix_awips_file(output_filename)
+            if self.fix_awips:
+                self._fix_awips_file(output_filename)
         except StandardError:
             last_fn = created_files[-1] if created_files else "N/A"
             LOG.error("Error while filling in NC file with data: %s", last_fn)
@@ -885,10 +946,6 @@ class Backend(roles.BackendRole):
                     os.remove(fn)
             raise
 
-        if not created_files:
-            if lettered_grid:
-                LOG.warning("Data did not fit in to any lettered tile")
-            raise RuntimeError("No SCMI tiles were created")
         return created_files[-1] if created_files else None
 
 
@@ -978,7 +1035,7 @@ def draw_rectangle(draw, coordinates, outline=None, fill=None, width=1):
 
 
 def create_debug_lettered_tiles(args):
-    from polar2grid.core.containers import GriddedProduct
+    from polar2grid.core.containers import GriddedProduct, GriddedScene
     init_args = args.subgroup_args['Backend Initialization']
     create_args = args.subgroup_args['Backend Output Creation']
     create_args['lettered_grid'] = True
@@ -1003,8 +1060,10 @@ def create_debug_lettered_tiles(args):
         valid_min=0,
         valid_max=255,
     )
-    created_files = backend.create_output_from_product(
-        product,
+    scene = GriddedScene()
+    scene[product['product_name']] = product
+    created_files = backend.create_output_from_scene(
+        scene,
         **create_args
     )
     return created_files
