@@ -882,7 +882,7 @@ class Backend(roles.BackendRole):
                            mx, bx, my, by,
                            output_pattern,
                            awips_info, attr_helper,
-                           fills, factor, offset, valid_min, valid_max, bit_depth):
+                           fills, factor, offset, valid_min, valid_max, bit_depth, **kwargs):
         # Create the netcdf file
         created_files = []
         grid_def = gridded_product["grid_definition"]
