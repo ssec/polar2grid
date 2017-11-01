@@ -807,14 +807,19 @@ class Backend(roles.BackendRole):
                                  lettered_grid=False, num_subtiles=None,
                                  **kwargs):
         # get all of the grids in this gridded scene, should only be one in most cases
-        grids = {x["grid_definition"]["grid_name"]: x["grid_definition"] for x in gridded_scene.values()}
+        grid_datasets = {}
+        for x in gridded_scene.values():
+            grid_id = x['grid_definition']['grid_name']
+            grid, ds_list = grid_datasets.setdefault(grid_id, (x['grid_definition'], []))
+            ds_list.append(x)
         output_filenames = []
         dtype = np.dtype(np.uint16)
         fill_value = np.nan
-        for grid_name, grid_def in grids.items():
+        for grid_name, (grid_def, ds_list) in grid_datasets.items():
             tile_gen = self._get_tile_generator(grid_def, lettered_grid, sector_id, num_subtiles, tile_size, tile_count)
-            for product_name, gridded_product in gridded_scene.items():
+            for gridded_product in ds_list:
                 pkwargs = {}
+                product_name = gridded_product['product_name']
                 data = gridded_product.get_data_array()
                 mask = gridded_product.get_data_mask()
                 data = np.ma.masked_array(data, mask=mask, copy=False)
@@ -867,7 +872,7 @@ class Backend(roles.BackendRole):
                         LOG.error("Could not create output for '%s'", product_name)
                         if self.exit_on_error:
                             raise
-                        LOG.debug("Backend exception: ", exc_info=True)
+                        LOG.debug("Writer exception: ", exc_info=True)
                         continue
 
         return output_filenames
