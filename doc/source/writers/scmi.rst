@@ -24,25 +24,25 @@ Lettered Sectors
     :width: 100%
     :align: center
 
-    "LCC" Sector Lettered Grid
+    `"LCC" Sector Lettered Grid <http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_LCC.png>`_
 
 .. figure:: ../_static/example_images/scmi_grid_Pacific.png
     :width: 100%
     :align: center
 
-    "Pacific" Sector Lettered Grid
+    `"Pacific" Sector Lettered Grid <http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Pacific.png>`_
 
 .. figure:: ../_static/example_images/scmi_grid_Mercator.png
     :width: 100%
     :align: center
 
-    "Mercator" Sector Lettered Grid
+    `"Mercator" Sector Lettered Grid <http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Mercator.png>`_
 
 .. figure:: ../_static/example_images/scmi_grid_Polar.png
     :width: 100%
     :align: center
 
-    "Polar" Sector Lettered Grid
+    `"Polar" Sector Lettered Grid <http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Polar.png>`_
 
 .. raw:: latex
 
