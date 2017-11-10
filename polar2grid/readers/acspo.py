@@ -27,10 +27,12 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The ACSPO reader is for reading files created by the Advanced Clear-Sky
-Processor for Oceans (ACSPO) system. The ACSPO system typically produces
-NetCDF4 files. The frontend can be specified with the ``polar2grid.sh``
-command using the ``acspo`` frontend name.
+"""The ACSPO reader is for reading files created by the NOAA Community
+Satellite Processing Package (CSPP) Advanced Clear-Sky
+Processor for Oceans (ACSPO) system software. The ACSPO reader supports 
+product files created from VIIRS, MODIS and AVHRR imaging sensors. The 
+ACSPO output product format is NetCDF4.  The frontend can be specified 
+with the ``polar2grid.sh`` command using the ``acspo`` frontend name.
 The ACSPO frontend provides the following products:
 
 +------------------------+--------------------------------------------+
