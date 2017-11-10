@@ -20,3 +20,5 @@ complex products called :term:`secondary products`.
     amsr2_l1b
     nucaps
     mirs
+    acspo
+    clavrx
