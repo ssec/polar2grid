@@ -27,18 +27,36 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The CLAVR-x reader is for reading files created by The Clouds from
-AVHRR Extended (CLAVR-x) processing system using the NOAA Algorithm
-Working Group (AWG) algorithms.
+"""The CLAVR-x reader is for reading files created by the Community 
+Satellite Processing Package (CSPP) Clouds from AVHRR Extended 
+(CLAVR-x) processing system software. The CLAVR-x reader 
+supports CSPP CLAVR-x product files created from VIIRS, MODIS 
+and AVHRR imaging sensors in the native HDF4 format.
 The reader can be specified with the ``polar2grid.sh``
 command using the ``clavrx`` reader name.
 The CLAVR-x reader provides the following products:
 
-+------------------------+--------------------------------------------+
-| Product Name           | Description                                |
-+========================+============================================+
-| TODO                   | TODO                                       |
-+------------------------+--------------------------------------------+
++------------------------+---------------------------------------------+
+| Product Name           | Description                                 |
++========================+=============================================+
+| cloud_height_acha      | Cloud Top Height (m)                        |
++------------------------+---------------------------------------------+
+| cloud_emiss_acha       | Cloud Emissivity                            |
++------------------------+---------------------------------------------+
+| cloud_opd_dcomp        | Cloud Optical Depth Daytime                 |
++------------------------+---------------------------------------------+
+| cloud_opd_nlcomp       | Cloud Optical Depth Nighttime               |
++------------------------+---------------------------------------------+
+| cloud_reff_dcomp       | Cloud Effective Radius Daytime (micron)     |
++------------------------+---------------------------------------------+
+| cloud_reff_nlomp       | Cloud Effective Radius Nightttime (micron)  |
++------------------------+---------------------------------------------+
+| cloud_phase            | Cloud Phase  (5 category)                   |
++------------------------+---------------------------------------------+
+| rain_rate              | Rain Rate (mm/hr)                           |
++------------------------+---------------------------------------------+
+| refl_lunar_dnb_nom     | Lunar Reflectance (VIIRS DNB nighttime only)|
++------------------------+---------------------------------------------+
 
 """
 
