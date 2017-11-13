@@ -57,7 +57,7 @@ By default the SCMI writer will save tiles by number starting with '1'
 representing the upper-left image tile. Tile numbers then increase
 along the column and then on to the next row.
 
-By specifying `--lettered` on the command line, tiles can be designated with a
+By specifying ``--letters`` on the command line, tiles can be designated with a
 letter. Lettered grids or sectors are preconfigured in the SCMI writer
 configuration file (`scmi_backend.ini`). The lettered tile locations are static and
 will not change with the data being written to them. Each lettered tile is split
