@@ -514,7 +514,7 @@ class AttributeHelper(object):
         if org is not None:
             return org
         else:
-            LOG.warning('environment ORGANIZATION not set for .production_location attribute, using hostname')
+            LOG.debug('environment ORGANIZATION not set for .production_location attribute, using hostname')
             import socket
             return socket.gethostname()  # FUTURE: something more correct but this will do for now
 

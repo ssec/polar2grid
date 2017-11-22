@@ -81,7 +81,7 @@ elif ADVERTISED_DATASETS:
     ADVERTISED_DATASETS = ADVERTISED_DATASETS.split(" ")
 else:
     ADVERTISED_DATASETS = set([
-        'cloud_type'
+        'cloud_type',
         'cld_temp_acha',
         'cld_height_acha',
         'cloud_phase',
@@ -126,6 +126,8 @@ class Frontend(ReaderWrapper):
 
     @property
     def all_product_names(self):
+        # print(ADVERTISED_DATASETS)
+        # print(ADVERTISED_DATASETS & set(self.scene.all_dataset_names(reader_name=self.reader)))
         return ADVERTISED_DATASETS & set(self.scene.all_dataset_names(reader_name=self.reader))
 
     def filter(self, scene):
