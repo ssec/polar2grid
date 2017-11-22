@@ -39,17 +39,21 @@ The CLAVR-x reader provides the following products:
 +------------------------+---------------------------------------------+
 | Product Name           | Description                                 |
 +========================+=============================================+
-| cloud_height_acha      | Cloud Top Height (m)                        |
+| cloud_type             | Cloud Type                                  |
 +------------------------+---------------------------------------------+
-| cloud_emiss_acha       | Cloud Emissivity                            |
+| cld_height_acha        | Cloud Top Height (m)                        |
 +------------------------+---------------------------------------------+
-| cloud_opd_dcomp        | Cloud Optical Depth Daytime                 |
+| cld_temp_acha          | Cloud Top Temperature (K)                   |
 +------------------------+---------------------------------------------+
-| cloud_opd_nlcomp       | Cloud Optical Depth Nighttime               |
+| cld_emiss_acha         | Cloud Emissivity                            |
 +------------------------+---------------------------------------------+
-| cloud_reff_dcomp       | Cloud Effective Radius Daytime (micron)     |
+| cld_opd_dcomp          | Cloud Optical Depth Daytime                 |
 +------------------------+---------------------------------------------+
-| cloud_reff_nlomp       | Cloud Effective Radius Nightttime (micron)  |
+| cld_opd_nlcomp         | Cloud Optical Depth Nighttime               |
++------------------------+---------------------------------------------+
+| cld_reff_dcomp         | Cloud Effective Radius Daytime (micron)     |
++------------------------+---------------------------------------------+
+| cld_reff_nlomp         | Cloud Effective Radius Nightttime (micron)  |
 +------------------------+---------------------------------------------+
 | cloud_phase            | Cloud Phase  (5 category)                   |
 +------------------------+---------------------------------------------+
