@@ -409,8 +409,8 @@ class LetteredTileGenerator(NumberedTileGenerator):
                 # theoretically we can precompute the X/Y now
                 # instead of taking the x/y data and mapping it
                 # to the tile
-                tmp_x = np.arange(x_left + cw / 2., x_right, cw, dtype=np.float32)
-                tmp_y = np.arange(y_top - ch / 2., y_bot, -ch, dtype=np.float32)
+                tmp_x = np.arange(x_left + cw / 2., x_right, cw)
+                tmp_y = np.arange(y_top - ch / 2., y_bot, -ch)
                 data_x_idx_min = np.nonzero(np.isclose(tmp_x, x[x_slice.start]))[0][0]
                 data_x_idx_max = np.nonzero(np.isclose(tmp_x, x[x_slice.stop - 1]))[0][0]
                 # I have a half pixel error some where
