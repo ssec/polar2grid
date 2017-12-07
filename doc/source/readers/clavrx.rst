@@ -16,15 +16,14 @@ Examples:
 
 .. code-block:: bash
 
-    polar2grid.sh amsr2_l1b gtiff -h
+    polar2grid.sh clavrx gtiff -h 
+  
+    polar2grid.sh clavrx scmi --sector-id LCC --list-products -f snpp/clavrx_npp*.hdf
+  
+    polar2grid.sh clavrx gtiff -p cld_height_acha cloud_phase cloud_type -f clavrx_npp_d20170520_t2058143_e2059385_b28822.level2.hdf
 
-    polar2grid.sh amsr2_l1b gtiff  -f <path to files>/<AMSR2 Level 1B filename>
+    polar2grid.sh clavrx hdf --grid-coverage=.01 -p cld_opd_nlcomp cld_reff_nlcomp refl_lunar_dnb_nom -f snpp/night/clavrx_npp*.hdf
 
-    polar2grid.sh amsr2_l1b gtiff -g lcc_fit -f ../data/GW1AM2_201607201808_128A_L1DLBTBR_1110110.h5
+    polar2grid.sh clavrx binary -f clavrx_hrpt_noaa19_20170517_0936_42605.l1b.level2.hdf
 
-    polar2grid.sh amsr2_l1b gtiff --rescale-configs $POLAR2GRID_HOME/rescale_configs/amsr2_png.ini -g lcc_fit -f ../data/GW1AM2_201607191903_137A_L1DLBTBR_1110110.h5
-
-    polar2grid.sh amsr2_l1b awips --list-products -f /amsr2/GW1AM2_201607201808_128A_L1DLBTBR_1110110.h5
-
-   polar2grid.sh amsr2_l1b awips -g 211e -p btemp_36.5h btemp_89.0av -f GW1AM2_201607191903_137A_L1DLBTBR_1110110.h5
-
+    polar2grid.sh clavrx scmi -g polar_alaska_1km --sector-id Polar --letters --compress -p cld_temp_acha --grid-coverage=.05 -f /modis/clavrx_a1.17140.2129.1000m.level2.hdf

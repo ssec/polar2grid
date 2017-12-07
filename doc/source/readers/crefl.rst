@@ -130,8 +130,8 @@ Execution Examples
 
     polar2grid.sh crefl gtiff --true-color -g wgs84_fit_250 --fornav-D 10 -f MYD021KM.A2017004.1732.006.2017023210017.hdf MYD02HKM.A2017004.1732.005.2017023210017.hdf MYD02QKM.A2017004.1732.005.2017023210017.hdf MYD03.A2017004.1732.005.2017023210017.hdf
 
-    polar2grid.sh crefl awips --grid-coverage=0 -g 211e -f /home/data/t1*.hdf 
+    polar2grid.sh crefl scmi --grid-coverage=0 -g lcc_conus_1km --sector-id LCC --letters --compress -f /home/data/t1*.hdf 
 
-    polar2grid.sh crefl awips -g 204 -f /modis/data/MYD*.hdf
+    polar2grid.sh crefl scmi --sector-id Pacific -g merc_pacific_1km --letters --compress -f /modis/data/MYD*.hdf
 
-    polar2grid.sh crefl awips --true-color --false-color -g 211w -f /viirs/SV*.h5 /viirs/GMTCO*.h5 /viirs/GITCO*.h5
+    polar2grid.sh crefl scmi --true-color --false-color --sector-id LCC -g lcc_conus_300m --letters -f /viirs/SV*.h5 /viirs/GMTCO*.h5 /viirs/GITCO*.h5

@@ -16,9 +16,9 @@ Examples:
 
 .. code-block:: bash
 
-    modis2gtiff.sh -f <path to files>/<list of files>
+    polar2grid.sh modis gtiff -f <path to files>/<list of files>
 
-    modis2gtiff.sh -h 
+    polar2grid.sh modis gtiff -h
 
     polar2grid.sh modis gtiff --list-products -f /data
 
@@ -26,7 +26,7 @@ Examples:
 
     polar2grid.sh modis gtiff --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g my_latlon -f ../l1b/a1.17006.1855.250m.hdf ../l1b/a1.17006.1855.geo.hdf
 
-    polar2grid.sh modis awips -g 211e --bt-products --grid-coverage=.05 -f MOD021KM.A2017004.1732*.hdf MOD03.A2017004.1732*.hdf
+    polar2grid.sh modis scmi --sector-id LCC -g lcc_conus_1km --letters --compress --bt-products --grid-coverage=.05 -f MOD021KM.A2017004.1732*.hdf MOD03.A2017004.1732*.hdf
 
     polar2grid.sh modis awips -g 203 204 210 -p vis01 vis06 vis26 bt20 bt31 bt35 bt27 -f /data/modis/MOD021KM.A2017004.1732.005.2017023210017.hdf /data/modis/MOD03.A2017004.1732.005.2017023210017.hdf
 
