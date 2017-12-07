@@ -20,7 +20,7 @@ Examples:
 
 .. code-block:: bash
 
-    viirs2gtiff.sh -f <path to files>/<list of files>
+    polar2grid.sh viirs_sdr gtiff -f <path to files>/<list of files>
 
     viirs2awips.sh -g 211e 211w -f ../sdr/*.h5
 
@@ -28,7 +28,7 @@ Examples:
 
     polar2grid.sh viirs_sdr gtiff --list-products -f ../sdr/*.h5
 
-    polar2grid.sh viirs_sdr awips -p i04 adaptive_dnb dynamic_dnb --sza-threshold=90.0 -g 203 -f <path to files>
+    polar2grid.sh viirs_sdr scmi -p i04 adaptive_dnb dynamic_dnb --sza-threshold=90.0 --letters --compress --sector-id Polar -g polar_alaska_1km -f <path to files>
 
     polar2grid.sh viirs_sdr hdf5 --compress gzip --m-bands -f ../sdr/*.h5
 
