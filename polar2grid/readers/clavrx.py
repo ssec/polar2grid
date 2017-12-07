@@ -34,7 +34,8 @@ supports CSPP CLAVR-x product files created from VIIRS, MODIS
 and AVHRR imaging sensors in the native HDF4 format.
 The reader can be specified with the ``polar2grid.sh``
 command using the ``clavrx`` reader name.
-The CLAVR-x reader provides the following products:
+The CLAVR-x reader provides the following products, which include 
+support for the VIIRS Day/Night Band Lunar Reflectance:
 
 +------------------------+---------------------------------------------+
 | Product Name           | Description                                 |
@@ -53,9 +54,9 @@ The CLAVR-x reader provides the following products:
 +------------------------+---------------------------------------------+
 | cld_reff_dcomp         | Cloud Effective Radius Daytime (micron)     |
 +------------------------+---------------------------------------------+
-| cld_reff_nlomp         | Cloud Effective Radius Nightttime (micron)  |
+| cld_reff_nlomp         | Cloud Effective Radius Nighttime (micron)  |
 +------------------------+---------------------------------------------+
-| cloud_phase            | Cloud Phase  (5 category)                   |
+| cloud_phase            | Cloud Phase  (5 categories)                   |
 +------------------------+---------------------------------------------+
 | rain_rate              | Rain Rate (mm/hr)                           |
 +------------------------+---------------------------------------------+
