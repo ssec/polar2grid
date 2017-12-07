@@ -7,8 +7,8 @@ The Day/Night Band is centered on .7 microns with a wide
 spectral response function (half width .505 to .890 microns).  
 Polar2Grid offers the user four different 
 options for enhancing the final image product.  If no 
-specific DNB enhancement is provided to the viirs readers
-polar2grid.sh viirs gtiff, polar2grid.sh viirs awips) scripts, 
+specific DNB enhancement is provided to the viirs readers 
+(for example, polar2grid.sh viirs_sdr gtiff),
 three different output products will be created for the given 
 scene by default.  The three options are:
 
