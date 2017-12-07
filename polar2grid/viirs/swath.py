@@ -148,6 +148,9 @@ Averaging resampling. The ``--fornav-D`` parameter set to 40 and the
     | dynamic_dnb               | Dynamic DNB Band from Steve Miller and     |
     |                           | Curtis Seaman. Uses erf to scale the data. |
     +---------------------------+--------------------------------------------+
+    | hncc_dnb                  | Simplified High and Near-Constant Contrast |
+    |                           | Approach from Stephan Zinke                |
+    +---------------------------+--------------------------------------------+
     | ifog                      | Temperature difference between I05 and I04 |
     +---------------------------+--------------------------------------------+
     | i_solar_zenith_angle      | I Band Solar Zenith Angle                  |

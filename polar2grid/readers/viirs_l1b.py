@@ -108,7 +108,10 @@ Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 | adaptive_dnb              | Adaptive Histogram Equalized DNB Band               |
 +---------------------------+-----------------------------------------------------+
 | dynamic_dnb               | Dynamic DNB Band from Steve Miller and              |
-|                           | Curtis Seaman. Uses erf to scale the data.          |
+|                           | Curtis Seaman. Uses erf to scale the data           |
++---------------------------+-----------------------------------------------------+
+| hncc_dnb                  | Simplified High and Near-Constant Contrast          |
+|                           | Approach from Stephan Zinke                         |
 +---------------------------+-----------------------------------------------------+
 | ifog                      | Temperature difference between I05 and I04          |
 +---------------------------+-----------------------------------------------------+
