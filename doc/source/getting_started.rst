@@ -17,7 +17,7 @@ gridded image files. In previous versions, this was done primarily through bash 
 
 can be used to create GeoTIFF single band images of all S-NPP VIIRS imager SDR calibrated data with accompnying geolocation files found in ``<path to files>/<list of files>``. 
 
-In Version 2.1, we encourage users to migrate to an implementation of Polar2Grid where the reader and writer are defined as arguments to the main polar2grid.sh script.  This implementation takes advantage of the modular design of Polar2Grid; a user only needs to decide on a :doc:`Reader <readers/index>` and a :doc:`Writer <writers/index>` and provide them to ``polar2grid.sh``. Creating VIIRS SDR GeoTIFF images from input SDRs using the polar2grid.sh script would look like:
+In Version 2.2, we encourage users to migrate to an implementation of Polar2Grid where the reader and writer are defined as arguments to the main polar2grid.sh script.  This implementation takes advantage of the modular design of Polar2Grid; a user only needs to decide on a :doc:`Reader <readers/index>` and a :doc:`Writer <writers/index>` and provide them to ``polar2grid.sh``. Creating VIIRS SDR GeoTIFF images from input SDRs using the polar2grid.sh script would look like:
 
 .. code-block:: bash
 
@@ -73,7 +73,7 @@ Examples:
 
     polar2grid.sh modis gtiff --list-products -f <path to files>/<list of files>
 
-    modis2awips.sh -p vis01 bt20 --grid-coverage=.25 -g 211e -v -f <path to files>
+    polar2grid.sh viirs gtiff -p i01 adaptive_dnb -g polar_alaska_300 --grid-coverage=.25 -v -f <path to files>
 
 
 
