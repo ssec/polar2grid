@@ -57,7 +57,7 @@ After processing the output can be provided to Polar2Grid to create true color i
 The CREFL reader can create True Color and False Color RGB composites when the
 corresponding ``--true-color`` and ``--false-color`` flags are specified. The
 default is to create a True Color image if no parameters are specified.
-However when used with the AWIPS writer the default is to apply a ratio
+However when used with the AWIPS scmi writer the default is to apply a ratio
 sharpening between low and high resolution bands to produce better quality
 single band images since AWIPS does not support 3-dimensional arrays. These
 defaults can all be turned off with the ``--no-compositors`` flag.
