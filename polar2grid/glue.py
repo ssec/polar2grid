@@ -173,7 +173,7 @@ def main_backend(argv=sys.argv[1:]):
     LOG.info("Loading scene or product...")
     gridded_scene = GriddedScene.load(args.scene)
 
-    LOG.info("Initializing backend...")
+    LOG.info("Initializing writer...")
     backend = bcls(**args.subgroup_args["Backend Initialization"])
     if isinstance(gridded_scene, GriddedScene):
         result = backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
@@ -304,8 +304,8 @@ def main(argv=sys.argv[1:]):
         LOG.info("Initializing backend...")
         backend = bcls(**args.subgroup_args["Backend Initialization"])
     except StandardError:
-        LOG.debug("Backend initialization exception: ", exc_info=True)
-        LOG.error("Backend initialization failed (see log for details)")
+        LOG.debug("Writer initialization exception: ", exc_info=True)
+        LOG.error("Writer initialization failed (see log for details)")
         return STATUS_BACKEND_FAIL
 
     try:
@@ -353,7 +353,7 @@ def main(argv=sys.argv[1:]):
 
     # What grids should we remap to (the user should tell us or the backend should have a good set of defaults)
     known_grids = backend.known_grids
-    LOG.debug("Backend known grids: %r", known_grids)
+    LOG.debug("Writer known grids: %r", known_grids)
     grids = remap_kwargs.pop("forced_grids", None)
     LOG.debug("Forced Grids: %r", grids)
     if resample_method == "sensor" and grids != ["sensor"]:
@@ -475,13 +475,13 @@ def main(argv=sys.argv[1:]):
             # Convert it to P2G Gridded Scene
             gridded_scene = convert_satpy_to_p2g_gridded(f, gridded_scene)
 
-        # Backend
+        # Writer
         try:
             LOG.info("Creating output from data mapped to grid %s", grid_name)
             backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
         except StandardError:
-            LOG.debug("Backend output creation exception: ", exc_info=True)
-            LOG.error("Backend output creation failed (see log for details)")
+            LOG.debug("Writer output creation exception: ", exc_info=True)
+            LOG.error("Writer output creation failed (see log for details)")
             status_to_return |= STATUS_BACKEND_FAIL
             if args.exit_on_error:
                 return status_to_return
