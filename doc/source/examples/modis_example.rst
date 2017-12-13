@@ -37,7 +37,7 @@ Create a subset of MODIS reprojected AWIPS products for a specfic AWIPS grid:
     polar2grid.sh modis scmi -p bt27 vis02 --sector-id LCC --letters --compress -g lcc_conus_1km -f <path_to__files>
 
 
-.. figure:: ../_static/example_images/SSEC_AWIPS_aqua_modis_vis02_211e_20170308_181800.nc.png
+.. figure:: ../_static/example_images/modis_vis02_example.png
     :width: 100%
     :align: center
 
@@ -50,7 +50,7 @@ Create true color and false color Aqua MODIS AWIPS NetCDF files from the 1000m, 
 
     polar2grid.sh crefl scmi --true-color --false-color --fornav-D 10 --sector-id LCC --letters --compress -g lcc_conus_300 -f l1b/a1.17067.1818.1000m.hdf l1b/a1.17067.1818.500m.hdf l1b/a1.17067.1818.250m.hdf  l1b/a1.17067.1818.geo.hdf
 
-.. figure:: ../_static/example_images/modis_true_color_awips_20170308_1818.png
+.. figure:: ../_static/example_images/modis_true_color_example.png
     :width: 100%
     :align: center
 
