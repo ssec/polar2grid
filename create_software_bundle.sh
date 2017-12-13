@@ -171,7 +171,7 @@ ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/
 hacky_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyresample-1.7.0.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/PyYAML-3.12.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyorbital-1.0.1.tar.gz
-${SHELLB3_DIR}/bin/python -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/satpy-0.7.5a0.tar.gz
+${SHELLB3_DIR}/bin/python -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/satpy-0.7.5.tar.gz
 # Pycoast
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyshp-1.2.3.tar.gz
 hacky_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/aggdraw-1.3.0a.tar.gz
