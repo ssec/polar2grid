@@ -126,7 +126,7 @@
       - clavrx
       - binary
     * - ACSPO Sea Surface Temperatures
-      - *-STAR-L2P_GHRSST-SSTskin-*.nc
+      - \*-STAR-L2P_GHRSST-SSTskin-\*.nc
       - 8 bit single band GeoTIFF
       - acspo
       - gtiff
