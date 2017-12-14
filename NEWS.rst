@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 2.2 (2017-12-14)
+------------------------
+
+* Phasing out of legacy <reader><writer>.bash scripts and replacing with polar2grid.sh <reader> <writer> implementation. Although the legacy scripts are still supported in Version 2.2, they are no longer documented.
+* Add new AWIPS NetCDF writer "scmi".
+* Add new grid definitions for 300m, 700m and 1km AWIPS SCMI tiled sectors LCC, Polar, Mercator and Pacific.
+* Add ACSPO SST reader.
+* Add CLAVRx Cloud Product reader.
+
 Version 2.1 (2016-11-25)
 ------------------------
 
