@@ -211,12 +211,14 @@ class INIConfigReader(SimpleINIConfigReader):
             id_values = [self.config_parser.get(section, id_field) for id_field in self.id_fields]
             num_wildcards = 0
             id_regexes = []
-            for v in id_values:
+            first_non_empty_idx = len(id_values)
+            for idx, v in enumerate(id_values):
                 if not v or v.lower() == "none":
                     num_wildcards += 1
                     id_regexes.append(".*")
                 else:
                     id_regexes.append(v)
+                    first_non_empty_idx = idx
             id_regex = "^" + self.sep_char.join(id_regexes) + "$"
 
             try:
@@ -226,7 +228,7 @@ class INIConfigReader(SimpleINIConfigReader):
                 raise ValueError("Invalid configuration identifying information (not a valid regular expression): '%s'" % (str(id_regex),))
 
             # Just need to know what section I should look in
-            config_key = (num_wildcards, this_regex_obj, section)
+            config_key = (num_wildcards, first_non_empty_idx, this_regex_obj, section)
             self.config.append(config_key)
         # If 2 or more entries have the same number of wildcards they may not be sorted optimally
         # (i.e. specific first field highest)
@@ -239,7 +241,7 @@ class INIConfigReader(SimpleINIConfigReader):
             raise ValueError("Incorrect number of identifying arguments, expected %d, got %d" % (len(self.id_fields), len(kwargs)))
 
         id_key = self.sep_char.join(str(kwargs.get(k, None)) for k in self.id_fields)
-        for num_wildcards, regex_obj, section in self.config:
+        for num_wildcards, first_valid_idx, regex_obj, section in self.config:
             if regex_obj.match(id_key):
                 LOG.debug("Key '%s' matched config regular expression '%s'", id_key, regex_obj.pattern)
                 return section
