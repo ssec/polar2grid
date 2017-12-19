@@ -10,6 +10,9 @@ Version 2.2 (2017-12-14)
 * Add new grid definitions for 300m, 750m and 1km AWIPS SCMI tiled sectors LCC, Polar, Mercator, and Pacific.
 * Add ACSPO SST reader.
 * Add CLAVR-x Cloud Product reader.
+* Fix scaling sometimes using the wrong configuration on certain platforms
+* Fix MODIS navigation calculations over the prime meridian
+* Add 'hncc_dnb' VIIRS product
 
 Version 2.1 (2016-11-25)
 ------------------------
