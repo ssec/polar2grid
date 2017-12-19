@@ -165,10 +165,6 @@ def main():
             ul_x + res_x * gtiff.RasterXSize + half_pixel_x,  # upper-right X
             ul_y + half_pixel_y,  # upper-right Y
         )
-        p = Proj(proj4_str)
-        if p.is_latlong():
-            # convert lat/lons to radians
-            area_extent = p(area_extent[0], area_extent[1]) + p(area_extent[2], area_extent[3])
         img = Image.open(input_tiff).convert('RGB')
         area_def = (proj4_str, area_extent)
 
