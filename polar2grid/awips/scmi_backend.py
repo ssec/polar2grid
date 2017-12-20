@@ -105,6 +105,7 @@ except ImportError:
 LOG = logging.getLogger(__name__)
 # AWIPS 2 seems to not like data values under 0
 AWIPS_USES_NEGATIVES = False
+AWIPS_DATA_DTYPE = np.int16
 DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{satellite}_{instrument}_{product_name}_{sector_id}_{tile_id}_{begin_time:%Y%m%d_%H%M}.nc'
 DEFAULT_CONFIG_FILE = os.environ.get("AWIPS_CONFIG_FILE", "polar2grid.awips:scmi_backend.ini")
 
@@ -202,14 +203,14 @@ class NumberedTileGenerator(object):
         if y.shape[0] > 2**15:
             # awips uses 0, 1, 2, 3 so we can't use the negative end of the variable space
             raise ValueError("Y variable too large for AWIPS-version of 16-bit integer space")
-        return x, y
+        return np.ma.masked_array(x), np.ma.masked_array(y)
 
     def _get_xy_scaling_parameters(self):
         """Get the X/Y coordinate limits for the full resulting image"""
         gd = self.grid_definition
         bx = self.x.min()
         mx = gd['cell_width']
-        by = self.y.min()
+        by = self.y.max()
         my = gd['cell_height']
         return mx, bx, my, by
 
@@ -555,7 +556,11 @@ class SCMI_writer(object):
                          valid_min=None, valid_max=None):
         fgf_coords = "%s %s" % (self.y_var_name, self.x_var_name)
 
-        self.image_data = self._nc.createVariable(self.image_var_name, 'u2', dimensions=(self.row_dim_name, self.col_dim_name), fill_value=fill_value, zlib=self._compress)
+        self.image_data = self._nc.createVariable(self.image_var_name,
+                                                  AWIPS_DATA_DTYPE,
+                                                  dimensions=(self.row_dim_name, self.col_dim_name),
+                                                  fill_value=fill_value,
+                                                  zlib=self._compress)
         self.image_data.coordinates = fgf_coords
         self.apply_data_attributes(bitdepth, scale_factor, add_offset,
                                    valid_min=valid_min, valid_max=valid_max)
@@ -814,7 +819,7 @@ class Backend(roles.BackendRole):
             grid, ds_list = grid_datasets.setdefault(grid_id, (x['grid_definition'], []))
             ds_list.append(x)
         output_filenames = []
-        dtype = np.dtype(np.uint16)
+        dtype = AWIPS_DATA_DTYPE
         fill_value = np.nan
         for grid_name, (grid_def, ds_list) in grid_datasets.items():
             tile_gen = self._get_tile_generator(grid_def, lettered_grid, sector_id, num_subtiles, tile_size, tile_count)
