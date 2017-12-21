@@ -522,7 +522,7 @@ class Remapper(object):
             if new_scn is None:
                 new_scn = _new_scn
             for ds in _new_scn:
-                new_scn[ds.info["id"]] = ds
+                new_scn[ds.id] = ds
 
         return new_scn
 
