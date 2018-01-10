@@ -54,9 +54,9 @@ support for the VIIRS Day/Night Band Lunar Reflectance:
 +------------------------+---------------------------------------------+
 | cld_reff_dcomp         | Cloud Effective Radius Daytime (micron)     |
 +------------------------+---------------------------------------------+
-| cld_reff_nlomp         | Cloud Effective Radius Nighttime (micron)  |
+| cld_reff_nlomp         | Cloud Effective Radius Nighttime (micron)   |
 +------------------------+---------------------------------------------+
-| cloud_phase            | Cloud Phase  (5 categories)                   |
+| cloud_phase            | Cloud Phase  (5 categories)                 |
 +------------------------+---------------------------------------------+
 | rain_rate              | Rain Rate (mm/hr)                           |
 +------------------------+---------------------------------------------+
