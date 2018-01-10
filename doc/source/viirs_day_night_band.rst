@@ -12,16 +12,16 @@ specific DNB enhancement is provided to the viirs readers
 three different output products will be created for the given 
 scene by default.  The three options are:
 
-* Adaptive Day/Night Band scaling   -  option -p adaptive_dnb
-* Dynamic Day/Night Band scaling    -  option -p dynamic_dnb
-* Simplified HNCC Day/Night scaling -  option -p hncc_dnb	
+* Adaptive Day/Night Band scaling   -  option ``-p adaptive_dnb``
+* Dynamic Day/Night Band scaling    -  option ``-p dynamic_dnb``
+* Simplified HNCC Day/Night scaling -  option ``-p hncc_dnb``	
 
 In addition, a fourth enhancement option is available by
-explicitly requesting it in the command line (using the -p option).
+explicitly requesting it in the command line (using the ``-p`` option).
 
-* Histogram Day/Night Band scaling  -  option -p histogram_dnb
+* Histogram Day/Night Band scaling  -  option ``-p histogram_dnb``
 
-The Histogram and Adaptive enhancment work by breaking up the 
+The Histogram and Adaptive enhancements work by breaking up the 
 radiance values and scale them based upon three regimes:
 
 * Day – Solar zenith angles less than 88 degrees,
