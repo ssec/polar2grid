@@ -28,9 +28,10 @@
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
 """The VIIRS SDR Reader operates on Science Data Record (SDR) HDF5 files from
-the Suomi National Polar-orbiting Partnership's (NPP) Visible/Infrared
-Imager Radiometer Suite (VIIRS) instrument. The VIIRS SDR reader ignores filenames and uses internal
-file content to determine the type of file being provided, but SDR are typically named as below
+the Suomi National Polar-orbiting Partnership's (NPP) and/or the NOAA20 
+Visible/Infrared Imager Radiometer Suite (VIIRS) instrument. The VIIRS 
+SDR reader ignores filenames and uses internal file content to determine 
+the type of file being provided, but SDR are typically named as below
 and have corresponding geolocation files::
 
     SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
