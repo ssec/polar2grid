@@ -94,7 +94,7 @@ To access these features provide the "reader" and "writer" names to the
 
 .. code-block:: bash
 
-    $POLAR2GRID_HOME/bin/polar2grid.sh <reader> --list-products <writer> <options> -f /path/to/files
+    $POLAR2GRID_HOME/bin/polar2grid.sh <reader> <writer> --list-products <options> -f /path/to/files
 
 In previous versions of Polar2Grid scripts were all named
 ``<reader>2<writer>.sh`` instead of
