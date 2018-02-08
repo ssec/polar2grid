@@ -352,7 +352,7 @@ class TrueColorCompositor(RGBCompositor):
 
 class FalseColorCompositor(TrueColorCompositor):
     # see TrueColorCompositor.ratio_sharpen()
-    default_compare_index = 2
+    default_compare_index = 1
 
     def __init__(self, red_products, green_products, blue_products, hires_products, **kwargs):
         kwargs.setdefault("composite_name", "false_color")
@@ -380,17 +380,17 @@ class FalseColorCompositor(TrueColorCompositor):
 
         try:
             all_products = [red_product, green_product, blue_product]
-            sharp_blue_product = self._get_first_available_product(gridded_scene, self.hires_products)
+            sharp_green_product = self._get_first_available_product(gridded_scene, self.hires_products)
 
-            if self.sharpen_rgb and not sharp_blue_product:
+            if self.sharpen_rgb and not sharp_green_product:
                 LOG.info("No high resolution products were found so false color sharpening will not be done")
                 LOG.debug("Will attempt to create a false color image using: %s", ",".join(all_products))
                 comp_data = self.joined_array(gridded_scene, all_products)
             elif self.sharpen_rgb:
-                all_products.append(sharp_blue_product)
+                all_products.append(sharp_green_product)
                 LOG.debug("Will attempt to create a false color image using: %s", ",".join(all_products))
-                comp_data = self.joined_array(gridded_scene, (red_product, green_product, sharp_blue_product))
-                self.ratio_sharpen(gridded_scene[blue_product].get_data_array(), comp_data)
+                comp_data = self.joined_array(gridded_scene, (red_product, sharp_green_product, blue_product))
+                self.ratio_sharpen(gridded_scene[green_product].get_data_array(), comp_data)
 
             if self.share_mask:
                 comp_data[:, self.shared_mask(gridded_scene, all_products)] = fill_value
