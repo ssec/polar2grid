@@ -199,7 +199,7 @@ class FileInfo(modis_guidebook.FileInfo):
     def __init__(self, *args, **kwargs):
         # I think (from reading source code) that 32767 is fill, 32766 is missing, 32765 is saturated
         # The saturated pixels then should therefore already be at the top of the range
-        kwargs.setdefault("range_attr_name", (0, 32765))
+        kwargs.setdefault("range_attr_name", (-100, 32765))
         kwargs.setdefault("fill_attr_name", 32766)
         # kwargs.setdefault("clip_saturated", True)  # not needed since the sat value is the top value
         super(FileInfo, self).__init__(*args, **kwargs)
