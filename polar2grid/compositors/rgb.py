@@ -297,6 +297,10 @@ class TrueColorCompositor(RGBCompositor):
         LOG.debug("True color compare index is set to %d, shape %r, lowres indexes %r",
                   compare_index, rgb_data.shape, lowres_band_indexes)
         ratio = rgb_data[compare_index] / lowres_red_data
+        # when the ratio is negative, don't affect the other layers
+        # the ratio is usually negative in really dark regions where the high
+        # and low resolution channels hover around 0
+        ratio[(ratio < 0) | ~np.isfinite(ratio)] = 1.
         for idx in lowres_band_indexes:
             rgb_data[idx, :] *= ratio
 
