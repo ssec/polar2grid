@@ -48,7 +48,7 @@ False Color
 The False Color Compositor is intended for corrected reflectance data from the CREFL (crefl) frontend.
 It operates similarly to the True Color Compositor described above, but with different bands to use
 by default. It expects a red, green, and blue product that are then pan sharpened using an additional
-high-resolution blue product. This compositor works for VIIRS and MODIS corrected reflectance products
+high-resolution green product. This compositor works for VIIRS and MODIS corrected reflectance products
 and produces a new product called "false_color".
 
 RGB

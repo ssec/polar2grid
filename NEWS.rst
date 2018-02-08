@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 2.2.1 (unreleased)
+--------------------------
+
+* Fix CREFL reader not reading negative reflectances
+* Fix ratio sharpening calculating bad ratios for dark or invalid regions
+* Fix VIIRS and MODIS false color by using the green band for sharpening
+
 Version 2.2 (2017-12-14)
 ------------------------
 

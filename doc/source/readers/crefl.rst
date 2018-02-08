@@ -85,7 +85,7 @@ false color Red/Green/Blue 24 bit GeoTIFF using
 Red:VIIRS M-Band 11 (2.25 μm) or MODIS Band 7 (2.21 μm),
 Green:VIIRS M-Band 7 (.87 μm) or MODIS Band 2 (.86 μm)
 and Blue:VIIRS M-Band 5 (.67 μm) or MODIS Band 1 (.65 μm).
-If the I-Band 1 data is also present in a CREFL file,
+If the I-Band 2 data is also present in a CREFL file,
 then it will be used to spatially sharpen the image.
 This band combination is very effective at distinguishing
 land/water boundaries as well as burn scars.
