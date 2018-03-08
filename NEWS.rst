@@ -8,6 +8,7 @@ Version 2.2.1 (unreleased)
 * Fix ratio sharpening calculating bad ratios for dark or invalid regions
 * Fix VIIRS and MODIS false color by using the green band for sharpening
 * Fix AMSR2 L1B scaling for PNG creation (`amsr2_png.ini`)
+* Fix NinJo writer not using backend config command line option
 
 Version 2.2 (2017-12-14)
 ------------------------
