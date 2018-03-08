@@ -268,7 +268,7 @@ def add_backend_argument_groups(parser):
     group = parser.add_argument_group(title="Backend Initialization")
     group.add_argument('--rescale-configs', nargs="*", dest="rescale_configs",
                        help="alternative rescale configuration files")
-    group.add_argument('--backend-configs', nargs="*", dest="rescale_configs",
+    group.add_argument('--backend-configs', nargs="*", dest="backend_configs",
                        help="alternative backend configuration files")
     group = parser.add_argument_group(title="Backend Output Creation")
     group.add_argument("--output-pattern", default=DEFAULT_OUTPUT_PATTERN,
