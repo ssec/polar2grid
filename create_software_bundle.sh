@@ -78,6 +78,7 @@ if [ ! -d ${SB_NAME}/common/ShellB3 ]; then
     mv ShellB3 common/ || oops "Couldn't move ShellB3 to 'common' directory"
 fi
 SHELLB3_DIR="${SB_NAME}/common/ShellB3"
+PYTHON_EXE="${SHELLB3_DIR}/bin/python3"
 #rm -f "${SHELLB3_DIR}/README.txt"
 #rm -f "${SHELLB3_DIR}/tests"
 
@@ -139,7 +140,7 @@ make clean
 # Have to use 'python setup.py install' because using easy_install on source tarballs doesn't compile extensions for some reason
 CFLAGS="-fno-strict-aliasing -L${SHELLB3_DIR}/lib" INSTALL_DIR="${SHELLB3_DIR}" make all_sdist
 CFLAGS="-fno-strict-aliasing -L${SHELLB3_DIR}/lib" INSTALL_DIR="${SHELLB3_DIR}" make all_install2
-${SHELLB3_DIR}/bin/python -c 'import polar2grid'
+${PYTHON_EXE} -c 'import polar2grid'
 if [ $? -ne 0 ]; then
     oops "Couldn't install polar2grid"
 fi
@@ -162,21 +163,21 @@ cp -r $BASE_P2G_DIR/etc $SB_NAME/ || oops "Couldn't copy configuration 'etc' dir
 # Temporary fix for including pytroll packages
 hacky_install() {
     pkg_url=$1
-    ${SHELLB3_DIR}/bin/python -m pip install --no-deps --global-option=build_ext --global-option="-L${SHELLB3_DIR}/lib" --global-option="-R\$ORIGIN/../../../.." $pkg_url
+    ${PYTHON_EXE} -m pip install --no-deps --global-option=build_ext --global-option="-L${SHELLB3_DIR}/lib" --global-option="-R\$ORIGIN/../../../.." $pkg_url
 }
 #${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/configobj-5.0.6.tar.gz
-${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollsift-0.1.1.tar.gz
-${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollimage-1.5.1.tar.gz
+${PYTHON_EXE} -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollsift-0.1.1.tar.gz
+${PYTHON_EXE} -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollimage-1.5.1.tar.gz
 #${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyresample-1.6.1.tar.gz
 #hacky_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyresample-1.7.1.tar.gz
 #${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/PyYAML-3.12.tar.gz
-${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyorbital-1.2.0.tar.gz
-${SHELLB3_DIR}/bin/python -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/satpy-0.9.0a0.tar.gz
+${PYTHON_EXE} -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyorbital-1.2.0.tar.gz
+${PYTHON_EXE} -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/satpy-0.9.0a0.tar.gz
 # Pycoast
 #${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyshp-1.2.3.tar.gz
 # TODO: Add to ShellB3
 hacky_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/aggdraw-1.3.tar.gz
-${SHELLB3_DIR}/bin/python -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pycoast-1.1.0.tar.gz
+${PYTHON_EXE} -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pycoast-1.1.0.tar.gz
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
