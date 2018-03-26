@@ -43,7 +43,7 @@ import os
 import osr
 
 from polar2grid.core import roles
-from polar2grid.core.dtype import clip_to_data_type, str_to_dtype
+from polar2grid.core.dtype import clip_to_data_type, str_to_dtype, str2dtype
 from polar2grid.core.rescale import Rescaler, DEFAULT_RCONFIG
 
 LOG = logging.getLogger(__name__)
@@ -252,7 +252,9 @@ def add_backend_argument_groups(parser):
     group.add_argument("--png-quicklook", dest="quicklook", action="store_true",
                        help="Create a PNG version of the created geotiff")
     group.add_argument("--dtype", dest="data_type", type=str_to_dtype, default=None,
-                        help="specify the data type for the backend to output")
+                       choices=list(str2dtype.keys()),
+                       help="specify the data type for the backend to output "
+                            "(default: 'uint1' 8-bit integer)")
     group.add_argument('--tiled', action='store_true',
                        help="Create tiled geotiffs")
     group.add_argument('--blockxsize', default=None, type=int,
