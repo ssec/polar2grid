@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2018 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -27,469 +27,54 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Connect various polar2grid components together to go from satellite data to output imagery format.
-
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2014
-:license:      GNU GPLv3
-
+"""Connect various satpy components together to go from satellite data to output imagery format.
 """
-__docformat__ = "restructuredtext en"
 
+import os
 import sys
-
 import logging
-import numpy as np
-import pkg_resources
-from polar2grid.readers import ReaderWrapper, convert_satpy_to_p2g_swath, convert_satpy_to_p2g_gridded
-from polar2grid.readers import dataset_to_gridded_product
-from polar2grid.remap import Remapper, add_remap_argument_groups, SATPY_RESAMPLERS
-from satpy import Scene, DatasetID, Dataset
-
-### Return Status Values ###
-STATUS_SUCCESS = 0
-# Python looks like it always returns 1 if an exception was found so that's our unknown failure value
-# not sure why we failed, not an expected failure
-STATUS_UNKNOWN_FAIL = 1
-# the frontend failed
-STATUS_FRONTEND_FAIL = 2
-# the backend failed
-STATUS_BACKEND_FAIL = 4
-# something with remapping failed
-STATUS_REMAP_FAIL = 8
-# grid determination or grid jobs creation failed
-STATUS_GDETER_FAIL = 16
-# composition failed
-STATUS_COMP_FAIL = 32
-
-P2G_FRONTEND_CLS_EP = "polar2grid.frontend_class"
-P2G_FRONTEND_ARGS_EP = "polar2grid.frontend_arguments"
-P2G_BACKEND_CLS_EP = "polar2grid.backend_class"
-P2G_BACKEND_ARGS_EP = "polar2grid.backend_arguments"
 
 
-def available_frontends(entry_point=P2G_FRONTEND_CLS_EP):
-    return {frontend_ep.name: frontend_ep.dist for frontend_ep in pkg_resources.iter_entry_points(entry_point)}
+def add_scene_argument_groups(parser):
+    group_1 = parser.add_argument_group(title='Scene Initialization')
+    group_1.add_argument('reader',
+                         help='Name of reader used to read provided files')
+    group_1.add_argument('-f', '--filenames', nargs='+',
+                         help='Input files to read')
+    group_2 = parser.add_argument_group(title='Scene Load')
+    group_2.add_argument('-d', '--datasets', nargs='+',
+                         help='Names of datasets to load from input files')
+    return group_1, group_2
 
 
-def available_backends(entry_point=P2G_BACKEND_CLS_EP):
-    return {backend_ep.name: backend_ep.dist for backend_ep in pkg_resources.iter_entry_points(entry_point)}
+def main():
+    from satpy import Scene
+    from satpy.writers.scmi import add_backend_argument_groups as add_writer_argument_groups
+    import argparse
+    parser = argparse.ArgumentParser(description="Convert GEOCAT Level 1 and 2 to AWIPS SCMI files")
+    parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
+                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
+    parser.add_argument('-l', '--log', dest="log_fn", default=None,
+                        help="specify the log filename")
+    subgroups = add_scene_argument_groups(parser)
+    subgroups += add_writer_argument_groups(parser)
+    args = parser.parse_args()
 
-
-def get_frontend_argument_func(frontends, name, entry_point=P2G_FRONTEND_ARGS_EP):
-    return pkg_resources.load_entry_point(frontends[name], entry_point, name)
-
-
-def get_frontend_class(frontends, name, entry_point=P2G_FRONTEND_CLS_EP):
-    return pkg_resources.load_entry_point(frontends[name], entry_point, name)
-
-
-def get_backend_argument_func(backends, name, entry_point=P2G_BACKEND_ARGS_EP):
-    return pkg_resources.load_entry_point(backends[name], entry_point, name)
-
-
-def get_backend_class(backends, name, entry_point=P2G_BACKEND_CLS_EP):
-    return pkg_resources.load_entry_point(backends[name], entry_point, name)
-
-
-def main_frontend(argv=sys.argv[1:]):
-    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, ExtendAction
-    frontends = available_frontends()
-    parser = create_basic_parser(description="Extract swath data using the generic Polar2Grid frontend command line arguments (see specific frontend for other features)")
-    parser.add_argument("frontend", choices=sorted(frontends.keys()),
-                        help="Specify the swath extractor to use to read data (additional arguments are determined after this is specified)")
-    parser.add_argument('-o', dest="output_filename", default=None,
-                        help="Output filename for JSON scene (default is to stdout)")
-    parser.add_argument('-f', dest='data_files', nargs="+", default=[], action=ExtendAction,
-                        help="List of files or directories to extract data from")
-    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
-
-    # don't include the help flag
-    argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
-    args, remaining_args = parser.parse_known_args(argv_without_help)
-    LOG = logging.getLogger(args.frontend)
-    farg_func = get_frontend_argument_func(frontends, args.frontend)
-    fcls = get_frontend_class(frontends, args.frontend)
-
-    subgroup_titles = []
-    subgroup_titles += farg_func(parser)
-    args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=subgroup_titles)
+    scene_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[0]._group_actions}
+    load_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[1]._group_actions}
+    writer_init_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[2]._group_actions}
+    writer_call_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[3]._group_actions}
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
-    sys.excepthook = create_exc_handler(LOG.name)
-    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
+    logging.basicConfig(level=levels[min(3, args.verbosity)], filename=args.log_fn)
 
-    list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
-    f = fcls(search_paths=args.data_files, **args.subgroup_args["Frontend Initialization"])
+    scn = Scene(**scene_args)
+    scn.load(load_args['datasets'])
+    writer_args = {}
+    writer_args.update(writer_init_args)
+    writer_args.update(writer_call_args)
+    scn.save_datasets(writer='scmi', **writer_args)
 
-    if list_products:
-        print("\n".join(f.available_product_names))
-        return 0
-
-    scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
-    json_str = scene.dumps(persist=True)
-    if args.output_filename:
-        with open(args.output_filename, 'w') as output_file:
-            output_file.write(json_str)
-    else:
-        print(json_str)
-    return 0
-
-
-def main_backend(argv=sys.argv[1:]):
-    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, ExtendAction
-    from polar2grid.core.containers import GriddedScene, GriddedProduct
-    backends = available_backends()
-    parser = create_basic_parser(description="Create image/output file from provided gridded scene using a typical Polar2Grid backend (see specific backend for other features)")
-    parser.add_argument("backend", choices=sorted(backends.keys()),
-                        help="Specify the output generator to use (additional arguments are determined after this is specified)")
-    parser.add_argument("--scene", required=True, help="JSON GriddedScene filename")
-    parser.add_argument('-o', dest="output_filename", default=None,
-                        help="Output filename for JSON scene (default is to stdout)")
-    parser.add_argument('-f', dest='data_files', nargs="+", default=[], action=ExtendAction,
-                        help="List of files or directories to extract data from")
-    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
-
-    # don't include the help flag
-    argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
-    args, remaining_args = parser.parse_known_args(argv_without_help)
-    LOG = logging.getLogger(args.backend)
-    barg_func = get_backend_argument_func(backends, args.backend)
-    bcls = get_backend_class(backends, args.backend)
-
-    subgroup_titles = []
-    subgroup_titles += barg_func(parser)
-    args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=subgroup_titles)
-
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
-    sys.excepthook = create_exc_handler(LOG.name)
-    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
-
-    LOG.info("Loading scene or product...")
-    gridded_scene = GriddedScene.load(args.scene)
-
-    LOG.info("Initializing writer...")
-    backend = bcls(**args.subgroup_args["Backend Initialization"])
-    if isinstance(gridded_scene, GriddedScene):
-        result = backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
-    elif isinstance(gridded_scene, GriddedProduct):
-        result = backend.create_output_from_product(gridded_scene, **args.subgroup_args["Backend Output Creation"])
-    else:
-        raise ValueError("Unknown Polar2Grid object provided")
-
-    import json
-    print(json.dumps(result))
-    return 0
-
-
-def main(argv=sys.argv[1:]):
-    from polar2grid.core.script_utils import setup_logging, create_basic_parser, create_exc_handler, rename_log_file, ExtendAction
-    from polar2grid.compositors import CompositorManager
-    frontends = available_frontends()
-    backends = available_backends()
-    parser = create_basic_parser(description="Extract swath data, remap it, and write it to a new file format")
-    parser.add_argument("frontend", choices=sorted(frontends.keys()),
-                        help="Specify the swath extractor to use to read data (additional arguments are determined after this is specified)")
-    parser.add_argument("backend", choices=sorted(backends.keys()),
-                        help="Specify the backend to use to write data output (additional arguments are determined after this is specified)")
-    parser.add_argument("--compositor-configs", nargs="*", default=None,
-                        help="Specify alternative configuration file(s) for compositors")
-    # don't include the help flag
-    argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
-    args, remaining_args = parser.parse_known_args(argv_without_help)
-    glue_name = args.frontend + "2" + args.backend
-    LOG = logging.getLogger(glue_name)
-
-    # Load compositor information (we can't know the compositor choices until we've loaded the configuration)
-    compositor_manager = CompositorManager(config_files=args.compositor_configs)
-    # Hack: argparse doesn't let you use choices and nargs=* on a positional argument
-    parser.add_argument("compositors", choices=compositor_manager.keys() + [[]], nargs="*",
-                        help="Specify the compositors to apply to the provided scene (additional arguments are determined after this is specified)")
-
-    # load the actual components we need
-    farg_func = get_frontend_argument_func(frontends, args.frontend)
-    fcls = get_frontend_class(frontends, args.frontend)
-    barg_func = get_backend_argument_func(backends, args.backend)
-    bcls = get_backend_class(backends, args.backend)
-
-    # add_frontend_arguments(parser)
-    subgroup_titles = []
-    subgroup_titles += farg_func(parser)
-    subgroup_titles += add_remap_argument_groups(parser)
-    subgroup_titles += barg_func(parser)
-
-    parser.add_argument('-f', dest='data_files', nargs="+", default=[], action=ExtendAction,
-                        help="List of files or directories to extract data from")
-    parser.add_argument('-d', dest='data_files', nargs="+", default=[], action=ExtendAction,
-                        help="Data directories to look for input data files (equivalent to -f)")
-    global_keywords = ("keep_intermediate", "overwrite_existing", "exit_on_error")
-    args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=subgroup_titles)
-
-    if not args.data_files:
-        # FUTURE: When the -d flag is removed this won't be needed because -f will be required
-        parser.print_usage()
-        parser.exit(1, "ERROR: No data files provided (-f flag)\n")
-
-    # Logs are renamed once data the provided start date is known
-    rename_log = False
-    if args.log_fn is None:
-        rename_log = True
-        args.log_fn = glue_name + "_fail.log"
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
-    sys.excepthook = create_exc_handler(LOG.name)
-    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
-
-    # Keep track of things going wrong to tell the user what went wrong (we want to create as much as possible)
-    status_to_return = STATUS_SUCCESS
-
-    # Compositor validation
-    # XXX: Hack to make `polar2grid.sh crefl gtiff` work like legacy crefl2gtiff.sh script
-    if args.subgroup_args['Frontend Swath Extraction'].get('no_compositors'):
-        LOG.debug("Removing all compositors")
-        args.compositors = []
-    elif args.frontend == 'crefl':
-        if args.backend in ['awips', 'scmi']:
-            LOG.debug("Adding 'crefl_sharpen' compositor")
-            args.compositors.append('crefl_sharpen' if args.backend == 'scmi' else 'crefl_sharpen_awips')
-        else:
-            LOG.debug("Adding 'true_color' compositor")
-            args.compositors.append('true_color')
-            if '--true-color' in sys.argv and 'true_color' not in args.compositors:
-                LOG.debug("Adding 'true_color' compositor")
-                args.compositors.append('true_color')
-            if '--false-color' in sys.argv and 'false_color' not in args.compositors:
-                LOG.debug("Adding 'false_color' compositor")
-                args.compositors.append('false_color')
-
-    # if "--true-color" in
-    for c in args.compositors:
-        if c not in compositor_manager:
-            LOG.error("Compositor '%s' is unknown" % (c,))
-            raise RuntimeError("Compositor '%s' is unknown" % (c,))
-
-    # Frontend
-    try:
-        LOG.info("Initializing reader...")
-        list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
-        f = fcls(search_paths=args.data_files, **args.subgroup_args["Frontend Initialization"])
-    except StandardError:
-        LOG.debug("Frontend exception: ", exc_info=True)
-        LOG.error("%s frontend failed to load and sort data files (see log for details)", args.frontend)
-        return STATUS_FRONTEND_FAIL
-
-    # Rename the log file
-    if rename_log:
-        rename_log_file(glue_name + f.begin_time.strftime("_%Y%m%d_%H%M%S.log"))
-
-    if list_products:
-        print("\n".join(sorted(f.available_product_names)))
-        return STATUS_SUCCESS
-
-    try:
-        LOG.info("Initializing remapping...")
-        remapper = Remapper(**args.subgroup_args["Remapping Initialization"])
-        remap_kwargs = args.subgroup_args["Remapping"]
-    except StandardError:
-        LOG.debug("Remapping initialization exception: ", exc_info=True)
-        LOG.error("Remapping initialization failed (see log for details)")
-        return STATUS_REMAP_FAIL
-
-    try:
-        LOG.info("Initializing backend...")
-        backend = bcls(**args.subgroup_args["Backend Initialization"])
-    except StandardError:
-        LOG.debug("Writer initialization exception: ", exc_info=True)
-        LOG.error("Writer initialization failed (see log for details)")
-        return STATUS_BACKEND_FAIL
-
-    try:
-        LOG.info("Initializing compositor objects...")
-        compositor_objects = {}
-        for c in args.compositors:
-            compositor_objects[c] = compositor_manager.get_compositor(c, **args.global_kwargs)
-    except StandardError:
-        LOG.debug("Compositor initialization exception: ", exc_info=True)
-        LOG.error("Compositor initialization failed (see log for details)")
-        return STATUS_COMP_FAIL
-
-    try:
-        LOG.info("Extracting swaths from data files available...")
-        scene = f.create_scene(**args.subgroup_args["Frontend Swath Extraction"])
-
-        # Determine if we have a satpy scene if we should convert it to
-        # a P2G Scene to continue processing
-        resample_method = args.subgroup_args["Remapping"].get("remap_method")
-        is_satpy_resample_method = resample_method in SATPY_RESAMPLERS
-        if is_satpy_resample_method and not isinstance(scene, Scene):
-            raise RuntimeError("Resampling method '{}' only supports 'satpy' readers".format(resample_method))
-        elif not is_satpy_resample_method and isinstance(scene, Scene):
-            # convert satpy scene to P2G Scene to be compatible with old P2G resamplers
-            scene = convert_satpy_to_p2g_swath(f, scene)
-
-        if isinstance(scene, Scene):
-            if not scene.datasets:
-                LOG.error("No products were returned by the frontend")
-                raise RuntimeError("No products were returned by the frontend")
-            if args.keep_intermediate:
-                raise RuntimeError("satpy readers do not currently support saving intermediate files")
-        else:
-            if (isinstance(scene, Scene) and not scene.datasets) or not scene:
-                LOG.error("No products were returned by the frontend")
-                raise RuntimeError("No products were returned by the frontend")
-            if args.keep_intermediate:
-                filename = glue_name + "_swath_scene.json"
-                LOG.info("Saving intermediate swath scene as '%s'", filename)
-                scene.save(filename)
-    except StandardError:
-        LOG.debug("Frontend data extraction exception: ", exc_info=True)
-        LOG.error("Frontend data extraction failed (see log for details)")
-        return STATUS_FRONTEND_FAIL
-
-    # What grids should we remap to (the user should tell us or the backend should have a good set of defaults)
-    known_grids = backend.known_grids
-    LOG.debug("Writer known grids: %r", known_grids)
-    grids = remap_kwargs.pop("forced_grids", None)
-    LOG.debug("Forced Grids: %r", grids)
-    if resample_method == "sensor" and grids != ["sensor"]:
-        LOG.error("'sensor' resampling method only supports the 'sensor' grid")
-        return STATUS_GDETER_FAIL
-    if not grids and not known_grids:
-        # the user didn't ask for any grids and the backend doesn't have specific defaults
-        LOG.error("No grids specified and no known defaults")
-        return STATUS_GDETER_FAIL
-    elif not grids:
-        # the user didn't tell us what to do, so let's try everything the backend knows how to do
-        grids = known_grids
-    elif known_grids is not None:
-        # the user told us what to do, let's make sure the backend can do it
-        grids = list(set(grids) & set(known_grids))
-        if not grids:
-            LOG.error("%s backend doesn't know how to handle any of the grids specified", args.backend)
-            return STATUS_GDETER_FAIL
-    LOG.debug("Grids that will be mapped to: %r", grids)
-
-    # Remap
-    gridded_scenes = {}
-    for grid_name in grids:
-        LOG.info("Remapping to grid %s", grid_name)
-        try:
-            gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
-            gridded_scenes[grid_name] = gridded_scene
-            if args.keep_intermediate:
-                filename = glue_name + "_gridded_scene_" + grid_name + ".json"
-                LOG.debug("saving intermediate gridded scene as '%s'", filename)
-                gridded_scene.save(filename)
-        except StandardError:
-            LOG.debug("Remapping data exception: ", exc_info=True)
-            LOG.error("Remapping data failed")
-            status_to_return |= STATUS_REMAP_FAIL
-            if args.exit_on_error:
-                return status_to_return
-            continue
-
-        if not isinstance(scene, Scene):
-            # Composition
-            for c, comp in compositor_objects.items():
-                try:
-                    LOG.info("Running gridded scene through '%s' compositor", c)
-                    gridded_scene = comp.modify_scene(gridded_scene, **args.subgroup_args[c + " Modification"])
-                    if args.keep_intermediate:
-                        filename = glue_name + "_gridded_scene_" + grid_name + ".json"
-                        LOG.debug("Updating saved intermediate gridded scene (%s) after compositor", filename)
-                        gridded_scene.save(filename)
-                except StandardError:
-                    LOG.debug("Compositor Error: ", exc_info=True)
-                    LOG.error("Could not properly modify scene using compositor '%s'" % (c,))
-                    if args.exit_on_error:
-                        raise RuntimeError("Could not properly modify scene using compositor '%s'" % (c,))
-
-        if isinstance(f, ReaderWrapper) and not isinstance(gridded_scene, Scene):
-            this_grid_definition = None
-            # HACK: Create SatPy composites that were either separated before
-            # resampling or needed resampling to be created
-            rgbs = {}
-            for product_name in gridded_scene.keys():
-                rgb_name = product_name[:-6]
-                # Keep track of one of the grid definitions
-                if this_grid_definition is None:
-                    this_grid_definition = gridded_scene[product_name]["grid_definition"]
-
-                if product_name.endswith("rgb_0") or product_name.endswith("rgb_1") or product_name.endswith("rgb_2"):
-                    if rgb_name not in rgbs:
-                        rgbs[rgb_name] = [None, None, None]
-                    chn_idx = int(product_name[-1])
-                    rgbs[rgb_name][chn_idx] = product_name
-            LOG.debug("Putting RGBs back together again")
-            for rgb_name, v in rgbs.items():
-                r = gridded_scene.pop(v[0])
-                g = gridded_scene.pop(v[1])
-                b = gridded_scene.pop(v[2])
-                new_info = r.copy()
-                new_info["grid_data"] = new_info["grid_data"].replace(v[0], rgb_name)
-                new_info["product_name"] = rgb_name
-                data = np.memmap(new_info["grid_data"], dtype=new_info["data_type"],
-                                 mode="w+", shape=(3, new_info["grid_definition"]["height"], new_info["grid_definition"]["width"]))
-                data[0] = r.get_data_array()[:]
-                data[1] = g.get_data_array()[:]
-                data[2] = b.get_data_array()[:]
-                gridded_scene[rgb_name] = new_info
-
-            # Create composites that satpy couldn't complete until after remapping
-            composite_names = [x for x in f.wishlist if not isinstance(x, DatasetID)]
-            if composite_names:
-                tmp_scene = Scene()
-                for k, v in gridded_scene.items():
-                    if not isinstance(v["sensor"], set):
-                        v["sensor"] = set([v["sensor"]])  # turn sensor back in to a set to match satpy usage
-                    tmp_scene[v["id"]] = Dataset(v.get_data_array(), **v)
-                    tmp_scene[v["id"]].info["area"] = this_grid_definition.to_satpy_area()
-                    # tmp_scene[v["id"]].info = {}
-                    if v["sensor"] not in tmp_scene.info["sensor"]:
-                        tmp_scene.info["sensor"].extend(v["sensor"])
-                # Overwrite the wishlist that will include the above assigned datasets
-                tmp_scene.wishlist = f.wishlist
-                for cname in composite_names:
-                    tmp_scene.compositors[cname] = tmp_scene.cpl.load_compositor(cname, tmp_scene.info["sensor"])
-                tmp_scene.compute()
-                tmp_scene.unload()
-                # Add any new Datasets to our P2G Scene if SatPy created them
-                for ds in tmp_scene:
-                    if ds.info["id"].name not in gridded_scene:
-                        LOG.debug("Adding Dataset from SatPy Commpositing: %s", ds.info["id"])
-                        gridded_scene[ds.info["id"].name] = dataset_to_gridded_product(ds)
-                        gridded_scene[ds.info["id"].name]["grid_definition"] = this_grid_definition
-                # Remove any Products from P2G Scene that SatPy decided it didn't need anymore
-                for k, v in list(gridded_scene.items()):
-                    if v["id"].name not in tmp_scene:
-                        LOG.debug("Removing Dataset that is no longer used: %s", k)
-                        del gridded_scene[k]
-
-        if isinstance(gridded_scene, Scene):
-            LOG.debug("Converting satpy Scene to P2G Gridded Scene")
-            # Convert it to P2G Gridded Scene
-            gridded_scene = convert_satpy_to_p2g_gridded(f, gridded_scene)
-
-        # Writer
-        try:
-            LOG.info("Creating output from data mapped to grid %s", grid_name)
-            backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
-        except StandardError:
-            LOG.debug("Writer output creation exception: ", exc_info=True)
-            LOG.error("Writer output creation failed (see log for details)")
-            status_to_return |= STATUS_BACKEND_FAIL
-            if args.exit_on_error:
-                return status_to_return
-            continue
-
-        LOG.info("Processing data for grid %s complete", grid_name)
-
-    return status_to_return
 
 if __name__ == "__main__":
     sys.exit(main())
