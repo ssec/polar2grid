@@ -153,10 +153,6 @@ cd $SB_NAME/bin
 wget http://realearth.ssec.wisc.edu/upload/re_upload -O wmsupload.sh || oops "Couldn't download and create wmsupload.sh script"
 chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
 
-# FIXME: Hack to get libproj in to ShellB3 from the system (until it gets provided by ShellB3)
-cd "${SHELLB3_DIR}"/lib64/
-cp -P /usr/lib64/libproj* .
-
 # Copy SatPy configurations
 cp -r $BASE_P2G_DIR/etc $SB_NAME/ || oops "Couldn't copy configuration 'etc' directory"
 
@@ -175,9 +171,15 @@ ${PYTHON_EXE} -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/p
 ${PYTHON_EXE} -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/satpy-0.9.0a0.tar.gz
 # Pycoast
 #${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pyshp-1.2.3.tar.gz
-# TODO: Add to ShellB3
-hacky_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/aggdraw-1.3.tar.gz
+#hacky_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/aggdraw-1.3.tar.gz
 ${PYTHON_EXE} -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pycoast-1.1.0.tar.gz
+
+# Download LUTs and data for pyspectral
+echo "Downloading PySpectral LUTs..."
+# load the p2g environment to set up pyspectral environment variables
+source ${SHELLB3_DIR}/bin/env.sh
+mkdir -p ${PSP_DATA_ROOT} || oops "Could not make PySpectral data directory"
+${PYTHON_EXE} -c "from pyspectral.utils import download_luts, download_rsr; download_luts(); download_rsr()" || oops "Could not download pyspectral LUTs"
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
