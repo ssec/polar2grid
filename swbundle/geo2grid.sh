@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # encoding: utf-8
-# Copyright (C) 2015 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-#     Written by David Hoese    April 2015
+#     Written by David Hoese    December 2014
 #     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
@@ -36,4 +36,4 @@ fi
 source $POLAR2GRID_HOME/bin/env.sh
 
 # Call the python module to do the processing, passing all arguments
-${P2G_SHELLB3_DIR}/bin/polar2grid.sh avhrr hdf5 $@
+${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue $@ -vv

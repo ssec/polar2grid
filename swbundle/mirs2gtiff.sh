@@ -37,5 +37,5 @@ fi
 source $POLAR2GRID_HOME/bin/env.sh
 
 # Call the python module to do the processing, passing all arguments
-${P2G_SHELLB3_DIR}/bin/python -m polar2grid.glue mirs gtiff $@ -vv
+${P2G_SHELLB3_DIR}/bin/polar2grid.sh mirs gtiff $@
 
