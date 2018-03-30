@@ -174,13 +174,6 @@ ${PYTHON_EXE} -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/po
 #hacky_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/aggdraw-1.3.tar.gz
 ${PYTHON_EXE} -m easy_install --no-deps http://larch.ssec.wisc.edu/eggs/repos/polar2grid/pycoast-1.1.0.tar.gz
 
-# Download LUTs and data for pyspectral
-echo "Downloading PySpectral LUTs..."
-# load the p2g environment to set up pyspectral environment variables
-source ${SHELLB3_DIR}/bin/env.sh
-mkdir -p ${PSP_DATA_ROOT} || oops "Could not make PySpectral data directory"
-${PYTHON_EXE} -c "from pyspectral.utils import download_luts, download_rsr; download_luts(); download_rsr()" || oops "Could not download pyspectral LUTs"
-
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
 cd "$SB_NAME"/..

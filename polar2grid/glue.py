@@ -21,7 +21,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-#     Written by David Hoese    December 2014
+#     Written by David Hoese    April 2018
 #     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
@@ -33,6 +33,36 @@
 import os
 import sys
 import logging
+import dask
+import dask.array as da
+
+LOG = logging.getLogger(__name__)
+
+
+def compute_writer_results(results):
+    sources = []
+    targets = []
+    delayeds = []
+    for res in results:
+        if isinstance(res, tuple):
+            # source, target to be passed to da.store
+            sources.append(res[0])
+            targets.append(res[1])
+        else:
+            # delayed object
+            delayeds.append(res)
+
+    # one or more writers have targets that we need to close in the future
+    if targets:
+        delayeds.append(da.store(sources, targets, compute=False))
+
+    if delayeds:
+        da.compute(delayeds)
+
+    if targets:
+        for target in targets:
+            if hasattr(target, 'close'):
+                target.close()
 
 
 def add_scene_argument_groups(parser):
@@ -47,33 +77,105 @@ def add_scene_argument_groups(parser):
     return group_1, group_2
 
 
+def add_resample_argument_groups(parser):
+    group_1 = parser.add_argument_group(title='Resampling')
+    group_1.add_argument('--method', dest='resampler',
+                         default='native', choices=['native', 'nearest'],
+                         help='resampling algorithm to use (default: native)')
+    group_1.add_argument('-a', '--areas', default=['MAX'], nargs="*",
+                         help='area definition to resample to (default: MAX)')
+    return tuple([group_1])
+
+
+def add_geotiff_argument_groups(parser):
+    group_1 = parser.add_argument_group(title='Writer Initialization')
+    group_1.add_argument('--file-pattern',
+                         help="custom file pattern to save dataset to")
+    group_2 = parser.add_argument_group(title='Writer Save')
+    return group_1, group_2
+
+
 def main():
     from satpy import Scene
-    from satpy.writers.scmi import add_backend_argument_groups as add_writer_argument_groups
+    from satpy.resample import get_area_def
+    from dask.diagnostics import ProgressBar
     import argparse
-    parser = argparse.ArgumentParser(description="Convert GEOCAT Level 1 and 2 to AWIPS SCMI files")
+    parser = argparse.ArgumentParser(description="Load, composite, resample, and save datasets")
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
                         help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_argument('-l', '--log', dest="log_fn", default=None,
                         help="specify the log filename")
+    parser.add_argument('--progress', action='store_true',
+                        help="show processing progress bar (not recommended for logged output)")
+    parser.add_argument('--num-workers', type=int,
+                        help="specify number of worker threads to use (default: 1 per logical core)")
+    parser.add_argument('-w', '--writers', nargs='+', choices=['geotiff'], default=['geotiff'],
+                        help='writers to save datasets with')
     subgroups = add_scene_argument_groups(parser)
-    subgroups += add_writer_argument_groups(parser)
+    subgroups += add_resample_argument_groups(parser)
+    subgroups += add_geotiff_argument_groups(parser)
     args = parser.parse_args()
 
     scene_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[0]._group_actions}
     load_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[1]._group_actions}
-    writer_init_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[2]._group_actions}
-    writer_call_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[3]._group_actions}
+    resample_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[2]._group_actions}
+    writer_init_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[3]._group_actions}
+    writer_call_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[4]._group_actions}
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)], filename=args.log_fn)
 
+    writers = args.writers
+    if len(writers) != 1:
+        raise ValueError("Multiple writers is not currently supported.")
+
+    if args.num_workers:
+        from multiprocessing.pool import ThreadPool
+        dask.set_options(pool=ThreadPool(args.num_workers))
+
     scn = Scene(**scene_args)
     scn.load(load_args['datasets'])
-    writer_args = {}
-    writer_args.update(writer_init_args)
-    writer_args.update(writer_call_args)
-    scn.save_datasets(writer='scmi', **writer_args)
+
+    resample_kwargs = resample_args.copy()
+    areas_to_resample = resample_kwargs.pop('areas')
+    if not areas_to_resample:
+        areas_to_resample = [None]
+
+    to_save = []
+    for area_name in areas_to_resample:
+        if area_name is None:
+            # no resampling
+            area_def = None
+        elif area_name == 'MAX':
+            area_def = scn.max_area()
+        elif area_name == 'MIN':
+            area_def = scn.min_area()
+        else:
+            area_def = get_area_def(area_name)
+
+        if area_def is not None:
+            new_scn = scn.resample(area_def, **resample_kwargs)
+        else:
+            # the user didn't want to resample to any areas
+            new_scn = scn
+
+        for writer_name in writers:
+            writer_args = {}
+            writer_args.update(writer_init_args)
+            writer_args.update(writer_call_args)
+            res = new_scn.save_datasets(writer=writer_name, compute=False,
+                                        **writer_args)
+            if isinstance(res, (tuple, list)):
+                to_save.extend(res)
+            else:
+                to_save.append(res)
+
+    if args.progress:
+        pbar = ProgressBar()
+        pbar.register()
+
+    compute_writer_results(to_save)
+    return 0
 
 
 if __name__ == "__main__":
