@@ -1,0 +1,8 @@
+recursive-include docs/source *
+include polar2grid/remap/*.h
+include polar2grid/core/rescale_configs/*.ini
+include polar2grid/grids/grids.conf
+include polar2grid/awips/awips_grids/grids.conf
+include polar2grid/awips/awips_grids/grids.conf
+include polar2grid/awips/*.ini
+include polar2grid/ninjo/*.ini
