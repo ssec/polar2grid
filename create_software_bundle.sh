@@ -141,8 +141,8 @@ make clean
 CFLAGS="-fno-strict-aliasing -L${SHELLB3_DIR}/lib" INSTALL_DIR="${SHELLB3_DIR}" make all_sdist
 CFLAGS="-fno-strict-aliasing -L${SHELLB3_DIR}/lib" INSTALL_DIR="${SHELLB3_DIR}" make all_install2
 echo "Test polar2grid import..."
-+cd ${SB_NAME} || oops "Couldn't change to software bundle directory"
-+${PYTHON_EXE} -c 'import polar2grid; print(polar2grid.__file__); print("polar2grid modules imported successfully")'
+cd ${SB_NAME} || oops "Couldn't change to software bundle directory"
+${PYTHON_EXE} -c 'import polar2grid; print(polar2grid.__file__); print("polar2grid modules imported successfully")'
 if [ $? -ne 0 ]; then
     oops "Couldn't install polar2grid"
 fi
