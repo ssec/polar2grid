@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2013-2015 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2013-2018 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -47,7 +47,7 @@ import sys
 from polar2grid.core.proj import Proj
 
 #grid_name,proj4, proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y
-CONFIG_LINE_FORMAT = "%(grid_name)s, proj4, %(proj4_str)s, %(width)d, %(height)d, %(pixel_size_x)0.3f, %(pixel_size_y)0.3f, %(origin_x)s, %(origin_y)s"
+CONFIG_LINE_FORMAT = "%(grid_name)s, proj4, %(proj4_str)s, %(width)d, %(height)d, %(pixel_size_x)0.4f, %(pixel_size_y)0.4f, %(origin_x)s, %(origin_y)s"
 
 
 def determine_projection(center_lon, center_lat, proj4_str=None):
@@ -57,11 +57,11 @@ def determine_projection(center_lon, center_lat, proj4_str=None):
     abs_lat = abs(center_lat)
     if proj4_str is None:
         if abs_lat < 15:
-            proj4_str = "+proj=eqc +datum=WGS84 +ellps=WGS84 +lat_ts=%(center_lat)0.3f +lon_0=%(center_lon)0.3f +units=m +no_defs"
+            proj4_str = "+proj=eqc +datum=WGS84 +ellps=WGS84 +lat_ts=%(center_lat)0.4f +lon_0=%(center_lon)0.4f +units=m +no_defs"
         elif abs_lat < 70:
-            proj4_str =  "+proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=%(center_lat)0.3f +lat_1=%(center_lat)0.3f +lon_0=%(center_lon)0.3f +units=m +no_defs"
+            proj4_str =  "+proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=%(center_lat)0.4f +lat_1=%(center_lat)0.4f +lon_0=%(center_lon)0.4f +units=m +no_defs"
         else:
-            proj4_str = "+proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=%(center_lat)0.3f +lon_0=%(center_lon)0.3f +units=m"
+            proj4_str = "+proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=%(center_lat)0.4f +lon_0=%(center_lon)0.4f +units=m"
 
     proj4_str = proj4_str % dict(center_lon=center_lon, center_lat=center_lat)
     return proj4_str
@@ -125,12 +125,12 @@ def main():
     origin_y = p(clon, clat)[1] + (grid_height / 2.0 * pixel_size_y * -1)
     if p.is_latlong():
         # Origin is in degrees so we need to add a unit string to it
-        origin_x = "%0.3fdeg" % origin_x
-        origin_y = "%0.3fdeg" % origin_y
+        origin_x = "%0.4fdeg" % origin_x
+        origin_y = "%0.4fdeg" % origin_y
     else:
         origin_lon, origin_lat = p(origin_x, origin_y, inverse=True)
-        origin_x = "%0.3fdeg" % origin_lon
-        origin_y = "%0.3fdeg" % origin_lat
+        origin_x = "%0.4fdeg" % origin_lon
+        origin_y = "%0.4fdeg" % origin_lat
 
     valid_config_line = CONFIG_LINE_FORMAT % {
             "grid_name" : grid_name,
