@@ -47,7 +47,7 @@ component see the :doc:`design_overview` Appendix.
 What's New?
 -----------
 
-Polar2Grid Version 2.2 is now available. Changes in this
+Polar2Grid Version 2.2.1 is now available. Changes in this
 version include:
 
 .. include:: NEWS.rst
