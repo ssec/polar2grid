@@ -18,17 +18,15 @@ if you have questions about installation.
 Polar2Grid Software
 -------------------
 
-The CSPP tarball can be found on either the CSPP or IMAPP websites:
+The Polar2Grid tarball can be found on either the CSPP website:
 
     http://cimss.ssec.wisc.edu/cspp/
 
-    http://cimss.ssec.wisc.edu/imapp/
-
 Next, unpack the tarball::
 
-    tar xf CSPP_IMAPP_POLAR2GRID_V2.2.tar.gz
+    tar xf CSPP_POLAR2GRID_V2.2.1.tar.gz
 
-This will create a Polar2Grid software bundle directory, ``polar2grid_v_2_2``.
+This will create a Polar2Grid software bundle directory, ``polar2grid_v_2_2_1``.
 To simplify calling scripts included in the bundle the following line should
 be added to your ``.bash_profile``::
 
@@ -53,13 +51,13 @@ Polar2Grid Test Data
 If you want to run the test case to verify your installation,
 download the following file::
 
-    CSPP_IMAPP_POLAR2GRID_V2.2_TEST_DATA.tar.gz
+    CSPP_POLAR2GRID_V2.2.1_TEST_DATA.tar.gz
 
 The test data should be unpacked in a directory separate from the Polar2Grid
 installation::
 
     cd $HOME
-    tar xf CSPP_IMAPP_POLAR2GRID_V2.2_TEST_DATA.tar.gz
+    tar xf CSPP_POLAR2GRID_V2.2.1_TEST_DATA.tar.gz
 
 This will create a ``polar2grid_test`` directory containing the test input,
 output, and verification scripts for both MODIS and VIIRS instruments.

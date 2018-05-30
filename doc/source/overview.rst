@@ -3,8 +3,7 @@ earth-observing satellite instruments, remapping it to uniform grids,
 and writing that gridded data to a new file format.
 Polar2Grid was created by scientists and software developers at the
 `SSEC <http://www.ssec.wisc.edu>`_. It is distributed as part of the
-`CSPP <http://cimss.ssec.wisc.edu/cspp/>`_ and
-`IMAPP <http://cimss.ssec.wisc.edu/imapp>`_ projects for
+`CSPP <http://cimss.ssec.wisc.edu/cspp/>`_  project for
 processing of data received via direct broadcast antennas. Although
 Polar2Grid was created to serve the direct
 broadcast community, it can be used on most archived data files.
