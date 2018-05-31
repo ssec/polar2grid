@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -105,18 +105,6 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=1.0, **kwargs):
     return compare_array(array1, array2, atol=atol)
 
 
-def compare_ninjo_tiff(tiff_fn1, tiff_fn2, atol=1.0, **kwargs):
-    from .ninjo.ninjo_backend import libtiff
-
-    tiff1 = libtiff.TIFF.open(tiff_fn1)
-    tiff2 = libtiff.TIFF.open(tiff_fn2)
-
-    array1 = tiff1.read_tiles().astype(numpy.float32)
-    array2 = tiff2.read_tiles().astype(numpy.float32)
-    
-    return compare_array(array1, array2, atol=atol)
-
-
 def compare_awips_netcdf(nc1_name, nc2_name, atol=1.0, **kwargs):
     """Compare 2 8-bit AWIPS-compatible NetCDF3 files
 
@@ -156,7 +144,6 @@ type_name_to_compare_func = {
     "binary": compare_binary,
     "gtiff": compare_geotiff,
     "geotiff": compare_geotiff,
-    "ninjo": compare_ninjo_tiff,
     "awips": compare_awips_netcdf,
     "netcdf": compare_netcdf,
 }
@@ -167,8 +154,8 @@ def _file_type(str_val):
     if str_val in type_name_to_compare_func:
         return type_name_to_compare_func[str_val]
 
-    print "ERROR: Unknown file type '%s'" % (str_val,)
-    print "Possible file types: \n\t%s" % ("\n\t".join(type_name_to_compare_func.keys()))
+    print("ERROR: Unknown file type '%s'" % (str_val,))
+    print("Possible file types: \n\t%s" % ("\n\t".join(type_name_to_compare_func.keys())))
     raise ValueError("Unknown file type '%s'" % (str_val,))
 
 

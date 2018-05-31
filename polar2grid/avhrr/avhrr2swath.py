@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -104,6 +104,8 @@ class Frontend(roles.FrontendRole):
         LOG.debug("SZA threshold set to %f", sza_threshold)
         self.sza_threshold = sza_threshold
         self._day_percentage = {}
+        self.file_readers = {}
+        self.available_file_types = []
         self.load_files(self.find_files_with_extensions())
 
         self.secondary_product_functions = {
@@ -118,7 +120,6 @@ class Frontend(roles.FrontendRole):
 
         This method should not be called by the user.
         """
-        self.file_readers = {}
         for file_type, file_type_info in readers.FILE_TYPES.items():
             self.file_readers[file_type] = readers.AVHRRMultiFileReader(file_type_info)
 
@@ -132,7 +133,7 @@ class Frontend(roles.FrontendRole):
                     self.file_readers[h.file_type].add_file(h)
                 else:
                     LOG.debug("Recognized the file type, but don't know anything more about the file")
-            except StandardError:
+            except (ValueError, OSError):
                 LOG.debug("Could not parse .l1b file as AVHRR AAPP file: %s", fp)
                 LOG.debug("File parsing error: ", exc_info=True)
                 file_paths_left.append(fp)
@@ -153,7 +154,7 @@ class Frontend(roles.FrontendRole):
             LOG.error("No useable files loaded")
             raise ValueError("No useable files loaded")
 
-        first_length = len(self.file_readers[self.file_readers.keys()[0]])
+        first_length = len(self.file_readers[next(iter(self.file_readers))])
         if not all(len(x) == first_length for x in self.file_readers.values()):
             LOG.error("Corrupt directory: Varying number of files for each type")
             ft_str = "\n\t".join("%s: %d" % (ft, len(fr)) for ft, fr in self.file_readers.items())
@@ -256,7 +257,7 @@ class Frontend(roles.FrontendRole):
         try:
             file_type = product_def.get_file_type(self.available_file_types)
             file_key = product_def.get_file_key(self.available_file_types)
-        except StandardError:
+        except RuntimeError:
             LOG.error("Could not create product '%s' because some data files are missing" % (product_name,))
             raise RuntimeError("Could not create product '%s' because some data files are missing" % (product_name,))
         file_reader = self.file_readers[file_type]
@@ -276,7 +277,7 @@ class Frontend(roles.FrontendRole):
             fill_value = file_reader.get_fill_value(file_key)
             shape = file_reader.write_var_to_flat_binary(file_key, filename, dtype=data_type)
             rows_per_scan = GEO_PAIRS[product_def.get_geo_pair_name(self.available_file_types)].rows_per_scan
-        except StandardError:
+        except (OSError, ValueError):
             LOG.error("Could not extract data from file")
             LOG.debug("Extraction exception: ", exc_info=True)
             raise
@@ -366,7 +367,7 @@ class Frontend(roles.FrontendRole):
                 LOG.info("Creating data product '%s'", product_name)
                 swath_def = swath_definitions[PRODUCTS[product_name].get_geo_pair_name(self.available_file_types)]
                 one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
-            except StandardError:
+            except (ValueError, OSError):
                 LOG.error("Could not create raw product '%s'", product_name)
                 if self.exit_on_error:
                     raise
@@ -384,7 +385,7 @@ class Frontend(roles.FrontendRole):
             try:
                 LOG.info("Creating secondary product '%s'", product_name)
                 one_swath = product_func(product_name, swath_def, products_created)
-            except StandardError:
+            except (ValueError, OSError):
                 LOG.error("Could not create product (unexpected error): '%s'", product_name)
                 LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
                 if self.exit_on_error:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2016 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -300,6 +300,7 @@ class ReaderWrapper(roles.FrontendRole):
         self.scene = Scene(reader=self.reader, filenames=pathnames, reader_kwargs=kwargs)
         self._begin_time = self.scene.start_time
         self._end_time = self.scene.end_time
+        self.wishlist = set()
 
     @property
     def begin_time(self):

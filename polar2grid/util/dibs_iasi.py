@@ -1,4 +1,4 @@
-#!/usr/bin/env python# encoding: utf-8
+#!/usr/bin/env python3# encoding: utf-8
 """
 dibs.py
 $Id: dibs.py 85 2012-04-25 21:11:09Z rayg $
@@ -14,7 +14,7 @@ Copyright (c) 2012 University of Wisconsin SSEC. All rights reserved.
 
 import logging
 import os, sys, re
-from urllib2 import urlopen
+from urllib.request import urlopen
 from subprocess import call
 from collections import defaultdict
 from glob import glob
@@ -73,7 +73,7 @@ def _test_flo_find(args, use_inside_hostname=True):
     start = date(2011, 12, 13)
     end = date(2011, 12, 14)
     for nfo, url in flo_find(43, -89, 1000, start, end, use_inside_hostname=use_inside_hostname):
-        print nfo.group(0), url # print filename and url
+        print(nfo.group(0), url)  # print filename and url
 
 def _all_products_present(key, file_nfos, products = PRODUCT_LIST):
     if products is None: # then products don't have groups IASI
@@ -144,10 +144,10 @@ def mainsync(name, lat, lon, radius, start=None, end=None, use_inside_hostname=T
     if end:
         end = datetime.strptime(end, '%Y-%m-%d').date()
 
-    fp = file(name+'.nfo', 'at')
+    fp = open(name+'.nfo', 'at')
     for key in sync(lat, lon, radius, start, end, use_inside_hostname=use_inside_hostname).keys():
         LOG.info('%s is ready' % repr(key))
-        print >>fp, '%s %s %s %s' % key
+        print('%s %s %s %s' % key, file=fp)
         fp.flush()
     fp.close()
 
@@ -199,14 +199,18 @@ def contiguous_groups(keyset, tolerance=timedelta(seconds=5)):
             seq.append(((sa,ea),(sb,eb)))
         else:
             if seq:
-                yield _outcome_cg(seq)
+                o = _outcome_cg(seq)
+                if o is not None:
+                    yield o
             seq = []
     if seq:
-        yield _outcome_cg(seq)
+        o = _outcome_cg(seq)
+        if o is not None:
+            yield o
 
 def read_nfo(filename=None, fobj=None):
     if fobj is None:
-        fobj = file(filename, 'rt')
+        fobj = open(filename, 'rt')
     for line in fobj:
         k = map(str.strip, line.split(' '))
         if len(k)==4:
@@ -237,7 +241,7 @@ def pass_build(key, subkeys):
 
 def mainpass(nfo_filename):
     "consume nfo file and link granule groups to their own .pass directories"
-    fobj = file(nfo_filename, 'rt')
+    fobj = open(nfo_filename, 'rt')
     stowname = '.' + nfo_filename
     if os.path.isfile(stowname):
         LOG.warning('removing old %s' % stowname)
@@ -281,10 +285,6 @@ example:
     # parser.add_option('-I', '--include-path', dest="includes",
     #                 action="append", help="include path to append to GCCXML call")
     (options, args) = parser.parse_args()
-
-    # make options a globally accessible structure, e.g. OPTS.
-    global OPTS
-    OPTS = options
 
     if options.self_test:
         from pprint import pprint

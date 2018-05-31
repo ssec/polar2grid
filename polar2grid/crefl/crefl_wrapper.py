@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -42,7 +42,7 @@ __docformat__ = "restructuredtext en"
 import os
 import sys
 from subprocess import check_output, CalledProcessError, STDOUT
-from itertools import izip, izip_longest
+from itertools import zip_longest
 import logging
 
 LOG = logging.getLogger(__name__)
@@ -163,7 +163,7 @@ def run_cviirs(geo_files,
             run_hdf5_rename(geo_file, svm_temp_file, "SolarAzimuthAngle", "SolAziAng_Mod")
 
             available_m_bands = []
-            for m_file_list, m_var, m_band in izip(m_files, m_vars, m_bands):
+            for m_file_list, m_var, m_band in zip(m_files, m_vars, m_bands):
                 if m_file_list:
                     LOG.debug("Running HDF5 to HDF4 transfer tool for band %s using var %s", m_band, m_var)
                     run_hdf5_rename(m_file_list[idx], svm_temp_file, "Reflectance", m_var)
@@ -176,7 +176,7 @@ def run_cviirs(geo_files,
                 output_filenames.append(m_output_filename)
 
             available_i_bands = []
-            for i_file_list, i_var, i_band in izip(i_files, i_vars, i_bands):
+            for i_file_list, i_var, i_band in zip(i_files, i_vars, i_bands):
                 if i_file_list:
                     LOG.debug("Running HDF5 to HDF4 transfer tool for band %s using var %s", i_band, i_var)
                     run_hdf5_rename(i_file_list[idx], svi_temp_file, "Reflectance", i_var)
@@ -187,7 +187,7 @@ def run_cviirs(geo_files,
                 LOG.info("Running CREFL for I bands")
                 _run_cviirs(i_output_filename, [svm_temp_file, svi_temp_file], bands=available_i_bands, output_500m=True)
                 output_filenames.append(i_output_filename)
-        except StandardError:
+        except (OSError, RuntimeError, ValueError, KeyError):
             LOG.error("Could not create VIIRS CREFL files", exc_info=True)
             LOG.error("Could not create VIIRS CREFL files")
             if os.path.isfile(m_output_filename) and not keep_intermediate:
@@ -258,11 +258,16 @@ def _run_modis_crefl(output_filename, input_filenames, bands=None, verbose=True,
     return output_filename
 
 
-def run_modis_crefl(km_files, hkm_files=[], qkm_files=[], keep_intermediate=False):
+def run_modis_crefl(km_files, hkm_files=None, qkm_files=None, keep_intermediate=False):
+    if hkm_files is None:
+        hkm_files = []
+    if qkm_files is None:
+        qkm_files = []
+
     bands_1_7 = "1,2,3,4,5,6,7"
     bands_1_4 = "1,2,3,4"
     output_filenames = []
-    for km_file, hkm_file, qkm_file in izip_longest(km_files, hkm_files, qkm_files):
+    for km_file, hkm_file, qkm_file in zip_longest(km_files, hkm_files, qkm_files):
         km_fn = os.path.basename(km_file)
         if km_fn.startswith("a1") or km_fn.startswith("t1"):
             # DB/IMAPPS filenaming

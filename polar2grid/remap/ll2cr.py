@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -41,7 +41,7 @@ __docformat__ = "restructuredtext en"
 import logging
 import numpy
 
-import _ll2cr
+from polar2grid.remap import _ll2cr
 from polar2grid.core.proj import Proj
 
 LOG = logging.getLogger(__name__)

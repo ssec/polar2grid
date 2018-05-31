@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2016 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -86,9 +86,11 @@ from netCDF4 import Dataset
 
 import numpy as np
 
+from polar2grid.core.dtype import DTYPE_UINT8
 from polar2grid.core import roles
 from polar2grid.core.containers import GriddedScene
 from ConfigParser import NoSectionError, NoOptionError
+from configparser import NoSectionError
 
 
 try:
@@ -545,6 +547,7 @@ class SCMI_writer(object):
         self._include_fgf = include_fgf
         self._compress = compress
         self.helper = helper
+        self.image_data = None  # filled in by create_variables later
 
     def create_dimensions(self, lines, columns):
         # Create Dimensions
@@ -617,6 +620,7 @@ class SCMI_writer(object):
         self.fgf_y.standard_name = "projection_y_coordinate"
         self.fgf_y[:] = y
 
+        LOG.debug('x variable shape is {}'.format(self.fgf_x.shape))
         self.fgf_x.scale_factor = np.float64(mx * float(downsample_factor))
         self.fgf_x.add_offset = np.float64(bx)
         self.fgf_x.units = units

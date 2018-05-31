@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """
 Purpose: convert MODIS to Brightness Temp
@@ -273,7 +273,7 @@ c ...   milliWatts per square meter per steradian per wavenumber
 """
 
 
-import os, sys, re, logging
+import sys, re, logging
 import numpy as np
 from collections import namedtuple
 

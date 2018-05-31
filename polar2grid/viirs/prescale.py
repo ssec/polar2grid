@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -89,7 +89,7 @@ def _make_day_night_masks(image, solarZenithAngle, fillValue,
     night_mask = (solarZenithAngle > highAngleCutoff) & good_mask
     day_mask   = (solarZenithAngle <= lowAngleCutoff) & good_mask
     mixed_mask = [ ]
-    steps = range(lowAngleCutoff, highAngleCutoff+1, stepsDegrees)
+    steps = list(range(lowAngleCutoff, highAngleCutoff+1, stepsDegrees))
     if steps[-1] >= highAngleCutoff:
         steps[-1] = highAngleCutoff
     steps = zip(steps, steps[1:])

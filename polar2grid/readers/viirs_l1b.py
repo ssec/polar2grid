@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2016 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -211,7 +211,7 @@ class Frontend(ReaderWrapper):
         LOG.debug("SZA threshold set to %f", self.sza_threshold)
         self.fraction_day_scene = None
         self.fraction_night_scene = None
-        super(Frontend, self).__init__(*args, **kwargs)
+        super(Frontend, self).__init__(**kwargs)
 
     @property
     def available_product_names(self):
@@ -269,7 +269,7 @@ class Frontend(ReaderWrapper):
             self._calc_percent_day(scene)
         # make a copy of the scene list so we can edit it later
         for ds in list(scene):
-            if ds.info['name'] in ('ifog') and \
+            if ds.info['name'] in ('ifog',) and \
                             self.fraction_night_scene <= self.night_fraction:
                 LOG.info("Will not create product '%s' because there is less than %f%% of night data",
                          ds.info['name'], self.night_fraction * 100.)

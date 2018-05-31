@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -443,6 +443,8 @@ class Frontend(roles.FrontendRole):
 
     def __init__(self, **kwargs):
         super(Frontend, self).__init__(**kwargs)
+        self.file_readers = {}
+        self.available_file_types = []
         self.load_files(self.find_files_with_extensions())
 
         self.secondary_product_functions = {
@@ -482,7 +484,6 @@ class Frontend(roles.FrontendRole):
 
         This method should not be called by the user.
         """
-        self.file_readers = {}
         for file_type, file_type_info in guidebook.FILE_TYPES.items():
             self.file_readers[file_type] = guidebook.MultiFileReader(file_type_info)
 
@@ -496,7 +497,7 @@ class Frontend(roles.FrontendRole):
                     self.file_readers[h.file_type].add_file(h)
                 else:
                     LOG.debug("Recognized the file type, but don't know anything more about the file")
-            except StandardError:
+            except ValueError:
                 LOG.debug("Could not parse HDF file as HDF-EOS file: %s", fp)
                 LOG.debug("File parsing error: ", exc_info=True)
                 file_paths_left.append(fp)
@@ -517,7 +518,7 @@ class Frontend(roles.FrontendRole):
             LOG.error("No useable files loaded")
             raise ValueError("No useable files loaded")
 
-        first_length = len(self.file_readers[self.file_readers.keys()[0]])
+        first_length = len(self.file_readers[next(iter(self.file_readers))])
         if not all(len(x) == first_length for x in self.file_readers.values()):
             LOG.error("Corrupt directory: Varying number of files for each type")
             ft_str = "\n\t".join("%s: %d" % (ft, len(fr)) for ft, fr in self.file_readers.items())
@@ -650,7 +651,7 @@ class Frontend(roles.FrontendRole):
         try:
             file_type = product_def.get_file_type(self.available_file_types)
             file_key = product_def.get_file_key(self.available_file_types)
-        except StandardError:
+        except RuntimeError:
             LOG.error("Could not create product '%s' because some data files are missing" % (product_name,))
             raise RuntimeError("Could not create product '%s' because some data files are missing" % (product_name,))
         file_reader = self.file_readers[file_type]
@@ -670,7 +671,7 @@ class Frontend(roles.FrontendRole):
             fill_value = file_reader.get_fill_value(file_key)
             shape = file_reader.write_var_to_flat_binary(file_key, filename, dtype=data_type)
             rows_per_scan = GEO_PAIRS[product_def.get_geo_pair_name(self.available_file_types)].rows_per_scan
-        except StandardError:
+        except (KeyError, ValueError, OSError):
             LOG.error("Could not extract data from file")
             LOG.debug("Extraction exception: ", exc_info=True)
             raise
@@ -761,7 +762,7 @@ class Frontend(roles.FrontendRole):
                 LOG.info("Creating data product '%s'", product_name)
                 swath_def = swath_definitions[PRODUCTS[product_name].get_geo_pair_name(self.available_file_types)]
                 one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
-            except StandardError:
+            except (ValueError, KeyError):
                 LOG.error("Could not create raw product '%s'", product_name)
                 if self.exit_on_error:
                     raise
@@ -779,7 +780,7 @@ class Frontend(roles.FrontendRole):
             try:
                 LOG.info("Creating secondary product '%s'", product_name)
                 one_swath = product_func(product_name, swath_def, products_created)
-            except StandardError:
+            except (ValueError, KeyError, RuntimeError, OSError):
                 LOG.error("Could not create product (unexpected error): '%s'", product_name)
                 LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
                 if self.exit_on_error:
@@ -820,7 +821,7 @@ class Frontend(roles.FrontendRole):
             shutil.copyfile(lst_product["swath_data"], filename)
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            lst_product["data_type"], products_created)
-        except StandardError:
+        except (RuntimeError, ValueError, KeyError, OSError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise
@@ -872,7 +873,7 @@ class Frontend(roles.FrontendRole):
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            ir_product["data_type"], products_created)
-        except StandardError:
+        except (ValueError, RuntimeError, KeyError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise
@@ -904,7 +905,7 @@ class Frontend(roles.FrontendRole):
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            bt_product["data_type"], products_created)
-        except StandardError:
+        except (RuntimeError, ValueError, KeyError, OSError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise
@@ -953,7 +954,7 @@ class Frontend(roles.FrontendRole):
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            products_created[left_term_name]["data_type"], products_created)
-        except StandardError:
+        except (RuntimeError, ValueError, KeyError, OSError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise
@@ -961,7 +962,7 @@ class Frontend(roles.FrontendRole):
         return one_swath
 
     def create_cloud_land_cleared(self, product_name, swath_definition, products_created,
-                                  cloud_values_to_clear=[1, 2], lsmask_values_to_clear=[3, 4], simask_values_to_clear=[1]):
+                                  cloud_values_to_clear=(1, 2), lsmask_values_to_clear=(3, 4), simask_values_to_clear=(1,)):
         product_def = PRODUCTS[product_name]
         deps = product_def.dependencies
         if len(deps) == 4:
@@ -1007,7 +1008,7 @@ class Frontend(roles.FrontendRole):
 
             one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                            base_product["data_type"], products_created)
-        except StandardError:
+        except (RuntimeError, ValueError, KeyError, OSError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise

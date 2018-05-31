@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -393,7 +393,10 @@ class BaseFileReader(object):
             raise KeyError("Key 'None' was not found")
 
         LOG.debug("Loading %s from %s", known_item, self.filename)
-        return self.file_handle[known_item]
+        val = self.file_handle[known_item]
+        if isinstance(val, bytes):
+            return val.decode()
+        return val
 
     def get_fill_value(self, item, default_dtype=numpy.float32):
         """If the caller of `get_swath_data` doesn't force the output fill value then they need to know what it is now.
@@ -594,7 +597,7 @@ class BaseMultiFileReader(object):
                 for file_reader in self.file_readers:
                     single_array = file_reader.get_swath_data(item)
                     file_appender.append(single_array)
-        except StandardError:
+        except (IOError, ValueError, TypeError):
             if os.path.isfile(filename):
                 os.remove(filename)
             raise

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """Simple script to find the nearest point to a longitude and latitude
 in a data set defined by some binary files.
@@ -60,9 +60,9 @@ Plot binary files using matplotlib.
     
     # check what the user gave us on the command line
     if len(args.data_file) != 1 :
-        print "Data file required for point selection. Skipping."
+        print("Data file required for point selection. Skipping.")
     elif args.latVal is None or args.lonVal is None:
-        print "Longitude and latitude to find must be selected. Skipping."
+        print("Longitude and latitude to find must be selected. Skipping.")
     else:
         # if we got to here, we have the minimum we needed to try
         scene = SwathScene.load(args.scene_file)

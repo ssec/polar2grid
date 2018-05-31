@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -72,7 +72,7 @@ def plot_binary(arr, output_fn, dpi_to_use=None, vmin=None, vmax=None, fill_figu
         figsize = None
 
     plt.figure(figsize=figsize)
-    print("Minimum: %f | Maximum: %f" % (numpy.nanmin(arr), numpy.nanmax(arr)))
+    print("Minimum: %f | Maximum: %f" % (float(numpy.nanmin(arr)), float(numpy.nanmax(arr))))
 
     if fill_figure:
         plt.axes([0, 0, 1, 1])
@@ -98,7 +98,7 @@ def _parse_binary_info(parts):
     cols = int(parts[3])
     fill = float(parts[4])
     arr = numpy.memmap(fn, dtype=dtype, mode='r', shape=(rows, cols))
-    return (fn, numpy.ma.masked_array(arr, numpy.isnan(arr) | (arr == fill)))
+    return fn, numpy.ma.masked_array(arr, numpy.isnan(arr) | (arr == fill))
 
 
 def main():
@@ -137,7 +137,7 @@ Plot binary files using matplotlib.
         try:
             scene = BaseP2GObject.load(scene_fn)
             print("Loaded %s" % (scene_fn,))
-        except StandardError:
+        except ValueError:
             print("Couldn't load object from JSON file '%s'" % (scene_fn,))
             continue
 
@@ -158,7 +158,7 @@ Plot binary files using matplotlib.
                 arr = numpy.ma.masked_array(product.get_data_array(), product.get_data_mask())
                 plot_binary(arr, output_fn, dpi_to_use=args.dpi, vmin=args.vmin, vmax=args.vmax,
                             fill_figure=args.fill_figure, full_res=args.full_res)
-            except StandardError as e:
+            except ValueError as e:
                 print("Could not plot '%s'" % (product["product_name"],))
                 if hasattr(e, "msg"):
                     print(e, e.msg)

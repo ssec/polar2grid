@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """
 Iasi SDR front end for polar2grid, which extracts band-pass slices of brightness temperature data.
@@ -43,7 +43,7 @@ from collections import namedtuple
 import calendar, re
 from datetime import datetime
 from pprint import pformat
-from numpy import exp,log,array,arange,empty,float32,float64,int8,sin,concatenate,repeat,reshape,rollaxis
+from numpy import array,arange,empty,float32,float64,int8,concatenate,repeat,reshape,rollaxis
 
 
 LOG = logging.getLogger(__name__)
@@ -129,7 +129,7 @@ def scale_scanline(prod, spectra=None, factor_table = None):
                             array(scaling.IDefScaleSondNslast)-offset+1,
                             array(scaling.IDefScaleSondScaleFactor)
                             )
-    if spectra!=None:
+    if spectra is not None:
         for _,start,end,factor in factor_table:
             spectra[:,start:end] *= 10.**(-factor+5)  # UW scaling preferred has a 1e5 difference : nets us mW/m2 sr cm-1
     return factor_table
@@ -210,16 +210,16 @@ def _sounder_scanlines_all(prod, line_indices = None, only_geotemporal = False, 
     else:
         lines = prod._records_['mdr-1c']
     for record_name in lines:
-        GGeoSondAnglesMETOP_zen = rearrange(prod.get('%s.GGeoSondAnglesMETOP[][][0]' % (record_name)))
-        GGeoSondAnglesMETOP_az = rearrange(prod.get('%s.GGeoSondAnglesMETOP[][][1]' % (record_name)))
-        GGeoSondAnglesSUN_zen = rearrange(prod.get('%s.GGeoSondAnglesSUN[][][0]' % (record_name)))
-        GGeoSondAnglesSUN_az = rearrange(prod.get('%s.GGeoSondAnglesSUN[][][1]' % (record_name)))
-        GGeoSondLoc_lon = rearrange(prod.get('%s.GGeoSondLoc[][][0]' % (record_name)))
-        GGeoSondLoc_lat = rearrange(prod.get('%s.GGeoSondLoc[][][1]' % (record_name)))
-        scanline = None if only_geotemporal else ifov_pseudoscan(array(prod.get('%s.GS1cSpect[][][]' % (record_name)),float64))
-        GQisFlagQual = None if only_geotemporal else ifov_pseudoscan(array(prod.get('%s.GQisFlagQual[][]' % (record_name)),int8))
+        GGeoSondAnglesMETOP_zen = rearrange(prod.get('%s.GGeoSondAnglesMETOP[][][0]' % (record_name,)))
+        GGeoSondAnglesMETOP_az = rearrange(prod.get('%s.GGeoSondAnglesMETOP[][][1]' % (record_name,)))
+        GGeoSondAnglesSUN_zen = rearrange(prod.get('%s.GGeoSondAnglesSUN[][][0]' % (record_name,)))
+        GGeoSondAnglesSUN_az = rearrange(prod.get('%s.GGeoSondAnglesSUN[][][1]' % (record_name,)))
+        GGeoSondLoc_lon = rearrange(prod.get('%s.GGeoSondLoc[][][0]' % (record_name,)))
+        GGeoSondLoc_lat = rearrange(prod.get('%s.GGeoSondLoc[][][1]' % (record_name,)))
+        scanline = None if only_geotemporal else ifov_pseudoscan(array(prod.get('%s.GS1cSpect[][][]' % (record_name,)),float64))
+        GQisFlagQual = None if only_geotemporal else ifov_pseudoscan(array(prod.get('%s.GQisFlagQual[][]' % (record_name,)),int8))
         #GQisFlagQualDetailed = None if only_geotemporal else ifov_pseudoscan(array(prod.get('%s.GQisFlagQualDetailed[][]' % (record_name)),int8))
-        OnboardUTC = array(prod.get( '%s.OnboardUTC' % record_name))
+        OnboardUTC = array(prod.get( '%s.OnboardUTC' % (record_name,)))
         CMP = {}
         if not only_geotemporal:
             for name in CLOUD_MASK_PRODUCTS:
@@ -508,7 +508,7 @@ def generate_scanline_metadata(prod,fovs=False):
     (refer to iasi_cache.py)
     FUTURE: reduce to 12 points per perimeter polygon
     >>> import tools as iasi
-    >>> for D in iasi.generate_scanline_metadata( iasi.open_product('IASI*') ): print D
+    >>> for D in iasi.generate_scanline_metadata( iasi.open_product('IASI*') ): print(D)
     """
     gen = sounder_scanlines(prod, only_geotemporal=True)
     while True:
@@ -697,7 +697,8 @@ def test_metadata(afile, do_plot=True):
         quad = [ (lonmin,latmin), (lonmax,latmin), (lonmax, latmax), (lonmin,latmax), (lonmin,latmin) ]
         qx = [q[0] for q in quad]
         qy = [q[1] for q in quad]
-        plot( poly[:,0], poly[:,1], 'x-', qx,qy ); show();
+        plot( poly[:,0], poly[:,1], 'x-', qx,qy )
+        show()
     return sm
 
 def test_xsect_cloudmask(afile,detector_number,level_number,entity='GCcsRadAnalWgt'):
@@ -746,7 +747,7 @@ def cris_swath(*sdr_filenames, **kwargs):
     sdr_filenames = list(sorted(sdr_filenames))
 
     if len (sdr_filenames) == 0 :
-        LOG.warn( "No inputs")
+        LOG.warning("No inputs")
         return None
 
     sdrs = [h5py.File(filename,'r') for filename in sdr_filenames]
@@ -800,24 +801,24 @@ CHANNEL_TAB = [ ('lw_900_905', 'rad_lw', 402, 411),
               ]
 
 # from DCTobin, DHDeslover 20120614
-wnLW = np.linspace(650-0.625*2,1095+0.625*2,717);
-wnMW = np.linspace(1210-1.25*2,1750+1.25*2,437);
-wnSW = np.linspace(2155-2.50*2,2550+2.50*2,163);
+wnLW = np.linspace(650-0.625*2,1095+0.625*2,717)
+wnMW = np.linspace(1210-1.25*2,1750+1.25*2,437)
+wnSW = np.linspace(2155-2.50*2,2550+2.50*2,163)
 
 WN_TAB = {  'rad_lw' : wnLW,
             'rad_mw' : wnMW,
             'rad_sw' : wnSW
             }
 
-h = 6.62606876E-34  # Planck constant in Js
-c = 2.99792458E8   # photon speed in m/s
-k = 1.3806503E-23   # Boltzmann constant in J/K
+H = 6.62606876E-34  # Planck constant in Js
+C = 2.99792458E8   # photon speed in m/s
+K = 1.3806503E-23   # Boltzmann constant in J/K
 
-c1 = 2*h*c*c*1e11
-c2 = h*c/k*1e2
+C1 = 2 * H * C * C * 1e11
+C2 = H * C / K * 1e2
 
 def rad2bt(freq, radiance):
-    return c2 * freq / (np.log(1.0 + c1 * (freq ** 3) / radiance))
+    return C2 * freq / (np.log(1.0 + C1 * (freq ** 3) / radiance))
 
 # FUTURE: BTCHAN, BT_CHANNEL_NAMES, rad2bt, bt_slices_for_band
 # should be promoted to a common module between instrument systems.
@@ -885,7 +886,7 @@ def write_arrays_to_fbf(nditer):
         LOG.debug('writing to %s...' % fn)
         if data.dtype != np.float32:
             data = data.astype(np.float32)
-        with file(fn, 'wb') as fp:
+        with open(fn, 'wb') as fp:
             data.tofile(fp)
 
 
@@ -946,10 +947,6 @@ Example:
 
     # FUTURE: validating the format strings is advisable
 
-    # make options a globally accessible structure, e.g. OPTS.
-    global OPTS
-    OPTS = options
-
     if options.self_test:
         # FIXME - run any self-tests
         # import doctest
@@ -963,8 +960,8 @@ Example:
         parser.error( 'incorrect arguments, try -h or --help.' )
         return 9
 
-    swath =  cris_swath(*args)
-    if swath == None :
+    swath = cris_swath(*args)
+    if swath is None:
         return 1
     #cris_quicklook(options.output, swath , options.format, options.label)
 
