@@ -86,11 +86,9 @@ from netCDF4 import Dataset
 
 import numpy as np
 
-from polar2grid.core.dtype import DTYPE_UINT8
 from polar2grid.core import roles
 from polar2grid.core.containers import GriddedScene
-from ConfigParser import NoSectionError, NoOptionError
-from configparser import NoSectionError
+from configparser import NoSectionError, NoOptionError
 
 
 try:
