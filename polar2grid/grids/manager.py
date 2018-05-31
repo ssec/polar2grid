@@ -293,6 +293,12 @@ class GridManager(roles.CartographerRole):
                 LOG.debug("Loading grid configuration '%s'" % (grid_config,))
                 self.add_grid_config(grid_config)
 
+    def __contains__(self, item):
+        return item in self.grid_information
+
+    def __getitem__(self, item):
+        return self.get_grid_definition(item)
+
     def add_grid_config(self, grid_config_filename):
         """Load a grid configuration file. If a ``grid_name`` was already
         added its information is overwritten.

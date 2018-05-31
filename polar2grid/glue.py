@@ -69,7 +69,7 @@ def add_scene_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Scene Initialization')
     group_1.add_argument('reader',
                          help='Name of reader used to read provided files')
-    group_1.add_argument('-f', '--filenames', nargs='+',
+    group_1.add_argument('-f', '--filenames', nargs='+', required=True,
                          help='Input files to read')
     group_2 = parser.add_argument_group(title='Scene Load')
     group_2.add_argument('-d', '--datasets', nargs='+',
@@ -82,8 +82,12 @@ def add_resample_argument_groups(parser):
     group_1.add_argument('--method', dest='resampler',
                          default='native', choices=['native', 'nearest'],
                          help='resampling algorithm to use (default: native)')
-    group_1.add_argument('-a', '--areas', default=['MAX'], nargs="*",
+    group_1.add_argument('-g', '--grids', default=['MAX'], nargs="*",
                          help='area definition to resample to (default: MAX)')
+    group_1.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
+                         help="Specify additional grid configuration files. "
+                              "(.conf for P2G-style grids, .yaml for "
+                              "SatPy-style areas)")
     return tuple([group_1])
 
 
@@ -137,9 +141,25 @@ def main():
     scn.load(load_args['datasets'])
 
     resample_kwargs = resample_args.copy()
-    areas_to_resample = resample_kwargs.pop('areas')
+    areas_to_resample = resample_kwargs.pop('grids')
+    grid_configs = resample_kwargs.pop('grid_configs')
     if not areas_to_resample:
         areas_to_resample = [None]
+
+    p2g_grid_configs = [x for x in grid_configs if x.endswith('.conf')]
+    pyresample_area_configs = [x for x in grid_configs if not x.endswith('.conf')]
+    if p2g_grid_configs:
+        from polar2grid.grids import GridManager
+        grid_manager = GridManager(*p2g_grid_configs)
+    else:
+        grid_manager = {}
+
+    if pyresample_area_configs:
+        from pyresample.utils import parse_area_file
+        custom_areas = parse_area_file(pyresample_area_configs)
+        custom_areas = {x.area_id: x for x in custom_areas}
+    else:
+        custom_areas = {}
 
     to_save = []
     for area_name in areas_to_resample:
@@ -150,6 +170,10 @@ def main():
             area_def = scn.max_area()
         elif area_name == 'MIN':
             area_def = scn.min_area()
+        elif area_name in custom_areas:
+            area_def = custom_areas[area_name]
+        elif area_name in grid_manager:
+            area_def = grid_manager[area_name].to_satpy_area()
         else:
             area_def = get_area_def(area_name)
 
@@ -166,7 +190,7 @@ def main():
             res = new_scn.save_datasets(writer=writer_name, compute=False,
                                         **writer_args)
             if isinstance(res, (tuple, list)):
-                to_save.extend(res)
+                to_save.extend(zip(*res))
             else:
                 to_save.append(res)
 
