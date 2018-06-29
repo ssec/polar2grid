@@ -6,6 +6,7 @@ import filecmp
 import sys
 import shutil
 import yaml
+import tempfile
 
 LOG = logging.getLogger(__name__)
 
@@ -25,9 +26,8 @@ def run_test(p2g_path, test, base_dir):
             subprocess.call(p2g_path, shell=True)
             os.chdir(orig_dir)
         
-        if not os.path.isdir("./tmp"):
-            os.makedirs("./tmp")
-        os.chdir("./tmp")
+        temp_dir = tempfile.mkdtemp()
+        os.chdir(temp_dir)
         subprocess.call(p2g_path, shell=True)
         
         for dirpaths, dirs, files in os.walk(expected_dir):
@@ -40,7 +40,7 @@ def run_test(p2g_path, test, base_dir):
     finally:
         os.chdir(orig_dir)
     
-    shutil.rmtree("./tmp")    
+    shutil.rmtree(temp_dir)    
 
 
 def main():
