@@ -1,15 +1,11 @@
-#source: /data/test_data/old_polar2grid_data/input/conus_day/{GITCO,GMTCO,SVM,SVI}*.h5
-#command: polar2grid.sh viirs_sdr gtiff -f
-#output: /data/users/kkolman/integration_tests/expected_test_output/conus_day
-
 base_test_dir: /data
 tests: 
-  - source_dir: test_data/old_polar2grid_data/input/conus_day/{GITCO,GMTCO,SVM,SVI}*.h5
-    command: polar2grid.sh viirs_sdr gtiff -f
-    expected_dir: users/kkolman/integration_tests/expected_test_output/conus_day/viirssdr_to_gtiff
-#  - source_dir: test_data/old_polar2grid_data/input/conus_day/{GITCO,GMTCO,SVM,SVI}*.h5
-#    command: polar2grid.sh viirs_sdr scmi -f 
-#    expected_dir: users/kkolman/integration_tests/expected_test_output/conus_day/viirssdr_to_scmi
-#  - source_dir: test_data/old_polar2grid_data/input/conus_night/{GITCO,GMTCO,SVM,SVI}*.h5
-#    command: polar2grid.sh viirs_sdr gtiff -f 
-#    expected_dir: users/kkolman/integration_tests/expected_test_output/conus_night/viirssdr_to_gtiff
+ # - source_dir: test_data/old_polar2grid_data/input/conus_day/{GITCO,GMTCO,SVM,SVI}*.h5
+ #   command: polar2grid.sh viirs_sdr gtiff -f
+ #   expected_dir: users/kkolman/integration_tests/expected_test_output/conus_day/viirssdr_to_gtiff
+  - source_dir: test_data/old_polar2grid_data/polar2grid_test/modis/input  
+    command: polar2grid.sh modis scmi --sector-id LCC --letters --compress -g lcc_conus_1km -f
+    expected_dir: test_data/old_polar2grid_data/polar2grid_test/modis/output
+  - source_dir: test_data/old_polar2grid_data/polar2grid_test/viirs/input
+    command: polar2grid.sh crefl gtiff --true-color --false-color -f
+    expected_dir: test_data/old_polar2grid_data/polar2grid_test/viirs/output
