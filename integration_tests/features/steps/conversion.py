@@ -40,9 +40,10 @@ def step_impl(context, expected):
                 if os.path.isfile(f):
                    # assert filecmp.cmp(f, os.path.join(dirpaths, f)), "File {} does not match expected output".format(f)
                     if filecmp.cmp(f, os.path.join(dirpaths, f)):
-                        context.logger.info("{} matches expected output".format(f))
+                        #context.logger.info("{} matches expected output".format(f))
+                        pass
                 else:
-                    context.logger.warning("{} was not created".format(f))        
+                    #context.logger.warning("{} was not created".format(f))        
                     raise Exception("{} was not created".format(f))
     finally:
             os.chdir(orig_dir)
