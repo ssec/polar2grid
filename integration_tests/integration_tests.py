@@ -23,12 +23,13 @@ def run_test(p2g_path, test, base_dir):
 
     orig_dir = os.getcwd()
     try: 
-        #if not os.path.isdir(expected_dir):
-        #    os.makedirs(expected_dir) 
-        #    os.chdir(expected_dir)
-        #    subprocess.call(p2g_path, shell=True)
-        #    os.chdir(orig_dir)
-        LOG.info("Making temporary directory...")         
+        # FIXME delete later
+        if not os.path.isdir(expected_dir):
+            os.makedirs(expected_dir) 
+            os.chdir(expected_dir)
+            subprocess.call(p2g_path, shell=True)
+            os.chdir(orig_dir)
+         
         temp_dir = tempfile.mkdtemp()
         os.chdir(temp_dir)
         subprocess.call(p2g_path, shell=True)
@@ -44,7 +45,6 @@ def run_test(p2g_path, test, base_dir):
     finally:
         os.chdir(orig_dir)
     
-    LOG.info("Removing temporary directory...")
     shutil.rmtree(temp_dir)    
 
 
@@ -59,8 +59,7 @@ def main():
     
     stream = file(yfilename, "r")
     yfile = yaml.load(stream)
-    
-    LOG.info("Running tests...")
+
     for test in yfile["tests"]:
         run_test(p2g_path, test, yfile["base_test_dir"])
   
