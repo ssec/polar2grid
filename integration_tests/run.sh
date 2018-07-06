@@ -6,7 +6,7 @@
 
 export PATH=/data/users/kkolman/miniconda2/bin:$PATH
 
-conda remove -y --name p2g_test --all || echo "Did not remove environment"
+conda remove -y --name p2g_test --all
 conda create -y -c conda-forge -n p2g_test python=3 behave
 source activate p2g_test
 cd /data/users/kkolman/integration_tests/polar2grid/integration_tests
