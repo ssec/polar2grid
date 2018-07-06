@@ -8,7 +8,7 @@ conda create -y -c conda-forge -n p2g_test python=3 behave
 source activate p2g_test
 cd /data/users/kkolman/integration_tests/polar2grid/integration_tests
 behave --no-logcapture --no-color --no-capture "$WORKSPACE"/integration_tests/features
-#exit_status=$?
-#source deactivate p2g_test
-exit $?
+exit_status=$?
+source deactivate p2g_test
+exit $exit_status
 
