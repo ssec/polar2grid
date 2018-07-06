@@ -10,8 +10,8 @@ Feature: Testing data conversions
 
    # folders are located in /data/test_data/old_polar2grid_data/polar2grid_test
    Examples: MODIS
-        | folder        | command                                                               | expected             |
-        | modis/input   | modis scmi --sector-id LCC --letters --compress -g lcc_conus_1km -f   | modis/output         |
+        | folder        | command                                                                                                                                                | expected             |
+        | modis/input   | crefl gtiff --true-color --false-color --fornav-D 10 --grid-configs /data/dist/polar2grid-swbundle-2.2.1b0/grid_configs/grid_example.conf -g miami -f  | modis/output         |
 
   #  Examples: VIIRS
    #     | folder        | command          | expected       | 

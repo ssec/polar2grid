@@ -33,23 +33,11 @@ def step_impl(context, command):
 def step_impl(context, expected):
     orig_dir = os.getcwd()
     assert os.path.exists(context.temp_dir)
+    assert os.listdir(context.temp_dir)
     try:
-        os.chdir(context.temp_dir)
-        context.compare_command = os.path.join(context.folder_path + "/../p2g_compare_geotiff.sh") + " " + os.path.join(context.folder_path, + "../output") + " " + "."
-        assert subprocess.call(context.compare_command)
-       # os.chdir(context.temp_dir)
-       # for dirpaths, dirs, files in os.walk(os.path.join(path, expected)):
-       #     for f in files:
-       #         if os.path.isfile(f):
-       #            # assert filecmp.cmp(f, os.path.join(dirpaths, f)), "File {} does not match expected output".format(f)
-       #             #if filecmp.cmp(f, os.path.join(dirpaths, f)):
-       #             context.compare_script = os.path.join(path, "modis", "p2g_compare_geotiff.sh") 
-       #             if subprocess.call(context.compare_script, shell=True):
-       #                 #context.logger.info("{} matches expected output".format(f))
-       #                 pass
-       #         else:
-       #             #context.logger.warning("{} was not created".format(f))        
-       #             raise Exception("{} was not created".format(f))
+        os.chdir(os.path.join(context.folder_path, ".."))
+        context.compare_command = "./p2g_compare_geotiff.sh " + "./output "  + context.temp_dir
+        assert subprocess.call(context.compare_command, shell=True) == 0
     finally:
         os.chdir(orig_dir)
         shutil.rmtree(context.temp_dir)
