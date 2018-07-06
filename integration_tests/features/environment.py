@@ -6,10 +6,15 @@
 
 import sys
     
+def before_all(context):
+    context.numFailed = 0
+
 def after_feature(context, feature):
     if context.failed:
+        context.numFailed += 1
+
+def after_all(context):
+    if context.numFailed > 0:
         sys.exit(1)
-
-
 
 

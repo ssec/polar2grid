@@ -46,7 +46,6 @@ def step_impl(context, expected):
                     #context.logger.warning("{} was not created".format(f))        
                     raise Exception("{} was not created".format(f))
     finally:
-            os.chdir(orig_dir)
-
-    shutil.rmtree(context.temp_dir)
+        os.chdir(orig_dir)
+        shutil.rmtree(context.temp_dir)
 
