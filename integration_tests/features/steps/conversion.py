@@ -7,7 +7,8 @@ import shutil
 
 @given(u'input data from {folder}')
 def step_impl(context, folder):
-    context.folder_path = os.path.join(context.data_path, folder, "input")    
+    context.folder = os.path.join(context.data_path, folder)
+    context.folder_path = os.path.join(context.folder, "input")    
     assert os.path.exists(context.folder_path), "Input folder does not exist."
 
 @when(u'{command} runs') 
@@ -29,7 +30,7 @@ def step_impl(context, command):
 def step_impl(context):
     orig_dir = os.getcwd()
     try:
-        os.chdir(context.folder_path)
+        os.chdir(context.folder)
         context.compare_command = "p2g_compare_geotiff.sh " + "output "  + context.temp_dir
         exit_status = subprocess.call(context.compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
