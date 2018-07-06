@@ -38,7 +38,7 @@ def step_impl(context, expected):
         os.chdir(os.path.join(context.folder_path, ".."))
         context.compare_command = "./p2g_compare_geotiff.sh " + "./output "  + context.temp_dir
         exit_status = subprocess.call(context.compare_command, shell=True)
-        assert exit_status == 0
+        assert exit_status == 1
     finally:
         os.chdir(orig_dir)
         shutil.rmtree(context.temp_dir)
