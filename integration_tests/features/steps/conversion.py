@@ -1,22 +1,18 @@
 from behave import given, when, then, step
 import os
 import tempfile
-import filecmp
 import subprocess
 import shutil
-import logging
 
-path = "/data/test_data/old_polar2grid_data/polar2grid_test"
-p2g_path = "/data/dist/polar2grid-swbundle-2.2.1b0/bin"
 
 @given(u'input data from {folder}')
 def step_impl(context, folder):
-    context.folder_path = os.path.join(path, folder)    
+    context.folder_path = os.path.join(context.data_path, folder)    
     assert os.path.exists(context.folder_path), "Input folder does not exist."
 
 @when(u'{command} runs') 
 def step_impl(context, command):
-    context.command = "{} {} {}".format(os.path.join(p2g_path, "polar2grid.sh"), command, context.folder_path)
+    context.command = "{} {} {}".format(os.path.join(context.p2g_path, "polar2grid.sh"), command, context.folder_path)
 
     orig_dir = os.getcwd()
     try:
@@ -29,16 +25,14 @@ def step_impl(context, command):
     assert os.path.exists(context.temp_dir), "Temporary directory not created"
     assert os.listdir(context.temp_dir), "No files were created"
 
-@then(u'the output matches with the files in {expected}')
+@then(u'the output matches with the verified files')
 def step_impl(context, expected):
     orig_dir = os.getcwd()
-    assert os.path.exists(context.temp_dir)
-    assert os.listdir(context.temp_dir)
     try:
         os.chdir(os.path.join(context.folder_path, ".."))
         context.compare_command = "./p2g_compare_geotiff.sh " + "./output "  + context.temp_dir
         exit_status = subprocess.call(context.compare_command, shell=True)
-        assert exit_status == 1
+        assert exit_status == 0, "Files did not match with the correct output"
     finally:
         os.chdir(orig_dir)
         shutil.rmtree(context.temp_dir)

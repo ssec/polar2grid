@@ -1,13 +1,9 @@
-#import logging
-
-#def before_all(context):
-#    logging.basicConfig(filemode='w', filename="/data/users/kkolman/integration_tests/polar2grid/integration_tests/behave.log", level=logging.INFO, format='%(levelname)s: %(message)s')
-#    context.logger = logging.getLogger(__name__)
-
 import sys
     
 def before_all(context):
     context.numFailed = 0
+    context.data_path = "/data/test_data/old_polar2grid_data/polar2grid_test"
+    context.p2g_path = "/data/dist/polar2grid-swbundle-2.2.1b0/bin"    
 
 def after_feature(context, feature):
     if context.failed:
@@ -16,5 +12,4 @@ def after_feature(context, feature):
 def after_all(context):
     if context.numFailed > 0:
         sys.exit(1)
-
 
