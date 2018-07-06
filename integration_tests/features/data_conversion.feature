@@ -12,7 +12,7 @@ Feature: Testing data conversions
        | folder  | command                                                                                                                            | 
        | modis   | crefl gtiff --true-color --false-color --fornav-D 10 --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f  | 
 
- #  Examples: VIIRS
- #      | folder  | command                                                                                                              |
- #      | viirs   | crefl gtiff --true-color --false-color --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f  | 
+   Examples: VIIRS
+       | folder  | command                                                                                                              |
+       | viirs   | crefl gtiff --true-color --false-color --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f  | 
 

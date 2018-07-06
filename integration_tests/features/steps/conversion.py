@@ -29,9 +29,7 @@ def step_impl(context, command):
 @then(u'the output matches with the verified files')
 def step_impl(context):
     orig_dir = os.getcwd()
-    print(orig_dir)
     try:
-        print(context.folder)
         os.chdir(context.folder)
         context.compare_command = "./p2g_compare_geotiff.sh " + "./output "  + context.temp_dir
         exit_status = subprocess.call(context.compare_command, shell=True)
