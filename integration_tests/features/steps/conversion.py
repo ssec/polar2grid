@@ -26,7 +26,7 @@ def step_impl(context, command):
     assert os.listdir(context.temp_dir), "No files were created"
 
 @then(u'the output matches with the verified files')
-def step_impl(context, expected):
+def step_impl(context):
     orig_dir = os.getcwd()
     try:
         os.chdir(context.folder_path)
