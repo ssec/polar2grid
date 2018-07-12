@@ -38,14 +38,12 @@ def step_impl(context, command):
 @then(u'the output matches with the files in {output}')
 def step_impl(context, output):
     orig_dir = os.getcwd()
-    assert os.path.exists(context.temp_dir)
-    assert os.listdir(context.temp_dir)
     try:
         os.chdir(context.data_path)
         if "gtiff" in context.command:
-            context.compare_command = "../polar2grid_test/viirs/p2g_compare_geotiff.sh " + output + " " + context.temp_dir
+            context.compare_command = os.path.join(context.data_path, "scripts/p2g_compare_geotiff.sh") + " " + output + " " + context.temp_dir
         else: 
-            context.compare_command = "/data/users/kkolman/p2g_compare_netcdf.sh " + output + " " + context.temp_dir
+            context.compare_command = os.path.join(context.data_path, "scripts/p2g_compare_netcdf.sh") + " " + output + " " + context.temp_dir
         exit_status = subprocess.call(context.compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
