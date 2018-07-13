@@ -28,14 +28,14 @@ Feature: Testing data conversions
 #
    Examples: MODIS
        | source            | command                                                                                                                           | output             |
-       | modis/input/test1 | crefl gtiff --true-color --fornav-D 10 --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f | modis/output/test1 |
+       | modis/input/test1 | crefl gtiff --false-color --true-color --fornav-D 10 --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f | modis/output/test1 |
      # tol | modis/l1b/a1.17067.1818.1000m.hdf modis/l1b/a1.17067.1818.250m.hdf modis/l1b/a1.17067.1818.500m.hdf modis/l1b/a1.17067.1818.geo.hdf |modis awips -g 211e -f | modis/awips |
      # tol |modis/l1b/MOD021KM.A2017004.1732.005.2017023210017.hdf modis/l1b/MOD02QKM.A2017004.1732.005.2017023210017.hdf modis/l1b/MOD02HKM.A2017004.1732.005.2017023210017.hdf modis/l1b/MOD03.A2017004.1732.005.2017023210017.hdf |crefl awips --fornav-D 10 -g 211e --true-color --false-color --grid-coverage=0 -f |modis/awips1|
      # tol | modis/l1b/a1.17006.1855.1000m.hdf modis/l1b/a1.17006.1855.250m.hdf modis/l1b/a1.17006.1855.500m.hdf modis/l1b/a1.17006.1855.geo.hdf |crefl awips --true-color --false-color --fornav-D 10 -g 211e -f | modis/awips2 |
  
    Examples: VIIRS
        | source            | command                                                                                                              | output             |
-       | viirs/input/test1 | crefl gtiff --true-color --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f  | viirs/output/test1 |
+       | viirs/input/test1 | crefl gtiff --true-color --false-color --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f  | viirs/output/test1 |
      # tol | viirs_sdr_day/aoml         | crefl gtiff -g lcc_fit -f                                             | viirs_sdr_day/output_tiff       |
 
 
