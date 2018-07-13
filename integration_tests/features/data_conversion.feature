@@ -53,7 +53,6 @@ Feature: Testing data conversions
        | viirs_sdr_night/input/test1 | viirs_sdr gtiff -p adaptive_dnb dynamic_dnb -f                     | viirs_sdr_night/output/test1 | 
        | viirs_sdr_day/input/test2   | viirs_sdr gtiff -f                                                 | viirs_sdr_day/output/test2   |
 
-
 #
 #     Examples: TEST
 #        | source | command | output |
