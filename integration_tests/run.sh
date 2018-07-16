@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 export PATH=/data/users/kkolman/miniconda2/bin:$PATH
 #export POLAR2GRID_HOME=/data/dist/polar2grid-swbundle-2.2.1b0
 
