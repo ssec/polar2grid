@@ -197,6 +197,7 @@ class INIConfigReader(SimpleINIConfigReader):
 
         super(INIConfigReader, self).__init__(*config_files, **kwargs)
 
+         
         self.load_config()
         if not self.config and not self.empty_ok:
             LOG.error("No valid configuration sections found with prefix '%s'", self.section_prefix)
@@ -232,7 +233,7 @@ class INIConfigReader(SimpleINIConfigReader):
             self.config.append(config_key)
         # If 2 or more entries have the same number of wildcards they may not be sorted optimally
         # (i.e. specific first field highest)
-        self.config.sort(key=lambda x: (x[0], next(re.finditer(r'[^\^:.*].*', x[1].pattern)).start(), x[2]))
+        self.config.sort(key=lambda x: (x[0], next(re.finditer(r'[^\^:.*].*', x[2].pattern)).start(), x[3]))
 
     def get_config_section(self, **kwargs):
         if len(kwargs) != len(self.id_fields):

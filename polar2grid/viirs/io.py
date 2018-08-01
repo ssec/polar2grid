@@ -66,7 +66,10 @@ class HDF5Reader(object):
         self._h5_handle.visititems(self._visit_items)
         # Also add the global attributes
         for attr_name, attr_val in self._h5_handle.attrs.items():
-            self.file_items["." + attr_name] = attr_val[0][0]
+            try:    
+                self.file_items["." + attr_name] = attr_val[0][0]
+            except:
+                self.file_items["." + attr_name] = attr_val[0]        
 
     def _visit_items(self, name, obj):
         """Look at each variable in the HDF file and record its attributes.

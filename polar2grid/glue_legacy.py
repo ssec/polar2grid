@@ -208,7 +208,7 @@ def main(argv=sys.argv[1:]):
     # Load compositor information (we can't know the compositor choices until we've loaded the configuration)
     compositor_manager = CompositorManager(config_files=args.compositor_configs)
     # Hack: argparse doesn't let you use choices and nargs=* on a positional argument
-    parser.add_argument("compositors", choices=compositor_manager.keys() + [[]], nargs="*",
+    parser.add_argument("compositors", choices=list(compositor_manager.keys()) + [[]], nargs="*",
                         help="Specify the compositors to apply to the provided scene (additional arguments are determined after this is specified)")
 
     # load the actual components we need
@@ -278,7 +278,7 @@ def main(argv=sys.argv[1:]):
         LOG.info("Initializing reader...")
         list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
         f = fcls(search_paths=args.data_files, **args.subgroup_args["Frontend Initialization"])
-    except StandardError:
+    except (ValueError, KeyError):
         LOG.debug("Frontend exception: ", exc_info=True)
         LOG.error("%s frontend failed to load and sort data files (see log for details)", args.frontend)
         return STATUS_FRONTEND_FAIL
@@ -295,7 +295,7 @@ def main(argv=sys.argv[1:]):
         LOG.info("Initializing remapping...")
         remapper = Remapper(**args.subgroup_args["Remapping Initialization"])
         remap_kwargs = args.subgroup_args["Remapping"]
-    except StandardError:
+    except (ValueError, KeyError):
         LOG.debug("Remapping initialization exception: ", exc_info=True)
         LOG.error("Remapping initialization failed (see log for details)")
         return STATUS_REMAP_FAIL
@@ -303,7 +303,7 @@ def main(argv=sys.argv[1:]):
     try:
         LOG.info("Initializing backend...")
         backend = bcls(**args.subgroup_args["Backend Initialization"])
-    except StandardError:
+    except (ValueError, KeyError):
         LOG.debug("Writer initialization exception: ", exc_info=True)
         LOG.error("Writer initialization failed (see log for details)")
         return STATUS_BACKEND_FAIL
@@ -313,7 +313,7 @@ def main(argv=sys.argv[1:]):
         compositor_objects = {}
         for c in args.compositors:
             compositor_objects[c] = compositor_manager.get_compositor(c, **args.global_kwargs)
-    except StandardError:
+    except (ValueError, KeyError):
         LOG.debug("Compositor initialization exception: ", exc_info=True)
         LOG.error("Compositor initialization failed (see log for details)")
         return STATUS_COMP_FAIL
@@ -346,7 +346,7 @@ def main(argv=sys.argv[1:]):
                 filename = glue_name + "_swath_scene.json"
                 LOG.info("Saving intermediate swath scene as '%s'", filename)
                 scene.save(filename)
-    except StandardError:
+    except (ValueError, KeyError):
         LOG.debug("Frontend data extraction exception: ", exc_info=True)
         LOG.error("Frontend data extraction failed (see log for details)")
         return STATUS_FRONTEND_FAIL
@@ -385,7 +385,7 @@ def main(argv=sys.argv[1:]):
                 filename = glue_name + "_gridded_scene_" + grid_name + ".json"
                 LOG.debug("saving intermediate gridded scene as '%s'", filename)
                 gridded_scene.save(filename)
-        except StandardError:
+        except (ValueError, KeyError):
             LOG.debug("Remapping data exception: ", exc_info=True)
             LOG.error("Remapping data failed")
             status_to_return |= STATUS_REMAP_FAIL
@@ -403,7 +403,7 @@ def main(argv=sys.argv[1:]):
                         filename = glue_name + "_gridded_scene_" + grid_name + ".json"
                         LOG.debug("Updating saved intermediate gridded scene (%s) after compositor", filename)
                         gridded_scene.save(filename)
-                except StandardError:
+                except (KeyError, ValueError):
                     LOG.debug("Compositor Error: ", exc_info=True)
                     LOG.error("Could not properly modify scene using compositor '%s'" % (c,))
                     if args.exit_on_error:
@@ -479,7 +479,7 @@ def main(argv=sys.argv[1:]):
         try:
             LOG.info("Creating output from data mapped to grid %s", grid_name)
             backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
-        except StandardError:
+        except (ValueError, KeyError):
             LOG.debug("Writer output creation exception: ", exc_info=True)
             LOG.error("Writer output creation failed (see log for details)")
             status_to_return |= STATUS_BACKEND_FAIL
