@@ -160,6 +160,7 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
         "swath_definition": swath_def,
         "channels": channels,
     }
+
     info.update(p2g_metadata)
 
     if channels == 1:

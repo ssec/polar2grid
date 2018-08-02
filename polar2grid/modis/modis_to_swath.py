@@ -508,7 +508,7 @@ class Frontend(roles.FrontendRole):
             LOG.debug("Unrecognized file: %s", fp)
 
         # Get rid of the readers we aren't using
-        for file_type, file_reader in self.file_readers.items():
+        for file_type, file_reader in list(self.file_readers.items()):
             if not len(file_reader):
                 del self.file_readers[file_type]
             else:
