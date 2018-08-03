@@ -129,7 +129,7 @@ chmod a+x "$SB_NAME"/bin/run_modis_crefl.sh
 
 echo "Copying bash scripts to software bundle bin"
 cd "$SB_NAME"
-cp -P ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt polar2grid_scripts/bin
+cp -P ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/
 
 # Create python packages
 #echo "Creating python packages..."
