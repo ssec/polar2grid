@@ -9,6 +9,7 @@ export POLAR2GRID_HOME="$WORKSPACE/test_swbundle"
 
 cd "$WORKSPACE/integration_tests"
 
+tar -xzf p2g_test_data.tar.xz
 behave --no-logcapture --no-color --no-capture
 exit_status=$?
 echo $exit_status
