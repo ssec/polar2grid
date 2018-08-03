@@ -115,9 +115,11 @@ class AWIPS2ConfigReader(roles.SimpleINIConfigReader):
 
     def get_product_info(self, product_definition):
         info = {}
-       
-        product_definition["satellite"] = product_definition["satellite"].decode("utf-8")
-        product_definition["instrument"] = product_definition["instrument"].decode("utf-8")
+      
+        if isinstance(product_definition["satellite"], bytes):
+            product_definition["satellite"] = product_definition["satellite"].decode("utf-8")
+        if isinstance(product_definition["instrument"], bytes):
+            product_definition["instrument"] = product_definition["instrument"].decode("utf-8")
  
         sat_section = self.SAT_SECTION_PREFIX + product_definition["satellite"] + ":" + product_definition["instrument"]
 

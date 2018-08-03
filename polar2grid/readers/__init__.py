@@ -145,21 +145,28 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
     else:
         rows, cols = ds.shape[-2:]
 
-    p2g_metadata = {
-        "product_name": info["name"],
-        "satellite": info["platform"].lower(),
-        "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
-        "data_kind": info["standard_name"],
-        "begin_time": info["start_time"],
-        "end_time": info["end_time"],
-        "fill_value": np.nan,
-        "swath_columns": cols,
-        "swath_rows": rows,
-        "rows_per_scan": info.get("rows_per_scan", rows),
-        "data_type": ds.dtype,
-        "swath_definition": swath_def,
-        "channels": channels,
-    }
+    try:
+        if isinstance(info["sensor"], bytes):
+            info["sensor"] = info["sensor"].decode("utf-8")
+
+        p2g_metadata = {
+            "product_name": info["name"],
+            "satellite": info["platform"].lower(),
+            "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
+            "data_kind": info["standard_name"],
+            "begin_time": info["start_time"],
+            "end_time": info["end_time"],
+            "fill_value": np.nan,
+            "swath_columns": cols,
+            "swath_rows": rows,
+            "rows_per_scan": info.get("rows_per_scan", rows),
+            "data_type": ds.dtype,
+            "swath_definition": swath_def,
+            "channels": channels,
+        }
+    except:
+        print(info["sensor"])
+        print(list(info["sensor"])[0])
 
     info.update(p2g_metadata)
 
