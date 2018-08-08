@@ -187,10 +187,19 @@ class P2GJSONEncoder(json.JSONEncoder):
             # return super(P2GJSONEncoder, self).encode(obj)
         elif isinstance(obj, datetime):
             return obj.isoformat()
-        elif numpy.issubclass_(obj, numpy.number):
+        elif numpy.issubclass_(obj, numpy.number) or isinstance(obj, numpy.dtype):
             return dtype_to_str(obj)
+        elif hasattr(obj, 'dtype'):
+            if obj.size > 1:
+                return obj.tolist()
+            return int(obj) if numpy.issubdtype(obj, numpy.integer) else float(obj)
         else:
-            return super(P2GJSONEncoder, self).default(obj)
+            try:
+                return super(P2GJSONEncoder, self).default(obj)
+            except TypeError as e:
+                print("TypeError:", str(e), type(obj))
+                print(obj)
+                raise
 
 
 class BaseP2GObject(dict):
@@ -220,7 +229,6 @@ class BaseP2GObject(dict):
             self.validate_keys(kwargs)
         else:
             self.set_persist(False)
-
 
     def __del__(self):
         self.cleanup()
