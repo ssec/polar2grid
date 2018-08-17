@@ -44,12 +44,11 @@ def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
         os.chdir(context.data_path)
-        #FIXME use file extensions to compare instead
         if "gtiff" in context.command:
-            context.compare_command = os.path.join(context.data_path, "scripts/p2g_py3_compare_geotiff.sh") + " " + output + " " + context.temp_dir
+            context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_geotiff.sh"), output, context.temp_dir)
             #context.compare_command = os.path.join(context.data_path, "../polar2grid_test/viirs/p2g_compare_geotiff.sh") + " " + output + " " + context.temp_dir
         else: 
-            context.compare_command = os.path.join(context.data_path, "scripts/p2g_py3_compare_netcdf.sh") + " " + output + " " + context.temp_dir
+            context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_netcdf.sh"), output, context.temp_dir)
             #context.compare_command = os.path.join(context.data_path, "/data/users/kkolman/test_data/scripts/p2g_compare_netcdf.sh") + " " + output + " " + context.temp_dir
         exit_status = subprocess.call(context.compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"

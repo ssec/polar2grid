@@ -4,7 +4,7 @@
 # Creates a software bundle directory and a tarball of that directory
 
 #SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/shellb3/ShellB3-Linux-x86_64-20140212-r840-core-cspp.tar.gz"
-SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/ssec/davidh/cspp_common_py27.tar.gz"
+#SHELLB3_DEFAULT="ftp://ftp.ssec.wisc.edu/pub/ssec/davidh/cspp_common_py27.tar.gz"
 BASE_P2G_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PY_DIR="$BASE_P2G_DIR"
 BUNDLE_SCRIPTS_DIR="$BASE_P2G_DIR"/swbundle
@@ -32,10 +32,6 @@ cached_download() {
 # Command line arguments
 if [ $# -eq 1 ]; then
     SB_NAME=$1
-    SHELLB3_URL=${SHELLB3_DEFAULT}
-elif [ $# -eq 2 ]; then
-    SB_NAME=$1
-    SHELLB3_URL=$2
 else
     echo "ERROR: Invalid Arguments"
     echo "Usage: ./create_software_bundle.sh <bundle name> [ShellB3 URL]"
@@ -153,6 +149,7 @@ cd $SB_NAME/bin
 wget http://realearth.ssec.wisc.edu/upload/re_upload -O wmsupload.sh || oops "Couldn't download and create wmsupload.sh script"
 chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
 
+# FIXME do I need this / need to include this somewhere else?
 # FIXME: Hack to get libproj in to ShellB3 from the system (until it gets provided by ShellB3)
 #cd "${SHELLB3_DIR}"/lib64/
 #cp -P /usr/lib64/libproj* .
