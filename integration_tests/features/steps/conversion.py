@@ -30,7 +30,8 @@ def step_impl(context, command):
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
     try:
-        context.temp_dir = tempfile.mkdtemp(dir="/data/tmp")
+        subprocess.call("mkdir -p tmp", shell=True)
+        context.temp_dir = tempfile.mkdtemp(dir="tmp")
         os.chdir(context.temp_dir)
         subprocess.call(context.command, shell=True)        
     finally:
