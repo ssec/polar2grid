@@ -45,6 +45,7 @@ import numpy as np
 import os
 from pyresample.geometry import AreaDefinition
 from satpy.scene import Scene
+import dask.array as da
 
 from polar2grid.core import containers, roles
 
@@ -69,8 +70,8 @@ def area_to_swath_def(area, overwrite_existing=False):
         "data_type": lons.dtype,
         "fill_value": np.nan,
     }
-    if hasattr(area, "info"):
-        info.update(area.info)
+    if hasattr(area, "attrs"):
+        info.update(area.attrs)
 
     # Write lons to disk
     filename = info["longitude"]
@@ -80,9 +81,9 @@ def area_to_swath_def(area, overwrite_existing=False):
             raise RuntimeError("Binary file already exists: %s" % (filename,))
         else:
             LOG.warning("Binary file already exists, will overwrite: %s", filename)
+    LOG.info("Writing longitude data to disk cache...")
     lon_arr = np.memmap(filename, mode="w+", dtype=lons.dtype, shape=lons.shape)
-    lon_arr[:] = lons.data
-    lon_arr[lons.mask] = np.nan
+    da.store(lons.data, lon_arr)
 
     # Write lats to disk
     filename = info["latitude"]
@@ -92,9 +93,9 @@ def area_to_swath_def(area, overwrite_existing=False):
             raise RuntimeError("Binary file already exists: %s" % (filename,))
         else:
             LOG.warning("Binary file already exists, will overwrite: %s", filename)
+    LOG.info("Writing latitude data to disk cache...")
     lat_arr = np.memmap(filename, mode="w+", dtype=lats.dtype, shape=lats.shape)
-    lat_arr[:] = lats.data
-    lat_arr[lats.mask] = np.nan
+    da.store(lats.data, lat_arr)
     return containers.SwathDefinition(**info)
 
 
@@ -126,8 +127,8 @@ def area_to_grid_definition(area, overwrite_existing=False):
         )
 
 
-def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
-    info = ds.info.copy()
+def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
+    info = ds.attrs.copy()
     info.pop("area")
     if ds.ndim == 3:
         # RGB composite
@@ -144,29 +145,29 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
         rows, cols = ds.shape[0], 1
     else:
         rows, cols = ds.shape[-2:]
+    if np.issubdtype(np.dtype(ds.dtype), np.floating):
+        dtype = np.float32
+    else:
+        dtype = ds.dtype
 
-    try:
-        if isinstance(info["sensor"], bytes):
-            info["sensor"] = info["sensor"].decode("utf-8")
+    if isinstance(info["sensor"], bytes):
+        info["sensor"] = info["sensor"].decode("utf-8")
 
-        p2g_metadata = {
-            "product_name": info["name"],
-            "satellite": info["platform"].lower(),
-            "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
-            "data_kind": info["standard_name"],
-            "begin_time": info["start_time"],
-            "end_time": info["end_time"],
-            "fill_value": np.nan,
-            "swath_columns": cols,
-            "swath_rows": rows,
-            "rows_per_scan": info.get("rows_per_scan", rows),
-            "data_type": ds.dtype,
-            "swath_definition": swath_def,
-            "channels": channels,
-        }
-    except:
-        print(info["sensor"])
-        print(list(info["sensor"])[0])
+    p2g_metadata = {
+        "product_name": info["name"],
+        "satellite": info["platform_name"].lower(),
+        "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
+        "data_kind": info["standard_name"],
+        "begin_time": info["start_time"],
+        "end_time": info["end_time"],
+        "fill_value": np.nan,
+        "swath_columns": cols,
+        "swath_rows": rows,
+        "rows_per_scan": info.get("rows_per_scan", rows),
+        "data_type": dtype,
+        "swath_definition": swath_def,
+        "channels": channels,
+    }
 
     info.update(p2g_metadata)
 
@@ -179,9 +180,10 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
                 raise RuntimeError("Binary file already exists: %s" % (filename,))
             else:
                 LOG.warning("Binary file already exists, will overwrite: %s", filename)
-        p2g_arr = np.memmap(filename, mode="w+", dtype=ds.dtype, shape=ds.shape)
-        p2g_arr[:] = ds.data
-        p2g_arr[ds.mask] = np.nan
+        LOG.info("Writing band data to disk cache...")
+        p2g_arr = np.memmap(filename, mode="w+", dtype=dtype, shape=ds.shape)
+        ds = ds.where(ds.notnull(), np.nan)
+        da.store(ds.data.astype(dtype), p2g_arr)
         yield containers.SwathProduct(**info)
     else:
         for chn_idx in range(channels):
@@ -195,15 +197,14 @@ def dataset_to_swath_product(ds, swath_def, overwrite_existing=False):
                     raise RuntimeError("Binary file already exists: %s" % (filename,))
                 else:
                     LOG.warning("Binary file already exists, will overwrite: %s", filename)
-
-            p2g_arr = np.memmap(filename, mode="w+", dtype=ds.dtype, shape=ds.shape[-2:])
-            p2g_arr[:] = ds.data[chn_idx]
-            p2g_arr[ds.mask[chn_idx]] = np.nan
+            LOG.info("Writing band data to disk cache...")
+            p2g_arr = np.memmap(filename, mode="w+", dtype=dtype, shape=ds.shape[-2:])
+            da.store(ds.data[chn_idx].astype(dtype), p2g_arr)
             yield containers.SwathProduct(**tmp_info)
 
 
-def dataset_to_gridded_product(ds, grid_def, overwrite_existing=False):
-    info = ds.info.copy()
+def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
+    info = ds.attrs.copy()
     info.pop("area", None)
     if ds.ndim == 3:
         # RGB composite
@@ -216,14 +217,14 @@ def dataset_to_gridded_product(ds, grid_def, overwrite_existing=False):
     else:
         channels = 1
 
-    if ds.ndim == 1:
-        rows, cols = ds.shape[-2], 1
+    if np.issubdtype(np.dtype(ds.dtype), np.floating):
+        dtype = np.float32
     else:
-        rows, cols = ds.shape[-2:]
+        dtype = ds.dtype
 
     p2g_metadata = {
         "product_name": info["name"],
-        "satellite": info["platform"].lower(),
+        "satellite": info["platform_name"].lower(),
         "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
         "data_kind": info["standard_name"],
         "begin_time": info["start_time"],
@@ -232,7 +233,7 @@ def dataset_to_gridded_product(ds, grid_def, overwrite_existing=False):
         # "swath_columns": cols,
         # "swath_rows": rows,
         "rows_per_scan": info["rows_per_scan"],
-        "data_type": ds.dtype,
+        "data_type": dtype,
         "channels": channels,
         "grid_definition": grid_def,
     }
@@ -246,8 +247,8 @@ def dataset_to_gridded_product(ds, grid_def, overwrite_existing=False):
             raise RuntimeError("Binary file already exists: %s" % (filename,))
         else:
             LOG.warning("Binary file already exists, will overwrite: %s", filename)
-    p2g_arr = np.memmap(filename, mode="w+", dtype=ds.dtype, shape=ds.shape)
-    p2g_arr[:] = ds.filled(np.nan).astype(np.float32)
+    p2g_arr = np.memmap(filename, mode="w+", dtype=dtype, shape=ds.shape)
+    da.store(ds.data.astype(dtype), p2g_arr)
     return containers.GriddedProduct(**info)
 
 
@@ -256,20 +257,19 @@ def convert_satpy_to_p2g_swath(frontend, scene):
     overwrite_existing = frontend.overwrite_existing
     areas = {}
     for ds in scene:
-        a = ds.info['area']
+        a = ds.attrs['area']
         area_name = getattr(a, 'name', None)
         if area_name is None:
             # generate an identifying name
-            # s = '_'.join(map(str, ds.info['area'].shape))
-            a.name = area_name = "{}_{}".format(a.lons.info['name'], a.lats.info['name'])
+            a.name = area_name = "{}_{}".format(a.lons.attrs['name'], a.lats.attrs['name'])
         if area_name in areas:
             swath_def = areas[area_name]
         else:
-            areas[area_name] = swath_def = area_to_swath_def(ds.info["area"], overwrite_existing=overwrite_existing)
+            areas[area_name] = swath_def = area_to_swath_def(ds.attrs["area"], overwrite_existing=overwrite_existing)
             def_rps = ds.shape[0] if ds.ndim <= 2 else ds.shape[-2]
-            swath_def.setdefault("rows_per_scan", ds.info.get("rows_per_scan", def_rps))
+            swath_def.setdefault("rows_per_scan", ds.attrs.get("rows_per_scan", def_rps))
 
-        for swath_product in dataset_to_swath_product(ds, swath_def, overwrite_existing=overwrite_existing):
+        for swath_product in dataarray_to_swath_product(ds, swath_def, overwrite_existing=overwrite_existing):
             p2g_scene[swath_product["product_name"]] = swath_product
 
     return p2g_scene
@@ -280,14 +280,12 @@ def convert_satpy_to_p2g_gridded(frontend, scene):
     overwrite_existing = frontend.overwrite_existing
     areas = {}
     for ds in scene:
-        if ds.info["area"].name in areas:
-            grid_def = areas[ds.info["area"].name]
+        if ds.attrs["area"].name in areas:
+            grid_def = areas[ds.attrs["area"].name]
         else:
-            areas[ds.info["area"].name] = grid_def = area_to_grid_definition(ds.info["area"],
+            areas[ds.attrs["area"].name] = grid_def = area_to_grid_definition(ds.attrs["area"],
                                                                              overwrite_existing=overwrite_existing)
-        # import ipdb; ipdb.set_trace()
-
-        gridded_product = dataset_to_gridded_product(ds, grid_def, overwrite_existing=overwrite_existing)
+        gridded_product = dataarray_to_gridded_product(ds, grid_def, overwrite_existing=overwrite_existing)
         p2g_scene[gridded_product["name"]] = gridded_product
 
     return p2g_scene

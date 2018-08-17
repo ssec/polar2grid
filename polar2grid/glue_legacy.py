@@ -45,9 +45,10 @@ import logging
 import numpy as np
 import pkg_resources
 from polar2grid.readers import ReaderWrapper, convert_satpy_to_p2g_swath, convert_satpy_to_p2g_gridded
-from polar2grid.readers import dataset_to_gridded_product
+from polar2grid.readers import dataarray_to_gridded_product
 from polar2grid.remap import Remapper, add_remap_argument_groups, SATPY_RESAMPLERS
-from satpy import Scene, DatasetID, Dataset
+from satpy import Scene, DatasetID
+from xarray import DataArray
 
 ### Return Status Values ###
 STATUS_SUCCESS = 0
@@ -375,12 +376,10 @@ def main(argv=sys.argv[1:]):
     LOG.debug("Grids that will be mapped to: %r", grids)
 
     # Remap
-    gridded_scenes = {}
     for grid_name in grids:
         LOG.info("Remapping to grid %s", grid_name)
         try:
             gridded_scene = remapper.remap_scene(scene, grid_name, **remap_kwargs)
-            gridded_scenes[grid_name] = gridded_scene
             if args.keep_intermediate:
                 filename = glue_name + "_gridded_scene_" + grid_name + ".json"
                 LOG.debug("saving intermediate gridded scene as '%s'", filename)
@@ -431,7 +430,9 @@ def main(argv=sys.argv[1:]):
                 g = gridded_scene.pop(v[1])
                 b = gridded_scene.pop(v[2])
                 new_info = r.copy()
+                print("Old: ", new_info['grid_data'])
                 new_info["grid_data"] = new_info["grid_data"].replace(v[0], rgb_name)
+                print("New: ", new_info['grid_data'])
                 new_info["product_name"] = rgb_name
                 data = np.memmap(new_info["grid_data"], dtype=new_info["data_type"],
                                  mode="w+", shape=(3, new_info["grid_definition"]["height"], new_info["grid_definition"]["width"]))
@@ -439,36 +440,40 @@ def main(argv=sys.argv[1:]):
                 data[1] = g.get_data_array()[:]
                 data[2] = b.get_data_array()[:]
                 gridded_scene[rgb_name] = new_info
+                del data, new_info
 
             # Create composites that satpy couldn't complete until after remapping
             composite_names = [x for x in f.wishlist if not isinstance(x, DatasetID)]
+            print("Composite Names: ", composite_names)
             if composite_names:
                 tmp_scene = Scene()
                 for k, v in gridded_scene.items():
                     if not isinstance(v["sensor"], set):
                         v["sensor"] = set([v["sensor"]])  # turn sensor back in to a set to match satpy usage
-                    tmp_scene[v["id"]] = Dataset(v.get_data_array(), **v)
-                    tmp_scene[v["id"]].info["area"] = this_grid_definition.to_satpy_area()
+                    tmp_scene[v["id"]] = DataArray(v.get_data_array(), attrs=v)
+                    tmp_scene[v["id"]].attrs["area"] = this_grid_definition.to_satpy_area()
                     # tmp_scene[v["id"]].info = {}
-                    if v["sensor"] not in tmp_scene.info["sensor"]:
-                        tmp_scene.info["sensor"].extend(v["sensor"])
+                    if v["sensor"] not in tmp_scene.attrs["sensor"]:
+                        tmp_scene.attrs["sensor"].extend(v["sensor"])
                 # Overwrite the wishlist that will include the above assigned datasets
                 tmp_scene.wishlist = f.wishlist
                 for cname in composite_names:
-                    tmp_scene.compositors[cname] = tmp_scene.cpl.load_compositor(cname, tmp_scene.info["sensor"])
+                    tmp_scene.compositors[cname] = tmp_scene.cpl.load_compositor(cname, tmp_scene.attrs["sensor"])
                 tmp_scene.compute()
                 tmp_scene.unload()
                 # Add any new Datasets to our P2G Scene if SatPy created them
                 for ds in tmp_scene:
-                    if ds.info["id"].name not in gridded_scene:
-                        LOG.debug("Adding Dataset from SatPy Commpositing: %s", ds.info["id"])
-                        gridded_scene[ds.info["id"].name] = dataset_to_gridded_product(ds)
-                        gridded_scene[ds.info["id"].name]["grid_definition"] = this_grid_definition
+                    ds_id = DatasetID.from_dict(ds.attrs)
+                    if ds_id.name not in gridded_scene:
+                        LOG.debug("Adding Dataset from SatPy Commpositing: %s", ds_id)
+                        gridded_scene[ds_id.name] = dataarray_to_gridded_product(ds)
+                        gridded_scene[ds_id.name]["grid_definition"] = this_grid_definition
                 # Remove any Products from P2G Scene that SatPy decided it didn't need anymore
                 for k, v in list(gridded_scene.items()):
                     if v["id"].name not in tmp_scene:
                         LOG.debug("Removing Dataset that is no longer used: %s", k)
                         del gridded_scene[k]
+                del tmp_scene, v
 
         if isinstance(gridded_scene, Scene):
             LOG.debug("Converting satpy Scene to P2G Gridded Scene")
@@ -488,8 +493,11 @@ def main(argv=sys.argv[1:]):
             continue
 
         LOG.info("Processing data for grid %s complete", grid_name)
-
+        # Force deletion and eventual garbage collection of the scene objects
+        del gridded_scene
+    del scene
     return status_to_return
+
 
 if __name__ == "__main__":
     sys.exit(main())

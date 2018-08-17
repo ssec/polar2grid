@@ -33,6 +33,7 @@
 import os
 import sys
 import logging
+from glob import glob
 import dask
 import dask.array as da
 
@@ -82,8 +83,12 @@ def add_resample_argument_groups(parser):
     group_1.add_argument('--method', dest='resampler',
                          default='native', choices=['native', 'nearest'],
                          help='resampling algorithm to use (default: native)')
+    group_1.add_argument('--cache-dir',
+                         help='Directory to store resampling intermediate '
+                              'results between executions')
     group_1.add_argument('-g', '--grids', default=['MAX'], nargs="*",
-                         help='area definition to resample to (default: MAX)')
+                         help='Area definition to resample to. Empty means '
+                              'no resampling (default: MAX)')
     group_1.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
                          help="Specify additional grid configuration files. "
                               "(.conf for P2G-style grids, .yaml for "
@@ -137,6 +142,14 @@ def main():
         from multiprocessing.pool import ThreadPool
         dask.set_options(pool=ThreadPool(args.num_workers))
 
+    all_filenames = []
+    for fn in scene_args['filenames']:
+        if os.path.isdir(fn):
+            all_filenames.extend(glob(os.path.join(fn, '*')))
+        else:
+            all_filenames.append(fn)
+    scene_args['filenames'] = all_filenames
+
     scn = Scene(**scene_args)
     scn.load(load_args['datasets'])
 
@@ -145,6 +158,10 @@ def main():
     grid_configs = resample_kwargs.pop('grid_configs')
     if not areas_to_resample:
         areas_to_resample = [None]
+    has_custom_grid = any(g not in ['MIN', 'MAX', None] for g in areas_to_resample)
+    if has_custom_grid and resample_kwargs['resampler'] == 'native':
+        raise ValueError("Must specify resampling method (--method) when "
+                         "a target grid (-g) is specified.")
 
     p2g_grid_configs = [x for x in grid_configs if x.endswith('.conf')]
     pyresample_area_configs = [x for x in grid_configs if not x.endswith('.conf')]

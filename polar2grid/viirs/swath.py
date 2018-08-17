@@ -1102,21 +1102,25 @@ class Frontend(roles.FrontendRole):
                 output_data = dnb_product.copy_array(filename=filename, read_only=False)
                 # use SatPy to perform the calculations
                 from satpy.composites.viirs import NCCZinke
-                dnb_data.info = {
+                import xarray as xr
+                import dask.array as da
+                dnb_data = xr.DataArray(da.from_array(dnb_data), attrs={
                     # 'units': "W m-2 sr-1",
                     'units': "W cm-2 sr-1",
                     'calibration': 'radiance',
                     'wavelength': (0.500, 0.700, 0.900),
-                }
+                })
+                sza_data = xr.DataArray(da.from_array(sza_data))
+                lza_data = xr.DataArray(da.from_array(sza_data))
+                sza_data = xr.DataArray(da.from_array(sza_data))
+                moon_illum_fraction = xr.DataArray(da.from_array(moon_illum_fraction))
                 compositor = NCCZinke(product_name,
                                       prequisites=[dnb_product_name,
                                                    sza_product_name,
                                                    lza_product_name,
                                                    'moon_illumination_fraction'])
                 hncc_ds = compositor([dnb_data, sza_data, lza_data, moon_illum_fraction])
-                if hasattr(hncc_ds, 'mask'):
-                    hncc_ds = hncc_ds.filled(numpy.nan)
-                output_data[:] = hncc_ds
+                output_data[:] = hncc_ds.data.compute()
                 one_swath = self.create_secondary_swath_object(product_name, swath_definition, filename,
                                                                dnb_product["data_type"], products_created)
             except (RuntimeError, ValueError, KeyError, OSError):

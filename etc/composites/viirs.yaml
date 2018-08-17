@@ -32,7 +32,7 @@ composites:
     standard_name: true_color
 
   true_color:
-    compositor: !!python/name:satpy.composites.viirs.RatioSharpenedRGB
+    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
     prerequisites:
     - name: m05
       modifiers: [sunz_corrected, rayleigh_corrected]
@@ -48,7 +48,7 @@ composites:
 
   # copy of natural_color
   false_color:
-    compositor: !!python/name:satpy.composites.viirs.RatioSharpenedRGB
+    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
     prerequisites:
     - name: m11
       modifiers: [sunz_corrected, rayleigh_corrected]
@@ -63,7 +63,7 @@ composites:
     high_resolution_band: blue
 
   natural_color:
-    compositor: !!python/name:satpy.composites.viirs.RatioSharpenedRGB
+    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
     prerequisites:
     - name: m11
       modifiers: [sunz_corrected, rayleigh_corrected]
@@ -78,7 +78,7 @@ composites:
     high_resolution_band: blue
 
   true_color_raw:
-    compositor: !!python/name:satpy.composites.RGBCompositor
+    compositor: !!python/name:satpy.composites.GenericCompositor
     prerequisites:
     - name: m05
       modifiers: [sunz_corrected]
@@ -89,7 +89,7 @@ composites:
     standard_name: true_color
 
   night_overview:
-    compositor: !!python/name:satpy.composites.RGBCompositor
+    compositor: !!python/name:satpy.composites.GenericCompositor
     prerequisites:
     - DNB
     - DNB
@@ -97,7 +97,7 @@ composites:
     standard_name: overview
 
   night_microphysics:
-    compositor: !!python/name:satpy.composites.RGBCompositor
+    compositor: !!python/name:satpy.composites.GenericCompositor
     prerequisites:
     - DNB
     - m12
