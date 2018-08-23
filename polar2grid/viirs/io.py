@@ -124,6 +124,10 @@ class VIIRSSDRReader(BaseFileReader):
         super(VIIRSSDRReader, self).__init__(file_handle, file_type_info)
 
         self.satellite = self[guidebook.K_SATELLITE].lower()
+        if self.satellite == 'j01':
+            self.satellite = 'noaa20'
+        elif self.satellite == 'j02':
+            self.satellite = 'noaa21'
         self.instrument = "viirs"
 
         # begin time
