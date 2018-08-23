@@ -8,7 +8,7 @@ Feature: Testing data conversions
         When <command> runs
         Then the output matches with the files in <output>
 
-   # test data located in /data/users/kkolman/test_data/
+   # test data located in /data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data/
    Examples: ACSPO
        | source            | command                            | output             |
        | acspo/input/test1 | acspo gtiff -vv --grid-coverage=0.0 -f | acspo/output/test1 |
@@ -25,9 +25,9 @@ Feature: Testing data conversions
        | avhrr/input/test1 | avhrr gtiff -vv -f  | avhrr/output/test1 |                                       
 
 
-   Examples: MIRS
-       | source           | command                                | output            |
-       | mirs/input/test1 | mirs awips -vv -p tpw --grid-coverage=0 -f | mirs/output/test1 |
+#   Examples: MIRS
+#       | source           | command                                | output            |
+#       | mirs/input/test1 | mirs awips -vv -p tpw --grid-coverage=0 -f | mirs/output/test1 |
 
 
   Examples: MODIS
@@ -47,7 +47,7 @@ Feature: Testing data conversions
     Examples: VIIRS_L1B
        | source                      | command | output |
       # tol |viirs_l1b_day/l1b  |viirs_l1b awips -g 211e 211w -p adaptive_dnb dynamic_dnb --night-fraction=0.4 -f |viirs_l1b_day/awips   |
-       | viirs_l1b_night/input/test1 | viirs_l1b gtiff -vv --grid-configs /data/users/kkolman/test_data/viirs_l1b_night/output/test1/my_grid.conf -g polar_europe -p adaptive_dnb dynamic_dnb histogram_dnb hncc_dnb -f  | viirs_l1b_night/output/test1  |    
+       | viirs_l1b_night/input/test1 | viirs_l1b gtiff -vv --grid-configs /data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data/viirs_l1b_night/input/test1/my_grid.conf -g polar_europe -p adaptive_dnb dynamic_dnb histogram_dnb hncc_dnb -f  | viirs_l1b_night/output/test1  |    
 
 
     Examples: VIIRS_SDR

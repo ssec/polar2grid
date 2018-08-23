@@ -1102,18 +1102,19 @@ class Frontend(roles.FrontendRole):
                 output_data = dnb_product.copy_array(filename=filename, read_only=False)
                 # use SatPy to perform the calculations
                 from satpy.composites.viirs import NCCZinke
+                from satpy import CHUNK_SIZE
                 import xarray as xr
                 import dask.array as da
-                dnb_data = xr.DataArray(da.from_array(dnb_data), attrs={
+                dnb_data = xr.DataArray(da.from_array(dnb_data, chunks=CHUNK_SIZE), attrs={
                     # 'units': "W m-2 sr-1",
                     'units': "W cm-2 sr-1",
                     'calibration': 'radiance',
                     'wavelength': (0.500, 0.700, 0.900),
                 })
-                sza_data = xr.DataArray(da.from_array(sza_data))
-                lza_data = xr.DataArray(da.from_array(sza_data))
-                sza_data = xr.DataArray(da.from_array(sza_data))
-                moon_illum_fraction = xr.DataArray(da.from_array(moon_illum_fraction))
+                sza_data = xr.DataArray(da.from_array(sza_data, chunks=CHUNK_SIZE))
+                lza_data = xr.DataArray(da.from_array(sza_data, chunks=CHUNK_SIZE))
+                sza_data = xr.DataArray(da.from_array(sza_data, chunks=CHUNK_SIZE))
+                moon_illum_fraction = xr.DataArray(da.from_array(moon_illum_fraction, chunks=CHUNK_SIZE))
                 compositor = NCCZinke(product_name,
                                       prequisites=[dnb_product_name,
                                                    sza_product_name,
