@@ -97,14 +97,48 @@ def add_resample_argument_groups(parser):
 
 
 def add_geotiff_argument_groups(parser):
-    group_1 = parser.add_argument_group(title='Writer Initialization')
+    group_1 = parser.add_argument_group(title='Geotiff Writer')
     group_1.add_argument('--file-pattern',
                          help="custom file pattern to save dataset to")
-    group_2 = parser.add_argument_group(title='Writer Save')
-    return group_1, group_2
+    # Saving specific keyword arguments
+    # group_2 = parser.add_argument_group(title='Writer Save')
+    return group_1, None
 
 
-def main():
+def add_scmi_argument_groups(parser):
+    DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{platform_name}_{sensor}_{name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc'
+    group_1 = parser.add_argument_group(title='SCMI Writer')
+    # group_1.add_argument('--file-pattern', default=DEFAULT_OUTPUT_PATTERN,
+    #                      help="custom file pattern to save dataset to")
+    group_1.add_argument("--compress", action="store_true",
+                         help="zlib compress each netcdf file")
+    group_1.add_argument("--fix-awips", action="store_true",
+                         help="modify NetCDF output to work with the old/broken AWIPS NetCDF library")
+    # Saving specific keyword arguments
+    # group_2 = parser.add_argument_group(title='Writer Save')
+    group_1.add_argument("--tiles", dest="tile_count", nargs=2, type=int, default=[1, 1],
+                         help="Number of tiles to produce in Y (rows) and X (cols) direction respectively")
+    group_1.add_argument("--tile-size", dest="tile_size", nargs=2, type=int, default=None,
+                         help="Specify how many pixels are in each tile (overrides '--tiles')")
+    group_1.add_argument("--letters", dest="lettered_grid", action='store_true',
+                         help="Create tiles from a static letter-based grid based on the product projection")
+    group_1.add_argument("--letter-subtiles", nargs=2, type=int, default=(2, 2),
+                         help="Specify number of subtiles in each lettered tile: \'row col\'")
+    group_1.add_argument("--source-name", default='SSEC',
+                         help="specify processing source name used in attributes and filename (default 'SSEC')")
+    group_1.add_argument("--sector-id", required=True,
+                         help="specify name for sector/region used in attributes and filename (example 'LCC')")
+    return group_1, None
+
+
+writers = {
+    'geotiff': add_geotiff_argument_groups,
+    'scmi': add_scmi_argument_groups,
+}
+
+
+def main(argv=sys.argv[1:]):
+    global LOG
     from satpy import Scene
     from satpy.resample import get_area_def
     from dask.diagnostics import ProgressBar
@@ -118,25 +152,40 @@ def main():
                         help="show processing progress bar (not recommended for logged output)")
     parser.add_argument('--num-workers', type=int,
                         help="specify number of worker threads to use (default: 1 per logical core)")
-    parser.add_argument('-w', '--writers', nargs='+', choices=['geotiff'], default=['geotiff'],
+    parser.add_argument('-w', '--writers', nargs='+', choices=list(writers.keys()), default=['geotiff'],
                         help='writers to save datasets with')
     subgroups = add_scene_argument_groups(parser)
     subgroups += add_resample_argument_groups(parser)
-    subgroups += add_geotiff_argument_groups(parser)
-    args = parser.parse_args()
 
-    scene_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[0]._group_actions}
-    load_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[1]._group_actions}
-    resample_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[2]._group_actions}
-    writer_init_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[3]._group_actions}
-    writer_call_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[4]._group_actions}
+    argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
+    args, remaining_args = parser.parse_known_args(argv_without_help)
+    glue_name = args.reader + "2" + "@".join(args.writers)
+    LOG = logging.getLogger(glue_name)
+
+    for writer in args.writers:
+        subgroups += writers[writer](parser)
+    args = parser.parse_args(argv)
+
+    def _args_to_dict(group_actions):
+        return {ga.dest: getattr(args, ga.dest) for ga in group_actions}
+    scene_args = _args_to_dict(subgroups[0]._group_actions)
+    load_args = _args_to_dict(subgroups[1]._group_actions)
+    resample_args = _args_to_dict(subgroups[2]._group_actions)
+    writer_args = {}
+    for idx, writer in enumerate(args.writers):
+        sgrp1, sgrp2 = subgroups[3 + idx * 2: 5 + idx * 2]
+        wargs = _args_to_dict(sgrp1._group_actions)
+        if sgrp2 is not None:
+            wargs.update(_args_to_dict(sgrp2._group_actions))
+        writer_args[writer] = wargs
+
+    if not args.filenames:
+        # FUTURE: When the -d flag is removed this won't be needed because -f will be required
+        parser.print_usage()
+        parser.exit(1, "ERROR: No data files provided (-f flag)\n")
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)], filename=args.log_fn)
-
-    writers = args.writers
-    if len(writers) != 1:
-        raise ValueError("Multiple writers is not currently supported.")
 
     if args.num_workers:
         from multiprocessing.pool import ThreadPool
@@ -200,12 +249,10 @@ def main():
             # the user didn't want to resample to any areas
             new_scn = scn
 
-        for writer_name in writers:
-            writer_args = {}
-            writer_args.update(writer_init_args)
-            writer_args.update(writer_call_args)
+        for writer_name in args.writers:
+            wargs = writer_args[writer_name]
             res = new_scn.save_datasets(writer=writer_name, compute=False,
-                                        **writer_args)
+                                        **wargs)
             if isinstance(res, (tuple, list)):
                 to_save.extend(zip(*res))
             else:
