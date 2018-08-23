@@ -1,0 +1,45 @@
+enhancements:
+  brightness_temperature_default:
+    standard_name: toa_brightness_temperature
+    operations:
+    - name: btemp_threshold
+      method: !!python/name:satpy.enhancements.btemp_threshold
+      kwargs:
+        threshold: 242.0
+        min_in: 163.0
+        max_in: 330.0
+  brightness_temperature_default_celsius:
+    standard_name: toa_brightness_temperature
+    units: celsius
+    operations:
+    - name: btemp_threshold
+      method: !!python/name:satpy.enhancements.btemp_threshold
+      kwargs:
+        threshold: -31.15
+        min_in: -110.15
+        max_in: 56.85
+  reflectance:
+    standard_name: toa_bidirectional_reflectance
+    operations:
+    - name: stretch
+    - name: sqrt
+      method: !!python/name:satpy.enhancements.sqrt
+      kwargs: {min_in: 0.0, max_in: 100.}
+
+
+#  true_color_crefl:
+#    sensor: abi
+#    standard_name: true_color
+#    operations:
+#    - name: crefl_scaling
+#      method: !!python/name:satpy.enhancements.crefl_scaling
+#      kwargs:
+##       Polar2Grid's scaling: "Preferred".
+#       idx: [0., 25., 55., 100., 255.]
+#       sc: [0., 90., 140., 175., 255.]
+##       Ralph Kuehn's new scaling: Looks darker.
+##       idx: [0., 30., 60., 120., 190., 255.]
+##       sc: [0., 100., 128., 188., 223., 255.]
+##       Ralph Kuehn's old scaling: Looks brighter.
+##       idx: [0., 30., 60., 120., 190., 255.]
+##       sc: [0, 110, 160, 210, 240, 255]
