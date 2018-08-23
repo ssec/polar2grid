@@ -373,7 +373,7 @@ class LetteredTileGenerator(NumberedTileGenerator):
     def _tile_identifier(self, ty, tx):
         st = self.num_subtiles
         ttc = self.total_tile_count
-        alpha_num = int((ty / st[0]) * (ttc[1] / st[1]) + (tx / st[1]))
+        alpha_num = int((ty // st[0]) * (ttc[1] // st[1]) + (tx // st[1]))
         alpha = string.ascii_uppercase[alpha_num]
         tile_num = int((ty % st[0]) * st[1] + (tx % st[1])) + 1
         return "T{}{:02d}".format(alpha, tile_num)
