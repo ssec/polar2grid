@@ -162,7 +162,7 @@ cp -r $BASE_P2G_DIR/etc $SB_NAME/ || oops "Couldn't copy configuration 'etc' dir
 # Temporary fix for including pytroll packages
 hacky_install() {
     pkg_url=$1
-    ${SHELLB3_DIR}/bin/python -m pip install --no-deps --global-option=build_ext --global-option="-L${SHELLB3_DIR}/lib" --global-option="-R\$ORIGIN/../../../.." $pkg_url
+    ${SHELLB3_DIR}/bin/python -m pip install --no-deps --global-option=build_ext --global-option="-L${SHELLB3_DIR}/lib" --global-option="-R\$ORIGIN/../../../.." --global-option="-I${SHELLB3_DIR}/include/freetype2" $pkg_url
 }
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/configobj-5.0.6.tar.gz
 ${SHELLB3_DIR}/bin/python -m easy_install http://larch.ssec.wisc.edu/eggs/repos/polar2grid/trollsift-0.1.1.tar.gz
