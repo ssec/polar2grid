@@ -6,3 +6,4 @@ include polar2grid/awips/awips_grids/grids.conf
 include polar2grid/awips/awips_grids/grids.conf
 include polar2grid/awips/*.ini
 include polar2grid/ninjo/*.ini
+recursive-include polar2grid/fonts *

@@ -47,6 +47,7 @@ from pyproj import Proj
 # XXX: For some reason 'gdal' needs to be imported *after* PIL otherwise we get a segfault
 import gdal
 import osr
+import numpy as np
 
 
 try:
@@ -62,6 +63,37 @@ except ImportError:
 
 LOG = logging.getLogger(__name__)
 PYCOAST_DIR = os.environ.get("GSHHS_DATA_ROOT")
+
+
+def get_colormap(band, band_count):
+    from trollimage.colormap import Colormap
+    ct = band.GetRasterColorTable()
+    data = band.ReadAsArray()
+    max_val = np.iinfo(data.dtype).max
+    # if we have an alpha band then include the entire colormap
+    # otherwise assume it is using 0 as a fill value
+    start_idx = 1 if band_count == 1 else 0
+    if ct is None:
+        # NOTE: the comma is needed to make this a tuple
+        color_iter = (
+            (idx / float(max_val), (int(idx / float(max_val)),) * 3 + (1.0,)) for idx in range(max_val))
+    else:
+        color_iter = ((idx / float(max_val), ct.GetColorEntry(idx))
+                      for idx in range(start_idx, ct.GetCount()))
+        color_iter = ((idx, tuple(x / float(max_val) for x in color)) for idx, color in color_iter)
+    cmap = Colormap(*color_iter)
+    return cmap
+
+
+def load_font(font_name, size):
+    try:
+        font = ImageFont.truetype(font_name, size)
+    except IOError:
+        font_path = get_resource_filename('polar2grid.fonts', font_name)
+        if not os.path.exists(font_path):
+            raise ValueError("Font path does not exist: {}".format(font_path))
+        font = ImageFont.truetype(font_path, size)
+    return font
 
 
 def get_parser():
@@ -124,6 +156,38 @@ def get_parser():
     group.add_argument("--borders-outline", default=['white'], nargs="*",
                        help="Color of border lines (color name or 3 RGB integers)")
 
+    group = parser.add_argument_group("colorbar")
+    group.add_argument("--add-colorbar", action="store_true",
+                       help="Add colorbar on top of image")
+    group.add_argument("--colorbar-width", type=int,
+                       help="Number of pixels wide")
+    group.add_argument("--colorbar-height", type=int,
+                       help="Number of pixels high")
+    group.add_argument("--colorbar-extend", action="store_true",
+                       help="Extend colorbar to full width/height of the image")
+    group.add_argument("--colorbar-tick-marks", type=float, default=5.0,
+                       help="Tick interval in data units")
+    group.add_argument("--colorbar-text-size", default=32, type=int,
+                       help="Tick label font size")
+    group.add_argument("--colorbar-text-color", nargs="*", default=['black'],
+                       help="Color of tick text (color name or 3 RGB integers)")
+    group.add_argument("--colorbar-font", default="Vera.ttf",
+                       help="Path to TTF font (polar2grid provided or custom path)")
+    group.add_argument("--colorbar-align", choices=['left', 'top', 'right', 'bottom'], default='bottom',
+                       help="Where on the image to place the colorbar")
+    group.add_argument('--colorbar-no-ticks', dest='colorbar_ticks', action='store_false',
+                       help="Don't include ticks and tick labels on colorbar")
+    group.add_argument('--colorbar-min', type=float,
+                       help="Minimum data value of the colorbar."
+                            "Defaults to 'min_in' of input metadata or"
+                            "minimum value of the data otherwise.")
+    group.add_argument('--colorbar-max', type=float,
+                       help="Maximum data value of the colorbar."
+                            "Defaults to 'max_in' of input metadata or"
+                            "maximum value of the data otherwise.")
+    group.add_argument('--colorbar-units',
+                       help="Units marker to include in the colorbar text")
+
     parser.add_argument("--shapes-dir", default=PYCOAST_DIR,
                         help="Specify alternative directory for coastline shape files (default: GSHSS_DATA_ROOT)")
     parser.add_argument("-o", "--output", dest="output_filename", nargs="+",
@@ -148,7 +212,8 @@ def main():
     else:
         assert len(args.output_filename) == len(args.input_tiff), "Output filenames must be equal to number of input tiffs"
 
-    if not (args.add_borders or args.add_coastlines or args.add_grid or args.add_rivers):
+    if not (args.add_borders or args.add_coastlines or args.add_grid or
+            args.add_rivers or args.add_colorbar):
         LOG.error("Please specify one of the '--add-X' options to modify the image")
         return -1
 
@@ -190,14 +255,7 @@ def main():
             cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline)
 
         if args.add_grid:
-            try:
-                font = ImageFont.truetype(args.grid_font, args.grid_text_size)
-            except IOError:
-                font_path = get_resource_filename('polar2grid.fonts', args.grid_font)
-                if not os.path.exists(font_path):
-                    raise ValueError("Font path does not exist: {}".format(font_path))
-                font = ImageFont.truetype(font_path, args.grid_text_size)
-
+            font = load_font(args.grid_font, args.grid_text_size)
             outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
             minor_outline = args.grid_minor_outline[0] if len(args.grid_minor_outline) == 1 else tuple(int(x) for x in args.grid_minor_outline)
             fill = args.grid_fill[0] if len(args.grid_fill) == 1 else tuple(int(x) for x in args.grid_fill)
@@ -205,6 +263,55 @@ def main():
                         fill=fill, outline=outline, minor_outline=minor_outline,
                         lon_placement=args.grid_lon_placement,
                         lat_placement=args.grid_lat_placement)
+
+        if args.add_colorbar:
+            from pycoast import DecoratorAGG
+            from aggdraw import Font
+            font_color = args.colorbar_text_color
+            font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
+            font = load_font(args.colorbar_font, args.colorbar_text_size)
+            # this actually needs an aggdraw font
+            font = Font(font_color, font.path, size=font.size)
+            band_count = gtiff.RasterCount
+            if band_count not in [1, 2]:
+                raise ValueError("Can't add colorbar to RGB/RGBA image")
+
+            # figure out what colormap we are dealing with
+            band = gtiff.GetRasterBand(1)
+            cmap = get_colormap(band, band_count)
+
+            # figure out our limits
+            vmin = args.colorbar_min
+            vmax = args.colorbar_max
+            metadata = gtiff.GetMetadata_Dict()
+            vmin = vmin or metadata.get('min_in')
+            vmax = vmax or metadata.get('max_in')
+            if isinstance(vmin, str):
+                vmin = float(vmin)
+            if isinstance(vmax, str):
+                vmax = float(vmax)
+            if vmin is None or vmax is None:
+                data = gtiff.GetRasterBand(1).ReadAsArray()
+                vmin = vmin or np.nanmin(data)
+                vmax = vmax or np.nanmax(data)
+            cmap.set_range(vmin, vmax)
+
+            dc = DecoratorAGG(img)
+            if args.colorbar_align == 'top':
+                dc.align_top()
+            elif args.colorbar_align == 'bottom':
+                dc.align_bottom()
+            elif args.colorbar_align == 'left':
+                dc.align_left()
+            elif args.colorbar_align == 'right':
+                dc.align_right()
+            dc.add_scale(cmap, extend=args.colorbar_extend,
+                         width=args.colorbar_width,
+                         height=args.colorbar_height,
+                         font=font,
+                         line=font_color,
+                         tick_marks=args.colorbar_tick_marks,
+                         unit=args.colorbar_units)
 
         img.save(output_filename)
 
