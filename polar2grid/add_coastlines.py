@@ -305,6 +305,10 @@ def main():
                 dc.align_left()
             elif args.colorbar_align == 'right':
                 dc.align_right()
+            if args.colorbar_width is None or args.colorbar_height is None:
+                LOG.warning("'--colorbar-width' or '--colorbar-height' were "
+                            "not specified. Forcing '--colorbar-extend'.")
+                args.colorbar_extend = True
             dc.add_scale(cmap, extend=args.colorbar_extend,
                          width=args.colorbar_width,
                          height=args.colorbar_height,
