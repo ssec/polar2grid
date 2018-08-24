@@ -40,41 +40,15 @@ import dask.array as da
 LOG = logging.getLogger(__name__)
 
 
-def compute_writer_results(results):
-    sources = []
-    targets = []
-    delayeds = []
-    for res in results:
-        if isinstance(res, tuple):
-            # source, target to be passed to da.store
-            sources.append(res[0])
-            targets.append(res[1])
-        else:
-            # delayed object
-            delayeds.append(res)
-
-    # one or more writers have targets that we need to close in the future
-    if targets:
-        delayeds.append(da.store(sources, targets, compute=False))
-
-    if delayeds:
-        da.compute(delayeds)
-
-    if targets:
-        for target in targets:
-            if hasattr(target, 'close'):
-                target.close()
-
-
 def add_scene_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Scene Initialization')
-    group_1.add_argument('reader',
+    group_1.add_argument('-r', '--reader',
                          help='Name of reader used to read provided files')
-    group_1.add_argument('-f', '--filenames', nargs='+', required=True,
+    group_1.add_argument('-f', '--filenames', nargs='+', default=[],
                          help='Input files to read')
     group_2 = parser.add_argument_group(title='Scene Load')
-    group_2.add_argument('-d', '--datasets', nargs='+',
-                         help='Names of datasets to load from input files')
+    group_2.add_argument('-p', '--products', nargs='+',
+                         help='Names of products to load from input files')
     return group_1, group_2
 
 
@@ -141,7 +115,10 @@ def main(argv=sys.argv[1:]):
     global LOG
     from satpy import Scene
     from satpy.resample import get_area_def
+    from satpy.writers import compute_writer_results
     from dask.diagnostics import ProgressBar
+    from polar2grid.core.script_utils import (
+        setup_logging, rename_log_file, create_exc_handler)
     import argparse
     parser = argparse.ArgumentParser(description="Load, composite, resample, and save datasets")
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
@@ -154,13 +131,19 @@ def main(argv=sys.argv[1:]):
                         help="specify number of worker threads to use (default: 1 per logical core)")
     parser.add_argument('-w', '--writers', nargs='+', choices=list(writers.keys()), default=['geotiff'],
                         help='writers to save datasets with')
+    parser.add_argument("--list-products", dest="list_products", action="store_true",
+                        help="List available reader products and exit")
     subgroups = add_scene_argument_groups(parser)
     subgroups += add_resample_argument_groups(parser)
 
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
     args, remaining_args = parser.parse_known_args(argv_without_help)
-    glue_name = args.reader + "2" + "@".join(args.writers)
+    glue_name = args.reader + "_" + "-".join(args.writers)
     LOG = logging.getLogger(glue_name)
+
+    if args.reader is None:
+        parser.print_usage()
+        parser.exit(1, "ERROR: Reader must be provided (-r flag)\n")
 
     for writer in args.writers:
         subgroups += writers[writer](parser)
@@ -180,17 +163,25 @@ def main(argv=sys.argv[1:]):
         writer_args[writer] = wargs
 
     if not args.filenames:
-        # FUTURE: When the -d flag is removed this won't be needed because -f will be required
         parser.print_usage()
         parser.exit(1, "ERROR: No data files provided (-f flag)\n")
 
+    # Prepare logging
+    rename_log = False
+    if args.log_fn is None:
+        rename_log = True
+        args.log_fn = glue_name + "_fail.log"
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=levels[min(3, args.verbosity)], filename=args.log_fn)
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    sys.excepthook = create_exc_handler(LOG.name)
+    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
+    # Set up dask and the number of workers
     if args.num_workers:
         from multiprocessing.pool import ThreadPool
         dask.set_options(pool=ThreadPool(args.num_workers))
 
+    # Parse provided files and search for files if provided directories
     all_filenames = []
     for fn in scene_args['filenames']:
         if os.path.isdir(fn):
@@ -199,8 +190,20 @@ def main(argv=sys.argv[1:]):
             all_filenames.append(fn)
     scene_args['filenames'] = all_filenames
 
+    # Create a Scene, analyze the provided files
     scn = Scene(**scene_args)
-    scn.load(load_args['datasets'])
+
+    if args.list_products:
+        print("\n".join(sorted(scn.available_dataset_names(composites=True))))
+        return 0
+
+    # Rename the log file
+    if rename_log:
+        rename_log_file(glue_name + scn.attrs['start_time'].strftime("_%Y%m%d_%H%M%S.log"))
+
+    # Load the actual data arrays and metadata (lazy loaded as dask arrays)
+    LOG.info("Loading product metadata from files...")
+    scn.load(load_args['products'])
 
     resample_kwargs = resample_args.copy()
     areas_to_resample = resample_kwargs.pop('grids')
@@ -244,6 +247,7 @@ def main(argv=sys.argv[1:]):
             area_def = get_area_def(area_name)
 
         if area_def is not None:
+            LOG.info("Resampling data to '%s'", area_name)
             new_scn = scn.resample(area_def, **resample_kwargs)
         else:
             # the user didn't want to resample to any areas
@@ -262,6 +266,7 @@ def main(argv=sys.argv[1:]):
         pbar = ProgressBar()
         pbar.register()
 
+    LOG.info("Saving data to writers...")
     compute_writer_results(to_save)
     return 0
 
