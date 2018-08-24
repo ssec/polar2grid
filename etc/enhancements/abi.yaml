@@ -18,13 +18,13 @@ enhancements:
         threshold: -31.15
         min_in: -110.15
         max_in: 56.85
-  reflectance:
-    standard_name: toa_bidirectional_reflectance
-    operations:
-    - name: stretch
-    - name: sqrt
-      method: !!python/name:satpy.enhancements.sqrt
-      kwargs: {min_in: 0.0, max_in: 100.}
+  #reflectance:
+  #  standard_name: toa_bidirectional_reflectance
+  #  operations:
+  #  - name: stretch
+  #  - name: sqrt
+  #    method: !!python/name:satpy.enhancements.sqrt
+  #    kwargs: {min_in: 0.0, max_in: 100.}
 
 
 #  true_color_crefl:

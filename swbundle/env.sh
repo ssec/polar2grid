@@ -35,14 +35,27 @@ if [ -z "$POLAR2GRID_REV" ]; then
       export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
     fi
 
-    export P2G_SHELLB3_DIR=$POLAR2GRID_HOME/common/ShellB3
-
-    # Add all polar2grid scripts to PATH
-    export PATH=$POLAR2GRID_HOME/bin:$PATH
-    # Add ShellB3 to PATH
-    export PATH=$P2G_SHELLB3_DIR/bin:$PATH
     # Don't let someone else's PYTHONPATH mess us up
     unset PYTHONPATH
+
+    export P2G_SHELLB3_DIR=$POLAR2GRID_HOME/common/ShellB3
+    if [ ! -d $P2G_SHELLB3_DIR ]; then
+        # assume we are using a conda-pack environment
+        P2G_SHELLB3_DIR=$POLAR2GRID_HOME
+        IS_CONDA=0  # True in bash
+        source $P2G_SHELLB3_DIR/bin/activate
+    else
+        IS_CONDA=1  # False in bash
+        # Add all polar2grid scripts to PATH
+        export PATH=$POLAR2GRID_HOME/bin:$PATH
+        # Add ShellB3 to PATH
+        export PATH=$P2G_SHELLB3_DIR/bin:$PATH
+        # insurance
+        export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib64
+        export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib:${LD_LIBRARY_PATH}
+        export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common:${LD_LIBRARY_PATH}
+    fi
+
     # Point gdal utilities to the proper data location
     export GDAL_DATA=$P2G_SHELLB3_DIR/share/gdal
     # Let SatPy know where we put things
@@ -53,11 +66,6 @@ if [ -z "$POLAR2GRID_REV" ]; then
     export PSP_CONFIG_DIR=$POLAR2GRID_HOME/etc/pyspectral.yaml
     export PSP_DATA_ROOT=$POLAR2GRID_HOME/pyspectral_data
     export GSHHS_DATA_ROOT=$POLAR2GRID_HOME/gshhg_data
-
-    # insurance
-    export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib64
-    export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib:${LD_LIBRARY_PATH}
-    export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common:${LD_LIBRARY_PATH}
 
     export POLAR2GRID_REV="$Id$"
 fi
