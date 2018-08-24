@@ -174,7 +174,9 @@ def get_parser():
     group.add_argument("--colorbar-font", default="Vera.ttf",
                        help="Path to TTF font (polar2grid provided or custom path)")
     group.add_argument("--colorbar-align", choices=['left', 'top', 'right', 'bottom'], default='bottom',
-                       help="Where on the image to place the colorbar")
+                       help="Which direction to align colorbar (see --colorbar-vertical)")
+    group.add_argument('--colorbar-vertical', action='store_true',
+                       help="Position the colorbar vertically")
     group.add_argument('--colorbar-no-ticks', dest='colorbar_ticks', action='store_false',
                        help="Don't include ticks and tick labels on colorbar")
     group.add_argument('--colorbar-min', type=float,
@@ -187,6 +189,8 @@ def get_parser():
                             "maximum value of the data otherwise.")
     group.add_argument('--colorbar-units',
                        help="Units marker to include in the colorbar text")
+    group.add_argument('--colorbar-title',
+                       help="Title shown with the colorbar")
 
     parser.add_argument("--shapes-dir", default=PYCOAST_DIR,
                         help="Specify alternative directory for coastline shape files (default: GSHSS_DATA_ROOT)")
@@ -265,7 +269,7 @@ def main():
                         lat_placement=args.grid_lat_placement)
 
         if args.add_colorbar:
-            from pycoast import DecoratorAGG
+            from pydecorate import DecoratorAGG
             from aggdraw import Font
             font_color = args.colorbar_text_color
             font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
@@ -292,8 +296,8 @@ def main():
                 vmax = float(vmax)
             if vmin is None or vmax is None:
                 data = gtiff.GetRasterBand(1).ReadAsArray()
-                vmin = vmin or np.nanmin(data)
-                vmax = vmax or np.nanmax(data)
+                vmin = vmin or np.iinfo(data.dtype).min
+                vmax = vmax or np.iinfo(data.dtype).max
             cmap.set_range(vmin, vmax)
 
             dc = DecoratorAGG(img)
@@ -305,17 +309,28 @@ def main():
                 dc.align_left()
             elif args.colorbar_align == 'right':
                 dc.align_right()
+
+            if args.colorbar_vertical:
+                dc.write_vertically()
+            else:
+                dc.write_horizontally()
+
             if args.colorbar_width is None or args.colorbar_height is None:
                 LOG.warning("'--colorbar-width' or '--colorbar-height' were "
                             "not specified. Forcing '--colorbar-extend'.")
                 args.colorbar_extend = True
+            kwargs = {}
+            if args.colorbar_width:
+                kwargs['width'] = args.colorbar_width
+            if args.colorbar_height:
+                kwargs['height'] = args.colorbar_height
             dc.add_scale(cmap, extend=args.colorbar_extend,
-                         width=args.colorbar_width,
-                         height=args.colorbar_height,
                          font=font,
                          line=font_color,
                          tick_marks=args.colorbar_tick_marks,
-                         unit=args.colorbar_units)
+                         title=args.colorbar_title,
+                         unit=args.colorbar_units,
+                         **kwargs)
 
         img.save(output_filename)
 
