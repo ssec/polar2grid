@@ -63,7 +63,7 @@ if [ -z "$POLAR2GRID_REV" ]; then
     # The cviirs and crefl executables require base HDF files which by default are in the bin directory
     export ANCPATH=$POLAR2GRID_HOME/bin
     export PPP_CONFIG_DIR=$POLAR2GRID_HOME/etc
-    export PSP_CONFIG_DIR=$POLAR2GRID_HOME/etc/pyspectral.yaml
+    export PSP_CONFIG_FILE=$POLAR2GRID_HOME/etc/pyspectral.yaml
     export PSP_DATA_ROOT=$POLAR2GRID_HOME/pyspectral_data
     export GSHHS_DATA_ROOT=$POLAR2GRID_HOME/gshhg_data
 
