@@ -179,7 +179,7 @@ def main(argv=sys.argv[1:]):
     # Set up dask and the number of workers
     if args.num_workers:
         from multiprocessing.pool import ThreadPool
-        dask.set_options(pool=ThreadPool(args.num_workers))
+        dask.config.set(pool=ThreadPool(args.num_workers))
 
     # Parse provided files and search for files if provided directories
     all_filenames = []
