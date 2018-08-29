@@ -1,2 +1,2 @@
-rsr_dir: ${PSP_DATA_ROOT}
-rayleigh_dir: ${PSP_DATA_ROOT}
+rsr_dir: !!python/object/apply:os.getenv ['PSP_DATA_ROOT']
+rayleigh_dir: !!python/object/apply:os.getenv ['PSP_DATA_ROOT']

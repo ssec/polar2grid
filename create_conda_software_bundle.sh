@@ -38,7 +38,7 @@ else
     exit 1
 fi
 
-python setup.py install || oops "Couldn't install current polar2grid package"
+pip install -U --no-deps . || oops "Couldn't install current polar2grid package"
 
 SB_TARBALL="${SB_NAME}.tar.gz"
 conda-pack -o $SB_TARBALL || oops "Couldn't create conda-packed tarball"
@@ -97,6 +97,10 @@ chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
 
 # Copy SatPy configurations
 cp -r $BASE_P2G_DIR/etc $SB_NAME/ || oops "Couldn't copy configuration 'etc' directory"
+
+# Download pyspectral data
+echo "Downloading pyspectral data..."
+$SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."

@@ -27,19 +27,19 @@ enhancements:
   #    kwargs: {min_in: 0.0, max_in: 100.}
 
 
-#  true_color_crefl:
-#    sensor: abi
-#    standard_name: true_color
-#    operations:
-#    - name: crefl_scaling
-#      method: !!python/name:satpy.enhancements.crefl_scaling
-#      kwargs:
-##       Polar2Grid's scaling: "Preferred".
-#       idx: [0., 25., 55., 100., 255.]
-#       sc: [0., 90., 140., 175., 255.]
-##       Ralph Kuehn's new scaling: Looks darker.
-##       idx: [0., 30., 60., 120., 190., 255.]
-##       sc: [0., 100., 128., 188., 223., 255.]
-##       Ralph Kuehn's old scaling: Looks brighter.
-##       idx: [0., 30., 60., 120., 190., 255.]
-##       sc: [0, 110, 160, 210, 240, 255]
+  true_color_crefl:
+    sensor: abi
+    standard_name: true_color
+    operations:
+    - name: crefl_scaling
+      method: !!python/name:satpy.enhancements.crefl_scaling
+      kwargs:
+#       Polar2Grid's scaling: "Preferred".
+       idx: [0., 25., 55., 100., 255.]
+       sc: [0., 90., 140., 175., 255.]
+#       Ralph Kuehn's new scaling: Looks darker.
+#       idx: [0., 30., 60., 120., 190., 255.]
+#       sc: [0., 100., 128., 188., 223., 255.]
+#       Ralph Kuehn's old scaling: Looks brighter.
+#       idx: [0., 30., 60., 120., 190., 255.]
+#       sc: [0, 110, 160, 210, 240, 255]
