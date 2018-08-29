@@ -102,6 +102,9 @@ cp -r $BASE_P2G_DIR/etc $SB_NAME/ || oops "Couldn't copy configuration 'etc' dir
 echo "Downloading pyspectral data..."
 $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
 
+# FIXME: Add the download_from_internet: False to the config
+echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
+
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
 cd "$SB_NAME"/..
