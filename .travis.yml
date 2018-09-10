@@ -26,7 +26,7 @@ install:
   - conda install -y $CONDA_DEPENDENCIES
   - pip install git+https://github.com/pytroll/satpy.git
 script:
-  - python setup.py install
+  - pip install -e .
   - python -m polar2grid.tests
   - cd doc
   - make html
