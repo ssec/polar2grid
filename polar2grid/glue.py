@@ -67,6 +67,12 @@ def add_resample_argument_groups(parser):
                          help="Specify additional grid configuration files. "
                               "(.conf for P2G-style grids, .yaml for "
                               "SatPy-style areas)")
+    group_1.add_argument('--ll-bbox', nargs=4, type=float,
+                         help='Crop data to region specified by lon/lat '
+                              'bounds (lon_min lat_min lon_max lat_max).'
+                              'Coordinates must be valid in the source data '
+                              'projection. For negative numbers use quotes '
+                              'preceeded by a space: " -95.5"')
     return tuple([group_1])
 
 
@@ -229,6 +235,10 @@ def main(argv=sys.argv[1:]):
         custom_areas = {x.area_id: x for x in custom_areas}
     else:
         custom_areas = {}
+
+    ll_bbox = resample_kwargs.pop('ll_bbox')
+    if ll_bbox:
+        scn = scn.crop(ll_bbox=ll_bbox)
 
     to_save = []
     for area_name in areas_to_resample:
