@@ -6,6 +6,7 @@ def before_all(context):
         context.data_path = context.config.userdata["datapath"]
     else:
         context.data_path = os.path.join(os.getcwd(), context.config.userdata["datapath"])
+    context.script = context.config.userdata["script"]
     context.p2g_path = "{}/bin".format(p2g_home)
 
 def after_all(context):

@@ -1,5 +1,5 @@
 Feature: Testing data conversions
-    This takes test data and runs it through the command provided for Polar2Grid. 
+    This takes test data and runs it through the command provided. 
     It then compares the new data with the expected output. 
 
 

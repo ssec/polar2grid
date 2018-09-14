@@ -24,15 +24,15 @@ def step_impl(context, source):
 
 @when(u'{command} runs') 
 def step_impl(context, command):
-    context.command = "{} {} {}".format(os.path.join(context.p2g_path, "polar2grid.sh"), command, context.source)
+    context.command = "{} {} {}".format(os.path.join(context.p2g_path, "{}.sh".format(context.script)), command, context.source)
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
     try:
-        context.temp_dir = tempfile.mkdtemp(dir="/data/tmp")
+        context.temp_dir = tempfile.mkdtemp()
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)        
-        assert exit_status == 0, "Polar2Grid command ran unsuccessfully"
+        assert exit_status == 0, "{} ran unsuccessfully".format(command)
     finally:
         os.chdir(orig_dir)
     
