@@ -207,6 +207,7 @@ TPW_VAR = "tpw_var"
 SWE_VAR = "swe_var"
 CLW_VAR = "clw_var"
 TSKIN_VAR = "tskin_var"
+SFR_VAR = "sfr_var"
 
 PRODUCT_RAIN_RATE = "rain_rate"
 PRODUCT_BT_CHANS = "btemp_channels"
@@ -219,6 +220,7 @@ PRODUCT_TPW = "tpw"
 PRODUCT_SWE = "swe"
 PRODUCT_CLW = "clw"
 PRODUCT_TSKIN = "tskin"
+PRODUCT_SFR = "sfr"
 
 PAIR_MIRS_NAV = "mirs_nav"
 
@@ -234,6 +236,7 @@ PRODUCTS.add_product(PRODUCT_TPW, PAIR_MIRS_NAV, "total_precipitable_water", FT_
 PRODUCTS.add_product(PRODUCT_SWE, PAIR_MIRS_NAV, "snow_water_equivalence", FT_IMG, SWE_VAR, description="Snow Water Equivalence", units="cm")
 PRODUCTS.add_product(PRODUCT_CLW, PAIR_MIRS_NAV, "cloud_liquid_water", FT_IMG, CLW_VAR, description="Cloud Liquid Water", units="mm")
 PRODUCTS.add_product(PRODUCT_TSKIN, PAIR_MIRS_NAV, "skin_temperature", FT_IMG, TSKIN_VAR, description="skin temperature", units="K")
+PRODUCTS.add_product(PRODUCT_SFR, PAIR_MIRS_NAV, "snow_fall_rate", FT_IMG, SFR_VAR, description="snow fall rate", units="mm/hr")
 
 
 GEO_PAIRS = GeoPairDict()
@@ -254,6 +257,7 @@ FILE_STRUCTURE = {
     SWE_VAR: ("SWE", ("scale", "scale_factor"), None, None),
     CLW_VAR: ("CLW", ("scale", "scale_factor"), None, None),
     TSKIN_VAR: ("TSkin", ("scale", "scale_factor"), None, None),
+    SFR_VAR: ("SFR", ("scale", "scale_factor"), None, None),
     }
 
 LIMB_SEA_FILE = os.environ.get("ATMS_LIMB_SEA", "polar2grid.mirs:limball_atmssea.txt")
@@ -362,6 +366,15 @@ class MIRSFileReader(BaseFileReader):
         "amsua-mhs": 323100,
     }
 
+    FILENAME_TO_SAT = {
+        "M1": "metopb",
+        "M2": "metopa",
+        "NN": "noaa18",
+        "NP": "noaa19",
+        "n18": "noaa18",
+        "n19": "noaa19",
+    }
+
     def __init__(self, filepath, file_type_info):
         super(MIRSFileReader, self).__init__(NetCDFFileReader(filepath), file_type_info)
         # Not supported in older version of NetCDF4 library
@@ -370,23 +383,16 @@ class MIRSFileReader(BaseFileReader):
             LOG.error("Unknown file format for file %s" % (self.filename,))
             raise ValueError("Unknown file format for file %s" % (self.filename,))
 
-        # IMG_SX.M1.D15238.S1614.E1627.B0000001.WE.HR.ORB.nc
-        fn_parts = self.file_handle.filename.split(".")
         try:
             self.satellite = self.file_handle.satellite_name.lower()
             self.instrument = self.file_handle.instrument_name.lower()
             self.begin_time = datetime.strptime(self.file_handle.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
             self.end_time = datetime.strptime(self.file_handle.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
         except AttributeError:
-            self.satellite = {
-                "M1": "metopb",
-                "M2": "metopa",
-                "NN": "noaa18",
-                "NP": "noaa19",
-            }[fn_parts[1]]
-            self.instrument = "amsua-mhs"  # actually combination of mhs and amsu
-            self.begin_time = datetime.strptime(fn_parts[2][1:] + fn_parts[3][1:], "%y%j%H%M")
-            self.end_time = datetime.strptime(fn_parts[2][1:] + fn_parts[4][1:], "%y%j%H%M")
+            if self.file_handle.filename.startswith('IMG'):
+                self._parse_old_filename()
+            else:
+                self._parse_new_filename()
 
         if self.instrument in self.INST_NADIR_RESOLUTION:
             self.nadir_resolution = self.INST_NADIR_RESOLUTION[self.instrument]
@@ -397,6 +403,22 @@ class MIRSFileReader(BaseFileReader):
             self.limb_resolution = self.INST_LIMB_RESOLUTION[self.instrument]
         else:
             self.limb_resolution = None
+
+    def _parse_old_filename(self):
+        # IMG_SX.M1.D15238.S1614.E1627.B0000001.WE.HR.ORB.nc
+        fn_parts = self.file_handle.filename.split(".")
+        self.satellite = self.FILENAME_TO_SAT[fn_parts[1]]
+        self.instrument = "amsua-mhs"  # actually combination of mhs and amsu
+        self.begin_time = datetime.strptime(fn_parts[2][1:] + fn_parts[3][1:], "%y%j%H%M")
+        self.end_time = datetime.strptime(fn_parts[2][1:] + fn_parts[4][1:], "%y%j%H%M")
+
+    def _parse_new_filename(self):
+        # NPR-MIRS-IMG_v11r3_n19_s201809112039000_e201809112050000_c201809112117030.nc
+        fn_parts = self.file_handle.filename.split('_')
+        self.satellite = self.FILENAME_TO_SAT[fn_parts[2]]
+        self.instrument = "amsua-mhs"  # actually combination of mhs and amsu
+        self.begin_time = datetime.strptime(fn_parts[3][1:-1], "%Y%m%d%H%M%S")
+        self.end_time = datetime.strptime(fn_parts[4][1:-1], "%Y%m%d%H%M%S")
 
     @classmethod
     def handles_file(cls, fn_or_nc_obj):
