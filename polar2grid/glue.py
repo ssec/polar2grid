@@ -35,9 +35,41 @@ import sys
 import logging
 from glob import glob
 import dask
-import dask.array as da
 
 LOG = logging.getLogger(__name__)
+
+
+def get_preserve_resolution(args, resample_kwargs, areas_to_resample):
+    """Determine if we should preserve native resolution products.
+
+    Preserving native resolution should only happen if:
+
+    1. The 'native' resampler is used
+    2. The areas provided to resampling are only 'MIN' or 'MAX'
+    3. The user didn't ask to *not* preserve it.
+
+    """
+    # save original native resolution if possible
+    all_minmax = all(x in ['MIN', 'MAX'] for x in areas_to_resample)
+    is_native = resample_kwargs.get('resampler') == 'native'
+    return all_minmax and is_native and args.preserve_resolution
+
+
+def write_scene(scn, writers, writer_args, datasets, to_save=None):
+    if to_save is None:
+        to_save = []
+
+    for writer_name in writers:
+        wargs = writer_args[writer_name]
+
+        res = scn.save_datasets(writer=writer_name, compute=False,
+                                    datasets=datasets,
+                                    **wargs)
+        if isinstance(res, (tuple, list)):
+            to_save.extend(zip(*res))
+        else:
+            to_save.append(res)
+    return to_save
 
 
 def add_scene_argument_groups(parser):
@@ -135,6 +167,10 @@ def main(argv=sys.argv[1:]):
                         help="show processing progress bar (not recommended for logged output)")
     parser.add_argument('--num-workers', type=int,
                         help="specify number of worker threads to use (default: 1 per logical core)")
+    parser.add_argument('--match-resolution', dest='preserve_resolution', action='store_false',
+                        help="When using the 'native' resampler for composites, don't save data "
+                             "at its native resolution, use the resolution used to create the "
+                             "composite.")
     parser.add_argument('-w', '--writers', nargs='+', choices=list(writers.keys()), default=['geotiff'],
                         help='writers to save datasets with')
     parser.add_argument("--list-products", dest="list_products", action="store_true",
@@ -240,7 +276,21 @@ def main(argv=sys.argv[1:]):
     if ll_bbox:
         scn = scn.crop(ll_bbox=ll_bbox)
 
-    to_save = []
+    wishlist = scn.wishlist.copy()
+    preserve_resolution = get_preserve_resolution(args, resample_kwargs, areas_to_resample)
+    if preserve_resolution:
+        preserved_products = set(wishlist) & set(scn.datasets.keys())
+        resampled_products = set(wishlist) - preserved_products
+
+        # original native scene
+        to_save = write_scene(scn, args.writers, writer_args, preserved_products)
+    else:
+        preserved_products = set()
+        resampled_products = set(wishlist)
+        to_save = []
+
+    LOG.debug("Products to preserve resolution for: {}".format(preserved_products))
+    LOG.debug("Products to use new resolution for: {}".format(resampled_products))
     for area_name in areas_to_resample:
         if area_name is None:
             # no resampling
@@ -259,18 +309,15 @@ def main(argv=sys.argv[1:]):
         if area_def is not None:
             LOG.info("Resampling data to '%s'", area_name)
             new_scn = scn.resample(area_def, **resample_kwargs)
-        else:
+        elif not preserve_resolution:
             # the user didn't want to resample to any areas
+            # the user also requested that we don't preserve resolution
+            # which means we have to save this Scene's datasets
+            # because they won't be saved
             new_scn = scn
 
-        for writer_name in args.writers:
-            wargs = writer_args[writer_name]
-            res = new_scn.save_datasets(writer=writer_name, compute=False,
-                                        **wargs)
-            if isinstance(res, (tuple, list)):
-                to_save.extend(zip(*res))
-            else:
-                to_save.append(res)
+        to_save = write_scene(new_scn, args.writers, writer_args,
+                              resampled_products, to_save=to_save)
 
     if args.progress:
         pbar = ProgressBar()
