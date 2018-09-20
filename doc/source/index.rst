@@ -1,5 +1,5 @@
-Polar2Grid
-==========
+|project|
+=========
 
 .. include:: overview.rst
 
