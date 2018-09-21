@@ -14,25 +14,25 @@ def step_impl(context, source):
         f = os.path.join(context.data_path, f) 
         new_source += f + " "
 
-        #FIXME checking for globs
         if "*" in os.path.basename(f):
             assert glob.glob(f), "Input files {} do  not exist".format(f)
             assert os.path.exists(os.path.dirname(f)), "Input folder {} does not exist".format(os.path.dirname(f))
         else:
-            assert os.path.exists(f), "Input {} does not exist.".format(f)
+            assert os.path.exists(f), "Input {} does not exist".format(f)
 
     context.source = new_source
 
 @when(u'{command} runs') 
 def step_impl(context, command):
-    context.command = "{} {} {}".format(os.path.join(context.p2g_path, "polar2grid.sh"), command, context.source)
+    context.command = "{} {} {}".format(os.path.join(context.p2g_path, "{}.sh".format(context.script)), command, context.source)
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
     try:
-        context.temp_dir = tempfile.mkdtemp(dir="/data/tmp")
+        context.temp_dir = tempfile.mkdtemp()
         os.chdir(context.temp_dir)
-        subprocess.call(context.command, shell=True)        
+        exit_status = subprocess.call(context.command, shell=True)        
+        assert exit_status == 0, "{} ran unsuccessfully".format(command)
     finally:
         os.chdir(orig_dir)
     
@@ -44,16 +44,14 @@ def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
         os.chdir(context.data_path)
-        #FIXME use file extensions to compare instead
         if "gtiff" in context.command:
-            context.compare_command = os.path.join(context.data_path, "scripts/p2g_py3_compare_geotiff.sh") + " " + output + " " + context.temp_dir
+            context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_geotiff.sh"), output, context.temp_dir)
             #context.compare_command = os.path.join(context.data_path, "../polar2grid_test/viirs/p2g_compare_geotiff.sh") + " " + output + " " + context.temp_dir
         else: 
-            context.compare_command = os.path.join(context.data_path, "scripts/p2g_py3_compare_netcdf.sh") + " " + output + " " + context.temp_dir
+            context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_netcdf.sh"), output, context.temp_dir)
             #context.compare_command = os.path.join(context.data_path, "/data/users/kkolman/test_data/scripts/p2g_compare_netcdf.sh") + " " + output + " " + context.temp_dir
         exit_status = subprocess.call(context.compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
         os.chdir(orig_dir)
         shutil.rmtree(context.temp_dir)
-
