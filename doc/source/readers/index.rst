@@ -1,24 +1,46 @@
 Readers
 =======
 
-Readers are the first component used in Polar2Grid processing. Their main
+Readers are the first component used in |project| processing. Their main
 responsibility is to extract input satellite imager data and the associated
 metadata from user provided input files.
-The data that readers distribute to other Polar2Grid components are called
-:term:`swath products` ("datasets" in SatPy terminology). Sometimes readers
-perform additional calculations or filtering on :term:`raw products` to create
-complex products called :term:`secondary products`.
+The data that readers distribute to other |project| components are called
+:term:`products` ("datasets" in SatPy terminology).
 
-.. toctree::
-    :maxdepth: 1
+Depending on what products are available in the files provided by the user
+the reader can also provide composite products. Composites can be RGB images,
+corrected/modified datasets (like VIIRS DNB normalization), or any other
+combination of other products to make a new one.
 
-    viirs_sdr
-    viirs_l1b
-    modis
-    crefl
-    avhrr
-    amsr2_l1b
-    nucaps
-    mirs
-    acspo
-    clavrx
+Due to the way |project| interfaces to the SatPy library there may be
+additional readers available than those described below. Further details on
+these readers can be found on the
+`SatPy documentation <https://satpy.readthedocs.io/en/latest/>`_. The readers
+described below have been tested and configured to work as |project| users
+have come to expect. Any other readers provided by SatPy are not guaranteed
+to work with all |project| features.
+
+
+.. ifconfig:: not is_geo2grid
+
+    .. toctree::
+        :maxdepth: 1
+
+        viirs_sdr
+        viirs_l1b
+        modis
+        crefl
+        avhrr
+        amsr2_l1b
+        nucaps
+        mirs
+        acspo
+        clavrx
+
+.. ifconfig:: is_geo2grid
+
+    .. toctree::
+        :maxdepth: 1
+
+        abi_l1b
+        hrit_jma

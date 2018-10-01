@@ -1,7 +1,7 @@
-Polar2Grid Basics
+|project| Basics
 =================
 
-All of the tools provided by Polar2Grid can be found in the ``bin`` directory
+All of the tools provided by |project| can be found in the ``bin`` directory
 of the extracted tarball. The majority of the scripts in the software bundle
 are wrappers around python software.
 

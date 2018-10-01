@@ -33,6 +33,7 @@
 import os
 import sys
 import logging
+import importlib
 from glob import glob
 import dask
 
@@ -180,13 +181,13 @@ def main(argv=sys.argv[1:]):
 
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
     args, remaining_args = parser.parse_known_args(argv_without_help)
-    glue_name = args.reader + "_" + "-".join(args.writers)
-    LOG = logging.getLogger(glue_name)
 
     if args.reader is None:
         parser.print_usage()
         parser.exit(1, "ERROR: Reader must be provided (-r flag)\n")
 
+    glue_name = args.reader + "_" + "-".join(args.writers)
+    LOG = logging.getLogger(glue_name)
     for writer in args.writers:
         subgroups += writers[writer](parser)
     args = parser.parse_args(argv)
@@ -245,6 +246,15 @@ def main(argv=sys.argv[1:]):
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
     LOG.info("Loading product metadata from files...")
+    if load_args['products'] is None:
+        try:
+            reader_mod = importlib.import_module('polar2grid.readers.' + scene_args['reader'])
+            load_args['products'] = reader_mod.DEFAULT_PRODUCTS
+            LOG.info("Using default product list: {}".format(load_args['products']))
+        except (ImportError, AttributeError):
+            LOG.error("No default products list set, please specify with `--products`.")
+            return -1
+
     scn.load(load_args['products'])
 
     resample_kwargs = resample_args.copy()
@@ -254,8 +264,8 @@ def main(argv=sys.argv[1:]):
         areas_to_resample = [None]
     has_custom_grid = any(g not in ['MIN', 'MAX', None] for g in areas_to_resample)
     if has_custom_grid and resample_kwargs['resampler'] == 'native':
-        raise ValueError("Must specify resampling method (--method) when "
-                         "a target grid (-g) is specified.")
+        LOG.error("Must specify resampling method (--method) when a target grid (-g) is specified.")
+        return -1
 
     p2g_grid_configs = [x for x in grid_configs if x.endswith('.conf')]
     pyresample_area_configs = [x for x in grid_configs if not x.endswith('.conf')]
