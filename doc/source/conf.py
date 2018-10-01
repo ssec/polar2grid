@@ -139,7 +139,8 @@ else:
 
 rst_epilog += """
 .. |project| replace:: {}
-""".format(project)
+.. |script| replace:: {}.sh
+""".format(project, project.lower())
 
 copyright = u'2012-2018, University of Wisconsin SSEC'
 

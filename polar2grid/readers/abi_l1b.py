@@ -93,5 +93,5 @@ COMPOSITE_PRODUCTS = [
 DEFAULT_PRODUCTS = READER_PRODUCTS + COMPOSITE_PRODUCTS
 
 
-def add_frontend_argument_groups(parser):
+def add_reader_argument_groups(parser):
     return parser

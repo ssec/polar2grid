@@ -37,7 +37,14 @@ import importlib
 from glob import glob
 import dask
 
+from polar2grid.writers import geotiff, scmi
+
 LOG = logging.getLogger(__name__)
+
+WRITER_PARSER_FUNCTIONS = {
+    'geotiff': geotiff.add_writer_argument_groups,
+    'scmi': scmi.add_writer_argument_groups,
+}
 
 
 def get_preserve_resolution(args, resample_kwargs, areas_to_resample):
@@ -108,48 +115,6 @@ def add_resample_argument_groups(parser):
                               'preceeded by a space: " -95.5"')
     return tuple([group_1])
 
-
-def add_geotiff_argument_groups(parser):
-    group_1 = parser.add_argument_group(title='Geotiff Writer')
-    group_1.add_argument('--file-pattern',
-                         help="custom file pattern to save dataset to")
-    # Saving specific keyword arguments
-    # group_2 = parser.add_argument_group(title='Writer Save')
-    return group_1, None
-
-
-def add_scmi_argument_groups(parser):
-    DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{platform_name}_{sensor}_{name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc'
-    group_1 = parser.add_argument_group(title='SCMI Writer')
-    # group_1.add_argument('--file-pattern', default=DEFAULT_OUTPUT_PATTERN,
-    #                      help="custom file pattern to save dataset to")
-    group_1.add_argument("--compress", action="store_true",
-                         help="zlib compress each netcdf file")
-    group_1.add_argument("--fix-awips", action="store_true",
-                         help="modify NetCDF output to work with the old/broken AWIPS NetCDF library")
-    # Saving specific keyword arguments
-    # group_2 = parser.add_argument_group(title='Writer Save')
-    group_1.add_argument("--tiles", dest="tile_count", nargs=2, type=int, default=[1, 1],
-                         help="Number of tiles to produce in Y (rows) and X (cols) direction respectively")
-    group_1.add_argument("--tile-size", dest="tile_size", nargs=2, type=int, default=None,
-                         help="Specify how many pixels are in each tile (overrides '--tiles')")
-    group_1.add_argument("--letters", dest="lettered_grid", action='store_true',
-                         help="Create tiles from a static letter-based grid based on the product projection")
-    group_1.add_argument("--letter-subtiles", nargs=2, type=int, default=(2, 2),
-                         help="Specify number of subtiles in each lettered tile: \'row col\'")
-    group_1.add_argument("--source-name", default='SSEC',
-                         help="specify processing source name used in attributes and filename (default 'SSEC')")
-    group_1.add_argument("--sector-id", required=True,
-                         help="specify name for sector/region used in attributes and filename (example 'LCC')")
-    return group_1, None
-
-
-writers = {
-    'geotiff': add_geotiff_argument_groups,
-    'scmi': add_scmi_argument_groups,
-}
-
-
 def main(argv=sys.argv[1:]):
     global LOG
     from satpy import Scene
@@ -172,7 +137,7 @@ def main(argv=sys.argv[1:]):
                         help="When using the 'native' resampler for composites, don't save data "
                              "at its native resolution, use the resolution used to create the "
                              "composite.")
-    parser.add_argument('-w', '--writers', nargs='+', choices=list(writers.keys()), default=['geotiff'],
+    parser.add_argument('-w', '--writers', nargs='+', choices=list(WRITER_PARSER_FUNCTIONS.keys()), default=['geotiff'],
                         help='writers to save datasets with')
     parser.add_argument("--list-products", dest="list_products", action="store_true",
                         help="List available reader products and exit")
@@ -189,7 +154,7 @@ def main(argv=sys.argv[1:]):
     glue_name = args.reader + "_" + "-".join(args.writers)
     LOG = logging.getLogger(glue_name)
     for writer in args.writers:
-        subgroups += writers[writer](parser)
+        subgroups += WRITER_PARSER_FUNCTIONS[writer](parser)
     args = parser.parse_args(argv)
 
     def _args_to_dict(group_actions):
