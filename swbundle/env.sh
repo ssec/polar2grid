@@ -31,6 +31,11 @@
 
 # Only load the environment if it hasn't been done already
 if [ -z "$POLAR2GRID_REV" ]; then
+    if [ -n "$GEO2GRID_HOME" ]; then
+      # overwrite polar2grid home with geo2grid home
+      # use polar2grid home from here on out
+      export POLAR2GRID_HOME="$GEO2GRID_HOME"
+    fi
     if [ -z "$POLAR2GRID_HOME" ]; then 
       export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
     fi
