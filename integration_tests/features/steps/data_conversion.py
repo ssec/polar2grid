@@ -22,9 +22,9 @@ def step_impl(context, source):
 
     context.source = new_source
 
-@when(u'{command} runs') 
-def step_impl(context, command):
-    context.command = "{} {} {}".format(os.path.join(context.p2g_path, "{}.sh".format(context.script)), command, context.source)
+@when(u'{script} {command} runs') 
+def step_impl(context, script, command):
+    context.command = "{} {} {}".format(os.path.join(context.p2g_path, script), command, context.source)
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
@@ -46,10 +46,8 @@ def step_impl(context, output):
         os.chdir(context.data_path)
         if "gtiff" in context.command:
             context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_geotiff.sh"), output, context.temp_dir)
-            #context.compare_command = os.path.join(context.data_path, "../polar2grid_test/viirs/p2g_compare_geotiff.sh") + " " + output + " " + context.temp_dir
         else: 
             context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_netcdf.sh"), output, context.temp_dir)
-            #context.compare_command = os.path.join(context.data_path, "/data/users/kkolman/test_data/scripts/p2g_compare_netcdf.sh") + " " + output + " " + context.temp_dir
         exit_status = subprocess.call(context.compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
