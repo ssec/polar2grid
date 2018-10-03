@@ -275,6 +275,63 @@ latex_elements = {
 \setcounter{tocdepth}{1}
 \usepackage{pdflscape}
 
+\def\ttl@save@mkschap #1{\vspace *{-20\p@ }{\parindent \z@ \raggedright
+    \normalfont \interlinepenalty \@M \DOTIS {#1} \vskip -20\p@ }}
+\makeatother
+
+""",
+    'classoptions': ',openany,oneside',
+    'babel': '\\usepackage[english]{babel}',
+    'printindex': '',
+}
+
+# new
+"""
+\renewcommand{\maketitle}{%
+  \let\spx@tempa\relax
+  \ifHy@pageanchor\def\spx@tempa{\Hy@pageanchortrue}\fi
+  \hypersetup{pageanchor=false}% avoid duplicate destination warnings
+  \begin{titlepage}%
+    \let\footnotesize\small
+    \let\footnoterule\relax
+    \noindent\rule{\textwidth}{1pt}\par
+      \begingroup % for PDF information dictionary
+       \def\endgraf{ }\def\and{\& }%
+       \pdfstringdefDisableCommands{\def\\{, }}% overwrite hyperref setup
+       \hypersetup{pdfauthor={\@author}, pdftitle={\@title}}%
+      \endgroup
+    \begin{flushright}%
+      \sphinxlogo
+      \py@HeaderFamily
+      {\Huge \@title \par}
+      {\itshape\LARGE \py@release\releaseinfo \par}
+      \vfill
+      {\LARGE
+        \begin{tabular}[t]{c}
+          \@author
+        \end{tabular}
+        \par}
+      \vfill\vfill
+      {\large
+       \@date \par
+       \vfill
+       \py@authoraddress \par
+      }%
+    \end{flushright}%\par
+    \@thanks
+  \end{titlepage}%
+  \setcounter{footnote}{0}%
+  \let\thanks\relax\let\maketitle\relax
+  %\gdef\@thanks{}\gdef\@author{}\gdef\@title{}
+  \if@openright\cleardoublepage\else\clearpage\fi
+  \spx@tempa
+}
+"""
+
+
+
+"""
+
 % Change the title page to look a bit better, and fit in with the fncychap
 % ``Bjarne'' style a bit better.
 %
@@ -329,11 +386,10 @@ latex_elements = {
 \def\ttl@save@mkschap #1{\vspace *{-20\p@ }{\parindent \z@ \raggedright
     \normalfont \interlinepenalty \@M \DOTIS {#1} \vskip -20\p@ }}
 \makeatother
-""",
-    'classoptions': ',openany,oneside',
-    'babel': '\\usepackage[english]{babel}',
-    'printindex': '',
-}
+"""
+
+
+
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]), toctree_only.
