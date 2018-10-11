@@ -7,13 +7,12 @@ Feature: Testing data conversions
         When <script> <command> runs
         Then the output matches with the files in <output>
 
-   # test data located in /data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data/
     Examples: ABI
-        | source          | command                  | output           | script      | 
-        | abi/input/test1 | -r abi_l1b -w geotiff -f | abi/output/test1 | geo2grid.sh |
-        | abi/input/test2 | -r abi_l1b -w geotiff -f | abi/output/test2 | geo2grid.sh |
-        | abi/input/test3 | -r abi_l1b -w geotiff -f | abi/output/test3 | geo2grid.sh |
-        | abi/input/test4 | r- abi_l1b -w geotiff -f | abi/output/test4 | geo2grid.sh |
+        | source          | command                       | output           | script      | 
+        | abi/input/test1 | -r abi_l1b -w geotiff -vv -f  | abi/output/test1 | geo2grid.sh |
+        | abi/input/test2 | -r abi_l1b -w geotiff -vv -f  | abi/output/test2 | geo2grid.sh |
+        | abi/input/test3 | -r abi_l1b -w geotiff -vv -f  | abi/output/test3 | geo2grid.sh |
+        | abi/input/test4 | -r abi_l1b -w geotiff -vv -f  | abi/output/test4 | geo2grid.sh |
 
     Examples: ACSPO
         | source            | command                                | output             | script        |
