@@ -66,6 +66,9 @@ def get_preserve_resolution(args, resample_kwargs, areas_to_resample):
 def write_scene(scn, writers, writer_args, datasets, to_save=None):
     if to_save is None:
         to_save = []
+    if not datasets:
+        # no datasets to save
+        return to_save
 
     for writer_name in writers:
         wargs = writer_args[writer_name]
