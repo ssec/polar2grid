@@ -24,6 +24,7 @@ def step_impl(context, source):
 
 @when(u'{script} {command} runs') 
 def step_impl(context, script, command):
+    context.script = script
     context.command = "{} {} {}".format(os.path.join(context.p2g_path, script), command, context.source)
 
     # creating new data in temporary directory to compare
@@ -44,7 +45,7 @@ def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
         os.chdir(context.data_path)
-        if "gtiff" in context.command:
+        if "gtiff" in context.command or context.script == "geo2grid.sh":
             context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_geotiff.sh"), output, context.temp_dir)
         else: 
             context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_netcdf.sh"), output, context.temp_dir)
