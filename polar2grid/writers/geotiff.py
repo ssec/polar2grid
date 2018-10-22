@@ -44,7 +44,7 @@ LOG = logging.getLogger(__name__)
 
 def add_writer_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Geotiff Writer')
-    group_1.add_argument('--file-pattern',
+    group_1.add_argument('--file-pattern', dest='filename',
                          help="custom file pattern to save dataset to")
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
