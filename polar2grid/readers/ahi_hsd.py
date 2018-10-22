@@ -27,16 +27,16 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The HRIT JMA Reader operates on JMA HRIT files
+"""The AHI HSD Reader operates on HSD files
 from the Himawari-8 Advanced Himawari Imager (AHI) instrument.
-The HRIT JMA reader analyzes the user provided filenames to determine if a file
+The AHI HSD reader analyzes the user provided filenames to determine if a file
 can be used. Files usually have the following naming scheme::
 
-    IMG_DK01B04_201809100300
+    HS_H08_20181022_0300_B09_FLDK_R20_S1010.DAT
 
-The HRIT JMA reader supports all instrument spectral bands, identified as
-the products shown below. The creation of the HRIT JMA reader can
-be specified to the main script with the reader name ``hrit_jma``.
+The AHI HSD reader supports all instrument spectral bands, identified as
+the products shown below. The creation of the AHI HSD reader can
+be specified to the main script with the reader name ``ahi_hsd``.
 
 The list of supported products includes true and natural color imagery.
 These are created by means of a python based atmospheric Rayleigh
