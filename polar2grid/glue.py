@@ -184,6 +184,7 @@ def main(argv=sys.argv[1:]):
         args.log_fn = glue_name + "_fail.log"
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    logging.getLogger('rasterio').setLevel(levels[min(2, args.verbosity)])
     sys.excepthook = create_exc_handler(LOG.name)
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
