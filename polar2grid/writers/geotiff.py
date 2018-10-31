@@ -41,10 +41,17 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+# reader_name -> filename
+DEFAULT_OUTPUT_FILENAME = {
+    None: '{platform_name!u}_{sensor!u}_{name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif',
+    'abi_l1b': '{platform_name!u}_{sensor!u}_{observation_type}{scene_abbr}_'
+               '{name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif',
+}
+
 
 def add_writer_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Geotiff Writer')
-    group_1.add_argument('--file-pattern', dest='filename',
+    group_1.add_argument('--output-filename', dest='filename',
                          help="custom file pattern to save dataset to")
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')

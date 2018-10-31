@@ -46,6 +46,18 @@ WRITER_PARSER_FUNCTIONS = {
     'scmi': scmi.add_writer_argument_groups,
 }
 
+OUTPUT_FILENAMES = {
+    'geotiff': geotiff.DEFAULT_OUTPUT_FILENAME,
+}
+
+
+def get_default_output_filename(reader, writer):
+    """Get a default output filename based on what reader we are reading."""
+    ofile_map = OUTPUT_FILENAMES.get(writer, {})
+    if reader not in ofile_map:
+        reader = None
+    return ofile_map[reader]
+
 
 def get_preserve_resolution(args, resample_kwargs, areas_to_resample):
     """Determine if we should preserve native resolution products.
@@ -73,9 +85,7 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
     for writer_name in writers:
         wargs = writer_args[writer_name]
 
-        res = scn.save_datasets(writer=writer_name, compute=False,
-                                    datasets=datasets,
-                                    **wargs)
+        res = scn.save_datasets(writer=writer_name, compute=False, datasets=datasets, **wargs)
         if isinstance(res, (tuple, list)):
             to_save.extend(zip(*res))
         else:
@@ -97,6 +107,7 @@ def add_scene_argument_groups(parser):
 
 def add_resample_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Resampling')
+    # FIXME: Make the default 'native' if g is MIN or MAX, nearest otherwise
     group_1.add_argument('--method', dest='resampler',
                          default='native', choices=['native', 'nearest'],
                          help='resampling algorithm to use (default: native)')
@@ -117,6 +128,7 @@ def add_resample_argument_groups(parser):
                               'projection. For negative numbers use quotes '
                               'preceeded by a space: " -95.5"')
     return tuple([group_1])
+
 
 def main(argv=sys.argv[1:]):
     global LOG
@@ -172,6 +184,10 @@ def main(argv=sys.argv[1:]):
         if sgrp2 is not None:
             wargs.update(_args_to_dict(sgrp2._group_actions))
         writer_args[writer] = wargs
+        # get default output filename
+        if 'filename' in wargs and wargs['filename'] is None:
+            wargs['filename'] = get_default_output_filename(args.reader, writer)
+            print("######################: ", wargs['filename'])
 
     if not args.filenames:
         parser.print_usage()
