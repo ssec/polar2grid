@@ -187,7 +187,6 @@ def main(argv=sys.argv[1:]):
         # get default output filename
         if 'filename' in wargs and wargs['filename'] is None:
             wargs['filename'] = get_default_output_filename(args.reader, writer)
-            print("######################: ", wargs['filename'])
 
     if not args.filenames:
         parser.print_usage()
