@@ -107,7 +107,6 @@ def add_scene_argument_groups(parser):
 
 def add_resample_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Resampling')
-    # FIXME: Make the default 'native' if g is MIN or MAX, nearest otherwise
     group_1.add_argument('--method', dest='resampler',
                          default='native', choices=['native', 'nearest'],
                          help='resampling algorithm to use (default: native)')
@@ -146,13 +145,13 @@ def main(argv=sys.argv[1:]):
                         help="specify the log filename")
     parser.add_argument('--progress', action='store_true',
                         help="show processing progress bar (not recommended for logged output)")
-    parser.add_argument('--num-workers', type=int,
-                        help="specify number of worker threads to use (default: 1 per logical core)")
+    parser.add_argument('--num-workers', type=int, default=4,
+                        help="specify number of worker threads to use (default: 4)")
     parser.add_argument('--match-resolution', dest='preserve_resolution', action='store_false',
                         help="When using the 'native' resampler for composites, don't save data "
                              "at its native resolution, use the resolution used to create the "
                              "composite.")
-    parser.add_argument('-w', '--writers', nargs='+', choices=list(WRITER_PARSER_FUNCTIONS.keys()), default=['geotiff'],
+    parser.add_argument('-w', '--writers', nargs='+', default=['geotiff'],
                         help='writers to save datasets with')
     parser.add_argument("--list-products", dest="list_products", action="store_true",
                         help="List available reader products and exit")
@@ -169,7 +168,10 @@ def main(argv=sys.argv[1:]):
     glue_name = args.reader + "_" + "-".join(args.writers)
     LOG = logging.getLogger(glue_name)
     for writer in args.writers:
-        subgroups += WRITER_PARSER_FUNCTIONS[writer](parser)
+        parser_func = WRITER_PARSER_FUNCTIONS.get(writer)
+        if parser_func is None:
+            continue
+        subgroups += parser_func(parser)
     args = parser.parse_args(argv)
 
     def _args_to_dict(group_actions):
