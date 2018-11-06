@@ -38,6 +38,7 @@ as transparent in most image viewers.
 
 """
 import logging
+from polar2grid.core.dtype import NUMPY_DTYPES, str2dtype, int_or_float
 
 LOG = logging.getLogger(__name__)
 
@@ -52,7 +53,16 @@ DEFAULT_OUTPUT_FILENAME = {
 def add_writer_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Geotiff Writer')
     group_1.add_argument('--output-filename', dest='filename',
-                         help="custom file pattern to save dataset to")
+                         help='custom file pattern to save dataset to')
+    group_1.add_argument('--dtype', choices=[NUMPY_DTYPES], type=str2dtype,
+                         help='Data type of the output file (8-bit unsigned '
+                              'integer by default - uint8)')
+    group_1.add_argument('--no-enhance', dest='enhance', action='store_false',
+                         help='Don\'t try to enhance the data before saving it')
+    group_1.add_argument('--fill-value', dest='fill_value', type=int_or_float,
+                         help='Instead of an alpha channel fill invalid '
+                              'values with this value. Turns LA or RGBA '
+                              'images in to L or RGB images respectively.')
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
     return group_1, None

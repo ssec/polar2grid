@@ -58,6 +58,19 @@ DTYPE_INT64 = "int8"
 DTYPE_FLOAT32 = "real4"
 DTYPE_FLOAT64 = "real8"
 
+NUMPY_DTYPES = [
+    'uint8',
+    'uint16',
+    'uint32',
+    'uint64',
+    'int8',
+    'int16',
+    'int32',
+    'int64',
+    'float32',
+    'float64',
+]
+
 # Map data type to numpy type for conversion
 str2dtype = {
     DTYPE_UINT8: numpy.uint8,
@@ -103,6 +116,9 @@ def str_to_dtype(dtype_str):
     if numpy.issubclass_(dtype_str, numpy.number):
         # if they gave us a numpy dtype
         return dtype_str
+    elif isinstance(dtype_str, str) and hasattr(numpy, dtype_str):
+        # they gave us the numpy name of the dtype
+        return getattr(numpy, dtype_str)
 
     try:
         return str2dtype[dtype_str]
@@ -150,9 +166,13 @@ def clip_to_data_type(data, data_type):
     return convert_to_data_type(data, data_type)
 
 
-def main():
-    from pprint import pprint
-    pprint(dtype2range)
+def int_or_float(val):
+    """Convert a string to integer or float.
 
-if __name__ == "__main__":
-    sys.exit(main())
+    If we can't make it an integer then make it a float.
+
+    """
+    try:
+        return int(val)
+    except ValueError:
+        return float(val)
