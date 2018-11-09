@@ -38,7 +38,7 @@ as transparent in most image viewers.
 
 """
 import logging
-from polar2grid.core.dtype import NUMPY_DTYPES, str2dtype, int_or_float
+from polar2grid.core.dtype import NUMPY_DTYPE_STRS, str_to_dtype, int_or_float
 
 LOG = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def add_writer_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Geotiff Writer')
     group_1.add_argument('--output-filename', dest='filename',
                          help='custom file pattern to save dataset to')
-    group_1.add_argument('--dtype', choices=[NUMPY_DTYPES], type=str2dtype,
+    group_1.add_argument('--dtype', choices=[NUMPY_DTYPE_STRS], type=str_to_dtype,
                          help='Data type of the output file (8-bit unsigned '
                               'integer by default - uint8)')
     group_1.add_argument('--no-enhance', dest='enhance', action='store_false',

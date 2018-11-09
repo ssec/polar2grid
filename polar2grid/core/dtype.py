@@ -58,7 +58,7 @@ DTYPE_INT64 = "int8"
 DTYPE_FLOAT32 = "real4"
 DTYPE_FLOAT64 = "real8"
 
-NUMPY_DTYPES = [
+NUMPY_DTYPE_STRS = [
     'uint8',
     'uint16',
     'uint32',
