@@ -89,6 +89,11 @@ READER_PRODUCTS = ['C{:02d}'.format(x) for x in range(1, 17)]
 COMPOSITE_PRODUCTS = [
     'true_color',
     'natural_color',
+    'airmass',
+    'ash',
+    'dust',
+    'fog',
+    'night_microphysics',
 ]
 DEFAULT_PRODUCTS = READER_PRODUCTS + COMPOSITE_PRODUCTS
 
