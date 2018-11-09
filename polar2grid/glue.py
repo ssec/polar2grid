@@ -59,20 +59,30 @@ def get_default_output_filename(reader, writer):
     return ofile_map[reader]
 
 
-def get_preserve_resolution(args, resample_kwargs, areas_to_resample):
+def get_preserve_resolution(args, resampler, areas_to_resample):
     """Determine if we should preserve native resolution products.
 
     Preserving native resolution should only happen if:
 
     1. The 'native' resampler is used
-    2. The areas provided to resampling are only 'MIN' or 'MAX'
+    2. At least one of the areas provided to resampling are 'MIN' or 'MAX'
     3. The user didn't ask to *not* preserve it.
 
     """
     # save original native resolution if possible
-    all_minmax = all(x in ['MIN', 'MAX'] for x in areas_to_resample)
-    is_native = resample_kwargs.get('resampler') == 'native'
-    return all_minmax and is_native and args.preserve_resolution
+    any_minmax = any(x in ['MIN', 'MAX'] for x in areas_to_resample)
+    is_native = resampler == 'native'
+    is_default = resampler is None
+    return any_minmax and (is_native or is_default) and args.preserve_resolution
+
+
+def get_input_files(input_filenames):
+    """Convert directories to list of files."""
+    for fn in input_filenames:
+        if os.path.isdir(fn):
+            yield from glob(os.path.join(fn, '*'))
+        else:
+            yield fn
 
 
 def write_scene(scn, writers, writer_args, datasets, to_save=None):
@@ -108,12 +118,12 @@ def add_scene_argument_groups(parser):
 def add_resample_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Resampling')
     group_1.add_argument('--method', dest='resampler',
-                         default='native', choices=['native', 'nearest'],
+                         default=None, choices=['native', 'nearest'],
                          help='resampling algorithm to use (default: native)')
     group_1.add_argument('--cache-dir',
                          help='Directory to store resampling intermediate '
                               'results between executions')
-    group_1.add_argument('-g', '--grids', default=['MAX'], nargs="*",
+    group_1.add_argument('-g', '--grids', default=None, nargs="*",
                          help='Area definition to resample to. Empty means '
                               'no resampling (default: MAX)')
     group_1.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
@@ -211,14 +221,7 @@ def main(argv=sys.argv[1:]):
         dask.config.set(pool=ThreadPool(args.num_workers))
 
     # Parse provided files and search for files if provided directories
-    all_filenames = []
-    for fn in scene_args['filenames']:
-        if os.path.isdir(fn):
-            all_filenames.extend(glob(os.path.join(fn, '*')))
-        else:
-            all_filenames.append(fn)
-    scene_args['filenames'] = all_filenames
-
+    scene_args['filenames'] = get_input_files(scene_args['filenames'])
     # Create a Scene, analyze the provided files
     scn = Scene(**scene_args)
 
@@ -249,13 +252,15 @@ def main(argv=sys.argv[1:]):
     if not areas_to_resample:
         areas_to_resample = [None]
     has_custom_grid = any(g not in ['MIN', 'MAX', None] for g in areas_to_resample)
-    if has_custom_grid and resample_kwargs['resampler'] == 'native':
-        LOG.error("Must specify resampling method (--method) when a target grid (-g) is specified.")
+    resampler = resample_kwargs.pop('resampler')
+    if has_custom_grid and resampler == 'native':
+        LOG.error("Resampling method 'native' can only be used with 'MIN' or 'MAX' grids (use 'nearest' instead).")
         return -1
 
     p2g_grid_configs = [x for x in grid_configs if x.endswith('.conf')]
     pyresample_area_configs = [x for x in grid_configs if not x.endswith('.conf')]
-    if p2g_grid_configs:
+    if not grid_configs or p2g_grid_configs:
+        # if we were given p2g grid configs or we weren't given any to choose from
         from polar2grid.grids import GridManager
         grid_manager = GridManager(*p2g_grid_configs)
     else:
@@ -273,7 +278,7 @@ def main(argv=sys.argv[1:]):
         scn = scn.crop(ll_bbox=ll_bbox)
 
     wishlist = scn.wishlist.copy()
-    preserve_resolution = get_preserve_resolution(args, resample_kwargs, areas_to_resample)
+    preserve_resolution = get_preserve_resolution(args, resampler, areas_to_resample)
     if preserve_resolution:
         preserved_products = set(wishlist) & set(scn.datasets.keys())
         resampled_products = set(wishlist) - preserved_products
@@ -298,13 +303,24 @@ def main(argv=sys.argv[1:]):
         elif area_name in custom_areas:
             area_def = custom_areas[area_name]
         elif area_name in grid_manager:
-            area_def = grid_manager[area_name].to_satpy_area()
+            from pyresample.geometry import DynamicAreaDefinition
+            p2g_def = grid_manager[area_name]
+            area_def = p2g_def.to_satpy_area()
+            if isinstance(area_def, DynamicAreaDefinition) and p2g_def['cell_width'] is not None:
+                area_def = area_def.freeze(scn.max_area(),
+                                           resolution=(abs(p2g_def['cell_width']), abs(p2g_def['cell_height'])))
         else:
             area_def = get_area_def(area_name)
 
+        if resampler is None and area_def is not None:
+            rs = 'native' if area_name in ['MIN', 'MAX'] else 'nearest'
+            LOG.debug("Setting default resampling to '{}' for grid '{}'".format(rs, area_name))
+        else:
+            rs = resampler
+
         if area_def is not None:
             LOG.info("Resampling data to '%s'", area_name)
-            new_scn = scn.resample(area_def, **resample_kwargs)
+            new_scn = scn.resample(area_def, resampler=rs, **resample_kwargs)
         elif not preserve_resolution:
             # the user didn't want to resample to any areas
             # the user also requested that we don't preserve resolution
@@ -312,8 +328,7 @@ def main(argv=sys.argv[1:]):
             # because they won't be saved
             new_scn = scn
 
-        to_save = write_scene(new_scn, args.writers, writer_args,
-                              resampled_products, to_save=to_save)
+        to_save = write_scene(new_scn, args.writers, writer_args, resampled_products, to_save=to_save)
 
     if args.progress:
         pbar = ProgressBar()

@@ -746,17 +746,25 @@ class GridDefinition(GeographicDefinition):
         return self.proj(*self.ur_extent, inverse=True)
 
     def to_satpy_area(self):
-        from pyresample.geometry import AreaDefinition
-        xy_ll = self.ll_extent
-        xy_ur = self.ur_extent
-        return AreaDefinition(
-            self["grid_name"],
+        from pyresample.geometry import AreaDefinition, DynamicAreaDefinition
+        if self.is_static:
+            xy_ll = self.ll_extent
+            xy_ur = self.ur_extent
+            return AreaDefinition(
+                self["grid_name"],
+                self["grid_name"],
+                self["grid_name"],
+                self.proj4_dict,
+                self["width"],
+                self["height"],
+                area_extent=xy_ll + xy_ur,
+            )
+        return DynamicAreaDefinition(
             self["grid_name"],
             self["grid_name"],
             self.proj4_dict,
             self["width"],
             self["height"],
-            area_extent=xy_ll + xy_ur,
         )
 
 
