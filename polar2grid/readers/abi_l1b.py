@@ -95,7 +95,7 @@ COMPOSITE_PRODUCTS = [
     'fog',
     'night_microphysics',
 ]
-DEFAULT_PRODUCTS = READER_PRODUCTS + COMPOSITE_PRODUCTS
+DEFAULT_PRODUCTS = READER_PRODUCTS + COMPOSITE_PRODUCTS[:2]
 
 
 def add_reader_argument_groups(parser):
