@@ -249,12 +249,21 @@ def main(argv=sys.argv[1:]):
     resample_kwargs = resample_args.copy()
     areas_to_resample = resample_kwargs.pop('grids')
     grid_configs = resample_kwargs.pop('grid_configs')
-    if not areas_to_resample:
-        areas_to_resample = [None]
-    has_custom_grid = any(g not in ['MIN', 'MAX', None] for g in areas_to_resample)
     resampler = resample_kwargs.pop('resampler')
+
+    if areas_to_resample is None and resampler in [None, 'native']:
+        # no areas specified
+        areas_to_resample = ['MAX']
+    elif areas_to_resample is None:
+        raise ValueError("Resampling method specified (--method) without any destination grid/area (-g flag).")
+    elif not areas_to_resample:
+        # they don't want any resampling (they used '-g' with no args)
+        areas_to_resample = [None]
+
+    has_custom_grid = any(g not in ['MIN', 'MAX', None] for g in areas_to_resample)
     if has_custom_grid and resampler == 'native':
-        LOG.error("Resampling method 'native' can only be used with 'MIN' or 'MAX' grids (use 'nearest' instead).")
+        LOG.error("Resampling method 'native' can only be used with 'MIN' or 'MAX' grids "
+                  "(use 'nearest' method instead).")
         return -1
 
     p2g_grid_configs = [x for x in grid_configs if x.endswith('.conf')]
