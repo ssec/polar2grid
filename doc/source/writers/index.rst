@@ -23,4 +23,3 @@ tool that is optimized for viewing the data.
         :maxdepth: 1
 
         geotiff
-        scmi

@@ -74,7 +74,7 @@ for image_url in images:
         continue
     elif image_url.startswith("http://") or image_url.startswith('ftp://'):
         print("Downloading example image: {}".format(image_url))
-        with urllib.urlopen(image_url) as remote_img, open(image_pathname, 'wb') as local_img:
+        with urllib.request.urlopen(image_url) as remote_img, open(image_pathname, 'wb') as local_img:
             copyfileobj(remote_img, local_img)
 
 # -- Customize setup -----------------------------------------------------------
