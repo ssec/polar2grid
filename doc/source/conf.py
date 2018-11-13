@@ -50,6 +50,10 @@ images = (
     "http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Mercator.png",
     "http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Pacific.png",
     "http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Polar.png",
+    "http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_GOES_EAST.png",
+    "http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_GOES_STORE.png",
+    "http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_GOES_TEST.png",
+    "http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_GOES_WEST.png",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/dnb/HNCC_DNB_Band_Example.png",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_true_color_example.png",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_vis02_example.png",
@@ -68,17 +72,10 @@ for image_url in images:
     image_pathname = os.path.join(image_dst, image_fn)
     if os.path.isfile(image_pathname):
         continue
-    elif image_url.startswith("http://"):
+    elif image_url.startswith("http://") or image_url.startswith('ftp://'):
         print("Downloading example image: {}".format(image_url))
-        urllib.urlretrieve(image_url, image_pathname)
-    elif image_url.startswith("ftp://"):
-        print("Downloading example image: {}".format(image_url))
-        parts = image_url.split("/")
-        server = parts[2]
-        ftp_fn = "/".join(parts[3:])
-        ftp = ftplib.FTP(server, user='ftp')  # hope for anonymous
-        out_file = open(image_pathname, 'wb')
-        ftp.retrbinary('RETR {}'.format(ftp_fn), out_file.write)
+        with urllib.urlopen(image_url) as remote_img, open(image_pathname, 'wb') as local_img:
+                local_img.write(remote_img.read())
 
 # -- Customize setup -----------------------------------------------------------
 
