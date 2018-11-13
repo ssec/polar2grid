@@ -11,7 +11,10 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import sys
+import urllib.request
+from shutil import copyfileobj
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -27,8 +30,6 @@ for dirname in [x for x in os.listdir(BASE_PATH) if os.path.isdir(os.path.join(B
 is_geo2grid = 'geo' in os.getenv('POLAR2GRID_DOC', 'polar').lower()
 
 # Hack to download example images instead of storing them in git
-import urllib
-from shutil import copyfileobj
 images = (
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_basic/gcom-w1_amsr2_btemp_36.5h_20160719_190300_wgs84_fit.jpg",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.jpg",
