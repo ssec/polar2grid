@@ -41,9 +41,8 @@
 import os
 import sys
 import logging
-from pycoast import ContourWriter
+from pycoast import ContourWriterAGG
 from PIL import Image, ImageFont
-from pyproj import Proj
 # XXX: For some reason 'gdal' needs to be imported *after* PIL otherwise we get a segfault
 import gdal
 import osr
@@ -237,7 +236,7 @@ def main():
         img = Image.open(input_tiff).convert('RGB')
         area_def = (proj4_str, area_extent)
 
-        cw = ContourWriter(args.shapes_dir)
+        cw = ContourWriterAGG(args.shapes_dir)
 
         if args.add_coastlines:
             outline = args.coastlines_outline[0] if len(args.coastlines_outline) == 1 else tuple(int(x) for x in args.coastlines_outline)
@@ -333,6 +332,7 @@ def main():
                          **kwargs)
 
         img.save(output_filename)
+
 
 if __name__ == "__main__":
     sys.exit(main())
