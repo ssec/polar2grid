@@ -28,7 +28,7 @@ is_geo2grid = 'geo' in os.getenv('POLAR2GRID_DOC', 'polar').lower()
 
 # Hack to download example images instead of storing them in git
 import urllib
-import ftplib
+from shutil import copyfileobj
 images = (
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_basic/gcom-w1_amsr2_btemp_36.5h_20160719_190300_wgs84_fit.jpg",
     "ftp://ftp.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.jpg",
@@ -75,7 +75,7 @@ for image_url in images:
     elif image_url.startswith("http://") or image_url.startswith('ftp://'):
         print("Downloading example image: {}".format(image_url))
         with urllib.urlopen(image_url) as remote_img, open(image_pathname, 'wb') as local_img:
-                local_img.write(remote_img.read())
+            copyfileobj(remote_img, local_img)
 
 # -- Customize setup -----------------------------------------------------------
 
