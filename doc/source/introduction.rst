@@ -9,17 +9,17 @@ Overview
 Software Design
 ---------------
 
-Polar2Grid has a modular design operating on the idea of satellite “products”
+|project| has a modular design operating on the idea of satellite “products”
 or "datasets"; data observed by a satellite instrument. These products can be
 any type of raster data, such as temperatures, reflectances, radiances, or
 any other value that may be recorded by or calculated from an instrument.
 There are 4 main steps or components involved when working with these
-products in Polar2Grid:
+products in |project|:
 reading, writing, compositing, and remapping.
-Polar2Grid makes it possible to access and configure these steps via simple
+|project| makes it possible to access and configure these steps via simple
 bash scripts. The script that "glues" these steps together is
-``polar2grid.sh`` and creates gridded versions of the user swath products
-provided to it. More information on accessing Polar2Grid's features and
+|script_literal| and creates gridded versions of the user data products
+provided to it. More information on accessing |project|'s features and
 running its scripts can be found in the :doc:`getting_started` section
 or the examples following each reader section. Note that although an
 example may be written for a specific reader the same operations can
@@ -39,24 +39,34 @@ component see the :doc:`design_overview` Appendix.
         "Compositors" -> "Writer" [style=dashed];
     }
 
-.. note::
-
-    Compositors and how they are configured will be changing in future
-    versions of Polar2Grid. Due to this they are no longer documented here.
-
 What's New?
 -----------
 
-Polar2Grid Version 2.2.1 is now available. Changes in this
-version include:
+.. ifconfig:: not is_geo2grid
 
-.. include:: NEWS.rst
-    :start-line: 6
-    :end-line: 17
+    Polar2Grid Version 2.2.1 is now available. Changes in this
+    version include:
 
-For more details on what's new in this version and past versions see the
-`Release Notes <https://raw.githubusercontent.com/davidh-ssec/polar2grid/master/NEWS.rst>`_
-in the github repository.
+    .. include:: NEWS.rst
+        :start-line: 6
+        :end-line: 17
+
+    For more details on what's new in this version and past versions see the
+    `Release Notes <https://raw.githubusercontent.com/davidh-ssec/polar2grid/master/NEWS.rst>`_
+    in the github repository.
+
+.. ifconfig:: is_geo2grid
+
+    Geo2Grid Version 0.1 is now available. Changes in this version include:
+
+    .. include:: NEWS_GEO2GRID.rst
+        :start-line: 6
+        :end-line: 15
+
+    For more details on what's new in this version and past versions see the
+    `Release Notes <https://raw.githubusercontent.com/davidh-ssec/polar2grid/master/NEWS_GEO2GRID.rst>`_
+    in the github repository.
+
 
 .. raw:: latex
 
@@ -65,11 +75,11 @@ in the github repository.
 System Requirements
 -------------------
 
-System requirements for the Polar2Grid software are as follows:
+System requirements for the |project| software are as follows:
  * Intel or AMD CPU with 64-bit instruction support
- * 8 GB RAM (minimum)
- * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)
- * 3 GB disk space (minimum)
+ * 16 GB RAM (minimum)
+ * CentOS 7 64-bit Linux (or other compatible 64-bit Linux distribution)
+ * 5 GB disk space (minimum)
  * GLIBC version 2.7 or higher (execute “/lib64/libc.so.6” to find the version number)
 
 Linux terminal commands included in these instructions assume the bash shell is used.

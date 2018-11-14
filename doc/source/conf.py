@@ -149,7 +149,8 @@ rst_epilog += """
 .. |project| replace:: {}
 .. |script| replace:: {}.sh
 .. |script_literal| replace:: ``{}.sh``
-""".format(project, project.lower(), project.lower())
+.. |project_env| replace:: ${}_HOME
+""".format(project, project.lower(), project.lower(), project.upper())
 
 copyright = u'2012-2018, University of Wisconsin SSEC'
 

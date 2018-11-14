@@ -1,6 +1,6 @@
-|project| is a set of command line tools for extracting swath data from
-earth-observing satellite instruments, remapping it to uniform grids,
-and writing that gridded data to a new file format.
+|project| is a set of command line tools for extracting data from
+earth-observing satellite instrument file formats, remapping it to uniform
+grids if needed, and writing that gridded data to a new file format.
 |project| was created by scientists and software developers at the
 `SSEC <http://www.ssec.wisc.edu>`_. It is distributed as part of the
 `CSPP <http://cimss.ssec.wisc.edu/cspp/>`_  project for
@@ -29,7 +29,8 @@ is used.
 
     `Documentation Website <http://www.ssec.wisc.edu/software/polar2grid/>`_
 
-`GitHub Repository <https://github.com/davidh-ssec/polar2grid>`_
+`GitHub Repository <https://github.com/ssec/polar2grid>`_
 
 `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`_
 
+`CSPP Forum <https://forums.ssec.wisc.edu/>`_
