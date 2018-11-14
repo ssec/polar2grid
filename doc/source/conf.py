@@ -14,6 +14,7 @@
 import os
 import sys
 import urllib.request
+import ftplib
 from shutil import copyfileobj
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -25,6 +26,7 @@ BASE_PATH = "../../../"
 for dirname in [x for x in os.listdir(BASE_PATH) if os.path.isdir(os.path.join(BASE_PATH, x)) and x.startswith("polar2grid")]:
     print("\t ", os.path.realpath(os.path.join(BASE_PATH, dirname)))
     sys.path.insert(0, os.path.abspath(os.path.join(BASE_PATH, dirname)))
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 # Handle building documentation for polar2grid or geo2grid
 is_geo2grid = 'geo' in os.getenv('POLAR2GRID_DOC', 'polar').lower()
@@ -73,10 +75,18 @@ for image_url in images:
     image_pathname = os.path.join(image_dst, image_fn)
     if os.path.isfile(image_pathname):
         continue
-    elif image_url.startswith("http://") or image_url.startswith('ftp://'):
+    elif image_url.startswith("http://"):  # or image_url.startswith('ftp://'):
         print("Downloading example image: {}".format(image_url))
         with urllib.request.urlopen(image_url) as remote_img, open(image_pathname, 'wb') as local_img:
             copyfileobj(remote_img, local_img)
+    elif image_url.startswith("ftp://"):
+        print("Downloading example image: {}".format(image_url))
+        parts = image_url.split("/")
+        server = parts[2]
+        ftp_fn = "/".join(parts[3:])
+        ftp = ftplib.FTP(server, user='ftp')  # hope for anonymous
+        out_file = open(image_pathname, 'wb')
+        ftp.retrbinary('RETR {}'.format(ftp_fn), out_file.write)
 
 # -- Customize setup -----------------------------------------------------------
 
@@ -98,7 +108,7 @@ rst_epilog = """
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.graphviz', 'sphinx.ext.todo', 'sphinx.ext.coverage',
-              'sphinx.ext.imgmath',
+              'sphinx.ext.imgmath', 'sphinx.ext.intersphinx','sphinx.ext.napoleon', 'doi_role',
               'sphinx.ext.ifconfig', 'sphinx.ext.viewcode', 'sphinxarg.ext']
 
 numfig = True
@@ -138,7 +148,8 @@ else:
 rst_epilog += """
 .. |project| replace:: {}
 .. |script| replace:: {}.sh
-""".format(project, project.lower())
+.. |script_literal| replace:: ``{}.sh``
+""".format(project, project.lower(), project.lower())
 
 copyright = u'2012-2018, University of Wisconsin SSEC'
 
@@ -450,3 +461,14 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+    'xarray': ('https://xarray.pydata.org/en/stable', None),
+    'dask': ('https://docs.dask.org/en/latest', None),
+    'pyresample': ('https://pyresample.readthedocs.io/en/stable', None),
+    'trollsift': ('https://trollsift.readthedocs.io/en/stable', None),
+    'trollimage': ('https://trollimage.readthedocs.io/en/stable', None),
+}
