@@ -38,10 +38,10 @@ The ABI L1B reader supports all instrument spectral bands, identified as
 the products shown below. The creation of the ABI L1B reader can
 be specified to the main script with the reader name ``abi_l1b``.
 
-The list of supported products includes true and false color imagery. 
+The list of supported products includes true and natural color imagery.
 These are created  by means of a python based atmospheric Rayleigh 
-Scattering algorithm that is executed as part of the |project| ABI L1B
-reader.  
+scattering correction algorithm that is executed as part of the |project| ABI
+L1B reader.
 
 +---------------------------+-----------------------------------------------------+
 | Product Name              | Description                                         |

@@ -8,10 +8,7 @@ The data that readers distribute to other |project| components are called
 :term:`products` ("datasets" in SatPy terminology).
 
 Depending on what products are available in the files provided by the user
-the reader can also provide composite products. Composites can be RGB images,
-corrected/modified datasets (like VIIRS DNB normalization), or any other
-combination of other products to make a new one.
-
+the reader can also provide composite products.
 Due to the way |project| interfaces to the SatPy library there may be
 additional readers available than those described below. Further details on
 these readers can be found on the

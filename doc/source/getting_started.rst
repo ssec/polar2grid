@@ -20,6 +20,22 @@ Basic Usage
 
         $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f <path to files>/<list of files>
 
+    This script takes advantage of the modular design of |project|;
+    a user only needs to decide on a :doc:`Reader <readers/index>` and a
+    :doc:`Writer <writers/index>` and provide them to |script_literal|.
+    In |project| the ``<path to files>`` will be searched for the necessary
+    files to make as many products as possible. Similarly if processing errors
+    occur |project| will attempt to continue processing to make as many products
+    as it can.
+
+    For example, executing the command above will create 8-bit GeoTIFF files of
+    all M-Band, I-Band, and Day/Night Band SDR files it finds in the directory
+    as long as it contains the matching geolocation files. If multiple granules
+    are provided to |script_literal| they will be aggregated together.
+    By default the above command resamples the data to a Google Earth compatible
+    Platte Carrée projected grid at ~600m resolution, but this can be changed
+    with command line arguments.
+
 .. ifconfig:: is_geo2grid
 
     The most common use of |project| is to convert satellite data files in to
@@ -33,30 +49,19 @@ Basic Usage
 
         $GEO2GRID_HOME/bin/geo2grid.sh -r abi_l1b -w geotiff -f <path to files>/<list of files>
 
-This script takes advantage of the modular design of |project|;
-a user only needs to decide on a :doc:`Reader <readers/index>` and a
-:doc:`Writer <writers/index>` and provide them to |script_literal|.
+    This script takes advantage of the modular design of |project|;
+    a user only needs to decide on a :doc:`Reader <readers/index>` and a
+    :doc:`Writer <writers/index>` and provide them to |script_literal|.
 
-In |project| the ``<path to files>`` will be searched for the necessary
-files to make as many products as possible. Similarly if processing errors
-occur |project| will attempt to continue processing to make as many products
-as it can.
-
-.. ifconfig:: not is_geo2grid
-
-    For example, executing the command above will create 8-bit GeoTIFF files of
-    all M-Band, I-Band, and Day/Night Band SDR files it finds in the directory
-    as long as it contains the matching geolocation files. If multiple granules
-    are provided to |script_literal| they will be aggregated together.
-    By default the above command resamples the data to a Google Earth compatible
-    Platte Carrée projected grid at ~600m resolution, but this can be changed
-    with command line arguments.
-
-.. ifconfig:: is_geo2grid
+    In |project| the ``<path to files>`` will be searched for the necessary
+    files to make as many products as possible. |project| processes one time
+    step per execution. Similarly if processing errors
+    occur |project| will attempt to continue processing to make as many products
+    as it can.
 
     For example, executing the command above will create 8-bit GeoTIFF files of
     all 16 ABI imager channels, a true color RGB, and natural color RGB in the
-    native resolution of the instrument channel (500m for most RGB composites).
+    native resolution of the instrument channel (500m for RGB composites).
     This can be customized with command line arguments.
 
 Common Script Options
@@ -104,6 +109,9 @@ are always available:
         -f                    Input files and paths.
         -g <grid_name>        Specify the output grid to use. Default is the native instrument projection.
                               See :doc:`grids` and :doc:`custom_grids` for information other possible values.
+
+        --ll-bbox <lonmin latmin lonmax latmax>    Subset input data to the bounding coordinates specified.
+
         -v                    Print detailed log information.
 
     Examples:

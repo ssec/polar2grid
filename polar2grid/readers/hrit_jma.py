@@ -40,15 +40,11 @@ be specified to the main script with the reader name ``hrit_jma``.
 
 The list of supported products includes true and natural color imagery.
 These are created by means of a python based atmospheric Rayleigh
-Scattering algorithm that is executed as part of the |project| reader.
+scattering algorithm that is executed as part of the |project| reader.
 
 +---------------------------+-----------------------------------------------------+
 | Product Name              | Description                                         |
 +===========================+=====================================================+
-| B01                       | Channel 1 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| B02                       | Channel 2 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
 | B03                       | Channel 3 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
 | B04                       | Channel 4 Reflectance Band                          |
@@ -77,16 +73,13 @@ Scattering algorithm that is executed as part of the |project| reader.
 +---------------------------+-----------------------------------------------------+
 | B16                       | Channel 16 Brightness Temperature Band              |
 +---------------------------+-----------------------------------------------------+
-| true_color                | Ratio sharpened rayleigh corrected true color       |
-+---------------------------+-----------------------------------------------------+
 | natural_color             | Ratio sharpened rayleigh corrected natural color    |
 +---------------------------+-----------------------------------------------------+
 
 """
 
-READER_PRODUCTS = ['B{:02d}'.format(x) for x in range(1, 17)]
+READER_PRODUCTS = ['B{:02d}'.format(x) for x in range(3, 17)]
 COMPOSITE_PRODUCTS = [
-    'true_color',
     'natural_color',
 ]
 DEFAULT_PRODUCTS = READER_PRODUCTS + COMPOSITE_PRODUCTS

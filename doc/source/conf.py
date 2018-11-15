@@ -90,6 +90,7 @@ for image_url in images:
 
 # -- Customize setup -----------------------------------------------------------
 
+
 def setup(app):
     app.add_stylesheet('prettytables.css')
     app.add_config_value('is_geo2grid', is_geo2grid, 'env')

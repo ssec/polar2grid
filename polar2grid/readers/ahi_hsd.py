@@ -40,7 +40,7 @@ be specified to the main script with the reader name ``ahi_hsd``.
 
 The list of supported products includes true and natural color imagery.
 These are created by means of a python based atmospheric Rayleigh
-Scattering algorithm that is executed as part of the |project| reader.
+scattering algorithm that is executed as part of the |project| reader.
 
 +---------------------------+-----------------------------------------------------+
 | Product Name              | Description                                         |
@@ -89,7 +89,7 @@ COMPOSITE_PRODUCTS = [
     'true_color',
     'natural_color',
 ]
-DEFAULT_PRODUCTS = READER_PRODUCTS + COMPOSITE_PRODUCTS
+DEFAULT_PRODUCTS = READER_PRODUCTS + COMPOSITE_PRODUCTS[:2]
 
 
 def add_reader_argument_groups(parser):
