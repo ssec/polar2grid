@@ -219,6 +219,9 @@ def main(argv=sys.argv[1:]):
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
     logging.getLogger('rasterio').setLevel(levels[min(2, args.verbosity)])
     sys.excepthook = create_exc_handler(LOG.name)
+    if levels[min(3, args.verbosity)] > logging.DEBUG:
+        import warnings
+        warnings.filterwarnings("ignore")
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
     # Set up dask and the number of workers
