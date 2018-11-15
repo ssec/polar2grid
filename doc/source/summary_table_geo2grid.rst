@@ -10,6 +10,8 @@
       - Writer Name
     * - ABI L1B
       - OR_ABI-L1b-Rad?-M?C??_G??_*.nc
+
+        Ex: OR_ABI-L1b-RadC-M3C01_G16_s20172451802150_e*.nc
       - 8-bit single band GeoTIFF
       - abi_l1b
       - geotiff
