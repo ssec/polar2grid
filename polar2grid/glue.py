@@ -123,7 +123,8 @@ def add_resample_argument_groups(parser):
                          help='resampling algorithm to use (default: native)')
     group_1.add_argument('--cache-dir',
                          help='Directory to store resampling intermediate '
-                              'results between executions')
+                              'results between executions. Not used with native '
+                              'resampling.')
     group_1.add_argument('-g', '--grids', default=None, nargs="*",
                          help='Area definition to resample to. Empty means '
                               'no resampling (default: MAX)')
@@ -133,10 +134,10 @@ def add_resample_argument_groups(parser):
                               "SatPy-style areas)")
     group_1.add_argument('--ll-bbox', nargs=4, type=float,
                          help='Crop data to region specified by lon/lat '
-                              'bounds (lon_min lat_min lon_max lat_max).'
+                              'bounds (lon_min lat_min lon_max lat_max). '
                               'Coordinates must be valid in the source data '
                               'projection. For negative numbers use quotes '
-                              'preceeded by a space: " -95.5"')
+                              'preceded by a space: " -95.5"')
     return tuple([group_1])
 
 
@@ -354,6 +355,7 @@ def main(argv=sys.argv[1:]):
 
     LOG.info("Saving data to writers...")
     compute_writer_results(to_save)
+    LOG.info("SUCCESS")
     return 0
 
 

@@ -430,9 +430,7 @@ def main(argv=sys.argv[1:]):
                 g = gridded_scene.pop(v[1])
                 b = gridded_scene.pop(v[2])
                 new_info = r.copy()
-                print("Old: ", new_info['grid_data'])
                 new_info["grid_data"] = new_info["grid_data"].replace(v[0], rgb_name)
-                print("New: ", new_info['grid_data'])
                 new_info["product_name"] = rgb_name
                 data = np.memmap(new_info["grid_data"], dtype=new_info["data_type"],
                                  mode="w+", shape=(3, new_info["grid_definition"]["height"], new_info["grid_definition"]["width"]))
@@ -444,7 +442,6 @@ def main(argv=sys.argv[1:]):
 
             # Create composites that satpy couldn't complete until after remapping
             composite_names = [x for x in f.wishlist if not isinstance(x, DatasetID)]
-            print("Composite Names: ", composite_names)
             if composite_names:
                 tmp_scene = Scene()
                 for k, v in gridded_scene.items():
