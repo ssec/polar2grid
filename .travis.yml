@@ -19,6 +19,7 @@ matrix:
   - env: PYTHON_VERSION=3.6
     os: osx
 install:
+  - wget ftp://128.104.108.86/pub/CSPP/p2g_v_2_1_examples/amsr2/images_basic/gcom-w1_amsr2_btemp_36.5h_20160719_190300_wgs84_fit.jpg
   - git clone --depth 1 git://github.com/astropy/ci-helpers.git
   - source ci-helpers/travis/setup_conda.sh
   - pip install git+https://github.com/pytroll/satpy.git
