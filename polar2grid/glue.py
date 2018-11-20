@@ -233,6 +233,7 @@ def main(argv=sys.argv[1:]):
     # Parse provided files and search for files if provided directories
     scene_args['filenames'] = get_input_files(scene_args['filenames'])
     # Create a Scene, analyze the provided files
+    LOG.info("Sorting and reading input files...")
     scn = Scene(**scene_args)
 
     if args.list_products:
@@ -244,7 +245,6 @@ def main(argv=sys.argv[1:]):
         rename_log_file(glue_name + scn.attrs['start_time'].strftime("_%Y%m%d_%H%M%S.log"))
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
-    LOG.info("Loading product metadata from files...")
     if load_args['products'] is None:
         try:
             reader_mod = importlib.import_module('polar2grid.readers.' + scene_args['reader'])
@@ -254,6 +254,7 @@ def main(argv=sys.argv[1:]):
             LOG.error("No default products list set, please specify with `--products`.")
             return -1
 
+    LOG.info("Loading product metadata from files...")
     scn.load(load_args['products'])
 
     resample_kwargs = resample_args.copy()
@@ -353,7 +354,7 @@ def main(argv=sys.argv[1:]):
         pbar = ProgressBar()
         pbar.register()
 
-    LOG.info("Saving data to writers...")
+    LOG.info("Computing products and saving data to writers...")
     compute_writer_results(to_save)
     LOG.info("SUCCESS")
     return 0
