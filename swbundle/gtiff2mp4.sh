@@ -22,7 +22,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-#     Written by David Hoese    December 2014
+#     Written by David Hoese    November 2018
 #     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
@@ -46,7 +46,7 @@ TMP_FRAME_DIR="gtiff2mp4_tmp"
 OUTPUT_FILENAME="$1"
 shift
 INPUT_FILES="$@"
-MAX_IMG_SIZE=4096
+MAX_IMG_SIZE=${MAX_IMG_SIZE:-4096}
 
 gdal_size() {
     if [[ -z "$1" ]]; then
