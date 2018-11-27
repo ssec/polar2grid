@@ -48,5 +48,5 @@ for fn in $INPUT_FILES; do
     current_proj=`gdalinfo -proj4 $fn | grep -A 1 "PROJ.4 string is:" | tail -n 1`
     new_proj=${current_proj/+sweep=x/+sweep=y}
     echo "Reprojecting $fn to $new_proj..."
-    gdalwarp -s_srs "$current_proj" -t_srs "$new_proj" -multi -wo "NUM_THREADS=4" -co "COMPRESS=DEFLATE" $fn $new_fn
+    gdalwarp -t_srs "$new_proj" -multi -wo "NUM_THREADS=4" -co "COMPRESS=DEFLATE" $fn $new_fn
 done
