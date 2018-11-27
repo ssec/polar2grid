@@ -46,6 +46,40 @@ TMP_FRAME_DIR="gtiff2mp4_tmp"
 OUTPUT_FILENAME="$1"
 shift
 INPUT_FILES="$@"
+MAX_IMG_SIZE=4096
+
+gdal_size() {
+    if [[ -z "$1" ]]; then
+        echo "Missing arguments. Syntax:"
+        echo "  gdal_pixelsize_gdalwarp_tr <input_raster>"
+        return
+    fi;
+    EXTENT=$(gdalinfo "$1" |\
+        grep "Size is" |\
+        sed "s/Size is //g; s/,/ /g" |\
+        tr "\n" " " |\
+        tr -d "[(,])-");
+    echo -n "$EXTENT"
+}
+
+get_new_image_width() {
+    img_width=$1
+    img_height=$2
+    if [[ $img_width -ge $img_height ]]; then
+        if [[ $img_width -ge $MAX_IMG_SIZE ]]; then
+            echo $MAX_IMG_SIZE
+        else
+            echo $img_width
+        fi
+    else
+        if [[ $img_height -gt $MAX_IMG_SIZE ]]; then
+            # use ratio to get width
+            echo $(( $MAX_IMG_SIZE * $img_width / $img_height ))
+        else
+            echo $img_width
+        fi
+    fi
+}
 
 cleanup() {
     >&2 echo "Removing temporary directory \"$TMP_FRAME_DIR\""
@@ -58,14 +92,23 @@ mkdir -p "$TMP_FRAME_DIR"
 x=1
 for i in $INPUT_FILES; do
     counter=$(printf %03d $x)
-    ln -s "../$i" "${TMP_FRAME_DIR}/${counter}.tif"
+    img_width_height=`gdal_size $i`
+    img_width=`echo $img_width_height | cut -f1 -d' '`
+    img_height=`echo $img_height | cut -f3 -d' '`
+    new_width=`get_new_image_width $img_width $img_height`
+    if [[ $new_width -eq $img_width ]]; then
+        ln -s "../$i" "${TMP_FRAME_DIR}/${counter}.tif"
+    else
+        echo "Scaling image to work with ffmpeg (New width=${new_width})"
+        gdal_translate -of GTIFF -outsize $new_width 0 $i "${TMP_FRAME_DIR}/${counter}.tif"
+    fi
     x=$(($x+1))
 done
 
 echo "Generating animation..."
 INPUT_PARAMS=${INPUT_PARAMS:--framerate 24 -f image2}
-OUTPUT_PARAMS=${OUTPUT_PARAMS:--c:v libx264 -vf "format=yuv420p,scale=trunc(iw/2)*2:trunc(ih/2)*2"}
-ffmpeg $INPUT_PARAMS -i "${TMP_FRAME_DIR}/%03d.tif" $OUTPUT_PARAMS $OUTPUT_FILENAME
+OUTPUT_PARAMS=${OUTPUT_PARAMS:--c:v libx264 -crf 25 -vf "format=yuv420p,scale=trunc(iw/2)*2:trunc(ih/2)*2"}
+ffmpeg -y $INPUT_PARAMS -i "${TMP_FRAME_DIR}/%03d.tif" $OUTPUT_PARAMS $OUTPUT_FILENAME
 
 
 echo "Done"
