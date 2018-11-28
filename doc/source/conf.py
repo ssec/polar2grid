@@ -131,8 +131,8 @@ master_doc = 'index'
 # General information about the project.
 if is_geo2grid:
     project = u'Geo2Grid'
-    version = '0.1.0'
-    release = '0.1.0'
+    version = '1.0.0'
+    release = '1.0.0'
 else:
     project = u'Polar2Grid'
 
@@ -151,7 +151,12 @@ rst_epilog += """
 .. |script| replace:: {}.sh
 .. |script_literal| replace:: ``{}.sh``
 .. |project_env| replace:: ${}_HOME
-""".format(project, project.lower(), project.lower(), project.upper())
+.. |cspp_abbr| replace:: {}
+.. |cspp_title| replace:: {}
+""".format(project, project.lower(), project.lower(), project.upper(),
+           'CSPP Geo' if is_geo2grid else 'CSPP LEO',
+           'CSPP for Geostationary Satellites' if is_geo2grid else 'CSPP for Low Earth Orbiter Satellites',
+           )
 
 copyright = u'2012-2018, University of Wisconsin SSEC'
 
@@ -404,10 +409,16 @@ latex_elements = {
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]), toctree_only.
-latex_documents = [
-  ('index', '{}_Documentation_{}.tex'.format(project, version), u'{} Documentation'.format(project),
-   u'Released through the \\and NOAA Community Satellite Processing Package (CSPP)', 'manual', True),
-]
+if is_geo2grid:
+    latex_documents = [
+      ('index', '{}_Documentation_{}.tex'.format(project, version), u'{} Documentation'.format(project),
+       u'NOAA Community Satellite Processing Package for Geostationary Satellites (CSPP Geo)', 'manual', True),
+    ]
+else:
+    latex_documents = [
+        ('index', '{}_Documentation_{}.tex'.format(project, version), u'{} Documentation'.format(project),
+         u'Released through the \\and NOAA Community Satellite Processing Package (CSPP)', 'manual', True),
+    ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -422,10 +433,15 @@ latex_logo = '_static/P2G_PDF_Logos.png'
 #latex_show_urls = False
 
 # Documents to append as an appendix to all manuals.
-latex_appendices = [
-    'misc_recipes',
-    'design_overview',
-]
+if is_geo2grid:
+    latex_appendices = [
+        'design_overview',
+    ]
+else:
+    latex_appendices = [
+        'misc_recipes',
+        'design_overview',
+    ]
 
 # If false, no module index is generated.
 latex_domain_indices = False

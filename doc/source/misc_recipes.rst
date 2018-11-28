@@ -3,68 +3,71 @@ Third-Party Recipes
 
 Third-party tools like those provided by
 the Geospatial Data Abstraction Library (GDAL) can be 
-found in the ``common/ShellB3/bin`` directory.
+found in the ``bin`` directory alongside the |project|
+bash scripts.
 
-Combining GeoTIFF Images
-------------------------
+.. ifconfig:: not is_geo2grid
 
-When working with polar orbiter satellite data, it is often 
-useful to stitch images of neighboring passes together.  
-The GDAL merge tool can do this easily using Polar2Grid 
-GeoTIFF output files.  
+    Combining GeoTIFF Images
+    ------------------------
 
-Suppose we have two VIIRS GeoTIFF files created from 
-two sequential Suomi NPP overpasses.  The GeoTIFF 
-files we use in this example are Polar2Grid 
-false color images from data acquired at 20:43 and 
-22:22 UTC on 23 March 2017 created in the default
-Polar2Grid WGS84 projection.  The individual images are 
-displayed side by side below.
+    When working with polar orbiter satellite data, it is often
+    useful to stitch images of neighboring passes together.
+    The GDAL merge tool can do this easily using |project|
+    GeoTIFF output files.
 
-.. raw:: latex
+    Suppose we have two VIIRS GeoTIFF files created from
+    two sequential Suomi NPP overpasses.  The GeoTIFF
+    files we use in this example are
+    false color images from data acquired at 20:43 and
+    22:22 UTC on 23 March 2017 created in a
+    WGS84 projection.  The individual images are
+    displayed side by side below.
 
-    \newpage
-    \begin{landscape}
+    .. raw:: latex
 
-.. figure:: _static/example_images/VIIRS_False_Color_Side_by_Side_Example_P2G.png
-    :width: 100%
-    :align: center
+        \newpage
+        \begin{landscape}
 
-    Suomi-NPP VIIRS False Color Images from two separate passes
-    (Red:VIIRS M-Band 11 (2.25 μm), Green:VIIRS M-Band 7 (.87 μm) 
-    and Blue:VIIRS M-Band 5 (.67μm)) observed on 23 March 2017.
+    .. figure:: _static/example_images/VIIRS_False_Color_Side_by_Side_Example_P2G.png
+        :width: 100%
+        :align: center
 
-.. raw:: latex
+        Suomi-NPP VIIRS False Color Images from two separate passes
+        (Red:VIIRS M-Band 11 (2.25 μm), Green:VIIRS M-Band 7 (.87 μm)
+        and Blue:VIIRS M-Band 5 (.67μm)) observed on 23 March 2017.
 
-    \end{landscape}
-    \newpage
+    .. raw:: latex
 
-To combine these images into a single output GeoTIFF image
-I can use the `gdal_merge.py` command that is packaged as 
-part of Polar2Grid:
+        \end{landscape}
+        \newpage
 
-.. code-block:: bash
+    To combine these images into a single output GeoTIFF image
+    I can use the `gdal_merge.py` command that is packaged as
+    part of |project|:
 
-    gdal_merge.py -n 0 -o my_false_color.tif npp_viirs_false_color_20170323_204320_wgs84_fit.tif npp_viirs_false_color_20170323_222255_wgs84_fit.tif 
+    .. code-block:: bash
 
-The `-n 0` is used to set the background data value so 
-it will not be included in the merge.  This is required 
-because without it, the black regions that border
-the second WGS84 GeoTIFF will be overlaid on top of the first
-image.  
+        gdal_merge.py -n 0 -o my_false_color.tif npp_viirs_false_color_20170323_204320_wgs84_fit.tif npp_viirs_false_color_20170323_222255_wgs84_fit.tif
 
-The resulting image is displayed below.
+    The `-n 0` is used to set the background data value so
+    it will not be included in the merge.  This is required
+    because without it, the black regions that border
+    the second WGS84 GeoTIFF will be overlaid on top of the first
+    image.
 
-.. figure:: _static/example_images/my_false_color.jpg
-    :width: 100%
-    :align: center
+    The resulting image is displayed below.
 
-    Merged S-NPP VIIRS False Color Images created from a pair
-    of images acquired and processed from two different orbits. 
+    .. figure:: _static/example_images/my_false_color.jpg
+        :width: 100%
+        :align: center
 
-More than one image can be combined. There are more options
-available to `gdal_merge.py`.  Execute 
+        Merged S-NPP VIIRS False Color Images created from a pair
+        of images acquired and processed from two different orbits.
 
-    `gdal_merge.py -h`
+    More than one image can be combined. There are more options
+    available to `gdal_merge.py`.  Execute
 
-for a complete list of options.
+        `gdal_merge.py -h`
+
+    for a complete list of options.
