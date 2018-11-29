@@ -21,56 +21,126 @@ beyond the scope of this documentation.
     if you have questions about installation.
 
 .. ifconfig:: not is_geo2grid
+
     Please
     `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`_
     if you have questions about installation.
 
-Polar2Grid Software
+|project| Software
+------------------
+
+The |project| tarball can be found on the CSPP website:
+
+.. ifconfig:: is_geo2grid
+
+        http://cimss.ssec.wisc.edu/csppgeo/
+
+    Next, unpack the tarball:
+
+    .. code-block:: bash
+
+        tar xf CSPP_GEO2GRID_V1.0.0.tar.gz
+
+    This will create a |project| software bundle directory, ``geo2grid_v_2_2_1``.
+    To simplify calling scripts included in the bundle the following line should
+    be added to your ``.bash_profile``:
+
+    .. code-block:: bash
+
+        export GEO2GRID_HOME=/path/to/softwarebundle
+
+    All other environment information needed to run is automatically loaded by the
+    scripts provided by |project|. Scripts are typically invoked using:
+
+    .. code-block:: bash
+
+        $GEO2GRID_HOME/bin/<p2g_script.sh> ...
+
+    If you want to run commands without including the preceding directory path,
+    or if using in a script in its own background environment, then you can set
+    your path to include the /bin directory:
+
+    .. code-block:: bash
+
+        export PATH=$PATH:$GEO2GRID_HOME/bin
+
+.. ifconfig:: not is_geo2grid
+
+        http://cimss.ssec.wisc.edu/cspp/
+
+    Next, unpack the tarball:
+
+    .. code-block:: bash
+
+        tar xf CSPP_POLAR2GRID_V2.2.1.tar.gz
+
+    This will create a Polar2Grid software bundle directory, ``polar2grid_v_2_2_1``.
+    To simplify calling scripts included in the bundle the following line should
+    be added to your ``.bash_profile``:
+
+    .. code-block:: bash
+
+        export POLAR2GRID_HOME=/path/to/softwarebundle
+
+    All other environment information needed to run is automatically loaded by the
+    scripts provided by Polar2Grid. Scripts are typically invoked using:
+
+    .. code-block:: bash
+
+        $POLAR2GRID_HOME/bin/<p2g_script.sh> ...
+
+    If you want to run commands without including the preceding directory path,
+    or if using in a script in its own background environment, then you can set
+    your path to include the /bin directory:
+
+    .. code-block:: bash
+
+        export PATH=$PATH:$POLAR2GRID_HOME/bin
+
+See :doc:`getting_started` for more information on running |project|.
+
+|project| Test Data
 -------------------
 
-The Polar2Grid tarball can be found on either the CSPP website:
+.. ifconfig:: is_geo2grid
 
-    http://cimss.ssec.wisc.edu/cspp/
+    If you want to run the test case to verify your installation,
+    download the following file:
 
-Next, unpack the tarball::
+    .. code-block:: bash
 
-    tar xf CSPP_POLAR2GRID_V2.2.1.tar.gz
+        CSPP_GEO2GRID_V1.0.0_TEST_DATA.tar.gz
 
-This will create a Polar2Grid software bundle directory, ``polar2grid_v_2_2_1``.
-To simplify calling scripts included in the bundle the following line should
-be added to your ``.bash_profile``::
+    The test data should be unpacked in a directory separate from the |project|
+    installation:
 
-    export POLAR2GRID_HOME=/path/to/softwarebundle
+    .. code-block:: bash
 
-All other environment information needed to run is automatically loaded by the
-scripts provided by Polar2Grid. Scripts are typically invoked using::
+        cd $HOME
+        tar xf CSPP_GEO2GRID_V1.0.0_TEST_DATA.tar.gz
 
-    $POLAR2GRID_HOME/bin/<p2g_script.sh> ...
+    This will create a ``geo2grid_test`` directory containing the test input,
+    output, and verification scripts for the ABI instrument.
 
-If you want to run commands without including the preceding directory path,
-or if using in a script in its own background environment, then you can set
-your path to include the /bin directory::
+.. ifconfig:: not is_geo2grid
 
-    export PATH=$PATH:$POLAR2GRID_HOME/bin
+    If you want to run the test case to verify your installation,
+    download the following file:
 
-See :doc:`getting_started` for more information on running Polar2Grid.
+    .. code-block:: bash
 
-Polar2Grid Test Data
---------------------
+        CSPP_POLAR2GRID_V2.2.1_TEST_DATA.tar.gz
 
-If you want to run the test case to verify your installation,
-download the following file::
+    The test data should be unpacked in a directory separate from the |project|
+    installation:
 
-    CSPP_POLAR2GRID_V2.2.1_TEST_DATA.tar.gz
+    .. code-block:: bash
 
-The test data should be unpacked in a directory separate from the Polar2Grid
-installation::
+        cd $HOME
+        tar xf CSPP_POLAR2GRID_V2.2.1_TEST_DATA.tar.gz
 
-    cd $HOME
-    tar xf CSPP_POLAR2GRID_V2.2.1_TEST_DATA.tar.gz
-
-This will create a ``polar2grid_test`` directory containing the test input,
-output, and verification scripts for both MODIS and VIIRS instruments.
+    This will create a ``polar2grid_test`` directory containing the test input,
+    output, and verification scripts for both MODIS and VIIRS instruments.
 
 See :doc:`verification/index` for instructions on using the verification
 test data.
