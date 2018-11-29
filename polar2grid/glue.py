@@ -107,7 +107,7 @@ def add_scene_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Scene Initialization')
     group_1.add_argument('-r', '--reader',
                          help='Name of reader used to read provided files. '
-                              'Supported readers: ' + ', '.join(['abi_l1b', 'hrit_jma', 'ahi_hsd']))
+                              'Supported readers: ' + ', '.join(['abi_l1b', 'hrit_ahi', 'ahi_hsd']))
     group_1.add_argument('-f', '--filenames', nargs='+', default=[],
                          help='Input files to read')
     group_2 = parser.add_argument_group(title='Scene Load')
@@ -176,7 +176,7 @@ def main(argv=sys.argv[1:]):
     if args.reader is None:
         parser.print_usage()
         parser.exit(1, "ERROR: Reader must be provided (-r flag).\n"
-                       "Supported readers:\n\t{}\n".format('\n\t'.join(['abi_l1b', 'ahi_hsd', 'hrit_jma'])))
+                       "Supported readers:\n\t{}\n".format('\n\t'.join(['abi_l1b', 'ahi_hsd', 'hrit_ahi'])))
     if args.writers is None:
         parser.print_usage()
         parser.exit(1, "ERROR: Writer must be provided (-w flag) with one or more writer.\n"

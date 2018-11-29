@@ -23,5 +23,5 @@
     * - AHI HRIT (HimawariCast) from JMA
       - IMG_DK01*_*
       - 8-bit single band GeoTIFF
-      - hrit_jma
+      - hrit_ahi
       - geotiff

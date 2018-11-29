@@ -40,4 +40,5 @@ to work with all |project| features.
         :maxdepth: 1
 
         abi_l1b
-        hrit_jma
+        hrit_ahi
+        ahi_hsd

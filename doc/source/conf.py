@@ -412,7 +412,7 @@ latex_elements = {
 if is_geo2grid:
     latex_documents = [
       ('index', '{}_Documentation_{}.tex'.format(project, version), u'{} Documentation'.format(project),
-       u'NOAA Community Satellite Processing Package for Geostationary Satellites (CSPP Geo)', 'manual', True),
+       u'NOAA Community Satellite Processing Package \\and for Geostationary Satellites (CSPP Geo)', 'manual', True),
     ]
 else:
     latex_documents = [
@@ -422,7 +422,7 @@ else:
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-latex_logo = '_static/P2G_PDF_Logos.png'
+latex_logo = '_static/{}2G_PDF_Logos.png'.format('G' if is_geo2grid else 'P')
 
 # latex_toplevel_sectioning = 'section'
 
