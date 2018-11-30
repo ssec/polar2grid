@@ -16,9 +16,9 @@ any other value that may be recorded by or calculated from an instrument.
 There are 4 main steps or components involved when working with these
 products in |project|:
 reading, writing, compositing, and remapping.
-|project| makes it possible to access and configure these steps via simple
-bash scripts. The script that "glues" these steps together is
-|script_literal| and creates gridded versions of the user data products
+|project| makes it possible to access and configure these steps with a simple
+bash script called |script_literal|. This script creates gridded versions of
+the user data products
 provided to it. More information on accessing |project|'s features and
 running its scripts can be found in the :doc:`getting_started` section
 or the examples following each reader section. Note that although an
