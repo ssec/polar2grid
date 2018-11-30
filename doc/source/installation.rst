@@ -41,7 +41,7 @@ The |project| tarball can be found on the CSPP website:
 
         tar xf CSPP_GEO2GRID_V1.0.0.tar.gz
 
-    This will create a |project| software bundle directory, ``geo2grid_v_2_2_1``.
+    This will create a |project| software bundle directory, ``geo2grid_v_1_0_0``.
     To simplify calling scripts included in the bundle the following line should
     be added to your ``.bash_profile``:
 

@@ -17,9 +17,8 @@ There are 4 main steps or components involved when working with these
 products in |project|:
 reading, writing, compositing, and remapping.
 |project| makes it possible to access and configure these steps with a simple
-bash script called |script_literal|. This script creates gridded versions of
-the user data products
-provided to it. More information on accessing |project|'s features and
+bash script called |script_literal| and other helper scripts.
+More information on accessing |project|'s features and
 running its scripts can be found in the :doc:`getting_started` section
 or the examples following each reader section. Note that although an
 example may be written for a specific reader the same operations can
@@ -75,11 +74,38 @@ What's New?
 System Requirements
 -------------------
 
-System requirements for the |project| software are as follows:
- * Intel or AMD CPU with 64-bit instruction support (2+ cores - 2.4GHz)
- * 16 GB RAM (minimum)
- * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)
- * 5 GB disk space (minimum)
+.. ifconfig:: is_geo2grid
+
+    For minimal processing requirements (i.e. not realtime) the following
+    system specifications are required:
+
+    * Intel or AMD CPU with 64-bit instruction support (2+ cores - 2.4GHz)
+    * 16 GB RAM (minimum)
+    * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)
+    * 5 GB disk space (minimum)
+
+    For a more demanding processing load, like realtime generation of all
+    GOES-16 ABI channels, true color, and natural color RGB images at full
+    resolution, a system should have at least:
+
+    * Intel or AMD CPU with 64-bit instruction support (20+ cores - 2.4GHz)
+    * 64 GB RAM (minimum)
+    * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)
+    * 1 TB disk space (minimum for ~1 week of images, does not include long-term storage)
+
+    Local storage (i.e. not network file systems) are preferred to limit any
+    effect that network congestion may have. If additional satellites are
+    included in the processing requirements then the above system requirements
+    will need to be adjusted accordingly.
+
+.. ifconfig:: not is_geo2grid
+
+    System requirements for the |project| software are as follows:
+
+    * Intel or AMD CPU with 64-bit instruction support (2+ cores - 2.4GHz)
+    * 16 GB RAM (minimum)
+    * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)
+    * 5 GB disk space (minimum)
 
 Linux terminal commands included in these instructions assume the bash shell is used.
 
@@ -94,8 +120,8 @@ and licensed by their respective organizations, and distributed consistent
 with their licensing terms.
 
 The University of Wisconsin-Madison Space Science and Engineering
-Center (SSEC) makes no warranty of any kind with regard to the CSPP 
-|project| software or any accompanying documentation, including but
+Center (SSEC) makes no warranty of any kind with regard to the |cspp_abbr|
+software or any accompanying documentation, including but
 not limited to the implied warranties of merchantability and fitness for a
 particular purpose. SSEC does not indemnify any infringement of copyright,
 patent, or trademark through the use or modification of this software.
@@ -104,5 +130,5 @@ There is no expressed or implied warranty made to anyone as to the
 suitability of this software for any purpose. All risk of use is assumed by
 the user. Users agree not to hold SSEC, the University of Wisconsin-Madison,
 or any of its employees or assigns liable for any consequences resulting from
-the use of the CSPP |project| software.
+the use of the |cspp_abbr| software.
 

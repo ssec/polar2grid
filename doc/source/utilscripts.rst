@@ -170,6 +170,29 @@ creation they will be automatically scaled to a smaller size.
 
     gtiff2mp4.sh out.mp4 in1.tif in2.tif ...
 
+This will create a MP4 video file called ``out.mp4`` with 24 images (frames)
+per second.
+
+Remap GOES geotiffs
+-------------------
+
+The projection of the GOES-East and GOES-West satellites uses special
+parameters that are not always supported by older visualization tools.
+While new versions of GDAL and PROJ.4 libraries can often fix these issues,
+this is not always an option. |project| provides the ``reproject_goes.sh``
+script to remap GOES geotiffs to a nearly identical projection that is more
+compatible with older visualization tools. The script can be called by doing:
+
+.. code-block:: bash
+
+    reproject_goes.sh in1.tif in2.tif in3.tif
+
+The script will take the original name and add a ``-y`` to the end. So in
+the above example the results would be ``in1-y.tif``, ``in2-y.tif``,
+and ``in3-y.tif``. The ``y`` refers to the sweep angle axis projection
+parameter that differs between the input geotiff (``x``) and the output
+geotiff (``y``).
+
 .. _util_p2g_proj:
 
 Python Proj
