@@ -109,7 +109,7 @@ rst_epilog = """
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.graphviz', 'sphinx.ext.todo', 'sphinx.ext.coverage',
-              'sphinx.ext.imgmath', 'sphinx.ext.intersphinx','sphinx.ext.napoleon', 'doi_role',
+              'sphinx.ext.imgmath', 'sphinx.ext.intersphinx', 'sphinx.ext.napoleon', 'doi_role',
               'sphinx.ext.ifconfig', 'sphinx.ext.viewcode', 'sphinxarg.ext']
 
 numfig = True
@@ -488,5 +488,6 @@ intersphinx_mapping = {
     'dask': ('https://docs.dask.org/en/latest', None),
     'pyresample': ('https://pyresample.readthedocs.io/en/stable', None),
     'trollsift': ('https://trollsift.readthedocs.io/en/stable', None),
+    'satpy': ('https://satpy.readthedocs.io/en/stable', None),
     'trollimage': ('https://trollimage.readthedocs.io/en/stable', None),
 }

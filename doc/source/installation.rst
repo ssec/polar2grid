@@ -17,13 +17,13 @@ beyond the scope of this documentation.
 .. ifconfig:: is_geo2grid
 
     Please
-    `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Geo%20Questions>`_
+    `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Geo%20Questions>`__
     if you have questions about installation.
 
 .. ifconfig:: not is_geo2grid
 
     Please
-    `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`_
+    `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`__
     if you have questions about installation.
 
 |project| Software

@@ -2,7 +2,19 @@ Utility Scripts
 ===============
 
 The following are scripts that can be used to aid in the 
-the creation of customized Polar2Grid products.
+the creation of customized |project| products. All utility
+scripts are stored in the bin directory:
+
+.. ifconfig:: is_geo2grid
+
+    $GEO2GRID_HOME/bin/<script>.sh ...
+
+.. ifconfig:: not is_geo2grid
+
+    $POLAR2GRID_HOME/bin/<script>.sh ...
+
+For simplicity, the sections below will specify the script directly, but
+note the scripts exist in the bin directory above.
 
 .. _util_p2g_grid_helper:
 
@@ -19,7 +31,7 @@ Example:
 
 .. code-block:: bash
 
-    $POLAR2GRID_HOME/bin/p2g_grid_helper.sh my_grid_name -150.1 56.3 250 -250 1000 1000
+    p2g_grid_helper.sh my_grid_name -150.1 56.3 250 -250 1000 1000
     # Will result in:
     my_grid_name, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=56.300 +lat_1=56.300 +lon_0=-150.100 +units=m +no_defs, 1000, 1000, 250.000, -250.000, -125000.000, 125000.000
 
@@ -31,12 +43,20 @@ center longitude and latitude.
 
 Once this text line has been output, it can be added to a text file and
 referenced in any Polar2Grid command line.  For instance, if I save
-the output text grid line to a the /home/p2g/my_grids.txt, I can create a 
-VIIRS GeoTIFF by executing a command like this:
+the output text grid line to a file named ``/home/user/my_grids.txt``, I can
+create a GeoTIFF from satellite data by executing a command like this:
 
-.. code-block:: bash
+.. ifconfig:: is_geo2grid
 
-   polar2grid.sh viirs_sdr gtiff --grid-configs /home/p2g/my_grids.txt -g my_grid_name -f <path_to_files>
+    .. code-block:: bash
+
+       geo2grid.sh -r abi_l1b -w geotiff --grid-configs /home/user/my_grids.txt -g my_grid_name -f <path_to_files>
+
+.. ifconfig:: not is_geo2grid
+
+    .. code-block:: bash
+
+       polar2grid.sh viirs_sdr gtiff --grid-configs /home/p2g/my_grids.txt -g my_grid_name -f <path_to_files>
 
 .. _util_add_coastlines:
 
@@ -68,7 +88,9 @@ Add Colormap
 
 Colormap files are comma-separated 'integer,R,G,B,A' text files.
 
-A basic greyscale example for an 8-bit GeoTIFF would be::
+A basic greyscale example for an 8-bit GeoTIFF would be:
+
+.. parsed-literal::
 
     0,0,0,0,255
     1,1,1,1,255
@@ -82,14 +104,18 @@ is the input GeoTIFF value, followed by R (red), G (green), B (blue),
 and A (alpha).
 
 This script will also linearly interpolate between two values.
-So the above colormap file could also be written in just two lines::
+So the above colormap file could also be written in just two lines:
+
+.. parsed-literal::
 
     0,0,0,0,255
     255,255,255,255,255
 
 Often times you may want to have the 0 value as a transparent 'fill' value
 and continue the colormap after that. This can be done by doing the
-following::
+following:
+
+.. parsed-literal::
 
     # 0 is a fill value
     0,0,0,0,0
@@ -115,7 +141,7 @@ GDAL tool ``gdal2tiles.py``.  The script can be executed with:
 
 .. code-block:: bash
 
-    $POLAR2GRID_HOME/bin/gtiff2kmz.sh input.tif [output.kmz]
+    gtiff2kmz.sh input.tif [output.kmz]
 
 Where ``output.kmz`` is an optional parameter specifying the name of the
 output KMZ file. If it isn't specified it defaults to the input
@@ -127,6 +153,18 @@ Example:
 
     gtiff2kmz.sh npp_viirs_true_color_20161210_193100_wgs84_fit.tif
 
+
+Convert GeoTIFFs to MP4 Video
+-----------------------------
+
+The ``gtiff2mp4.sh`` script converts a series of GeoTIFF files in to a
+single MP4 video file. This script uses default video creation settings
+to support the most video players. If an image is too large for the video
+creation they will be automatically scaled to a smaller size.
+
+.. code-block:: bash
+
+    gtiff2mp4.sh out.mp4 in1.tif in2.tif ...
 
 .. _util_p2g_proj:
 
@@ -142,7 +180,6 @@ Example:
 
 .. code-block:: bash
 
-    $POLAR2GRID_HOME/bin/p2g_proj.sh "+proj=lcc +datum=NAD83 +ellps=GRS80 +lat_1=25 +lon_0=-95" -105.23 38.5
+    p2g_proj.sh "+proj=lcc +datum=NAD83 +ellps=GRS80 +lat_1=25 +lon_0=-95" -105.23 38.5
     # Will result in:
     -878781.238459 4482504.91307
-
