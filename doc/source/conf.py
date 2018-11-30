@@ -109,8 +109,9 @@ rst_epilog = """
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.graphviz', 'sphinx.ext.todo', 'sphinx.ext.coverage',
-              'sphinx.ext.imgmath', 'sphinx.ext.intersphinx', 'sphinx.ext.napoleon', 'doi_role',
-              'sphinx.ext.ifconfig', 'sphinx.ext.viewcode', 'sphinxarg.ext']
+              'sphinx.ext.imgmath', 'sphinx.ext.intersphinx', 'sphinx.ext.napoleon',
+              'sphinx.ext.ifconfig', 'sphinx.ext.viewcode', 'sphinxarg.ext',
+              'doi_role', 'toctree_filter']
 
 numfig = True
 
@@ -157,6 +158,9 @@ rst_epilog += """
            'CSPP Geo' if is_geo2grid else 'CSPP LEO',
            'CSPP for Geostationary Satellites' if is_geo2grid else 'CSPP for Low Earth Orbiter Satellites',
            )
+
+# Custom TOCTree filtering
+toc_filter_exclude = ['polar2grid'] if is_geo2grid else ['geo2grid']
 
 copyright = u'2012-2018, University of Wisconsin SSEC'
 

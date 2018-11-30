@@ -1,8 +1,8 @@
-Verifying your Polar2Grid Installation
-======================================
+Verifying your |project| Installation
+=====================================
 
-.. toctree::
+.. toctree-filt::
     :maxdepth: 1
 
-    viirs_verification
-    modis_verification
+    :polar2grid:viirs_verification
+    :polar2grid:modis_verification

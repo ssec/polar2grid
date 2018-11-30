@@ -18,27 +18,19 @@ have come to expect. Any other readers provided by SatPy are not guaranteed
 to work with all |project| features.
 
 
-.. ifconfig:: not is_geo2grid
+.. toctree-filt::
+    :maxdepth: 1
 
-    .. toctree::
-        :maxdepth: 1
-
-        viirs_sdr
-        viirs_l1b
-        modis
-        crefl
-        avhrr
-        amsr2_l1b
-        nucaps
-        mirs
-        acspo
-        clavrx
-
-.. ifconfig:: is_geo2grid
-
-    .. toctree::
-        :maxdepth: 1
-
-        abi_l1b
-        hrit_ahi
-        ahi_hsd
+    :polar2grid:viirs_sdr
+    :polar2grid:viirs_l1b
+    :polar2grid:modis
+    :polar2grid:crefl
+    :polar2grid:avhrr
+    :polar2grid:amsr2_l1b
+    :polar2grid:nucaps
+    :polar2grid:mirs
+    :polar2grid:acspo
+    :polar2grid:clavrx
+    :geo2grid:abi_l1b
+    :geo2grid:hrit_ahi
+    :geo2grid:ahi_hsd

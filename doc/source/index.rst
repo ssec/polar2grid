@@ -3,7 +3,7 @@
 
 .. include:: overview.rst
 
-.. toctree::
+.. toctree-filt::
     :maxdepth: 1
     :numbered:
 
@@ -14,7 +14,7 @@
     remapping
     writers/index
     utilscripts
-    viirs_day_night_band
+    :polar2grid:viirs_day_night_band
     verification/index
     examples/index
     grids

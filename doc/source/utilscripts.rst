@@ -7,11 +7,15 @@ scripts are stored in the bin directory:
 
 .. ifconfig:: is_geo2grid
 
-    $GEO2GRID_HOME/bin/<script>.sh ...
+    .. code-block:: bash
+
+        $GEO2GRID_HOME/bin/<script>.sh ...
 
 .. ifconfig:: not is_geo2grid
 
-    $POLAR2GRID_HOME/bin/<script>.sh ...
+    .. code-block:: bash
+
+        $POLAR2GRID_HOME/bin/<script>.sh ...
 
 For simplicity, the sections below will specify the script directly, but
 note the scripts exist in the bin directory above.
