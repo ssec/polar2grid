@@ -1,16 +1,16 @@
 Provided Grids
 ==============
 
-Polar2Grid allows users to remap to one or more projected grids. A grid
-defines the uniform geographic area that an output image covers. Polar2Grid
+|project| allows users to remap to one or more projected grids. A grid
+defines the uniform geographic area that an output image covers. |project|
 comes with various grids to choose from that should suit most users and their
-use cases. Some grids are provided for specific writers (like AWIPS), but
+use cases. Some grids are provided for specific writers (like AWIPS SCMI), but
 can be used for other writers as well. For those cases that the provided
 grids aren't enough it is possible to create your own custom grids. See the
 :doc:`custom_grids` documentation for help with this.
 
-Below are descriptions for a few of the grids provided with Polar2Grid.
-For information on all of the grids provided by Polar2Grid see the
+Below are descriptions for a few of the grids provided with |project|.
+For information on all of the grids provided by |project| see the
 `Grids Configuration File <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/grids/grids.conf>`_.
 
 The grids' projections are defined using PROJ.4. Go to

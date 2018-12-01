@@ -91,7 +91,7 @@ If you are unfamiliar with projections, try the :ref:`util_p2g_grid_helper` scri
      :doc:`grids` list, but for more information on possible parameters see
      `PROJ.4 GenParams <http://trac.osgeo.org/proj/wiki/GenParms>`_. Note that
      compatiblity with certain PROJ.4 string components may be dependent on the
-     version of the PROJ.4(pyproj) library that Polar2Grid uses, so testing
+     version of the PROJ.4(pyproj) library that |project| uses, so testing
      should be done to verify that your string works as expected.
  #. **width**:
      Width of the grid in number of pixels. This value may be 'None' if it

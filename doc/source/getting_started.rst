@@ -148,7 +148,7 @@ To access these features provide the "reader" and "writer" names to the
 
     .. code-block:: bash
 
-        $POLAR2GRID_HOME/bin/geo2grid.sh -r <reader> -w <writer> --list-products <options> -f /path/to/files
+        $GEO2GRID_HOME/bin/geo2grid.sh -r <reader> -w <writer> --list-products <options> -f /path/to/files
 
 .. raw:: latex
 

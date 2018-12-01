@@ -129,7 +129,7 @@ def get_parser():
     group.add_argument("--grid-text-size", default=32, type=int,
                        help="Lat/lon grid text font size")
     group.add_argument("--grid-font", default="Vera.ttf",
-                       help="Path to TTF font (polar2grid provided or custom path)")
+                       help="Path to TTF font (package provided or custom path)")
     group.add_argument("--grid-fill", nargs="*", default=["cyan"],
                        help="Color of grid text (color name or 3 RGB integers)")
     group.add_argument("--grid-outline", nargs="*", default=["cyan"],
@@ -171,7 +171,7 @@ def get_parser():
     group.add_argument("--colorbar-text-color", nargs="*", default=['black'],
                        help="Color of tick text (color name or 3 RGB integers)")
     group.add_argument("--colorbar-font", default="Vera.ttf",
-                       help="Path to TTF font (polar2grid provided or custom path)")
+                       help="Path to TTF font (package provided or custom path)")
     group.add_argument("--colorbar-align", choices=['left', 'top', 'right', 'bottom'], default='bottom',
                        help="Which direction to align colorbar (see --colorbar-vertical)")
     group.add_argument('--colorbar-vertical', action='store_true',

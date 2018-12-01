@@ -46,7 +46,7 @@ is a lambert conic conformal projection which was chosen based on the
 center longitude and latitude.
 
 Once this text line has been output, it can be added to a text file and
-referenced in any Polar2Grid command line.  For instance, if I save
+referenced in the |script_literal| command line.  For instance, if I save
 the output text grid line to a file named ``/home/user/my_grids.txt``, I can
 create a GeoTIFF from satellite data by executing a command like this:
 
