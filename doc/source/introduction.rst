@@ -56,11 +56,11 @@ What's New?
 
 .. ifconfig:: is_geo2grid
 
-    Geo2Grid Version 0.1 is now available. Changes in this version include:
+    Included in this release:
 
     .. include:: NEWS_GEO2GRID.rst
         :start-line: 6
-        :end-line: 15
+        :end-line: 17
 
     For more details on what's new in this version and past versions see the
     `Release Notes <https://raw.githubusercontent.com/davidh-ssec/polar2grid/master/NEWS_GEO2GRID.rst>`_

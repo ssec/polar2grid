@@ -29,13 +29,13 @@ beyond the scope of this documentation.
 |project| Software
 ------------------
 
-The |project| tarball can be found on the CSPP website:
 
 .. ifconfig:: is_geo2grid
 
-        http://cimss.ssec.wisc.edu/csppgeo/
+    The |project| tarball can be downloaded from the CSPP Geo website:
+    http://cimss.ssec.wisc.edu/csppgeo/
 
-    Next, unpack the tarball:
+    To install the software, unpack the tarball:
 
     .. code-block:: bash
 
@@ -56,9 +56,9 @@ The |project| tarball can be found on the CSPP website:
 
         $GEO2GRID_HOME/bin/<p2g_script.sh> ...
 
-    If you want to run commands without including the preceding directory path,
-    or if using in a script in its own background environment, then you can set
-    your path to include the /bin directory:
+    To execute commands without including the preceding directory path,
+    or if using in a script in its own background environment, then set
+    the path to include the /bin directory:
 
     .. code-block:: bash
 
@@ -66,9 +66,10 @@ The |project| tarball can be found on the CSPP website:
 
 .. ifconfig:: not is_geo2grid
 
-        http://cimss.ssec.wisc.edu/cspp/
+    The |project| tarball can be downloaded from the CSPP LEO website:
+    http://cimss.ssec.wisc.edu/cspp/
 
-    Next, unpack the tarball:
+    To install the software, unpack the tarball:
 
     .. code-block:: bash
 
@@ -89,9 +90,9 @@ The |project| tarball can be found on the CSPP website:
 
         $POLAR2GRID_HOME/bin/<p2g_script.sh> ...
 
-    If you want to run commands without including the preceding directory path,
-    or if using in a script in its own background environment, then you can set
-    your path to include the /bin directory:
+    To execute commands without including the preceding directory path,
+    or if using in a script in its own background environment, then set
+    the path to include the /bin directory:
 
     .. code-block:: bash
 
@@ -104,9 +105,9 @@ See :doc:`getting_started` for more information on running |project|.
 
 .. ifconfig:: is_geo2grid
 
-    If you want to run the test case to verify your installation,
-    download the following file:
-
+    To confirm a successful installation download the following verification
+    test data set:
+	
     .. code-block:: bash
 
         CSPP_GEO2GRID_V1.0.0_TEST_DATA.tar.gz
@@ -124,8 +125,8 @@ See :doc:`getting_started` for more information on running |project|.
 
 .. ifconfig:: not is_geo2grid
 
-    If you want to run the test case to verify your installation,
-    download the following file:
+    To confirm a successful installation download the following verification
+    test data set:
 
     .. code-block:: bash
 

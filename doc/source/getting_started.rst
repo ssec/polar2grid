@@ -3,7 +3,7 @@
 
 All of the tools provided by |project| can be found in the ``bin`` directory
 of the extracted tarball. The majority of the scripts in the software bundle
-are wrappers around python software.
+are bash wrappers around python software.
 
 Basic Usage
 -----------
@@ -41,8 +41,8 @@ Basic Usage
     The most common use of |project| is to convert satellite data files in to
     gridded image files.
     The following command can be used to create 8-bit GeoTIFF single band
-    images of all 16 ABI imager L1B calibrated channels, a true color RGB,
-    and natural color RGB, based on the files found in
+    images of all 16 ABI imager L1B calibrated channels, a true color 24 bit RGB,
+    and natural color 24 bit RGB, based on the files found in
     ``<path to files>/<list of files>``.
 
     .. code-block:: bash
@@ -83,7 +83,7 @@ are always available:
 
         -h                    Print detailed helpful information.
         --list-products       List all possible product options to use with -p from the given input data.
-        -p                    List of products to create.
+        -p                    List of supports products to create for the given inputs.
         -f                    Input files and paths.
         --grid-coverage       Fraction of grid that must be covered by valid data. Default is 0.1.
         -g <grid_name>        Specify the output grid to use. Default is the Platte Carrée projection, also
@@ -105,7 +105,8 @@ are always available:
 
         -h                    Print detailed helpful information.
         --list-products       List all possible product options to use with -p from the given input data.
-        -p                    List of products to create.
+
+        -p                    List of supports products to create for the given inputs.
         -f                    Input files and paths.
         -g <grid_name>        Specify the output grid to use. Default is the native instrument projection.
                               See :doc:`grids` and :doc:`custom_grids` for information other possible values.
@@ -121,6 +122,8 @@ are always available:
         geo2grid.sh -r abi_l1b -w geotiff --list-products -f <path to files>/<list of files>
 
         geo2grid.sh -r abi_l1b -w geotiff -p C01 natural_color -v -f <path to files>
+
+        geo2grid.sh -r abi_l1b -w geotiff --ll-bbox -95.0 40.0 -85.0 50.0 -f /abi/OR_ABI-L1b-RadF-*.nc
 
 
 For information on other scripts and features provided by |project| see
