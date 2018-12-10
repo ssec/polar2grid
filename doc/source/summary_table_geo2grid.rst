@@ -11,17 +11,21 @@
     * - ABI L1B
       - OR_ABI-L1b-Rad?-M?C??_G??_*.nc
 
-        Ex: OR_ABI-L1b-RadC-M3C01_G16_s20172451802150_e*.nc
+        **Ex: OR_ABI-L1b-RadC-M3C01_G16_s20172451802150_e*.nc**
       - 8-bit single band GeoTIFF
       - abi_l1b
       - geotiff
     * - AHI HSD
       - HS_H08_*_B??_*_*_S*.DAT
+
+        **Ex: HS_H08_20181112_1230_B08_FLDK_R20_S0910.DAT**
       - 8-bit single band GeoTIFF
       - ahi_hsd
       - geotiff
     * - AHI HRIT (HimawariCast) from JMA
       - IMG_DK01*_*
+
+        **Ex: IMG_DK01B05_201811121230**
       - 8-bit single band GeoTIFF
       - hrit_ahi
       - geotiff
