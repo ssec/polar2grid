@@ -64,6 +64,30 @@ Basic Usage
     native resolution of the instrument channel (500m for RGB composites).
     This can be customized with command line arguments.
 
+.. ifconfig:: is_geo2grid
+
+Creating Red Green Blue (RGB) Composite Imagery	
+-----------------------------------------------
+
+.. ifconfig:: is_geo2grid
+
+    The list of supported products includes true and natural color 24 bit RGB imagery.  
+    The software uses the number of specified CPU threads to create high quality 
+    reprojections in the lowest latency possible by using the DASK utility 
+    (Dave to write something here). The creation of these RGBs includes the
+    following steps, which are performed by default with each execution:
+
+    * Check for required spectral bands used in RGB creation among input files.
+    * Sharpen composite bands to the highest spatial resolution (500m).
+    * Creation of pseudo "green" band for the ABI instruments.
+    * Reflectance adjustment (dividing by cosine of the solar zenith angle).
+    * Removal of atmospheric Rayleigh scattering (atmospheric correction).
+
+    Geo2Grid also supports the creation of other RGBs (this varies depending on 
+    the instrument), however these files are not produced by default.  The 
+    recipes for creating these RGBs come from <???????EUMETSAT Recipes?>.
+
+
 Common Script Options
 ---------------------
 
@@ -83,7 +107,7 @@ are always available:
 
         -h                    Print detailed helpful information.
         --list-products       List all possible product options to use with -p from the given input data.
-        -p                    List of supports products to create for the given inputs.
+        -p                    List of products you want to create.
         -f                    Input files and paths.
         --grid-coverage       Fraction of grid that must be covered by valid data. Default is 0.1.
         -g <grid_name>        Specify the output grid to use. Default is the Platte Carrée projection, also
@@ -106,7 +130,7 @@ are always available:
         -h                    Print detailed helpful information.
         --list-products       List all possible product options to use with -p from the given input data.
 
-        -p                    List of supports products to create for the given inputs.
+        -p                    List of products you want to create.
         -f                    Input files and paths.
         -g <grid_name>        Specify the output grid to use. Default is the native instrument projection.
                               See :doc:`grids` and :doc:`custom_grids` for information other possible values.
