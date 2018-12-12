@@ -27,24 +27,36 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The ABI Level 1B Reader operates on NASA Level 1B (L1B) NetCDF files
-from the GOES-EAST (GOES-16) and GOES-WEST (GOES-17) Advanced Baseline Imager (ABI) instrument.
-The ABI L1B reader analyzes the user provided filenames to determine if a file
-can be used. Files usually have the following naming scheme::
+"""The ABI Level 1B Reader operates on NOAA Level 1B (L1B) NetCDF files
+from the GOES-16 (GOES-East) and GOES-17 (GOES-West) Advanced Baseline 
+Imager (ABI) instrument. The ABI L1B reader works off of the input filenames 
+to determine if a file is supported by Geo2Grid.  Naming conventions 
+supported by Geo2Grid are as follows:
+
+    OR_ABI-L1b-RadF-<Instrument Mode>C<Band Number 1-16>_<Satellite G16 or G17>_s<Start date and time>_e<End date and time>_c<Creation date and time>.nc
+
+For example:
 
     OR_ABI-L1b-RadF-M3C16_G16_s20182531700311_e20182531711090_c20182531711149.nc
 
-The ABI L1B reader supports all instrument spectral bands, identified as
-the products shown below. The creation of the ABI L1B reader can
-be specified to the main script with the reader name ``abi_l1b``.
+These are the mission compliant radiance file naming conventions 
+used by the NOAA Comprehensive Large Array-data Stewardship 
+System (CLASS) archive and the CSPP GOES Rebroadcast (GRB) software.  
+The ABI L1B reader supports all instrument spectral bands, identified in 
+Geo2Grid as the products shown in the table below. The 
+ABI L1B reader can be provided to the main geo2grid.sh script 
+using the ``-r`` option and the reader name ``abi_l1b``. 
 
 The list of supported products includes true and natural color imagery.
-These are created  by means of a python based atmospheric Rayleigh 
+These are created by means of a python based atmospheric Rayleigh 
 scattering correction algorithm that is executed as part of the |project| ABI
-L1B reader.
+L1B reader, along with sharpening to the highest spatial resolution. For
+more information on the creation of RGBs, please see the 
+:doc:`RGB section <getting_started>`.
+
 
 +---------------------------+-----------------------------------------------------+
-| Product Name              | Description                                         |
+| **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
 | C01                       | Channel 1 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
