@@ -1,5 +1,5 @@
-HRIT AHI Reader
-===============
+AHI Himawari Standard Data (HSD) Reader
+=======================================
 
 .. automodule:: polar2grid.readers.ahi_hsd
 
