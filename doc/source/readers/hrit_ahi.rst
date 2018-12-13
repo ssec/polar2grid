@@ -1,5 +1,5 @@
-HRIT AHI Reader
-===============
+AHI HimawariCast (HRIT) Reader
+==============================
 
 .. automodule:: polar2grid.readers.hrit_ahi
 
