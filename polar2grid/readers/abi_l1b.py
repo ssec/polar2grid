@@ -30,12 +30,8 @@
 """The ABI Level 1B Reader operates on NOAA Level 1B (L1B) NetCDF files
 from the GOES-16 (GOES-East) and GOES-17 (GOES-West) Advanced Baseline 
 Imager (ABI) instrument. The ABI L1B reader works off of the input filenames 
-to determine if a file is supported by Geo2Grid.  Naming conventions 
-supported by Geo2Grid are as follows:
-
-    OR_ABI-L1b-RadF-<Instrument Mode>C<Band Number 1-16>_<Satellite G16 or G17>_s<Start date and time>_e<End date and time>_c<Creation date and time>.nc
-
-For example:
+to determine if a file is supported by Geo2Grid. Files usually have the 
+following naming scheme:
 
     OR_ABI-L1b-RadF-M3C16_G16_s20182531700311_e20182531711090_c20182531711149.nc
 
