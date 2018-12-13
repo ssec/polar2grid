@@ -27,23 +27,29 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The AHI HSD Reader operates on HSD files
-from the Himawari-8 Advanced Himawari Imager (AHI) instrument.
-The AHI HSD reader analyzes the user provided filenames to determine if a file
-can be used. Files usually have the following naming scheme::
+"""The AHI HSD Reader operates on standard files from the Japan 
+Meteorological Agency (JMA) Himawari-8 Advanced Himawari Imager (AHI) 
+instrument. The AHI HSD reader works off of the input filenames
+to determine if a file is supported by Geo2Grid. Files usually 
+have the following naming scheme:
 
     HS_H08_20181022_0300_B09_FLDK_R20_S1010.DAT
 
-The AHI HSD reader supports all instrument spectral bands, identified as
-the products shown below. The creation of the AHI HSD reader can
-be specified to the main script with the reader name ``ahi_hsd``.
+These are the mission compliant radiance file naming conventions
+used by JMA. The AHI HSD reader supports all instrument spectral bands, 
+identified in Geo2Grid as the products shown in the table below. The
+AHI HSD reader can be provided to the main geo2grid.sh script
+using the ``-r`` option and the reader name ``ahi_hsd``.
 
 The list of supported products includes true and natural color imagery.
 These are created by means of a python based atmospheric Rayleigh
-scattering algorithm that is executed as part of the |project| reader.
+scattering correction algorithm that is executed as part of the |project| AHI 
+HSD reader, along with sharpening to the highest spatial resolution. For
+more information on the creation of RGBs, please see the
+:doc:`RGB section <getting_started>`.
 
 +---------------------------+-----------------------------------------------------+
-| Product Name              | Description                                         |
+| **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
 | B01                       | Channel 1 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
