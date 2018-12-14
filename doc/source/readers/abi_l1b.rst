@@ -3,8 +3,8 @@ ABI L1B Reader
 
 .. automodule:: polar2grid.readers.abi_l1b
 
-Command Line Arguments
-----------------------
+Command Line Usage
+------------------
 
 .. argparse::
     :module: polar2grid.readers.abi_l1b

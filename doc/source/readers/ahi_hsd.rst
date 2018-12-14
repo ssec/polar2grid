@@ -3,8 +3,8 @@ AHI Himawari Standard Data (HSD) Reader
 
 .. automodule:: polar2grid.readers.ahi_hsd
 
-Command Line Arguments
-----------------------
+Command Line Usage
+------------------
 
 .. argparse::
     :module: polar2grid.readers.ahi_hsd

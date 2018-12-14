@@ -3,8 +3,8 @@ AHI HimawariCast (HRIT) Reader
 
 .. automodule:: polar2grid.readers.hrit_ahi
 
-Command Line Arguments
-----------------------
+Command Line Usage
+------------------
 
 .. argparse::
     :module: polar2grid.readers.hrit_ahi
