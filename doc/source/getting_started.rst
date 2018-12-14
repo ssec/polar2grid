@@ -134,6 +134,7 @@ are always available:
         -f                    Input files and paths.
         -g <grid_name>        Specify the output grid to use. Default is the native instrument projection.
                               See :doc:`grids` and :doc:`custom_grids` for information other possible values.
+        --num-workers         Specify number of parallel processing worker threads to use (default: 4)
 
         --ll-bbox <lonmin latmin lonmax latmax>    Subset input data to the bounding coordinates specified.
 
