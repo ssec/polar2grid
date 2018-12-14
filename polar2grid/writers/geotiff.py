@@ -63,6 +63,8 @@ def add_writer_argument_groups(parser):
                          help='Instead of an alpha channel fill invalid '
                               'values with this value. Turns LA or RGBA '
                               'images in to L or RGB images respectively.')
+    group_1.add_argument('--compress', default='LZW',
+                         help='File compression algorithm (DEFLATE, LZW, NONE, etc)')
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
     return group_1, None
