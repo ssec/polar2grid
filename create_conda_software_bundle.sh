@@ -96,7 +96,8 @@ wget http://realearth.ssec.wisc.edu/upload/re_upload -O wmsupload.sh || oops "Co
 chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
 
 # Copy SatPy configurations
-cp -r $BASE_P2G_DIR/etc $SB_NAME/ || oops "Couldn't copy configuration 'etc' directory"
+mkdir $SB_NAME/etc/satpy || oops "Couldn't create configuration 'etc/satpy' directory"
+cp -r $BASE_P2G_DIR/etc/* $SB_NAME/etc/satpy/ || oops "Couldn't copy configuration 'etc' directory"
 
 # Download pyspectral data
 echo "Downloading pyspectral data..."
