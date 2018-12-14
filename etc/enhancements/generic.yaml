@@ -27,3 +27,9 @@ enhancements:
     - name: gamma
       method: !!python/name:satpy.enhancements.gamma
       kwargs: {gamma: 2.0}
+  day_night_mix:
+    standard_name: day_night_mix
+    operations:
+      - name: stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: crude, min_stretch: [0, 0, 0], max_stretch: [1, 1, 1]}

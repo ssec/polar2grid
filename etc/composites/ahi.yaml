@@ -1,0 +1,7 @@
+composites:
+  true_color_night:
+    compositor: !!python/name:satpy.composites.DayNightCompositor
+    prerequisites:
+      - true_color
+      - B14
+    standard_name: day_night_mix
