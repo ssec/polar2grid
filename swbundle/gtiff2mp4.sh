@@ -45,7 +45,7 @@ fi
 TMP_FRAME_DIR="gtiff2mp4_tmp"
 OUTPUT_FILENAME="$1"
 shift
-INPUT_FILES="$@"
+INPUT_FILES=( "$@" )
 MAX_IMG_SIZE=${MAX_IMG_SIZE:-4096}
 
 gdal_size() {
@@ -91,10 +91,12 @@ echo "Creating temporary directory for sorting frames..."
 mkdir -p "$TMP_FRAME_DIR"
 
 echo "Creating video file from: "
-printf '%s\n' "${my_array[@]}"
+printf '%s\n' ${INPUT_FILES[@]}
+echo "Total number of input files: ${#INPUT_FILES[@]}"
 
 x=1
-for i in $INPUT_FILES; do
+echo "Preparing images for video conversion..."
+for i in "${INPUT_FILES[@]}"; do
     counter=$(printf %03d $x)
     img_width_height=`gdal_size $i`
     img_width=`echo $img_width_height | cut -f1 -d' '`
