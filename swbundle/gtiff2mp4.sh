@@ -89,6 +89,10 @@ trap cleanup 0 ERR
 
 echo "Creating temporary directory for sorting frames..."
 mkdir -p "$TMP_FRAME_DIR"
+
+echo "Creating video file from: "
+printf '%s\n' "${my_array[@]}"
+
 x=1
 for i in $INPUT_FILES; do
     counter=$(printf %03d $x)
