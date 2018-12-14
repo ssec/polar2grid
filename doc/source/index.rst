@@ -11,6 +11,7 @@
     installation
     getting_started
     readers/index
+    compositors
     remapping
     writers/index
     utilscripts

@@ -1,3 +1,5 @@
+sensor_name: visir/abi
+
 composites:
   true_color_night:
     compositor: !!python/name:satpy.composites.DayNightCompositor
