@@ -64,29 +64,36 @@ Basic Usage
     native resolution of the instrument channel (500m for RGB composites).
     This can be customized with command line arguments.
 
-.. ifconfig:: is_geo2grid
+.. _getting_started_rgb:
 
-Creating Red Green Blue (RGB) Composite Imagery	
+Creating Red Green Blue (RGB) Composite Imagery
 -----------------------------------------------
 
+.. ifconfig:: not is_geo2grid
+
+    TODO
+
 .. ifconfig:: is_geo2grid
 
-    The list of supported products includes true and natural color 24 bit RGB imagery.  
-    The software uses the number of specified CPU threads to create high quality 
-    reprojections in the lowest latency possible by using the DASK utility 
-    (Dave to write something here). The creation of these RGBs includes the
-    following steps, which are performed by default with each execution:
+        The list of supported products includes true and natural color 24-bit
+        RGB imagery. The software uses the number of specified CPU threads to
+        create high quality reprojections in the lowest latency possible
+        thanks to the dask python library. Dask splits data arrays in to
+        multiple "chunks" and processes them in parallel. The creation of
+        these RGBs includes the following steps, which are performed by
+        default with each execution:
 
-    * Check for required spectral bands used in RGB creation among input files.
-    * Sharpen composite bands to the highest spatial resolution (500m).
-    * Creation of pseudo "green" band for the ABI instruments.
-    * Reflectance adjustment (dividing by cosine of the solar zenith angle).
-    * Removal of atmospheric Rayleigh scattering (atmospheric correction).
+        * Check for required spectral bands used in RGB creation among input files.
+        * Upsample and sharpen composite bands to the highest spatial resolution (500m).
+        * Creation of pseudo "green" band for the ABI instruments.
+        * Reflectance adjustment (dividing by cosine of the solar zenith angle).
+        * Removal of atmospheric Rayleigh scattering (atmospheric correction).
+        * Nonlinear scaling before writing data to disk
 
-    Geo2Grid also supports the creation of other RGBs (this varies depending on 
-    the instrument), however these files are not produced by default.  The 
-    recipes for creating these RGBs come from <???????EUMETSAT Recipes?>.
-
+        Geo2Grid also supports the creation of other RGBs (this varies depending on
+        the instrument), however these files are not produced by default.  The
+        recipes for creating these RGBs come from historical EUMETSAT recipes that
+        have been adjusted to work with the data being used in |project|.
 
 Common Script Options
 ---------------------

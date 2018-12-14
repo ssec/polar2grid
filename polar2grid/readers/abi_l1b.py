@@ -48,7 +48,7 @@ These are created by means of a python based atmospheric Rayleigh
 scattering correction algorithm that is executed as part of the |project| ABI
 L1B reader, along with sharpening to the highest spatial resolution. For
 more information on the creation of RGBs, please see the 
-:doc:`RGB section <getting_started>`.
+:ref:`RGB section <getting_started_rgb>`.
 
 
 +---------------------------+-----------------------------------------------------+

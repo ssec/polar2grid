@@ -52,7 +52,7 @@ is used.
 
     `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Geo%20Questions>`__
 
-    `GitHub Repository <https://github.com/ssec/geo2grid>`_
+    `GitHub Repository <https://github.com/ssec/geo2grid>`__
 
 .. ifconfig:: not is_geo2grid
 
@@ -62,6 +62,6 @@ is used.
 
     `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`__
 
-    `GitHub Repository <https://github.com/ssec/polar2grid>`_
+    `GitHub Repository <https://github.com/ssec/polar2grid>`__
 
 `CSPP Forum <https://forums.ssec.wisc.edu/>`_
