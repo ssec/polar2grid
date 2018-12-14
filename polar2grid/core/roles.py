@@ -522,7 +522,7 @@ class BackendRole(object):
         If a keyword is provided that is not recognized it will be provided
         to the pattern after running through a `str` filter.
 
-        Possible pattern keywords (\*created internally in this function):
+        Possible pattern keywords:
             - satellite       : identifier for the instrument's satellite
             - instrument      : name of the instrument
             - product_name    : name of the product in the output
@@ -532,10 +532,10 @@ class BackendRole(object):
             - columns         : number of columns in the data
             - rows            : number of rows in the data
             - begin_time      : begin time of the first scan (YYYYMMDD_HHMMSS)
-            - begin_YYYYMMDD\* : begin date of the first scan
-            - begin_YYMMDD\*   : begin date of the first scan
-            - begin_HHMMSS\*   : begin time of the first scan
-            - begin_HHMM\*     : begin time of the first scan
+            - begin_YYYYMMDD : begin date of the first scan
+            - begin_YYMMDD   : begin date of the first scan
+            - begin_HHMMSS   : begin time of the first scan
+            - begin_HHMM     : begin time of the first scan
             - end_time        : end time of the first scan. Same keywords as start_time.
 
         >>> from datetime import datetime
@@ -643,7 +643,7 @@ class BackendRole(object):
         If a keyword is provided that is not recognized it will be provided
         to the pattern after running through a `str` filter.
 
-        Possible pattern keywords (\*created internally in this function):
+        Possible pattern keywords:
             - satellite       : identifier for the instrument's satellite
             - instrument      : name of the instrument
             - product_name    : name of the product in the output
@@ -653,10 +653,10 @@ class BackendRole(object):
             - columns         : number of columns in the data
             - rows            : number of rows in the data
             - begin_time      : begin time of the first scan (YYYYMMDD_HHMMSS)
-            - begin_YYYYMMDD\* : begin date of the first scan
-            - begin_YYMMDD\*   : begin date of the first scan
-            - begin_HHMMSS\*   : begin time of the first scan
-            - begin_HHMM\*     : begin time of the first scan
+            - begin_YYYYMMDD  : begin date of the first scan
+            - begin_YYMMDD    : begin date of the first scan
+            - begin_HHMMSS    : begin time of the first scan
+            - begin_HHMM      : begin time of the first scan
             - end_time        : end time of the first scan. Same keywords as start_time.
 
         >>> from datetime import datetime
