@@ -26,13 +26,9 @@ install:
   - set +e
 script:
   - pip install -e .
-  - echo "Exit status: $?"
   - python -m polar2grid.tests
-  - echo "Exit status: $?"
   - cd doc
-  - echo "Exit status: $?"
   - make html
-  - echo "Exit status: $?"
 #  make clean
 #  make latexpdf
 #after_success:
