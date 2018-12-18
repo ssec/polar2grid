@@ -132,12 +132,11 @@ def add_resample_argument_groups(parser):
                          help="Specify additional grid configuration files. "
                               "(.conf for P2G-style grids, .yaml for "
                               "SatPy-style areas)")
-    group_1.add_argument('--ll-bbox', nargs=4, type=float,
+    group_1.add_argument('--ll-bbox', nargs=4, type=float, metavar=("lon_min", "lat_min", "lon_max", "lat_max"),
                          help='Crop data to region specified by lon/lat '
                               'bounds (lon_min lat_min lon_max lat_max). '
                               'Coordinates must be valid in the source data '
-                              'projection. For negative numbers use quotes '
-                              'preceded by a space: " -95.5"')
+                              'projection.')
     return tuple([group_1])
 
 
