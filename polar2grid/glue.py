@@ -107,7 +107,7 @@ def add_scene_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Scene Initialization')
     group_1.add_argument('-r', '--reader',
                          help='Name of reader used to read provided files. '
-                              'Supported readers: ' + ', '.join(['abi_l1b', 'hrit_ahi', 'ahi_hsd']))
+                              'Supported readers: ' + ', '.join(['abi_l1b', 'ahi_hrit', 'ahi_hsd']))
     group_1.add_argument('-f', '--filenames', nargs='+', default=[],
                          help='Input files to read')
     group_2 = parser.add_argument_group(title='Scene Load')

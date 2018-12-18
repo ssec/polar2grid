@@ -27,5 +27,5 @@
 
         **Ex: IMG_DK01B05_201811121230**
       - 8-bit single band GeoTIFF
-      - hrit_ahi
+      - ahi_hrit
       - geotiff

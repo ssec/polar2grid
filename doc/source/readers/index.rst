@@ -32,5 +32,5 @@ to work with all |project| features.
     :polar2grid:acspo
     :polar2grid:clavrx
     :geo2grid:abi_l1b
-    :geo2grid:hrit_ahi
+    :geo2grid:ahi_hrit
     :geo2grid:ahi_hsd
