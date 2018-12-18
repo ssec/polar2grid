@@ -23,12 +23,9 @@ install:
   - git clone --depth 1 git://github.com/astropy/ci-helpers.git
   - source ci-helpers/travis/setup_conda.sh
   - pip install git+https://github.com/pytroll/satpy.git
-  - set +e
-script:
   - pip install -e .
-  - python -m polar2grid.tests
-  - cd doc
-  - make html
+script:
+  - python -m polar2grid.tests && cd doc && make html
 #  make clean
 #  make latexpdf
 #after_success:
