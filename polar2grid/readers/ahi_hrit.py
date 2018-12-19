@@ -46,8 +46,13 @@ using the ``-r`` option and the reader name ``ahi_hrit``.
 The list of supported products includes natural color imagery.
 This is created by means of a python based atmospheric Rayleigh
 scattering correction algorithm that is executed as part of the |project| AHI
-HRIT reader, along with sharpening to the highest spatial resolution. For
-more information on the creation of RGBs, please see the
+HRIT reader, along with sharpening to the highest spatial resolution. 
+
+Please note that true color image RGB creation is not supported for 
+HimwariCast because AHI Band 1 (Blue) and Band 2 (Green) are not
+included.
+
+For more information on the creation of RGBs, please see the
 :ref:`RGB section <getting_started_rgb>`.
 
 +---------------------------+-----------------------------------------------------+
