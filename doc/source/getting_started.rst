@@ -141,6 +141,8 @@ are always available:
         -f                    Input files and paths.
         -g <grid_name>        Specify the output grid to use. Default is the native instrument projection.
                               See :doc:`grids` and :doc:`custom_grids` for information other possible values.
+        --cache-dir <dir>     Directory to store resampling intermediate results between executions.
+                              Not used with 'native' resampling method.
         --num-workers         Specify number of parallel processing worker threads to use (default: 4)
         --progress            Display a timed progress bar to show processing progress
 
