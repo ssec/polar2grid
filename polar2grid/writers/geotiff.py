@@ -50,11 +50,23 @@ DEFAULT_OUTPUT_FILENAME = {
 }
 
 
+class NumpyDtypeList(list):
+    """Magic list to allow dtype objects to match string versions of themselves."""
+
+    def __contains__(self, item):
+        if super(NumpyDtypeList, self).__contains__(item):
+            return True
+        try:
+            return super(NumpyDtypeList, self).__contains__(item().dtype.name)
+        except AttributeError:
+            return False
+
+
 def add_writer_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Geotiff Writer')
     group_1.add_argument('--output-filename', dest='filename',
                          help='custom file pattern to save dataset to')
-    group_1.add_argument('--dtype', choices=[NUMPY_DTYPE_STRS], type=str_to_dtype,
+    group_1.add_argument('--dtype', choices=NumpyDtypeList(NUMPY_DTYPE_STRS), type=str_to_dtype,
                          help='Data type of the output file (8-bit unsigned '
                               'integer by default - uint8)')
     group_1.add_argument('--no-enhance', dest='enhance', action='store_false',
