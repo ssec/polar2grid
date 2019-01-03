@@ -43,6 +43,7 @@ import sys
 import logging
 from pycoast import ContourWriterAGG
 from PIL import Image, ImageFont
+from aggdraw import Font
 # XXX: For some reason 'gdal' needs to be imported *after* PIL otherwise we get a segfault
 import gdal
 import osr
@@ -84,15 +85,15 @@ def get_colormap(band, band_count):
     return cmap
 
 
-def load_font(font_name, size):
+def find_font(font_name, size):
     try:
         font = ImageFont.truetype(font_name, size)
+        return font.path
     except IOError:
         font_path = get_resource_filename('polar2grid.fonts', font_name)
         if not os.path.exists(font_path):
             raise ValueError("Font path does not exist: {}".format(font_path))
-        font = ImageFont.truetype(font_path, size)
-    return font
+        return font_path
 
 
 def get_parser():
@@ -124,7 +125,7 @@ def get_parser():
     group = parser.add_argument_group("grid")
     group.add_argument("--add-grid", action="store_true",
                        help="Add lat/lon grid")
-    group.add_argument("--grid-text", action="store_true",
+    group.add_argument("--grid-no-text", dest='grid_text', action="store_false",
                        help="Add labels to lat/lon grid")
     group.add_argument("--grid-text-size", default=32, type=int,
                        help="Lat/lon grid text font size")
@@ -258,23 +259,24 @@ def main():
             cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline)
 
         if args.add_grid:
-            font = load_font(args.grid_font, args.grid_text_size)
             outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
             minor_outline = args.grid_minor_outline[0] if len(args.grid_minor_outline) == 1 else tuple(int(x) for x in args.grid_minor_outline)
             fill = args.grid_fill[0] if len(args.grid_fill) == 1 else tuple(int(x) for x in args.grid_fill)
+            font_path = find_font(args.grid_font, args.grid_text_size)
+            font = Font(outline, font_path, size=args.grid_text_size)
             cw.add_grid(img, area_def, args.grid_D, args.grid_d, font,
                         fill=fill, outline=outline, minor_outline=minor_outline,
+                        write_text=args.grid_text,
                         lon_placement=args.grid_lon_placement,
                         lat_placement=args.grid_lat_placement)
 
         if args.add_colorbar:
             from pydecorate import DecoratorAGG
-            from aggdraw import Font
             font_color = args.colorbar_text_color
             font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
-            font = load_font(args.colorbar_font, args.colorbar_text_size)
+            font_path = find_font(args.colorbar_font, args.colorbar_text_size)
             # this actually needs an aggdraw font
-            font = Font(font_color, font.path, size=font.size)
+            font = Font(font_color, font_path, size=args.colorbar_text_size)
             band_count = gtiff.RasterCount
             if band_count not in [1, 2]:
                 raise ValueError("Can't add colorbar to RGB/RGBA image")
