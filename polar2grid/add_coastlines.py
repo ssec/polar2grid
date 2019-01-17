@@ -221,6 +221,10 @@ def main():
         LOG.error("Please specify one of the '--add-X' options to modify the image")
         return -1
 
+    # we may be dealing with large images that look like decompression bombs
+    # let's turn off the check for the image size in PIL/Pillow
+    Image.MAX_IMAGE_PIXELS = None
+
     for input_tiff, output_filename in zip(args.input_tiff, args.output_filename):
         LOG.info("Creating {} from {}".format(output_filename, input_tiff))
         gtiff = gdal.Open(input_tiff)
