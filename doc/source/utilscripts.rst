@@ -64,8 +64,8 @@ create a GeoTIFF from satellite data by executing a command like this:
 
 .. _util_add_coastlines:
 
-Add Overlays (Borders, Coastlines, Grids Lines)
------------------------------------------------
+Add Overlays (Borders, Coastlines, Grids Lines, Rivers)
+-------------------------------------------------------
 
 .. argparse::
     :module: polar2grid.add_coastlines
@@ -76,8 +76,8 @@ Example:
 
 .. code-block:: bash
 
-    add_coastlines.sh --add-coastlines --add-borders gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.tif
-    add_coastlines.sh --add-coastlines --add-borders --borders-resolution=h --borders-outline='red' --add-grid npp_viirs_true_color_20170305_193251_lcc_fit.tif -o myfile.png
+    add_coastlines.sh --add-coastlines --add-rivers --rivers-resolution=h --add-grid GOES-16_ABI_RadF_true_color_20181112_063034_GOES-East.tif
+    add_coastlines.sh --add-coastlines --add-borders --borders-resolution=h --borders-outline='red' --add-grid GOES-16_ABI_RadF_natural_color_20181112_183034_GOES-East.tif -o abi_natural_color_coastlines.png
 
 .. _util_add_colormap:
 
