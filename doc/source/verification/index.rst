@@ -6,3 +6,5 @@ Verifying your |project| Installation
 
     :polar2grid:viirs_verification
     :polar2grid:modis_verification
+
+    :geo2grid:abi_verification
