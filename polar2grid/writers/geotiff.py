@@ -77,6 +77,12 @@ def add_writer_argument_groups(parser):
                               'images in to L or RGB images respectively.')
     group_1.add_argument('--compress', default='LZW',
                          help='File compression algorithm (DEFLATE, LZW, NONE, etc)')
+    group_1.add_argument('--tiled', action='store_true',
+                         help="Create tiled geotiffs")
+    group_1.add_argument('--blockxsize', default=None, type=int,
+                         help="Set tile block X size")
+    group_1.add_argument('--blockysize', default=None, type=int,
+                         help="Set tile block Y size")
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
     return group_1, None
