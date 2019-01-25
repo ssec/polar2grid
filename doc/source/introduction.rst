@@ -98,6 +98,32 @@ System Requirements
     included in the processing requirements then the above system requirements
     will need to be adjusted accordingly.
 
+Linux terminal commands included in these instructions assume the bash shell is used.
+
+
+    
+Execution Times
+---------------
+
+The following table provides execution time averages for creating all default 
+GeoTIFF images at full spatial resolution for the given Instrument and Sector.  
+Eight computer threads were used. The times are provided for the higher end 
+system defined above. Execution times decrease when fewer bands and smaller 
+regions are processed.
+
+**Table of Execution Times for Creating GeoTIFF default Images** 
+(All bands plus true and natural color images)
+
++------------------+---------------------+-----------------+-----------------------------+
+|**Instrument**    |**Full Disk Sector** |**CONUS Sector** |  **1000x1000 pixel subset** |
++==================+=====================+=================+=============================+
+| GOES ABI         |   11m15s            |                 |                             |
++------------------+---------------------+-----------------+-----------------------------+
+| AHI HSD          |   18m25s            |    N/A          |                             |
++------------------+---------------------+-----------------+-----------------------------+
+| AHI HimwariCast  |    1m50s            |    N/A          |                             |
++------------------+---------------------+-----------------+-----------------------------+
+
 .. ifconfig:: not is_geo2grid
 
     System requirements for the |project| software are as follows:
@@ -106,8 +132,6 @@ System Requirements
     * 16 GB RAM (minimum)
     * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)
     * 5 GB disk space (minimum)
-
-Linux terminal commands included in these instructions assume the bash shell is used.
 
 License and Disclaimer
 ----------------------
