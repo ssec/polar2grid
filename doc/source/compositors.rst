@@ -42,16 +42,16 @@ Composites
 
 .. ifconfig:: is_geo2grid
 
-    Compositing is the process in |project| of putting multiple products
+    Compositing is the process in |project| of combining multiple products
     together to make a new one. Most often this is done to make RGB color
-    images like the ``true_color`` or ``false_color`` products. The most
+    images like ``true_color`` and ``false_color``. The most
     common RGB recipes are already configured internally to |project|, but
-    users can make their own combinations too. The below instructions will
+    users can make their own combinations too. The following instructions will
     go over some basic examples of how to make your own composites.
 
-    One type of composite that you may want to make is an image with one
-    product shown on the night side of the data and another on the day side.
-    An example of this type of composite can be found in:
+    One type of composite that you may want to make is an image that combines 
+    one type of product for the night side of the data and another on the day side.
+    An example of this type of day/night composite can be found in:
 
     .. code-block:: bash
 
@@ -59,10 +59,11 @@ Composites
 
     This ``abi.yaml`` file is meant to hold all custom user composites for the
     ABI instrument. There is also an ``ahi.yaml`` file in the same directory
-    for the AHI instrument. In this file is the ``true_color_night``
-    composite recipe which combines the ``true_color`` composite with the
-    ``C14`` channel data in to one image. The file contents are copied below
-    for reference:
+    for the AHI instrument. This file contains the ``true_color_night``
+    composite recipe which combines the visible reflectance daytime ``true_color`` 
+    composite with the nighttime ABI Channel 14 ``C14`` infrared 11 micron 
+    brightness temperatures into one image. The ``abi.yaml`` file contents 
+    are displayed below for reference:
 
     .. code-block:: yaml
 
@@ -82,7 +83,7 @@ Composites
         The name of the composite which will be used to request the product
         be made on the command line with the ``-p`` flag. In this example
         it is ``true_color_night``. The name for a composite should be unique
-        within a single file or it may be overwritten.
+        within a single file or it may be overwritten. 
     2. Compositor:
         The ``compositor`` is a pointer to the python code that does the work
         of combining the products together. In this case we are using the
@@ -90,7 +91,7 @@ Composites
         option is the ``GenericCompositor`` for joining three bands together
         in to an RGB.
     3. Inputs:
-        The prerequisites are the products that are passed as inputs in to this
+        The prerequisites are the products that are passed as inputs to this
         compositor. In the case of the day/night compositor the first product
         listed will be used for day time and the second product listed will be
         used at night time.
@@ -99,12 +100,58 @@ Composites
         a composite to a particular enhancement or scaling. For the
         ``DayNightCompositor`` this should almost always be ``day_night_mix``.
 
+    Once the composite recipe has been added to the ``<instrument>.yaml`` 
+    file it will appear in the list of available products when using the
+     ``--list-products`` option.  They it can be invoked like any other
+    product to ``geo2grid.sh``.
+
     The existing ``true_color_night`` composite can be modified directly or
     used as a template for additional composites. Make sure to change the
     composite name and what prerequisites are used in the composite. After
-    that the composite can be loaded with your data by doing:
+    that the composite can be loaded with your data by using the following
+    command:
 
     .. code-block:: bash
 
         $GEO2GRID_HOME/bin/geo2grid.sh -r abi-l1b -w geotiff -p true_color_night -f /path/to/files*.nc
 
+    The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC, 
+    12 November 2018 is shown below.
+
+    .. figure:: _static/example_images/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East.jpg
+        :width: 90%
+        :align: center
+
+    GOES-16 ABI true color day/Channel 14 brightness temperature night composite using input Full Disk 
+    observations from 12:30 UTC, 12 November 2018.
+
+    It is possible to use the compositor to combine RGBs as well.  In the following example, I want
+    to use the day/night compositor to combine the true color RGB for day data and the nighttime
+    microphysics RGB for nighttime data.  In this case, I can add the following lines to the 
+    ``abi.yaml`` file.
+
+    .. code-block:: yaml
+
+        true_color_night_microphysics:
+          compositor: !!python/name:satpy.composites.DayNightCompositor
+          prerequisites:
+            - true_color
+            - night_microphysics
+          standard_name: day_night_mix
+
+    Once the .yaml files has been update, the composite can be generated using the following
+    command:
+
+    .. code-block:: bash
+
+        $GEO2GRID_HOME/bin/geo2grid.sh -r abi-l1b -w geotiff -p true_color_night_microphysics -f /path/to/files*.nc
+
+    The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC, 
+    12 November 2018 is shown below.
+
+    .. figure:: _static/example_images/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East.jpg
+        :width: 90%
+        :align: center
+
+    GOES-16 ABI true color RGB day/nighttime microphysics RGB night composite using input Full Disk
+    observations from 12:30 UTC, 12 November 2018.
