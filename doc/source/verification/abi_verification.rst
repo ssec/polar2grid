@@ -33,7 +33,7 @@ images that are greater than 1 GB (21696 lines x 21696 elements).
 
 The software uses ABI Band 1 (.47 micron), Band 2 (.64 micron) and
 Band 3 (.86 micron) reflectances to create a "Green" Band, which is
-in turn used with Bands 1 and 2 to create the true color imagery.
+in turn combined with Bands 1 and 2 to create the true color imagery.
 The natural color image is created by combining ABI Band 2 (.64 micron),
 Band 3 (.86 micron) and Band 5 (1.6 micron) reflectances.  Both
 true and natural color images are sharpened to 500 m spatial
@@ -57,23 +57,25 @@ ABI Bands found. The output from our test system is shown below.
 
 .. code-block:: bash
 
-    ./g2g_compare_abi_geotiff.sh output work
-    Comparing work/npp_viirs_false_color_20170319_183246_miami.tif to known valid file
-    SUCCESS: 0 pixels out of 750000 pixels are different
-    Comparing work/npp_viirs_true_color_20170319_183246_miami.tif to known valid file
-    SUCCESS: 0 pixels out of 750000 pixels are different
-    Comparing work/npp_viirs_viirs_crefl01_20170319_183246_miami.tif to known valid file
-    SUCCESS: 0 pixels out of 750000 pixels are different
-    Comparing work/npp_viirs_viirs_crefl02_20170319_183246_miami.tif to known valid file
-    SUCCESS: 0 pixels out of 750000 pixels are different
-    Comparing work/npp_viirs_viirs_crefl03_20170319_183246_miami.tif to known valid file
-    SUCCESS: 0 pixels out of 750000 pixels are different
-    Comparing work/npp_viirs_viirs_crefl04_20170319_183246_miami.tif to known valid file
-    SUCCESS: 0 pixels out of 750000 pixels are different
-    Comparing work/npp_viirs_viirs_crefl07_20170319_183246_miami.tif to known valid file
-    SUCCESS: 0 pixels out of 750000 pixels are different
-    Comparing work/npp_viirs_viirs_crefl08_20170319_183246_miami.tif to known valid file
-    SUCCESS: 0 pixels out of 750000 pixels are different
+    ./g2g_compare_geotiff.sh output work
+    Comparing work/GOES-16_ABI_RadF_C01_20181219_174533_GOES-East.tif to known valid file
+    SUCCESS: 0 pixels out of 117679104 pixels are different
+    Comparing work/GOES-16_ABI_RadF_C02_20181219_174533_GOES-East.tif to known valid file
+    SUCCESS: 0 pixels out of 470716416 pixels are different
+    Comparing work/GOES-16_ABI_RadF_C03_20181219_174533_GOES-East.tif to known valid file
+    SUCCESS: 0 pixels out of 117679104 pixels are different
+    Comparing work/GOES-16_ABI_RadF_C05_20181219_174533_GOES-East.tif to known valid file
+    SUCCESS: 0 pixels out of 117679104 pixels are different
+    Comparing work/GOES-16_ABI_RadF_C07_20181219_174533_GOES-East.tif to known valid file
+    SUCCESS: 0 pixels out of 29419776 pixels are different
+    Comparing work/GOES-16_ABI_RadF_C09_20181219_174533_GOES-East.tif to known valid file
+    SUCCESS: 0 pixels out of 29419776 pixels are different
+    Comparing work/GOES-16_ABI_RadF_C14_20181219_174533_GOES-East.tif to known valid file
+    SUCCESS: 0 pixels out of 29419776 pixels are different
+    Comparing work/GOES-16_ABI_RadF_natural_color_20181219_174533_GOES-East.tif to known valid file
+    SUCCESS: 0 pixels out of 470716416 pixels are different
+    Comparing work/GOES-16_ABI_RadF_true_color_20181219_174533_GOES-East.tif to known valid file
+    SUCCESS: 0 pixels out of 470716416 pixels are different
     All files passed
     SUCCESS
 
