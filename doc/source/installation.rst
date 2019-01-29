@@ -54,7 +54,7 @@ beyond the scope of this documentation.
 
     .. code-block:: bash
 
-        $GEO2GRID_HOME/bin/<p2g_script.sh> ...
+        $GEO2GRID_HOME/bin/<geo2grid.sh> ...
 
     To execute commands without including the preceding directory path,
     or if using in a script in its own background environment, then set
