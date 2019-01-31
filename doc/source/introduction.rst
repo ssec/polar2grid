@@ -9,6 +9,17 @@ Overview
 Software Design
 ---------------
 
+.. graphviz::
+
+    digraph glue_flow {
+        rankdir = LR;
+        node [shape = rectangle, fillcolor="#C3DCE7:white", gradientangle="90.0", style="filled"];
+        "Reader" -> "Remapper";
+        "Remapper" -> "Writer";
+        "Remapper" -> "Compositors" [style=dashed];
+        "Compositors" -> "Writer" [style=dashed];
+    }
+
 |project| has a modular design operating on the idea of satellite “products”
 or "datasets"; data observed by a satellite instrument. These products can be
 any type of raster data, such as temperatures, reflectances, radiances, or
@@ -26,17 +37,6 @@ be applied to all readers unless mentioned otherwise.
 
 For more low-level information on the design and responsibility of each
 component see the :doc:`design_overview` Appendix.
-
-.. graphviz::
-
-    digraph glue_flow {
-        rankdir = LR;
-        node [shape = rectangle, fillcolor="#C3DCE7:white", gradientangle="90.0", style="filled"];
-        "Reader" -> "Remapper";
-        "Remapper" -> "Writer";
-        "Remapper" -> "Compositors" [style=dashed];
-        "Compositors" -> "Writer" [style=dashed];
-    }
 
 What's New?
 -----------
