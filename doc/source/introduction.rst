@@ -98,10 +98,6 @@ System Requirements
     included in the processing requirements then the above system requirements
     will need to be adjusted accordingly.
 
-Linux terminal commands included in these instructions assume the bash shell is used.
-
-
-    
 Execution Times
 ---------------
 
