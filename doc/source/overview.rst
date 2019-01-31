@@ -48,7 +48,7 @@ is used.
 
     .. only:: not html
 
-        `Documentation Website <http://www.ssec.wisc.edu/software/polar2grid/>`_
+        `Documentation Website <http://www.ssec.wisc.edu/software/geo2grid/>`_
 
     `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Geo%20Questions>`__
 
