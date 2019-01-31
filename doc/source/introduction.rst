@@ -102,7 +102,7 @@ Execution Times
 ---------------
 
 The following table provides execution time averages for creating all default 
-GeoTIFF images at full spatial resolution for the given Instrument and Sector.  
+GeoTIFF images at full spatial resolution for the given instrument and sector.  
 Eight computer threads were used. The times are provided for the higher end 
 system defined above. Execution times decrease when fewer bands and smaller 
 regions are processed.
