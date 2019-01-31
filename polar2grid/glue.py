@@ -191,7 +191,7 @@ def main(argv=sys.argv[1:]):
     args = parser.parse_args(argv)
 
     def _args_to_dict(group_actions):
-        return {ga.dest: getattr(args, ga.dest) for ga in group_actions}
+        return {ga.dest: getattr(args, ga.dest) for ga in group_actions if hasattr(args, ga.dest)}
     scene_args = _args_to_dict(subgroups[0]._group_actions)
     load_args = _args_to_dict(subgroups[1]._group_actions)
     resample_args = _args_to_dict(subgroups[2]._group_actions)

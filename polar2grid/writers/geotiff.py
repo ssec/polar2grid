@@ -63,6 +63,7 @@ class NumpyDtypeList(list):
 
 
 def add_writer_argument_groups(parser):
+    from argparse import SUPPRESS
     group_1 = parser.add_argument_group(title='Geotiff Writer')
     group_1.add_argument('--output-filename', dest='filename',
                          help='custom file pattern to save dataset to')
@@ -79,9 +80,9 @@ def add_writer_argument_groups(parser):
                          help='File compression algorithm (DEFLATE, LZW, NONE, etc)')
     group_1.add_argument('--tiled', action='store_true',
                          help="Create tiled geotiffs")
-    group_1.add_argument('--blockxsize', default=None, type=int,
+    group_1.add_argument('--blockxsize', default=SUPPRESS, type=int,
                          help="Set tile block X size")
-    group_1.add_argument('--blockysize', default=None, type=int,
+    group_1.add_argument('--blockysize', default=SUPPRESS, type=int,
                          help="Set tile block Y size")
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
