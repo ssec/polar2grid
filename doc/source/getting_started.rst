@@ -162,9 +162,8 @@ are always available:
 
 
 For information on other scripts and features provided by |project| see
-the :doc:`utilscripts` or :doc:`misc_recipes` sections or
-the various examples through out the :doc:`reader <readers/index>` and
-:doc:`writer <writers/index>` sections.
+the :doc:`utilscripts` section or the various examples throughout 
+the document.
 
 .. _reader_writer_combos:
 
@@ -212,8 +211,10 @@ Creating Your Own Custom Grids
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The |project| software bundle comes with a wrapper script for the
-:ref:`Custom Grid Utility <util_p2g_grid_helper>` for easily creating |project| grids over
-a user determined longitude and latitude region. To run it from the software bundle wrapper run:
+:ref:`Custom Grid Utility <util_p2g_grid_helper>` for easily creating |project| grid definitions over
+a user determined longitude and latitude region. Once these definitions have
+been created, they can be provided to geo2grid.sh. To run the utility scrip 
+from the software bundle wrapper run:
 
 .. ifconfig:: not is_geo2grid
 
