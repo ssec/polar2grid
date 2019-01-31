@@ -50,7 +50,7 @@ UW/SSEC, execute the following commands:
 .. code-block:: bash
 
     cd ..
-    ./g2g_compare_abi_geotiff.sh output work
+    ./g2g_compare_geotiff.sh output work
 
 This script compares the values of all the GeoTIFF files for all 
 ABI Bands found. The output from our test system is shown below. 
