@@ -9,8 +9,8 @@ Version 1.0.0 (unreleased)
 * AHI HSD (ahi_hsd) reader added
 * AHI HRIT/HimawariCast (ahi_hrit) reader added
 * Geotiff (geotiff) writer added
-* MIN/MAX native resampling possible
 * Multi-threaded (multiple worker) processing
 * Sharpened rayleigh-corrected full-resolution true and natural color RGBs
 * Command line Lat/Lon defined subsets
 * User defined grid capability
+* MIN/MAX native resampling possible
