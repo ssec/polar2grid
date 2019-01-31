@@ -50,9 +50,9 @@ is used.
 
         `Documentation Website <http://www.ssec.wisc.edu/software/geo2grid/>`_
 
-    `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Geo%20Questions>`__
-
     `GitHub Repository <https://github.com/ssec/geo2grid>`__
+ 
+    `CSPP Geo Forum <https://forums.ssec.wisc.edu/viewforum.php?f=67>`_
 
 .. ifconfig:: not is_geo2grid
 
@@ -64,4 +64,4 @@ is used.
 
     `GitHub Repository <https://github.com/ssec/polar2grid>`__
 
-`CSPP Forum <https://forums.ssec.wisc.edu/>`_
+    `CSPP LEO Forum <https://forums.ssec.wisc.edu/viewforum.php?f=66>`_
