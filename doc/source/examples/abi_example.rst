@@ -22,7 +22,7 @@ RGBs in standard satellite projection using 8 worker threads:
 
     ``geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 -f <path_to_files>``
 
-Create a subset of ABI band output Geotiff image files:
+Create a subset of ABI band output Geotiff image files for Channels 1, 2 ,3 and 5:
 
     ``geo2grid.sh -r abi_l1b -w geotiff -p C01 C02 C03 C05 true_color -f <path_to_abi_files>``
 
@@ -39,6 +39,8 @@ required to create the false color image are available:
 .. code-block:: bash
 
     geo2grid.sh -r abi_l1b -w geotiff -p natural-color --ll-bbox -95.0 40.0 -85.0 50.0 -f OR_ABI-L1b-RadC*.nc
+
+The resulting image is displayed below.
 
 .. raw:: latex
 
