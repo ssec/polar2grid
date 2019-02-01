@@ -7,16 +7,11 @@ metadata from user provided input files.
 The data that readers distribute to other |project| components are called
 :term:`products` ("datasets" in SatPy terminology).
 
-Depending on what products are available in the files provided by the user
-the reader can also provide composite products.
-Due to the way |project| interfaces to the SatPy library there may be
-additional readers available than those described below. Further details on
-these readers can be found on the
-`SatPy documentation <https://satpy.readthedocs.io/en/latest/>`_. The readers
-described below have been tested and configured to work as |project| users
-have come to expect. Any other readers provided by SatPy are not guaranteed
-to work with all |project| features.
-
+The number and type of products that can be created is dependent upon
+the input datasets that are provided. Composites, such as RGBs, require a 
+specific set of band combinations to be present. All products that 
+can be created for a given input dataset can be determined by
+using the  ``--list-products`` option.
 
 .. toctree-filt::
     :maxdepth: 1
