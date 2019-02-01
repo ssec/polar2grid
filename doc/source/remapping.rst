@@ -20,12 +20,12 @@ Remapping
     data to a uniform grid makes it easier to view, manipulate, and store the data.
     Some instrument data is provided to the user already gridded (ex. ABI L1B data)
     and others are not (ex. VIIRS SDR or older GOES satellites).
-    In |project| it is possible to perform the gridding process for ungridded data
-    or to re-grid already gridded data. Mapping input data to an output grid can
-    be a complicated process to make a good looking image. There are different ways
-    to get an image the way a user wants based on what grid (projection) is chosen
-    and what algorithm is used to map input pixel to output pixel.
-    |project| offers various options that are described below.
+    In |project| it is possible to perform the gridding (reprojecting) process for 
+    ungridded data or to re-project already gridded data. Mapping input data in 
+    order to create a high quality image can be a complicated process. There are 
+    different techniques that can be used to create an output image based on what 
+    grid (projection) is chosen and what algorithm is used to map input pixel to 
+    output pixel.  |project| offers various options that are described below.
 
     Native Resampling
     -----------------
@@ -46,7 +46,7 @@ Remapping
     pixel for each pixel in the output image. If a valid pixel can't be found near
     a location then an invalid (transparent) pixel is put in its place. Controlling
     this search distance and other options are described below in the Command Line
-    Arguments section. Nearest resampling can be specified on the command line
+    Arguments section. Nearest neighbor resampling can be specified on the command line
     with ``--method nearest`` and is the default when non-native grids are specified
     to the command line (``-g my_grid``).
 
