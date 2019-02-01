@@ -22,15 +22,15 @@ RGBs in standard satellite projection using 8 worker threads:
 
     ``geo2grid.sh -r ahi_hsd -w geotiff --num-workers 8 -f <path_to_files>``
 
-Create a subset of AHI band output Geotiff image files:
+Create a subset of AHI band output Geotiff image files for Bands 1, 2, 3, 4 and 5:
 
     ``geo2grid.sh -r ahi_hsd -w geotiff -p B01 B02 B03 B04 B05 natural_color -f <path_to_ahi_files>``
 
 Create AHI images over a Lambert Conic Conformal (LCC) grid centered over
 perth Australia.  
 
-Run the grid helper script to define the grid boundaries, spatial
-resolution and projection.
+Run the grid helper script to define the grid center, areal extent, spatial
+resolution and projection .
 
     ``p2g_grid_helper.sh perth 117.9 -32.4 500 500 1500 1500``
 
