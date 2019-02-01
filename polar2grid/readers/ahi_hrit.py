@@ -49,7 +49,7 @@ scattering correction algorithm that is executed as part of the |project| AHI
 HRIT reader, along with sharpening to the highest spatial resolution. 
 
 Please note that true color image RGB creation is not supported for 
-HimwariCast because AHI Band 1 (Blue) and Band 2 (Green) are not
+HimawariCast because AHI Band 1 (Blue) and Band 2 (Green) are not
 included.
 
 For more information on the creation of RGBs, please see the
