@@ -98,7 +98,7 @@ def find_font(font_name, size):
 
 def get_parser():
     import argparse
-    parser = argparse.ArgumentParser(description="Convert a GeoTIFF to PNG and add coastlines and borders",
+    parser = argparse.ArgumentParser(description="Add overlays to a GeoTIFF file and save as a PNG file.",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_argument_group("coastlines")
     group.add_argument("--add-coastlines", action="store_true",
