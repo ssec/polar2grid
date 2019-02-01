@@ -81,7 +81,7 @@ Composites
 
     1. Name:
         The name of the composite which will be used to request the product
-        be made on the command line with the ``-p`` flag. In this example
+        on the command line with the ``-p`` flag. In this example
         it is ``true_color_night``. The name for a composite should be unique
         within a single file or it may be overwritten. 
     2. Compositor:
@@ -93,16 +93,16 @@ Composites
     3. Inputs:
         The prerequisites are the products that are passed as inputs to this
         compositor. In the case of the day/night compositor the first product
-        listed will be used for day time and the second product listed will be
-        used at night time.
+        listed will be used for day time observations and the second product 
+        listed will be used for night time data.
     4. Standard Name:
         Used later in |project| processing to map
         a composite to a particular enhancement or scaling. For the
         ``DayNightCompositor`` this should almost always be ``day_night_mix``.
 
     Once the composite recipe has been added to the ``<instrument>.yaml`` 
-    file it will appear in the list of available products when using the
-     ``--list-products`` option.  They it can be invoked like any other
+    file it will appear in the list of available products when using the 
+    ``--list-products`` option.  It can then be invoked like any other
     product to ``geo2grid.sh``.
 
     The existing ``true_color_night`` composite can be modified directly or
@@ -139,7 +139,7 @@ Composites
             - night_microphysics
           standard_name: day_night_mix
 
-    Once the .yaml files has been update, the composite can be generated using the following
+    Once the .yaml files has been updated, the composite can be generated using the following
     command:
 
     .. code-block:: bash
