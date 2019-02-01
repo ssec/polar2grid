@@ -36,6 +36,13 @@ these steps may be optional or appear in a different order.
         "Compositors" -> "Writer" [style=dashed];
     }
 
+In |project| a majority of this functionality is provided by the open source
+SatPy library created by the PyTroll group. More information on SatPy and
+the capabilities it provides to python users can be found in the
+`SatPy documentation <https://satpy.readthedocs.io/en/latest/>`_.
+For more on the PyTroll group and their work see the
+`PyTroll home page <http://pytroll.github.io/>`_.
+
 Data Container
 --------------
 
