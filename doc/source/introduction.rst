@@ -38,6 +38,11 @@ be applied to all readers unless mentioned otherwise.
 For more low-level information on the design and responsibility of each
 component see the :doc:`design_overview` Appendix.
 
+In |project| a majority of the functionality is provided by the open source
+SatPy library created by the PyTroll group. More information on SatPy and
+the capabilities it provides to python users can be found in the
+`SatPy documentation <https://satpy.readthedocs.io/en/latest/>`_.
+
 What's New?
 -----------
 
