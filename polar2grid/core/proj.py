@@ -63,9 +63,9 @@ class Proj(Proj):
 
 def get_parser():
     from argparse import ArgumentParser
-    parser = ArgumentParser(description="Convert lon/lat points to X/Y values")
+    parser = ArgumentParser(description="Convert latitude/longitude coordinates to X/Y values.")
     parser.add_argument("-i", "--inverse", dest="inv", action="store_true", default=False,
-                        help="Convert X/Y values to lon/lat")
+                        help="Convert X/Y values to latitude/longitude coordinates")
     parser.add_argument("proj4_str",
                         help="PROJ.4 projection string (in quotes)")
     parser.add_argument("lon_point", type=float,
