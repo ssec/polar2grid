@@ -26,7 +26,7 @@ images are by default atmospherically corrected and spatially
 sharpened to 500 m resolution in native satellite 
 projection.  As it is executing, a progress bar will update, and 
 8 CPU threads will be used if available. On modern computers, the 
-execution should take around 11 minutes.  
+execution should take around 10-15 minutes.  
 
 The output files are large, including the true and natural color
 images that are greater than 1 GB (21696 lines x 21696 elements).
