@@ -39,8 +39,8 @@ Example:
     # Will result in:
     my_grid_name, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=56.300 +lat_1=56.300 +lon_0=-150.100 +units=m +no_defs, 1000, 1000, 250.000, -250.000, -125000.000, 125000.000
 
-The above example creates a text grid line named 'my_grid_name' at a 
-250m resolution, 1000 pixels wide and height, and centered at 
+The above example creates a proj4 text grid line named 'my_grid_name' defined
+to be at 250m resolution, 1000 pixels width and height, and centered at 
 -150.1 degrees longitude and 56.3 degrees latitude. The projection 
 is a lambert conic conformal projection which was chosen based on the 
 center longitude and latitude.
@@ -72,7 +72,7 @@ Add Overlays (Borders, Coastlines, Grids Lines, Rivers)
     :func: get_parser
     :prog: add_coastlines.sh
 
-Example:
+Examples:
 
 .. code-block:: bash
 
@@ -155,7 +155,7 @@ Example:
 
 .. code-block:: bash
 
-    gtiff2kmz.sh npp_viirs_true_color_20161210_193100_wgs84_fit.tif
+    gtiff2kmz.sh GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.tif
 
 
 Convert GeoTIFFs to MP4 Video
@@ -173,15 +173,23 @@ creation they will be automatically scaled to a smaller size.
 This will create a MP4 video file called ``out.mp4`` with 24 images (frames)
 per second.
 
-Remap GOES geotiffs
+Example:
+
+.. code-block:: bash
+
+    gtiff2mp4.sh my_natural_color_animation.mp4  *natural_color*.tif
+
+
+Remap GOES GeoTIFFs
 -------------------
 
 The projection of the GOES-East and GOES-West satellites uses special
 parameters that are not always supported by older visualization tools.
 While new versions of GDAL and PROJ.4 libraries can often fix these issues,
 this is not always an option. |project| provides the ``reproject_goes.sh``
-script to remap GOES geotiffs to a nearly identical projection that is more
-compatible with older visualization tools. The script can be called by doing:
+script to remap GOES GeoTIFFs to a nearly identical projection that is more
+compatible with older visualization tools. The script can be called by 
+executing:
 
 .. code-block:: bash
 
