@@ -48,7 +48,7 @@ is used.
 
     .. only:: not html
 
-        `Documentation Website <http://www.ssec.wisc.edu/software/geo2grid/>`_
+        `Documentation Website <http://www.ssec.wisc.edu/software/geo2grid/>`__
 
     `GitHub Repository <https://github.com/ssec/geo2grid>`__
  
@@ -58,7 +58,7 @@ is used.
 
     .. only:: not html
 
-        `Documentation Website <http://www.ssec.wisc.edu/software/polar2grid/>`_
+        `Documentation Website <http://www.ssec.wisc.edu/software/polar2grid/>`__
 
     `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`__
 
