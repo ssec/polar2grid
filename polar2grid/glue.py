@@ -233,7 +233,16 @@ def main(argv=sys.argv[1:]):
     scene_args['filenames'] = get_input_files(scene_args['filenames'])
     # Create a Scene, analyze the provided files
     LOG.info("Sorting and reading input files...")
-    scn = Scene(**scene_args)
+    try:
+        scn = Scene(**scene_args)
+    except ValueError as e:
+        LOG.error("{} | Enable debug message (-vvv) or see log file for details.".format(str(e)))
+        LOG.debug("Further error information: ", exc_info=True)
+        return -1
+    except OSError:
+        LOG.error("Could not open files. Enable debug message (-vvv) or see log file for details.")
+        LOG.debug("Further error information: ", exc_info=True)
+        return -1
 
     if args.list_products:
         print("\n".join(sorted(scn.available_dataset_names(composites=True))))
