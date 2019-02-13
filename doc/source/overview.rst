@@ -50,7 +50,7 @@ is used.
 
         `Documentation Website <http://www.ssec.wisc.edu/software/geo2grid/>`__
 
-    `GitHub Repository <https://github.com/ssec/geo2grid>`__
+    `GitHub Repository <https://github.com/ssec/polar2grid>`__
  
     `CSPP Geo Forum <https://forums.ssec.wisc.edu/viewforum.php?f=67>`_
 

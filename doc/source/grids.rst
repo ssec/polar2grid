@@ -11,7 +11,7 @@ grids aren't enough it is possible to create your own custom grids. See the
 
 Below are descriptions for a few of the grids provided with |project|.
 For information on all of the grids provided by |project| see the
-`Grids Configuration File <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/grids/grids.conf>`_.
+`Grids Configuration File <https://github.com/ssec/polar2grid/blob/master/polar2grid/grids/grids.conf>`_.
 
 The grids' projections are defined using PROJ.4. Go to
 `PROJ.4 GenParams <http://trac.osgeo.org/proj/wiki/GenParms>`_

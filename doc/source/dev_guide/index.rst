@@ -22,7 +22,7 @@ been removed from the Developer's Guide.
 If you would like to contribute to either Polar2Grid or MPOP or have any
 questions about the collaboration please contact the CSPP/Polar2Grid team.
 
-Code repository: https://github.com/davidh-ssec/polar2grid
+Code repository: https://github.com/ssec/polar2grid
 
 **Developer's Guide Components:**
 

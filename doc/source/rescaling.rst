@@ -12,7 +12,7 @@ The functions described below are intended for use by polar2grid writers via
 the ``Rescaler`` object, but can be used elsewhere if needed.
 These functions ignore any fill/invalid values in the data. Common values
 for an 8-bit (0-255) output are shown as an example. The ``Rescaler``
-object uses `configuration files <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid_core/polar2grid/core/rescale_configs/rescale.ini>`_
+object uses `configuration files <https://github.com/ssec/polar2grid/blob/master/polar2grid/core/rescale_configs/rescale.ini>`_
 to set how bands are scaled. The function keyword arguments are passed
 from the configuration file values.
 

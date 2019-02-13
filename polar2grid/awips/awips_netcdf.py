@@ -49,7 +49,7 @@ data in the AWIPS NetCDF file.
 
 Both the AWIPS backend and the AWIPS client must be configured to handle certain
 products over certain grids. By default the AWIPS backend is configured with the
-`AWIPS configuration file <https://github.com/davidh-ssec/polar2grid/blob/master/py/polar2grid/polar2grid/awips/awips_grids.conf>`_
+`AWIPS configuration file <https://github.com/ssec/polar2grid/blob/master/polar2grid/awips/awips_grids.conf>`_
 that comes with Polar2Grid. This following AWIPS grids are supported in Polar2Grid:
 
     +-------------+----------------------------+

@@ -5,7 +5,7 @@ ninjotiff.py
 Created on Mon Apr 15 13:41:55 2013
 
 A big amount of the tiff writer are (PFE) from
-https://github.com/davidh-ssec/polar2grid by David Hoese
+https://github.com/ssec/polar2grid by David Hoese
 
 License:
 Copyright (C) 2013 Space Science and Engineering Center (SSEC),
@@ -583,7 +583,7 @@ def write(image_data, output_fn, area_def, product_name=None, **kwargs):
 #
 # -----------------------------------------------------------------------------
 def _write(image_data, output_fn, write_rgb=False, **kwargs):
-    """Proudly Found Elsewhere (PFE) https://github.com/davidh-ssec/polar2grid
+    """Proudly Found Elsewhere (PFE) https://github.com/ssec/polar2grid
     by David Hoese.
 
     Create a NinJo compatible TIFF file with the tags used
