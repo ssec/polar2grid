@@ -1,45 +1,53 @@
-Polar2Grid
-==========
+Polar2Grid and Geo2Grid
+=======================
 
-.. image:: https://travis-ci.org/davidh-ssec/polar2grid.svg
-    :target: https://travis-ci.org/davidh-ssec/polar2grid
+.. image:: https://travis-ci.org/ssec/polar2grid.svg
+    :target: https://travis-ci.org/ssec/polar2grid
 
-Polar2Grid is a set of tools for extracting swath data from earth-observing satellite instruments,
-remapping it to uniform grids, and finally writing that gridded data to a new file format.
-Polar2Grid is created by scientists and software developers at the Space Science and Engineering Center (SSEC) at
-the University of Wisconsin - Madison. It is distributed as part of the
+Polar2Grid and Geo2Grid are a set of tools for extracting data from earth-observing satellite instruments,
+remapping it to uniform grids, and writing that gridded data to a new file format.
+As the names suggest, Polar2Grid is meant to operate on polar-orbiting satellite data and
+Geo2Grid on geostationary satellite data. Due to the projects sharing a lot of internal functionality
+their code bases are stored in the same code repository.
+Both projects are created by scientists and software developers at the Space Science and Engineering Center (SSEC) at
+the University of Wisconsin - Madison. Polar2Grid is distributed as part of the
 `Community Satellite Processing Package (CSPP) <http://cimss.ssec.wisc.edu/cspp/>`_ for
-processing of data received via direct broadcast antennas. Although this is why Polar2Grid was created, it can be used
-on most archived (non-DB) data files. See the documentation for specific functionality.
+processing of data received via direct broadcast antennas. Geo2Grid is distributed as part of the
+`CSPP Geo <http://cimss.ssec.wisc.edu/csppgeo/>`_ project for processing of data received via direct broadcast
+antennas. Although both projects were created to serve the direct
+broadcast community, they can be used on most archived data files.
+See the documentation for specific functionality.
 
-`Documentation <http://www.ssec.wisc.edu/software/polar2grid/>`_
+`Polar2Grid Documentation <http://www.ssec.wisc.edu/software/polar2grid/>`_
 
-`GitHub Repository <https://github.com/davidh-ssec/polar2grid>`_
+`Geo2Grid Documentation <http://www.ssec.wisc.edu/software/geo2grid/>`_
 
-`Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`_
+`GitHub Repository <https://github.com/ssec/polar2grid>`_
+
+`Polar2Grid Contact <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`__
+
+`CSPP LEO Forum <https://forums.ssec.wisc.edu/viewforum.php?f=66>`_
+
+`CSPP Geo Forum <https://forums.ssec.wisc.edu/viewforum.php?f=67>`_
 
 Installation
 ------------
 
-It is recommended that users use the official Polar2Grid release compatible
+It is recommended that users use the official Polar2Grid/Geo2Grid release compatible
 with RHEL6+ systems whenever possible. This tarball is available through the
-CSPP team's website (see above). To install the Polar2Grid python package
-that provides most of the functionality of Polar2Grid can be installed with::
+CSPP team's website (see above). To install the Polar2Grid python package (used for Polar2Grid and Geo2Grid)
+from source, run::
 
-    pip install -i http://larch.ssec.wisc.edu/simple polar2grid
-
-Or from source::
-
-    python setup.py install
+    pip install .
 
 Contributing
 ------------
 
 Feel free to submit issues and pull requests on Github or contact us (see above) about more involved feature requests.
-We do ask that before you add features yourself or fix complex issues that you contact us in some way. Polar2Grid is
-in active development and features and fixes are added all the time. Developers should see the
+We do ask that before you add features yourself or fix complex issues that you contact us in some way. Both projects
+are in active development and features and fixes are added all the time. Developers should see the
 `Developer's Guide <http://www.ssec.wisc.edu/software/polar2grid/dev_guide/>`_ for more information on the internals
-of Polar2Grid.
+of both projects.
 
 Directories
 -----------
@@ -53,7 +61,8 @@ the source for some of these executables in the root of the repository.
 - swbundle: Helper scripts and other files provided in the Polar2Grid Software Bundle released by the CSPP team.
 - modis_crefl: Copy of the MODIS Corrected Reflectance software (CREFL) that includes updates for building with Makefile
 - viirs_crefl: Copy of the VIIRS Corrected Reflectance software (CREFL) that includes updates for building with Makefile
-- ms2gt: Custom version of the `ms2gt <http://nsidc.org/data/modis/ms2gt/>`_ software package with bug fixes and optimizations. This is not used as of P2Gv2.0 and will be removed in future revisions.
+- ms2gt: Custom version of the `ms2gt <http://nsidc.org/data/modis/ms2gt/>`_ software package with bug fixes and
+         optimizations. This is not used as of P2Gv2.0 and will be removed in future revisions.
 - etc: Configuration files used to customize the SatPy package for Polar2Grid users.
 
 Branching Model
@@ -72,7 +81,7 @@ Copyright and License
 
 ::
 
-    Copyright (C) 2012-2017 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
+    Copyright (C) 2012-2019 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
