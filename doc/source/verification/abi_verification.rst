@@ -88,7 +88,7 @@ is displayed below.
 
     GOES-16 ABI montage of images created from the Geo2Grid verification
     data observed on 19 December 2018 at 17:45 UTC. The images are 
-    from top to bottom, right to left, bands 1, 2, 3, 5, 7, 9, 14, 
+    from top to bottom, left to right, bands 1, 2, 3, 5, 7, 9, 14, 
     natural color and true color.
 
 
