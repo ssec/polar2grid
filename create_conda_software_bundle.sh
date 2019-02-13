@@ -38,6 +38,12 @@ else
     exit 1
 fi
 
+if [[ $SB_NAME == *"polar"* ]]; then
+    PROJECT="P2G"
+else
+    PROJECT="G2G"
+fi
+
 pip install -U --no-deps . || oops "Couldn't install current polar2grid package"
 
 SB_TARBALL="${SB_NAME}.tar.gz"
@@ -86,6 +92,15 @@ chmod a+x "$SB_NAME"/bin/run_modis_crefl.sh
 echo "Copying bash scripts to software bundle bin"
 cd "$SB_NAME"
 cp -P ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/ || echo "Couldn't copy scripts to bin/ directory"
+# clean up readmes
+if [[ $PROJECT == "P2G" ]]; then
+    rm -f ${BUNDLE_SCRIPTS_DIR}/GEO2GRID_README.txt
+    mv ${BUNDLE_SCRIPTS_DIR}/POLAR2GRID_README.txt ${BUNDLE_SCRIPTS_DIR}/README.txt
+else
+    rm -f ${BUNDLE_SCRIPTS_DIR}/POLAR2GRID_README.txt
+    mv ${BUNDLE_SCRIPTS_DIR}/GEO2GRID_README.txt ${BUNDLE_SCRIPTS_DIR}/README.txt
+fi
+
 
 # Copy the release notes to the tarball
 cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
