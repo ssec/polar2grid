@@ -2,7 +2,7 @@
 .. ifconfig:: not is_geo2grid
 
     |project| is a set of command line tools for extracting data
-    from earth-observing satellite instrument file formats,
+    from earth-observing satellite instrument files,
     remapping it to uniform grids if needed, and writing that
     gridded data to a new file format.  It provides an easy way
     to create high quality projected images. |project| was
@@ -16,7 +16,7 @@
 .. ifconfig:: is_geo2grid
 
     |project| is a set of command line tools for extracting data
-    from earth-observing satellite instrument file formats,
+    from earth-observing satellite instrument files,
     remapping it to uniform grids if needed, and writing that
     gridded data to a new file format.  It provides an easy way
     to create high quality projected images. |project| was
