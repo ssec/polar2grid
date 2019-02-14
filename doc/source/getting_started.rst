@@ -112,7 +112,7 @@ are always available:
 
     .. rst-class:: full_width_table
 
-        -h                    Print detailed helpful information.
+        -h                    Print helpful information.
         --list-products       List all possible product options to use with -p from the given input data.
         -p                    List of products you want to create.
         -f                    Input files and paths.
@@ -134,7 +134,9 @@ are always available:
 
     .. rst-class:: full_width_table
 
-        -h                    Print detailed helpful information.
+        -r 	 	      Instrument input files to read from (choose from abi_l1b, ahi_hsd, and ahi_hrit).
+        -w  		      Output format to write to (Currently only option is geotiff).
+        -h                    Print helpful information.
         --list-products       List all possible product options to use with -p from the given input data.
 
         -p                    List of products you want to create.
