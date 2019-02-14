@@ -37,7 +37,7 @@ in turn combined with Bands 1 and 2 to create the true color imagery.
 The natural color image is created by combining ABI Band 2 (.64 micron),
 Band 3 (.86 micron) and Band 5 (1.6 micron) reflectances.  Both
 true and natural color images are sharpened to 500 m spatial
-resolution by using the textual information provided by Band 2 (.64 
+resolution by using the textural information provided by Band 2 (.64 
 micron).  
 
 If the ABI Geo2Grid processing script runs normally, it will return
