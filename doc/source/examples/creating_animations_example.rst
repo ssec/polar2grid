@@ -9,7 +9,7 @@ files from a latitude/longitude subset of GOES-16 ABI CONUS GeoTIFF images
 located over the Southeastern United States.
 
 Create a series of GOES-16 ABI GeoTIFF files from a time sequence of data. In
-the bash shell script example below, we use the ABI CONUS Band 1 files to 
+the bash shell script example below, I use the ABI CONUS Band 1 files to 
 search for all files we have available from 19 December 2019. The files for 
 this day are all located in the same directory.  I then create true and 
 natural color images from all time periods that are available. 
