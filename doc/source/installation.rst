@@ -47,7 +47,7 @@ beyond the scope of this documentation.
 
     .. code-block:: bash
 
-        export GEO2GRID_HOME=/path/to/softwarebundle
+        export GEO2GRID_HOME=/path/to/geo2grid_v_1_0_0
 
     All other environment information needed to run is automatically loaded by the
     scripts provided by |project|. Scripts are typically invoked using:
@@ -63,6 +63,9 @@ beyond the scope of this documentation.
     .. code-block:: bash
 
         export PATH=$PATH:$GEO2GRID_HOME/bin
+
+    The example invocations in this document assume you have added this
+    to your PATH.
 
 .. ifconfig:: not is_geo2grid
 
