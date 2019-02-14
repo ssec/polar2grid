@@ -8,7 +8,7 @@ includes a python runtime and all of the necessary third-party software
 to run the features provided by |project|.
 The tarball uses bash scripts for conveniently
 calling the python software or utilities provided by third-party
-vendors. The software bundle is only supported on x86_64 RHEL systems,
+vendors. The software bundle is only supported on CentOS6-compatible systems,
 but may work on other Linux systems as well.
 There are other ways to install
 |project| on other operating systems, but the instructions to do so are
