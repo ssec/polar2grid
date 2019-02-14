@@ -27,7 +27,7 @@ Create a subset of AHI band output Geotiff image files for Bands 1, 2, 3, 4 and 
     ``geo2grid.sh -r ahi_hsd -w geotiff -p B01 B02 B03 B04 B05 natural_color -f <path_to_ahi_files>``
 
 Create AHI images over a Lambert Conic Conformal (LCC) grid centered over
-perth Australia.  
+Perth, Australia.  
 
 Run the grid helper script to define the grid center, areal extent, spatial
 resolution and projection .
