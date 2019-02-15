@@ -38,62 +38,33 @@ Basic Usage
 
 .. ifconfig:: is_geo2grid
 
-    The most common use of |project| is to convert satellite data files in to
-    gridded image files.
-    The following command can be used to create 8-bit GeoTIFF single band
-    images of all 16 ABI imager L1B calibrated channels, a true color 24 bit RGB,
-    and natural color 24 bit RGB, based on the files found in
-    ``<path to files>/<list of files>``.
+    The purpose of |project| is to convert satellite data files into
+    high quality gridded image files. The main run script is ``geo2grid.sh``
+    and requires users to choose an input reader (-r what instrument 
+    data would you like to use) and an output writer (-w what output format
+    would you like to create). The only other required input is the 
+    list of files or a directory pointing to the location of the input 
+    files (-f). Each instrument data reader by default will create
+    single band output image GeoTIFF files for whatever bands are provided,
+    along with true and natural color images. Only one time step
+    can be processed with each script execution.
+    
+    For example, executing the following command above will create 
+    8-bit GeoTIFF files of all 16 ABI imager channels, a true 
+    color RGB, and natural color RGB in the native resolution of the 
+    instrument channel (500m for RGB composites).  This can be 
+    customized with command line arguments.
 
     .. code-block:: bash
 
-        $GEO2GRID_HOME/bin/geo2grid.sh -r abi_l1b -w geotiff -f <path to files>/<list of files>
+        $GEO2GRID_HOME/bin/geo2grid.sh -r abi_l1b -w geotiff -f <path to files>
 
     This script takes advantage of the modular design of |project|;
     a user only needs to decide on a :doc:`Reader <readers/index>` and a
     :doc:`Writer <writers/index>` and provide them to |script_literal|.
 
-    In |project| the ``<path to files>`` will be searched for the necessary
-    files to make as many products as possible. |project| processes one time
-    step per execution. Similarly if processing errors
-    occur |project| will attempt to continue processing to make as many products
-    as it can.
-
-    For example, executing the command above will create 8-bit GeoTIFF files of
-    all 16 ABI imager channels, a true color RGB, and natural color RGB in the
-    native resolution of the instrument channel (500m for RGB composites).
-    This can be customized with command line arguments.
-
-.. _getting_started_rgb:
-
-Creating Red Green Blue (RGB) Composite Imagery
------------------------------------------------
-
-.. ifconfig:: not is_geo2grid
-
-    TODO
-
-.. ifconfig:: is_geo2grid
-
-        The list of supported products includes true and natural color 24-bit
-        RGB imagery. The software uses the number of specified CPU threads to
-        create high quality reprojections in the lowest latency possible
-        thanks to the dask python library. Dask splits data arrays in to
-        multiple "chunks" and processes them in parallel. The creation of
-        these RGBs includes the following steps, which are performed by
-        default with each execution:
-
-        * Check for required spectral bands used in RGB creation among input files.
-        * Upsample and sharpen composite bands to the highest spatial resolution (500m).
-        * Creation of pseudo "green" band for the ABI instruments.
-        * Reflectance adjustment (dividing by cosine of the solar zenith angle).
-        * Removal of atmospheric Rayleigh scattering (atmospheric correction).
-        * Nonlinear scaling before writing data to disk
-
-        Geo2Grid also supports the creation of other RGBs (this varies depending on
-        the instrument), however these files are not produced by default.  The
-        recipes for creating these RGBs come from historical EUMETSAT recipes that
-        have been adjusted to work with the data being used in |project|.
+    If processing errors occur |project| will attempt to continue 
+    processing to make as many products as it can.
 
 Common Script Options
 ---------------------
@@ -162,6 +133,10 @@ are always available:
 
         geo2grid.sh -r abi_l1b -w geotiff --ll-bbox -95.0 40.0 -85.0 50.0 -f /abi/OR_ABI-L1b-RadF-*.nc
 
+        geo2grid.sh -r ahi_hsd -w geotiff -p B03 B04 B05 B14 -f /ahi/*FLDK*.DAT
+
+        geo2grid.sh -r ahi_hrit -w geotiff -f /ahi/IMG_DK01*
+
 
 For information on other scripts and features provided by |project| see
 the :doc:`utilscripts` section or the various examples throughout 
@@ -172,7 +147,7 @@ the document.
 Reader/Writer Combinations
 --------------------------
 
-The table below is a summary of the possible combinations of readers and
+The tables below provide a summary of the possible combinations of readers and
 writers and expectations for the inputs and outputs of |script_literal|.
 To access these features provide the "reader" and "writer" names to the
 |script_literal| script followed by other script options:
@@ -202,15 +177,46 @@ To access these features provide the "reader" and "writer" names to the
 
 .. ifconfig:: is_geo2grid
 
-    .. include:: summary_table_geo2grid.rst
+    .. include:: summary_table_geo2grid_readers.rst
+    .. include:: summary_table_geo2grid_writers.rst
 
 .. raw:: latex
 
     \end{landscape}
     \newpage
 
+Creating Red Green Blue (RGB) Composite Imagery
+-----------------------------------------------
+
+.. ifconfig:: not is_geo2grid
+
+    TODO
+
+.. ifconfig:: is_geo2grid
+
+        The list of supported products includes true and natural color 24-bit
+        RGB imagery. The software uses the number of specified CPU threads to
+        create high quality reprojections in the lowest latency possible
+        thanks to the dask python library. Dask splits data arrays in to
+        multiple "chunks" and processes them in parallel. The creation of
+        these RGBs includes the following steps, which are performed by
+        default with each execution:
+
+        * Check for required spectral bands used in RGB creation among input files.
+        * Upsample and sharpen composite bands to the highest spatial resolution (500m).
+        * Creation of pseudo "green" band for the ABI instruments.
+        * Reflectance adjustment (dividing by cosine of the solar zenith angle).
+        * Removal of atmospheric Rayleigh scattering (atmospheric correction).
+        * Nonlinear scaling before writing data to disk
+
+        Geo2Grid also supports the creation of other RGBs (this varies depending on
+        the instrument), however these files are not produced by default.  The
+        recipes for creating these RGBs come from historical EUMETSAT recipes that
+        have been adjusted to work with the data being used in |project|.
+
+
 Creating Your Own Custom Grids
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------
 
 The |project| software bundle comes with a wrapper script for the
 :ref:`Custom Grid Utility <util_p2g_grid_helper>` for easily creating |project| grid definitions over
