@@ -95,10 +95,10 @@ cp -P ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/ || echo "Could
 # clean up readmes
 if [[ $PROJECT == "P2G" ]]; then
     rm -f bin/GEO2GRID_README.txt
-    mv bin/POLAR2GRID_README.txt bin/README.txt
+    mv bin/POLAR2GRID_README.txt README.txt
 else
     rm -f bin/POLAR2GRID_README.txt
-    mv bin/GEO2GRID_README.txt bin/README.txt
+    mv bin/GEO2GRID_README.txt README.txt
 fi
 
 
