@@ -59,7 +59,7 @@ crefl: crefl.c
 	$(CC) -o $@ $(CFLAGS) $< ${LDFLAGS} -lmfhdf -ldf -ljpeg ${LDLIBS} -lz -lm
 
 tbase.hdf:
-	wget http://www.ssec.wisc.edu/~davidh/polar2grid/modis_crefl/tbase.hdf
+	wget https://www.ssec.wisc.edu/~davidh/polar2grid/modis_crefl/tbase.hdf
 
 .PHONY: install prebuilt_crefl prebuilt all_dynamic clean clean_all
 install: tbase.hdf crefl run_modis_crefl.sh
@@ -69,7 +69,7 @@ install: tbase.hdf crefl run_modis_crefl.sh
 	chmod u+x $(PREFIX)/bin/run_modis_crefl.sh
 
 prebuilt_crefl:
-	wget http://www.ssec.wisc.edu/~davidh/polar2grid/modis_crefl/crefl
+	wget https://www.ssec.wisc.edu/~davidh/polar2grid/modis_crefl/crefl
 
 prebuilt: prebuilt_crefl tbase.hdf
 
