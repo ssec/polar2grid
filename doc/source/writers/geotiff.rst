@@ -11,3 +11,4 @@ Command Line Arguments
     :func: add_writer_argument_groups
     :prog: |script| -r <reader> -w geotiff
     :passparser:
+    :nodefaultconst:

@@ -40,25 +40,25 @@ Lettered Sectors
     :width: 100%
     :align: center
 
-    `"LCC" Sector Lettered Grid <http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_LCC.png>`_
+    `"LCC" Sector Lettered Grid <https://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_LCC.png>`_
 
 .. figure:: ../_static/example_images/scmi_grid_Pacific.png
     :width: 100%
     :align: center
 
-    `"Pacific" Sector Lettered Grid <http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Pacific.png>`_
+    `"Pacific" Sector Lettered Grid <https://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Pacific.png>`_
 
 .. figure:: ../_static/example_images/scmi_grid_Mercator.png
     :width: 100%
     :align: center
 
-    `"Mercator" Sector Lettered Grid <http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Mercator.png>`_
+    `"Mercator" Sector Lettered Grid <https://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Mercator.png>`_
 
 .. figure:: ../_static/example_images/scmi_grid_Polar.png
     :width: 100%
     :align: center
 
-    `"Polar" Sector Lettered Grid <http://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Polar.png>`_
+    `"Polar" Sector Lettered Grid <https://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_Polar.png>`_
 
 .. raw:: latex
 

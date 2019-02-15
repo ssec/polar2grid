@@ -36,4 +36,5 @@ fi
 source $POLAR2GRID_HOME/bin/env.sh
 
 # Call the python module to do the processing, passing all arguments
+export PROG_NAME="polar2grid.sh"
 python3 -m polar2grid.glue_legacy $@ -vv

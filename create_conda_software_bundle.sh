@@ -60,7 +60,7 @@ cp -r ${BUNDLE_SCRIPTS_DIR}/rescale_configs .
 mkdir -p gshhg_data || oops "Could not make GSHHG data directory"
 pushd gshhg_data
 echo "Downloading GSHHG shapefiles"
-cached_download http://www.soest.hawaii.edu/pwessel/gshhg/gshhg-shp-2.3.6.zip
+cached_download https://www.soest.hawaii.edu/pwessel/gshhg/gshhg-shp-2.3.6.zip
 unzip gshhg-shp-2.3.6.zip || oops "Could not unpack GSHHG shapefiles"
 rm gshhg-shp-2.3.6.zip || oops "Could not delete the GSHHG zip file"
 popd
@@ -94,11 +94,11 @@ cd "$SB_NAME"
 cp -P ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/ || echo "Couldn't copy scripts to bin/ directory"
 # clean up readmes
 if [[ $PROJECT == "P2G" ]]; then
-    rm -f ${BUNDLE_SCRIPTS_DIR}/GEO2GRID_README.txt
-    mv ${BUNDLE_SCRIPTS_DIR}/POLAR2GRID_README.txt ${BUNDLE_SCRIPTS_DIR}/README.txt
+    rm -f bin/GEO2GRID_README.txt
+    mv bin/POLAR2GRID_README.txt README.txt
 else
-    rm -f ${BUNDLE_SCRIPTS_DIR}/POLAR2GRID_README.txt
-    mv ${BUNDLE_SCRIPTS_DIR}/GEO2GRID_README.txt ${BUNDLE_SCRIPTS_DIR}/README.txt
+    rm -f bin/POLAR2GRID_README.txt
+    mv bin/GEO2GRID_README.txt README.txt
 fi
 
 
@@ -107,8 +107,8 @@ cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy rele
 
 # Create a wmsupload.sh script
 cd $SB_NAME/bin
-wget http://realearth.ssec.wisc.edu/upload/re_upload -O wmsupload.sh || oops "Couldn't download and create wmsupload.sh script"
-chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
+wget https://realearth.ssec.wisc.edu/upload/re_upload || oops "Couldn't download and create re_upload script"
+chmod u+x re_upload || oops "Couldn't make wmsupload.sh executable"
 
 # Copy SatPy configurations
 mkdir $SB_NAME/etc/satpy || oops "Couldn't create configuration 'etc/satpy' directory"

@@ -62,7 +62,7 @@ cviirs: cviirs.c
 	$(CC) -o $@ -m64 $(CFLAGS) $< $(LDFLAGS) -lmfhdf -ldf -ljpeg $(LDLIBS) -lz -lm
 
 CMGDEM.hdf:
-	wget http://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/CMGDEM.hdf
+	wget https://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/CMGDEM.hdf
 
 .PHONY: install prebuilt_h5SDS_transfer_rename prebuilt_cviirs prebuilt all_dynamic clean clean_all
 install: CMGDEM.hdf h5SDS_transfer_rename cviirs run_viirs_crefl.sh
@@ -73,11 +73,11 @@ install: CMGDEM.hdf h5SDS_transfer_rename cviirs run_viirs_crefl.sh
 	chmod u+x $(PREFIX)/bin/run_viirs_crefl.sh
 
 prebuilt_h5SDS_transfer_rename:
-	wget  http://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/h5SDS_transfer_rename; \
+	wget  https://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/h5SDS_transfer_rename; \
 	chmod u+x h5SDS_transfer_rename
 
 prebuilt_cviirs:
-	wget  http://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/cviirs; \
+	wget  https://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/cviirs; \
 	chmod u+x cviirs
 
 prebuilt: prebuilt_h5SDS_transfer_rename prebuilt_cviirs CMGDEM.hdf
