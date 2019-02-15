@@ -29,6 +29,7 @@ Defining Your Own Grids (Grid Configuration Helper)
     :module: polar2grid.grids.config_helper
     :func: get_parser
     :prog: p2g_grid_helper.sh
+    :nodefaultconst:
 
 
 Example:
@@ -71,6 +72,7 @@ Add Overlays (Borders, Coastlines, Grids Lines, Rivers)
     :module: polar2grid.add_coastlines
     :func: get_parser
     :prog: add_coastlines.sh
+    :nodefaultconst:
 
 Examples:
 
@@ -88,6 +90,7 @@ Add Colormap
     :module: polar2grid.add_colormap
     :func: get_parser
     :prog: add_colormap.sh
+    :nodefaultconst:
 
 
 Colormap files are comma-separated 'integer,R,G,B,A' text files.
@@ -210,6 +213,7 @@ Python Proj
     :module: polar2grid.core.proj
     :func: get_parser
     :prog: p2g_proj.sh
+    :nodefaultconst:
 
 Example:
 
