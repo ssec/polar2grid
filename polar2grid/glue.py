@@ -224,7 +224,7 @@ basic processing with limited products:
 
     if not args.filenames:
         parser.print_usage()
-        parser.exit(1, "ERROR: No data files provided (-f flag)\n")
+        parser.exit(1, "\nERROR: No data files provided (-f flag)\n")
 
     # Prepare logging
     rename_log = False
