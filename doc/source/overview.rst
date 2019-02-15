@@ -52,7 +52,7 @@ is used.
 
     `GitHub Repository <https://github.com/ssec/polar2grid>`__
  
-    `CSPP Geo Forum <https://forums.ssec.wisc.edu/viewforum.php?f=67>`_
+    `CSPP Geo2Grid Forum <https://forums.ssec.wisc.edu/viewforum.php?f=72>`_
 
 .. ifconfig:: not is_geo2grid
 
