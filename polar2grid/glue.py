@@ -112,7 +112,7 @@ def add_scene_argument_groups(parser):
                          help='Input files to read')
     group_2 = parser.add_argument_group(title='Scene Load')
     group_2.add_argument('-p', '--products', nargs='+',
-                         help='Names of products to load from input files')
+                         help='Names of products to create from input files')
     return group_1, group_2
 
 
@@ -149,7 +149,19 @@ def main(argv=sys.argv[1:]):
     from polar2grid.core.script_utils import (
         setup_logging, rename_log_file, create_exc_handler)
     import argparse
-    parser = argparse.ArgumentParser(description="Load, composite, resample, and save datasets")
+    prog = os.getenv('PROG_NAME', sys.argv[0])
+    # "usage: " will be printed at the top of this:
+    usage = """
+    %(prog)s -h
+see available products:
+    %(prog)s -r <reader> -w <writer> --list-products -f file1 [file2 ...]
+basic processing:
+    %(prog)s -r <reader> -w <writer> [options] -f file1 [file2 ...]
+basic processing with limited products:
+    %(prog)s -r <reader> -w <writer> [options] -p prod1 prod2 -f file1 [file2 ...]
+"""
+    parser = argparse.ArgumentParser(prog=prog, usage=usage,
+                                     description="Load, composite, resample, and save datasets.")
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
                         help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_argument('-l', '--log', dest="log_fn", default=None,
@@ -172,23 +184,27 @@ def main(argv=sys.argv[1:]):
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
     args, remaining_args = parser.parse_known_args(argv_without_help)
 
+    # get the logger if we know the readers and writers that will be used
+    if args.reader is not None and args.writers is not None:
+        glue_name = args.reader + "_" + "-".join(args.writers or [])
+        LOG = logging.getLogger(glue_name)
+    # add writer arguments
+    if args.writers is not None:
+        for writer in (args.writers or []):
+            parser_func = WRITER_PARSER_FUNCTIONS.get(writer)
+            if parser_func is None:
+                continue
+            subgroups += parser_func(parser)
+    args = parser.parse_args(argv)
+
     if args.reader is None:
         parser.print_usage()
-        parser.exit(1, "ERROR: Reader must be provided (-r flag).\n"
+        parser.exit(1, "\nERROR: Reader must be provided (-r flag).\n"
                        "Supported readers:\n\t{}\n".format('\n\t'.join(['abi_l1b', 'ahi_hsd', 'hrit_ahi'])))
     if args.writers is None:
         parser.print_usage()
-        parser.exit(1, "ERROR: Writer must be provided (-w flag) with one or more writer.\n"
+        parser.exit(1, "\nERROR: Writer must be provided (-w flag) with one or more writer.\n"
                        "Supported writers:\n\t{}\n".format('\n\t'.join(['geotiff'])))
-
-    glue_name = args.reader + "_" + "-".join(args.writers)
-    LOG = logging.getLogger(glue_name)
-    for writer in args.writers:
-        parser_func = WRITER_PARSER_FUNCTIONS.get(writer)
-        if parser_func is None:
-            continue
-        subgroups += parser_func(parser)
-    args = parser.parse_args(argv)
 
     def _args_to_dict(group_actions):
         return {ga.dest: getattr(args, ga.dest) for ga in group_actions if hasattr(args, ga.dest)}
