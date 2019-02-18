@@ -91,6 +91,8 @@ for image_url in images:
         ftp = ftplib.FTP(server, user='ftp')  # hope for anonymous
         out_file = open(image_pathname, 'wb')
         ftp.retrbinary('RETR {}'.format(ftp_fn), out_file.write)
+    else:
+        raise ValueError("Not sure how to download image: {}".format(image_url))
 
 # -- Customize setup -----------------------------------------------------------
 
