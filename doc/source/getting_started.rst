@@ -185,6 +185,8 @@ To access these features provide the "reader" and "writer" names to the
     \end{landscape}
     \newpage
 
+.. _getting_started_rgb:
+
 Creating Red Green Blue (RGB) Composite Imagery
 -----------------------------------------------
 

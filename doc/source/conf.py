@@ -72,23 +72,18 @@ images = (
 )
 script_path = os.path.dirname(os.path.realpath(__file__))
 image_dst = os.path.join(script_path, '_static', 'example_images')
-
-try:
-    os.makedirs(image_dst)
-except OSError:
-    # already exists, good
-    pass
+os.makedirs(image_dst, exist_ok=True)
 
 for image_url in images:
     image_fn = os.path.basename(image_url)
     image_pathname = os.path.join(image_dst, image_fn)
     if os.path.isfile(image_pathname):
         continue
-    elif image_url.startswith("http://"):  # or image_url.startswith('ftp://'):
+    elif image_url.startswith('http://') or image_url.startswith('https://'):  # or image_url.startswith('ftp://'):
         print("Downloading example image: {}".format(image_url))
         with urllib.request.urlopen(image_url) as remote_img, open(image_pathname, 'wb') as local_img:
             copyfileobj(remote_img, local_img)
-    elif image_url.startswith("ftp://"):
+    elif image_url.startswith('ftp://'):
         print("Downloading example image: {}".format(image_url))
         parts = image_url.split("/")
         server = parts[2]
