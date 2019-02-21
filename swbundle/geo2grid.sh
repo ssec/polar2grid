@@ -36,9 +36,9 @@ fi
 source $POLAR2GRID_HOME/bin/env.sh
 
 # Set best known defaults for number of OpenMP threads
-export OMP_NUM_THREADS={OMP_NUM_THREADS:-2}
+export OMP_NUM_THREADS=${OMP_NUM_THREADS:-2}
 # and dask chunk size
-export PYTROLL_CHUNK_SIZE={PYTROLL_CHUNK_SIZE:-1024}
+export PYTROLL_CHUNK_SIZE=${PYTROLL_CHUNK_SIZE:-1024}
 
 # Call the python module to do the processing, passing all arguments
 export PROG_NAME="geo2grid.sh"
