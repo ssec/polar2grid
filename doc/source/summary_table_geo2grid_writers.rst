@@ -15,10 +15,10 @@
     * - geotiff
       - HIMAWARI-8_AHI_B??_YYYYMMDD_HHMMSS_*.tif
 
-        **HIMAWARI-8_AHI_B03_20181112_183020_FLDK.tif**
+        **Ex: HIMAWARI-8_AHI_B03_20181112_183020_FLDK.tif**
       - 8-bit single band GeoTIFF
     * - geotiff
       - HIMAWARI-8_AHI_B??_YYYYMMDD_HHMMSS_*.tif
 
-        **HIMAWARI-8_AHI_B15_20181112_183000_FLDK.tif**
+        **Ex: HIMAWARI-8_AHI_B15_20181112_183000_FLDK.tif**
       - 8-bit single band GeoTIFF
