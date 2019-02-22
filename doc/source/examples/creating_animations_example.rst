@@ -37,7 +37,7 @@ natural color images from all time periods that are available.
          	datetime=`basename $file | cut -c27-38`
         	echo "datetime :"$datetime
 
-                # Cut out a box with lat/lon bounds of 23N, 105 to 37N 75W
+                # Cut out a box with lat/lon bounds of 23N, 105W to 37N 75W
                 geo2grid.sh -r abi_l1b -w geotiff --ll-bbox -105 23 -75 37 --num-workers 8 -p true_color natural_color -f /data/abi16/20190104/*${datetime}*.nc
 
 	done
