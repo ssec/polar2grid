@@ -18,6 +18,7 @@
     :polar2grid:viirs_day_night_band
     verification/index
     examples/index
+    :geo2grid:data_access
     grids
     custom_grids
 
