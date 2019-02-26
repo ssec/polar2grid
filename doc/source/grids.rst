@@ -14,7 +14,7 @@ For information on all of the grids provided by |project| see the
 `Grids Configuration File <https://github.com/ssec/polar2grid/blob/master/polar2grid/grids/grids.conf>`_.
 
 The grids' projections are defined using PROJ.4. Go to
-`PROJ.4 GenParams <http://trac.osgeo.org/proj/wiki/GenParms>`_
+the `PROJ documentation <https://proj4.org/usage/projections.html>`_
 for more information on what each projection parameter means.
 
 .. note::
