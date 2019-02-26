@@ -81,3 +81,5 @@ ms2gt/src/utils/insert_region
 ms2gt/src/utils/make_mask
 ms2gt/src/xy2ll/xy2ll
 
+# PyCharm configs
+.idea
