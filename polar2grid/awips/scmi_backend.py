@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2016 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -88,7 +88,7 @@ import numpy as np
 
 from polar2grid.core import roles
 from polar2grid.core.containers import GriddedScene
-from ConfigParser import NoSectionError, NoOptionError
+from configparser import NoSectionError, NoOptionError
 
 
 try:
@@ -373,7 +373,7 @@ class LetteredTileGenerator(NumberedTileGenerator):
     def _tile_identifier(self, ty, tx):
         st = self.num_subtiles
         ttc = self.total_tile_count
-        alpha_num = int((ty / st[0]) * (ttc[1] / st[1]) + (tx / st[1]))
+        alpha_num = int((ty // st[0]) * (ttc[1] // st[1]) + (tx // st[1]))
         alpha = string.ascii_uppercase[alpha_num]
         tile_num = int((ty % st[0]) * st[1] + (tx % st[1])) + 1
         return "T{}{:02d}".format(alpha, tile_num)
@@ -545,6 +545,7 @@ class SCMI_writer(object):
         self._include_fgf = include_fgf
         self._compress = compress
         self.helper = helper
+        self.image_data = None  # filled in by create_variables later
 
     def create_dimensions(self, lines, columns):
         # Create Dimensions
@@ -617,6 +618,7 @@ class SCMI_writer(object):
         self.fgf_y.standard_name = "projection_y_coordinate"
         self.fgf_y[:] = y
 
+        LOG.debug('x variable shape is {}'.format(self.fgf_x.shape))
         self.fgf_x.scale_factor = np.float64(mx * float(downsample_factor))
         self.fgf_x.add_offset = np.float64(bx)
         self.fgf_x.units = units
@@ -627,7 +629,7 @@ class SCMI_writer(object):
         LOG.info('writing image data')
         # note: autoscaling will be applied to make int16
         assert(hasattr(data, 'mask'))
-        self.image_data[:, :] = np.require(data.filled(fill_value), dtype=np.float32)
+        self.image_data[:, :] = np.require(data, dtype=np.float32)
 
     def set_projection_attrs(self, grid_def):
         """

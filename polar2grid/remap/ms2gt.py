@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """Simple python wrapper around the actual shell calls to
 ms2gt utilities.
@@ -257,5 +257,5 @@ def fornav(chan_count, swath_cols, swath_scans, swath_rows_per_scan, colfile, ro
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    print "No scripting implemented"
+    print("No scripting implemented")
     sys.exit(0)

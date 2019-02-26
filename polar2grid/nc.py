@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """
 NetCDF utilities.
@@ -41,7 +41,6 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
-import os
 import sys
 import logging
 import numpy
@@ -70,9 +69,9 @@ def _process_dimension(xml_parser, nc, elem, event="start", parent=None):
     new_dim = nc.createDimension(elem.get("name"), elem.get("length") and int(elem.get("length")))
 
     next_event,next_elem = xml_parser.next()
-    while not (next_event == "end" and \
-        next_elem.tag == ncml_tag("dimension") and \
-        next_elem.get("name") == elem.get("name")):
+    while not (next_event == "end" and
+                       next_elem.tag == ncml_tag("dimension") and
+                       next_elem.get("name") == elem.get("name")):
         _process_element(xml_parser, nc, next_elem, event=next_event, parent=new_dim)
         next_event,next_elem = xml_parser.next()
 
@@ -83,9 +82,9 @@ def _process_attribute(xml_parser, nc, elem, event="start", parent=None):
     setattr(parent, elem.get("name"), _types[elem.get("type")](elem.get("value")))
 
     next_event,next_elem = xml_parser.next()
-    while not (next_event == "end" and \
-        next_elem.tag == ncml_tag("attribute") and \
-        next_elem.get("name") == elem.get("name")):
+    while not (next_event == "end" and
+                       next_elem.tag == ncml_tag("attribute") and
+                       next_elem.get("name") == elem.get("name")):
         # FIXME: I don't know if parent=nc would be correct here
         _process_element(xml_parser, nc, next_elem, event=next_event, parent=nc)
         next_event,next_elem = xml_parser.next()
@@ -102,9 +101,9 @@ def _process_variable(xml_parser, nc, elem, event="start", parent=None):
     new_var[:] = 0
 
     next_event,next_elem = xml_parser.next()
-    while not (next_event == "end" and \
-        next_elem.tag == ncml_tag("variable") and \
-        next_elem.get("name") == elem.get("name")):
+    while not (next_event == "end" and
+                       next_elem.tag == ncml_tag("variable") and
+                       next_elem.get("name") == elem.get("name")):
         _process_element(xml_parser, nc, next_elem, event=next_event, parent=new_var)
         next_event,next_elem = xml_parser.next()
 
@@ -123,8 +122,8 @@ def _process_element(xml_parser, nc, elem, event="start", parent=None):
     elif elem.tag == ncml_tag("netcdf"):
         pass
     else:
-        log.error("Unknown NCML element found (%r)" % (elem))
-        raise ValueError("Unknown NCML element found (%r)" % (elem))
+        log.error("Unknown NCML element found (%r)" % (elem,))
+        raise ValueError("Unknown NCML element found (%r)" % (elem,))
 
 def create_nc_from_ncml(nc_filename, ncml_filename, format="NETCDF3_CLASSIC"):
     """Take a NCML file and create a NetCDF file filled with the attributes

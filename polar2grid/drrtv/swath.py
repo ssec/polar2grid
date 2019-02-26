@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -250,12 +250,12 @@ def _swath_from_var(var_name, h5_var, tool=None):
     return data
 
 
-def _get_whole_var(h5s, var_name, tool, explode=DEFAULT_EXPLODE_SAMPLING, filter=None):
+def _get_whole_var(h5s, var_name, tool, explode=DEFAULT_EXPLODE_SAMPLING, swath_filter=None):
     "extract a swath to a FBF file and return the path"
     # these aren't huge arrays so it's fine to hold them all in memory
     sections = [_swath_from_var(var_name, h5[var_name], tool) for h5 in h5s]
     swath = np.concatenate(sections, axis=0)
-    swarthy = swath if filter is None else filter(swath)
+    swarthy = swath if swath_filter is None else swath_filter(swath)
     data = _explode(swarthy, EXPLODE_FACTOR) if explode else swath
     if data.dtype != np.float32:
         data = data.astype(np.float32)
@@ -302,7 +302,7 @@ def _write_var_to_binary_file(filename, h5_files, var_name, pressure=None):
         data = np.array(data, dtype=np.float32)
         data[mask] = np.nan
     LOG.debug('writing to %s...' % filename)
-    with file(filename, 'wb') as fp:
+    with open(filename, 'wb') as fp:
         data.tofile(fp)
     return data.shape
 
@@ -478,7 +478,7 @@ class Frontend(FrontendRole):
             filename = product_name + ".dat"
             shape = _write_var_to_binary_file(filename, self.file_objects, file_key, pressure=pressure)
             rows_per_scan = self.rows_per_scan
-        except StandardError:
+        except OSError:
             LOG.error("Could not extract data from file")
             LOG.debug("Extraction exception: ", exc_info=True)
             raise
@@ -576,7 +576,7 @@ class Frontend(FrontendRole):
             try:
                 LOG.info("Creating data product '%s'", product_name)
                 one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
-            except StandardError:
+            except (RuntimeError, ValueError, OSError):
                 LOG.error("Could not create raw product '%s'", product_name)
                 if self.exit_on_error:
                     raise

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -267,7 +267,7 @@ def read_atms_limb_correction_coefficients(fn):
         parts = fn.split(":")
         mod_part, file_part = parts if len(parts) == 2 else ("", parts[0])
         mod_part = mod_part or __package__  # self.__module__
-        coeff_str = get_resource_string(mod_part, file_part).split("\n")
+        coeff_str = get_resource_string(mod_part, file_part).decode().split("\n")
     # make it a generator
     coeff_str = (line.strip() for line in coeff_str)
 
@@ -310,19 +310,19 @@ def read_atms_limb_correction_coefficients(fn):
 
 def apply_atms_limb_correction(datasets, dmean, coeffs, amean, nchx, nchanx):
     all_new_ds = []
-    sum = np.zeros(datasets.shape[1], dtype=datasets[0].dtype)
+    coeff_sum = np.zeros(datasets.shape[1], dtype=datasets[0].dtype)
     for channel_idx in range(datasets.shape[0]):
         ds = datasets[channel_idx]
         new_ds = ds.copy()
         all_new_ds.append(new_ds)
         for fov_idx in range(96):
-            sum[:] = 0
+            coeff_sum[:] = 0
             for k in range(nchx[channel_idx]):
                 coef = coeffs[channel_idx, fov_idx, nchanx[channel_idx, k]] * (
                     datasets[nchanx[channel_idx, k], :, fov_idx] -
                     amean[nchanx[channel_idx, k], fov_idx, channel_idx])
-                sum += coef
-            new_ds[:, fov_idx] = sum + dmean[channel_idx]
+                coeff_sum += coef
+            new_ds[:, fov_idx] = coeff_sum + dmean[channel_idx]
 
     return all_new_ds
 
@@ -362,6 +362,20 @@ class MIRSFileReader(BaseFileReader):
         "amsua-mhs": 323100,
     }
 
+    FILENAME_TO_SAT = {
+        "M1": "metopb",
+        "M2": "metopa",
+        "NN": "noaa18",
+        "NP": "noaa19",
+        "n18": "noaa18",
+        "n19": "noaa19",
+        "ma1": "metopb",
+        "ma2": "metopa",
+        # should have file attributes, but just in case:
+        "npp": "npp",
+        "n20": "n20",
+    }
+
     def __init__(self, filepath, file_type_info):
         super(MIRSFileReader, self).__init__(NetCDFFileReader(filepath), file_type_info)
         # Not supported in older version of NetCDF4 library
@@ -370,23 +384,16 @@ class MIRSFileReader(BaseFileReader):
             LOG.error("Unknown file format for file %s" % (self.filename,))
             raise ValueError("Unknown file format for file %s" % (self.filename,))
 
-        # IMG_SX.M1.D15238.S1614.E1627.B0000001.WE.HR.ORB.nc
-        fn_parts = self.file_handle.filename.split(".")
         try:
             self.satellite = self.file_handle.satellite_name.lower()
             self.instrument = self.file_handle.instrument_name.lower()
             self.begin_time = datetime.strptime(self.file_handle.time_coverage_start, "%Y-%m-%dT%H:%M:%SZ")
             self.end_time = datetime.strptime(self.file_handle.time_coverage_end, "%Y-%m-%dT%H:%M:%SZ")
         except AttributeError:
-            self.satellite = {
-                "M1": "metopb",
-                "M2": "metopa",
-                "NN": "noaa18",
-                "NP": "noaa19",
-            }[fn_parts[1]]
-            self.instrument = "amsua-mhs"  # actually combination of mhs and amsu
-            self.begin_time = datetime.strptime(fn_parts[2][1:] + fn_parts[3][1:], "%y%j%H%M")
-            self.end_time = datetime.strptime(fn_parts[2][1:] + fn_parts[4][1:], "%y%j%H%M")
+            if self.file_handle.filename.startswith('IMG'):
+                self._parse_old_filename()
+            else:
+                self._parse_new_filename()
 
         if self.instrument in self.INST_NADIR_RESOLUTION:
             self.nadir_resolution = self.INST_NADIR_RESOLUTION[self.instrument]
@@ -398,13 +405,29 @@ class MIRSFileReader(BaseFileReader):
         else:
             self.limb_resolution = None
 
+    def _parse_old_filename(self):
+        # IMG_SX.M1.D15238.S1614.E1627.B0000001.WE.HR.ORB.nc
+        fn_parts = self.file_handle.filename.split(".")
+        self.satellite = self.FILENAME_TO_SAT[fn_parts[1]]
+        self.instrument = "amsua-mhs"  # actually combination of mhs and amsu
+        self.begin_time = datetime.strptime(fn_parts[2][1:] + fn_parts[3][1:], "%y%j%H%M")
+        self.end_time = datetime.strptime(fn_parts[2][1:] + fn_parts[4][1:], "%y%j%H%M")
+
+    def _parse_new_filename(self):
+        # NPR-MIRS-IMG_v11r3_n19_s201809112039000_e201809112050000_c201809112117030.nc
+        fn_parts = self.file_handle.filename.split('_')
+        self.satellite = self.FILENAME_TO_SAT[fn_parts[2]]
+        self.instrument = "amsua-mhs"  # actually combination of mhs and amsu
+        self.begin_time = datetime.strptime(fn_parts[3][1:-1], "%Y%m%d%H%M%S")
+        self.end_time = datetime.strptime(fn_parts[4][1:-1], "%Y%m%d%H%M%S")
+
     @classmethod
     def handles_file(cls, fn_or_nc_obj):
         """Validate that the file this object represents is something that we actually know how to read.
         """
         try:
             if isinstance(fn_or_nc_obj, str):
-                nc_obj = NetCDFFileReader(fn_or_nc_obj, "r")
+                nc_obj = NetCDFFileReader(fn_or_nc_obj)
             else:
                 nc_obj = fn_or_nc_obj
 
@@ -423,7 +446,7 @@ class MIRSFileReader(BaseFileReader):
         nc_var.set_auto_maskandscale(False)
         return nc_var
 
-    def get_fill_value(self, item):
+    def get_fill_value(self, item, default_type=np.float32):
         fill_value = None
         if item in FILE_STRUCTURE:
             var_name = FILE_STRUCTURE[item][0]
@@ -442,7 +465,7 @@ class MIRSFileReader(BaseFileReader):
             var_name = FILE_STRUCTURE[item][0]
             scale_attr_name = FILE_STRUCTURE[item][1]
             if scale_attr_name:
-                if isinstance(scale_attr_name, (str, unicode)):
+                if isinstance(scale_attr_name, str):
                     scale_attr_name = [scale_attr_name]
                 for x in scale_attr_name:
                     try:
@@ -462,8 +485,8 @@ class MIRSFileReader(BaseFileReader):
         if freq_idx.shape[0] != 0:
             freq_idx = freq_idx[0]
         else:
-            LOG.error("Frequency %f for variable %s does not exist" % (freq, item))
-            raise ValueError("Frequency %f for variable %s does not exist" % (freq, item))
+            LOG.error("Frequency %f does not exist" % (freq,))
+            raise ValueError("Frequency %f does not exist" % (freq,))
         return freq_idx
 
     def filter_by_frequency(self, item, arr, freq):
@@ -649,7 +672,6 @@ class Frontend(roles.FrontendRole):
                 file_reader = self.file_readers[file_type]
             else:
                 self.file_readers[file_type] = file_reader = FILE_CLASSES[file_type]()
-                self.file_readers[file_type]
             file_reader.add_file(filepath)
 
         # Get rid of the readers we aren't using
@@ -663,7 +685,7 @@ class Frontend(roles.FrontendRole):
             LOG.error("No useable files loaded")
             raise ValueError("No useable files loaded")
 
-        first_length = len(self.file_readers[self.file_readers.keys()[0]])
+        first_length = len(self.file_readers[next(iter(self.file_readers.keys()))])
         if not all(len(x) == first_length for x in self.file_readers.values()):
             LOG.error("Corrupt directory: Varying number of files for each type")
             ft_str = "\n\t".join("%s: %d" % (ft, len(fr)) for ft, fr in self.file_readers.items())
@@ -701,16 +723,16 @@ class Frontend(roles.FrontendRole):
         if os.getenv("P2G_MIRS_DEFAULTS", None):
             return os.getenv("P2G_MIRS_DEFAULTS")
 
-        return list(set([PRODUCT_RAIN_RATE, 'btemp_88v', 'btemp_89v1']) &
+        return list({PRODUCT_RAIN_RATE, 'btemp_88v', 'btemp_89v1'} &
                     set(self.PRODUCTS.keys()))
 
     @property
     def begin_time(self):
-        return self.file_readers[self.file_readers.keys()[0]].begin_time
+        return self.file_readers[next(iter(self.file_readers.keys()))].begin_time
 
     @property
     def end_time(self):
-        return self.file_readers[self.file_readers.keys()[0]].end_time
+        return self.file_readers[next(iter(self.file_readers.keys()))].end_time
 
     def create_swath_definition(self, lon_product, lat_product):
         product_def = self.PRODUCTS[lon_product["product_name"]]
@@ -761,7 +783,7 @@ class Frontend(roles.FrontendRole):
         # TODO: Get the data type from the data or allow the user to specify
         try:
             shape = file_reader.write_var_to_flat_binary(product_def.file_key, filename)
-        except StandardError:
+        except (OSError, ValueError):
             LOG.error("Could not extract data from file")
             LOG.debug("Extraction exception: ", exc_info=True)
             raise
@@ -858,7 +880,7 @@ class Frontend(roles.FrontendRole):
                 LOG.info("Creating data product '%s'", product_name)
                 swath_def = swath_definitions[self.PRODUCTS[product_name].get_geo_pair_name(self.available_file_types)]
                 one_swath = products_created[product_name] = self.create_raw_swath_object(product_name, swath_def)
-            except StandardError:
+            except (ValueError, OSError):
                 LOG.error("Could not create raw product '%s'", product_name)
                 LOG.debug("Debug: ", exc_info=True)
                 if self.exit_on_error:
@@ -877,7 +899,7 @@ class Frontend(roles.FrontendRole):
             try:
                 LOG.info("Creating secondary product '%s'", product_name)
                 one_swath = product_func(product_name, swath_def, products_created)
-            except StandardError:
+            except (ValueError, OSError, KeyError):
                 LOG.error("Could not create product (unexpected error): '%s'", product_name)
                 LOG.debug("Could not create product (unexpected error): '%s'", product_name, exc_info=True)
                 if self.exit_on_error:

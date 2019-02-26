@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -36,18 +36,3 @@
 :date:         Dec 2014
 :license:      GNU GPLv3
 """
-__docformat__ = "restructuredtext en"
-
-import os
-import sys
-import logging
-
-LOG = logging.getLogger(__name__)
-
-
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    sys.exit(main())

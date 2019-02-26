@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -58,6 +58,19 @@ DTYPE_INT64 = "int8"
 DTYPE_FLOAT32 = "real4"
 DTYPE_FLOAT64 = "real8"
 
+NUMPY_DTYPE_STRS = [
+    'uint8',
+    'uint16',
+    'uint32',
+    'uint64',
+    'int8',
+    'int16',
+    'int32',
+    'int64',
+    'float32',
+    'float64',
+]
+
 # Map data type to numpy type for conversion
 str2dtype = {
     DTYPE_UINT8: numpy.uint8,
@@ -103,6 +116,9 @@ def str_to_dtype(dtype_str):
     if numpy.issubclass_(dtype_str, numpy.number):
         # if they gave us a numpy dtype
         return dtype_str
+    elif isinstance(dtype_str, str) and hasattr(numpy, dtype_str):
+        # they gave us the numpy name of the dtype
+        return getattr(numpy, dtype_str)
 
     try:
         return str2dtype[dtype_str]
@@ -111,7 +127,7 @@ def str_to_dtype(dtype_str):
 
 
 def dtype_to_str(numpy_dtype):
-    if isinstance(numpy_dtype, (str, unicode)):
+    if isinstance(numpy_dtype, str):
         # if they gave us a string, make sure it's valid
         return normalize_dtype_string(numpy_dtype)
 
@@ -125,7 +141,7 @@ def convert_to_data_type(data, data_type):
     """Convert a numpy array to a different data type represented by a
     polar2grid data type constant.
     """
-    if isinstance(data_type, (str, unicode)):
+    if isinstance(data_type, str):
         if data_type not in str2dtype:
             log.error("Unknown data_type '%s', don't know how to convert data" % (data_type,))
             raise ValueError("Unknown data_type '%s', don't know how to convert data" % (data_type,))
@@ -137,7 +153,7 @@ def convert_to_data_type(data, data_type):
 
 
 def clip_to_data_type(data, data_type):
-    if not isinstance(data_type, (str, unicode)):
+    if not isinstance(data_type, str):
         data_type = dtype_to_str(data_type)
     if data_type not in str2dtype:
         log.error("Unknown data_type '%s', don't know how to convert data" % (data_type,))
@@ -150,9 +166,13 @@ def clip_to_data_type(data, data_type):
     return convert_to_data_type(data, data_type)
 
 
-def main():
-    from pprint import pprint
-    pprint(dtype2range)
+def int_or_float(val):
+    """Convert a string to integer or float.
 
-if __name__ == "__main__":
-    sys.exit(main())
+    If we can't make it an integer then make it a float.
+
+    """
+    try:
+        return int(val)
+    except ValueError:
+        return float(val)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -105,11 +105,12 @@ class CreflRGBSharpenCompositor(roles.CompositorRole):
     """
 
     def __init__(self, lores_products, hires_products, **kwargs):
+        super(CreflRGBSharpenCompositor, self).__init__()
         self.share_mask = kwargs.get("share_mask", True)
         self.remove_lores = kwargs.get("remove_lores", True)
         self.apply_scale = kwargs.get("apply_scale", False)
-        self.lores_products = lores_products if not isinstance(lores_products, (str, unicode)) else lores_products.split(",")
-        self.hires_products = lores_products if not isinstance(hires_products, (str, unicode)) else hires_products.split(",")
+        self.lores_products = lores_products if not isinstance(lores_products, str) else lores_products.split(",")
+        self.hires_products = lores_products if not isinstance(hires_products, str) else hires_products.split(",")
 
     def shared_mask(self, gridded_scene, product_names, axis=0):
         return np.any([gridded_scene[pname].get_data_mask() for pname in product_names], axis=axis)
@@ -199,7 +200,7 @@ class CreflRGBSharpenCompositor(roles.CompositorRole):
 
             if self.remove_lores:
                 del gridded_scene[lores_product_name]
-        except StandardError:
+        except (ValueError, KeyError):
             LOG.error("Could not sharpen products")
             raise
 
@@ -212,7 +213,7 @@ class RGBCompositor(roles.CompositorRole):
         self.composite_data_kind = kwargs.get("composite_data_kind", "rgb")
         self.share_mask = kwargs.get("share_mask", True)
         self.composite_products = kwargs.get("composite_products", "")
-        if isinstance(self.composite_products, (str, unicode)):
+        if isinstance(self.composite_products, str):
             self.composite_products = self.composite_products.split(",")
         super(RGBCompositor, self).__init__(**kwargs)
 
@@ -248,7 +249,7 @@ class RGBCompositor(roles.CompositorRole):
             base_product = gridded_scene[self.composite_products[0]]
             gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn, base_product=base_product,
                                                                               data_kind=self.composite_data_kind)
-        except StandardError:
+        except (ValueError, KeyError):
             LOG.error("Could not create composite product with name '%s'", self.composite_name)
             if os.path.isfile(fn):
                 os.remove(fn)
@@ -261,10 +262,10 @@ class TrueColorCompositor(RGBCompositor):
     default_compare_index = 0
 
     def __init__(self, red_products, green_products, blue_products, hires_products, **kwargs):
-        self.red_products = red_products if not isinstance(red_products, (str, unicode)) else red_products.split(",")
-        self.green_products = green_products if not isinstance(green_products, (str, unicode)) else green_products.split(",")
-        self.blue_products = blue_products if not isinstance(blue_products, (str, unicode)) else blue_products.split(",")
-        self.hires_products = hires_products if not isinstance(hires_products, (str, unicode)) else hires_products.split(",")
+        self.red_products = red_products if not isinstance(red_products, str) else red_products.split(",")
+        self.green_products = green_products if not isinstance(green_products, str) else green_products.split(",")
+        self.blue_products = blue_products if not isinstance(blue_products, str) else blue_products.split(",")
+        self.hires_products = hires_products if not isinstance(hires_products, str) else hires_products.split(",")
         self.sharpen_rgb = kwargs.pop("sharpen_rgb", True)
         kwargs.setdefault("composite_name", "true_color")
         kwargs.setdefault("composite_data_kind", "crefl_true_color")
@@ -324,15 +325,15 @@ class TrueColorCompositor(RGBCompositor):
         try:
             all_products = [red_product, green_product, blue_product]
             sharp_red_product = self._get_first_available_product(gridded_scene, self.hires_products)
-            if self.sharpen_rgb and not sharp_red_product:
-                LOG.info("No high resolution products were found so true color sharpening will not be done")
-                LOG.debug("Will attempt to create a true color image using: %s", ",".join(all_products))
-                comp_data = self.joined_array(gridded_scene, all_products)
-            elif self.sharpen_rgb:
+            if sharp_red_product and self.sharpen_rgb:
                 all_products.append(sharp_red_product)
                 LOG.debug("Will attempt to create a true color image using: %s", ",".join(all_products))
                 comp_data = self.joined_array(gridded_scene, (sharp_red_product, green_product, blue_product))
                 self.ratio_sharpen(gridded_scene[red_product].get_data_array(), comp_data)
+            else:
+                LOG.info("No high resolution products were found so true color sharpening will not be done")
+                LOG.debug("Will attempt to create a true color image using: %s", ",".join(all_products))
+                comp_data = self.joined_array(gridded_scene, all_products)
 
             if self.share_mask:
                 LOG.debug("Sharing missing value mask between bands and using fill value %r", fill_value)
@@ -345,7 +346,7 @@ class TrueColorCompositor(RGBCompositor):
             gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn,
                                                                               base_product=base_product,
                                                                               data_kind=self.composite_data_kind)
-        except StandardError:
+        except ValueError:
             LOG.error("Could not create composite product with name '%s'", self.composite_name)
             if os.path.isfile(fn):
                 os.remove(fn)
@@ -406,7 +407,7 @@ class FalseColorCompositor(TrueColorCompositor):
             gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn,
                                                                               base_product=base_product,
                                                                               data_kind=self.composite_data_kind)
-        except StandardError:
+        except ValueError:
             LOG.error("Could not create composite product with name '%s'", self.composite_name)
             if os.path.isfile(fn):
                 os.remove(fn)

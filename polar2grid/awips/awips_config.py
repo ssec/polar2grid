@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -36,7 +36,7 @@ import sys
 
 import logging
 import os
-from ConfigParser import NoSectionError, NoOptionError
+from configparser import NoSectionError, NoOptionError
 
 from polar2grid.core import roles
 
@@ -115,7 +115,14 @@ class AWIPS2ConfigReader(roles.SimpleINIConfigReader):
 
     def get_product_info(self, product_definition):
         info = {}
+      
+        if isinstance(product_definition["satellite"], bytes):
+            product_definition["satellite"] = product_definition["satellite"].decode("utf-8")
+        if isinstance(product_definition["instrument"], bytes):
+            product_definition["instrument"] = product_definition["instrument"].decode("utf-8")
+ 
         sat_section = self.SAT_SECTION_PREFIX + product_definition["satellite"] + ":" + product_definition["instrument"]
+
         try:
             r = product_definition.get('reader')
             product_section = '{}{}{}'.format(self.PRODUCT_SECTION_PREFIX, r + ':' if r else '', product_definition['product_name'])
@@ -170,7 +177,7 @@ class AWIPSConfigReader(roles.INIConfigReader):
             awips_info = self.get_config_options(allow_default=False, **kwargs)
             awips_info = dict((k, awips_info[k]) for k in self.info_fields)
             awips_info["ncml_template"] = _rel_to_abs(awips_info["ncml_template"], NCML_DIR)
-        except StandardError:
+        except (OSError, KeyError, ValueError):
             LOG.error("Could not find an AWIPS configuration section for '%s'" % (all_meta["product_name"],))
             LOG.debug("Configuration Error: ", exc_info=True)
             raise RuntimeError("Could not find an AWIPS configuration section for '%s'" % (all_meta["product_name"],))

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -111,6 +111,7 @@ class HDFEOSMetadata(dict):
     This parser could probably be done better, but no one seems to know specifics about the Metadata format.
     """
     def __init__(self, metadata_str):
+        super(HDFEOSMetadata, self).__init__()
         metadata_lines = [x.strip() for x in metadata_str.split("\n") if x]
 
         # Check that we have a fully constructed metadata dictionary
@@ -188,9 +189,6 @@ class HDFEOSMetadata(dict):
             return current_idx + 1
         else:
             raise RuntimeError("Could not properly parse HDF-EOS Metadata")
-
-        # Return the next index to look at
-        return current_idx + 1
 
 
 class HDFReader(object):
@@ -358,9 +356,9 @@ class HDFEOSReader(HDFReader):
             #     self.satellite = "aqua" if file_type_str.startswith("MYD") else "terra"
             # except KeyError:
             #     pass
-        except StandardError:
+        except (OSError, ValueError):
             LOG.debug("Could not parse HDF-EOS file", exc_info=True)
-            raise RuntimeError("Could not parse HDF-EOS file (see debug log for details)")
+            raise ValueError("Could not parse HDF-EOS file (see debug log for details)")
 
 
 class FileReader(BaseFileReader):
@@ -374,7 +372,7 @@ class FileReader(BaseFileReader):
     CANT_AGGR_VALUE = 65528
 
     def __init__(self, filename_or_hdf_obj, file_type_info):
-        if isinstance(filename_or_hdf_obj, (str, unicode)):
+        if isinstance(filename_or_hdf_obj, str):
             filename_or_hdf_obj = HDFEOSReader(filename_or_hdf_obj)
         super(FileReader, self).__init__(filename_or_hdf_obj, file_type_info)
 
@@ -393,7 +391,7 @@ class FileReader(BaseFileReader):
         if known_item is None:
             raise KeyError("Key 'None' was not found")
 
-        if not isinstance(known_item, (str, unicode)):
+        if not isinstance(known_item, str):
             # Using FileVar class
             known_item = known_item.var_path
         LOG.debug("Loading %s from %s", known_item, self.filename)
@@ -422,7 +420,7 @@ class FileReader(BaseFileReader):
         data = data.astype(var_info.data_type)
 
         # Get the fill value
-        if var_info.fill_attr_name and isinstance(var_info.fill_attr_name, (str, unicode)):
+        if var_info.fill_attr_name and isinstance(var_info.fill_attr_name, str):
             fill_value = self[var_info.var_name + "." + var_info.fill_attr_name]
             mask = data == fill_value
         elif var_info.fill_attr_name:
@@ -435,7 +433,7 @@ class FileReader(BaseFileReader):
         # Get the valid_min and valid_max
         valid_min, valid_max = None, None
         if var_info.range_attr_name:
-            if isinstance(var_info.range_attr_name, (str, unicode)):
+            if isinstance(var_info.range_attr_name, str):
                 valid_min, valid_max = self[var_info.var_name + "." + var_info.range_attr_name]
             else:
                 valid_min, valid_max = var_info.range_attr_name

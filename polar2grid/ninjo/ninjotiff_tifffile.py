@@ -5,7 +5,7 @@ ninjotiff.py
 Created on Mon Apr 15 13:41:55 2013
 
 A big amount of the tiff writer are (PFE) from
-https://github.com/davidh-ssec/polar2grid by David Hoese
+https://github.com/ssec/polar2grid by David Hoese
 
 License:
 Copyright (C) 2013 Space Science and Engineering Center (SSEC),
@@ -138,7 +138,7 @@ def get_product_config(product_name, force_read=False):
     return ProductConfigs()(product_name, force_read)
 
 class _Singleton(type):
-    def __init__(cls, name_, bases_, dict_):
+    def __init__(cls, name_, bases_=None, dict_=None):
         super(_Singleton, cls).__init__(name_, bases_, dict_)
         cls.instance = None
 
@@ -164,7 +164,7 @@ class ProductConfigs(object):
         return sorted(self._products.keys())
 
     def read_config(self):
-        from ConfigParser import ConfigParser        
+        from configparser import ConfigParser
 
         def _eval(val):
             try:
@@ -520,8 +520,8 @@ def write(image_data, output_fn, area_def, product_name=None, **kwargs):
         log.info("Will generate product '%s'" % product_name)
 
     if image_data.shape != shape:
-        raise ValueError, "Raster shape %s does not correspond to expected shape %s" % (
-            str(image_data.shape), str(shape))
+        raise ValueError("Raster shape %s does not correspond to expected shape %s" % (
+            str(image_data.shape), str(shape)))
 
     # Ninjo's physical units and value.
     # If just a physical unit (e.g. 'C') is passed, it will then be
@@ -537,7 +537,7 @@ def write(image_data, output_fn, area_def, product_name=None, **kwargs):
         area_def.proj_id.split('_')[-1]
 
     # Get pixel size
-    if not kwargs.has_key('pixel_xres') or not kwargs.has_key('pixel_yres'):
+    if 'pixel_xres' not in kwargs or 'pixel_yres' not in kwargs:
         kwargs['pixel_xres'], kwargs['pixel_yres'] = \
             _get_pixel_size(kwargs['projection'], area_def)
 
@@ -583,7 +583,7 @@ def write(image_data, output_fn, area_def, product_name=None, **kwargs):
 #
 # -----------------------------------------------------------------------------
 def _write(image_data, output_fn, write_rgb=False, **kwargs):
-    """Proudly Found Elsewhere (PFE) https://github.com/davidh-ssec/polar2grid
+    """Proudly Found Elsewhere (PFE) https://github.com/ssec/polar2grid
     by David Hoese.
 
     Create a NinJo compatible TIFF file with the tags used
@@ -954,8 +954,8 @@ if __name__ == '__main__':
     try:
         filename = sys.argv[1]
     except IndexError:
-        print >> sys.stderr, "usage: python ninjotiff.py <ninjotiff-filename>"
+        print("usage: python ninjotiff.py <ninjotiff-filename>", file=sys.stderr)
         sys.exit(2)
 
     for inf in info(filename):
-        print inf, '\n'
+        print(inf + '\n')

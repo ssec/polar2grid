@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -63,7 +63,7 @@ def _proj4_to_srs(proj4_str):
         srs = osr.SpatialReference()
         # GDAL doesn't like unicode
         result = srs.ImportFromProj4(str(proj4_str))
-    except StandardError:
+    except ValueError:
         LOG.error("Could not convert Proj4 string '%s' into a GDAL SRS" % (proj4_str,))
         LOG.debug("Exception: ", exc_info=True)
         raise ValueError("Could not convert Proj4 string '%s' into a GDAL SRS" % (proj4_str,))
@@ -229,7 +229,7 @@ class Backend(roles.BackendRole):
                 LOG.debug("Setting geotiff metadata for linear min/max values")
                 gtiff.SetMetadataItem("min_in", str(rescale_options["min_in"]))
                 gtiff.SetMetadataItem("max_in", str(rescale_options["max_in"]))
-        except StandardError:
+        except (ValueError, KeyError):
             if not self.keep_intermediate and os.path.isfile(output_filename):
                 os.remove(output_filename)
             raise

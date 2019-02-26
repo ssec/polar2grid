@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -78,7 +78,8 @@ def interpolate_geolocation_cartesian(lon_array, lat_array, res_factor=4):
     Python rewrite of the IDL function ``MODIS_GEO_INTERP_250`` but converts to cartesian (X, Y, Z) coordinates
     first to avoid problems with the anti-meridian/poles.
 
-    :param nav_array: MODIS 1km latitude array or 1km longitude array
+    :param lon_array: MODIS 1km longitude array
+    :param lat_array: MODIS 1km latitude array
 
     :returns: MODIS 250m latitude array or 250m longitude array
 
@@ -86,7 +87,7 @@ def interpolate_geolocation_cartesian(lon_array, lat_array, res_factor=4):
     If we are going from 1000m to 250m we have 2 times the size of the original
     """
     num_rows,num_cols = lon_array.shape
-    num_scans = num_rows / ROWS_PER_SCAN
+    num_scans = int(num_rows / ROWS_PER_SCAN)
 
     lons_rad = np.radians(lon_array)
     lats_rad = np.radians(lat_array)
@@ -149,46 +150,46 @@ def interpolate_geolocation_cartesian(lon_array, lat_array, res_factor=4):
     return new_lons.astype(lon_array.dtype), new_lats.astype(lat_array.dtype)
 
 
-def interpolate_geolocation(nav_array):
-    """Interpolate MODIS navigation from 1000m resolution to 250m.
-
-    Python rewrite of the IDL function ``MODIS_GEO_INTERP_250``
-
-    :param nav_array: MODIS 1km latitude array or 1km longitude array
-
-    :returns: MODIS 250m latitude array or 250m longitude array
-    """
-    num_rows,num_cols = nav_array.shape
-    num_scans = num_rows / ROWS_PER_SCAN
-
-    # Make a resulting array that is the right size for the new resolution
-    result_array = np.empty((num_rows * res_factor, num_cols * res_factor), dtype=np.float32)
-    x = np.arange(res_factor * num_cols, dtype=np.float32) * 0.25
-    y = np.arange(res_factor * ROWS_PER_SCAN, dtype=np.float32) * 0.25 - 0.375
-    x,y = np.meshgrid(x,y)
-    coordinates = np.array([y,x]) # Used by map_coordinates, major optimization
-
-    # Interpolate each scan, one at a time, otherwise the math doesn't work well
-    for scan_idx in range(num_scans):
-        # Calculate indexes
-        j0 = ROWS_PER_SCAN              * scan_idx
-        j1 = j0 + ROWS_PER_SCAN
-        k0 = ROWS_PER_SCAN * res_factor * scan_idx
-        k1 = k0 + ROWS_PER_SCAN * res_factor
-
-        # Use bilinear interpolation for all 250 meter pixels
-        map_coordinates(nav_array[ j0:j1, : ], coordinates, output=result_array[ k0:k1, : ], order=1, mode='nearest')
-
-        # Use linear extrapolation for the first two 250 meter pixels along track
-        m = (result_array[ k0 + 5, : ] - result_array[ k0 + 2, : ]) / (y[5,0] - y[2,0])
-        b = result_array[ k0 + 5, : ] - m * y[5,0]
-        result_array[ k0 + 0, : ] = m * y[0,0] + b
-        result_array[ k0 + 1, : ] = m * y[1,0] + b
-
-        # Use linear extrapolation for the last  two 250 meter pixels along track
-        m = (result_array[ k0 + 37, : ] - result_array[ k0 + 34, : ]) / (y[37,0] - y[34,0])
-        b = result_array[ k0 + 37, : ] - m * y[37,0]
-        result_array[ k0 + 38, : ] = m * y[38,0] + b
-        result_array[ k0 + 39, : ] = m * y[39,0] + b
-
-    return result_array
+# def interpolate_geolocation(nav_array):
+#     """Interpolate MODIS navigation from 1000m resolution to 250m.
+#
+#     Python rewrite of the IDL function ``MODIS_GEO_INTERP_250``
+#
+#     :param nav_array: MODIS 1km latitude array or 1km longitude array
+#
+#     :returns: MODIS 250m latitude array or 250m longitude array
+#     """
+#     num_rows,num_cols = nav_array.shape
+#     num_scans = int(num_rows / ROWS_PER_SCAN)
+#
+#     # Make a resulting array that is the right size for the new resolution
+#     result_array = np.empty((num_rows * res_factor, num_cols * res_factor), dtype=np.float32)
+#     x = np.arange(res_factor * num_cols, dtype=np.float32) * 0.25
+#     y = np.arange(res_factor * ROWS_PER_SCAN, dtype=np.float32) * 0.25 - 0.375
+#     x,y = np.meshgrid(x,y)
+#     coordinates = np.array([y,x]) # Used by map_coordinates, major optimization
+#
+#     # Interpolate each scan, one at a time, otherwise the math doesn't work well
+#     for scan_idx in range(num_scans):
+#         # Calculate indexes
+#         j0 = ROWS_PER_SCAN              * scan_idx
+#         j1 = j0 + ROWS_PER_SCAN
+#         k0 = ROWS_PER_SCAN * res_factor * scan_idx
+#         k1 = k0 + ROWS_PER_SCAN * res_factor
+#
+#         # Use bilinear interpolation for all 250 meter pixels
+#         map_coordinates(nav_array[ j0:j1, : ], coordinates, output=result_array[ k0:k1, : ], order=1, mode='nearest')
+#
+#         # Use linear extrapolation for the first two 250 meter pixels along track
+#         m = (result_array[ k0 + 5, : ] - result_array[ k0 + 2, : ]) / (y[5,0] - y[2,0])
+#         b = result_array[ k0 + 5, : ] - m * y[5,0]
+#         result_array[ k0 + 0, : ] = m * y[0,0] + b
+#         result_array[ k0 + 1, : ] = m * y[1,0] + b
+#
+#         # Use linear extrapolation for the last  two 250 meter pixels along track
+#         m = (result_array[ k0 + 37, : ] - result_array[ k0 + 34, : ]) / (y[37,0] - y[34,0])
+#         b = result_array[ k0 + 37, : ] - m * y[37,0]
+#         result_array[ k0 + 38, : ] = m * y[38,0] + b
+#         result_array[ k0 + 39, : ] = m * y[39,0] + b
+#
+#     return result_array

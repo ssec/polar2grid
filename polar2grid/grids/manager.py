@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2013-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -110,7 +110,7 @@ def parse_proj4_config_line(grid_name, parts):
     try:
         p = Proj(proj4_str)
         del p
-    except StandardError:
+    except ValueError:
         LOG.error("Invalid proj4 string in '%s' : '%s'" % (grid_name, proj4_str))
         raise
 
@@ -156,7 +156,7 @@ def parse_proj4_config_line(grid_name, parts):
             grid_origin_y = None
         else:
             grid_origin_y, convert_yorigin_to_meters = _parse_meter_degree_param(parts[8])
-    except StandardError:
+    except ValueError:
         LOG.error("Could not parse proj4 grid configuration: '%s'" % (grid_name,))
         raise
 
@@ -262,9 +262,9 @@ def read_grids_config(config_filepath):
     full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
     if not os.path.exists(full_config_filepath):
         try:
-            config_str = get_resource_string(__name__, config_filepath)
+            config_str = get_resource_string(__name__, config_filepath).decode()
             return read_grids_config_str(config_str)
-        except StandardError:
+        except ValueError:
             LOG.error("Grids configuration file '%s' does not exist" % (config_filepath,))
             LOG.debug("Grid configuration error: ", exc_info=1)
             raise
@@ -292,6 +292,12 @@ class GridManager(roles.CartographerRole):
             for grid_config in grid_configs:
                 LOG.debug("Loading grid configuration '%s'" % (grid_config,))
                 self.add_grid_config(grid_config)
+
+    def __contains__(self, item):
+        return item in self.grid_information
+
+    def __getitem__(self, item):
+        return self.get_grid_definition(item)
 
     def add_grid_config(self, grid_config_filename):
         """Load a grid configuration file. If a ``grid_name`` was already

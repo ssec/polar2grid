@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """Functions and mappings for taking rempapped polar-orbitting data and
 rescaling it to a useable range for the backend using the data, usually a
@@ -403,7 +403,7 @@ class Rescaler(roles.INIConfigReader):
         """Get the names of the arguments that will be passed to the scaling functions.
         """
         import inspect
-        args = set([a for func in self.rescale_methods.values() for a in inspect.getargspec(func).args])
+        args = set([a for func in self.rescale_methods.values() for a in inspect.getfullargspec(func).args])
         # caller provided arguments
         args.remove("img")
         args.remove("flip")  # boolean
@@ -451,7 +451,7 @@ class Rescaler(roles.INIConfigReader):
                 data[good_data_mask] += 1
 
             return data
-        except StandardError:
+        except (ValueError, KeyError, RuntimeError):
             LOG.error("Unexpected error during rescaling")
             raise
 
@@ -513,8 +513,8 @@ class Rescaler(roles.INIConfigReader):
         if log_level <= logging.DEBUG:
             try:
                 # assumes NaN fill value
-                LOG.debug("Data min: %f, max: %f" % (numpy.nanmin(data), numpy.nanmax(data)))
-            except StandardError:
+                LOG.debug("Data min: %f, max: %f" % (float(numpy.nanmin(data)), float(numpy.nanmax(data))))
+            except (ValueError, KeyError, RuntimeError):
                 LOG.debug("Couldn't get min/max values for %s (all fill data?)", gridded_product["product_name"])
 
         return data
@@ -540,7 +540,7 @@ way to do production level rescaling, but is useful for testing.
         import doctest
         return doctest.testmod()
 
-    print "Command line interface not implemented yet"
+    print("Command line interface not implemented yet")
     parser.print_help()
     
     # FUTURE when this allows use of the rescale functions, also allow use of the histogram equalization

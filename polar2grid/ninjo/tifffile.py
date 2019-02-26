@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # tifffile.py
 
@@ -620,7 +620,7 @@ class TiffWriter(object):
              'rgb': 2,
              'palette': 3}[photometric])
         if photometric == 'palette':
-            if colormap == None:
+            if colormap is None:
                 raise ValueError(
                     "photometric 'palette' specified but colormap missing")
             else:
@@ -711,8 +711,8 @@ class TiffWriter(object):
                     # reset and use compress sizes
                     strip_byte_counts = []
                 for plane in data[pageindex]:
-                    for ty in xrange(0, tiles_y):
-                        for tx in xrange(0, tiles_x):
+                    for ty in range(0, tiles_y):
+                        for tx in range(0, tiles_x):
                             # allocate fixed size tile filled with zeros
                             tile = numpy.zeros((tile_width * tile_length,
                                                 shape[-1]), data.dtype)
@@ -724,7 +724,7 @@ class TiffWriter(object):
                             itw = min(tile_width,
                                       shape[3] - tx*tile_width)
                             ioffs = tx*tile_width
-                            for tl in xrange(0, itl):
+                            for tl in range(0, itl):
                                 # copy data to tile line
                                 ir = ty*tile_length+tl
                                 tile[tl*tile_width:tl*tile_width+itw] \
@@ -2243,7 +2243,7 @@ class TiffTag(object):
         """Initialize instance from file or arguments."""
         self._offset = None
         if hasattr(arg, '_fh'):
-            self._fromfile(arg, **kwargs)
+            self._fromfile(arg)
         else:
             self._fromdata(arg, **kwargs)
 
@@ -3158,7 +3158,7 @@ def read_micromanager_metadata(fh):
 
 def imagej_metadata(data, bytecounts, byteorder):
     """Return dict from ImageJ metadata tag value."""
-    _str = str if sys.version_info[0] < 3 else lambda x: str(x, 'cp1252')
+    _str = str if sys.version_info[0] < 3 else lambda x: str(x, encoding='cp1252')
 
     def read_string(data, byteorder):
         return _str(stripnull(data[0 if byteorder == '<' else 1::2]))
@@ -3212,7 +3212,7 @@ def imagej_description(description):
     def _bool(val):
         return {b'true': True, b'false': False}[val.lower()]
 
-    _str = str if sys.version_info[0] < 3 else lambda x: str(x, 'cp1252')
+    _str = str if sys.version_info[0] < 3 else lambda x: str(x, encoding='cp1252')
     result = {}
     for line in description.splitlines():
         try:
@@ -4538,8 +4538,8 @@ TIFF_TAGS = {
     347: ('jpeg_tables', None, 7, None, None),
     530: ('ycbcr_subsampling', 1, 3, 2, None),
     531: ('ycbcr_positioning', 1, 3, 1, None),
-    32996: ('sgi_matteing', None, None, 1, None),  # use extra_samples
-    32996: ('sgi_datatype', None, None, 1, None),  # use sample_format
+    # 32996: ('sgi_matteing', None, None, 1, None),  # use extra_samples
+    # 32996: ('sgi_datatype', None, None, 1, None),  # use sample_format
     32997: ('image_depth', None, 4, 1, None),
     32998: ('tile_depth', None, 4, 1, None),
     33432: ('copyright', None, 1, None, None),
@@ -4716,7 +4716,7 @@ def imshow(data, title=None, vmin=0, vmax=None, cmap=None,
 
     if title:
         try:
-            title = unicode(title, 'Windows-1252')
+            title = unicode(title, encoding='Windows-1252')
         except TypeError:
             pass
         pyplot.title(title, size=11)

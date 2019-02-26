@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2017 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -27,14 +27,14 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The CLAVR-x reader is for reading files created by the Community 
-Satellite Processing Package (CSPP) Clouds from AVHRR Extended 
-(CLAVR-x) processing system software. The CLAVR-x reader 
-supports CSPP CLAVR-x product files created from VIIRS, MODIS 
+"""The CLAVR-x reader is for reading files created by the Community
+Satellite Processing Package (CSPP) Clouds from AVHRR Extended
+(CLAVR-x) processing system software. The CLAVR-x reader
+supports CSPP CLAVR-x product files created from VIIRS, MODIS
 and AVHRR imaging sensors in the native HDF4 format.
 The reader can be specified with the ``polar2grid.sh``
 command using the ``clavrx`` reader name.
-The CLAVR-x reader provides the following products, which include 
+The CLAVR-x reader provides the following products, which include
 support for the VIIRS Day/Night Band Lunar Reflectance:
 
 +------------------------+---------------------------------------------+
@@ -127,8 +127,6 @@ class Frontend(ReaderWrapper):
 
     @property
     def all_product_names(self):
-        # print(ADVERTISED_DATASETS)
-        # print(ADVERTISED_DATASETS & set(self.scene.all_dataset_names(reader_name=self.reader)))
         return ADVERTISED_DATASETS & set(self.scene.all_dataset_names(reader_name=self.reader))
 
     def filter(self, scene):

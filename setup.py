@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -73,7 +73,7 @@ if not os.getenv("USE_CYTHON", False) or cythonize is None:
             extension.sources[:] = sources
         return extensions
 
-version = '2.3.0'
+version = '2.3.0a2'
 
 
 class PyTest(Command):

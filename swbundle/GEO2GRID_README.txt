@@ -1,7 +1,7 @@
-Polar2Grid software bundle
-==========================
+Geo2Grid software bundle
+========================
 
-Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
+Copyright (C) 2012-2019 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,12 +16,12 @@ Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC), University 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-This file is part of the polar2grid software package. Polar2grid takes
+This file is part of the geo2grid software package. Geo2grid takes
 satellite observation data, remaps it, and writes it to a file format for
 input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+Documentation: http://www.ssec.wisc.edu/software/geo2grid/
 
-    Written by David Hoese    January 2015
+    Written by David Hoese    February 2019
     University of Wisconsin-Madison 
     Space Science and Engineering Center
     1225 West Dayton Street
@@ -39,23 +39,22 @@ Installation
 
 1. Untar the tarball:
     # if you're reading this, this step is probably complete already
-    tar -xzf polar2grid-swbundle-<version>.tar.gz
+    tar -xzf geo2grid-swbundle-<version>.tar.gz
 2. Add the following line to your .bash_profile or .bashrc:
-    export POLAR2GRID_HOME=/path/to/untarred-swbundle-dir
+    export GEO2GRID_HOME=/path/to/untarred-swbundle-dir
 
-To run a polar2grid glue script
-===============================
+To run a geo2grid script
+========================
 
-The polar2grid scripts are usually part of a larger system, but if you want
-to run a script manually:
+The geo2grid script can be run directly from the bin directory:
 
-    $POLAR2GRID_HOME/bin/viirs2awips.sh ...
+    $GEO2GRID_HOME/bin/geo2grid.sh ...
 
 or
 
-    $POLAR2GRID_HOME/bin/viirs2awips.sh --help
+    $GEO2GRID_HOME/bin/geo2grid.sh --help
 
 for more help.
 
-Polar2Grid Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-CSPP Home Page: http://cimss.ssec.wisc.edu/cspp/
+Geo2Grid Documentation: http://www.ssec.wisc.edu/software/geo2grid/
+CSPP Geo Home Page: http://cimss.ssec.wisc.edu/csppgeo/

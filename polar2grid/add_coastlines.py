@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2016 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -41,9 +41,9 @@
 import os
 import sys
 import logging
-from pycoast import ContourWriter
+from pycoast import ContourWriterAGG
 from PIL import Image, ImageFont
-from pyproj import Proj
+from aggdraw import Font
 # XXX: For some reason 'gdal' needs to be imported *after* PIL otherwise we get a segfault
 import gdal
 import osr
@@ -85,20 +85,20 @@ def get_colormap(band, band_count):
     return cmap
 
 
-def load_font(font_name, size):
+def find_font(font_name, size):
     try:
         font = ImageFont.truetype(font_name, size)
+        return font.path
     except IOError:
         font_path = get_resource_filename('polar2grid.fonts', font_name)
         if not os.path.exists(font_path):
             raise ValueError("Font path does not exist: {}".format(font_path))
-        font = ImageFont.truetype(font_path, size)
-    return font
+        return font_path
 
 
 def get_parser():
     import argparse
-    parser = argparse.ArgumentParser(description="Convert a GeoTIFF to PNG and add coastlines and borders",
+    parser = argparse.ArgumentParser(description="Add overlays to a GeoTIFF file and save as a PNG file.",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     group = parser.add_argument_group("coastlines")
     group.add_argument("--add-coastlines", action="store_true",
@@ -125,12 +125,12 @@ def get_parser():
     group = parser.add_argument_group("grid")
     group.add_argument("--add-grid", action="store_true",
                        help="Add lat/lon grid")
-    group.add_argument("--grid-text", action="store_true",
+    group.add_argument("--grid-no-text", dest='grid_text', action="store_false",
                        help="Add labels to lat/lon grid")
     group.add_argument("--grid-text-size", default=32, type=int,
                        help="Lat/lon grid text font size")
     group.add_argument("--grid-font", default="Vera.ttf",
-                       help="Path to TTF font (polar2grid provided or custom path)")
+                       help="Path to TTF font (package provided or custom path)")
     group.add_argument("--grid-fill", nargs="*", default=["cyan"],
                        help="Color of grid text (color name or 3 RGB integers)")
     group.add_argument("--grid-outline", nargs="*", default=["cyan"],
@@ -172,7 +172,7 @@ def get_parser():
     group.add_argument("--colorbar-text-color", nargs="*", default=['black'],
                        help="Color of tick text (color name or 3 RGB integers)")
     group.add_argument("--colorbar-font", default="Vera.ttf",
-                       help="Path to TTF font (polar2grid provided or custom path)")
+                       help="Path to TTF font (package provided or custom path)")
     group.add_argument("--colorbar-align", choices=['left', 'top', 'right', 'bottom'], default='bottom',
                        help="Which direction to align colorbar (see --colorbar-vertical)")
     group.add_argument('--colorbar-vertical', action='store_true',
@@ -221,6 +221,10 @@ def main():
         LOG.error("Please specify one of the '--add-X' options to modify the image")
         return -1
 
+    # we may be dealing with large images that look like decompression bombs
+    # let's turn off the check for the image size in PIL/Pillow
+    Image.MAX_IMAGE_PIXELS = None
+
     for input_tiff, output_filename in zip(args.input_tiff, args.output_filename):
         LOG.info("Creating {} from {}".format(output_filename, input_tiff))
         gtiff = gdal.Open(input_tiff)
@@ -237,7 +241,7 @@ def main():
         img = Image.open(input_tiff).convert('RGB')
         area_def = (proj4_str, area_extent)
 
-        cw = ContourWriter(args.shapes_dir)
+        cw = ContourWriterAGG(args.shapes_dir)
 
         if args.add_coastlines:
             outline = args.coastlines_outline[0] if len(args.coastlines_outline) == 1 else tuple(int(x) for x in args.coastlines_outline)
@@ -259,23 +263,24 @@ def main():
             cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline)
 
         if args.add_grid:
-            font = load_font(args.grid_font, args.grid_text_size)
             outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
             minor_outline = args.grid_minor_outline[0] if len(args.grid_minor_outline) == 1 else tuple(int(x) for x in args.grid_minor_outline)
             fill = args.grid_fill[0] if len(args.grid_fill) == 1 else tuple(int(x) for x in args.grid_fill)
+            font_path = find_font(args.grid_font, args.grid_text_size)
+            font = Font(outline, font_path, size=args.grid_text_size)
             cw.add_grid(img, area_def, args.grid_D, args.grid_d, font,
                         fill=fill, outline=outline, minor_outline=minor_outline,
+                        write_text=args.grid_text,
                         lon_placement=args.grid_lon_placement,
                         lat_placement=args.grid_lat_placement)
 
         if args.add_colorbar:
             from pydecorate import DecoratorAGG
-            from aggdraw import Font
             font_color = args.colorbar_text_color
             font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
-            font = load_font(args.colorbar_font, args.colorbar_text_size)
+            font_path = find_font(args.colorbar_font, args.colorbar_text_size)
             # this actually needs an aggdraw font
-            font = Font(font_color, font.path, size=font.size)
+            font = Font(font_color, font_path, size=args.colorbar_text_size)
             band_count = gtiff.RasterCount
             if band_count not in [1, 2]:
                 raise ValueError("Can't add colorbar to RGB/RGBA image")
@@ -333,6 +338,7 @@ def main():
                          **kwargs)
 
         img.save(output_filename)
+
 
 if __name__ == "__main__":
     sys.exit(main())

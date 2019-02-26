@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -535,7 +535,7 @@ class AVHRRSingleFileReader(BaseFileReader):
 
             self.satellite = self.SAT_ID_MAP[int(self.file_handle["satid"][0])]
             self.instrument = "avhrr"
-        except StandardError:
+        except (KeyError, ValueError):
             LOG.error("Could not parse basic information from AVHRR file: %s", self.file_handle.filepath)
             raise
 
@@ -546,7 +546,7 @@ class AVHRRSingleFileReader(BaseFileReader):
 
         # Normally these types of operations are handled in `get_swath_data`, but due to the way numpy dtypes work this
         # is handled here (where indexing can be properly handled)
-        if not isinstance(known_item, (str, unicode)):
+        if not isinstance(known_item, str):
             # Using FileVar class
             if known_item.calibrate_func is not None:
                 # wrap in array in case we don't get a basic numpy array back

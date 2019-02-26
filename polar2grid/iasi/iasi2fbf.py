@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """
 Extract IASI data to flat binary files in a similar form to AIRS ROK MATLAB script.

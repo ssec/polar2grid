@@ -9,7 +9,7 @@ It is recommended that you contact the Polar2Grid team before adding/developing
 any new features to coordinate efforts.
 
 The main code repository for polar2grid can be found on github at
-https://github.com/davidh-ssec/polar2grid.
+https://github.com/ssec/polar2grid.
 If you plan to make a lot of changes over a long period of time it may
 be beneficial to `fork <https://help.github.com/articles/fork-a-repo>`_
 the main repository and then make a
@@ -27,7 +27,7 @@ process this script is the place to start.
 
         mkdir ~/polar2grid
         cd ~/polar2grid
-        git clone https://github.com/davidh-ssec/polar2grid.git polar2grid
+        git clone https://github.com/ssec/polar2grid.git
         cd polar2grid
 
     If you are working on a specific branch, like 'ninjo' for example,

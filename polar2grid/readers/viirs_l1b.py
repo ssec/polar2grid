@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2016 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -154,6 +154,7 @@ import logging
 import numpy as np
 import os
 from polar2grid.readers import ReaderWrapper, main
+from satpy import DatasetID
 
 LOG = logging.getLogger(__name__)
 
@@ -211,7 +212,7 @@ class Frontend(ReaderWrapper):
         LOG.debug("SZA threshold set to %f", self.sza_threshold)
         self.fraction_day_scene = None
         self.fraction_night_scene = None
-        super(Frontend, self).__init__(*args, **kwargs)
+        super(Frontend, self).__init__(**kwargs)
 
     @property
     def available_product_names(self):
@@ -241,7 +242,8 @@ class Frontend(ReaderWrapper):
             else:
                 raise ValueError("Could not check day or night time percentage without SZA data")
 
-        invalid_mask = sza_data.mask
+        sza_data = sza_data.persist()
+        invalid_mask = sza_data.isnull().compute().data
         valid_day_mask = (sza_data < self.sza_threshold) & ~invalid_mask
         valid_night_mask = (sza_data >= self.sza_threshold) & ~invalid_mask
         self.fraction_day_scene = np.count_nonzero(valid_day_mask) / (float(sza_data.size) - np.count_nonzero(invalid_mask))
@@ -258,22 +260,24 @@ class Frontend(ReaderWrapper):
             self._calc_percent_day(scene)
         # make a copy of the scene list so we can edit it later
         for ds in list(scene):
-            if ds.info['standard_name'] in ('toa_bidirectional_reflectance', 'false_color', 'true_color') and \
+            if ds.attrs['standard_name'] in ('toa_bidirectional_reflectance', 'false_color', 'true_color') and \
                             self.fraction_day_scene <= self.day_fraction:
+                ds_id = DatasetID.from_dict(ds.attrs)
                 LOG.info("Will not create product '%s' because there is less than %f%% of day data",
-                         ds.info['name'], self.day_fraction * 100.)
-                del scene[ds.id]
+                         ds.attrs['name'], self.day_fraction * 100.)
+                del scene[ds_id]
 
     def filter_nighttime(self, scene):
         if self.fraction_day_scene is None:
             self._calc_percent_day(scene)
         # make a copy of the scene list so we can edit it later
         for ds in list(scene):
-            if ds.info['name'] in ('ifog') and \
+            if ds.attrs['name'] in ('ifog',) and \
                             self.fraction_night_scene <= self.night_fraction:
+                ds_id = DatasetID.from_dict(ds.attrs)
                 LOG.info("Will not create product '%s' because there is less than %f%% of night data",
-                         ds.info['name'], self.night_fraction * 100.)
-                del scene[ds.id]
+                         ds.attrs['name'], self.night_fraction * 100.)
+                del scene[ds_id]
 
 
 def add_frontend_argument_groups(parser):
@@ -283,7 +287,7 @@ def add_frontend_argument_groups(parser):
     """
     from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
     # Set defaults for other components that may be used in polar2grid processing
-    parser.set_defaults(fornav_D=40, fornav_d=1)
+    parser.set_defaults(fornav_D=40, fornav_d=2)
 
     # Use the append_const action to handle adding products to the list
     group_title = "Frontend Initialization"

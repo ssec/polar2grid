@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -50,6 +50,33 @@ from glob import glob
 LOG = logging.getLogger(__name__)
 
 
+# class SatPyWarningFilter(logging.Formatter):
+#     def format(self, record):
+#         if record.name.startswith('satpy') and record.levelno == logging.WARNING:
+#             record.levelno = logging.DEBUG
+#             record.levelname = 'DEBUG'
+#         return super(SatPyWarningFilter, self).format(record)
+
+class SatPyWarningFilter(logging.Filter):
+    def filter(self, record):
+        is_satpy = record.name.startswith('satpy')
+        is_msg = 'The following datasets were not created and may require resampling' in record.msg
+        return 0 if is_satpy and is_msg else 1
+
+
+class ThirdPartyFilter(logging.Filter):
+    def __init__(self, ignored_packages, level=logging.WARNING, name=''):
+        self.ignored_packages = ignored_packages
+        self.level_filter = level
+        super(ThirdPartyFilter, self).__init__(name)
+
+    def filter(self, record):
+        for pkg in self.ignored_packages:
+            if record.name.startswith(pkg) and record.levelno < self.level_filter:
+                return 0
+        return 1
+
+
 def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log_numpy=True):
     """Setup the logger to the console to the logging level defined in the
     command line (default INFO).  Sets up a file logging for everything,
@@ -61,6 +88,7 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log
     :param log_filename: Log messages to console and specified log_filename (None for no file log)
     :param log_numpy: Tell numpy to log invalid values encountered
     """
+    # set the root logger to DEBUG so that handlers can have all possible messages to filter
     root_logger = logging.getLogger('')
     root_logger.setLevel(logging.DEBUG)
 
@@ -69,6 +97,12 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log
     console_format = "%(levelname)-8s : %(message)s"
     console.setFormatter(logging.Formatter(console_format))
     console.setLevel(console_level)
+    console.addFilter(SatPyWarningFilter())
+    if console_level > logging.DEBUG:
+        # if we are only showing INFO/WARNING/ERROR messages for P2G then
+        # filter out messages from these packages
+        console.addFilter(ThirdPartyFilter(['satpy', 'pyresample', 'pyspectral', 'trollimage',
+                                            'pyorbital', 'trollsift']))
     root_logger.addHandler(console)
 
     # Log file messages have a lot more information
@@ -175,7 +209,7 @@ def _safe_remove(fn):
     try:
         LOG.debug("Removing %s" % fn)
         os.remove(fn)
-    except StandardError:
+    except IOError:
         LOG.error("Could not remove %s" % fn)
 
 

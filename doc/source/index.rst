@@ -1,9 +1,9 @@
-Polar2Grid
-==========
+|project|
+=========
 
 .. include:: overview.rst
 
-.. toctree::
+.. toctree-filt::
     :maxdepth: 1
     :numbered:
 
@@ -11,12 +11,14 @@ Polar2Grid
     installation
     getting_started
     readers/index
+    compositors
     remapping
     writers/index
     utilscripts
-    viirs_day_night_band
+    :polar2grid:viirs_day_night_band
     verification/index
     examples/index
+    :geo2grid:data_access
     grids
     custom_grids
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -46,9 +46,9 @@ import sys
 import logging
 import re
 from datetime import datetime
-from StringIO import StringIO
-from ConfigParser import SafeConfigParser, Error as ConfigParserError
-from abc import ABCMeta, abstractmethod, abstractproperty
+from io import StringIO
+from configparser import ConfigParser, Error as ConfigParserError
+from abc import ABCMeta, abstractmethod
 
 try:
     # try getting setuptools/distribute's version of resource retrieval first
@@ -75,9 +75,9 @@ class abstractclassmethod(classmethod):
     """
     __isabstractmethod__ = True
 
-    def __init__(self, callable):
-        callable.__isabstractmethod__ = True
-        super(abstractclassmethod, self).__init__(callable)
+    def __init__(self, callable_):
+        callable_.__isabstractmethod__ = True
+        super(abstractclassmethod, self).__init__(callable_)
 
 
 class abstractstaticmethod(staticmethod):
@@ -116,19 +116,19 @@ class SimpleINIConfigReader(object):
         self.keep_intermediate = kwargs.pop("keep_intermediate", False)
         self.exit_on_error = kwargs.pop("exit_on_error", True)
 
-        file_objs = set([f for f in self.config_files if not isinstance(f, (str, unicode))])
-        filepaths = set([f for f in self.config_files if isinstance(f, (str, unicode))])
+        file_objs = set([f for f in self.config_files if not isinstance(f, str)])
+        filepaths = set([f for f in self.config_files if isinstance(f, str)])
 
-        self.config_parser = SafeConfigParser(kwargs, allow_no_value=True)
+        self.config_parser = ConfigParser(kwargs, allow_no_value=True)
 
         if file_objs:
             for fp in file_objs:
-                self.config_parser.readfp(fp)
+                self.config_parser.read_file(fp)
         else:
             for fp in filepaths:
                 fo = self.open_config_file(fp)
                 try:
-                    self.config_parser.readfp(fo, fp)
+                    self.config_parser.read_file(fo, fp)
                 except ConfigParserError:
                     LOG.warning("Could not parse config file: %s", fp)
 
@@ -154,8 +154,8 @@ class SimpleINIConfigReader(object):
                         parts = config_file.split(":")
                         mod_part, file_part = parts if len(parts) == 2 else ("", parts[0])
                         mod_part = mod_part or self.__module__
-                        config_str = get_resource_string(mod_part, file_part)
-                    except StandardError:
+                        config_str = get_resource_string(mod_part, file_part).decode()
+                    except ValueError:
                         LOG.error("Configuration file '%s' was not found" % (config_file,))
                         raise
                     config_file = StringIO(config_str)
@@ -197,6 +197,7 @@ class INIConfigReader(SimpleINIConfigReader):
 
         super(INIConfigReader, self).__init__(*config_files, **kwargs)
 
+         
         self.load_config()
         if not self.config and not self.empty_ok:
             LOG.error("No valid configuration sections found with prefix '%s'", self.section_prefix)
@@ -232,7 +233,7 @@ class INIConfigReader(SimpleINIConfigReader):
             self.config.append(config_key)
         # If 2 or more entries have the same number of wildcards they may not be sorted optimally
         # (i.e. specific first field highest)
-        self.config.sort()
+        self.config.sort(key=lambda x: (x[0], next(re.finditer(r'[^\^:.*].*', x[2].pattern)).start(), x[3]))
 
     def get_config_section(self, **kwargs):
         if len(kwargs) != len(self.id_fields):
@@ -341,8 +342,8 @@ class CSVConfigReader(object):
                     # they have specified a package provided file
                     LOG.debug("Loading package provided rescale config: '%s'" % (config_file,))
                     try:
-                        config_str = get_resource_string(self.__module__, config_file)
-                    except StandardError:
+                        config_str = get_resource_string(self.__module__, config_file).decode()
+                    except ValueError:
                         LOG.error("Rescale config '%s' was not found" % (config_file,))
                         raise
                     config_file = StringIO(config_str)
@@ -375,7 +376,7 @@ class CSVConfigReader(object):
         try:
             id_regex_obj = self.parse_id_parts(id_parts)
             entry_info = self.parse_entry_parts(entry_parts)
-        except StandardError:
+        except ValueError:
             if self.ignore_bad_lines: return
             LOG.error("Bad configuration line: '%s'" % (str(parts),))
             raise
@@ -494,7 +495,8 @@ class BackendRole(object):
         self.keep_intermediate = keep_intermediate
         self.exit_on_error = exit_on_error
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def known_grids(self):
         """Provide a list of known grids that this backend knows how to handle. For all grids use `None`.
         """
@@ -520,7 +522,7 @@ class BackendRole(object):
         If a keyword is provided that is not recognized it will be provided
         to the pattern after running through a `str` filter.
 
-        Possible pattern keywords (\*created internally in this function):
+        Possible pattern keywords:
             - satellite       : identifier for the instrument's satellite
             - instrument      : name of the instrument
             - product_name    : name of the product in the output
@@ -530,10 +532,10 @@ class BackendRole(object):
             - columns         : number of columns in the data
             - rows            : number of rows in the data
             - begin_time      : begin time of the first scan (YYYYMMDD_HHMMSS)
-            - begin_YYYYMMDD\* : begin date of the first scan
-            - begin_YYMMDD\*   : begin date of the first scan
-            - begin_HHMMSS\*   : begin time of the first scan
-            - begin_HHMM\*     : begin time of the first scan
+            - begin_YYYYMMDD : begin date of the first scan
+            - begin_YYMMDD   : begin date of the first scan
+            - begin_HHMMSS   : begin time of the first scan
+            - begin_HHMM     : begin time of the first scan
             - end_time        : end time of the first scan. Same keywords as start_time.
 
         >>> from datetime import datetime
@@ -551,7 +553,7 @@ class BackendRole(object):
         ...     grid_name="wgs84_fit",
         ...     data_type="uint1",
         ...     columns = 2500, rows=3000, begin_time=datetime(2012, 11, 10, 9, 8, 7))
-        >>> print filename
+        >>> print(filename)
         npp_viirs_i04_btemp_wgs84_fit_20121110_090807.uint1.2500.3000
 
         """
@@ -563,12 +565,12 @@ class BackendRole(object):
         begin_time_dt = kwargs.pop("begin_time", None)
         end_time_dt = kwargs.pop("end_time", None)
 
-        if data_type and not isinstance(data_type, (str, unicode)):
+        if data_type and not isinstance(data_type, str):
             data_type = dtype_to_str(data_type)
 
         # Convert begin time and end time
         if begin_time_dt is None and end_time_dt is None:
-            begin_time_dt = end_time_dt = datetime.utc_now()
+            begin_time_dt = end_time_dt = datetime.utcnow()
         elif begin_time_dt is None:
             begin_time_dt = end_time_dt
         elif end_time_dt is None:
@@ -616,7 +618,7 @@ class BackendRole(object):
                 **kwargs
             ))
         except KeyError as e:
-            LOG.error("Unknown output pattern key: '%s'" % (e.message,))
+            LOG.error("Unknown output pattern key: '%s'" % (str(e),))
             raise
 
         return output_filename
@@ -641,7 +643,7 @@ class BackendRole(object):
         If a keyword is provided that is not recognized it will be provided
         to the pattern after running through a `str` filter.
 
-        Possible pattern keywords (\*created internally in this function):
+        Possible pattern keywords:
             - satellite       : identifier for the instrument's satellite
             - instrument      : name of the instrument
             - product_name    : name of the product in the output
@@ -651,10 +653,10 @@ class BackendRole(object):
             - columns         : number of columns in the data
             - rows            : number of rows in the data
             - begin_time      : begin time of the first scan (YYYYMMDD_HHMMSS)
-            - begin_YYYYMMDD\* : begin date of the first scan
-            - begin_YYMMDD\*   : begin date of the first scan
-            - begin_HHMMSS\*   : begin time of the first scan
-            - begin_HHMM\*     : begin time of the first scan
+            - begin_YYYYMMDD  : begin date of the first scan
+            - begin_YYMMDD    : begin date of the first scan
+            - begin_HHMMSS    : begin time of the first scan
+            - begin_HHMM      : begin time of the first scan
             - end_time        : end time of the first scan. Same keywords as start_time.
 
         >>> from datetime import datetime
@@ -672,7 +674,7 @@ class BackendRole(object):
         ...     grid_name="wgs84_fit",
         ...     data_type="uint1",
         ...     columns = 2500, rows=3000, begin_time=datetime(2012, 11, 10, 9, 8, 7))
-        >>> print filename
+        >>> print(filename)
         npp_viirs_i04_btemp_wgs84_fit_20121110_090807.uint1.2500.3000
 
         """
@@ -684,12 +686,12 @@ class BackendRole(object):
         begin_time_dt = kwargs.pop("begin_time", None)
         end_time_dt = kwargs.pop("end_time", None)
 
-        if data_type and not isinstance(data_type, (str, unicode)):
+        if data_type and not isinstance(data_type, str):
             data_type = dtype_to_str(data_type)
 
         # Convert begin time and end time
         if begin_time_dt is None and end_time_dt is None:
-            begin_time_dt = end_time_dt = datetime.utc_now()
+            begin_time_dt = end_time_dt = datetime.utcnow()
         elif begin_time_dt is None:
             begin_time_dt = end_time_dt
         elif end_time_dt is None:
@@ -729,7 +731,7 @@ class BackendRole(object):
                 **kwargs
             )
         except KeyError as e:
-            LOG.error("Unknown output pattern key: '%s'" % (e.message,))
+            LOG.error("Unknown output pattern key: '%s'" % (str(e),))
             raise
 
         return output_filename
@@ -747,7 +749,7 @@ class BackendRole(object):
             try:
                 output_fn = self.create_output_from_product(gridded_product, **kwargs)
                 output_filenames.append(output_fn)
-            except StandardError:
+            except (ValueError, KeyError, RuntimeError):
                 LOG.error("Could not create output for '%s'", product_name)
                 if self.exit_on_error:
                     raise
@@ -784,25 +786,29 @@ class FrontendRole(object):
             LOG.info("No files or paths provided as input, will search the current directory...")
             self.search_paths = ['.']
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def begin_time(self):
         """Datetime object of first observed data point loaded by Frontend.
         """
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def end_time(self):
         """Datetime object of last observed data point loaded by Frontend.
         """
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def available_product_names(self):
         """Names of data products that can be created from the data loaded during initialization.
         """
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def all_product_names(self):
         """All product names that this Frontend knows how to create (assuming the proper data is available).
         """
@@ -907,7 +913,7 @@ class CompositorRole(object):
         return GriddedProduct(**base_product)
 
     @abstractmethod
-    def modify_scene(self):
+    def modify_scene(self, gridded_scene, fill_value=None, **kwargs):
         pass
 
 

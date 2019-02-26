@@ -1,0 +1,35 @@
+enhancements:
+  true_color_crefl:
+    sensor: ahi
+    standard_name: true_color
+    operations:
+      - name: crefl_scaling
+        method: !!python/name:satpy.enhancements.crefl_scaling
+        kwargs:
+          #       Polar2Grid's scaling: "Preferred".
+          idx: [0., 25., 55., 100., 255.]
+          sc: [0., 90., 140., 175., 255.]
+  #       Ralph Kuehn's new scaling: Looks darker.
+  #       idx: [0., 30., 60., 120., 190., 255.]
+  #       sc: [0., 100., 128., 188., 223., 255.]
+  #       Ralph Kuehn's old scaling: Looks brighter.
+  #       idx: [0., 30., 60., 120., 190., 255.]
+  #       sc: [0, 110, 160, 210, 240, 255]
+  channel_8_default:
+    name: B08
+    operations:
+      - name: linear
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 280., max_stretch: 180.}
+  channel_9_default:
+    name: B09
+    operations:
+      - name: linear
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 280., max_stretch: 180.}
+  channel_10_default:
+    name: B10
+    operations:
+      - name: linear
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 280., max_stretch: 180.}

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -66,7 +66,10 @@ class HDF5Reader(object):
         self._h5_handle.visititems(self._visit_items)
         # Also add the global attributes
         for attr_name, attr_val in self._h5_handle.attrs.items():
-            self.file_items["." + attr_name] = attr_val[0][0]
+            try:    
+                self.file_items["." + attr_name] = attr_val[0][0]
+            except TypeError:
+                self.file_items["." + attr_name] = attr_val[0]        
 
     def _visit_items(self, name, obj):
         """Look at each variable in the HDF file and record its attributes.
@@ -117,9 +120,8 @@ class VIIRSSDRReader(BaseFileReader):
     def __init__(self, file_handle, file_type_info):
         """Initialize VIIRS SDR Reader and get information that we can derive by the file name.
 
-        :param filename: HDF5 filename for a VIIRS data SDR file.
+        :param file_handle: h5py handle on SDR files
         :param file_type_info: Dictionary mapping file key constants to the variable path in the file
-        :param instrument: Name of the instrument that recorded the data in the file. Defaults to 'viirs'.
         """
         super(VIIRSSDRReader, self).__init__(file_handle, file_type_info)
 
@@ -131,13 +133,13 @@ class VIIRSSDRReader(BaseFileReader):
         self.instrument = "viirs"
 
         # begin time
-        sd = self[guidebook.K_AGGR_STARTDATE][0][0]
-        st = self[guidebook.K_AGGR_STARTTIME][0][0]
+        sd = self[guidebook.K_AGGR_STARTDATE]
+        st = self[guidebook.K_AGGR_STARTTIME]
         self.begin_time = time_attr_to_datetime(sd, st)
 
         # end time
-        ed = self[guidebook.K_AGGR_ENDDATE][0][0]
-        et = self[guidebook.K_AGGR_ENDTIME][0][0]
+        ed = self[guidebook.K_AGGR_ENDDATE]
+        et = self[guidebook.K_AGGR_ENDTIME]
         self.end_time = time_attr_to_datetime(ed, et)
 
     def __getitem__(self, item):
@@ -145,15 +147,25 @@ class VIIRSSDRReader(BaseFileReader):
         if known_item is None:
             raise KeyError("Key 'None' was not found")
 
-        if not isinstance(known_item, (str, unicode)):
+        if not isinstance(known_item, str):
             # Using FileVar class
             known_item = known_item.var_path
         LOG.debug("Loading %s from %s", known_item, self.filename)
-        return self.file_handle[known_item]
+        value = self.file_handle[known_item]
+        if '.' in known_item:
+            # squeeze attributes
+            value = numpy.squeeze(value)
+        if issubclass(value.dtype.type, numpy.string_) and not value.shape:
+            value = numpy.asscalar(value)
+            if not isinstance(value, str):
+                # python 3 - was scalar numpy array of bytes
+                # otherwise python 2 - scalar numpy array of 'str'
+                value = value.decode()
+        return value
 
     def scale_swath_data(self, data, scaling_factors):
-        num_grans = len(scaling_factors)/2
-        gran_size = data.shape[0]/num_grans
+        num_grans = int(len(scaling_factors) / 2)
+        gran_size = int(data.shape[0] / num_grans)
         scaling_mask = numpy.zeros(data.shape)
         for i in range(num_grans):
             start_idx = i * gran_size

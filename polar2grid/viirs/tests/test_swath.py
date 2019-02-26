@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """
 Test the polar2grid.viirs Frontend class.
@@ -41,8 +41,6 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
 """
 __docformat__ = "restructuredtext en"
-
-from polar2grid.viirs import swath
 
 if __name__ == '__main__':
     import sys

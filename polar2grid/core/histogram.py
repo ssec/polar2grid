@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """
 Functions related to histogram equalization. This is a scaling function like the
@@ -398,8 +398,9 @@ def _linear_normalization_from_0to1 (data, mask, theoretical_max, theoretical_mi
         theoretical_max = theoretical_max - theoretical_min
     data[mask] = data[mask] / theoretical_max
 
+
 def main():
-    print "Command line interface not implemented. If you wish to rescale from the command line use rescale.py."
+    print("Command line interface not implemented. If you wish to rescale from the command line use rescale.py.")
 
 if __name__ == "__main__":
     sys.exit(main())

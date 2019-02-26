@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
@@ -60,7 +60,7 @@ LOG = logging.getLogger(__name__)
 # FUTURE: Handling duplicate sub-objects better (ex. geolocation)
 class P2GJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
-        super(P2GJSONDecoder, self).__init__(object_hook=self.dict_to_object, *args, **kwargs)
+        super(P2GJSONDecoder, self).__init__(object_hook=self.dict_to_object, **kwargs)
 
     @staticmethod
     def _jsonclass_to_pyclass(json_class_name):
@@ -72,13 +72,14 @@ class P2GJSONDecoder(json.JSONDecoder):
                 cls = globals()[cls_name]
             except KeyError:
                 LOG.error("Unknown class in JSON file: %s", json_class_name)
+                raise
         else:
             cls = getattr(importlib.import_module(mod_name), cls_name)
         return cls
 
     def dict_to_object(self, obj):
         for k, v in obj.items():
-            if isinstance(v, (str, unicode)):
+            if isinstance(v, str):
                 try:
                     obj[k] = iso8601(v)
                     continue
@@ -88,7 +89,7 @@ class P2GJSONDecoder(json.JSONDecoder):
                 try:
                     obj[k] = str_to_dtype(v)
                     continue
-                except StandardError:
+                except ValueError:
                     pass
 
         if "__class__" not in obj:
@@ -129,27 +130,27 @@ class P2GJSONEncoder(json.JSONEncoder):
             _encoder = json.encoder.encode_basestring_ascii
         else:
             _encoder = json.encoder.encode_basestring
-        if self.encoding != 'utf-8':
-            def _encoder(o, _orig_encoder=_encoder, _encoding=self.encoding):
-                if isinstance(o, str):
-                    o = o.decode(_encoding)
-                return _orig_encoder(o)
+        # if self.encoding != 'utf-8':
+        #     def _encoder(obj, _orig_encoder=_encoder, _encoding=self.encoding):
+        #         if isinstance(obj, str):
+        #             obj = obj.decode(_encoding)
+        #         return _orig_encoder(obj)
 
-        def floatstr(o, allow_nan=self.allow_nan,
-                     _repr=json.encoder.FLOAT_REPR, _inf=json.encoder.INFINITY, _neginf=-json.encoder.INFINITY):
-            if o != o:
+        def floatstr(obj, allow_nan=self.allow_nan,
+                     _repr=float.__repr__, _inf=json.encoder.INFINITY, _neginf=-json.encoder.INFINITY):
+            if obj != obj:
                 text = 'NaN'
-            elif o == _inf:
+            elif obj == _inf:
                 text = 'Infinity'
-            elif o == _neginf:
+            elif obj == _neginf:
                 text = '-Infinity'
             else:
-                return _repr(o)
+                return _repr(obj)
 
             if not allow_nan:
                 raise ValueError(
                     "Out of range float values are not JSON compliant: " +
-                    repr(o))
+                    repr(obj))
 
             return text
 
@@ -186,10 +187,19 @@ class P2GJSONEncoder(json.JSONEncoder):
             # return super(P2GJSONEncoder, self).encode(obj)
         elif isinstance(obj, datetime):
             return obj.isoformat()
-        elif numpy.issubclass_(obj, numpy.number):
+        elif numpy.issubclass_(obj, numpy.number) or isinstance(obj, numpy.dtype):
             return dtype_to_str(obj)
+        elif hasattr(obj, 'dtype'):
+            if obj.size > 1:
+                return obj.tolist()
+            return int(obj) if numpy.issubdtype(obj, numpy.integer) else float(obj)
         else:
-            return super(P2GJSONEncoder, self).default(obj)
+            try:
+                return super(P2GJSONEncoder, self).default(obj)
+            except TypeError as e:
+                print("TypeError:", str(e), type(obj))
+                print(obj)
+                raise
 
 
 class BaseP2GObject(dict):
@@ -211,6 +221,7 @@ class BaseP2GObject(dict):
         self.load_loadable_kwargs()
         self._initialize_children()
 
+        self.persist = False
         if cls:
             # this is being loaded from a serialized/JSON copy
             # we don't have the 'right' to delete any binary files associated with it
@@ -219,7 +230,6 @@ class BaseP2GObject(dict):
         else:
             self.set_persist(False)
 
-
     def __del__(self):
         self.cleanup()
 
@@ -227,13 +237,13 @@ class BaseP2GObject(dict):
         """Delete any files associated with this object.
         """
         for kw in self.cleanup_kwargs:
-            if kw in self and isinstance(self[kw], (str, unicode)):
+            if kw in self and isinstance(self[kw], str):
                 # Do we not want to delete this file because someone tried to save the state of this object
                 if hasattr(self, "persist") and not self.persist:
                     try:
                         LOG.debug("Removing associated file that is no longer needed: '%s'", self[kw])
                         os.remove(self[kw])
-                    except StandardError as e:
+                    except OSError as e:
                         if hasattr(e, "errno") and e.errno == 2:
                             LOG.debug("Unable to remove file because it doesn't exist: '%s'", self[kw])
                         else:
@@ -264,7 +274,7 @@ class BaseP2GObject(dict):
             self.loadable_kwargs = self.keys()
 
         for kw in self.loadable_kwargs:
-            if kw in self and isinstance(self[kw], (str, unicode)):
+            if kw in self and isinstance(self[kw], str):
                 LOG.debug("Loading associated JSON file from key {}: '{}'".format(kw, self[kw]))
                 self[kw] = BaseP2GObject.load(self[kw])
 
@@ -275,7 +285,7 @@ class BaseP2GObject(dict):
         # Allow the caller to specify the preferred object class if one is not specified in the JSON
         if object_class is None:
             object_class = cls
-        if isinstance(filename, (str, unicode)):
+        if isinstance(filename, str):
             # we are dealing with a string filename
             file_obj = open(filename, "r")
         else:
@@ -365,7 +375,7 @@ class BaseProduct(BaseP2GObject):
         File is loaded from disk as a memory mapped file if needed.
         """
         data = self[item]
-        if isinstance(data, (str, unicode)):
+        if isinstance(data, str):
             data = self._memmap(data, dtype, rows, cols, mode)
 
         return data
@@ -394,7 +404,7 @@ class BaseProduct(BaseP2GObject):
         mode = "r" if read_only else "r+"
         data = self[item]
 
-        if isinstance(data, (str, unicode)):
+        if isinstance(data, str):
             # we have a binary filename
             if filename:
                 # the user wants to copy the FBF
@@ -434,13 +444,13 @@ class BaseScene(BaseP2GObject):
     def get_begin_time(self):
         """Get the begin time shared by all products in the scene.
         """
-        products = self.keys()
+        products = list(self.keys())
         return self[products[0]]["begin_time"]
 
     def get_end_time(self):
         """Get the end time shared by all products in the scene.
         """
-        products = self.keys()
+        products = list(self.keys())
         return self[products[0]]["end_time"]
 
 
@@ -736,17 +746,25 @@ class GridDefinition(GeographicDefinition):
         return self.proj(*self.ur_extent, inverse=True)
 
     def to_satpy_area(self):
-        from pyresample.geometry import AreaDefinition
-        xy_ll = self.ll_extent
-        xy_ur = self.ur_extent
-        return AreaDefinition(
-            self["grid_name"],
+        from pyresample.geometry import AreaDefinition, DynamicAreaDefinition
+        if self.is_static:
+            xy_ll = self.ll_extent
+            xy_ur = self.ur_extent
+            return AreaDefinition(
+                self["grid_name"],
+                self["grid_name"],
+                self["grid_name"],
+                self.proj4_dict,
+                self["width"],
+                self["height"],
+                area_extent=xy_ll + xy_ur,
+            )
+        return DynamicAreaDefinition(
             self["grid_name"],
             self["grid_name"],
             self.proj4_dict,
             self["width"],
             self["height"],
-            area_extent=xy_ll + xy_ur,
         )
 
 
@@ -811,7 +829,7 @@ class SwathProduct(BaseProduct):
 
     @property
     def shape(self):
-        return (self["swath_rows"], self["swath_columns"])
+        return self["swath_rows"], self["swath_columns"]
 
     def get_data_array(self, item="swath_data", mode="r"):
         dtype = self["data_type"]
@@ -878,7 +896,7 @@ class GriddedProduct(BaseProduct):
 
     @property
     def shape(self):
-        return (self["grid_definition"]["height"], self["grid_definition"]["width"])
+        return self["grid_definition"]["height"], self["grid_definition"]["width"]
 
     def from_swath_product(self, swath_product):
         # for k in ["product_name", "satellite", "instrument",
@@ -943,10 +961,10 @@ class SwathScene(BaseScene):
         """Generator of filepaths for each product provided or all products by default.
         """
         product_names = product_names if product_names is not None else self.keys()
-        data_key = data_key if data_key is not None else self.values()[0].cleanup_kwargs[0]
+        data_key = data_key if data_key is not None else list(self.values())[0].cleanup_kwargs[0]
         for pname in product_names:
             fp = self[pname][data_key]
-            if not isinstance(fp, (str, unicode)):
+            if not isinstance(fp, str):
                 LOG.warning("Non-string filepath being provided from product")
             yield fp
 
@@ -977,7 +995,7 @@ def remove_json(json_filename, binary_only=False):
     obj = BaseP2GObject.load(json_filename)
     if not binary_only:
         for json_key in obj.loadable_kwargs:
-            if isinstance(obj[json_key], (str, unicode)):
+            if isinstance(obj[json_key], str):
                 remove_json(obj[json_key], binary_only=False)
         LOG.info("Deleting JSON file '%s'", json_filename)
         os.remove(json_filename)

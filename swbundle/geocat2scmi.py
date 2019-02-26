@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """Convert GEOCAT Level 1 and 2 products to AWIPS SCMI format.
 

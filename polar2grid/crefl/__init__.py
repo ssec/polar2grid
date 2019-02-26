@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """Polar2grid frontend for corrected reflectance (crefl) products created
 for VIIRS and MODIS data.

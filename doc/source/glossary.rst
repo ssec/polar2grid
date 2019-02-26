@@ -34,20 +34,24 @@ Glossary
 
     product
     products
-        A swath of instrument data. When from a Polar2Grid Reader a product is considered
-        a :term:`swath product`. After a swath product has been remapped it is considered
-        a :term:`gridded product`.
+        A swath or grid of instrument data. When read as an
+        unprojected/ungridded array of data this may be referred to as
+        a :term:`swath product`. If read from a projected/gridded data file
+        or after a swath product has been resampled it is considered
+        :term:`gridded product`.
 
     swath product
     swath products
-        :term:`Products <products>` representing the direct observations of a satellite
-        instrument. Swath products are not guaranteed to be uniformly spaced and are usually
-        not.
+        :term:`Products <products>` representing the direct observations of a
+        polar-orbitting satellite instrument. Swath products are not guaranteed
+        to be uniformly spaced and are usually not.
 
     gridded product
     gridded products
-        :term:`Products <products>` that have been mapped to a uniform grid. These are usually
-        created from :term:`swath products` by remapping.
+        :term:`Products <products>` that have been mapped to a uniform grid.
+        These are typically associated with modern geostationary satellite
+        imagery or they can be the result of resampling :term:`swath products`
+        to a projected uniform grid.
 
     raw product
     raw products
