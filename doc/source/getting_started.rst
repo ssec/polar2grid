@@ -169,8 +169,6 @@ To access these features provide the "reader" and "writer" names to the
     \newpage
     \begin{landscape}
 
-.. tabularcolumns:: |L|L|L|l|l|l|
-
 .. ifconfig:: not is_geo2grid
 
     .. include:: summary_table.rst

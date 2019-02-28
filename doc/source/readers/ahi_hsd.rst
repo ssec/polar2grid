@@ -28,5 +28,6 @@ Examples:
 
     geo2grid.sh -r ahi_hsd -w geotiff --ll-bbox 125 -15 160 10 -f /data/hsd/*FLDK*.DAT
 
-    geo2grid.sh -r ahi_hsd -w geotiff -p true_color natural_color --num-workers 4 --grid-configs=/geo/my_grid.conf -g perth --method nearest -f /data/hsd/*FLDK*.DAT
+    geo2grid.sh -r ahi_hsd -w geotiff -p true_color natural_color --num-workers 4 \
+        --grid-configs=/geo/my_grid.conf -g perth --method nearest -f /data/hsd/*FLDK*.DAT
 
