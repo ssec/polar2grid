@@ -113,7 +113,7 @@ Composites
 
     .. code-block:: bash
 
-        $GEO2GRID_HOME/bin/geo2grid.sh -r abi-l1b -w geotiff -p true_color_night -f /path/to/files*.nc
+        $GEO2GRID_HOME/bin/geo2grid.sh -r abi_l1b -w geotiff -p true_color_night -f /path/to/files*.nc
 
     The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC, 
     12 November 2018 is shown below.
@@ -144,7 +144,7 @@ Composites
 
     .. code-block:: bash
 
-        $GEO2GRID_HOME/bin/geo2grid.sh -r abi-l1b -w geotiff -p true_color_night_microphysics -f /path/to/files*.nc
+        $GEO2GRID_HOME/bin/geo2grid.sh -r abi_l1b -w geotiff -p true_color_night_microphysics -f /path/to/files*.nc
 
     The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC, 
     12 November 2018 is shown below.
