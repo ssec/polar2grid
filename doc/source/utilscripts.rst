@@ -48,20 +48,20 @@ center longitude and latitude.
 
 Once this text line has been output, it can be added to a text file and
 referenced in the |script_literal| command line.  For instance, if I save
-the output text grid line to a file named ``/home/user/my_grids.txt``, I can
+the output text grid line to a file named ``/home/user/my_grids.conf``, I can
 create a GeoTIFF from satellite data by executing a command like this:
 
 .. ifconfig:: is_geo2grid
 
     .. code-block:: bash
 
-       geo2grid.sh -r abi_l1b -w geotiff --grid-configs /home/user/my_grids.txt -g my_grid_name -f <path_to_files>
+       geo2grid.sh -r abi_l1b -w geotiff --grid-configs /home/user/my_grids.conf -g my_grid_name -f <path_to_files>
 
 .. ifconfig:: not is_geo2grid
 
     .. code-block:: bash
 
-       polar2grid.sh viirs_sdr gtiff --grid-configs /home/p2g/my_grids.txt -g my_grid_name -f <path_to_files>
+       polar2grid.sh viirs_sdr gtiff --grid-configs /home/p2g/my_grids.conf -g my_grid_name -f <path_to_files>
 
 .. _util_add_coastlines:
 
