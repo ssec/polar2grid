@@ -207,6 +207,7 @@ TPW_VAR = "tpw_var"
 SWE_VAR = "swe_var"
 CLW_VAR = "clw_var"
 TSKIN_VAR = "tskin_var"
+SFR_VAR = "sfr_var"
 
 PRODUCT_RAIN_RATE = "rain_rate"
 PRODUCT_BT_CHANS = "btemp_channels"
@@ -219,6 +220,7 @@ PRODUCT_TPW = "tpw"
 PRODUCT_SWE = "swe"
 PRODUCT_CLW = "clw"
 PRODUCT_TSKIN = "tskin"
+PRODUCT_SFR = "sfr"
 
 PAIR_MIRS_NAV = "mirs_nav"
 
@@ -234,6 +236,7 @@ PRODUCTS.add_product(PRODUCT_TPW, PAIR_MIRS_NAV, "total_precipitable_water", FT_
 PRODUCTS.add_product(PRODUCT_SWE, PAIR_MIRS_NAV, "snow_water_equivalence", FT_IMG, SWE_VAR, description="Snow Water Equivalence", units="cm")
 PRODUCTS.add_product(PRODUCT_CLW, PAIR_MIRS_NAV, "cloud_liquid_water", FT_IMG, CLW_VAR, description="Cloud Liquid Water", units="mm")
 PRODUCTS.add_product(PRODUCT_TSKIN, PAIR_MIRS_NAV, "skin_temperature", FT_IMG, TSKIN_VAR, description="skin temperature", units="K")
+PRODUCTS.add_product(PRODUCT_SFR, PAIR_MIRS_NAV, "snow_fall_rate", FT_IMG, SFR_VAR, description="snow fall rate", units="mm/hr")
 
 
 GEO_PAIRS = GeoPairDict()
@@ -254,6 +257,7 @@ FILE_STRUCTURE = {
     SWE_VAR: ("SWE", ("scale", "scale_factor"), None, None),
     CLW_VAR: ("CLW", ("scale", "scale_factor"), None, None),
     TSKIN_VAR: ("TSkin", ("scale", "scale_factor"), None, None),
+    SFR_VAR: ("SFR", ("scale", "scale_factor"), None, None),
     }
 
 LIMB_SEA_FILE = os.environ.get("ATMS_LIMB_SEA", "polar2grid.mirs:limball_atmssea.txt")
