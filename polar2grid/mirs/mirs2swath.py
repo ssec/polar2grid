@@ -463,6 +463,13 @@ class MIRSFileReader(BaseFileReader):
         LOG.debug("File fill value for '%s' is '%f'", item, float(fill_value))
         return fill_value
 
+    def get_valid_range(self, item):
+        valid_range = 0
+        if item in FILE_STRUCTURE:
+            var_name = FILE_STRUCTURE[item][0]
+            valid_range = getattr(self.file_handle[var_name], 'valid_range', None)
+        return valid_range
+
     def get_scale_value(self, item):
         scale_value = None
         if item in FILE_STRUCTURE:
@@ -542,9 +549,10 @@ class MIRSFileReader(BaseFileReader):
 
         file_fill = self.get_fill_value(item)
         file_scale = self.get_scale_value(item)
+        valid_range = self.get_valid_range(item)
 
         bad_mask = None
-        if file_fill:
+        if file_fill is not None:
             if item == LON_VAR:
                 # Because appaarently -999.79999877929688 is a fill value now
                 bad_mask = (var_data == file_fill) | (var_data < -180) | (var_data > 180)
@@ -554,7 +562,12 @@ class MIRSFileReader(BaseFileReader):
             else:
                 bad_mask = var_data == file_fill
             var_data[bad_mask] = fill
-        if file_scale:
+        if valid_range is not None:
+            invalid_mask = (var_data < valid_range[0]) | (var_data > valid_range[1])
+            var_data[invalid_mask] = fill
+            if bad_mask is not None:
+                bad_mask |= invalid_mask
+        if file_scale is not None:
             var_data = var_data.astype(dtype)
             if bad_mask is not None:
                 var_data[~bad_mask] = var_data[~bad_mask] * file_scale
