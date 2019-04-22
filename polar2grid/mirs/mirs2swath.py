@@ -207,6 +207,7 @@ TPW_VAR = "tpw_var"
 SWE_VAR = "swe_var"
 CLW_VAR = "clw_var"
 TSKIN_VAR = "tskin_var"
+SFR_VAR = "sfr_var"
 
 PRODUCT_RAIN_RATE = "rain_rate"
 PRODUCT_BT_CHANS = "btemp_channels"
@@ -219,6 +220,7 @@ PRODUCT_TPW = "tpw"
 PRODUCT_SWE = "swe"
 PRODUCT_CLW = "clw"
 PRODUCT_TSKIN = "tskin"
+PRODUCT_SFR = "sfr"
 
 PAIR_MIRS_NAV = "mirs_nav"
 
@@ -234,6 +236,7 @@ PRODUCTS.add_product(PRODUCT_TPW, PAIR_MIRS_NAV, "total_precipitable_water", FT_
 PRODUCTS.add_product(PRODUCT_SWE, PAIR_MIRS_NAV, "snow_water_equivalence", FT_IMG, SWE_VAR, description="Snow Water Equivalence", units="cm")
 PRODUCTS.add_product(PRODUCT_CLW, PAIR_MIRS_NAV, "cloud_liquid_water", FT_IMG, CLW_VAR, description="Cloud Liquid Water", units="mm")
 PRODUCTS.add_product(PRODUCT_TSKIN, PAIR_MIRS_NAV, "skin_temperature", FT_IMG, TSKIN_VAR, description="skin temperature", units="K")
+PRODUCTS.add_product(PRODUCT_SFR, PAIR_MIRS_NAV, "snow_fall_rate", FT_IMG, SFR_VAR, description="snow fall rate", units="mm/hr")
 
 
 GEO_PAIRS = GeoPairDict()
@@ -254,6 +257,7 @@ FILE_STRUCTURE = {
     SWE_VAR: ("SWE", ("scale", "scale_factor"), None, None),
     CLW_VAR: ("CLW", ("scale", "scale_factor"), None, None),
     TSKIN_VAR: ("TSkin", ("scale", "scale_factor"), None, None),
+    SFR_VAR: ("SFR", ("scale", "scale_factor"), None, None),
     }
 
 LIMB_SEA_FILE = os.environ.get("ATMS_LIMB_SEA", "polar2grid.mirs:limball_atmssea.txt")
@@ -459,6 +463,13 @@ class MIRSFileReader(BaseFileReader):
         LOG.debug("File fill value for '%s' is '%f'", item, float(fill_value))
         return fill_value
 
+    def get_valid_range(self, item):
+        valid_range = 0
+        if item in FILE_STRUCTURE:
+            var_name = FILE_STRUCTURE[item][0]
+            valid_range = getattr(self.file_handle[var_name], 'valid_range', None)
+        return valid_range
+
     def get_scale_value(self, item):
         scale_value = None
         if item in FILE_STRUCTURE:
@@ -538,9 +549,10 @@ class MIRSFileReader(BaseFileReader):
 
         file_fill = self.get_fill_value(item)
         file_scale = self.get_scale_value(item)
+        valid_range = self.get_valid_range(item)
 
         bad_mask = None
-        if file_fill:
+        if file_fill is not None:
             if item == LON_VAR:
                 # Because appaarently -999.79999877929688 is a fill value now
                 bad_mask = (var_data == file_fill) | (var_data < -180) | (var_data > 180)
@@ -550,7 +562,12 @@ class MIRSFileReader(BaseFileReader):
             else:
                 bad_mask = var_data == file_fill
             var_data[bad_mask] = fill
-        if file_scale:
+        if valid_range is not None:
+            invalid_mask = (var_data < valid_range[0]) | (var_data > valid_range[1])
+            var_data[invalid_mask] = fill
+            if bad_mask is not None:
+                bad_mask |= invalid_mask
+        if file_scale is not None:
             var_data = var_data.astype(dtype)
             if bad_mask is not None:
                 var_data[~bad_mask] = var_data[~bad_mask] * file_scale

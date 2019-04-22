@@ -83,7 +83,7 @@ def _plt_basic_imshow_fig (data, vmin, vmax, cmap=cm.bone, title="image", backgr
     
     # Create a new figure everytime so things don't get shared
     figure = plt.figure()
-    axes = figure.add_subplot(111, axisbg=background_color)
+    axes = figure.add_subplot(111, facecolor=background_color)
 
     # Plot the data
     print(data.min(), data.max())
