@@ -302,6 +302,10 @@ class ReaderWrapper(roles.FrontendRole):
         self.reader = kwargs.pop("reader", self.DEFAULT_READER_NAME)
         super(ReaderWrapper, self).__init__(**kwargs)
         pathnames = self.find_files_with_extensions()
+        # Remove keyword arguments that Satpy won't understand
+        for key in ('search_paths', 'keep_intermediate',
+                    'overwrite_existing', 'exit_on_error'):
+            kwargs.pop(key, None)
         # Create a satpy Scene object
         self.scene = Scene(reader=self.reader, filenames=pathnames, reader_kwargs=kwargs)
         self._begin_time = self.scene.start_time

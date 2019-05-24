@@ -37,9 +37,11 @@
 :license:      GNU GPLv3
 
 """
+import os
 import sys
 import numpy as np
 import gdal
+from trollimage.colormap import Colormap
 
 
 def parse_color_table_file(f):
@@ -122,8 +124,31 @@ def parse_color_table_file(f):
     return ct
 
 
-def create_colortable(ct_file):
-    ct_entries = parse_color_table_file(ct_file)
+def load_color_table_file_to_colormap(ct_file):
+    """Load a text colormap file and create a trollimage.Colormap object.
+
+    If the provided pathname includes ``$POLAR2GRID_HOME`` it will be replaced
+    with the current environment variable value of ``POLAR2GRID_HOME``.
+
+    """
+    from trollimage.colormap import Colormap
+    ct_file = ct_file.replace("$POLAR2GRID_HOME", os.getenv('POLAR2GRID_HOME', ''))
+    ct_file = ct_file.replace("$GEO2GRID_HOME", os.getenv('GEO2GRID_HOME', ''))
+    ct = parse_color_table_file(ct_file)
+    entries = ((e[0] / 255., [x / 255. for x in e[1:]]) for e in ct)
+    return Colormap(*entries)
+
+
+def create_colortable(ct_file_or_entries):
+    """Create GDAL ColorTable object from Colormap object."""
+    if isinstance(ct_file_or_entries, str):
+        ct_entries = parse_color_table_file(ct_file_or_entries)
+    elif isinstance(ct_file_or_entries, Colormap):
+        ct_entries = enumerate(ct_file_or_entries.colors)
+        ct_entries = (((x,) + tuple(int(c * 255.) for c in color)) for x, color in ct_entries)
+    else:
+        ct_entries = ct_file_or_entries
+
     ct = gdal.ColorTable()
     for entry in ct_entries:
         ct.SetColorEntry(entry[0], tuple(entry[1:]))
@@ -132,7 +157,11 @@ def create_colortable(ct_file):
 
 
 def add_colortable(gtiff, ct):
-    for band_num in range(gtiff.RasterCount):
+    num_bands = gtiff.RasterCount
+    if num_bands in (2, 4):
+        # don't add a color table to alpha bands
+        num_bands -= 1
+    for band_num in range(num_bands):
         gtiff.GetRasterBand(band_num + 1).SetColorTable(ct)
 
 

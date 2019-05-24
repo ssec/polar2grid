@@ -48,6 +48,7 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 
+import os
 import sys
 
 import logging
@@ -348,11 +349,62 @@ def ndvi_scale(img, min_out, max_out, min_in=-1.0, max_in=1.0, threshold=0.0, th
 
     return img
 
+
+def palettize(img, min_out, max_out, min_in=0, max_in=1.0, colormap=None, alpha=True, **kwargs):
+    """Apply a colormap to data and return the indices in to that colormap."""
+    import xarray as xr
+    import dask.array as da
+    from trollimage.xrimage import XRImage
+    import trollimage.colormap as ticolormap
+    from satpy import CHUNK_SIZE
+    good_data_mask = kwargs['good_data_mask']
+
+    if img.ndim > 2:
+        raise ValueError("Not sure how to palettize more than 2 dimensions")
+
+    if colormap is None:
+        raise ValueError("'colormap' is required for 'palettize' rescaling")
+    elif not isinstance(colormap, ticolormap.Colormap):
+        raise ValueError("Unknown 'colormap' type: %s", str(type(colormap)))
+
+    dims = ('y', 'x') if img.ndim == 2 else ('y',)
+    xrimg = XRImage(
+        xr.DataArray(da.from_array(img, chunks=CHUNK_SIZE), dims=dims))
+    if alpha:
+        # use colormap as is
+        tmp_cmap = colormap
+        # produce LA image
+        xrimg = xrimg.convert(xrimg.mode + 'A')
+    else:
+        # the colormap has a value at 0 (first position) that represents
+        # invalid data. We should palettize based on the colormap without
+        # the 0 and then increment
+        tmp_cmap = ticolormap.Colormap(*zip(colormap.values[1:], colormap.colors[1:]))
+
+    tmp_cmap.set_range(min_in, max_in)
+    xrimg.palettize(tmp_cmap)
+    img_data = xrimg.data.values
+
+    if alpha:
+        # multiply alpha by the output size
+        img_data[1, :, :] *= max_out
+    else:
+        # get the single band (L)
+        img_data = img_data[0]
+        # increment the indexes by 1 because the colormap has a 0 fill value
+        img_data += 1
+        img_data[~good_data_mask] = 0
+    # our data values are now integers that can't be scaled to the output type
+    # because they need to match the colormap
+    return img_data
+
+
 def debug_scale(img, min_out, max_out, min_in=0, max_in=1.0, percent=0.5, **kwargs):
     # Put all valid at the top of the output scale
     LOG.debug("Running debug scale")
     new_range = (max_out - min_out) * percent
     return linear_flexible_scale(img, max_out - new_range, max_out, min_in=min_in, max_in=max_in, **kwargs)
+
 
 class Rescaler(roles.INIConfigReader):
     # Fields used to match a product object to it's correct configuration
@@ -381,6 +433,7 @@ class Rescaler(roles.INIConfigReader):
         'ndvi': ndvi_scale,
         'unlinear': unlinear_scale,
         'lookup': lookup_scale,
+        'palettize': palettize,
         'debug': debug_scale,
     }
 
@@ -396,7 +449,7 @@ class Rescaler(roles.INIConfigReader):
         super(Rescaler, self).__init__(*rescale_configs, **kwargs)
 
     def _bool_kwargs(self):
-        args = {"clip", "flip"}
+        args = {"clip", "flip", "alpha"}
         return args
 
     def _float_kwargs(self):
@@ -409,6 +462,8 @@ class Rescaler(roles.INIConfigReader):
         args.remove("flip")  # boolean
         args.remove("table_name")  # string
         args.remove("units")
+        args.remove("colormap")
+        args.remove("alpha")
         args.add("min_out")
         args.add("max_out")
         args.add("percent")
@@ -422,8 +477,14 @@ class Rescaler(roles.INIConfigReader):
         try:
             LOG.debug("Scaling data with method %s and arguments %r", method, rescale_options)
             rescale_func = self.rescale_methods[method]
-            good_data = data[good_data_mask]
-            good_data = rescale_func(good_data, **rescale_options)
+            is_colormapped = method in ('palettize', 'colorize')
+            # trollimage functions need a 2D image
+            if is_colormapped:
+                good_data = rescale_func(data, good_data_mask=good_data_mask, **rescale_options)
+                return good_data
+            else:
+                good_data = data[good_data_mask]
+                good_data = rescale_func(good_data, **rescale_options)
 
             # Note: If the output fill value is anything that is affected by clipping or incrementing then
             # certain scalings may fail if they decided some values could not be calculated
@@ -440,13 +501,14 @@ class Rescaler(roles.INIConfigReader):
                 else:
                     good_data = numpy.clip(good_data, rescale_options["min_out"], rescale_options["max_out"], out=good_data)
 
+            # if not is_colormapped:
             data[good_data_mask] = good_data
             # need to recalculate mask here in case the rescaling method assigned some new fill values
             # rescaling functions should set NaN for invalid values
             good_data_mask &= ~mask_helper(data, numpy.nan)
             data[~good_data_mask] = fill_value
 
-            if inc_by_one:
+            if inc_by_one and not is_colormapped:
                 LOG.debug("Incrementing data by 1 so 0 acts as a fill value")
                 data[good_data_mask] += 1
 
@@ -473,6 +535,21 @@ class Rescaler(roles.INIConfigReader):
         rescale_options.setdefault("max_out", max_out - 1 if rescale_options["inc_by_one"] else max_out)
         rescale_options.setdefault("units", gridded_product.get("units", "kelvin"))
         rescale_options["fill_out"] = fill_value
+
+        # Parse out colormaps
+        colormap = rescale_options.get('colormap')
+        if colormap is not None:
+            import trollimage.colormap as ticolormap
+            from polar2grid.add_colormap import load_color_table_file_to_colormap
+            if isinstance(colormap, str):
+                try:
+                    colormap = load_color_table_file_to_colormap(colormap)
+                except OSError:
+                    colormap = getattr(ticolormap, colormap)
+            elif not isinstance(colormap, ticolormap.Colormap):
+                raise ValueError("Unknown 'colormap' type: %s", str(type(colormap)))
+            colormap.set_range(rescale_options['min_in'], rescale_options['max_in'])
+            rescale_options['colormap'] = colormap
         return rescale_options
 
     def rescale_product(self, gridded_product, data_type, inc_by_one=False, fill_value=None, rescale_options=None,
