@@ -839,7 +839,6 @@ class FrontendRole(object):
                         yield os.path.abspath(fp)
             elif os.path.isfile(p):
                 ext = os.path.splitext(p)[1]
-                print(p, ext, extensions)
                 if ext in extensions:
                     yield os.path.abspath(p)
                 elif warn_invalid:
