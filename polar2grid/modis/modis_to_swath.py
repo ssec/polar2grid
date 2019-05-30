@@ -529,11 +529,11 @@ class Frontend(roles.FrontendRole):
 
     @property
     def begin_time(self):
-        return self.file_readers[self.available_file_types[0]].begin_time
+        return self.file_readers[list(self.available_file_types)[0]].begin_time
 
     @property
     def end_time(self):
-        return self.file_readers[self.available_file_types[0]].end_time
+        return self.file_readers[list(self.available_file_types)[0]].end_time
 
     @property
     def all_product_names(self):
