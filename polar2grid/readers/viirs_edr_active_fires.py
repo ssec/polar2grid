@@ -8,7 +8,7 @@ LOG = logging.getLogger(__name__)
 
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = ['.nc']
-    DEFAULT_READER_NAME = 'viirs_active_fires'
+    DEFAULT_READER_NAME = 'viirs_edr_active_fires'
 
 
 def add_frontend_argument_groups(parser):
