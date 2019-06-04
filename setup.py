@@ -100,9 +100,7 @@ def readme():
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 2",
-    "Programming Language :: Python :: 2.7",
-    "Programming Language :: Python :: 2 :: Only",  # Working on it, I swear
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: Implementation :: CPython",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: POSIX :: Linux",  # Not sure if it works on Windows, since we don't normally support it, needs testing
@@ -214,6 +212,7 @@ setup(
         'setuptools',       # reading configuration files
         'numpy',
         ],
+    python_requires='>=3.6',
     extras_require=extras_require,
     entry_points=entry_points
 )
