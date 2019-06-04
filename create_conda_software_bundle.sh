@@ -63,6 +63,7 @@ echo "Downloading GSHHG shapefiles"
 cached_download https://www.soest.hawaii.edu/pwessel/gshhg/gshhg-shp-2.3.6.zip
 unzip gshhg-shp-2.3.6.zip || oops "Could not unpack GSHHG shapefiles"
 rm gshhg-shp-2.3.6.zip || oops "Could not delete the GSHHG zip file"
+chmod 444 `find . -type f` || oops "Could not make GSHHG shapefiles readable by everyone"
 popd
 
 # Create the VIIRS CREFL utilities
@@ -108,7 +109,7 @@ cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy rele
 # Create a wmsupload.sh script
 cd $SB_NAME/bin
 wget https://realearth.ssec.wisc.edu/upload/re_upload || oops "Couldn't download and create re_upload script"
-chmod u+x re_upload || oops "Couldn't make wmsupload.sh executable"
+chmod u+x re_upload || oops "Couldn't make 're_upload' executable"
 
 # Copy SatPy configurations
 mkdir $SB_NAME/etc/satpy || oops "Couldn't create configuration 'etc/satpy' directory"
