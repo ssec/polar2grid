@@ -36,7 +36,7 @@ LOG = logging.getLogger(__name__)
 
 
 class Frontend(ReaderWrapper):
-    FILE_EXTENSIONS = ['.h5']
+    FILE_EXTENSIONS = ['.HDF', '.h5']
     DEFAULT_READER_NAME = 'mersi2_l1b'
 
 

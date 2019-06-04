@@ -62,5 +62,5 @@ def add_frontend_argument_groups(parser):
 
 
 if __name__ == "__main__":
-    sys.exit(main(description="Extract VIRR_EDR_FLOOD swath data into binary files",
+    sys.exit(main(description="Extract VIIRS_EDR_FLOOD swath data into binary files",
                   add_argument_groups=add_frontend_argument_groups))
