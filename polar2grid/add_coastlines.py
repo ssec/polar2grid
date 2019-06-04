@@ -155,6 +155,8 @@ def get_parser():
                        help="Level of detail for border lines")
     group.add_argument("--borders-outline", default=['white'], nargs="*",
                        help="Color of border lines (color name or 3 RGB integers)")
+    group.add_argument("--borders-width", default=1.0, type=float,
+                       help="Width of border lines")
 
     group = parser.add_argument_group("colorbar")
     group.add_argument("--add-colorbar", action="store_true",
@@ -260,7 +262,8 @@ def main():
 
         if args.add_borders:
             outline = args.borders_outline[0] if len(args.borders_outline) == 1 else tuple(int(x) for x in args.borders_outline)
-            cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline)
+            cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline,
+                           width=args.borders_width)
 
         if args.add_grid:
             outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
