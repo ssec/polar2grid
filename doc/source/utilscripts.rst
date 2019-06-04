@@ -137,6 +137,21 @@ following:
 
 Blank lines are allowed as well as spaces between line elements.
 
+Note this script is no longer needed as of |project| 2.3 where colormaps
+can be specified directly in rescaling configuration files. For example:
+
+.. parsed-literal::
+
+    [rescale:amsr2_btemp_36.5h]
+    data_kind=toa_brightness_temperature
+    instrument=amsr2
+    product_name=btemp_36.5h
+    method=palettize
+    min_in=180
+    max_in=280
+    colormap=$POLAR2GRID_HOME/colormaps/amsr2_36h.cmap
+    alpha=False
+
 .. _util_gtiff2kmz:
 
 GeoTIFF to KMZ Conversion

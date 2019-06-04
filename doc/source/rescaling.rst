@@ -197,3 +197,17 @@ Passive
 
 A passive function to tell the rescaler "don't do anything".
 
+Palettize
+---------
+
+:method: palettize
+:min_in: Minimum input value
+:max_in: Maximum input value
+:colormap: Colormap file (ex. ``$POLAR2GRID_HOME/colormaps/amsr2_36h.cmap``) or builtin colormaps from `trollimage <https://trollimage.readthedocs.io/en/latest/colormap.html#default-colormaps>`_.
+:alpha: Include Alpha band in final image instead of using 0 as fill value (default: True)
+
+Map input values linearly between ``min_in`` and ``max_in`` and map to
+colors from ``colormap``. If ``alpha`` is ``True`` (default) then all colors
+will be used for valid data points and a separate alpha channel will make
+GeoTIFFs transparent where values are invalid. If ``alpha`` is ``False`` then
+the color associated with value ``0`` will be used for invalid values.
