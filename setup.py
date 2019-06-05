@@ -73,7 +73,7 @@ if not os.getenv("USE_CYTHON", False) or cythonize is None:
             extension.sources[:] = sources
         return extensions
 
-version = '2.3.0a2'
+version = '2.3.0a3'
 
 
 class PyTest(Command):
@@ -121,6 +121,7 @@ extras_require = {
     "remap": ["pyproj", "scipy"],
     "utils": ["matplotlib"],
     "docs": ["sphinx", "rst2pdf"],
+    "coastlines": ["pycoast", "pydecorate"],
     # Frontends (included separately):
     "viirs_sdr": ['h5py'],
     'modis_l1b': ['pyhdf'],

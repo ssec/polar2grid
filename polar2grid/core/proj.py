@@ -45,7 +45,7 @@ __docformat__ = "restructuredtext en"
 import sys
 
 try:
-    from pyproj import Proj
+    from pyproj import Proj as BaseProj
 except ImportError:
     # This module is loaded by meta.py which could be all a user needs so we shouldn't fail if they don't have pyproj
     import warnings
@@ -53,7 +53,13 @@ except ImportError:
     Proj = object
 
 
-class Proj(Proj):
+class Proj(BaseProj):
+    def is_latlong(self):
+        if hasattr(BaseProj, 'is_latlong'):
+            return super(Proj, self).is_latlong()
+        else:
+            return self.crs.is_geographic
+
     def __call__(self, data1, data2, **kwargs):
         if self.is_latlong():
             return data1, data2
