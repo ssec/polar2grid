@@ -126,11 +126,14 @@ echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
 # Taken from https://jcrist.github.io/conda-docker-tips.html
 MINIFY_TARBALL=${MINIFY_TARBALL:-1}
 if [ $MINIFY_TARBALL -ne 0 ]; then
+    cd $SB_NAME
     conda clean -afy
     find . -follow -type f -name '*.a' -delete
     find . -follow -type f -name '*.pyc' -delete
     find . -follow -type f -name '*.js.map' -delete
     find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
+    rm ./etc/conda/activate.d/*.csh
+    rm ./etc/conda/activate.d/*.fish
 fi
 
 # Tar up the software bundle
