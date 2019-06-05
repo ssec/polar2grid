@@ -125,7 +125,7 @@ echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
 # Perform extra "risky" operations to make the tarball as small as possible
 # Taken from https://jcrist.github.io/conda-docker-tips.html
 MINIFY_TARBALL=${MINIFY_TARBALL:-1}
-if [ $MINIFY_TARBALL -ne 1 ]; then
+if [ $MINIFY_TARBALL -ne 0 ]; then
     conda clean -afy
     find . -follow -type f -name '*.a' -delete
     find . -follow -type f -name '*.pyc' -delete
