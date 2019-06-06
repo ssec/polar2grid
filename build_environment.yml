@@ -1,0 +1,43 @@
+name: polar2grid_dist
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - aggdraw
+  - appdirs
+  - cftime
+  - conda-pack
+  - configobj
+  - curl
+  - dask
+  - distributed
+  - ffmpeg
+  - fontconfig
+  - freetype
+  - gdal
+  - h5py
+  - netcdf4
+  - pillow
+  - pip
+  - pycoast
+  - pydecorate
+  - pyhdf
+  - pykdtree
+  - pyorbital
+  - pyproj
+  - pyresample
+  - pyshp
+  - pyspectral
+  - python=3.7
+  - python-geotiepoints
+  - pyyaml
+  - rasterio
+  - requests
+  - setuptools
+  - six
+  - trollimage
+  - trollsift
+  - xarray
+  - scipy
+  - pip:
+    - git+https://github.com/pytroll/satpy.git@master

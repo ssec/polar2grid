@@ -30,6 +30,7 @@ cached_download() {
 
 # This assumes that the current conda environment is already active
 which conda || oops "Conda environment must be available"
+which conda-pack || oops "'conda-pack' must be installed in conda environment"
 if [ $# -eq 1 ]; then
     SB_NAME=$1
 else
@@ -102,7 +103,6 @@ else
     mv bin/GEO2GRID_README.txt README.txt
 fi
 
-
 # Copy the release notes to the tarball
 cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 
@@ -119,8 +119,22 @@ cp -r $BASE_P2G_DIR/etc/* $SB_NAME/etc/satpy/ || oops "Couldn't copy configurati
 echo "Downloading pyspectral data..."
 $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
 
-# FIXME: Add the download_from_internet: False to the config
+# Add the download_from_internet: False to the config
 echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
+
+# Perform extra "risky" operations to make the tarball as small as possible
+# Taken from https://jcrist.github.io/conda-docker-tips.html
+MINIFY_TARBALL=${MINIFY_TARBALL:-1}
+if [ $MINIFY_TARBALL -ne 0 ]; then
+    cd $SB_NAME
+    conda clean -afy
+    find . -follow -type f -name '*.a' -delete
+    find . -follow -type f -name '*.pyc' -delete
+    find . -follow -type f -name '*.js.map' -delete
+    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
+    rm ./etc/conda/activate.d/*.csh
+    rm ./etc/conda/activate.d/*.fish
+fi
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."

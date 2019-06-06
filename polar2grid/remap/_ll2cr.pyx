@@ -87,6 +87,12 @@ class MyProj(Proj):
     THIS SHOULD NOT BE USED OUTSIDE OF LL2CR! It makes assumptions and has requirements that may not make sense outside
     of the ll2cr modules.
     """
+    def is_latlong(self):
+        if hasattr(Proj, 'is_latlong'):
+            return super(MyProj, self).is_latlong()
+        else:
+            return self.crs.is_geographic
+
     def __call__(self, lons, lats, **kwargs):
         if self.is_latlong():
             return lons, lats
