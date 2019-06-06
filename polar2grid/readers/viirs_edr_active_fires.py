@@ -27,7 +27,49 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
-""""""
+"""
+The VIIRS EDR Active Fires reader operates on NetCDF and ASCII files.
+Files usually have the following naming scheme:
+
+    AFIMG_{satellite_name}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time}_{source}.nc
+    or
+    AFIMG_{satellite_name}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time}_{source}.txt
+
+This reader's default resampling algorithm is ``nearest`` for Nearest Neighbor resampling.
+The ``--remap_method`` parameter is set to ``nearest``.
+
++---------------------------+-----------------------------------------------------+
+| **Product Name**          | **Description**                                     |
++===========================+=====================================================+
+| confidence_cat            | Confidence of there being a fire                    |
++---------------------------+-----------------------------------------------------+
+| confidence_pct            |                                                     |
++---------------------------+-----------------------------------------------------+
+| power                     |                                                     |
++---------------------------+-----------------------------------------------------+
+| T13                       |                                                     |
++---------------------------+-----------------------------------------------------+
+| T4                        |                                                     |
++---------------------------+-----------------------------------------------------+
+| true_color                | Ratio sharpened rayleigh corrected true color       |
++---------------------------+-----------------------------------------------------+
+| natural_color             |                                                     |
++---------------------------+-----------------------------------------------------+
+| false_color               |                                                     |
++---------------------------+-----------------------------------------------------+
+| fire_temperature          |                                                     |
++---------------------------+-----------------------------------------------------+
+| fire_temperature_awips    |                                                     |
++---------------------------+-----------------------------------------------------+
+| fire_temperature_eumetsat |                                                     |
++---------------------------+-----------------------------------------------------+
+| fire_temperature_39refl   |                                                     |
++---------------------------+-----------------------------------------------------+
+| ash                       |                                                     |
++---------------------------+-----------------------------------------------------+
+| dust                      |                                                    |
++---------------------------+-----------------------------------------------------+
+"""
 import sys
 import logging
 from polar2grid.readers import ReaderWrapper, main
@@ -36,7 +78,7 @@ LOG = logging.getLogger(__name__)
 
 
 class Frontend(ReaderWrapper):
-    FILE_EXTENSIONS = ['.nc']
+    FILE_EXTENSIONS = ['.nc', '.txt']
     DEFAULT_READER_NAME = 'viirs_edr_active_fires'
 
 

@@ -27,7 +27,41 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
-""""""
+"""
+The VIIRS EDR FLOOD reader operates on HDF4 files.
+Files usually have the following naming scheme:
+
+    WATER_VIIRS_Prj_SVI_{platform_shortname}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_{source:8s}_{dim0}_{dim1}_01.hdf
+    or
+    WATER_VIIRS_Prj_SVI_{platform_shortname}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_{source:8s}_{aoi:3s}_{dim0}_{dim1}_01.hdf
+
+This reader's default resampling algorithm is ``nearest`` for Nearest Neighbor resampling.
+The ``--remap_method`` parameter is set to ``nearest``.
+
++---------------------------+-----------------------------------------------------+
+| **Product Name**          | **Description**                                     |
++===========================+=====================================================+
+| water_detection            | Channel 1 Reflectance Band                         |
++---------------------------+-----------------------------------------------------+
+| true_color                | Ratio sharpened rayleigh corrected true color       |
++---------------------------+-----------------------------------------------------+
+| natural_color             |                                                     |
++---------------------------+-----------------------------------------------------+
+| false_color               |                                                     |
++---------------------------+-----------------------------------------------------+
+| fire_temperature          |                                                     |
++---------------------------+-----------------------------------------------------+
+| fire_temperature_awips    |                                                     |
++---------------------------+-----------------------------------------------------+
+| fire_temperature_eumetsat |                                                     |
++---------------------------+-----------------------------------------------------+
+| fire_temperature_39refl   |                                                     |
++---------------------------+-----------------------------------------------------+
+| ash                       |                                                     |
++---------------------------+-----------------------------------------------------+
+| dust                      |                                                     |
++---------------------------+-----------------------------------------------------+
+"""
 import sys
 import logging
 from polar2grid.readers import ReaderWrapper, main

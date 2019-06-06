@@ -27,11 +27,15 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
-"""The virr Level 1B Reader operates on Level 1B (L1B) HDF5 files.
+"""The VIRR Level 1B reader operates on Level 1B (L1B) HDF5 files.
 Files usually have the following naming scheme:
 
     tf2018343030324.FY3C-L_VIRRX_L1B.HDF or tf2018343092538.FY3B-L_VIRRX_L1B.HDF
+    the numbers at the start are year julian-day hour minute seconds
 
+This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
+Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
+``--fornav-d`` parameter is set to 1.
 
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
@@ -67,7 +71,7 @@ LOG = logging.getLogger(__name__)
 
 
 class Frontend(ReaderWrapper):
-    FILE_EXTENSIONS = ['.HDF', '.h5']
+    FILE_EXTENSIONS = ['.HDF']
     DEFAULT_READER_NAME = 'virr_l1b'
 
 
