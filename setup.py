@@ -157,6 +157,10 @@ entry_points = {
         'crefl_sharpen_awips=polar2grid.compositors.rgb:CreflRGBSharpenCompositor',
         ],
     'polar2grid.frontend_class': [
+        'viirs_edr_flood=polar2grid.readers.viirs_edr_flood:Frontend',
+        'viirs_edr_active_fires=polar2grid.readers.viirs_edr_active_fires:Frontend',
+        'mersi2_l1b=polar2grid.readers.mersi2_l1b:Frontend',
+        'virr_l1b=polar2grid.readers.virr_l1b:Frontend',
         'viirs_l1b=polar2grid.readers.viirs_l1b:Frontend',
         'nucaps=polar2grid.readers.nucaps:Frontend',
         'amsr2_l1b=polar2grid.readers.amsr2_l1b:Frontend',
@@ -172,6 +176,10 @@ entry_points = {
         'clavrx=polar2grid.readers.clavrx:Frontend',
         ],
     'polar2grid.frontend_arguments': [
+        'viirs_edr_flood=polar2grid.readers.viirs_edr_flood:add_frontend_argument_groups',
+        'viirs_edr_active_fires=polar2grid.readers.viirs_edr_active_fires:add_frontend_argument_groups',
+        'mersi2_l1b=polar2grid.readers.mersi2_l1b:add_frontend_argument_groups',
+        'virr_l1b=polar2grid.readers.virr_l1b:add_frontend_argument_groups',
         'viirs_l1b=polar2grid.readers.viirs_l1b:add_frontend_argument_groups',
         'nucaps=polar2grid.readers.nucaps:add_frontend_argument_groups',
         'amsr2_l1b=polar2grid.readers.amsr2_l1b:add_frontend_argument_groups',
