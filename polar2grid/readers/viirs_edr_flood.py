@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2016 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2019 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -42,24 +42,6 @@ The ``--remap_method`` parameter is set to ``nearest``.
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
 | water_detection            | Channel 1 Reflectance Band                         |
-+---------------------------+-----------------------------------------------------+
-| true_color                | Ratio sharpened rayleigh corrected true color       |
-+---------------------------+-----------------------------------------------------+
-| natural_color             |                                                     |
-+---------------------------+-----------------------------------------------------+
-| false_color               |                                                     |
-+---------------------------+-----------------------------------------------------+
-| fire_temperature          |                                                     |
-+---------------------------+-----------------------------------------------------+
-| fire_temperature_awips    |                                                     |
-+---------------------------+-----------------------------------------------------+
-| fire_temperature_eumetsat |                                                     |
-+---------------------------+-----------------------------------------------------+
-| fire_temperature_39refl   |                                                     |
-+---------------------------+-----------------------------------------------------+
-| ash                       |                                                     |
-+---------------------------+-----------------------------------------------------+
-| dust                      |                                                     |
 +---------------------------+-----------------------------------------------------+
 """
 import sys

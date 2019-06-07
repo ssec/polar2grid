@@ -1,4 +1,4 @@
-mersi2 L1B Reader
+MERSI-2 L1B Reader
 =================
 
 .. automodule:: polar2grid.readers.mersi2_l1b
