@@ -399,6 +399,28 @@ def palettize(img, min_out, max_out, min_in=0, max_in=1.0, colormap=None, alpha=
     return img_data
 
 
+def water_temp_palettize(img, min_out, max_out, min_in=0, max_in=1.0, colormap=None, **kwargs):
+    """Apply a colormap to data and return the indices in to that colormap."""
+    import trollimage.colormap as ticolormap
+    # we accept a colormap but don't need to actually do anything because the
+    # data is already mapped to the colormap
+    if colormap is None:
+        raise ValueError("'colormap' is required for 'palettize' rescaling")
+    elif not isinstance(colormap, ticolormap.Colormap):
+        raise ValueError("Unknown 'colormap' type: %s", str(type(colormap)))
+
+    # shift data values around to fit in 8-bit space
+    img[img == 150] = 31
+    img[img == 199] = 18
+    img[img >= 200] -= 100
+
+    # Convert to an LA image
+    good_data_mask = kwargs['good_data_mask']
+    alpha = numpy.where(good_data_mask, max_out, 0)
+    img = numpy.concatenate((img, alpha), axis=0)
+    return img
+
+
 def debug_scale(img, min_out, max_out, min_in=0, max_in=1.0, percent=0.5, **kwargs):
     # Put all valid at the top of the output scale
     LOG.debug("Running debug scale")
@@ -434,6 +456,7 @@ class Rescaler(roles.INIConfigReader):
         'unlinear': unlinear_scale,
         'lookup': lookup_scale,
         'palettize': palettize,
+        'water_temp_palettize': water_temp_palettize,
         'debug': debug_scale,
     }
 
@@ -477,7 +500,7 @@ class Rescaler(roles.INIConfigReader):
         try:
             LOG.debug("Scaling data with method %s and arguments %r", method, rescale_options)
             rescale_func = self.rescale_methods[method]
-            is_colormapped = method in ('palettize', 'colorize')
+            is_colormapped = 'palettize' in method or 'colorize' in method
             # trollimage functions need a 2D image
             if is_colormapped:
                 good_data = rescale_func(data, good_data_mask=good_data_mask, **rescale_options)
@@ -548,7 +571,8 @@ class Rescaler(roles.INIConfigReader):
                     colormap = getattr(ticolormap, colormap)
             elif not isinstance(colormap, ticolormap.Colormap):
                 raise ValueError("Unknown 'colormap' type: %s", str(type(colormap)))
-            colormap.set_range(rescale_options['min_in'], rescale_options['max_in'])
+            if 'min_in' in rescale_options:
+                colormap.set_range(rescale_options['min_in'], rescale_options['max_in'])
             rescale_options['colormap'] = colormap
         return rescale_options
 

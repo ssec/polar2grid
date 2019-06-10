@@ -46,15 +46,25 @@ import os
 from pyresample.geometry import AreaDefinition
 from satpy.scene import Scene
 import dask.array as da
+import xarray as xr
 
 from polar2grid.core import containers, roles
 
 LOG = logging.getLogger(__name__)
 
 
-def area_to_swath_def(area, overwrite_existing=False):
-    lons = area.lons
-    lats = area.lats
+def area_to_swath_def(area, chunks=4096, overwrite_existing=False):
+    if hasattr(area, 'lons') and area.lons is not None:
+        lons = area.lons
+        lats = area.lats
+    else:
+        lons, lats = area.get_lonlats(chunks=chunks)
+
+    # get dask array underneath
+    if isinstance(lons, xr.DataArray):
+        lons = lons.data
+        lats = lats.data
+
     name = area.name
     name = name.replace(":", "")
     if lons.ndim == 1:
@@ -83,7 +93,7 @@ def area_to_swath_def(area, overwrite_existing=False):
             LOG.warning("Binary file already exists, will overwrite: %s", filename)
     LOG.info("Writing longitude data to disk cache...")
     lon_arr = np.memmap(filename, mode="w+", dtype=lons.dtype, shape=lons.shape)
-    da.store(lons.data, lon_arr)
+    da.store(lons, lon_arr)
 
     # Write lats to disk
     filename = info["latitude"]
@@ -95,7 +105,7 @@ def area_to_swath_def(area, overwrite_existing=False):
             LOG.warning("Binary file already exists, will overwrite: %s", filename)
     LOG.info("Writing latitude data to disk cache...")
     lat_arr = np.memmap(filename, mode="w+", dtype=lats.dtype, shape=lats.shape)
-    da.store(lats.data, lat_arr)
+    da.store(lats, lat_arr)
     return containers.SwathDefinition(**info)
 
 
@@ -157,7 +167,7 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
         "product_name": info["name"],
         "satellite": info["platform_name"].lower(),
         "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
-        "data_kind": info["standard_name"],
+        "data_kind": info.get("standard_name", info['name']),
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
         "fill_value": np.nan,
@@ -252,20 +262,32 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
     return containers.GriddedProduct(**info)
 
 
-def convert_satpy_to_p2g_swath(frontend, scene):
+def convert_satpy_to_p2g_swath(frontend, scene, convert_area_defs=True):
+    """Convert a Satpy Scene in to a Polar2Grid SwathScene.
+
+    If ``convert_area_defs`` is ``True`` (default) then `AreaDefinition`
+    objects will be converted to `SwathDefinition` objects by accessing
+    their longitude and latitude arrays. If ``False`` then an exception
+    is raised when an `AreaDefinition` is encountered.
+
+    """
     p2g_scene = containers.SwathScene()
     overwrite_existing = frontend.overwrite_existing
     areas = {}
     for ds in scene:
         a = ds.attrs['area']
-        area_name = getattr(a, 'name', None)
+        area_name = getattr(a, 'name', getattr(a, 'description', None))
         if area_name is None:
             # generate an identifying name
             a.name = area_name = "{}_{}".format(a.lons.attrs['name'], a.lats.attrs['name'])
         if area_name in areas:
             swath_def = areas[area_name]
+        elif isinstance(a, AreaDefinition) and not convert_area_defs:
+            raise ValueError("AreaDefinition found in SwathScene, will not convert to swath")
         else:
-            areas[area_name] = swath_def = area_to_swath_def(ds.attrs["area"], overwrite_existing=overwrite_existing)
+            areas[area_name] = swath_def = area_to_swath_def(ds.attrs["area"],
+                                                             chunks=ds.data.chunks,
+                                                             overwrite_existing=overwrite_existing)
             def_rps = ds.shape[0] if ds.ndim <= 2 else ds.shape[-2]
             swath_def.setdefault("rows_per_scan", ds.attrs.get("rows_per_scan", def_rps))
 
