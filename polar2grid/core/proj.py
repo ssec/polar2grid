@@ -55,10 +55,9 @@ except ImportError:
 
 class Proj(BaseProj):
     def is_latlong(self):
-        if hasattr(BaseProj, 'is_latlong'):
-            return super(Proj, self).is_latlong()
-        else:
+        if hasattr(self, 'crs'):
             return self.crs.is_geographic
+        return super(Proj, self).is_latlong()
 
     def __call__(self, data1, data2, **kwargs):
         if self.is_latlong():

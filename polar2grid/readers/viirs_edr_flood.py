@@ -41,7 +41,7 @@ The ``--remap_method`` parameter is set to ``nearest``.
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
-| water_detection           | Channel 1 Reflectance Band                          |
+| WaterDetection           | Channel 1 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
 """
 import sys
@@ -54,6 +54,7 @@ LOG = logging.getLogger(__name__)
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = [".hdf"]
     DEFAULT_READER_NAME = "viirs_edr_flood"
+    DEFAULT_DATASETS = ['WaterDetection']
 
 
 def add_frontend_argument_groups(parser):

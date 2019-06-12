@@ -88,10 +88,9 @@ class MyProj(Proj):
     of the ll2cr modules.
     """
     def is_latlong(self):
-        if hasattr(Proj, 'is_latlong'):
-            return super(MyProj, self).is_latlong()
-        else:
+        if hasattr(self, 'crs'):
             return self.crs.is_geographic
+        return super(MyProj, self).is_latlong()
 
     def __call__(self, lons, lats, **kwargs):
         if self.is_latlong():
