@@ -455,7 +455,6 @@ class Remapper(object):
             output_filepaths = self._add_prefix("grid_%s_" % (grid_name,), *product_filepaths)
 
             # Prepare the products
-            fill_value = numpy.nan
             for product_name, output_fn in zip(product_names, output_filepaths):
                 LOG.debug("Running nearest neighbor on '%s' with search distance %f", product_name, kwargs["distance_upper_bound"])
                 if os.path.isfile(output_fn):
@@ -467,6 +466,7 @@ class Remapper(object):
 
                 try:
                     image_array = swath_scene[product_name].get_data_array().ravel()
+                    fill_value = swath_scene[product_name]['fill_value']
                     values = numpy.append(image_array[good_mask], image_array.dtype.type(fill_value))
                     output_array = values[i]
                     output_array.tofile(output_fn)

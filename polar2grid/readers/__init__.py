@@ -157,8 +157,10 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
         rows, cols = ds.shape[-2:]
     if np.issubdtype(np.dtype(ds.dtype), np.floating):
         dtype = np.float32
+        default_fill = np.nan
     else:
         dtype = ds.dtype
+        default_fill = 0
 
     if isinstance(info["sensor"], bytes):
         info["sensor"] = info["sensor"].decode("utf-8")
@@ -170,7 +172,7 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
         "data_kind": info.get("standard_name", info['name']),
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
-        "fill_value": np.nan,
+        "fill_value": info.get('_FillValue', default_fill),
         "swath_columns": cols,
         "swath_rows": rows,
         "rows_per_scan": info.get("rows_per_scan", rows),
@@ -229,8 +231,10 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
 
     if np.issubdtype(np.dtype(ds.dtype), np.floating):
         dtype = np.float32
+        default_fill = np.nan
     else:
         dtype = ds.dtype
+        default_fill = 0
 
     p2g_metadata = {
         "product_name": info["name"],
@@ -239,7 +243,7 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
         "data_kind": info["standard_name"],
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
-        "fill_value": np.nan,
+        "fill_value": info.get('_FillValue', default_fill),
         # "swath_columns": cols,
         # "swath_rows": rows,
         "rows_per_scan": info["rows_per_scan"],
