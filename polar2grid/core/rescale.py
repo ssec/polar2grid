@@ -368,8 +368,9 @@ def palettize(img, min_out, max_out, min_in=0, max_in=1.0, colormap=None, alpha=
         raise ValueError("Unknown 'colormap' type: %s", str(type(colormap)))
 
     dims = ('y', 'x') if img.ndim == 2 else ('y',)
+    attrs = kwargs.get('attrs', {})
     xrimg = XRImage(
-        xr.DataArray(da.from_array(img, chunks=CHUNK_SIZE), dims=dims))
+        xr.DataArray(da.from_array(img, chunks=CHUNK_SIZE), dims=dims, attrs=attrs))
     if alpha:
         # use colormap as is
         tmp_cmap = colormap
@@ -599,6 +600,7 @@ class Rescaler(roles.INIConfigReader):
 
         data = gridded_product.copy_array(read_only=False)
         good_data_mask = ~gridded_product.get_data_mask()
+        rescale_options['attrs'] = gridded_product  # copy metadata as keyword argument
         if rescale_options.get("separate_rgb", True) and data.ndim == 3:
             data = numpy.concatenate((
                 [self._rescale_data(method, data[0], good_data_mask[0], rescale_options, fill_value, clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one, clip_zero=clip_zero)],
