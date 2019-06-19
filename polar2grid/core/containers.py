@@ -241,14 +241,15 @@ class BaseP2GObject(dict):
                 # Do we not want to delete this file because someone tried to save the state of this object
                 if hasattr(self, "persist") and not self.persist:
                     try:
-                        LOG.debug("Removing associated file that is no longer needed: '%s'", self[kw])
+                        # LOG.debug("Removing associated file that is no longer needed: '%s'", self[kw])
                         os.remove(self[kw])
                     except OSError as e:
-                        if hasattr(e, "errno") and e.errno == 2:
-                            LOG.debug("Unable to remove file because it doesn't exist: '%s'", self[kw])
-                        else:
-                            LOG.warning("Unable to remove file: '%s'", self[kw])
-                            LOG.debug("Unable to remove file traceback:", exc_info=True)
+                        # if hasattr(e, "errno") and e.errno == 2:
+                        #     LOG.debug("Unable to remove file because it doesn't exist: '%s'", self[kw])
+                        # else:
+                        #     LOG.warning("Unable to remove file: '%s'", self[kw])
+                        #     LOG.debug("Unable to remove file traceback:", exc_info=True)
+                        pass
 
     def set_persist(self, persist=True):
         """Set the object to keep associated files on disk even after it has been garbage collected.

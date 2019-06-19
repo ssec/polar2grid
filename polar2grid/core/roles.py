@@ -197,7 +197,6 @@ class INIConfigReader(SimpleINIConfigReader):
 
         super(INIConfigReader, self).__init__(*config_files, **kwargs)
 
-         
         self.load_config()
         if not self.config and not self.empty_ok:
             LOG.error("No valid configuration sections found with prefix '%s'", self.section_prefix)

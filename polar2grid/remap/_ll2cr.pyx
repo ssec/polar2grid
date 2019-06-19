@@ -87,19 +87,23 @@ class MyProj(Proj):
     THIS SHOULD NOT BE USED OUTSIDE OF LL2CR! It makes assumptions and has requirements that may not make sense outside
     of the ll2cr modules.
     """
+    def is_latlong(self):
+        if hasattr(self, 'crs'):
+            return self.crs.is_geographic
+        return super(MyProj, self).is_latlong()
+
     def __call__(self, lons, lats, **kwargs):
         if self.is_latlong():
             return lons, lats
         elif isinstance(lons, numpy.ndarray):
             # Because we are doing this we know that we are getting a double array
             inverse = kwargs.get('inverse', False)
-            radians = kwargs.get('radians', False)
             errcheck = kwargs.get('errcheck', False)
             # call proj4 functions. inx and iny modified in place.
             if inverse:
-                _proj.Proj._inv(self, lons, lats, radians=radians, errcheck=errcheck)
+                _proj.Proj._inv(self, lons, lats, errcheck=errcheck)
             else:
-                _proj.Proj._fwd(self, lons, lats, radians=radians, errcheck=errcheck)
+                _proj.Proj._fwd(self, lons, lats, errcheck=errcheck)
             # if inputs were lists, tuples or floats, convert back.
             return lons, lats
         else:

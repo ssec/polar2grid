@@ -322,6 +322,9 @@ def _ir_calibrate(data_reader, irchn, calib_type):
     if calib_type == 0:
         return count
 
+    # Mask unnaturally low values
+    mask = count == 0.0
+
     k1_ = numpy.expand_dims(data_reader['calir'][:, irchn, 0, 0] / 1.0e9, 1)
     k2_ = numpy.expand_dims(data_reader['calir'][:, irchn, 0, 1] / 1.0e6, 1)
     k3_ = numpy.expand_dims(data_reader['calir'][:, irchn, 0, 2] / 1.0e6, 1)
@@ -338,7 +341,8 @@ def _ir_calibrate(data_reader, irchn, calib_type):
         LOG.debug("Suspicious scan lines: " + str(suspect_line_nums))
 
     if calib_type == 2:
-        return rad
+        rad[mask | (rad <= 0.0)] = numpy.nan
+        return numpy.ma.masked_array(rad, numpy.isnan(rad))
 
     # Central wavenumber:
     cwnum = data_reader['radtempcnv'][0, irchn, 0]
@@ -349,20 +353,6 @@ def _ir_calibrate(data_reader, irchn, calib_type):
 
     bandcor_2 = data_reader['radtempcnv'][0, irchn, 1] / 1e5
     bandcor_3 = data_reader['radtempcnv'][0, irchn, 2] / 1e6
-
-    # Count to radiance conversion:
-    rad = k1_ * count * count + k2_ * count + k3_
-
-    if calib_type == 2:
-        return rad
-
-    all_zero = numpy.logical_and(numpy.logical_and(numpy.equal(k1_, 0),
-                                             numpy.equal(k2_, 0)),
-                              numpy.equal(k3_, 0))
-    idx = numpy.indices((all_zero.shape[0],))
-    suspect_line_nums = numpy.repeat(idx[0], all_zero[:, 0])
-    if suspect_line_nums.any():
-        LOG.debug("Suspect scan lines: " + str(suspect_line_nums))
 
     ir_const_1 = 1.1910659e-5
     ir_const_2 = 1.438833
@@ -383,6 +373,7 @@ def _ir_calibrate(data_reader, irchn, calib_type):
     # real measurement. So we leave out this filtering to the user!
     # tb_[count == 0] = np.nan
     #tb_[rad == 0] = np.nan
+    tb_[mask] = numpy.nan
     return numpy.ma.masked_array(tb_, numpy.isnan(tb_))
 
 

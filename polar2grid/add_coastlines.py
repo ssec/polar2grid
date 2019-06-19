@@ -111,6 +111,8 @@ def get_parser():
                        help="Color of coastline lines (color name or 3 RGB integers)")
     group.add_argument("--coastlines-fill", default=None, nargs="*",
                        help="Color of land")
+    group.add_argument("--coastlines-width", default=1.0, type=float,
+                       help="Width of coastline lines")
 
     group = parser.add_argument_group("rivers")
     group.add_argument("--add-rivers", action="store_true",
@@ -121,6 +123,8 @@ def get_parser():
                        help="Level of detail for river lines")
     group.add_argument("--rivers-outline", default=['blue'], nargs="*",
                        help="Color of river lines (color name or 3 RGB integers)")
+    group.add_argument("--rivers-width", default=1.0, type=float,
+                       help="Width of rivers lines")
 
     group = parser.add_argument_group("grid")
     group.add_argument("--add-grid", action="store_true",
@@ -145,6 +149,8 @@ def get_parser():
                        help="Longitude label placement")
     group.add_argument("--grid-lat-placement", choices=["tl", "lr", "lc", "cc"], default="lr",
                        help="Latitude label placement")
+    group.add_argument("--grid-width", default=1.0, type=float,
+                       help="Width of grid lines")
 
     group = parser.add_argument_group("borders")
     group.add_argument("--add-borders", action="store_true",
@@ -155,6 +161,8 @@ def get_parser():
                        help="Level of detail for border lines")
     group.add_argument("--borders-outline", default=['white'], nargs="*",
                        help="Color of border lines (color name or 3 RGB integers)")
+    group.add_argument("--borders-width", default=1.0, type=float,
+                       help="Width of border lines")
 
     group = parser.add_argument_group("colorbar")
     group.add_argument("--add-colorbar", action="store_true",
@@ -249,18 +257,20 @@ def main():
                 fill = args.coastlines_fill[0] if len(args.coastlines_fill) == 1 else tuple(int(x) for x in args.coastlines_fill)
             else:
                 fill = None
-            cw.add_coastlines(img, area_def, resolution=args.coastlines_resolution, level=args.coastlines_level,
+            cw.add_coastlines(img, area_def, resolution=args.coastlines_resolution,
+                              level=args.coastlines_level, width=args.coastlines_width,
                               outline=outline, fill=fill)
 
         if args.add_rivers:
             outline = args.rivers_outline[0] if len(args.rivers_outline) == 1 else tuple(int(x) for x in args.rivers_outline)
             cw.add_rivers(img, area_def,
                           resolution=args.rivers_resolution, level=args.rivers_level,
-                          outline=outline)
+                          width=args.rivers_width, outline=outline)
 
         if args.add_borders:
             outline = args.borders_outline[0] if len(args.borders_outline) == 1 else tuple(int(x) for x in args.borders_outline)
-            cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline)
+            cw.add_borders(img, area_def, resolution=args.borders_resolution, level=args.borders_level, outline=outline,
+                           width=args.borders_width)
 
         if args.add_grid:
             outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
@@ -270,7 +280,7 @@ def main():
             font = Font(outline, font_path, size=args.grid_text_size)
             cw.add_grid(img, area_def, args.grid_D, args.grid_d, font,
                         fill=fill, outline=outline, minor_outline=minor_outline,
-                        write_text=args.grid_text,
+                        write_text=args.grid_text, width=args.grid_width,
                         lon_placement=args.grid_lon_placement,
                         lat_placement=args.grid_lat_placement)
 

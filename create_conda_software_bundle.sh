@@ -30,6 +30,7 @@ cached_download() {
 
 # This assumes that the current conda environment is already active
 which conda || oops "Conda environment must be available"
+which conda-pack || oops "'conda-pack' must be installed in conda environment"
 if [ $# -eq 1 ]; then
     SB_NAME=$1
 else
@@ -63,6 +64,7 @@ echo "Downloading GSHHG shapefiles"
 cached_download https://www.soest.hawaii.edu/pwessel/gshhg/gshhg-shp-2.3.6.zip
 unzip gshhg-shp-2.3.6.zip || oops "Could not unpack GSHHG shapefiles"
 rm gshhg-shp-2.3.6.zip || oops "Could not delete the GSHHG zip file"
+chmod 444 `find . -type f` || oops "Could not make GSHHG shapefiles readable by everyone"
 popd
 
 # Create the VIIRS CREFL utilities
@@ -101,14 +103,13 @@ else
     mv bin/GEO2GRID_README.txt README.txt
 fi
 
-
 # Copy the release notes to the tarball
 cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 
 # Create a wmsupload.sh script
 cd $SB_NAME/bin
 wget https://realearth.ssec.wisc.edu/upload/re_upload || oops "Couldn't download and create re_upload script"
-chmod u+x re_upload || oops "Couldn't make wmsupload.sh executable"
+chmod u+x re_upload || oops "Couldn't make 're_upload' executable"
 
 # Copy SatPy configurations
 mkdir $SB_NAME/etc/satpy || oops "Couldn't create configuration 'etc/satpy' directory"
@@ -118,8 +119,22 @@ cp -r $BASE_P2G_DIR/etc/* $SB_NAME/etc/satpy/ || oops "Couldn't copy configurati
 echo "Downloading pyspectral data..."
 $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
 
-# FIXME: Add the download_from_internet: False to the config
+# Add the download_from_internet: False to the config
 echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
+
+# Perform extra "risky" operations to make the tarball as small as possible
+# Taken from https://jcrist.github.io/conda-docker-tips.html
+MINIFY_TARBALL=${MINIFY_TARBALL:-1}
+if [ $MINIFY_TARBALL -ne 0 ]; then
+    cd $SB_NAME
+    conda clean -afy
+    find . -follow -type f -name '*.a' -delete
+    find . -follow -type f -name '*.pyc' -delete
+    find . -follow -type f -name '*.js.map' -delete
+    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
+    rm ./etc/conda/activate.d/*.csh
+    rm ./etc/conda/activate.d/*.fish
+fi
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."

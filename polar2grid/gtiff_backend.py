@@ -76,7 +76,8 @@ def _proj4_to_srs(proj4_str):
 
 
 def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GDT_UInt16, compress=None,
-                   quicklook=False, tiled=False, blockxsize=None, blockysize=None, **kwargs):
+                   quicklook=False, tiled=False, blockxsize=None, blockysize=None, colormap=None,
+                   **kwargs):
     """Function that creates a geotiff from the information provided.
     """
     log_level = logging.getLogger('').handlers[0].level or 0
@@ -90,20 +91,13 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
     else:
         num_bands = data.shape[0]
 
-    # We only know how to handle gray scale, RGB, and RGBA
-    if num_bands not in [1, 3, 4]:
+    # We only know how to handle L, LA, P, PA, RGB, and RGBA
+    if num_bands not in [1, 2, 3, 4]:
         msg = "Geotiff backend doesn't know how to handle data of shape '%r'" % (data.shape,)
         LOG.error(msg)
         raise ValueError(msg)
 
     options = []
-    if num_bands == 1:
-        options.append("PHOTOMETRIC=MINISBLACK")
-    elif num_bands == 3:
-        options.append("PHOTOMETRIC=RGB")
-    elif num_bands == 4:
-        options.append("PHOTOMETRIC=RGB")
-
     if compress is not None and compress != "NONE":
         options.append("COMPRESS=%s" % (compress,))
     if tiled:
@@ -115,7 +109,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
 
     # Creating the file will truncate any pre-existing file
     LOG.debug("Creation Geotiff with options %r", options)
-    if num_bands == 1:
+    if num_bands == 1 and data.ndim == 2:
         gtiff = gtiff_driver.Create(output_filename, data.shape[1], data.shape[0],
                                     bands=num_bands, eType=etype, options=options)
     else:
@@ -129,7 +123,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
     for idx in range(num_bands):
         gtiff_band = gtiff.GetRasterBand(idx + 1)
 
-        if num_bands == 1:
+        if num_bands == 1 and data.ndim == 2:
             band_data = data
         else:
             band_data = data[idx]
@@ -149,6 +143,11 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
         if gtiff_band.WriteArray(band_data) != 0:
             LOG.error("Could not write band 1 data to geotiff '%s'" % (output_filename,))
             raise ValueError("Could not write band 1 data to geotiff '%s'" % (output_filename,))
+
+    if colormap is not None:
+        from polar2grid.add_colormap import create_colortable, add_colortable
+        ct = create_colortable(colormap)
+        add_colortable(gtiff, ct)
 
     if quicklook:
         png_filename = output_filename.replace(os.path.splitext(output_filename)[1], ".png")
@@ -223,7 +222,7 @@ class Backend(roles.BackendRole):
             geotransform = gridded_product["grid_definition"].gdal_geotransform
             gtiff = create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform,
                                    etype=etype, tiled=tiled, blockxsize=blockxsize, blockysize=blockysize,
-                                   **kwargs)
+                                   colormap=rescale_options.get('colormap'), **kwargs)
 
             if rescale_options.get("method") == "linear" and "min_in" in rescale_options and "max_in" in rescale_options:
                 LOG.debug("Setting geotiff metadata for linear min/max values")
