@@ -44,21 +44,21 @@ Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 +---------------------------+-----------------------------------------------------+
 | R2                        | Channel 2 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| R3                        | Channel 3 Reflectance Band                          |
+| E1                        | Channel 3 Emissive Band                             |
 +---------------------------+-----------------------------------------------------+
-| R4                        | Channel 4 Reflectance Band                          |
+| E2                        | Channel 4 Emissive Band                             |
 +---------------------------+-----------------------------------------------------+
-| R5                        | Channel 5 Reflectance Band                          |
+| E3                        | Channel 5 Emissive Band                             |
 +---------------------------+-----------------------------------------------------+
-| R6                        | Channel 6 Reflectance Band                          |
+| R3                        | Channel 6 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| R7                        | Channel 7 Reflectance Band                          |
+| R4                        | Channel 7 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| E1                        | Channel 1 Emissive Band                             |
+| R5                        | Channel 8 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| E2                        | Channel 2 Emissive Band                             |
+| R6                        | Channel 9 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| E3                        | Channel 3 Emissive Band                             |
+| R7                        | Channel 10 Reflectance Band                         |
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+
