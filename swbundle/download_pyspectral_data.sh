@@ -29,11 +29,14 @@
 #     david.hoese@ssec.wisc.edu
 
 if [ -z "$POLAR2GRID_HOME" ]; then
+  echo "THIS SHOULDN'T BE ZERO LENGTH: $POLAR2GRID_HOME"
   export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 fi
 
 # Setup necessary environments
+echo SOURCE/BIN/ENV.SH
 source $POLAR2GRID_HOME/bin/env.sh
 
 # Call the python module to do the processing, passing all arguments
+ECHO CALL PYTHON
 python3 -c "from pyspectral.utils import download_luts, download_rsr; download_luts(); download_rsr()"
