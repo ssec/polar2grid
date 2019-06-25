@@ -5,11 +5,12 @@ cd "$WORKSPACE"
 
 # environment already has polar2grid installed on it
 /data/users/davidh/anaconda3/bin/conda env update -n jenkins_p2g_env -f build_environment.yml
+/data/users/davidh/anaconda3/bin/conda init bash
+source ~/.bashrc
 source activate jenkins_p2g_env
-tarball_name="polar2grid-swbundle-`date +"%Y%m%d-%H%M%S"`"
-./create_conda_software_bundle.sh "$WORKSPACE/integration_tests"
-ls "$WORKSPACE/$tarball_name"
-export POLAR2GRID_HOME="$WORKSPACE/$tarball_name"
+#tarball_name="polar2grid-swbundle-`date +"%Y%m%d-%H%M%S"`"
+./create_conda_software_bundle.sh test_swbundle
+export POLAR2GRID_HOME="$WORKSPACE/test_swbundle"
 cd "$WORKSPACE/integration_tests"
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
 exit $?
