@@ -38,5 +38,5 @@ echo SOURCE/BIN/ENV.SH
 source $POLAR2GRID_HOME/bin/env.sh
 
 # Call the python module to do the processing, passing all arguments
-ECHO CALL PYTHON
+echo CALL PYTHON
 python3 -c "from pyspectral.utils import download_luts, download_rsr; download_luts(); download_rsr()"
