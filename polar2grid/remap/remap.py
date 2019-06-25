@@ -328,8 +328,10 @@ class Remapper(object):
                 #     maximum_weight_mode=kwargs.get("maximum_weight_mode", None),
                 #     start_scan=(0, 0),
                 # )
-                cols_array = numpy.memmap(cols_fn, dtype=numpy.float32, mode='r', shape=(swath_def["swath_rows"], swath_def["swath_columns"]))
-                rows_array = numpy.memmap(rows_fn, dtype=numpy.float32, mode='r', shape=(swath_def["swath_rows"], swath_def["swath_columns"]))
+                cols_array = numpy.memmap(cols_fn, dtype=swath_def['data_type'],
+                                          mode='r', shape=(swath_def["swath_rows"], swath_def["swath_columns"]))
+                rows_array = numpy.memmap(rows_fn, dtype=swath_def['data_type'],
+                                          mode='r', shape=(swath_def["swath_rows"], swath_def["swath_columns"]))
                 # Assumed that all share the same fill value and data type
                 input_dtype = [swath_scene[pn]["data_type"] for pn in product_names]
                 input_fill = [swath_scene[pn]["fill_value"] for pn in product_names]
