@@ -7,7 +7,7 @@ cd "$WORKSPACE"
 /data/users/davidh/anaconda3/bin/conda env update -n jenkins_p2g_env -f build_environment.yml
 /data/users/davidh/anaconda3/bin/conda init bash
 source ~/.bashrc
-source activate jenkins_p2g_env
+/data/users/davidh/anaconda3/bin/conda activate jenkins_p2g_env
 tarball_name="polar2grid-swbundle-`date +"%Y%m%d-%H%M%S"`"
 export POLAR2GRID_HOME="$WORKSPACE/$tarball_name"
 ./create_conda_software_bundle.sh "$WORKSPACE/$tarball_name"

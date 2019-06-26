@@ -50,6 +50,7 @@ if [ -z "$POLAR2GRID_REV" ]; then
         IS_CONDA=0  # True in bash
         /data/users/davidh/anaconda3/bin/conda init bash
         source ~/.bashrc
+        /data/users/davidh/anaconda3/bin/conda activate jenkins_p2g_env
         /data/users/davidh/anaconda3/bin/conda deactivate
         echo ACTIVATING NEW ENV
         source $P2G_SHELLB3_DIR/bin/activate
