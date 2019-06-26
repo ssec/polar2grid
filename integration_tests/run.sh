@@ -8,6 +8,7 @@ old_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 /data/users/davidh/anaconda3/bin/conda env update -n jenkins_p2g_env -f build_environment.yml
 /data/users/davidh/anaconda3/bin/conda update -n jenkins_p2g_env behave
 new_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
+echo $new_list
 /data/users/davidh/anaconda3/bin/conda init bash
 source ~/.bashrc
 source activate jenkins_p2g_env
