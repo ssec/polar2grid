@@ -6,7 +6,7 @@ cd "$WORKSPACE"
 # environment already has polar2grid installed on it
 old_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 /data/users/davidh/anaconda3/bin/conda env update -n jenkins_p2g_env -f build_environment.yml
-/data/users/davidh/anaconda3/bin/conda update -n jenkins_p2g_env behave
+/data/users/davidh/anaconda3/bin/conda install -n jenkins_p2g_env behave
 new_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 echo $new_list
 /data/users/davidh/anaconda3/bin/conda init bash
