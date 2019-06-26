@@ -12,6 +12,8 @@ tarball_name="polar2grid-swbundle-`date +"%Y%m%d-%H%M%S"`"
 ./create_conda_software_bundle.sh "$WORKSPACE/$tarball_name"
 export POLAR2GRID_HOME="$WORKSPACE/$tarball_name"
 cd "$WORKSPACE/integration_tests"
-source activate jenkins_p2g_env
+/data/users/davidh/anaconda3/bin/conda init bash
+source ~/.bashrc
+/data/users/davidh/anaconda3/bin/conda activate jenkins_p2g_env
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
 exit $?
