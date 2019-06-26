@@ -49,7 +49,6 @@ if [ -z "$POLAR2GRID_REV" ]; then
         P2G_SHELLB3_DIR=$POLAR2GRID_HOME
         IS_CONDA=0  # True in bash
         /data/users/davidh/anaconda3/bin/conda init bash
-        source ~/.bashrc
         source $P2G_SHELLB3_DIR/bin/activate
     else
         IS_CONDA=1  # False in bash
