@@ -4,9 +4,6 @@ import tempfile
 import subprocess
 import shutil
 import glob
-import logging
-
-LOG = logging.getLogger(__name__)
 
 
 @given(u'input data from {source}')
@@ -48,9 +45,9 @@ def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
         os.chdir(context.data_path)
-        LOG.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        LOG.info(os.listdir(context.temp_dir))
-        LOG.info('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        print(os.listdir(context.temp_dir))
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         if "gtiff" in context.command or context.script == "geo2grid.sh":
             context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_geotiff.sh"), output, context.temp_dir)
         else: 
