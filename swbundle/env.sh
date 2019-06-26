@@ -49,7 +49,9 @@ if [ -z "$POLAR2GRID_REV" ]; then
         P2G_SHELLB3_DIR=$POLAR2GRID_HOME
         IS_CONDA=0  # True in bash
         echo ACTIVATING NEW ENV
+        source deactivate jenkins_p2g_env
         source $P2G_SHELLB3_DIR/bin/activate
+        echo ACTIVATED NEW ENV
     else
         IS_CONDA=1  # False in bash
         # Add all polar2grid scripts to PATH
@@ -61,7 +63,6 @@ if [ -z "$POLAR2GRID_REV" ]; then
         export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib:${LD_LIBRARY_PATH}
         export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common:${LD_LIBRARY_PATH}
     fi
-    echo EXPORTING GLOBALS
 
     # Point gdal utilities to the proper data location
     export GDAL_DATA=$P2G_SHELLB3_DIR/share/gdal
