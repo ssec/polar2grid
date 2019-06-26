@@ -50,9 +50,7 @@ if [ -z "$POLAR2GRID_REV" ]; then
         IS_CONDA=0  # True in bash
         /data/users/davidh/anaconda3/bin/conda init bash
         source ~/.bashrc
-        echo ACTIVATING NEW ENV
         source $P2G_SHELLB3_DIR/bin/activate
-        echo ACTIVATED NEW ENV
     else
         IS_CONDA=1  # False in bash
         # Add all polar2grid scripts to PATH

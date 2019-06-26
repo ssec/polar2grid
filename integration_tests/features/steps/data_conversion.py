@@ -31,6 +31,7 @@ def step_impl(context, script, command):
     orig_dir = os.getcwd()
     try:
         context.temp_dir = tempfile.mkdtemp()
+        print('???????????????????????????????????????' + context.temp_dir + '???????????????????????????????????????')
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)        
         assert exit_status == 0, "{} ran unsuccessfully".format(command)
@@ -45,6 +46,9 @@ def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
         os.chdir(context.data_path)
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!' + context.temp_dir + '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        assert os.path.exists(context.temp_dir), "Temporary directory not created!"
+        assert os.listdir(context.temp_dir), "No files were created!"
         if "gtiff" in context.command or context.script == "geo2grid.sh":
             context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_geotiff.sh"), output, context.temp_dir)
         else: 
