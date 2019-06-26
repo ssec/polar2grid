@@ -48,7 +48,7 @@ if [ -z "$POLAR2GRID_REV" ]; then
         # assume we are using a conda-pack environment
         P2G_SHELLB3_DIR=$POLAR2GRID_HOME
         IS_CONDA=0  # True in bash
-        source deactivate jenkins_p2g_env
+        /data/users/davidh/anaconda3/bin/conda deactivate
         echo ACTIVATING NEW ENV
         source $P2G_SHELLB3_DIR/bin/activate
         echo ACTIVATED NEW ENV
