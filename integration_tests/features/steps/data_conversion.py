@@ -45,13 +45,14 @@ def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
         os.chdir(context.data_path)
-        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        print(os.listdir(context.temp_dir))
-        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
         if "gtiff" in context.command or context.script == "geo2grid.sh":
-            context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_geotiff.sh"), output, context.temp_dir)
+            context.compare_command = "{} {} {}".format(os.path.join(os.environ['POLAR2GRID_HOME'],
+                                                                     "bin/p2g_py3_compare_geotiff.sh"),
+                                                        output, context.temp_dir)
         else:
-            context.compare_command = "{} {} {}".format(os.path.join(context.data_path, "scripts/p2g_py3_compare_netcdf.sh"), output, context.temp_dir)
+            context.compare_command = "{} {} {}".format(os.path.join(os.environ['POLAR2GRID_HOME'],
+                                                                     "bin/p2g_py3_compare_netcdf.sh"),
+                                                        output, context.temp_dir)
         exit_status = subprocess.call(context.compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
