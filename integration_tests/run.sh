@@ -4,6 +4,7 @@
 cd "$WORKSPACE"
 
 # environment already has polar2grid installed on it
+# Check if the environment/tarball need to be updated.
 old_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 /data/users/davidh/anaconda3/bin/conda env update -n jenkins_p2g_env -f build_environment.yml
 /data/users/davidh/anaconda3/bin/conda install -c conda-forge -n jenkins_p2g_env behave
@@ -35,8 +36,9 @@ else
     tarball_name=/tmp/polar2grid-swbundle-*
     if [ -s $tarball_name ]
     then
-        cp -r $tarball_name $WORKSPACE
+        cp -r "$tarball_name" $WORKSPACE
     fi
+    tarball_name=${tarball_name/\/tmp\//}
 fi
 echo $tarball_name
 export POLAR2GRID_HOME="$WORKSPACE/$tarball_name"
