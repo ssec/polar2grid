@@ -33,10 +33,10 @@ if [ "$old_list" != "$new_list" ]; then
         prev_fn=$fn
     done
 else
-    tarball_name=/tmp/polar2grid-swbundle-*
+    tarball_name=`echo /tmp/polar2grid-swbundle-*`
     if [ -s $tarball_name ]
     then
-        cp -r "$tarball_name" $WORKSPACE
+        cp -r $tarball_name $WORKSPACE
     fi
     tarball_name=${tarball_name/\/tmp\//}
 fi
