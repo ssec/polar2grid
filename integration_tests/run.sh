@@ -15,7 +15,7 @@ source ~/.bashrc
 source activate jenkins_p2g_env
 #
 tarball_name=`echo /tmp/polar2grid-swbundle-*`
-if [ "$old_list" != "$new_list" ] || [ tarball_name == "/tmp/polar2grid-swbundle-*" ]; then
+if [ "$old_list" == "$new_list" ] || [ tarball_name == "/tmp/polar2grid-swbundle-*" ]; then
     tarball_name=polar2grid-swbundle-`date +"%Y%m%d-%H%M%S"`
     ./create_conda_software_bundle.sh $WORKSPACE/$tarball_name
     cp -r  $WORKSPACE/$tarball_name /tmp
