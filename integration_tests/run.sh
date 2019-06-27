@@ -1,5 +1,5 @@
 #!/bin/bash
-# script for jenkins to run tests on polar2grid
+# Script for jenkins to run tests on polar2grid.
 
 cd "$WORKSPACE"
 
@@ -8,9 +8,7 @@ old_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 /data/users/davidh/anaconda3/bin/conda env update -n jenkins_p2g_env -f build_environment.yml
 /data/users/davidh/anaconda3/bin/conda update -c conda-forge -n jenkins_p2g_env behave
 new_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
-# Activate conda for bash.
-/data/users/davidh/anaconda3/bin/conda init bash
-# Restart the shell.
+# Restart the shell to enable conda.
 source ~/.bashrc
 source activate jenkins_p2g_env
 #
