@@ -32,7 +32,8 @@ def step_impl(context, script, command):
     try:
         context.temp_dir = tempfile.mkdtemp()
         os.chdir(context.temp_dir)
-        exit_status = subprocess.call(context.command, shell=True)        
+        exit_status = subprocess.call(context.command, shell=True)
+        shutil.copy(context.temp_dir, '/data/users/wroberts')
         assert exit_status == 0, "{} ran unsuccessfully".format(command)
     finally:
         os.chdir(orig_dir)
