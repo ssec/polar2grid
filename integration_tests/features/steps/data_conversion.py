@@ -10,7 +10,7 @@ import glob
 @given(u'input data from {source}')
 def step_impl(context, source):
     for file in os.listdir('/data/users/wroberts/tmp'):
-        os.chmod(file, stat.S_IRWXO)
+        os.chmod('/data/users/wroberts/tmp' + file, stat.S_IRWXO)
     new_source = ""
     
     for f in source.split(" "):
