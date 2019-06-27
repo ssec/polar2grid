@@ -9,7 +9,6 @@ import glob
 
 @given(u'input data from {source}')
 def step_impl(context, source):
-    os.rmdir('/data/users/wroberts/tmp')
     new_source = ""
     
     for f in source.split(" "):
