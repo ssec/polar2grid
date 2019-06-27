@@ -1,5 +1,6 @@
 from behave import given, when, then, step
 import os
+import stat
 import tempfile
 import subprocess
 import shutil
@@ -34,6 +35,7 @@ def step_impl(context, script, command):
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
         shutil.copytree(context.temp_dir, '/data/users/wroberts' + context.temp_dir)
+        os.chmod('/data/users/wroberts' + context.temp_dir, stat.S_IWGRP)
         assert exit_status == 0, "{} ran unsuccessfully".format(command)
     finally:
         os.chdir(orig_dir)
