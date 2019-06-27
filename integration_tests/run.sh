@@ -14,7 +14,8 @@ new_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 source ~/.bashrc
 source activate jenkins_p2g_env
 #
-if [ "$old_list" != "$new_list" ]; then
+tarball_name=`echo /tmp/polar2grid-swbundle-*`
+if [ "$old_list" != "$new_list" ] || [ tarball_name == "/tmp/polar2grid-swbundle-*" ]; then
     tarball_name=polar2grid-swbundle-`date +"%Y%m%d-%H%M%S"`
     ./create_conda_software_bundle.sh $WORKSPACE/$tarball_name
     cp -r  $WORKSPACE/$tarball_name /tmp
@@ -35,7 +36,6 @@ if [ "$old_list" != "$new_list" ]; then
         prev_fn=$fn
     done
 else
-    tarball_name=`echo /tmp/polar2grid-swbundle-*`
     if [ -s $tarball_name ]
     then
         cp -r $tarball_name $WORKSPACE
