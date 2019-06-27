@@ -9,12 +9,10 @@ import glob
 
 @given(u'input data from {source}')
 def step_impl(context, source):
-    for file in os.listdir('/data/users/wroberts/tmp'):
-        os.chmod('/data/users/wroberts/tmp/' + file, stat.S_IRWXO)
     new_source = ""
     
     for f in source.split(" "):
-        f = os.path.join(context.data_path, f) 
+        f = os.path.join(context.data_path, f)
         new_source += f + " "
 
         if "*" in os.path.basename(f):
