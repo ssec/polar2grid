@@ -8,11 +8,7 @@ old_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 /data/users/davidh/anaconda3/bin/conda env update -n jenkins_p2g_env -f build_environment.yml
 /data/users/davidh/anaconda3/bin/conda update -c conda-forge -n jenkins_p2g_env behave
 new_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
-# Activate conda for bash.
-/data/users/davidh/anaconda3/bin/conda init bash
-# Restart the shell to enable conda.
-source ~/.bashrc
-source activate jenkins_p2g_env
+/data/users/davidh/anaconda3/bin/conda activate jenkins_p2g_env
 #
 tarball_name=`echo /tmp/polar2grid-swbundle-*`
 if [ "$old_list" != "$new_list" ] || [ tarball_name == "/tmp/polar2grid-swbundle-*" ]; then
