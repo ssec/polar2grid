@@ -8,6 +8,8 @@ import glob
 
 @given(u'input data from {source}')
 def step_impl(context, source):
+    for file in os.listdir('/data/users/wroberts/tmp'):
+        subprocess.call('chmod o+xwr /data/users/wroberts/tmp/' + file, shell=True)
     new_source = ""
     
     for f in source.split(" "):
@@ -34,7 +36,7 @@ def step_impl(context, script, command):
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
         shutil.copytree(context.temp_dir, '/data/users/wroberts' + context.temp_dir)
-        subprocess.call('chmod o+wr /data/users/wroberts' + context.temp_dir, shell=True)
+        subprocess.call('chmod o+xwr /data/users/wroberts' + context.temp_dir, shell=True)
         assert exit_status == 0, "{} ran unsuccessfully".format(command)
     finally:
         os.chdir(orig_dir)
