@@ -103,6 +103,10 @@ else
     mv bin/GEO2GRID_README.txt README.txt
 fi
 
+# Remove non-bash activate/deactivate scripts
+rm -f $SB_NAME/etc/conda/activate.d/*.{fish,csh}
+rm -f $SB_NAME/etc/conda/deactivate.d/*.{fish,csh}
+
 # Copy the release notes to the tarball
 cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 
