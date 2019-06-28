@@ -8,8 +8,6 @@ import glob
 
 @given(u'input data from {source}')
 def step_impl(context, source):
-    for file in os.listdir('/data/users/wroberts/tmp'):
-        subprocess.call('chmod o+xwr /data/users/wroberts/tmp/' + file, shell=True)
     new_source = ""
     
     for f in source.split(" "):
