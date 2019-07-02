@@ -9,7 +9,7 @@ import glob
 @given(u'input data from {source}')
 def step_impl(context, source):
     new_source = ""
-    
+
     for f in source.split(" "):
         f = os.path.join(context.data_path, f)
         new_source += f + " "
@@ -30,7 +30,12 @@ def step_impl(context, script, command):
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
     try:
-        context.temp_dir = tempfile.mkdtemp()
+        # context.temp_dir = tempfile.mkdtemp()
+
+        os.mkdir('/data/users/wroberts/' + context.source)
+        context.temp_dir = '/data/users/wroberts/' + context.source
+        subprocess.call('chmod o+xwr ' + context.temp_dir, shell=True)
+
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
         assert exit_status == 0, "{} ran unsuccessfully".format(command)
