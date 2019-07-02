@@ -31,13 +31,13 @@ def step_impl(context, script, command):
     orig_dir = os.getcwd()
     try:
         # context.temp_dir = tempfile.mkdtemp()
-
-        os.mkdir('/data/users/wroberts/' + context.source)
-        context.temp_dir = '/data/users/wroberts/' + context.source
-        subprocess.call('chmod o+xwr ' + context.temp_dir, shell=True)
-
+        fn = os.path.join('data', 'users', 'wroberts', context.source)
+        print(fn)
+        os.mkdir(fn)
+        context.temp_dir = fn
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
+        subprocess.call('chmod o+xwr ' + context.temp_dir, shell=True)
         assert exit_status == 0, "{} ran unsuccessfully".format(command)
     finally:
         os.chdir(orig_dir)
