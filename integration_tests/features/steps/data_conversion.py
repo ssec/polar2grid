@@ -30,14 +30,9 @@ def step_impl(context, script, command):
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
     try:
-        # context.temp_dir = tempfile.mkdtemp()
-        fn = os.path.join('data', 'users', 'wroberts', context.source)
-        print(fn)
-        os.mkdir(fn)
-        context.temp_dir = fn
+        context.temp_dir = tempfile.mkdtemp()
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
-        subprocess.call('chmod o+xwr ' + context.temp_dir, shell=True)
         assert exit_status == 0, "{} ran unsuccessfully".format(command)
     finally:
         os.chdir(orig_dir)
