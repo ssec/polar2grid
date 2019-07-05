@@ -40,4 +40,4 @@ dependencies:
   - xarray
   - scipy
   - pip:
-    - git+https://github.com/wroberts4/satpy@jenkins
+    - git+https://github.com/wroberts4/satpy@master
