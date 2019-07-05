@@ -7,7 +7,6 @@ cd "$WORKSPACE"
 old_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 /data/users/davidh/anaconda3/bin/conda remove -n jenkins_p2g_env --all
 /data/users/davidh/anaconda3/bin/conda env update -n jenkins_p2g_env -f build_environment.yml
-/data/users/davidh/anaconda3/bin/conda update -c conda-forge -n jenkins_p2g_env behave
 new_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 # Activate conda for bash.
 /data/users/davidh/anaconda3/bin/conda init bash
@@ -44,10 +43,5 @@ done
 #fi
 export POLAR2GRID_HOME="$WORKSPACE/$tarball_name"
 cd "$WORKSPACE/integration_tests"
-# Activate conda for bash.
-/data/users/davidh/anaconda3/bin/conda init bash
-# Restart the shell to enable conda.
-source ~/.bashrc
-conda activate jenkins_p2g_env
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
 exit $?

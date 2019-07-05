@@ -5,6 +5,7 @@ channels:
 dependencies:
   - aggdraw
   - appdirs
+  - behave
   - cftime
   - conda-pack
   - configobj

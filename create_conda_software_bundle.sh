@@ -130,19 +130,19 @@ $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral d
 # Add the download_from_internet: False to the config
 echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
 
-## Perform extra "risky" operations to make the tarball as small as possible
-## Taken from https://jcrist.github.io/conda-docker-tips.html
-#MINIFY_TARBALL=${MINIFY_TARBALL:-1}
-#if [ $MINIFY_TARBALL -ne 0 ]; then
-#    cd $CONDA_PREFIX
-#    conda clean -afy
-#    find . -follow -type f -name '*.a' -delete
-#    find . -follow -type f -name '*.pyc' -delete
-#    find . -follow -type f -name '*.js.map' -delete
-#    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
-#    rm ./etc/conda/activate.d/*.{fish,csh}
-#    rm ./etc/conda/deactivate.d/*.{fish,csh}
-#fi
+# Perform extra "risky" operations to make the tarball as small as possible
+# Taken from https://jcrist.github.io/conda-docker-tips.html
+MINIFY_TARBALL=${MINIFY_TARBALL:-1}
+if [ $MINIFY_TARBALL -ne 0 ]; then
+    cd $CONDA_PREFIX
+    conda clean -afy
+    find . -follow -type f -name '*.a' -delete
+    find . -follow -type f -name '*.pyc' -delete
+    find . -follow -type f -name '*.js.map' -delete
+    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
+    rm ./etc/conda/activate.d/*.{fish,csh}
+    rm ./etc/conda/deactivate.d/*.{fish,csh}
+fi
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
