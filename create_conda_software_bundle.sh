@@ -52,7 +52,7 @@ pip install -U --no-deps . || oops "Couldn't install current polar2grid package"
 MINIFY_TARBALL=${MINIFY_TARBALL:-1}
 if [ $MINIFY_TARBALL -ne 0 ]; then
     cd $CONDA_PREFIX
-    conda clean -afy
+#    conda clean -afy
     find . -follow -type f -name '*.a' -delete
     find . -follow -type f -name '*.pyc' -delete
     find . -follow -type f -name '*.js.map' -delete
