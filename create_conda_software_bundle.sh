@@ -53,12 +53,12 @@ MINIFY_TARBALL=${MINIFY_TARBALL:-1}
 if [ $MINIFY_TARBALL -ne 0 ]; then
     cd $CONDA_PREFIX
 #    conda clean -afy
-    find . -follow -type f -name '*.a' -delete
-    find . -follow -type f -name '*.pyc' -delete
-    find . -follow -type f -name '*.js.map' -delete
-    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
-    rm ./etc/conda/activate.d/*.csh
-    rm ./etc/conda/activate.d/*.fish
+#    find . -follow -type f -name '*.a' -delete
+#    find . -follow -type f -name '*.pyc' -delete
+#    find . -follow -type f -name '*.js.map' -delete
+#    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
+    rm ./etc/conda/activate.d/*.{fish,csh}
+    rm ./etc/conda/deactivate.d/*.{fish,csh}
 fi
 
 SB_TARBALL="${SB_NAME}.tar.gz"
