@@ -120,6 +120,8 @@ mkdir $SB_NAME/etc/satpy || oops "Couldn't create configuration 'etc/satpy' dire
 cp -r $BASE_P2G_DIR/etc/* $SB_NAME/etc/satpy/ || oops "Couldn't copy configuration 'etc' directory"
 
 conda init bash
+# Restart the shell to enable conda.
+source ~/.bashrc
 conda deactivate
 # Download pyspectral data
 echo "Downloading pyspectral data..."
