@@ -13,7 +13,6 @@ new_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 # Restart the shell to enable conda.
 source ~/.bashrc
 conda activate jenkins_p2g_env
-#
 tarball_name=`echo /tmp/polar2grid-swbundle-*`
 if [ "$old_list" != "$new_list" ] || [ tarball_name == "/tmp/polar2grid-swbundle-*" ]; then
     tarball_name=polar2grid-swbundle-`date +"%Y%m%d-%H%M%S"`

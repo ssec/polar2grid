@@ -234,7 +234,7 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
         default_fill = np.nan
     else:
         dtype = ds.dtype
-        default_fill = 0
+        default_fill = info.get('_FillValue', 0)
 
     p2g_metadata = {
         "product_name": info["name"],
@@ -243,7 +243,7 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
         "data_kind": info["standard_name"],
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
-        "fill_value": info.get('_FillValue') if isinstance(info.get('_FillValue'), int) else default_fill,
+        "fill_value": default_fill,
         # "swath_columns": cols,
         # "swath_rows": rows,
         "rows_per_scan": info["rows_per_scan"],
