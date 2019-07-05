@@ -119,6 +119,7 @@ chmod u+x re_upload || oops "Couldn't make 're_upload' executable"
 mkdir $SB_NAME/etc/satpy || oops "Couldn't create configuration 'etc/satpy' directory"
 cp -r $BASE_P2G_DIR/etc/* $SB_NAME/etc/satpy/ || oops "Couldn't copy configuration 'etc' directory"
 
+conda deactivate
 # Download pyspectral data
 echo "Downloading pyspectral data..."
 $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
