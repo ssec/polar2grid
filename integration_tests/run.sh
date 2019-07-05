@@ -5,7 +5,7 @@ cd "$WORKSPACE"
 
 # Checks if the environment/tarball needs to be updated.
 old_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
-/data/users/davidh/anaconda3/bin/conda env update -n jenkins_p2g_env -f build_environment.yml
+/data/users/davidh/anaconda3/bin/conda create -n jenkins_p2g_env -f build_environment.yml
 /data/users/davidh/anaconda3/bin/conda update -c conda-forge -n jenkins_p2g_env behave
 new_list=`/data/users/davidh/anaconda3/bin/conda list -n jenkins_p2g_env`
 # Activate conda for bash.
