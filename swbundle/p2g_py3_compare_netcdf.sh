@@ -83,7 +83,7 @@ image1_data = image1_var[:].astype(numpy.uint8).astype(numpy.float)
 image2_data = image2_var[:].astype(numpy.uint8).astype(numpy.float)
 
 if image1_data.shape != image2_data.shape:
-    print("ERROR: Data shape for '$WFILE' is not the same as the valid '$VFILE'")
+    print("ERROR: Data shape for '$WFILE' is not the same as the valid '$VFILE': {0}, {1}".format(work_data.shape, valid_data.shape))
     sys.exit(1)
 
 total_pixels = image1_data.shape[0] * image1_data.shape[1]

@@ -76,7 +76,7 @@ work_data = work_gtiff.GetRasterBand(1).ReadAsArray()
 valid_data = valid_gtiff.GetRasterBand(1).ReadAsArray()
 
 if work_data.shape != valid_data.shape:
-    print("ERROR: Data shape for '$WFILE' is not the same as the valid '$VFILE'")
+    print("ERROR: Data shape for '$WFILE' is not the same as the valid '$VFILE': {0}, {1}".format(work_data.shape, valid_data.shape))
     sys.exit(1)
 
 total_pixels = work_data.shape[0] * work_data.shape[1]
