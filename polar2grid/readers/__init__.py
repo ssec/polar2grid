@@ -160,7 +160,8 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
         default_fill = np.nan
     else:
         dtype = ds.dtype
-        default_fill = 0
+        # Invalid data is 0
+        default_fill = info.get('_FillValue', 0)
 
     if isinstance(info["sensor"], bytes):
         info["sensor"] = info["sensor"].decode("utf-8")
@@ -172,7 +173,7 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
         "data_kind": info.get("standard_name", info['name']),
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
-        "fill_value": info.get('_FillValue') if isinstance(info.get('_FillValue'), int) else default_fill,
+        "fill_value": default_fill,
         "swath_columns": cols,
         "swath_rows": rows,
         "rows_per_scan": info.get("rows_per_scan", rows),

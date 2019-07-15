@@ -13,7 +13,6 @@ def step_impl(context, source):
     for f in source.split(" "):
         f = os.path.join(context.data_path, f)
         new_source += f + " "
-        subprocess.call('rm -rf /tmp/tmp*', shell=True)
 
         if "*" in os.path.basename(f):
             assert glob.glob(f), "Input files {} do  not exist".format(f)
