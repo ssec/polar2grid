@@ -17,7 +17,7 @@ export POLAR2GRID_HOME="$WORKSPACE/$tarball_name"
 cd "$WORKSPACE/integration_tests"
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
 # If successful, override old tarball.
-if ["(($?))" == 0]
+if [$? == 0]
 then
     cp -r  $WORKSPACE/$tarball_name /tmp
     prev_val=0
