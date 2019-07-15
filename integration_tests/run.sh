@@ -3,12 +3,12 @@
 
 cd "$WORKSPACE"
 
-/data/users/davidh/anaconda3/bin/conda remove -n pywinds --all
-/data/users/davidh/anaconda3/bin/conda env update -n jenkins_p2g_env -f build_environment.yml
 # Activate conda for bash.
 /data/users/davidh/anaconda3/bin/conda init bash
 # Restart the shell to enable conda.
 source ~/.bashrc
+conda remove -y -n jenkins_p2g_env --all
+conda env update -n jenkins_p2g_env -f build_environment.yml
 conda activate jenkins_p2g_env
 
 tarball_name=polar2grid-swbundle-`date +"%Y%m%d-%H%M%S"`
