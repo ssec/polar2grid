@@ -25,11 +25,10 @@ then
     done
     cp -r $POLAR2GRID_HOME /tmp
     # Make docs.
-    conda activate jenkins_p2g_env
     conda install -y sphinx
     pip install sphinx-argparse
     cd "$WORKSPACE"/doc
     make html
-    cp -r "$WORKSPACE"/doc/build/html /data/users/wroberts/html/.
+    cp -r "$WORKSPACE"/doc/build/html /data/users/wroberts/docs
 fi
 exit $?
