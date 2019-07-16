@@ -6,9 +6,10 @@
 source ~/.bashrc
 conda activate jenkins_p2g_env
 conda install -y sphinx
+pip install sphinx-argparse
 
 cd "$WORKSPACE"/doc
 make html
-cp -r source /data/users/wroberts/html/.
+cp -r "$WORKSPACE"/doc/build/html /data/users/wroberts/html/.
 
 exit $?
