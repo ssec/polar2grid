@@ -6,6 +6,8 @@
 source ~/.bashrc
 conda activate jenkins_p2g_env
 
-
+cd "$WORKSPACE"/doc
+make html
+cp -r source /data/users/wroberts/html/.
 
 exit $?

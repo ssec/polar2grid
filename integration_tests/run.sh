@@ -15,4 +15,5 @@ tarball_name=polar2grid-swbundle-`date +"%Y%m%d-%H%M%S"`
 export POLAR2GRID_HOME="$WORKSPACE/$tarball_name"
 cd "$WORKSPACE/integration_tests"
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
+echo $?
 exit $?
