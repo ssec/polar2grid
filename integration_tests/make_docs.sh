@@ -5,6 +5,7 @@
 # Restart the shell to enable conda.
 source ~/.bashrc
 conda activate jenkins_p2g_env
+conda install -y sphinx
 
 cd "$WORKSPACE"/doc
 make html
