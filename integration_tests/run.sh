@@ -1,7 +1,6 @@
 #!/bin/bash
 # Script for jenkins to run tests on polar2grid.
 
-rm -rf /data/users/wroberts/docs
 cd "$WORKSPACE"
 # Activate conda for bash.
 /data/users/davidh/anaconda3/bin/conda init bash
@@ -22,11 +21,8 @@ if [ $? = 0 ]
 then
     mkdir /tmp/polar2grid-$time
     # Save software bundle.
-    for fn in /tmp/polar2grid-*
-    do
-        rm -rf $fn
-    done
-    cp -r $POLAR2GRID_HOME /tmp/polar2grid-$time
+    rm -rf /tmp/polar2grid-*
+    cp -r $POLAR2GRID_HOME /tmp/polar2grid-$time/$POLAR2GRID_HOME
     # Make docs.
     conda install -y sphinx
     pip install sphinx-argparse
