@@ -28,7 +28,6 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 """SatPy compatible readers and legacy P2G frontends to wrap them.
-
 :author:       David Hoese (davidh)
 :contact:      david.hoese@ssec.wisc.edu
 :organization: Space Science and Engineering Center (SSEC)
@@ -160,8 +159,7 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
         default_fill = np.nan
     else:
         dtype = ds.dtype
-        # Invalid data is 0
-        default_fill = info.get('_FillValue', 0)
+        default_fill = 0
 
     if isinstance(info["sensor"], bytes):
         info["sensor"] = info["sensor"].decode("utf-8")
@@ -173,7 +171,7 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
         "data_kind": info.get("standard_name", info['name']),
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
-        "fill_value": default_fill,
+        "fill_value": info.get('_FillValue', default_fill),
         "swath_columns": cols,
         "swath_rows": rows,
         "rows_per_scan": info.get("rows_per_scan", rows),
@@ -235,7 +233,7 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
         default_fill = np.nan
     else:
         dtype = ds.dtype
-        default_fill = info.get('_FillValue', 0)
+        default_fill = 0
 
     p2g_metadata = {
         "product_name": info["name"],
@@ -244,7 +242,7 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
         "data_kind": info["standard_name"],
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
-        "fill_value": default_fill,
+        "fill_value": info.get('_FillValue', default_fill),
         # "swath_columns": cols,
         # "swath_rows": rows,
         "rows_per_scan": info["rows_per_scan"],
@@ -269,12 +267,10 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
 
 def convert_satpy_to_p2g_swath(frontend, scene, convert_area_defs=True):
     """Convert a Satpy Scene in to a Polar2Grid SwathScene.
-
     If ``convert_area_defs`` is ``True`` (default) then `AreaDefinition`
     objects will be converted to `SwathDefinition` objects by accessing
     their longitude and latitude arrays. If ``False`` then an exception
     is raised when an `AreaDefinition` is encountered.
-
     """
     p2g_scene = containers.SwathScene()
     overwrite_existing = frontend.overwrite_existing
@@ -419,4 +415,3 @@ def main(description=None, add_argument_groups=None):
     else:
         print(json_str)
     return 0
-
