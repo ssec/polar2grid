@@ -28,6 +28,6 @@ then
     pip install sphinx-argparse
     cd "$WORKSPACE"/doc
     make html
-    cp -r "$WORKSPACE"/doc/build/html /tmp/polar2grid-$time
+    cp -r "$WORKSPACE"/doc/build/html /tmp/polar2grid-$time/html
 fi
 exit $?
