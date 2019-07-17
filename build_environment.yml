@@ -41,4 +41,4 @@ dependencies:
   - xarray
   - scipy
   - pip:
-    - git+https://github.com/wroberts4/satpy.git@master
+    - git+https://github.com/pytroll/satpy.git@master
