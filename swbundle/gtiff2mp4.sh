@@ -94,6 +94,8 @@ echo "Creating video file from: "
 printf '%s\n' ${INPUT_FILES[@]}
 echo "Total number of input files: ${#INPUT_FILES[@]}"
 
+FILE_EXT=${INPUT_FILES[0]##.}
+
 x=1
 echo "Preparing images for video conversion..."
 for i in "${INPUT_FILES[@]}"; do
@@ -103,10 +105,10 @@ for i in "${INPUT_FILES[@]}"; do
     img_height=`echo $img_height | cut -f3 -d' '`
     new_width=`get_new_image_width $img_width $img_height`
     if [[ $new_width -eq $img_width ]]; then
-        ln -s "../$i" "${TMP_FRAME_DIR}/${counter}.tif"
+        ln -s "../$i" "${TMP_FRAME_DIR}/${counter}.${FILE_EXT}"
     else
         echo "Scaling image to work with ffmpeg (New width=${new_width})"
-        gdal_translate -of GTIFF -outsize $new_width 0 $i "${TMP_FRAME_DIR}/${counter}.tif"
+        gdal_translate -outsize $new_width 0 $i "${TMP_FRAME_DIR}/${counter}.${FILE_EXT}"
     fi
     x=$(($x+1))
 done
@@ -114,7 +116,7 @@ done
 echo "Generating animation..."
 INPUT_PARAMS=${INPUT_PARAMS:--framerate 24 -f image2}
 OUTPUT_PARAMS=${OUTPUT_PARAMS:--c:v libx264 -crf 25 -vf "format=yuv420p,scale=trunc(iw/2)*2:trunc(ih/2)*2"}
-ffmpeg -y $INPUT_PARAMS -i "${TMP_FRAME_DIR}/%03d.tif" $OUTPUT_PARAMS $OUTPUT_FILENAME
+ffmpeg -y $INPUT_PARAMS -i "${TMP_FRAME_DIR}/%03d.{FILE_EXT}" $OUTPUT_PARAMS $OUTPUT_FILENAME
 
 
 echo "Done"
