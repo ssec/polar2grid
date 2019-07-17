@@ -22,12 +22,12 @@ then
     mkdir /tmp/polar2grid-$time
     # Save software bundle.
     rm -rf /tmp/polar2grid-*
-    cp -r $POLAR2GRID_HOME /tmp/polar2grid-$time/$POLAR2GRID_HOME
+    cp -r $POLAR2GRID_HOME /tmp/polar2grid-$time
     # Make docs.
     conda install -y sphinx
     pip install sphinx-argparse
     cd "$WORKSPACE"/doc
     make html
-    cp -r "$WORKSPACE"/doc/build/html /tmp/polar2grid-$time/html
+    cp -r "$WORKSPACE"/doc/build/html /tmp/polar2grid-$time
 fi
 exit $?
