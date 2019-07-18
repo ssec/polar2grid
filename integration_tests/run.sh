@@ -23,14 +23,13 @@ then
     # Save software bundle.
     rm -rf /tmp/polar2grid-*
     cp -r $WORKSPACE/$tarball_name /tmp/polar2grid-$time
-    cp -r $WORKSPACE/../jobs/polar2grid_tests/htmlreports/HTML_Report /tmp/polar2grid-$time
-#    # Make docs.
-#    conda install -y sphinx
-#    pip install sphinx-argparse
-#    cd "$WORKSPACE"/doc
-#    make html
-#    make latexpdf
-#    cp -r "$WORKSPACE"/doc/build/html /tmp/polar2grid-$time
-#    cp -r "$WORKSPACE"/doc/build/latex /tmp/polar2grid-$time
+    # Make docs.
+    conda install -y sphinx
+    pip install sphinx-argparse
+    cd "$WORKSPACE"/doc
+    make html
+    make latexpdf
+    cp -r "$WORKSPACE"/doc/build/html /tmp/polar2grid-$time
+    cp -r "$WORKSPACE"/doc/build/latex /tmp/polar2grid-$time
 fi
 exit $?
