@@ -53,6 +53,19 @@ from polar2grid.core import containers, roles
 LOG = logging.getLogger(__name__)
 
 
+def normalize_satellite_name(input_sat):
+    """Normalize satellite names for Polar2Grid (not Geo2Grid)."""
+    input_sat = input_sat.lower().replace('-', '').replace('_', '')
+    if 'suomi' in input_sat or input_sat == 'snpp':
+        return 'npp'
+
+    if 'jpss' in input_sat:
+        # map JPSS-1 to NOAA-20 and so on
+        return 'noaa' + ['20', '21', '22'][int(input_sat[4:]) - 1]
+    return input_sat
+
+
+
 def area_to_swath_def(area, chunks=4096, overwrite_existing=False):
     if hasattr(area, 'lons') and area.lons is not None:
         lons = area.lons
@@ -167,7 +180,7 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
 
     p2g_metadata = {
         "product_name": info["name"],
-        "satellite": info["platform_name"].lower(),
+        "satellite": normalize_satellite_name(info["platform_name"]),
         "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
         "data_kind": info.get("standard_name", info['name']),
         "begin_time": info["start_time"],
@@ -238,7 +251,7 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
 
     p2g_metadata = {
         "product_name": info["name"],
-        "satellite": info["platform_name"].lower(),
+        "satellite": normalize_satellite_name(info["platform_name"]),
         "instrument": info["sensor"].lower() if isinstance(info["sensor"], str) else list(info["sensor"])[0].lower(),
         "data_kind": info["standard_name"],
         "begin_time": info["start_time"],
