@@ -50,6 +50,7 @@ import os
 from polar2grid.core.frontend_utils import BaseMultiFileReader, BaseFileReader
 from polar2grid.viirs import guidebook
 from polar2grid.viirs.guidebook import K_MOONILLUM
+from polar2grid.readers import normalize_satellite_name
 
 LOG = logging.getLogger(__name__)
 ORBIT_TRANSITION_THRESHOLD = timedelta(seconds=10)
@@ -125,11 +126,8 @@ class VIIRSSDRReader(BaseFileReader):
         """
         super(VIIRSSDRReader, self).__init__(file_handle, file_type_info)
 
-        self.satellite = self[guidebook.K_SATELLITE].lower()
-        if self.satellite == 'j01':
-            self.satellite = 'noaa20'
-        elif self.satellite == 'j02':
-            self.satellite = 'noaa21'
+        self.satellite = self[guidebook.K_SATELLITE]
+        self.satellite = normalize_satellite_name(self.satellite)
         self.instrument = "viirs"
 
         # begin time

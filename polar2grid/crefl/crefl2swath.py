@@ -165,6 +165,7 @@ import polar2grid.viirs.io as viirs_io
 import polar2grid.viirs.swath as viirs_module
 from polar2grid.core import containers, roles
 from polar2grid.core.frontend_utils import ProductDict, GeoPairDict
+from polar2grid.readers import normalize_satellite_name
 
 LOG = logging.getLogger(__name__)
 
@@ -256,7 +257,7 @@ class VIIRSCreflReader(modis_guidebook.HDFReader):
         # CREFLM_npp_d20141103_t1758468_e1800112.hdf
         fn = os.path.splitext(self.filename)[0]
         parts = fn.split("_")
-        self.satellite = parts[1].lower()
+        self.satellite = normalize_satellite_name(parts[1])
         self.instrument = "viirs"
 
         # Parse out the datetime, making sure to add the microseconds and set the timezone to UTC
