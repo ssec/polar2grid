@@ -32,4 +32,6 @@ then
     cp -r "$WORKSPACE"/doc/build/html /tmp/polar2grid-$time
     cp -r "$WORKSPACE"/doc/build/latex /tmp/polar2grid-$time
 fi
+echo $?
+echo "$WORKSPACE"
 exit $?
