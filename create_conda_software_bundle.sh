@@ -134,7 +134,7 @@ echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
 # Taken from https://jcrist.github.io/conda-docker-tips.html
 MINIFY_TARBALL=${MINIFY_TARBALL:-1}
 if [ $MINIFY_TARBALL -ne 0 ]; then
-    cd $CONDA_PREFIX
+    cd $SB_NAME
     conda clean -afy
     find . -follow -type f -name '*.a' -delete
     find . -follow -type f -name '*.pyc' -delete
