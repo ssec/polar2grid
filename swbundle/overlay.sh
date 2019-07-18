@@ -65,8 +65,8 @@ to_rgba() {
 }
 
 oops() {
-    echo "OOPS: $*"
-    echo "FAILURE"
+    >&2 echo "OOPS: $*"
+    >&2 echo "FAILURE"
     exit 1
 }
 
@@ -92,3 +92,4 @@ IN2_RGB_FN=${IN2/.tif/.__rgba__.tif}
 to_rgba ${IN1} ${IN1_RGB_FN} || oops "Could not create RGBA version of ${IN1}"
 to_rgba ${IN2} ${IN2_RGB_FN} || oops "Could not create RGBA version of ${IN2}"
 gdal_merge.py -o ${OUT} $IN1_RGB_FN $IN2_RGB_FN || oops "Could not create merged image"
+>&2 echo "SUCCESS"
