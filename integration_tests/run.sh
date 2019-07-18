@@ -3,7 +3,7 @@
 
 cd "$WORKSPACE"
 # Activate conda for bash.
-/data/users/davidh/anaconda3/bin/conda init bash
+/data/users/davidh/minconda3/bin/conda init bash
 # Restart the shell to enable conda.
 source ~/.bashrc
 conda remove -y -n jenkins_p2g_env --all
