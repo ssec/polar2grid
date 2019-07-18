@@ -55,11 +55,11 @@ to_rgba() {
     elif [[ $num_bands -eq 2 ]]; then
         # LA
         gdal_translate -b 1 -b 1 -b 1 -b 2 -colorinterp red,green,blue,alpha $1 $2
-    elif [[ $num_bands -eq 3 ]]; then
-        # RGB
-        gdal_translate -b 1 -b 1 -b 1 -b mask,1 -colorinterp red,green,blue,alpha $1 $2
+#    elif [[ $num_bands -eq 3 ]]; then
+#        # RGB
+#        gdal_translate -b 1 -b 1 -b 1 -colorinterp red,green,blue $1 $2
     else
-        # RGBA or hope for the best
+        # RGB or RGBA or hope for the best
         ln -s $1 $2
     fi
 }
