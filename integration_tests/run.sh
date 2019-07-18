@@ -6,6 +6,7 @@ cd "$WORKSPACE"
 /data/users/davidh/miniconda3/bin/conda init bash
 # Restart the shell to enable conda.
 source ~/.bashrc
+conda remove -y -n jenkins_p2g_env --all
 conda env update -n jenkins_p2g_env -f build_environment.yml
 conda activate jenkins_p2g_env
 
