@@ -246,7 +246,7 @@ def main():
             ul_x + res_x * gtiff.RasterXSize + half_pixel_x,  # upper-right X
             ul_y + half_pixel_y,  # upper-right Y
         )
-        img = Image.open(input_tiff).convert('RGB')
+        img = Image.open(input_tiff).convert('RGBA' if gtiff.RasterCount in (2, 4) else 'RGB')
         area_def = (proj4_str, area_extent)
 
         cw = ContourWriterAGG(args.shapes_dir)
