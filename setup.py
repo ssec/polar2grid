@@ -118,7 +118,7 @@ extras_require = {
     "ninjo": [],
     "hdf5": ["h5py"],
     # Other:
-    "remap": ["pyproj", "scipy"],
+    "remap": ["pyproj>=2.0", "scipy"],
     "utils": ["matplotlib"],
     "docs": ["sphinx", "rst2pdf"],
     "coastlines": ["pycoast", "pydecorate"],

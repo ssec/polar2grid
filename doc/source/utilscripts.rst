@@ -175,6 +175,13 @@ Example:
 
     gtiff2kmz.sh GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.tif
 
+Overlay one image on to another
+-------------------------------
+
+The ``overlay.sh`` script can be used to overlay one image (ex. VIIRS EDR
+Active Fires) on top of another image (ex. VIIRS Adaptive DNB or True Color).
+This script uses GDAL's ``gdal_merge.py`` utility underneath, but converts
+everything to RGBA format first for better consistency in output images.
 
 Convert GeoTIFFs to MP4 Video
 -----------------------------
