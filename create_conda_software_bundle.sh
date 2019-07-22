@@ -103,10 +103,6 @@ else
     mv bin/GEO2GRID_README.txt README.txt
 fi
 
-# Remove non-bash activate/deactivate scripts
-rm -f $SB_NAME/etc/conda/activate.d/*.{fish,csh}
-rm -f $SB_NAME/etc/conda/deactivate.d/*.{fish,csh}
-
 # Copy the release notes to the tarball
 cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 
@@ -140,8 +136,6 @@ if [ $MINIFY_TARBALL -ne 0 ]; then
     find . -follow -type f -name '*.pyc' -delete
     find . -follow -type f -name '*.js.map' -delete
     find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
-    rm ./etc/conda/activate.d/*.{fish,csh}
-    rm ./etc/conda/deactivate.d/*.{fish,csh}
 fi
 
 # Tar up the software bundle
