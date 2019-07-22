@@ -18,8 +18,7 @@ export POLAR2GRID_HOME="$WORKSPACE/$tarball_name"
 cd "$WORKSPACE/integration_tests"
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
 # Only run by Jenkins if build was successful.
-if [ $? = 0 ]
-then
+if [[ $? = 0 ]]; then
     mkdir /tmp/polar2grid-$time
     # Save software bundle.
     rm -rf /tmp/polar2grid-*
@@ -29,8 +28,10 @@ then
     pip install sphinx-argparse
     cd "$WORKSPACE"/doc
     make html
-    make latexpdf
     cp -r "$WORKSPACE"/doc/build/html /tmp/polar2grid-$time
+    # Clear out intermediate results and rebuild for PDF document
+    make clean
+    make latexpdf
     cp -r "$WORKSPACE"/doc/build/latex /tmp/polar2grid-$time
 fi
 exit $?
