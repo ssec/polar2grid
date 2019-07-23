@@ -52,7 +52,7 @@ SB_TARBALL="${SB_NAME}.tar.gz"
 # Taken from https://jcrist.github.io/conda-docker-tips.html
 MINIFY_TARBALL=${MINIFY_TARBALL:-1}
 if [ $MINIFY_TARBALL -ne 0 ]; then
-    cd CONDA_PREFIX
+    cd $CONDA_PREFIX
     conda clean -afy
     find . -follow -type f -name '*.a' -delete
     find . -follow -type f -name '*.pyc' -delete
