@@ -131,7 +131,7 @@ echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
 # Taken from https://jcrist.github.io/conda-docker-tips.html
 MINIFY_TARBALL=${MINIFY_TARBALL:-1}
 if [ $MINIFY_TARBALL -ne 0 ]; then
-    echo ls -lha $SB_NAME
+    ls -lha $SB_NAME
     cd $SB_NAME
     find . -follow -type f -name '*.a' -delete
     find . -follow -type f -name '*.pyc' -delete
@@ -142,7 +142,7 @@ fi
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
 cd "$SB_NAME"/..
-echo ls -lha $SB_NAME
+ls -lha $SB_NAME
 rm -f ${SB_TARBALL}
 tar -czf "$SB_TARBALL" "$(basename "$SB_NAME")"
 
