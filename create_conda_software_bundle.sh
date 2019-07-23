@@ -115,17 +115,6 @@ chmod u+x re_upload || oops "Couldn't make 're_upload' executable"
 mkdir $SB_NAME/etc/satpy || oops "Couldn't create configuration 'etc/satpy' directory"
 cp -r $BASE_P2G_DIR/etc/* $SB_NAME/etc/satpy/ || oops "Couldn't copy configuration 'etc' directory"
 
-conda init bash
-# Restart the shell to enable conda.
-source ~/.bashrc
-conda deactivate
-# Download pyspectral data
-echo "Downloading pyspectral data..."
-$SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
-
-# Add the download_from_internet: False to the config
-echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
-
 # Perform extra "risky" operations to make the tarball as small as possible
 # Taken from https://jcrist.github.io/conda-docker-tips.html
 MINIFY_TARBALL=${MINIFY_TARBALL:-1}
@@ -137,6 +126,17 @@ if [ $MINIFY_TARBALL -ne 0 ]; then
     find . -follow -type f -name '*.js.map' -delete
     find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
 fi
+
+conda init bash
+# Restart the shell to enable conda.
+source ~/.bashrc
+conda deactivate
+# Download pyspectral data
+echo "Downloading pyspectral data..."
+$SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
+
+# Add the download_from_internet: False to the config
+echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
 
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
