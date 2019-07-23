@@ -59,9 +59,10 @@ def normalize_satellite_name(input_sat):
     if 'suomi' in input_sat or input_sat == 'snpp':
         return 'npp'
 
-    if 'jpss' in input_sat:
+    if 'jpss' in input_sat or (len(input_sat) == 3 and input_sat[0] == 'j'):
         # map JPSS-1 to NOAA-20 and so on
-        return 'noaa' + ['20', '21', '22'][int(input_sat[4:]) - 1]
+        sat_num = int(input_sat.replace('jpss', '').replace('j', ''))
+        return 'noaa' + ['20', '21', '22', '23'][sat_num - 1]
     return input_sat
 
 
