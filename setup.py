@@ -40,7 +40,6 @@ http://www.ssec.wisc.edu/software/polar2grid/
 """
 __docformat__ = "restructuredtext en"
 import os
-import glob
 from setuptools import setup, find_packages, Command
 from distutils.extension import Extension
 import numpy
@@ -214,8 +213,7 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     include_package_data=True,
     package_data={'polar2grid': ["compositors/*.ini", "awips/*.ini", "awips/*.yaml",
-                                 "grids/*.conf", "ninjo/*.ini", "core/rescale_configs/*.ini"],
-                  'swbundle': 'rescale_configs/*.ini'},
+                                 "grids/*.conf", "ninjo/*.ini", "core/rescale_configs/*.ini"]},
     zip_safe=True,
     tests_require=['py.test'],
     cmdclass={'test': PyTest},
@@ -225,7 +223,6 @@ setup(
         ],
     python_requires='>=3.6',
     extras_require=extras_require,
-    entry_points=entry_points,
-    scripts=glob.glob('swbundle/*.sh')
+    entry_points=entry_points
 )
 
