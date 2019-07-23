@@ -48,6 +48,17 @@ fi
 pip install -U --no-deps . || oops "Couldn't install current polar2grid package"
 
 SB_TARBALL="${SB_NAME}.tar.gz"
+# Perform extra "risky" operations to make the tarball as small as possible
+# Taken from https://jcrist.github.io/conda-docker-tips.html
+MINIFY_TARBALL=${MINIFY_TARBALL:-1}
+if [ $MINIFY_TARBALL -ne 0 ]; then
+    cd CONDA_PREFIX
+    conda clean -afy
+    find . -follow -type f -name '*.a' -delete
+    find . -follow -type f -name '*.pyc' -delete
+    find . -follow -type f -name '*.js.map' -delete
+    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
+fi
 conda-pack -o $SB_TARBALL || oops "Couldn't create conda-packed tarball"
 mkdir -p ${SB_NAME} || oops "Couldn't make output directory"
 tar -xzf ${SB_TARBALL} -C ${SB_NAME} || oops "Couldn't untar conda-packed tarball"
@@ -114,18 +125,6 @@ chmod u+x re_upload || oops "Couldn't make 're_upload' executable"
 # Copy SatPy configurations
 mkdir $SB_NAME/etc/satpy || oops "Couldn't create configuration 'etc/satpy' directory"
 cp -r $BASE_P2G_DIR/etc/* $SB_NAME/etc/satpy/ || oops "Couldn't copy configuration 'etc' directory"
-
-# Perform extra "risky" operations to make the tarball as small as possible
-# Taken from https://jcrist.github.io/conda-docker-tips.html
-MINIFY_TARBALL=${MINIFY_TARBALL:-1}
-if [ $MINIFY_TARBALL -ne 0 ]; then
-    cd $SB_NAME
-    conda clean -afy
-    find . -follow -type f -name '*.a' -delete
-    find . -follow -type f -name '*.pyc' -delete
-    find . -follow -type f -name '*.js.map' -delete
-    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
-fi
 
 conda init bash
 # Restart the shell to enable conda.
