@@ -1,6 +1,7 @@
 #!/bin/bash
 # Script for jenkins to run tests on polar2grid.
 
+set -ex
 export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
 cd "$WORKSPACE"
 # Activate conda for bash.
@@ -16,11 +17,12 @@ tarball_name=polar2grid-swbundle-$time
 export POLAR2GRID_HOME="$WORKSPACE/$tarball_name"
 cd "$WORKSPACE/integration_tests"
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
+
 # Only run by Jenkins if build was successful.
-if [[ $? = 0 ]]; then
-    mkdir /tmp/polar2grid-$time
+if [[ $? -eq 0 ]]; then
     # Save software bundle.
     rm -rf /tmp/polar2grid-*
+    mkdir /tmp/polar2grid-$time
     cp -r "$WORKSPACE/$tarball_name" /tmp/polar2grid-$time
     # Make docs.
     conda install -y sphinx
@@ -33,4 +35,3 @@ if [[ $? = 0 ]]; then
     make latexpdf
     cp -r "$WORKSPACE"/doc/build/latex /tmp/polar2grid-$time
 fi
-exit $?
