@@ -48,17 +48,7 @@ fi
 pip install -U --no-deps . || oops "Couldn't install current polar2grid package"
 
 SB_TARBALL="${SB_NAME}.tar.gz"
-# Perform extra "risky" operations to make the tarball as small as possible
-# Taken from https://jcrist.github.io/conda-docker-tips.html
-MINIFY_TARBALL=${MINIFY_TARBALL:-1}
-if [ $MINIFY_TARBALL -ne 0 ]; then
-    cd $CONDA_PREFIX
-    conda clean -afy
-    find . -follow -type f -name '*.a' -delete
-    find . -follow -type f -name '*.pyc' -delete
-    find . -follow -type f -name '*.js.map' -delete
-    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
-fi
+conda clean -afy
 conda-pack -o $SB_TARBALL || oops "Couldn't create conda-packed tarball"
 mkdir -p ${SB_NAME} || oops "Couldn't make output directory"
 tar -xzf ${SB_TARBALL} -C ${SB_NAME} || oops "Couldn't untar conda-packed tarball"
@@ -137,9 +127,22 @@ $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral d
 # Add the download_from_internet: False to the config
 echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
 
+# Perform extra "risky" operations to make the tarball as small as possible
+# Taken from https://jcrist.github.io/conda-docker-tips.html
+MINIFY_TARBALL=${MINIFY_TARBALL:-1}
+if [ $MINIFY_TARBALL -ne 0 ]; then
+    echo ls -lha $SB_NAME
+    cd $SB_NAME
+    find . -follow -type f -name '*.a' -delete
+    find . -follow -type f -name '*.pyc' -delete
+    find . -follow -type f -name '*.js.map' -delete
+    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
+fi
+
 # Tar up the software bundle
 echo "Creating software bundle tarball..."
 cd "$SB_NAME"/..
+echo ls -lha $SB_NAME
 rm -f ${SB_TARBALL}
 tar -czf "$SB_TARBALL" "$(basename "$SB_NAME")"
 
