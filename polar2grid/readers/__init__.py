@@ -55,7 +55,12 @@ LOG = logging.getLogger(__name__)
 
 def normalize_satellite_name(input_sat):
     """Normalize satellite names for Polar2Grid (not Geo2Grid)."""
-    input_sat = input_sat.lower().replace('-', '').replace('_', '')
+    input_sat = input_sat.lower()
+    # special cases for backwards compatibility
+    if input_sat in ('gcom-w1'):
+        return input_sat
+
+    input_sat = input_sat.replace('-', '').replace('_', '')
     if 'suomi' in input_sat or input_sat == 'snpp':
         return 'npp'
 
