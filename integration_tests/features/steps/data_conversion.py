@@ -22,6 +22,7 @@ def step_impl(context, source):
 
     context.source = new_source
 
+
 @when(u'{script} {command} runs')
 def step_impl(context, script, command):
     context.script = script
@@ -39,6 +40,7 @@ def step_impl(context, script, command):
     
     assert os.path.exists(context.temp_dir), "Temporary directory not created"
     assert os.listdir(context.temp_dir), "No files were created"
+
 
 @then(u'the output matches with the files in {output}')
 def step_impl(context, output):

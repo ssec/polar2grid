@@ -7,12 +7,12 @@ Feature: Testing data conversions
         When <script> <command> runs
         Then the output matches with the files in <output>
 
-#    Examples: ABI
-#        | source          | command                       | output           | script      |
-#        | abi/input/test1 | -r abi_l1b -w geotiff -vv -f  | abi/output/test1 | geo2grid.sh |
-#        | abi/input/test2 | -r abi_l1b -w geotiff -vv -f  | abi/output/test2 | geo2grid.sh |
-#        | abi/input/test3 | -r abi_l1b -w geotiff -vv -f  | abi/output/test3 | geo2grid.sh |
-#        | abi/input/test4 | -r abi_l1b -w geotiff -vv -f  | abi/output/test4 | geo2grid.sh |
+    Examples: ABI
+        | source          | command                       | output           | script      |
+        | abi/input/test1 | -r abi_l1b -w geotiff --num-workers 8 -vv -f  | abi/output/test1 | geo2grid.sh |
+        | abi/input/test2 | -r abi_l1b -w geotiff --num-workers 8 -vv -f  | abi/output/test2 | geo2grid.sh |
+        | abi/input/test3 | -r abi_l1b -w geotiff --num-workers 8 -vv -f  | abi/output/test3 | geo2grid.sh |
+        | abi/input/test4 | -r abi_l1b -w geotiff --num-workers 8 -vv -f  | abi/output/test4 | geo2grid.sh |
 
     Examples: ACSPO
         | source            | command                                | output             | script        |
@@ -37,7 +37,7 @@ Feature: Testing data conversions
 
     Examples: VIIRS_L1B
        | source                      | command | output | script |
-       | viirs_l1b_night/input/test1 | viirs_l1b gtiff -vv --grid-configs /data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data/viirs_l1b_night/input/test1/my_grid.conf -g polar_europe -p adaptive_dnb dynamic_dnb histogram_dnb hncc_dnb -f  | viirs_l1b_night/output/backup_test1  | polar2grid.sh |
+       | viirs_l1b_night/input/test1 | viirs_l1b gtiff -vv --grid-configs /data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data/viirs_l1b_night/input/test1/my_grid.conf -g polar_europe -p adaptive_dnb dynamic_dnb histogram_dnb hncc_dnb -f  | viirs_l1b_night/output/test1  | polar2grid.sh |
 
     Examples: VIIRS_SDR
        | source                      | command                                                                | output                       | script        |
