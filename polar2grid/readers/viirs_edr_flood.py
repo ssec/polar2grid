@@ -41,7 +41,7 @@ The ``--remap_method`` parameter is set to ``nearest``.
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
-| WaterDetection           | Channel 1 Reflectance Band                          |
+| WaterDetection            | Channel 1 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
 """
 import sys

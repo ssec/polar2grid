@@ -55,13 +55,19 @@ LOG = logging.getLogger(__name__)
 
 def normalize_satellite_name(input_sat):
     """Normalize satellite names for Polar2Grid (not Geo2Grid)."""
-    input_sat = input_sat.lower().replace('-', '').replace('_', '')
+    input_sat = input_sat.lower()
+    # special cases for backwards compatibility
+    if input_sat in ('gcom-w1'):
+        return input_sat
+
+    input_sat = input_sat.replace('-', '').replace('_', '')
     if 'suomi' in input_sat or input_sat == 'snpp':
         return 'npp'
 
-    if 'jpss' in input_sat:
+    if 'jpss' in input_sat or (len(input_sat) == 3 and input_sat[0] == 'j'):
         # map JPSS-1 to NOAA-20 and so on
-        return 'noaa' + ['20', '21', '22'][int(input_sat[4:]) - 1]
+        sat_num = int(input_sat.replace('jpss', '').replace('j', ''))
+        return 'noaa' + ['20', '21', '22', '23'][sat_num - 1]
     return input_sat
 
 
@@ -173,7 +179,8 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
         default_fill = np.nan
     else:
         dtype = ds.dtype
-        default_fill = 0
+        # Invalid data is 0
+        default_fill = info.get('_FillValue', 0)
 
     if isinstance(info["sensor"], bytes):
         info["sensor"] = info["sensor"].decode("utf-8")
@@ -185,7 +192,7 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
         "data_kind": info.get("standard_name", info['name']),
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
-        "fill_value": info.get('_FillValue', default_fill),
+        "fill_value": default_fill,
         "swath_columns": cols,
         "swath_rows": rows,
         "rows_per_scan": info.get("rows_per_scan", rows),
@@ -247,7 +254,7 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
         default_fill = np.nan
     else:
         dtype = ds.dtype
-        default_fill = 0
+        default_fill = info.get('_FillValue', 0)
 
     p2g_metadata = {
         "product_name": info["name"],
@@ -256,7 +263,7 @@ def dataarray_to_gridded_product(ds, grid_def, overwrite_existing=False):
         "data_kind": info["standard_name"],
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
-        "fill_value": info.get('_FillValue', default_fill),
+        "fill_value": default_fill,
         # "swath_columns": cols,
         # "swath_rows": rows,
         "rows_per_scan": info["rows_per_scan"],
@@ -431,4 +438,3 @@ def main(description=None, add_argument_groups=None):
     else:
         print(json_str)
     return 0
-

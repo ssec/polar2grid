@@ -606,6 +606,10 @@ class Frontend(roles.FrontendRole):
             have_crefl, _ = self.analyze_hdf4_files(files_created)
             if not have_crefl:
                 raise RuntimeError("crefl completed successfully, but didn't give us any recognizable crefl files")
+            # Short term hack: delete/cleanup swath products and swath definitions
+            for cname, child in scene.items():
+                child['swath_definition'].cleanup()
+                child.cleanup()
         except (ValueError, RuntimeError, OSError):
             LOG.error("Could not create modis crefl files from SDRs")
             raise
@@ -645,6 +649,10 @@ class Frontend(roles.FrontendRole):
             have_crefl, _ = self.analyze_hdf4_files(files_created)
             if not have_crefl:
                 raise RuntimeError("cviirs completed successfully, but didn't give us any recognizable crefl files")
+            # Short term hack: delete/cleanup swath products and swath definitions
+            for cname, child in scene.items():
+                child['swath_definition'].cleanup()
+                child.cleanup()
         except (ValueError, RuntimeError, OSError):
             LOG.error("Could not create crefl files from SDRs")
             raise

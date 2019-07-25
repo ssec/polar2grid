@@ -5,6 +5,7 @@ channels:
 dependencies:
   - aggdraw
   - appdirs
+  - behave
   - cftime
   - conda-pack
   - configobj
@@ -15,6 +16,7 @@ dependencies:
   - fontconfig
   - freetype
   - gdal
+  - graphviz
   - h5py
   - netcdf4
   - pillow
@@ -41,3 +43,4 @@ dependencies:
   - scipy
   - pip:
     - git+https://github.com/pytroll/satpy.git@master
+    - graphviz
