@@ -42,6 +42,7 @@ __docformat__ = "restructuredtext en"
 import os
 from setuptools import setup, find_packages, Command
 from distutils.extension import Extension
+from glob import glob
 import numpy
 
 extensions = [
@@ -209,11 +210,13 @@ setup(
     url="http://www.ssec.wisc.edu/software/polar2grid/",
     download_url="http://larch.ssec.wisc.edu/simple/polar2grid",
     ext_modules=cythonize(extensions),
-    include_dirs=[numpy.get_include()],
+    include_dirs=[numpy.get_include(), 'etc'],
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     include_package_data=True,
     package_data={'polar2grid': ["compositors/*.ini", "awips/*.ini", "awips/*.yaml",
-                                 "grids/*.conf", "ninjo/*.ini", "core/rescale_configs/*.ini"]},
+                                 "grids/*.conf", "ninjo/*.ini", "core/rescale_configs/*.ini"],
+                  '': ['pyspectral.yaml']},
+    data_files=[('etc', ['pyspectral.yaml'])],
     zip_safe=True,
     tests_require=['py.test'],
     cmdclass={'test': PyTest},
@@ -223,6 +226,8 @@ setup(
         ],
     python_requires='>=3.6',
     extras_require=extras_require,
-    entry_points=entry_points
+    entry_points=entry_points,
+    scripts=glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'swbundle', '*.sh')) +
+            ['etc/pyspectral.yaml']
 )
 
