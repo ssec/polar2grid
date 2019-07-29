@@ -1,0 +1,11 @@
+name: jenkins_p2g_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - behave
+  - graphviz
+  - sphinx
+  - pip:
+    - graphviz
+    - sphinx-argparse

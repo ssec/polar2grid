@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script for jenkins to run tests on polar2grid.
+# Script for jenkins to run tests on polar2grid. Jenkins home is on bumi.ssec.wisc.edu.
 
 set -ex
 export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
@@ -28,6 +28,7 @@ swbundle_name=${prefix}2grid-swbundle-${end}
 
 ./create_conda_software_bundle.sh ${WORKSPACE}/${swbundle_name}
 export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
+conda env update -n jenkins_p2g_env -f jenkins_environment.yml
 cd "$WORKSPACE/integration_tests"
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
 
