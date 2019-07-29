@@ -37,6 +37,7 @@ dependencies:
   - requests
   - setuptools
   - six
+  - sphinx
   - trollimage
   - trollsift
   - xarray
@@ -44,3 +45,4 @@ dependencies:
   - pip:
     - git+https://github.com/pytroll/satpy.git@master
     - graphviz
+    - sphinx-argparse

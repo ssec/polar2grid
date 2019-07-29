@@ -49,7 +49,7 @@ pip install -U --no-deps . || oops "Couldn't install current polar2grid package"
 
 SB_TARBALL="${SB_NAME}.tar.gz"
 conda clean -afy
-conda-pack --exclude behave -o $SB_TARBALL || oops "Couldn't create conda-packed tarball"
+conda-pack -o $SB_TARBALL || oops "Couldn't create conda-packed tarball"
 mkdir -p ${SB_NAME} || oops "Couldn't make output directory"
 tar -xzf ${SB_TARBALL} -C ${SB_NAME} || oops "Couldn't untar conda-packed tarball"
 cd ${SB_NAME} || oops "Couldn't change to software bundle directory"
