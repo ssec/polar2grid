@@ -42,6 +42,7 @@ __docformat__ = "restructuredtext en"
 import os
 from setuptools import setup, find_packages, Command
 from distutils.extension import Extension
+from glob import glob
 import numpy
 
 extensions = [
@@ -223,6 +224,8 @@ setup(
         ],
     python_requires='>=3.6',
     extras_require=extras_require,
-    entry_points=entry_points
+    entry_points=entry_points,
+    scripts=glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'swbundle', '*.sh')) +
+            ['etc/pyspectral.yaml']
 )
 
