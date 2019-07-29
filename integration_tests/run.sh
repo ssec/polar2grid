@@ -37,7 +37,7 @@ rm -rf /tmp/${prefix}2grid-*
 mkdir /tmp/${prefix}2grid-$end
 cp -r "$WORKSPACE/$tarball_name" /tmp/${prefix}2grid-$end
 # Make docs.
-conda update -n jenkins_p2g_env sphinx
+conda update -c conda-forge -n jenkins_p2g_env sphinx
 pip install sphinx-argparse
 cd "$WORKSPACE"/doc
 make latexpdf POLAR2GRID_DOC=$prefix
