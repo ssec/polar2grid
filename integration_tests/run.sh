@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script for jenkins to run tests on polar2grid.
 
-set -exf
+set -ex
 export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
 cd "$WORKSPACE"
 # Activate conda for bash.
