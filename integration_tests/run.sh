@@ -31,7 +31,7 @@ export POLAR2GRID_HOME="$WORKSPACE/$tarball_name"
 cd "$WORKSPACE/integration_tests"
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
 
-# Only ran by Jenkins if build was successful and correct version tag was added.
+# Only ran by Jenkins if build was successful.
 # Save software bundle.
 rm -rf /tmp/${prefix}2grid-*
 mkdir /tmp/${prefix}2grid-$end
