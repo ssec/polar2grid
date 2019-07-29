@@ -16,7 +16,7 @@ prefix="$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")"
 version="$(cut -d'-' -f2 <<<"$GIT_TAG_NAME")"
 end="`date +"%Y%m%d-%H%M%S"`"
 # If the tag is correct and a version was specified, make a version release.
-if [[ "$GIT_TAG_NAME" =~ g2g|p2g-v[0-9]+\.[0-9]+\.[0-9]+[a-z]? ]]; then
+if [[ "$GIT_TAG_NAME" =~ g2g-v[0-9]+\.[0-9]+\.[0-9]+[a-z]?|p2g-v[0-9]+\.[0-9]+\.[0-9]+[a-z]? ]]; then
     end="$version"
 fi
 if [[ "$prefix" = "g2g" ]]; then
