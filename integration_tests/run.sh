@@ -12,11 +12,11 @@ conda env update -n jenkins_p2g_env -f build_environment.yml --prune
 conda activate jenkins_p2g_env
 
 # Handle release vs test naming.
-end="`date +"%Y%m%d-%H%M%S"`"
 prefix="$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")"
 version="$(cut -d'-' -f2 <<<"$GIT_TAG_NAME")"
-# If the tag is correct, make a version release.
-if [[ ("$prefix" = p2g || "$prefix" = g2g) && ! -z "$version" && "$prefix" != "$version" ]]; then
+end="`date +"%Y%m%d-%H%M%S"`"
+# If the tag is correct and a version was specified, make a version release.
+if [[ "$GIT_TAG_NAME" =~ g2g|p2g-v[0-9]+\.[0-9]+\.[0-9]+[a-z]? ]]; then
     end="$version"
 fi
 if [[ "$prefix" = "g2g" ]]; then
@@ -48,6 +48,7 @@ make clean
 make html POLAR2GRID_DOC=$prefix
 cp -r "$WORKSPACE"/doc/build/html /tmp/${prefix}2grid-$end
 chmod a+rx /tmp/${prefix}2grid-$end
-if [[ $end = "$version" ]]; then
+# Only copy to data/tmp if the tag was correct and a version was specified.
+if [[ "$GIT_TAG_NAME" =~ g2g|p2g-v[0-9]+\.[0-9]+\.[0-9]+[a-z]? ]]; then
     cp -r /tmp/${prefix}2grid-$end /data/tmp/${prefix}2grid-$end
 fi
