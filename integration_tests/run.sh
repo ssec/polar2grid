@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script for jenkins to run tests on polar2grid. Jenkins home is on bumi.ssec.wisc.edu.
+# Script for jenkins to run tests on polar2grid.
 
 set -ex
 export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH

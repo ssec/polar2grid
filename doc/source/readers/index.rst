@@ -16,11 +16,8 @@ using the  ``--list-products`` option.
 .. toctree-filt::
     :maxdepth: 1
 
-    :polar2grid:viirs_edr_active_fires
-    :polar2grid:viirs_edr_flood
     :polar2grid:viirs_sdr
     :polar2grid:viirs_l1b
-    :polar2grid:virr_l1b
     :polar2grid:modis
     :polar2grid:crefl
     :polar2grid:avhrr
@@ -29,6 +26,9 @@ using the  ``--list-products`` option.
     :polar2grid:mirs
     :polar2grid:acspo
     :polar2grid:clavrx
+    :polar2grid:viirs_edr_active_fires
+    :polar2grid:viirs_edr_flood
+    :polar2grid:virr_l1b
     :geo2grid:abi_l1b
     :geo2grid:ahi_hsd
     :geo2grid:ahi_hrit

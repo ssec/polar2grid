@@ -18,6 +18,8 @@ found in the feature file.
 How Jenkins runs the tests
 ==========================
 
-Jenkins runs a script that follows the same steps as above with the exception of extracting the test data from a tarball. The
-script can be found in ``integration_tests/run.sh``.
+Jenkins runs a script that follows the same steps as above with the exception of extracting the test data from a
+tarball. The script can be found in ``integration_tests/run.sh``.
+
+Jenkins home is on bumi.ssec.wisc.edu using port 8080.
 
