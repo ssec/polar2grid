@@ -8,8 +8,8 @@ cd "$WORKSPACE"
 /data/users/davidh/miniconda3/bin/conda init bash
 # Restart the shell to enable conda.
 source ~/.bashrc
-conda env update -n jenkins_p2g_env -f build_environment.yml
-conda activate jenkins_p2g_env
+conda env update -n jenkins_p2g_swbundle -f build_environment.yml
+conda activate jenkins_p2g_swbundle
 
 # Handle release vs test naming.
 prefix="$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")"
@@ -28,11 +28,13 @@ swbundle_name=${prefix}2grid-swbundle-${end}
 
 ./create_conda_software_bundle.sh ${WORKSPACE}/${swbundle_name}
 export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
-conda env update -n jenkins_p2g_env -f jenkins_environment.yml
 cd "$WORKSPACE/integration_tests"
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
 
 # Only ran by Jenkins if build was successful.
+conda env update -n jenkins_p2g_docs -f build_environment.yml
+conda env update -n jenkins_p2g_docs -f jenkins_environment.yml
+conda activate jenkins_p2g_docs
 # Remove old software bundles.
 rm -rf /tmp/${prefix}2grid-*
 mkdir /tmp/${prefix}2grid-${end}
