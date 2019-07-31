@@ -4,6 +4,18 @@
 #include "numpy/arrayobject.h"
 #include "_fornav_templates.h"
 
+bool safe_isnan(npy_int8 val) {
+    return false;
+}
+
+bool safe_isnan(npy_float32 val) {
+    return isnan(val);
+}
+
+bool safe_isnan(npy_float64 val) {
+    return isnan(val);
+}
+
 int initialize_weight(size_t chan_count, unsigned int weight_count, weight_type weight_min, weight_type weight_distance_max,
         weight_type weight_delta_max, weight_type weight_sum_min, ewa_weight *ewaw) {
   unsigned int idx;
@@ -223,7 +235,7 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
       u0 = uimg[swath_offset];
       v0 = vimg[swath_offset];
 
-      if (u0 < 0.0 || v0 < 0.0 || isnan(u0) || isnan(v0)) {
+      if (u0 < 0.0 || v0 < 0.0 || safe_isnan(u0) || safe_isnan(v0)) {
         continue;
       }
 
@@ -272,14 +284,14 @@ int compute_ewa(size_t chan_count, int maximum_weight_mode,
                 if (maximum_weight_mode) {
                   if (weight > grid_weights[chan][grid_offset]) {
                     ((grid_weights[chan])[grid_offset]) = weight;
-                    if ((this_val == img_fill) || (isnan(this_val))) {
+                    if ((this_val == img_fill) || (safe_isnan(this_val))) {
                       ((grid_accums[chan])[grid_offset]) = (accum_type)NAN;
                     } else {
                       ((grid_accums[chan])[grid_offset]) = (accum_type)this_val;
                     }
                   }
                 } else {
-                  if ((this_val != img_fill) && !(isnan(this_val))) {
+                  if ((this_val != img_fill) && !(safe_isnan(this_val))) {
                     ((grid_weights[chan])[grid_offset]) += weight;
                     ((grid_accums[chan])[grid_offset]) += (accum_type)this_val * weight;
                   }
@@ -398,7 +410,7 @@ unsigned int write_grid_image(GRID_TYPE *output_image, GRID_TYPE fill, size_t gr
        i++, grid_accum++, grid_weights++, output_image++) {
     // Calculate the elliptical weighted average value for each cell (float -> not-float needs rounding)
     // The fill value for the weight and accumulation arrays is static at NaN
-    if (*grid_weights < weight_sum_min or isnan(*grid_accum)) {
+    if (*grid_weights < weight_sum_min or safe_isnan(*grid_accum)) {
       chanf = (accum_type)NAN;
     } else if (maximum_weight_mode) {
       // keep the current value
@@ -409,7 +421,7 @@ unsigned int write_grid_image(GRID_TYPE *output_image, GRID_TYPE fill, size_t gr
       chanf = *grid_accum / *grid_weights - get_rounding(output_image);
     }
 
-    if (isnan(chanf)) {
+    if (safe_isnan(chanf)) {
       *output_image = (GRID_TYPE)fill;
     } else {
       valid_count++;
