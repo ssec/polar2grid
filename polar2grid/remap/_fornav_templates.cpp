@@ -4,15 +4,15 @@
 #include "numpy/arrayobject.h"
 #include "_fornav_templates.h"
 
-bool safe_isnan(npy_int8 val) {
+inline bool safe_isnan(npy_int8 val) {
     return false;
 }
 
-bool safe_isnan(npy_float32 val) {
+inline bool safe_isnan(npy_float32 val) {
     return isnan(val);
 }
 
-bool safe_isnan(npy_float64 val) {
+inline bool safe_isnan(npy_float64 val) {
     return isnan(val);
 }
 
