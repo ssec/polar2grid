@@ -1,7 +1,19 @@
 Release Notes
 =============
 
-Version 2.2.1 (unreleased)
+Version 2.3.0 (unreleased)
+--------------------------
+
+* Add FY-3C VIRR reader
+* Add MERSI-2 reader
+* Add VIIRS EDR Flood reader
+* Add VIIRS EDR Active Fire reader
+* Add "overlay.sh" script for overlaying active fire products
+* Add '--borders-width' flag to "add_coastlines.sh"
+* Fix AVHRR reader not masking bad 0 values
+* Fix MIRS reader not using valid range properly
+
+Version 2.2.1 (2018-04-27)
 --------------------------
 
 * Fix CREFL reader not reading negative reflectances

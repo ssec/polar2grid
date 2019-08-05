@@ -1,7 +1,14 @@
 Release Notes
 =============
 
-Version 1.0.0 (unreleased)
+Version 1.0.1 (unreleased)
+--------------------------
+
+* Fix resampling freezing when output grid was larger than 1024x1024
+* Fix crash when certain RGBs were created with '--ll-bbox'
+* Add missing '--radius-of-influence' flag for nearest neighbor resampling
+
+Version 1.0.0 (2019-03-01)
 --------------------------
 
 * New Geo2Grid Package!
