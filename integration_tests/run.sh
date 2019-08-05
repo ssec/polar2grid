@@ -35,6 +35,7 @@ behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/i
 conda env update -n jenkins_p2g_docs -f build_environment.yml
 conda env update -n jenkins_p2g_docs -f jenkins_environment.yml
 conda activate jenkins_p2g_docs
+pip install -U --no-deps "$WORKSPACE"
 # Remove old software bundles.
 rm -rf /tmp/"${prefix}"2grid-*
 mkdir "/tmp/${prefix}2grid-${end}"

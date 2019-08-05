@@ -4,6 +4,7 @@ channels:
 dependencies:
   - behave
   - graphviz
+  - pip
   - sphinx
   - pip:
     - graphviz
