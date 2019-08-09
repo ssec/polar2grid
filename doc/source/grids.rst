@@ -219,3 +219,51 @@ Equirectangular Fit
 :Y Pixel Size: 250 meters
 :X Origin: None
 :Y Origin: None
+
+GOES-East 1km
+^^^^^^^^^^^^^
+
+:Grid Name: goes_east_1km
+:Description: 1 kilometer resolution GOES-16 Full Disk
+
+GOES-East 4km
+^^^^^^^^^^^^^
+
+:Grid Name: goes_east_4km
+:Description: 4 kilometer resolution GOES-16 Full Disk
+
+GOES-East 8km
+^^^^^^^^^^^^^
+
+:Grid Name: goes_east_8km
+:Description: 8 kilometer resolution GOES-16 Full Disk
+
+GOES-East 10km
+^^^^^^^^^^^^^
+
+:Grid Name: goes_east_10km
+:Description: 10 kilometer resolution GOES-16 Full Disk
+
+GOES-West 1km
+^^^^^^^^^^^^^
+
+:Grid Name: goes_west_1km
+:Description: 1 kilometer resolution GOES-17 Full Disk
+
+GOES-West 4km
+^^^^^^^^^^^^^
+
+:Grid Name: goes_west_4km
+:Description: 4 kilometer resolution GOES-17 Full Disk
+
+GOES-West 8km
+^^^^^^^^^^^^^
+
+:Grid Name: goes_west_8km
+:Description: 8 kilometer resolution GOES-17 Full Disk
+
+GOES-West 10km
+^^^^^^^^^^^^^
+
+:Grid Name: goes_west_10km
+:Description: 10 kilometer resolution GOES-17 Full Disk
