@@ -39,4 +39,4 @@ dependencies:
   - xarray
   - scipy
   - pip:
-    - git+https://github.com/pytroll/satpy.git@master
+    - git+https://github.com/djhoese/satpy.git@bugfix-abi-extents
