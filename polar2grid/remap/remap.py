@@ -546,7 +546,7 @@ def add_remap_argument_groups(parser):
                        help="Remapping algorithm to use")
     group.add_argument('--swath-usage', dest="swath_usage", default=0, type=float,
                        help="Fraction of swath that must be used to continue remapping/processing (default 0)")
-    group.add_argument('--grid-coverage', dest="grid_coverage", default=0.1, type=float,
+    group.add_argument('--grid-coverage', dest="grid_coverage", default=SUPPRESS, type=float,
                        help="Fraction of grid that must be covered with valid data to continue processing (default 0.1)")
     group.add_argument('--fornav-D', dest='fornav_D', default=SUPPRESS, type=float,
                        help="Specify the -D option for fornav")
