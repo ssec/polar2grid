@@ -35,9 +35,17 @@ import sys
 import logging
 import importlib
 from glob import glob
-import dask
 
+import dask
+import numpy as np
+from pyresample.geometry import DynamicAreaDefinition, AreaDefinition
+from pyproj import Proj
 from polar2grid.writers import geotiff, scmi
+
+try:
+    from pyproj import CRS
+except ImportError:
+    CRS = None
 
 LOG = logging.getLogger(__name__)
 
@@ -57,6 +65,44 @@ def get_default_output_filename(reader, writer):
     if reader not in ofile_map:
         reader = None
     return ofile_map[reader]
+
+
+def _proj_dict_equal(a, b):
+    """Compare two projection dictionaries for "close enough" equality."""
+    # pyproj 2.0+
+    if CRS is not None:
+        crs1 = CRS(a)
+        crs2 = CRS(b)
+        return crs1 == crs2
+
+    # fallback
+    from osgeo import osr
+    a = dict(sorted(a.items()))
+    b = dict(sorted(b.items()))
+    p1 = Proj(a)
+    p2 = Proj(b)
+    s1 = osr.SpatialReference()
+    s1.ImportFromProj4(p1.srs)
+    s2 = osr.SpatialReference()
+    s2.ImportFromProj4(p2.srs)
+    return s1.IsSame(s2)
+
+
+def is_native_grid(grid, max_native_area):
+    """Is the desired grid a version of the native Area?"""
+    if not isinstance(max_native_area, AreaDefinition):
+        return False
+    if not isinstance(grid, AreaDefinition):
+        return False
+    if not _proj_dict_equal(max_native_area.proj_dict, grid.proj_dict):
+        return False
+    # if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent), atol=grid.pixel_size_x):
+    if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent)):
+        return False
+    if max_native_area.width < grid.width:
+        return (grid.width / max_native_area.width).is_integer()
+    else:
+        return (max_native_area.width / grid.width).is_integer()
 
 
 def get_preserve_resolution(args, resampler, areas_to_resample):
@@ -303,12 +349,6 @@ basic processing with limited products:
         # they don't want any resampling (they used '-g' with no args)
         areas_to_resample = [None]
 
-    has_custom_grid = any(g not in ['MIN', 'MAX', None] for g in areas_to_resample)
-    if has_custom_grid and resampler == 'native':
-        LOG.error("Resampling method 'native' can only be used with 'MIN' or 'MAX' grids "
-                  "(use 'nearest' method instead).")
-        return -1
-
     p2g_grid_configs = [x for x in grid_configs if x.endswith('.conf')]
     pyresample_area_configs = [x for x in grid_configs if not x.endswith('.conf')]
     if not grid_configs or p2g_grid_configs:
@@ -355,7 +395,6 @@ basic processing with limited products:
         elif area_name in custom_areas:
             area_def = custom_areas[area_name]
         elif area_name in grid_manager:
-            from pyresample.geometry import DynamicAreaDefinition
             p2g_def = grid_manager[area_name]
             area_def = p2g_def.to_satpy_area()
             if isinstance(area_def, DynamicAreaDefinition) and p2g_def['cell_width'] is not None:
@@ -365,7 +404,7 @@ basic processing with limited products:
             area_def = get_area_def(area_name)
 
         if resampler is None and area_def is not None:
-            rs = 'native' if area_name in ['MIN', 'MAX'] else 'nearest'
+            rs = 'native' if area_name in ['MIN', 'MAX'] or is_native_grid(area_def, scn.max_area()) else 'nearest'
             LOG.debug("Setting default resampling to '{}' for grid '{}'".format(rs, area_name))
         else:
             rs = resampler
