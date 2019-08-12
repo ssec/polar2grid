@@ -627,18 +627,18 @@ class GridDefinition(GeographicDefinition):
 
     @property
     def xy_lowerright(self):
-        y_ll = self["origin_y"] + self["cell_height"] * self["height"]
-        x_ll = self["origin_x"] + self["cell_width"] * self["width"]
+        y_ll = self["origin_y"] + self["cell_height"] * (self["height"] - 1)
+        x_ll = self["origin_x"] + self["cell_width"] * (self["width"] - 1)
         return x_ll, y_ll
 
     @property
     def xy_lowerleft(self):
-        y_ll = self["origin_y"] + self["cell_height"] * self["height"]
+        y_ll = self["origin_y"] + self["cell_height"] * (self["height"] - 1)
         return self["origin_x"], y_ll
 
     @property
     def xy_upperright(self):
-        x_ll = self["origin_x"] + self["cell_width"] * self["width"]
+        x_ll = self["origin_x"] + self["cell_width"] * (self["width"] - 1)
         return x_ll, self["origin_y"]
 
     @property
@@ -731,6 +731,7 @@ class GridDefinition(GeographicDefinition):
     @property
     def ll_extent(self):
         xy_ll = self.xy_lowerleft
+        # NOTE: cell_height is negative
         return xy_ll[0] - self["cell_width"]/2., xy_ll[1] + self["cell_height"]/2.
 
     @property
@@ -740,6 +741,7 @@ class GridDefinition(GeographicDefinition):
     @property
     def ur_extent(self):
         xy_ur = self.xy_upperright
+        # NOTE: cell_height is negative
         return xy_ur[0] + self["cell_width"]/2., xy_ur[1] - self["cell_height"]/2.
 
     @property
