@@ -36,13 +36,6 @@ if [ $# -ne 2 ]; then
   exit 1
 fi
 
-#if [ -z "$POLAR2GRID_HOME" ]; then
-#  export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
-#fi
-#
-## Setup necessary environments
-#source $POLAR2GRID_HOME/bin/env.sh
-
 # Get primary and secondary directory names
 VERIFY_BASE=$1
 WORK_DIR=$2
@@ -72,10 +65,9 @@ for VFILE in $VERIFY_BASE/*.tif; do
     fi
     echo "Comparing $WFILE to known valid file"
     python<<EOF
-import sys
-print(sys.prefix)
 import numpy
 from osgeo import gdal
+import sys
 
 work_gtiff  = gdal.Open("$WFILE", gdal.GA_ReadOnly)
 valid_gtiff = gdal.Open("$VFILE", gdal.GA_ReadOnly)
