@@ -1,6 +1,7 @@
 name: jenkins_p2g_docs
 channels:
   - conda-forge
+  - default
 dependencies:
   - behave
   - graphviz
