@@ -1,7 +1,6 @@
 name: polar2grid_dist
 channels:
   - conda-forge
-  - default
 dependencies:
   - aggdraw
   - appdirs
