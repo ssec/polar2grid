@@ -1,5 +1,7 @@
 from behave import given, when, then, step
+from polar2grid.compare import compare_geotiff, compare_netcdf
 import os
+import ntpath
 import tempfile
 import subprocess
 import shutil
@@ -48,13 +50,17 @@ def step_impl(context, output):
     try:
         os.chdir(context.data_path)
         if "gtiff" in context.command or context.script == "geo2grid.sh":
-            compare_command = "{} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_geotiff.sh"),
-                                                        output, context.temp_dir)
+            for old_file in glob.glob(output + '*.tif'):
+                head, tail = ntpath.split(old_file)
+                new_file = tail or ntpath.basename(head)
+                exit_status = compare_geotiff(old_file, os.path.join(context.temp_dir, new_file), atol=0., error=0.)
+                assert exit_status == 0, "Files did not match with the correct output"
         else:
-            compare_command = "{} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_netcdf.sh"),
-                                                        output, context.temp_dir)
-        exit_status = subprocess.call(compare_command, shell=True)
-        assert exit_status == 0, "Files did not match with the correct output"
+            for old_file in glob.glob(output + '*.nc'):
+                head, tail = ntpath.split(old_file)
+                new_file = tail or ntpath.basename(head)
+                exit_status = compare_netcdf(old_file, os.path.join(context.temp_dir, new_file), atol=0., error=0.)
+                assert exit_status == 0, "Files did not match with the correct output"
     finally:
         os.chdir(orig_dir)
         shutil.rmtree(context.temp_dir)

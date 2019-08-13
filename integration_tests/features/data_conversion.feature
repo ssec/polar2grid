@@ -8,7 +8,7 @@ Feature: Testing data conversions
         Then the output matches with the files in <output>
 
     Examples: ABI
-        | source          | command                       | output           | script      |
+        | source          | command                                       | output           | script      |
         | abi/input/test1 | -r abi_l1b -w geotiff --num-workers 8 -vv -f  | abi/output/test1 | geo2grid.sh |
         | abi/input/test2 | -r abi_l1b -w geotiff --num-workers 8 -vv -f  | abi/output/test2 | geo2grid.sh |
         | abi/input/test3 | -r abi_l1b -w geotiff --num-workers 8 -vv -f  | abi/output/test3 | geo2grid.sh |
