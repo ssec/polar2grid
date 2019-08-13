@@ -59,7 +59,8 @@ def step_impl(context, output):
             for old_file in glob.glob(output + '*.nc'):
                 head, tail = ntpath.split(old_file)
                 new_file = tail or ntpath.basename(head)
-                exit_status = compare_netcdf(old_file, os.path.join(context.temp_dir, new_file), atol=0., error=0.)
+                exit_status = compare_netcdf(old_file, os.path.join(context.temp_dir, new_file), None, atol=0.,
+                                             error=0.)
                 assert exit_status == 0, "Files did not match with the correct output"
     finally:
         os.chdir(orig_dir)
