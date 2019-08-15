@@ -126,6 +126,7 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=1.0, error=0., **kwargs):
 
     return compare_array(image1_data, image2_data, atol=atol, error=error)
 
+
 def compare_netcdf(nc1_name, nc2_name, variables, atol=1.0, error=0., **kwargs):
     from netCDF4 import Dataset
     nc1 = Dataset(nc1_name, "r")

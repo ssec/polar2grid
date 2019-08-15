@@ -47,11 +47,11 @@ oops() {
 }
 
 if [ ! -d $VERIFY_BASE ]; then
-    oops "Verification directory $VERIFY_BASE does not exist"
+    oops "ERROR: Verification directory $VERIFY_BASE does not exist"
 fi
 
 if [ ! -d $WORK_DIR ]; then
-    oops "Working directory $WORK_DIR does not exist"
+    oops "ERROR: Working directory $WORK_DIR does not exist"
 fi
 
 # Run tests for each test data directory in the base directory
@@ -63,45 +63,25 @@ for VFILE in $VERIFY_BASE/SSEC*; do
         BAD_COUNT=$(($BAD_COUNT + 1))
         continue
     fi
-    echo "Comparing $WFILE to known valid file"
+    echo "INFO: Comparing $WFILE to known valid file"
     python<<EOF
-from netCDF4 import Dataset
-import numpy
-import sys
+from polar2grid.compare import compare_netcdf
+import logging
 
-nc1_name  = "$VFILE"
-nc2_name  = "$WFILE"
-threshold = 1
 
-nc1 = Dataset(nc1_name, "r")
-nc2 = Dataset(nc2_name, "r")
-image1_var = nc1.variables["image"]
-image2_var = nc2.variables["image"]
-image1_var.set_auto_maskandscale(False)
-image2_var.set_auto_maskandscale(False)
-image1_data = image1_var[:].astype(numpy.uint8).astype(numpy.float)
-image2_data = image2_var[:].astype(numpy.uint8).astype(numpy.float)
-
-if image1_data.shape != image2_data.shape:
-    print("ERROR: Data shape for '$WFILE' is not the same as the valid '$VFILE': {0}, {1}".format(work_data.shape, valid_data.shape))
-    sys.exit(1)
-
-total_pixels = image1_data.shape[0] * image1_data.shape[1]
-equal_pixels = len(numpy.nonzero((image2_data - image1_data) < threshold)[0])
-if equal_pixels != total_pixels:
-    print("FAIL: %d pixels out of %d pixels are different" % (total_pixels-equal_pixels,total_pixels))
-    sys.exit(2)
-print("SUCCESS: %d pixels out of %d pixels are different" % (total_pixels-equal_pixels,total_pixels))
+logging.basicConfig(level=logging.INFO)
+if compare_netcdf("$VFILE", "$WFILE", ['image'], atol=0., error=.000001) != 0:
+    exit(1)
 
 EOF
 [ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
 done
 
 if [ $BAD_COUNT -ne 0 ]; then
-    oops "$BAD_COUNT files were found to be unequal"
+    oops "ERROR: $BAD_COUNT files were found to be unequal"
 fi
 
 # End of all tests
-echo "All files passed"
-echo "SUCCESS"
+echo "INFO: All files passed"
+echo "INFO: SUCCESS"
 
