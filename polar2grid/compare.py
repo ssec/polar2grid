@@ -47,7 +47,7 @@ import numpy
 LOG = logging.getLogger(__name__)
 
 
-def compare_array(array1, array2, atol=0., rtol=0., percent_error=0.):
+def compare_array(array1, array2, atol=0., rtol=0., margin_of_error=0.):
     """Compare 2 binary arrays per pixel
 
     Two pixels are considered different if the absolute value of their
@@ -70,7 +70,7 @@ def compare_array(array1, array2, atol=0., rtol=0., percent_error=0.):
     total_pixels = array1.size
     equal_pixels = numpy.count_nonzero(numpy.isclose(array1, array2, rtol=rtol, atol=atol, equal_nan=True))
     diff_pixels = total_pixels - equal_pixels
-    if diff_pixels > percent_error / 100 * total_pixels:
+    if diff_pixels > margin_of_error / 100 * total_pixels:
         LOG.warning("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
         return 1
     else:
@@ -78,14 +78,14 @@ def compare_array(array1, array2, atol=0., rtol=0., percent_error=0.):
         return 0
 
 
-def compare_binary(fn1, fn2, shape, dtype, atol=1.0, percent_error=0., **kwargs):
+def compare_binary(fn1, fn2, shape, dtype, atol=1.0, margin_of_error=0., **kwargs):
     array1 = numpy.memmap(fn1, shape=shape, dtype=dtype, mode='r')
     array2 = numpy.memmap(fn2, shape=shape, dtype=dtype, mode='r')
 
-    return compare_array(array1, array2, atol=atol, percent_error=percent_error)
+    return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error)
 
 
-def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=1.0, percent_error=0., **kwargs):
+def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=1.0, margin_of_error=0., **kwargs):
     """Compare 2 single banded geotiff files
 
     .. note::
@@ -102,10 +102,10 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=1.0, percent_error=0., **kwargs):
     array1 = gtiff1.GetRasterBand(1).ReadAsArray().astype(numpy.float32)
     array2 = gtiff2.GetRasterBand(1).ReadAsArray().astype(numpy.float32)
 
-    return compare_array(array1, array2, atol=atol, percent_error=percent_error)
+    return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error)
 
 
-def compare_awips_netcdf(nc1_name, nc2_name, atol=1.0, percent_error=0., **kwargs):
+def compare_awips_netcdf(nc1_name, nc2_name, atol=1.0, margin_of_error=0., **kwargs):
     """Compare 2 8-bit AWIPS-compatible NetCDF3 files
 
     .. note::
@@ -124,10 +124,10 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=1.0, percent_error=0., **kwarg
     image1_data = image1_var[:].astype(numpy.uint8).astype(numpy.float32)
     image2_data = image2_var[:].astype(numpy.uint8).astype(numpy.float32)
 
-    return compare_array(image1_data, image2_data, atol=atol, percent_error=percent_error)
+    return compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error)
 
 
-def compare_netcdf(nc1_name, nc2_name, variables, atol=1.0, percent_error=0., **kwargs):
+def compare_netcdf(nc1_name, nc2_name, variables, atol=1.0, margin_of_error=0., **kwargs):
     from netCDF4 import Dataset
     nc1 = Dataset(nc1_name, "r")
     nc2 = Dataset(nc2_name, "r")
@@ -138,7 +138,7 @@ def compare_netcdf(nc1_name, nc2_name, variables, atol=1.0, percent_error=0., **
         image1_var.set_auto_maskandscale(False)
         image2_var.set_auto_maskandscale(False)
         LOG.debug("Comparing data for variable '{}'".format(v))
-        num_diff += compare_array(image1_var, image2_var, atol=atol, percent_error=percent_error)
+        num_diff += compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error)
     return num_diff
 
 type_name_to_compare_func = {
@@ -176,7 +176,7 @@ def main(argv=sys.argv[1:]):
                         help="Data type for binary file comparison only")
     parser.add_argument('--variables', nargs='+',
                         help='NetCDF variables to read and compare')
-    parser.add_argument('--percent-error', type=float, default=0.,
+    parser.add_argument('--margin-of-error', type=float, default=0.,
                         help='percent of total pixels that can be wrong')
     parser.add_argument('file_type', type=_file_type,
                         help="type of files being compare")

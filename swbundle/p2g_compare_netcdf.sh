@@ -71,7 +71,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 # Allow 1 out of every million pixels to be wrong.
-if compare_netcdf("$VFILE", "$WFILE", ['image'], atol=0., percent_error=.0001) != 0:
+if compare_netcdf("$VFILE", "$WFILE", ['image'], atol=0., margin_of_error=.0001) != 0:
     exit(1)
 
 EOF
