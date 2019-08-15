@@ -70,7 +70,8 @@ import logging
 
 
 logging.basicConfig(level=logging.INFO)
-if compare_geotiff("$VFILE", "$WFILE", atol=0., error=.000001) != 0:
+# Allow 1 out of every million pixels to be wrong.
+if compare_geotiff("$VFILE", "$WFILE", atol=0., percent_error=.0001) != 0:
     exit(1)
 
 EOF
