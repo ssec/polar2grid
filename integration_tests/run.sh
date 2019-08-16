@@ -25,25 +25,29 @@ swbundle_name="${prefix}2grid-swbundle-${end}"
 # Restart the shell to enable conda.
 source ~/.bashrc
 
-conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
-conda activate jenkins_p2g_swbundle
-
-./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
-export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
 # Documentation environment also has behave, while the build environment does not.
 conda env update -n jenkins_p2g_docs -f "$WORKSPACE/build_environment.yml"
 conda env update -n jenkins_p2g_docs -f "$WORKSPACE/jenkins_environment.yml"
 conda activate jenkins_p2g_docs
 pip install "$WORKSPACE"
 
-if [[ "$GIT_TAG_NAME" =~ [pg]2g-no-tests ]]; then
+if [[ "$GIT_TAG_NAME" =~ [pg]2g-skip-tests ]]; then
+    echo ~
     cd "$WORKSPACE"/doc
     make latexpdf POLAR2GRID_DOC="${prefix}"
+    # scp -i ~/.ssh/id_rsa "$WORKSPACE"/doc/build/latex/*.pdf wroberts@ash.ssec.wisc.edu:/home/wroberts/html
     make clean
     make html POLAR2GRID_DOC="${prefix}"
+    # scp -r -i ~/.ssh/id_rsa "$WORKSPACE"/doc/build/html wroberts@ash.ssec.wisc.edu:/home/wroberts/html
     exit 0
 fi
 
+conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
+conda activate jenkins_p2g_swbundle
+./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
+export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
+
+conda activate jenkins_p2g_docs
 cd "$WORKSPACE/integration_tests"
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
 
