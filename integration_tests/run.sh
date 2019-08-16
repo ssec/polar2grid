@@ -4,24 +4,6 @@
 set -ex
 export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
 cd "$WORKSPACE"
-# Activate conda for bash.
-/data/users/davidh/miniconda3/bin/conda init bash
-# Restart the shell to enable conda.
-source ~/.bashrc
-
-if [[ "$GIT_TAG_NAME" =~ skip ]]; then
-    conda env update -n jenkins_p2g_docs -f "$WORKSPACE/build_environment.yml"
-    conda env update -n jenkins_p2g_docs -f "$WORKSPACE/jenkins_environment.yml"
-    conda activate jenkins_p2g_docs
-    pip install "$WORKSPACE"
-    make latexpdf POLAR2GRID_DOC="${prefix}"
-    make clean
-    make html POLAR2GRID_DOC="${prefix}"
-    exit 0
-fi
-
-conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
-conda activate jenkins_p2g_swbundle
 
 # Handle release vs test naming.
 prefix="$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")"
@@ -38,6 +20,14 @@ else
 fi
 swbundle_name="${prefix}2grid-swbundle-${end}"
 
+# Activate conda for bash.
+/data/users/davidh/miniconda3/bin/conda init bash
+# Restart the shell to enable conda.
+source ~/.bashrc
+
+conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
+conda activate jenkins_p2g_swbundle
+
 ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
 export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
 # Documentation environment also has behave, while the build environment does not.
@@ -45,6 +35,15 @@ conda env update -n jenkins_p2g_docs -f "$WORKSPACE/build_environment.yml"
 conda env update -n jenkins_p2g_docs -f "$WORKSPACE/jenkins_environment.yml"
 conda activate jenkins_p2g_docs
 pip install "$WORKSPACE"
+
+if [[ "$GIT_TAG_NAME" =~ [pg]2g-no-tests ]]; then
+    cd "$WORKSPACE"/doc
+    make latexpdf POLAR2GRID_DOC="${prefix}"
+    make clean
+    make html POLAR2GRID_DOC="${prefix}"
+    exit 0
+fi
+
 cd "$WORKSPACE/integration_tests"
 behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
 
