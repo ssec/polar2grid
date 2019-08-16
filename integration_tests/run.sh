@@ -8,6 +8,18 @@ cd "$WORKSPACE"
 /data/users/davidh/miniconda3/bin/conda init bash
 # Restart the shell to enable conda.
 source ~/.bashrc
+
+if [[ "$GIT_TAG_NAME" =~ skip ]]; then
+    conda env update -n jenkins_p2g_docs -f "$WORKSPACE/build_environment.yml"
+    conda env update -n jenkins_p2g_docs -f "$WORKSPACE/jenkins_environment.yml"
+    conda activate jenkins_p2g_docs
+    pip install "$WORKSPACE"
+    make latexpdf POLAR2GRID_DOC="${prefix}"
+    make clean
+    make html POLAR2GRID_DOC="${prefix}"
+    exit 0
+fi
+
 conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_swbundle
 
