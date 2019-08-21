@@ -71,7 +71,6 @@ def normalize_satellite_name(input_sat):
     return input_sat
 
 
-
 def area_to_swath_def(area, chunks=4096, overwrite_existing=False):
     if hasattr(area, 'lons') and area.lons is not None:
         lons = area.lons
@@ -316,6 +315,7 @@ def convert_satpy_to_p2g_swath(frontend, scene, convert_area_defs=True):
             swath_def.setdefault("rows_per_scan", ds.attrs.get("rows_per_scan", def_rps))
 
         for swath_product in dataarray_to_swath_product(ds, swath_def, overwrite_existing=overwrite_existing):
+            swath_product.setdefault('reader', frontend.reader)
             p2g_scene[swath_product["product_name"]] = swath_product
 
     return p2g_scene
@@ -332,6 +332,7 @@ def convert_satpy_to_p2g_gridded(frontend, scene):
             areas[ds.attrs["area"].name] = grid_def = area_to_grid_definition(ds.attrs["area"],
                                                                              overwrite_existing=overwrite_existing)
         gridded_product = dataarray_to_gridded_product(ds, grid_def, overwrite_existing=overwrite_existing)
+        gridded_product.setdefault('reader', frontend.reader)
         p2g_scene[gridded_product["name"]] = gridded_product
 
     return p2g_scene
