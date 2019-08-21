@@ -69,10 +69,15 @@ from polar2grid.readers import ReaderWrapper, main
 
 LOG = logging.getLogger(__name__)
 
+ALL_RBANDS = ['R{:d}'.format(x) for x in range(1, 8)]
+ALL_EBANDS = ['E{:d}'.format(x) for x in range(1, 4)]
+ALL_COMPS = ['true_color']
+
 
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = ['.HDF']
     DEFAULT_READER_NAME = 'virr_l1b'
+    DEFAULT_DATASETS = ALL_RBANDS + ALL_EBANDS + ALL_COMPS
 
 
 def add_frontend_argument_groups(parser):

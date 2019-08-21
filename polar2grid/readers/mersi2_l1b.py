@@ -91,13 +91,9 @@ Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 +---------------------------+-----------------------------------------------------+
 | 25                        | Channel 25 Reflectance Band                         |
 +---------------------------+-----------------------------------------------------+
-| true_color                | Ratio sharpened rayleigh corrected true color       |
+| true_color                | Rayleigh corrected true color RGB                   |
 +---------------------------+-----------------------------------------------------+
-| airmass                   |                                                     |
-+---------------------------+-----------------------------------------------------+
-| ash                       |                                                     |
-+---------------------------+-----------------------------------------------------+
-| natural_color             |                                                     |
+| natural_color             | Natural color RGB                                   |
 +---------------------------+-----------------------------------------------------+
 """
 import sys
@@ -106,10 +102,25 @@ from polar2grid.readers import ReaderWrapper, main
 
 LOG = logging.getLogger(__name__)
 
+ALL_BANDS = [str(x) for x in range(1, 26)]
+ALL_ANGLES = ['solar_zenith_angle', 'solar_azimuth_angle', 'sensor_zenith_angle', 'sensor_azimuth_angle']
+ALL_COMPS = ['true_color', 'natural_color']
+
 
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = ['.HDF']
     DEFAULT_READER_NAME = 'mersi2_l1b'
+    DEFAULT_DATASETS = ALL_BANDS + ALL_COMPS
+
+    @property
+    def available_product_names(self):
+        available = set(self.scene.available_dataset_names(reader_name=self.reader, composites=True))
+        return sorted(available & set(self.all_product_names))
+
+    @property
+    def all_product_names(self):
+        # return self.scene.all_dataset_names(reader_name=self.reader, composites=True)
+        return ALL_BANDS + ALL_ANGLES + ALL_COMPS
 
 
 def add_frontend_argument_groups(parser):
