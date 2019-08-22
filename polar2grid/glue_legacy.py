@@ -47,8 +47,10 @@ import pkg_resources
 from polar2grid.readers import ReaderWrapper, convert_satpy_to_p2g_swath, convert_satpy_to_p2g_gridded
 from polar2grid.readers import dataarray_to_gridded_product
 from polar2grid.remap import Remapper, add_remap_argument_groups, SATPY_RESAMPLERS
-from satpy import Scene, DatasetID
+from satpy import Scene, DatasetID, CHUNK_SIZE
+from satpy.utils import TRACE_LEVEL
 from xarray import DataArray
+import dask.array as da
 
 ### Return Status Values ###
 STATUS_SUCCESS = 0
@@ -119,8 +121,8 @@ def main_frontend(argv=sys.argv[1:]):
     subgroup_titles += farg_func(parser)
     args = parser.parse_args(argv, global_keywords=global_keywords, subgroup_titles=subgroup_titles)
 
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG, TRACE_LEVEL]
+    setup_logging(console_level=levels[min(4, args.verbosity)], log_filename=args.log_fn)
     # sys.excepthook = create_exc_handler(LOG.name)
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
@@ -241,8 +243,8 @@ def main(argv=sys.argv[1:]):
     if args.log_fn is None:
         rename_log = True
         args.log_fn = glue_name + "_fail.log"
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG, TRACE_LEVEL]
+    setup_logging(console_level=levels[min(4, args.verbosity)], log_filename=args.log_fn)
     sys.excepthook = create_exc_handler(LOG.name)
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
@@ -347,7 +349,7 @@ def main(argv=sys.argv[1:]):
                 filename = glue_name + "_swath_scene.json"
                 LOG.info("Saving intermediate swath scene as '%s'", filename)
                 scene.save(filename)
-    except (ValueError, KeyError):
+    except (ValueError, KeyError, RuntimeError):
         LOG.debug("Frontend data extraction exception: ", exc_info=True)
         LOG.error("Frontend data extraction failed (see log for details)")
         return STATUS_FRONTEND_FAIL
@@ -384,7 +386,7 @@ def main(argv=sys.argv[1:]):
                 filename = glue_name + "_gridded_scene_" + grid_name + ".json"
                 LOG.debug("saving intermediate gridded scene as '%s'", filename)
                 gridded_scene.save(filename)
-        except (ValueError, KeyError):
+        except (ValueError, KeyError, RuntimeError):
             LOG.debug("Remapping data exception: ", exc_info=True)
             LOG.error("Remapping data failed")
             status_to_return |= STATUS_REMAP_FAIL
@@ -402,7 +404,7 @@ def main(argv=sys.argv[1:]):
                         filename = glue_name + "_gridded_scene_" + grid_name + ".json"
                         LOG.debug("Updating saved intermediate gridded scene (%s) after compositor", filename)
                         gridded_scene.save(filename)
-                except (KeyError, ValueError):
+                except (KeyError, ValueError, RuntimeError):
                     LOG.debug("Compositor Error: ", exc_info=True)
                     LOG.error("Could not properly modify scene using compositor '%s'" % (c,))
                     if args.exit_on_error:
@@ -441,33 +443,35 @@ def main(argv=sys.argv[1:]):
                 del data, new_info
 
             # Create composites that satpy couldn't complete until after remapping
-            composite_names = [x for x in f.wishlist if not isinstance(x, DatasetID)]
+            composite_names = f.missing_datasets
             if composite_names:
                 tmp_scene = Scene()
                 for k, v in gridded_scene.items():
-                    if not isinstance(v["sensor"], set):
-                        v["sensor"] = set([v["sensor"]])  # turn sensor back in to a set to match satpy usage
-                    tmp_scene[v["id"]] = DataArray(v.get_data_array(), attrs=v)
-                    tmp_scene[v["id"]].attrs["area"] = this_grid_definition.to_satpy_area()
-                    # tmp_scene[v["id"]].info = {}
-                    if v["sensor"] not in tmp_scene.attrs["sensor"]:
-                        tmp_scene.attrs["sensor"].extend(v["sensor"])
+                    ds_id = DatasetID.from_dict(v)
+                    dask_arr = da.from_array(v.get_data_array(), chunks=CHUNK_SIZE)
+                    tmp_scene[ds_id] = DataArray(dask_arr, attrs=v)
+                    tmp_scene[ds_id].attrs["area"] = this_grid_definition.to_satpy_area()
+                    if isinstance(v, set):
+                        tmp_scene.attrs["sensor"].update(v["sensor"])
+                    else:
+                        tmp_scene.attrs["sensor"].add(v["sensor"])
                 # Overwrite the wishlist that will include the above assigned datasets
-                tmp_scene.wishlist = f.wishlist
-                for cname in composite_names:
-                    tmp_scene.compositors[cname] = tmp_scene.cpl.load_compositor(cname, tmp_scene.attrs["sensor"])
-                tmp_scene.compute()
+                tmp_scene.wishlist = f.wishlist.copy()
+                comps, mods = tmp_scene.cpl.load_compositors(tmp_scene.attrs["sensor"])
+                tmp_scene.dep_tree.compositors = comps
+                tmp_scene.dep_tree.modifiers = mods
+                tmp_scene.dep_tree.find_dependencies(tmp_scene.wishlist.copy())
+                tmp_scene.generate_composites()
                 tmp_scene.unload()
                 # Add any new Datasets to our P2G Scene if SatPy created them
                 for ds in tmp_scene:
                     ds_id = DatasetID.from_dict(ds.attrs)
                     if ds_id.name not in gridded_scene:
                         LOG.debug("Adding Dataset from SatPy Commpositing: %s", ds_id)
-                        gridded_scene[ds_id.name] = dataarray_to_gridded_product(ds)
-                        gridded_scene[ds_id.name]["grid_definition"] = this_grid_definition
+                        gridded_scene[ds_id.name] = dataarray_to_gridded_product(ds, this_grid_definition)
                 # Remove any Products from P2G Scene that SatPy decided it didn't need anymore
                 for k, v in list(gridded_scene.items()):
-                    if v["id"].name not in tmp_scene:
+                    if v['name'] not in tmp_scene:
                         LOG.debug("Removing Dataset that is no longer used: %s", k)
                         del gridded_scene[k]
                 del tmp_scene, v
@@ -481,7 +485,7 @@ def main(argv=sys.argv[1:]):
         try:
             LOG.info("Creating output from data mapped to grid %s", grid_name)
             backend.create_output_from_scene(gridded_scene, **args.subgroup_args["Backend Output Creation"])
-        except (ValueError, KeyError):
+        except (ValueError, KeyError, RuntimeError):
             LOG.debug("Writer output creation exception: ", exc_info=True)
             LOG.error("Writer output creation failed (see log for details)")
             status_to_return |= STATUS_BACKEND_FAIL

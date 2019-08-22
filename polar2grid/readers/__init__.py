@@ -358,6 +358,7 @@ class ReaderWrapper(roles.FrontendRole):
         self._begin_time = self.scene.start_time
         self._end_time = self.scene.end_time
         self.wishlist = set()
+        self.missing_datasets = set()
 
     @property
     def begin_time(self):
@@ -394,6 +395,7 @@ class ReaderWrapper(roles.FrontendRole):
         kwargs.pop("keep_intermediate")
         self.scene.load(products, **kwargs)
         self.wishlist = self.scene.wishlist
+        self.missing_datasets = self.scene.missing_datasets
 
         # Apply Filters
         self.filter(self.scene)

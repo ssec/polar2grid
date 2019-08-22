@@ -90,7 +90,7 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log
     """
     # set the root logger to DEBUG so that handlers can have all possible messages to filter
     root_logger = logging.getLogger('')
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(min(console_level, logging.DEBUG))
 
     # Console output is minimal
     console = logging.StreamHandler(sys.stderr)
@@ -306,7 +306,7 @@ class ArgumentParser(argparse.ArgumentParser):
 def create_basic_parser(*args, **kwargs):
     parser = ArgumentParser(*args, **kwargs)
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
-                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
+                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG-TRACE (default INFO)')
     parser.add_argument('-l', '--log', dest="log_fn", default=None,
                         help="specify the log filename")
     parser.add_argument('--debug', dest="keep_intermediate", default=False,
