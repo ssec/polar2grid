@@ -72,12 +72,23 @@ LOG = logging.getLogger(__name__)
 ALL_RBANDS = ['R{:d}'.format(x) for x in range(1, 8)]
 ALL_EBANDS = ['E{:d}'.format(x) for x in range(1, 4)]
 ALL_COMPS = ['true_color']
+ALL_ANGLES = ['solar_zenith_angle', 'solar_azimuth_angle', 'sensor_zenith_angle', 'sensor_azimuth_angle']
 
 
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = ['.HDF']
     DEFAULT_READER_NAME = 'virr_l1b'
     DEFAULT_DATASETS = ALL_RBANDS + ALL_EBANDS + ALL_COMPS
+
+    @property
+    def available_product_names(self):
+        available = set(self.scene.available_dataset_names(reader_name=self.reader, composites=True))
+        return sorted(available & set(self.all_product_names))
+
+    @property
+    def all_product_names(self):
+        # return self.scene.all_dataset_names(reader_name=self.reader, composites=True)
+        return ALL_RBANDS + ALL_EBANDS + ALL_ANGLES + ALL_COMPS
 
 
 def add_frontend_argument_groups(parser):
