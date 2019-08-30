@@ -77,7 +77,7 @@ def _proj4_to_srs(proj4_str):
 
 def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GDT_UInt16, compress=None,
                    quicklook=False, tiled=False, blockxsize=None, blockysize=None, colormap=None,
-                   **kwargs):
+                   fill_value=None, **kwargs):
     """Function that creates a geotiff from the information provided.
     """
     log_level = logging.getLogger('').handlers[0].level or 0
@@ -125,6 +125,8 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
 
         if num_bands == 1 and data.ndim == 2:
             band_data = data
+            if fill_value is not None:
+                gtiff_band.SetNoDataValue(fill_value)
         else:
             band_data = data[idx]
 
@@ -222,9 +224,9 @@ class Backend(roles.BackendRole):
             geotransform = gridded_product["grid_definition"].gdal_geotransform
             gtiff = create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform,
                                    etype=etype, tiled=tiled, blockxsize=blockxsize, blockysize=blockysize,
-                                   colormap=rescale_options.get('colormap'), **kwargs)
+                                   colormap=rescale_options.get('colormap'), fill_value=fill_value, **kwargs)
 
-            if rescale_options.get("method") == "linear" and "min_in" in rescale_options and "max_in" in rescale_options:
+            if rescale_options.get("method") in ["linear", "palettize", "colorize"] and "min_in" in rescale_options and "max_in" in rescale_options:
                 LOG.debug("Setting geotiff metadata for linear min/max values")
                 gtiff.SetMetadataItem("min_in", str(rescale_options["min_in"]))
                 gtiff.SetMetadataItem("max_in", str(rescale_options["max_in"]))
