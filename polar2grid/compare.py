@@ -73,9 +73,8 @@ def compare_array(array1, array2, atol=0., rtol=0., margin_of_error=0.):
     if diff_pixels > margin_of_error / 100 * total_pixels:
         LOG.warning("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
         return 1
-    else:
-        LOG.info("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
-        return 0
+    LOG.info("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
+    return 0
 
 
 def compare_binary(fn1, fn2, shape, dtype, atol=1.0, margin_of_error=0., **kwargs):
@@ -190,7 +189,8 @@ def main(argv=sys.argv[1:]):
     logging.basicConfig(level=levels[min(3, args.verbosity)])
     kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, 'variables': args.variables}
 
-    return args.file_type(args.file1, args.file2, atol=args.atol, rtol=args.rtol, error=args.error, **kwargs)
+    return args.file_type(args.file1, args.file2, atol=args.atol, rtol=args.rtol,
+                          margin_of_error=args.margin_of_error, **kwargs)
 
 
 if __name__ == "__main__":

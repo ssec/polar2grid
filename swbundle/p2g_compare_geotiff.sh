@@ -41,17 +41,17 @@ VERIFY_BASE=$1
 WORK_DIR=$2
 
 oops() {
-    echo "OOPS: $*"
+    echo "ERROR: $*"
     echo "FAILURE"
     exit 1
 }
 
 if [ ! -d $VERIFY_BASE ]; then
-    oops "ERROR: Verification directory $VERIFY_BASE does not exist"
+    oops "Verification directory $VERIFY_BASE does not exist"
 fi
 
 if [ ! -d $WORK_DIR ]; then
-    oops "ERROR: Working directory $WORK_DIR does not exist"
+    oops "Working directory $WORK_DIR does not exist"
 fi
 
 # Run tests for each test data directory in the base directory
@@ -59,29 +59,19 @@ BAD_COUNT=0
 for VFILE in $VERIFY_BASE/*.tif; do
     WFILE=$WORK_DIR/`basename $VFILE`
     if [ ! -f $WFILE ]; then
-        oops "ERROR: Could not find output file $WFILE"
+        oops "Could not find output file $WFILE"
         BAD_COUNT=$(($BAD_count + 1))
         continue
     fi
     echo "INFO: Comparing $WFILE to known valid file"
-    python<<EOF
-from polar2grid.compare import compare_geotiff
-import logging
-
-
-logging.basicConfig(level=logging.INFO)
-# Allow 1 out of every million pixels to be wrong.
-if compare_geotiff("$VFILE", "$WFILE", atol=0., margin_of_error=.0001) != 0:
-    exit(1)
-
-EOF
-    [ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
+    python -m polar2grid.compare geotiff "$VFILE" "$WFILE" --atol 0. -vv
+[ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
 done
 
 if [ $BAD_COUNT -ne 0 ]; then
-    oops "ERROR: $BAD_COUNT files were found to be unequal"
+    oops "$BAD_COUNT files were found to be unequal"
 fi
 
 # End of all tests
-echo "INFO: All files passed"
-echo "INFO: SUCCESS"
+echo "All files passed"
+echo "SUCCESS"

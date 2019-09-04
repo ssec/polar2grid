@@ -32,7 +32,6 @@ conda activate jenkins_p2g_docs
 pip install "$WORKSPACE"
 
 if [[ "$GIT_TAG_NAME" =~ [pg]2g-skip-tests ]]; then
-    echo ~
     cd "$WORKSPACE"/doc
     make latexpdf POLAR2GRID_DOC="${prefix}"
     # scp -i ~/.ssh/id_rsa "$WORKSPACE"/doc/build/latex/*.pdf wroberts@ash.ssec.wisc.edu:/home/wroberts/html
