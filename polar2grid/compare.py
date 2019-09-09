@@ -165,9 +165,9 @@ def main(argv=sys.argv[1:]):
     parser = ArgumentParser(description="Compare two files per pixel")
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
                         help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
-    parser.add_argument('--atol', type=float, default=1.0,
+    parser.add_argument('--atol', type=float, default=0.,
                         help="specify threshold for comparison differences (see numpy.isclose 'atol' parameter)")
-    parser.add_argument('--rtol', type=float, default=1e-05,
+    parser.add_argument('--rtol', type=float, default=0.,
                         help="specify relative tolerance for comparison (see numpy.isclose 'rtol' parameter)")
     parser.add_argument('--shape', dest="shape", type=int, nargs=2, default=(None, None),
                         help="'rows cols' for binary file comparison only")

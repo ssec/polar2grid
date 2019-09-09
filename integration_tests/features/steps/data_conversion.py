@@ -48,11 +48,11 @@ def step_impl(context, output):
     try:
         os.chdir(context.data_path)
         if "gtiff" in context.command or context.script == "geo2grid.sh":
-            compare_command = "{} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_geotiff.sh"),
-                                                output, context.temp_dir)
+            compare_command = "{} {} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_geotiff.sh"),
+                                                   output, context.temp_dir, '-vv')
         else:
-            compare_command = "{} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_netcdf.sh"),
-                                                output, context.temp_dir)
+            compare_command = "{} {} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_netcdf.sh"),
+                                                   output, context.temp_dir, '--variables image -vv')
         exit_status = subprocess.call(compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:

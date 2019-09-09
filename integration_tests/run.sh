@@ -5,21 +5,6 @@ set -ex
 export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
 cd "$WORKSPACE"
 
-# Handle release vs test naming.
-prefix="$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")"
-end="`date +"%Y%m%d-%H%M%S"`"
-# If the tag is correct and a version was specified, make a version release.
-if [[ "$GIT_TAG_NAME" =~ [pg]2g-v[0-9]+\.[0-9]+\.[0-9]+.* ]]; then
-    # Removes prefix from $GIT_TAG_NAME.
-    end=${GIT_TAG_NAME#"$prefix-"}
-fi
-if [[ "${prefix}" = "g2g" ]]; then
-    prefix=geo
-else
-    prefix=polar
-fi
-swbundle_name="${prefix}2grid-swbundle-${end}"
-
 # Activate conda for bash.
 /data/users/davidh/miniconda3/bin/conda init bash
 # Restart the shell to enable conda.
@@ -31,31 +16,44 @@ conda env update -n jenkins_p2g_docs -f "$WORKSPACE/jenkins_environment.yml"
 conda activate jenkins_p2g_docs
 pip install "$WORKSPACE"
 
-if [[ "$GIT_TAG_NAME" =~ [pg]2g-skip-tests ]]; then
-    cd "$WORKSPACE"/doc
-    make latexpdf POLAR2GRID_DOC="${prefix}"
-    # scp -i ~/.ssh/id_rsa "$WORKSPACE"/doc/build/latex/*.pdf wroberts@ash.ssec.wisc.edu:/home/wroberts/html
-    make clean
-    make html POLAR2GRID_DOC="${prefix}"
-    # scp -r -i ~/.ssh/id_rsa "$WORKSPACE"/doc/build/html wroberts@ash.ssec.wisc.edu:/home/wroberts/html
-    exit 0
+commit_message=`git log --format=%B -n 1 $GIT_COMMIT`
+
+if [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "g2g" ]]; then
+    prefix=geo
+elif [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "p2g" ]]; then
+    prefix=polar
+elif [[ "${commit_message:1:3}" = "g2g" ]]; then
+    prefix=geo
+else
+    prefix=polar
 fi
 
-conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
-conda activate jenkins_p2g_swbundle
-./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
-export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
+# Handle release vs test naming.
+end="`date +"%Y%m%d-%H%M%S"`"
+# If the tag is correct and a version was specified, make a version release.
+if [[ "$GIT_TAG_NAME" =~ [pg]2g-v[0-9]+\.[0-9]+\.[0-9]+.* ]]; then
+    # Removes prefix from $GIT_TAG_NAME.
+    end="${GIT_TAG_NAME:5}"
+fi
 
-conda activate jenkins_p2g_docs
-cd "$WORKSPACE/integration_tests"
-behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
-
-# Only ran by Jenkins if build was successful.
-# Remove old software bundles.
-rm -rf /tmp/"${prefix}"2grid-*
 mkdir "/tmp/${prefix}2grid-${end}"
-# Save software bundle and tarball.
-cp "$WORKSPACE/$swbundle_name.tar.gz" "/tmp/${prefix}2grid-${end}"
+if [[ ! "$commit_message" =~ "["[pg]2g-skip-tests"]" ]]; then
+    swbundle_name="${prefix}2grid-swbundle-${end}"
+    conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
+    conda activate jenkins_p2g_swbundle
+    ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
+    export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
+    conda activate jenkins_p2g_docs
+    cd "$WORKSPACE/integration_tests"
+    behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
+    # Save tarball.
+    cp "${WORKSPACE}/${swbundle_name}.tar.gz" "/tmp/${prefix}2grid-${end}"
+    # Only copy to data/dist if the tag was correct and a version was specified.
+    if [[ "$GIT_TAG_NAME" =~ [pg]2g-v[0-9]+\.[0-9]+\.[0-9]+.* ]]; then
+        cp "${WORKSPACE}/${swbundle_name}.tar.gz" /data/dist
+    fi
+fi
+
 # Make docs.
 cd "$WORKSPACE"/doc
 make latexpdf POLAR2GRID_DOC="${prefix}"
@@ -66,7 +64,3 @@ make clean
 make html POLAR2GRID_DOC="${prefix}"
 cp -r "$WORKSPACE"/doc/build/html "/tmp/${prefix}2grid-${end}"
 chmod -R a+rX "/tmp/${prefix}2grid-${end}"
-# Only copy to data/dist if the tag was correct and a version was specified.
-if [[ "$GIT_TAG_NAME" =~ [pg]2g-v[0-9]+\.[0-9]+\.[0-9]+.* ]]; then
-    cp "/tmp/${prefix}2grid-${end}/${swbundle_name}.tar.gz" /data/dist
-fi

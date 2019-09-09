@@ -64,8 +64,8 @@ for VFILE in $VERIFY_BASE/SSEC*; do
         continue
     fi
     echo "INFO: Comparing $WFILE to known valid file"
-    python -m polar2grid.compare netcdf "$VFILE" "$WFILE" --variables image --atol 0. -vv
-[ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
+    python -m polar2grid.compare netcdf "$VFILE" "$WFILE" `echo "${@:3}"`
+    [ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
 done
 
 if [ $BAD_COUNT -ne 0 ]; then
