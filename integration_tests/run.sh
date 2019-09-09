@@ -18,7 +18,8 @@ pip install "$WORKSPACE"
 
 commit_message=`git log --format=%B -n 1 $GIT_COMMIT`
 
-if [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "g2g" ]] || [[ "$commit_message" =~ " ["g2g-skip-tests"]"$ ]]; then
+if [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "g2g" ]] || [[ "$commit_message" =~ (^|.+[[:space:]])"["g2g-skip-tests"]"$ ]]
+then
     prefix=geo
 else
     prefix=polar
@@ -37,7 +38,7 @@ conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_swbundle
 ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
 conda activate jenkins_p2g_docs
-if [[ ! "$commit_message" =~ " ["[pg]2g-skip-tests"]"$ ]]; then
+if [[ ! "$commit_message" =~ (^|.+[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
     export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
     cd "$WORKSPACE/integration_tests"
     behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
@@ -56,7 +57,7 @@ make html POLAR2GRID_DOC="${prefix}"
 cp -r "$WORKSPACE"/doc/build/html "/tmp/${prefix}2grid-${end}"
 chmod -R a+rX "/tmp/${prefix}2grid-${end}"
 # Only copy to data/dist if the tag was correct, a version was specified, and the docs were successfully made.
-if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+.* ]] && [[ ! "$commit_message" =~ " ["[pg]2g-skip-tests"]"$ ]]
+if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+.* ]] && [[ ! "$commit_message" =~ (^|.+[[:space:]])"["[pg]2g-skip-tests"]"$ ]]
 then
     cp "${WORKSPACE}/${swbundle_name}.tar.gz" /data/dist
 fi
