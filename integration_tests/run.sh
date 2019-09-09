@@ -32,22 +32,19 @@ if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+.* ]]; then
     end="${GIT_TAG_NAME:5}"
 fi
 
+swbundle_name="${prefix}2grid-swbundle-${end}"
+conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
+conda activate jenkins_p2g_swbundle
+./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
+conda activate jenkins_p2g_docs
 if [[ ! "$commit_message" =~ " ["[pg]2g-skip-tests"]"$ ]]; then
-    swbundle_name="${prefix}2grid-swbundle-${end}"
-    conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
-    conda activate jenkins_p2g_swbundle
-    ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
     export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
-    conda activate jenkins_p2g_docs
     cd "$WORKSPACE/integration_tests"
     behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
-    mkdir "/tmp/${prefix}2grid-${end}"
-    # Save tarball.
-    cp "${WORKSPACE}/${swbundle_name}.tar.gz" "/tmp/${prefix}2grid-${end}"
-else
-    mkdir "/tmp/${prefix}2grid-${end}"
 fi
-
+mkdir "/tmp/${prefix}2grid-${end}"
+# Save tarball.
+cp "${WORKSPACE}/${swbundle_name}.tar.gz" "/tmp/${prefix}2grid-${end}"
 # Make docs.
 cd "$WORKSPACE"/doc
 make latexpdf POLAR2GRID_DOC="${prefix}"
@@ -58,7 +55,7 @@ make clean
 make html POLAR2GRID_DOC="${prefix}"
 cp -r "$WORKSPACE"/doc/build/html "/tmp/${prefix}2grid-${end}"
 chmod -R a+rX "/tmp/${prefix}2grid-${end}"
-# Only copy to data/dist if the tag was correct and a version was specified.
+# Only copy to data/dist if the tag was correct, a version was specified, and the docs were successfully made.
 if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+.* ]] && [[ ! "$commit_message" =~ " ["[pg]2g-skip-tests"]"$ ]]
 then
     cp "${WORKSPACE}/${swbundle_name}.tar.gz" /data/dist
