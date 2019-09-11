@@ -39,6 +39,7 @@ supported backend's output.
 """
 __docformat__ = "restructuredtext en"
 
+from os.path import exists
 import sys
 
 import logging
@@ -189,6 +190,12 @@ def main(argv=sys.argv[1:]):
     logging.basicConfig(level=levels[min(3, args.verbosity)])
     kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, 'variables': args.variables}
 
+    if not exists(args.file1):
+        LOG.error('Could not find file {}'.format(args.file1))
+        return 1
+    if not exists(args.file2):
+        LOG.error('Could not find file {}'.format(args.file2))
+        return 1
     return args.file_type(args.file1, args.file2, atol=args.atol, rtol=args.rtol,
                           margin_of_error=args.margin_of_error, **kwargs)
 

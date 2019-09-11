@@ -28,18 +28,30 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-#
 
-# Check arguments
-if [ $# -lt 2 ]; then
-  echo "Usage: p2g_compare_geotiff.sh verification_dir work_dir"
-  exit 1
+# Checks arguments
+if [ $# -lt 2 ] || [[ $* =~ (^|[[:space:]])("-h"|"--help")($|[[:space:]]) ]]; then
+    echo "Usage: p2g_compare_geotiff.sh verification_dir work_dir"
+    print=0
+    options=`python -m polar2grid.compare geotiff -h`
+    while IFS= read line
+    do
+        if [[ "$line" =~ "optional" ]]; then
+            print=1
+        fi
+        if [[ $print -eq 1 ]]; then
+            echo "$line"
+        fi
+    done <<< "$options"
+    if [[ $* =~ (^|[[:space:]])("-h"|"--help")($|[[:space:]]) ]]; then
+        exit 0
+    fi
+    exit 1
 fi
 
 # Get primary and secondary directory names
 VERIFY_BASE=$1
 WORK_DIR=$2
-
 oops() {
     echo "ERROR: $*"
     echo "FAILURE"
@@ -58,11 +70,6 @@ fi
 BAD_COUNT=0
 for VFILE in $VERIFY_BASE/*.tif; do
     WFILE=$WORK_DIR/`basename $VFILE`
-    if [ ! -f $WFILE ]; then
-        oops "Could not find output file $WFILE"
-        BAD_COUNT=$(($BAD_count + 1))
-        continue
-    fi
     echo "INFO: Comparing $WFILE to known valid file"
     python -m polar2grid.compare geotiff "$VFILE" "$WFILE" `echo "${@:3}"`
     [ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
