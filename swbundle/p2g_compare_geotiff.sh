@@ -31,8 +31,8 @@
 #
 
 # Check arguments
-if [ $# -ne 2 ]; then
-  echo "Usage: p2g_compare_geotiff.bash verification_dir work_dir"
+if [ $# -lt 2 ]; then
+  echo "Usage: p2g_compare_geotiff.sh verification_dir work_dir"
   exit 1
 fi
 
