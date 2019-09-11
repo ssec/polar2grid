@@ -20,7 +20,7 @@ fi
 # Handle release vs test naming.
 end="`date +"%Y%m%d-%H%M%S"`"
 # If the tag is correct and a version was specified, make a version release.
-if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+.* ]]; then
+if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
     # Removes prefix from $GIT_TAG_NAME.
     end="${GIT_TAG_NAME:5}"
 fi
@@ -54,6 +54,6 @@ make html POLAR2GRID_DOC="${prefix}"
 cp -r "$WORKSPACE"/doc/build/html "/tmp/${prefix}2grid-${end}"
 chmod -R a+rX "/tmp/${prefix}2grid-${end}"
 # Only copy to data/dist if the tag was correct, a version was specified, and the docs were successfully made.
-if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+.* ]]; then
+if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
     cp "${WORKSPACE}/${swbundle_name}.tar.gz" /data/dist
 fi
