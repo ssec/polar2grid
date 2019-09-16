@@ -33,6 +33,7 @@
 # Checks arguments
 if [ $# -lt 2 ] || [[ $* =~ (^|[[:space:]])("-h"|"--help")($|[[:space:]]) ]]; then
     echo "Usage: p2g_compare_geotiff.sh verification_dir work_dir"
+    # Prints only the optional arguments
     print=0
     options=`python -m polar2grid.compare geotiff -h`
     while IFS= read line
@@ -72,7 +73,7 @@ fi
 BAD_COUNT=0
 for VFILE in $VERIFY_BASE/SSEC*; do
     WFILE=$WORK_DIR/`basename $VFILE`
-    echo "INFO: Comparing $WFILE to known valid file"
+    echo "INFO: Comparing $WFILE to known valid file $VFILE"
     python -m polar2grid.compare netcdf "$VFILE" "$WFILE" `echo "${@:3}"`
     [ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
 done
