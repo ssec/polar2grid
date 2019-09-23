@@ -45,7 +45,7 @@ else
     PROJECT="G2G"
 fi
 
-pip install -U . || oops "Couldn't install current polar2grid package"
+pip install -U --no-deps . || oops "Couldn't install current polar2grid package"
 
 SB_TARBALL="${SB_NAME}.tar.gz"
 conda clean -afy

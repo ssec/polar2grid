@@ -27,14 +27,15 @@ fi
 swbundle_name="${prefix}2grid-swbundle-${end}"
 
 # Documentation environment also has behave, while the build environment does not.
-conda remove -n jenkins_p2g_docs --all
-conda env create -n jenkins_p2g_docs --file "$WORKSPACE/build_environment.yml"
+conda env create -n jenkins_p2g_docs --file "$WORKSPACE/build_environment.yml" --force
 conda env update -n jenkins_p2g_docs --file "$WORKSPACE/jenkins_environment.yml"
 conda activate jenkins_p2g_docs
-pip install "$WORKSPACE"
+pip install -U --no-deps "$WORKSPACE"
+pip install -U --no-deps git+https://github.com/pytroll/satpy
 conda remove -n jenkins_p2g_swbundle --all
-conda env create -n jenkins_p2g_swbundle --file "$WORKSPACE/build_environment.yml"
+conda env create -n jenkins_p2g_swbundle --file "$WORKSPACE/build_environment.yml" --force
 conda activate jenkins_p2g_swbundle
+pip install -U --no-deps git+https://github.com/pytroll/satpy
 ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
 conda activate jenkins_p2g_docs
 if [[ ! "$commit_message" =~ (^|.[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
