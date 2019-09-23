@@ -45,9 +45,10 @@ else
     PROJECT="G2G"
 fi
 
-pip install -U --no-deps . || oops "Couldn't install current polar2grid package"
+pip install -U . || oops "Couldn't install current polar2grid package"
 
 SB_TARBALL="${SB_NAME}.tar.gz"
+conda clean -afy
 conda-pack --n-threads -1 --compress-level 0 -o $SB_TARBALL || oops "Couldn't create conda-packed tarball"
 mkdir -p ${SB_NAME} || oops "Couldn't make output directory"
 tar -xzf ${SB_TARBALL} -C ${SB_NAME} || oops "Couldn't untar conda-packed tarball"
