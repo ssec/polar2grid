@@ -27,11 +27,11 @@ fi
 swbundle_name="${prefix}2grid-swbundle-${end}"
 
 # Documentation environment also has behave, while the build environment does not.
-conda env update -n jenkins_p2g_docs -f "$WORKSPACE/build_environment.yml"
-conda env update -n jenkins_p2g_docs -f "$WORKSPACE/jenkins_environment.yml"
+conda env update -n jenkins_p2g_docs --file "$WORKSPACE/build_environment.yml"  --update-all
+conda env update -n jenkins_p2g_docs --file "$WORKSPACE/jenkins_environment.yml" --update-all
 conda activate jenkins_p2g_docs
 pip install "$WORKSPACE"
-conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
+conda env update -n jenkins_p2g_swbundle --file "$WORKSPACE/build_environment.yml" --update-all
 conda activate jenkins_p2g_swbundle
 ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
 conda activate jenkins_p2g_docs
