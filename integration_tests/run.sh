@@ -29,12 +29,14 @@ swbundle_name="${prefix}2grid-swbundle-${end}"
 # Documentation environment also has behave, while the build environment does not.
 conda env update -n jenkins_p2g_docs --file "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_docs
+pip install -U git+https://github.com/pytroll/satpy
 # xarray mismatch pip vs conda after pip installs satpy.
 conda install xarray
 conda env update -n jenkins_p2g_docs --file "$WORKSPACE/jenkins_environment.yml"
 pip install -U --no-deps "$WORKSPACE"
 conda env update -n jenkins_p2g_swbundle --file "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_swbundle
+pip install -U git+https://github.com/pytroll/satpy
 # xarray mismatch pip vs conda after pip installs satpy.
 conda install xarray
 ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
