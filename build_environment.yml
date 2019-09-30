@@ -36,7 +36,6 @@ dependencies:
   - six
   - trollimage
   - trollsift
-  - xarray
   - scipy
   - xarray
   - pip:
