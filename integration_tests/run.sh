@@ -26,8 +26,6 @@ if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
 fi
 swbundle_name="${prefix}2grid-swbundle-${end}"
 
-conda remove -n jenkins_p2g_docs --all
-conda remove -n jenkins_p2g_swbundle --all
 # Documentation environment also has behave, while the build environment does not.
 conda env update -n jenkins_p2g_docs --file "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_docs
