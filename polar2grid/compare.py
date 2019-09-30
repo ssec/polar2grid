@@ -78,14 +78,14 @@ def compare_array(array1, array2, atol=0., rtol=0., margin_of_error=0.):
     return 0
 
 
-def compare_binary(fn1, fn2, shape, dtype, atol=1.0, margin_of_error=0., **kwargs):
+def compare_binary(fn1, fn2, shape, dtype, atol=0., margin_of_error=0., **kwargs):
     array1 = numpy.memmap(fn1, shape=shape, dtype=dtype, mode='r')
     array2 = numpy.memmap(fn2, shape=shape, dtype=dtype, mode='r')
 
     return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error)
 
 
-def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=1.0, margin_of_error=0., **kwargs):
+def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0., margin_of_error=0., **kwargs):
     """Compare 2 single banded geotiff files
 
     .. note::
@@ -105,7 +105,7 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=1.0, margin_of_error=0., **kwargs
     return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error)
 
 
-def compare_awips_netcdf(nc1_name, nc2_name, atol=1.0, margin_of_error=0., **kwargs):
+def compare_awips_netcdf(nc1_name, nc2_name, atol=0., margin_of_error=0., **kwargs):
     """Compare 2 8-bit AWIPS-compatible NetCDF3 files
 
     .. note::
@@ -127,7 +127,7 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=1.0, margin_of_error=0., **kwa
     return compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error)
 
 
-def compare_netcdf(nc1_name, nc2_name, variables, atol=1.0, margin_of_error=0., **kwargs):
+def compare_netcdf(nc1_name, nc2_name, variables, atol=0., margin_of_error=0., **kwargs):
     from netCDF4 import Dataset
     nc1 = Dataset(nc1_name, "r")
     nc2 = Dataset(nc2_name, "r")
