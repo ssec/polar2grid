@@ -31,14 +31,14 @@ conda env update -n jenkins_p2g_docs --file "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_docs
 pip install -U git+https://github.com/pytroll/satpy
 # xarray mismatch pip vs conda after pip installs satpy.
-conda install xarray=0.13.0
+conda install xarray=0.12.3
 conda env update -n jenkins_p2g_docs --file "$WORKSPACE/jenkins_environment.yml"
 pip install -U --no-deps "$WORKSPACE"
 conda env update -n jenkins_p2g_swbundle --file "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_swbundle
 pip install -U git+https://github.com/pytroll/satpy
 # xarray mismatch pip vs conda after pip installs satpy.
-conda install xarray=0.13.0
+conda install xarray=0.12.3
 ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
 conda activate jenkins_p2g_docs
 if [[ ! "$commit_message" =~ (^|.[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
