@@ -1,4 +1,4 @@
-name: jenkins_p2g_swbundle
+name: test
 channels:
   - conda-forge
 dependencies:
@@ -17,6 +17,7 @@ dependencies:
   - h5py
   - netcdf4
   - pillow
+  - pip
   - pycoast
   - pydecorate
   - pyhdf
@@ -37,3 +38,5 @@ dependencies:
   - trollsift
   - xarray
   - scipy
+  - pip:
+    - git+https://github.com/pytroll/satpy
