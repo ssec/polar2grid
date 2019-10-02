@@ -32,13 +32,13 @@ conda remove -n jenkins_p2g_swbundle --all
 conda env update -n jenkins_p2g_docs --file "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_docs
 # xarray mismatch pip vs conda after pip installs satpy.
-conda install -c conda-forge xarray=`conda list xarray | grep -oE "[0-9]+\.[0-9]+\S*"`
+conda install -c conda-forge xarray=0.12.3
 conda env update -n jenkins_p2g_docs --file "$WORKSPACE/jenkins_environment.yml"
 pip install -U --no-deps "$WORKSPACE"
 conda env update -n jenkins_p2g_swbundle --file "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_swbundle
 # xarray mismatch pip vs conda after pip installs satpy.
-conda install -c conda-forge xarray=`conda list xarray | grep -oE "[0-9]+\.[0-9]+\S*"`
+conda install -c conda-forge xarray=0.12.3
 ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
 conda activate jenkins_p2g_docs
 if [[ ! "$commit_message" =~ (^|[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
