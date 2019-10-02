@@ -26,7 +26,8 @@ def step_impl(context, source):
 @when('"{command}" runs')
 def step_impl(context, command):
     context.script = command.split()[0]
-    context.command = "{} {} {}".format(os.path.join(context.p2g_path, context.script), command, context.source)
+    context.command = "{} {} {}".format(os.path.join(context.p2g_path, context.script), " ".join(command.split()[1:]),
+                                        context.source)
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
