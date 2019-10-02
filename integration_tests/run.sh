@@ -26,19 +26,17 @@ if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
 fi
 swbundle_name="${prefix}2grid-swbundle-${end}"
 
-conda remove -n jenkins_p2g_docs --all
-conda remove -n jenkins_p2g_swbundle --all
 # Documentation environment also has behave, while the build environment does not.
 conda env update -n jenkins_p2g_docs --file "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_docs
 # xarray mismatch pip vs conda after pip installs satpy.
-conda install -c conda-forge xarray=0.12.3
+conda install -c conda-forge xarray=`conda list xarray | grep -oE "[0-9]+\.[0-9]+\S*"`
 conda env update -n jenkins_p2g_docs --file "$WORKSPACE/jenkins_environment.yml"
 pip install -U --no-deps "$WORKSPACE"
 conda env update -n jenkins_p2g_swbundle --file "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_swbundle
 # xarray mismatch pip vs conda after pip installs satpy.
-conda install -c conda-forge xarray=0.12.3
+conda install -c conda-forge xarray=`conda list xarray | grep -oE "[0-9]+\.[0-9]+\S*"`
 ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
 conda activate jenkins_p2g_docs
 if [[ ! "$commit_message" =~ (^|[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
