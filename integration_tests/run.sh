@@ -42,7 +42,7 @@ conda activate jenkins_p2g_docs
 if [[ ! "$commit_message" =~ (^|[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
     export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
     cd "$WORKSPACE/integration_tests"
-    behave --no-logcapture --no-color --no-capture -D datapath=/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
+    behave --no-logcapture --no-color --no-capture -D datapath=/data/dist/p2g_test_data
 fi
 mkdir "/tmp/${prefix}2grid-${end}"
 # Save tarball.
