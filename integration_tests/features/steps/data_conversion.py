@@ -6,13 +6,13 @@ import shutil
 import glob
 
 
-@given('input data from "{input}"')
-def step_impl(context, input):
-    new_input = ""
+@given('input data from {source}')
+def step_impl(context, source):
+    new_source = ""
 
-    for f in input.split(" "):
+    for f in source.split(" "):
         f = os.path.join(context.data_path, f)
-        new_input += f + " "
+        new_source += f + " "
 
         if "*" in os.path.basename(f):
             assert glob.glob(f), "Input files {} do  not exist".format(f)
@@ -20,14 +20,14 @@ def step_impl(context, input):
         else:
             assert os.path.exists(f), "Input {} does not exist".format(f)
 
-    context.input = new_input
+    context.source = new_source
 
 
-@when('"{command}" runs')
+@when('{command} runs')
 def step_impl(context, command):
     context.script = command.split()[0]
     context.command = "{} {} {}".format(os.path.join(context.p2g_path, context.script),
-                                        " ".join(command.split()[1:]), context.input)
+                                        " ".join(command.split()[1:]), context.source)
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
@@ -43,7 +43,7 @@ def step_impl(context, command):
     assert os.listdir(context.temp_dir), "No files were created"
 
 
-@then('the output matches with the files in "{output}"')
+@then('the output matches with the files in {output}')
 def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
