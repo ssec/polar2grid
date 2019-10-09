@@ -3,8 +3,7 @@ How to run the tests in own environment
 
 Navigate to your Polar2Grid directory, then run::
 
-    conda env update -n jenkins_p2g_docs -f build_environment.yml
-    conda env update -n jenkins_p2g_docs -f jenkins_environment.yml
+    conda env update -n jenkins_p2g_docs -f build_environment.yml -f jenkins_environment.yml
     conda activate jenkins_p2g_docs
     pip install .
     conda env update -n jenkins_p2g_swbundle -f build_environment.yml
@@ -21,8 +20,7 @@ found in the feature file.
 How Jenkins runs the tests
 ==========================
 
-Jenkins runs a script that follows the same steps as above. The script can be found in ``integration_tests/run.sh``.
+Jenkins runs a script that follows similar steps as above. The script can be found in ``integration_tests/run.sh``.
 
 Jenkins home is on bumi.ssec.wisc.edu using port 8080, and data can be found in
-bumi:/data/users/kkolman/integration_tests/polar2grid/integration_tests/p2g_test_data
-
+bumi:/data/dist/p2g_test_data
