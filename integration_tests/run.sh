@@ -18,7 +18,7 @@ else
     prefix=polar
 fi
 # Handle release vs test naming.
-end="`date +"%Y%m%d-%H%M%S"`"
+end="`date +%Y%m%d-%H%M%S`"
 # If the tag is correct and a version was specified, make a version release.
 if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
     # Removes prefix from $GIT_TAG_NAME.
