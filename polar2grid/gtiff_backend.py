@@ -239,6 +239,7 @@ class Backend(roles.BackendRole):
 
 
 def add_backend_argument_groups(parser):
+    from polar2grid.writers.geotiff import NumpyDtypeList, NUMPY_DTYPE_STRS
     parser.set_defaults(forced_grids=["wgs84_fit"])
     group = parser.add_argument_group(title="Backend Initialization")
     group.add_argument('--rescale-configs', nargs="*", dest="rescale_configs",
@@ -253,7 +254,7 @@ def add_backend_argument_groups(parser):
     group.add_argument("--png-quicklook", dest="quicklook", action="store_true",
                        help="Create a PNG version of the created geotiff")
     group.add_argument("--dtype", dest="data_type", type=str_to_dtype, default=None,
-                       choices=list(str2dtype.keys()),
+                       choices=NumpyDtypeList(NUMPY_DTYPE_STRS),
                        help="specify the data type for the backend to output "
                             "(default: 'uint1' 8-bit integer)")
     group.add_argument('--tiled', action='store_true',
