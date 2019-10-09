@@ -9,10 +9,10 @@ Navigate to your Polar2Grid directory, then run::
     conda env update -n jenkins_p2g_swbundle -f build_environment.yml
     conda activate jenkins_p2g_swbundle
     # Creates a folder with the necessary scripts to run the tests.
-    ./create_conda_software_bundle.sh polar2grid-`datetime +%Y%m%d-%H%M%S`
+    ./create_conda_software_bundle.sh polar2grid-`date +%Y%m%d-%H%M%S`
     conda activate jenkins_p2g_docs
     # If not already in your .bash_profile.
-    export POLAR2GRID_HOME=polar2grid-`datetime +%Y%m%d-%H%M%S`
+    export POLAR2GRID_HOME=polar2grid-`date +%Y%m%d-%H%M%S`
     cd integration_tests
     # Runs the tests.
     behave --no-logcapture --no-capture --no-color -D datapath=/path/to/test/data
