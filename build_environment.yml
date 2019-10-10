@@ -37,6 +37,7 @@ dependencies:
   - trollsift
   - xarray
   - scipy
+  - zarr
   - pip:
     - git+https://github.com/pytroll/satpy.git
     - git+https://github.com/pytroll/pyspectral.git
