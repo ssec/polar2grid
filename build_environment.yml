@@ -26,7 +26,6 @@ dependencies:
   - pyproj
   - pyresample
   - pyshp
-  - pyspectral
   - python=3.7
   - python-geotiepoints
   - pyyaml
@@ -39,4 +38,4 @@ dependencies:
   - scipy
   - xarray
   - pip:
-    - git+https://github.com/pytroll/satpy
+    - git+https://github.com/pytroll/satpy.git

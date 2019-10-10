@@ -40,25 +40,25 @@ Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
-| R1                        | Channel 1 Reflectance Band                          |
+| 1                         | Channel 1 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| R2                        | Channel 2 Reflectance Band                          |
+| 2                         | Channel 2 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| E1                        | Channel 3 Emissive Band                             |
+| 3                         | Channel 3 Emissive Band                             |
 +---------------------------+-----------------------------------------------------+
-| E2                        | Channel 4 Emissive Band                             |
+| 4                         | Channel 4 Emissive Band                             |
 +---------------------------+-----------------------------------------------------+
-| E3                        | Channel 5 Emissive Band                             |
+| 5                         | Channel 5 Emissive Band                             |
 +---------------------------+-----------------------------------------------------+
-| R3                        | Channel 6 Reflectance Band                          |
+| 6                         | Channel 6 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| R4                        | Channel 7 Reflectance Band                          |
+| 7                         | Channel 7 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| R5                        | Channel 8 Reflectance Band                          |
+| 8                         | Channel 8 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| R6                        | Channel 9 Reflectance Band                          |
+| 9                         | Channel 9 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
-| R7                        | Channel 10 Reflectance Band                         |
+| 10                        | Channel 10 Reflectance Band                         |
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+
@@ -69,10 +69,25 @@ from polar2grid.readers import ReaderWrapper, main
 
 LOG = logging.getLogger(__name__)
 
+ALL_BANDS = [str(x) for x in range(1, 11)]
+ALL_COMPS = ['true_color']
+ALL_ANGLES = ['solar_zenith_angle', 'solar_azimuth_angle', 'sensor_zenith_angle', 'sensor_azimuth_angle']
+
 
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = ['.HDF']
     DEFAULT_READER_NAME = 'virr_l1b'
+    DEFAULT_DATASETS = ALL_BANDS + ALL_COMPS
+
+    @property
+    def available_product_names(self):
+        available = set(self.scene.available_dataset_names(reader_name=self.reader, composites=True))
+        return sorted(available & set(self.all_product_names))
+
+    @property
+    def all_product_names(self):
+        # return self.scene.all_dataset_names(reader_name=self.reader, composites=True)
+        return ALL_BANDS + ALL_ANGLES + ALL_COMPS
 
 
 def add_frontend_argument_groups(parser):

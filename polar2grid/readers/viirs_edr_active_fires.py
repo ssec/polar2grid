@@ -62,6 +62,16 @@ LOG = logging.getLogger(__name__)
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = ['.nc', '.txt']
     DEFAULT_READER_NAME = 'viirs_edr_active_fires'
+    # confidence_cat and T4 are IMG resolution only
+    # confidence_pct and T13 are MOD resolution only
+    DEFAULT_DATASETS = ['T4', 'T13', 'confidence_cat', 'confidence_pct', 'power']
+
+    @property
+    def available_product_names(self):
+        available = set(self.scene.available_dataset_names(reader_name=self.reader, composites=True))
+        # remove longitude and latitude as available datasets to avoid confusion
+        available -= {'longitude', 'latitude'}
+        return sorted(available & set(self.all_product_names))
 
 
 def add_frontend_argument_groups(parser):
