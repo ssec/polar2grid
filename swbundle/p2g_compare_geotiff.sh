@@ -28,20 +28,33 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-#
 
-# Check arguments
-if [ $# -ne 2 ]; then
-  echo "Usage: p2g_compare_geotiff.bash verification_dir work_dir"
-  exit 1
+# Checks arguments
+if [ $# -lt 2 ] || [[ $* =~ (^|[[:space:]])("-h"|"--help")($|[[:space:]]) ]]; then
+    echo "Usage: p2g_compare_geotiff.sh verification_dir work_dir"
+    # Prints only the optional arguments
+    print=0
+    options=`python -m polar2grid.compare geotiff -h`
+    while IFS= read line
+    do
+        if [[ "$line" =~ "optional" ]]; then
+            print=1
+        fi
+        if [[ $print -eq 1 ]]; then
+            echo "$line"
+        fi
+    done <<< "$options"
+    if [[ $* =~ (^|[[:space:]])("-h"|"--help")($|[[:space:]]) ]]; then
+        exit 0
+    fi
+    exit 1
 fi
 
 # Get primary and secondary directory names
 VERIFY_BASE=$1
 WORK_DIR=$2
-
 oops() {
-    echo "OOPS: $*"
+    echo "ERROR: $*"
     echo "FAILURE"
     exit 1
 }
@@ -58,34 +71,8 @@ fi
 BAD_COUNT=0
 for VFILE in $VERIFY_BASE/*.tif; do
     WFILE=$WORK_DIR/`basename $VFILE`
-    if [ ! -f $WFILE ]; then
-        oops "ERROR: Could not find output file $WFILE"
-        BAD_COUNT=$(($BAD_count + 1))
-        continue
-    fi
-    echo "Comparing $WFILE to known valid file"
-    python<<EOF
-from osgeo import gdal
-import numpy
-import sys
-
-work_gtiff  = gdal.Open("$WFILE", gdal.GA_ReadOnly)
-valid_gtiff = gdal.Open("$VFILE", gdal.GA_ReadOnly)
-
-work_data = work_gtiff.GetRasterBand(1).ReadAsArray()
-valid_data = valid_gtiff.GetRasterBand(1).ReadAsArray()
-
-if work_data.shape != valid_data.shape:
-    print("ERROR: Data shape for '$WFILE' is not the same as the valid '$VFILE': {0}, {1}".format(work_data.shape, valid_data.shape))
-    sys.exit(1)
-
-total_pixels = work_data.shape[0] * work_data.shape[1]
-equal_pixels = len(numpy.nonzero( work_data == valid_data )[0])
-if equal_pixels != total_pixels:
-    print ("FAIL: %d pixels out of %d pixels are different" % (total_pixels-equal_pixels,total_pixels))
-    sys.exit(2)
-print ("SUCCESS: %d pixels out of %d pixels are different" % (total_pixels-equal_pixels,total_pixels))
-EOF
+    echo "INFO: Comparing $WFILE to known valid file $VFILE"
+    python -m polar2grid.compare geotiff "$VFILE" "$WFILE" `echo "${@:3}"`
     [ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
 done
 

@@ -1,4 +1,4 @@
-name: polar2grid_dist
+name: jenkins_p2g_swbundle
 channels:
   - conda-forge
 dependencies:
@@ -35,8 +35,7 @@ dependencies:
   - six
   - trollimage
   - trollsift
-  - xarray
   - scipy
+  - xarray
   - pip:
     - git+https://github.com/pytroll/satpy.git
-    - git+https://github.com/pytroll/pyspectral.git

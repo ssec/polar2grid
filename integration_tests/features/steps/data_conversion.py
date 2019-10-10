@@ -1,4 +1,4 @@
-from behave import given, when, then, step
+from behave import given, when, then
 import os
 import tempfile
 import subprocess
@@ -6,7 +6,7 @@ import shutil
 import glob
 
 
-@given(u'input data from {source}')
+@given('input data from {source}')
 def step_impl(context, source):
     new_source = ""
 
@@ -23,10 +23,11 @@ def step_impl(context, source):
     context.source = new_source
 
 
-@when(u'{script} {command} runs')
-def step_impl(context, script, command):
-    context.script = script
-    context.command = "{} {} {}".format(os.path.join(context.p2g_path, script), command, context.source)
+@when('{command} runs')
+def step_impl(context, command):
+    context.script = command.split()[0]
+    context.command = "{} {} {}".format(os.path.join(context.p2g_path, context.script),
+                                        " ".join(command.split()[1:]), context.source)
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
@@ -42,17 +43,17 @@ def step_impl(context, script, command):
     assert os.listdir(context.temp_dir), "No files were created"
 
 
-@then(u'the output matches with the files in {output}')
+@then('the output matches with the files in {output}')
 def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
         os.chdir(context.data_path)
         if "gtiff" in context.command or context.script == "geo2grid.sh":
-            compare_command = "{} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_geotiff.sh"),
-                                                        output, context.temp_dir)
+            compare_command = "{} {} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_geotiff.sh"),
+                                                   output, context.temp_dir, '-vv')
         else:
-            compare_command = "{} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_netcdf.sh"),
-                                                        output, context.temp_dir)
+            compare_command = "{} {} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_netcdf.sh"),
+                                                   output, context.temp_dir, '--variables image -vv')
         exit_status = subprocess.call(compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:

@@ -39,6 +39,7 @@ supported backend's output.
 """
 __docformat__ = "restructuredtext en"
 
+from os.path import exists
 import sys
 
 import logging
@@ -47,7 +48,7 @@ import numpy
 LOG = logging.getLogger(__name__)
 
 
-def compare_array(array1, array2, atol=0., rtol=0.):
+def compare_array(array1, array2, atol=0., rtol=0., margin_of_error=0.):
     """Compare 2 binary arrays per pixel
 
     Two pixels are considered different if the absolute value of their
@@ -70,22 +71,21 @@ def compare_array(array1, array2, atol=0., rtol=0.):
     total_pixels = array1.size
     equal_pixels = numpy.count_nonzero(numpy.isclose(array1, array2, rtol=rtol, atol=atol, equal_nan=True))
     diff_pixels = total_pixels - equal_pixels
-    if diff_pixels != 0:
+    if diff_pixels > margin_of_error / 100 * total_pixels:
         LOG.warning("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
-    else:
-        LOG.info("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
+        return 1
+    LOG.info("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
+    return 0
 
-    return diff_pixels
 
-
-def compare_binary(fn1, fn2, shape, dtype, atol=1.0, **kwargs):
+def compare_binary(fn1, fn2, shape, dtype, atol=0., margin_of_error=0., **kwargs):
     array1 = numpy.memmap(fn1, shape=shape, dtype=dtype, mode='r')
     array2 = numpy.memmap(fn2, shape=shape, dtype=dtype, mode='r')
 
-    return compare_array(array1, array2, atol=atol)
+    return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error)
 
 
-def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=1.0, **kwargs):
+def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0., margin_of_error=0., **kwargs):
     """Compare 2 single banded geotiff files
 
     .. note::
@@ -102,10 +102,10 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=1.0, **kwargs):
     array1 = gtiff1.GetRasterBand(1).ReadAsArray().astype(numpy.float32)
     array2 = gtiff2.GetRasterBand(1).ReadAsArray().astype(numpy.float32)
 
-    return compare_array(array1, array2, atol=atol)
+    return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error)
 
 
-def compare_awips_netcdf(nc1_name, nc2_name, atol=1.0, **kwargs):
+def compare_awips_netcdf(nc1_name, nc2_name, atol=0., margin_of_error=0., **kwargs):
     """Compare 2 8-bit AWIPS-compatible NetCDF3 files
 
     .. note::
@@ -124,9 +124,10 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=1.0, **kwargs):
     image1_data = image1_var[:].astype(numpy.uint8).astype(numpy.float32)
     image2_data = image2_var[:].astype(numpy.uint8).astype(numpy.float32)
 
-    return compare_array(image1_data, image2_data, atol=atol)
+    return compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error)
 
-def compare_netcdf(nc1_name, nc2_name, variables, atol=1.0, **kwargs):
+
+def compare_netcdf(nc1_name, nc2_name, variables, atol=0., margin_of_error=0., **kwargs):
     from netCDF4 import Dataset
     nc1 = Dataset(nc1_name, "r")
     nc2 = Dataset(nc2_name, "r")
@@ -137,7 +138,7 @@ def compare_netcdf(nc1_name, nc2_name, variables, atol=1.0, **kwargs):
         image1_var.set_auto_maskandscale(False)
         image2_var.set_auto_maskandscale(False)
         LOG.debug("Comparing data for variable '{}'".format(v))
-        num_diff += compare_array(image1_var, image2_var, atol=atol)
+        num_diff += compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error)
     return num_diff
 
 type_name_to_compare_func = {
@@ -165,9 +166,9 @@ def main(argv=sys.argv[1:]):
     parser = ArgumentParser(description="Compare two files per pixel")
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
                         help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
-    parser.add_argument('--atol', type=float, default=1.0,
+    parser.add_argument('--atol', type=float, default=0.,
                         help="specify threshold for comparison differences (see numpy.isclose 'atol' parameter)")
-    parser.add_argument('--rtol', type=float, default=1e-05,
+    parser.add_argument('--rtol', type=float, default=0.,
                         help="specify relative tolerance for comparison (see numpy.isclose 'rtol' parameter)")
     parser.add_argument('--shape', dest="shape", type=int, nargs=2, default=(None, None),
                         help="'rows cols' for binary file comparison only")
@@ -175,6 +176,8 @@ def main(argv=sys.argv[1:]):
                         help="Data type for binary file comparison only")
     parser.add_argument('--variables', nargs='+',
                         help='NetCDF variables to read and compare')
+    parser.add_argument('--margin-of-error', type=float, default=0.,
+                        help='percent of total pixels that can be wrong')
     parser.add_argument('file_type', type=_file_type,
                         help="type of files being compare")
     parser.add_argument('file1',
@@ -187,12 +190,15 @@ def main(argv=sys.argv[1:]):
     logging.basicConfig(level=levels[min(3, args.verbosity)])
     kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, 'variables': args.variables}
 
-    num_diff = args.file_type(args.file1, args.file2, atol=args.atol, rtol=args.rtol, **kwargs)
-
-    if num_diff == 0:
-        return 0
-    else:
+    if not exists(args.file1):
+        LOG.error('Could not find file {}'.format(args.file1))
         return 1
+    if not exists(args.file2):
+        LOG.error('Could not find file {}'.format(args.file2))
+        return 1
+    return args.file_type(args.file1, args.file2, atol=args.atol, rtol=args.rtol,
+                          margin_of_error=args.margin_of_error, **kwargs)
+
 
 if __name__ == "__main__":
     sys.exit(main())
