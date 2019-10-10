@@ -30,10 +30,25 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
-# Check arguments
-if [ $# -ne 2 ]; then
-  echo "Usage: p2g_compare_netcdf.bash verification_dir work_dir"
-  exit 1
+# Checks arguments
+if [ $# -lt 2 ] || [[ $* =~ (^|[[:space:]])("-h"|"--help")($|[[:space:]]) ]]; then
+    echo "Usage: p2g_compare_geotiff.sh verification_dir work_dir"
+    # Prints only the optional arguments
+    print=0
+    options=`python -m polar2grid.compare geotiff -h`
+    while IFS= read line
+    do
+        if [[ "$line" =~ "optional" ]]; then
+            print=1
+        fi
+        if [[ $print -eq 1 ]]; then
+            echo "$line"
+        fi
+    done <<< "$options"
+    if [[ $* =~ (^|[[:space:]])("-h"|"--help")($|[[:space:]]) ]]; then
+        exit 0
+    fi
+    exit 1
 fi
 
 # Get primary and secondary directory names
@@ -41,7 +56,7 @@ VERIFY_BASE=$1
 WORK_DIR=$2
 
 oops() {
-    echo "OOPS: $*"
+    echo "ERROR: $*"
     echo "FAILURE"
     exit 1
 }
@@ -58,43 +73,9 @@ fi
 BAD_COUNT=0
 for VFILE in $VERIFY_BASE/SSEC*; do
     WFILE=$WORK_DIR/`basename $VFILE`
-    if [ ! -f $WFILE ]; then
-        echo "ERROR: Could not find output file $WFILE"
-        BAD_COUNT=$(($BAD_COUNT + 1))
-        continue
-    fi
-    echo "Comparing $WFILE to known valid file"
-    python<<EOF
-from netCDF4 import Dataset
-import numpy
-import sys
-
-nc1_name  = "$VFILE"
-nc2_name  = "$WFILE"
-threshold = 1
-
-nc1 = Dataset(nc1_name, "r")
-nc2 = Dataset(nc2_name, "r")
-image1_var = nc1.variables["image"]
-image2_var = nc2.variables["image"]
-image1_var.set_auto_maskandscale(False)
-image2_var.set_auto_maskandscale(False)
-image1_data = image1_var[:].astype(numpy.uint8).astype(numpy.float)
-image2_data = image2_var[:].astype(numpy.uint8).astype(numpy.float)
-
-if image1_data.shape != image2_data.shape:
-    print("ERROR: Data shape for '$WFILE' is not the same as the valid '$VFILE': {0}, {1}".format(work_data.shape, valid_data.shape))
-    sys.exit(1)
-
-total_pixels = image1_data.shape[0] * image1_data.shape[1]
-equal_pixels = len(numpy.nonzero((image2_data - image1_data) < threshold)[0])
-if equal_pixels != total_pixels:
-    print("FAIL: %d pixels out of %d pixels are different" % (total_pixels-equal_pixels,total_pixels))
-    sys.exit(2)
-print("SUCCESS: %d pixels out of %d pixels are different" % (total_pixels-equal_pixels,total_pixels))
-
-EOF
-[ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
+    echo "INFO: Comparing $WFILE to known valid file $VFILE"
+    python -m polar2grid.compare netcdf "$VFILE" "$WFILE" `echo "${@:3}"`
+    [ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
 done
 
 if [ $BAD_COUNT -ne 0 ]; then
