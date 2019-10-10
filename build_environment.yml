@@ -36,6 +36,7 @@ dependencies:
   - trollimage
   - trollsift
   - scipy
+  - zarr
   - xarray
   - pip:
     - git+https://github.com/pytroll/satpy.git

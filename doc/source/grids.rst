@@ -132,7 +132,7 @@ Lambert Conic Conformal - Australia Centered
 Lambert Conic Conformal - Asia Centered
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:Grid Name: lcc_sa
+:Grid Name: lcc_asia
 :Description: 1km Asia centered lcc grid
 :PROJ.4 String: +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=25 +lat_1=25 +lon_0=105 +units=m +no_defs
 :Grid Width: None
