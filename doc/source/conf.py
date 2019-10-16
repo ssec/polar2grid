@@ -149,10 +149,10 @@ else:
     # built documents.
     #
     # The short X.Y version.
-    version = '2.2.1'
+    version = '2.3'
 
     # The full version, including alpha/beta/rc tags.
-    release = '2.2.1'
+    release = '2.3'
 
 rst_epilog += """
 .. |project| replace:: {}
