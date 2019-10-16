@@ -29,13 +29,9 @@ swbundle_name="${prefix}2grid-swbundle-${end}"
 # Documentation environment also has behave, while the build environment does not.
 conda env update -n jenkins_p2g_docs -f "$WORKSPACE/build_environment.yml" -f "$WORKSPACE/jenkins_environment.yml"
 conda activate jenkins_p2g_docs
-# xarray mismatch pip vs conda after pip installs satpy.
-conda update xarray --force-reinstall -c conda-forge
 pip install -U --no-deps "$WORKSPACE"
 conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_swbundle
-# xarray mismatch pip vs conda after pip installs satpy.
-conda update xarray --force-reinstall -c conda-forge
 ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
 conda activate jenkins_p2g_docs
 if [[ ! "$commit_message" =~ (^|[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
