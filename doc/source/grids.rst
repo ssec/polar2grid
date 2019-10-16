@@ -239,7 +239,7 @@ GOES-East 8km
 :Description: 8 kilometer resolution GOES-16 Full Disk
 
 GOES-East 10km
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 :Grid Name: goes_east_10km
 :Description: 10 kilometer resolution GOES-16 Full Disk
@@ -263,7 +263,7 @@ GOES-West 8km
 :Description: 8 kilometer resolution GOES-17 Full Disk
 
 GOES-West 10km
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 :Grid Name: goes_west_10km
 :Description: 10 kilometer resolution GOES-17 Full Disk
