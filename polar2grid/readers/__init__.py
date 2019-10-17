@@ -192,6 +192,7 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
         "begin_time": info["start_time"],
         "end_time": info["end_time"],
         "fill_value": default_fill,
+        "_FillValue": default_fill,  # might be used by satpy later
         "swath_columns": cols,
         "swath_rows": rows,
         "rows_per_scan": info.get("rows_per_scan", rows),

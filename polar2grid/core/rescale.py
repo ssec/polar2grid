@@ -350,7 +350,7 @@ def ndvi_scale(img, min_out, max_out, min_in=-1.0, max_in=1.0, threshold=0.0, th
     return img
 
 
-def palettize(img, min_out, max_out, min_in=0, max_in=1.0, colormap=None, alpha=True, **kwargs):
+def palettize(img, min_out, max_out, min_in=0, max_in=1.0, colormap=None, alpha=True, colorize=False, **kwargs):
     """Apply a colormap to data and return the indices in to that colormap."""
     import xarray as xr
     import dask.array as da
@@ -372,6 +372,10 @@ def palettize(img, min_out, max_out, min_in=0, max_in=1.0, colormap=None, alpha=
     xrimg = XRImage(
         xr.DataArray(da.from_array(img, chunks=CHUNK_SIZE), dims=dims, attrs=attrs))
     if alpha:
+        # convert to float otherwise trollimage will make a 0-255 alpha band (for uint8 data)
+        xrimg.data = xrimg.data.where(good_data_mask)
+        xrimg.data.attrs.pop('_FillValue', None)
+        xrimg.data.attrs.pop('fill_value', None)
         # use colormap as is
         tmp_cmap = colormap
         # produce LA image
@@ -383,21 +387,34 @@ def palettize(img, min_out, max_out, min_in=0, max_in=1.0, colormap=None, alpha=
         tmp_cmap = ticolormap.Colormap(*zip(colormap.values[1:], colormap.colors[1:]))
 
     tmp_cmap.set_range(min_in, max_in)
-    xrimg.palettize(tmp_cmap)
+    if colorize:
+        xrimg.colorize(tmp_cmap)
+    else:
+        xrimg.palettize(tmp_cmap)
     img_data = xrimg.data.values
 
     if alpha:
         # multiply alpha by the output size
-        img_data[1, :, :] *= max_out
+        # ignore inc_by_one here
+        img_data[-1, :, :] *= max_out + 1
+        if colorize:
+            # scale 0-1 to 0-max_out
+            img_data[:-1, :, :] *= max_out + 1
     else:
-        # get the single band (L)
-        img_data = img_data[0]
-        # increment the indexes by 1 because the colormap has a 0 fill value
-        img_data += 1
-        img_data[~good_data_mask] = 0
+        for band_idx in range(img_data.shape[0]):
+            # get the single band (L)
+            img_data = img_data[band_idx]
+            # increment the indexes by 1 because the colormap has a 0 fill value
+            img_data += 1
+            img_data[~good_data_mask] = 0
     # our data values are now integers that can't be scaled to the output type
     # because they need to match the colormap
     return img_data
+
+
+def colorize(*args, **kwargs):
+    kwargs['colorize'] = True
+    return palettize(*args, **kwargs)
 
 
 def water_temp_palettize(img, min_out, max_out, min_in=0, max_in=1.0, colormap=None, **kwargs):
@@ -457,6 +474,7 @@ class Rescaler(roles.INIConfigReader):
         'unlinear': unlinear_scale,
         'lookup': lookup_scale,
         'palettize': palettize,
+        'colorize': colorize,
         'water_temp_palettize': water_temp_palettize,
         'debug': debug_scale,
     }
