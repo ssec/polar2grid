@@ -67,7 +67,7 @@ class Backend(roles.BackendRole):
             grid_def = gridded_scene["grid_definition"]
             gridded_product = gridded_scene
         else:
-            k = gridded_scene.keys()[0]
+            k = list(gridded_scene.keys())[0]
             grid_def = gridded_scene[k]["grid_definition"]
             gridded_product = gridded_scene[k]
 
