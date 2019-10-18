@@ -204,7 +204,10 @@ def dataarray_to_swath_product(ds, swath_def, overwrite_existing=False):
     info.update(p2g_metadata)
 
     if channels == 1:
-        filename = info["name"] + ".dat"
+        filename = "-".join([info['name'], str(info['calibration']), str(info['resolution'])])
+        if info.get('modifiers'):
+            filename += '-' + '_'.join(info['modifiers'])
+        filename = filename + ".dat"
         info["swath_data"] = filename
         if os.path.isfile(filename):
             if not overwrite_existing:
@@ -394,7 +397,7 @@ class ReaderWrapper(roles.FrontendRole):
         kwargs.pop("overwrite_existing")
         kwargs.pop("exit_on_error")
         kwargs.pop("keep_intermediate")
-        self.scene.load(products, **kwargs)
+        self.scene.load(products, generate=False, **kwargs)
         self.wishlist = self.scene.wishlist
         self.missing_datasets = self.scene.missing_datasets
 
