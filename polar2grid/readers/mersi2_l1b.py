@@ -93,24 +93,40 @@ Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 +---------------------------+-----------------------------------------------------+
 | true_color                | Rayleigh corrected true color RGB                   |
 +---------------------------+-----------------------------------------------------+
-| natural_color             | Natural color RGB                                   |
+| false_color               | False color RGB (bands 7, 4, 3)                     |
++---------------------------+-----------------------------------------------------+
+| natural_color             | Natural color RGB (bands 6, 4, 3)                   |
 +---------------------------+-----------------------------------------------------+
 """
+import os
 import sys
 import logging
 from polar2grid.readers import ReaderWrapper, main
+from satpy import DatasetID
+import numpy as np
 
 LOG = logging.getLogger(__name__)
 
 ALL_BANDS = [str(x) for x in range(1, 26)]
 ALL_ANGLES = ['solar_zenith_angle', 'solar_azimuth_angle', 'sensor_zenith_angle', 'sensor_azimuth_angle']
-ALL_COMPS = ['true_color', 'natural_color']
+ALL_COMPS = ['true_color', 'false_color']
 
 
 class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = ['.HDF']
     DEFAULT_READER_NAME = 'mersi2_l1b'
     DEFAULT_DATASETS = ALL_BANDS + ALL_COMPS
+
+    def __init__(self, *args, **kwargs):
+        self.day_fraction = kwargs.pop('day_fraction', 0.1)
+        LOG.debug("Day fraction set to %f", self.day_fraction)
+        # self.night_fraction = kwargs.pop('night_fraction', 0.1)
+        # LOG.debug("Night fraction set to %f", self.night_fraction)
+        self.sza_threshold = kwargs.pop('sza_threshold', 100.)
+        LOG.debug("SZA threshold set to %f", self.sza_threshold)
+        self.fraction_day_scene = None
+        self.fraction_night_scene = None
+        super(Frontend, self).__init__(**kwargs)
 
     @property
     def available_product_names(self):
@@ -121,6 +137,44 @@ class Frontend(ReaderWrapper):
     def all_product_names(self):
         # return self.scene.all_dataset_names(reader_name=self.reader, composites=True)
         return ALL_BANDS + ALL_ANGLES + ALL_COMPS
+
+    def _calc_percent_day(self, scene):
+        if 'solar_zenith_angle' in scene:
+            sza_data = scene['solar_zenith_angle']
+        else:
+            for sza_name in ('solar_zenith_angle',):
+                scene.load([sza_name])
+                if sza_name not in scene:
+                    continue
+                sza_data = scene[sza_name]
+                del scene[sza_name]
+                break
+            else:
+                raise ValueError("Could not check day or night time percentage without SZA data")
+
+        sza_data = sza_data.persist()
+        invalid_mask = sza_data.isnull().compute().data
+        valid_day_mask = (sza_data < self.sza_threshold) & ~invalid_mask
+        valid_night_mask = (sza_data >= self.sza_threshold) & ~invalid_mask
+        self.fraction_day_scene = np.count_nonzero(valid_day_mask) / (float(sza_data.size) - np.count_nonzero(invalid_mask))
+        self.fraction_night_scene = np.count_nonzero(valid_night_mask) / (float(sza_data.size) - np.count_nonzero(invalid_mask))
+        LOG.debug("Fraction of scene that is valid day pixels: %f%%", self.fraction_day_scene * 100.)
+        LOG.debug("Fraction of scene that is valid night pixels: %f%%", self.fraction_night_scene * 100.)
+
+    def filter(self, scene):
+        self.filter_daytime(scene)
+
+    def filter_daytime(self, scene):
+        if self.fraction_day_scene is None:
+            self._calc_percent_day(scene)
+        # make a copy of the scene list so we can edit it later
+        for ds in list(scene):
+            if ds.attrs['standard_name'] in ('toa_bidirectional_reflectance', 'false_color', 'natural_color',
+                                             'true_color') and self.fraction_day_scene <= self.day_fraction:
+                ds_id = DatasetID.from_dict(ds.attrs)
+                LOG.info("Will not create product '%s' because there is less than %f%% of day data",
+                         ds.attrs['name'], self.day_fraction * 100.)
+                del scene[ds_id]
 
 
 def add_frontend_argument_groups(parser):
@@ -137,6 +191,12 @@ def add_frontend_argument_groups(parser):
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
     group.add_argument("--list-products", dest="list_products", action="store_true",
                        help="List available frontend products and exit")
+    group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
+                       help="Fraction of day required to produce reflectance products (default 0.10)")
+    # group.add_argument("--night-fraction", dest="night_fraction", type=float, default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
+    #                    help="Fraction of night required to product products like fog (default 0.10)")
+    group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
+                       help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
