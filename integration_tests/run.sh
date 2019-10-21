@@ -37,7 +37,7 @@ for prefix in ${prefixes}; do
     swbundle_name="${WORKSPACE}/{prefix}2grid-swbundle-${end}"
     package_name="/tmp/${prefix}2grid-${end}"
     conda activate jenkins_p2g_swbundle
-    ./create_conda_software_bundle.sh "$swbundle_name"
+    "${WORKSPACE}/create_conda_software_bundle.sh" "$swbundle_name"
     conda activate jenkins_p2g_docs
     if [[ ! "$commit_message" =~ (^|[[:space:]])"["([pg]2g-)?skip-tests"]"$ ]]; then
         export POLAR2GRID_HOME="$swbundle_name"
