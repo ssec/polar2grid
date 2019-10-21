@@ -1,5 +1,6 @@
 #!/bin/bash
 # Script for jenkins to run tests on polar2grid.
+# Optional commit message requests (pick one only): [skip-tests], [p2g], [g2g], [p2g-skip-tests], and [g2g-skip-tests].
 
 set -ex
 export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
@@ -11,9 +12,9 @@ cd "$WORKSPACE"
 source ~/.bashrc
 
 commit_message=`git log --format=%B -n 1 $GIT_COMMIT`
-if [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "g2g" ]] || [[ "$commit_message" =~ (^|[[:space:]])"["(g2g|g2g-skip-tests)"]"$ ]]; then
+if [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "g2g" ]] || [[ "$commit_message" =~ (^|[[:space:]])"["g2g(-skip-tests)?"]"$ ]]; then
     prefixes=geo
-elif [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "p2g" ]] || [[ "$commit_message" =~ (^|[[:space:]])"["(p2g|p2g-skip-tests)"]"$ ]]; then
+elif [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "p2g" ]] || [[ "$commit_message" =~ (^|[[:space:]])"["p2g(-skip-tests)?"]"$ ]]; then
     prefixes=polar
 else
     prefixes="geo polar"
@@ -37,7 +38,7 @@ for prefix in ${prefixes}; do
     conda activate jenkins_p2g_swbundle
     ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
     conda activate jenkins_p2g_docs
-    if [[ ! "$commit_message" =~ (^|[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
+    if [[ ! "$commit_message" =~ (^|[[:space:]])"["([pg]2g-)?skip-tests"]"$ ]]; then
         export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
         cd "$WORKSPACE/integration_tests"
         behave --no-logcapture --no-color --no-capture -D datapath=/data/dist/p2g_test_data -i "${prefix}2grid.feature"
