@@ -1,22 +1,32 @@
 #!/bin/bash
 # Script for jenkins to run tests on polar2grid.
 # Optional commit message requests (pick one only): [skip-tests], [p2g], [g2g], [p2g-skip-tests], and [g2g-skip-tests].
-# Example; Create a polar2grid tarball without running tests and release it as polar2grid-swbundle-1.0.0b.tar.gz:
-#          git commit -m "Change wording in polar2grid documentation [skip-tests]"
-#          git tag -a p2g-v1.0.0b -m "P2G version 1.0.0b"
-#          git push --follow-tags
+# The git tag name can be used to specify a release and the name specified by the will be used for the tarball/tests.
+# Example; Create a release polar2grid tarball without running tests and release it as
+#          polar2grid-swbundle-1.0.0b.tar.gz along with its documentation in
+#          bumi:/tmp/polar2grid-swbundle-1.0.0b if all tests pass:
+#          $ git commit -m "Change wording in polar2grid documentation [skip-tests]"
+#          $ git tag -a p2g-v1.0.0b -m "P2G version 1.0.0b"
+#          $ git push --follow-tags
 # Note that in the above example both [skip-tests] and [p2g-skip-tests] would work the same since the tag specifies p2g.
-# Example; Create a polar2grid tarball without running tests, but do not release as a version:
-#          git commit -m "Test that polar2grid documentation builds [p2g-skip-tests]"
-#          git push
-# Example;
-#          git commit -m "Update abi_l1b in geo2grid [g2g]"
-#          git push
-# Example: git commit -m "Update geo2grid and polar2grid"
-#          git push --follow-tags
-# Example: git commit -m "Release geo2grid version 3.0.0"
-#          git tag -a g2g-v3.0.0 -m "G2G version 3.0.0"
-#          git push --follow-tags
+# Example; Create a polar2grid tarball without running tests, but do not release as a version. The tarball and its
+#          documentation can be found in bumi:/tmp/polar2grid-swbundle-YYYYmmhh-HHMMSS:
+#          $ git commit -m "Test that polar2grid documentation builds [p2g-skip-tests]"
+#          $ git push
+# Example; Create a non-release geo2grid tarball and run tests on it. The tarball and its
+#           documentation can be found in bumi:/tmp/geo2grid-swbundle-YYYYmmhh-HHMMSS:
+#          $ git commit -m "Update abi_l1b in geo2grid [g2g]"
+#          $ git push
+# Example; Create both a non-release geo2grid and a non-release polar2grid tarball and run tests on them. The
+#          tarballs and their documentation can be found in bumi:/tmp/geo2grid-swbundle-YYYYmmhh-HHMMSS and
+#          bumi:/tmp/polar2grid-swbundle-YYYYmmhh-HHMMSS:
+#          $ git commit -m "Update geo2grid and polar2grid"
+#          $ git push
+# Example; Create a geo2grid tarball, run tests on it, and release it as geo2grid-swbundle-3.0.0.tar.gz if all tests
+#          pass. The tarball and its documentation can be found in bumi:/tmp/geo2grid-swbundle-YYYYmmhh-HHMMSS:
+#          $ git commit -m "Release geo2grid version 3.0.0"
+#          $ git tag -a g2g-v3.0.0 -m "G2G version 3.0.0"
+#          $ git push --follow-tags
 
 set -ex
 export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
