@@ -60,6 +60,7 @@ conda activate jenkins_p2g_docs
 pip install -U --no-deps "$WORKSPACE"
 
 for prefix in ${prefixes}; do
+    cd "$WORKSPACE"
     swbundle_name="${WORKSPACE}/${prefix}2grid-swbundle-${end}"
     package_name="/tmp/${prefix}2grid-${end}"
     conda activate jenkins_p2g_swbundle

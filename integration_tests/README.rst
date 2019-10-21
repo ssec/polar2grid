@@ -25,5 +25,4 @@ How Jenkins runs the tests
 
 Jenkins runs a script that follows similar steps as above. The script can be found in ``integration_tests/run.sh``.
 
-Jenkins home is on bumi.ssec.wisc.edu using port 8080, and data can be found in
-bumi:/data/test_data
+Jenkins home is on bumi.ssec.wisc.edu using port 8080, and data can be found in bumi:/data/test_data
