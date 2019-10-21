@@ -26,17 +26,17 @@ if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
     end="${GIT_TAG_NAME:5}"
 fi
 
+conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
 # Documentation environment also has behave, while the build environment does not.
 conda env update -n jenkins_p2g_docs -f "$WORKSPACE/build_environment.yml" -f "$WORKSPACE/jenkins_environment.yml"
 conda activate jenkins_p2g_docs
 pip install -U --no-deps "$WORKSPACE"
-conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
-conda activate jenkins_p2g_swbundle
-./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
-conda activate jenkins_p2g_docs
 
 for prefix in ${prefixes}; do
     swbundle_name="${prefix}2grid-swbundle-${end}"
+    conda activate jenkins_p2g_swbundle
+    ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
+    conda activate jenkins_p2g_docs
     if [[ ! "$commit_message" =~ (^|[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
         export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
         cd "$WORKSPACE/integration_tests"
