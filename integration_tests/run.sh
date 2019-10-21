@@ -11,7 +11,7 @@ cd "$WORKSPACE"
 source ~/.bashrc
 
 commit_message=`git log --format=%B -n 1 $GIT_COMMIT`
-if [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "g2g" ]] || [[ "$commit_message" =~ (^|[[:space:]])"["g2g-skip-tests"]"$ ]]
+if [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "g2g" ]] || [[ "$commit_message" =~ (^|[[:space:]])"["g2g*"]"$ ]]
 then
     prefix=geo
 else
@@ -34,10 +34,14 @@ conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE/build_environment.yml"
 conda activate jenkins_p2g_swbundle
 ./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
 conda activate jenkins_p2g_docs
-if [[ ! "$commit_message" =~ (^|[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
+if [[ ! "$commit_message" =~ (^|[[:space:]])"["[p2g-skip-tests"]"$ ]]; then
     export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
     cd "$WORKSPACE/integration_tests"
-    behave --no-logcapture --no-color --no-capture -D datapath=/data/dist/p2g_test_data
+    behave --no-logcapture --no-color --no-capture -D datapath=/data/dist/p2g_test_data -i polar2grid.feature
+elif [[ ! "$commit_message" =~ (^|[[:space:]])"["[g2g-skip-tests"]"$ ]]; then
+    export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
+    cd "$WORKSPACE/integration_tests"
+    behave --no-logcapture --no-color --no-capture -D datapath=/data/dist/p2g_test_data -i geo2grid.feature
 fi
 mkdir "/tmp/${prefix}2grid-${end}"
 # Save tarball.

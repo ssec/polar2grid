@@ -7,13 +7,6 @@ Feature: Test output images
     When <command> runs
     Then the output matches with the files in <output>
 
-  Examples: ABI
-    | command                                                  | source          | output           |
-    | geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 -vv -f | abi/input/test1 | abi/output/test1 |
-    | geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 -vv -f | abi/input/test2 | abi/output/test2 |
-    | geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 -vv -f | abi/input/test3 | abi/output/test3 |
-    | geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 -vv -f | abi/input/test4 | abi/output/test4 |
-
   Examples: ACSPO
     | command                                              | source            |  output            |
     | polar2grid.sh acspo gtiff -vv --grid-coverage=0.0 -f | acspo/input/test1 | acspo/output/test1 |
