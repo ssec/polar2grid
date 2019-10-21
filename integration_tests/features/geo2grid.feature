@@ -1,8 +1,8 @@
-Feature: Test output images
+Feature: Test geo2grid output images
   This takes test data from source and runs it through the command provided.
   It then compares the new image with the expected output.
 
-  Scenario Outline: Data conversion
+  Scenario Outline: Test geo2grid images
     Given input data from <source>
     When <command> runs
     Then the output matches with the files in <output>
