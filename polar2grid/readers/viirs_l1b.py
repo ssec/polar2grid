@@ -260,8 +260,8 @@ class Frontend(ReaderWrapper):
             self._calc_percent_day(scene)
         # make a copy of the scene list so we can edit it later
         for ds in list(scene):
-            if ds.attrs['standard_name'] in ('toa_bidirectional_reflectance', 'false_color', 'true_color') and \
-                            self.fraction_day_scene <= self.day_fraction:
+            if ds.attrs['standard_name'] in ('toa_bidirectional_reflectance',) and \
+                    self.fraction_day_scene <= self.day_fraction:
                 ds_id = DatasetID.from_dict(ds.attrs)
                 LOG.info("Will not create product '%s' because there is less than %f%% of day data",
                          ds.attrs['name'], self.day_fraction * 100.)
