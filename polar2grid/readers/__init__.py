@@ -387,6 +387,45 @@ class ReaderWrapper(roles.FrontendRole):
     def filter(self, scene):
         pass
 
+    def _purge_node(self, parent_node, missing_nodes):
+        """We no longer need this Node, remove it and any children."""
+        for child in parent_node.children:
+            self._purge_node(child, missing_nodes)
+        if parent_node.name is None:
+            # root node
+            return
+        if all(parent in missing_nodes or parent is None for parent in parent_node.parents) and \
+            parent_node.name in self.scene:
+            # we aren't needed by anything
+            # if not parent_node.parents and parent_node.name in self.scene:
+            LOG.debug("Removing {} because it is no longer needed".format(parent_node.name))
+            del self.scene[parent_node.name]
+
+    def _update_filtered_dep_tree(self, parent_node):
+        """Update Scene wishlist and needed datasets based on filtered datasets."""
+        missing_deps = set()
+        for child in parent_node.children:
+            _req_deps = self._update_filtered_dep_tree(child)
+            missing_deps.update(_req_deps)
+
+        # we are the root node no need to do the rest of the checks
+        if parent_node.name is None:
+            # get rid of any dependencies that are no longer needed
+            self._purge_node(self.scene.dep_tree, missing_deps)
+            return None
+        # if we are missing any of our required dependencies then we can't be made
+        if missing_deps or (not parent_node.children and parent_node.name not in self.scene):
+            missing_deps.add(parent_node)
+        if missing_deps:
+            if parent_node.name in self.scene:
+                LOG.debug("Removing {} because it is missing some dependencies".format(parent_node.name))
+                del self.scene[parent_node.name]
+            elif parent_node.name in self.scene.wishlist:
+                # it was asked for but hasn't been generated yet
+                LOG.debug("Removing {} because it is missing some dependencies".format(parent_node.name))
+                self.scene.wishlist.remove(parent_node.name)
+        return missing_deps
+
     def create_scene(self, products=None, **kwargs):
         LOG.debug("Loading scene data...")
         # If the user didn't provide the products they want, figure out which ones we can create
@@ -398,11 +437,12 @@ class ReaderWrapper(roles.FrontendRole):
         kwargs.pop("exit_on_error")
         kwargs.pop("keep_intermediate")
         self.scene.load(products, generate=False, **kwargs)
-        self.wishlist = self.scene.wishlist
-        self.missing_datasets = self.scene.missing_datasets
 
         # Apply Filters
         self.filter(self.scene)
+        self._update_filtered_dep_tree(self.scene.dep_tree)
+        self.wishlist = self.scene.wishlist
+        self.missing_datasets = self.scene.missing_datasets
 
         # Delete the satpy scene so memory is cleared out if it isn't used by the caller
         scene = self.scene
