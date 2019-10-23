@@ -30,7 +30,6 @@
 
 set -ex
 export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
-cd "$WORKSPACE"
 
 # Activate conda for bash.
 /data/users/davidh/miniconda3/bin/conda init bash
