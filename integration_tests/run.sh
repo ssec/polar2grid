@@ -70,6 +70,8 @@ for prefix in ${prefixes}; do
         cd "$WORKSPACE"/integration_tests
         behave --no-logcapture --no-color --no-capture -D datapath=/data/test_data -i "${prefix}2grid.feature"
     fi
+    # Remove the directory if it was already made.
+    rm -rf "$package_name"
     mkdir "$package_name"
     # Save tarball.
     cp "${swbundle_name}.tar.gz" "$package_name"
