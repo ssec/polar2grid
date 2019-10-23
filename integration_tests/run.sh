@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script for jenkins to run tests on polar2grid.
 # Optional commit message requests (pick one only): [skip-tests], [p2g], [g2g], [p2g-skip-tests], and [g2g-skip-tests].
-# The git tag name can be used to specify a release and the name specified by the will be used for the tarball/tests.
+# The git tag name can be used to specify a release and the name specified by it will be used for the tarball/tests.
 # Example; Create a release polar2grid tarball without running tests and release it as
 #          polar2grid-swbundle-1.0.0b.tar.gz along with its documentation in
 #          bumi:/tmp/polar2grid-swbundle-1.0.0b if all tests pass:
