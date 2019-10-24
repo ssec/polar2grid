@@ -1,59 +1,88 @@
 #!/bin/bash
 # Script for jenkins to run tests on polar2grid.
+# Optional commit message requests (pick one only): [skip-tests], [p2g], [g2g], [p2g-skip-tests], and [g2g-skip-tests].
+# The git tag name can be used to specify a release and the name specified by it will be used for the tarball/tests.
+# Example; Create a release polar2grid tarball without running tests and release it as
+#          polar2grid-swbundle-1.0.0b.tar.gz along with its documentation in
+#          bumi:/tmp/polar2grid-swbundle-1.0.0b if all tests pass:
+#          $ git commit -m "Change wording in polar2grid documentation [skip-tests]"
+#          $ git tag -a p2g-v1.0.0b -m "P2G version 1.0.0b"
+#          $ git push --follow-tags
+# Note that in the above example both [skip-tests] and [p2g-skip-tests] would work the same since the tag specifies p2g.
+# Example; Create a polar2grid tarball without running tests, but do not release as a version. The tarball and its
+#          documentation can be found in bumi:/tmp/polar2grid-swbundle-YYYYmmhh-HHMMSS:
+#          $ git commit -m "Test that polar2grid documentation builds [p2g-skip-tests]"
+#          $ git push
+# Example; Create a non-release geo2grid tarball and run tests on it. The tarball and its
+#           documentation can be found in bumi:/tmp/geo2grid-swbundle-YYYYmmhh-HHMMSS:
+#          $ git commit -m "Update abi_l1b in geo2grid [g2g]"
+#          $ git push
+# Example; Create both a non-release geo2grid and a non-release polar2grid tarball and run tests on them. The
+#          tarballs and their documentation can be found in bumi:/tmp/geo2grid-swbundle-YYYYmmhh-HHMMSS and
+#          bumi:/tmp/polar2grid-swbundle-YYYYmmhh-HHMMSS:
+#          $ git commit -m "Update geo2grid and polar2grid"
+#          $ git push
+# Example; Create a geo2grid tarball, run tests on it, and release it as geo2grid-swbundle-3.0.0.tar.gz if all tests
+#          pass. The tarball and its documentation can be found in bumi:/tmp/geo2grid-swbundle-YYYYmmhh-HHMMSS:
+#          $ git commit -m "Release geo2grid version 3.0.0"
+#          $ git tag -a g2g-v3.0.0 -m "G2G version 3.0.0"
+#          $ git push --follow-tags
 
 set -ex
 export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
-cd "$WORKSPACE"
 
 # Activate conda for bash.
 /data/users/davidh/miniconda3/bin/conda init bash
 # Restart the shell to enable conda.
 source ~/.bashrc
 
-commit_message=`git log --format=%B -n 1 $GIT_COMMIT`
-if [[ "$(cut -d'-' -f1 <<<"$GIT_TAG_NAME")" = "g2g" ]] || [[ "$commit_message" =~ (^|[[:space:]])"["g2g-skip-tests"]"$ ]]
-then
-    prefix=geo
+commit_message=`git log --format=%B -n 1 "$GIT_COMMIT"`
+if [[ "${GIT_TAG_NAME}:0:3" = "g2g" ]] || [[ "$commit_message" =~ (^|[[:space:]])"["g2g(-skip-tests)?"]"$ ]]; then
+    prefixes=geo
+elif [[ "${GIT_TAG_NAME}:0:3" = "p2g" ]] || [[ "$commit_message" =~ (^|[[:space:]])"["p2g(-skip-tests)?"]"$ ]]; then
+    prefixes=polar
 else
-    prefix=polar
+    prefixes="geo polar"
 fi
 # Handle release vs test naming.
-end="`date +"%Y%m%d-%H%M%S"`"
+end="`date +%Y%m%d-%H%M%S`"
 # If the tag is correct and a version was specified, make a version release.
 if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
     # Removes prefix from $GIT_TAG_NAME.
     end="${GIT_TAG_NAME:5}"
 fi
-swbundle_name="${prefix}2grid-swbundle-${end}"
 
+conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE"/build_environment.yml
 # Documentation environment also has behave, while the build environment does not.
-conda env update -n jenkins_p2g_docs --file "$WORKSPACE/build_environment.yml"
+conda env update -n jenkins_p2g_docs -f "$WORKSPACE"/build_environment.yml -f "${WORKSPACE}/jenkins_environment.yml"
 conda activate jenkins_p2g_docs
-# xarray mismatch pip vs conda after pip installs satpy.
-conda update xarray --force-reinstall -c conda-forge
-conda env update -n jenkins_p2g_docs --file "$WORKSPACE/jenkins_environment.yml"
 pip install -U --no-deps "$WORKSPACE"
-conda env update -n jenkins_p2g_swbundle --file "$WORKSPACE/build_environment.yml"
-conda activate jenkins_p2g_swbundle
-# xarray mismatch pip vs conda after pip installs satpy.
-conda update xarray --force-reinstall -c conda-forge
-./create_conda_software_bundle.sh "${WORKSPACE}/${swbundle_name}"
-conda activate jenkins_p2g_docs
-if [[ ! "$commit_message" =~ (^|[[:space:]])"["[pg]2g-skip-tests"]"$ ]]; then
-    export POLAR2GRID_HOME="$WORKSPACE/$swbundle_name"
-    cd "$WORKSPACE/integration_tests"
-    behave --no-logcapture --no-color --no-capture -D datapath=/data/dist/p2g_test_data
-fi
-mkdir "/tmp/${prefix}2grid-${end}"
-# Save tarball.
-cp "${WORKSPACE}/${swbundle_name}.tar.gz" "/tmp/${prefix}2grid-${end}"
-# Make docs.
-cd "$WORKSPACE"/doc
-make latexpdf POLAR2GRID_DOC="${prefix}"
-cp "$WORKSPACE"/doc/build/latex/*.pdf "/tmp/${prefix}2grid-${end}"
-# Clear out intermediate results and rebuild for HTML document.
-make clean
-# Needs to be second since Jenkins makes an html in workspace from the file generated by this command.
-make html POLAR2GRID_DOC="${prefix}"
-cp -r "$WORKSPACE"/doc/build/html "/tmp/${prefix}2grid-${end}"
-chmod -R a+rX "/tmp/${prefix}2grid-${end}"
+
+for prefix in ${prefixes}; do
+    cd "$WORKSPACE"
+    swbundle_name="${WORKSPACE}/${prefix}2grid-swbundle-${end}"
+    package_name="/tmp/${prefix}2grid-${end}"
+    conda activate jenkins_p2g_swbundle
+    "$WORKSPACE"/create_conda_software_bundle.sh "$swbundle_name"
+    conda activate jenkins_p2g_docs
+    if [[ ! "$commit_message" =~ (^|[[:space:]])"["([pg]2g-)?skip-tests"]"$ ]]; then
+        export POLAR2GRID_HOME="$swbundle_name"
+        cd "$WORKSPACE"/integration_tests
+        behave --no-logcapture --no-color --no-capture -D datapath=/data/test_data -i "${prefix}2grid.feature"
+    fi
+    # Remove the directory if it was already made.
+    rm -rf "$package_name"
+    mkdir "$package_name"
+    # Save tarball.
+    cp "${swbundle_name}.tar.gz" "$package_name"
+    # Make docs.
+    cd "$WORKSPACE"/doc
+    make latexpdf POLAR2GRID_DOC="$prefix"
+    cp "$WORKSPACE"/doc/build/latex/*.pdf "$package_name"
+    # Clear out intermediate results and rebuild for HTML document.
+    make clean
+    # Needs to be second since Jenkins makes an html in workspace from the file generated by this command.
+    make html POLAR2GRID_DOC="$prefix"
+    cp -r "$WORKSPACE"/doc/build/html "$package_name"
+    chmod -R a+rX "$package_name"
+done
