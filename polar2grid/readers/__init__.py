@@ -348,6 +348,7 @@ class ReaderWrapper(roles.FrontendRole):
     DEFAULT_DATASETS = []
     # This is temporary until a better solution is found for loading start/end time on init
     PRIMARY_FILE_TYPE = None
+    GENERATE_COMPOSITES = False
 
     def __init__(self, **kwargs):
         self.reader = kwargs.pop("reader", self.DEFAULT_READER_NAME)
@@ -436,11 +437,12 @@ class ReaderWrapper(roles.FrontendRole):
         kwargs.pop("overwrite_existing")
         kwargs.pop("exit_on_error")
         kwargs.pop("keep_intermediate")
-        self.scene.load(products, generate=False, **kwargs)
+        self.scene.load(products, generate=self.GENERATE_COMPOSITES, **kwargs)
 
         # Apply Filters
         self.filter(self.scene)
-        self._update_filtered_dep_tree(self.scene.dep_tree)
+        if not self.GENERATE_COMPOSITES:
+            self._update_filtered_dep_tree(self.scene.dep_tree)
         self.wishlist = self.scene.wishlist
         self.missing_datasets = self.scene.missing_datasets
 
