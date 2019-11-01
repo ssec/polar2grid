@@ -202,6 +202,7 @@ class Frontend(ReaderWrapper):
     FILE_EXTENSIONS = [".nc"]
     DEFAULT_READER_NAME = "viirs_l1b"
     DEFAULT_DATASETS = I_PRODUCTS + M_PRODUCTS + DNB_PRODUCTS
+    GENERATE_COMPOSITES = True
 
     def __init__(self, *args, **kwargs):
         self.day_fraction = kwargs.pop('day_fraction', 0.1)
