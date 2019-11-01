@@ -495,6 +495,7 @@ def main(argv=sys.argv[1:]):
 
         LOG.info("Processing data for grid %s complete", grid_name)
         # Force deletion and eventual garbage collection of the scene objects
+        gridded_scene.cleanup()
         del gridded_scene
     del scene
     return status_to_return
