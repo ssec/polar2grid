@@ -87,9 +87,10 @@ def add_writer_argument_groups(parser):
                          help="Set tile block Y size")
     group_1.add_argument('--gdal-num-threads', dest='num_threads',
                          default=os.environ.get('DASK_NUM_WORKERS', 4),
-                         help='Set number of threads used for compressing '
-                              'geotiffs (default: Same as num-workers)')
-    group_1.add_argument('--overviews',
+                         help=SUPPRESS)  # don't show this option to the user
+                         # help='Set number of threads used for compressing '
+                         #      'geotiffs (default: Same as num-workers)')
+    group_1.add_argument('--overviews', type=lambda x: x.split(' '),
                          help="Build lower resolution versions of your image "
                               "for better performance in some clients. "
                               "Specified as a space separate list of numbers, "
