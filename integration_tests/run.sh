@@ -131,6 +131,7 @@ run_tests()
     set +e
     (
         set -e
+        export POLAR2GRID_HOME="$swbundle_name"
         prefix=$1
         test_details="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_details.txt"
         json_file="${WORKSPACE}/integration_tests/json_file.txt"
@@ -204,8 +205,10 @@ for prefix in ${prefixes}; do
     cp "${swbundle_name}.tar.gz" "${WORKSPACE}/$package_name"
 
     conda activate jenkins_p2g_docs
-    if [[ ! "$commit_message" =~ (^|.[[:space:]])"["([pg]2g-)?skip-tests"]"$ ]]; then
-        export POLAR2GRID_HOME="$swbundle_name"
+    if [[ "$commit_message" =~ (^|.[[:space:]])"["([pg]2g-)?skip-tests"]"$ ]]; then
+        # Replace FAILED with SKIPPED.
+        save_vars "${prefix:0:1}2g_tests=SKIPPED"
+    else
         run_tests $prefix
     fi
     test_status=$?
