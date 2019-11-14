@@ -37,6 +37,7 @@ any invalid or missing data pixels. This results in invalid pixels showing up
 as transparent in most image viewers.
 
 """
+import os
 import logging
 from polar2grid.core.dtype import NUMPY_DTYPE_STRS, str_to_dtype, int_or_float
 
@@ -84,6 +85,16 @@ def add_writer_argument_groups(parser):
                          help="Set tile block X size")
     group_1.add_argument('--blockysize', default=SUPPRESS, type=int,
                          help="Set tile block Y size")
+    group_1.add_argument('--gdal-num-threads', dest='num_threads',
+                         default=os.environ.get('DASK_NUM_WORKERS', 4),
+                         help=SUPPRESS)  # don't show this option to the user
+                         # help='Set number of threads used for compressing '
+                         #      'geotiffs (default: Same as num-workers)')
+    group_1.add_argument('--overviews', type=lambda x: x.split(' '),
+                         help="Build lower resolution versions of your image "
+                              "for better performance in some clients. "
+                              "Specified as a space separate list of numbers, "
+                              "typically as powers of 2. Example: '2 4 8 16'")
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
     return group_1, None

@@ -222,7 +222,7 @@ basic processing with limited products:
                         help="specify the log filename")
     parser.add_argument('--progress', action='store_true',
                         help="show processing progress bar (not recommended for logged output)")
-    parser.add_argument('--num-workers', type=int, default=4,
+    parser.add_argument('--num-workers', type=int, default=os.getenv('DASK_NUM_WORKERS', 4),
                         help="specify number of worker threads to use (default: 4)")
     parser.add_argument('--match-resolution', dest='preserve_resolution', action='store_false',
                         help="When using the 'native' resampler for composites, don't save data "
@@ -237,6 +237,7 @@ basic processing with limited products:
 
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
     args, remaining_args = parser.parse_known_args(argv_without_help)
+    os.environ['DASK_NUM_WORKERS'] = str(args.num_workers)
 
     # get the logger if we know the readers and writers that will be used
     if args.reader is not None and args.writers is not None:
