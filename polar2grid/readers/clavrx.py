@@ -135,7 +135,7 @@ class Frontend(ReaderWrapper):
     def filter_daynight_datasets(self, scene):
         """Some products are only available at daytime or nighttime"""
         for k in DAY_ONLY + NIGHT_ONLY:
-            if k in scene and np.all(scene[k].mask):
+            if k in scene and scene[k].isnull().all():
                 LOG.info("Removing dataset '{}' because it is completely empty".format(k))
                 del scene[k]
 

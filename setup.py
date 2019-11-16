@@ -208,7 +208,7 @@ setup(
     keywords='',
     url="http://www.ssec.wisc.edu/software/polar2grid/",
     download_url="http://larch.ssec.wisc.edu/simple/polar2grid",
-    ext_modules=cythonize(extensions),
+    ext_modules=cythonize(extensions, compiler_directives={'language_level': '3'}),
     include_dirs=[numpy.get_include()],
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     include_package_data=True,
