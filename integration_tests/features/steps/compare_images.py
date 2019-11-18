@@ -58,3 +58,4 @@ def step_impl(context, output):
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
         os.chdir(orig_dir)
+        shutil.rmtree(context.temp_dir)
