@@ -58,6 +58,8 @@ setup_vars()
     commit_message=`git log --format=%B -n 1 "$GIT_COMMIT"`
     # Handle release vs test naming.
     suffix=`date "+%Y%m%d-%H%M%S"`
+    # Used in documentation
+    export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
 
     # Format string to be YYYY-mm-dd HH:MM:SS.
     # git_author: https://stackoverflow.com/questions/29876342/how-to-get-only-author-name-or-email-in-git-given-sha1.
@@ -183,13 +185,13 @@ publish_package()
     save_vars "${prefix:0:1}2g_package_published=TRUE"
 }
 
-set -ex
+set -x
+
+# Allows the program to return a failing code while setting finish_time.
 exit_status=0
 try
 (
     set -e
-    export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
-
     setup_vars
     setup_conda
 
@@ -215,24 +217,21 @@ try
             else
                 run_tests $prefix
             fi
-            test_status=$?
+            exit_status=$?
             create_documentation $prefix $package_name
             # Only publishes if both tests and documentation passed.
-            if [[ ${test_status} -eq 0 ]]; then
+            if [[ ${exit_status} -eq 0 ]]; then
                 publish_package $prefix $package_name
-            else
-                exit_status=${test_status}
             fi
         )
-        # If there was an error, keep note, but run other prefix.
+        current_status=$?
+        # If exit_status is not an error, keep note of current_status and continue.
         if [[ ${exit_status} -eq 0 ]]; then
-            exit_status=$?
+            exit_status=${current_status}
         fi
     done
 )
-if [[ ${exit_status} -eq 0 ]]; then
-    exit_status=$?
-fi
+exit_status=$?
 # Allows errors to happen in save_vars.
 set -e
 save_vars "finish_time=`date "+%Y-%m-%d %H:%M:%S"`"
