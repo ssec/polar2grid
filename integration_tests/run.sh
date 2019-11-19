@@ -33,6 +33,16 @@ try()
     set +e
 }
 
+update_exit_status()
+{
+    current_status=$?
+    exit_status=$1
+    # If exit_status is not an error, keep note of current_status and continue.
+    if [[ ${exit_status} -eq 0 ]]; then
+        exit_status=${current_status}
+    fi
+}
+
 save_vars()
 {
     # Variables in here are used in email information.
@@ -224,14 +234,10 @@ try
                 publish_package $prefix $package_name
             fi
         )
-        current_status=$?
-        # If exit_status is not an error, keep note of current_status and continue.
-        if [[ ${exit_status} -eq 0 ]]; then
-            exit_status=${current_status}
-        fi
+        update_exit_status ${exit_status}
     done
 )
-exit_status=$?
+update_exit_status ${exit_status}
 # Allows errors to happen in save_vars.
 set -e
 save_vars "finish_time=`date "+%Y-%m-%d %H:%M:%S"`"
