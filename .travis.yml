@@ -21,6 +21,7 @@ matrix:
 install:
   - git clone --depth 1 git://github.com/astropy/ci-helpers.git
   - source ci-helpers/travis/setup_conda.sh
+  - conda install -c conda-forge zarr pyspectral
   - pip install git+https://github.com/pytroll/satpy.git
   - pip install -e .
 script:
