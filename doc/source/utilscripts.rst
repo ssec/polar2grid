@@ -183,48 +183,51 @@ Active Fires) on top of another image (ex. VIIRS Adaptive DNB or True Color).
 This script uses GDAL's ``gdal_merge.py`` utility underneath, but converts
 everything to RGBA format first for better consistency in output images.
 
-Convert GeoTIFFs to MP4 Video
------------------------------
+.. ifconfig:: is_geo2grid
 
-The ``gtiff2mp4.sh`` script converts a series of GeoTIFF files in to a
-single MP4 video file. This script uses default video creation settings
-to support the most video players. If an image is too large for the video
-creation they will be automatically scaled to a smaller size.
+  Convert GeoTIFFs to MP4 Video
+  -----------------------------
 
-.. code-block:: bash
+  The ``gtiff2mp4.sh`` script converts a series of GeoTIFF files in to a
+  single MP4 video file. This script uses default video creation settings
+  to support the most video players. If an image is too large for the video
+  creation they will be automatically scaled to a smaller size.
 
-    gtiff2mp4.sh out.mp4 in1.tif in2.tif ...
+  .. code-block:: bash
 
-This will create a MP4 video file called ``out.mp4`` with 24 images (frames)
-per second.
+      gtiff2mp4.sh out.mp4 in1.tif in2.tif ...
 
-Example:
+  This will create a MP4 video file called ``out.mp4`` with 24 images (frames)
+  per second.
 
-.. code-block:: bash
+  Example:
 
-    gtiff2mp4.sh my_natural_color_animation.mp4  *natural_color*.tif
+  .. code-block:: bash
 
+      gtiff2mp4.sh my_natural_color_animation.mp4  *natural_color*.tif
 
-Remap GOES GeoTIFFs
--------------------
+.. ifconfig:: is_geo2grid
 
-The projection of the GOES-East and GOES-West satellites uses special
-parameters that are not always supported by older visualization tools.
-While new versions of GDAL and PROJ.4 libraries can often fix these issues,
-this is not always an option. |project| provides the ``reproject_goes.sh``
-script to remap GOES GeoTIFFs to a nearly identical projection that is more
-compatible with older visualization tools. The script can be called by 
-executing:
+  Remap GOES GeoTIFFs
+  -------------------
 
-.. code-block:: bash
+  The projection of the GOES-East and GOES-West satellites uses special
+  parameters that are not always supported by older visualization tools.
+  While new versions of GDAL and PROJ.4 libraries can often fix these issues,
+  this is not always an option. |project| provides the ``reproject_goes.sh``
+  script to remap GOES GeoTIFFs to a nearly identical projection that is more
+  compatible with older visualization tools. The script can be called by 
+  executing:
 
-    reproject_goes.sh in1.tif in2.tif in3.tif
+  .. code-block:: bash
 
-The script will take the original name and add a ``-y`` to the end. So in
-the above example the results would be ``in1-y.tif``, ``in2-y.tif``,
-and ``in3-y.tif``. The ``y`` refers to the sweep angle axis projection
-parameter that differs between the input geotiff (``x``) and the output
-geotiff (``y``).
+      reproject_goes.sh in1.tif in2.tif in3.tif
+
+  The script will take the original name and add a ``-y`` to the end. So in
+  the above example the results would be ``in1-y.tif``, ``in2-y.tif``,
+  and ``in3-y.tif``. The ``y`` refers to the sweep angle axis projection
+  parameter that differs between the input geotiff (``x``) and the output
+  geotiff (``y``).
 
 .. _util_p2g_proj:
 
