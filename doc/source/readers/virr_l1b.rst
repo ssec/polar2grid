@@ -17,3 +17,7 @@ Examples:
 .. code-block:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh virr_l1b gtiff -h
+
+    polar2grid.sh virr_l1b hdf5 --list-products -f tf2019230221957.FY3B-L_VIRRX_L1B.HDF
+
+    
