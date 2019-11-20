@@ -79,14 +79,6 @@ with the a software bundle glue script.
    The default scaling is linear with dynamic limits per band. To create nicer looking images a custom rescaling
    configuration would be required.
 
-|
-
-:author:       David Hoese (davidh)
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2014
-:license:      GNU GPLv3
-
 """
 __docformat__ = "restructuredtext en"
 
