@@ -28,6 +28,7 @@
 #          $ git tag -a g2g-v3.0.0 -m "G2G version 3.0.0"
 #          $ git push --follow-tags
 
+# NOTE: This creates a subshell!
 try()
 {
     set +e
@@ -197,8 +198,9 @@ publish_package()
 
 set -x
 
-# Allows the program to return a failing code while setting finish_time.
+# Allows the program to set finish_time while also returning a failing code.
 exit_status=0
+
 try
 (
     set -e
@@ -226,16 +228,18 @@ try
                 save_vars "${prefix:0:1}2g_tests=SKIPPED"
             else
                 run_tests $prefix
+                update_exit_status ${exit_status}
             fi
-            exit_status=$?
             create_documentation $prefix $package_name
             # Only publishes if both tests and documentation passed.
             if [[ ${exit_status} -eq 0 ]]; then
                 publish_package $prefix $package_name
             fi
+            exit ${exit_status}
         )
         update_exit_status ${exit_status}
     done
+    exit ${exit_status}
 )
 update_exit_status ${exit_status}
 # Allows errors to happen in save_vars.
