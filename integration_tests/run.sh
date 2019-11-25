@@ -110,14 +110,15 @@ setup_conda()
 
 format_test_details()
 {
-    test_details="$1"
+    test_output="$1"
+    test_details="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_details.txt"
     json_file="${WORKSPACE}/integration_tests/json_file.txt"
     # Gets the line before json data starts.
-    i=`grep -n "^\[$" "$test_details" | grep -oE "[0-9]+"`
+    i=`grep -n "^\[$" "$test_output" | grep -oE "[0-9]+"`
     # Gets the line after json data ends.
-    j=`grep -n "^\]$" "$test_details" | grep -oE "[0-9]+"`
+    j=`grep -n "^\]$" "$test_output" | grep -oE "[0-9]+"`
     # Remove lines that are not json data.
-    sed "1,${i}d;${j},\$d" "$test_details" > "$json_file"
+    sed "1,${i}d;${j},\$d" "$test_output" > "$json_file"
     set +x
     python << EOF > "$test_details"
 import json
@@ -136,6 +137,7 @@ with open("json_file.txt") as json_file:
 EOF
     set -x
     rm "$json_file"
+    rm "$test_output"
 }
 
 run_tests()
@@ -147,14 +149,14 @@ run_tests()
         set -e
         export POLAR2GRID_HOME="$swbundle_name"
         prefix=$1
-        test_details="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_details.txt"
+        test_output="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_output.txt"
         json_file="${WORKSPACE}/integration_tests/json_file.txt"
         cd "${WORKSPACE}/integration_tests"
         # Prints output to stdout and to an output file.
         behave --no-logcapture --no-color --no-capture -D datapath=/data/test_data -i "${prefix}2grid.feature"\
-         --format pretty --format json.pretty 2>&1 | tee "$test_details"
+         --format pretty --format json.pretty 2>&1 | tee "$test_output"
 
-        format_test_details "$test_details"
+        format_test_details "$test_output"
 
         # Replace FAILED with SUCCESSFUL.
         save_vars "${prefix:0:1}2g_tests=SUCCESSFUL"
