@@ -28,12 +28,6 @@
 #          $ git tag -a g2g-v3.0.0 -m "G2G version 3.0.0"
 #          $ git push --follow-tags
 
-# NOTE: This creates a subshell!
-try()
-{
-    set +e
-}
-
 update_exit_status()
 {
     current_status=$?
@@ -146,8 +140,10 @@ EOF
 
 run_tests()
 {
-    try
+    # Allows tests to fail without causing documentation to fail.
+    set +e
     (
+        # Breaks out of subprocess on error.
         set -e
         export POLAR2GRID_HOME="$swbundle_name"
         prefix=$1
@@ -201,16 +197,17 @@ set -x
 # Allows the program to set finish_time while also returning a failing code.
 exit_status=0
 
-try
 (
     set -e
     setup_vars
     setup_conda
 
+    # Allows a prefix to fail without causing other prefixes to fail.
+    set +e
     # Make polar2grid and geo2grid separately.
     for prefix in ${prefixes}; do
-        try
         (
+            # Breaks out of subprocess on error.
             set -e
             swbundle_name="${WORKSPACE}/${prefix}2grid-swbundle-${suffix}"
             cd "$WORKSPACE"
@@ -227,13 +224,15 @@ try
                 # Replace FAILED with SKIPPED.
                 save_vars "${prefix:0:1}2g_tests=SKIPPED"
             else
-                run_tests $prefix
+                run_tests ${prefix}
                 update_exit_status ${exit_status}
+                # Allows block to break if documentation or publishing package fails.
+                set -e
             fi
-            create_documentation $prefix $package_name
+            create_documentation ${prefix} ${package_name}
             # Only publishes if both tests and documentation passed.
             if [[ ${exit_status} -eq 0 ]]; then
-                publish_package $prefix $package_name
+                publish_package ${prefix} ${package_name}
             fi
             exit ${exit_status}
         )
@@ -242,7 +241,8 @@ try
     exit ${exit_status}
 )
 update_exit_status ${exit_status}
-# Allows errors to happen in save_vars.
+# Causes errors to be thrown for the rest of the program.
 set -e
+
 save_vars "finish_time=`date "+%Y-%m-%d %H:%M:%S"`"
 exit ${exit_status}
