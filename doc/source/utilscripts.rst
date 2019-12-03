@@ -175,13 +175,20 @@ Example:
 
     gtiff2kmz.sh GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.tif
 
-Overlay one image on to another
--------------------------------
+Overlay GeoTIFF Images
+----------------------
 
 The ``overlay.sh`` script can be used to overlay one image (ex. VIIRS EDR
 Active Fires) on top of another image (ex. VIIRS Adaptive DNB or True Color).
 This script uses GDAL's ``gdal_merge.py`` utility underneath, but converts
 everything to RGBA format first for better consistency in output images.
+
+.. code-block:: bash
+
+    usage: overlay.sh background.tif foreground.tif out.tif
+
+    overlay.sh noaa20_viirs_dynamic_dnb_20191120_151043_wgs84_fit.tif noaa20_viirs_confidence_pct_20191120_151043_wgs84_fit.tif afmod_overlay_confidence_cat.tif
+      
 
 .. ifconfig:: is_geo2grid
 
