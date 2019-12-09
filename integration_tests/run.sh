@@ -28,16 +28,6 @@
 #          $ git tag -a g2g-v3.0.0 -m "G2G version 3.0.0"
 #          $ git push --follow-tags
 
-update_exit_status()
-{
-    current_status=$?
-    exit_status=$1
-    # If exit_status is not an error, keep note of current_status and continue.
-    if [[ ${exit_status} -eq 0 ]]; then
-        exit_status=${current_status}
-    fi
-}
-
 save_vars()
 {
     # Variables in here are used in email information.
@@ -55,29 +45,28 @@ save_vars()
     rm "$tmp_variables"
 }
 
-setup_vars()
+make_suffix()
 {
-    # Make empty files.
-    touch "${WORKSPACE}/integration_tests/p2g_test_details.txt"
-    touch "${WORKSPACE}/integration_tests/g2g_test_details.txt"
-    commit_message=`git log --format=%B -n 1 "$GIT_COMMIT"`
-    # Handle release vs test naming.
-    suffix=`date "+%Y%m%d-%H%M%S"`
-    # Used in documentation
-    export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
-
-    # Format string to be YYYY-mm-dd HH:MM:SS.
-    # git_author: https://stackoverflow.com/questions/29876342/how-to-get-only-author-name-or-email-in-git-given-sha1.
-    save_vars "start_time=${suffix:0:4}-${suffix:4:2}-${suffix:6:2} ${suffix:9:2}:${suffix:11:2}:${suffix:13:2}"\
-     "git_author=`git show -s --format="%ae" "$GIT_COMMIT"`" "p2g_package_published=FALSE"\
-     "g2g_package_published=FALSE" "GIT_TAG_NAME=$GIT_TAG_NAME" "commit_message=$commit_message"
-
+    start_time=$1
+    # Handles release vs test naming. Formats string to be YYYYmmdd-HHMMSS.
+    suffix=${start_time:0:4}${start_time:5:2}${start_time:8:2}-${start_time:11:2}${start_time:14:2}${start_time:17:2}
 
     # If the tag is correct and a version was specified, make a version release.
     if [[ "$GIT_TAG_NAME" =~ ^[pg]2g-v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
         # Removes prefix from $GIT_TAG_NAME.
         suffix="${GIT_TAG_NAME:5}"
     fi
+    echo "$suffix"
+}
+
+setup_prefixes()
+{
+    suffix=$1
+    commit_message=`git log --format=%B -n 1 "$GIT_COMMIT"`
+    # Credit: https://stackoverflow.com/questions/29876342/how-to-get-only-author-name-or-email-in-git-given-sha1.
+    git_author=`git show -s --format="%ae" "$GIT_COMMIT"`
+    save_vars "commit_message=$commit_message" "git_author=$git_author" "GIT_TAG_NAME=$GIT_TAG_NAME"\
+     "p2g_package_published=FALSE" "g2g_package_published=FALSE"
 
     if [[ "${GIT_TAG_NAME:0:3}" = "g2g" ]] || [[ "$commit_message" =~ (^|.[[:space:]])"["g2g(-skip-tests)?"]"$ ]]; then
         prefixes=geo
@@ -92,6 +81,7 @@ setup_vars()
         save_vars "p2g_tests=FAILED" "p2g_documentation=FAILED" "p2g_package=polar2grid-${suffix}"\
          "g2g_tests=FAILED" "g2g_documentation=FAILED" "g2g_package=geo2grid-${suffix}"
     fi
+    echo "$prefixes"
 }
 
 setup_conda()
@@ -101,28 +91,32 @@ setup_conda()
     # Restart the shell to enable conda.
     source ~/.bashrc
 
-    conda env update -n jenkins_p2g_swbundle -f "$WORKSPACE"/build_environment.yml
+    conda env update -n jenkins_p2g_swbundle -f "${WORKSPACE}/build_environment.yml"
     # Documentation environment also has behave, while the build environment does not.
-    conda env update -n jenkins_p2g_docs -f "$WORKSPACE"/build_environment.yml -f "${WORKSPACE}/jenkins_environment.yml"
+    conda env update -n jenkins_p2g_docs -f "${WORKSPACE}/build_environment.yml" -f "${WORKSPACE}/jenkins_environment.yml"
     conda activate jenkins_p2g_docs
     pip install -U --no-deps "$WORKSPACE"
 }
 
 format_test_details()
 {
-    test_output="$1"
+    prefix=$1
+    test_output=$2
     test_details="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_details.txt"
     json_file="${WORKSPACE}/integration_tests/json_file.txt"
     # Gets the line before json data starts.
-    i=`grep -n "^\[$" "$test_output" | grep -oE "[0-9]+"`
+    i=`grep -n "^{$" "$test_output" | grep -oE "[0-9]+"`
+    i=$((i - 1))
     # Gets the line after json data ends.
-    j=`grep -n "^\]$" "$test_output" | grep -oE "[0-9]+"`
+    j=`grep -n "^}$" "$test_output" | grep -oE "[0-9]+"`
+    j=$((j + 1))
     # Remove lines that are not json data.
     sed "1,${i}d;${j},\$d" "$test_output" > "$json_file"
     set +x
+    # Read the json file data using python.
     python << EOF > "$test_details"
 import json
-with open("json_file.txt") as json_file:
+with open("${json_file}") as json_file:
     data = json.load(json_file)
     print()
     for test in data['elements']:
@@ -142,31 +136,37 @@ EOF
 
 run_tests()
 {
-    # Allows tests to fail without causing documentation to fail.
-    set +e
-    (
-        # Breaks out of subprocess on error.
-        set -e
-        export POLAR2GRID_HOME="$swbundle_name"
-        prefix=$1
-        test_output="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_output.txt"
-        json_file="${WORKSPACE}/integration_tests/json_file.txt"
-        cd "${WORKSPACE}/integration_tests"
-        # Prints output to stdout and to an output file.
-        behave --no-logcapture --no-color --no-capture -D datapath=/data/test_data -i "${prefix}2grid.feature"\
-         --format pretty --format json.pretty 2>&1 | tee "$test_output"
+    # Makes pipes return a failing status if the first command failed.
+    set -o pipefail
 
-        format_test_details "$test_output"
+    prefix=$1
+    swbundle_name=$2
+    # Keeps track of wether or not an error occurs.
+    status=0
+    test_output="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_output.txt"
+    # Breaks out of subprocess on error.
+    export POLAR2GRID_HOME="${swbundle_name}/bin"
 
-        # Replace FAILED with SUCCESSFUL.
-        save_vars "${prefix:0:1}2g_tests=SUCCESSFUL"
-    )
+    # Prints output to stdout and to an output file.
+    behave "${WORKSPACE}/integration_tests/features" --no-logcapture --no-color\
+     --no-capture -D datapath=/data/test_data -i "${prefix}2grid.feature" --format pretty\
+     --format json.pretty 2>&1 | tee "$test_output" || status=$?
+    # Still makes test details even if not all tests pass.
+    format_test_details "$prefix" "$test_output"
+    # Replaces FAILED with SUCCESSFUL if all tests passed.
+    [[ ${status} -eq 0 ]] && save_vars "${prefix:0:1}2g_tests=SUCCESSFUL"
+
+    return ${status}
 }
 
 create_documentation()
 {
     prefix=$1
     package_name=$2
+    # Used in documentation
+    export PATH="/usr/local/texlive/2019/bin/x86_64-linux":$PATH
+    # Keeps track of wether or not an error occurs.
+
     # Make docs.
     cd "$WORKSPACE"/doc
     make latexpdf POLAR2GRID_DOC="$prefix"
@@ -196,55 +196,55 @@ publish_package()
 
 set -x
 
+start_time=`date "+%Y-%m-%d %H:%M:%S"`
+save_vars "start_time=$start_time"
+
+suffix=$(make_suffix "$start_time")
+prefixes=$(setup_prefixes "$suffix")
+setup_conda
+
 # Allows the program to set finish_time while also returning a failing code.
 exit_status=0
 
-(
-    set -e
-    setup_vars
-    setup_conda
+# Make polar2grid and geo2grid separately.
+for prefix in ${prefixes}; do
+    # Allows documentation to run even if tests fail without publishing package.
+    test_status=0
+    swbundle_name="${WORKSPACE}/${prefix}2grid-swbundle-${suffix}"
+    # This is what is sent to bumi:/tmp. It contains the swbundles and documentation.
+    package_name="${prefix}2grid-${suffix}"
+    mkdir "${WORKSPACE}/$package_name"
+    # Shows which tests passed and failed. Needs an empty file if no tests ran.
+    touch "${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_details.txt"
+    # Makes a sub-shell. Essentially a "try block" that lets the rest of the program run when an error occurs.
+    (
+        # Break out of sub-shell on error.
+        set -e
+        # Handles swbundle logic.
+        conda activate jenkins_p2g_swbundle
+        "${WORKSPACE}/create_conda_software_bundle.sh" "$swbundle_name"
+        # Copies tarball to package directory.
+        cp "${swbundle_name}.tar.gz" "${WORKSPACE}/$package_name"
 
-    # Allows a prefix to fail without causing other prefixes to fail.
-    set +e
-    # Make polar2grid and geo2grid separately.
-    for prefix in ${prefixes}; do
-        (
-            # Breaks out of subprocess on error.
-            set -e
-            swbundle_name="${WORKSPACE}/${prefix}2grid-swbundle-${suffix}"
-            cd "$WORKSPACE"
-            conda activate jenkins_p2g_swbundle
-            "$WORKSPACE"/create_conda_software_bundle.sh "$swbundle_name"
+        # Handles testing and documentation logic.
+        conda activate jenkins_p2g_docs
+        if [[ "$commit_message" =~ (^|.[[:space:]])"["([pg]2g-)?skip-tests"]"$ ]]; then
+            # Replace FAILED with SKIPPED.
+            save_vars "${prefix:0:1}2g_tests=SKIPPED"
+        else
+            # Only run tests if package was built correctly. Allows documentation to run even if tests fail.
+            run_tests "$prefix" "$swbundle_name" || test_status=$?
+        fi
+        # If this fails, the sub-shell will terminate
+        create_documentation "$prefix" "$package_name"
 
-            package_name="${prefix}2grid-${suffix}"
-            mkdir "${WORKSPACE}/$package_name"
-            # Copies tarball to package directory.
-            cp "${swbundle_name}.tar.gz" "${WORKSPACE}/$package_name"
-
-            conda activate jenkins_p2g_docs
-            if [[ "$commit_message" =~ (^|.[[:space:]])"["([pg]2g-)?skip-tests"]"$ ]]; then
-                # Replace FAILED with SKIPPED.
-                save_vars "${prefix:0:1}2g_tests=SKIPPED"
-            else
-                run_tests ${prefix}
-                update_exit_status ${exit_status}
-                # Allows block to break if documentation or publishing package fails.
-                set -e
-            fi
-            create_documentation ${prefix} ${package_name}
-            # Only publishes if both tests and documentation passed.
-            if [[ ${exit_status} -eq 0 ]]; then
-                publish_package ${prefix} ${package_name}
-            fi
-            exit ${exit_status}
-        )
-        update_exit_status ${exit_status}
-    done
-    exit ${exit_status}
-)
-update_exit_status ${exit_status}
-# Causes errors to be thrown for the rest of the program.
-set -e
+        # Only publishes if both tests and documentation passed.
+        if [[ ${test_status} -eq 0 ]]; then
+            publish_package "$prefix" "$package_name"
+        fi
+        exit ${test_status}
+    ) || exit_status=$? # Makes exit_status 1 if package status is a failing code.
+done
 
 save_vars "finish_time=`date "+%Y-%m-%d %H:%M:%S"`"
 exit ${exit_status}
