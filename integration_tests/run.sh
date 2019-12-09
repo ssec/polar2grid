@@ -145,7 +145,7 @@ run_tests()
     status=0
     test_output="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_output.txt"
     # Breaks out of subprocess on error.
-    export POLAR2GRID_HOME="${swbundle_name}/bin"
+    export POLAR2GRID_HOME="$swbundle_name"
 
     # Prints output to stdout and to an output file.
     behave "${WORKSPACE}/integration_tests/features" --no-logcapture --no-color\
