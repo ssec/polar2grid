@@ -123,7 +123,9 @@ def main_frontend(argv=sys.argv[1:]):
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG, TRACE_LEVEL]
     setup_logging(console_level=levels[min(4, args.verbosity)], log_filename=args.log_fn)
-    # sys.excepthook = create_exc_handler(LOG.name)
+    if levels[min(3, args.verbosity)] > logging.DEBUG:
+        import warnings
+        warnings.filterwarnings("ignore")
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
 
     list_products = args.subgroup_args["Frontend Initialization"].pop("list_products")
