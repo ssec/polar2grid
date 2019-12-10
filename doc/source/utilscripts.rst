@@ -187,6 +187,13 @@ everything to RGBA format first for better consistency in output images.
 
     usage: overlay.sh background.tif foreground.tif out.tif
 
+Example:
+The following example shows how you would overlay the VIIRS Active
+Fire AFMOD resolution Fire Confidence Percentage GeoTIFF imag  on top of a 
+VIIRS Day/Night Band GeoTIFF image.
+
+.. code-block:: bash
+
     overlay.sh noaa20_viirs_dynamic_dnb_20191120_151043_wgs84_fit.tif noaa20_viirs_confidence_pct_20191120_151043_wgs84_fit.tif afmod_overlay_confidence_cat.tif
       
 
