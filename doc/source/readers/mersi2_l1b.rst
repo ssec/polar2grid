@@ -24,9 +24,6 @@ Examples:
 
     polar2grid.sh mersi2_l1b gtiff -p true_color false_color -g lcc_fit -f ../mersi/tf2019259173245.FY3D-X_MERSI*.HDF
 
-#    polar2grid.sh mersi2_l1b scmi 
-
-
 
     
 
