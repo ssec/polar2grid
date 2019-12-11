@@ -517,9 +517,7 @@ class Rescaler(roles.INIConfigReader):
             is_colormapped = 'palettize' in method or 'colorize' in method
             # trollimage functions need a 2D image
             if is_colormapped:
-                print(data.shape)
                 good_data = rescale_func(data, good_data_mask=good_data_mask, **rescale_options)
-                print(good_data.shape)
                 return good_data
             else:
                 good_data = data[good_data_mask]
@@ -614,7 +612,6 @@ class Rescaler(roles.INIConfigReader):
         inc_by_one = rescale_options.pop("inc_by_one")
 
         data = gridded_product.copy_array(read_only=False)
-        print(data.shape)
         good_data_mask = ~gridded_product.get_data_mask()
         rescale_options['attrs'] = gridded_product  # copy metadata as keyword argument
         if rescale_options.get("separate_rgb", True) and data.ndim == 3:
@@ -626,7 +623,6 @@ class Rescaler(roles.INIConfigReader):
         else:
             data = self._rescale_data(method, data, good_data_mask, rescale_options, fill_value,
                                       clip=clip, mask_clip=mask_clip, inc_by_one=inc_by_one, clip_zero=clip_zero)
-        print(data.shape)
 
         log_level = logging.getLogger('').handlers[0].level or 0
         # Only perform this calculation if it will be shown, its very time consuming
