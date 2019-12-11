@@ -18,7 +18,7 @@ Navigate to your Polar2Grid directory, then run::
     behave --no-logcapture --no-capture --no-color -D datapath=/path/to/test/data
 
 To run a specific test, add the argument ``--name TESTNAME`` when running behave. The test names can be
-found in the feature file.
+found in the feature files (for example: ``--name VIIRS_L1B`` would skip all tests except VIIRS_L1B).
 
 How Jenkins runs the tests
 ==========================

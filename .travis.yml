@@ -39,4 +39,3 @@ script:
 #    on:
 #      tags: true
 #      repo: pytroll/satpy
-
