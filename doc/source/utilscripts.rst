@@ -175,6 +175,9 @@ Example:
 
     gtiff2kmz.sh GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.tif
 
+
+.. _util_script_fireoverlay:
+
 Overlay GeoTIFF Images
 ----------------------
 
@@ -189,7 +192,7 @@ everything to RGBA format first for better consistency in output images.
 
 Example:
 The following example shows how you would overlay the VIIRS Active
-Fire AFMOD resolution Fire Confidence Percentage GeoTIFF imag  on top of a 
+Fire AFMOD resolution Fire Confidence Percentage GeoTIFF image on top of a 
 VIIRS Day/Night Band GeoTIFF image.
 
 .. code-block:: bash
