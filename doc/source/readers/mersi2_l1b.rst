@@ -24,7 +24,6 @@ Examples:
 
     polar2grid.sh mersi2_l1b gtiff -p true_color false_color -g lcc_fit -f ../mersi/tf2019259173245.FY3D-X_MERSI*.HDF
 
+    polar2grid.sh mersi2_l1b hdf5 -p 20 21 22 23 24 25  --grid-configs ${HOME}/my_grid.conf -g shanghai seoul -f ../data/*.HDF
 
-    
-
-    
+    polar2grid.sh mersi2_l1b binary --sza-threshold=90  -p 1 2 3 4 6 7 20 25 -f tf2019226095418.FY3D-X_MERSI_*.HDF 
