@@ -41,7 +41,7 @@ Examples:
     polar2grid.sh viirs_edr_active_fires gtiff -g lcc_aus -p confidence_pct T13  -f AFMOD_j01_d20191120_t1513353_e1514581_b10389_c20191121192444396115_cspp_dev.nc
 
 **NOTE:** The active fire images can be overlaid onto another GeoTIFF. 
-See :doc:`utilscripts` for instructions.
+See :ref:`util_script_fireoverlay` for instructions.
 
     
 
