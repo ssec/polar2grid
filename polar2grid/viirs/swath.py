@@ -51,7 +51,7 @@ with the frontend name ``viirs_sdr``.
 
 This reader's default remapping algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--fornav-D`` parameter set to 40 and the
-``--fornav-d`` parameter set to 1.
+``--fornav-d`` parameter set to 2.
 
     +---------------------------+--------------------------------------------+
     | Product Name              | Description                                |
