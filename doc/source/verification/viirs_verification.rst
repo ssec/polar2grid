@@ -9,7 +9,8 @@ shown in Section 2.2 and execute the following commands:
     cd polar2grid_test/viirs
     mkdir work
     cd work
-    polar2grid.sh crefl gtiff --true-color --false-color --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f ../input
+    polar2grid.sh crefl gtiff --true-color --false-color --fornav-d 1 --grid-configs \
+      ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f ../input
 
 The test case consists of 6 input direct broadcast HDF 5 SDR granules 
 for a selection of VIIRS bands from a pass acquired on 19 March 2017
@@ -19,12 +20,20 @@ is using the example configuration file
 conformal conic (lcc) “miami” grid definition entry located 
 within it. It will first create 6 VIIRS Corrected REFLectance 
 (CREFL) I-Band and 6 CREFL M-Band HDF4 files, and then use those to 
-create one true and one false color image at 300 m resolution, 
-500 lines x 700 elements centered on the US city of 
-Miami in the state of Florida. The processing should run in less than 
-2 minutes and create 8 crefl output VIIRS GeoTIFF files, including 
-both true and false color output images, and the individual Corrected 
-Reflectance images that went into producing the final products. 
+create one true and one false color image at 300 m resolution, 500 lines 
+x 700 elements centered on the US city of Miami in the state of Florida. 
+We are using a fornav "d" flag of "1" to inform the elliptical 
+weight averaging (EWA) technique how to weight the effect of the input 
+pixel to an output pixel based upon its location in the scan line and 
+other calculated coefficients Although this may result in the 
+"sharpest" output resolution image, the user should be aware that 
+with reprojecting VIIRS terrain corrected imagery this may lead to 
+black missing data regions.  That is why the default `--fornav-d` value is "2".
+
+The processing should run in less than 2 minutes and create 8 crefl 
+output VIIRS GeoTIFF files, including both true and false color output 
+images, and the individual Corrected Reflectance images that went into 
+producing the final products. 
 
 If the VIIRS Polar2Grid processing script runs normally, it will return 
 a status code equal to zero. If the VIIRS Polar2Grid processing script 
@@ -32,7 +41,6 @@ encounters a fatal error, it will return a non-zero status code.
 
 To verify your output files against the output files created at 
 UW/SSEC, execute the following commands:
-
 
 .. code-block:: bash
 
