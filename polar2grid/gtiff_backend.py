@@ -86,7 +86,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
     # Find the number of bands provided
     if isinstance(data, (list, tuple)):
         num_bands = len(data)
-    elif len(data.shape) == 2:
+    elif data.ndim == 2:
         num_bands = 1
     else:
         num_bands = data.shape[0]
@@ -126,6 +126,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
         if num_bands == 1 and data.ndim == 2:
             band_data = data
             if fill_value is not None:
+                LOG.debug("Setting geotiff nodata value: {}".format(fill_value))
                 gtiff_band.SetNoDataValue(fill_value)
         else:
             band_data = data[idx]
@@ -147,6 +148,7 @@ def create_geotiff(data, output_filename, proj4_str, geotransform, etype=gdal.GD
             raise ValueError("Could not write band 1 data to geotiff '%s'" % (output_filename,))
 
     if colormap is not None:
+        LOG.debug("Adding colormap as Geotiff ColorTable")
         from polar2grid.add_colormap import create_colortable, add_colortable
         ct = create_colortable(colormap)
         add_colortable(gtiff, ct)
@@ -222,9 +224,10 @@ class Backend(roles.BackendRole):
             # Create the geotiff
             # X and Y rotation are 0 in most cases so we just hard-code it
             geotransform = gridded_product["grid_definition"].gdal_geotransform
+            colormap = rescale_options.get('colormap') if rescale_options.get('method') != 'colorize' else None
             gtiff = create_geotiff(data, output_filename, grid_def["proj4_definition"], geotransform,
                                    etype=etype, tiled=tiled, blockxsize=blockxsize, blockysize=blockysize,
-                                   colormap=rescale_options.get('colormap'), fill_value=fill_value, **kwargs)
+                                   colormap=colormap, fill_value=fill_value, **kwargs)
 
             if rescale_options.get("method") in ["linear", "palettize", "colorize"] and "min_in" in rescale_options and "max_in" in rescale_options:
                 LOG.debug("Setting geotiff metadata for linear min/max values")

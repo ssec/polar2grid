@@ -9,6 +9,7 @@ Version 1.0.1 (unreleased)
 * Add missing '--radius-of-influence' flag for nearest neighbor resampling
 * Add ability to native resample to lower resolution grids
 * Add 'goes_east_Xkm' and 'goes_west_Xkm' grids for easier lower resolution resampling
+* Enable multithreaded geotiff compression
 
 Version 1.0.0 (2019-03-01)
 --------------------------

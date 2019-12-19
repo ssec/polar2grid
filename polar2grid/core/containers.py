@@ -910,7 +910,7 @@ class GriddedProduct(BaseProduct):
         info = swath_product.copy(as_dict=True)
         for k in ["swath_rows", "swath_cols", "swath_data", "swath_definition"]:
             info.pop(k, None)
-        self.update(**swath_product)
+        self.update(**info)
 
     def get_data_array(self, item="grid_data", mode="r"):
         """Get FBF item as a numpy array.

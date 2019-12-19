@@ -229,7 +229,9 @@ class RGBCompositor(roles.CompositorRole):
         if fill_value is None:
             fill_value = gridded_scene[self.composite_products[0]]["fill_value"]
 
-        fn = self.composite_name + ".dat"
+        base_product = gridded_scene[self.composite_products[0]]
+        grid_name = base_product['grid_definition']['grid_name']
+        fn = "grid_{}_{}.dat".format(grid_name, self.composite_name)
 
         try:
             comp_data = self.joined_array(gridded_scene, self.composite_products)
@@ -238,7 +240,6 @@ class RGBCompositor(roles.CompositorRole):
                 comp_data[:, self.shared_mask(gridded_scene, self.composite_products)] = fill_value
 
             comp_data.tofile(fn)
-            base_product = gridded_scene[self.composite_products[0]]
             gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn, base_product=base_product,
                                                                               data_kind=self.composite_data_kind)
         except (ValueError, KeyError):
@@ -312,10 +313,12 @@ class TrueColorCompositor(RGBCompositor):
         if fill_value is None:
             fill_value = gridded_scene[red_product]["fill_value"]
 
-        fn = self.composite_name + ".dat"
+        all_products = [red_product, green_product, blue_product]
+        base_product = gridded_scene[all_products[0]]
+        grid_name = base_product['grid_definition']['grid_name']
+        fn = "grid_{}_{}.dat".format(grid_name, self.composite_name)
 
         try:
-            all_products = [red_product, green_product, blue_product]
             sharp_red_product = self._get_first_available_product(gridded_scene, self.hires_products)
             if sharp_red_product and self.sharpen_rgb:
                 all_products.append(sharp_red_product)
@@ -334,7 +337,6 @@ class TrueColorCompositor(RGBCompositor):
             LOG.debug("True color array has shape %r", comp_data.shape)
             LOG.info("Saving true color image to filename '%s'", fn)
             comp_data.tofile(fn)
-            base_product = gridded_scene[all_products[0]]
             gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn,
                                                                               base_product=base_product,
                                                                               data_kind=self.composite_data_kind)
@@ -373,7 +375,10 @@ class FalseColorCompositor(TrueColorCompositor):
         if fill_value is None:
             fill_value = gridded_scene[red_product]["fill_value"]
 
-        fn = self.composite_name + ".dat"
+        all_products = [red_product, green_product, blue_product]
+        base_product = gridded_scene[all_products[0]]
+        grid_name = base_product['grid_definition']['grid_name']
+        fn = "grid_{}_{}.dat".format(grid_name, self.composite_name)
 
         try:
             all_products = [red_product, green_product, blue_product]
@@ -395,7 +400,6 @@ class FalseColorCompositor(TrueColorCompositor):
             LOG.debug("False color array has shape %r", comp_data.shape)
             LOG.info("Saving false color image to filename '%s'", fn)
             comp_data.tofile(fn)
-            base_product = gridded_scene[all_products[0]]
             gridded_scene[self.composite_name] = self._create_gridded_product(self.composite_name, fn,
                                                                               base_product=base_product,
                                                                               data_kind=self.composite_data_kind)
