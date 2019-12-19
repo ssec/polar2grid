@@ -2,7 +2,7 @@
 
 .. tabularcolumns:: |L|L|L|l|l|
 
-.. list-table:: Reader/Writer Summary Table
+.. list-table:: Reader/Writer Summary Table (Subset of Readers)
     :header-rows: 1
 
     * - **Input Source**
