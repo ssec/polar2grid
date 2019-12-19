@@ -11,7 +11,7 @@ def step_impl(context, source):
     new_source = ""
 
     for f in source.split(" "):
-        f = os.path.join(context.data_path, f)
+        f = os.path.join(os.environ['DATAPATH'], f)
         new_source += f + " "
 
         if "*" in os.path.basename(f):
@@ -46,7 +46,7 @@ def step_impl(context, command):
 def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
-        os.chdir(context.data_path)
+        os.chdir(os.environ['DATAPATH'])
         if "gtiff" in context.command or context.script == "geo2grid.sh":
             compare_command = "{} {} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_geotiff.sh"),
                                                    output, context.temp_dir, '-vv')

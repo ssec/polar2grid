@@ -42,6 +42,7 @@ __docformat__ = "restructuredtext en"
 import os
 from setuptools import setup, find_packages, Command
 from distutils.extension import Extension
+from glob import glob
 import numpy
 
 extensions = [
@@ -214,6 +215,11 @@ setup(
     include_package_data=True,
     package_data={'polar2grid': ["compositors/*.ini", "awips/*.ini", "awips/*.yaml",
                                  "grids/*.conf", "ninjo/*.ini", "core/rescale_configs/*.ini"]},
+    # The location of where these are installed are important for the swbundle and glue scripts!
+    # Look at env.sh, glue.py, and glue_legacy.py for where these are pointed to.
+    data_files=[('etc/satpy/enhancements', glob('etc/enhancements/*')),
+                ('etc/satpy/composites', glob('etc/composites/*')),
+                ('etc/satpy', ['etc/pyspectral.yaml'])],
     zip_safe=True,
     tests_require=['py.test'],
     cmdclass={'test': PyTest},
@@ -223,6 +229,7 @@ setup(
         ],
     python_requires='>=3.6',
     extras_require=extras_require,
-    entry_points=entry_points
+    entry_points=entry_points,
+    scripts=[file for file in glob('swbundle/*.sh') if file not in ['swbundle/env.sh', 'swbundle/polar2grid_env.sh']]
 )
 

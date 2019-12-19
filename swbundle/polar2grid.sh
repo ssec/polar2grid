@@ -33,7 +33,7 @@ if [ -z "$POLAR2GRID_HOME" ]; then
 fi
 
 # Setup necessary environments
-source $POLAR2GRID_HOME/bin/env.sh
+# __SWBUNDLE_ENVIRONMENT_INJECTION__
 
 # Set best known defaults for number of OpenMP threads
 export OMP_NUM_THREADS=${OMP_NUM_THREADS:-2}

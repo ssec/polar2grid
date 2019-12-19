@@ -4,26 +4,26 @@
 # The git tag name can be used to specify a release and the name specified by it will be used for the tarball/tests.
 # Example; Create a release polar2grid tarball without running tests and release it as
 #          polar2grid-swbundle-1.0.0b.tar.gz along with its documentation in
-#          bumi:/tmp/polar2grid-swbundle-1.0.0b if all tests pass:
+#          bumi:/tmp/polar2grid-1.0.0b if all tests pass:
 #          $ git commit -m "Change wording in polar2grid documentation [skip-tests]"
 #          $ git tag -a p2g-v1.0.0b -m "P2G version 1.0.0b"
 #          $ git push --follow-tags
 # Note that in the above example both [skip-tests] and [p2g-skip-tests] would work the same since the tag specifies p2g.
 # Example; Create a polar2grid tarball without running tests, but do not release as a version. The tarball and its
-#          documentation can be found in bumi:/tmp/polar2grid-swbundle-YYYYmmhh-HHMMSS:
+#          documentation can be found in bumi:/tmp/polar2grid-YYYYmmhh-HHMMSS:
 #          $ git commit -m "Test that polar2grid documentation builds [p2g-skip-tests]"
 #          $ git push
 # Example; Create a non-release geo2grid tarball and run tests on it. The tarball and its
-#           documentation can be found in bumi:/tmp/geo2grid-swbundle-YYYYmmhh-HHMMSS:
+#           documentation can be found in bumi:/tmp/geo2grid-YYYYmmhh-HHMMSS:
 #          $ git commit -m "Update abi_l1b in geo2grid [g2g]"
 #          $ git push
 # Example; Create both a non-release geo2grid and a non-release polar2grid tarball and run tests on them. The
-#          tarballs and their documentation can be found in bumi:/tmp/geo2grid-swbundle-YYYYmmhh-HHMMSS and
+#          tarballs and their documentation can be found in bumi:/tmp/geo2grid-YYYYmmhh-HHMMSS and
 #          bumi:/tmp/polar2grid-swbundle-YYYYmmhh-HHMMSS:
 #          $ git commit -m "Update geo2grid and polar2grid"
 #          $ git push
 # Example; Create a geo2grid tarball, run tests on it, and release it as geo2grid-swbundle-3.0.0.tar.gz if all tests
-#          pass. The tarball and its documentation can be found in bumi:/tmp/geo2grid-swbundle-YYYYmmhh-HHMMSS:
+#          pass. The tarball and its documentation can be found in bumi:/tmp/geo2grid-v3.0.0:
 #          $ git commit -m "Release geo2grid version 3.0.0"
 #          $ git tag -a g2g-v3.0.0 -m "G2G version 3.0.0"
 #          $ git push --follow-tags
@@ -140,14 +140,12 @@ run_tests()
     set -o pipefail
 
     prefix=$1
-    swbundle_name=$2
     # Keeps track of wether or not an error occurs.
     status=0
     test_output="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_output.txt"
-    # Breaks out of subprocess on error.
-    export POLAR2GRID_HOME="$swbundle_name"
 
-    # Prints output to stdout and to an output file.
+    # Prints output to stdout and to an output file. Note that if datapath is not specified, then
+    # the environment variable DATAPATH must be specified.
     behave "${WORKSPACE}/integration_tests/features" --no-logcapture --no-color\
      --no-capture -D datapath=/data/test_data -i "${prefix}2grid.feature" --format pretty\
      --format json.pretty 2>&1 | tee "$test_output" || status=$?
@@ -182,7 +180,7 @@ create_documentation()
     save_vars "${prefix:0:1}2g_documentation=SUCCESSFUL"
 }
 
-# Copies ("publishes") tarball and documentation to bumi:/tmp and give the ability for others to copy it.
+# Copies ("publishes") tarball and documentation to bumi:/tmp and gives the ability for others to copy it.
 publish_package()
 {
     prefix=$1
@@ -195,6 +193,9 @@ publish_package()
 }
 
 set -x
+
+# 0 makes and uses the swbundle for scripts. 1 uses the environment for scripts.
+SWBUNDLE_OR_ENVIRONMENT=0
 
 start_time=`date "+%Y-%m-%d %H:%M:%S"`
 save_vars "start_time=$start_time"
@@ -210,7 +211,7 @@ exit_status=0
 for prefix in ${prefixes}; do
     # Allows documentation to run even if tests fail without publishing package.
     test_status=0
-    swbundle_name="${WORKSPACE}/${prefix}2grid-swbundle-${suffix}"
+    swbundle_name="${prefix}2grid-swbundle-${suffix}"
     # This is what is sent to bumi:/tmp. It contains the swbundles and documentation.
     package_name="${prefix}2grid-${suffix}"
     mkdir "${WORKSPACE}/$package_name"
@@ -220,20 +221,34 @@ for prefix in ${prefixes}; do
     (
         # Break out of sub-shell on error.
         set -e
-        # Handles swbundle logic.
-        conda activate jenkins_p2g_swbundle
-        "${WORKSPACE}/create_conda_software_bundle.sh" "$swbundle_name"
-        # Copies tarball to package directory.
-        cp "${swbundle_name}.tar.gz" "${WORKSPACE}/$package_name"
 
-        # Handles testing and documentation logic.
+        # This block handles making the swbundle or making the environment information.
+        conda activate jenkins_p2g_swbundle
+        if [[ ${SWBUNDLE_OR_ENVIRONMENT} -eq 0 ]]; then
+            # Handles swbundle logic.
+            "${WORKSPACE}/create_conda_software_bundle.sh" "${WORKSPACE}/${swbundle_name}"
+            # Points polar2grid to where the scripts and packages are.
+            export POLAR2GRID_HOME="${WORKSPACE}/${swbundle_name}"
+            # Copies tarball to package directory.
+            cp "${WORKSPACE}/${swbundle_name}.tar.gz" "${WORKSPACE}/$package_name"
+        else
+            pip install -U --no-deps .
+            # Add the environment information to the package. Run `conda env update -f swbundle.yml`
+            # or `conda env update -f docs.yml` to install the frozen environment. Note that satpy may
+            # cause the above two commands to crash since it is installed from github. See
+            # https://stackoverflow.com/questions/13685920/install-specific-git-commit-with-pip for me information.
+            conda env export -n jenkins_p2g_swbundle | grep -v "^prefix: " > "${WORKSPACE}/${package_name}/swbundle.yml"
+            conda env export -n jenkins_p2g_docs | grep -v "^prefix: " > "${WORKSPACE}/${package_name}/docs.yml"
+        fi
+
+        # This block handles testing and documentation logic.
         conda activate jenkins_p2g_docs
         if [[ "$commit_message" =~ (^|.[[:space:]])"["([pg]2g-)?skip-tests"]"$ ]]; then
             # Replace FAILED with SKIPPED.
             save_vars "${prefix:0:1}2g_tests=SKIPPED"
         else
             # Only run tests if package was built correctly. Allows documentation to run even if tests fail.
-            run_tests "$prefix" "$swbundle_name" || test_status=$?
+            run_tests "$prefix" || test_status=$?
         fi
         # If this fails, the sub-shell will terminate
         create_documentation "$prefix" "$package_name"

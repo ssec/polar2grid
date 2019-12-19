@@ -102,6 +102,13 @@ cp -P ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/
 
 make clean
 
+# Inject environment code into swbundle only.
+for file in `echo *.sh`; do
+    cp "$file" tmp.sh
+    sed "s/# __SWBUNDLE_ENVIRONMENT_INJECTION__/source \$POLAR2GRID_HOME\/bin\/env.sh/g" tmp.sh > "$file"
+done
+rm tmp.sh
+
 # Copy the release notes to the tarball
 cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 
@@ -112,7 +119,7 @@ chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
 
 # FIXME need libproj?
 
-# Copy SatPy configurations
+# Copy SatPy configurations. Note: Contents are already in etc/satpy thanks to setup.py.
 cp -r $BASE_P2G_DIR/etc $SB_NAME/ || oops "Couldn't copy configuration 'etc' directory"
 
 # Tar up the software bundle
