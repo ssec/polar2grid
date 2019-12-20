@@ -5,7 +5,7 @@
 Creating ACSPO SST Reprojections
 --------------------------------
 
-This set of examples will demonstate how you can create high quality
+This set of examples demonstrates how you can create high quality
 Sea Surface Temperature (SST) color enhanced images 
 using a number of the functionalities available in Polar2Grid.
 
@@ -31,9 +31,8 @@ image.
     ``polar2grid.sh acspo gtiff --grid-coverage 0 -f 20191216072134-STAR-L2P_GHRSST-SSTskin-VIIRS_NPP-ACSPO_V2.61-v02.0-fv01.0.nc``
 
 The data set is re-projected into the WGS84 (Platte Carrée) projection
-by default. The image scaling is defined in the 
-`$POLAR2GRID/lib/python3.7/site-packages/polar2grid/core/rescale_configs/rescale.ini`
-file. This file contains product scaling information for all data parameters 
+by default. The image scaling is defined in the
+`resclale.ini <https://github.com/ssec/polar2grid/blob/master/polar2grid/core/rescale_configs/rescale.ini>`_ file.  file. This file contains product scaling information for all data parameters 
 supported by Polar2Grid. The default scaling used for the ACSPO Version 
 2.61 SST files can be found under data_kind `sea_surface_sub-skin_temperature`
 which is taken from the array `standard_name` attribute.
@@ -51,8 +50,8 @@ values stored (0-255) to the temperatures they represent - in this
 case 267.317 K to 309.816 K. **Note:** Previous versions of the ACSPO
 sst files use a standard_name attribute of `sea_surface_skin_temperature`.
 The scaling is done linearly. The output image below shows the
-M16 11 micron Brightness Temperature on the left, and the ACSPO
-SST VIIRS image on the right.
+VIIRS M-Band 16 (11 micron) Brightness Temperature on the left, and 
+the ACSPO SST VIIRS image on the right.
 
 .. raw:: latex
 
@@ -65,22 +64,24 @@ SST VIIRS image on the right.
 
     S-NPP VIIRS M-Band 16 Brightness Temperature image (Left panel) and ACSPO Sea Surface Temperature image (Right Panel) from an entire direct broadcast pass acquired on 16 December 2019 covering the eastern portion of Canada and the United States. The default projection is WGS84 (Platte Carrée) and the default scaling is black white brightness values 0-255.
 
-Now I would like to create a subset of this image over a region of interest
-in the waters surrounding the US state of Florida.  To do this, I need to
-create a new grid.  I will use the `p2g_grid_helper.sh` script to do this.
+Now I would like to create image over a subset of this dataset over a 
+region of interest of the waters surrounding the US state of Florida.  
+To do this, I need to create a new grid.  I will use the 
+:ref:`util_p2g_grid_helper` script to do this.
 
 	``p2g_grid_helper.sh acspo_sst -80 30 1000 1000  1200 1200``
 
 I named my grid `acspo_sst`, centered it on `-80 E Longitude` and `30 N Latitude`,
-with 1000 m spatial resolution in the X and Y directions, and defining the output
-grid to be 1200x1200 lines and elements.
+with `1000 m` spatial resolution in the X and Y directions, and defined the output
+grid to be `1200 x 1200` lines and elements.
 
 Executing this command results in this proj4 grid definition:
 
 	``acspo_sst, proj4, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=30.00000 +lat_1=30.00000 +lon_0=-80.00000 +units=m +no_defs, 1200, 1200, 1000.00000, -1000.00000, -86.56812deg, 35.24785deg``
 
-I store this grid in an ascii file named `mygrid.conf`, and I can use it to
-create an image of my overpass over my new grid by executing this command:
+I store this grid in an ASCII text file named `mygrid.conf`, which I can 
+provide to `polar2grid.sh` to create an image over my subset region
+by executing this command:
 
 	``polar2grid.sh acspo gtiff --grid-coverage 0 --grid-configs mygrid.conf -g acspo_sst -f viirs/``
 
@@ -102,13 +103,12 @@ shown below.
 To add a color enhancement to this image, I use the *add_colormap.sh* utility
 script and a rainbow color table `p2g_sst_palette.txt` that is included as part of 
 the Polar2Grid package.  This table is formatted as described in the 
-:ref:`util_add_colormap` section. You can view the file ### Change this location ##
-`online <https://github.com/ssec/polar2grid/blob/master/polar2grid/grids/grids.conf>`_.
+:ref:`util_add_colormap` section. You can view the file 
+`online <https://github.com/ssec/polar2grid/blob/master/swbundle/colormaps/p2g_sst_palette.txt>`_.
 
-This colormap will assign a color value to each of the the 0-255 brightness range
-in the GeoTIFF image.  Again, the default color range is associate with a
+This colormap will assign a color value to each of the 0-255 brightness range
+in the GeoTIFF image.  Again, the default color range is associated with a
 temperature range of 267.317 K to 309.816 K.
-
 
 	``add_colormap.sh p2g_sst_palette.txt npp_viirs_sst_20191216_072134_acspo_sst.tif``
 
@@ -143,7 +143,7 @@ my new rescale file is shown below (my_rescale.ini).
     max_in=304.00
 
 I can then apply this new rescaling file by referencing the file
-in the polar2grid.sh execution.  In the example below, my_rescale.ini
+in the `polar2grid.sh` execution.  In the example below, my_rescale.ini
 file is located in the execution directory.  If it is not, you will need
 to provide the full path to the file.
 
@@ -167,11 +167,11 @@ and applying my colormap is shown below.
 
     S-NPP VIIRS ACSPO SST color enhanced subset image over our area of interest using a customized rescaling that linearly maps brightness values of 0-255 to a temperature range of 279.0 K to 304.0 K.
 
-To further enhance this ACSPO SST image I can add a colorbar 
+To further enhance this ACSPO SST image I can add a color bar 
 using the `add_coastlines.sh` script.  There are many options to this script
 all of which are listed in the :ref:`util_add_coastlines` section. Users
-can control the location and size of the colorbar, a colorbar title, fonts,
-etc. The script overlays the colorbar and text onto the image storing
+can control the location and size of the color bar, a color bar title, fonts,
+etc. The script overlays the color bar and text onto the image storing
 it as a .png file.
 
 For example, by executing the following command:
@@ -190,7 +190,7 @@ as displayed below.
     :width: 95%
     :align: center
 
-    S-NPP VIIRS ACSPO SST color enhanced subset image over our area of interest using a customized rescaling that linearly maps brightness values of 0-255 to a temperature range of 279.0 K to 304.0 K including a overlaid colortable.
+    S-NPP VIIRS ACSPO SST color enhanced subset image over our area of interest using a customized rescaling that linearly maps brightness values of 0-255 to a temperature range of 279.0 K to 304.0 K including a overlaid color table.
 
 If you wanted to display a more familiar SST temperature scale such as Celsius
 or Fahrenheit, you can do that by using the ``--colorbar-min`` and
@@ -199,12 +199,12 @@ any data values in the file, but it will change the color table display.
 For example, I have set the dataset range in my file to be 279.0 K to 
 304.0 K.  This is equivalent to a range in Degrees Celsius of 5.85 C to 30.85 C.  
 So by executing the following command, I can display the image
-with a colorbar in Degrees Celsius.
+with a color bar in Degrees Celsius.
 
     ``add_coastlines.sh npp_viirs_sst_20191216_072134_acspo_sst.tif --colorbar-units="°C" --colorbar-min=5.85 --colorbar-max=30.85 --colorbar-tick-marks 5.0 --colorbar-align top --colorbar-title="VIIRS ACSPO SST  16 December 2019  07:21 UTC"  --colorbar-text-size 20 --colorbar-height=35``
 
 I can perform a similar conversion of the temperature range to 
-Degrees Fahrenheit and create an image with a colorbar labelled 
+Degrees Fahrenheit and create an image with a color bar labelled 
 in those units.
 
     ``add_coastlines.sh npp_viirs_sst_20191216_072134_acspo_sst.tif --add-colorbar --colorbar-text-color='white' --colorbar-units="°F" --colorbar-min=42.53 --colorbar-max=87.53 --colorbar-tick-marks 5.0 --colorbar-align top --colorbar-title="VIIRS ACSPO SST  16 December 2019  07:21 UTC"  --colorbar-text-size 20 --colorbar-height=35``
@@ -228,4 +228,4 @@ Degrees Celsius and coastline overlays.
     :width: 95%
     :align: center
 
-    Final S-NPP VIIRS ACSPO SST image created from data acquired by direct broadcast on 16 December 2019 beginning at 07:21 UTC. The image creation includes re-gridding, re-scaling, color enhanced with colortable and map overlays.
+    Final S-NPP VIIRS ACSPO SST image created from data acquired by direct broadcast on 16 December 2019 beginning at 07:21 UTC. The image creation includes re-gridding, re-scaling, color enhanced with color table and map overlays.
