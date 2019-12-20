@@ -183,16 +183,12 @@ To access these features provide the "reader" and "writer" names to the
     \end{landscape}
     \newpage
 
-.. _getting_started_rgb:
-
-Creating Red Green Blue (RGB) Composite Imagery
------------------------------------------------
-
-.. ifconfig:: not is_geo2grid
-
-    TODO
-
 .. ifconfig:: is_geo2grid
+
+    .. _getting_started_rgb:
+
+    Creating Red Green Blue (RGB) Composite Imagery
+    -----------------------------------------------
 
         The list of supported products includes true and natural color 24-bit
         RGB imagery. The software uses the number of specified CPU threads to
