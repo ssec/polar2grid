@@ -2,7 +2,7 @@ Utility Scripts
 ===============
 
 The following are scripts that can be used to aid in the 
-the creation of customized |project| products. All utility
+creation of customized |project| products. All utility
 scripts are stored in the bin directory:
 
 .. ifconfig:: is_geo2grid
