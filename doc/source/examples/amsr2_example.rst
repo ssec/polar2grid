@@ -111,4 +111,4 @@ is displayed below:
     :width: 60%
     :align: center
 
-    GCOMW-1 AMSR2 L1B 89.0A/H GHz brightness temperatures reprojected in Lambert Conic Conformal Projection and rescaled and enhanced using the Naval Research Lab color enahcnement.  Data set was observed at 19:03 UTC on 19 July 2016.
+    GCOMW-1 AMSR2 L1B 89.0A/H GHz brightness temperatures reprojected in Lambert Conic Conformal Projection and rescaled and enhanced using the Naval Research Lab color ehancement.  Data set was observed at 19:03 UTC on 19 July 2016.

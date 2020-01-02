@@ -1,5 +1,5 @@
-Provided Grids
-==============
+Grids
+=====
 
 |project| allows users to remap to one or more projected grids. A grid
 defines the uniform geographic area that an output image covers. |project|
@@ -8,6 +8,9 @@ use cases. Some grids are provided for specific writers (like AWIPS SCMI), but
 can be used for other writers as well. For those cases that the provided
 grids aren't enough it is possible to create your own custom grids. See the
 :doc:`custom_grids` documentation for help with this.
+
+Provided Grids
+--------------
 
 Below are descriptions for a few of the grids provided with |project|.
 For information on all of the grids provided by |project| see the

@@ -9,7 +9,8 @@ shown in Section 2.2 and execute the following commands:
     cd polar2grid_test/modis
     mkdir work
     cd work
-    polar2grid.sh crefl gtiff --true-color --false-color --fornav-D 10 --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f ../input
+    polar2grid.sh crefl gtiff --true-color --false-color --fornav-d 1 --grid-configs \
+      ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f ../input
 
 The test case consists of a set of MODIS archived 5 minute HDF 4 Level 1B
 granule files (1KM, HKM, QKM and Geolocation) for a Terra MODIS

@@ -2,15 +2,15 @@
 
 .. tabularcolumns:: |L|L|L|l|l|
 
-.. list-table:: Reader/Writer Summary Table
+.. list-table:: Reader/Writer Summary Table (Subset of Readers)
     :header-rows: 1
 
-    * - Input Source
-      - Input Filename Pattern
-      - Output Type
-      - Reader Name
-      - Writer Name
-    * - Suomi-NPP VIIRS Sensor Data Records
+    * - **Input Source**
+      - **Input Filename Pattern**
+      - **Output Type**
+      - **Reader Name**
+      - **Writer Name**
+    * - **Suomi-NPP VIIRS Sensor Data Records**
       - SVI01_npp_*.h5
         GITCO_npp_*.h5
       - 8-bit single band GeoTIFF
@@ -36,7 +36,7 @@
       - 24-bit true and false color GeoTIFF
       - crefl
       - gtiff
-    * - Aqua and Terra MODIS Level 1b (IMAPP or NASA archive files)
+    * - **Aqua and Terra MODIS Level 1b (IMAPP or NASA archive files)**
       - MOD021KM*.hdf
         MOD03*.hdf
         
@@ -67,7 +67,7 @@
       - 24-bit true and false color GeoTIFF
       - crefl
       - gtiff
-    * - NOAA-18, NOAA-19, Metop-A and Metop-B AVHRR AAPP Level 1b
+    * - **NOAA-18, NOAA-19, and Metop-A,-B,-C AVHRR AAPP Level 1b**
       - hrpt_noaa18_*.l1b
       - 8 bit single band GeoTIFF
       - avhrr
@@ -87,8 +87,8 @@
       - Binary
       - avhrr
       - binary
-    * - GCOM-W1 ASMR2 L1B
-      - GW1AM2*L1DLBTBR*.h5
+    * - **GCOM-W1 ASMR2 L1B**
+      - GW1AM2\*L1DLBTBR\*.h5
       - 8 bit single band GeoTIFF
       - amsr2_l1b
       - gtiff
@@ -107,7 +107,22 @@
       - Binary
       - amsr2_l1b
       - binary
-    * - CLAVR-x Cloud Retrievals
+    * - **FY3-D MERSI2 L1B**
+      - tf\*.FY3D\-X_MERSI_*_L1B.HDF
+      - 8 bit single band GeoTIFF, 24-bit true and false color GeoTIFF
+      - mersi2_l1b
+      - gtiff
+    * - "
+      - "
+      - HDF5
+      - mersi2_l1b
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - mersi2_l1b
+      - binary
+    * - **CLAVR-x Cloud Retrievals**
       - clavrx*.hdf
       - 8 bit single band GeoTIFF
       - clavrx
@@ -127,7 +142,7 @@
       - Binary
       - clavrx
       - binary
-    * - ACSPO Sea Surface Temperatures
+    * - **ACSPO Sea Surface Temperatures**
       - \*-STAR-L2P_GHRSST-SSTskin-\*.nc
       - 8 bit single band GeoTIFF
       - acspo
