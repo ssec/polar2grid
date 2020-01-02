@@ -14,9 +14,9 @@ env:
     - CONDA_CHANNEL_PRIORITY='True'
 matrix:
   include:
-  - env: PYTHON_VERSION=3.6
+  - env: PYTHON_VERSION=3.7
     os: linux
-  - env: PYTHON_VERSION=3.6
+  - env: PYTHON_VERSION=3.7
     os: osx
 install:
   - git clone --depth 1 git://github.com/astropy/ci-helpers.git
