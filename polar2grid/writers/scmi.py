@@ -83,12 +83,14 @@ LOG = logging.getLogger(__name__)
 def add_writer_argument_groups(parser):
     DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{platform_name}_{sensor}_{name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc'
     group_1 = parser.add_argument_group(title='SCMI Writer')
-    # group_1.add_argument('--file-pattern', default=DEFAULT_OUTPUT_PATTERN,
-    #                      help="custom file pattern to save dataset to")
     group_1.add_argument("--compress", action="store_true",
                          help="zlib compress each netcdf file")
     group_1.add_argument("--fix-awips", action="store_true",
                          help="modify NetCDF output to work with the old/broken AWIPS NetCDF library")
+    group_1.add_argument('--output-filename', dest='filename', default=DEFAULT_OUTPUT_PATTERN,
+                         help='custom file pattern to save dataset to')
+    group_1.add_argument('--use-end-time', action='store_true',
+                         help='use end_time metadata inplace of start_time (useful for multi-day composites)')
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
     group_1.add_argument("--tiles", dest="tile_count", nargs=2, type=int, default=[1, 1],
