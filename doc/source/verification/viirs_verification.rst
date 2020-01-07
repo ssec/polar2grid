@@ -25,10 +25,11 @@ x 700 elements centered on the US city of Miami in the state of Florida.
 We are using a fornav "d" flag of "1" to inform the elliptical 
 weight averaging (EWA) technique how to weight the effect of the input 
 pixel to an output pixel based upon its location in the scan line and 
-other calculated coefficients Although this may result in the 
+other calculated coefficients. Although this may result in the 
 "sharpest" output resolution image, the user should be aware that 
 with reprojecting VIIRS terrain corrected imagery this may lead to 
-black missing data regions.  That is why the default `--fornav-d` value is "2".
+black missing data regions in regions of varying terrains, especially
+at higher view angles.  That is why the default `--fornav-d` value is "2".
 
 The processing should run in less than 2 minutes and create 8 crefl 
 output VIIRS GeoTIFF files, including both true and false color output 
