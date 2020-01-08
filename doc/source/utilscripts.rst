@@ -38,7 +38,7 @@ Example:
 
     p2g_grid_helper.sh my_grid_name -150.1 56.3 250 -250 1000 1000
     # Will result in:
-    my_grid_name, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=56.300 +lat_1=56.300 +lon_0=-150.100 +units=m +no_defs, 1000, 1000, 250.000, -250.000, -125000.000, 125000.000
+    my_grid_name, proj4, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=56.30000 +lat_1=56.30000 +lon_0=-150.10000 +units=m +no_defs, 1000, 1000, 250.00000, -250.00000, -152.17946deg, 57.40550deg
 
 The above example creates a proj4 text grid line named 'my_grid_name' defined
 to be at 250m resolution, 1000 pixels width and height, and centered at 
