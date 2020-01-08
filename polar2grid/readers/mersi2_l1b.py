@@ -28,8 +28,8 @@
 #     Madison, WI  53706
 #     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
 """
-The MERSI2 Level 1B reader operates on Level 1B (L1B) HDF5 files files come in four varieties; band data
-and geolocation data, both at 250m and 1000m resolution.
+The MERSI2 Level 1B reader operates on Level 1B (L1B) HDF5 files.  The files come in 
+four varieties; band data and geolocation data, both at 250m and 1000m resolution.
 Files usually have the following naming scheme:
 
     tf{start_time:%Y%j%H%M%S}.{platform_shortname}-{trans_band:1s}_MERSI_1000M_L1B.{ext}
