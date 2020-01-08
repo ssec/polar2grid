@@ -27,12 +27,12 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""The HDF5 backend creates HDF5 files with gridded products. By default it creates
-one HDF5 file with all products in the same file. Products are grouped together in
-HDF5 data groups for the grid that they are remapped to. Each grid data group has
-attributes describing the grid it represents. See the command line arguments for
-this backend for information on compressing the HDF5 files and including longitude
-and latitude datasets in the files.
+"""The HDF5 backend creates HDF5 files with gridded product arrays. By default 
+it creates one HDF5 file with all product arrays in the same file. Products 
+are grouped together in HDF5 data groups for the grid that they are remapped 
+to. Each grid data group has attributes describing the grid it represents. 
+See the command line arguments for this backend for information on compressing 
+the HDF5 files and including longitude and latitude datasets in the files.
 
 """
 __docformat__ = "restructuredtext en"
