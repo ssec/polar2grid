@@ -58,7 +58,7 @@ a KMZ formatted file, a GeoTIFF must be created first:
     $POLAR2GRID_HOME/bin/polar2grid.sh crefl gtiff -f /path/to/my_sdrs/
 
 This will create a series of corrected reflectance GeoTIFF files 
-that are used to the produce the final 24 bit true color 
+that are used to produce the final 24 bit true color 
 GeoTIFF with the ``.tif`` file extension. To create a KMZ file
 (a compressed KML) to show in Google Earth or other program 
 use the ``gtiff2kmz.sh`` script provided in the software bundle:
