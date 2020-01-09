@@ -51,7 +51,7 @@ which is taken from the array `standard_name` attribute.
 
 This is used in the Polar2Grid software to define the range of brightness
 values in the output GeoTIFF file (0-255) to the temperatures they represent - in this
-case 267.317 K to 309.816 K. **Note:** Previous versions of the ACSPO
+case 267.317 K to 309.816 K. Please Note: Previous versions of the ACSPO
 sst files use a standard_name attribute of `sea_surface_skin_temperature`.
 The scaling is done linearly. The output greyscale image below shows the
 VIIRS M-Band 16 (11 micron) Brightness Temperature on the left, and 
@@ -152,7 +152,7 @@ my new rescale file is shown below (my_rescale.ini).
 I can then apply this new rescaling file by referencing the file
 in the `polar2grid.sh` execution.  In the example below, my_rescale.ini
 file is located in the execution directory.  If it is not, you will need
-to provide the full path to the file. **Note: Polar2Grid does not overwrite
+to provide the full path to the file. Please Note: Polar2Grid does not overwrite
 output files, so you will need to either rename or delete the original
 ACSPO GeoTIFF output file.
 
@@ -194,11 +194,9 @@ as displayed below.
 
 .. raw:: latex
 
-    \newpage
-
 .. figure:: ../_static/example_images/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor_colortable_resize.png
     :name: npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor_colortable_resize.png
-    :width: 95%
+    :width: 85%
     :align: center
 
     S-NPP VIIRS ACSPO SST color enhanced subset image over our area of interest using a customized rescaling that linearly maps brightness values of 0-255 to a temperature range of 279.0 K to 304.0 K including a overlaid color table.
