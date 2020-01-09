@@ -189,12 +189,12 @@ def get_parser():
                        help="Don't include ticks and tick labels on colorbar")
     group.add_argument('--colorbar-min', type=float,
                        help="Minimum data value of the colorbar."
-                            "Defaults to 'min_in' of input metadata or"
-                            "minimum value of the data otherwise.")
+                            " Defaults to 'min_in' of input metadata or"
+                            " minimum value of the data otherwise.")
     group.add_argument('--colorbar-max', type=float,
                        help="Maximum data value of the colorbar."
-                            "Defaults to 'max_in' of input metadata or"
-                            "maximum value of the data otherwise.")
+                            " Defaults to 'max_in' of input metadata or"
+                            " maximum value of the data otherwise.")
     group.add_argument('--colorbar-units',
                        help="Units marker to include in the colorbar text")
     group.add_argument('--colorbar-title',
