@@ -100,7 +100,7 @@ def add_writer_argument_groups(parser):
     group_1.add_argument("--letter-subtiles", nargs=2, type=int, default=(2, 2),
                          help="Specify number of subtiles in each lettered tile: \'row col\'")
     group_1.add_argument("--source-name", default='SSEC',
-                         help="specify processing source name used in attributes and filename (default 'SSEC')")
+                         help="specify processing source name used in attributes and filename")
     group_1.add_argument("--sector-id", required=True,
                          help="specify name for sector/region used in attributes and filename (example 'LCC')")
     return group_1, None
