@@ -35,9 +35,9 @@ image.
 
 The data set is re-projected into the WGS84 (Platte Carrée) projection
 by default. The image scaling is defined in the
-`resclale.ini <https://github.com/ssec/polar2grid/blob/master/polar2grid/core/rescale_configs/rescale.ini>`_ 
- file. This file contains product scaling information for all data parameters 
-supported by Polar2Grid. The default scaling used for the ACSPO Version 
+`resclale.ini <https://github.com/ssec/polar2grid/blob/master/polar2grid/core/rescale_configs/rescale.ini>`_ file. This file contains product 
+scaling information for all data parameters supported by Polar2Grid. 
+The default scaling used for the ACSPO Version 
 2.61 SST files can be found under data_kind `sea_surface_sub-skin_temperature`
 which is taken from the array `standard_name` attribute.
 
@@ -152,19 +152,16 @@ my new rescale file is shown below (my_rescale.ini).
 I can then apply this new rescaling file by referencing the file
 in the `polar2grid.sh` execution.  In the example below, my_rescale.ini
 file is located in the execution directory.  If it is not, you will need
-to provide the full path to the file.
+to provide the full path to the file. **Note: Polar2Grid does not overwrite
+output files, so you will need to either rename or delete the original
+ACSPO GeoTIFF output file.
 
 .. code-block:: bash
 
     polar2grid.sh acspo gtiff --rescale-configs my_rescale.ini \
       --grid-coverage 0 --grid-configs mygrid.conf -g acspo_sst -f viirs/*.nc
 
-You can add more customized dataset rescaling to your file, and by adding
-``--rescale-configs my_rescale.ini rescale_configs/rescale.ini`` to your
-command. It lets polar2grid.sh know to use your local rescaling
-file first and if the dataset is not found in it, then use the 
-default rescaling file. The result of applying this rescaling to my image
-and applying my colormap is shown below.
+The result of applying this rescaling to my image and applying my colormap is shown below.
 
 .. raw:: latex
 
