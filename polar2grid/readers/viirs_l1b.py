@@ -298,7 +298,7 @@ def add_frontend_argument_groups(parser):
     group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
                        help="Fraction of day required to produce reflectance products (default 0.10)")
     group.add_argument("--night-fraction", dest="night_fraction", type=float, default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
-                       help="Fraction of night required to product products like fog (default 0.10)")
+                       help="Fraction of night required to produce products like fog (default 0.10)")
     group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
                        help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
     # group.add_argument("--dnb-saturation-correction", action="store_true",
