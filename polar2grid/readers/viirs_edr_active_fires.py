@@ -28,13 +28,12 @@
 #     Madison, WI  53706
 #     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
 """
-The VIIRS EDR Active Fires reader operates on NetCDF I-Band (AFIMG) Resolution or 
+The VIIRS EDR Active Fires reader operates on CSPP NetCDF I-Band (AFIMG) Resolution or 
 M-Band Resolution (AFMOD) Environmental Data Record files.
-Files usually have the following naming scheme:
+Files usually have the following naming schemes:
 
-   AFIMG_{satellite_name}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time}_{source}.nc
-   or 
-   AFMOD_{satellite_name}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time}_{source}.nc
+   AFIMG_npp_d20200109_t0959025_e1000267_b42492_c20200109101744000538_cspp_dev.nc, and/or
+   AFMOD_j01_d20200109_t1711298_e1712525_b11100_c20200109173628141913_cspp_dev.nc
 
 This reader's default resampling algorithm is ``nearest`` for Nearest Neighbor resampling.
 The ``--remap_method`` parameter is set to ``nearest``.
