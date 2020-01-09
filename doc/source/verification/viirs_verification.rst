@@ -31,7 +31,7 @@ with reprojecting VIIRS terrain corrected imagery this may lead to
 black missing data regions in regions of varying terrains, especially
 at higher view angles.  That is why the default `--fornav-d` value is "2".
 
-The processing should run in less than 2 minutes and create 8 crefl 
+The processing should run in less than 2 minutes and create 9 crefl 
 output VIIRS GeoTIFF files, including both true and false color output 
 images, and the individual Corrected Reflectance images that went into 
 producing the final products. 
