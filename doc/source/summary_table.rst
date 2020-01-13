@@ -67,7 +67,7 @@
       - 24-bit true and false color GeoTIFF
       - crefl
       - gtiff
-    * - **NOAA-18, NOAA-19, and Metop-A,-B,-C AVHRR AAPP Level 1b**
+    * - **NOAA-18, NOAA-19,Metop-A,-B,-C AVHRR AAPP Level 1b**
       - hrpt_noaa18_*.l1b
       - 8 bit single band GeoTIFF
       - avhrr

@@ -33,7 +33,7 @@ NOAA/STAR Microwave Integrated Retrieval System (MIRS). The software
 supports the creation of atmospheric profile and surface parameters from 
 ATMS, AMSU-A, and MHS microwave sensor data. For more information
 on this product, please see the 
-`CSPP MIRS distribution website <http://cimss.ssec.wisc.edu/cspp/mirs_v2.0.shtml>`_.
+`CSPP LEO distribution website <https://cimss.ssec.wisc.edu/cspp/>`_.
 
 When executed on Suomi-NPP Advanced Technology Microwave Sounder (ATMS) 
 MIRS product files, a limb correction algorithm is applied for  

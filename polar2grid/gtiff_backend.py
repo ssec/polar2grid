@@ -29,7 +29,7 @@
 # david.hoese@ssec.wisc.edu
 """The GeoTIFF backend puts gridded image data into a standard GeoTIFF file.  It
 uses the GDAL python API to create the GeoTIFF files. It can handle any grid that
-can be described by PROJ.4 and understand by GeoTIFF.
+can be described by PROJ.4 and understood by GeoTIFF.
 
 """
 __docformat__ = "restructuredtext en"

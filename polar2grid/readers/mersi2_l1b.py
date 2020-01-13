@@ -28,8 +28,8 @@
 #     Madison, WI  53706
 #     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
 """
-The MERSI2 Level 1B reader operates on Level 1B (L1B) HDF5 files files come in four varieties; band data
-and geolocation data, both at 250m and 1000m resolution.
+The MERSI2 Level 1B reader operates on Level 1B (L1B) HDF5 files.  The files come in 
+four varieties; band data and geolocation data, both at 250m and 1000m resolution.
 Files usually have the following naming scheme:
 
     tf{start_time:%Y%j%H%M%S}.{platform_shortname}-{trans_band:1s}_MERSI_1000M_L1B.{ext}
@@ -192,11 +192,11 @@ def add_frontend_argument_groups(parser):
     group.add_argument("--list-products", dest="list_products", action="store_true",
                        help="List available frontend products and exit")
     group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
-                       help="Fraction of day required to produce reflectance products (default 0.10)")
+                       help="Fraction of day required to produce reflectance products")
     # group.add_argument("--night-fraction", dest="night_fraction", type=float, default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
-    #                    help="Fraction of night required to product products like fog (default 0.10)")
+    #                    help="Fraction of night required to product products like fog")
     group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
-                       help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
+                       help="Angle threshold of solar zenith angle used when deciding day or night")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,

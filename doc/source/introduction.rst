@@ -48,7 +48,7 @@ What's New?
 
 .. ifconfig:: not is_geo2grid
 
-    Polar2Grid Version 2.2.1 is now available. Changes in this
+    Polar2Grid Version 2.3 is now available. Changes in this
     version include:
 
     .. include:: NEWS.rst

@@ -22,7 +22,7 @@ within it. It will first create Corrected REFLectance (CREFL) HDF4 files
 and then use those to create one true and one false color image at 
 300 m resolution, 500 lines x 700 elements centered on the US city of 
 Miami in the state of Florida. The processing should run in less than 
-2 minutes and create 8 CREFL output MODIS GeoTIFF files, including 
+2 minutes and create 9 CREFL output MODIS GeoTIFF files, including 
 both true and false color output images, and the individual Corrected 
 Reflectance images that went into producing the final products. 
 
