@@ -144,8 +144,7 @@ run_tests()
     status=0
     test_output="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_output.txt"
 
-    # Prints output to stdout and to an output file. Note that if datapath is not specified, then
-    # the environment variable DATAPATH must be specified.
+    # Prints output to stdout and to an output file. Note that datapath MUST be specified.
     behave "${WORKSPACE}/integration_tests/features" --no-logcapture --no-color\
      --no-capture -D datapath=/data/test_data -i "${prefix}2grid.feature" --format pretty\
      --format json.pretty 2>&1 | tee "$test_output" || status=$?

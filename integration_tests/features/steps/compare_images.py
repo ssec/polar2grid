@@ -11,7 +11,7 @@ def step_impl(context, source):
     new_source = ""
 
     for f in source.split(" "):
-        f = os.path.join(os.environ['DATAPATH'], f)
+        f = os.path.join(context.datapath, f)
         new_source += f + " "
 
         if "*" in os.path.basename(f):
@@ -26,7 +26,8 @@ def step_impl(context, source):
 @when('{command} runs')
 def step_impl(context, command):
     context.script = command.split()[0]
-    context.command = "{} {}".format(os.path.join(context.p2g_path, command), context.source)
+    context.command = "datapath={} {} {}".format(context.datapath, os.path.join(context.p2g_path, command),
+                                                 context.source)
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
@@ -46,7 +47,7 @@ def step_impl(context, command):
 def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
-        os.chdir(os.environ['DATAPATH'])
+        os.chdir(context.datapath)
         if "gtiff" in context.command or context.script == "geo2grid.sh":
             compare_command = "{} {} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_geotiff.sh"),
                                                    output, context.temp_dir, '-vv')

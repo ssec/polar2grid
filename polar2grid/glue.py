@@ -47,7 +47,7 @@ try:
 except ImportError:
     CRS = None
 
-os.environ["PPP_CONFIG_DIR"] = os.path.join(sys.prefix, 'etc', 'satpy')
+os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'satpy'))
 
 LOG = logging.getLogger(__name__)
 
