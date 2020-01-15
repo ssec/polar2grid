@@ -119,7 +119,7 @@ chmod u+x wmsupload.sh || oops "Couldn't make wmsupload.sh executable"
 
 # FIXME need libproj?
 
-# Copy SatPy configurations. Note: Contents are already in etc/satpy thanks to setup.py.
+# Copy SatPy configurations. Note: Contents are already in etc/polar2grid thanks to setup.py.
 cp -r $BASE_P2G_DIR/etc $SB_NAME/ || oops "Couldn't copy configuration 'etc' directory"
 
 # Tar up the software bundle

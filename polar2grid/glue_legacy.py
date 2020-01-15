@@ -53,7 +53,7 @@ from satpy.utils import TRACE_LEVEL
 from xarray import DataArray
 import dask.array as da
 
-os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'satpy'))
+os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
 
 ### Return Status Values ###
 STATUS_SUCCESS = 0

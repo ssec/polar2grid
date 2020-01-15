@@ -92,8 +92,10 @@ setup_conda()
     source ~/.bashrc
 
     conda env update -n jenkins_p2g_swbundle -f "${WORKSPACE}/build_environment.yml"
-    # Documentation environment also has behave, while the build environment does not.
-    conda env update -n jenkins_p2g_docs -f "${WORKSPACE}/build_environment.yml" -f "${WORKSPACE}/jenkins_environment.yml"
+    # Documentation environment also has behave, while the build environment does not. Currently must use
+    # two commands to install two yaml files.
+    conda env update -n jenkins_p2g_docs -f "${WORKSPACE}/build_environment.yml"
+    conda env update -n jenkins_p2g_docs -f "${WORKSPACE}/jenkins_environment.yml"
     conda activate jenkins_p2g_docs
     pip install -U --no-deps "$WORKSPACE"
 }

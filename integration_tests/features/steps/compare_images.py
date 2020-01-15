@@ -26,8 +26,8 @@ def step_impl(context, source):
 @when('{command} runs')
 def step_impl(context, command):
     context.script = command.split()[0]
-    context.command = "datapath={} {} {}".format(context.datapath, os.path.join(context.p2g_path, command),
-                                                 context.source)
+    context.command = "datapath={}; {} {}".format(context.datapath, os.path.join(context.p2g_path, command),
+                                                  context.source)
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
@@ -35,7 +35,7 @@ def step_impl(context, command):
         context.temp_dir = tempfile.mkdtemp()
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
-        assert exit_status == 0, "{} ran unsuccessfully".format(command)
+        assert exit_status == 0, "{} ran unsuccessfully".format(context.command)
     finally:
         os.chdir(orig_dir)
     

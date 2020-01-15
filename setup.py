@@ -217,9 +217,9 @@ setup(
                                  "grids/*.conf", "ninjo/*.ini", "core/rescale_configs/*.ini"]},
     # The location of where these are installed are important for the swbundle and glue scripts!
     # Look at env.sh, glue.py, and glue_legacy.py for where these are pointed to.
-    data_files=[('etc/satpy/enhancements', glob('etc/enhancements/*')),
-                ('etc/satpy/composites', glob('etc/composites/*')),
-                ('etc/satpy', ['etc/pyspectral.yaml'])],
+    data_files=[('etc/polar2grid/enhancements', glob('etc/enhancements/*')),
+                ('etc/polar2grid/composites', glob('etc/composites/*')),
+                ('etc/polar2grid', ['etc/pyspectral.yaml'])],
     zip_safe=True,
     tests_require=['py.test'],
     cmdclass={'test': PyTest},
