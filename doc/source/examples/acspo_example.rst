@@ -163,8 +163,6 @@ ACSPO GeoTIFF output file.
 
 The result of applying this rescaling to my image and applying my colormap is shown below.
 
-.. raw:: latex
-
 .. figure:: ../_static/example_images/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor.png
     :name: npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor.png
     :width: 80%
@@ -191,8 +189,6 @@ For example, executing the following command:
 
 results in the creation of the file `npp_viirs_sst_20191216_072134_acspo_sst.png`
 as displayed below.
-
-.. raw:: latex
 
 .. figure:: ../_static/example_images/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor_colortable_resize.png
     :name: npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor_colortable_resize.png
