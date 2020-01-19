@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 2.3.0 (unreleased)
+Version 2.3.0 (2020-01-13)
 --------------------------
 
 * Add FY-3C VIRR reader
