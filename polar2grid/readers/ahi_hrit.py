@@ -88,12 +88,27 @@ For more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | natural_color             | Ratio sharpened rayleigh corrected natural color    |
 +---------------------------+-----------------------------------------------------+
+| airmass                   | Air mass RGB                                        |
++---------------------------+-----------------------------------------------------+
+| ash                       | Ash RGB                                             |
++---------------------------+-----------------------------------------------------+
+| dust                      | Dust RGB                                            |
++---------------------------+-----------------------------------------------------+
+| fog                       | Fog RGB                                             |
++---------------------------+-----------------------------------------------------+
+| night_microphysics        | Night Microphysics RGB                              |
++---------------------------+-----------------------------------------------------+
 
 """
 
 READER_PRODUCTS = ['B{:02d}'.format(x) for x in range(3, 17)]
 COMPOSITE_PRODUCTS = [
     'natural_color',
+    'airmass',
+    'ash',
+    'dust',
+    'fog',
+    'night_microphysics',
 ]
 DEFAULT_PRODUCTS = READER_PRODUCTS + COMPOSITE_PRODUCTS
 

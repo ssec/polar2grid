@@ -10,6 +10,7 @@ Version 1.0.1 (unreleased)
 * Add ability to native resample to lower resolution grids
 * Add 'goes_east_Xkm' and 'goes_west_Xkm' grids for easier lower resolution resampling
 * Enable multithreaded geotiff compression
+* Add AHI airmass, ash, dust, fog, and night_microphysics RGBs
 
 Version 1.0.0 (2019-03-01)
 --------------------------
