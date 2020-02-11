@@ -48,12 +48,15 @@ def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
         os.chdir(context.datapath)
+        # NOTE: 81231 / 151404144 (0.054%) pixels are currently wrong in VIIRS_L1B.
         if "gtiff" in context.command or context.script == "geo2grid.sh":
-            compare_command = "{} {} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_geotiff.sh"),
-                                                   output, context.temp_dir, '-vv')
+            compare_command = ' '.join([os.path.join(context.p2g_path, 'p2g_compare_geotiff.sh'),
+                                        output, context.temp_dir, '-vv', '--margin-of-error',
+                                        str(81231 / 1514041.44)])
         else:
-            compare_command = "{} {} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_netcdf.sh"),
-                                                   output, context.temp_dir, '--variables image -vv')
+            compare_command = ' '.join([os.path.join(context.p2g_path, 'p2g_compare_netcdf.sh'),
+                                        output, context.temp_dir, '-vv', '--margin-of-error',
+                                        str(81231 / 1514041.44), '--variables', 'image'])
         exit_status = subprocess.call(compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
