@@ -45,7 +45,12 @@ else
     PROJECT="G2G"
 fi
 
-pip install -U --no-deps . || oops "Couldn't install current polar2grid package"
+# If SB_NAME is a relative path, make it an absolute path.
+if [[ "$SB_NAME" != /* ]]; then
+    SB_NAME="$(pwd)/${SB_NAME}"
+fi
+
+pip install -U --no-deps "$BASE_P2G_DIR" || oops "Couldn't install current polar2grid package"
 
 SB_TARBALL="${SB_NAME}.tar.gz"
 conda clean -afy
