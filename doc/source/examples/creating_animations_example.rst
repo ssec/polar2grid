@@ -10,7 +10,7 @@ located over the Southeastern United States.
 
 Create a series of GOES-16 ABI GeoTIFF files from a time sequence of data. In
 the bash shell script example below, I use the ABI CONUS Band 1 files to 
-search for all files we have available from 19 December 2019. The files for 
+search for all files we have available from 4 January 2019. The files for 
 this day are all located in the same directory.  I then create true and 
 natural color images from all time periods that are available. 
 
@@ -20,7 +20,7 @@ natural color images from all time periods that are available.
 
 	# Set GEO2GRID environment variables 
 
-	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_0_0
+	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_0_1
 	export PATH=$PATH:$GEO2GRID_HOME/bin
 
 	# Get input list of files/times based upon ABI Band 1 files
