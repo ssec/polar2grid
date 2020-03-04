@@ -144,8 +144,8 @@ master_doc = 'index'
 # General information about the project.
 if is_geo2grid:
     project = u'Geo2Grid'
-    version = '1.0.0'
-    release = '1.0.0'
+    version = '1.0.1'
+    release = '1.0.1'
 else:
     project = u'Polar2Grid'
 
