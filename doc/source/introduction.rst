@@ -65,7 +65,7 @@ What's New?
 
     .. include:: NEWS_GEO2GRID.rst
         :start-line: 6
-        :end-line: 13
+        :end-line: 14
 
     For more details on what's new in this version and past versions see the
     `Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/master/NEWS_GEO2GRID.rst>`_
@@ -106,13 +106,13 @@ System Requirements
     Execution Times
     ---------------
 
-    The following table provides execution time averages for creating all default 
-    GeoTIFF images at full spatial resolution for the given instrument and sector.  
-    Eight computer threads were used. The times are provided for the higher end 
-    system defined above. Execution times decrease when fewer bands and smaller 
+    The following table provides execution time averages for creating all default
+    GeoTIFF images at full spatial resolution for the given instrument and sector.
+    Eight computer threads were used. The times are provided for the higher end
+    system defined above. Execution times decrease when fewer bands and smaller
     regions are processed.
 
-    **Table of Execution Times for Creating GeoTIFF default Images** 
+    **Table of Execution Times for Creating GeoTIFF default Images**
     (All bands plus true and natural color images)
 
     +------------------+---------------------+-----------------+-----------------------------+
