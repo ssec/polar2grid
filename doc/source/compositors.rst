@@ -79,7 +79,7 @@ Composites
     The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC, 
     12 November 2018 is shown below.
 
-    .. figure:: _static/example_images/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East.jpg
+    .. figure:: _static/example_images/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East_new.png
         :width: 90%
         :align: center
 
@@ -89,7 +89,7 @@ Composites
     It is possible to use the compositor to combine RGBs as well.  In the following example, I want
     to use the day/night compositor to combine the true color RGB for day data and the nighttime
     microphysics RGB for nighttime data.  In this case, I can add the following lines to the 
-    ``abi.yaml`` file.
+    ``abi.yaml`` file.  Make sure to follow the formatting exactly, including the indentations.
 
     .. code-block:: yaml
 
@@ -110,7 +110,7 @@ Composites
     The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC, 
     12 November 2018 is shown below.
 
-    .. figure:: _static/example_images/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East.jpg
+    .. figure:: _static/example_images/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_new.png
         :width: 90%
         :align: center
 
