@@ -44,7 +44,7 @@ natural color images from all time periods that are available.
 
 	exit 0
 
-This script created 120 images for my time period 10:00 UTC through 20:00 UTC, 
+This script created 120 GeoTIFF images for my time period 10:00 UTC through 20:00 UTC, 
 with a time step of every 5 minutes. 
 
 To create a 120 image animation, I use the Geo2Grid utility script
@@ -54,11 +54,14 @@ To create a 120 image animation, I use the Geo2Grid utility script
 
     gtiff2mp4.sh my_true_color_animation.mp4  *true_color*.tif
 
-The script wraps the ``ffmpeg`` video software, and creates images
+The script wraps the ``ffmpeg`` video software, and combines all of the
+``*true_color*.tif`` files found in the directory into an animation
 based upon defaults that make the output animations most compatible
 with modern video players. The output frame rate is 24 frames per 
 second. The images will automatically be resized if they are
-large in order to ensure a smooth animation.
+large in order to ensure a smooth animation. I chose an output
+filename of ``my_true_color_animation.mp4``. The software can also
+create animations from input ``.png`` files.
 
 The figure below is the last image in the 120 loop sequence.  The
 output MP4 animation is available for viewing at `this site <ftp://ftp.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_true_color_animation.mp4>`_.
