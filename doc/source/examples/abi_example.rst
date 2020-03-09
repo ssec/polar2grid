@@ -38,7 +38,7 @@ required to create the false color image are available:
 
 .. code-block:: bash
 
-    geo2grid.sh -r abi_l1b -w geotiff -p natural-color --ll-bbox -95.0 40.0 -85.0 50.0 -f OR_ABI-L1b-RadC*.nc
+    geo2grid.sh -r abi_l1b -w geotiff -p natural_color --ll-bbox -95.0 40.0 -85.0 50.0 -f OR_ABI-L1b-RadC*.nc
 
 The resulting image is displayed below.
 
