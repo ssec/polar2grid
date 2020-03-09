@@ -5,6 +5,7 @@ Version 1.0.1 (unreleased)
 --------------------------
 
 * Significantly improved performance by enabling multithreaded geotiff compression
+* Improve day/night transition region in day/night composites
 * Fix resampling freezing when output grid was larger than 1024x1024
 * Fix crash when certain RGBs were created with '--ll-bbox'
 * Add missing '--radius-of-influence' flag for nearest neighbor resampling
