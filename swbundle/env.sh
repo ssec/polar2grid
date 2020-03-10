@@ -42,6 +42,9 @@ if [ -z "$POLAR2GRID_REV" ]; then
 
     # Don't let someone else's PYTHONPATH mess us up
     unset PYTHONPATH
+    export PYTHONNOUSERSITE=1
+    unset LD_PRELOAD
+    unset DYLD_LIBRARY_PATH
     unset LD_LIBRARY_PATH
 
     export P2G_SHELLB3_DIR=$POLAR2GRID_HOME/common/ShellB3
