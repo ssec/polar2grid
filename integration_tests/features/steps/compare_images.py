@@ -32,7 +32,7 @@ def step_impl(context, command):
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
     try:
-        context.temp_dir = tempfile.mkdtemp()
+        context.temp_dir = tempfile.mkdtemp(prefix='p2g_tests_')
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
         assert exit_status == 0, "{} ran unsuccessfully".format(context.command)
