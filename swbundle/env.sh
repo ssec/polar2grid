@@ -42,6 +42,7 @@ if [ -z "$POLAR2GRID_REV" ]; then
 
     # Don't let someone else's PYTHONPATH mess us up
     unset PYTHONPATH
+    unset LD_LIBRARY_PATH
 
     export P2G_SHELLB3_DIR=$POLAR2GRID_HOME/common/ShellB3
     if [ ! -d $P2G_SHELLB3_DIR ]; then
