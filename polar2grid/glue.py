@@ -188,7 +188,7 @@ def add_resample_argument_groups(parser):
     group_1.add_argument('--radius-of-influence', default=None,
                          help='Specify radius to search for valid input '
                               'pixels for nearest neighbor resampling. '
-                              'Value is in projection units (typically meters).'
+                              'Value is in projection units (typically meters). '
                               'By default this will be determined by input '
                               'pixel size.')
     return tuple([group_1])

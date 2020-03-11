@@ -207,7 +207,7 @@ VIIRS Day/Night Band GeoTIFF image.
 
   The ``gtiff2mp4.sh`` script converts a series of GeoTIFF files in to a
   single MP4 video file. This script uses default video creation settings
-  to support the most video players. If an image is too large for the video
+  to support most video players. If an image is too large for the video
   creation they will be automatically scaled to a smaller size.
 
   .. code-block:: bash
