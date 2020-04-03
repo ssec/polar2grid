@@ -41,8 +41,12 @@ __docformat__ = "restructuredtext en"
 # Second Try: gcc -shared -pthread -fPIC -fwrapv -O2 -Wall -fno-strict-aliasing -L /opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ -L /opt/local/lib/ -I /opt/local/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7/ -I /opt/local/include/ -I /opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/numpy/core/include/ -o _ll2cr.so _ll2cr.c -lpython2.7
 
 
-# from polar2grid.proj import Proj
-from pyproj import _proj, Proj
+try:
+    from pyproj._proj import _Proj
+except ImportError:
+    # backward compatibility with PyProj < v2.6
+    from pyproj._proj import Proj as _Proj
+from pyproj import Proj
 import numpy
 cimport cython
 from cpython cimport bool
@@ -101,9 +105,9 @@ class MyProj(Proj):
             errcheck = kwargs.get('errcheck', False)
             # call proj4 functions. inx and iny modified in place.
             if inverse:
-                _proj.Proj._inv(self, lons, lats, errcheck=errcheck)
+                _Proj._inv(self, lons, lats, errcheck=errcheck)
             else:
-                _proj.Proj._fwd(self, lons, lats, errcheck=errcheck)
+                _Proj._fwd(self, lons, lats, errcheck=errcheck)
             # if inputs were lists, tuples or floats, convert back.
             return lons, lats
         else:
