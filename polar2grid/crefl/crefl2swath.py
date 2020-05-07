@@ -609,7 +609,9 @@ class Frontend(roles.FrontendRole):
             # Short term hack: delete/cleanup swath products and swath definitions
             for cname, child in scene.items():
                 child['swath_definition'].cleanup()
+                child['swath_definition'].set_persist()
                 child.cleanup()
+                child.set_persist()
         except (ValueError, RuntimeError, OSError):
             LOG.error("Could not create modis crefl files from SDRs")
             raise
@@ -652,7 +654,9 @@ class Frontend(roles.FrontendRole):
             # Short term hack: delete/cleanup swath products and swath definitions
             for cname, child in scene.items():
                 child['swath_definition'].cleanup()
+                child['swath_definition'].set_persist()
                 child.cleanup()
+                child.set_persist()
         except (ValueError, RuntimeError, OSError):
             LOG.error("Could not create crefl files from SDRs")
             raise
