@@ -53,11 +53,11 @@ Example (10-255 from 173-300):
 
 .. math::
 
-    \text{m} = (250.0 - 10.0) / (300.0 - 173.0) = 1.90
+    \text{m} = (255.0 - 10.0) / (300.0 - 173.0) = 1.9291338
 
-    \text{b} = 10.0 - 1.90 * 300.0 = -560.0
+    \text{b} = 10.0 - 1.9291338 * 173.0 = -323.74014
 
-    \text{rescale\_data} = 1.90 * \text{data} + -560.0
+    \text{rescale\_data} = 1.9291338 * \text{data} + -323.74014
 
 .. _rescale_square_root_enhancement:
 
