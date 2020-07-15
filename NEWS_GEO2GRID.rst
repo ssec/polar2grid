@@ -1,7 +1,12 @@
 Release Notes
 =============
 
-Version 1.0.1 (unreleased)
+Version 1.0.2 (unreleased)
+--------------------------
+
+* Add workaround for threading issue in pyresample
+
+Version 1.0.1 (2020-03-18)
 --------------------------
 
 * Significantly improved performance by enabling multithreaded geotiff compression
