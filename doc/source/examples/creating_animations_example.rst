@@ -20,7 +20,7 @@ natural color images from all time periods that are available.
 
 	# Set GEO2GRID environment variables 
 
-	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_0_1
+	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_0_2
 	export PATH=$PATH:$GEO2GRID_HOME/bin
 
 	# Get input list of files/times based upon ABI Band 1 files
