@@ -34,7 +34,7 @@ if [ -z "$POLAR2GRID_HOME" ]; then
 fi
 
 # Setup necessary environments
-source $POLAR2GRID_HOME/bin/env.sh
+# __SWBUNDLE_ENVIRONMENT_INJECTION__
 set -e
 
 if [ $# -lt 2 ]; then

@@ -39,6 +39,7 @@
 """
 __docformat__ = "restructuredtext en"
 
+import os
 import sys
 
 import logging
@@ -51,6 +52,8 @@ from satpy import Scene, DatasetID, CHUNK_SIZE
 from satpy.utils import TRACE_LEVEL
 from xarray import DataArray
 import dask.array as da
+
+os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
 
 ### Return Status Values ###
 STATUS_SUCCESS = 0

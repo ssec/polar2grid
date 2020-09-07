@@ -34,7 +34,7 @@ if [ -z "$POLAR2GRID_HOME" ]; then
 fi
 
 # Setup necessary environments
-source $POLAR2GRID_HOME/bin/env.sh
+# __SWBUNDLE_ENVIRONMENT_INJECTION__
 
 # Call the script
 ${P2G_SHELLB3_DIR}/bin/python -m polar2grid.core.proj "$@"

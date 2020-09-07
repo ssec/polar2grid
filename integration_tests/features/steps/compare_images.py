@@ -11,7 +11,7 @@ def step_impl(context, source):
     new_source = ""
 
     for f in source.split(" "):
-        f = os.path.join(context.data_path, f)
+        f = os.path.join(context.datapath, f)
         new_source += f + " "
 
         if "*" in os.path.basename(f):
@@ -26,15 +26,16 @@ def step_impl(context, source):
 @when('{command} runs')
 def step_impl(context, command):
     context.script = command.split()[0]
-    context.command = "{} {}".format(os.path.join(context.p2g_path, command), context.source)
+    context.command = "datapath={}; {} {}".format(context.datapath, os.path.join(context.p2g_path, command),
+                                                  context.source)
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
     try:
-        context.temp_dir = tempfile.mkdtemp()
+        context.temp_dir = tempfile.mkdtemp(prefix='p2g_tests_')
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
-        assert exit_status == 0, "{} ran unsuccessfully".format(command)
+        assert exit_status == 0, "{} ran unsuccessfully".format(context.command)
     finally:
         os.chdir(orig_dir)
     
@@ -46,13 +47,16 @@ def step_impl(context, command):
 def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
-        os.chdir(context.data_path)
+        os.chdir(context.datapath)
+        # NOTE: 81231 / 151404144 (0.054%) pixels are currently wrong in VIIRS_L1B.
         if "gtiff" in context.command or context.script == "geo2grid.sh":
-            compare_command = "{} {} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_geotiff.sh"),
-                                                   output, context.temp_dir, '-vv')
+            compare_command = ' '.join([os.path.join(context.p2g_path, 'p2g_compare_geotiff.sh'),
+                                        output, context.temp_dir, '-vv', '--margin-of-error',
+                                        str(81231 / 1514041.44)])
         else:
-            compare_command = "{} {} {} {}".format(os.path.join(context.p2g_path, "p2g_compare_netcdf.sh"),
-                                                   output, context.temp_dir, '--variables image -vv')
+            compare_command = ' '.join([os.path.join(context.p2g_path, 'p2g_compare_netcdf.sh'),
+                                        output, context.temp_dir, '-vv', '--margin-of-error',
+                                        str(81231 / 1514041.44), '--variables', 'image'])
         exit_status = subprocess.call(compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:

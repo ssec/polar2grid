@@ -1,5 +1,5 @@
-How to run the tests in own environment
-=======================================
+How to run the tests in your own environment
+============================================
 
 Navigate to your Polar2Grid directory, then run::
 
@@ -19,6 +19,18 @@ Navigate to your Polar2Grid directory, then run::
 
 To run a specific test, add the argument ``--name TESTNAME`` when running behave. The test names can be
 found in the feature files (for example: ``--name VIIRS_L1B`` would skip all tests except VIIRS_L1B).
+
+How to add tests
+================
+Tests are found under ``integration_tests/features/``. There are two test files, ``geo2grid.feature`` and
+``polar2grid.feature``. Each is composed hierarchically in this way: A ``Feature`` which contains a
+name and description, a ``Scenario Outline`` which details how the tests are ran, and finally ``Examples``
+with each containing a name and the specifics to pass into ``Scenario Outline`` (command, source, output).
+`command` should be the full shell command that you want to run with the `-f` flag last. source and output are
+directories containing input and expected output files respectively. To add a test, simply add another line to
+an existing ``Examples`` block or make a new ``Examples`` block following the format that is already there.
+For more information please see the official behave documentation:
+https://behave.readthedocs.io/en/latest/tutorial.html
 
 How Jenkins runs the tests
 ==========================

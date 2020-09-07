@@ -45,7 +45,12 @@ else
     PROJECT="G2G"
 fi
 
-pip install -U --no-deps . || oops "Couldn't install current polar2grid package"
+# If SB_NAME is a relative path, make it an absolute path.
+if [[ "$SB_NAME" != /* ]]; then
+    SB_NAME="$(pwd)/${SB_NAME}"
+fi
+
+pip install -U --no-deps "$BASE_P2G_DIR" || oops "Couldn't install current polar2grid package"
 
 SB_TARBALL="${SB_NAME}.tar.gz"
 conda clean -afy
@@ -112,14 +117,13 @@ cd $SB_NAME/bin
 wget https://realearth.ssec.wisc.edu/upload/re_upload || oops "Couldn't download and create re_upload script"
 chmod u+x re_upload || oops "Couldn't make 're_upload' executable"
 
-# Copy SatPy configurations
-mkdir $SB_NAME/etc/satpy || oops "Couldn't create configuration 'etc/satpy' directory"
-cp -r $BASE_P2G_DIR/etc/* $SB_NAME/etc/satpy/ || oops "Couldn't copy configuration 'etc' directory"
+# Inject environment code into swbundle only.
+for file in `echo *.sh`; do
+    cp "$file" tmp.sh
+    sed "s/# __SWBUNDLE_ENVIRONMENT_INJECTION__/source \$POLAR2GRID_HOME\/bin\/env.sh/g" tmp.sh > "$file"
+done
+rm tmp.sh
 
-conda init bash
-# Restart the shell to enable conda.
-source ~/.bashrc
-conda deactivate
 # Download pyspectral data
 echo "Downloading pyspectral data..."
 $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
