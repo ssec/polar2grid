@@ -39,15 +39,15 @@ beyond the scope of this documentation.
 
     .. code-block:: bash
 
-        tar xf CSPP_GEO2GRID_V1.0.0.tar.gz
+        tar xf CSPP_GEO2GRID_V1.0.2.tar.gz
 
-    This will create a |project| software bundle directory, ``geo2grid_v_1_0_0``.
+    This will create a |project| software bundle directory, ``geo2grid_v_1_0_2``.
     To simplify calling scripts included in the bundle the following line should
     be added to your ``.bash_profile``:
 
     .. code-block:: bash
 
-        export GEO2GRID_HOME=/path/to/geo2grid_v_1_0_0
+        export GEO2GRID_HOME=/path/to/geo2grid_v_1_0_2
 
     All other environment information needed to run is automatically loaded by the
     scripts provided by |project|. Scripts are typically invoked using:
@@ -76,9 +76,9 @@ beyond the scope of this documentation.
 
     .. code-block:: bash
 
-        tar xf CSPP_POLAR2GRID_V2.2.1.tar.gz
+        tar xf CSPP_POLAR2GRID_V2.3.tar.gz
 
-    This will create a Polar2Grid software bundle directory, ``polar2grid_v_2_2_1``.
+    This will create a Polar2Grid software bundle directory, ``polar2grid_v_2_3``.
     To simplify calling scripts included in the bundle the following line should
     be added to your ``.bash_profile``:
 
@@ -113,7 +113,7 @@ See :doc:`getting_started` for more information on running |project|.
 	
     .. code-block:: bash
 
-        CSPP_GEO2GRID_V1.0.0_TEST_DATA.tar.gz
+        CSPP_GEO2GRID_V1.0.2_TEST_DATA.tar.gz
 
     The test data should be unpacked in a directory separate from the |project|
     installation:
@@ -121,7 +121,7 @@ See :doc:`getting_started` for more information on running |project|.
     .. code-block:: bash
 
         cd $HOME
-        tar xf CSPP_GEO2GRID_V1.0.0_TEST_DATA.tar.gz
+        tar xf CSPP_GEO2GRID_V1.0.2_TEST_DATA.tar.gz
 
     This will create a ``geo2grid_test`` directory containing the test input,
     output, and verification scripts for the ABI instrument.
@@ -133,7 +133,7 @@ See :doc:`getting_started` for more information on running |project|.
 
     .. code-block:: bash
 
-        CSPP_POLAR2GRID_V2.2.1_TEST_DATA.tar.gz
+        CSPP_POLAR2GRID_V2.3_TEST_DATA.tar.gz
 
     The test data should be unpacked in a directory separate from the |project|
     installation:
@@ -141,7 +141,7 @@ See :doc:`getting_started` for more information on running |project|.
     .. code-block:: bash
 
         cd $HOME
-        tar xf CSPP_POLAR2GRID_V2.2.1_TEST_DATA.tar.gz
+        tar xf CSPP_POLAR2GRID_V2.3_TEST_DATA.tar.gz
 
     This will create a ``polar2grid_test`` directory containing the test input,
     output, and verification scripts for both MODIS and VIIRS instruments.

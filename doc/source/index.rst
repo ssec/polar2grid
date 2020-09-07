@@ -11,8 +11,9 @@
     installation
     getting_started
     readers/index
-    compositors
-    remapping
+    :geo2grid:compositors
+    :geo2grid:remapping
+    :polar2grid:remapping_polar
     writers/index
     utilscripts
     :polar2grid:viirs_day_night_band

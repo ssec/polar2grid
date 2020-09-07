@@ -28,12 +28,12 @@
 #     Madison, WI  53706
 #     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
 """
-The VIIRS EDR Active Fires reader operates on NetCDF and ASCII files.
-Files usually have the following naming scheme:
+The VIIRS EDR Active Fires reader operates on CSPP NetCDF I-Band (AFIMG) Resolution or 
+M-Band Resolution (AFMOD) Environmental Data Record files.
+Files usually have the following naming schemes:
 
-    AFIMG_{satellite_name}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time}_{source}.nc
-    or
-    AFIMG_{satellite_name}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_c{creation_time}_{source}.txt
+   AFIMG_npp_d20200109_t0959025_e1000267_b42492_c20200109101744000538_cspp_dev.nc, and/or
+   AFMOD_j01_d20200109_t1711298_e1712525_b11100_c20200109173628141913_cspp_dev.nc
 
 This reader's default resampling algorithm is ``nearest`` for Nearest Neighbor resampling.
 The ``--remap_method`` parameter is set to ``nearest``.
@@ -41,15 +41,15 @@ The ``--remap_method`` parameter is set to ``nearest``.
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
-| confidence_cat            | Confidence of there being a fire                    |
+| confidence_cat            | Fire Confidence Category   (AFIMG Resolution Only)  | 
 +---------------------------+-----------------------------------------------------+
-| confidence_pct            |                                                     |
+| T4                        | I-Band 4 Temperature       (AFIMG Resolution Only)  |
 +---------------------------+-----------------------------------------------------+
-| power                     |                                                     |
+| power                     | Fire Radiative Power                                |
 +---------------------------+-----------------------------------------------------+
-| T13                       |                                                     |
+| confidence_pct            | Fire Confidence Percentage (AFMOD Resolution Only)  |
 +---------------------------+-----------------------------------------------------+
-| T4                        |                                                     |
+| T13                       | M-Band 13 Temperature      (AFMOD Resolution Only)  |
 +---------------------------+-----------------------------------------------------+
 """
 import sys

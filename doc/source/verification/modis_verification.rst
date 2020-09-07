@@ -9,7 +9,8 @@ shown in Section 2.2 and execute the following commands:
     cd polar2grid_test/modis
     mkdir work
     cd work
-    polar2grid.sh crefl gtiff --true-color --false-color --fornav-D 10 --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f ../input
+    polar2grid.sh crefl gtiff --true-color --false-color --fornav-d 1 --grid-configs \
+      ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f ../input
 
 The test case consists of a set of MODIS archived 5 minute HDF 4 Level 1B
 granule files (1KM, HKM, QKM and Geolocation) for a Terra MODIS
@@ -21,7 +22,7 @@ within it. It will first create Corrected REFLectance (CREFL) HDF4 files
 and then use those to create one true and one false color image at 
 300 m resolution, 500 lines x 700 elements centered on the US city of 
 Miami in the state of Florida. The processing should run in less than 
-2 minutes and create 8 CREFL output MODIS GeoTIFF files, including 
+2 minutes and create 9 CREFL output MODIS GeoTIFF files, including 
 both true and false color output images, and the individual Corrected 
 Reflectance images that went into producing the final products. 
 

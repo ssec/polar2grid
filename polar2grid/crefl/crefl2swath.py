@@ -79,7 +79,7 @@ detected by the software. Alternate locations can be specified with the
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--fornav-D`` option is set to 40 and the
-``--fornav-d`` option is set to 1. Note that for working with MODIS data
+``--fornav-d`` option is set to 2. Note that for working with MODIS data
 it may produce lower quality images with these settings so the
 ``--fornav-D`` option should be set to 10 on the command line::
 
@@ -609,7 +609,9 @@ class Frontend(roles.FrontendRole):
             # Short term hack: delete/cleanup swath products and swath definitions
             for cname, child in scene.items():
                 child['swath_definition'].cleanup()
+                child['swath_definition'].set_persist()
                 child.cleanup()
+                child.set_persist()
         except (ValueError, RuntimeError, OSError):
             LOG.error("Could not create modis crefl files from SDRs")
             raise
@@ -652,7 +654,9 @@ class Frontend(roles.FrontendRole):
             # Short term hack: delete/cleanup swath products and swath definitions
             for cname, child in scene.items():
                 child['swath_definition'].cleanup()
+                child['swath_definition'].set_persist()
                 child.cleanup()
+                child.set_persist()
         except (ValueError, RuntimeError, OSError):
             LOG.error("Could not create crefl files from SDRs")
             raise

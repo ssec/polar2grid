@@ -83,6 +83,8 @@ LOG = logging.getLogger(__name__)
 def add_writer_argument_groups(parser):
     DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{platform_name}_{sensor}_{name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc'
     group_1 = parser.add_argument_group(title='SCMI Writer')
+    # group_1.add_argument('--file-pattern', default=DEFAULT_OUTPUT_PATTERN,
+    #                      help="Custom file pattern to save dataset to")
     group_1.add_argument("--compress", action="store_true",
                          help="zlib compress each netcdf file")
     group_1.add_argument("--fix-awips", action="store_true",
@@ -109,7 +111,7 @@ def add_writer_argument_groups(parser):
     group_1.add_argument("--letter-subtiles", nargs=2, type=int, default=(2, 2),
                          help="Specify number of subtiles in each lettered tile: \'row col\'")
     group_1.add_argument("--source-name", default='SSEC',
-                         help="specify processing source name used in attributes and filename (default 'SSEC')")
+                         help="specify processing source name used in attributes and filename")
     group_1.add_argument("--sector-id", required=True,
                          help="specify name for sector/region used in attributes and filename (example 'LCC')")
     return group_1, None

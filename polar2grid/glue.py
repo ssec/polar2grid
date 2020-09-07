@@ -47,6 +47,8 @@ try:
 except ImportError:
     CRS = None
 
+os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
+
 LOG = logging.getLogger(__name__)
 
 WRITER_PARSER_FUNCTIONS = {
@@ -185,10 +187,10 @@ def add_resample_argument_groups(parser):
                               'projection.')
 
     # nearest neighbor resampling
-    group_1.add_argument('--radius-of-influence', default=None,
+    group_1.add_argument('--radius-of-influence', default=None, type=float,
                          help='Specify radius to search for valid input '
                               'pixels for nearest neighbor resampling. '
-                              'Value is in projection units (typically meters).'
+                              'Value is in projection units (typically meters). '
                               'By default this will be determined by input '
                               'pixel size.')
     return tuple([group_1])

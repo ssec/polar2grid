@@ -61,14 +61,21 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/dnb/HNCC_DNB_Band_Example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_true_color_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_vis02_example.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_vis02_example.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/VIIRS_M16_ACSPO_SST_composite_example.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_wcolor.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor_colortable_resize.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_final_resize.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_true_color_20190104_195718_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East.jpg",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East_new.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East.jpg",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_new.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes16_abi_naturalcolor.png",
 )
 script_path = os.path.dirname(os.path.realpath(__file__))
@@ -139,8 +146,8 @@ master_doc = 'index'
 # General information about the project.
 if is_geo2grid:
     project = u'Geo2Grid'
-    version = '1.0.0'
-    release = '1.0.0'
+    version = '1.0.2'
+    release = '1.0.2'
 else:
     project = u'Polar2Grid'
 
@@ -149,10 +156,10 @@ else:
     # built documents.
     #
     # The short X.Y version.
-    version = '2.2.1'
+    version = '2.3'
 
     # The full version, including alpha/beta/rc tags.
-    release = '2.2.1'
+    release = '2.3'
 
 rst_epilog += """
 .. |project| replace:: {}

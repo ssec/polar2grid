@@ -33,7 +33,7 @@ if [ -z "$POLAR2GRID_HOME" ]; then
 fi
 
 # Setup necessary environments
-source $POLAR2GRID_HOME/bin/env.sh
+# __SWBUNDLE_ENVIRONMENT_INJECTION__
 
 # Call the python module to do the processing, passing all arguments
 python3 -c "from pyspectral.utils import download_luts, download_rsr; download_luts(); download_rsr()"

@@ -37,31 +37,31 @@ This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 ``--fornav-d`` parameter is set to 1.
 
-+---------------------------+-----------------------------------------------------+
-| **Product Name**          | **Description**                                     |
-+===========================+=====================================================+
-| 1                         | Channel 1 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| 2                         | Channel 2 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| 3                         | Channel 3 Emissive Band                             |
-+---------------------------+-----------------------------------------------------+
-| 4                         | Channel 4 Emissive Band                             |
-+---------------------------+-----------------------------------------------------+
-| 5                         | Channel 5 Emissive Band                             |
-+---------------------------+-----------------------------------------------------+
-| 6                         | Channel 6 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| 7                         | Channel 7 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| 8                         | Channel 8 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| 9                         | Channel 9 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| 10                        | Channel 10 Reflectance Band                         |
-+---------------------------+-----------------------------------------------------+
-| true_color                | Ratio sharpened rayleigh corrected true color       |
-+---------------------------+-----------------------------------------------------+
++---------------------------+-----------------------------------------------------+-------------------------+
+| **Product Name**          | **Description**                                     | Central Wavelength (um) |
++===========================+=====================================================+=========================+
+| 1                         | Channel 1 Reflectance Band                          |0.63                     |
++---------------------------+-----------------------------------------------------+-------------------------+
+| 2                         | Channel 2 Reflectance Band                          |0.865                    |
++---------------------------+-----------------------------------------------------+-------------------------+
+| 3                         | Channel 3 Emissive Band                             |3.74                     |
++---------------------------+-----------------------------------------------------+-------------------------+
+| 4                         | Channel 4 Emissive Band                             |10.8                     |
++---------------------------+-----------------------------------------------------+-------------------------+
+| 5                         | Channel 5 Emissive Band                             |12.0                     |
++---------------------------+-----------------------------------------------------+-------------------------+
+| 6                         | Channel 6 Reflectance Band                          |1.60                     |
++---------------------------+-----------------------------------------------------+-------------------------+
+| 7                         | Channel 7 Reflectance Band                          |0.455                    |
++---------------------------+-----------------------------------------------------+-------------------------+
+| 8                         | Channel 8 Reflectance Band                          |0.505                    |
++---------------------------+-----------------------------------------------------+-------------------------+
+| 9                         | Channel 9 Reflectance Band                          |0.555                    |
++---------------------------+-----------------------------------------------------+-------------------------+
+| 10                        | Channel 10 Reflectance Band                         |1.36                     |
++---------------------------+-----------------------------------------------------+-------------------------+
+| true_color                | Ratio sharpened rayleigh corrected true color       |N/A                      |
++---------------------------+-----------------------------------------------------+-------------------------+
 """
 import os
 import sys
@@ -157,11 +157,11 @@ def add_frontend_argument_groups(parser):
     group.add_argument("--list-products", dest="list_products", action="store_true",
                        help="List available frontend products and exit")
     group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
-                       help="Fraction of day required to produce reflectance products (default 0.10)")
+                       help="Fraction of day required to produce reflectance products")
     # group.add_argument("--night-fraction", dest="night_fraction", type=float, default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
-    #                    help="Fraction of night required to product products like fog (default 0.10)")
+    #                    help="Fraction of night required to product products like fog")
     group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
-                       help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
+                       help="Angle threshold of solar zenith angle used when deciding day or night")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,

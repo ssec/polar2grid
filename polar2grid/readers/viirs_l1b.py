@@ -54,7 +54,7 @@ reader.
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
-``--fornav-d`` parameter is set to 1.
+``--fornav-d`` parameter is set to 2.
 
 +---------------------------+-----------------------------------------------------+
 | Product Name              | Description                                         |
@@ -296,11 +296,11 @@ def add_frontend_argument_groups(parser):
     group.add_argument("--list-products", dest="list_products", action="store_true",
                        help="List available frontend products and exit")
     group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
-                       help="Fraction of day required to produce reflectance products (default 0.10)")
+                       help="Fraction of day required to produce reflectance products")
     group.add_argument("--night-fraction", dest="night_fraction", type=float, default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
-                       help="Fraction of night required to product products like fog (default 0.10)")
+                       help="Fraction of night required to produce products like fog")
     group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
-                       help="Angle threshold of solar zenith angle used when deciding day or night (default 100)")
+                       help="Angle threshold of solar zenith angle used when deciding day or night")
     # group.add_argument("--dnb-saturation-correction", action="store_true",
     #                    help="Enable dynamic DNB saturation correction (normally used for aurora scenes)")
     group_title = "Frontend Swath Extraction"

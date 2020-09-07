@@ -34,7 +34,7 @@ if [ -z "$POLAR2GRID_HOME" ]; then
 fi
 
 # Setup necessary environments
-source $POLAR2GRID_HOME/bin/env.sh
+# __SWBUNDLE_ENVIRONMENT_INJECTION__
 set -e
 
 if [ $# -lt 2 ]; then
@@ -116,7 +116,7 @@ done
 echo "Generating animation..."
 INPUT_PARAMS=${INPUT_PARAMS:--framerate 24 -f image2}
 OUTPUT_PARAMS=${OUTPUT_PARAMS:--c:v libx264 -crf 25 -vf "format=yuv420p,scale=trunc(iw/2)*2:trunc(ih/2)*2"}
-ffmpeg -y $INPUT_PARAMS -i "${TMP_FRAME_DIR}/%03d.{FILE_EXT}" $OUTPUT_PARAMS $OUTPUT_FILENAME
+ffmpeg -y $INPUT_PARAMS -i "${TMP_FRAME_DIR}/%03d.${FILE_EXT}" $OUTPUT_PARAMS $OUTPUT_FILENAME
 
 
 echo "Done"

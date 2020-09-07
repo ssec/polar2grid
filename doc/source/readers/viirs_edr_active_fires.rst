@@ -12,8 +12,45 @@ Command Line Arguments
     :prog: polar2grid.sh viirs_edr_active_fires <writer>
     :passparser:
 
+Some output GeoTIFF fire products are color enhanced:
+
+AFIMG 
+
+	confidence_cat - Low (Yellow), Nominal (Orange), High (Red)
+
+        power - 1 - 250 and above (MW) Yellow->Red
+
+AFMOD 
+
+	confidence_pct - 1-100% Yellow->Red
+
+        power - 1 - 250 and above (MW) Yellow->Red
+
 Examples:
 
 .. code-block:: bash
 
     $POLAR2GRID_HOME/bin/polar2grid.sh viirs_edr_active_fires gtiff -h
+    
+    polar2grid.sh viirs_edr_active_fires gtiff --list-products -f ../active_fire_edr/AFIMG*.nc
+
+    polar2grid.sh viirs_edr_active_fires gtiff --list-products -f ../active_fire_edr/AFMOD*.nc
+
+    polar2grid.sh viirs_edr_active_fires gtiff -p confidence_cat T4 img_edr/AFIMG*.nc
+
+    polar2grid.sh viirs_edr_active_fires gtiff -g lcc_aus -p confidence_pct T13  -f AFMOD_j01_d20191120_t1513353_e1514581_b10389_c20191121192444396115_cspp_dev.nc
+
+**NOTE:** The active fire images can be overlaid onto another GeoTIFF. 
+See :ref:`util_script_fireoverlay` for instructions.
+
+    
+
+    
+
+    
+
+    
+
+
+  
+    

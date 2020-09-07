@@ -48,7 +48,7 @@ What's New?
 
 .. ifconfig:: not is_geo2grid
 
-    Polar2Grid Version 2.2.1 is now available. Changes in this
+    Polar2Grid Version 2.3 is now available. Changes in this
     version include:
 
     .. include:: NEWS.rst
@@ -65,7 +65,7 @@ What's New?
 
     .. include:: NEWS_GEO2GRID.rst
         :start-line: 6
-        :end-line: 11
+        :end-line: 7
 
     For more details on what's new in this version and past versions see the
     `Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/master/NEWS_GEO2GRID.rst>`_
@@ -103,27 +103,27 @@ System Requirements
     included in the processing requirements then the above system requirements
     will need to be adjusted accordingly.
 
-Execution Times
----------------
+    Execution Times
+    ---------------
 
-The following table provides execution time averages for creating all default 
-GeoTIFF images at full spatial resolution for the given instrument and sector.  
-Eight computer threads were used. The times are provided for the higher end 
-system defined above. Execution times decrease when fewer bands and smaller 
-regions are processed.
+    The following table provides execution time averages for creating all default
+    GeoTIFF images at full spatial resolution for the given instrument and sector.
+    Eight computer threads were used. The times are provided for the higher end
+    system defined above. Execution times decrease when fewer bands and smaller
+    regions are processed.
 
-**Table of Execution Times for Creating GeoTIFF default Images** 
-(All bands plus true and natural color images)
+    **Table of Execution Times for Creating GeoTIFF default Images**
+    (All bands plus true and natural color images)
 
-+------------------+---------------------+-----------------+-----------------------------+
-|**Instrument**    |**Full Disk Sector** |**CONUS Sector** |  **1000x1000 pixel subset** |
-+==================+=====================+=================+=============================+
-| GOES ABI         |    6m50s            |    1m04s        |         31s                 |
-+------------------+---------------------+-----------------+-----------------------------+
-| AHI HSD          |   13m03s            |    N/A          |         40s                 |
-+------------------+---------------------+-----------------+-----------------------------+
-| AHI HimawariCast |    1m32s            |    N/A          |         29s                 |
-+------------------+---------------------+-----------------+-----------------------------+
+    +------------------+---------------------+-----------------+-----------------------------+
+    |**Instrument**    |**Full Disk Sector** |**CONUS Sector** |  **1000x1000 pixel subset** |
+    +==================+=====================+=================+=============================+
+    | GOES ABI         |    4m48s            |      42s        |         18s                 |
+    +------------------+---------------------+-----------------+-----------------------------+
+    | AHI HSD          |    7m01s            |    N/A          |         21s                 |
+    +------------------+---------------------+-----------------+-----------------------------+
+    | AHI HimawariCast |      36s            |    N/A          |         18s                 |
+    +------------------+---------------------+-----------------+-----------------------------+
 
 .. ifconfig:: not is_geo2grid
 

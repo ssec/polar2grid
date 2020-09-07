@@ -10,7 +10,7 @@ located over the Southeastern United States.
 
 Create a series of GOES-16 ABI GeoTIFF files from a time sequence of data. In
 the bash shell script example below, I use the ABI CONUS Band 1 files to 
-search for all files we have available from 19 December 2019. The files for 
+search for all files we have available from 4 January 2019. The files for 
 this day are all located in the same directory.  I then create true and 
 natural color images from all time periods that are available. 
 
@@ -20,7 +20,7 @@ natural color images from all time periods that are available.
 
 	# Set GEO2GRID environment variables 
 
-	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_0_0
+	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_0_2
 	export PATH=$PATH:$GEO2GRID_HOME/bin
 
 	# Get input list of files/times based upon ABI Band 1 files
@@ -44,7 +44,7 @@ natural color images from all time periods that are available.
 
 	exit 0
 
-This script created 120 images for my time period 10:00 UTC through 20:00 UTC, 
+This script created 120 GeoTIFF images for my time period 10:00 UTC through 20:00 UTC, 
 with a time step of every 5 minutes. 
 
 To create a 120 image animation, I use the Geo2Grid utility script
@@ -54,11 +54,14 @@ To create a 120 image animation, I use the Geo2Grid utility script
 
     gtiff2mp4.sh my_true_color_animation.mp4  *true_color*.tif
 
-The script wraps the ``ffmpeg`` video software, and creates images
+The script wraps the ``ffmpeg`` video software, and combines all of the
+``*true_color*.tif`` files found in the directory into an animation
 based upon defaults that make the output animations most compatible
 with modern video players. The output frame rate is 24 frames per 
 second. The images will automatically be resized if they are
-large in order to ensure a smooth animation.
+large in order to ensure a smooth animation. I chose an output
+filename of ``my_true_color_animation.mp4``. The software can also
+create animations from input ``.png`` files.
 
 The figure below is the last image in the 120 loop sequence.  The
 output MP4 animation is available for viewing at `this site <ftp://ftp.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_true_color_animation.mp4>`_.

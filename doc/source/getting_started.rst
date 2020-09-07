@@ -71,7 +71,7 @@ Common Script Options
 
 Additional command line arguments for the |script_literal| script and
 their defaults are described in the related
-:doc:`reader <readers/index>` or :doc:`writer <writers/index>` sections.
+:doc:`Reader <readers/index>` or :doc:`Writer <writers/index>` sections.
 Options that affect remapping are described in the :doc:`remapping` section.
 Additionally all |project| bash scripts accept a ``-h`` argument to list
 all the available command line arguments.
@@ -113,7 +113,7 @@ are always available:
         -p                    List of products you want to create.
         -f                    Input files and paths.
         -g <grid_name>        Specify the output grid to use. Default is the native instrument projection.
-                              See :doc:`grids` and :doc:`custom_grids` for information other possible values.
+                              See :doc:`grids` and :doc:`custom_grids` for information on other possible values.
         --cache-dir <dir>     Directory to store resampling intermediate results between executions.
                               Not used with 'native' resampling method.
         --num-workers         Specify number of parallel processing worker threads to use (default: 4)
@@ -183,16 +183,12 @@ To access these features provide the "reader" and "writer" names to the
     \end{landscape}
     \newpage
 
-.. _getting_started_rgb:
-
-Creating Red Green Blue (RGB) Composite Imagery
------------------------------------------------
-
-.. ifconfig:: not is_geo2grid
-
-    TODO
-
 .. ifconfig:: is_geo2grid
+
+    .. _getting_started_rgb:
+
+    Creating Red Green Blue (RGB) Composite Imagery
+    -----------------------------------------------
 
         The list of supported products includes true and natural color 24-bit
         RGB imagery. The software uses the number of specified CPU threads to
@@ -221,7 +217,7 @@ Creating Your Own Custom Grids
 The |project| software bundle comes with a wrapper script for the
 :ref:`Custom Grid Utility <util_p2g_grid_helper>` for easily creating |project| grid definitions over
 a user determined longitude and latitude region. Once these definitions have
-been created, they can be provided to geo2grid.sh. To run the utility script  
+been created, they can be provided to polar2grid.sh. To run the utility script  
 from the software bundle wrapper run:
 
 .. ifconfig:: not is_geo2grid

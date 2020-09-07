@@ -21,12 +21,12 @@ Feature: Test polar2grid output images
     | polar2grid.sh avhrr gtiff -vv -f | avhrr/input/test1 | avhrr/output/test1 |
 
   Examples: MODIS
-    | command                                                                                                                                             | source            | output             |
-    | polar2grid.sh crefl gtiff -vv --true-color --false-color --fornav-D 10 --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f | modis/input/test1 | modis/output/test1 |
+    | command                                                                                                                                      | source            | output             |
+    | polar2grid.sh crefl gtiff -vv --true-color --false-color --fornav-D 10 --grid-configs ${datapath}/grid_configs/grid_example.conf -g miami -f | modis/input/test1 | modis/output/test1 |
 
   Examples: VIIRS
-    | command                                                                                                                                | source            | output             |
-    | polar2grid.sh crefl gtiff -vv --true-color --false-color --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f  | viirs/input/test1 | viirs/output/test1 |
+    | command                                                                                                                         | source            | output             |
+    | polar2grid.sh crefl gtiff -vv --true-color --false-color --grid-configs ${datapath}/grid_configs/grid_example.conf -g miami -f  | viirs/input/test1 | viirs/output/test1 |
 
   Examples: VIIRS_L1B
     | command                                                                                                                                                                                   | source                      | output                        |

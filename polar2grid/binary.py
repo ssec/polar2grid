@@ -28,8 +28,7 @@
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
 """The Binary backend is a very simple backend that outputs the gridded data in
-a flat binary file for each band of data. Since it is writing binary data to a file
-and ignore any geolocation information it supports any grid.
+a flat binary file for each band of data. The binary writer supports data on any grid.
 """
 __docformat__ = "restructuredtext en"
 

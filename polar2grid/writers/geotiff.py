@@ -67,7 +67,7 @@ def add_writer_argument_groups(parser):
     from argparse import SUPPRESS
     group_1 = parser.add_argument_group(title='Geotiff Writer')
     group_1.add_argument('--output-filename', dest='filename',
-                         help='custom file pattern to save dataset to')
+                         help='Custom file pattern to save dataset to')
     group_1.add_argument('--dtype', choices=NumpyDtypeList(NUMPY_DTYPE_STRS), type=str_to_dtype,
                          help='Data type of the output file (8-bit unsigned '
                               'integer by default - uint8)')
