@@ -1,8 +1,8 @@
 Polar2Grid and Geo2Grid
 =======================
 
-.. image:: https://travis-ci.org/ssec/polar2grid.svg
-    :target: https://travis-ci.org/ssec/polar2grid
+.. image:: https://travis-ci.com/ssec/polar2grid.svg
+    :target: https://travis-ci.com/ssec/polar2grid
 
 Polar2Grid and Geo2Grid are a set of tools for extracting data from earth-observing satellite instruments,
 remapping it to uniform grids, and writing that gridded data to a new file format.
