@@ -89,6 +89,17 @@ def add_writer_argument_groups(parser):
                          help="zlib compress each netcdf file")
     group_1.add_argument("--fix-awips", action="store_true",
                          help="modify NetCDF output to work with the old/broken AWIPS NetCDF library")
+    group_1.add_argument('--output-filename', dest='filename', default=DEFAULT_OUTPUT_PATTERN,
+                         help='custom file pattern to save dataset to')
+    group_1.add_argument('--use-end-time', action='store_true',
+                         help='use end_time metadata inplace of start_time (useful for multi-day composites)')
+    group_1.add_argument('--use-sector-reference', action='store_true',
+                         help='use the lettered sector location as reference '
+                              'and shift data to match tile pixel locations. '
+                              'Useful when tiles will be updated in future '
+                              'executions. By default the sector tiles are '
+                              'shifted to match the data location. Maximum '
+                              'shift is 0.5 pixels.')
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
     group_1.add_argument("--tiles", dest="tile_count", nargs=2, type=int, default=[1, 1],
