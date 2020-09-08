@@ -27,7 +27,7 @@ dependencies:
   - pyresample
   - pyshp
   - pyspectral
-  - python=3.7
+  - python=3.8
   - python-geotiepoints
   - pyyaml
   - rasterio

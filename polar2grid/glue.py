@@ -48,6 +48,7 @@ except ImportError:
     CRS = None
 
 os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
+USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
 
 LOG = logging.getLogger(__name__)
 
@@ -157,7 +158,19 @@ def add_scene_argument_groups(parser):
                          help='Name of reader used to read provided files. '
                               'Supported readers: ' + ', '.join(['abi_l1b', 'ahi_hrit', 'ahi_hsd']))
     group_1.add_argument('-f', '--filenames', nargs='+', default=[],
-                         help='Input files to read')
+                         help='Input files to read. For a long list of '
+                              'files, use \'-f @my_files.txt\' '
+                              'to provide a list of filenames from another '
+                              'file (one filename per line). Files can also '
+                              'be passed at the end of the command line by '
+                              'using two hyphens (--) to separate the list '
+                              'of files from the other arguments. '
+                              'arguments (ex. \'%(prog)s ... -- /path/to/files*\')')
+    import argparse
+    group_1.add_argument('filenames', nargs="*", action='extend', help=argparse.SUPPRESS)
+                         # help="Alternative to '-f' flag. Use two hyphens (--) "
+                         #      "to separate these files from other command line "
+                         #      "arguments (ex. '%(prog)s ... -- /path/to/files*')")
     group_2 = parser.add_argument_group(title='Scene Load')
     group_2.add_argument('-p', '--products', nargs='+',
                          help='Names of products to create from input files')
@@ -217,6 +230,7 @@ basic processing with limited products:
     %(prog)s -r <reader> -w <writer> [options] -p prod1 prod2 -f file1 [file2 ...]
 """
     parser = argparse.ArgumentParser(prog=prog, usage=usage,
+                                     fromfile_prefix_chars="@",
                                      description="Load, composite, resample, and save datasets.")
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
                         help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
@@ -375,7 +389,7 @@ basic processing with limited products:
     wishlist = scn.wishlist.copy()
     preserve_resolution = get_preserve_resolution(args, resampler, areas_to_resample)
     if preserve_resolution:
-        preserved_products = set(wishlist) & set(scn.datasets.keys())
+        preserved_products = set(wishlist) & set(scn.keys())
         resampled_products = set(wishlist) - preserved_products
 
         # original native scene
