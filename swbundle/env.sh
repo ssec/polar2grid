@@ -30,7 +30,7 @@
 #     david.hoese@ssec.wisc.edu
 
 # Only load the environment if it hasn't been done already
-if [ -z "$POLAR2GRID_REV" ]; then
+if [ -z "$POLAR2GRID_ENV_LOADED" ]; then
     if [ -n "$GEO2GRID_HOME" ]; then
       # overwrite polar2grid home with geo2grid home
       # use polar2grid home from here on out
@@ -47,26 +47,18 @@ if [ -z "$POLAR2GRID_REV" ]; then
     unset DYLD_LIBRARY_PATH
     unset LD_LIBRARY_PATH
 
-    export P2G_SHELLB3_DIR=$POLAR2GRID_HOME/common/ShellB3
-    if [ ! -d $P2G_SHELLB3_DIR ]; then
-        # assume we are using a conda-pack environment
-        P2G_SHELLB3_DIR=$POLAR2GRID_HOME
-        IS_CONDA=0  # True in bash
-        source $P2G_SHELLB3_DIR/bin/activate
-    else
-        IS_CONDA=1  # False in bash
-        # Add all polar2grid scripts to PATH
-        export PATH=$POLAR2GRID_HOME/bin:$PATH
-        # Add ShellB3 to PATH
-        export PATH=$P2G_SHELLB3_DIR/bin:$PATH
-        # insurance
-        export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib64
-        export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common/ShellB3/lib:${LD_LIBRARY_PATH}
-        export LD_LIBRARY_PATH=${POLAR2GRID_HOME}/common:${LD_LIBRARY_PATH}
+    P2G_CONDA_BASE=$POLAR2GRID_HOME
+    source $P2G_CONDA_BASE/bin/activate
+    # Check if we already ran conda-unpack
+    install_signal="${P2G_CONDA_BASE}/.installed"
+    if [[ "$(head -n 1 ${install_signal} 2>/dev/null)" != "${P2G_CONDA_BASE}" ]]; then
+        echo "Running one-time initialization of environment..."
+        conda-unpack
+        echo "${P2G_CONDA_BASE}" > "${install_signal}"
     fi
 
     # Point gdal utilities to the proper data location
-    export GDAL_DATA=$P2G_SHELLB3_DIR/share/gdal
+    export GDAL_DATA=$P2G_CONDA_BASE/share/gdal
     # Let SatPy know where we put things
     export SATPY_ANCPATH=$POLAR2GRID_HOME/bin
     # The cviirs and crefl executables require base HDF files which by default are in the bin directory
@@ -76,6 +68,6 @@ if [ -z "$POLAR2GRID_REV" ]; then
     export PSP_DATA_ROOT=$POLAR2GRID_HOME/pyspectral_data
     export GSHHS_DATA_ROOT=$POLAR2GRID_HOME/gshhg_data
 
-    export POLAR2GRID_REV="$Id$"
+    export POLAR2GRID_ENV_LOADED="1"
 fi
 

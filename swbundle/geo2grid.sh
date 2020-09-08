@@ -28,6 +28,9 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
+if [ -n "$GEO2GRID_HOME" ]; then
+  export POLAR2GRID_HOME="${GEO2GRID_HOME}"
+fi
 if [ -z "$POLAR2GRID_HOME" ]; then
   export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 fi
@@ -42,4 +45,5 @@ export PYTROLL_CHUNK_SIZE=${PYTROLL_CHUNK_SIZE:-1024}
 
 # Call the python module to do the processing, passing all arguments
 export PROG_NAME="geo2grid.sh"
+export USE_POLAR2GRID_DEFAULTS=0
 python3 -m polar2grid.glue "$@" -vv
