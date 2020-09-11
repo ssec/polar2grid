@@ -5,14 +5,14 @@ env:
     - PYTHON_VERSION=$TRAVIS_PYTHON_VERSION
     - NUMPY_VERSION=stable
     - MAIN_CMD='python setup.py'
-    - CONDA_DEPENDENCIES='xarray dask toolz Cython sphinx cartopy pillow matplotlib scipy pyyaml pyproj pyresample coveralls coverage codecov behave netcdf4 h5py h5netcdf gdal rasterio imageio pyhdf libtiff sphinx-argparse graphviz python-graphviz pycoast pytest zarr pylibtiff python-geotiepoints'
-    - PIP_DEPENDENCIES='trollsift trollimage pyspectral pyorbital'
+    - CONDA_DEPENDENCIES='xarray dask toolz Cython sphinx cartopy pillow matplotlib scipy pyyaml pyproj pyresample coveralls coverage codecov behave netcdf4 h5py h5netcdf gdal rasterio imageio pyhdf libtiff sphinx-argparse graphviz python-graphviz pycoast pytest zarr python-geotiepoints'
+    # See https://github.com/conda-forge/pylibtiff-feedstock/issues/2
+    - PIP_DEPENDENCIES='trollsift trollimage pyspectral pyorbital libtiff'
     - SETUP_XVFB=False
     - EVENT_TYPE='push pull_request'
     - SETUP_CMD='test'
     - CONDA_CHANNELS='conda-forge'
     - CONDA_CHANNEL_PRIORITY='strict'
-    - MAMBA=True
 matrix:
   include:
   - env: PYTHON_VERSION=3.8
@@ -20,8 +20,7 @@ matrix:
   - env: PYTHON_VERSION=3.8
     os: osx
 install:
-#  - git clone --depth 1 git://github.com/astropy/ci-helpers.git
-  - git clone --branch mamba https://github.com/astrofrog/ci-helpers.git
+  - git clone --depth 1 git://github.com/astropy/ci-helpers.git
   - source ci-helpers/travis/setup_conda.sh
   - pip install --no-deps git+https://github.com/pytroll/satpy.git
   - pip install -e . --no-deps
