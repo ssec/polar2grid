@@ -112,12 +112,8 @@ fi
 # Copy the release notes to the tarball
 cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 
-# Create a wmsupload.sh script
-cd $SB_NAME/bin
-wget https://realearth.ssec.wisc.edu/upload/re_upload || oops "Couldn't download and create re_upload script"
-chmod u+x re_upload || oops "Couldn't make 're_upload' executable"
-
 # Inject environment code into swbundle only.
+cd $SB_NAME/bin
 for file in `echo *.sh`; do
     cp "$file" tmp.sh
     sed "s/# __SWBUNDLE_ENVIRONMENT_INJECTION__/source \$POLAR2GRID_HOME\/bin\/env.sh/g" tmp.sh > "$file"

@@ -38,8 +38,8 @@ ALL_PKG_DIRS = $(MAIN_PKG_DIR)
 ALL_PKG_INSTALL = $(ALL_PKG_DIRS:=_install)
 ALL_PKG_SDIST = $(ALL_PKG_DIRS:=_sdist)
 ALL_PKG_DEV = $(ALL_PKG_DIRS:=_dev)
-DOC_DIR ?= /var/apache/www/htdocs/software/polar2grid
-GEO_DOC_DIR ?= /var/apache/www/htdocs/software/geo2grid
+DOC_DIR ?= /webdata/web/www/htdocs/software/polar2grid
+GEO_DOC_DIR ?= /webdata/web/www/htdocs/software/geo2grid
 
 EGG_REPOS_MACHINE = birch
 EGG_REPOS_DIR = /var/apache/larch/htdocs/eggs/repos/polar2grid/
@@ -85,8 +85,8 @@ update_doc: build_doc_html
 	cd doc/build/html; \
 	echo $(FN); \
 	tar -czf $(FN) *; \
-	scp $(FN) birch.ssec.wisc.edu:/tmp/; \
-	ssh birch.ssec.wisc.edu "cd '$(DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
+	scp $(FN) webaccess.ssec.wisc.edu:/tmp/; \
+	ssh webaccess.ssec.wisc.edu "cd '$(DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
 
 build_doc_html_geo:
 	cd doc; \
@@ -97,8 +97,8 @@ update_doc_geo: build_doc_html_geo
 	cd doc/build/html; \
 	echo $(FN); \
 	tar -czf $(FN) *; \
-	scp $(FN) birch.ssec.wisc.edu:/tmp/; \
-	ssh birch.ssec.wisc.edu "cd '$(GEO_DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
+	scp $(FN) webaccess.ssec.wisc.edu:/tmp/; \
+	ssh webaccess.ssec.wisc.edu "cd '$(GEO_DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
 
 ### Clean up what we've done ###
 clean_sdist:
