@@ -29,16 +29,17 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
+# where are we?
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+THIS_SCRIPT_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
+P2G_CONDA_BASE="${THIS_SCRIPT_HOME}/libexec/python_runtime"
+P2G_METADATA="${P2G_CONDA_BASE}/lib/python*/site-packages/polar2grid-*.dist-info/METADATA"
+METADATA_CHECKSUM=$(openssl sha256 $P2G_METADATA)
+
 # Only load the environment if it hasn't been done already
-if [ -z "$POLAR2GRID_ENV_LOADED" ]; then
-    if [ -n "$GEO2GRID_HOME" ]; then
-      # overwrite polar2grid home with geo2grid home
-      # use polar2grid home from here on out
-      export POLAR2GRID_HOME="$GEO2GRID_HOME"
-    fi
-    if [ -z "$POLAR2GRID_HOME" ]; then 
-      export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
-    fi
+if [[ "${_POLAR2GRID_ENV_LOADED}" == "${METADATA_CHECKSUM}" ]]; then
+    export POLAR2GRID_HOME="${THIS_SCRIPT_HOME}"
 
     # Don't let someone else's PYTHONPATH mess us up
     unset PYTHONPATH
@@ -47,7 +48,6 @@ if [ -z "$POLAR2GRID_ENV_LOADED" ]; then
     unset DYLD_LIBRARY_PATH
     unset LD_LIBRARY_PATH
 
-    P2G_CONDA_BASE=$POLAR2GRID_HOME
     source $P2G_CONDA_BASE/bin/activate
     # Check if we already ran conda-unpack
     install_signal="${P2G_CONDA_BASE}/.installed"
@@ -68,6 +68,6 @@ if [ -z "$POLAR2GRID_ENV_LOADED" ]; then
     export PSP_DATA_ROOT=$POLAR2GRID_HOME/pyspectral_data
     export GSHHS_DATA_ROOT=$POLAR2GRID_HOME/gshhg_data
 
-    export POLAR2GRID_ENV_LOADED="1"
+    export _POLAR2GRID_ENV_LOADED="${METADATA_CHECKSUM}"
 fi
 

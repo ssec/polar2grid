@@ -55,8 +55,10 @@ pip install -U --no-deps "$BASE_P2G_DIR" || oops "Couldn't install current polar
 SB_TARBALL="${SB_NAME}.tar.gz"
 conda clean -afy
 conda-pack --n-threads -1 --compress-level 0 -o $SB_TARBALL || oops "Couldn't create conda-packed tarball"
-mkdir -p ${SB_NAME} || oops "Couldn't make output directory"
-tar -xzf ${SB_TARBALL} -C ${SB_NAME} || oops "Couldn't untar conda-packed tarball"
+PYTHON_RUNTIME_BASE="${SB_NAME}/libexec/python_runtime"
+mkdir -p ${PYTHON_RUNTIME_BASE} || oops "Couldn't make output directory"
+tar -xzf ${SB_TARBALL} -C ${PYTHON_RUNTIME_BASE} || oops "Couldn't untar conda-packed tarball"
+
 cd ${SB_NAME} || oops "Couldn't change to software bundle directory"
 
 echo "Copying user grid directory to software bundle"
@@ -74,28 +76,28 @@ chmod 444 `find . -type f` || oops "Could not make GSHHG shapefiles readable by 
 popd
 
 # Create the VIIRS CREFL utilities
-echo "Getting prebuilt VIIRS CREFL binaries..."
-cd "$VCREFL_DIR"
-make clean
-make prebuilt || oops "Couldn't get prebuilt VIIRS CREFL binaries"
-chmod a+x cviirs
-chmod a+x h5SDS_transfer_rename
-mv cviirs "$SB_NAME"/bin/
-mv h5SDS_transfer_rename "$SB_NAME"/bin/
-mv CMGDEM.hdf "$SB_NAME"/bin/
-cp run_viirs_crefl.sh "$SB_NAME"/bin/
-chmod a+x "$SB_NAME"/bin/run_viirs_crefl.sh
+#echo "Getting prebuilt VIIRS CREFL binaries..."
+#cd "$VCREFL_DIR"
+#make clean
+#make prebuilt || oops "Couldn't get prebuilt VIIRS CREFL binaries"
+#chmod a+x cviirs
+#chmod a+x h5SDS_transfer_rename
+#mv cviirs "$SB_NAME"/bin/
+#mv h5SDS_transfer_rename "$SB_NAME"/bin/
+#mv CMGDEM.hdf "$SB_NAME"/bin/
+#cp run_viirs_crefl.sh "$SB_NAME"/bin/
+#chmod a+x "$SB_NAME"/bin/run_viirs_crefl.sh
 
 # Create the MODIS CREFL utilities
-echo "Getting prebuilt MODIS CREFL binaries..."
-cd "$MCREFL_DIR"
-make clean
-make prebuilt || oops "Couldn't get prebuilt MODIS CREFL binaries"
-chmod a+x crefl
-mv crefl "$SB_NAME"/bin/
-mv tbase.hdf "$SB_NAME"/bin/
-cp run_modis_crefl.sh "$SB_NAME"/bin/
-chmod a+x "$SB_NAME"/bin/run_modis_crefl.sh
+#echo "Getting prebuilt MODIS CREFL binaries..."
+#cd "$MCREFL_DIR"
+#make clean
+#make prebuilt || oops "Couldn't get prebuilt MODIS CREFL binaries"
+#chmod a+x crefl
+#mv crefl "$SB_NAME"/bin/
+#mv tbase.hdf "$SB_NAME"/bin/
+#cp run_modis_crefl.sh "$SB_NAME"/bin/
+#chmod a+x "$SB_NAME"/bin/run_modis_crefl.sh
 
 echo "Copying bash scripts to software bundle bin"
 cd "$SB_NAME"

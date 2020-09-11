@@ -28,12 +28,9 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
-if [ -n "$GEO2GRID_HOME" ]; then
-  export POLAR2GRID_HOME="${GEO2GRID_HOME}"
-fi
-if [ -z "$POLAR2GRID_HOME" ]; then
-  export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
-fi
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+export POLAR2GRID_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
 
 # Setup necessary environments
 # __SWBUNDLE_ENVIRONMENT_INJECTION__
