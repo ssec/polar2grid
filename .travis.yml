@@ -12,6 +12,7 @@ env:
     - SETUP_CMD='test'
     - CONDA_CHANNELS='conda-forge'
     - CONDA_CHANNEL_PRIORITY='strict'
+    - MAMBA=True
 matrix:
   include:
   - env: PYTHON_VERSION=3.8
