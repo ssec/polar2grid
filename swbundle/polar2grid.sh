@@ -28,9 +28,9 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
-if [ -z "$POLAR2GRID_HOME" ]; then
-  export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
-fi
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+export POLAR2GRID_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
 
 # Setup necessary environments
 # __SWBUNDLE_ENVIRONMENT_INJECTION__
@@ -42,4 +42,5 @@ export PYTROLL_CHUNK_SIZE=${PYTROLL_CHUNK_SIZE:-1024}
 
 # Call the python module to do the processing, passing all arguments
 export PROG_NAME="polar2grid.sh"
-python3 -m polar2grid.glue_legacy $@ -vv
+export USE_POLAR2GRID_DEFAULTS=1
+python3 -m polar2grid.glue $@ -vv

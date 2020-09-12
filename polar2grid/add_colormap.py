@@ -132,8 +132,9 @@ def load_color_table_file_to_colormap(ct_file):
 
     """
     from trollimage.colormap import Colormap
-    ct_file = ct_file.replace("$POLAR2GRID_HOME", os.getenv('POLAR2GRID_HOME', ''))
-    ct_file = ct_file.replace("$GEO2GRID_HOME", os.getenv('GEO2GRID_HOME', ''))
+    p2g_home = os.getenv('POLAR2GRID_HOME', '')
+    ct_file = ct_file.replace("$POLAR2GRID_HOME", p2g_home)
+    ct_file = ct_file.replace("$GEO2GRID_HOME", p2g_home)
     if ct_file.endswith('.npy') or ct_file.endswith('.npz'):
         # binary colormap files (RGB, RGBA, VRGB, VRGBA)
         from satpy.enhancements import create_colormap
