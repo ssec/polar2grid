@@ -101,6 +101,9 @@ popd
 
 echo "Copying bash scripts to software bundle bin"
 cd "$SB_NAME"
+mkdir -p bin || oops "Couldn't make 'bin' directory"
+mkdir -p etc || oops "Couldn't make 'etc' directory"
+ln -s ../libexec/python_runtime/etc/polar2grid etc/polar2grid
 cp -P ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/ || echo "Couldn't copy scripts to bin/ directory"
 # clean up readmes
 if [[ $PROJECT == "P2G" ]]; then
