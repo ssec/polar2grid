@@ -369,12 +369,14 @@ class MIRSFileReader(BaseFileReader):
     FILENAME_TO_SAT = {
         "M1": "metopb",
         "M2": "metopa",
+        "M3": "metopc",
         "NN": "noaa18",
         "NP": "noaa19",
         "n18": "noaa18",
         "n19": "noaa19",
         "ma1": "metopb",
         "ma2": "metopa",
+        "ma3": "metopc",
         # should have file attributes, but just in case:
         "npp": "npp",
         "n20": "n20",
