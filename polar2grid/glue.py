@@ -35,6 +35,7 @@ import sys
 import argparse
 import logging
 import importlib
+import pkg_resources
 from glob import glob
 
 import dask
@@ -48,7 +49,21 @@ try:
 except ImportError:
     CRS = None
 
-os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
+
+def dist_is_editable(dist):
+    """Is distribution an editable install?"""
+    for path_item in sys.path:
+        egg_link = os.path.join(path_item, dist.project_name + '.egg-link')
+        if os.path.isfile(egg_link):
+            return True
+    return False
+
+
+dist = pkg_resources.get_distribution('polar2grid')
+if dist_is_editable(dist):
+    os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(dist.module_path, 'etc'))
+else:
+    os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
 USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
 
 LOG = logging.getLogger(__name__)
@@ -61,6 +76,23 @@ WRITER_PARSER_FUNCTIONS = {
 OUTPUT_FILENAMES = {
     'geotiff': geotiff.DEFAULT_OUTPUT_FILENAME,
 }
+
+PLATFORM_ALIASES = {
+    'suomi-npp': 'npp',
+}
+
+
+def get_platform_name_alias(satpy_platform_name):
+    return PLATFORM_ALIASES.get(satpy_platform_name.lower(), satpy_platform_name)
+
+
+def overwrite_platform_name_with_aliases(scn):
+    """Change 'platform_name' for every DataArray to Polar2Grid expectations."""
+    for data_arr in scn:
+        if 'platform_name' not in data_arr.attrs:
+            continue
+        pname = get_platform_name_alias(data_arr.attrs['platform_name'])
+        data_arr.attrs['platform_name'] = pname
 
 
 def get_default_output_filename(reader, writer):
@@ -153,6 +185,11 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
     return to_save
 
 
+def _handle_product_names(aliases, products):
+    for prod_name in products:
+        yield aliases.get(prod_name, prod_name)
+
+
 def add_scene_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Reading')
     group_1.add_argument('-r', '--reader', action='append', dest='readers',
@@ -225,6 +262,21 @@ def _retitle_optional_arguments(parser):
     if len(opt_args) == 1:
         opt_args = opt_args[0]
         opt_args.title = "Global Options"
+
+
+def _apply_default_products_and_aliases(reader, user_products):
+    reader_mod = importlib.import_module('polar2grid.readers.' + reader)
+    default_products = getattr(reader_mod, 'DEFAULT_PRODUCTS', [])
+    if user_products is None and default_products:
+        LOG.info("Using default product list: {}".format(default_products))
+        user_products = default_products
+    elif user_products is None:
+        LOG.error("Reader does not have a default set of products to load, "
+                  "please specify products to load with `--products`.")
+        return None
+
+    aliases = getattr(reader_mod, 'PRODUCT_ALIASES', {})
+    return list(_handle_product_names(aliases, user_products))
 
 
 def main(argv=sys.argv[1:]):
@@ -377,17 +429,18 @@ basic processing with limited products:
         rename_log_file(glue_name + scn.attrs['start_time'].strftime("_%Y%m%d_%H%M%S.log"))
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
-    if load_args['products'] is None:
-        try:
-            reader_mod = importlib.import_module('polar2grid.readers.' + scene_creation['reader'])
-            load_args['products'] = reader_mod.DEFAULT_PRODUCTS
-            LOG.info("Using default product list: {}".format(load_args['products']))
-        except (ImportError, AttributeError):
-            LOG.error("No default products list set, please specify with `--products`.")
-            return -1
-
     LOG.info("Loading product metadata from files...")
+    load_args['products'] = _apply_default_products_and_aliases(
+        scene_creation['reader'], load_args['products'])
+    if not load_args['products']:
+        return -1
     scn.load(load_args['products'])
+
+    # from .filters.day_night import _get_sunlight_coverage
+    # data_arr = scn[load_args['products'][0]]
+    # sl_cov = _get_sunlight_coverage(data_arr.attrs['area'], data_arr.attrs['start_time'])
+    # print("Sunlight coverage: ", sl_cov)
+    # return
 
     resample_kwargs = resample_args.copy()
     areas_to_resample = resample_kwargs.pop('grids')
@@ -473,6 +526,7 @@ basic processing with limited products:
             # because they won't be saved
             new_scn = scn
 
+        overwrite_platform_name_with_aliases(new_scn)
         to_save = write_scene(new_scn, args.writers, writer_args, resampled_products, to_save=to_save)
 
     if args.progress:

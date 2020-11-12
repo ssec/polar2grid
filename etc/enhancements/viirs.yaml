@@ -1,0 +1,10 @@
+enhancements:
+  true_color_crefl:
+    sensor: viirs
+    standard_name: true_color
+    operations:
+      - name: crefl_scaling
+        method: !!python/name:satpy.enhancements.crefl_scaling
+        kwargs:
+          idx: [0., 25., 55., 100., 255.]
+          sc: [0., 90., 140., 175., 255.]
