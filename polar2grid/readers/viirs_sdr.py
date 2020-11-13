@@ -27,81 +27,158 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The ABI Level 1B Reader operates on NOAA Level 1B (L1B) NetCDF files
-from the GOES-16 (GOES-East) and GOES-17 (GOES-West) Advanced Baseline 
-Imager (ABI) instrument. The ABI L1B reader works off of the input filenames 
-to determine if a file is supported by Geo2Grid. Files usually have the 
-following naming scheme:
+"""The VIIRS SDR Reader operates on Science Data Record (SDR) HDF5 files from
+the Suomi National Polar-orbiting Partnership's (NPP) and/or the NOAA20
+Visible/Infrared Imager Radiometer Suite (VIIRS) instrument. The VIIRS
+SDR reader ignores filenames and uses internal file content to determine
+the type of file being provided, but SDR are typically named as below
+and have corresponding geolocation files::
 
-    OR_ABI-L1b-RadF-M3C16_G16_s20182531700311_e20182531711090_c20182531711149.nc
+SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
 
-These are the mission compliant radiance file naming conventions 
-used by the NOAA Comprehensive Large Array-data Stewardship 
-System (CLASS) archive and the CSPP GOES Rebroadcast (GRB) software.  
-The ABI L1B reader supports all instrument spectral bands, identified in 
-Geo2Grid as the products shown in the table below. The 
-ABI L1B reader can be provided to the main geo2grid.sh script 
-using the ``-r`` option and the reader name ``abi_l1b``. 
+The VIIRS SDR reader supports all instrument spectral bands, identified as
+the products shown below. It supports terrain corrected or non-terrain corrected
+navigation files. Geolocation files must be included when specifying filepaths to
+readers and ``polar2grid.sh``. The VIIRS reader can be specified to the ``polar2grid.sh`` script
+with the reader name ``viirs_sdr``.
 
-The list of supported products includes true and natural color imagery.
-These are created by means of a python based atmospheric Rayleigh 
-scattering correction algorithm that is executed as part of the |project| ABI
-L1B reader, along with sharpening to the highest spatial resolution. For
-more information on the creation of RGBs, please see the 
-:ref:`RGB section <getting_started_rgb>`.
+This reader's default remapping algorithm is ``ewa`` for Elliptical Weighted
+Averaging resampling. The ``--fornav-D`` parameter set to 40 and the
+``--fornav-d`` parameter set to 2.
 
-
-+---------------------------+-----------------------------------------------------+
-| **Product Name**          | **Description**                                     |
-+===========================+=====================================================+
-| C01                       | Channel 1 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| C02                       | Channel 2 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| C03                       | Channel 3 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| C04                       | Channel 4 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| C05                       | Channel 5 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| C06                       | Channel 6 Reflectance Band                          |
-+---------------------------+-----------------------------------------------------+
-| C07                       | Channel 7 Brightness Temperature Band               |
-+---------------------------+-----------------------------------------------------+
-| C08                       | Channel 8 Brightness Temperature Band               |
-+---------------------------+-----------------------------------------------------+
-| C09                       | Channel 9 Brightness Temperature Band               |
-+---------------------------+-----------------------------------------------------+
-| C10                       | Channel 10 Brightness Temperature Band              |
-+---------------------------+-----------------------------------------------------+
-| C11                       | Channel 11 Brightness Temperature Band              |
-+---------------------------+-----------------------------------------------------+
-| C12                       | Channel 12 Brightness Temperature Band              |
-+---------------------------+-----------------------------------------------------+
-| C13                       | Channel 13 Brightness Temperature Band              |
-+---------------------------+-----------------------------------------------------+
-| C14                       | Channel 14 Brightness Temperature Band              |
-+---------------------------+-----------------------------------------------------+
-| C15                       | Channel 15 Brightness Temperature Band              |
-+---------------------------+-----------------------------------------------------+
-| C16                       | Channel 16 Brightness Temperature Band              |
-+---------------------------+-----------------------------------------------------+
-| true_color                | Ratio sharpened rayleigh corrected true color       |
-+---------------------------+-----------------------------------------------------+
-| natural_color             | Ratio sharpened rayleigh corrected natural color    |
-+---------------------------+-----------------------------------------------------+
-| airmass                   | Air mass RGB                                        |
-+---------------------------+-----------------------------------------------------+
-| ash                       | Ash RGB                                             |
-+---------------------------+-----------------------------------------------------+
-| dust                      | Dust RGB                                            |
-+---------------------------+-----------------------------------------------------+
-| fog                       | Fog RGB                                             |
-+---------------------------+-----------------------------------------------------+
-| night_microphysics        | Night Microphysics RGB                              |
-+---------------------------+-----------------------------------------------------+
++---------------------------+--------------------------------------------+
+| Product Name              | Description                                |
++===========================+============================================+
+| i01                       | I01 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| i02                       | I02 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| i03                       | I03 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| i04                       | I04 Brightness Temperature Band            |
++---------------------------+--------------------------------------------+
+| i05                       | I05 Brightness Temperature Band            |
++---------------------------+--------------------------------------------+
+| i01_rad                   | I01 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| i02_rad                   | I02 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| i03_rad                   | I03 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| i04_rad                   | I04 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| i05_rad                   | I05 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m01                       | M01 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m02                       | M02 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m03                       | M03 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m04                       | M04 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m05                       | M05 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m06                       | M06 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m07                       | M07 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m08                       | M08 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m09                       | M09 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m10                       | M10 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m11                       | M11 Reflectance Band                       |
++---------------------------+--------------------------------------------+
+| m12                       | M12 Brightness Temperature Band            |
++---------------------------+--------------------------------------------+
+| m13                       | M13 Brightness Temperature Band            |
++---------------------------+--------------------------------------------+
+| m14                       | M14 Brightness Temperature Band            |
++---------------------------+--------------------------------------------+
+| m15                       | M15 Brightness Temperature Band            |
++---------------------------+--------------------------------------------+
+| m16                       | M16 Brightness Temperature Band            |
++---------------------------+--------------------------------------------+
+| m01_rad                   | M01 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m02_rad                   | M02 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m03_rad                   | M03 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m04_rad                   | M04 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m05_rad                   | M05 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m06_rad                   | M06 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m07_rad                   | M07 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m08_rad                   | M08 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m09_rad                   | M09 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m10_rad                   | M10 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m11_rad                   | M11 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m12_rad                   | M12 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m13_rad                   | M13 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m14_rad                   | M14 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m15_rad                   | M15 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| m16_rad                   | M16 Radiance Band                          |
++---------------------------+--------------------------------------------+
+| dnb                       | Raw DNB Band (not useful for images)       |
++---------------------------+--------------------------------------------+
+| histogram_dnb             | Histogram Equalized DNB Band               |
++---------------------------+--------------------------------------------+
+| adaptive_dnb              | Adaptive Histogram Equalized DNB Band      |
++---------------------------+--------------------------------------------+
+| dynamic_dnb               | Dynamic DNB Band from Steve Miller and     |
+|                           | Curtis Seaman. Uses erf to scale the data. |
++---------------------------+--------------------------------------------+
+| hncc_dnb                  | Simplified High and Near-Constant Contrast |
+|                           | Approach from Stephan Zinke                |
++---------------------------+--------------------------------------------+
+| ifog                      | Temperature difference between I05 and I04 |
++---------------------------+--------------------------------------------+
+| i_solar_zenith_angle      | I Band Solar Zenith Angle                  |
++---------------------------+--------------------------------------------+
+| i_solar_azimuth_angle     | I Band Solar Azimuth Angle                 |
++---------------------------+--------------------------------------------+
+| i_sat_zenith_angle        | I Band Satellite Zenith Angle              |
++---------------------------+--------------------------------------------+
+| i_sat_azimuth_angle       | I Band Satellite Azimuth Angle             |
++---------------------------+--------------------------------------------+
+| m_solar_zenith_angle      | M Band Solar Zenith Angle                  |
++---------------------------+--------------------------------------------+
+| m_solar_azimuth_angle     | M Band Solar Azimuth Angle                 |
++---------------------------+--------------------------------------------+
+| m_sat_zenith_angle        | M Band Satellite Zenith Angle              |
++---------------------------+--------------------------------------------+
+| m_sat_azimuth_angle       | M Band Satellite Azimuth Angle             |
++---------------------------+--------------------------------------------+
+| dnb_solar_zenith_angle    | DNB Band Solar Zenith Angle                |
++---------------------------+--------------------------------------------+
+| dnb_solar_azimuth_angle   | DNB Band Solar Azimuth Angle               |
++---------------------------+--------------------------------------------+
+| dnb_sat_zenith_angle      | DNB Band Satellite Zenith Angle            |
++---------------------------+--------------------------------------------+
+| dnb_sat_azimuth_angle     | DNB Band Satellite Azimuth Angle           |
++---------------------------+--------------------------------------------+
+| dnb_lunar_zenith_angle    | DNB Band Lunar Zenith Angle                |
++---------------------------+--------------------------------------------+
+| dnb_lunar_azimuth_angle   | DNB Band Lunar Azimuth Angle               |
++---------------------------+--------------------------------------------+
 
 """
+
+from satpy import DataQuery
 
 I_PRODUCTS = [
     "I01",
@@ -146,6 +223,11 @@ DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_P
 PRODUCT_ALIASES = {}
 for band in I_PRODUCTS + M_PRODUCTS:
     PRODUCT_ALIASES[band.lower()] = band
+# radiance products
+for band in I_PRODUCTS + M_PRODUCTS:
+    dq = DataQuery(name=band, calibration='radiation')
+    PRODUCT_ALIASES[band.lower() + '_rad'] = dq
+    PRODUCT_ALIASES[band.lower() + '_rad'] = dq
 
 
 def add_reader_argument_groups(parser):
