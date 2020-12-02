@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2018 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2020 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -21,26 +21,28 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-#     Written by David Hoese    March 2016
+#     Written by David Hoese    March 2020
 #     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The SCMI AWIPS writer is used to create AWIPS compatible tiled NetCDF4
+"""The AWIPS Tiled writer is used to create AWIPS compatible tiled NetCDF4
 files. The Advanced Weather Interactive Processing System (AWIPS) is a
 program used by the United States National Weather Service (NWS) and others
 to view
 different forms of weather imagery. Sectorized Cloud and Moisture Imagery
-(SCMI) is a netcdf format accepted by AWIPS to store one image broken up
-in to one or more "tiles". Once AWIPS is configured for specific products
-the SCMI NetCDF writer can be used to provide compatible products to the
+(SCMI) is a NetCDF4 format accepted by AWIPS to store one image broken up
+in to one or more "tiles". This format has been used to support additional
+products over time and so this writer is now called "awips_tiled" to refer
+to the generic usse of these files. Once AWIPS is configured for specific products
+the AWIPS Tiled writer can be used to provide compatible products to the
 system. The files created by this writer are compatible with AWIPS II.
 
-The SCMI writer takes remapped image data and creates an
-AWIPS-compatible NetCDF4 file. The SCMI writer and the AWIPS client may
+The writer takes remapped image data and creates an
+AWIPS-compatible NetCDF4 file. The writer and the AWIPS client may
 need to be configured to make things appear the way the user wants in
-the AWIPS client. The SCMI writer can only produce files for datasets mapped
+the AWIPS client. The writer can only produce files for datasets mapped
 to areas with specific projections:
 
     - Lambert Conformal Conic (`+proj=lcc`)
@@ -48,18 +50,18 @@ to areas with specific projections:
     - Mercator (`+proj=merc`)
     - Polar Stereographic (`+proj=stere`)
 
-This is a limitation of the AWIPS client and not of the SCMI writer.
+This is a limitation of the AWIPS client and not of the writer.
 
 Numbered versus Lettered Grids
 ------------------------------
 
-By default the SCMI writer will save tiles by number starting with '1'
+By default the writer will save tiles by number starting with '1'
 representing the upper-left image tile. Tile numbers then increase
 along the column and then on to the next row.
 
 By specifying ``--letters`` on the command line, tiles can be designated with a
-letter. Lettered grids or sectors are preconfigured in the SCMI writer
-configuration file (`scmi.yaml` in SatPy). The lettered tile locations are
+letter. Lettered grids or sectors are preconfigured in the writer
+configuration file (``awips_tiled.yaml`` in SatPy). The lettered tile locations are
 static and will not change with the data being written to them. Each lettered
 tile is split in to a certain number of subtiles (`--letter-subtiles`),
 default 2 rows by 2 columns. Lettered tiles are meant to make it easier for
@@ -71,8 +73,11 @@ created.
 
  .. warning::
 
-     The SCMI writer does not default to using any grid. Therefore, it is recommended to specify
+     The writer does not default to using any grid. Therefore, it is recommended to specify
      one or more grids for remapping by using the `-g` flag.
+
+For more detailed information on templates and other options for this writer
+see the Satpy documentation :mod:`here <satpy.writers.awips_tiled>`.
 
 """
 import logging
@@ -113,7 +118,10 @@ def add_writer_argument_groups(parser, group=None):
                        help="Specify number of subtiles in each lettered tile: \'row col\'")
     group.add_argument("--source-name", default='SSEC',
                        help="specify processing source name used in attributes and filename")
-    group.add_argument("--sector-id", required=True,
+    group.add_argument("--sector-id",
                        help="specify name for sector/region used in attributes and filename (example 'LCC')")
+    group.add_argument("--template", default="polar",
+                       help="specify name for pre-configured template used to "
+                            "determine output file structure and formatting.")
     return group, None
 

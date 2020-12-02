@@ -42,7 +42,7 @@ import dask
 import numpy as np
 from pyresample.geometry import DynamicAreaDefinition, AreaDefinition
 from pyproj import Proj
-from polar2grid.writers import geotiff, scmi
+from polar2grid.writers import geotiff, awips_tiled
 
 try:
     from pyproj import CRS
@@ -70,7 +70,8 @@ LOG = logging.getLogger(__name__)
 
 WRITER_PARSER_FUNCTIONS = {
     'geotiff': geotiff.add_writer_argument_groups,
-    'scmi': scmi.add_writer_argument_groups,
+    'scmi': awips_tiled.add_writer_argument_groups,
+    'awips_tiled': awips_tiled.add_writer_argument_groups,
 }
 
 OUTPUT_FILENAMES = {
@@ -79,6 +80,10 @@ OUTPUT_FILENAMES = {
 
 PLATFORM_ALIASES = {
     'suomi-npp': 'npp',
+}
+
+WRITER_ALIASES = {
+    'scmi': 'awips_tiled',
 }
 
 
@@ -220,7 +225,7 @@ def add_writer_argument_groups(parser):
                          metavar="WRITER",
                          help='Writers to save datasets with. Multiple writers '
                               'can be provided by specifying \'-w\' multiple '
-                              'times (ex. \'-w geotiff -w scmi\').')
+                              'times (ex. \'-w geotiff -w awips_tiled\').')
     return (group_1,)
 
 
@@ -333,6 +338,7 @@ basic processing with limited products:
         LOG = logging.getLogger(glue_name)
     # add writer arguments
     if args.writers is not None:
+        args.writers = [WRITER_ALIASES.get(writer, writer) for writer in args.writers]
         for writer in (args.writers or []):
             parser_func = WRITER_PARSER_FUNCTIONS.get(writer)
             if parser_func is None:
@@ -527,7 +533,7 @@ basic processing with limited products:
             new_scn = scn
 
         overwrite_platform_name_with_aliases(new_scn)
-        to_save = write_scene(new_scn, args.writers, writer_args, resampled_products, to_save=to_save)
+        to_save = write_scene(new_scn, writer_args['writers'], writer_args, resampled_products, to_save=to_save)
 
     if args.progress:
         pbar = ProgressBar()
