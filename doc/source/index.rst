@@ -25,6 +25,11 @@
 
 .. only:: html
 
+    Additional Details
+    ------------------
+
+    - :doc:`complex_composites/index`
+
     Developer's Guide
     -----------------
 
@@ -35,11 +40,3 @@
     - :doc:`rescaling`
     - :doc:`NEWS`
 
-.. only:: html
-
-    Indices and tables
-    ------------------
-
-    * :ref:`genindex`
-    * :ref:`modindex`
-    * :ref:`search`

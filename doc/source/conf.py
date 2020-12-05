@@ -106,7 +106,7 @@ for image_url in images:
 
 
 def setup(app):
-    app.add_stylesheet('prettytables.css')
+    app.add_css_file('prettytables.css')
     app.add_config_value('is_geo2grid', is_geo2grid, 'env')
 
 # -- General configuration -----------------------------------------------------
@@ -454,11 +454,13 @@ latex_logo = '_static/{}2G_PDF_Logos.png'.format('G' if is_geo2grid else 'P')
 if is_geo2grid:
     latex_appendices = [
         'design_overview',
+        # 'complex_composites/geo2grid_composites',
     ]
 else:
     latex_appendices = [
         'misc_recipes',
         'design_overview',
+        # 'complex_composites/polar2grid_composites',
     ]
 
 # If false, no module index is generated.
