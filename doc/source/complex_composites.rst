@@ -3,9 +3,26 @@ Complex Composites
 
 Many composites in |project| take advantage of various corrections or
 adjustments to produce the best looking imagery possible. The below
-sections describe the corrections used in |project| and also describe
-a few key composites provided in |project| and which of these
-corrections they use.
+sections describe the corrections and other related topics used in
+|project|.
+
+.. _explain_rgb_composite:
+
+RGB Images
+----------
+
+An RGB image is an image constructed of three different color channels,
+Red, Green, and Blue. By interpreting the values from each channel and
+combining them we can produce an array of colors. This differs from a
+basic grayscale or "luminance" image where the single "L" channel
+determines how white or black a pixel is. For more information on the
+RGB color model see
+`this Wikipedia article <https://en.wikipedia.org/wiki/RGB_color_model>`_.
+
+You may also see RGBA images where the A stands for "Alpha". This Alpha
+channel will determine the opaque or transparency of an image. This is
+typically used in |project| to make invalid or missing data values
+transparent (completely opaque or completely transparent).
 
 .. _sunz_correction:
 
@@ -22,8 +39,9 @@ may not include it.
 Rayleigh Scattering Correction - Pyspectral
 -------------------------------------------
 
-Due to atmospheric molecules, some visible channels are scattered obscuring
-the measurement of the surface which we typically want in RGB images. One
+Due to the size of molecules that make up our atmosphere, some visible channel
+light is preferentially scattered more than others, especially at larger
+viewing angles. One
 method to correct for this is implemented in the Pyspectral Python library.
 A detailed description of the algorithm used by Pyspectral and other features
 of the library can be found in the official Pyspectral documentation:

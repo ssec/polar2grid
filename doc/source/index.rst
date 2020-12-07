@@ -28,7 +28,7 @@
     Additional Details
     ------------------
 
-    - :doc:`complex_composites/index`
+    - :doc:`complex_composites`
 
     Developer's Guide
     -----------------
