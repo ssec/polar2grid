@@ -13,17 +13,24 @@ corrections are used.
 RGB Images
 ----------
 
-An RGB image is an image constructed of three different color channels,
-Red, Green, and Blue. By interpreting the values from each channel and
-combining them we can produce an array of colors. This differs from a
-basic grayscale or "luminance" image where the single "L" channel
-determines how white or black a pixel is. For more information on the
-RGB color model see
-`this Wikipedia article <https://en.wikipedia.org/wiki/RGB_color_model>`_.
+Satellite imagers can simultaneously observe the Earth in multiple spectral
+channels, while the human eye is sensitive to only the visible channels. By
+mapping data from imager channels to the visible red, green, and blue channels
+in different ways, we can produce “RGB” images that show the Earth as a human
+would see it from space (“true color”), or that emphasize certain features
+that can be detected using combinations of different channels (“false color”).
 
-You may also see RGBA images where the A stands for "Alpha". This Alpha
-channel will determine the opaque or transparency of an image. This is
-typically used in |project| to make invalid or missing data values
+Luminance (L), or single band, images are also used when displaying a single
+imager channel in grayscale. Another popular way of showing single imager
+channels is to apply a "colormap" to the data. In these cases, each data value
+of a single satellite imager channel is represented by a color. This is
+different than the RGB composites described above where multiple channels go
+into making a single color image.
+
+Depending on the configuration and writer used, |project| may also add an
+additional "Alpha" channel (ex. RGBA) to an image. This Alpha
+channel is used to determine the opaqueness or transparency of an image. This
+is typically used in |project| to make invalid or missing data values
 transparent (completely opaque or completely transparent).
 
 .. _sunz_correction:
@@ -90,8 +97,9 @@ to that in the above ratio sharpening technique.
 Non-linear True Color Scaling
 -----------------------------
 
-As a final "enhancement" or scaling method, Geo2Grid uses a series of linear
-interpolation ranges to bring out certain regions of the image and lessen the
+As a final step for some images, Geo2Grid scales the image values using a
+series of linear interpolation ranges to bring out certain regions of the
+image and lessen the
 effect of others. For lack of a better name, these multiple linear stretches
 make up an overall non-linear scaling. A typical scaling where reflectance
 data (0 - 1) has been multiplied by 255 (8-bit unsigned integer) would be:
@@ -109,12 +117,3 @@ data (0 - 1) has been multiplied by 255 (8-bit unsigned integer) would be:
       - 140 - 175
     * - 100 - 255
       - 175 - 255
-
-.. ifconfig:: not is_geo2grid
-
-    .. include:: polar2grid_composites.rst
-
-.. ifconfig:: is_geo2grid
-
-    .. include:: geo2grid_composites.rst
-

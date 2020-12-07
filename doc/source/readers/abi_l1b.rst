@@ -39,7 +39,7 @@ Examples:
     The ABI L1b "true_color" composite produced by Geo2Grid provides a view
     of the Earth as the human eye would see it; or as close as we can come
     to with satellite data and the channels we have available. This means
-    things like trees and grass are green, water is blue, desserts are
+    things like trees and grass are green, water is blue, deserts are
     red/brown, and clouds are white. The True Color
     image is an :ref:`RGB (Red, Green, Blue) image <explain_rgb_composite>`
     consisting of the ABI C02 reflectance channel, a
