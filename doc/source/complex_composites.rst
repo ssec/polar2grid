@@ -4,7 +4,9 @@ Complex Composites
 Many composites in |project| take advantage of various corrections or
 adjustments to produce the best looking imagery possible. The below
 sections describe the corrections and other related topics used in
-|project|.
+|project|. See the various :doc:`readers/index` documentation for more
+information on what products are available and descriptions of what
+corrections are used.
 
 .. _explain_rgb_composite:
 
