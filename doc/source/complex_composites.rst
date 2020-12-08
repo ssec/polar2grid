@@ -38,10 +38,11 @@ transparent (completely opaque or completely transparent).
 Solar Zenith Angle Modification
 -------------------------------
 
-Visible channel data is not truly a "reflectance" until it has been adjusted
-for the amount of sun reflecting off of the atmosphere. While this is a very
-common change when working with numeric reflectance data, some RGB recipes
-may not include it.
+Reflectance is defined as the reflected radiation as a fraction of the
+incident radiation. To calculate reflectance, the solar zenith angle is needed,
+in addition to the radiance measured by the sensor. This modification, used by
+some RGB recipes, involves dividing the channel data by the cosine of the
+solar zenith angle.
 
 .. _psp_rayleigh_correction:
 
