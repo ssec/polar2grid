@@ -1,5 +1,5 @@
-Complex Composites
-==================
+Image Processing Techniques
+===========================
 
 Many composites in |project| take advantage of various corrections or
 adjustments to produce the best looking imagery possible. The below

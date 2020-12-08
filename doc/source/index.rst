@@ -28,7 +28,7 @@
     Additional Details
     ------------------
 
-    - :doc:`complex_composites`
+    - :doc:`image_processing_techniques`
 
     Developer's Guide
     -----------------
