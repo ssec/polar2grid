@@ -46,11 +46,11 @@ composites:
   unsharp_true_color:
     compositor: !!python/name:satpy.composites.RGBCompositor
     prerequisites:
-    - name: m05
+    - name: M05
       modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: m04
+    - name: M04
       modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: m03
+    - name: M03
       modifiers: [sunz_corrected, rayleigh_corrected]
 # FIXME: Ratio is wrong due to sunz correction producing high output (I think)
 #    optional_prerequisites:
@@ -60,14 +60,14 @@ composites:
   true_color:
     compositor: !!python/name:satpy.composites.RatioSharpenedRGB
     prerequisites:
-    - name: m05
+    - name: M05
       modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: m04
+    - name: M04
       modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: m03
+    - name: M03
       modifiers: [sunz_corrected, rayleigh_corrected]
     optional_prerequisites:
-    - name: i01
+    - name: I01
       modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
     standard_name: true_color
     high_resolution_band: red
@@ -76,14 +76,14 @@ composites:
   false_color:
     compositor: !!python/name:satpy.composites.RatioSharpenedRGB
     prerequisites:
-    - name: m11
+    - name: M11
       modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: m07
+    - name: M07
       modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: m05
+    - name: M05
       modifiers: [sunz_corrected, rayleigh_corrected]
     optional_prerequisites:
-    - name: i01
+    - name: I01
       modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
     standard_name: false_color
     high_resolution_band: blue
@@ -91,14 +91,14 @@ composites:
   natural_color:
     compositor: !!python/name:satpy.composites.RatioSharpenedRGB
     prerequisites:
-    - name: m11
+    - name: M11
       modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: m07
+    - name: M07
       modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: m05
+    - name: M05
       modifiers: [sunz_corrected, rayleigh_corrected]
     optional_prerequisites:
-    - name: i01
+    - name: I01
       modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
     standard_name: natural_color
     high_resolution_band: blue
@@ -106,11 +106,11 @@ composites:
   true_color_raw:
     compositor: !!python/name:satpy.composites.GenericCompositor
     prerequisites:
-    - name: m05
+    - name: M05
       modifiers: [sunz_corrected]
-    - name: m04
+    - name: M04
       modifiers: [sunz_corrected]
-    - name: m03
+    - name: M03
       modifiers: [sunz_corrected]
     standard_name: true_color
 
@@ -119,20 +119,20 @@ composites:
     prerequisites:
     - DNB
     - DNB
-    - m15
+    - M15
     standard_name: overview
 
   night_microphysics:
     compositor: !!python/name:satpy.composites.GenericCompositor
     prerequisites:
     - DNB
-    - m12
-    - m15
+    - M12
+    - M15
     standard_name: night_microphysics
 
   ifog:
     compositor: !!python/name:satpy.composites.viirs.VIIRSFog
     prerequisites:
-    - i05
-    - i04
+    - I05
+    - I04
     standard_name: temperature_difference

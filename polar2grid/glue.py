@@ -32,34 +32,72 @@
 
 import os
 import sys
+import argparse
 import logging
 import importlib
+import pkg_resources
 from glob import glob
 
 import dask
 import numpy as np
 from pyresample.geometry import DynamicAreaDefinition, AreaDefinition
 from pyproj import Proj
-from polar2grid.writers import geotiff, scmi
+from polar2grid.writers import geotiff, awips_tiled
 
 try:
     from pyproj import CRS
 except ImportError:
     CRS = None
 
-os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
+
+def dist_is_editable(dist):
+    """Is distribution an editable install?"""
+    for path_item in sys.path:
+        egg_link = os.path.join(path_item, dist.project_name + '.egg-link')
+        if os.path.isfile(egg_link):
+            return True
+    return False
+
+
+dist = pkg_resources.get_distribution('polar2grid')
+if dist_is_editable(dist):
+    os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(dist.module_path, 'etc'))
+else:
+    os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
 USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
 
 LOG = logging.getLogger(__name__)
 
 WRITER_PARSER_FUNCTIONS = {
     'geotiff': geotiff.add_writer_argument_groups,
-    'scmi': scmi.add_writer_argument_groups,
+    'scmi': awips_tiled.add_writer_argument_groups,
+    'awips_tiled': awips_tiled.add_writer_argument_groups,
 }
 
 OUTPUT_FILENAMES = {
     'geotiff': geotiff.DEFAULT_OUTPUT_FILENAME,
 }
+
+PLATFORM_ALIASES = {
+    'suomi-npp': 'npp',
+}
+
+WRITER_ALIASES = {
+    'scmi': 'awips_tiled',
+}
+
+
+def get_platform_name_alias(satpy_platform_name):
+    return PLATFORM_ALIASES.get(satpy_platform_name.lower(), satpy_platform_name)
+
+
+def overwrite_platform_name_with_aliases(scn):
+    """Change 'platform_name' for every DataArray to Polar2Grid expectations."""
+    for data_arr in scn:
+        if 'platform_name' not in data_arr.attrs:
+            continue
+        pname = get_platform_name_alias(data_arr.attrs['platform_name'])
+        data_arr.attrs['platform_name'] = pname
 
 
 def get_default_output_filename(reader, writer):
@@ -152,9 +190,15 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
     return to_save
 
 
+def _handle_product_names(aliases, products):
+    for prod_name in products:
+        yield aliases.get(prod_name, prod_name)
+
+
 def add_scene_argument_groups(parser):
-    group_1 = parser.add_argument_group(title='Scene Initialization')
-    group_1.add_argument('-r', '--reader',
+    group_1 = parser.add_argument_group(title='Reading')
+    group_1.add_argument('-r', '--reader', action='append', dest='readers',
+                         metavar="READER",
                          help='Name of reader used to read provided files. '
                               'Supported readers: ' + ', '.join(['abi_l1b', 'ahi_hrit', 'ahi_hsd']))
     group_1.add_argument('-f', '--filenames', nargs='+', default=[],
@@ -166,15 +210,23 @@ def add_scene_argument_groups(parser):
                               'using two hyphens (--) to separate the list '
                               'of files from the other arguments. '
                               'arguments (ex. \'%(prog)s ... -- /path/to/files*\')')
-    import argparse
     group_1.add_argument('filenames', nargs="*", action='extend', help=argparse.SUPPRESS)
                          # help="Alternative to '-f' flag. Use two hyphens (--) "
                          #      "to separate these files from other command line "
                          #      "arguments (ex. '%(prog)s ... -- /path/to/files*')")
-    group_2 = parser.add_argument_group(title='Scene Load')
-    group_2.add_argument('-p', '--products', nargs='+',
+    group_1.add_argument('-p', '--products', nargs='+',
                          help='Names of products to create from input files')
-    return group_1, group_2
+    return (group_1,)
+
+
+def add_writer_argument_groups(parser):
+    group_1 = parser.add_argument_group(title='Writing')
+    group_1.add_argument('-w', '--writer', action='append', dest='writers',
+                         metavar="WRITER",
+                         help='Writers to save datasets with. Multiple writers '
+                              'can be provided by specifying \'-w\' multiple '
+                              'times (ex. \'-w geotiff -w awips_tiled\').')
+    return (group_1,)
 
 
 def add_resample_argument_groups(parser):
@@ -207,6 +259,29 @@ def add_resample_argument_groups(parser):
                               'By default this will be determined by input '
                               'pixel size.')
     return tuple([group_1])
+
+
+def _retitle_optional_arguments(parser):
+    """Hack to make the optional arguments say what we want."""
+    opt_args = [x for x in parser._action_groups if x.title == 'optional arguments']
+    if len(opt_args) == 1:
+        opt_args = opt_args[0]
+        opt_args.title = "Global Options"
+
+
+def _apply_default_products_and_aliases(reader, user_products):
+    reader_mod = importlib.import_module('polar2grid.readers.' + reader)
+    default_products = getattr(reader_mod, 'DEFAULT_PRODUCTS', [])
+    if user_products is None and default_products:
+        LOG.info("Using default product list: {}".format(default_products))
+        user_products = default_products
+    elif user_products is None:
+        LOG.error("Reader does not have a default set of products to load, "
+                  "please specify products to load with `--products`.")
+        return None
+
+    aliases = getattr(reader_mod, 'PRODUCT_ALIASES', {})
+    return list(_handle_product_names(aliases, user_products))
 
 
 def main(argv=sys.argv[1:]):
@@ -244,23 +319,26 @@ basic processing with limited products:
                         help="When using the 'native' resampler for composites, don't save data "
                              "at its native resolution, use the resolution used to create the "
                              "composite.")
-    parser.add_argument('-w', '--writers', nargs='+',
-                        help='writers to save datasets with')
     parser.add_argument("--list-products", dest="list_products", action="store_true",
                         help="List available reader products and exit")
-    subgroups = add_scene_argument_groups(parser)
-    subgroups += add_resample_argument_groups(parser)
+    reader_group = add_scene_argument_groups(parser)[0]
+    resampling_group = add_resample_argument_groups(parser)[0]
+    writer_group = add_writer_argument_groups(parser)[0]
+    subgroups = [reader_group, resampling_group, writer_group]
 
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
+
+    _retitle_optional_arguments(parser)
     args, remaining_args = parser.parse_known_args(argv_without_help)
     os.environ['DASK_NUM_WORKERS'] = str(args.num_workers)
 
     # get the logger if we know the readers and writers that will be used
-    if args.reader is not None and args.writers is not None:
-        glue_name = args.reader + "_" + "-".join(args.writers or [])
+    if args.readers is not None and args.writers is not None:
+        glue_name = args.readers[0] + "_" + "-".join(args.writers or [])
         LOG = logging.getLogger(glue_name)
     # add writer arguments
     if args.writers is not None:
+        args.writers = [WRITER_ALIASES.get(writer, writer) for writer in args.writers]
         for writer in (args.writers or []):
             parser_func = WRITER_PARSER_FUNCTIONS.get(writer)
             if parser_func is None:
@@ -268,30 +346,47 @@ basic processing with limited products:
             subgroups += parser_func(parser)
     args = parser.parse_args(argv)
 
-    if args.reader is None:
+    if args.readers is None:
         parser.print_usage()
         parser.exit(1, "\nERROR: Reader must be provided (-r flag).\n"
                        "Supported readers:\n\t{}\n".format('\n\t'.join(['abi_l1b', 'ahi_hsd', 'hrit_ahi'])))
+    elif len(args.readers) > 1:
+        parser.print_usage()
+        parser.exit(1, "\nMultiple readers is not currently supported. Got:\n\t"
+                  "{}\n".format('\n\t'.join(args.readers)))
+        return -1
     if args.writers is None:
         parser.print_usage()
         parser.exit(1, "\nERROR: Writer must be provided (-w flag) with one or more writer.\n"
                        "Supported writers:\n\t{}\n".format('\n\t'.join(['geotiff'])))
 
-    def _args_to_dict(group_actions):
-        return {ga.dest: getattr(args, ga.dest) for ga in group_actions if hasattr(args, ga.dest)}
-    scene_args = _args_to_dict(subgroups[0]._group_actions)
-    load_args = _args_to_dict(subgroups[1]._group_actions)
-    resample_args = _args_to_dict(subgroups[2]._group_actions)
-    writer_args = {}
-    for idx, writer in enumerate(args.writers):
-        sgrp1, sgrp2 = subgroups[3 + idx * 2: 5 + idx * 2]
+    def _args_to_dict(group_actions, exclude=None):
+        if exclude is None:
+            exclude = []
+        return {ga.dest: getattr(args, ga.dest) for ga in group_actions
+                if hasattr(args, ga.dest) and ga.dest not in exclude}
+    reader_args = _args_to_dict(reader_group._group_actions)
+    scene_creation = {
+        'filenames': reader_args.pop('filenames'),
+        'reader': reader_args.pop('readers')[0],
+    }
+    load_args = {
+        'products': reader_args.pop('products'),
+    }
+    # anything left in 'reader_args' is a reader-specific kwarg
+    resample_args = _args_to_dict(resampling_group._group_actions)
+    writer_args = _args_to_dict(writer_group._group_actions)
+    # writer_args = {}
+    subgroup_idx = 3
+    for idx, writer in enumerate(writer_args['writers']):
+        sgrp1, sgrp2 = subgroups[subgroup_idx + idx * 2: subgroup_idx + 2 + idx * 2]
         wargs = _args_to_dict(sgrp1._group_actions)
         if sgrp2 is not None:
             wargs.update(_args_to_dict(sgrp2._group_actions))
         writer_args[writer] = wargs
         # get default output filename
         if 'filename' in wargs and wargs['filename'] is None:
-            wargs['filename'] = get_default_output_filename(args.reader, writer)
+            wargs['filename'] = get_default_output_filename(args.readers[0], writer)
 
     if not args.filenames:
         parser.print_usage()
@@ -317,11 +412,11 @@ basic processing with limited products:
         dask.config.set(pool=ThreadPool(args.num_workers))
 
     # Parse provided files and search for files if provided directories
-    scene_args['filenames'] = get_input_files(scene_args['filenames'])
+    scene_creation['filenames'] = get_input_files(scene_creation['filenames'])
     # Create a Scene, analyze the provided files
     LOG.info("Sorting and reading input files...")
     try:
-        scn = Scene(**scene_args)
+        scn = Scene(**scene_creation)
     except ValueError as e:
         LOG.error("{} | Enable debug message (-vvv) or see log file for details.".format(str(e)))
         LOG.debug("Further error information: ", exc_info=True)
@@ -340,17 +435,18 @@ basic processing with limited products:
         rename_log_file(glue_name + scn.attrs['start_time'].strftime("_%Y%m%d_%H%M%S.log"))
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
-    if load_args['products'] is None:
-        try:
-            reader_mod = importlib.import_module('polar2grid.readers.' + scene_args['reader'])
-            load_args['products'] = reader_mod.DEFAULT_PRODUCTS
-            LOG.info("Using default product list: {}".format(load_args['products']))
-        except (ImportError, AttributeError):
-            LOG.error("No default products list set, please specify with `--products`.")
-            return -1
-
     LOG.info("Loading product metadata from files...")
+    load_args['products'] = _apply_default_products_and_aliases(
+        scene_creation['reader'], load_args['products'])
+    if not load_args['products']:
+        return -1
     scn.load(load_args['products'])
+
+    # from .filters.day_night import _get_sunlight_coverage
+    # data_arr = scn[load_args['products'][0]]
+    # sl_cov = _get_sunlight_coverage(data_arr.attrs['area'], data_arr.attrs['start_time'])
+    # print("Sunlight coverage: ", sl_cov)
+    # return
 
     resample_kwargs = resample_args.copy()
     areas_to_resample = resample_kwargs.pop('grids')
@@ -436,7 +532,8 @@ basic processing with limited products:
             # because they won't be saved
             new_scn = scn
 
-        to_save = write_scene(new_scn, args.writers, writer_args, resampled_products, to_save=to_save)
+        overwrite_platform_name_with_aliases(new_scn)
+        to_save = write_scene(new_scn, writer_args['writers'], writer_args, resampled_products, to_save=to_save)
 
     if args.progress:
         pbar = ProgressBar()
