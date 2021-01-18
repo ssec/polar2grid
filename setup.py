@@ -39,40 +39,9 @@ http://www.ssec.wisc.edu/software/polar2grid/
 :license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"
-import os
 from setuptools import setup, find_packages, Command
-from distutils.extension import Extension
 from glob import glob
 import numpy
-
-extensions = [
-    Extension("polar2grid.remap._ll2cr", sources=["polar2grid/remap/_ll2cr.pyx"], extra_compile_args=["-O3", "-Wno-unused-function"]),
-    Extension("polar2grid.remap._fornav", sources=["polar2grid/remap/_fornav.pyx", "polar2grid/remap/_fornav_templates.cpp"], language="c++", extra_compile_args=["-O3", "-Wno-unused-function"])
-]
-
-try:
-    from Cython.Build import cythonize
-except ImportError:
-    cythonize = None
-
-if not os.getenv("USE_CYTHON", False) or cythonize is None:
-    print("Cython will not be used. Use environment variable 'USE_CYTHON=True' to use it")
-    def cythonize(extensions, **_ignore):
-        """Fake function to compile from C/C++ files instead of compiling .pyx files with cython.
-        """
-        for extension in extensions:
-            sources = []
-            for sfile in extension.sources:
-                path, ext = os.path.splitext(sfile)
-                if ext in ('.pyx', '.py'):
-                    if extension.language == 'c++':
-                        ext = '.cpp'
-                    else:
-                        ext = '.c'
-                    sfile = path + ext
-                sources.append(sfile)
-            extension.sources[:] = sources
-        return extensions
 
 version = '2.3.0'
 
@@ -147,8 +116,6 @@ setup(
     classifiers=classifiers,
     keywords='',
     url="http://www.ssec.wisc.edu/software/polar2grid/",
-    download_url="http://larch.ssec.wisc.edu/simple/polar2grid",
-    ext_modules=cythonize(extensions, compiler_directives={'language_level': '3'}),
     include_dirs=[numpy.get_include()],
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     include_package_data=True,
@@ -158,6 +125,8 @@ setup(
     # Look at env.sh, glue.py, and glue_legacy.py for where these are pointed to.
     data_files=[('etc/polar2grid/enhancements', glob('etc/enhancements/*')),
                 ('etc/polar2grid/composites', glob('etc/composites/*')),
+                ('etc/polar2grid/readers', glob('etc/readers/*')),
+                ('etc/polar2grid/writers', glob('etc/writers/*')),
                 ('etc/polar2grid', ['etc/pyspectral.yaml'])],
     zip_safe=True,
     tests_require=['py.test'],
@@ -165,6 +134,7 @@ setup(
     install_requires=[
         'setuptools',       # reading configuration files
         'numpy',
+        'satpy',
         ],
     python_requires='>=3.8',
     extras_require=extras_require,

@@ -89,8 +89,7 @@ from scipy.spatial import cKDTree
 
 from polar2grid.core.containers import GriddedProduct, GriddedScene, SwathScene
 from polar2grid.grids import GridManager
-from polar2grid.remap import fornav
-from polar2grid.remap import ll2cr as ll2cr  # gridinator
+from pyresample.ewa import fornav, ll2cr
 
 LOG = logging.getLogger(__name__)
 SWATH_USAGE = os.environ.get("P2G_SWATH_USAGE", 0)
