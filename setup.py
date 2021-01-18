@@ -102,8 +102,11 @@ extras_require = {
 extras_require["all"] = list(set([x for y in extras_require.values() for x in y]))
 
 entry_points = {
-    'console_scripts': [],
-    }
+    'console_scripts': [
+        'polar2grid=polar2grid.__main__:p2g_main',
+        'geo2grid=polar2grid.__main__:g2g_main',
+    ],
+}
 
 setup(
     name='polar2grid',
