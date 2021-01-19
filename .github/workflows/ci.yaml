@@ -23,6 +23,7 @@ jobs:
           pip install --no-deps -e .
 
       - name: build website
+        shell: bash -l {0}
         run: |
           cd doc && make html
 #      - name: deploy website
