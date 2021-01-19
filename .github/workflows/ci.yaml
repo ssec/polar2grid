@@ -61,16 +61,23 @@ jobs:
 #          python-version: ${{ matrix.python-version }}
           environment-file: continuous_integration/environment.yaml
 
-      - name: Install Polar2Grid
+      - name: Install Polar2Grid on non-Windows
         shell: bash -l {0}
         run: |
           pip install --no-deps -e .
+        if: runner.os != 'Windows'
 
       - name: Run unit tests on non-Windows
         shell: bash -l {0}
         run: |
           pytest --cov=polar2grid polar2grid/tests --cov-report=xml
         if: runner.os != 'Windows'
+
+      - name: Install Polar2Grid on Windows
+        shell: powershell
+        run: |
+          pip install --no-deps -e .
+        if: runner.os == 'Windows'
 
       - name: Run unit tests on Windows
         shell: powershell

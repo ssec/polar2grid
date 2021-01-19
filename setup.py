@@ -41,7 +41,6 @@ http://www.ssec.wisc.edu/software/polar2grid/
 __docformat__ = "restructuredtext en"
 from setuptools import setup, find_packages, Command
 from glob import glob
-import numpy
 
 version = '2.4.0'
 
@@ -119,7 +118,6 @@ setup(
     classifiers=classifiers,
     keywords='',
     url="http://www.ssec.wisc.edu/software/polar2grid/",
-    include_dirs=[numpy.get_include()],
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     include_package_data=True,
     package_data={'polar2grid': ["compositors/*.ini", "awips/*.ini", "awips/*.yaml",
@@ -136,7 +134,6 @@ setup(
     cmdclass={'test': PyTest},
     install_requires=[
         'setuptools',       # reading configuration files
-        'numpy',
         'satpy',
         'rasterio',
         'netCDF4',
