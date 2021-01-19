@@ -17,7 +17,6 @@ dependencies:
   - h5py
   - netcdf4
   - pillow
-  - pip
   - pycoast
   - pydecorate
   - pyhdf
@@ -43,7 +42,8 @@ dependencies:
   - pytest-cov
   - sphinx
   - graphviz
+  - pip
   - pip:
-    - git+https://github.com/pytroll/satpy.git
+    - "git+https://github.com/pytroll/satpy.git"
     - graphviz
     - sphinx-argparse
