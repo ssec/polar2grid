@@ -5,7 +5,6 @@ dependencies:
   - aggdraw
   - appdirs
   - cftime
-  - conda-pack
   - configobj
   - curl
   - dask
@@ -43,7 +42,8 @@ dependencies:
   - sphinx
   - graphviz
   - pip
+  - satpy
   - pip:
-    - "git+https://github.com/pytroll/satpy.git"
+#    - "git+https://github.com/pytroll/satpy.git"
     - graphviz
     - sphinx-argparse
