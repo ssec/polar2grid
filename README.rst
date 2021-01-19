@@ -1,8 +1,8 @@
 Polar2Grid and Geo2Grid
 =======================
 
-.. image:: https://travis-ci.com/ssec/polar2grid.svg
-    :target: https://travis-ci.com/ssec/polar2grid
+.. image:: https://github.com/ssec/polar2grid/workflows/CI/badge.svg?branch=master
+    :target: https://github.com/ssec/polar2grid/actions?query=workflow%3A%22CI%22
 
 Polar2Grid and Geo2Grid are a set of tools for extracting data from earth-observing satellite instruments,
 remapping it to uniform grids, and writing that gridded data to a new file format.
@@ -40,6 +40,34 @@ from source, run::
 
     pip install .
 
+Other Installation Methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The "polar2grid" package that powers the official CSPP Polar2Grid and CSPP Geo
+Geo2Grid all-in-one tarballs is also released as a traditional python package
+on PyPI and conda-forge. Installing the package in this way allows Polar2Grid
+and Geo2Grid functionality to be used from non-Linux systems.
+The python package can be installed into your normal Python 3.8+
+environment by doing the following in a conda environment (recommended):
+
+.. code-block:: bash
+
+    conda install -c conda-forge polar2grid
+
+Or with pip:
+
+.. code-block:: bash
+
+    pip install polar2grid
+
+Once the package is installed the regular "geo2grid.sh" and "polar2grid.sh"
+scripts are available. For systems without the bash shell available there are
+also "geo2grid" and "polar2grid" wrapper scripts available. For example:
+
+.. code-block:: bash
+
+    polar2grid -h
+
 Contributing
 ------------
 
@@ -65,23 +93,12 @@ the source for some of these executables in the root of the repository.
          optimizations. This is not used as of P2Gv2.0 and will be removed in future revisions.
 - etc: Configuration files used to customize the SatPy package for Polar2Grid users.
 
-Branching Model
----------------
-
-The branching model used by the Polar2Grid team follows a basic ``feature-branch`` -> ``develop`` -> ``master``
-structure.
-New features still in development should get their own branches. Once these features are complete they are merged
-into the ``develop`` branch. Once all features for a particular release have been tested and are considered
-"release ready" they are merged into the ``master`` branch. If a master merge is for a new minor version a
-maintenance branch is also created for future bug fixes. This branching model was inspired from the discussion
-`here <http://nvie.com/posts/a-successful-git-branching-model/>`_.
-
 Copyright and License
 ---------------------
 
 ::
 
-    Copyright (C) 2012-2019 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
+    Copyright (C) 2012-2021 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

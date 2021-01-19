@@ -1,0 +1,46 @@
+name: test
+channels:
+  - conda-forge
+dependencies:
+  - aggdraw
+  - appdirs
+  - cftime
+  - configobj
+  - curl
+  - dask
+  - distributed
+  - ffmpeg
+  - fontconfig
+  - freetype
+  - gdal
+  - h5py
+  - netcdf4
+  - pillow
+  - pycoast
+  - pydecorate
+  - pyhdf
+  - pykdtree
+  - pyorbital
+  - pyproj
+  - pyresample
+  - pyshp
+  - pyspectral
+  - python=3.8
+  - python-geotiepoints
+  - pyyaml
+  - rasterio
+  - requests
+  - setuptools
+  - six
+  - trollimage
+  - trollsift
+  - scipy
+  - zarr
+  - xarray
+  - pytest
+  - pytest-cov
+  - sphinx
+  - pip
+  - satpy
+  - python-graphviz
+  - sphinx-argparse

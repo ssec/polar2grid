@@ -58,14 +58,6 @@ def dist_is_editable(dist):
             return True
     return False
 
-
-dist = pkg_resources.get_distribution('polar2grid')
-if dist_is_editable(dist):
-    os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(dist.module_path, 'etc'))
-else:
-    os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
-USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
-
 LOG = logging.getLogger(__name__)
 
 WRITER_PARSER_FUNCTIONS = {
@@ -293,6 +285,14 @@ def main(argv=sys.argv[1:]):
     from polar2grid.core.script_utils import (
         setup_logging, rename_log_file, create_exc_handler)
     import argparse
+
+    dist = pkg_resources.get_distribution('polar2grid')
+    if dist_is_editable(dist):
+        os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(dist.module_path, 'etc'))
+    else:
+        os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
+    USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
+
     prog = os.getenv('PROG_NAME', sys.argv[0])
     # "usage: " will be printed at the top of this:
     usage = """

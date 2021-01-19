@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -21,19 +21,30 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-#     Written by David Hoese    December 2014
+#     Written by David Hoese    January 2021
 #     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Run tests for polar2grid from the command line.
+"""Simple wrapper around the Polar2Grid and Geo2Grid glue scripts."""
 
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2014
-:license:      GNU GPLv3
+import os
+import sys
 
-"""
+
+def p2g_main(argv=sys.argv[1:]):
+    from polar2grid.glue import main
+    os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")
+    main(argv=argv)
+
+
+def g2g_main(argv=sys.argv[1:]):
+    from polar2grid.glue import main
+    os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "0")
+    main(argv=argv)
+
+
+if __name__ == "__main__":
+    from polar2grid.glue import main
+    sys.exit(main())
