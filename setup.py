@@ -42,7 +42,7 @@ __docformat__ = "restructuredtext en"
 from setuptools import setup, find_packages, Command
 from glob import glob
 
-version = '2.4.0'
+version = '2.4.1'
 
 
 class PyTest(Command):
