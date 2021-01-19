@@ -1,4 +1,4 @@
-name: jenkins_p2g_swbundle
+name: test
 channels:
   - conda-forge
 dependencies:
