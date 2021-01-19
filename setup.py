@@ -138,6 +138,9 @@ setup(
         'setuptools',       # reading configuration files
         'numpy',
         'satpy',
+        'rasterio',
+        'netCDF4',
+        'h5py',
         ],
     python_requires='>=3.8',
     extras_require=extras_require,
