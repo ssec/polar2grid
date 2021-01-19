@@ -40,10 +40,7 @@ dependencies:
   - pytest
   - pytest-cov
   - sphinx
-  - graphviz
   - pip
   - satpy
-  - pip:
-#    - "git+https://github.com/pytroll/satpy.git"
-    - graphviz
-    - sphinx-argparse
+  - python-graphviz
+  - sphinx-argparse
