@@ -43,7 +43,7 @@ from setuptools import setup, find_packages, Command
 from glob import glob
 import numpy
 
-version = '2.3.0'
+version = '2.4.0'
 
 
 class PyTest(Command):

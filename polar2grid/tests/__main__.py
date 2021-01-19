@@ -37,9 +37,3 @@
 :license:      GNU GPLv3
 
 """
-__docformat__ = "restructuredtext en"
-
-if __name__ == "__main__":
-    import sys
-    from polar2grid.tests import main
-    sys.exit(main())

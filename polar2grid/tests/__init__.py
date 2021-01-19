@@ -37,15 +37,3 @@
 :license:      GNU GPLv3
 
 """
-__docformat__ = "restructuredtext en"
-
-
-def main():
-    import os
-    import pytest
-    return pytest.main([os.path.dirname(os.path.realpath(__file__))])
-
-
-if __name__ == "__main__":
-    import sys
-    sys.exit(main())
