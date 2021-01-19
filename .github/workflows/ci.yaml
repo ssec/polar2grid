@@ -24,7 +24,7 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
 #          python-version: ${{ matrix.python-version }}
-          environment-file: continous_integration/environment.yaml
+          environment-file: continuous_integration/environment.yaml
 
       - name: Install Polar2Grid
         shell: bash -l {0}
