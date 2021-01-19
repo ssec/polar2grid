@@ -3,6 +3,40 @@ name: CI
 on: [push, pull_request]
 
 jobs:
+  # build website
+  website:
+    name: build website
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+
+      - name: Setup Conda Environment
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          #          python-version: ${{ matrix.python-version }}
+          environment-file: continuous_integration/environment.yaml
+
+      - name: Install Polar2Grid
+        shell: bash -l {0}
+        run: |
+          pip install --no-deps -e .
+
+      - name: build website
+        run: |
+          cd doc && make html
+#      - name: deploy website
+#        if: github.event_name == 'push'
+#        uses: peaceiris/actions-gh-pages@v3
+#        with:
+#          personal_token: ${{ secrets.VISPY_WEBSITE_TOKEN }}
+#          publish_dir: doc/_build/html
+#          publish_branch: master
+#          cname: vispy.org
+#          allow_empty_commit: true
+#          external_repository: vispy/vispy.github.com
+#          full_commit_message: "Deploy vispy.org website for SHA:$GITHUB_SHA (Tag: $GITHUB_REF)"
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -31,10 +65,17 @@ jobs:
         run: |
           pip install --no-deps -e .
 
-      - name: Run unit tests
+      - name: Run unit tests on non-Windows
         shell: bash -l {0}
         run: |
           pytest --cov=polar2grid polar2grid/tests --cov-report=xml
+        if: runner.os != 'Windows'
+
+      - name: Run unit tests on Windows
+        shell: powershell
+        run: |
+          pytest --cov=polar2grid polar2grid/tests --cov-report=xml
+        if: runner.os == 'Windows'
 
 #      - name: Upload unittest coverage to Codecov
 #        uses: codecov/codecov-action@v1
