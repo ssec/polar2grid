@@ -32,6 +32,7 @@
 
 import os
 import sys
+import inspect
 import argparse
 import logging
 import importlib
@@ -86,7 +87,7 @@ def get_platform_name_alias(satpy_platform_name):
 def overwrite_platform_name_with_aliases(scn):
     """Change 'platform_name' for every DataArray to Polar2Grid expectations."""
     for data_arr in scn:
-        if 'platform_name' not in data_arr.attrs:
+        if 'platform_name' not in data_arr.__dict__:
             continue
         pname = get_platform_name_alias(data_arr.attrs['platform_name'])
         data_arr.attrs['platform_name'] = pname
@@ -173,7 +174,6 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
 
     for writer_name in writers:
         wargs = writer_args[writer_name]
-
         res = scn.save_datasets(writer=writer_name, compute=False, datasets=datasets, **wargs)
         if isinstance(res, (tuple, list)):
             to_save.extend(zip(*res))
@@ -192,7 +192,7 @@ def add_scene_argument_groups(parser):
     group_1.add_argument('-r', '--reader', action='append', dest='readers',
                          metavar="READER",
                          help='Name of reader used to read provided files. '
-                              'Supported readers: ' + ', '.join(['abi_l1b', 'ahi_hrit', 'ahi_hsd']))
+                              'Supported readers: ' + ', '.join(['mirs', 'abi_l1b', 'ahi_hrit', 'ahi_hsd']))
     group_1.add_argument('-f', '--filenames', nargs='+', default=[],
                          help='Input files to read. For a long list of '
                               'files, use \'-f @my_files.txt\' '
@@ -261,7 +261,7 @@ def _retitle_optional_arguments(parser):
         opt_args.title = "Global Options"
 
 
-def _apply_default_products_and_aliases(reader, user_products):
+def _apply_default_products_and_aliases(scn, reader, user_products):
     reader_mod = importlib.import_module('polar2grid.readers.' + reader)
     default_products = getattr(reader_mod, 'DEFAULT_PRODUCTS', [])
     if user_products is None and default_products:
@@ -271,6 +271,16 @@ def _apply_default_products_and_aliases(reader, user_products):
         LOG.error("Reader does not have a default set of products to load, "
                   "please specify products to load with `--products`.")
         return None
+
+    if reader == 'mirs':
+       ds_ids = scn.available_dataset_names(composites=True)
+       product_values = (getattr(reader_mod, 'PRODUCT_ALIASES', {}).values())
+       for pv in product_values:
+           print(pv['name'])
+       default_names = map(lambda x: x['name'], product_values)
+       default_names = set(default_names)
+       # only load default products which match data available
+       user_products = set(ds_ids).intersection(default_names)
 
     aliases = getattr(reader_mod, 'PRODUCT_ALIASES', {})
     return list(_handle_product_names(aliases, user_products))
@@ -436,7 +446,7 @@ basic processing with limited products:
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
     LOG.info("Loading product metadata from files...")
-    load_args['products'] = _apply_default_products_and_aliases(
+    load_args['products'] = _apply_default_products_and_aliases(scn,
         scene_creation['reader'], load_args['products'])
     if not load_args['products']:
         return -1
