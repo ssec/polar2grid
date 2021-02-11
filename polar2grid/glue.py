@@ -32,7 +32,6 @@
 
 import os
 import sys
-import inspect
 import argparse
 import logging
 import importlib
@@ -41,7 +40,8 @@ from glob import glob
 
 import dask
 import numpy as np
-from pyresample.geometry import DynamicAreaDefinition, AreaDefinition
+from satpy import DataQuery
+from pyresample.geometry import DynamicAreaDefinition, AreaDefinition, SwathDefinition
 from pyproj import Proj
 from polar2grid.writers import geotiff, awips_tiled
 
@@ -87,7 +87,8 @@ def get_platform_name_alias(satpy_platform_name):
 def overwrite_platform_name_with_aliases(scn):
     """Change 'platform_name' for every DataArray to Polar2Grid expectations."""
     for data_arr in scn:
-        if 'platform_name' not in data_arr.__dict__:
+        data_dict = data_arr.attrs
+        if 'platform_name' not in data_dict:
             continue
         pname = get_platform_name_alias(data_arr.attrs['platform_name'])
         data_arr.attrs['platform_name'] = pname
@@ -172,8 +173,20 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
         # no datasets to save
         return to_save
 
+    for dataID in datasets:
+        try:
+            area_def = getattr(scn[dataID], 'area', None)
+        except KeyError:
+            msg = 'No area definition in {}'.format(dataID)
+            LOG.info(msg)
+            LOG.error('Information', exc_info=True)
+            
+        if isinstance(area_def, SwathDefinition): 
+            scn[dataID].attrs['area'].area_id = "native"
+
     for writer_name in writers:
         wargs = writer_args[writer_name]
+        print(writer_name, datasets, wargs)
         res = scn.save_datasets(writer=writer_name, compute=False, datasets=datasets, **wargs)
         if isinstance(res, (tuple, list)):
             to_save.extend(zip(*res))
@@ -184,7 +197,10 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
 
 def _handle_product_names(aliases, products):
     for prod_name in products:
-        yield aliases.get(prod_name, prod_name)
+        product = aliases.get(prod_name, prod_name)
+        if isinstance(product, DataQuery):
+            product = product['name']
+        yield product
 
 
 def add_scene_argument_groups(parser):
@@ -272,19 +288,19 @@ def _apply_default_products_and_aliases(scn, reader, user_products):
                   "please specify products to load with `--products`.")
         return None
 
-    if reader == 'mirs':
-       ds_ids = scn.available_dataset_names(composites=True)
-       product_values = (getattr(reader_mod, 'PRODUCT_ALIASES', {}).values())
-       for pv in product_values:
-           print(pv['name'])
-       default_names = map(lambda x: x['name'], product_values)
-       default_names = set(default_names)
-       # only load default products which match data available
-       user_products = set(ds_ids).intersection(default_names)
-
+    # check for valid product names
+    ds_ids = scn.available_dataset_names(composites=True)
     aliases = getattr(reader_mod, 'PRODUCT_ALIASES', {})
-    return list(_handle_product_names(aliases, user_products))
+    user_products = list(_handle_product_names(aliases, user_products))
 
+    # only load default products which match data available
+    user_products = set(ds_ids).intersection(user_products)
+    if user_products:
+        return list(_handle_product_names(aliases, user_products))
+    else:
+        msg = "No intersection between products {} and scn {}"
+        msg = msg.format(user_products, ds_ids)
+        LOG.error(msg)
 
 def main(argv=sys.argv[1:]):
     global LOG
