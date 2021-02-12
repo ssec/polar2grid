@@ -59,6 +59,7 @@ def dist_is_editable(dist):
             return True
     return False
 
+
 LOG = logging.getLogger(__name__)
 
 WRITER_PARSER_FUNCTIONS = {
