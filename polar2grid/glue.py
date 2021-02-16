@@ -39,9 +39,7 @@ import pkg_resources
 from glob import glob
 
 import dask
-import numpy as np
-from pyresample.geometry import DynamicAreaDefinition, AreaDefinition
-from pyproj import Proj
+from polar2grid.resample import resample_scene
 from polar2grid.writers import geotiff, awips_tiled
 
 try:
@@ -98,61 +96,6 @@ def get_default_output_filename(reader, writer):
     if reader not in ofile_map:
         reader = None
     return ofile_map[reader]
-
-
-def _proj_dict_equal(a, b):
-    """Compare two projection dictionaries for "close enough" equality."""
-    # pyproj 2.0+
-    if CRS is not None:
-        crs1 = CRS(a)
-        crs2 = CRS(b)
-        return crs1 == crs2
-
-    # fallback
-    from osgeo import osr
-    a = dict(sorted(a.items()))
-    b = dict(sorted(b.items()))
-    p1 = Proj(a)
-    p2 = Proj(b)
-    s1 = osr.SpatialReference()
-    s1.ImportFromProj4(p1.srs)
-    s2 = osr.SpatialReference()
-    s2.ImportFromProj4(p2.srs)
-    return s1.IsSame(s2)
-
-
-def is_native_grid(grid, max_native_area):
-    """Is the desired grid a version of the native Area?"""
-    if not isinstance(max_native_area, AreaDefinition):
-        return False
-    if not isinstance(grid, AreaDefinition):
-        return False
-    if not _proj_dict_equal(max_native_area.proj_dict, grid.proj_dict):
-        return False
-    # if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent), atol=grid.pixel_size_x):
-    if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent)):
-        return False
-    if max_native_area.width < grid.width:
-        return (grid.width / max_native_area.width).is_integer()
-    else:
-        return (max_native_area.width / grid.width).is_integer()
-
-
-def get_preserve_resolution(args, resampler, areas_to_resample):
-    """Determine if we should preserve native resolution products.
-
-    Preserving native resolution should only happen if:
-
-    1. The 'native' resampler is used
-    2. At least one of the areas provided to resampling are 'MIN' or 'MAX'
-    3. The user didn't ask to *not* preserve it.
-
-    """
-    # save original native resolution if possible
-    any_minmax = any(x in ['MIN', 'MAX'] for x in areas_to_resample)
-    is_native = resampler == 'native'
-    is_default = resampler is None
-    return any_minmax and (is_native or is_default) and args.preserve_resolution
 
 
 def get_input_files(input_filenames):
@@ -279,7 +222,6 @@ def _apply_default_products_and_aliases(reader, user_products):
 def main(argv=sys.argv[1:]):
     global LOG
     from satpy import Scene
-    from satpy.resample import get_area_def
     from satpy.writers import compute_writer_results
     from dask.diagnostics import ProgressBar
     from polar2grid.core.script_utils import (
@@ -448,92 +390,15 @@ basic processing with limited products:
     # print("Sunlight coverage: ", sl_cov)
     # return
 
-    resample_kwargs = resample_args.copy()
-    areas_to_resample = resample_kwargs.pop('grids')
-    grid_configs = resample_kwargs.pop('grid_configs')
-    resampler = resample_kwargs.pop('resampler')
-
-    if areas_to_resample is None and resampler in [None, 'native']:
-        # no areas specified
-        areas_to_resample = ['MAX']
-    elif areas_to_resample is None:
-        raise ValueError("Resampling method specified (--method) without any destination grid/area (-g flag).")
-    elif not areas_to_resample:
-        # they don't want any resampling (they used '-g' with no args)
-        areas_to_resample = [None]
-
-    p2g_grid_configs = [x for x in grid_configs if x.endswith('.conf')]
-    pyresample_area_configs = [x for x in grid_configs if not x.endswith('.conf')]
-    if not grid_configs or p2g_grid_configs:
-        # if we were given p2g grid configs or we weren't given any to choose from
-        from polar2grid.grids import GridManager
-        grid_manager = GridManager(*p2g_grid_configs)
-    else:
-        grid_manager = {}
-
-    if pyresample_area_configs:
-        from pyresample.utils import parse_area_file
-        custom_areas = parse_area_file(pyresample_area_configs)
-        custom_areas = {x.area_id: x for x in custom_areas}
-    else:
-        custom_areas = {}
-
-    ll_bbox = resample_kwargs.pop('ll_bbox')
+    ll_bbox = resample_args.pop('ll_bbox')
     if ll_bbox:
         scn = scn.crop(ll_bbox=ll_bbox)
 
-    wishlist = scn.wishlist.copy()
-    preserve_resolution = get_preserve_resolution(args, resampler, areas_to_resample)
-    if preserve_resolution:
-        preserved_products = set(wishlist) & set(scn.keys())
-        resampled_products = set(wishlist) - preserved_products
-
-        # original native scene
-        to_save = write_scene(scn, args.writers, writer_args, preserved_products)
-    else:
-        preserved_products = set()
-        resampled_products = set(wishlist)
-        to_save = []
-
-    LOG.debug("Products to preserve resolution for: {}".format(preserved_products))
-    LOG.debug("Products to use new resolution for: {}".format(resampled_products))
-    for area_name in areas_to_resample:
-        if area_name is None:
-            # no resampling
-            area_def = None
-        elif area_name == 'MAX':
-            area_def = scn.max_area()
-        elif area_name == 'MIN':
-            area_def = scn.min_area()
-        elif area_name in custom_areas:
-            area_def = custom_areas[area_name]
-        elif area_name in grid_manager:
-            p2g_def = grid_manager[area_name]
-            area_def = p2g_def.to_satpy_area()
-            if isinstance(area_def, DynamicAreaDefinition) and p2g_def['cell_width'] is not None:
-                area_def = area_def.freeze(scn.max_area(),
-                                           resolution=(abs(p2g_def['cell_width']), abs(p2g_def['cell_height'])))
-        else:
-            area_def = get_area_def(area_name)
-
-        if resampler is None and area_def is not None:
-            rs = 'native' if area_name in ['MIN', 'MAX'] or is_native_grid(area_def, scn.max_area()) else 'nearest'
-            LOG.debug("Setting default resampling to '{}' for grid '{}'".format(rs, area_name))
-        else:
-            rs = resampler
-
-        if area_def is not None:
-            LOG.info("Resampling data to '%s'", area_name)
-            new_scn = scn.resample(area_def, resampler=rs, **resample_kwargs)
-        elif not preserve_resolution:
-            # the user didn't want to resample to any areas
-            # the user also requested that we don't preserve resolution
-            # which means we have to save this Scene's datasets
-            # because they won't be saved
-            new_scn = scn
-
-        overwrite_platform_name_with_aliases(new_scn)
-        to_save = write_scene(new_scn, writer_args['writers'], writer_args, resampled_products, to_save=to_save)
+    to_save = []
+    scenes_to_save = resample_scene(scn, preserve_resolution=args.preserve_resolution, **resample_args)
+    for scene_to_save, products_to_save in scenes_to_save:
+        overwrite_platform_name_with_aliases(scene_to_save)
+        to_save = write_scene(scene_to_save, writer_args['writers'], writer_args, products_to_save, to_save=to_save)
 
     if args.progress:
         pbar = ProgressBar()
