@@ -47,6 +47,7 @@ class ResamplerDecisionTree(DecisionTree):
                                  "sensor",
                                  "standard_name",
                                  "area_type",
+                                 "reader",  # not currently available
                                  "units",
                                  ))
         self.prefix = kwargs.pop("config_section", "resampling")
@@ -88,7 +89,7 @@ class ResamplerDecisionTree(DecisionTree):
 
     def find_match(self, **query_dict):
         """Find a match."""
-        query_dict['area_type'] = "swath" if isinstance(query_dict.attrs['area'], SwathDefinition) else 'area'
+        query_dict['area_type'] = "swath" if isinstance(query_dict['area'], SwathDefinition) else 'area'
 
         try:
             return super().find_match(**query_dict)

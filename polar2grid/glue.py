@@ -164,18 +164,48 @@ def add_writer_argument_groups(parser):
     return (group_1,)
 
 
-def add_resample_argument_groups(parser):
+def add_resample_argument_groups(parser, is_polar2grid=False):
     group_1 = parser.add_argument_group(title='Resampling')
-    group_1.add_argument('--method', dest='resampler',
-                         default=None, choices=['native', 'nearest'],
-                         help='resampling algorithm to use (default: native)')
+    if is_polar2grid:
+        group_1.add_argument('--method', dest='resampler',
+                             default=None, choices=['ewa', 'native', 'nearest'],
+                             help='resampling algorithm to use (default: <sensor specific>)')
+        group_1.add_argument('-g', '--grids', default=None, nargs="*",
+                             help='Area definition to resample to. Empty means '
+                                  'no resampling (default: "wgs84_fit" for '
+                                  'non-native resampling)')
+
+        # EWA options
+        group_1.add_argument('--weight-delta-max', default=argparse.SUPPRESS, type=float,
+                             help='Maximum distance in grid cells over which '
+                                  'to distribute an input swath pixel (--method "ewa"). '
+                                  'Default is 10.0.')
+        group_1.add_argument('--weight-distance-max', default=argparse.SUPPRESS, type=float,
+                             help='Distance in grid cell units at which to '
+                                  'apply a minimum weight. (--method "ewa"). '
+                                  'Default is 1.0.')
+        group_1.add_argument('--maximum-weight-mode', dest="maximum_weight_mode",
+                             default=argparse.SUPPRESS, action="store_true",
+                             help='Use maximum weight mode (--method "ewa"). '
+                                  'Default is off.')
+        group_1.add_argument('--ewa-persist', default=argparse.SUPPRESS,
+                             help='Pre-compute geolocation to determine what '
+                                  'chunks of data should be resampled '
+                                  '(--method "ewa"). This can reduce the '
+                                  'overall work required by the algorithm, '
+                                  'but only if a small amount of swath data '
+                                  'lies on the target area.')
+    else:
+        group_1.add_argument('--method', dest='resampler',
+                             default=None, choices=['native', 'nearest'],
+                             help='resampling algorithm to use (default: native)')
+        group_1.add_argument('-g', '--grids', default=None, nargs="*",
+                             help='Area definition to resample to. Empty means '
+                                  'no resampling (default: "MAX")')
     group_1.add_argument('--cache-dir',
                          help='Directory to store resampling intermediate '
                               'results between executions. Not used with native '
-                              'resampling.')
-    group_1.add_argument('-g', '--grids', default=None, nargs="*",
-                         help='Area definition to resample to. Empty means '
-                              'no resampling (default: MAX)')
+                              'resampling or resampling of ungridded or swath data.')
     group_1.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
                          help="Specify additional grid configuration files. "
                               "(.conf for P2G-style grids, .yaml for "
@@ -184,12 +214,13 @@ def add_resample_argument_groups(parser):
                          help='Crop data to region specified by lon/lat '
                               'bounds (lon_min lat_min lon_max lat_max). '
                               'Coordinates must be valid in the source data '
-                              'projection.')
+                              'projection. Can only be used with gridded '
+                              'input data.')
 
     # nearest neighbor resampling
-    group_1.add_argument('--radius-of-influence', default=None, type=float,
+    group_1.add_argument('--radius-of-influence', default=argparse.SUPPRESS, type=float,
                          help='Specify radius to search for valid input '
-                              'pixels for nearest neighbor resampling. '
+                              'pixels for nearest neighbor resampling (--method "nearest"). '
                               'Value is in projection units (typically meters). '
                               'By default this will be determined by input '
                               'pixel size.')
@@ -221,6 +252,8 @@ def _apply_default_products_and_aliases(reader, user_products):
 
 def main(argv=sys.argv[1:]):
     global LOG
+
+    import satpy
     from satpy import Scene
     from satpy.writers import compute_writer_results
     from dask.diagnostics import ProgressBar
@@ -230,9 +263,13 @@ def main(argv=sys.argv[1:]):
 
     dist = pkg_resources.get_distribution('polar2grid')
     if dist_is_editable(dist):
-        os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(dist.module_path, 'etc'))
+        p2g_etc = os.path.join(dist.module_path, 'etc')
     else:
-        os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
+        p2g_etc = os.path.join(sys.prefix, 'etc', 'polar2grid')
+    config_path = satpy.config.get('config_path')
+    if p2g_etc not in config_path:
+        satpy.config.set(config_path=config_path + [p2g_etc])
+
     USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
 
     prog = os.getenv('PROG_NAME', sys.argv[0])
@@ -250,7 +287,8 @@ basic processing with limited products:
                                      fromfile_prefix_chars="@",
                                      description="Load, composite, resample, and save datasets.")
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
-                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
+                        help='each occurrence increases verbosity 1 level through '
+                             'ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_argument('-l', '--log', dest="log_fn", default=None,
                         help="specify the log filename")
     parser.add_argument('--progress', action='store_true',
@@ -264,7 +302,8 @@ basic processing with limited products:
     parser.add_argument("--list-products", dest="list_products", action="store_true",
                         help="List available reader products and exit")
     reader_group = add_scene_argument_groups(parser)[0]
-    resampling_group = add_resample_argument_groups(parser)[0]
+    resampling_group = add_resample_argument_groups(
+        parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
     writer_group = add_writer_argument_groups(parser)[0]
     subgroups = [reader_group, resampling_group, writer_group]
 
@@ -341,7 +380,6 @@ basic processing with limited products:
         args.log_fn = glue_name + "_fail.log"
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
-    logging.getLogger('rasterio').setLevel(levels[min(2, args.verbosity)])
     sys.excepthook = create_exc_handler(LOG.name)
     if levels[min(3, args.verbosity)] > logging.DEBUG:
         import warnings
@@ -350,8 +388,7 @@ basic processing with limited products:
 
     # Set up dask and the number of workers
     if args.num_workers:
-        from multiprocessing.pool import ThreadPool
-        dask.config.set(pool=ThreadPool(args.num_workers))
+        dask.config.set(num_workers=args.num_workers)
 
     # Parse provided files and search for files if provided directories
     scene_creation['filenames'] = get_input_files(scene_creation['filenames'])
@@ -395,7 +432,12 @@ basic processing with limited products:
         scn = scn.crop(ll_bbox=ll_bbox)
 
     to_save = []
-    scenes_to_save = resample_scene(scn, preserve_resolution=args.preserve_resolution, **resample_args)
+    areas_to_resample = resample_args.pop("grids")
+    if 'ewa_persist' in resample_args:
+        resample_args['persist'] = resample_args.pop('ewa_persist')
+    scenes_to_save = resample_scene(scn, areas_to_resample, preserve_resolution=args.preserve_resolution,
+                                    is_polar2grid=USE_POLAR2GRID_DEFAULTS,
+                                    **resample_args)
     for scene_to_save, products_to_save in scenes_to_save:
         overwrite_platform_name_with_aliases(scene_to_save)
         to_save = write_scene(scene_to_save, writer_args['writers'], writer_args, products_to_save, to_save=to_save)

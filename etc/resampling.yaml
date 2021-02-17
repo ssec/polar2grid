@@ -1,0 +1,51 @@
+resampling:
+  default_swath:
+    area_type: swath
+    resampler: nearest
+  default_area:
+    area_type: area
+    resampler: native
+    default_target: MAX
+  default_viirs:
+    area_type: swath
+    sensor: viirs
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
+  default_modis:
+    area_type: swath
+    sensor: modis
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 10.0
+      weight_distance_max: 1.0
+  default_avhrr:
+    area_type: swath
+    sensor: avhrr
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 10.0
+      weight_distance_max: 1.0
+      # TODO: Does 'rows_per_scan' need to be specified?
+  default_mirs_amsu:
+    area_type: swath
+    sensor: amsu
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 100.0
+      weight_distance_max: 1.0
+  default_mirs_amsu-mhs:
+    area_type: swath
+    sensor: amsu-mhs
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 100.0
+      weight_distance_max: 1.0
+  default_mirs_atms:
+    area_type: swath
+    sensor: atms
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 100.0
+      weight_distance_max: 1.0
