@@ -188,6 +188,7 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
         resampling_groups = {(resampler, resample_kwargs, default_target): None}
 
     wishlist = input_scene.wishlist.copy()
+    scenes_to_save = []
     for (resampler, _resample_kwargs, default_target), data_ids in resampling_groups.items():
         if areas_to_resample is None:
             if resampler in ['native']:
@@ -207,11 +208,10 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
         if preserve_resolution:
             preserved_products = set(wishlist) & set(input_scene.keys())
             resampled_products = set(wishlist) - preserved_products
-            scenes_to_save = [(input_scene, preserved_products)]
+            scenes_to_save.append((input_scene, preserved_products))
         else:
             preserved_products = set()
             resampled_products = set(wishlist)
-            scenes_to_save = []
 
         logger.debug("Products to preserve resolution for: {}".format(preserved_products))
         logger.debug("Products to use new resolution for: {}".format(resampled_products))
