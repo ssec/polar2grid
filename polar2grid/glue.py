@@ -199,8 +199,6 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
 def _handle_product_names(aliases, products):
     for prod_name in products:
         product = aliases.get(prod_name, prod_name)
-        if isinstance(product, DataQuery):
-            product = product['name']
         yield product
 
 
@@ -278,30 +276,40 @@ def _retitle_optional_arguments(parser):
         opt_args.title = "Global Options"
 
 
+def _user_products_that_exist(user_products, available_names):
+    for user_product in user_products:
+        name = user_product if isinstance(user_product, str) else user_product['name']
+        if name in available_names:
+            yield user_product
+
+
 def _apply_default_products_and_aliases(scn, reader, user_products):
     reader_mod = importlib.import_module('polar2grid.readers.' + reader)
     default_products = getattr(reader_mod, 'DEFAULT_PRODUCTS', [])
+    all_dataset_names = None
     if user_products is None and default_products:
         LOG.info("Using default product list: {}".format(default_products))
         user_products = default_products
+        all_dataset_names = scn.all_dataset_names(composites=True)
     elif user_products is None:
         LOG.error("Reader does not have a default set of products to load, "
                   "please specify products to load with `--products`.")
         return None
 
-    # check for valid product names
-    ds_ids = scn.available_dataset_names(composites=True)
+    # only use defaults that actually exist for the provided files
     aliases = getattr(reader_mod, 'PRODUCT_ALIASES', {})
-    user_products = list(_handle_product_names(aliases, user_products))
+    user_products = _handle_product_names(aliases, user_products)
+    if all_dataset_names is not None:
+        user_products = _user_products_that_exist(user_products, all_dataset_names)
+    user_products = list(user_products)
 
-    # only load default products which match data available
-    user_products = set(ds_ids).intersection(user_products)
     if user_products:
         return list(_handle_product_names(aliases, user_products))
-    else:
-        msg = "No intersection between products {} and scn {}"
-        msg = msg.format(user_products, ds_ids)
+    elif all_dataset_names:
+        msg = "No default products found in available file products:\n\t{}"
+        msg = msg.format("\n\t".join(all_dataset_names))
         LOG.error(msg)
+
 
 def main(argv=sys.argv[1:]):
     global LOG
