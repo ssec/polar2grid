@@ -64,6 +64,7 @@ jobs:
       - name: Install Polar2Grid on non-Windows
         shell: bash -l {0}
         run: |
+          pip install git+https://github.com/pytroll/satpy.git
           pip install --no-deps -e .
         if: runner.os != 'Windows'
 
@@ -78,6 +79,7 @@ jobs:
       - name: Install Polar2Grid on Windows
         shell: powershell
         run: |
+          pip install git+https://github.com/pytroll/satpy.git
           pip install --no-deps -e .
         if: runner.os == 'Windows'
 
