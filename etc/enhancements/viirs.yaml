@@ -8,3 +8,25 @@ enhancements:
         kwargs:
           idx: [0., 25., 55., 100., 255.]
           sc: [0., 90., 140., 175., 255.]
+  false_color_crefl:
+    sensor: viirs
+    standard_name: false_color
+    operations:
+      - name: crefl_scaling
+        method: !!python/name:satpy.enhancements.crefl_scaling
+        kwargs:
+          idx: [0., 25., 55., 100., 255.]
+          sc: [0., 90., 140., 175., 255.]
+  viirs_crefl:
+    sensor: viirs
+    standard_name: corrected_reflectance
+    operations:
+      - name: crefl_scaling
+        method: !!python/name:satpy.enhancements.crefl_scaling
+        kwargs:
+          idx: [0., 25., 55., 100., 255.]
+          sc: [0., 90., 140., 175., 255.]
+  pre_enhanced_viirs_crefl:
+    sensor: viirs
+    standard_name: preenhanced_crefl
+    operations: []
