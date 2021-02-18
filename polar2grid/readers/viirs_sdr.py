@@ -229,6 +229,9 @@ for band in I_PRODUCTS + M_PRODUCTS:
     PRODUCT_ALIASES[band.lower() + '_rad'] = dq
     PRODUCT_ALIASES[band.lower() + '_rad'] = dq
 
+PRODUCT_ALIASES['awips_true_color'] = ['viirs_crefl08', 'viirs_crefl04', 'viirs_crefl03']
+PRODUCT_ALIASES['awips_false_color'] = ['viirs_crefl07', 'viirs_crefl09', 'viirs_crefl08']
+
 
 def add_reader_argument_groups(parser):
     return parser
