@@ -174,16 +174,16 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
         # no datasets to save
         return to_save
 
-    for dataID in datasets:
+    for data_id in datasets:
         try:
-            area_def = getattr(scn[dataID], 'area', None)
+            area_def = getattr(scn[data_id], 'area', None)
         except KeyError:
-            msg = 'No area definition in {}'.format(dataID)
+            msg = 'No area definition in {}'.format(data_id)
             LOG.info(msg)
             LOG.error('Information', exc_info=True)
             
         if isinstance(area_def, SwathDefinition): 
-            scn[dataID].attrs['area'].area_id = "native"
+            scn[data_id].attrs['area'].area_id = "native"
 
     for writer_name in writers:
         wargs = writer_args[writer_name]
@@ -303,7 +303,7 @@ def _apply_default_products_and_aliases(scn, reader, user_products):
     user_products = list(user_products)
 
     if user_products:
-        return list(_handle_product_names(aliases, user_products))
+        return user_products
     elif all_dataset_names:
         msg = "No default products found in available file products:\n\t{}"
         msg = msg.format("\n\t".join(all_dataset_names))
