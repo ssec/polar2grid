@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2012-2021 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,12 +21,11 @@
 #     input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-# Written by Joleen Feltz    January 2021
 # University of Wisconsin-Madison
 # Space Science and Engineering Center
 # 1225 West Dayton Street
 # Madison, WI  53706
-# joleen.feltz@ssec.wisc.edu
+#
 """The MiRS frontend extracts data from files created by the Community
 Satellite Processing Package (CSPP) direct broadcast version of the
 NOAA/STAR Microwave Integrated Retrieval System (MIRS). The software

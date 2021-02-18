@@ -187,7 +187,6 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
 
     for writer_name in writers:
         wargs = writer_args[writer_name]
-        print(writer_name, datasets, wargs)
         res = scn.save_datasets(writer=writer_name, compute=False, datasets=datasets, **wargs)
         if isinstance(res, (tuple, list)):
             to_save.extend(zip(*res))
