@@ -167,8 +167,13 @@ def add_writer_argument_groups(parser):
 def add_resample_argument_groups(parser, is_polar2grid=False):
     group_1 = parser.add_argument_group(title='Resampling')
     if is_polar2grid:
+        DEBUG_EWA = bool(int(os.getenv("P2G_EWA_LEGACY", "0")))
+        methods = ['ewa', 'native', 'nearest']
+        if DEBUG_EWA:
+            methods.append('ewa_legacy')
+
         group_1.add_argument('--method', dest='resampler',
-                             default=None, choices=['ewa', 'native', 'nearest'],
+                             default=None, choices=methods,
                              help='resampling algorithm to use (default: <sensor specific>)')
         group_1.add_argument('-g', '--grids', default=None, nargs="*",
                              help='Area definition to resample to. Empty means '
