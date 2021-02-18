@@ -71,6 +71,8 @@ jobs:
         shell: bash -l {0}
         run: |
           pytest --cov=polar2grid polar2grid/tests --cov-report=xml
+          polar2grid --help
+          geo2grid --help
         if: runner.os != 'Windows'
 
       - name: Install Polar2Grid on Windows
@@ -82,9 +84,9 @@ jobs:
       - name: Run unit tests on Windows
         shell: powershell
         run: |
-          pytest --cov=polar2grid polar2grid/tests --cov-report=xml; \
-          polar2grid --help; \
-          geo2grid --help;
+          pytest --cov=polar2grid polar2grid/tests --cov-report=xml
+          polar2grid --help
+          geo2grid --help
 
         if: runner.os == 'Windows'
 
