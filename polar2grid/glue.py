@@ -40,13 +40,7 @@ from glob import glob
 
 import dask
 from polar2grid.resample import resample_scene
-from pyresample.geometry import SwathDefinition
 from polar2grid.writers import geotiff, awips_tiled
-
-try:
-    from pyproj import CRS
-except ImportError:
-    CRS = None
 
 
 def dist_is_editable(dist):
@@ -117,15 +111,10 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
         return to_save
 
     for data_id in datasets:
-        try:
-            area_def = getattr(scn[data_id], 'area', None)
-        except KeyError:
-            msg = 'No area definition in {}'.format(data_id)
-            LOG.info(msg)
-            LOG.error('Information', exc_info=True)
-
-        if isinstance(area_def, SwathDefinition):
-            scn[data_id].attrs['area'].area_id = "native"
+        area_def = scn[data_id].attrs.get('area')
+        if area_def is None or hasattr(area_def, 'area_id'):
+            continue
+        scn[data_id].attrs['area'].area_id = "native"
 
     for writer_name in writers:
         wargs = writer_args[writer_name]
@@ -143,12 +132,34 @@ def _handle_product_names(aliases, products):
         yield product
 
 
-def add_scene_argument_groups(parser):
+def add_scene_argument_groups(parser, is_polar2grid=False):
+    if is_polar2grid:
+        readers = [
+            'acspo',
+            'amsr2_l1b',
+            'amsr_l2_gaasp',
+            'clavrx',
+            'mersi2_l1b',
+            'mirs',
+            'nucaps',
+            'viirs_edr_active_fires',
+            'viirs_edr_flood',
+            'viirs_l1b',
+            'viirs_sdr',
+            'virr_l1b',
+        ]
+    else:
+        readers = [
+            'abi_l1b',
+            'ahi_hrit',
+            'ahi_hsd',
+        ]
+
     group_1 = parser.add_argument_group(title='Reading')
     group_1.add_argument('-r', '--reader', action='append', dest='readers',
                          metavar="READER",
                          help='Name of reader used to read provided files. '
-                              'Supported readers: ' + ', '.join(['mirs', 'abi_l1b', 'ahi_hrit', 'ahi_hsd']))
+                              'Supported readers: ' + ', '.join(readers))
     group_1.add_argument('-f', '--filenames', nargs='+', default=[],
                          help='Input files to read. For a long list of '
                               'files, use \'-f @my_files.txt\' '
@@ -339,7 +350,8 @@ basic processing with limited products:
                              "composite.")
     parser.add_argument("--list-products", dest="list_products", action="store_true",
                         help="List available reader products and exit")
-    reader_group = add_scene_argument_groups(parser)[0]
+    reader_group = add_scene_argument_groups(
+        parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
     resampling_group = add_resample_argument_groups(
         parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
     writer_group = add_writer_argument_groups(parser)[0]
