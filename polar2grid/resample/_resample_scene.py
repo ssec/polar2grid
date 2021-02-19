@@ -201,8 +201,6 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
                 areas_to_resample = [default_target]
         elif not areas_to_resample:
             areas_to_resample = [None]
-        else:
-            areas_to_resample = [default_target]
 
         preserve_resolution = _get_preserve_resolution(preserve_resolution, resampler, areas_to_resample)
         if preserve_resolution:
