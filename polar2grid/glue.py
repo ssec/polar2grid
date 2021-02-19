@@ -40,6 +40,7 @@ from glob import glob
 
 import dask
 from polar2grid.resample import resample_scene
+from pyresample.geometry import SwathDefinition
 from polar2grid.writers import geotiff, awips_tiled
 
 try:
@@ -55,6 +56,7 @@ def dist_is_editable(dist):
         if os.path.isfile(egg_link):
             return True
     return False
+
 
 LOG = logging.getLogger(__name__)
 
@@ -114,9 +116,19 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
         # no datasets to save
         return to_save
 
+    for data_id in datasets:
+        try:
+            area_def = getattr(scn[data_id], 'area', None)
+        except KeyError:
+            msg = 'No area definition in {}'.format(data_id)
+            LOG.info(msg)
+            LOG.error('Information', exc_info=True)
+
+        if isinstance(area_def, SwathDefinition):
+            scn[data_id].attrs['area'].area_id = "native"
+
     for writer_name in writers:
         wargs = writer_args[writer_name]
-
         res = scn.save_datasets(writer=writer_name, compute=False, datasets=datasets, **wargs)
         if isinstance(res, (tuple, list)):
             to_save.extend(zip(*res))
@@ -127,7 +139,8 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
 
 def _handle_product_names(aliases, products):
     for prod_name in products:
-        yield aliases.get(prod_name, prod_name)
+        product = aliases.get(prod_name, prod_name)
+        yield product
 
 
 def add_scene_argument_groups(parser):
@@ -135,7 +148,7 @@ def add_scene_argument_groups(parser):
     group_1.add_argument('-r', '--reader', action='append', dest='readers',
                          metavar="READER",
                          help='Name of reader used to read provided files. '
-                              'Supported readers: ' + ', '.join(['abi_l1b', 'ahi_hrit', 'ahi_hsd']))
+                              'Supported readers: ' + ', '.join(['mirs', 'abi_l1b', 'ahi_hrit', 'ahi_hsd']))
     group_1.add_argument('-f', '--filenames', nargs='+', default=[],
                          help='Input files to read. For a long list of '
                               'files, use \'-f @my_files.txt\' '
@@ -240,19 +253,39 @@ def _retitle_optional_arguments(parser):
         opt_args.title = "Global Options"
 
 
-def _apply_default_products_and_aliases(reader, user_products):
+def _user_products_that_exist(user_products, available_names):
+    for user_product in user_products:
+        name = user_product if isinstance(user_product, str) else user_product['name']
+        if name in available_names:
+            yield user_product
+
+
+def _apply_default_products_and_aliases(scn, reader, user_products):
     reader_mod = importlib.import_module('polar2grid.readers.' + reader)
     default_products = getattr(reader_mod, 'DEFAULT_PRODUCTS', [])
+    all_dataset_names = None
     if user_products is None and default_products:
         LOG.info("Using default product list: {}".format(default_products))
         user_products = default_products
+        all_dataset_names = scn.all_dataset_names(composites=True)
     elif user_products is None:
         LOG.error("Reader does not have a default set of products to load, "
                   "please specify products to load with `--products`.")
         return None
 
+    # only use defaults that actually exist for the provided files
     aliases = getattr(reader_mod, 'PRODUCT_ALIASES', {})
-    return list(_handle_product_names(aliases, user_products))
+    user_products = _handle_product_names(aliases, user_products)
+    if all_dataset_names is not None:
+        user_products = _user_products_that_exist(user_products, all_dataset_names)
+    user_products = list(user_products)
+
+    if user_products:
+        return user_products
+    elif all_dataset_names:
+        msg = "No default products found in available file products:\n\t{}"
+        msg = msg.format("\n\t".join(all_dataset_names))
+        LOG.error(msg)
 
 
 def main(argv=sys.argv[1:]):
@@ -420,7 +453,7 @@ basic processing with limited products:
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
     LOG.info("Loading product metadata from files...")
-    load_args['products'] = _apply_default_products_and_aliases(
+    load_args['products'] = _apply_default_products_and_aliases(scn,
         scene_creation['reader'], load_args['products'])
     if not load_args['products']:
         return -1
