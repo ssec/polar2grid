@@ -129,7 +129,10 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
 def _handle_product_names(aliases, products):
     for prod_name in products:
         product = aliases.get(prod_name, prod_name)
-        yield product
+        if isinstance(product, (list, tuple)):
+            yield from product
+        else:
+            yield product
 
 
 def add_scene_argument_groups(parser, is_polar2grid=False):

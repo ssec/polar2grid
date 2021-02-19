@@ -225,7 +225,7 @@ for band in I_PRODUCTS + M_PRODUCTS:
     PRODUCT_ALIASES[band.lower()] = band
 # radiance products
 for band in I_PRODUCTS + M_PRODUCTS:
-    dq = DataQuery(name=band, calibration='radiation')
+    dq = DataQuery(name=band, calibration='radiance')
     PRODUCT_ALIASES[band.lower() + '_rad'] = dq
     PRODUCT_ALIASES[band.lower() + '_rad'] = dq
 
