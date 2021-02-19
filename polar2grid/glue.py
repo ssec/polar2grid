@@ -39,16 +39,8 @@ import pkg_resources
 from glob import glob
 
 import dask
-import numpy as np
-from satpy import DataQuery
-from pyresample.geometry import DynamicAreaDefinition, AreaDefinition, SwathDefinition
-from pyproj import Proj
+from polar2grid.resample import resample_scene
 from polar2grid.writers import geotiff, awips_tiled
-
-try:
-    from pyproj import CRS
-except ImportError:
-    CRS = None
 
 
 def dist_is_editable(dist):
@@ -88,8 +80,7 @@ def get_platform_name_alias(satpy_platform_name):
 def overwrite_platform_name_with_aliases(scn):
     """Change 'platform_name' for every DataArray to Polar2Grid expectations."""
     for data_arr in scn:
-        data_dict = data_arr.attrs
-        if 'platform_name' not in data_dict:
+        if 'platform_name' not in data_arr.attrs:
             continue
         pname = get_platform_name_alias(data_arr.attrs['platform_name'])
         data_arr.attrs['platform_name'] = pname
@@ -101,61 +92,6 @@ def get_default_output_filename(reader, writer):
     if reader not in ofile_map:
         reader = None
     return ofile_map[reader]
-
-
-def _proj_dict_equal(a, b):
-    """Compare two projection dictionaries for "close enough" equality."""
-    # pyproj 2.0+
-    if CRS is not None:
-        crs1 = CRS(a)
-        crs2 = CRS(b)
-        return crs1 == crs2
-
-    # fallback
-    from osgeo import osr
-    a = dict(sorted(a.items()))
-    b = dict(sorted(b.items()))
-    p1 = Proj(a)
-    p2 = Proj(b)
-    s1 = osr.SpatialReference()
-    s1.ImportFromProj4(p1.srs)
-    s2 = osr.SpatialReference()
-    s2.ImportFromProj4(p2.srs)
-    return s1.IsSame(s2)
-
-
-def is_native_grid(grid, max_native_area):
-    """Is the desired grid a version of the native Area?"""
-    if not isinstance(max_native_area, AreaDefinition):
-        return False
-    if not isinstance(grid, AreaDefinition):
-        return False
-    if not _proj_dict_equal(max_native_area.proj_dict, grid.proj_dict):
-        return False
-    # if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent), atol=grid.pixel_size_x):
-    if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent)):
-        return False
-    if max_native_area.width < grid.width:
-        return (grid.width / max_native_area.width).is_integer()
-    else:
-        return (max_native_area.width / grid.width).is_integer()
-
-
-def get_preserve_resolution(args, resampler, areas_to_resample):
-    """Determine if we should preserve native resolution products.
-
-    Preserving native resolution should only happen if:
-
-    1. The 'native' resampler is used
-    2. At least one of the areas provided to resampling are 'MIN' or 'MAX'
-    3. The user didn't ask to *not* preserve it.
-
-    """
-    # save original native resolution if possible
-    any_minmax = any(x in ['MIN', 'MAX'] for x in areas_to_resample)
-    is_native = resampler == 'native'
-    is_default = resampler is None
-    return any_minmax and (is_native or is_default) and args.preserve_resolution
 
 
 def get_input_files(input_filenames):
@@ -175,38 +111,60 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
         return to_save
 
     for data_id in datasets:
-        try:
-            area_def = getattr(scn[data_id], 'area', None)
-        except KeyError:
-            msg = 'No area definition in {}'.format(data_id)
-            LOG.info(msg)
-            LOG.error('Information', exc_info=True)
-            
-        if isinstance(area_def, SwathDefinition): 
-            scn[data_id].attrs['area'].area_id = "native"
+        area_def = scn[data_id].attrs.get('area')
+        if area_def is None or hasattr(area_def, 'area_id'):
+            continue
+        scn[data_id].attrs['area'].area_id = "native"
 
     for writer_name in writers:
         wargs = writer_args[writer_name]
         res = scn.save_datasets(writer=writer_name, compute=False, datasets=datasets, **wargs)
-        if isinstance(res, (tuple, list)):
+        if isinstance(res[0], (tuple, list)):
+            # list of (dask-array, file-obj) tuples
             to_save.extend(zip(*res))
         else:
-            to_save.append(res)
+            # list of delayed objects
+            to_save.extend(res)
     return to_save
 
 
 def _handle_product_names(aliases, products):
     for prod_name in products:
         product = aliases.get(prod_name, prod_name)
-        yield product
+        if isinstance(product, (list, tuple)):
+            yield from product
+        else:
+            yield product
 
 
-def add_scene_argument_groups(parser):
+def add_scene_argument_groups(parser, is_polar2grid=False):
+    if is_polar2grid:
+        readers = [
+            'acspo',
+            'amsr2_l1b',
+            'amsr_l2_gaasp',
+            'clavrx',
+            'mersi2_l1b',
+            'mirs',
+            'nucaps',
+            'viirs_edr_active_fires',
+            'viirs_edr_flood',
+            'viirs_l1b',
+            'viirs_sdr',
+            'virr_l1b',
+        ]
+    else:
+        readers = [
+            'abi_l1b',
+            'ahi_hrit',
+            'ahi_hsd',
+        ]
+
     group_1 = parser.add_argument_group(title='Reading')
     group_1.add_argument('-r', '--reader', action='append', dest='readers',
                          metavar="READER",
                          help='Name of reader used to read provided files. '
-                              'Supported readers: ' + ', '.join(['mirs', 'abi_l1b', 'ahi_hrit', 'ahi_hsd']))
+                              'Supported readers: ' + ', '.join(readers))
     group_1.add_argument('-f', '--filenames', nargs='+', default=[],
                          help='Input files to read. For a long list of '
                               'files, use \'-f @my_files.txt\' '
@@ -225,9 +183,14 @@ def add_scene_argument_groups(parser):
     return (group_1,)
 
 
+def _convert_writer_name(writer_name):
+    return WRITER_ALIASES.get(writer_name, writer_name)
+
+
 def add_writer_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Writing')
     group_1.add_argument('-w', '--writer', action='append', dest='writers',
+                         type=_convert_writer_name,
                          metavar="WRITER",
                          help='Writers to save datasets with. Multiple writers '
                               'can be provided by specifying \'-w\' multiple '
@@ -235,18 +198,53 @@ def add_writer_argument_groups(parser):
     return (group_1,)
 
 
-def add_resample_argument_groups(parser):
+def add_resample_argument_groups(parser, is_polar2grid=False):
     group_1 = parser.add_argument_group(title='Resampling')
-    group_1.add_argument('--method', dest='resampler',
-                         default=None, choices=['native', 'nearest'],
-                         help='resampling algorithm to use (default: native)')
+    if is_polar2grid:
+        DEBUG_EWA = bool(int(os.getenv("P2G_EWA_LEGACY", "0")))
+        methods = ['ewa', 'native', 'nearest']
+        if DEBUG_EWA:
+            methods.append('ewa_legacy')
+
+        group_1.add_argument('--method', dest='resampler',
+                             default=None, choices=methods,
+                             help='resampling algorithm to use (default: <sensor specific>)')
+        group_1.add_argument('-g', '--grids', default=None, nargs="*",
+                             help='Area definition to resample to. Empty means '
+                                  'no resampling (default: "wgs84_fit" for '
+                                  'non-native resampling)')
+
+        # EWA options
+        group_1.add_argument('--weight-delta-max', default=argparse.SUPPRESS, type=float,
+                             help='Maximum distance in grid cells over which '
+                                  'to distribute an input swath pixel (--method "ewa"). '
+                                  'Default is 10.0.')
+        group_1.add_argument('--weight-distance-max', default=argparse.SUPPRESS, type=float,
+                             help='Distance in grid cell units at which to '
+                                  'apply a minimum weight. (--method "ewa"). '
+                                  'Default is 1.0.')
+        group_1.add_argument('--maximum-weight-mode', dest="maximum_weight_mode",
+                             default=argparse.SUPPRESS, action="store_true",
+                             help='Use maximum weight mode (--method "ewa"). '
+                                  'Default is off.')
+        group_1.add_argument('--ewa-persist', default=argparse.SUPPRESS,
+                             help='Pre-compute geolocation to determine what '
+                                  'chunks of data should be resampled '
+                                  '(--method "ewa"). This can reduce the '
+                                  'overall work required by the algorithm, '
+                                  'but only if a small amount of swath data '
+                                  'lies on the target area.')
+    else:
+        group_1.add_argument('--method', dest='resampler',
+                             default=None, choices=['native', 'nearest'],
+                             help='resampling algorithm to use (default: native)')
+        group_1.add_argument('-g', '--grids', default=None, nargs="*",
+                             help='Area definition to resample to. Empty means '
+                                  'no resampling (default: "MAX")')
     group_1.add_argument('--cache-dir',
                          help='Directory to store resampling intermediate '
                               'results between executions. Not used with native '
-                              'resampling.')
-    group_1.add_argument('-g', '--grids', default=None, nargs="*",
-                         help='Area definition to resample to. Empty means '
-                              'no resampling (default: MAX)')
+                              'resampling or resampling of ungridded or swath data.')
     group_1.add_argument('--grid-configs', dest='grid_configs', nargs="+", default=tuple(),
                          help="Specify additional grid configuration files. "
                               "(.conf for P2G-style grids, .yaml for "
@@ -255,12 +253,13 @@ def add_resample_argument_groups(parser):
                          help='Crop data to region specified by lon/lat '
                               'bounds (lon_min lat_min lon_max lat_max). '
                               'Coordinates must be valid in the source data '
-                              'projection.')
+                              'projection. Can only be used with gridded '
+                              'input data.')
 
     # nearest neighbor resampling
-    group_1.add_argument('--radius-of-influence', default=None, type=float,
+    group_1.add_argument('--radius-of-influence', default=argparse.SUPPRESS, type=float,
                          help='Specify radius to search for valid input '
-                              'pixels for nearest neighbor resampling. '
+                              'pixels for nearest neighbor resampling (--method "nearest"). '
                               'Value is in projection units (typically meters). '
                               'By default this will be determined by input '
                               'pixel size.')
@@ -312,8 +311,9 @@ def _apply_default_products_and_aliases(scn, reader, user_products):
 
 def main(argv=sys.argv[1:]):
     global LOG
+
+    import satpy
     from satpy import Scene
-    from satpy.resample import get_area_def
     from satpy.writers import compute_writer_results
     from dask.diagnostics import ProgressBar
     from polar2grid.core.script_utils import (
@@ -322,9 +322,13 @@ def main(argv=sys.argv[1:]):
 
     dist = pkg_resources.get_distribution('polar2grid')
     if dist_is_editable(dist):
-        os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(dist.module_path, 'etc'))
+        p2g_etc = os.path.join(dist.module_path, 'etc')
     else:
-        os.environ.setdefault("PPP_CONFIG_DIR", os.path.join(sys.prefix, 'etc', 'polar2grid'))
+        p2g_etc = os.path.join(sys.prefix, 'etc', 'polar2grid')
+    config_path = satpy.config.get('config_path')
+    if p2g_etc not in config_path:
+        satpy.config.set(config_path=config_path + [p2g_etc])
+
     USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
 
     prog = os.getenv('PROG_NAME', sys.argv[0])
@@ -342,7 +346,8 @@ basic processing with limited products:
                                      fromfile_prefix_chars="@",
                                      description="Load, composite, resample, and save datasets.")
     parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
-                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
+                        help='each occurrence increases verbosity 1 level through '
+                             'ERROR-WARNING-INFO-DEBUG (default INFO)')
     parser.add_argument('-l', '--log', dest="log_fn", default=None,
                         help="specify the log filename")
     parser.add_argument('--progress', action='store_true',
@@ -355,8 +360,10 @@ basic processing with limited products:
                              "composite.")
     parser.add_argument("--list-products", dest="list_products", action="store_true",
                         help="List available reader products and exit")
-    reader_group = add_scene_argument_groups(parser)[0]
-    resampling_group = add_resample_argument_groups(parser)[0]
+    reader_group = add_scene_argument_groups(
+        parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
+    resampling_group = add_resample_argument_groups(
+        parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
     writer_group = add_writer_argument_groups(parser)[0]
     subgroups = [reader_group, resampling_group, writer_group]
 
@@ -371,13 +378,11 @@ basic processing with limited products:
         glue_name = args.readers[0] + "_" + "-".join(args.writers or [])
         LOG = logging.getLogger(glue_name)
     # add writer arguments
-    if args.writers is not None:
-        args.writers = [WRITER_ALIASES.get(writer, writer) for writer in args.writers]
-        for writer in (args.writers or []):
-            parser_func = WRITER_PARSER_FUNCTIONS.get(writer)
-            if parser_func is None:
-                continue
-            subgroups += parser_func(parser)
+    for writer in (args.writers or []):
+        parser_func = WRITER_PARSER_FUNCTIONS.get(writer)
+        if parser_func is None:
+            continue
+        subgroups += parser_func(parser)
     args = parser.parse_args(argv)
 
     if args.readers is None:
@@ -433,7 +438,6 @@ basic processing with limited products:
         args.log_fn = glue_name + "_fail.log"
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
-    logging.getLogger('rasterio').setLevel(levels[min(2, args.verbosity)])
     sys.excepthook = create_exc_handler(LOG.name)
     if levels[min(3, args.verbosity)] > logging.DEBUG:
         import warnings
@@ -442,8 +446,7 @@ basic processing with limited products:
 
     # Set up dask and the number of workers
     if args.num_workers:
-        from multiprocessing.pool import ThreadPool
-        dask.config.set(pool=ThreadPool(args.num_workers))
+        dask.config.set(num_workers=args.num_workers)
 
     # Parse provided files and search for files if provided directories
     scene_creation['filenames'] = get_input_files(scene_creation['filenames'])
@@ -482,92 +485,20 @@ basic processing with limited products:
     # print("Sunlight coverage: ", sl_cov)
     # return
 
-    resample_kwargs = resample_args.copy()
-    areas_to_resample = resample_kwargs.pop('grids')
-    grid_configs = resample_kwargs.pop('grid_configs')
-    resampler = resample_kwargs.pop('resampler')
-
-    if areas_to_resample is None and resampler in [None, 'native']:
-        # no areas specified
-        areas_to_resample = ['MAX']
-    elif areas_to_resample is None:
-        raise ValueError("Resampling method specified (--method) without any destination grid/area (-g flag).")
-    elif not areas_to_resample:
-        # they don't want any resampling (they used '-g' with no args)
-        areas_to_resample = [None]
-
-    p2g_grid_configs = [x for x in grid_configs if x.endswith('.conf')]
-    pyresample_area_configs = [x for x in grid_configs if not x.endswith('.conf')]
-    if not grid_configs or p2g_grid_configs:
-        # if we were given p2g grid configs or we weren't given any to choose from
-        from polar2grid.grids import GridManager
-        grid_manager = GridManager(*p2g_grid_configs)
-    else:
-        grid_manager = {}
-
-    if pyresample_area_configs:
-        from pyresample.utils import parse_area_file
-        custom_areas = parse_area_file(pyresample_area_configs)
-        custom_areas = {x.area_id: x for x in custom_areas}
-    else:
-        custom_areas = {}
-
-    ll_bbox = resample_kwargs.pop('ll_bbox')
+    ll_bbox = resample_args.pop('ll_bbox')
     if ll_bbox:
         scn = scn.crop(ll_bbox=ll_bbox)
 
-    wishlist = scn.wishlist.copy()
-    preserve_resolution = get_preserve_resolution(args, resampler, areas_to_resample)
-    if preserve_resolution:
-        preserved_products = set(wishlist) & set(scn.keys())
-        resampled_products = set(wishlist) - preserved_products
-
-        # original native scene
-        to_save = write_scene(scn, args.writers, writer_args, preserved_products)
-    else:
-        preserved_products = set()
-        resampled_products = set(wishlist)
-        to_save = []
-
-    LOG.debug("Products to preserve resolution for: {}".format(preserved_products))
-    LOG.debug("Products to use new resolution for: {}".format(resampled_products))
-    for area_name in areas_to_resample:
-        if area_name is None:
-            # no resampling
-            area_def = None
-        elif area_name == 'MAX':
-            area_def = scn.max_area()
-        elif area_name == 'MIN':
-            area_def = scn.min_area()
-        elif area_name in custom_areas:
-            area_def = custom_areas[area_name]
-        elif area_name in grid_manager:
-            p2g_def = grid_manager[area_name]
-            area_def = p2g_def.to_satpy_area()
-            if isinstance(area_def, DynamicAreaDefinition) and p2g_def['cell_width'] is not None:
-                area_def = area_def.freeze(scn.max_area(),
-                                           resolution=(abs(p2g_def['cell_width']), abs(p2g_def['cell_height'])))
-        else:
-            area_def = get_area_def(area_name)
-
-        if resampler is None and area_def is not None:
-            rs = 'native' if area_name in ['MIN', 'MAX'] or is_native_grid(area_def, scn.max_area()) else 'nearest'
-            LOG.debug("Setting default resampling to '{}' for grid '{}'".format(rs, area_name))
-        else:
-            rs = resampler
-
-        if area_def is not None:
-            LOG.info("Resampling data to '%s'", area_name)
-            new_scn = scn.resample(area_def, resampler=rs, **resample_kwargs)
-        elif not preserve_resolution:
-            # the user didn't want to resample to any areas
-            # the user also requested that we don't preserve resolution
-            # which means we have to save this Scene's datasets
-            # because they won't be saved
-            new_scn = scn
-
-        overwrite_platform_name_with_aliases(new_scn)
-        to_save = write_scene(new_scn, writer_args['writers'], writer_args, resampled_products, to_save=to_save)
+    to_save = []
+    areas_to_resample = resample_args.pop("grids")
+    if 'ewa_persist' in resample_args:
+        resample_args['persist'] = resample_args.pop('ewa_persist')
+    scenes_to_save = resample_scene(scn, areas_to_resample, preserve_resolution=args.preserve_resolution,
+                                    is_polar2grid=USE_POLAR2GRID_DEFAULTS,
+                                    **resample_args)
+    for scene_to_save, products_to_save in scenes_to_save:
+        overwrite_platform_name_with_aliases(scene_to_save)
+        to_save = write_scene(scene_to_save, writer_args['writers'], writer_args, products_to_save, to_save=to_save)
 
     if args.progress:
         pbar = ProgressBar()

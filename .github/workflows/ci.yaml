@@ -64,6 +64,7 @@ jobs:
       - name: Install Polar2Grid on non-Windows
         shell: bash -l {0}
         run: |
+          pip install git+https://github.com/pytroll/satpy.git
           pip install --no-deps -e .
         if: runner.os != 'Windows'
 
@@ -71,11 +72,14 @@ jobs:
         shell: bash -l {0}
         run: |
           pytest --cov=polar2grid polar2grid/tests --cov-report=xml
+          polar2grid --help
+          geo2grid --help
         if: runner.os != 'Windows'
 
       - name: Install Polar2Grid on Windows
         shell: powershell
         run: |
+          pip install git+https://github.com/pytroll/satpy.git
           pip install --no-deps -e .
         if: runner.os == 'Windows'
 
@@ -83,6 +87,9 @@ jobs:
         shell: powershell
         run: |
           pytest --cov=polar2grid polar2grid/tests --cov-report=xml
+          polar2grid --help
+          geo2grid --help
+
         if: runner.os == 'Windows'
 
 #      - name: Upload unittest coverage to Codecov

@@ -2,7 +2,7 @@ sensor_name: visir/viirs
 
 modifiers:
   rayleigh_corrected:
-    compositor: !!python/name:satpy.composites.viirs.ReflectanceCorrector
+    modifier: !!python/name:satpy.composites.viirs.ReflectanceCorrector
     dem_filename: CMGDEM.hdf
     prerequisites: []
     optional_prerequisites:
@@ -16,7 +16,7 @@ modifiers:
       resolution: 742
 
   rayleigh_corrected_iband:
-    compositor: !!python/name:satpy.composites.viirs.ReflectanceCorrector
+    modifier: !!python/name:satpy.composites.viirs.ReflectanceCorrector
     dem_filename: CMGDEM.hdf
     prerequisites: []
     optional_prerequisites:
@@ -30,13 +30,13 @@ modifiers:
       resolution: 371
 
   sunz_corrected:
-    compositor: !!python/name:satpy.composites.SunZenithCorrector
+    modifier: !!python/name:satpy.modifiers.SunZenithCorrector
     prerequisites:
       - name: solar_zenith_angle
         resolution: 742
 
   sunz_corrected_iband:
-    compositor: !!python/name:satpy.composites.SunZenithCorrector
+    modifier: !!python/name:satpy.modifiers.SunZenithCorrector
     prerequisites:
       - name: solar_zenith_angle
         resolution: 371
@@ -60,48 +60,164 @@ composites:
   true_color:
     compositor: !!python/name:satpy.composites.RatioSharpenedRGB
     prerequisites:
-    - name: M05
-      modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: M04
-      modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: M03
-      modifiers: [sunz_corrected, rayleigh_corrected]
+      # M05
+      - name: _crefl01
+      # M04
+      - name: _crefl04
+      # M03
+      - name: _crefl03
     optional_prerequisites:
-    - name: I01
-      modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
+      # I01
+      - name: _crefl08
     standard_name: true_color
     high_resolution_band: red
 
-  # copy of natural_color
+  _preenhanced_true_color:
+    compositor: !!python/name:polar2grid.composites.enhanced.SingleEnhancedBandCompositor
+    prerequisites:
+      - name: true_color
+
+  _preenhanced_false_color:
+    compositor: !!python/name:polar2grid.composites.enhanced.SingleEnhancedBandCompositor
+    prerequisites:
+      - name: false_color
+
+  # VIIRS pre-enhanced versions of the true and false color bands
+  # These are meant to be provided to AWIPS using the "awips_tiled" writer
+  # so they can be joined together into an RGB.
+  viirs_crefl01:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'R'
+  viirs_crefl02:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_false_color
+    standard_name: preenhanced_crefl
+    band_index: 'G'
+  viirs_crefl03:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'B'
+  viirs_crefl04:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'G'
+  viirs_crefl07:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_false_color
+    standard_name: preenhanced_crefl
+    band_index: 'R'
+  viirs_crefl08:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'R'
+  viirs_crefl09:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_false_color
+    standard_name: preenhanced_crefl
+    band_index: 'G'
+
+  _crefl01:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: M05
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl02:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: M07
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl03:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: M03
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl04:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: M04
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl05:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: M08
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl06:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: M10
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl07:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: M11
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl08:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: I01
+        modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
+    standard_name: corrected_reflectance
+  _crefl09:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: I02
+        modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
+    standard_name: corrected_reflectance
+  _crefl10:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: I03
+        modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
+    standard_name: corrected_reflectance
+
   false_color:
     compositor: !!python/name:satpy.composites.RatioSharpenedRGB
     prerequisites:
-    - name: M11
-      modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: M07
-      modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: M05
-      modifiers: [sunz_corrected, rayleigh_corrected]
+      # M11
+      - name: _crefl07
+      # M07
+      - name: _crefl02
+      # M05
+      - name: _crefl01
     optional_prerequisites:
-    - name: I01
-      modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
+      # I02
+      - name: _crefl09
     standard_name: false_color
-    high_resolution_band: blue
+    high_resolution_band: green
 
   natural_color:
     compositor: !!python/name:satpy.composites.RatioSharpenedRGB
     prerequisites:
-    - name: M11
-      modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: M07
-      modifiers: [sunz_corrected, rayleigh_corrected]
-    - name: M05
-      modifiers: [sunz_corrected, rayleigh_corrected]
+      # M10
+      - name: _crefl06
+      # M07
+      - name: _crefl02
+      # M05
+      - name: _crefl01
     optional_prerequisites:
-    - name: I01
-      modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
+      # I02
+      - name: _crefl09
     standard_name: natural_color
-    high_resolution_band: blue
+    high_resolution_band: green
 
   true_color_raw:
     compositor: !!python/name:satpy.composites.GenericCompositor

@@ -217,7 +217,7 @@ TRUE_COLOR_PRODUCTS = [
 FALSE_COLOR_PRODUCTS = [
     "false_color"
 ]
-DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS
+DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + DNB_PRODUCTS[1:] + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS
 
 # map all lowercase band names to uppercase names
 PRODUCT_ALIASES = {}
@@ -225,9 +225,12 @@ for band in I_PRODUCTS + M_PRODUCTS:
     PRODUCT_ALIASES[band.lower()] = band
 # radiance products
 for band in I_PRODUCTS + M_PRODUCTS:
-    dq = DataQuery(name=band, calibration='radiation')
+    dq = DataQuery(name=band, calibration='radiance')
     PRODUCT_ALIASES[band.lower() + '_rad'] = dq
     PRODUCT_ALIASES[band.lower() + '_rad'] = dq
+
+PRODUCT_ALIASES['awips_true_color'] = ['viirs_crefl08', 'viirs_crefl04', 'viirs_crefl03']
+PRODUCT_ALIASES['awips_false_color'] = ['viirs_crefl07', 'viirs_crefl09', 'viirs_crefl08']
 
 
 def add_reader_argument_groups(parser):
