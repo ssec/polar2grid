@@ -119,10 +119,12 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
     for writer_name in writers:
         wargs = writer_args[writer_name]
         res = scn.save_datasets(writer=writer_name, compute=False, datasets=datasets, **wargs)
-        if isinstance(res, (tuple, list)):
+        if isinstance(res[0], (tuple, list)):
+            # list of (dask-array, file-obj) tuples
             to_save.extend(zip(*res))
         else:
-            to_save.append(res)
+            # list of delayed objects
+            to_save.extend(res)
     return to_save
 
 
@@ -181,9 +183,14 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
     return (group_1,)
 
 
+def _convert_writer_name(writer_name):
+    return WRITER_ALIASES.get(writer_name, writer_name)
+
+
 def add_writer_argument_groups(parser):
     group_1 = parser.add_argument_group(title='Writing')
     group_1.add_argument('-w', '--writer', action='append', dest='writers',
+                         type=_convert_writer_name,
                          metavar="WRITER",
                          help='Writers to save datasets with. Multiple writers '
                               'can be provided by specifying \'-w\' multiple '
@@ -371,13 +378,11 @@ basic processing with limited products:
         glue_name = args.readers[0] + "_" + "-".join(args.writers or [])
         LOG = logging.getLogger(glue_name)
     # add writer arguments
-    if args.writers is not None:
-        args.writers = [WRITER_ALIASES.get(writer, writer) for writer in args.writers]
-        for writer in (args.writers or []):
-            parser_func = WRITER_PARSER_FUNCTIONS.get(writer)
-            if parser_func is None:
-                continue
-            subgroups += parser_func(parser)
+    for writer in (args.writers or []):
+        parser_func = WRITER_PARSER_FUNCTIONS.get(writer)
+        if parser_func is None:
+            continue
+        subgroups += parser_func(parser)
     args = parser.parse_args(argv)
 
     if args.readers is None:
