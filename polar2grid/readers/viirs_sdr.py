@@ -20,13 +20,6 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    March 2016
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
 """The VIIRS SDR Reader operates on Science Data Record (SDR) HDF5 files from
 the Suomi National Polar-orbiting Partnership's (NPP) and/or the NOAA20
 Visible/Infrared Imager Radiometer Suite (VIIRS) instrument. The VIIRS
@@ -217,7 +210,10 @@ TRUE_COLOR_PRODUCTS = [
 FALSE_COLOR_PRODUCTS = [
     "false_color"
 ]
-DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + DNB_PRODUCTS[1:] + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS
+OTHER_COMPS = [
+    "ifog",
+]
+DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + DNB_PRODUCTS[1:] + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + OTHER_COMPS
 
 # map all lowercase band names to uppercase names
 PRODUCT_ALIASES = {}
@@ -231,6 +227,15 @@ for band in I_PRODUCTS + M_PRODUCTS:
 
 PRODUCT_ALIASES['awips_true_color'] = ['viirs_crefl08', 'viirs_crefl04', 'viirs_crefl03']
 PRODUCT_ALIASES['awips_false_color'] = ['viirs_crefl07', 'viirs_crefl09', 'viirs_crefl08']
+
+FILTERS = {
+    'day': {
+        'standard_name': ['toa_bidirectional_reflectance', 'true_color', 'false_color', 'natural_color'],
+    },
+    'night': {
+        'standard_name': ['temperature_difference'],
+    }
+}
 
 
 def add_reader_argument_groups(parser):

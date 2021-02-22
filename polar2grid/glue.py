@@ -180,6 +180,22 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
                          #      "arguments (ex. '%(prog)s ... -- /path/to/files*')")
     group_1.add_argument('-p', '--products', nargs='+',
                          help='Names of products to create from input files')
+    group_1.add_argument('--filter-night-reflectance', nargs='?', type=float,
+                         default=False,
+                         help="Don't produce products that include "
+                              "reflectance data when most of the image "
+                              "is night time (no valid reflectances). The "
+                              "list of products checked is currently limited "
+                              "to reflectance bands and true and false color "
+                              "composites. Default is 0.1 (at least 10% "
+                              "night).")
+    group_1.add_argument('--sza-threshold', type=float,
+                         default=100,
+                         help="When making filter decisions based on amount "
+                              "of day or amount of night, use this solar "
+                              "zenith angle value as the transition point. "
+                              "Less than this is day, greater than or equal to "
+                              "this value is night.")
     return (group_1,)
 
 
@@ -438,6 +454,7 @@ basic processing with limited products:
         args.log_fn = glue_name + "_fail.log"
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    logging.getLogger('rasterio').setLevel(levels[min(2, args.verbosity)])
     sys.excepthook = create_exc_handler(LOG.name)
     if levels[min(3, args.verbosity)] > logging.DEBUG:
         import warnings
@@ -479,15 +496,22 @@ basic processing with limited products:
         return -1
     scn.load(load_args['products'])
 
-    # from .filters.day_night import _get_sunlight_coverage
-    # data_arr = scn[load_args['products'][0]]
-    # sl_cov = _get_sunlight_coverage(data_arr.attrs['area'], data_arr.attrs['start_time'])
-    # print("Sunlight coverage: ", sl_cov)
-    # return
-
     ll_bbox = resample_args.pop('ll_bbox')
     if ll_bbox:
         scn = scn.crop(ll_bbox=ll_bbox)
+
+    if reader_args['filter_night_reflectance'] is not False:
+        sza_threshold = reader_args['sza_threshold']
+        day_fraction = reader_args['filter_night_reflectance']
+        if day_fraction is None:
+            day_fraction = 0.1
+        LOG.info("Running day coverage filtering...")
+        from .filters.day_night import DayCoverageFilter
+        day_filter = DayCoverageFilter(sza_threshold=sza_threshold, day_fraction=day_fraction)
+        scn = day_filter.filter_scene(scn)
+        if scn is None:
+            LOG.info("No remaining products after filtering.")
+            return 0
 
     to_save = []
     areas_to_resample = resample_args.pop("grids")
