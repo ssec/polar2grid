@@ -187,7 +187,7 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
                               "is night time (no valid reflectances). The "
                               "list of products checked is currently limited "
                               "to reflectance bands and true and false color "
-                              "composites. Default is 0.1 (at least 10% "
+                              "composites. Default is 0.1 (at least 10%% "
                               "night).")
     group_1.add_argument('--sza-threshold', type=float,
                          default=100,
