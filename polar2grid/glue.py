@@ -41,6 +41,7 @@ from glob import glob
 import dask
 from polar2grid.resample import resample_scene
 from polar2grid.writers import geotiff, awips_tiled
+from polar2grid.filters import filter_scene
 
 
 def dist_is_editable(dist):
@@ -180,13 +181,22 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
                          #      "arguments (ex. '%(prog)s ... -- /path/to/files*')")
     group_1.add_argument('-p', '--products', nargs='+',
                          help='Names of products to create from input files')
-    group_1.add_argument('--filter-night-reflectance', nargs='?', type=float,
-                         default=False,
-                         help="Don't produce products that include "
-                              "reflectance data when most of the image "
-                              "is night time (no valid reflectances). The "
+    group_1.add_argument('--filter-day-products', nargs='?', type=float,
+                         default=False, metavar="fraction_of_day",
+                         help="Don't produce products that require "
+                              "daytime data when most of the image "
+                              "is nighttime (ex. reflectances). The "
                               "list of products checked is currently limited "
                               "to reflectance bands and true and false color "
+                              "composites. Default is 0.1 (at least 10%% "
+                              "day).")
+    group_1.add_argument('--filter-night-products', nargs='?', type=float,
+                         default=False, metavar="fraction_of_night",
+                         help="Don't produce products that require "
+                              "nighttime data when most of the image "
+                              "is daytime. The "
+                              "list of products checked is currently limited "
+                              "to temperature difference fog "
                               "composites. Default is 0.1 (at least 10%% "
                               "night).")
     group_1.add_argument('--sza-threshold', type=float,
@@ -421,9 +431,10 @@ basic processing with limited products:
         return {ga.dest: getattr(args, ga.dest) for ga in group_actions
                 if hasattr(args, ga.dest) and ga.dest not in exclude}
     reader_args = _args_to_dict(reader_group._group_actions)
+    reader_names = reader_args.pop('readers')
     scene_creation = {
         'filenames': reader_args.pop('filenames'),
-        'reader': reader_args.pop('readers')[0],
+        'reader': reader_names[0],
     }
     load_args = {
         'products': reader_args.pop('products'),
@@ -500,18 +511,14 @@ basic processing with limited products:
     if ll_bbox:
         scn = scn.crop(ll_bbox=ll_bbox)
 
-    if reader_args['filter_night_reflectance'] is not False:
-        sza_threshold = reader_args['sza_threshold']
-        day_fraction = reader_args['filter_night_reflectance']
-        if day_fraction is None:
-            day_fraction = 0.1
-        LOG.info("Running day coverage filtering...")
-        from .filters.day_night import DayCoverageFilter
-        day_filter = DayCoverageFilter(sza_threshold=sza_threshold, day_fraction=day_fraction)
-        scn = day_filter.filter_scene(scn)
-        if scn is None:
-            LOG.info("No remaining products after filtering.")
-            return 0
+    scn = filter_scene(scn, reader_names,
+                       sza_threshold=reader_args['sza_threshold'],
+                       day_fraction=reader_args['filter_day_products'],
+                       night_fraction=reader_args['filter_night_products'],
+                       )
+    if scn is None:
+        LOG.info("No remaining products after filtering.")
+        return 0
 
     to_save = []
     areas_to_resample = resample_args.pop("grids")

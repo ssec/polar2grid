@@ -229,10 +229,11 @@ PRODUCT_ALIASES['awips_true_color'] = ['viirs_crefl08', 'viirs_crefl04', 'viirs_
 PRODUCT_ALIASES['awips_false_color'] = ['viirs_crefl07', 'viirs_crefl09', 'viirs_crefl08']
 
 FILTERS = {
-    'day': {
-        'standard_name': ['toa_bidirectional_reflectance', 'true_color', 'false_color', 'natural_color'],
+    'day_only': {
+        'standard_name': ['toa_bidirectional_reflectance', 'true_color', 'false_color', 'natural_color',
+                          'corrected_reflectance'],
     },
-    'night': {
+    'night_only': {
         'standard_name': ['temperature_difference'],
     }
 }
