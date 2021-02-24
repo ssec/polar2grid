@@ -154,12 +154,16 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
             'viirs_sdr',
             'virr_l1b',
         ]
+        filter_dn_products = 0.1
+        filter_doc = " and is enabled by default."
     else:
         readers = [
             'abi_l1b',
             'ahi_hrit',
             'ahi_hsd',
         ]
+        filter_dn_products = False
+        filter_doc = ", but is disabled by default."
 
     group_1 = parser.add_argument_group(title='Reading')
     group_1.add_argument('-r', '--reader', action='append', dest='readers',
@@ -182,23 +186,23 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
     group_1.add_argument('-p', '--products', nargs='+',
                          help='Names of products to create from input files')
     group_1.add_argument('--filter-day-products', nargs='?', type=float,
-                         default=False, metavar="fraction_of_day",
+                         default=filter_dn_products, metavar="fraction_of_day",
                          help="Don't produce products that require "
                               "daytime data when most of the image "
                               "is nighttime (ex. reflectances). The "
                               "list of products checked is currently limited "
                               "to reflectance bands and true and false color "
                               "composites. Default is 0.1 (at least 10%% "
-                              "day).")
+                              "day)" + filter_doc)
     group_1.add_argument('--filter-night-products', nargs='?', type=float,
-                         default=False, metavar="fraction_of_night",
+                         default=filter_dn_products, metavar="fraction_of_night",
                          help="Don't produce products that require "
                               "nighttime data when most of the image "
                               "is daytime. The "
                               "list of products checked is currently limited "
                               "to temperature difference fog "
                               "composites. Default is 0.1 (at least 10%% "
-                              "night).")
+                              "night)" + filter_doc)
     group_1.add_argument('--sza-threshold', type=float,
                          default=100,
                          help="When making filter decisions based on amount "
@@ -244,10 +248,12 @@ def add_resample_argument_groups(parser, is_polar2grid=False):
         group_1.add_argument('--weight-delta-max', default=argparse.SUPPRESS, type=float,
                              help='Maximum distance in grid cells over which '
                                   'to distribute an input swath pixel (--method "ewa"). '
+                                  'This is equivalent to the old "--fornav-D" flag.'
                                   'Default is 10.0.')
         group_1.add_argument('--weight-distance-max', default=argparse.SUPPRESS, type=float,
                              help='Distance in grid cell units at which to '
                                   'apply a minimum weight. (--method "ewa"). '
+                                  'This is equivalent to the old "--fornav-d" flag.'
                                   'Default is 1.0.')
         group_1.add_argument('--maximum-weight-mode', dest="maximum_weight_mode",
                              default=argparse.SUPPRESS, action="store_true",
