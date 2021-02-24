@@ -228,6 +228,7 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
                 # which means we have to save this Scene's datasets
                 # because they won't be saved
                 new_scn = input_scene.copy(datasets=data_ids)
-            scenes_to_save.append((new_scn, resampled_products))
+            _resampled_products = resampled_products & set(new_scn.keys())
+            scenes_to_save.append((new_scn, _resampled_products))
 
     return scenes_to_save

@@ -109,26 +109,29 @@ def get_twilight_poly(utctime):
     return SphPolygon(vertices)
 
 
-class DayCoverageFilter(object):
-    """Remove certain products when there is not enough day data."""
+class CoverageFilter:
+    """Base class for filtering based on day/night coverage."""
+
+    FILTER_MSG = "Unloading '{}' because there is not enough day/night coverage."
 
     def __init__(self,
                  product_filter_criteria: dict = None,
                  sza_threshold: float = 100.0,
-                 day_fraction: float = 0.1):
+                 fraction: float = 0.1):
         """Initialize thresholds and default search criteria."""
         self._filter_criteria = product_filter_criteria or {}
-        matching_standard_names = ['toa_bidirectional_reflectance', 'true_color', 'natural_color', 'false_color']
-        self._filter_criteria.setdefault('standard_name', matching_standard_names)
         self._sza_threshold = sza_threshold
-        self._day_fraction = day_fraction
+        self._fraction = fraction
 
     def _matches_criteria(self, data_arr: DataArray):
-        sname_match = self._filter_criteria.get('standard_name')
         attrs = data_arr.attrs
-        if attrs.get('standard_name') in sname_match:
-            return True
+        for filter_key, filter_list in self._filter_criteria.items():
+            if attrs.get(filter_key) in filter_list:
+                return True
         return False
+
+    def _should_be_filtered(self, sunlight_coverage):
+        raise NotImplementedError("Subclass must implement the filter decision")
 
     def _filter_data_array(self, data_arr: DataArray, _cache: dict):
         """Check if this DataArray should be removed.
@@ -147,26 +150,70 @@ class DayCoverageFilter(object):
         end_time = data_arr.attrs['end_time']
         mid_time = start_time + (end_time - start_time) / 2
         sza_threshold = self._sza_threshold
-        day_fraction = self._day_fraction
         if area not in _cache:
             slc = _get_sunlight_coverage(area, mid_time, sza_threshold)
             logger.debug("Sunlight is estimated to cover %0.2f%% of the scene.", slc * 100)
-            should_be_filtered = slc < day_fraction
-            _cache[area] = should_be_filtered
+            _cache[area] = self._should_be_filtered(slc)
         return _cache[area]
 
     def filter_scene(self, scene: Scene):
         """Create a new Scene with filtered DataArrays removed."""
         _cache = {}
         remaining_ids = []
+        filtered_ids = []
         for data_id in scene.keys():
             logger.debug("Analyzing '{}' for filtering...".format(data_id))
             if not self._filter_data_array(scene[data_id], _cache):
                 remaining_ids.append(data_id)
             else:
-                logger.info("Unloading '{}' because there is not enough day data.".format(data_id))
+                logger.debug(self.FILTER_MSG.format(data_id))
+                filtered_ids.append(data_id)
         if not remaining_ids:
             return None
         new_scn = scene.copy(remaining_ids)
-        new_scn._wishlist = scene._wishlist.copy()
+        new_scn._wishlist = scene.wishlist.copy()
         return new_scn
+
+
+class DayCoverageFilter(CoverageFilter):
+    """Remove certain products when there is not enough day data."""
+
+    FILTER_MSG = "Unloading '{}' because there is not enough day data."
+
+    def __init__(self,
+                 product_filter_criteria: dict = None,
+                 sza_threshold: float = 100.0,
+                 day_fraction: float = 0.1):
+        """Initialize thresholds and default search criteria."""
+        product_filter_criteria = product_filter_criteria or {}
+        matching_standard_names = ['toa_bidirectional_reflectance', 'true_color', 'natural_color', 'false_color']
+        product_filter_criteria.setdefault('standard_name', matching_standard_names)
+
+        super().__init__(product_filter_criteria,
+                         sza_threshold=sza_threshold,
+                         fraction=day_fraction)
+
+    def _should_be_filtered(self, sunlight_coverage):
+        return sunlight_coverage < self._fraction
+
+
+class NightCoverageFilter(CoverageFilter):
+    """Remove certain products when there is not enough day data."""
+
+    FILTER_MSG = "Unloading '{}' because there is not enough night data."
+
+    def __init__(self,
+                 product_filter_criteria: dict = None,
+                 sza_threshold: float = 100.0,
+                 night_fraction: float = 0.1):
+        """Initialize thresholds and default search criteria."""
+        product_filter_criteria = product_filter_criteria or {}
+        matching_standard_names = ['temperature_difference']
+        product_filter_criteria.setdefault('standard_name', matching_standard_names)
+
+        super().__init__(product_filter_criteria,
+                         sza_threshold=sza_threshold,
+                         fraction=night_fraction)
+
+    def _should_be_filtered(self, sunlight_coverage):
+        return (1 - sunlight_coverage) < self._fraction

@@ -27,7 +27,7 @@ from typing import Union, Optional, List, Dict
 import logging
 
 from satpy import Scene
-from .day_night import DayCoverageFilter
+from .day_night import DayCoverageFilter, NightCoverageFilter
 
 logger = logging.getLogger(__name__)
 
@@ -72,14 +72,13 @@ def _filter_scene_night_only_products(input_scene: Scene, filter_criteria: dict,
                                       sza_threshold: float = 100.0,
                                       night_fraction: Optional[float] = None):
     """Run filtering for products that need a certain amount of day data."""
-    raise NotImplementedError()
     if night_fraction is None:
         night_fraction = 0.1
-    logger.info("Running day coverage filtering...")
-    day_filter = DayCoverageFilter(filter_criteria,
-                                   sza_threshold=sza_threshold,
-                                   night_fraction=night_fraction)
-    return day_filter.filter_scene(input_scene)
+    logger.info("Running night coverage filtering...")
+    night_filter = NightCoverageFilter(filter_criteria,
+                                       sza_threshold=sza_threshold,
+                                       night_fraction=night_fraction)
+    return night_filter.filter_scene(input_scene)
 
 
 def filter_scene(input_scene: Scene,
