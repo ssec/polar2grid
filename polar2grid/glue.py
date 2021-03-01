@@ -57,7 +57,6 @@ LOG = logging.getLogger(__name__)
 
 WRITER_PARSER_FUNCTIONS = {
     'geotiff': geotiff.add_writer_argument_groups,
-    'scmi': awips_tiled.add_writer_argument_groups,
     'awips_tiled': awips_tiled.add_writer_argument_groups,
 }
 

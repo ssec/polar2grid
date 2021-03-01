@@ -89,7 +89,7 @@ def add_writer_argument_groups(parser, group=None):
     import argparse
     DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{platform_name}_{sensor}_{name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc'
     if group is None:
-        group = parser.add_argument_group(title='SCMI Writer')
+        group = parser.add_argument_group(title='AWIPS Tiled Writer')
     # group_1.add_argument('--file-pattern', default=DEFAULT_OUTPUT_PATTERN,
     #                      help="Custom file pattern to save dataset to")
     group.add_argument("--compress", action="store_true",
