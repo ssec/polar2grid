@@ -93,7 +93,6 @@ def _get_legacy_and_custom_areas(grid_configs):
     if not grid_configs or p2g_grid_configs:
         # if we were given p2g grid configs or we weren't given any to choose from
         from polar2grid.grids import GridManager
-
         grid_manager = GridManager(*p2g_grid_configs)
     else:
         grid_manager = {}
@@ -161,6 +160,14 @@ def _default_grid(resampler, is_polar2grid):
     return default_target
 
 
+def _hashable_kwargs(kwargs):
+    return tuple(sorted(kwargs.items()))
+
+
+def _redict_hashable_kwargs(kwargs_tuple):
+    return dict(kwargs_tuple)
+
+
 def _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid):
     resampling_groups = {}
     for data_id in input_scene.keys():
@@ -170,7 +177,7 @@ def _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid):
         default_target = resampling_args.get('default_target', None)
         if default_target is None:
             default_target = _default_grid(resampler, is_polar2grid)
-        hashable_kwargs = tuple(sorted(resampler_kwargs.items()))
+        hashable_kwargs = _hashable_kwargs(resampler_kwargs)
         resampling_groups.setdefault((resampler, hashable_kwargs, default_target), []).append(data_id)
     return resampling_groups
 
@@ -183,9 +190,9 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
     if resampler is None:
         resampling_groups = _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid)
     else:
-        if areas_to_resample is None:
-            default_target = _default_grid(resampler, is_polar2grid)
-        resampling_groups = {(resampler, resample_kwargs, default_target): None}
+        default_target = _default_grid(resampler, is_polar2grid)
+        rs_kwargs = _hashable_kwargs(resample_kwargs)
+        resampling_groups = {(resampler, rs_kwargs, default_target): None}
 
     wishlist = input_scene.wishlist.copy()
     scenes_to_save = []
@@ -214,7 +221,7 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
         logger.debug("Products to preserve resolution for: {}".format(preserved_products))
         logger.debug("Products to use new resolution for: {}".format(resampled_products))
         # convert hashable tuple to dict
-        _resample_kwargs = dict(_resample_kwargs)
+        _resample_kwargs = _redict_hashable_kwargs(_resample_kwargs)
         for area_name in areas_to_resample:
             area_def = area_resolver[area_name]
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
