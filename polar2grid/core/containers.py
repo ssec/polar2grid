@@ -660,7 +660,7 @@ class GridDefinition(GeographicDefinition):
                 proj4_dict[k] = float(proj4_dict[k])
 
         # load information from PROJ.4 about the ellipsis if possible
-        if "ellps" in proj4_dict and "a" not in proj4_dict or "b" not in proj4_dict:
+        if "ellps" in proj4_dict and ("a" not in proj4_dict or "b" not in proj4_dict):
             import pyproj
             ellps = pyproj.pj_ellps[proj4_dict["ellps"]]
             proj4_dict["a"] = ellps["a"]
