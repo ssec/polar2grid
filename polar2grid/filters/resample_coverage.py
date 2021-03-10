@@ -88,6 +88,6 @@ class ResampleCoverageFilter(BaseFilter):
             logger.debug("Resampling found %f%% coverage.", coverage_fraction * 100)
             return False
         logger.warning("Resampling found %f%% of the output grid covered. "
-                       "Will skip producing this product.",
-                       coverage_fraction * 100)
+                       "Will skip producing this product: %s",
+                       coverage_fraction * 100, data_arr.attrs['name'])
         return True

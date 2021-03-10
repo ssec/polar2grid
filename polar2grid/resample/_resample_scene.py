@@ -228,10 +228,13 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
                 logger.info("Resampling to '%s' using '%s' resampling...", area_name, rs)
                 logger.debug("Resampling to '%s' using resampler '%s' with %s", area_name, rs, _resample_kwargs)
                 scene_to_resample = input_scene
-                if area_name not in ('MIN', 'MAX') or resampler == 'native' or grid_coverage <= 0:
+                if resampler != 'native' and grid_coverage > 0:
                     filter = ResampleCoverageFilter(target_area=area_def,
                                                     coverage_fraction=grid_coverage)
                     scene_to_resample = filter.filter_scene(input_scene)
+                    if scene_to_resample is None:
+                        logger.warning("No products were found to overlap with '%s' grid.", area_name)
+                        continue
                 new_scn = scene_to_resample.resample(area_def, resampler=rs, **_resample_kwargs)
             elif not preserve_resolution:
                 # the user didn't want to resample to any areas
