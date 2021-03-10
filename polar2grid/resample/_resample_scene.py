@@ -25,6 +25,7 @@
 import logging
 
 from .resample_decisions import ResamplerDecisionTree
+from polar2grid.filters.resample_coverage import ResampleCoverageFilter
 
 from pyresample.geometry import DynamicAreaDefinition, AreaDefinition
 from satpy.resample import get_area_def
@@ -183,7 +184,7 @@ def _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid):
 
 
 def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
-                   preserve_resolution=True, is_polar2grid=True, **resample_kwargs):
+                   preserve_resolution=True, grid_coverage=0.1, is_polar2grid=True, **resample_kwargs):
     """Resample a single Scene to multiple target areas."""
     area_resolver = AreaDefResolver(input_scene, grid_configs)
     resampling_dtree = ResamplerDecisionTree.from_configs()
@@ -212,14 +213,12 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
         preserve_resolution = _get_preserve_resolution(preserve_resolution, resampler, areas_to_resample)
         if preserve_resolution:
             preserved_products = set(wishlist) & set(input_scene.keys())
-            resampled_products = set(wishlist) - preserved_products
             scenes_to_save.append((input_scene, preserved_products))
         else:
             preserved_products = set()
-            resampled_products = set(wishlist)
 
         logger.debug("Products to preserve resolution for: {}".format(preserved_products))
-        logger.debug("Products to use new resolution for: {}".format(resampled_products))
+        logger.debug("Products to use new resolution for: {}".format(set(wishlist) - preserved_products))
         # convert hashable tuple to dict
         _resample_kwargs = _redict_hashable_kwargs(_resample_kwargs)
         for area_name in areas_to_resample:
@@ -228,14 +227,23 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
             if area_def is not None:
                 logger.info("Resampling to '%s' using '%s' resampling...", area_name, rs)
                 logger.debug("Resampling to '%s' using resampler '%s' with %s", area_name, rs, _resample_kwargs)
-                new_scn = input_scene.resample(area_def, resampler=rs, **_resample_kwargs)
+                scene_to_resample = input_scene
+                if area_name not in ('MIN', 'MAX') or resampler == 'native' or grid_coverage <= 0:
+                    filter = ResampleCoverageFilter(target_area=area_def,
+                                                    coverage_fraction=grid_coverage)
+                    scene_to_resample = filter.filter_scene(input_scene)
+                new_scn = scene_to_resample.resample(area_def, resampler=rs, **_resample_kwargs)
             elif not preserve_resolution:
                 # the user didn't want to resample to any areas
                 # the user also requested that we don't preserve resolution
                 # which means we have to save this Scene's datasets
                 # because they won't be saved
                 new_scn = input_scene.copy(datasets=data_ids)
-            _resampled_products = resampled_products & set(new_scn.keys())
+            # we only want to try to save products that we asked for and that
+            # we were actually able to generate. Composite generation may have
+            # modified the original DataID so we can't use
+            # 'resampled_products'.
+            _resampled_products = (new_scn.wishlist & set(new_scn.keys())) - preserved_products
             scenes_to_save.append((new_scn, _resampled_products))
 
     return scenes_to_save

@@ -30,14 +30,13 @@ try:
 except ImportError:
     from functools import lru_cache as cache
 
+from ._utils import polygon_for_area
+from ._base import BaseFilter
+
 import numpy as np
 from xarray import DataArray
-from satpy import Scene
-import dask.array as da
 from pyorbital.astronomy import sun_zenith_angle
-from pyresample.boundary import AreaDefBoundary, Boundary
 from pyresample.spherical import SphPolygon
-from pyresample.geometry import get_geostationary_bounding_box, SwathDefinition
 
 logger = logging.getLogger(__name__)
 
@@ -45,17 +44,7 @@ logger = logging.getLogger(__name__)
 @cache
 def _get_sunlight_coverage(area_def, start_time, sza_threshold=90, overpass=None):
     """Get the sunlight coverage of *area_def* at *start_time* as a value between 0 and 1."""
-    if isinstance(area_def, SwathDefinition):
-        lons, lats = area_def.get_lonlats()
-        freq = int(lons.shape[-1] * 0.10)
-        lons, lats = da.compute(lons[::freq, ::freq], lats[::freq, ::freq])
-        adp = Boundary(lons.ravel(), lats.ravel()).contour_poly
-    elif area_def.is_geostationary:
-        adp = Boundary(
-            *get_geostationary_bounding_box(area_def,
-                                            nb_points=100)).contour_poly
-    else:
-        adp = AreaDefBoundary(area_def, frequency=100).contour_poly
+    adp = polygon_for_area(area_def)
     poly = get_twilight_poly(start_time)
     if overpass is not None:
         ovp = overpass.boundary.contour_poly
@@ -109,7 +98,7 @@ def get_twilight_poly(utctime):
     return SphPolygon(vertices)
 
 
-class CoverageFilter:
+class SunlightCoverageFilter(BaseFilter):
     """Base class for filtering based on day/night coverage."""
 
     FILTER_MSG = "Unloading '{}' because there is not enough day/night coverage."
@@ -119,16 +108,9 @@ class CoverageFilter:
                  sza_threshold: float = 100.0,
                  fraction: float = 0.1):
         """Initialize thresholds and default search criteria."""
-        self._filter_criteria = product_filter_criteria or {}
+        super().__init__(product_filter_criteria)
         self._sza_threshold = sza_threshold
         self._fraction = fraction
-
-    def _matches_criteria(self, data_arr: DataArray):
-        attrs = data_arr.attrs
-        for filter_key, filter_list in self._filter_criteria.items():
-            if attrs.get(filter_key) in filter_list:
-                return True
-        return False
 
     def _should_be_filtered(self, sunlight_coverage):
         raise NotImplementedError("Subclass must implement the filter decision")
@@ -156,26 +138,8 @@ class CoverageFilter:
             _cache[area] = self._should_be_filtered(slc)
         return _cache[area]
 
-    def filter_scene(self, scene: Scene):
-        """Create a new Scene with filtered DataArrays removed."""
-        _cache = {}
-        remaining_ids = []
-        filtered_ids = []
-        for data_id in scene.keys():
-            logger.debug("Analyzing '{}' for filtering...".format(data_id))
-            if not self._filter_data_array(scene[data_id], _cache):
-                remaining_ids.append(data_id)
-            else:
-                logger.debug(self.FILTER_MSG.format(data_id))
-                filtered_ids.append(data_id)
-        if not remaining_ids:
-            return None
-        new_scn = scene.copy(remaining_ids)
-        new_scn._wishlist = scene.wishlist.copy()
-        return new_scn
 
-
-class DayCoverageFilter(CoverageFilter):
+class DayCoverageFilter(SunlightCoverageFilter):
     """Remove certain products when there is not enough day data."""
 
     FILTER_MSG = "Unloading '{}' because there is not enough day data."
@@ -197,7 +161,7 @@ class DayCoverageFilter(CoverageFilter):
         return sunlight_coverage < self._fraction
 
 
-class NightCoverageFilter(CoverageFilter):
+class NightCoverageFilter(SunlightCoverageFilter):
     """Remove certain products when there is not enough day data."""
 
     FILTER_MSG = "Unloading '{}' because there is not enough night data."
