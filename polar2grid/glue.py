@@ -272,6 +272,11 @@ def add_resample_argument_groups(parser, is_polar2grid=False):
         group_1.add_argument('-g', '--grids', default=None, nargs="*",
                              help='Area definition to resample to. Empty means '
                                   'no resampling (default: "MAX")')
+    # shared options
+    group_1.add_argument('--grid-coverage', default=0.1,
+                         type=float,
+                         help="Fraction of target grid that must contain "
+                              "data to continue processing product.")
     group_1.add_argument('--cache-dir',
                          help='Directory to store resampling intermediate '
                               'results between executions. Not used with native '
