@@ -44,6 +44,10 @@ def _get_intersection_coverage(source_polygon: SphPolygon, target_polygon: SphPo
     """Get fraction of output grid that will be filled with input data."""
     intersect_polygon = source_polygon.intersection(target_polygon)
     if intersect_polygon is None:
+        same_shape = source_polygon.vertices.shape == target_polygon.vertices.shape
+        if same_shape and (source_polygon.vertices == target_polygon.vertices).all():
+            # they are exactly the same
+            return 1.0
         return 0.0
     return intersect_polygon.area() / target_polygon.area()
 
