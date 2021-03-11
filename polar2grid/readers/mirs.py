@@ -216,6 +216,7 @@ PRODUCT_ALIASES['swe'] = 'SWE'
 
 PRODUCT_ALIASES['sea_ice'] = 'SIce'
 
+FILTERS = { 'day_only': {}, 'night_only': {}, }
 
 def add_reader_argument_groups(parser):
     return parser
