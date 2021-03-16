@@ -18,6 +18,12 @@ enhancements:
         threshold: -31.15
         min_in: -110.15
         max_in: 56.85
+  radiance_default:
+    calibration: radiance
+    operations:
+      - name: stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: crude, min_stretch: 0, max_stretch: 1}
   reflectance_default:
     standard_name: toa_bidirectional_reflectance
     operations:
