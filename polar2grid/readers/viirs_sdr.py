@@ -298,4 +298,4 @@ def add_reader_argument_groups(parser, group=None):
                        help="Add M-band geolocation radiance products to list of products")
     group.add_argument('--i-rad-products', dest='products', action=ExtendConstAction, const=I_RAD_PRODUCTS,
                        help="Add I-band geolocation radiance products to list of products")
-    return (group, None)
+    return group, None
