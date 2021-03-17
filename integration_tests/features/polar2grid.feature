@@ -14,7 +14,7 @@ Feature: Test polar2grid output images
 
  Examples: AMSR2_L1B
     | command                                                                  | source            | output             |
-    | polar2grid.sh -r amsr2_l1b -w awips_tiled -vv -g 211e -p btemp_36.5h btemp_89.0av -f | amsr2/input/test1 | amsr2/output/test1 |
+    | polar2grid.sh -r amsr2_l1b -w awips_tiled -vv --sector-id LCC --source-name SSEC --letters -g 211e -p btemp_36.5h btemp_89.0av -f | amsr2/input/test1 | amsr2/output/test1 |
 
   Examples: AVHRR
     | command                          | source            | output             |
