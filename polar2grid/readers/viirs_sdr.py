@@ -180,6 +180,12 @@ I_PRODUCTS = [
     "I04",
     "I05",
 ]
+I_ANGLE_PRODUCTS = [
+    DataQuery(name='solar_zenith_angle', resolution=371),
+    DataQuery(name='solar_azimuth_angle', resolution=371),
+    DataQuery(name='satellite_zenith_angle', resolution=371),
+    DataQuery(name='satellite_azimuth_angle', resolution=371),
+]
 M_PRODUCTS = [
     "M01",
     "M02",
@@ -198,11 +204,25 @@ M_PRODUCTS = [
     "M15",
     "M16",
 ]
+M_ANGLE_PRODUCTS = [
+    DataQuery(name='solar_zenith_angle', resolution=742),
+    DataQuery(name='solar_azimuth_angle', resolution=742),
+    DataQuery(name='satellite_zenith_angle', resolution=742),
+    DataQuery(name='satellite_azimuth_angle', resolution=742),
+]
 DNB_PRODUCTS = [
     "histogram_dnb",
     "adaptive_dnb",
     "dynamic_dnb",
     "hncc_dnb",
+]
+DNB_ANGLE_PRODUCTS = [
+    DataQuery(name='dnb_solar_zenith_angle'),
+    DataQuery(name='dnb_solar_azimuth_angle'),
+    DataQuery(name='dnb_satellite_zenith_angle'),
+    DataQuery(name='dnb_satellite_azimuth_angle'),
+    DataQuery(name='dnb_lunar_zenith_angle'),
+    DataQuery(name='dnb_lunar_azimuth_angle'),
 ]
 TRUE_COLOR_PRODUCTS = [
     "true_color"
@@ -219,14 +239,34 @@ DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + DNB_PRODUCTS[1:] + TRUE_COLOR_PRODU
 PRODUCT_ALIASES = {}
 for band in I_PRODUCTS + M_PRODUCTS:
     PRODUCT_ALIASES[band.lower()] = band
+
 # radiance products
-for band in I_PRODUCTS + M_PRODUCTS:
+I_RAD_PRODUCTS = []
+for band in I_PRODUCTS:
     dq = DataQuery(name=band, calibration='radiance')
     PRODUCT_ALIASES[band.lower() + '_rad'] = dq
+    I_RAD_PRODUCTS.append(dq)
+M_RAD_PRODUCTS = []
+for band in M_PRODUCTS:
+    dq = DataQuery(name=band, calibration='radiance')
     PRODUCT_ALIASES[band.lower() + '_rad'] = dq
+    M_RAD_PRODUCTS.append(dq)
 
 PRODUCT_ALIASES['awips_true_color'] = ['viirs_crefl08', 'viirs_crefl04', 'viirs_crefl03']
 PRODUCT_ALIASES['awips_false_color'] = ['viirs_crefl07', 'viirs_crefl09', 'viirs_crefl08']
+
+
+PRODUCT_ALIASES["dnb_sat_zenith_angle"] = DataQuery(name='dnb_satellite_zenith_angle')
+PRODUCT_ALIASES["dnb_sat_azimuth_angle"] = DataQuery(name='dnb_satellite_azimuth_angle')
+PRODUCT_ALIASES["m_solar_zenith_angle"] = DataQuery(name='solar_zenith_angle', resolution=742)
+PRODUCT_ALIASES["m_solar_azimuth_angle"] = DataQuery(name='solar_azimuth_angle', resolution=742)
+PRODUCT_ALIASES["m_sat_zenith_angle"] = DataQuery(name='satellite_zenith_angle', resolution=742)
+PRODUCT_ALIASES["m_sat_azimuth_angle"] = DataQuery(name='satellite_azimuth_angle', resolution=742)
+PRODUCT_ALIASES["i_solar_zenith_angle"] = DataQuery(name='solar_zenith_angle', resolution=371)
+PRODUCT_ALIASES["i_solar_azimuth_angle"] = DataQuery(name='solar_azimuth_angle', resolution=371)
+PRODUCT_ALIASES["i_sat_zenith_angle"] = DataQuery(name='satellite_zenith_angle', resolution=371)
+PRODUCT_ALIASES["i_sat_azimuth_angle"] = DataQuery(name='satellite_azimuth_angle', resolution=371)
+
 
 FILTERS = {
     'day_only': {
@@ -239,5 +279,23 @@ FILTERS = {
 }
 
 
-def add_reader_argument_groups(parser):
-    return parser
+def add_reader_argument_groups(parser, group=None):
+    from polar2grid.core.script_utils import ExtendConstAction
+    if group is None:
+        group = parser.add_argument_group(title='VIIRS SDR Reader')
+
+    group.add_argument('--i-bands', dest='products', action=ExtendConstAction, const=I_PRODUCTS,
+                       help="Add all I-band raw products to list of products")
+    group.add_argument('--m-bands', dest='products', action=ExtendConstAction, const=M_PRODUCTS,
+                       help="Add all M-band raw products to list of products")
+    group.add_argument('--dnb-angle-products', dest='products', action=ExtendConstAction, const=DNB_ANGLE_PRODUCTS,
+                       help="Add DNB-band geolocation 'angle' products to list of products")
+    group.add_argument('--i-angle-products', dest='products', action=ExtendConstAction, const=I_ANGLE_PRODUCTS,
+                       help="Add I-band geolocation 'angle' products to list of products")
+    group.add_argument('--m-angle-products', dest='products', action=ExtendConstAction, const=M_ANGLE_PRODUCTS,
+                       help="Add M-band geolocation 'angle' products to list of products")
+    group.add_argument('--m-rad-products', dest='products', action=ExtendConstAction, const=M_RAD_PRODUCTS,
+                       help="Add M-band geolocation radiance products to list of products")
+    group.add_argument('--i-rad-products', dest='products', action=ExtendConstAction, const=I_RAD_PRODUCTS,
+                       help="Add I-band geolocation radiance products to list of products")
+    return group, None
