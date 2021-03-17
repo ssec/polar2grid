@@ -56,7 +56,7 @@ def step_impl(context, output):
         else:
             compare_command = ' '.join([os.path.join(context.p2g_path, 'p2g_compare_netcdf.sh'),
                                         output, context.temp_dir, '-vv', '--margin-of-error',
-                                        str(81231 / 1514041.44), '--variables', 'image'])
+                                        str(81231 / 1514041.44), '--variables', 'data'])
         exit_status = subprocess.call(compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
