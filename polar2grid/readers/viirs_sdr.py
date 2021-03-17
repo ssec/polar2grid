@@ -282,7 +282,7 @@ FILTERS = {
 def add_reader_argument_groups(parser, group=None):
     from polar2grid.core.script_utils import ExtendConstAction
     if group is None:
-        group = parser.add_argument_group(title='Geotiff Writer')
+        group = parser.add_argument_group(title='VIIRS SDR Reader')
 
     group.add_argument('--i-bands', dest='products', action=ExtendConstAction, const=I_PRODUCTS,
                        help="Add all I-band raw products to list of products")
