@@ -425,7 +425,7 @@ def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     scene_creation = {
         'filenames': filenames,
         'reader': reader_names[0],
-        'reader_kwargs': reader_specific_args[reader_names[0]],
+        'reader_kwargs': reader_specific_args.get(reader_names[0], {}),
     }
     load_args = {
         'products': products,
