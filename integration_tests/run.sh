@@ -203,7 +203,9 @@ save_vars "start_time=$start_time"
 
 suffix=$(make_suffix "$start_time")
 prefixes=$(setup_prefixes "$suffix")
+set +x
 setup_conda
+set -x
 
 # Allows the program to set finish_time while also returning a failing code.
 exit_status=0

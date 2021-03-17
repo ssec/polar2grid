@@ -333,11 +333,11 @@ def _apply_default_products_and_aliases(scn, reader, user_products):
     default_products = get_reader_attr(reader, 'DEFAULT_PRODUCTS', [])
     aliases = get_reader_attr(reader, 'PRODUCT_ALIASES', {})
     all_dataset_names = None
-    if user_products is None and default_products:
+    if not user_products and default_products:
         LOG.info("Using default product list: {}".format(default_products))
         user_products = default_products
         all_dataset_names = scn.all_dataset_names(composites=True)
-    elif user_products is None:
+    elif not user_products:
         LOG.error("Reader does not have a default set of products to load, "
                   "please specify products to load with `--products`.")
         return None
@@ -385,6 +385,8 @@ def _parse_reader_args(reader_names: list[str],
                        ) -> dict:
     reader_args = {}
     for reader_name, (sgrp1, sgrp2) in zip(reader_names, reader_subgroups):
+        if sgrp1 is None:
+            continue
         rargs = _args_to_dict(args, sgrp1._group_actions)
         if sgrp2 is not None:
             rargs.update(_args_to_dict(args, sgrp2._group_actions))
@@ -410,13 +412,13 @@ def _parse_writer_args(writer_names: list[str],
 
 
 def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups):
-    products = reader_args.pop('products')
-    filenames = reader_args.pop('filenames')
+    products = reader_args.pop('products') or []
+    filenames = reader_args.pop('filenames') or []
     filenames = list(get_input_files(filenames))
 
     reader_specific_args = _parse_reader_args(reader_names, reader_subgroups, args)
     for _reader_name, _reader_args in reader_specific_args.items():
-        _extended_products = _reader_args.pop('products', [])
+        _extended_products = _reader_args.pop('products') or []
         products.extend(_extended_products)
 
     # Parse provided files and search for files if provided directories
