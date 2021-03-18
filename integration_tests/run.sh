@@ -226,7 +226,9 @@ for prefix in ${prefixes}; do
         set -e
 
         # This block handles making the swbundle or making the environment information.
+        set +x
         conda activate jenkins_p2g_swbundle
+        set -x
         if [[ ${SWBUNDLE_OR_ENVIRONMENT} -eq 0 ]]; then
             # Handles swbundle logic.
             "${WORKSPACE}/create_conda_software_bundle.sh" "${WORKSPACE}/${swbundle_name}"
@@ -240,8 +242,10 @@ for prefix in ${prefixes}; do
             # or `conda env update -f docs.yml` to install the frozen environment. Note that satpy may
             # cause the above two commands to crash since it is installed from github. See
             # https://stackoverflow.com/questions/13685920/install-specific-git-commit-with-pip for me information.
+            set +x
             conda env export -n jenkins_p2g_swbundle | grep -v "^prefix: " > "${WORKSPACE}/${package_name}/swbundle.yml"
             conda env export -n jenkins_p2g_docs | grep -v "^prefix: " > "${WORKSPACE}/${package_name}/docs.yml"
+            set -x
         fi
 
         # This block handles testing and documentation logic.
