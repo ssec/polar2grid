@@ -45,18 +45,18 @@ def boundary_for_area(area_def: PRGeometry) -> Boundary:
     """Create Boundary object representing the provided area."""
     if isinstance(area_def, SwathDefinition):
         # TODO: Persist lon/lats if requested
-        lons, lats = area_def.get_lonlats()
-        row_freq = int(lons.shape[0] * 0.30)
-        col_freq = int(lons.shape[1] * 0.30)
-        lons, lats = da.compute(lons[::row_freq, ::col_freq],
-                                lats[::row_freq, ::col_freq])
-        adp = Boundary(lons.ravel(), lats.ravel())
+        lons, lats = area_def.get_bbox_lonlats()
+        lons = da.concatenate(lons)
+        lats = da.concatenate(lats)
+        freq = int(lons.shape[0] * 0.05)
+        lons, lats = da.compute(lons[::freq], lats[::freq])
+        adp = Boundary(lons, lats)
     elif area_def.is_geostationary:
         adp = Boundary(
             *get_geostationary_bounding_box(area_def,
                                             nb_points=100))
     else:
-        adp = AreaDefBoundary(area_def, frequency=100)
+        adp = AreaDefBoundary(area_def, frequency=int(area_def.shape[0] * 0.30))
     return adp
 
 
