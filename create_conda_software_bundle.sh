@@ -136,7 +136,7 @@ echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
 echo "Downloading Satpy auxiliary data..."
 AUX_CACHE_DIR="${CACHE_DIR}/satpy_aux_data"
 SATPY_DATA_DIR="${SB_NAME}/share/polar2grid/data"
-${SB_NAME}/bin/satpy_retrieve_all_aux_data --data-dir ${AUX_CACHE_DIR}
+${PYTHON_RUNTIME_BASE}/bin/satpy_retrieve_all_aux_data --data-dir ${AUX_CACHE_DIR}
 echo "Copying Satpy auxiliary data to software bundle..."
 # don't include large geotiff files that we don't use in P2G/G2G
 rsync -auv --exclude "*.tif" ${AUX_CACHE_DIR}/* "${SATPY_DATA_DIR}/"
