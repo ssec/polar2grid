@@ -26,7 +26,7 @@ def step_impl(context, source):
 @when('{command} runs')
 def step_impl(context, command):
     context.script = command.split()[0]
-    context.command = "datapath={}; {} {}".format(context.datapath, os.path.join(context.p2g_path, command),
+    context.command = "datapath={}; /usr/bin/time {} {}".format(context.datapath, os.path.join(context.p2g_path, command),
                                                   context.source)
 
     # creating new data in temporary directory to compare
