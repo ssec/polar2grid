@@ -86,11 +86,10 @@ setup_prefixes()
 
 setup_conda()
 {
-    # The below commands should have already been run for the jenkins user
     # Activate conda for bash.
-    #/var/lib/jenkins/miniconda3/bin/conda init bash
+    /var/lib/jenkins/miniconda3/bin/conda init bash
     # Restart the shell to enable conda.
-    #source ~/.bashrc
+    source ~/.bashrc
 
     conda env update -n jenkins_p2g_swbundle -f "${WORKSPACE}/build_environment.yml"
     # Documentation environment also has behave, while the build environment does not. Currently must use
