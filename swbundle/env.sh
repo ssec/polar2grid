@@ -38,7 +38,7 @@ P2G_METADATA="${P2G_CONDA_BASE}/lib/python*/site-packages/polar2grid-*.dist-info
 METADATA_CHECKSUM=$(openssl sha256 $P2G_METADATA)
 
 # Only load the environment if it hasn't been done already
-if [[ "${_POLAR2GRID_ENV_LOADED}" == "${METADATA_CHECKSUM}" ]]; then
+if [[ "${_POLAR2GRID_ENV_LOADED}" != "${METADATA_CHECKSUM}" ]]; then
     export POLAR2GRID_HOME="${THIS_SCRIPT_HOME}"
 
     # Don't let someone else's PYTHONPATH mess us up
@@ -59,12 +59,9 @@ if [[ "${_POLAR2GRID_ENV_LOADED}" == "${METADATA_CHECKSUM}" ]]; then
 
     # Point gdal utilities to the proper data location
     export GDAL_DATA=$P2G_CONDA_BASE/share/gdal
-    # Let SatPy know where we put things
-    export SATPY_ANCPATH=$POLAR2GRID_HOME/bin
-    # The cviirs and crefl executables require base HDF files which by default are in the bin directory
-    export ANCPATH=$POLAR2GRID_HOME/bin
     export SATPY_CONFIG_PATH=$POLAR2GRID_HOME/etc/polar2grid
     export SATPY_DATA_DIR=$POLAR2GRID_HOME/share/polar2grid/data
+    export CREFL_ANCPATH=$POLAR2GRID_HOME/share/polar2grid/data
     export SATPY_DOWNLOAD_AUX=False
     export PSP_CONFIG_FILE=$POLAR2GRID_HOME/etc/polar2grid/pyspectral.yaml
     export PSP_DATA_ROOT=$POLAR2GRID_HOME/pyspectral_data

@@ -235,7 +235,7 @@ for prefix in ${prefixes}; do
             # Points polar2grid to where the scripts and packages are.
             export POLAR2GRID_HOME="${WORKSPACE}/${swbundle_name}"
             # Copies tarball to package directory.
-            cp "${WORKSPACE}/${swbundle_name}.tar.gz" "${WORKSPACE}/$package_name"
+            cp "${WORKSPACE}/${swbundle_name}.tar.gz" "${WORKSPACE}/$package_name/"
         else
             pip install -U --no-deps .
             # Add the environment information to the package. Run `conda env update -f swbundle.yml`

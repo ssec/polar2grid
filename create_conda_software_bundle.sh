@@ -119,7 +119,7 @@ cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy rele
 
 # Inject environment code into swbundle only.
 cd $SB_NAME/bin
-for file in `echo *.sh`; do
+for file in *.sh; do
     cp "$file" tmp.sh
     sed "s/# __SWBUNDLE_ENVIRONMENT_INJECTION__/source \$POLAR2GRID_HOME\/bin\/env.sh/g" tmp.sh > "$file"
 done
@@ -130,7 +130,7 @@ echo "Downloading pyspectral data..."
 $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
 
 # Add the download_from_internet: False to the config
-echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
+echo "download_from_internet: False" >> ${SB_NAME}/etc/polar2grid/pyspectral.yaml
 
 # Download Satpy auxiliary data
 echo "Downloading Satpy auxiliary data..."
@@ -151,7 +151,8 @@ if [ $MINIFY_TARBALL -ne 0 ]; then
     find . -follow -type f -name '*.a' -delete
     find . -follow -type f -name '*.pyc' -delete
     find . -follow -type f -name '*.js.map' -delete
-    find ${PYTHON_RUNTIME_BASE}/lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
+    # Disable this as conda-unpack fails
+    #find ${PYTHON_RUNTIME_BASE}/lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
 fi
 
 # Tar up the software bundle
