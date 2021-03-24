@@ -4,4 +4,4 @@ writer:
   #writer: polar2grid.polar2grid.writers.hdf5.hdf5writer
   writer: !!python/name:polar2grid.writers.hdf5.hdf5writer
   filename:
-    '{satellite}_{instrument}_{product_name}_{data_kind}_{grid_name}_{start_time}.{data_type}.{columns}.{rows}.h5'
+      "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.h5"
