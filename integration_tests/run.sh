@@ -1,4 +1,4 @@
-#!/bin/bash -l
+#!/bin/bash
 # Script for jenkins to run tests on polar2grid.
 # Optional commit message requests (pick one only): [skip-tests], [p2g], [g2g], [p2g-skip-tests], and [g2g-skip-tests].
 # The git tag name can be used to specify a release and the name specified by it will be used for the tarball/tests.
@@ -86,13 +86,10 @@ setup_prefixes()
 
 setup_conda()
 {
-    # The below commands should be done as part of setting up Jenkins with
-    # conda. The "bash -l" hashbang at the top of this script makes sure that
-    # the .bashrc is loaded.
     # Activate conda for bash.
-    #/var/lib/jenkins/miniconda3/bin/conda init bash
+    /var/lib/jenkins/miniconda3/bin/conda init bash
     # Restart the shell to enable conda.
-    #source ~/.bashrc
+    source ~/.bashrc
 
     conda env update -n jenkins_p2g_swbundle -f "${WORKSPACE}/build_environment.yml"
     # Documentation environment also has behave, while the build environment does not. Currently must use
