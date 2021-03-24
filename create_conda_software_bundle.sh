@@ -134,7 +134,7 @@ echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
 
 # Download Satpy auxiliary data
 echo "Downloading Satpy auxiliary data..."
-AUX_CACHE_DIR="${CACHE_DIR}/satpy_aux_data"
+AUX_CACHE_DIR="${CACHE_DIR}/satpy_aux_data_${USER}"
 SATPY_DATA_DIR="${SB_NAME}/share/polar2grid/data"
 ${PYTHON_RUNTIME_BASE}/bin/satpy_retrieve_all_aux_data --data-dir ${AUX_CACHE_DIR} || oops "Could not download Satpy auxiliary data"
 
