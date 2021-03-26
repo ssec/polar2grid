@@ -31,7 +31,14 @@
 
 # where are we?
 SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+while [ -h "$SOURCE" ]; do
+    NEWSRC="$(readlink "$SOURCE")"
+    if [ ! -e "$NEWSRC" ]; then
+        # probably a relative link
+        NEWSRC="$(cd $(dirname "$SOURCE"); pwd)/$NEWSRC"
+    fi
+    SOURCE=$NEWSRC
+done
 THIS_SCRIPT_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
 P2G_CONDA_BASE="${THIS_SCRIPT_HOME}/libexec/python_runtime"
 P2G_METADATA="${P2G_CONDA_BASE}/lib/python*/site-packages/polar2grid-*.dist-info/METADATA"
