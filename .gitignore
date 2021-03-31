@@ -83,3 +83,6 @@ ms2gt/src/xy2ll/xy2ll
 
 # PyCharm configs
 .idea
+
+# Example images should not be added to the repository
+doc/source/_static/example_images

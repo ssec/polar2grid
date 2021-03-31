@@ -116,5 +116,5 @@ COMPOSITE_PRODUCTS = [
 DEFAULT_PRODUCTS = READER_PRODUCTS + COMPOSITE_PRODUCTS[:2]
 
 
-def add_reader_argument_groups(parser):
-    return parser
+# def add_reader_argument_groups(parser):
+#     return group, None

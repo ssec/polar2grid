@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2018 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -20,31 +20,34 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    April 2018
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
 """Connect various satpy components together to go from satellite data to output imagery format.
 """
+
+from __future__ import annotations
 
 import os
 import sys
 import argparse
 import logging
-import importlib
 import pkg_resources
 from glob import glob
+from typing import Callable, Optional
 
 import dask
 from polar2grid.resample import resample_scene
 from polar2grid.writers import geotiff, awips_tiled
 from polar2grid.filters import filter_scene
+from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr
+from polar2grid.core.script_utils import ExtendAction
 
 
-def dist_is_editable(dist):
+# type aliases
+ComponentParserFunc = Callable[[argparse.ArgumentParser], tuple]
+
+LOG = logging.getLogger(__name__)
+
+
+def dist_is_editable(dist) -> bool:
     """Is distribution an editable install?"""
     for path_item in sys.path:
         egg_link = os.path.join(path_item, dist.project_name + '.egg-link')
@@ -53,12 +56,13 @@ def dist_is_editable(dist):
     return False
 
 
-LOG = logging.getLogger(__name__)
+def get_reader_parser_function(reader_name: str) -> Optional[ComponentParserFunc]:
+    return get_reader_attr(reader_name, 'add_reader_argument_groups')
 
-WRITER_PARSER_FUNCTIONS = {
-    'geotiff': geotiff.add_writer_argument_groups,
-    'awips_tiled': awips_tiled.add_writer_argument_groups,
-}
+
+def get_writer_parser_function(writer_name: str) -> Optional[ComponentParserFunc]:
+    return get_writer_attr(writer_name, 'add_writer_argument_groups')
+
 
 OUTPUT_FILENAMES = {
     'geotiff': geotiff.DEFAULT_OUTPUT_FILENAME,
@@ -66,6 +70,10 @@ OUTPUT_FILENAMES = {
 
 PLATFORM_ALIASES = {
     'suomi-npp': 'npp',
+}
+
+READER_ALIASES = {
+    'modis': 'modis_l1b',
 }
 
 WRITER_ALIASES = {
@@ -137,6 +145,14 @@ def _handle_product_names(aliases, products):
             yield product
 
 
+def _convert_reader_name(reader_name: str) -> str:
+    return READER_ALIASES.get(reader_name, reader_name)
+
+
+def _convert_writer_name(writer_name: str) -> str:
+    return WRITER_ALIASES.get(writer_name, writer_name)
+
+
 def add_scene_argument_groups(parser, is_polar2grid=False):
     if is_polar2grid:
         readers = [
@@ -166,7 +182,7 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
 
     group_1 = parser.add_argument_group(title='Reading')
     group_1.add_argument('-r', '--reader', action='append', dest='readers',
-                         metavar="READER",
+                         metavar="READER", type=_convert_reader_name,
                          help='Name of reader used to read provided files. '
                               'Supported readers: ' + ', '.join(readers))
     group_1.add_argument('-f', '--filenames', nargs='+', default=[],
@@ -182,7 +198,7 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
                          # help="Alternative to '-f' flag. Use two hyphens (--) "
                          #      "to separate these files from other command line "
                          #      "arguments (ex. '%(prog)s ... -- /path/to/files*')")
-    group_1.add_argument('-p', '--products', nargs='+',
+    group_1.add_argument('-p', '--products', nargs='+', default=None, action=ExtendAction,
                          help='Names of products to create from input files')
     group_1.add_argument('--filter-day-products', nargs='?', type=float,
                          default=filter_dn_products, metavar="fraction_of_day",
@@ -210,10 +226,6 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
                               "Less than this is day, greater than or equal to "
                               "this value is night.")
     return (group_1,)
-
-
-def _convert_writer_name(writer_name):
-    return WRITER_ALIASES.get(writer_name, writer_name)
 
 
 def add_writer_argument_groups(parser):
@@ -272,6 +284,11 @@ def add_resample_argument_groups(parser, is_polar2grid=False):
         group_1.add_argument('-g', '--grids', default=None, nargs="*",
                              help='Area definition to resample to. Empty means '
                                   'no resampling (default: "MAX")')
+    # shared options
+    group_1.add_argument('--grid-coverage', default=0.1,
+                         type=float,
+                         help="Fraction of target grid that must contain "
+                              "data to continue processing product.")
     group_1.add_argument('--cache-dir',
                          help='Directory to store resampling intermediate '
                               'results between executions. Not used with native '
@@ -313,20 +330,19 @@ def _user_products_that_exist(user_products, available_names):
 
 
 def _apply_default_products_and_aliases(scn, reader, user_products):
-    reader_mod = importlib.import_module('polar2grid.readers.' + reader)
-    default_products = getattr(reader_mod, 'DEFAULT_PRODUCTS', [])
+    default_products = get_reader_attr(reader, 'DEFAULT_PRODUCTS', [])
+    aliases = get_reader_attr(reader, 'PRODUCT_ALIASES', {})
     all_dataset_names = None
-    if user_products is None and default_products:
+    if not user_products and default_products:
         LOG.info("Using default product list: {}".format(default_products))
         user_products = default_products
         all_dataset_names = scn.all_dataset_names(composites=True)
-    elif user_products is None:
+    elif not user_products:
         LOG.error("Reader does not have a default set of products to load, "
                   "please specify products to load with `--products`.")
         return None
 
     # only use defaults that actually exist for the provided files
-    aliases = getattr(reader_mod, 'PRODUCT_ALIASES', {})
     user_products = _handle_product_names(aliases, user_products)
     if all_dataset_names is not None:
         user_products = _user_products_that_exist(user_products, all_dataset_names)
@@ -338,6 +354,83 @@ def _apply_default_products_and_aliases(scn, reader, user_products):
         msg = "No default products found in available file products:\n\t{}"
         msg = msg.format("\n\t".join(all_dataset_names))
         LOG.error(msg)
+
+
+def _add_component_parser_args(parser: argparse.ArgumentParser,
+                               component_type: str,
+                               component_names: list[str]
+                               ) -> list:
+    _get_args_func = get_writer_parser_function if component_type == 'writers' else get_reader_parser_function
+    subgroups = []
+    for component_name in component_names:
+        parser_func = _get_args_func(component_name)
+        if parser_func is None:
+            # two items in each tuple
+            subgroups += [(None, None)]
+            continue
+        subgroups += [parser_func(parser)]
+    return subgroups
+
+
+def _args_to_dict(args, group_actions, exclude=None):
+    if exclude is None:
+        exclude = []
+    return {ga.dest: getattr(args, ga.dest) for ga in group_actions
+            if hasattr(args, ga.dest) and ga.dest not in exclude}
+
+
+def _parse_reader_args(reader_names: list[str],
+                       reader_subgroups: list,
+                       args,
+                       ) -> dict:
+    reader_args = {}
+    for reader_name, (sgrp1, sgrp2) in zip(reader_names, reader_subgroups):
+        if sgrp1 is None:
+            continue
+        rargs = _args_to_dict(args, sgrp1._group_actions)
+        if sgrp2 is not None:
+            rargs.update(_args_to_dict(args, sgrp2._group_actions))
+        reader_args[reader_name] = rargs
+    return reader_args
+
+
+def _parse_writer_args(writer_names: list[str],
+                       writer_subgroups: list,
+                       reader_names: list[str],
+                       args,
+                       ) -> dict:
+    writer_args = {}
+    for writer_name, (sgrp1, sgrp2) in zip(writer_names, writer_subgroups):
+        wargs = _args_to_dict(args, sgrp1._group_actions)
+        if sgrp2 is not None:
+            wargs.update(_args_to_dict(args, sgrp2._group_actions))
+        writer_args[writer_name] = wargs
+        # get default output filename
+        if 'filename' in wargs and wargs['filename'] is None:
+            wargs['filename'] = get_default_output_filename(reader_names[0], writer_name)
+    return writer_args
+
+
+def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups):
+    products = reader_args.pop('products') or []
+    filenames = reader_args.pop('filenames') or []
+    filenames = list(get_input_files(filenames))
+
+    reader_specific_args = _parse_reader_args(reader_names, reader_subgroups, args)
+    for _reader_name, _reader_args in reader_specific_args.items():
+        _extended_products = _reader_args.pop('products') or []
+        products.extend(_extended_products)
+
+    # Parse provided files and search for files if provided directories
+    scene_creation = {
+        'filenames': filenames,
+        'reader': reader_names[0],
+        'reader_kwargs': reader_specific_args.get(reader_names[0], {}),
+    }
+    load_args = {
+        'products': products,
+    }
+    return scene_creation, load_args
 
 
 def main(argv=sys.argv[1:]):
@@ -396,8 +489,6 @@ basic processing with limited products:
     resampling_group = add_resample_argument_groups(
         parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
     writer_group = add_writer_argument_groups(parser)[0]
-    subgroups = [reader_group, resampling_group, writer_group]
-
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
 
     _retitle_optional_arguments(parser)
@@ -408,12 +499,8 @@ basic processing with limited products:
     if args.readers is not None and args.writers is not None:
         glue_name = args.readers[0] + "_" + "-".join(args.writers or [])
         LOG = logging.getLogger(glue_name)
-    # add writer arguments
-    for writer in (args.writers or []):
-        parser_func = WRITER_PARSER_FUNCTIONS.get(writer)
-        if parser_func is None:
-            continue
-        subgroups += parser_func(parser)
+    reader_subgroups = _add_component_parser_args(parser, 'readers', args.readers or [])
+    writer_subgroups = _add_component_parser_args(parser, 'writers', args.writers or [])
     args = parser.parse_args(argv)
 
     if args.readers is None:
@@ -423,41 +510,21 @@ basic processing with limited products:
     elif len(args.readers) > 1:
         parser.print_usage()
         parser.exit(1, "\nMultiple readers is not currently supported. Got:\n\t"
-                  "{}\n".format('\n\t'.join(args.readers)))
+                       "{}\n".format('\n\t'.join(args.readers)))
         return -1
     if args.writers is None:
         parser.print_usage()
         parser.exit(1, "\nERROR: Writer must be provided (-w flag) with one or more writer.\n"
                        "Supported writers:\n\t{}\n".format('\n\t'.join(['geotiff'])))
 
-    def _args_to_dict(group_actions, exclude=None):
-        if exclude is None:
-            exclude = []
-        return {ga.dest: getattr(args, ga.dest) for ga in group_actions
-                if hasattr(args, ga.dest) and ga.dest not in exclude}
-    reader_args = _args_to_dict(reader_group._group_actions)
+    reader_args = _args_to_dict(args, reader_group._group_actions)
     reader_names = reader_args.pop('readers')
-    scene_creation = {
-        'filenames': reader_args.pop('filenames'),
-        'reader': reader_names[0],
-    }
-    load_args = {
-        'products': reader_args.pop('products'),
-    }
-    # anything left in 'reader_args' is a reader-specific kwarg
-    resample_args = _args_to_dict(resampling_group._group_actions)
-    writer_args = _args_to_dict(writer_group._group_actions)
-    # writer_args = {}
-    subgroup_idx = 3
-    for idx, writer in enumerate(writer_args['writers']):
-        sgrp1, sgrp2 = subgroups[subgroup_idx + idx * 2: subgroup_idx + 2 + idx * 2]
-        wargs = _args_to_dict(sgrp1._group_actions)
-        if sgrp2 is not None:
-            wargs.update(_args_to_dict(sgrp2._group_actions))
-        writer_args[writer] = wargs
-        # get default output filename
-        if 'filename' in wargs and wargs['filename'] is None:
-            wargs['filename'] = get_default_output_filename(args.readers[0], writer)
+    scene_creation, load_args = _get_scene_init_load_args(
+        args, reader_args, reader_names, reader_subgroups)
+    resample_args = _args_to_dict(args, resampling_group._group_actions)
+    writer_args = _args_to_dict(args, writer_group._group_actions)
+    writer_specific_args = _parse_writer_args(writer_args['writers'], writer_subgroups, reader_names, args)
+    writer_args.update(writer_specific_args)
 
     if not args.filenames:
         parser.print_usage()
@@ -481,8 +548,6 @@ basic processing with limited products:
     if args.num_workers:
         dask.config.set(num_workers=args.num_workers)
 
-    # Parse provided files and search for files if provided directories
-    scene_creation['filenames'] = get_input_files(scene_creation['filenames'])
     # Create a Scene, analyze the provided files
     LOG.info("Sorting and reading input files...")
     try:

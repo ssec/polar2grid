@@ -27,18 +27,4 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Polar2Grid Namespace Module
-
-Polar2Grid is a python package that provides utilities and scripts to
-convert polar orbiting satellite data and remap it into a known grid.
-
-:author:       David Hoese (davidh)
-:author:       Ray Garcia (rayg)
-:author:       Eva Schiffer (evas)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2014
-:license:      GNU GPLv3
-"""
-__docformat__ = "restructuredtext en"
+"""Polar2Grid main package."""
