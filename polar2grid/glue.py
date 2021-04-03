@@ -40,7 +40,7 @@ from glob import glob
 
 import dask
 from polar2grid.resample import resample_scene
-from polar2grid.writers import geotiff, awips_tiled
+from polar2grid.writers import geotiff, awips_tiled, hdf5
 from polar2grid.filters import filter_scene
 
 
@@ -58,6 +58,7 @@ LOG = logging.getLogger(__name__)
 WRITER_PARSER_FUNCTIONS = {
     'geotiff': geotiff.add_writer_argument_groups,
     'awips_tiled': awips_tiled.add_writer_argument_groups,
+    'hdf5': hdf5.add_writer_argument_groups,
 }
 
 OUTPUT_FILENAMES = {
