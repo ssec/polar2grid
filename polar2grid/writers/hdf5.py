@@ -2,20 +2,26 @@ import os
 import sys
 import logging
 import satpy
-import string
-import re
 import pkg_resources
 import h5py
-from functools import lru_cache
-from itertools import groupby
+from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList,\
+    str_to_dtype, int_or_float
 from satpy.writers import Writer
+from satpy.readers.yaml_reader import FileYAMLReader
 from satpy.utils import debug_on
 from trollsift import Parser
-from satpy import find_files_and_readers, Scene
+
 from pyresample.geometry import SwathDefinition
 from datetime import datetime as datetime
-from pyproj import CRS
-from util.legacy_compat import convert_p2g_pattern_to_satpy, legacy_proj
+from polar2grid.util.legacy_compat import convert_p2g_pattern_to_satpy, legacy_proj
+
+from satpy.writers import compute_writer_results
+from dask.diagnostics import ProgressBar
+from polar2grid.core.script_utils import (
+    setup_logging, rename_log_file, create_exc_handler)
+
+USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
+
 LOG = logging.getLogger(__name__)
 
 debug_on()
@@ -29,46 +35,20 @@ def dist_is_editable(dist):
             return True
     return False
 
-# TODO:  Remove me if not used
-def all_equal(iterable):
-    "Returns True if all the elements are equal to each other"
-    g = groupby(iterable)
-    return next(g, True) and not next(g, False)
+dist = pkg_resources.get_distribution('polar2grid')
+if dist_is_editable(dist):
+    p2g_etc = os.path.join(dist.module_path, 'etc')
+else:
+    p2g_etc = os.path.join(sys.prefix, 'etc', 'polar2grid')
 
+config_path = satpy.config.get('config_path')
+if p2g_etc not in config_path:
+    satpy.config.set(config_path=config_path + [p2g_etc])
 
-def create_subgroup_dataset(filename, parent, hdf_subgroup, dataset_id,
-                            **kwargs):
-    """Write dask array to hdf5 file."""
+def DEFAULT_FILE_PATTERN(config_files):
+    a = hdf5writer("hdf5", config_files=config_files)
+    return a.file_pattern
 
-    ds_attrs = dataset_id.attrs
-
-    dask_args = {}
-
-    for key in ["append", "compute", "compression", "shuffle"]:
-        if key in kwargs:
-            dask_args[key] = kwargs.pop(key)
-
-    if hdf_subgroup in parent:
-        LOG.warning("Product %s already in hdf5 group,"
-                    "will delete existing dataset", hdf_subgroup)
-        del parent[hdf_subgroup]
-
-
-    try:
-        dset = parent.create_dataset(hdf_subgroup, shape=dataset_id.shape,
-                                     dtype=dataset_id.dtype, **kwargs)
-    except ValueError:
-        if os.path.isfile(filename):
-            os.remove(filename)
-        raise
-
-    dset.attrs["satellite"] = ds_attrs["platform_name"]
-    dset.attrs["instrument"] = ds_attrs["sensor"]
-    dset.attrs["begin_time"] = ds_attrs["start_time"].isoformat()
-    dset.attrs["end_time"] = ds_attrs["end_time"].isoformat()
-    dataset_id.data.to_hdf5(filename, hdf_subgroup, **dask_args)
-
-    
 class hdf5writer(Writer):
     """Writer for hdf5 files."""
     def __init__(self, dtype=None, **kwargs):
@@ -76,13 +56,37 @@ class hdf5writer(Writer):
         super(hdf5writer, self).__init__(default_config_filename="/writers/hdf5.yaml",
                                          **kwargs)
         self.dtype = self.info.get("dtype") if dtype is None else dtype
-        #TODO:  Recheck that yaml sets default file name not that tags are commented out.
-        """self.tags = self.info.get("tags", None) if tags is None else tags
-        if self.tags is None:
-            self.tags = {}
-        elif not isinstance(self.tags, dict):
-            # if it's coming from a config file
-            self.tags = dict(tuple(x.split("=")) for x in self.tags.split(","))"""
+
+    def save_datasets(self, dataset, filename=None, dtype=None,
+                      fill_value=None, **kwargs):
+        """Save hdf5 datasets.
+        arguments compression, append, add_geolocation"""
+        # don't need config_files key anymore
+        _config_files = kwargs.pop("config_files")
+        compute = kwargs.pop("compute")
+        kwargs["compression"] = kwargs.get("compression", None)
+        if kwargs["compression"] == "none":
+            kwargs["compression"] = None
+
+        append = kwargs.get("append", True)
+
+        add_geolocation = kwargs.pop("add_geolocation") \
+            if "add_geolocation" in kwargs else False
+
+        for dataset_id in dataset:
+            args = self._output_file_kwargs(dataset_id)
+            out_filename = filename or self.get_filename(**args)
+            # open hdf5 file handle, check if group already exists.
+            hdf5_fh = self.open_hdf5_filehandle(out_filename, append=append)
+            hdf_group = self.create_group_from_data(filename, hdf5_fh,
+                                                    dataset, add_geolocation,
+                                                    **kwargs)
+
+            hdf_subgroup = '{}/{}'.format(hdf_group, dataset_id.attrs["name"])
+            create_subgroup_dataset(out_filename, hdf5_fh, hdf_subgroup,
+                                    dataset_id, **kwargs)
+
+            hdf5_fh.close()
 
     def _output_file_kwargs(self, dataset):
         """Get file keywords from data for output_pattern."""
@@ -118,7 +122,7 @@ class hdf5writer(Writer):
             os.makedirs(dirname)
         return output_filename
 
-    def create_hdf5_file(self, output_filename, append=True):
+    def open_hdf5_filehandle(self, output_filename, append=True):
         if os.path.isfile(output_filename):
             if append:
                 LOG.info("Will append to existing file: %s", output_filename)
@@ -137,8 +141,13 @@ class hdf5writer(Writer):
         return h5_group
 
     @staticmethod
-    def create_group_from_data(dataset, parent, compression,
-                               add_geolocation=False, **kwargs):
+    def create_group_from_data(filename, parent, dataset,
+                               add_geolocation, **kwargs):
+       dask_args = {}
+       for key in ["append", "compute", "compression", "shuffle"]:
+          if key in kwargs:
+             dask_args[key] = kwargs.pop(key)
+
        data_arr = dataset[0]
        LOG.debug(data_arr.attrs["name"])
        projection_name = (data_arr.attrs["area"].name).replace(" ","_")
@@ -150,88 +159,121 @@ class hdf5writer(Writer):
        group = parent.create_group(projection_name)
        # add attributes from grid_defintion.
        area_def = data_arr.attrs["area"]
-       for a in ["height", "width", "origin_x", "origin_y"]:
-           ds_attr = getattr(area_def, a, None)
-           if ds_attr is None:
-               pass
-           else:
-               group.attrs[a] = ds_attr
-       group.attrs["proj4_string"] = area_def.proj_str
-       group.attrs["cell_height"] = area_def.pixel_size_y
-       group.attrs["cell_width"] = area_def.pixel_size_x
+       if isinstance(area_def, SwathDefinition):
+           group.attrs["height"], group.attrs["width"] = area_def.shape
+           group.attrs["description"] = "No projection: native format"
+       else:
+           for a in ["height", "width", "origin_x", "origin_y"]:
+               ds_attr = getattr(area_def, a, None)
+               if ds_attr is None:
+                   pass
+               else:
+                   group.attrs[a] = ds_attr
+           group.attrs["proj4_string"] = area_def.proj_str
+           group.attrs["cell_height"] = area_def.pixel_size_y
+           group.attrs["cell_width"] = area_def.pixel_size_x
 
        if add_geolocation:
            msg=("Adding geolocation 'longitude' and "
                 "'latitude' datasets for grid %s", projection_name)
            LOG.info(msg)
            lon_data, lat_data = data_arr.attrs["area"].get_lonlats()
-           group.create_dataset("longitude", shape=data_arr.shape,
+
+           lon_subgroup = "{}/longitude".format(projection_name)
+           lat_subgroup = "{}/latitude".format(projection_name)
+           dataset_id.data.to_hdf5(filename, lon_subgroup, **dask_args)
+           dataset_id.data.to_hdf5(filename, lat_subgroup, **dask_args)
+           """group.create_dataset("longitude", shape=data_arr.shape,
                                 dtype=lon_data.dtype, data=lon_data,
                                 compression=compression)
            group.create_dataset("latitude", shape=data_arr.shape,
                                 dtype=lat_data.dtype, data=lat_data,
-                                compression=compression)
+                                compression=compression)"""
 
        return projection_name
 
 
-    def save_datasets(self, dataset, filename=None, dtype=None,
-                      fill_value=None, **kwargs):
-        """Save hdf5 datasets.
-        arguments compression, append, add_geolocation"""
-        # don't need config_files key anymore
-        _config_files = kwargs.pop("config_files")
-        compute = kwargs.pop("compute")
-        kwargs["compression"] = kwargs.get("compression", None)
-        if kwargs["compression"] == "none":
-            kwargs["compression"] = None
+    @staticmethod
+    def create_subgroup_dataset(filename, parent, hdf_subgroup,
+                                dataset_id, **kwargs):
+        """Write dask array to hdf5 file."""
 
-        append = kwargs.get("append", True)
+        ds_attrs = dataset_id.attrs
 
-        if "add_geolocation" in kwargs:
-            add_geolocation = kwargs.pop("add_geolocation")
+        dask_args = {}
 
-        for dataset_id in dataset:
-            args = self._output_file_kwargs(dataset_id)
-            out_filename = filename or self.get_filename(**args)
-            # open hdf5 file handle, check if group already exists.
-            # TODO:  check on overwrite existing in self. (Check that this works)
-            hdf5_fh = self.create_hdf5_file(out_filename, append=append)
-            hdf_group = self.create_group_from_data(dataset, hdf5_fh, **kwargs)
+        for key in ["append", "compute", "compression", "shuffle"]:
+            if key in kwargs:
+                dask_args[key] = kwargs.pop(key)
 
-            hdf_subgroup = '{}/{}'.format(hdf_group, dataset_id.attrs["name"])
-            #TODO:  Create your own dataset, 
-            create_subgroup_dataset(out_filename, hdf5_fh, hdf_subgroup,
-                                    dataset_id,
-                                    **kwargs)
+        if hdf_subgroup in parent:
+            LOG.warning("Product %s already in hdf5 group,"
+                        "will delete existing dataset", hdf_subgroup)
+            del parent[hdf_subgroup]
 
-            hdf5_fh.close()
+        try:
+            dset = parent.create_dataset(hdf_subgroup, shape=dataset_id.shape,
+                                         dtype=dataset_id.dtype, **kwargs)
+        except ValueError:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            raise
 
-if __name__ == "__main__":
-    from satpy import Scene
-    from satpy.writers import compute_writer_results
-    from dask.diagnostics import ProgressBar
-    from polar2grid.core.script_utils import (
-        setup_logging, rename_log_file, create_exc_handler)
-    import argparse
+        dset.attrs["satellite"] = ds_attrs["platform_name"]
+        dset.attrs["instrument"] = ds_attrs["sensor"]
+        dset.attrs["begin_time"] = ds_attrs["start_time"].isoformat()
+        dset.attrs["end_time"] = ds_attrs["end_time"].isoformat()
+        dataset_id.data.to_hdf5(filename, hdf_subgroup, **dask_args)
 
-    dist = pkg_resources.get_distribution('polar2grid')
-    if dist_is_editable(dist):
-        p2g_etc = os.path.join(dist.module_path, 'etc')
-    else:
-        p2g_etc = os.path.join(sys.prefix, 'etc', 'polar2grid')
-    config_path = satpy.config.get('config_path')
-    if p2g_etc not in config_path:
-        satpy.config.set(config_path=config_path + [p2g_etc])
 
-    USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
 
+
+class HDF5_YAMLreader(FileYAMLReader):
+    """Custom file reader for reading writer's yaml file at runtime."""
+
+    def __init__(self, config_files, **kwargs):
+        """Initialize file reader and adjust geolocation preferences.
+
+        Args:
+            config_files (iterable): yaml config files passed to base class
+        """
+        super(HDF5_YAMLreader, self).__init__(config_files, **kwargs)
+        pass
+
+"""if __name__ == "__main__":
+    
+    from satpy import find_files_and_readers, Scene
     basedir="/Users/joleenf/data/mirs/"
     f = find_files_and_readers(base_dir=basedir, start_time=datetime(2020,12,20,7,00),
                                end_time=datetime(2020,12,20,18,30), reader="mirs")
     a = Scene(f)
     a.load(["TPW", "RR"])
-    new = a.resample('northamerica')
-    new.save_datasets(filename="{sensor}_{start_time_YYMMDD}.h5",
+    #new = a.resample('northamerica')
+    a.save_datasets(
                       writer="hdf5", base_dir=basedir, add_geolocation=True,
-                      append=True, compression=True)
+                      append=True, compression=True)"""
+
+def add_writer_argument_groups(parser, group=None):
+    from argparse import SUPPRESS
+    yaml = os.path.join(p2g_etc, "writers", "hdf5.yaml")
+    if group is None:
+        group = parser.add_argument_group(title='hdf5 Writer')
+    group.add_argument('--output-filename', dest='filename',
+                       default=DEFAULT_FILE_PATTERN([yaml]),
+                       help='Custom file pattern to save dataset to')
+    group.add_argument('--dtype', choices=NumpyDtypeList(NUMPY_DTYPE_STRS), type=str_to_dtype,
+                       help='Data type of the output file (8-bit unsigned '
+                            'integer by default - uint8)')
+    group.add_argument('--fill-value', dest='fill_value', type=int_or_float,
+                       help='Fill value for invalid data in this dataset.')
+    group.add_argument('--compress', default='LZW',
+                       help='File compression algorithm (DEFLATE, LZW, NONE, etc)')
+    group.add_argument('--gdal-num-threads', dest='num_threads',
+                       default=os.environ.get('DASK_NUM_WORKERS', 4),
+                       help=SUPPRESS)  # don't show this option to the user
+                       # help='Set number of threads used for compressing '
+                       #      'geotiffs (default: Same as num-workers)')
+    group.add_argument('--chunks', dest='chunks', type=tuple,
+                       help="Chunked storage of dataset. "
+                            "Default is chosen appropriate to dataset by h5py.")
+    return group, None
