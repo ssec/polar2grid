@@ -167,7 +167,6 @@ As an example, the ATMS band options are:
 
 """
 
-from satpy import DataQuery
 
 PRECIP_PRODUCTS = [
     "rain_rate",
@@ -205,7 +204,7 @@ BTEMP_PRODUCTS = [
     "btemp_183h4",
     "btemp_183h5",
 ]
-DEFAULT_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS + BTEMP_PRODUCTS
+DEFAULT_PRODUCTS = ['rain_rate', 'btemp_88v', 'btemp_89v1']
 
 PRODUCT_ALIASES = {}
 PRODUCT_ALIASES['rain_rate'] = 'RR'
@@ -215,6 +214,8 @@ PRODUCT_ALIASES['snow_cover'] = 'Snow'
 PRODUCT_ALIASES['swe'] = 'SWE'
 
 PRODUCT_ALIASES['sea_ice'] = 'SIce'
+
+P2G_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS + BTEMP_PRODUCTS
 
 
 def add_reader_argument_groups(parser):

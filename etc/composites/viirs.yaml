@@ -14,6 +14,7 @@ modifiers:
       resolution: 742
     - name: solar_zenith_angle
       resolution: 742
+    optional_prerequisites: []
 
   rayleigh_corrected_iband:
     modifier: !!python/name:satpy.modifiers.atmosphere.ReflectanceCorrector
@@ -28,6 +29,7 @@ modifiers:
       resolution: 371
     - name: solar_zenith_angle
       resolution: 371
+    optional_prerequisites: []
 
   sunz_corrected:
     modifier: !!python/name:satpy.modifiers.SunZenithCorrector

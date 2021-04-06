@@ -38,6 +38,7 @@ from polar2grid.resample import resample_scene
 from polar2grid.writers import geotiff, awips_tiled
 from polar2grid.filters import filter_scene
 from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr
+from polar2grid.utils.legacy_compat import AliasHandler
 from polar2grid.core.script_utils import ExtendAction
 
 
@@ -134,15 +135,6 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
             # list of delayed objects
             to_save.extend(res)
     return to_save
-
-
-def _handle_product_names(aliases, products):
-    for prod_name in products:
-        product = aliases.get(prod_name, prod_name)
-        if isinstance(product, (list, tuple)):
-            yield from product
-        else:
-            yield product
 
 
 def _convert_reader_name(reader_name: str) -> str:
@@ -329,7 +321,16 @@ def _user_products_that_exist(user_products, available_names):
             yield user_product
 
 
-def _apply_default_products_and_aliases(scn, reader, user_products):
+# def _handle_product_names(aliases, products):
+#     for prod_name in products:
+#         product = aliases.get(prod_name, prod_name)
+#         if isinstance(product, (list, tuple)):
+#             yield from product
+#         else:
+#             yield product
+
+
+def _create_alias_handler(scn, reader, user_products, allow_empty_list=False):
     default_products = get_reader_attr(reader, 'DEFAULT_PRODUCTS', [])
     aliases = get_reader_attr(reader, 'PRODUCT_ALIASES', {})
     all_dataset_names = None
@@ -337,19 +338,17 @@ def _apply_default_products_and_aliases(scn, reader, user_products):
         LOG.info("Using default product list: {}".format(default_products))
         user_products = default_products
         all_dataset_names = scn.all_dataset_names(composites=True)
-    elif not user_products:
+    elif not user_products and not allow_empty_list:
         LOG.error("Reader does not have a default set of products to load, "
                   "please specify products to load with `--products`.")
         return None
 
-    # only use defaults that actually exist for the provided files
-    user_products = _handle_product_names(aliases, user_products)
+    alias_handler = AliasHandler(aliases, user_products)
     if all_dataset_names is not None:
-        user_products = _user_products_that_exist(user_products, all_dataset_names)
-    user_products = list(user_products)
-
-    if user_products:
-        return user_products
+        # only use defaults that actually exist for the provided files
+        user_products = alias_handler.remove_unknown_user_products(all_dataset_names)
+    if user_products or allow_empty_list:
+        return alias_handler
     elif all_dataset_names:
         msg = "No default products found in available file products:\n\t{}"
         msg = msg.format("\n\t".join(all_dataset_names))
@@ -419,7 +418,8 @@ def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     reader_specific_args = _parse_reader_args(reader_names, reader_subgroups, args)
     for _reader_name, _reader_args in reader_specific_args.items():
         _extended_products = _reader_args.pop('products') or []
-        products.extend(_extended_products)
+        # Shouldn't be needed as argparse combines all destination variables
+        # products.extend(_extended_products)
 
     # Parse provided files and search for files if provided directories
     scene_creation = {
@@ -433,17 +433,32 @@ def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     return scene_creation, load_args
 
 
-def main(argv=sys.argv[1:]):
-    global LOG
+def _print_list_products(reader_names, scn, alias_handler, binary_name, p2g_only=True):
+    all_p2g_products = get_reader_attr(reader_names[0], "P2G_PRODUCTS", [])
+    if not all_p2g_products:
+        LOG.warning("Provided readers are not configured in %s. All "
+                    "products will be listed with internal Satpy names.",
+                    binary_name)
 
+    available_satpy_ids = scn.available_dataset_ids(composites=True)
+    available_satpy_names, available_p2g_names = alias_handler.available_product_names(
+        all_p2g_products, available_satpy_ids
+    )
+
+    available_satpy_names = ["*" + _sname for _sname in available_satpy_names]
+    if available_satpy_names and not p2g_only:
+        print("### Extra Custom/Satpy Products")
+        print("\n".join(available_satpy_names) + "\n")
+    if not p2g_only:
+        print("## Available Polar2Grid Products")
+    if not available_p2g_names:
+        print("<None>")
+    else:
+        print("\n".join(sorted(available_p2g_names)))
+
+
+def add_polar2grid_config_paths():
     import satpy
-    from satpy import Scene
-    from satpy.writers import compute_writer_results
-    from dask.diagnostics import ProgressBar
-    from polar2grid.core.script_utils import (
-        setup_logging, rename_log_file, create_exc_handler)
-    import argparse
-
     dist = pkg_resources.get_distribution('polar2grid')
     if dist_is_editable(dist):
         p2g_etc = os.path.join(dist.module_path, 'etc')
@@ -453,7 +468,20 @@ def main(argv=sys.argv[1:]):
     if p2g_etc not in config_path:
         satpy.config.set(config_path=config_path + [p2g_etc])
 
+
+def main(argv=sys.argv[1:]):
+    global LOG
+
+    from satpy import Scene
+    from satpy.writers import compute_writer_results
+    from dask.diagnostics import ProgressBar
+    from polar2grid.core.script_utils import (
+        setup_logging, rename_log_file, create_exc_handler)
+    import argparse
+
+    add_polar2grid_config_paths()
     USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
+    BINARY_NAME = "polar2grid" if USE_POLAR2GRID_DEFAULTS else "geo2grid"
 
     prog = os.getenv('PROG_NAME', sys.argv[0])
     # "usage: " will be printed at the top of this:
@@ -483,7 +511,9 @@ basic processing with limited products:
                              "at its native resolution, use the resolution used to create the "
                              "composite.")
     parser.add_argument("--list-products", dest="list_products", action="store_true",
-                        help="List available reader products and exit")
+                        help="List available {} products and exit".format(BINARY_NAME))
+    parser.add_argument("--list-products-all", dest="list_products_all", action="store_true",
+                        help="List available {} products and custom/Satpy products and exit".format(BINARY_NAME))
     reader_group = add_scene_argument_groups(
         parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
     resampling_group = add_resample_argument_groups(
@@ -561,18 +591,23 @@ basic processing with limited products:
         LOG.debug("Further error information: ", exc_info=True)
         return -1
 
-    if args.list_products:
-        print("\n".join(sorted(scn.available_dataset_names(composites=True))))
-        return 0
-
     # Rename the log file
     if rename_log:
         rename_log_file(glue_name + scn.attrs['start_time'].strftime("_%Y%m%d_%H%M%S.log"))
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
     LOG.info("Loading product metadata from files...")
-    load_args['products'] = _apply_default_products_and_aliases(scn,
-        scene_creation['reader'], load_args['products'])
+    alias_handler = _create_alias_handler(
+        scn,
+        scene_creation['reader'],
+        load_args['products'],
+        allow_empty_list=args.list_products or args.list_products_all)
+    load_args['products'] = list(alias_handler.convert_p2g_name_to_satpy())
+    if args.list_products or args.list_products_all:
+        _print_list_products(reader_names, scn, alias_handler, BINARY_NAME,
+                             p2g_only=not args.list_products_all)
+        return 0
+
     if not load_args['products']:
         return -1
     scn.load(load_args['products'])
@@ -599,6 +634,7 @@ basic processing with limited products:
                                     **resample_args)
     for scene_to_save, products_to_save in scenes_to_save:
         overwrite_platform_name_with_aliases(scene_to_save)
+        alias_handler.apply_p2g_name_to_scene(scene_to_save)
         to_save = write_scene(scene_to_save, writer_args['writers'], writer_args, products_to_save, to_save=to_save)
 
     if args.progress:

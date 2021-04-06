@@ -181,10 +181,10 @@ I_PRODUCTS = [
     "I05",
 ]
 I_ANGLE_PRODUCTS = [
-    DataQuery(name='solar_zenith_angle', resolution=371),
-    DataQuery(name='solar_azimuth_angle', resolution=371),
-    DataQuery(name='satellite_zenith_angle', resolution=371),
-    DataQuery(name='satellite_azimuth_angle', resolution=371),
+    'i_solar_zenith_angle',
+    'i_solar_azimuth_angle',
+    'i_sat_zenith_angle',
+    'i_sat_azimuth_angle',
 ]
 M_PRODUCTS = [
     "M01",
@@ -205,10 +205,10 @@ M_PRODUCTS = [
     "M16",
 ]
 M_ANGLE_PRODUCTS = [
-    DataQuery(name='solar_zenith_angle', resolution=742),
-    DataQuery(name='solar_azimuth_angle', resolution=742),
-    DataQuery(name='satellite_zenith_angle', resolution=742),
-    DataQuery(name='satellite_azimuth_angle', resolution=742),
+    'm_solar_zenith_angle',
+    'm_solar_azimuth_angle',
+    'm_sat_zenith_angle',
+    'm_sat_azimuth_angle',
 ]
 DNB_PRODUCTS = [
     "histogram_dnb",
@@ -217,12 +217,12 @@ DNB_PRODUCTS = [
     "hncc_dnb",
 ]
 DNB_ANGLE_PRODUCTS = [
-    DataQuery(name='dnb_solar_zenith_angle'),
-    DataQuery(name='dnb_solar_azimuth_angle'),
-    DataQuery(name='dnb_satellite_zenith_angle'),
-    DataQuery(name='dnb_satellite_azimuth_angle'),
-    DataQuery(name='dnb_lunar_zenith_angle'),
-    DataQuery(name='dnb_lunar_azimuth_angle'),
+    'dnb_solar_zenith_angle',
+    'dnb_solar_azimuth_angle',
+    'dnb_sat_zenith_angle',
+    'dnb_sat_azimuth_angle',
+    'dnb_lunar_zenith_angle',
+    'dnb_lunar_azimuth_angle',
 ]
 TRUE_COLOR_PRODUCTS = [
     "true_color"
@@ -233,31 +233,41 @@ FALSE_COLOR_PRODUCTS = [
 OTHER_COMPS = [
     "ifog",
 ]
-DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + DNB_PRODUCTS[1:] + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + OTHER_COMPS
 
-# map all lowercase band names to uppercase names
+
 PRODUCT_ALIASES = {}
-for band in I_PRODUCTS + M_PRODUCTS:
-    PRODUCT_ALIASES[band.lower()] = band
 
-# radiance products
+
+def _process_legacy_and_rad_products(satpy_names, band_aliases, rad_aliases):
+    """Map all lowercase band names to uppercase names and add radiance product."""
+    for band in satpy_names:
+        # P2G name is lowercase, Satpy is uppercase
+        PRODUCT_ALIASES[band.lower()] = band
+        band_aliases.append(band.lower())
+
+        # radiance products for M and I bands
+        rad_name = band.lower() + '_rad'
+        dq = DataQuery(name=band, calibration='radiance')
+        PRODUCT_ALIASES[rad_name] = dq
+        rad_aliases.append(rad_name)
+
+
+I_ALIASES = []
 I_RAD_PRODUCTS = []
-for band in I_PRODUCTS:
-    dq = DataQuery(name=band, calibration='radiance')
-    PRODUCT_ALIASES[band.lower() + '_rad'] = dq
-    I_RAD_PRODUCTS.append(dq)
+_process_legacy_and_rad_products(I_PRODUCTS, I_ALIASES, I_RAD_PRODUCTS)
+M_ALIASES = []
 M_RAD_PRODUCTS = []
-for band in M_PRODUCTS:
-    dq = DataQuery(name=band, calibration='radiance')
-    PRODUCT_ALIASES[band.lower() + '_rad'] = dq
-    M_RAD_PRODUCTS.append(dq)
+_process_legacy_and_rad_products(M_PRODUCTS, M_ALIASES, M_RAD_PRODUCTS)
 
-PRODUCT_ALIASES['awips_true_color'] = ['viirs_crefl08', 'viirs_crefl04', 'viirs_crefl03']
-PRODUCT_ALIASES['awips_false_color'] = ['viirs_crefl07', 'viirs_crefl09', 'viirs_crefl08']
+_AWIPS_TRUE_COLOR = ['viirs_crefl08', 'viirs_crefl04', 'viirs_crefl03']
+_AWIPS_FALSE_COLOR = ['viirs_crefl07', 'viirs_crefl09', 'viirs_crefl08']
 
-
+PRODUCT_ALIASES["dnb_solar_zenith_angle"] = DataQuery(name='dnb_solar_zenith_angle')
+PRODUCT_ALIASES["dnb_solar_azimuth_angle"] = DataQuery(name='dnb_solar_azimuth_angle')
 PRODUCT_ALIASES["dnb_sat_zenith_angle"] = DataQuery(name='dnb_satellite_zenith_angle')
 PRODUCT_ALIASES["dnb_sat_azimuth_angle"] = DataQuery(name='dnb_satellite_azimuth_angle')
+PRODUCT_ALIASES["dnb_lunar_zenith_angle"] = DataQuery(name='dnb_lunar_zenith_angle')
+PRODUCT_ALIASES["dnb_lunar_azimuth_angle"] = DataQuery(name='dnb_lunar_azimuth_angle')
 PRODUCT_ALIASES["m_solar_zenith_angle"] = DataQuery(name='solar_zenith_angle', resolution=742)
 PRODUCT_ALIASES["m_solar_azimuth_angle"] = DataQuery(name='solar_azimuth_angle', resolution=742)
 PRODUCT_ALIASES["m_sat_zenith_angle"] = DataQuery(name='satellite_zenith_angle', resolution=742)
@@ -267,6 +277,13 @@ PRODUCT_ALIASES["i_solar_azimuth_angle"] = DataQuery(name='solar_azimuth_angle',
 PRODUCT_ALIASES["i_sat_zenith_angle"] = DataQuery(name='satellite_zenith_angle', resolution=371)
 PRODUCT_ALIASES["i_sat_azimuth_angle"] = DataQuery(name='satellite_azimuth_angle', resolution=371)
 
+DEFAULT_PRODUCTS = I_ALIASES + M_ALIASES + DNB_PRODUCTS[1:] + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + OTHER_COMPS
+P2G_PRODUCTS = (
+        I_ALIASES + M_ALIASES + DNB_PRODUCTS +
+        I_RAD_PRODUCTS + M_RAD_PRODUCTS +
+        I_ANGLE_PRODUCTS + M_ANGLE_PRODUCTS + DNB_ANGLE_PRODUCTS +
+        OTHER_COMPS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS
+)
 
 FILTERS = {
     'day_only': {
@@ -284,9 +301,9 @@ def add_reader_argument_groups(parser, group=None):
     if group is None:
         group = parser.add_argument_group(title='VIIRS SDR Reader')
 
-    group.add_argument('--i-bands', dest='products', action=ExtendConstAction, const=I_PRODUCTS,
+    group.add_argument('--i-bands', dest='products', action=ExtendConstAction, const=I_ALIASES,
                        help="Add all I-band raw products to list of products")
-    group.add_argument('--m-bands', dest='products', action=ExtendConstAction, const=M_PRODUCTS,
+    group.add_argument('--m-bands', dest='products', action=ExtendConstAction, const=M_ALIASES,
                        help="Add all M-band raw products to list of products")
     group.add_argument('--dnb-angle-products', dest='products', action=ExtendConstAction, const=DNB_ANGLE_PRODUCTS,
                        help="Add DNB-band geolocation 'angle' products to list of products")
@@ -298,4 +315,10 @@ def add_reader_argument_groups(parser, group=None):
                        help="Add M-band geolocation radiance products to list of products")
     group.add_argument('--i-rad-products', dest='products', action=ExtendConstAction, const=I_RAD_PRODUCTS,
                        help="Add I-band geolocation radiance products to list of products")
+    group.add_argument('--awips-true-color', dest='products', action=ExtendConstAction, const=_AWIPS_TRUE_COLOR,
+                       help="Add individual CREFL corrected products to create "
+                            "the 'true_color' composite in AWIPS.")
+    group.add_argument('--awips-false-color', dest='products', action=ExtendConstAction, const=_AWIPS_FALSE_COLOR,
+                       help="Add individual CREFL corrected products to create "
+                            "the 'false_color' composite in AWIPS.")
     return group, None

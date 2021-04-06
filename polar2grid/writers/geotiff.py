@@ -45,10 +45,10 @@ LOG = logging.getLogger(__name__)
 
 # reader_name -> filename
 DEFAULT_OUTPUT_FILENAME = {
-    None: '{platform_name!u}_{sensor!u}_{name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif',
+    None: '{platform_name!u}_{sensor!u}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif',
     'abi_l1b': '{platform_name!u}_{sensor!u}_{observation_type}{scene_abbr}_'
-               '{name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif',
-    'viirs_sdr': '{platform_name!l}_{sensor!l}_{name!l}_'
+               '{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif',
+    'viirs_sdr': '{platform_name!l}_{sensor!l}_{p2g_name}_'
                '{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif',
 }
 
