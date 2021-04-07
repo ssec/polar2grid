@@ -396,10 +396,10 @@ def _print_list_products(reader_info, p2g_only=True):
     available_satpy_names, available_p2g_names = reader_info.get_available_products()
     available_satpy_names = ["*" + _sname for _sname in available_satpy_names]
     if available_satpy_names and not p2g_only:
-        print("### Extra Custom/Satpy Products")
+        print("### Custom/Satpy Products")
         print("\n".join(available_satpy_names) + "\n")
     if not p2g_only:
-        print("## Available Polar2Grid Products")
+        print("### Standard Available Polar2Grid Products")
     if not available_p2g_names:
         print("<None>")
     else:

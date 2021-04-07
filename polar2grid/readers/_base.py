@@ -90,6 +90,8 @@ class ReaderProxyBase:
         p2g_product_names: Optional[list[str]] = None,
         possible_satpy_ids: Optional[list[DataID]] = None,
     ) -> tuple[list[str], list[str]]:
+        if possible_satpy_ids is None:
+            possible_satpy_ids = self.scn.available_dataset_ids(composites=True)
         if p2g_product_names is None:
             p2g_product_names = self.get_all_products()
             if not p2g_product_names:
@@ -98,8 +100,7 @@ class ReaderProxyBase:
                     "products will be listed with internal Satpy names.",
                     self._binary_name,
                 )
-        if possible_satpy_ids is None:
-            possible_satpy_ids = self.scn.available_dataset_ids(composites=True)
+                return sorted(set([x['name'] for x in possible_satpy_ids])), []
         return self._alias_handler.available_product_names(
             p2g_product_names, possible_satpy_ids
         )
