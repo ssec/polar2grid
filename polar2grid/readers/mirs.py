@@ -167,6 +167,12 @@ As an example, the ATMS band options are:
 
 """
 
+from __future__ import annotations
+
+from argparse import ArgumentParser, _ArgumentGroup
+from typing import Optional
+
+from ._base import ReaderProxyBase
 
 PRECIP_PRODUCTS = [
     "rain_rate",
@@ -204,19 +210,40 @@ BTEMP_PRODUCTS = [
     "btemp_183h4",
     "btemp_183h5",
 ]
-DEFAULT_PRODUCTS = ['rain_rate', 'btemp_88v', 'btemp_89v1']
+DEFAULT_PRODUCTS = ["rain_rate", "btemp_88v", "btemp_89v1"]
 
 PRODUCT_ALIASES = {}
-PRODUCT_ALIASES['rain_rate'] = 'RR'
-PRODUCT_ALIASES['tpw'] = 'TPW'
+PRODUCT_ALIASES["rain_rate"] = "RR"
+PRODUCT_ALIASES["tpw"] = "TPW"
 
-PRODUCT_ALIASES['snow_cover'] = 'Snow'
-PRODUCT_ALIASES['swe'] = 'SWE'
+PRODUCT_ALIASES["snow_cover"] = "Snow"
+PRODUCT_ALIASES["swe"] = "SWE"
 
-PRODUCT_ALIASES['sea_ice'] = 'SIce'
+PRODUCT_ALIASES["sea_ice"] = "SIce"
 
 P2G_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS + BTEMP_PRODUCTS
 
 
-def add_reader_argument_groups(parser):
-    return parser
+class ReaderProxy(ReaderProxyBase):
+    """Provide Polar2Grid-specific information about this reader's products."""
+
+    @property
+    def is_polar2grid_reader(self):
+        return True
+
+    def get_default_products(self) -> list[str]:
+        return DEFAULT_PRODUCTS
+
+    def get_all_products(self):
+        return P2G_PRODUCTS
+
+    @property
+    def _aliases(self):
+        return PRODUCT_ALIASES
+
+
+def add_reader_argument_groups(
+    parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
+) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
+    """Add reader-specific command line arguments to an existing argument parser."""
+    return None, None

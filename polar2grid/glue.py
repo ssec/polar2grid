@@ -35,12 +35,11 @@ from typing import Callable, Optional
 
 import dask
 from polar2grid.resample import resample_scene
-from polar2grid.writers import geotiff, awips_tiled
+from polar2grid.writers import geotiff
 from polar2grid.filters import filter_scene
 from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr
-from polar2grid.utils.legacy_compat import AliasHandler
 from polar2grid.core.script_utils import ExtendAction
-
+from polar2grid.readers._base import ReaderProxyBase
 
 # type aliases
 ComponentParserFunc = Callable[[argparse.ArgumentParser], tuple]
@@ -65,6 +64,7 @@ def get_writer_parser_function(writer_name: str) -> Optional[ComponentParserFunc
     return get_writer_attr(writer_name, 'add_writer_argument_groups')
 
 
+# FIXME: Remove this in favor of runtime import
 OUTPUT_FILENAMES = {
     'geotiff': geotiff.DEFAULT_OUTPUT_FILENAME,
 }
@@ -314,47 +314,6 @@ def _retitle_optional_arguments(parser):
         opt_args.title = "Global Options"
 
 
-def _user_products_that_exist(user_products, available_names):
-    for user_product in user_products:
-        name = user_product if isinstance(user_product, str) else user_product['name']
-        if name in available_names:
-            yield user_product
-
-
-# def _handle_product_names(aliases, products):
-#     for prod_name in products:
-#         product = aliases.get(prod_name, prod_name)
-#         if isinstance(product, (list, tuple)):
-#             yield from product
-#         else:
-#             yield product
-
-
-def _create_alias_handler(scn, reader, user_products, allow_empty_list=False):
-    default_products = get_reader_attr(reader, 'DEFAULT_PRODUCTS', [])
-    aliases = get_reader_attr(reader, 'PRODUCT_ALIASES', {})
-    all_dataset_names = None
-    if not user_products and default_products:
-        LOG.info("Using default product list: {}".format(default_products))
-        user_products = default_products
-        all_dataset_names = scn.all_dataset_names(composites=True)
-    elif not user_products and not allow_empty_list:
-        LOG.error("Reader does not have a default set of products to load, "
-                  "please specify products to load with `--products`.")
-        return None
-
-    alias_handler = AliasHandler(aliases, user_products)
-    if all_dataset_names is not None:
-        # only use defaults that actually exist for the provided files
-        user_products = alias_handler.remove_unknown_user_products(all_dataset_names)
-    if user_products or allow_empty_list:
-        return alias_handler
-    elif all_dataset_names:
-        msg = "No default products found in available file products:\n\t{}"
-        msg = msg.format("\n\t".join(all_dataset_names))
-        LOG.error(msg)
-
-
 def _add_component_parser_args(parser: argparse.ArgumentParser,
                                component_type: str,
                                component_names: list[str]
@@ -433,18 +392,8 @@ def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     return scene_creation, load_args
 
 
-def _print_list_products(reader_names, scn, alias_handler, binary_name, p2g_only=True):
-    all_p2g_products = get_reader_attr(reader_names[0], "P2G_PRODUCTS", [])
-    if not all_p2g_products:
-        LOG.warning("Provided readers are not configured in %s. All "
-                    "products will be listed with internal Satpy names.",
-                    binary_name)
-
-    available_satpy_ids = scn.available_dataset_ids(composites=True)
-    available_satpy_names, available_p2g_names = alias_handler.available_product_names(
-        all_p2g_products, available_satpy_ids
-    )
-
+def _print_list_products(reader_info, p2g_only=True):
+    available_satpy_names, available_p2g_names = reader_info.get_available_products()
     available_satpy_names = ["*" + _sname for _sname in available_satpy_names]
     if available_satpy_names and not p2g_only:
         print("### Extra Custom/Satpy Products")
@@ -597,17 +546,12 @@ basic processing with limited products:
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
     LOG.info("Loading product metadata from files...")
-    alias_handler = _create_alias_handler(
-        scn,
-        scene_creation['reader'],
-        load_args['products'],
-        allow_empty_list=args.list_products or args.list_products_all)
-    load_args['products'] = list(alias_handler.convert_p2g_name_to_satpy())
+    reader_info = ReaderProxyBase.from_reader_name(scene_creation['reader'], scn, load_args['products'])
     if args.list_products or args.list_products_all:
-        _print_list_products(reader_names, scn, alias_handler, BINARY_NAME,
-                             p2g_only=not args.list_products_all)
+        _print_list_products(reader_info, p2g_only=not args.list_products_all)
         return 0
 
+    load_args['products'] = reader_info.get_satpy_products_to_load()
     if not load_args['products']:
         return -1
     scn.load(load_args['products'])
@@ -634,7 +578,7 @@ basic processing with limited products:
                                     **resample_args)
     for scene_to_save, products_to_save in scenes_to_save:
         overwrite_platform_name_with_aliases(scene_to_save)
-        alias_handler.apply_p2g_name_to_scene(scene_to_save)
+        reader_info.apply_p2g_name_to_scene(scene_to_save)
         to_save = write_scene(scene_to_save, writer_args['writers'], writer_args, products_to_save, to_save=to_save)
 
     if args.progress:
