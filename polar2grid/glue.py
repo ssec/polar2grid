@@ -35,7 +35,6 @@ from typing import Callable, Optional
 
 import dask
 from polar2grid.resample import resample_scene
-from polar2grid.writers import geotiff
 from polar2grid.filters import filter_scene
 from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr
 from polar2grid.core.script_utils import ExtendAction
@@ -64,11 +63,6 @@ def get_writer_parser_function(writer_name: str) -> Optional[ComponentParserFunc
     return get_writer_attr(writer_name, 'add_writer_argument_groups')
 
 
-# FIXME: Remove this in favor of runtime import
-OUTPUT_FILENAMES = {
-    'geotiff': geotiff.DEFAULT_OUTPUT_FILENAME,
-}
-
 PLATFORM_ALIASES = {
     'suomi-npp': 'npp',
 }
@@ -95,12 +89,12 @@ def overwrite_platform_name_with_aliases(scn):
         data_arr.attrs['platform_name'] = pname
 
 
-def get_default_output_filename(reader, writer):
+def get_default_output_filename(reader: str, writer: str):
     """Get a default output filename based on what reader we are reading."""
-    ofile_map = OUTPUT_FILENAMES.get(writer, {})
+    ofile_map = get_writer_attr(writer, "DEFAULT_OUTPUT_FILENAMES", {})
     if reader not in ofile_map:
         reader = None
-    return ofile_map[reader]
+    return ofile_map.get(reader)
 
 
 def get_input_files(input_filenames):

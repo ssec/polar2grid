@@ -84,10 +84,14 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{platform_name}_{sensor}_{p2g_name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc'
+DEFAULT_OUTPUT_FILENAMES = {
+    None: DEFAULT_OUTPUT_PATTERN,
+}
+
 
 def add_writer_argument_groups(parser, group=None):
     import argparse
-    DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{platform_name}_{sensor}_{name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc'
     if group is None:
         group = parser.add_argument_group(title='AWIPS Tiled Writer')
     # group_1.add_argument('--file-pattern', default=DEFAULT_OUTPUT_PATTERN,
@@ -97,7 +101,7 @@ def add_writer_argument_groups(parser, group=None):
     group.add_argument("--fix-awips", action="store_true",
                        help=argparse.SUPPRESS)
                        # help="modify NetCDF output to work with the old/broken AWIPS NetCDF library")
-    group.add_argument('--output-filename', dest='filename', default=DEFAULT_OUTPUT_PATTERN,
+    group.add_argument('--output-filename', dest='filename',
                        help='custom file pattern to save dataset to')
     group.add_argument('--use-end-time', action='store_true',
                        help='use end_time metadata inplace of start_time (useful for multi-day composites)')
