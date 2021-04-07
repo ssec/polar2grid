@@ -34,20 +34,21 @@ logger = logging.getLogger(__name__)
 
 def convert_old_p2g_date_frmts(frmt):
     """Convert old P2G output pattern date formats."""
-    dt_frmts = {"_YYYYMMDD": ":%Y%m%d",
-                  "_YYMMDD": ":%y%m%d",
-                  "_HHMMSS": ":%H%M%S",
-                  "_HHMM": ":%H%M"
-                  }
+    dt_frmts = {
+        "_YYYYMMDD": ":%Y%m%d",
+        "_YYMMDD": ":%y%m%d",
+        "_HHMMSS": ":%H%M%S",
+        "_HHMM": ":%H%M",
+    }
     for old_frmt, new_frmt in dt_frmts.items():
-        old_start="start_time{}".format(old_frmt)
-        new_start="start_time{}".format(new_frmt)
+        old_start = "start_time{}".format(old_frmt)
+        new_start = "start_time{}".format(new_frmt)
         frmt = frmt.replace(old_start, new_start)
 
-        old_begin="begin_time{}".format(old_frmt)
+        old_begin = "begin_time{}".format(old_frmt)
         frmt = frmt.replace(old_begin, new_start)
 
-        old_end="end_time{}".format(old_frmt)
+        old_end = "end_time{}".format(old_frmt)
         new_end = "end_time{}".format(new_frmt)
         frmt = frmt.replace(old_end, new_end)
 
@@ -57,12 +58,13 @@ def convert_old_p2g_date_frmts(frmt):
 def convert_p2g_pattern_to_satpy(output_pattern):
     """Convert old P2G output patterns to new format."""
 
-    fmt=output_pattern.replace("begin_time", "")
-    replacements = {"satellite": "platform_name",
-                    "instrument": "sensor",
-                    "begin_time": "start_time",
-                    "product_name": "p2g_name",
-                    }
+    fmt = output_pattern.replace("begin_time", "")
+    replacements = {
+        "satellite": "platform_name",
+        "instrument": "sensor",
+        "begin_time": "start_time",
+        "product_name": "p2g_name",
+    }
     for p2g_kw, satpy_kw in replacements.items():
         fmt = fmt.replace(p2g_kw, satpy_kw)
     fmt = convert_old_p2g_date_frmts(fmt)
@@ -87,17 +89,19 @@ class AliasHandler:
 
     """
 
-    def __init__(self,
-                 all_aliases: dict[str, Union[str, DataQuery]],
-                 user_products: list[str],
-                 ):
+    def __init__(
+        self,
+        all_aliases: dict[str, Union[str, DataQuery]],
+        user_products: list[str],
+    ):
 
         self._all_aliases = all_aliases
         self._user_products = user_products
 
-    def remove_unknown_user_products(self,
-                                     known_dataset_names: Iterable[str],
-                                     ) -> list[str]:
+    def remove_unknown_user_products(
+        self,
+        known_dataset_names: Iterable[str],
+    ) -> list[str]:
         """Remove user products that aren't known to the Scene.
 
         This is for a Satpy reader that dynamically determines what datasets
@@ -113,7 +117,9 @@ class AliasHandler:
         new_user_products = []
         for user_name, satpy_name in zip(self._user_products, satpy_names):
             # convert DataID/DataQuery to string
-            satpy_name = satpy_name if isinstance(satpy_name, str) else satpy_name['name']
+            satpy_name = (
+                satpy_name if isinstance(satpy_name, str) else satpy_name["name"]
+            )
             if satpy_name not in known_dataset_names:
                 continue
             new_user_products.append(user_name)
@@ -125,8 +131,9 @@ class AliasHandler:
         """All user provided product names as Satpy identifiers."""
         return list(self.convert_p2g_name_to_satpy())
 
-    def convert_p2g_name_to_satpy(self,
-                                  products: Optional[Iterable[str]] = None,
+    def convert_p2g_name_to_satpy(
+        self,
+        products: Optional[Iterable[str]] = None,
     ) -> Generator[Union[str, DataID], None, None]:
         """Convert P2G names to corresponding Satpy name or DataID."""
         if products is None:
@@ -135,9 +142,9 @@ class AliasHandler:
             yield self._all_aliases.get(product_name, product_name)
 
     def convert_satpy_to_p2g_name(
-            self,
-            satpy_products: Iterable[Union[DataID]],
-            possible_p2g_names: Optional[list[str]] = None,
+        self,
+        satpy_products: Iterable[Union[DataID]],
+        possible_p2g_names: Optional[list[str]] = None,
     ):
         """Get the P2G name for a series of Satpy names or DataIDs."""
         from satpy import DatasetDict
@@ -154,16 +161,21 @@ class AliasHandler:
                 continue
 
             if matching_satpy_id in satpy_id_to_p2g_name:
-                logger.warning("Multiple product names map to the same identifier in Satpy")
-                print(matching_satpy_id, satpy_id_to_p2g_name[matching_satpy_id], p2g_name)
+                logger.warning(
+                    "Multiple product names map to the same identifier in Satpy"
+                )
+                print(
+                    matching_satpy_id, satpy_id_to_p2g_name[matching_satpy_id], p2g_name
+                )
             satpy_id_to_p2g_name[matching_satpy_id] = p2g_name
 
         for satpy_product in satpy_products:
-            yield satpy_id_to_p2g_name.get(satpy_product, satpy_product['name'])
+            yield satpy_id_to_p2g_name.get(satpy_product, satpy_product["name"])
 
-    def apply_p2g_name_to_scene(self,
-                                scn: Scene,
-                                ):
+    def apply_p2g_name_to_scene(
+        self,
+        scn: Scene,
+    ):
         """Assign a new 'p2g_name' string attribute to every DataArray.
 
         This is typically done just before writing the 'Scene' output to disk so
@@ -174,17 +186,19 @@ class AliasHandler:
         all_ids = list(scn.keys())
         all_p2g_names = list(self.convert_satpy_to_p2g_name(all_ids))
         for data_id, p2g_name in zip(all_ids, all_p2g_names):
-            scn[data_id].attrs['p2g_name'] = p2g_name
+            scn[data_id].attrs["p2g_name"] = p2g_name
             logger.debug("Mapping Satpy ID to P2G name: %s -> %s", data_id, p2g_name)
 
     def available_product_names(
-            self,
-            all_p2g_products: list[str],
-            available_satpy_ids: list[DataID]
+        self, all_p2g_products: list[str], available_satpy_ids: list[DataID]
     ) -> tuple[list[str], list[str]]:
         """Get separate lists of available Satpy products and Polar2Grid products."""
-        available_ids_as_p2g_names = list(self.convert_satpy_to_p2g_name(available_satpy_ids, all_p2g_products))
-        satpy_id_to_p2g_name = dict(zip(available_satpy_ids, available_ids_as_p2g_names))
+        available_ids_as_p2g_names = list(
+            self.convert_satpy_to_p2g_name(available_satpy_ids, all_p2g_products)
+        )
+        satpy_id_to_p2g_name = dict(
+            zip(available_satpy_ids, available_ids_as_p2g_names)
+        )
         available_p2g_names = []
         available_satpy_names = []
         for satpy_id in available_satpy_ids:

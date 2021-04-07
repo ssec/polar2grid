@@ -45,11 +45,11 @@ LOG = logging.getLogger(__name__)
 
 # reader_name -> filename
 DEFAULT_OUTPUT_FILENAMES = {
-    None: '{platform_name!u}_{sensor!u}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif',
-    'abi_l1b': '{platform_name!u}_{sensor!u}_{observation_type}{scene_abbr}_'
-               '{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif',
-    'viirs_sdr': '{platform_name!l}_{sensor!l}_{p2g_name}_'
-               '{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif',
+    None: "{platform_name!u}_{sensor!u}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
+    "abi_l1b": "{platform_name!u}_{sensor!u}_{observation_type}{scene_abbr}_"
+    "{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
+    "viirs_sdr": "{platform_name!l}_{sensor!l}_{p2g_name}_"
+    "{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
 }
 
 
@@ -67,37 +67,63 @@ class NumpyDtypeList(list):
 
 def add_writer_argument_groups(parser, group=None):
     from argparse import SUPPRESS
+
     if group is None:
-        group = parser.add_argument_group(title='Geotiff Writer')
-    group.add_argument('--output-filename', dest='filename',
-                       help='Custom file pattern to save dataset to')
-    group.add_argument('--dtype', choices=NumpyDtypeList(NUMPY_DTYPE_STRS), type=str_to_dtype,
-                       help='Data type of the output file (8-bit unsigned '
-                            'integer by default - uint8)')
-    group.add_argument('--no-enhance', dest='enhance', action='store_false',
-                       help='Don\'t try to enhance the data before saving it')
-    group.add_argument('--fill-value', dest='fill_value', type=int_or_float,
-                       help='Instead of an alpha channel fill invalid '
-                            'values with this value. Turns LA or RGBA '
-                            'images in to L or RGB images respectively.')
-    group.add_argument('--compress', default='LZW',
-                       help='File compression algorithm (DEFLATE, LZW, NONE, etc)')
-    group.add_argument('--tiled', action='store_true',
-                       help="Create tiled geotiffs")
-    group.add_argument('--blockxsize', default=SUPPRESS, type=int,
-                       help="Set tile block X size")
-    group.add_argument('--blockysize', default=SUPPRESS, type=int,
-                       help="Set tile block Y size")
-    group.add_argument('--gdal-num-threads', dest='num_threads',
-                       default=os.environ.get('DASK_NUM_WORKERS', 4),
-                       help=SUPPRESS)  # don't show this option to the user
-                       # help='Set number of threads used for compressing '
-                       #      'geotiffs (default: Same as num-workers)')
-    group.add_argument('--overviews', type=lambda x: x.split(' '),
-                       help="Build lower resolution versions of your image "
-                            "for better performance in some clients. "
-                            "Specified as a space separate list of numbers, "
-                            "typically as powers of 2. Example: '2 4 8 16'")
+        group = parser.add_argument_group(title="Geotiff Writer")
+    group.add_argument(
+        "--output-filename",
+        dest="filename",
+        help="Custom file pattern to save dataset to",
+    )
+    group.add_argument(
+        "--dtype",
+        choices=NumpyDtypeList(NUMPY_DTYPE_STRS),
+        type=str_to_dtype,
+        help="Data type of the output file (8-bit unsigned "
+        "integer by default - uint8)",
+    )
+    group.add_argument(
+        "--no-enhance",
+        dest="enhance",
+        action="store_false",
+        help="Don't try to enhance the data before saving it",
+    )
+    group.add_argument(
+        "--fill-value",
+        dest="fill_value",
+        type=int_or_float,
+        help="Instead of an alpha channel fill invalid "
+        "values with this value. Turns LA or RGBA "
+        "images in to L or RGB images respectively.",
+    )
+    group.add_argument(
+        "--compress",
+        default="LZW",
+        help="File compression algorithm (DEFLATE, LZW, NONE, etc)",
+    )
+    group.add_argument("--tiled", action="store_true", help="Create tiled geotiffs")
+    group.add_argument(
+        "--blockxsize", default=SUPPRESS, type=int, help="Set tile block X size"
+    )
+    group.add_argument(
+        "--blockysize", default=SUPPRESS, type=int, help="Set tile block Y size"
+    )
+    group.add_argument(
+        "--gdal-num-threads",
+        dest="num_threads",
+        default=os.environ.get("DASK_NUM_WORKERS", 4),
+        help=SUPPRESS,
+    )  # don't show this option to the user
+    # help='Set number of threads used for compressing '
+    #      'geotiffs (default: Same as num-workers)')
+    group.add_argument(
+        "--overviews",
+        type=lambda x: x.split(" "),
+        help="Build lower resolution versions of your image "
+        "for better performance in some clients. "
+        "Specified as a space separate list of numbers, "
+        "typically as powers of 2. Example: '2 4 8 16'",
+    )
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
     return group, None
