@@ -206,7 +206,8 @@ class ReaderProxy(ReaderProxyBase):
     # TODO: Filter default products and all products by what btemps are available/known
     is_polar2grid_reader = True
 
-    def _btemp_channels_from_satpy(self, satpy_ids: list[Union[str, DataID]]):
+    @staticmethod
+    def _btemp_channels_from_satpy(satpy_ids: list[Union[str, DataID]]):
         for data_id in satpy_ids:
             dname = data_id if isinstance(data_id, str) else data_id["name"]
             if dname.startswith("btemp_"):
