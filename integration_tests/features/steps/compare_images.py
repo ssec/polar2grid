@@ -94,7 +94,7 @@ def step_impl(context, command):
         context.temp_dir = tempfile.mkdtemp(prefix="p2g_tests_")
         os.chdir(context.temp_dir)
         output = subprocess.check_output(context.command, shell=True)
-        context.output = output
+        context.output = output.decode("utf-8")
     finally:
         os.chdir(orig_dir)
 
