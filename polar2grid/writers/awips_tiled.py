@@ -84,46 +84,88 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+DEFAULT_OUTPUT_PATTERN = "{source_name}_AII_{platform_name}_{sensor}_{p2g_name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc"
+DEFAULT_OUTPUT_FILENAMES = {
+    None: DEFAULT_OUTPUT_PATTERN,
+}
+
 
 def add_writer_argument_groups(parser, group=None):
     import argparse
-    DEFAULT_OUTPUT_PATTERN = '{source_name}_AII_{platform_name}_{sensor}_{name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc'
+
     if group is None:
-        group = parser.add_argument_group(title='AWIPS Tiled Writer')
+        group = parser.add_argument_group(title="AWIPS Tiled Writer")
     # group_1.add_argument('--file-pattern', default=DEFAULT_OUTPUT_PATTERN,
     #                      help="Custom file pattern to save dataset to")
-    group.add_argument("--compress", action="store_true",
-                       help="zlib compress each netcdf file")
-    group.add_argument("--fix-awips", action="store_true",
-                       help=argparse.SUPPRESS)
-                       # help="modify NetCDF output to work with the old/broken AWIPS NetCDF library")
-    group.add_argument('--output-filename', dest='filename', default=DEFAULT_OUTPUT_PATTERN,
-                       help='custom file pattern to save dataset to')
-    group.add_argument('--use-end-time', action='store_true',
-                       help='use end_time metadata inplace of start_time (useful for multi-day composites)')
-    group.add_argument('--use-sector-reference', action='store_true',
-                       help='use the lettered sector location as reference '
-                            'and shift data to match tile pixel locations. '
-                            'Useful when tiles will be updated in future '
-                            'executions. By default the sector tiles are '
-                            'shifted to match the data location. Maximum '
-                            'shift is 0.5 pixels.')
+    group.add_argument(
+        "--compress", action="store_true", help="zlib compress each netcdf file"
+    )
+    group.add_argument("--fix-awips", action="store_true", help=argparse.SUPPRESS)
+    # help="modify NetCDF output to work with the old/broken AWIPS NetCDF library")
+    group.add_argument(
+        "--output-filename",
+        dest="filename",
+        help="custom file pattern to save dataset to",
+    )
+    group.add_argument(
+        "--use-end-time",
+        action="store_true",
+        help="use end_time metadata inplace of start_time (useful for multi-day composites)",
+    )
+    group.add_argument(
+        "--use-sector-reference",
+        action="store_true",
+        help="use the lettered sector location as reference "
+        "and shift data to match tile pixel locations. "
+        "Useful when tiles will be updated in future "
+        "executions. By default the sector tiles are "
+        "shifted to match the data location. Maximum "
+        "shift is 0.5 pixels.",
+    )
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
-    group.add_argument("--tiles", dest="tile_count", nargs=2, type=int, default=[1, 1],
-                       help="Number of tiles to produce in Y (rows) and X (cols) direction respectively")
-    group.add_argument("--tile-size", dest="tile_size", nargs=2, type=int, default=None,
-                       help="Specify how many pixels are in each tile (overrides '--tiles')")
-    group.add_argument("--letters", dest="lettered_grid", action='store_true',
-                       help="Create tiles from a static letter-based grid based on the product projection")
-    group.add_argument("--letter-subtiles", nargs=2, type=int, default=(2, 2),
-                       help="Specify number of subtiles in each lettered tile: \'row col\'")
-    group.add_argument("--source-name", default='SSEC',
-                       help="specify processing source name used in attributes and filename")
-    group.add_argument("--sector-id",
-                       help="specify name for sector/region used in attributes and filename (example 'LCC')")
-    group.add_argument("--template", default="polar",
-                       help="specify name for pre-configured template used to "
-                            "determine output file structure and formatting.")
+    group.add_argument(
+        "--tiles",
+        dest="tile_count",
+        nargs=2,
+        type=int,
+        default=[1, 1],
+        help="Number of tiles to produce in Y (rows) and X (cols) direction respectively",
+    )
+    group.add_argument(
+        "--tile-size",
+        dest="tile_size",
+        nargs=2,
+        type=int,
+        default=None,
+        help="Specify how many pixels are in each tile (overrides '--tiles')",
+    )
+    group.add_argument(
+        "--letters",
+        dest="lettered_grid",
+        action="store_true",
+        help="Create tiles from a static letter-based grid based on the product projection",
+    )
+    group.add_argument(
+        "--letter-subtiles",
+        nargs=2,
+        type=int,
+        default=(2, 2),
+        help="Specify number of subtiles in each lettered tile: 'row col'",
+    )
+    group.add_argument(
+        "--source-name",
+        default="SSEC",
+        help="specify processing source name used in attributes and filename",
+    )
+    group.add_argument(
+        "--sector-id",
+        help="specify name for sector/region used in attributes and filename (example 'LCC')",
+    )
+    group.add_argument(
+        "--template",
+        default="polar",
+        help="specify name for pre-configured template used to "
+        "determine output file structure and formatting.",
+    )
     return group, None
-

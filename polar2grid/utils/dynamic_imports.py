@@ -26,24 +26,16 @@ import importlib
 from typing import Any
 
 
-def _get_component_attr(component_type: str,
-                        component_name: str,
-                        attr_name: str,
-                        default: Any = None
-                        ) -> Any:
-    comp_mod = importlib.import_module(f'polar2grid.{component_type}.{component_name}')
+def _get_component_attr(
+    component_type: str, component_name: str, attr_name: str, default: Any = None
+) -> Any:
+    comp_mod = importlib.import_module(f"polar2grid.{component_type}.{component_name}")
     return getattr(comp_mod, attr_name, default)
 
 
-def get_reader_attr(reader_name: str,
-                    attr_name: str,
-                    default: Any = None
-                    ) -> Any:
-    return _get_component_attr('readers', reader_name, attr_name, default=default)
+def get_reader_attr(reader_name: str, attr_name: str, default: Any = None) -> Any:
+    return _get_component_attr("readers", reader_name, attr_name, default=default)
 
 
-def get_writer_attr(writer_name: str,
-                    attr_name: str,
-                    default: Any = None
-                    ) -> Any:
-    return _get_component_attr('writers', writer_name, attr_name, default=default)
+def get_writer_attr(writer_name: str, attr_name: str, default: Any = None) -> Any:
+    return _get_component_attr("writers", writer_name, attr_name, default=default)

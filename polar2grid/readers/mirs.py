@@ -167,7 +167,14 @@ As an example, the ATMS band options are:
 
 """
 
-from satpy import DataQuery
+from __future__ import annotations
+
+from argparse import ArgumentParser, _ArgumentGroup
+from typing import Optional, Union
+
+from ._base import ReaderProxyBase
+
+from satpy import DataID
 
 PRECIP_PRODUCTS = [
     "rain_rate",
@@ -181,41 +188,49 @@ SEAICE_PRODUCTS = [
     "sea_ice",
 ]
 
-BTEMP_PRODUCTS = [
-    "btemp_23v",
-    "btemp_31v",
-    "btemp_50h",
-    "btemp_51h",
-    "btemp_52h",
-    "btemp_53h",
-    "btemp_54h1",
-    "btemp_54h2",
-    "btemp_55h",
-    "btemp_57h1",
-    "btemp_57h2",
-    "btemp_57h3",
-    "btemp_57h4",
-    "btemp_57h5",
-    "btemp_57h6",
-    "btemp_88v",
-    "btemp_165h",
-    "btemp_183h1",
-    "btemp_183h2",
-    "btemp_183h3",
-    "btemp_183h4",
-    "btemp_183h5",
-]
-DEFAULT_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS + BTEMP_PRODUCTS
-
 PRODUCT_ALIASES = {}
-PRODUCT_ALIASES['rain_rate'] = 'RR'
-PRODUCT_ALIASES['tpw'] = 'TPW'
+PRODUCT_ALIASES["rain_rate"] = "RR"
+PRODUCT_ALIASES["tpw"] = "TPW"
 
-PRODUCT_ALIASES['snow_cover'] = 'Snow'
-PRODUCT_ALIASES['swe'] = 'SWE'
+PRODUCT_ALIASES["snow_cover"] = "Snow"
+PRODUCT_ALIASES["swe"] = "SWE"
 
-PRODUCT_ALIASES['sea_ice'] = 'SIce'
+PRODUCT_ALIASES["sea_ice"] = "SIce"
+
+P2G_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS
 
 
-def add_reader_argument_groups(parser):
-    return parser
+class ReaderProxy(ReaderProxyBase):
+    """Provide Polar2Grid-specific information about this reader's products."""
+
+    is_polar2grid_reader = True
+
+    @staticmethod
+    def _btemp_channels_from_satpy(satpy_ids: list[Union[str, DataID]]):
+        for data_id in satpy_ids:
+            dname = data_id if isinstance(data_id, str) else data_id["name"]
+            if dname.startswith("btemp_"):
+                yield dname
+
+    def get_default_products(self) -> list[str]:
+        """Get products to load if users hasn't specified any others."""
+        all_btemps = list(self._btemp_channels_from_satpy(self.scn.all_dataset_names()))
+        defaults = ["rain_rate"]
+        defaults += set(all_btemps) & set(["btemp_88v", "btemp_89v1"])
+        return defaults
+
+    def get_all_products(self):
+        """Get all polar2grid products that could be loaded."""
+        all_btemps = list(self._btemp_channels_from_satpy(self.scn.all_dataset_names()))
+        return P2G_PRODUCTS + all_btemps
+
+    @property
+    def _aliases(self):
+        return PRODUCT_ALIASES
+
+
+def add_reader_argument_groups(
+    parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
+) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
+    """Add reader-specific command line arguments to an existing argument parser."""
+    return None, None
