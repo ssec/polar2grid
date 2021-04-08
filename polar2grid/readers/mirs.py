@@ -203,7 +203,6 @@ P2G_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS
 class ReaderProxy(ReaderProxyBase):
     """Provide Polar2Grid-specific information about this reader's products."""
 
-    # TODO: Filter default products and all products by what btemps are available/known
     is_polar2grid_reader = True
 
     @staticmethod
