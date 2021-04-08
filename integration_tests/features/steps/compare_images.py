@@ -107,4 +107,6 @@ def step_impl(context, output):
     names_to_check = output.split(",")
     output = context.output
     for product_name in names_to_check:
-        assert product_name in output, f"Missing {product_name} in command output"
+        num_products_in_output = output.count(product_name + "\n")
+        assert num_products_in_output != 0, f"Missing {product_name} in command output"
+        assert num_products_in_output == 1, f"Too many of {product_name} in command output"

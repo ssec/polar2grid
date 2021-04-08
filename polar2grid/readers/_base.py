@@ -81,14 +81,14 @@ class ReaderProxyBase:
         return "polar2grid"
 
     @property
-    def _aliases(self):
+    def _aliases(self) -> dict[str, Union[DataQuery, str]]:
         return {}
 
     def get_default_products(self) -> list[str]:
         """Get products to load if user hasn't specified any others."""
         return []
 
-    def get_all_products(self):
+    def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
         return []
 

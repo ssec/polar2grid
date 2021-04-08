@@ -117,9 +117,7 @@ class AliasHandler:
         new_user_products = []
         for user_name, satpy_name in zip(self._user_products, satpy_names):
             # convert DataID/DataQuery to string
-            satpy_name = (
-                satpy_name if isinstance(satpy_name, str) else satpy_name["name"]
-            )
+            satpy_name = satpy_name if isinstance(satpy_name, str) else satpy_name["name"]
             if satpy_name not in known_dataset_names:
                 continue
             new_user_products.append(user_name)
@@ -146,7 +144,13 @@ class AliasHandler:
         satpy_products: Iterable[Union[DataID]],
         possible_p2g_names: Optional[list[str]] = None,
     ):
-        """Get the P2G name for a series of Satpy names or DataIDs."""
+        """Get the P2G name for a series of Satpy names or DataIDs.
+
+        If a Satpy DataID does not have a Polar2Grid compatible name then
+        ``None`` is yielded. A name is not compatible if requesting it would
+        produce a different product than the original DataID.
+
+        """
         from satpy import DatasetDict
 
         if possible_p2g_names is None:
@@ -161,16 +165,26 @@ class AliasHandler:
                 continue
 
             if matching_satpy_id in satpy_id_to_p2g_name:
-                logger.warning(
-                    "Multiple product names map to the same identifier in Satpy"
-                )
-                print(
-                    matching_satpy_id, satpy_id_to_p2g_name[matching_satpy_id], p2g_name
-                )
+                logger.warning("Multiple product names map to the same identifier in Satpy")
+                print(matching_satpy_id, satpy_id_to_p2g_name[matching_satpy_id], p2g_name)
             satpy_id_to_p2g_name[matching_satpy_id] = p2g_name
 
         for satpy_product in satpy_products:
-            yield satpy_id_to_p2g_name.get(satpy_product, satpy_product["name"])
+            satpy_id_name = satpy_product["name"]
+            satpy_id_as_p2g_name = satpy_id_to_p2g_name.get(satpy_product)
+            satpy_name_is_p2g_name = satpy_id_name in possible_p2g_names
+            satpy_name_does_not_round_trip = satpy_id_dict[satpy_product] != satpy_product
+            if satpy_id_as_p2g_name is None:
+                # We can't yield this name if it is also a P2G name or if
+                # asking Satpy for the name doesn't return the same DataID
+                # product. Otherwise users would ask for X and not get X.
+                if satpy_name_is_p2g_name or satpy_name_does_not_round_trip:
+                    yield None
+                else:
+                    yield satpy_id_name
+                continue
+
+            yield satpy_id_to_p2g_name.get(satpy_product, satpy_id_name)
 
     def apply_p2g_name_to_scene(
         self,
@@ -186,6 +200,10 @@ class AliasHandler:
         all_ids = list(scn.keys())
         all_p2g_names = list(self.convert_satpy_to_p2g_name(all_ids))
         for data_id, p2g_name in zip(all_ids, all_p2g_names):
+            if p2g_name is None:
+                # the Satpy ID doesn't have a Polar2Grid compatible name
+                logger.debug("Satpy DataID %s does not have a compatible polar2grid name.", data_id)
+                continue
             scn[data_id].attrs["p2g_name"] = p2g_name
             logger.debug("Mapping Satpy ID to P2G name: %s -> %s", data_id, p2g_name)
 
@@ -193,16 +211,15 @@ class AliasHandler:
         self, all_p2g_products: list[str], available_satpy_ids: list[DataID]
     ) -> tuple[list[str], list[str]]:
         """Get separate lists of available Satpy products and Polar2Grid products."""
-        available_ids_as_p2g_names = list(
-            self.convert_satpy_to_p2g_name(available_satpy_ids, all_p2g_products)
-        )
-        satpy_id_to_p2g_name = dict(
-            zip(available_satpy_ids, available_ids_as_p2g_names)
-        )
+        available_ids_as_p2g_names = list(self.convert_satpy_to_p2g_name(available_satpy_ids, all_p2g_products))
+        satpy_id_to_p2g_name = dict(zip(available_satpy_ids, available_ids_as_p2g_names))
         available_p2g_names = []
         available_satpy_names = []
         for satpy_id in available_satpy_ids:
             p2g_name = satpy_id_to_p2g_name[satpy_id]
+            if p2g_name is None:
+                # no Polar2Grid compatible name
+                continue
             if p2g_name in all_p2g_products:
                 available_p2g_names.append(p2g_name)
             else:
