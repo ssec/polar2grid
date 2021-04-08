@@ -227,14 +227,15 @@ P2G_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS + BTEMP_PRODUCT
 class ReaderProxy(ReaderProxyBase):
     """Provide Polar2Grid-specific information about this reader's products."""
 
-    @property
-    def is_polar2grid_reader(self):
-        return True
+    # TODO: Filter default products and all products by what btemps are available/known
+    is_polar2grid_reader = True
 
     def get_default_products(self) -> list[str]:
+        """Get products to load if users hasn't specified any others."""
         return DEFAULT_PRODUCTS
 
     def get_all_products(self):
+        """Get all polar2grid products that could be loaded."""
         return P2G_PRODUCTS
 
     @property

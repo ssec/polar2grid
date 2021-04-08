@@ -39,9 +39,25 @@ logger = logging.getLogger(__name__)
 class ReaderProxyBase:
     """Helper to provide Polar2Grid-specific information about a reader.
 
-    TODO: Describe what methods are most commonly overridden.
+    In the most common cases, a subclass should define the following:
+
+    * **is_polar2grid_reader** or **is_geo2grid_reader**: If this reader
+      should be used for Polar2Grid or Geo2Grid.
+    * **get_default_products**: Get a list of Polar2Grid names (not Satpy
+      names or DataQuery objects) that should be loaded if the user hasn't
+      specified any.
+    * **get_all_products**: Get all Polar2Grid names that this reader could
+      possibly load. This list of products will be used by other methods to
+      determine what available products for loading are custom or Satpy
+      products and what products are "guaranteed" products from
+      Polar2Grid/Geo2Grid.
+    * **_aliases**: A property that returns a dictionary mapping Polar2Grid
+      name for a product to a Satpy DataQuery or name.
 
     """
+
+    is_polar2grid_reader: bool = False
+    is_geo2grid_reader: bool = False
 
     def __init__(self, scn: Scene, user_products: list[str]):
         self.scn = scn
@@ -59,16 +75,6 @@ class ReaderProxyBase:
         return reader_info_cls(*args)
 
     @property
-    def is_polar2grid_reader(self):
-        """This reader is part of Polar2Grid."""
-        return False
-
-    @property
-    def is_geo2grid_reader(self):
-        """This reader is part of Geo2Grid."""
-        return False
-
-    @property
     def _binary_name(self):
         if self.is_geo2grid_reader:
             return "geo2grid"
@@ -83,6 +89,7 @@ class ReaderProxyBase:
         return []
 
     def get_all_products(self):
+        """Get all polar2grid products that could be loaded."""
         return []
 
     def get_available_products(
@@ -90,6 +97,7 @@ class ReaderProxyBase:
         p2g_product_names: Optional[list[str]] = None,
         possible_satpy_ids: Optional[list[DataID]] = None,
     ) -> tuple[list[str], list[str]]:
+        """Get custom/satpy products and polar2grid products that are available for loading."""
         if possible_satpy_ids is None:
             possible_satpy_ids = self.scn.available_dataset_ids(composites=True)
         if p2g_product_names is None:
@@ -100,15 +108,14 @@ class ReaderProxyBase:
                     "products will be listed with internal Satpy names.",
                     self._binary_name,
                 )
-                return sorted(set([x['name'] for x in possible_satpy_ids])), []
-        return self._alias_handler.available_product_names(
-            p2g_product_names, possible_satpy_ids
-        )
+                return sorted(set([x["name"] for x in possible_satpy_ids])), []
+        return self._alias_handler.available_product_names(p2g_product_names, possible_satpy_ids)
 
     def apply_p2g_name_to_scene(
         self,
         scn: Scene,
     ):
+        """Add a 'p2g_name' attribute to each DataArray in the provided Scene."""
         self._alias_handler.apply_p2g_name_to_scene(scn)
 
     def get_satpy_products_to_load(self) -> Optional[list[Union[DataQuery, str]]]:
@@ -124,16 +131,12 @@ class ReaderProxyBase:
             return None
         elif no_handler:
             # This shouldn't happen unless _create_alias_handler is changed
-            raise RuntimeError(
-                "Converting to Satpy identifiers failed in an unexpected way."
-            )
+            raise RuntimeError("Converting to Satpy identifiers failed in an unexpected way.")
 
         products_to_load = list(self._alias_handler.convert_p2g_name_to_satpy())
         if not products_to_load and no_user_products and not no_defaults:
             msg = "Default products were not found in available file products."
-            debug_msg = (
-                "Default products were not found in available file products:\n\t{}"
-            )
+            debug_msg = "Default products were not found in available file products:\n\t{}"
             debug_msg = debug_msg.format("\n\t".join(self.scn.all_dataset_names()))
             logger.error(msg)
             logger.debug(debug_msg)

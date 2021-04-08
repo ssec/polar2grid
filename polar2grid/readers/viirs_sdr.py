@@ -272,39 +272,16 @@ PRODUCT_ALIASES["dnb_sat_zenith_angle"] = DataQuery(name="dnb_satellite_zenith_a
 PRODUCT_ALIASES["dnb_sat_azimuth_angle"] = DataQuery(name="dnb_satellite_azimuth_angle")
 PRODUCT_ALIASES["dnb_lunar_zenith_angle"] = DataQuery(name="dnb_lunar_zenith_angle")
 PRODUCT_ALIASES["dnb_lunar_azimuth_angle"] = DataQuery(name="dnb_lunar_azimuth_angle")
-PRODUCT_ALIASES["m_solar_zenith_angle"] = DataQuery(
-    name="solar_zenith_angle", resolution=742
-)
-PRODUCT_ALIASES["m_solar_azimuth_angle"] = DataQuery(
-    name="solar_azimuth_angle", resolution=742
-)
-PRODUCT_ALIASES["m_sat_zenith_angle"] = DataQuery(
-    name="satellite_zenith_angle", resolution=742
-)
-PRODUCT_ALIASES["m_sat_azimuth_angle"] = DataQuery(
-    name="satellite_azimuth_angle", resolution=742
-)
-PRODUCT_ALIASES["i_solar_zenith_angle"] = DataQuery(
-    name="solar_zenith_angle", resolution=371
-)
-PRODUCT_ALIASES["i_solar_azimuth_angle"] = DataQuery(
-    name="solar_azimuth_angle", resolution=371
-)
-PRODUCT_ALIASES["i_sat_zenith_angle"] = DataQuery(
-    name="satellite_zenith_angle", resolution=371
-)
-PRODUCT_ALIASES["i_sat_azimuth_angle"] = DataQuery(
-    name="satellite_azimuth_angle", resolution=371
-)
+PRODUCT_ALIASES["m_solar_zenith_angle"] = DataQuery(name="solar_zenith_angle", resolution=742)
+PRODUCT_ALIASES["m_solar_azimuth_angle"] = DataQuery(name="solar_azimuth_angle", resolution=742)
+PRODUCT_ALIASES["m_sat_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=742)
+PRODUCT_ALIASES["m_sat_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=742)
+PRODUCT_ALIASES["i_solar_zenith_angle"] = DataQuery(name="solar_zenith_angle", resolution=371)
+PRODUCT_ALIASES["i_solar_azimuth_angle"] = DataQuery(name="solar_azimuth_angle", resolution=371)
+PRODUCT_ALIASES["i_sat_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=371)
+PRODUCT_ALIASES["i_sat_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=371)
 
-DEFAULT_PRODUCTS = (
-    I_ALIASES
-    + M_ALIASES
-    + DNB_PRODUCTS[1:]
-    + TRUE_COLOR_PRODUCTS
-    + FALSE_COLOR_PRODUCTS
-    + OTHER_COMPS
-)
+DEFAULT_PRODUCTS = I_ALIASES + M_ALIASES + DNB_PRODUCTS[1:] + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + OTHER_COMPS
 P2G_PRODUCTS = (
     I_ALIASES
     + M_ALIASES
@@ -338,14 +315,14 @@ FILTERS = {
 class ReaderProxy(ReaderProxyBase):
     """Provide Polar2Grid-specific information about this reader's products."""
 
-    @property
-    def is_polar2grid_reader(self):
-        return True
+    is_polar2grid_reader = True
 
     def get_default_products(self) -> list[str]:
+        """Get products to load if users hasn't specified any others."""
         return DEFAULT_PRODUCTS
 
     def get_all_products(self):
+        """Get all polar2grid products that could be loaded."""
         return P2G_PRODUCTS
 
     @property
@@ -419,15 +396,13 @@ def add_reader_argument_groups(
         dest="products",
         action=ExtendConstAction,
         const=_AWIPS_TRUE_COLOR,
-        help="Add individual CREFL corrected products to create "
-        "the 'true_color' composite in AWIPS.",
+        help="Add individual CREFL corrected products to create " "the 'true_color' composite in AWIPS.",
     )
     group.add_argument(
         "--awips-false-color",
         dest="products",
         action=ExtendConstAction,
         const=_AWIPS_FALSE_COLOR,
-        help="Add individual CREFL corrected products to create "
-        "the 'false_color' composite in AWIPS.",
+        help="Add individual CREFL corrected products to create " "the 'false_color' composite in AWIPS.",
     )
     return group, None
