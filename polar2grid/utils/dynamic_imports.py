@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -20,11 +20,22 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    December 2014
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
-"""Polar2Grid main package."""
+"""Utilities for dynamically imported and accessing components."""
+
+import importlib
+from typing import Any
+
+
+def _get_component_attr(
+    component_type: str, component_name: str, attr_name: str, default: Any = None
+) -> Any:
+    comp_mod = importlib.import_module(f"polar2grid.{component_type}.{component_name}")
+    return getattr(comp_mod, attr_name, default)
+
+
+def get_reader_attr(reader_name: str, attr_name: str, default: Any = None) -> Any:
+    return _get_component_attr("readers", reader_name, attr_name, default=default)
+
+
+def get_writer_attr(writer_name: str, attr_name: str, default: Any = None) -> Any:
+    return _get_component_attr("writers", writer_name, attr_name, default=default)

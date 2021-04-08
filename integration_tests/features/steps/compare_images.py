@@ -6,7 +6,7 @@ import shutil
 import glob
 
 
-@given('input data from {source}')
+@given("input data from {source}")
 def step_impl(context, source):
     new_source = ""
 
@@ -23,42 +23,88 @@ def step_impl(context, source):
     context.source = new_source
 
 
-@when('{command} runs')
+@when("{command} runs")
 def step_impl(context, command):
     context.script = command.split()[0]
-    context.command = "datapath={}; {} {}".format(context.datapath, os.path.join(context.p2g_path, command),
-                                                  context.source)
+    context.command = "datapath={}; /usr/bin/time {} {}".format(
+        context.datapath, os.path.join(context.p2g_path, command), context.source
+    )
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
     try:
-        context.temp_dir = tempfile.mkdtemp(prefix='p2g_tests_')
+        context.temp_dir = tempfile.mkdtemp(prefix="p2g_tests_")
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
         assert exit_status == 0, "{} ran unsuccessfully".format(context.command)
     finally:
         os.chdir(orig_dir)
-    
+
     assert os.path.exists(context.temp_dir), "Temporary directory not created"
     assert os.listdir(context.temp_dir), "No files were created"
 
 
-@then('the output matches with the files in {output}')
+@then("the output matches with the files in {output}")
 def step_impl(context, output):
     orig_dir = os.getcwd()
     try:
         os.chdir(context.datapath)
         # NOTE: 81231 / 151404144 (0.054%) pixels are currently wrong in VIIRS_L1B.
-        if "gtiff" in context.command or context.script == "geo2grid.sh":
-            compare_command = ' '.join([os.path.join(context.p2g_path, 'p2g_compare_geotiff.sh'),
-                                        output, context.temp_dir, '-vv', '--margin-of-error',
-                                        str(81231 / 1514041.44)])
+        if "geotiff" in context.command or context.script == "geo2grid.sh":
+            compare_command = " ".join(
+                [
+                    os.path.join(context.p2g_path, "p2g_compare_geotiff.sh"),
+                    output,
+                    context.temp_dir,
+                    "-vv",
+                    "--margin-of-error",
+                    str(81231 / 1514041.44),
+                ]
+            )
         else:
-            compare_command = ' '.join([os.path.join(context.p2g_path, 'p2g_compare_netcdf.sh'),
-                                        output, context.temp_dir, '-vv', '--margin-of-error',
-                                        str(81231 / 1514041.44), '--variables', 'image'])
+            compare_command = " ".join(
+                [
+                    os.path.join(context.p2g_path, "p2g_compare_netcdf.sh"),
+                    output,
+                    context.temp_dir,
+                    "-vv",
+                    "--margin-of-error",
+                    str(81231 / 1514041.44),
+                    "--variables",
+                    "data",
+                ]
+            )
         exit_status = subprocess.call(compare_command, shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
         os.chdir(orig_dir)
         shutil.rmtree(context.temp_dir)
+
+
+@when("{command} runs with --list-products")
+def step_impl(context, command):
+    context.script = command.split()[0]
+    context.command = "datapath={}; /usr/bin/time {} {} --list-products".format(
+        context.datapath, os.path.join(context.p2g_path, command), context.source
+    )
+
+    # creating new data in temporary directory to compare
+    orig_dir = os.getcwd()
+    try:
+        context.temp_dir = tempfile.mkdtemp(prefix="p2g_tests_")
+        os.chdir(context.temp_dir)
+        output = subprocess.check_output(context.command, shell=True)
+        context.output = output.decode("utf-8")
+    finally:
+        os.chdir(orig_dir)
+
+    assert os.path.exists(context.temp_dir), "Temporary directory not created"
+    assert os.listdir(context.temp_dir), "No files were created"
+
+
+@then("the printed output includes the products in {output}")
+def step_impl(context, output):
+    names_to_check = output.split(",")
+    output = context.output
+    for product_name in names_to_check:
+        assert product_name in output, f"Missing {product_name} in command output"

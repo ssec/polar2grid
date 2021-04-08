@@ -12,7 +12,7 @@ resampling:
     resampler: ewa
     kwargs:
       weight_delta_max: 40.0
-      weight_distance_max: 1.0
+      weight_distance_max: 2.0
   default_modis:
     area_type: swath
     sensor: modis

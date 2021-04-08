@@ -119,7 +119,7 @@ cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy rele
 
 # Inject environment code into swbundle only.
 cd $SB_NAME/bin
-for file in `echo *.sh`; do
+for file in *.sh; do
     cp "$file" tmp.sh
     sed "s/# __SWBUNDLE_ENVIRONMENT_INJECTION__/source \$POLAR2GRID_HOME\/bin\/env.sh/g" tmp.sh > "$file"
 done
@@ -130,7 +130,18 @@ echo "Downloading pyspectral data..."
 $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
 
 # Add the download_from_internet: False to the config
-echo "download_from_internet: False" >> ${SB_NAME}/etc/pyspectral.yaml
+echo "download_from_internet: False" >> ${SB_NAME}/etc/polar2grid/pyspectral.yaml
+
+# Download Satpy auxiliary data
+echo "Downloading Satpy auxiliary data..."
+AUX_CACHE_DIR="${CACHE_DIR}/satpy_aux_data_${USER}"
+SATPY_DATA_DIR="${SB_NAME}/share/polar2grid/data"
+${PYTHON_RUNTIME_BASE}/bin/satpy_retrieve_all_aux_data --data-dir ${AUX_CACHE_DIR} || oops "Could not download Satpy auxiliary data"
+
+echo "Copying Satpy auxiliary data to software bundle..."
+mkdir -p ${SATPY_DATA_DIR} || oops "Could not create polar2grid auxiliary data directory"
+# don't include large geotiff files that we don't use in P2G/G2G
+rsync -auv --exclude "*.tif" ${AUX_CACHE_DIR}/* "${SATPY_DATA_DIR}/" || oops "Could not copy Satpy auxiliary data to software bundle"
 
 # Perform extra "risky" operations to make the tarball as small as possible
 # Taken from https://jcrist.github.io/conda-docker-tips.html
@@ -140,7 +151,8 @@ if [ $MINIFY_TARBALL -ne 0 ]; then
     find . -follow -type f -name '*.a' -delete
     find . -follow -type f -name '*.pyc' -delete
     find . -follow -type f -name '*.js.map' -delete
-    find ./lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
+    # Disable this as conda-unpack fails
+    #find ${PYTHON_RUNTIME_BASE}/lib/python*/site-packages/bokeh/server/static -follow -type f -name '*.js' ! -name '*.min.js' -delete
 fi
 
 # Tar up the software bundle

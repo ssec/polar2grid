@@ -87,7 +87,7 @@ setup_prefixes()
 setup_conda()
 {
     # Activate conda for bash.
-    /data/users/davidh/miniconda3/bin/conda init bash
+    /var/lib/jenkins/miniconda3/bin/conda init bash
     # Restart the shell to enable conda.
     source ~/.bashrc
 
@@ -203,7 +203,9 @@ save_vars "start_time=$start_time"
 
 suffix=$(make_suffix "$start_time")
 prefixes=$(setup_prefixes "$suffix")
+set +x
 setup_conda
+set -x
 
 # Allows the program to set finish_time while also returning a failing code.
 exit_status=0
@@ -224,26 +226,32 @@ for prefix in ${prefixes}; do
         set -e
 
         # This block handles making the swbundle or making the environment information.
+        set +x
         conda activate jenkins_p2g_swbundle
+        set -x
         if [[ ${SWBUNDLE_OR_ENVIRONMENT} -eq 0 ]]; then
             # Handles swbundle logic.
             "${WORKSPACE}/create_conda_software_bundle.sh" "${WORKSPACE}/${swbundle_name}"
             # Points polar2grid to where the scripts and packages are.
             export POLAR2GRID_HOME="${WORKSPACE}/${swbundle_name}"
             # Copies tarball to package directory.
-            cp "${WORKSPACE}/${swbundle_name}.tar.gz" "${WORKSPACE}/$package_name"
+            cp "${WORKSPACE}/${swbundle_name}.tar.gz" "${WORKSPACE}/$package_name/"
         else
             pip install -U --no-deps .
             # Add the environment information to the package. Run `conda env update -f swbundle.yml`
             # or `conda env update -f docs.yml` to install the frozen environment. Note that satpy may
             # cause the above two commands to crash since it is installed from github. See
             # https://stackoverflow.com/questions/13685920/install-specific-git-commit-with-pip for me information.
+            set +x
             conda env export -n jenkins_p2g_swbundle | grep -v "^prefix: " > "${WORKSPACE}/${package_name}/swbundle.yml"
             conda env export -n jenkins_p2g_docs | grep -v "^prefix: " > "${WORKSPACE}/${package_name}/docs.yml"
+            set -x
         fi
 
         # This block handles testing and documentation logic.
+        set +x
         conda activate jenkins_p2g_docs
+        set -x
         if [[ "$commit_message" =~ (^|.[[:space:]])"["([pg]2g-)?skip-tests"]"$ ]]; then
             # Replace FAILED with SKIPPED.
             save_vars "${prefix:0:1}2g_tests=SKIPPED"
