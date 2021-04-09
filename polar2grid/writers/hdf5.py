@@ -8,7 +8,6 @@ from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList,\
     str_to_dtype, int_or_float
 from satpy.writers import Writer
 from satpy.readers.yaml_reader import FileYAMLReader
-from satpy.utils import debug_on
 from trollsift import Parser
 
 from pyresample.geometry import SwathDefinition
@@ -24,7 +23,8 @@ USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULT
 
 LOG = logging.getLogger(__name__)
 
-debug_on()
+# reader_name -> filename
+DEFAULT_OUTPUT_PATTERN = "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.h5"
 
 
 def dist_is_editable(dist):
@@ -45,9 +45,6 @@ config_path = satpy.config.get('config_path')
 if p2g_etc not in config_path:
     satpy.config.set(config_path=config_path + [p2g_etc])
 
-def DEFAULT_FILE_PATTERN(config_files):
-    a = hdf5writer("hdf5", config_files=config_files)
-    return a.file_pattern
 
 class hdf5writer(Writer):
     """Writer for hdf5 files."""
@@ -240,18 +237,6 @@ class HDF5_YAMLreader(FileYAMLReader):
         super(HDF5_YAMLreader, self).__init__(config_files, **kwargs)
         pass
 
-"""if __name__ == "__main__":
-    
-    from satpy import find_files_and_readers, Scene
-    basedir="/Users/joleenf/data/mirs/"
-    f = find_files_and_readers(base_dir=basedir, start_time=datetime(2020,12,20,7,00),
-                               end_time=datetime(2020,12,20,18,30), reader="mirs")
-    a = Scene(f)
-    a.load(["TPW", "RR"])
-    #new = a.resample('northamerica')
-    a.save_datasets(
-                      writer="hdf5", base_dir=basedir, add_geolocation=True,
-                      append=True, compression=True)"""
 
 def add_writer_argument_groups(parser, group=None):
     from argparse import SUPPRESS
@@ -259,7 +244,7 @@ def add_writer_argument_groups(parser, group=None):
     if group is None:
         group = parser.add_argument_group(title='hdf5 Writer')
     group.add_argument('--output-filename', dest='filename',
-                       default=DEFAULT_FILE_PATTERN([yaml]),
+                       default=DEFAULT_OUTPUT_PATTERN,
                        help='Custom file pattern to save dataset to')
     group.add_argument('--dtype', choices=NumpyDtypeList(NUMPY_DTYPE_STRS), type=str_to_dtype,
                        help='Data type of the output file (8-bit unsigned '
