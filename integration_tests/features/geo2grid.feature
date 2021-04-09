@@ -21,4 +21,4 @@ Feature: Test geo2grid output images
 
     Examples: ABI List Products
       | command                                                                                      | source                      | output                       |
-      | geo2grid.sh -r abi_l1b -w geotiff -vv -f                                                     | abi_input/test1             | true_color,C01,natural_color |
+      | geo2grid.sh -r abi_l1b -w geotiff -vv -f                                                     | abi/input/test1             | true_color,C01,natural_color |
