@@ -67,7 +67,6 @@ class hdf5writer(Writer):
         """Save hdf5 datasets."""
         # don't need config_files key anymore
         _config_files = kwargs.pop("config_files")
-        compute = kwargs.pop("compute")
         kwargs["compression"] = kwargs.get("compression", None)
         if kwargs["compression"] == "none":
             kwargs["compression"] = None
@@ -75,8 +74,8 @@ class hdf5writer(Writer):
         add_geolocation = kwargs.pop("add_geolocation") \
             if "add_geolocation" in kwargs else False
 
-        dask_args = {}
-        for key in ["append", "compute", "compress", "shuffle", "num_threads"]:
+        dask_args = {"append": append}
+        for key in ["compute", "compress", "shuffle", "num_threads"]:
             if key in kwargs:
                 dask_args[key] = kwargs.pop(key)
 
@@ -108,7 +107,9 @@ class hdf5writer(Writer):
                 delayed_write.append(lon_group)
                 add_geolocation = False if all_equal(output_names) else True
 
-            a = dataset_id.data.to_hdf5(out_filename, hdf_subgroup, **dask_args)
+            a = dask.delayed(dataset_id.data.to_hdf5(out_filename,
+                                                     hdf_subgroup,
+                                                     **dask_args))
             delayed_write.append(a)
 
         dask.compute(*delayed_write)
@@ -210,8 +211,8 @@ class hdf5writer(Writer):
 
         lon_grp = "{}/longitude".format(parent_group)
         lat_grp = "{}/latitude".format(parent_group)
-        lons=lon_data.to_hdf5(fname, lon_grp, **dask_args)
-        lats=lat_data.to_hdf5(fname, lat_grp, **dask_args)
+        lons=dask.delayed(lon_data.to_hdf5(fname, lon_grp, **dask_args))
+        lats=dask.delayed(lat_data.to_hdf5(fname, lat_grp, **dask_args))
 
         return lons, lats
 
@@ -280,4 +281,4 @@ if __name__ == "__main__":
     # new = a.resample('northamerica')
     a.save_datasets(filename=DEFAULT_OUTPUT_PATTERN,
         writer="hdf5", base_dir=basedir, add_geolocation=True,
-        compression=True, compute=False)
+        compression=True)
