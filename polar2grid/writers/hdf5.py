@@ -13,7 +13,7 @@ from trollsift import Parser
 
 from pyresample.geometry import SwathDefinition
 from datetime import datetime as datetime
-from polar2grid.util.legacy_compat import convert_p2g_pattern_to_satpy, legacy_proj
+from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
 
 from satpy.writers import compute_writer_results
 from dask.diagnostics import ProgressBar
