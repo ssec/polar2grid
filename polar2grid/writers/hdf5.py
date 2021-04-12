@@ -6,6 +6,7 @@ import satpy
 import h5py
 import xarray
 import dask
+import dask.array as da
 
 from itertools import groupby
 from datetime import datetime as datetime
@@ -57,6 +58,56 @@ def all_equal(iterable : list):
     return next(g, True) and not next(g, False)
 
 
+def to_hdf5(filename, *args, **kwargs):
+    """Store arrays in HDF5 file
+
+    This saves several dask arrays into several datapaths in an HDF5 file.
+    It creates the necessary datasets and handles clean file opening/closing.
+
+    >>> da.to_hdf5('myfile.hdf5', '/x', x)  # doctest: +SKIP
+
+    or
+
+    >>> da.to_hdf5('myfile.hdf5', {'/x': x, '/y': y})  # doctest: +SKIP
+
+    Optionally provide arguments as though to ``h5py.File.create_dataset``
+
+    >>> da.to_hdf5('myfile.hdf5', '/x', x, compression='lzf', shuffle=True)  # doctest: +SKIP
+
+    This can also be used as a method on a single Array
+
+    >>> x.to_hdf5('myfile.hdf5', '/x')  # doctest: +SKIP
+
+    See Also
+    --------
+    da.store
+    h5py.File.create_dataset
+    """
+    if len(args) == 1 and isinstance(args[0], dict):
+        data = args[0]
+    elif len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], da.Array):
+        data = {args[0]: args[1]}
+    else:
+        raise ValueError("Please provide {'/data/path': array} dictionary")
+
+    chunks = kwargs.pop("chunks", True)
+
+    import h5py
+
+    with h5py.File(filename, mode="a") as f:
+        dsets = [
+            f.require_dataset(
+                dp,
+                shape=x.shape,
+                dtype=x.dtype,
+                chunks=tuple([c[0] for c in x.chunks]) if chunks is True else chunks,
+                **kwargs,
+            )
+            for dp, x in data.items()
+        ]
+        return da.store(list(data.values()), dsets, compute=False, lock=True)
+
+
 class hdf5writer(Writer):
     """Writer for hdf5 files."""
     def __init__(self, dtype=None, **kwargs):
@@ -67,7 +118,7 @@ class hdf5writer(Writer):
 
 
     def save_datasets(self, dataset, filename=None, dtype=None,
-                      fill_value=None, append=True, compute=False,
+                      fill_value=None, append=True, compute=True,
                       **kwargs):
         """Save hdf5 datasets."""
         # don't need config_files key anymore
@@ -80,7 +131,7 @@ class hdf5writer(Writer):
             if "add_geolocation" in kwargs else False
 
         dask_args = {"append": append}
-        for key in ["compute", "compress", "shuffle", "num_threads"]:
+        for key in ["compress", "shuffle", "num_threads"]:
             if key in kwargs:
                 dask_args[key] = kwargs.pop(key)
 
@@ -90,7 +141,7 @@ class hdf5writer(Writer):
             args = self._output_file_kwargs(dataset_id)
             out_filename = filename or self.get_filename(**args)
             output_names.append(out_filename)
-        one_file=True if all_equal(output_names) else False
+        one_file=all_equal(output_names)
 
         delayed_write=[]
         for dataset_id, out_filename in zip(dataset, output_names):
@@ -115,12 +166,12 @@ class hdf5writer(Writer):
                 delayed_write.append(lon_group)
                 add_geolocation = False if one_file else True
 
-            a = dask.delayed(dataset_id.data.to_hdf5(out_filename,
-                                                     hdf_subgroup,
-                                                     **dask_args))
-            delayed_write.append(a)
+            #a = to_hdf5(out_filename, hdf_subgroup, dataset_id.data, **dask_args)
+            a = dataset_id.data.to_hdf5(out_filename, hdf_subgroup, **dask_args)
 
-        dask.compute(*delayed_write)
+            delayed_write.append(dask.delayed(a))
+
+        return delayed_write
 
 
     def _output_file_kwargs(self, dataset):
@@ -138,6 +189,18 @@ class hdf5writer(Writer):
         args['data_type'] = self.dtype
 
         return args
+
+    def iter_by_area(self):
+        """Generate datasets grouped by Area.
+        :return: generator of (area_obj, list of dataset objects)
+        """
+        datasets_by_area = {}
+        for ds in self:
+            a = ds.attrs.get('area')
+            dsid = DataID.from_dataarray(ds)
+            datasets_by_area.setdefault(a, []).append(dsid)
+        return datasets_by_area.items()
+
 
     def get_filename(self, **kwargs):
         """Create a filename for saving output data.
@@ -219,8 +282,8 @@ class hdf5writer(Writer):
 
         lon_grp = "{}/longitude".format(parent_group)
         lat_grp = "{}/latitude".format(parent_group)
-        lons=dask.delayed(lon_data.to_hdf5(fname, lon_grp, **dask_args))
-        lats=dask.delayed(lat_data.to_hdf5(fname, lat_grp, **dask_args))
+        lons=lon_data.to_hdf5(fname, lon_grp, **dask_args)
+        lats=lat_data.to_hdf5(fname, lat_grp, **dask_args)
 
         return lons, lats
 
