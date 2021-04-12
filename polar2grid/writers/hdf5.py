@@ -1,23 +1,27 @@
 import os
 import sys
 import logging
-import satpy
 import pkg_resources
+import satpy
 import h5py
+import xarray
+import dask
+
 from itertools import groupby
-from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList,\
-    str_to_dtype, int_or_float
+from datetime import datetime as datetime
 from satpy.writers import Writer
 from satpy.readers.yaml_reader import FileYAMLReader
+from satpy.writers import compute_writer_results
+
 from trollsift import Parser
 
 from pyresample.geometry import SwathDefinition
-from datetime import datetime as datetime
 from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
+from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList,\
+    str_to_dtype, int_or_float
 
-from satpy.writers import compute_writer_results
 from dask.diagnostics import ProgressBar
-import dask
+
 from polar2grid.core.script_utils import (
     setup_logging, rename_log_file, create_exc_handler)
 
@@ -47,7 +51,7 @@ config_path = satpy.config.get('config_path')
 if p2g_etc not in config_path:
     satpy.config.set(config_path=config_path + [p2g_etc])
 
-def all_equal(iterable):
+def all_equal(iterable : list):
     "Returns True if all the elements are equal to each other"
     g = groupby(iterable)
     return next(g, True) and not next(g, False)
@@ -63,7 +67,8 @@ class hdf5writer(Writer):
 
 
     def save_datasets(self, dataset, filename=None, dtype=None,
-                      fill_value=None, append=True, **kwargs):
+                      fill_value=None, append=True, compute=False,
+                      **kwargs):
         """Save hdf5 datasets."""
         # don't need config_files key anymore
         _config_files = kwargs.pop("config_files")
@@ -85,10 +90,13 @@ class hdf5writer(Writer):
             args = self._output_file_kwargs(dataset_id)
             out_filename = filename or self.get_filename(**args)
             output_names.append(out_filename)
+        one_file=True if all_equal(output_names) else False
 
         delayed_write=[]
         for dataset_id, out_filename in zip(dataset, output_names):
             # open hdf5 file handle, check if group already exists.
+            if not one_file:
+                hdf5_fh.close()
             hdf5_fh = self.open_hdf5_filehandle(out_filename, append=append)
             parent_group = self.create_top_level_proj_group(out_filename,
                                                        hdf5_fh,
@@ -105,7 +113,7 @@ class hdf5writer(Writer):
                                                               **dask_args)
                 delayed_write.append(lat_group)
                 delayed_write.append(lon_group)
-                add_geolocation = False if all_equal(output_names) else True
+                add_geolocation = False if one_file else True
 
             a = dask.delayed(dataset_id.data.to_hdf5(out_filename,
                                                      hdf_subgroup,
