@@ -7,8 +7,6 @@
 BASE_P2G_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PY_DIR="$BASE_P2G_DIR"
 BUNDLE_SCRIPTS_DIR="$BASE_P2G_DIR"/swbundle
-VCREFL_DIR="$BASE_P2G_DIR"/viirs_crefl
-MCREFL_DIR="$BASE_P2G_DIR"/modis_crefl
 CACHE_DIR="/tmp"
 
 oops() {
@@ -74,30 +72,6 @@ unzip gshhg-shp-2.3.6.zip || oops "Could not unpack GSHHG shapefiles"
 rm gshhg-shp-2.3.6.zip || oops "Could not delete the GSHHG zip file"
 chmod 444 `find . -type f` || oops "Could not make GSHHG shapefiles readable by everyone"
 popd
-
-# Create the VIIRS CREFL utilities
-#echo "Getting prebuilt VIIRS CREFL binaries..."
-#cd "$VCREFL_DIR"
-#make clean
-#make prebuilt || oops "Couldn't get prebuilt VIIRS CREFL binaries"
-#chmod a+x cviirs
-#chmod a+x h5SDS_transfer_rename
-#mv cviirs "$SB_NAME"/bin/
-#mv h5SDS_transfer_rename "$SB_NAME"/bin/
-#mv CMGDEM.hdf "$SB_NAME"/bin/
-#cp run_viirs_crefl.sh "$SB_NAME"/bin/
-#chmod a+x "$SB_NAME"/bin/run_viirs_crefl.sh
-
-# Create the MODIS CREFL utilities
-#echo "Getting prebuilt MODIS CREFL binaries..."
-#cd "$MCREFL_DIR"
-#make clean
-#make prebuilt || oops "Couldn't get prebuilt MODIS CREFL binaries"
-#chmod a+x crefl
-#mv crefl "$SB_NAME"/bin/
-#mv tbase.hdf "$SB_NAME"/bin/
-#cp run_modis_crefl.sh "$SB_NAME"/bin/
-#chmod a+x "$SB_NAME"/bin/run_modis_crefl.sh
 
 echo "Copying bash scripts to software bundle bin"
 cd "$SB_NAME"
