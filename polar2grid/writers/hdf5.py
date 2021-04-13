@@ -14,7 +14,7 @@ import dask.array as da
 from itertools import groupby
 from datetime import datetime as datetime
 from satpy.dataset import DataID
-from satpy.writers import Writer
+from satpy.writers import ImageWriter
 from satpy.readers.yaml_reader import FileYAMLReader
 from satpy.writers import compute_writer_results
 
@@ -61,14 +61,15 @@ def all_equal(iterable: list[str]) -> bool:
 
 
 class FakeHDF5:
-    def __init__(self, fh, output_filename, var_name):
+    def __init__(self, fh, output_filename: str, var_name: str):
         self.fh = fh
         self.output_filename = output_filename
         self.var_name = var_name
 
-    def new_dataset(self, var_name, data, compression):
+    def new_dataset(self, var_name: str, data, compression):
         LOG.debug("Create Fake {}".format(var_name))
         dset = self.fh.require_dataset(var_name, shape=data.shape, dtype=data.dtype, compression=compression)
+        return dset
 
     def __setitem__(self, write_slice, data):
         if isinstance(data, np.ndarray):
@@ -79,7 +80,7 @@ class FakeHDF5:
         self.fh[self.var_name][write_slice] = data
 
 
-class hdf5writer(Writer):
+class hdf5writer(ImageWriter):
     """Writer for hdf5 files."""
 
     def __init__(self, dtype=None, **kwargs):
@@ -190,17 +191,14 @@ class hdf5writer(Writer):
 
         lon_dataset = FakeHDF5(fh, fname, lon_grp)
         lon_dataset.new_dataset(lon_grp, lon_data, compression=compression)
-        lon_dataset[:] = lon_data
 
         lat_dataset = FakeHDF5(fh, fname, lat_grp)
         lat_dataset.new_dataset(lat_grp, lat_data, compression=compression)
-        lat_dataset[:] = lat_data
-        to_store = ([lon_data, lat_data], [lon_dataset, lat_dataset])
 
-        return to_store
+        return [lon_data, lat_data], [lon_dataset, lat_dataset]
 
     @staticmethod
-    def create_variable(filename: str, parent, hdf_subgroup, dataset_id, **kwargs):
+    def create_variable(filename: str, parent, hdf_subgroup: str, dataset_id, **kwargs):
         """Create a hdf5 subgroup and it's attributes."""
 
         ds_attrs = dataset_id.attrs
@@ -261,20 +259,23 @@ class hdf5writer(Writer):
             parent_group = self.create_proj_group(filename, hdf5_fh, area)
 
             if add_geolocation:
-                geo_store = self.write_geolocation(hdf5_fh, filename, parent_group, area, compression=compression)
+                dsets, target_fh = self.write_geolocation(
+                    hdf5_fh, filename, parent_group, area, compression=compression
+                )
             else:
-                geo_store = list()
+                dsets = list()
+                target_fh = list()
 
             for (data_name, data_arr) in data_names:
                 hdf_subgroup = "{}/{}".format(parent_group, data_name)
 
                 file_var = FakeHDF5(hdf5_fh, filename, hdf_subgroup)
                 file_var.new_dataset(hdf_subgroup, data_arr, compression=compression)
-                file_var[:] = data_arr.data
 
-                geo_store = geo_store + ([data_arr.data], [file_var])
+                dsets.append(data_arr.data)
+                target_fh.append(file_var)
 
-        return geo_store
+        return (dsets, target_fh)
 
 
 def add_writer_argument_groups(parser, group=None):
