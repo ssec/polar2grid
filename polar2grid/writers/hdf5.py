@@ -61,22 +61,23 @@ def all_equal(iterable: list[str]) -> bool:
 
 
 class FakeHDF5:
-    def __init__(self, fh, output_filename: str, var_name: str):
+    def __init__(self, fh, output_filename: str, var_name: str, data, compression: bool):
         self.fh = fh
         self.output_filename = output_filename
         self.var_name = var_name
+        self.compression = compression
+        self.data = self.data(data)
 
-    def new_dataset(self, var_name: str, data, compression):
-        LOG.debug("Create Fake {}".format(var_name))
-        dset = self.fh.require_dataset(var_name, shape=data.shape, dtype=data.dtype, compression=compression)
-        return dset
+    def data(self, data):
+        if isinstance(data, np.ndarray):
+            return da.array(data)
+        elif isinstance(data, xr.DataArray):
+            return data.data
+        return data
 
     def __setitem__(self, write_slice, data):
-        if isinstance(data, np.ndarray):
-            data = da.array(data)
-        elif isinstance(data, xr.DataArray):
-            data = data.data
 
+        self.fh.require_dataset(self.var_name, shape=data.shape, dtype=data.dtype, compression=self.compression)
         self.fh[self.var_name][write_slice] = data
 
 
@@ -189,13 +190,10 @@ class hdf5writer(ImageWriter):
         lon_grp = "{}/longitude".format(parent)
         lat_grp = "{}/latitude".format(parent)
 
-        lon_dataset = FakeHDF5(fh, fname, lon_grp)
-        lon_dataset.new_dataset(lon_grp, lon_data, compression=compression)
+        lon_dataset = FakeHDF5(fh, fname, lon_grp, lon_data, compression)
+        lat_dataset = FakeHDF5(fh, fname, lat_grp, lat_data, compression)
 
-        lat_dataset = FakeHDF5(fh, fname, lat_grp)
-        lat_dataset.new_dataset(lat_grp, lat_data, compression=compression)
-
-        return [lon_data, lat_data], [lon_dataset, lat_dataset]
+        return [lon_dataset.data, lat_dataset.data], [lon_dataset, lat_dataset]
 
     @staticmethod
     def create_variable(filename: str, parent, hdf_subgroup: str, dataset_id, **kwargs):
@@ -269,9 +267,7 @@ class hdf5writer(ImageWriter):
             for (data_name, data_arr) in data_names:
                 hdf_subgroup = "{}/{}".format(parent_group, data_name)
 
-                file_var = FakeHDF5(hdf5_fh, filename, hdf_subgroup)
-                file_var.new_dataset(hdf_subgroup, data_arr, compression=compression)
-
+                file_var = FakeHDF5(hdf5_fh, filename, hdf_subgroup, data_arr.data, compression)
                 dsets.append(data_arr.data)
                 target_fh.append(file_var)
 
