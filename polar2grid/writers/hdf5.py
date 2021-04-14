@@ -217,17 +217,12 @@ class hdf5writer(ImageWriter):
 
     def save_datasets(self, dataset, filename=None, dtype=None, fill_value=None, append=True, compute=True, **kwargs):
         """Save hdf5 datasets."""
-
+        _config_files = kwargs.pop("config_files")
         compression = kwargs.pop("compression", None) if "compression" in kwargs else None
         if compression == "none":
             compression = None
 
         add_geolocation = kwargs.pop("add_geolocation") if "add_geolocation" in kwargs else False
-
-        dask_args = {"append": append}
-        for key in ["compress", "shuffle"]:
-            if key in kwargs:
-                dask_args[key] = kwargs.pop(key)
 
         # will this be written to one or multiple files?
         output_names = []
