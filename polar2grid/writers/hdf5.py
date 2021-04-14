@@ -61,23 +61,19 @@ def all_equal(iterable: list[str]) -> bool:
 
 
 class FakeHDF5:
-    def __init__(self, fh, output_filename: str, var_name: str, data, compression: bool):
+    def __init__(self, fh, output_filename: str, var_name: str, compression: bool):
         self.fh = fh
         self.output_filename = output_filename
         self.var_name = var_name
         self.compression = compression
-        self.data = self.data(data)
-
-    def data(self, data):
-        if isinstance(data, np.ndarray):
-            return da.from_array(data)
-        elif isinstance(data, xr.DataArray):
-            return data.data
-        return data
 
     def __setitem__(self, write_slice, data):
-        x = self.data
-        dset = self.fh.require_dataset(self.var_name, shape=x.shape, dtype=x.dtype, compression=self.compression)
+        try:
+            self.fh.require_dataset(self.var_name, shape=data.shape, dtype=data.dtype, compression=self.compression)
+        except TypeError as e:
+            msg = "{} \n\n Use --no-append flag or different output_pattern".format(e)
+            raise TypeError(msg)
+
         self.fh[self.var_name][write_slice] = data
 
 
@@ -88,6 +84,7 @@ class hdf5writer(ImageWriter):
         """Init the writer."""
         super(hdf5writer, self).__init__(default_config_filename="/writers/hdf5.yaml", **kwargs)
         self.dtype = self.info.get("dtype") if dtype is None else dtype
+        # self.overwrite_existing =
 
     def _output_file_kwargs(self, dataset):
         """Get file keywords from data for output_pattern."""
@@ -104,15 +101,14 @@ class hdf5writer(ImageWriter):
 
         return args
 
-    def iter_by_area(self, datasets):
+    def iter_by_area(self, datasets: List[xr.DataArray]):
         """Generate datasets grouped by Area.
-        :return: generator of (area_obj, list of dataset objects)
+        :return: list of (area_obj, list of dataset objects)
         """
         datasets_by_area = {}
         for ds in datasets:
             a = ds.attrs.get("area")
-            ds_name = ds.attrs["name"]
-            datasets_by_area.setdefault(a, []).append((ds_name, ds))
+            datasets_by_area.setdefault(a, []).append(ds)
         return datasets_by_area.items()
 
     def get_filename(self, **kwargs) -> str:
@@ -133,8 +129,7 @@ class hdf5writer(ImageWriter):
             os.makedirs(dirname)
         return output_filename
 
-    @staticmethod
-    def open_hdf5_filehandle(output_filename: str, append=True):
+    def open_hdf5_filehandle(self, output_filename: str, append: bool = True):
         """Open a HDF5 file handle."""
         if os.path.isfile(output_filename):
             if append:
@@ -181,22 +176,22 @@ class hdf5writer(ImageWriter):
         return projection_name
 
     @staticmethod
-    def write_geolocation(fh, fname: str, parent, area_def, compression):
+    def write_geolocation(fh, fname: str, parent: str, area_def, compression, chunks) -> Tuple[list, List[FakeHDF5]]:
         """Delayed Geolocation Data write."""
         msg = ("Adding geolocation 'longitude' and " "'latitude' datasets for grid %s", parent)
         LOG.info(msg)
-        lon_data, lat_data = area_def.get_lonlats()
+        lon_data, lat_data = area_def.get_lonlats(chunks=chunks)
 
         lon_grp = "{}/longitude".format(parent)
         lat_grp = "{}/latitude".format(parent)
 
-        lon_dataset = FakeHDF5(fh, fname, lon_grp, lon_data, compression)
-        lat_dataset = FakeHDF5(fh, fname, lat_grp, lat_data, compression)
+        lon_dataset = FakeHDF5(fh, fname, lon_grp, compression)
+        lat_dataset = FakeHDF5(fh, fname, lat_grp, compression)
 
-        return [lon_dataset.data, lat_dataset.data], [lon_dataset, lat_dataset]
+        return [lon_data, lat_data], [lon_dataset, lat_dataset]
 
     @staticmethod
-    def create_variable(filename: str, parent, hdf_subgroup: str, dataset_id, **kwargs):
+    def create_variable(filename: str, parent, hdf_subgroup: str, dataset_id: xr.DataArray, **kwargs):
         """Create a hdf5 subgroup and it's attributes."""
 
         ds_attrs = dataset_id.attrs
@@ -251,23 +246,21 @@ class hdf5writer(ImageWriter):
         hdf5_fh = self.open_hdf5_filehandle(filename, append=append)
 
         datasets_by_area = self.iter_by_area(dataset)
-
-        for area, data_names in datasets_by_area:
+        for area, data_arrs in datasets_by_area:
             # open hdf5 file handle, check if group already exists.
             parent_group = self.create_proj_group(filename, hdf5_fh, area)
 
             if add_geolocation:
-                dsets, target_fh = self.write_geolocation(
-                    hdf5_fh, filename, parent_group, area, compression=compression
-                )
+                chunks = data_arrs[0].chunks
+                dsets, target_fh = self.write_geolocation(hdf5_fh, filename, parent_group, area, compression, chunks)
             else:
                 dsets = list()
                 target_fh = list()
 
-            for (data_name, data_arr) in data_names:
-                hdf_subgroup = "{}/{}".format(parent_group, data_name)
+            for data_arr in data_arrs:
+                hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["name"])
 
-                file_var = FakeHDF5(hdf5_fh, filename, hdf_subgroup, data_arr.data, compression)
+                file_var = FakeHDF5(hdf5_fh, filename, hdf_subgroup, compression)
                 dsets.append(data_arr.data)
                 target_fh.append(file_var)
 
@@ -304,23 +297,11 @@ def add_writer_argument_groups(parser, group=None):
         action="store_true",
         help="Add 'longitude' and 'latitude' datasets for each grid",
     )
+    group.add_argument(
+        "--no-append",
+        dest="append",
+        action="store_false",
+        help="Don't append to the hdf5 file if it already exists (otherwise may overwrite data)",
+    )
 
     return group, None
-
-
-if __name__ == "__main__":
-    from satpy import find_files_and_readers, Scene
-
-    basedir = "/Users/joleenf/data/mirs/"
-    f = find_files_and_readers(
-        base_dir=basedir,
-        start_time=datetime(2020, 12, 20, 7, 00),
-        end_time=datetime(2020, 12, 20, 18, 30),
-        reader="mirs",
-    )
-    a = Scene(f)
-    a.load(["TPW", "RR"])
-    # new = a.resample('northamerica')
-    a.save_datasets(
-        filename=DEFAULT_OUTPUT_FILENAMES[None], writer="hdf5", base_dir=basedir, add_geolocation=True, compression=True
-    )
