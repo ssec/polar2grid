@@ -1,6 +1,0 @@
-writer:
-  name: hdf5
-  description: Generic hdf5 Writer
-  writer: !!python/name:polar2grid.writers.hdf5.hdf5writer
-  #filename:
-  #    "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.h5"
