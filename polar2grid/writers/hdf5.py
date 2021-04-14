@@ -70,14 +70,14 @@ class FakeHDF5:
 
     def data(self, data):
         if isinstance(data, np.ndarray):
-            return da.array(data)
+            return da.from_array(data)
         elif isinstance(data, xr.DataArray):
             return data.data
         return data
 
     def __setitem__(self, write_slice, data):
-
-        self.fh.require_dataset(self.var_name, shape=data.shape, dtype=data.dtype, compression=self.compression)
+        x = self.data
+        dset = self.fh.require_dataset(self.var_name, shape=x.shape, dtype=x.dtype, compression=self.compression)
         self.fh[self.var_name][write_slice] = data
 
 
