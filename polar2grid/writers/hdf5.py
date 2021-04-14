@@ -66,13 +66,14 @@ class FakeHDF5:
         self.var_name = var_name
         self.compression = compression
 
-    def __setitem__(self, write_slice, data):
-        try:
-            self.fh.require_dataset(self.var_name, shape=data.shape, dtype=data.dtype, compression=self.compression)
-        except TypeError as e:
-            msg = "{} \n\n Use --no-append flag or different output_pattern".format(e)
-            raise TypeError(msg)
+    def check_variable(self, data: da.array, append: bool):
+        if append:
+            if self.var_name in self.fh:
+                LOG.warning("Product %s already exists in hdf5 group, will delete existing dataset", self.var_name)
+                del self.fh[self.var_name]
+        self.fh.create_dataset(self.var_name, shape=data.shape, dtype=data.dtype, compression=self.compression)
 
+    def __setitem__(self, write_slice, data):
         self.fh[self.var_name][write_slice] = data
 
 
@@ -130,14 +131,10 @@ class hdf5writer(ImageWriter):
     @staticmethod
     def open_hdf5_filehandle(output_filename: str, append: bool = True):
         """Open a HDF5 file handle."""
-        overwrite_existing = False
         if os.path.isfile(output_filename):
             if append:
                 LOG.info("Will append to existing file: %s", output_filename)
                 mode = "a"
-            elif not overwrite_existing:
-                LOG.error("HDF5 file already exists: %s", output_filename)
-                raise RuntimeError("HDF5 file already exists: %s" % (output_filename,))
             else:
                 LOG.warning("HDF5 file already exists, will overwrite/truncate: %s", output_filename)
                 mode = "w"
@@ -176,7 +173,9 @@ class hdf5writer(ImageWriter):
         return projection_name
 
     @staticmethod
-    def write_geolocation(fh, fname: str, parent: str, area_def, compression, chunks) -> Tuple[list, List[FakeHDF5]]:
+    def write_geolocation(
+        fh, fname: str, parent: str, area_def, append, compression, chunks
+    ) -> Tuple[list, List[FakeHDF5]]:
         """Delayed Geolocation Data write."""
         msg = ("Adding geolocation 'longitude' and " "'latitude' datasets for grid %s", parent)
         LOG.info(msg)
@@ -186,7 +185,9 @@ class hdf5writer(ImageWriter):
         lat_grp = "{}/latitude".format(parent)
 
         lon_dataset = FakeHDF5(fh, fname, lon_grp, compression)
+        lon_dataset.check_variable(lon_data, append)
         lat_dataset = FakeHDF5(fh, fname, lat_grp, compression)
+        lat_dataset.check_variable(lat_data, append)
 
         return [lon_data, lat_data], [lon_dataset, lat_dataset]
 
@@ -250,7 +251,9 @@ class hdf5writer(ImageWriter):
 
             if add_geolocation:
                 chunks = data_arrs[0].chunks
-                dsets, target_fh = self.write_geolocation(hdf5_fh, filename, parent_group, area, compression, chunks)
+                dsets, target_fh = self.write_geolocation(
+                    hdf5_fh, filename, parent_group, area, append, compression, chunks
+                )
             else:
                 dsets = list()
                 target_fh = list()
@@ -259,9 +262,9 @@ class hdf5writer(ImageWriter):
                 hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["name"])
 
                 file_var = FakeHDF5(hdf5_fh, filename, hdf_subgroup, compression)
+                file_var.check_variable(data_arr.data, append)
                 dsets.append(data_arr.data)
                 target_fh.append(file_var)
-
         return (dsets, target_fh)
 
 
