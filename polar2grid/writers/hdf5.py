@@ -15,7 +15,6 @@ from itertools import groupby
 from datetime import datetime as datetime
 from satpy.dataset import DataID
 from satpy.writers import ImageWriter
-from satpy.readers.yaml_reader import FileYAMLReader
 from satpy.writers import compute_writer_results
 
 from trollsift import Parser
@@ -82,9 +81,8 @@ class hdf5writer(ImageWriter):
 
     def __init__(self, dtype=None, **kwargs):
         """Init the writer."""
-        super(hdf5writer, self).__init__(default_config_filename="/writers/hdf5.yaml", **kwargs)
+        super(hdf5writer, self).__init__(**kwargs)
         self.dtype = self.info.get("dtype") if dtype is None else dtype
-        # self.overwrite_existing =
 
     def _output_file_kwargs(self, dataset):
         """Get file keywords from data for output_pattern."""
@@ -129,13 +127,15 @@ class hdf5writer(ImageWriter):
             os.makedirs(dirname)
         return output_filename
 
-    def open_hdf5_filehandle(self, output_filename: str, append: bool = True):
+    @staticmethod
+    def open_hdf5_filehandle(output_filename: str, append: bool = True):
         """Open a HDF5 file handle."""
+        overwrite_existing = False
         if os.path.isfile(output_filename):
             if append:
                 LOG.info("Will append to existing file: %s", output_filename)
                 mode = "a"
-            elif not self.overwrite_existing:
+            elif not overwrite_existing:
                 LOG.error("HDF5 file already exists: %s", output_filename)
                 raise RuntimeError("HDF5 file already exists: %s" % (output_filename,))
             else:
@@ -216,8 +216,6 @@ class hdf5writer(ImageWriter):
 
     def save_datasets(self, dataset, filename=None, dtype=None, fill_value=None, append=True, compute=True, **kwargs):
         """Save hdf5 datasets."""
-        # don't need config_files key anymore
-        _config_files = kwargs.pop("config_files")
 
         compression = kwargs.pop("compression", None) if "compression" in kwargs else None
         if compression == "none":
@@ -271,7 +269,6 @@ def add_writer_argument_groups(parser, group=None):
     """Create writer argument groups."""
     from argparse import SUPPRESS
 
-    yaml = os.path.join(p2g_etc, "writers", "hdf5.yaml")
     if group is None:
         group = parser.add_argument_group(title="hdf5 Writer")
     group.add_argument("--output-filename", dest="filename", help="Custom file pattern to save dataset to")
