@@ -35,6 +35,13 @@ Feature: Test polar2grid output images
       | polar2grid.sh -r viirs_sdr -w geotiff -vv -p adaptive_dnb dynamic_dnb -f                     | viirs_sdr_night/input/test1 | viirs_sdr_night/output/test1 |
       | polar2grid.sh -r viirs_sdr -w geotiff -vv -p true_color false_color --grid-configs ${datapath}/grid_configs/grid_example.conf -g miami -f  | viirs/input/test1 | viirs/output/test1 |
 
+    Examples: MiRS
+      | command                                                                                           | source                      | output                       |
+      | polar2grid.sh -r mirs -w hdf5 -p tpw swe btemp_183h1 btemp_57h1 sea_ice rain_rate btemp_88v -f    | mirs/input/test2            | mirs/output/test2            |
+      | polar2grid.sh -r mirs -w binary -p tpw swe btemp_183h1 btemp_57h1 sea_ice rain_rate btemp_88v -f  | mirs/input/test2            | mirs/output/test3            |
+      | polar2grid.sh -r mirs -w geotiff -p tpw swe btemp_183h1 btemp_57h1 sea_ice rain_rate btemp_88v -f | mirs/input/test2            | mirs/output/test4            |
+      | polar2grid.sh -r mirs -w awips_tiled --grid-coverage 0 -g lcc_conus_1km --sector-id LCC --letters --compress -p tpw swe btemp_183h1 btemp_57h1 sea_ice rain_rate btemp_88v -f | mirs/input/test2            | mirs/output/test5            |
+
   Scenario Outline: Test list products output
     Given input data from <source>
     When <command> runs with --list-products
