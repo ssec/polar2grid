@@ -27,7 +27,7 @@ resampling:
     kwargs:
       weight_delta_max: 10.0
       weight_distance_max: 1.0
-      # TODO: Does 'rows_per_scan' need to be specified?
+      rows_per_scan: 0
   default_mirs_amsu:
     area_type: swath
     sensor: amsu
