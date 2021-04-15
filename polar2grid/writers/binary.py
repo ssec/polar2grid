@@ -20,7 +20,14 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""The Binary writer writes band data to a flat binary file."""
+"""The Binary writer writes band data to a flat binary file.
+
+By default it enhances the data based on the enhancement configuration file
+and then saves the data to a flat binary file of the same data type. A different
+output type can be specified as well as the ``--no-enhance`` command line flag to
+write the "raw" band data.
+
+"""
 
 from __future__ import annotations
 
