@@ -40,7 +40,7 @@ Functions that handle polar2grid data types.
 """
 __docformat__ = "restructuredtext en"
 
-import numpy
+import numpy as np
 
 import sys
 import logging
@@ -59,30 +59,30 @@ DTYPE_FLOAT32 = "real4"
 DTYPE_FLOAT64 = "real8"
 
 NUMPY_DTYPE_STRS = [
-    'uint8',
-    'uint16',
-    'uint32',
-    'uint64',
-    'int8',
-    'int16',
-    'int32',
-    'int64',
-    'float32',
-    'float64',
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "float32",
+    "float64",
 ]
 
-# Map data type to numpy type for conversion
+# Map data type to np type for conversion
 str2dtype = {
-    DTYPE_UINT8: numpy.uint8,
-    DTYPE_UINT16: numpy.uint16,
-    DTYPE_UINT32: numpy.uint32,
-    DTYPE_UINT64: numpy.uint64,
-    DTYPE_INT8: numpy.int8,
-    DTYPE_INT16: numpy.int16,
-    DTYPE_INT32: numpy.int32,
-    DTYPE_INT64: numpy.int64,
-    DTYPE_FLOAT32: numpy.float32,
-    DTYPE_FLOAT64: numpy.float64
+    DTYPE_UINT8: np.uint8,
+    DTYPE_UINT16: np.uint16,
+    DTYPE_UINT32: np.uint32,
+    DTYPE_UINT64: np.uint64,
+    DTYPE_INT8: np.int8,
+    DTYPE_INT16: np.int16,
+    DTYPE_INT32: np.int32,
+    DTYPE_INT64: np.int64,
+    DTYPE_FLOAT32: np.float32,
+    DTYPE_FLOAT64: np.float64,
 }
 dtype2str = dict((v, k) for k, v in str2dtype.items())
 
@@ -90,16 +90,16 @@ dtype2str = dict((v, k) for k, v in str2dtype.items())
 # Since float32 is polar2grid's intermediate type, float32 and float64 don't
 # get clipped
 dtype2range = {
-    DTYPE_UINT8: (0, 2**8-1),
-    DTYPE_UINT16: (0, 2**16-1),
-    DTYPE_UINT32: (0, 2**32-1),
-    DTYPE_UINT64: (0, 2**64-1),
-    DTYPE_INT8: (-1*(2**7), 2**7-1),
-    DTYPE_INT16: (-1*(2**15), 2**15-1),
-    DTYPE_INT32: (-1*(2**31), 2**31-1),
-    DTYPE_INT64: (-1*(2**63), 2**63-1),
+    DTYPE_UINT8: (0, 2 ** 8 - 1),
+    DTYPE_UINT16: (0, 2 ** 16 - 1),
+    DTYPE_UINT32: (0, 2 ** 32 - 1),
+    DTYPE_UINT64: (0, 2 ** 64 - 1),
+    DTYPE_INT8: (-1 * (2 ** 7), 2 ** 7 - 1),
+    DTYPE_INT16: (-1 * (2 ** 15), 2 ** 15 - 1),
+    DTYPE_INT32: (-1 * (2 ** 31), 2 ** 31 - 1),
+    DTYPE_INT64: (-1 * (2 ** 63), 2 ** 63 - 1),
     DTYPE_FLOAT32: None,
-    DTYPE_FLOAT64: None
+    DTYPE_FLOAT64: None,
 }
 
 
@@ -113,12 +113,12 @@ def normalize_dtype_string(dtype_str):
 
 
 def str_to_dtype(dtype_str):
-    if numpy.issubclass_(dtype_str, numpy.number):
-        # if they gave us a numpy dtype
+    if np.issubclass_(dtype_str, np.number):
+        # if they gave us a np dtype
         return dtype_str
-    elif isinstance(dtype_str, str) and hasattr(numpy, dtype_str):
-        # they gave us the numpy name of the dtype
-        return getattr(numpy, dtype_str)
+    elif isinstance(dtype_str, str) and hasattr(np, dtype_str):
+        # they gave us the np name of the dtype
+        return getattr(np, dtype_str)
 
     try:
         return str2dtype[dtype_str]
@@ -132,9 +132,9 @@ def dtype_to_str(numpy_dtype):
         return normalize_dtype_string(numpy_dtype)
 
     try:
-        return dtype2str[numpy.dtype(numpy_dtype).type]
+        return dtype2str[np.dtype(numpy_dtype).type]
     except KeyError:
-        raise ValueError("Unsupported numpy data type: %r" % (numpy_dtype,))
+        raise ValueError("Unsupported np data type: %r" % (numpy_dtype,))
 
 
 def convert_to_data_type(data, data_type):
@@ -153,17 +153,13 @@ def convert_to_data_type(data, data_type):
 
 
 def clip_to_data_type(data, data_type):
-    if not isinstance(data_type, str):
-        data_type = dtype_to_str(data_type)
-    if data_type not in str2dtype:
-        log.error("Unknown data_type '%s', don't know how to convert data" % (data_type,))
-        raise ValueError("Unknown data_type '%s', don't know how to convert data" % (data_type,))
-
-    rmin, rmax = dtype2range[data_type]
+    if np.issubdtype(np.dtype(data_type), np.floating):
+        return data
+    info = np.iinfo(data_type)
+    rmin = info.min
+    rmax = info.max
     log.debug("Clipping data to a %d - %d data range" % (rmin, rmax))
-    numpy.clip(data, rmin, rmax, out=data)
-
-    return convert_to_data_type(data, data_type)
+    return data.clip(rmin, rmax)
 
 
 def int_or_float(val):
