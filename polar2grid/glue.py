@@ -121,9 +121,7 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
 
     for writer_name in writers:
         wargs = writer_args[writer_name]
-        res = scn.save_datasets(
-            writer=writer_name, compute=False, datasets=datasets, **wargs
-        )
+        res = scn.save_datasets(writer=writer_name, compute=False, datasets=datasets, **wargs)
         if isinstance(res[0], (tuple, list)):
             # list of (dask-array, file-obj) tuples
             to_save.extend(zip(*res))
@@ -176,8 +174,7 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
         dest="readers",
         metavar="READER",
         type=_convert_reader_name,
-        help="Name of reader used to read provided files. "
-        "Supported readers: " + ", ".join(readers),
+        help="Name of reader used to read provided files. " "Supported readers: " + ", ".join(readers),
     )
     group_1.add_argument(
         "-f",
@@ -193,9 +190,7 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
         "of files from the other arguments. "
         "arguments (ex. '%(prog)s ... -- /path/to/files*')",
     )
-    group_1.add_argument(
-        "filenames", nargs="*", action="extend", help=argparse.SUPPRESS
-    )
+    group_1.add_argument("filenames", nargs="*", action="extend", help=argparse.SUPPRESS)
     # help="Alternative to '-f' flag. Use two hyphens (--) "
     #      "to separate these files from other command line "
     #      "arguments (ex. '%(prog)s ... -- /path/to/files*')")
@@ -338,16 +333,14 @@ def add_resample_argument_groups(parser, is_polar2grid=False):
             "--grids",
             default=None,
             nargs="*",
-            help="Area definition to resample to. Empty means "
-            'no resampling (default: "MAX")',
+            help="Area definition to resample to. Empty means " 'no resampling (default: "MAX")',
         )
     # shared options
     group_1.add_argument(
         "--grid-coverage",
         default=0.1,
         type=float,
-        help="Fraction of target grid that must contain "
-        "data to continue processing product.",
+        help="Fraction of target grid that must contain " "data to continue processing product.",
     )
     group_1.add_argument(
         "--cache-dir",
@@ -383,9 +376,8 @@ def add_resample_argument_groups(parser, is_polar2grid=False):
         type=float,
         help="Specify radius to search for valid input "
         'pixels for nearest neighbor resampling (--method "nearest"). '
-        "Value is in projection units (typically meters). "
-        "By default this will be determined by input "
-        "pixel size.",
+        "Value is in geocentric meters regardless of input or output projection. "
+        "By default this will be estimated based on input and output projection and pixel size.",
     )
     return tuple([group_1])
 
@@ -401,11 +393,7 @@ def _retitle_optional_arguments(parser):
 def _add_component_parser_args(
     parser: argparse.ArgumentParser, component_type: str, component_names: list[str]
 ) -> list:
-    _get_args_func = (
-        get_writer_parser_function
-        if component_type == "writers"
-        else get_reader_parser_function
-    )
+    _get_args_func = get_writer_parser_function if component_type == "writers" else get_reader_parser_function
     subgroups = []
     for component_name in component_names:
         parser_func = _get_args_func(component_name)
@@ -421,9 +409,7 @@ def _args_to_dict(args, group_actions, exclude=None):
     if exclude is None:
         exclude = []
     return {
-        ga.dest: getattr(args, ga.dest)
-        for ga in group_actions
-        if hasattr(args, ga.dest) and ga.dest not in exclude
+        ga.dest: getattr(args, ga.dest) for ga in group_actions if hasattr(args, ga.dest) and ga.dest not in exclude
     }
 
 
@@ -457,9 +443,7 @@ def _parse_writer_args(
         writer_args[writer_name] = wargs
         # get default output filename
         if "filename" in wargs and wargs["filename"] is None:
-            wargs["filename"] = get_default_output_filename(
-                reader_names[0], writer_name
-            )
+            wargs["filename"] = get_default_output_filename(reader_names[0], writer_name)
     return writer_args
 
 
@@ -527,9 +511,7 @@ def main(argv=sys.argv[1:]):
     import argparse
 
     add_polar2grid_config_paths()
-    USE_POLAR2GRID_DEFAULTS = bool(
-        int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1"))
-    )
+    USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
     BINARY_NAME = "polar2grid" if USE_POLAR2GRID_DEFAULTS else "geo2grid"
 
     prog = os.getenv("PROG_NAME", sys.argv[0])
@@ -555,12 +537,9 @@ basic processing with limited products:
         dest="verbosity",
         action="count",
         default=0,
-        help="each occurrence increases verbosity 1 level through "
-        "ERROR-WARNING-INFO-DEBUG (default INFO)",
+        help="each occurrence increases verbosity 1 level through " "ERROR-WARNING-INFO-DEBUG (default INFO)",
     )
-    parser.add_argument(
-        "-l", "--log", dest="log_fn", default=None, help="specify the log filename"
-    )
+    parser.add_argument("-l", "--log", dest="log_fn", default=None, help="specify the log filename")
     parser.add_argument(
         "--progress",
         action="store_true",
@@ -590,16 +569,10 @@ basic processing with limited products:
         "--list-products-all",
         dest="list_products_all",
         action="store_true",
-        help="List available {} products and custom/Satpy products and exit".format(
-            BINARY_NAME
-        ),
+        help="List available {} products and custom/Satpy products and exit".format(BINARY_NAME),
     )
-    reader_group = add_scene_argument_groups(
-        parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS
-    )[0]
-    resampling_group = add_resample_argument_groups(
-        parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS
-    )[0]
+    reader_group = add_scene_argument_groups(parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
+    resampling_group = add_resample_argument_groups(parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
     writer_group = add_writer_argument_groups(parser)[0]
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
 
@@ -620,16 +593,13 @@ basic processing with limited products:
         parser.exit(
             1,
             "\nERROR: Reader must be provided (-r flag).\n"
-            "Supported readers:\n\t{}\n".format(
-                "\n\t".join(["abi_l1b", "ahi_hsd", "hrit_ahi"])
-            ),
+            "Supported readers:\n\t{}\n".format("\n\t".join(["abi_l1b", "ahi_hsd", "hrit_ahi"])),
         )
     elif len(args.readers) > 1:
         parser.print_usage()
         parser.exit(
             1,
-            "\nMultiple readers is not currently supported. Got:\n\t"
-            "{}\n".format("\n\t".join(args.readers)),
+            "\nMultiple readers is not currently supported. Got:\n\t" "{}\n".format("\n\t".join(args.readers)),
         )
         return -1
     if args.writers is None:
@@ -642,14 +612,10 @@ basic processing with limited products:
 
     reader_args = _args_to_dict(args, reader_group._group_actions)
     reader_names = reader_args.pop("readers")
-    scene_creation, load_args = _get_scene_init_load_args(
-        args, reader_args, reader_names, reader_subgroups
-    )
+    scene_creation, load_args = _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     resample_args = _args_to_dict(args, resampling_group._group_actions)
     writer_args = _args_to_dict(args, writer_group._group_actions)
-    writer_specific_args = _parse_writer_args(
-        writer_args["writers"], writer_subgroups, reader_names, args
-    )
+    writer_specific_args = _parse_writer_args(writer_args["writers"], writer_subgroups, reader_names, args)
     writer_args.update(writer_specific_args)
 
     if not args.filenames:
@@ -662,9 +628,7 @@ basic processing with limited products:
         rename_log = True
         args.log_fn = glue_name + "_fail.log"
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(
-        console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn
-    )
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
     logging.getLogger("rasterio").setLevel(levels[min(2, args.verbosity)])
     sys.excepthook = create_exc_handler(LOG.name)
     if levels[min(3, args.verbosity)] > logging.DEBUG:
@@ -682,31 +646,21 @@ basic processing with limited products:
     try:
         scn = Scene(**scene_creation)
     except ValueError as e:
-        LOG.error(
-            "{} | Enable debug message (-vvv) or see log file for details.".format(
-                str(e)
-            )
-        )
+        LOG.error("{} | Enable debug message (-vvv) or see log file for details.".format(str(e)))
         LOG.debug("Further error information: ", exc_info=True)
         return -1
     except OSError:
-        LOG.error(
-            "Could not open files. Enable debug message (-vvv) or see log file for details."
-        )
+        LOG.error("Could not open files. Enable debug message (-vvv) or see log file for details.")
         LOG.debug("Further error information: ", exc_info=True)
         return -1
 
     # Rename the log file
     if rename_log:
-        rename_log_file(
-            glue_name + scn.attrs["start_time"].strftime("_%Y%m%d_%H%M%S.log")
-        )
+        rename_log_file(glue_name + scn.attrs["start_time"].strftime("_%Y%m%d_%H%M%S.log"))
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
     LOG.info("Loading product metadata from files...")
-    reader_info = ReaderProxyBase.from_reader_name(
-        scene_creation["reader"], scn, load_args["products"]
-    )
+    reader_info = ReaderProxyBase.from_reader_name(scene_creation["reader"], scn, load_args["products"])
     if args.list_products or args.list_products_all:
         _print_list_products(reader_info, p2g_only=not args.list_products_all)
         return 0
@@ -740,7 +694,7 @@ basic processing with limited products:
         areas_to_resample,
         preserve_resolution=args.preserve_resolution,
         is_polar2grid=USE_POLAR2GRID_DEFAULTS,
-        **resample_args
+        **resample_args,
     )
     for scene_to_save, products_to_save in scenes_to_save:
         overwrite_platform_name_with_aliases(scene_to_save)
