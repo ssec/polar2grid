@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import TextIO
 
 import os
 import sys
@@ -60,7 +61,7 @@ def all_equal(iterable: list[str]) -> bool:
 
 
 class FakeHDF5:
-    def __init__(self, fh, output_filename: str, var_name: str, compression: bool):
+    def __init__(self, fh : TextIO[IO[AnyStr]], output_filename: str, var_name: str, compression: bool):
         self.fh = fh
         self.output_filename = output_filename
         self.var_name = var_name
@@ -133,7 +134,7 @@ class hdf5writer(ImageWriter):
         """Open a HDF5 file handle."""
         if os.path.isfile(output_filename):
             if append:
-                LOG.info("Will append to existing file: %s", output_filename)
+                LOG.info("Appending to existing file: %s", output_filename)
                 mode = "a"
             else:
                 LOG.warning("HDF5 file already exists, will overwrite/truncate: %s", output_filename)
@@ -146,7 +147,7 @@ class hdf5writer(ImageWriter):
         return h5_fh
 
     @staticmethod
-    def create_proj_group(filename: str, parent, area_def):
+    def create_proj_group(filename: str, parent : TextIO, area_def):
         """Create the top level group from projection information."""
         projection_name = (area_def.name).replace(" ", "_")
         # if top group alrady made, return.
@@ -174,7 +175,7 @@ class hdf5writer(ImageWriter):
 
     @staticmethod
     def write_geolocation(
-        fh, fname: str, parent: str, area_def, append, compression, chunks
+        fh, fname: str, parent: str, area_def, append : bool, compression, chunks : tuple[int, int]
     ) -> Tuple[list, List[FakeHDF5]]:
         """Delayed Geolocation Data write."""
         msg = ("Adding geolocation 'longitude' and " "'latitude' datasets for grid %s", parent)
@@ -215,7 +216,7 @@ class hdf5writer(ImageWriter):
 
         return
 
-    def save_datasets(self, dataset, filename=None, dtype=None, fill_value=None, append=True, compute=True, **kwargs):
+    def save_datasets(self, dataset : List[xr.DataArray], filename=None, dtype=None, fill_value=None, append=True, compute=True, **kwargs):
         """Save hdf5 datasets."""
         compression = kwargs.pop("compression", None) if "compression" in kwargs else None
         if compression == "none":
