@@ -85,12 +85,13 @@ class FlatBinaryWriter(ImageWriter):
         fill = data.attrs.get("_FillValue", np.nan)
         if fill_value is None:
             fill_value = fill
-        final_data = clip_to_data_type(data.data, dtype)
+        final_data = data.data
         if self.enhancer and np.issubdtype(data.dtype, np.floating) and not np.issubdtype(dtype, np.floating):
             # going from float -> int and the data was enhanced
             # scale the data to fit the integer dtype
             rmin, rmax = np.iinfo(dtype).min, np.iinfo(dtype).max
             final_data = final_data * (rmax - rmin) + rmin
+        final_data = clip_to_data_type(final_data, dtype)
 
         same_fill = np.isnan(fill) and np.isnan(fill_value) or fill == fill_value
         if data.dtype == dtype and same_fill:

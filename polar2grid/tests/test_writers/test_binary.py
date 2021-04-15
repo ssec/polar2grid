@@ -67,7 +67,7 @@ def _create_fake_data_arr(shape=(100, 50), dims=("y", "x"), dtype=np.float64):
         "area": area_mock,
         "standard_name": "test_arange",
     }
-    data = np.arange(np.prod(shape), dtype=np.float32)
+    data = np.arange(np.prod(shape), dtype=np.float64)
     if not np.issubdtype(dtype, np.floating):
         data = np.clip(data, *_int_min_max(dtype))
         attrs["_FillValue"] = 0
@@ -112,14 +112,16 @@ class TestBinaryWriter:
         exp_data = self._generate_expected_output(src_data_arr, dst_dtype, enhance)
         np.testing.assert_allclose(data, exp_data, atol=2e-7)
 
-    def _generate_expected_output(self, src_data_arr, dst_dtype, enhance):
+    @staticmethod
+    def _generate_expected_output(src_data_arr, dst_dtype, enhance):
         src_dtype = src_data_arr.dtype
-        exp_data = src_data_arr.values.astype(np.float32).ravel()
+        exp_data = src_data_arr.values.astype(np.float64).ravel()
         if enhance:
             exp_data = exp_data / 500.0  # see polar2grid/tests/etc/enhancements/generic.yaml
             if not np.issubdtype(dst_dtype, np.floating):
                 rmin, rmax = _int_min_max(dst_dtype)
                 exp_data = exp_data * (rmax - rmin) + rmin
+                exp_data = np.clip(exp_data, rmin, rmax)
             exp_data = exp_data.astype(dst_dtype)
         elif not np.issubdtype(dst_dtype, np.floating) or not np.issubdtype(src_dtype, np.floating):
             rmin, rmax = _min_max_for_two_dtypes(src_dtype, dst_dtype)
