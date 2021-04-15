@@ -101,17 +101,34 @@ For more information on the creation of RGBs, please see the
 
 """
 
-READER_PRODUCTS = ['B{:02d}'.format(x) for x in range(3, 17)]
+from __future__ import annotations
+
+from ._base import ReaderProxyBase
+
+READER_PRODUCTS = ["B{:02d}".format(x) for x in range(3, 17)]
 COMPOSITE_PRODUCTS = [
-    'natural_color',
-    'airmass',
-    'ash',
-    'dust',
-    'fog',
-    'night_microphysics',
+    "natural_color",
+    "airmass",
+    "ash",
+    "dust",
+    "fog",
+    "night_microphysics",
 ]
-DEFAULT_PRODUCTS = READER_PRODUCTS + COMPOSITE_PRODUCTS[:1]
 
 
-def add_reader_argument_groups(parser):
-    return parser
+class ReaderProxy(ReaderProxyBase):
+    """Provide Polar2Grid-specific information about this reader's products."""
+
+    is_geo2grid_reader = True
+
+    def get_default_products(self) -> list[str]:
+        """Get products to load if users hasn't specified any others."""
+        return READER_PRODUCTS + COMPOSITE_PRODUCTS[:1]
+
+    def get_all_products(self) -> list[str]:
+        """Get all polar2grid products that could be loaded."""
+        return READER_PRODUCTS + COMPOSITE_PRODUCTS
+
+
+# def add_reader_argument_groups(parser):
+#     return group, None

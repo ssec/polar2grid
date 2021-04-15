@@ -35,16 +35,21 @@ logger = logging.getLogger(__name__)
 def _merge_filter_critera(*readers_criteria: Dict[str, Union[List[str], None]]):
     result = {}
     for reader_criteria in readers_criteria:
+        if reader_criteria is None:
+            continue
         for criteria_key, criteria_value in reader_criteria.items():
             if criteria_value is not None:
                 result.setdefault(criteria_key, []).extend(criteria_value)
+    if not result:
+        # no criteria were provided/found
+        return None
     return result
 
 
 def _get_single_reader_filter_criteria(reader: str, filter_name: str):
     reader_mod = importlib.import_module('polar2grid.readers.' + reader)
     filter_criteria = getattr(reader_mod, 'FILTERS', {})
-    return filter_criteria[filter_name]
+    return filter_criteria.get(filter_name)
 
 
 def get_reader_filter_criteria(reader_names: List[str], filter_name: str):

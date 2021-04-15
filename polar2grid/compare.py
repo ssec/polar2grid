@@ -65,8 +65,8 @@ def compare_array(array1, array2, atol=0., rtol=0., margin_of_error=0.):
     :returns: number of different pixels
     """
     if array1.shape != array2.shape:
-        LOG.error("Data shapes were not equal")
-        raise ValueError("Data shapes were not equal")
+        LOG.error("Data shapes were not equal: %r | %r", array1.shape, array2.shape)
+        raise ValueError("Data shapes were not equal: {} | {}".format(array1.shape, array2.shape))
 
     total_pixels = array1.size
     equal_pixels = numpy.count_nonzero(numpy.isclose(array1, array2, rtol=rtol, atol=atol, equal_nan=True))

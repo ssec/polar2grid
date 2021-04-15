@@ -32,7 +32,7 @@
 
 # Checks arguments
 if [ $# -lt 2 ] || [[ $* =~ (^|[[:space:]])("-h"|"--help")($|[[:space:]]) ]]; then
-    echo "Usage: p2g_compare_geotiff.sh verification_dir work_dir"
+    echo "Usage: p2g_compare_netcdf.sh verification_dir work_dir"
     # Prints only the optional arguments
     print=0
     options=`python -m polar2grid.compare geotiff -h`

@@ -2,10 +2,10 @@ sensor_name: visir/viirs
 
 modifiers:
   rayleigh_corrected:
-    modifier: !!python/name:satpy.composites.viirs.ReflectanceCorrector
-    dem_filename: CMGDEM.hdf
-    prerequisites: []
-    optional_prerequisites:
+    modifier: !!python/name:satpy.modifiers.atmosphere.ReflectanceCorrector
+    url: "https://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/CMGDEM.hdf"
+    known_hash: "sha256:f33f1f867d79fff4fafe128f61c154236dd74fcc97bf418ea1437977a38d0604"
+    prerequisites:
     - name: satellite_azimuth_angle
       resolution: 742
     - name: satellite_zenith_angle
@@ -14,12 +14,13 @@ modifiers:
       resolution: 742
     - name: solar_zenith_angle
       resolution: 742
+    optional_prerequisites: []
 
   rayleigh_corrected_iband:
-    modifier: !!python/name:satpy.composites.viirs.ReflectanceCorrector
-    dem_filename: CMGDEM.hdf
-    prerequisites: []
-    optional_prerequisites:
+    modifier: !!python/name:satpy.modifiers.atmosphere.ReflectanceCorrector
+    url: "https://www.ssec.wisc.edu/~davidh/polar2grid/viirs_crefl/CMGDEM.hdf"
+    known_hash: "sha256:f33f1f867d79fff4fafe128f61c154236dd74fcc97bf418ea1437977a38d0604"
+    prerequisites:
     - name: satellite_azimuth_angle
       resolution: 371
     - name: satellite_zenith_angle
@@ -28,6 +29,7 @@ modifiers:
       resolution: 371
     - name: solar_zenith_angle
       resolution: 371
+    optional_prerequisites: []
 
   sunz_corrected:
     modifier: !!python/name:satpy.modifiers.SunZenithCorrector
