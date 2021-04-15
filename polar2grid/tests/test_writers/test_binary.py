@@ -114,7 +114,7 @@ class TestBinaryWriter:
 
     def _generate_expected_output(self, src_data_arr, dst_dtype, enhance):
         src_dtype = src_data_arr.dtype
-        exp_data = src_data_arr.values.astype(np.float64).ravel()
+        exp_data = src_data_arr.values.astype(np.float32).ravel()
         if enhance:
             exp_data = exp_data / 500.0  # see polar2grid/tests/etc/enhancements/generic.yaml
             if not np.issubdtype(dst_dtype, np.floating):
