@@ -39,7 +39,7 @@ Feature: Test polar2grid output images
       | command                                                                                           | source                      | output                       |
       | polar2grid.sh -r mirs -w hdf5 -p tpw swe btemp_183h1 btemp_57h1 sea_ice rain_rate btemp_88v -f    | mirs/input/test2            | mirs/output/test2            |
       | polar2grid.sh -r mirs -w binary -p tpw swe btemp_183h1 btemp_57h1 sea_ice rain_rate btemp_88v -f  | mirs/input/test2            | mirs/output/test3            |
-      | polar2grid.sh -r mirs -w geotiff -p tpw swe btemp_183h1 btemp_57h1 sea_ice rain_rate btemp_88v -f | mirs/input/test2            | mirs/output/test4            |
+      | polar2grid.sh -r mirs -w geotiff --fill-value 0 -p tpw swe btemp_183h1 btemp_57h1 sea_ice rain_rate btemp_88v -f | mirs/input/test2            | mirs/output/test4            |
       | polar2grid.sh -r mirs -w awips_tiled --grid-coverage 0 -g lcc_conus_1km --sector-id LCC --letters --compress -p tpw swe btemp_183h1 btemp_57h1 sea_ice rain_rate btemp_88v -f | mirs/input/test2            | mirs/output/test5            |
 
   Scenario Outline: Test list products output
