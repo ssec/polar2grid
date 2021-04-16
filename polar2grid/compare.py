@@ -135,6 +135,9 @@ def compare_netcdf(nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0,
     nc1 = Dataset(nc1_name, "r")
     nc2 = Dataset(nc2_name, "r")
     num_diff = 0
+    if variables is None:
+        # TODO: Handle groups
+        variables = list(nc1.variables.keys())
     for v in variables:
         image1_var = nc1[v]
         image2_var = nc2[v]
@@ -145,12 +148,27 @@ def compare_netcdf(nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0,
     return num_diff
 
 
+def _get_hdf5_variables(variables, name, obj):
+    import h5py
+
+    if isinstance(obj, h5py.Group):
+        return
+    variables.append(name)
+
+
 def compare_hdf5(nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs):
     import h5py
 
     nc1 = h5py.File(nc1_name, "r")
     nc2 = h5py.File(nc2_name, "r")
     num_diff = 0
+    if variables is None:
+        from functools import partial
+
+        variables = []
+        cb = partial(_get_hdf5_variables, variables)
+        nc1.visititems(cb)
+
     for v in variables:
         image1_var = nc1[v]
         image2_var = nc2[v]
@@ -221,7 +239,11 @@ def main(argv=sys.argv[1:]):
         help="'rows cols' for binary file comparison only",
     )
     parser.add_argument("--dtype", type=str_to_dtype, help="Data type for binary file comparison only")
-    parser.add_argument("--variables", nargs="+", help="NetCDF variables to read and compare")
+    parser.add_argument(
+        "--variables",
+        nargs="+",
+        help="NetCDF/HDF5 variables to read and compare. " "If not provided all variables will be compared.",
+    )
     parser.add_argument("--margin-of-error", type=float, default=0.0, help="percent of total pixels that can be wrong")
     parser.add_argument(
         "file_type",
