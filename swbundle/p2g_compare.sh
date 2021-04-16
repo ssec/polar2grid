@@ -63,6 +63,9 @@ fi
 # Run tests for each test data directory in the base directory
 BAD_COUNT=0
 for VFILE in $VERIFY_BASE/*; do
+    if [ ${VFILE:(-3)} == "log" ]; then
+        continue
+    fi
     WFILE=$WORK_DIR/`basename $VFILE`
     echo "INFO: Comparing $WFILE to known valid file $VFILE"
     python -m polar2grid.compare "$VFILE" "$WFILE" `echo "${@:3}"`
