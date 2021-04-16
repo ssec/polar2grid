@@ -399,9 +399,8 @@ def add_resample_argument_groups(parser, is_polar2grid=False):
         type=float,
         help="Specify radius to search for valid input "
         'pixels for nearest neighbor resampling (--method "nearest"). '
-        "Value is in projection units (typically meters). "
-        "By default this will be determined by input "
-        "pixel size.",
+        "Value is in geocentric meters regardless of input or output projection. "
+        "By default this will be estimated based on input and output projection and pixel size.",
     )
     return tuple([group_1])
 
