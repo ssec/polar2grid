@@ -40,6 +40,7 @@ as transparent in most image viewers.
 import os
 import logging
 from polar2grid.core.dtype import NUMPY_DTYPE_STRS, str_to_dtype, int_or_float
+from polar2grid.core.script_utils import NumpyDtypeList
 
 LOG = logging.getLogger(__name__)
 
@@ -48,21 +49,8 @@ DEFAULT_OUTPUT_FILENAMES = {
     None: "{platform_name!u}_{sensor!u}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
     "abi_l1b": "{platform_name!u}_{sensor!u}_{observation_type}{scene_abbr}_"
     "{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
-    "viirs_sdr": "{platform_name!l}_{sensor!l}_{p2g_name}_"
-    "{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
+    "viirs_sdr": "{platform_name!l}_{sensor!l}_{p2g_name}_" "{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
 }
-
-
-class NumpyDtypeList(list):
-    """Magic list to allow dtype objects to match string versions of themselves."""
-
-    def __contains__(self, item):
-        if super(NumpyDtypeList, self).__contains__(item):
-            return True
-        try:
-            return super(NumpyDtypeList, self).__contains__(item().dtype.name)
-        except AttributeError:
-            return False
 
 
 def add_writer_argument_groups(parser, group=None):
@@ -79,8 +67,7 @@ def add_writer_argument_groups(parser, group=None):
         "--dtype",
         choices=NumpyDtypeList(NUMPY_DTYPE_STRS),
         type=str_to_dtype,
-        help="Data type of the output file (8-bit unsigned "
-        "integer by default - uint8)",
+        help="Data type of the output file (8-bit unsigned " "integer by default - uint8)",
     )
     group.add_argument(
         "--no-enhance",
@@ -102,12 +89,8 @@ def add_writer_argument_groups(parser, group=None):
         help="File compression algorithm (DEFLATE, LZW, NONE, etc)",
     )
     group.add_argument("--tiled", action="store_true", help="Create tiled geotiffs")
-    group.add_argument(
-        "--blockxsize", default=SUPPRESS, type=int, help="Set tile block X size"
-    )
-    group.add_argument(
-        "--blockysize", default=SUPPRESS, type=int, help="Set tile block Y size"
-    )
+    group.add_argument("--blockxsize", default=SUPPRESS, type=int, help="Set tile block X size")
+    group.add_argument("--blockysize", default=SUPPRESS, type=int, help="Set tile block Y size")
     group.add_argument(
         "--gdal-num-threads",
         dest="num_threads",

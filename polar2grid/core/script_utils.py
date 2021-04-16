@@ -57,15 +57,16 @@ LOG = logging.getLogger(__name__)
 #             record.levelname = 'DEBUG'
 #         return super(SatPyWarningFilter, self).format(record)
 
+
 class SatPyWarningFilter(logging.Filter):
     def filter(self, record):
-        is_satpy = record.name.startswith('satpy')
-        is_msg = 'The following datasets were not created and may require resampling' in record.msg
+        is_satpy = record.name.startswith("satpy")
+        is_msg = "The following datasets were not created and may require resampling" in record.msg
         return 0 if is_satpy and is_msg else 1
 
 
 class ThirdPartyFilter(logging.Filter):
-    def __init__(self, ignored_packages, level=logging.WARNING, name=''):
+    def __init__(self, ignored_packages, level=logging.WARNING, name=""):
         self.ignored_packages = ignored_packages
         self.level_filter = level
         super(ThirdPartyFilter, self).__init__(name)
@@ -89,7 +90,7 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log
     :param log_numpy: Tell numpy to log invalid values encountered
     """
     # set the root logger to DEBUG so that handlers can have all possible messages to filter
-    root_logger = logging.getLogger('')
+    root_logger = logging.getLogger("")
     root_logger.setLevel(min(console_level, logging.DEBUG))
 
     # Console output is minimal
@@ -101,8 +102,9 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log
     if console_level > logging.DEBUG:
         # if we are only showing INFO/WARNING/ERROR messages for P2G then
         # filter out messages from these packages
-        console.addFilter(ThirdPartyFilter(['satpy', 'pyresample', 'pyspectral', 'trollimage',
-                                            'pyorbital', 'trollsift']))
+        console.addFilter(
+            ThirdPartyFilter(["satpy", "pyresample", "pyspectral", "trollimage", "pyorbital", "trollsift"])
+        )
     root_logger.addHandler(console)
 
     # Log file messages have a lot more information
@@ -114,25 +116,26 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log
         root_logger.addHandler(file_handler)
 
         # Make a traceback logger specifically for adding tracebacks to log file
-        traceback_log = logging.getLogger('traceback')
+        traceback_log = logging.getLogger("traceback")
         traceback_log.propagate = False
         traceback_log.setLevel(logging.ERROR)
         traceback_log.addHandler(file_handler)
 
     if log_numpy:
         import numpy
+
         class TempLog(object):
             def write(self, msg):
                 logging.getLogger("numpy").debug(msg)
+
         numpy.seterr(invalid="log")
         numpy.seterrcall(TempLog())
 
 
 def rename_log_file(new_filename):
-    """Rename the file handler for the root logger and the traceback logger.
-    """
+    """Rename the file handler for the root logger and the traceback logger."""
     # the traceback logger only has 1 handler so let's get that
-    traceback_log = logging.getLogger('traceback')
+    traceback_log = logging.getLogger("traceback")
     if not traceback_log.handlers:
         LOG.error("Tried to change the log filename, but no log file was configured")
         raise RuntimeError("Tried to change the log filename, but no log file was configured")
@@ -140,14 +143,14 @@ def rename_log_file(new_filename):
     h = traceback_log.handlers[0]
     fn = h.baseFilename
     h.stream.close()
-    root_logger = logging.getLogger('')
+    root_logger = logging.getLogger("")
     root_logger.removeHandler(h)
     traceback_log.removeHandler(h)
 
     # move the old file
     if os.path.isfile(new_filename):
-        with open(new_filename, 'a') as new_file:
-            with open(fn, 'r') as old_file:
+        with open(new_filename, "a") as new_file:
+            with open(fn, "r") as old_file:
                 new_file.write(old_file.read())
         os.remove(fn)
     else:
@@ -173,11 +176,14 @@ def create_exc_handler(glue_name):
         Note, however, that this doesn't effect code in a separate process as the
         exception never gets raised in the parent.
         """
-        logging.getLogger(glue_name).error("Unexpected error. Enable debug messages (-vvv) or see log file for details.")
+        logging.getLogger(glue_name).error(
+            "Unexpected error. Enable debug messages (-vvv) or see log file for details."
+        )
         logging.getLogger(glue_name).debug("Unexpected error exception: ", exc_info=(exc_type, exc_value, traceback))
-        tb_log = logging.getLogger('traceback')
+        tb_log = logging.getLogger("traceback")
         if tb_log.handlers:
             tb_log.error(exc_value, exc_info=(exc_type, exc_value, traceback))
+
     return exc_handler
 
 
@@ -225,11 +231,24 @@ def remove_file_patterns(*args):
                 _safe_remove(f)
 
 
+class NumpyDtypeList(list):
+    """Magic list to allow dtype objects to match string versions of themselves."""
+
+    def __contains__(self, item):
+        if super(NumpyDtypeList, self).__contains__(item):
+            return True
+        try:
+            return super(NumpyDtypeList, self).__contains__(item().dtype.name)
+        except AttributeError:
+            return False
+
+
 ### Argument Parsing ###
 
+
 class ExtendAction(argparse.Action):
-    """Similar to the 'append' action, but expects multiple elements instead of just one.
-    """
+    """Similar to the 'append' action, but expects multiple elements instead of just one."""
+
     def __call__(self, parser, namespace, values, option_string=None):
         current_values = getattr(namespace, self.dest, []) or []
         current_values.extend(values)
@@ -237,8 +256,8 @@ class ExtendAction(argparse.Action):
 
 
 class ExtendConstAction(argparse.Action):
-    """Similar to the 'append' action, but expects multiple elements instead of just one.
-    """
+    """Similar to the 'append' action, but expects multiple elements instead of just one."""
+
     def __init__(self, option_strings, dest, nargs=0, **kwargs):
         if nargs:
             raise ValueError("nargs is not allowed")
@@ -305,15 +324,32 @@ class ArgumentParser(argparse.ArgumentParser):
 
 def create_basic_parser(*args, **kwargs):
     parser = ArgumentParser(*args, **kwargs)
-    parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
-                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG-TRACE (default INFO)')
-    parser.add_argument('-l', '--log', dest="log_fn", default=None,
-                        help="specify the log filename")
-    parser.add_argument('--debug', dest="keep_intermediate", default=False,
-                        action='store_true',
-                        help="Keep intermediate files for future use.")
-    parser.add_argument('--overwrite', dest="overwrite_existing", action="store_true",
-                        help="Overwrite intermediate or output files if they exist already")
-    parser.add_argument('--exit-on-error', dest="exit_on_error", action="store_true",
-                        help="exit on first error including non-fatal errors")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbosity",
+        action="count",
+        default=0,
+        help="each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG-TRACE (default INFO)",
+    )
+    parser.add_argument("-l", "--log", dest="log_fn", default=None, help="specify the log filename")
+    parser.add_argument(
+        "--debug",
+        dest="keep_intermediate",
+        default=False,
+        action="store_true",
+        help="Keep intermediate files for future use.",
+    )
+    parser.add_argument(
+        "--overwrite",
+        dest="overwrite_existing",
+        action="store_true",
+        help="Overwrite intermediate or output files if they exist already",
+    )
+    parser.add_argument(
+        "--exit-on-error",
+        dest="exit_on_error",
+        action="store_true",
+        help="exit on first error including non-fatal errors",
+    )
     return parser
