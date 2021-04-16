@@ -139,7 +139,7 @@ def _convert_writer_name(writer_name: str) -> str:
     return WRITER_ALIASES.get(writer_name, writer_name)
 
 
-def add_scene_argument_groups(parser, is_polar2grid=False):
+def _supported_readers(is_polar2grid: bool = False) -> list[str]:
     if is_polar2grid:
         readers = [
             "acspo",
@@ -155,16 +155,23 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
             "viirs_sdr",
             "virr_l1b",
         ]
-        filter_dn_products = 0.1
-        filter_doc = " and is enabled by default."
     else:
         readers = [
             "abi_l1b",
             "ahi_hrit",
             "ahi_hsd",
         ]
+    return readers
+
+
+def add_scene_argument_groups(parser, is_polar2grid=False):
+    if is_polar2grid:
+        filter_dn_products = 0.1
+        filter_doc = " and is enabled by default."
+    else:
         filter_dn_products = False
         filter_doc = ", but is disabled by default."
+    readers = _supported_readers(is_polar2grid)
 
     group_1 = parser.add_argument_group(title="Reading")
     group_1.add_argument(
@@ -243,7 +250,22 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
     return (group_1,)
 
 
-def add_writer_argument_groups(parser):
+def _supported_writers(is_polar2grid: bool = False) -> list[str]:
+    if is_polar2grid:
+        writers = [
+            "geotiff",
+            "awips_tiled",
+            "binary",
+        ]
+    else:
+        writers = [
+            "geotiff",
+        ]
+    return writers
+
+
+def add_writer_argument_groups(parser, is_polar2grid=False):
+    writers = _supported_writers(is_polar2grid)
     group_1 = parser.add_argument_group(title="Writing")
     group_1.add_argument(
         "-w",
@@ -254,7 +276,8 @@ def add_writer_argument_groups(parser):
         metavar="WRITER",
         help="Writers to save datasets with. Multiple writers "
         "can be provided by specifying '-w' multiple "
-        "times (ex. '-w geotiff -w awips_tiled').",
+        "times (ex. '-w geotiff -w awips_tiled'). "
+        "Supported writers: " + ", ".join(writers),
     )
     return (group_1,)
 
@@ -593,7 +616,7 @@ basic processing with limited products:
         parser.exit(
             1,
             "\nERROR: Reader must be provided (-r flag).\n"
-            "Supported readers:\n\t{}\n".format("\n\t".join(["abi_l1b", "ahi_hsd", "hrit_ahi"])),
+            "Supported readers:\n\t{}\n".format("\n\t".join(_supported_readers(USE_POLAR2GRID_DEFAULTS))),
         )
     elif len(args.readers) > 1:
         parser.print_usage()
@@ -607,7 +630,7 @@ basic processing with limited products:
         parser.exit(
             1,
             "\nERROR: Writer must be provided (-w flag) with one or more writer.\n"
-            "Supported writers:\n\t{}\n".format("\n\t".join(["geotiff"])),
+            "Supported writers:\n\t{}\n".format("\n\t".join(_supported_writers(USE_POLAR2GRID_DEFAULTS))),
         )
 
     reader_args = _args_to_dict(args, reader_group._group_actions)

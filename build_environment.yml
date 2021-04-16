@@ -24,7 +24,7 @@ dependencies:
   - pykdtree
   - pyorbital
   - pyproj
-  - pyresample>=1.18.1
+  - pyresample>=1.19.0
   - pyshp
   - pyspectral
   - python=3.8

@@ -1,0 +1,5 @@
+writer:
+  name: binary
+  description: Generic Flat Binary File Writer
+  writer: !!python/name:polar2grid.writers.binary.FlatBinaryWriter
+  filename: "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat"
