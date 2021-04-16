@@ -33,7 +33,7 @@ def step_impl(context, command):
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
     try:
-        context.temp_dir = tempfile.mkdtemp(prefix="p2g_tests_")
+        context.temp_dir = tempfile.mkdtemp(prefix=os.path.join(context.base_temp_dir, "p2g_tests_"))
         os.chdir(context.temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
         assert exit_status == 0, "{} ran unsuccessfully".format(context.command)
@@ -64,7 +64,6 @@ def step_impl(context, output):
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
         os.chdir(orig_dir)
-        shutil.rmtree(context.temp_dir)
 
 
 @when("{command} runs with --list-products")
@@ -77,7 +76,7 @@ def step_impl(context, command):
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
     try:
-        context.temp_dir = tempfile.mkdtemp(prefix="p2g_tests_")
+        context.temp_dir = tempfile.mkdtemp(prefix=os.path.join(context.base_temp_dir, "p2g_tests_"))
         os.chdir(context.temp_dir)
         output = subprocess.check_output(context.command, shell=True)
         context.output = output.decode("utf-8")
@@ -90,9 +89,13 @@ def step_impl(context, command):
 
 @then("the printed output includes the products in {output}")
 def step_impl(context, output):
+    orig_dir = os.getcwd()
     names_to_check = output.split(",")
     output = context.output
-    for product_name in names_to_check:
-        num_products_in_output = output.count(product_name + "\n")
-        assert num_products_in_output != 0, f"Missing {product_name} in command output"
-        assert num_products_in_output == 1, f"Too many of {product_name} in command output"
+    try:
+        for product_name in names_to_check:
+            num_products_in_output = output.count(product_name + "\n")
+            assert num_products_in_output != 0, f"Missing {product_name} in command output"
+            assert num_products_in_output == 1, f"Too many of {product_name} in command output"
+    finally:
+        os.chdir(orig_dir)
