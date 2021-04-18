@@ -19,7 +19,8 @@ enhancements:
         min_in: -110.15
         max_in: 56.85
   radiance_default:
-    calibration: radiance
+    # radiance
+    standard_name: toa_outgoing_radiance_per_unit_wavelength
     operations:
       - name: stretch
         method: !!python/name:satpy.enhancements.stretch
