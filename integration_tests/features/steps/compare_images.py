@@ -2,8 +2,10 @@ from behave import given, when, then
 import os
 import tempfile
 import subprocess
-import shutil
 import glob
+import re
+
+DTYPE_REGEX = re.compile(r"--dtype (P?<dtype>\S+) ")
 
 
 @given("input data from {source}")
@@ -47,20 +49,21 @@ def step_impl(context, command):
 @then("the output matches with the files in {output}")
 def step_impl(context, output):
     orig_dir = os.getcwd()
+    dtype = _get_dtype_from_command(context.command)
     try:
         os.chdir(context.datapath)
         # NOTE: 81231 / 151404144 (0.054%) pixels are currently wrong in VIIRS_L1B.
-        compare_command = " ".join(
-            [
-                os.path.join(context.p2g_path, "p2g_compare.sh"),
-                output,
-                context.temp_dir,
-                "-vv",
-                "--margin-of-error",
-                str(81231 / 1514041.44),
-            ]
-        )
-        exit_status = subprocess.call(compare_command, shell=True)
+        compare_command = [
+            os.path.join(context.p2g_path, "p2g_compare.sh"),
+            output,
+            context.temp_dir,
+            "-vv",
+            "--dtype",
+            dtype or "float32",
+            "--margin-of-error",
+            str(81231 / 1514041.44),
+        ]
+        exit_status = subprocess.call(" ".join(compare_command), shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
         os.chdir(orig_dir)
@@ -99,3 +102,10 @@ def step_impl(context, output):
             assert num_products_in_output == 1, f"Too many of {product_name} in command output"
     finally:
         os.chdir(orig_dir)
+
+
+def _get_dtype_from_command(cmd_str):
+    match_res = DTYPE_REGEX.match(cmd_str)
+    if match_res is None:
+        return None
+    return match_res.match_dict()["dtype"]
