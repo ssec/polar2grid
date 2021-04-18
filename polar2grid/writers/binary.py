@@ -48,7 +48,11 @@ import dask.array as da
 logger = logging.getLogger(__name__)
 
 DEFAULT_OUTPUT_FILENAMES = {
-    None: "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat"
+    None: "{platform_name!u}_{sensor!u}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
+    "abi_l1b": "{platform_name!u}_{sensor!u}_{observation_type}{scene_abbr}_"
+    "{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
+    "viirs_sdr": "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
+    "mirs": "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
 }
 
 
