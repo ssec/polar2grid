@@ -39,21 +39,13 @@ def all_equal(iterable: list[str]) -> bool:
 
 
 class FakeHDF5:
-    def __init__(self, fh : TextIO[IO[AnyStr]], output_filename: str, var_name: str, compression: bool):
-        self.fh = fh
+    def __init__(self, output_filename: str, var_name: str):
         self.output_filename = output_filename
         self.var_name = var_name
-        self.compression = compression
-
-    def check_variable(self, data: da.array, dtype: np.dtype, append: bool):
-        if append:
-            if self.var_name in self.fh:
-                LOG.warning("Product %s already exists in hdf5 group, will delete existing dataset", self.var_name)
-                del self.fh[self.var_name]
-        self.fh.create_dataset(self.var_name, shape=data.shape, dtype=dtype, compression=self.compression)
 
     def __setitem__(self, write_slice, data):
-        self.fh[self.var_name][write_slice] = data
+        with h5py.File(self.output_filename, mode="a") as fh:
+            fh[self.var_name][write_slice] = data
 
 
 class hdf5writer(ImageWriter):
@@ -124,7 +116,7 @@ class hdf5writer(ImageWriter):
         return h5_fh
 
     @staticmethod
-    def create_proj_group(filename: str, parent : TextIO, area_def):
+    def create_proj_group(filename: str, parent: TextIO, area_def):
         """Create the top level group from projection information."""
         projection_name = (area_def.name).replace(" ", "_")
         # if top group alrady made, return.
@@ -151,8 +143,15 @@ class hdf5writer(ImageWriter):
         return projection_name
 
     @staticmethod
+    def check_variable(fh, var_name: str, data: da.array, dtype: np.dtype, append: bool, compression: bool):
+        if append:
+            if var_name in fh:
+                LOG.warning("Product %s already exists in hdf5 group, will delete existing dataset", var_name)
+                del fh[var_name]
+        dset = fh.create_dataset(var_name, shape=data.shape, dtype=dtype, compression=compression)
+
     def write_geolocation(
-            fh, fname: str, parent: str, area_def, dtype: np.dtype, append: bool, compression, chunks: tuple[int, int]
+        self, fh, fname: str, parent: str, area_def, dtype: np.dtype, append: bool, compression, chunks: tuple[int, int]
     ) -> tuple[list, list[FakeHDF5]]:
         """Delayed Geolocation Data write."""
         msg = ("Adding geolocation 'longitude' and " "'latitude' datasets for grid %s", parent)
@@ -164,10 +163,10 @@ class hdf5writer(ImageWriter):
         lon_grp = "{}/longitude".format(parent)
         lat_grp = "{}/latitude".format(parent)
 
-        lon_dataset = FakeHDF5(fh, fname, lon_grp, compression)
-        lon_dataset.check_variable(lon_data, dtype, append)
-        lat_dataset = FakeHDF5(fh, fname, lat_grp, compression)
-        lat_dataset.check_variable(lat_data, dtype, append)
+        lon_dataset = FakeHDF5(fname, lon_grp)
+        lon_dset = self.check_variable(fh, lon_grp, lon_data, dtype, append, compression)
+        lat_dataset = FakeHDF5(fname, lat_grp)
+        lat_dset = self.check_variable(fh, lat_grp, lat_data, dtype, append, compression)
 
         return [lon_data, lat_data], [lon_dataset, lat_dataset]
 
@@ -195,8 +194,16 @@ class hdf5writer(ImageWriter):
 
         return
 
-    def save_datasets(self, dataset: list[xr.DataArray], filename=None, dtype=None, fill_value=None, append=True,
-                      compute=True, **kwargs):
+    def save_datasets(
+        self,
+        dataset: list[xr.DataArray],
+        filename=None,
+        dtype=None,
+        fill_value=None,
+        append=True,
+        compute=True,
+        **kwargs,
+    ):
         """Save hdf5 datasets."""
 
         compression = kwargs.pop("compression", None) if "compression" in kwargs else None
@@ -239,8 +246,8 @@ class hdf5writer(ImageWriter):
                 d_dtype = data_arr.dtype if dtype is None else dtype
                 hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["name"])
 
-                file_var = FakeHDF5(hdf5_fh, filename, hdf_subgroup, compression)
-                file_var.check_variable(data_arr.data, d_dtype, append)
+                file_var = FakeHDF5(filename, hdf_subgroup)
+                arr_dset = self.check_variable(hdf5_fh, hdf_subgroup, data_arr.data, d_dtype, append, compression)
                 dsets.append(data_arr.data)
                 target_fh.append(file_var)
         return (dsets, target_fh)
