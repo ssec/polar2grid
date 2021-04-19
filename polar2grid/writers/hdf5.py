@@ -214,6 +214,7 @@ class hdf5writer(ImageWriter):
 
         # will this be written to one or multiple files?
         output_names = []
+
         for dataset_id in dataset:
             args = self._output_file_kwargs(dataset_id, dtype)
             out_filename = filename or self.get_filename(**args)
@@ -224,23 +225,23 @@ class hdf5writer(ImageWriter):
         if not all_equal(output_names):
             LOG.warning("Writing to {}".format(filename))
 
-        delayed_write = []
         hdf5_fh = self.open_hdf5_filehandle(filename, append=append)
 
         datasets_by_area = self.iter_by_area(dataset)
         for area, data_arrs in datasets_by_area:
-
+            # Initialize source/targets at start of each new AREA grouping.
+            dsets = []
+            targets = []
             # open hdf5 file handle, check if group already exists.
             parent_group = self.create_proj_group(filename, hdf5_fh, area)
 
             if add_geolocation:
                 chunks = data_arrs[0].chunks
-                dsets, target_fh = self.write_geolocation(
+                geo_sets, fnames = self.write_geolocation(
                     hdf5_fh, filename, parent_group, area, dtype, append, compression, chunks
                 )
-            else:
-                dsets = list()
-                target_fh = list()
+                dsets.append(geo_sets)
+                targets.append(fnames)
 
             for data_arr in data_arrs:
                 d_dtype = data_arr.dtype if dtype is None else dtype
@@ -249,8 +250,8 @@ class hdf5writer(ImageWriter):
                 file_var = FakeHDF5(filename, hdf_subgroup)
                 arr_dset = self.check_variable(hdf5_fh, hdf_subgroup, data_arr.data, d_dtype, append, compression)
                 dsets.append(data_arr.data)
-                target_fh.append(file_var)
-        return (dsets, target_fh)
+                targets.append(file_var)
+        return (dsets, targets)
 
 
 def add_writer_argument_groups(parser, group=None):
