@@ -5,7 +5,6 @@ import os
 import sys
 import logging
 
-import pkg_resources
 import satpy
 import h5py
 import numpy as np
@@ -16,7 +15,6 @@ from itertools import groupby
 from datetime import datetime as datetime
 from satpy.dataset import DataID
 from satpy.writers import ImageWriter
-from satpy.writers import compute_writer_results
 
 from trollsift import Parser
 
@@ -34,26 +32,6 @@ LOG = logging.getLogger(__name__)
 DEFAULT_OUTPUT_FILENAMES = {None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.h5"}
 
 
-def dist_is_editable(dist) -> bool:
-    """Is distribution an editable install?"""
-    for path_item in sys.path:
-        egg_link = os.path.join(path_item, dist.project_name + ".egg-link")
-        if os.path.isfile(egg_link):
-            return True
-    return False
-
-
-dist = pkg_resources.get_distribution("polar2grid")
-if dist_is_editable(dist):
-    p2g_etc = os.path.join(dist.module_path, "etc")
-else:
-    p2g_etc = os.path.join(sys.prefix, "etc", "polar2grid")
-
-config_path = satpy.config.get("config_path")
-if p2g_etc not in config_path:
-    satpy.config.set(config_path=config_path + [p2g_etc])
-
-
 def all_equal(iterable: list[str]) -> bool:
     "Returns True if all the elements are equal to each other"
     g = groupby(iterable)
@@ -67,12 +45,12 @@ class FakeHDF5:
         self.var_name = var_name
         self.compression = compression
 
-    def check_variable(self, data: da.array, append: bool):
+    def check_variable(self, data: da.array, dtype: np.dtype, append: bool):
         if append:
             if self.var_name in self.fh:
                 LOG.warning("Product %s already exists in hdf5 group, will delete existing dataset", self.var_name)
                 del self.fh[self.var_name]
-        self.fh.create_dataset(self.var_name, shape=data.shape, dtype=data.dtype, compression=self.compression)
+        self.fh.create_dataset(self.var_name, shape=data.shape, dtype=dtype, compression=self.compression)
 
     def __setitem__(self, write_slice, data):
         self.fh[self.var_name][write_slice] = data
@@ -81,12 +59,11 @@ class FakeHDF5:
 class hdf5writer(ImageWriter):
     """Writer for hdf5 files."""
 
-    def __init__(self, dtype=None, **kwargs):
+    def __init__(self, **kwargs):
         """Init the writer."""
         super(hdf5writer, self).__init__(**kwargs)
-        self.dtype = self.info.get("dtype") if dtype is None else dtype
 
-    def _output_file_kwargs(self, dataset):
+    def _output_file_kwargs(self, dataset, dtype):
         """Get file keywords from data for output_pattern."""
         if isinstance(dataset, list):
             dataset = dataset[0]
@@ -97,11 +74,11 @@ class hdf5writer(ImageWriter):
         args = dataset.attrs
         args["grid_name"] = "native" if isinstance(area, SwathDefinition) else area.area_id
         args["rows"], args["columns"] = area.shape
-        args["data_type"] = self.dtype
+        args["data_type"] = dtype
 
         return args
 
-    def iter_by_area(self, datasets: List[xr.DataArray]):
+    def iter_by_area(self, datasets: list[xr.DataArray]):
         """Generate datasets grouped by Area.
         :return: list of (area_obj, list of dataset objects)
         """
@@ -175,25 +152,27 @@ class hdf5writer(ImageWriter):
 
     @staticmethod
     def write_geolocation(
-        fh, fname: str, parent: str, area_def, append : bool, compression, chunks : tuple[int, int]
-    ) -> Tuple[list, List[FakeHDF5]]:
+            fh, fname: str, parent: str, area_def, dtype: np.dtype, append: bool, compression, chunks: tuple[int, int]
+    ) -> tuple[list, list[FakeHDF5]]:
         """Delayed Geolocation Data write."""
         msg = ("Adding geolocation 'longitude' and " "'latitude' datasets for grid %s", parent)
         LOG.info(msg)
         lon_data, lat_data = area_def.get_lonlats(chunks=chunks)
 
+        dtype = lon_data.dtype if dtype is None else dtype
+
         lon_grp = "{}/longitude".format(parent)
         lat_grp = "{}/latitude".format(parent)
 
         lon_dataset = FakeHDF5(fh, fname, lon_grp, compression)
-        lon_dataset.check_variable(lon_data, append)
+        lon_dataset.check_variable(lon_data, dtype, append)
         lat_dataset = FakeHDF5(fh, fname, lat_grp, compression)
-        lat_dataset.check_variable(lat_data, append)
+        lat_dataset.check_variable(lat_data, dtype, append)
 
         return [lon_data, lat_data], [lon_dataset, lat_dataset]
 
     @staticmethod
-    def create_variable(filename: str, parent, hdf_subgroup: str, dataset_id: xr.DataArray, **kwargs):
+    def create_variable(filename: str, parent, hdf_subgroup: str, dataset_id: xr.DataArray, dtype: np.dtype, **kwargs):
         """Create a hdf5 subgroup and it's attributes."""
 
         ds_attrs = dataset_id.attrs
@@ -203,7 +182,7 @@ class hdf5writer(ImageWriter):
             del parent[hdf_subgroup]
 
         try:
-            dset = parent.create_dataset(hdf_subgroup, shape=dataset_id.shape, dtype=dataset_id.dtype, **kwargs)
+            dset = parent.create_dataset(hdf_subgroup, shape=dataset_id.shape, dtype=dtype, **kwargs)
         except ValueError:
             if os.path.isfile(filename):
                 os.remove(filename)
@@ -216,8 +195,10 @@ class hdf5writer(ImageWriter):
 
         return
 
-    def save_datasets(self, dataset : List[xr.DataArray], filename=None, dtype=None, fill_value=None, append=True, compute=True, **kwargs):
+    def save_datasets(self, dataset: list[xr.DataArray], filename=None, dtype=None, fill_value=None, append=True,
+                      compute=True, **kwargs):
         """Save hdf5 datasets."""
+
         compression = kwargs.pop("compression", None) if "compression" in kwargs else None
         if compression == "none":
             compression = None
@@ -227,7 +208,7 @@ class hdf5writer(ImageWriter):
         # will this be written to one or multiple files?
         output_names = []
         for dataset_id in dataset:
-            args = self._output_file_kwargs(dataset_id)
+            args = self._output_file_kwargs(dataset_id, dtype)
             out_filename = filename or self.get_filename(**args)
             output_names.append(out_filename)
         one_file = all_equal(output_names)
@@ -241,23 +222,25 @@ class hdf5writer(ImageWriter):
 
         datasets_by_area = self.iter_by_area(dataset)
         for area, data_arrs in datasets_by_area:
+
             # open hdf5 file handle, check if group already exists.
             parent_group = self.create_proj_group(filename, hdf5_fh, area)
 
             if add_geolocation:
                 chunks = data_arrs[0].chunks
                 dsets, target_fh = self.write_geolocation(
-                    hdf5_fh, filename, parent_group, area, append, compression, chunks
+                    hdf5_fh, filename, parent_group, area, dtype, append, compression, chunks
                 )
             else:
                 dsets = list()
                 target_fh = list()
 
             for data_arr in data_arrs:
+                d_dtype = data_arr.dtype if dtype is None else dtype
                 hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["name"])
 
                 file_var = FakeHDF5(hdf5_fh, filename, hdf_subgroup, compression)
-                file_var.check_variable(data_arr.data, append)
+                file_var.check_variable(data_arr.data, d_dtype, append)
                 dsets.append(data_arr.data)
                 target_fh.append(file_var)
         return (dsets, target_fh)
