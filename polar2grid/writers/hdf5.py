@@ -13,18 +13,12 @@ import dask.array as da
 
 from itertools import groupby
 from datetime import datetime as datetime
-from satpy.dataset import DataID
-from satpy.writers import ImageWriter
-
-from trollsift import Parser
+from satpy.writers import Writer
+from satpy.writers import split_results, compute_writer_results
 
 from pyresample.geometry import SwathDefinition
 from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
-from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList, str_to_dtype, int_or_float
-
-from polar2grid.core.script_utils import setup_logging, rename_log_file, create_exc_handler
-
-USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
+from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList, str_to_dtype
 
 LOG = logging.getLogger(__name__)
 
@@ -33,7 +27,7 @@ DEFAULT_OUTPUT_FILENAMES = {None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%
 
 
 def all_equal(iterable: list[str]) -> bool:
-    "Returns True if all the elements are equal to each other"
+    """Returns True if all the elements are equal to each other."""
     g = groupby(iterable)
     return next(g, True) and not next(g, False)
 
@@ -48,12 +42,15 @@ class FakeHDF5:
             fh[self.var_name][write_slice] = data
 
 
-class hdf5writer(ImageWriter):
+class HDF5writer(Writer):
     """Writer for hdf5 files."""
 
     def __init__(self, **kwargs):
         """Init the writer."""
-        super(hdf5writer, self).__init__(**kwargs)
+        super(HDF5writer, self).__init__(**kwargs)
+
+        if self.filename_parser is None:
+            raise RuntimeError("No filename pattern or specific filename provided")
 
     def _output_file_kwargs(self, dataset, dtype):
         """Get file keywords from data for output_pattern."""
@@ -72,31 +69,17 @@ class hdf5writer(ImageWriter):
 
     def iter_by_area(self, datasets: list[xr.DataArray]):
         """Generate datasets grouped by Area.
-        :return: list of (area_obj, list of dataset objects)
+
+        Args:
+            datasets (list[xr.DataArray]):  A list of dataArray objects stored in Scene.
+        Returns:
+            dictionary:  a dictionary of {AreaDef:  list[xr.DataArray]}
         """
         datasets_by_area = {}
         for ds in datasets:
             a = ds.attrs.get("area")
             datasets_by_area.setdefault(a, []).append(ds)
         return datasets_by_area.items()
-
-    def get_filename(self, **kwargs) -> str:
-        """Create a filename for saving output data.
-
-        Args:
-            kwargs (dict): Attributes and other metadata to use for formatting
-                the previously provided `filename`.
-
-        """
-        if self.filename_parser is None:
-            raise RuntimeError("No filename pattern or specific filename provided")
-        self.filename_parser = Parser(convert_p2g_pattern_to_satpy(self.filename_parser.fmt))
-        output_filename = self.filename_parser.compose(kwargs)
-        dirname = os.path.dirname(output_filename)
-        if dirname and not os.path.isdir(dirname):
-            LOG.info("Creating output directory: {}".format(dirname))
-            os.makedirs(dirname)
-        return output_filename
 
     @staticmethod
     def open_hdf5_filehandle(output_filename: str, append: bool = True):
@@ -118,7 +101,7 @@ class hdf5writer(ImageWriter):
     @staticmethod
     def create_proj_group(filename: str, parent: TextIO, area_def):
         """Create the top level group from projection information."""
-        projection_name = (area_def.name).replace(" ", "_")
+        projection_name = (area_def.area_id).replace(" ", "_")
         # if top group alrady made, return.
         if projection_name in parent:
             return projection_name
@@ -199,9 +182,9 @@ class hdf5writer(ImageWriter):
         dataset: list[xr.DataArray],
         filename=None,
         dtype=None,
-        fill_value=None,
         append=True,
         compute=True,
+        chunks=None,
         **kwargs,
     ):
         """Save hdf5 datasets."""
@@ -228,10 +211,11 @@ class hdf5writer(ImageWriter):
         hdf5_fh = self.open_hdf5_filehandle(filename, append=append)
 
         datasets_by_area = self.iter_by_area(dataset)
+        # Initialize source/targets at start of each new AREA grouping.
+        dsets = []
+        targets = []
+
         for area, data_arrs in datasets_by_area:
-            # Initialize source/targets at start of each new AREA grouping.
-            dsets = []
-            targets = []
             # open hdf5 file handle, check if group already exists.
             parent_group = self.create_proj_group(filename, hdf5_fh, area)
 
@@ -251,7 +235,18 @@ class hdf5writer(ImageWriter):
                 arr_dset = self.check_variable(hdf5_fh, hdf_subgroup, data_arr.data, d_dtype, append, compression)
                 dsets.append(data_arr.data)
                 targets.append(file_var)
-        return (dsets, targets)
+
+        results = (dsets, targets)
+        if compute:
+            LOG.info("Computing and writing results...")
+            return compute_writer_results([results])
+
+        targets, sources, delayeds = split_results([results])
+        if delayeds:
+            # This writer had only delayed writes
+            return delayeds
+        else:
+            return targets, sources
 
 
 def add_writer_argument_groups(parser, group=None):
@@ -260,26 +255,21 @@ def add_writer_argument_groups(parser, group=None):
 
     if group is None:
         group = parser.add_argument_group(title="hdf5 Writer")
-    group.add_argument("--output-filename", dest="filename", help="Custom file pattern to save dataset to")
+    group.add_argument(
+        "--output-pattern",
+        dest="filename",
+        type=convert_p2g_pattern_to_satpy,
+        help="Custom file pattern to save dataset to",
+    )
     group.add_argument(
         "--dtype",
         choices=NumpyDtypeList(NUMPY_DTYPE_STRS),
         type=str_to_dtype,
         help="Data type of the output file (8-bit unsigned " "integer by default - uint8)",
     )
-    group.add_argument(
-        "--fill-value", dest="fill_value", type=int_or_float, help="Fill value for invalid data in this dataset."
-    )
     group.add_argument("--compress", default="LZW", help="File compression algorithm (DEFLATE, LZW, NONE, etc)")
     group.add_argument(
-        "--chunks",
-        dest="chunks",
-        type=tuple,
-        help="Chunked storage of dataset. " "Default is chosen appropriate to dataset by h5py.",
-    )
-    group.add_argument(
         "--add-geolocation",
-        dest="add_geolocation",
         action="store_true",
         help="Add 'longitude' and 'latitude' datasets for each grid",
     )
