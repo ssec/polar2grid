@@ -25,7 +25,6 @@
 from __future__ import annotations
 
 import logging
-import re
 
 from typing import Union, Iterable, Generator, Optional
 from satpy import Scene, DataID, DataQuery

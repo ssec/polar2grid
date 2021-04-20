@@ -42,12 +42,12 @@ class FakeHDF5:
             fh[self.var_name][write_slice] = data
 
 
-class HDF5writer(Writer):
+class HDF5Writer(Writer):
     """Writer for hdf5 files."""
 
     def __init__(self, **kwargs):
         """Init the writer."""
-        super(HDF5writer, self).__init__(**kwargs)
+        super(HDF5Writer, self).__init__(**kwargs)
 
         if self.filename_parser is None:
             raise RuntimeError("No filename pattern or specific filename provided")
@@ -256,7 +256,7 @@ def add_writer_argument_groups(parser, group=None):
     if group is None:
         group = parser.add_argument_group(title="hdf5 Writer")
     group.add_argument(
-        "--output-pattern",
+        "--output-filename",
         dest="filename",
         type=convert_p2g_pattern_to_satpy,
         help="Custom file pattern to save dataset to",
