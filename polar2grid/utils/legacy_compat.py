@@ -25,6 +25,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from typing import Union, Iterable, Generator, Optional
 from satpy import Scene, DataID, DataQuery
@@ -40,6 +41,10 @@ def convert_old_p2g_date_frmts(frmt):
         "_HHMMSS": ":%H%M%S",
         "_HHMM": ":%H%M",
     }
+
+    abs_search = re.compile(r"{start_time}").search
+    if bool(abs_search(frmt)):
+        return frmt.replace("{start_time}", "{start_time:%Y%m%d_%H%M}")
     for old_frmt, new_frmt in dt_frmts.items():
         old_start = "start_time{}".format(old_frmt)
         new_start = "start_time{}".format(new_frmt)
@@ -55,10 +60,9 @@ def convert_old_p2g_date_frmts(frmt):
     return frmt
 
 
-def convert_p2g_pattern_to_satpy(output_pattern):
+def convert_p2g_pattern_to_satpy(pattern):
     """Convert old P2G output patterns to new format."""
 
-    fmt = output_pattern.replace("begin_time", "")
     replacements = {
         "satellite": "platform_name",
         "instrument": "sensor",
@@ -66,10 +70,10 @@ def convert_p2g_pattern_to_satpy(output_pattern):
         "product_name": "p2g_name",
     }
     for p2g_kw, satpy_kw in replacements.items():
-        fmt = fmt.replace(p2g_kw, satpy_kw)
-    fmt = convert_old_p2g_date_frmts(fmt)
+        pattern = pattern.replace(p2g_kw, satpy_kw)
+    pattern = convert_old_p2g_date_frmts(pattern)
 
-    return fmt
+    return pattern
 
 
 class AliasHandler:
