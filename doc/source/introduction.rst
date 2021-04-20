@@ -39,7 +39,7 @@ For more low-level information on the design and responsibility of each
 component see the :doc:`design_overview` Appendix.
 
 In |project| a majority of the functionality is provided by the open source
-SatPy library created by the PyTroll group. More information on SatPy and
+SatPy library created by the Pytroll group. More information on SatPy and
 the capabilities it provides to python users can be found in the
 `SatPy documentation <https://satpy.readthedocs.io/en/latest/>`_.
 
@@ -56,7 +56,7 @@ What's New?
         :end-line: 14
 
     For more details on what's new in this version and past versions see the
-    `Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/master/NEWS.rst>`_
+    `Polar2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/master/NEWS.rst>`_
     in the github repository.
 
 .. ifconfig:: is_geo2grid
@@ -68,7 +68,7 @@ What's New?
         :end-line: 7
 
     For more details on what's new in this version and past versions see the
-    `Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/master/NEWS_GEO2GRID.rst>`_
+    `Geo2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/master/NEWS_GEO2GRID.rst>`_
     in the github repository.
 
 

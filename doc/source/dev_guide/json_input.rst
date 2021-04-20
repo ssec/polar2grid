@@ -4,7 +4,7 @@ JSON and Binary Input
 .. warning::
 
     This feature is not finalized and will likely change with more user
-    feedback and as collaboration with the PyTroll team evolves.
+    feedback and as collaboration with the Pytroll team evolves.
 
 Polar2Grid supports many types of input files, but supporting all possible
 formats and schemes would be impossible to keep up with. The simple solution

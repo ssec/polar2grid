@@ -39,7 +39,7 @@ Version 2.2 (2017-12-14)
 Version 2.1 (2016-11-25)
 ------------------------
 
-* Start using PyTroll SatPy library for various features
+* Start using Pytroll SatPy library for various features
 * Phasing out of legacy <reader><writer>.bash scripts and replacing with polar2grid.sh <reader> <writer> implementation.
 * Add ability to output float geotiffs
 * Add ability to store geotiff tiles instead of strips
@@ -60,15 +60,15 @@ Version 2.1 (2016-11-25)
 Roadmap to Version 3.0
 ----------------------
 
-* Collaboration with the PyTroll project and the creation of the new SatPy
+* Collaboration with the Pytroll project and the creation of the new SatPy
   library will result in large internal changes to Polar2Grid.
 
     * SatPy is a replacement for the internals of Polar2Grid and a replacement
-      for the PyTroll mpop package.
+      for the Pytroll mpop package.
     * Migrate Polar2Grid frontends to SatPy readers.
     * Use SatPy for resampling and output writers, not just some readers.
     * Rename frontends to readers, backends to writers, products to datasets.
-    * The remaining roadmap bullets are subject to change based on the PyTroll/Polar2Grid merger.
+    * The remaining roadmap bullets are subject to change based on the Pytroll/Polar2Grid merger.
 
 * Create new grid file format for more flexibility
 
