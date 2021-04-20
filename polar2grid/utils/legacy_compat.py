@@ -42,9 +42,6 @@ def convert_old_p2g_date_frmts(frmt):
         "_HHMM": ":%H%M",
     }
 
-    abs_search = re.compile(r"{start_time}").search
-    if bool(abs_search(frmt)):
-        return frmt.replace("{start_time}", "{start_time:%Y%m%d_%H%M}")
     for old_frmt, new_frmt in dt_frmts.items():
         old_start = "start_time{}".format(old_frmt)
         new_start = "start_time{}".format(new_frmt)
