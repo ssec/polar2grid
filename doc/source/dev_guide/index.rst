@@ -29,6 +29,7 @@ Code repository: https://github.com/ssec/polar2grid
  - :doc:`dev_env`
  - :doc:`swbundle`
  - :doc:`json_input`
+ - :doc:`adding_readers`
 
 Prerequisites
 -------------
@@ -45,19 +46,9 @@ A developer should be familiar with these concepts to develop a new component
 for polar2grid:
 
  - python and numpy programming
- - memory management in terms of how arrays are created/manipulated/copied
  - remapping/regridding satellite imagery swaths (including types of projections)
  - python packaging, specifically `distribute <http://packages.python.org/distribute/>`_ (setuptools)
  - git source code management system and the 'forking' and 'pull request'
    features of http://github.com
+ - Xarray and dask programming and how it is used by the Satpy library
 
-Branching Model
----------------
-
-The branching model used by the Polar2Grid team follows a basic ``feature-branch`` -> ``develop`` -> ``master``
-structure.
-New features still in development should get their own branches. Once these features are complete they are merged
-into the ``develop`` branch. Once all features for a particular release have been tested and are considered
-"release ready" they are merged into the ``master`` branch. If a master merge is for a new minor version a
-maintenance branch is also created for future bug fixes. This branching model was inspired from the discussion
-`here <http://nvie.com/posts/a-successful-git-branching-model/>`_.
