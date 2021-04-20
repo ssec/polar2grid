@@ -11,7 +11,7 @@ enhancements:
         kwargs:
           xp: [0., 25., 55., 100., 255.]
           fp: [0., 90., 140., 175., 255.]
-          coordinate_divisor: 255
+          reference_divisor: 255
   false_color_crefl:
     sensor: viirs
     standard_name: false_color
@@ -24,7 +24,7 @@ enhancements:
         kwargs:
           xp: [0., 25., 55., 100., 255.]
           fp: [0., 90., 140., 175., 255.]
-          coordinate_divisor: 255
+          reference_divisor: 255
   viirs_crefl:
     sensor: viirs
     standard_name: corrected_reflectance
@@ -37,7 +37,7 @@ enhancements:
         kwargs:
           xp: [0., 25., 55., 100., 255.]
           fp: [0., 90., 140., 175., 255.]
-          coordinate_divisor: 255
+          reference_divisor: 255
   pre_enhanced_viirs_crefl:
     sensor: viirs
     standard_name: preenhanced_crefl
