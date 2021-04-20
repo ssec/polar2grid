@@ -48,3 +48,272 @@ enhancements:
         kwargs:
           min_stretch: -10.0
           max_stretch: 10.0
+
+  # Polar2Grid - MiRS Products
+  # MIRS BTs - ATMS
+  btemp_23v:
+    name: btemp_23v
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 140, max_stretch: 300.}
+  btemp_31v:
+    name: btemp_31v
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 140, max_stretch: 300.}
+  btemp_50h:
+    name: btemp_50h
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 170, max_stretch: 290.}
+  btemp_51h:
+    name: btemp_51h
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 170, max_stretch: 290.}
+  btemp_52h:
+    name: btemp_52h
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 170, max_stretch: 290.}
+  btemp_53h:
+    name: btemp_53h
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 270.}
+  btemp_54h1:
+    name: btemp_54h1
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 250.}
+  btemp_54h2:
+    name: btemp_54h2
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 210, max_stretch: 230.}
+  btemp_55h:
+    name: btemp_55h
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 230.}
+  btemp_57h1:
+    name: btemp_57h1
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 230.}
+  btemp_57h2:
+    name: btemp_57h2
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 180, max_stretch: 230.}
+  btemp_57h3:
+    name: btemp_57h3
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 180, max_stretch: 250.}
+  btemp_57h4:
+    name: btemp_57h4
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 180, max_stretch: 250.}
+  btemp_57h5:
+    name: btemp_57h5
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 180, max_stretch: 280.}
+  btemp_57h6:
+    name: btemp_57h6
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 290.}
+  btemp_88v:
+    name: btemp_88v
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 150, max_stretch: 300.}
+  btemp_165h:
+    name: btemp_165h
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 150, max_stretch: 300.}
+  btemp_183h1_npp:
+    name: btemp_183h1
+    platform_name: npp
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 300.}
+  btemp_183h2_npp:
+    name: btemp_183h2
+    platform_name: npp
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 300.}
+  btemp_183h3:
+    name: btemp_183h3
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 280.}
+  btemp_183h4:
+    name: btemp_183h4
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 300.}
+  btemp_183h5:
+    name: btemp_183h5
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 265.}
+
+  # MIRS BTs - NOAA-18 - AMSU-A MHS
+  # MIRS BTs - NOAA-19 - AMSU-A MHS
+  # MIRS BTs - M1 (metopb) - AMSU-A MHS
+  # MIRS BTs - M2 (metopa) - AMSU-A MHS
+  btemp_50v:
+    name: btemp_50v
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 170, max_stretch: 290.}
+  btemp_52v:
+    name: btemp_52v
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 170, max_stretch: 290.}
+  btemp_54h:
+    name: btemp_54h
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 250.}
+  btemp_54v:
+    name: btemp_54v
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 210, max_stretch: 230.}
+  btemp_89v1:
+    name: btemp_89v1
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 150, max_stretch: 300.}
+  btemp_89v2:
+    name: btemp_89v2
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 150, max_stretch: 300.}
+  # 157h on OPSO NOAA site
+  btemp_157v:
+    name: btemp_157v
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 150, max_stretch: 300.}
+  # 184h on OSPO NOAA site
+  # http://www.ospo.noaa.gov/Products/atmosphere/mirs/prod_mon.html?sat=JPSS
+  btemp_183h1:
+    name: btemp_183h1
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 265.}
+  # 186h on OSPO NOAA site
+  btemp_183h2:
+    name: btemp_183h2
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 280.}
+  btemp_190v:
+    name: btemp_190v
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 300.}
+
+  # Polar2Grid - CLAVR-x products
+  clavrx_cloud_type:
+    name: cloud_type
+    operations: {}
+  clavrx_cld_temp_acha:
+    name: cld_temp_acha
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 160, max_stretch: 320.}
+  clavrx_cld_height_acha:
+    name: cld_height_acha
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 20000.}
+  clavrx_cloud_phase:
+    name: cloud_phase
+    operations: {}
+  clavrx_cld_opd_dcomp:
+    name: cld_opd_dcomp
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -0.2, max_stretch: 160.}
+  clavrx_cld_opd_nlcomp:
+    name: cld_opd_nlcomp
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -0.2, max_stretch: 160.}
+  clavrx_cld_reff_dcomp:
+    name: cld_reff_dcomp
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 160.}
+  clavrx_cld_reff_nlcomp:
+    name: cld_reff_nlcomp
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 160.}
+  clavrx_cld_emiss_acha:
+    name: cld_emiss_acha
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 1.}
+  clavrx_refl_lunar_dnb_nom:
+    name: refl_lunar_dnb_nom
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -2.0, max_stretch: 150.}
+  # NOTE: rain_rate is slightly different in CLAVR-X versus MiRS
+  clavrx_rain_rate:
+    name: rain_rate
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 32.}
