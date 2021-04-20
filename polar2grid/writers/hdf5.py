@@ -17,7 +17,7 @@ from satpy.writers import Writer
 from satpy.writers import split_results, compute_writer_results
 
 from pyresample.geometry import SwathDefinition
-from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy, output_pattern_parser_error
+from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
 from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList, str_to_dtype
 
 LOG = logging.getLogger(__name__)
@@ -279,13 +279,6 @@ def add_writer_argument_groups(parser, group=None):
         dest="append",
         action="store_false",
         help="Don't append to the hdf5 file if it already exists (otherwise may overwrite data)",
-    )
-
-    group.add_argument(
-        "--output-pattern",
-        dest="output-pattern",
-        type=output_pattern_parser_error,
-        help=SUPPRESS,
     )
 
     return group, None

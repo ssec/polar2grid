@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import logging
 
-import argparse
 from typing import Union, Iterable, Generator, Optional
 from satpy import Scene, DataID, DataQuery
 
@@ -55,10 +54,6 @@ def convert_old_p2g_date_frmts(frmt):
         frmt = frmt.replace(old_end, new_end)
 
     return frmt
-
-
-def output_pattern_parser_error(value):
-    raise DeprecationWarning("--output-pattern is deprecated, use --output-filename")
 
 
 def convert_p2g_pattern_to_satpy(pattern):
