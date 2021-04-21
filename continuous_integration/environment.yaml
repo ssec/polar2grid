@@ -44,3 +44,4 @@ dependencies:
   - satpy
   - python-graphviz
   - sphinx-argparse
+  - sphinxcontrib-apidoc

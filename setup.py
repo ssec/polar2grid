@@ -42,7 +42,7 @@ __docformat__ = "restructuredtext en"
 from setuptools import setup, find_packages, Command
 from glob import glob
 
-version = '2.4.1'
+version = "2.4.1"
 
 
 class PyTest(Command):
@@ -57,7 +57,8 @@ class PyTest(Command):
     def run(self):
         import subprocess
         import sys
-        errno = subprocess.call([sys.executable, 'runtests.py'])
+
+        errno = subprocess.call([sys.executable, "runtests.py"])
         raise SystemExit(errno)
 
 
@@ -83,67 +84,73 @@ classifiers = [
 extras_require = {
     # Backends:
     "awips": ["netCDF4"],
-    "gtiff": ["gdal"],
-    "ninjo": [],
+    "geotiff": ["rasterio"],
     "hdf5": ["h5py"],
     # Other:
-    "remap": ["pyproj>=2.0", "scipy"],
     "utils": ["matplotlib"],
-    "docs": ["sphinx", "rst2pdf"],
+    "docs": ["sphinx", "rst2pdf", "sphinx-argparse", "sphinxcontrib-apidoc"],
     "coastlines": ["pycoast", "pydecorate"],
     # Frontends (included separately):
-    "viirs_sdr": ['h5py'],
-    'modis_l1b': ['pyhdf'],
-    'mirs': ['netCDF4'],
-    "drrtv": ['h5py'],
-    'acspo': ['netCDF4'],
+    "viirs_sdr": ["h5py"],
+    "modis_l1b": ["pyhdf"],
+    "mirs": ["netCDF4"],
+    "drrtv": ["h5py"],
+    "acspo": ["netCDF4"],
 }
 extras_require["all"] = list(set([x for y in extras_require.values() for x in y]))
 
 entry_points = {
-    'console_scripts': [
-        'polar2grid=polar2grid.__main__:p2g_main',
-        'geo2grid=polar2grid.__main__:g2g_main',
+    "console_scripts": [
+        "polar2grid=polar2grid.__main__:p2g_main",
+        "geo2grid=polar2grid.__main__:g2g_main",
     ],
 }
 
 setup(
-    name='polar2grid',
+    name="polar2grid",
     version=version,
-    author='David Hoese, SSEC',
-    author_email='david.hoese@ssec.wisc.edu',
-    license='GPLv3',
+    author="David Hoese, SSEC",
+    author_email="david.hoese@ssec.wisc.edu",
+    license="GPLv3",
     description="Library and scripts to remap satellite data to a grid",
     long_description=readme(),
     classifiers=classifiers,
-    keywords='',
+    keywords="",
     url="http://www.ssec.wisc.edu/software/polar2grid/",
-    packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
+    packages=find_packages(exclude=["ez_setup", "examples", "tests"]),
     include_package_data=True,
-    package_data={'polar2grid': ["compositors/*.ini", "awips/*.ini", "awips/*.yaml",
-                                 "grids/*.conf", "ninjo/*.ini", "core/rescale_configs/*.ini"]},
+    package_data={
+        "polar2grid": [
+            "compositors/*.ini",
+            "awips/*.ini",
+            "awips/*.yaml",
+            "grids/*.conf",
+            "ninjo/*.ini",
+            "core/rescale_configs/*.ini",
+        ]
+    },
     # The location of where these are installed are important for the swbundle and glue scripts!
     # Look at env.sh, glue.py, and glue_legacy.py for where these are pointed to.
-    data_files=[('etc/polar2grid/enhancements', glob('etc/enhancements/*')),
-                ('etc/polar2grid/composites', glob('etc/composites/*')),
-                ('etc/polar2grid/readers', glob('etc/readers/*')),
-                ('etc/polar2grid/writers', glob('etc/writers/*')),
-                ('etc/polar2grid', ['etc/pyspectral.yaml']),
-                ('etc/polar2grid', ['etc/resampling.yaml']),
-                ],
+    data_files=[
+        ("etc/polar2grid/enhancements", glob("etc/enhancements/*")),
+        ("etc/polar2grid/composites", glob("etc/composites/*")),
+        ("etc/polar2grid/readers", glob("etc/readers/*")),
+        ("etc/polar2grid/writers", glob("etc/writers/*")),
+        ("etc/polar2grid", ["etc/pyspectral.yaml"]),
+        ("etc/polar2grid", ["etc/resampling.yaml"]),
+    ],
     zip_safe=True,
-    tests_require=['py.test'],
-    cmdclass={'test': PyTest},
+    tests_require=["py.test"],
+    cmdclass={"test": PyTest},
     install_requires=[
-        'setuptools',       # reading configuration files
-        'satpy',
-        'rasterio',
-        'netCDF4',
-        'h5py',
-        ],
-    python_requires='>=3.8',
+        "setuptools",  # reading configuration files
+        "satpy",
+        "rasterio",
+        "netCDF4",
+        "h5py",
+    ],
+    python_requires=">=3.8",
     extras_require=extras_require,
     entry_points=entry_points,
-    scripts=[file for file in glob('swbundle/*.sh') if file not in ['swbundle/env.sh', 'swbundle/polar2grid_env.sh']]
+    scripts=[file for file in glob("swbundle/*.sh") if file not in ["swbundle/env.sh", "swbundle/polar2grid_env.sh"]],
 )
-

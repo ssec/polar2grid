@@ -29,14 +29,12 @@
     ------------------
 
     - :doc:`image_processing_techniques`
-
-    Developer's Guide
-    -----------------
-
-    - :doc:`Introduction <dev_guide/index>`
-    - :doc:`dev_guide/dev_env`
-    - :doc:`dev_guide/swbundle`
-    - :doc:`dev_guide/json_input`
-    - :doc:`rescaling`
     - :doc:`NEWS`
+    - :doc:`rescaling`
+
+    .. toctree::
+        :maxdepth: 1
+        :numbered:
+
+        dev_guide/index
 

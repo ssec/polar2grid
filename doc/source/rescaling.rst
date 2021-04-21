@@ -1,6 +1,13 @@
 Rescaling
 =========
 
+.. warning::
+
+    This page refers to legacy implementations of "enhancement" in Polar2Grid.
+    It does not necessarily reflect how Polar2Grid and Geo2Grid currently work
+    and may be outdated. It is kept here for reference, but may be removed in
+    the future.
+
 Rescaling is a polar2grid component shared by most writers that rescales
 gridded image data via the ``Rescaler`` object. Rescaling provides simple
 enhancement capabilities to prepare the product data for an image format.
@@ -18,7 +25,7 @@ from the configuration file values.
 
 .. note::
 
-    Rescaling configuration files will change in future versions due to PyTroll
+    Rescaling configuration files will change in future versions due to Pytroll
     collaboration and merging. Please contact us if you have a custom configuration
     that you need converted to the new (similar) format.
 

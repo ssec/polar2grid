@@ -21,16 +21,18 @@ from datetime import datetime
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+# sys.path.insert(0, os.path.abspath('.'))
 print("Adding the following directories to PYTHONPATH:")
 BASE_PATH = "../../../"
-for dirname in [x for x in os.listdir(BASE_PATH) if os.path.isdir(os.path.join(BASE_PATH, x)) and x.startswith("polar2grid")]:
+for dirname in [
+    x for x in os.listdir(BASE_PATH) if os.path.isdir(os.path.join(BASE_PATH, x)) and x.startswith("polar2grid")
+]:
     print("\t ", os.path.realpath(os.path.join(BASE_PATH, dirname)))
     sys.path.insert(0, os.path.abspath(os.path.join(BASE_PATH, dirname)))
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 # Handle building documentation for polar2grid or geo2grid
-is_geo2grid = 'geo' in os.getenv('POLAR2GRID_DOC', 'polar').lower()
+is_geo2grid = "geo" in os.getenv("POLAR2GRID_DOC", "polar").lower()
 
 # Hack to download example images instead of storing them in git
 images = (
@@ -79,7 +81,7 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes16_abi_naturalcolor.png",
 )
 script_path = os.path.dirname(os.path.realpath(__file__))
-image_dst = os.path.join(script_path, '_static', 'example_images')
+image_dst = os.path.join(script_path, "_static", "example_images")
 os.makedirs(image_dst, exist_ok=True)
 
 for image_url in images:
@@ -87,18 +89,18 @@ for image_url in images:
     image_pathname = os.path.join(image_dst, image_fn)
     if os.path.isfile(image_pathname):
         continue
-    elif image_url.startswith('http://') or image_url.startswith('https://'):  # or image_url.startswith('ftp://'):
+    elif image_url.startswith("http://") or image_url.startswith("https://"):  # or image_url.startswith('ftp://'):
         print("Downloading example image: {}".format(image_url))
-        with urllib.request.urlopen(image_url) as remote_img, open(image_pathname, 'wb') as local_img:
+        with urllib.request.urlopen(image_url) as remote_img, open(image_pathname, "wb") as local_img:
             copyfileobj(remote_img, local_img)
-    elif image_url.startswith('ftp://'):
+    elif image_url.startswith("ftp://"):
         print("Downloading example image: {}".format(image_url))
         parts = image_url.split("/")
         server = parts[2]
         ftp_fn = "/".join(parts[3:])
-        ftp = ftplib.FTP(server, user='ftp')  # hope for anonymous
-        out_file = open(image_pathname, 'wb')
-        ftp.retrbinary('RETR {}'.format(ftp_fn), out_file.write)
+        ftp = ftplib.FTP(server, user="ftp")  # hope for anonymous
+        out_file = open(image_pathname, "wb")
+        ftp.retrbinary("RETR {}".format(ftp_fn), out_file.write)
     else:
         raise ValueError("Not sure how to download image: {}".format(image_url))
 
@@ -106,8 +108,9 @@ for image_url in images:
 
 
 def setup(app):
-    app.add_css_file('prettytables.css')
-    app.add_config_value('is_geo2grid', is_geo2grid, 'env')
+    app.add_css_file("prettytables.css")
+    app.add_config_value("is_geo2grid", is_geo2grid, "env")
+
 
 # -- General configuration -----------------------------------------------------
 rst_epilog = """
@@ -118,48 +121,82 @@ rst_epilog = """
 """
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
+# needs_sphinx = '1.0'
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.graphviz', 'sphinx.ext.todo', 'sphinx.ext.coverage',
-              'sphinx.ext.imgmath', 'sphinx.ext.intersphinx', 'sphinx.ext.napoleon',
-              'sphinx.ext.ifconfig', 'sphinx.ext.viewcode', 'sphinxarg.ext',
-              'doi_role', 'toctree_filter']
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.graphviz",
+    "sphinx.ext.todo",
+    "sphinx.ext.coverage",
+    "sphinx.ext.imgmath",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.ifconfig",
+    "sphinx.ext.viewcode",
+    "sphinxarg.ext",
+    "doi_role",
+    "toctree_filter",
+    "sphinxcontrib.apidoc",
+]
+
+# API docs
+apidoc_module_dir = "../../polar2grid"
+apidoc_output_dir = "dev_guide/api"
+apidoc_excluded_paths = [
+    "avhrr",
+    "awips",
+    "compositors",
+    "crefl",
+    "drrtv",
+    "iasi",
+    "mirs",
+    "modis",
+    "ninjo",
+    "viirs",
+    "core/fbf.py",
+    "core/histogram.py",
+    "core/rescale.py",
+    "core/roles.py",
+]
+apidoc_separate_modules = True
+apidoc_extra_args = ["-P"]
+
 
 numfig = True
 
 # graphviz_dot = 'dot'
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The encoding of source files.
-#source_encoding = 'utf-8-sig'
+# source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
 if is_geo2grid:
-    project = u'Geo2Grid'
-    version = '1.0.2'
-    release = '1.0.2'
+    project = "Geo2Grid"
+    version = "1.0.2"
+    release = "1.0.2"
 else:
-    project = u'Polar2Grid'
+    project = "Polar2Grid"
 
     # The version info for the project you're documenting, acts as replacement for
     # |version| and |release|, also used in various other places throughout the
     # built documents.
     #
     # The short X.Y version.
-    version = '2.3'
+    version = "2.3"
 
     # The full version, including alpha/beta/rc tags.
-    release = '2.3'
+    release = "2.3"
 
 rst_epilog += """
 .. |project| replace:: {}
@@ -168,73 +205,75 @@ rst_epilog += """
 .. |project_env| replace:: ${}_HOME
 .. |cspp_abbr| replace:: {}
 .. |cspp_title| replace:: {}
-""".format(project, project.lower(), project.lower(), project.upper(),
-           'CSPP Geo' if is_geo2grid else 'CSPP LEO',
-           'CSPP for Geostationary Satellites' if is_geo2grid else 'CSPP for Low Earth Orbiter Satellites',
-           )
+""".format(
+    project,
+    project.lower(),
+    project.lower(),
+    project.upper(),
+    "CSPP Geo" if is_geo2grid else "CSPP LEO",
+    "CSPP for Geostationary Satellites" if is_geo2grid else "CSPP for Low Earth Orbiter Satellites",
+)
 
 # Custom TOCTree filtering
-toc_filter_exclude = ['polar2grid'] if is_geo2grid else ['geo2grid']
+toc_filter_exclude = ["polar2grid"] if is_geo2grid else ["geo2grid"]
 
-copyright = u'2012-{:%Y}, University of Wisconsin SSEC'.format(datetime.utcnow())
+copyright = "2012-{:%Y}, University of Wisconsin SSEC".format(datetime.utcnow())
 
 # The language for content autogenerated by Sphinx. Refer to documentation
 # for a list of supported languages.
-#language = None
+# language = None
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
-#today = ''
+# today = ''
 # Else, today_fmt is used as the format for a strftime call.
-#today_fmt = '%B %d, %Y'
+# today_fmt = '%B %d, %Y'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = [
-    "glue_scripts/common_opts.rst"
-    ]
+exclude_patterns = ["glue_scripts/common_opts.rst"]
 
 # The reST default role (used for this markup: `text`) to use for all documents.
-#default_role = None
+# default_role = None
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
+# add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-#add_module_names = True
+# add_module_names = True
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
-#show_authors = False
+# show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # A list of ignored prefixes for module index sorting.
-#modindex_common_prefix = []
+# modindex_common_prefix = []
 
 
 # -- Options for HTML output ---------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'alabaster'
+html_theme = "alabaster"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+# html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
+# html_theme_path = []
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+# html_title = None
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-#html_short_title = None
+# html_short_title = None
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
@@ -248,64 +287,62 @@ html_favicon = "_static/favicon.ico"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
-html_last_updated_fmt = '%b %d, %Y'
+html_last_updated_fmt = "%b %d, %Y"
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
 html_use_smartypants = False
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
+# html_sidebars = {}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
-#html_additional_pages = {}
+# html_additional_pages = {}
 
 # If false, no module index is generated.
-#html_domain_indices = True
+# html_domain_indices = True
 
 # If false, no index is generated.
-#html_use_index = True
+# html_use_index = True
 
 # If true, the index is split into individual pages for each letter.
-#html_split_index = False
+# html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+# html_show_sourcelink = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-#html_show_sphinx = True
+# html_show_sphinx = True
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
-#html_show_copyright = True
+# html_show_copyright = True
 
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the
 # base URL from which the finished HTML is served.
-#html_use_opensearch = ''
+# html_use_opensearch = ''
 
 # This is the file name suffix for HTML files (e.g. ".xhtml").
-#html_file_suffix = None
+# html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = project.lower() + 'doc'
+htmlhelp_basename = project.lower() + "doc"
 
 
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
-
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
-
-# Additional stuff for the LaTeX preamble.
-    'preamble': r"""
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
+    # Additional stuff for the LaTeX preamble.
+    "preamble": r"""
 \setcounter{tocdepth}{1}
 \usepackage{pdflscape}
 
@@ -314,9 +351,9 @@ latex_elements = {
 \makeatother
 
 """,
-    'classoptions': ',openany,oneside',
-    'babel': '\\usepackage[english]{babel}',
-    'printindex': '',
+    "classoptions": ",openany,oneside",
+    "babel": "\\usepackage[english]{babel}",
+    "printindex": "",
 }
 
 # new
@@ -361,7 +398,6 @@ latex_elements = {
   \spx@tempa
 }
 """
-
 
 
 """
@@ -423,63 +459,70 @@ latex_elements = {
 """
 
 
-
-
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]), toctree_only.
 if is_geo2grid:
     latex_documents = [
-      ('index', '{}_Documentation_{}.tex'.format(project, version), u'{} Documentation'.format(project),
-       u'NOAA Community Satellite Processing Package \\and for Geostationary Satellites (CSPP Geo)', 'manual', True),
+        (
+            "index",
+            "{}_Documentation_{}.tex".format(project, version),
+            "{} Documentation".format(project),
+            "NOAA Community Satellite Processing Package \\and for Geostationary Satellites (CSPP Geo)",
+            "manual",
+            True,
+        ),
     ]
 else:
     latex_documents = [
-        ('index', '{}_Documentation_{}.tex'.format(project, version), u'{} Documentation'.format(project),
-         u'Released through the \\and NOAA Community Satellite Processing Package (CSPP)', 'manual', True),
+        (
+            "index",
+            "{}_Documentation_{}.tex".format(project, version),
+            "{} Documentation".format(project),
+            "Released through the \\and NOAA Community Satellite Processing Package (CSPP)",
+            "manual",
+            True,
+        ),
     ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-latex_logo = '_static/{}2G_PDF_Logos.png'.format('G' if is_geo2grid else 'P')
+latex_logo = "_static/{}2G_PDF_Logos.png".format("G" if is_geo2grid else "P")
 
 # latex_toplevel_sectioning = 'section'
 
 # If true, show page references after internal links.
-#latex_show_pagerefs = False
+# latex_show_pagerefs = False
 
 # If true, show URL addresses after external links.
-#latex_show_urls = False
+# latex_show_urls = False
 
 # Documents to append as an appendix to all manuals.
 if is_geo2grid:
     latex_appendices = [
-        'design_overview',
+        "design_overview",
         # 'complex_composites/geo2grid_composites',
     ]
 else:
     latex_appendices = [
-        'misc_recipes',
-        'design_overview',
+        "misc_recipes",
+        "design_overview",
         # 'complex_composites/polar2grid_composites',
     ]
 
 # If false, no module index is generated.
 latex_domain_indices = False
 
-latex_engine = 'xelatex'
+latex_engine = "xelatex"
 
 
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    ('index', project.lower(), u'{} Documentation'.format(project),
-     [u'David Hoese'], 1)
-]
+man_pages = [("index", project.lower(), "{} Documentation".format(project), ["David Hoese"], 1)]
 
 # If true, show URL addresses after external links.
-#man_show_urls = False
+# man_show_urls = False
 
 
 # -- Options for Texinfo output ------------------------------------------------
@@ -488,28 +531,34 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', project.lower(), u'{} Documentation'.format(project),
-   u'David Hoese', project.lower(), 'One line description of project.',
-   'Miscellaneous'),
+    (
+        "index",
+        project.lower(),
+        "{} Documentation".format(project),
+        "David Hoese",
+        project.lower(),
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
 
 # Documents to append as an appendix to all manuals.
-#texinfo_appendices = []
+# texinfo_appendices = []
 
 # If false, no module index is generated.
-#texinfo_domain_indices = True
+# texinfo_domain_indices = True
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
-#texinfo_show_urls = 'footnote'
+# texinfo_show_urls = 'footnote'
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
-    'xarray': ('https://xarray.pydata.org/en/stable', None),
-    'dask': ('https://docs.dask.org/en/latest', None),
-    'pyresample': ('https://pyresample.readthedocs.io/en/stable', None),
-    'trollsift': ('https://trollsift.readthedocs.io/en/stable', None),
-    'satpy': ('https://satpy.readthedocs.io/en/stable', None),
-    'trollimage': ('https://trollimage.readthedocs.io/en/stable', None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://docs.scipy.org/doc/numpy", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference", None),
+    "xarray": ("https://xarray.pydata.org/en/stable", None),
+    "dask": ("https://docs.dask.org/en/latest", None),
+    "pyresample": ("https://pyresample.readthedocs.io/en/stable", None),
+    "trollsift": ("https://trollsift.readthedocs.io/en/stable", None),
+    "satpy": ("https://satpy.readthedocs.io/en/stable", None),
+    "trollimage": ("https://trollimage.readthedocs.io/en/stable", None),
 }
