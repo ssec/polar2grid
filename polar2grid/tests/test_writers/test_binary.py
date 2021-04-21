@@ -106,7 +106,7 @@ class TestBinaryWriter:
         exp_fn = tmpdir.join("noaa-20_viirs_fake_p2g_name_20210101_120000_fake_area.dat")
 
         if dst_dtype is None:
-            dst_dtype = src_dtype
+            dst_dtype = src_dtype if src_dtype != np.float64 else np.float32
         assert os.path.isfile(exp_fn)
         data = np.memmap(str(exp_fn), mode="r", dtype=dst_dtype)
         exp_data = self._generate_expected_output(src_data_arr, dst_dtype, enhance)

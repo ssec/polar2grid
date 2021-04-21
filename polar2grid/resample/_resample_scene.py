@@ -38,11 +38,12 @@ logger = logging.getLogger(__name__)
 def _crs_equal(a, b):
     """Compare two projection dictionaries for "close enough" equality."""
     # pyproj 2.0+
-    if hasattr(a, 'crs') and hasattr(b, 'crs'):
+    if hasattr(a, "crs") and hasattr(b, "crs"):
         return a.crs == b.crs
 
     # fallback
     from osgeo import osr
+
     a = dict(sorted(a.proj_dict.items()))
     b = dict(sorted(b.proj_dict.items()))
     p1 = Proj(a)
@@ -82,24 +83,26 @@ def _get_preserve_resolution(preserve_resolution, resampler, areas_to_resample):
 
     """
     # save original native resolution if possible
-    any_minmax = any(x in ['MIN', 'MAX'] for x in areas_to_resample)
-    is_native = resampler == 'native'
+    any_minmax = any(x in ["MIN", "MAX"] for x in areas_to_resample)
+    is_native = resampler == "native"
     is_default = resampler is None
     return any_minmax and (is_native or is_default) and preserve_resolution
 
 
 def _get_legacy_and_custom_areas(grid_configs):
-    p2g_grid_configs = [x for x in grid_configs if x.endswith('.conf')]
-    pyresample_area_configs = [x for x in grid_configs if not x.endswith('.conf')]
+    p2g_grid_configs = [x for x in grid_configs if x.endswith(".conf")]
+    pyresample_area_configs = [x for x in grid_configs if not x.endswith(".conf")]
     if not grid_configs or p2g_grid_configs:
         # if we were given p2g grid configs or we weren't given any to choose from
         from polar2grid.grids import GridManager
+
         grid_manager = GridManager(*p2g_grid_configs)
     else:
         grid_manager = {}
 
     if pyresample_area_configs:
         from pyresample.utils import parse_area_file
+
         custom_areas = parse_area_file(pyresample_area_configs)
         custom_areas = {x.area_id: x for x in custom_areas}
     else:
@@ -112,19 +115,21 @@ def _get_area_def_from_name(area_name, input_scene, grid_manager, custom_areas):
     if area_name is None:
         # no resampling
         area_def = None
-    elif area_name == 'MAX':
+    elif area_name == "MAX":
         area_def = input_scene.max_area()
-    elif area_name == 'MIN':
+    elif area_name == "MIN":
         area_def = input_scene.min_area()
     elif area_name in custom_areas:
         area_def = custom_areas[area_name]
     elif area_name in grid_manager:
         p2g_def = grid_manager[area_name]
         area_def = p2g_def.to_satpy_area()
-        if isinstance(area_def, DynamicAreaDefinition) and p2g_def['cell_width'] is not None:
+        if isinstance(area_def, DynamicAreaDefinition) and p2g_def["cell_width"] is not None:
             logger.info("Computing dynamic grid parameters...")
-            area_def = area_def.freeze(input_scene.max_area(),
-                                       resolution=(abs(p2g_def['cell_width']), abs(p2g_def['cell_height'])))
+            area_def = area_def.freeze(
+                input_scene.max_area(), resolution=(abs(p2g_def["cell_width"]), abs(p2g_def["cell_height"]))
+            )
+            logger.debug("Frozen dynamic area: %s", area_def)
     else:
         area_def = get_area_def(area_name)
     return area_def
@@ -132,7 +137,7 @@ def _get_area_def_from_name(area_name, input_scene, grid_manager, custom_areas):
 
 def _get_default_resampler(resampler, area_name, area_def, input_scene):
     if resampler is None and area_def is not None:
-        rs = 'native' if area_name in ['MIN', 'MAX'] or _is_native_grid(area_def, input_scene.max_area()) else 'nearest'
+        rs = "native" if area_name in ["MIN", "MAX"] or _is_native_grid(area_def, input_scene.max_area()) else "nearest"
         logger.debug("Setting default resampling to '{}' for grid '{}'".format(rs, area_name))
     else:
         rs = resampler
@@ -147,17 +152,14 @@ class AreaDefResolver:
         self.custom_areas = custom_areas
 
     def __getitem__(self, area_name):
-        return _get_area_def_from_name(area_name,
-                                       self.input_scene,
-                                       self.grid_manager,
-                                       self.custom_areas)
+        return _get_area_def_from_name(area_name, self.input_scene, self.grid_manager, self.custom_areas)
 
 
 def _default_grid(resampler, is_polar2grid):
-    if resampler in ['native']:
-        default_target = 'MAX'
+    if resampler in ["native"]:
+        default_target = "MAX"
     else:
-        default_target = 'wgs84_fit' if is_polar2grid else 'MAX'
+        default_target = "wgs84_fit" if is_polar2grid else "MAX"
     return default_target
 
 
@@ -173,9 +175,9 @@ def _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid):
     resampling_groups = {}
     for data_id in input_scene.keys():
         resampling_args = resampling_dtree.find_match(**input_scene[data_id].attrs)
-        resampler = resampling_args['resampler']
-        resampler_kwargs = resampling_args.get('kwargs', {})
-        default_target = resampling_args.get('default_target', None)
+        resampler = resampling_args["resampler"]
+        resampler_kwargs = resampling_args.get("kwargs", {})
+        default_target = resampling_args.get("default_target", None)
         if default_target is None:
             default_target = _default_grid(resampler, is_polar2grid)
         hashable_kwargs = _hashable_kwargs(resampler_kwargs)
@@ -183,8 +185,16 @@ def _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid):
     return resampling_groups
 
 
-def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
-                   preserve_resolution=True, grid_coverage=0.1, is_polar2grid=True, **resample_kwargs):
+def resample_scene(
+    input_scene,
+    areas_to_resample,
+    grid_configs,
+    resampler,
+    preserve_resolution=True,
+    grid_coverage=0.1,
+    is_polar2grid=True,
+    **resample_kwargs,
+):
     """Resample a single Scene to multiple target areas."""
     area_resolver = AreaDefResolver(input_scene, grid_configs)
     resampling_dtree = ResamplerDecisionTree.from_configs()
@@ -199,9 +209,9 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
     scenes_to_save = []
     for (resampler, _resample_kwargs, default_target), data_ids in resampling_groups.items():
         if areas_to_resample is None:
-            if resampler in ['native']:
+            if resampler in ["native"]:
                 logging.debug("Using default resampling target area 'MAX'.")
-                areas_to_resample = ['MAX']
+                areas_to_resample = ["MAX"]
             elif default_target is None:
                 raise ValueError("No destination grid/area specified and no default available (use -g flag).")
             else:
@@ -226,10 +236,9 @@ def resample_scene(input_scene, areas_to_resample, grid_configs, resampler,
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
             if area_def is not None:
                 scene_to_resample = input_scene
-                if resampler != 'native' and grid_coverage > 0:
+                if resampler != "native" and grid_coverage > 0:
                     logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
-                    filter = ResampleCoverageFilter(target_area=area_def,
-                                                    coverage_fraction=grid_coverage)
+                    filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=grid_coverage)
                     scene_to_resample = filter.filter_scene(input_scene)
                     if scene_to_resample is None:
                         logger.warning("No products were found to overlap with '%s' grid.", area_name)

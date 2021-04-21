@@ -37,7 +37,7 @@ is used.
 
     .. note::
 
-        A collaboration between the Polar2Grid and PyTroll team will change a
+        A collaboration between the Polar2Grid and Pytroll team will change a
         majority of the low-level code in future versions of Polar2Grid.
         However, the bash scripts will still be available to provide the same
         functionality with which users are familiar. Polar2Grid terminology

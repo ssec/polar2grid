@@ -44,12 +44,12 @@ from os.path import exists
 import sys
 
 import logging
-import numpy
+import numpy as np
 
 LOG = logging.getLogger(__name__)
 
 
-def compare_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0):
+def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwargs):
     """Compare 2 binary arrays per pixel
 
     Two pixels are considered different if the absolute value of their
@@ -70,7 +70,7 @@ def compare_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0):
         raise ValueError("Data shapes were not equal: {} | {}".format(array1.shape, array2.shape))
 
     total_pixels = array1.size
-    equal_pixels = numpy.count_nonzero(numpy.isclose(array1, array2, rtol=rtol, atol=atol, equal_nan=True))
+    equal_pixels = np.count_nonzero(np.isclose(array1, array2, rtol=rtol, atol=atol, equal_nan=True))
     diff_pixels = total_pixels - equal_pixels
     if diff_pixels > margin_of_error / 100 * total_pixels:
         LOG.warning("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
@@ -79,11 +79,38 @@ def compare_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0):
     return 0
 
 
-def compare_binary(fn1, fn2, shape, dtype, atol=0.0, margin_of_error=0.0, **kwargs):
-    array1 = numpy.memmap(fn1, shape=shape, dtype=dtype, mode="r")
-    array2 = numpy.memmap(fn2, shape=shape, dtype=dtype, mode="r")
+def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
+    """Debug two arrays being different by visually comparing them."""
+    import matplotlib.pyplot as plt
 
-    return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error)
+    LOG.info("Plotting arrays...")
+    if vmin is None:
+        vmin = min(np.nanmin(array1), np.nanmin(array2))
+        vmax = max(np.nanmax(array1), np.nanmax(array2))
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    ax1.imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
+    ax2.imshow(array2, cmap=cmap, vmin=vmin, vmax=vmax)
+    plt.show()
+    return 0
+
+
+def compare_array(array1, array2, plot=False, **kwargs):
+    if plot:
+        return plot_array(array1, array2, **kwargs)
+    else:
+        return isclose_array(array1, array2, **kwargs)
+
+
+def compare_binary(fn1, fn2, shape, dtype, atol=0.0, margin_of_error=0.0, **kwargs):
+    if dtype is None:
+        dtype = np.float32
+    mmap_kwargs = {"dtype": dtype, "mode": "r"}
+    if shape is not None and shape[0] is not None:
+        mmap_kwargs["shape"] = shape
+    array1 = np.memmap(fn1, **mmap_kwargs)
+    array2 = np.memmap(fn2, **mmap_kwargs)
+
+    return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)
 
 
 def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwargs):
@@ -100,10 +127,10 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwarg
     gtiff1 = gdal.Open(gtiff_fn1, gdal.GA_ReadOnly)
     gtiff2 = gdal.Open(gtiff_fn2, gdal.GA_ReadOnly)
 
-    array1 = gtiff1.GetRasterBand(1).ReadAsArray().astype(numpy.float32)
-    array2 = gtiff2.GetRasterBand(1).ReadAsArray().astype(numpy.float32)
+    array1 = gtiff1.GetRasterBand(1).ReadAsArray().astype(np.float32)
+    array2 = gtiff2.GetRasterBand(1).ReadAsArray().astype(np.float32)
 
-    return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error)
+    return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)
 
 
 def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs):
@@ -123,10 +150,10 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kw
     image2_var = nc2.variables["image"]
     image1_var.set_auto_maskandscale(False)
     image2_var.set_auto_maskandscale(False)
-    image1_data = image1_var[:].astype(numpy.uint8).astype(numpy.float32)
-    image2_data = image2_var[:].astype(numpy.uint8).astype(numpy.float32)
+    image1_data = image1_var[:].astype(np.uint8).astype(np.float32)
+    image2_data = image2_var[:].astype(np.uint8).astype(np.float32)
 
-    return compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error)
+    return compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error, **kwargs)
 
 
 def compare_netcdf(nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs):
@@ -144,7 +171,7 @@ def compare_netcdf(nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0,
         image1_var.set_auto_maskandscale(False)
         image2_var.set_auto_maskandscale(False)
         LOG.debug("Comparing data for variable '{}'".format(v))
-        num_diff += compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error)
+        num_diff += compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
     return num_diff
 
 
@@ -173,7 +200,7 @@ def compare_hdf5(nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, *
         image1_var = nc1[v]
         image2_var = nc2[v]
         LOG.debug("Comparing data for variable '{}'".format(v))
-        num_diff += compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error)
+        num_diff += compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
     return num_diff
 
 
@@ -243,6 +270,10 @@ def main(argv=sys.argv[1:]):
         "--variables",
         nargs="+",
         help="NetCDF/HDF5 variables to read and compare. " "If not provided all variables will be compared.",
+    parser.add_argument(
+        "--plot",
+        action="store_true",
+        help="Show a plot of the two arrays instead of " "checking equality. Used for debugging.",
     )
     parser.add_argument("--margin-of-error", type=float, default=0.0, help="percent of total pixels that can be wrong")
     parser.add_argument(
@@ -257,7 +288,7 @@ def main(argv=sys.argv[1:]):
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
-    kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, "variables": args.variables}
+    kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, "variables": args.variables, "plot": args.plot}
 
     if not exists(args.file1):
         LOG.error("Could not find file {}".format(args.file1))

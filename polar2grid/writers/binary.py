@@ -23,9 +23,13 @@
 """The Binary writer writes band data to a flat binary file.
 
 By default it enhances the data based on the enhancement configuration file
-and then saves the data to a flat binary file of the same data type. A different
-output type can be specified as well as the ``--no-enhance`` command line flag to
-write the "raw" band data.
+and then saves the data to a flat binary file. The output data type will match
+the input data for integer types (ex. uint8 -> uint8), but floating point types
+will always be forced to 32-bit floats for consistency between readers and
+changes in the low-level Satpy library. A different output type can be
+specified using the ``--dtype`` flag. To turn off scaling of the data (a.k.a.
+enhancements) the ``--no-enhance`` command line flag can be specified to write
+the "raw" band data.
 
 """
 
@@ -44,7 +48,11 @@ import dask.array as da
 logger = logging.getLogger(__name__)
 
 DEFAULT_OUTPUT_FILENAMES = {
-    None: "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat"
+    None: "{platform_name!u}_{sensor!u}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
+    "abi_l1b": "{platform_name!u}_{sensor!u}_{observation_type}{scene_abbr}_"
+    "{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
+    "viirs_sdr": "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
+    "mirs": "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
 }
 
 
@@ -64,8 +72,14 @@ class FlatBinaryWriter(ImageWriter):
         img = get_enhanced_image(
             dataset.squeeze(), enhance=self.enhancer, overlay=overlay, decorate=decorate, fill_value=fill_value
         )
-        kwargs["dtype"] = kwargs.get("dtype") or dataset.dtype
+        kwargs["dtype"] = kwargs.get("dtype") or self._get_default_dtype(dataset)
         return self.save_image(img, filename=filename, compute=compute, fill_value=fill_value, **kwargs)
+
+    @staticmethod
+    def _get_default_dtype(data_arr: xr.DataArray) -> np.dtype:
+        if data_arr.dtype == np.float64:
+            return np.float32
+        return data_arr.dtype
 
     def save_image(self, img, filename=None, compute=True, dtype=None, fill_value=None, **kwargs):
         filename = filename or self.get_filename(

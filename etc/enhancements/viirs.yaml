@@ -3,30 +3,77 @@ enhancements:
     sensor: viirs
     standard_name: true_color
     operations:
-      - name: crefl_scaling
-        method: !!python/name:satpy.enhancements.crefl_scaling
+      - name: reflectance_range
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
+      - name: Linear interpolation
+        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
         kwargs:
-          idx: [0., 25., 55., 100., 255.]
-          sc: [0., 90., 140., 175., 255.]
+          xp: [0., 25., 55., 100., 255.]
+          fp: [0., 90., 140., 175., 255.]
+          reference_scale_factor: 255
   false_color_crefl:
     sensor: viirs
     standard_name: false_color
     operations:
-      - name: crefl_scaling
-        method: !!python/name:satpy.enhancements.crefl_scaling
+      - name: reflectance_range
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
+      - name: Linear interpolation
+        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
         kwargs:
-          idx: [0., 25., 55., 100., 255.]
-          sc: [0., 90., 140., 175., 255.]
+          xp: [0., 25., 55., 100., 255.]
+          fp: [0., 90., 140., 175., 255.]
+          reference_scale_factor: 255
   viirs_crefl:
     sensor: viirs
     standard_name: corrected_reflectance
     operations:
-      - name: crefl_scaling
-        method: !!python/name:satpy.enhancements.crefl_scaling
+      - name: reflectance_range
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
+      - name: Linear interpolation
+        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
         kwargs:
-          idx: [0., 25., 55., 100., 255.]
-          sc: [0., 90., 140., 175., 255.]
+          xp: [0., 25., 55., 100., 255.]
+          fp: [0., 90., 140., 175., 255.]
+          reference_scale_factor: 255
   pre_enhanced_viirs_crefl:
     sensor: viirs
     standard_name: preenhanced_crefl
     operations: []
+
+  # Polar2Grid - VIIRS EDR Active Fires
+  viirs_confidence_cat:
+    name: confidence_cat
+    sensor: viirs
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - {colors: ylorrd, min_value: 7, max_value: 9}
+  viirs_confidence_pct:
+    name: confidence_pct
+    sensor: viirs
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - {colors: ylorrd, min_value: 0, max_value: 100}
+  viirs_fire_power:
+    name: power
+    sensor: viirs
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - {colors: ylorrd, min_value: 0, max_value: 250}
+
+  # VIIRS EDR Flood - Configured in Satpy
+#  viirs_water_detection:
+#    name: WaterDetection
+#    sensor: viirs
+#    operations: {}

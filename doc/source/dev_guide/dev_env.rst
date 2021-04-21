@@ -10,16 +10,15 @@ any new features to coordinate efforts.
 
 The main code repository for polar2grid can be found on github at
 https://github.com/ssec/polar2grid.
-If you plan to make a lot of changes over a long period of time it may
-be beneficial to `fork <https://help.github.com/articles/fork-a-repo>`_
-the main repository and then make a
+Changes to this repository are done through a
 `pull request <https://help.github.com/articles/using-pull-requests>`_
-when you believe your code is ready for other developers to see.
+which will require creating a
+`fork <https://help.github.com/articles/fork-a-repo>`_ of the repository.
 
 The following instructions will assist in getting an environment up and running
-that will allow for easy development of polar2grid. Most of the installation
-logic is kept in a simple script. If you would like more control over the installation
-process this script is the place to start.
+that will allow for easy development of polar2grid. The instructions will use a
+conda-based Python environment. This isn't strictly required, but is the
+easiest way to get going.
 
 1. Get a copy of the code repository:
    
@@ -30,18 +29,6 @@ process this script is the place to start.
         git clone https://github.com/ssec/polar2grid.git
         cd polar2grid
 
-    If you are working on a specific branch, like 'ninjo' for example,
-    you should do the following in addition to the above. If you don't know
-    what this is for, don't run it:
-
-    ::
-
-        git checkout -b ninjo origin/ninjo
-
-    .. note::
-
-        The ``develop`` branch has the newest features, but may not be fully tested. The ``master`` branch contains
-        stable/release ready features.
 
 2. Run the development installation script:
 

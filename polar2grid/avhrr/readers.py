@@ -29,7 +29,7 @@
 #     david.hoese@ssec.wisc.edu
 """File access to AVHRR files.
 
-The majority of the AVHRR format and how it is accessed was taken from the mpop package created by the PyTroll group
+The majority of the AVHRR format and how it is accessed was taken from the mpop package created by the Pytroll group
 and is copywritten by SMHI.
 https://github.com/mraspaud/mpop
 
@@ -62,184 +62,190 @@ FT_NOAA = "FT_NOAA"
 AVHRR_CHANNEL_NAMES = ("1", "2", "3A", "3B", "4", "5")
 
 # AAPP 1b header
-_HEADERTYPE = numpy.dtype([("siteid", "S3"),
-                        ("blank", "S1"),
-                        ("l1bversnb", "<i2"),
-                        ("l1bversyr", "<i2"),
-                        ("l1bversdy", "<i2"),
-                        ("reclg", "<i2"),
-                        ("blksz", "<i2"),
-                        ("hdrcnt", "<i2"),
-                        ("filler0", "S6"),
-                        ("dataname", "S42"),
-                        ("prblkid", "S8"),
-                        ("satid", "<i2"),
-                        ("instid", "<i2"),
-                        ("datatype", "<i2"),
-                        ("tipsrc", "<i2"),
-                        ("startdatajd", "<i4"),
-                        ("startdatayr", "<i2"),
-                        ("startdatady", "<i2"),
-                        ("startdatatime", "<i4"),
-                        ("enddatajd", "<i4"),
-                        ("enddatayr", "<i2"),
-                        ("enddatady", "<i2"),
-                        ("enddatatime", "<i4"),
-                        ("cpidsyr", "<i2"),
-                        ("cpidsdy", "<i2"),
-                        ("filler1", "S8"),
-                        # data set quality indicators
-                        ("inststat1", "<i4"),
-                        ("filler2", "S2"),
-                        ("statchrecnb", "<i2"),
-                        ("inststat2", "<i4"),
-                        ("scnlin", "<i2"),
-                        ("callocscnlin", "<i2"),
-                        ("misscnlin", "<i2"),
-                        ("datagaps", "<i2"),
-                        ("okdatafr", "<i2"),
-                        ("pacsparityerr", "<i2"),
-                        ("auxsyncerrsum", "<i2"),
-                        ("timeseqerr", "<i2"),
-                        ("timeseqerrcode", "<i2"),
-                        ("socclockupind", "<i2"),
-                        ("locerrind", "<i2"),
-                        ("locerrcode", "<i2"),
-                        ("pacsstatfield", "<i2"),
-                        ("pacsdatasrc", "<i2"),
-                        ("filler3", "S4"),
-                        ("spare1", "S8"),
-                        ("spare2", "S8"),
-                        ("filler4", "S10"),
-                        # Calibration
-                        ("racalind", "<i2"),
-                        ("solarcalyr", "<i2"),
-                        ("solarcaldy", "<i2"),
-                        ("pcalalgind", "<i2"),
-                        ("pcalalgopt", "<i2"),
-                        ("scalalgind", "<i2"),
-                        ("scalalgopt", "<i2"),
-                        ("irttcoef", "<i2", (4, 6)),
-                        ("filler5", "<i4", (2, )),
-                        # radiance to temperature conversion
-                        ("albcnv", "<i4", (2, 3)),
-                        ("radtempcnv", "<i4", (3, 3)),
-                        ("filler6", "<i4", (3, )),
-                        # Navigation
-                        ("modelid", "S8"),
-                        ("nadloctol", "<i2"),
-                        ("locbit", "<i2"),
-                        ("filler7", "S2"),
-                        ("rollerr", "<i2"),
-                        ("pitcherr", "<i2"),
-                        ("yawerr", "<i2"),
-                        ("epoyr", "<i2"),
-                        ("epody", "<i2"),
-                        ("epotime", "<i4"),
-                        ("smaxis", "<i4"),
-                        ("eccen", "<i4"),
-                        ("incli", "<i4"),
-                        ("argper", "<i4"),
-                        ("rascnod", "<i4"),
-                        ("manom", "<i4"),
-                        ("xpos", "<i4"),
-                        ("ypos", "<i4"),
-                        ("zpos", "<i4"),
-                        ("xvel", "<i4"),
-                        ("yvel", "<i4"),
-                        ("zvel", "<i4"),
-                        ("earthsun", "<i4"),
-                        ("filler8", "S16"),
-                        # analog telemetry conversion
-                        ("pchtemp", "<i2", (5, )),
-                        ("reserved1", "<i2"),
-                        ("pchtempext", "<i2", (5, )),
-                        ("reserved2", "<i2"),
-                        ("pchpow", "<i2", (5, )),
-                        ("reserved3", "<i2"),
-                        ("rdtemp", "<i2", (5, )),
-                        ("reserved4", "<i2"),
-                        ("bbtemp1", "<i2", (5, )),
-                        ("reserved5", "<i2"),
-                        ("bbtemp2", "<i2", (5, )),
-                        ("reserved6", "<i2"),
-                        ("bbtemp3", "<i2", (5, )),
-                        ("reserved7", "<i2"),
-                        ("bbtemp4", "<i2", (5, )),
-                        ("reserved8", "<i2"),
-                        ("eleccur", "<i2", (5, )),
-                        ("reserved9", "<i2"),
-                        ("motorcur", "<i2", (5, )),
-                        ("reserved10", "<i2"),
-                        ("earthpos", "<i2", (5, )),
-                        ("reserved11", "<i2"),
-                        ("electemp", "<i2", (5, )),
-                        ("reserved12", "<i2"),
-                        ("chtemp", "<i2", (5, )),
-                        ("reserved13", "<i2"),
-                        ("bptemp", "<i2", (5, )),
-                        ("reserved14", "<i2"),
-                        ("mhtemp", "<i2", (5, )),
-                        ("reserved15", "<i2"),
-                        ("adcontemp", "<i2", (5, )),
-                        ("reserved16", "<i2"),
-                        ("d4bvolt", "<i2", (5, )),
-                        ("reserved17", "<i2"),
-                        ("d5bvolt", "<i2", (5, )),
-                        ("reserved18", "<i2"),
-                        ("bbtempchn3B", "<i2", (5, )),
-                        ("reserved19", "<i2"),
-                        ("bbtempchn4", "<i2", (5, )),
-                        ("reserved20", "<i2"),
-                        ("bbtempchn5", "<i2", (5, )),
-                        ("reserved21", "<i2"),
-                        ("refvolt", "<i2", (5, )),
-                        ("reserved22", "<i2"),
-                        ])
+_HEADERTYPE = numpy.dtype(
+    [
+        ("siteid", "S3"),
+        ("blank", "S1"),
+        ("l1bversnb", "<i2"),
+        ("l1bversyr", "<i2"),
+        ("l1bversdy", "<i2"),
+        ("reclg", "<i2"),
+        ("blksz", "<i2"),
+        ("hdrcnt", "<i2"),
+        ("filler0", "S6"),
+        ("dataname", "S42"),
+        ("prblkid", "S8"),
+        ("satid", "<i2"),
+        ("instid", "<i2"),
+        ("datatype", "<i2"),
+        ("tipsrc", "<i2"),
+        ("startdatajd", "<i4"),
+        ("startdatayr", "<i2"),
+        ("startdatady", "<i2"),
+        ("startdatatime", "<i4"),
+        ("enddatajd", "<i4"),
+        ("enddatayr", "<i2"),
+        ("enddatady", "<i2"),
+        ("enddatatime", "<i4"),
+        ("cpidsyr", "<i2"),
+        ("cpidsdy", "<i2"),
+        ("filler1", "S8"),
+        # data set quality indicators
+        ("inststat1", "<i4"),
+        ("filler2", "S2"),
+        ("statchrecnb", "<i2"),
+        ("inststat2", "<i4"),
+        ("scnlin", "<i2"),
+        ("callocscnlin", "<i2"),
+        ("misscnlin", "<i2"),
+        ("datagaps", "<i2"),
+        ("okdatafr", "<i2"),
+        ("pacsparityerr", "<i2"),
+        ("auxsyncerrsum", "<i2"),
+        ("timeseqerr", "<i2"),
+        ("timeseqerrcode", "<i2"),
+        ("socclockupind", "<i2"),
+        ("locerrind", "<i2"),
+        ("locerrcode", "<i2"),
+        ("pacsstatfield", "<i2"),
+        ("pacsdatasrc", "<i2"),
+        ("filler3", "S4"),
+        ("spare1", "S8"),
+        ("spare2", "S8"),
+        ("filler4", "S10"),
+        # Calibration
+        ("racalind", "<i2"),
+        ("solarcalyr", "<i2"),
+        ("solarcaldy", "<i2"),
+        ("pcalalgind", "<i2"),
+        ("pcalalgopt", "<i2"),
+        ("scalalgind", "<i2"),
+        ("scalalgopt", "<i2"),
+        ("irttcoef", "<i2", (4, 6)),
+        ("filler5", "<i4", (2,)),
+        # radiance to temperature conversion
+        ("albcnv", "<i4", (2, 3)),
+        ("radtempcnv", "<i4", (3, 3)),
+        ("filler6", "<i4", (3,)),
+        # Navigation
+        ("modelid", "S8"),
+        ("nadloctol", "<i2"),
+        ("locbit", "<i2"),
+        ("filler7", "S2"),
+        ("rollerr", "<i2"),
+        ("pitcherr", "<i2"),
+        ("yawerr", "<i2"),
+        ("epoyr", "<i2"),
+        ("epody", "<i2"),
+        ("epotime", "<i4"),
+        ("smaxis", "<i4"),
+        ("eccen", "<i4"),
+        ("incli", "<i4"),
+        ("argper", "<i4"),
+        ("rascnod", "<i4"),
+        ("manom", "<i4"),
+        ("xpos", "<i4"),
+        ("ypos", "<i4"),
+        ("zpos", "<i4"),
+        ("xvel", "<i4"),
+        ("yvel", "<i4"),
+        ("zvel", "<i4"),
+        ("earthsun", "<i4"),
+        ("filler8", "S16"),
+        # analog telemetry conversion
+        ("pchtemp", "<i2", (5,)),
+        ("reserved1", "<i2"),
+        ("pchtempext", "<i2", (5,)),
+        ("reserved2", "<i2"),
+        ("pchpow", "<i2", (5,)),
+        ("reserved3", "<i2"),
+        ("rdtemp", "<i2", (5,)),
+        ("reserved4", "<i2"),
+        ("bbtemp1", "<i2", (5,)),
+        ("reserved5", "<i2"),
+        ("bbtemp2", "<i2", (5,)),
+        ("reserved6", "<i2"),
+        ("bbtemp3", "<i2", (5,)),
+        ("reserved7", "<i2"),
+        ("bbtemp4", "<i2", (5,)),
+        ("reserved8", "<i2"),
+        ("eleccur", "<i2", (5,)),
+        ("reserved9", "<i2"),
+        ("motorcur", "<i2", (5,)),
+        ("reserved10", "<i2"),
+        ("earthpos", "<i2", (5,)),
+        ("reserved11", "<i2"),
+        ("electemp", "<i2", (5,)),
+        ("reserved12", "<i2"),
+        ("chtemp", "<i2", (5,)),
+        ("reserved13", "<i2"),
+        ("bptemp", "<i2", (5,)),
+        ("reserved14", "<i2"),
+        ("mhtemp", "<i2", (5,)),
+        ("reserved15", "<i2"),
+        ("adcontemp", "<i2", (5,)),
+        ("reserved16", "<i2"),
+        ("d4bvolt", "<i2", (5,)),
+        ("reserved17", "<i2"),
+        ("d5bvolt", "<i2", (5,)),
+        ("reserved18", "<i2"),
+        ("bbtempchn3B", "<i2", (5,)),
+        ("reserved19", "<i2"),
+        ("bbtempchn4", "<i2", (5,)),
+        ("reserved20", "<i2"),
+        ("bbtempchn5", "<i2", (5,)),
+        ("reserved21", "<i2"),
+        ("refvolt", "<i2", (5,)),
+        ("reserved22", "<i2"),
+    ]
+)
 
 # AAPP 1b scanline
-_SCANTYPE = numpy.dtype([("scnlin", "<i2"),
-                      ("scnlinyr", "<i2"),
-                      ("scnlindy", "<i2"),
-                      ("clockdrift", "<i2"),
-                      ("scnlintime", "<i4"),
-                      ("scnlinbit", "<i2"),
-                      ("filler0", "S10"),
-                      ("qualind", "<i4"),
-                      ("scnlinqual", "<i4"),
-                      ("calqual", "<i2", (3, )),
-                      ("cbiterr", "<i2"),
-                      ("filler1", "S8"),
-                      # Calibration
-                      ("calvis", "<i4", (3, 3, 5)),
-                      ("calir", "<i4", (3, 2, 3)),
-                      ("filler2", "<i4", (3, )),
-                      # Navigation
-                      ("navstat", "<i4"),
-                      ("attangtime", "<i4"),
-                      ("rollang", "<i2"),
-                      ("pitchang", "<i2"),
-                      ("yawang", "<i2"),
-                      ("scalti", "<i2"),
-                      ("ang", "<i2", (51, 3)),
-                      ("filler3", "<i2", (3, )),
-                      ("pos", "<i4", (51, 2)),
-                      ("filler4", "<i4", (2, )),
-                      ("telem", "<i2", (103, )),
-                      ("filler5", "<i2"),
-                      ("hrpt", "<i2", (2048, 5)),
-                      ("filler6", "<i4", (2, )),
-                      # tip minor frame header
-                      ("tipmfhd", "<i2", (7, 5)),
-                      # cpu telemetry
-                      ("cputel", "S6", (2, 5)),
-                      ("filler7", "<i2", (67, )),
-                      ])
+_SCANTYPE = numpy.dtype(
+    [
+        ("scnlin", "<i2"),
+        ("scnlinyr", "<i2"),
+        ("scnlindy", "<i2"),
+        ("clockdrift", "<i2"),
+        ("scnlintime", "<i4"),
+        ("scnlinbit", "<i2"),
+        ("filler0", "S10"),
+        ("qualind", "<i4"),
+        ("scnlinqual", "<i4"),
+        ("calqual", "<i2", (3,)),
+        ("cbiterr", "<i2"),
+        ("filler1", "S8"),
+        # Calibration
+        ("calvis", "<i4", (3, 3, 5)),
+        ("calir", "<i4", (3, 2, 3)),
+        ("filler2", "<i4", (3,)),
+        # Navigation
+        ("navstat", "<i4"),
+        ("attangtime", "<i4"),
+        ("rollang", "<i2"),
+        ("pitchang", "<i2"),
+        ("yawang", "<i2"),
+        ("scalti", "<i2"),
+        ("ang", "<i2", (51, 3)),
+        ("filler3", "<i2", (3,)),
+        ("pos", "<i4", (51, 2)),
+        ("filler4", "<i4", (2,)),
+        ("telem", "<i2", (103,)),
+        ("filler5", "<i2"),
+        ("hrpt", "<i2", (2048, 5)),
+        ("filler6", "<i4", (2,)),
+        # tip minor frame header
+        ("tipmfhd", "<i2", (7, 5)),
+        # cpu telemetry
+        ("cputel", "S6", (2, 5)),
+        ("filler7", "<i2", (67,)),
+    ]
+)
 
 
 class AVHRRReader(object):
-    """Basic file reader for AVHRR files.
-    """
+    """Basic file reader for AVHRR files."""
+
     def __init__(self, filename):
         self.filename = os.path.basename(filename)
         self.filepath = os.path.realpath(filename)
@@ -256,8 +262,7 @@ class AVHRRReader(object):
         return key in _SCANTYPE.names or key in _HEADERTYPE.names
 
     def __getitem__(self, key):
-        """Get HDF5 variable, making it easier to access attributes.
-        """
+        """Get HDF5 variable, making it easier to access attributes."""
         try:
             return self._data[key]
         except (ValueError, KeyError):
@@ -317,7 +322,7 @@ def _ir_calibrate(data_reader, irchn, calib_type):
     *calib_type* = 2: Radiances
     """
 
-    count = data_reader['hrpt'][:, :, irchn + 2].astype(numpy.float)
+    count = data_reader["hrpt"][:, :, irchn + 2].astype(numpy.float)
 
     if calib_type == 0:
         return count
@@ -325,16 +330,14 @@ def _ir_calibrate(data_reader, irchn, calib_type):
     # Mask unnaturally low values
     mask = count == 0.0
 
-    k1_ = numpy.expand_dims(data_reader['calir'][:, irchn, 0, 0] / 1.0e9, 1)
-    k2_ = numpy.expand_dims(data_reader['calir'][:, irchn, 0, 1] / 1.0e6, 1)
-    k3_ = numpy.expand_dims(data_reader['calir'][:, irchn, 0, 2] / 1.0e6, 1)
+    k1_ = numpy.expand_dims(data_reader["calir"][:, irchn, 0, 0] / 1.0e9, 1)
+    k2_ = numpy.expand_dims(data_reader["calir"][:, irchn, 0, 1] / 1.0e6, 1)
+    k3_ = numpy.expand_dims(data_reader["calir"][:, irchn, 0, 2] / 1.0e6, 1)
 
     # Count to radiance conversion:
     rad = k1_ * count * count + k2_ * count + k3_
 
-    all_zero = numpy.logical_and(numpy.logical_and(numpy.equal(k1_, 0),
-                                             numpy.equal(k2_, 0)),
-                              numpy.equal(k3_, 0))
+    all_zero = numpy.logical_and(numpy.logical_and(numpy.equal(k1_, 0), numpy.equal(k2_, 0)), numpy.equal(k3_, 0))
     idx = numpy.indices((all_zero.shape[0],))
     suspect_line_nums = numpy.repeat(idx[0], all_zero[:, 0])
     if suspect_line_nums.any():
@@ -345,20 +348,19 @@ def _ir_calibrate(data_reader, irchn, calib_type):
         return numpy.ma.masked_array(rad, numpy.isnan(rad))
 
     # Central wavenumber:
-    cwnum = data_reader['radtempcnv'][0, irchn, 0]
+    cwnum = data_reader["radtempcnv"][0, irchn, 0]
     if irchn == 0:
         cwnum = cwnum / 1.0e2
     else:
         cwnum = cwnum / 1.0e3
 
-    bandcor_2 = data_reader['radtempcnv'][0, irchn, 1] / 1e5
-    bandcor_3 = data_reader['radtempcnv'][0, irchn, 2] / 1e6
+    bandcor_2 = data_reader["radtempcnv"][0, irchn, 1] / 1e5
+    bandcor_3 = data_reader["radtempcnv"][0, irchn, 2] / 1e6
 
     ir_const_1 = 1.1910659e-5
     ir_const_2 = 1.438833
 
-    t_planck = (ir_const_2 * cwnum) / \
-        numpy.log(1 + ir_const_1 * cwnum * cwnum * cwnum / rad)
+    t_planck = (ir_const_2 * cwnum) / numpy.log(1 + ir_const_1 * cwnum * cwnum * cwnum / rad)
 
     # Band corrections applied to t_planck to get correct
     # brightness temperature for channel:
@@ -367,12 +369,12 @@ def _ir_calibrate(data_reader, irchn, calib_type):
     else:  # AAPP 1 to 4
         tb_ = (t_planck - bandcor_2) / bandcor_3
 
-    #tb_[tb_ <= 0] = np.nan
+    # tb_[tb_ <= 0] = np.nan
     # Data with count=0 are often related to erroneous (bad) lines, but in case
     # of saturation (channel 3b) count=0 can be observed and associated to a
     # real measurement. So we leave out this filtering to the user!
     # tb_[count == 0] = np.nan
-    #tb_[rad == 0] = np.nan
+    # tb_[rad == 0] = np.nan
     tb_[mask] = numpy.nan
     return numpy.ma.masked_array(tb_, numpy.isnan(tb_))
 
@@ -380,7 +382,7 @@ def _ir_calibrate(data_reader, irchn, calib_type):
 def interpolate_1km_geolocation(lons_40km, lats_40km):
     """Interpolate AVHRR 40km navigation to 1km.
 
-    This code was extracted from the python-geotiepoints package from the PyTroll group. To avoid adding another
+    This code was extracted from the python-geotiepoints package from the Pytroll group. To avoid adding another
     dependency to this package this simple case from the geotiepoints was copied.
     """
     cols40km = numpy.arange(24, 2048, 40)
@@ -415,26 +417,25 @@ def interpolate_1km_geolocation(lons_40km, lats_40km):
 
 
 def get_lons_from_cartesian(x__, y__):
-    """Get longitudes from cartesian coordinates.
-    """
+    """Get longitudes from cartesian coordinates."""
     return rad2deg(arccos(x__ / sqrt(x__ ** 2 + y__ ** 2))) * sign(y__)
 
 
 def get_lats_from_cartesian(x__, y__, z__, thr=0.8):
-    """Get latitudes from cartesian coordinates.
-    """
+    """Get latitudes from cartesian coordinates."""
     # if we are at low latitudes - small z, then get the
     # latitudes only from z. If we are at high latitudes (close to the poles)
     # then derive the latitude using x and y:
-    lats = numpy.where((z__ < thr * EARTH_RADIUS) & (z__ > -thr * EARTH_RADIUS),
-                       90 - rad2deg(arccos(z__/EARTH_RADIUS)),
-                       sign(z__) * (90 - rad2deg(arcsin(sqrt(x__ ** 2 + y__ ** 2) / EARTH_RADIUS))))
+    lats = numpy.where(
+        (z__ < thr * EARTH_RADIUS) & (z__ > -thr * EARTH_RADIUS),
+        90 - rad2deg(arccos(z__ / EARTH_RADIUS)),
+        sign(z__) * (90 - rad2deg(arcsin(sqrt(x__ ** 2 + y__ ** 2) / EARTH_RADIUS))),
+    )
     return lats
 
 
 def geolocation_calibration(data_reader, chn, calib_type):
-    """Special function to hide the fact that we need to interpolate 40km resolution geolocation to 1km.
-    """
+    """Special function to hide the fact that we need to interpolate 40km resolution geolocation to 1km."""
     # Hacked up cache
     if hasattr(data_reader, "lons_1km"):
         if chn == 0:
@@ -466,9 +467,16 @@ def get_band_3_mask(data_reader, chn, calib_type):
     return numpy.expand_dims((data_reader["scnlinbit"] & 1) == 1, 1)
 
 
-class VarInfo(namedtuple("FileVar", ["var_name", "index", "scale_factor", "calibrate_func", "calibrate_level", "data_type"])):
-    def __new__(cls, var_name, index=(0,), scale_factor=None, calibrate_func=None, calibrate_level=1, data_type=numpy.float32):
-        return super(VarInfo, cls).__new__(cls, var_name, index, scale_factor, calibrate_func, calibrate_level, data_type)
+class VarInfo(
+    namedtuple("FileVar", ["var_name", "index", "scale_factor", "calibrate_func", "calibrate_level", "data_type"])
+):
+    def __new__(
+        cls, var_name, index=(0,), scale_factor=None, calibrate_func=None, calibrate_level=1, data_type=numpy.float32
+    ):
+        return super(VarInfo, cls).__new__(
+            cls, var_name, index, scale_factor, calibrate_func, calibrate_level, data_type
+        )
+
 
 # TODO: Add lat/lon interpolation (this module probably)
 
@@ -490,7 +498,7 @@ FILE_TYPES[FT_AAPP] = {
     K_BAND1: VarInfo("hrpt", 0, None, _vis_calibrate),
     K_BAND2: VarInfo("hrpt", 1, None, _vis_calibrate),
     K_BAND3a: VarInfo("hrpt", 2, None, _vis_calibrate),
-    K_BAND3b: VarInfo("hrpt", 0, None, _ir_calibrate), # + 2 to channel number in IR calibration functions
+    K_BAND3b: VarInfo("hrpt", 0, None, _ir_calibrate),  # + 2 to channel number in IR calibration functions
     K_BAND4: VarInfo("hrpt", 1, None, _ir_calibrate),
     K_BAND5: VarInfo("hrpt", 2, None, _ir_calibrate),
     K_BAND3_MASK: VarInfo("scnlinbit", None, None, get_band_3_mask, data_type=numpy.int32),
