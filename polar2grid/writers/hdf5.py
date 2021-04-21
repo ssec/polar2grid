@@ -1,18 +1,57 @@
+#!/usr/bin/env python3
+# encoding: utf-8
+# Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+#     input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+#
+# Written by David Hoese    December 2014
+# University of Wisconsin-Madison
+# Space Science and Engineering Center
+# 1225 West Dayton Street
+# Madison, WI  53706
+# david.hoese@ssec.wisc.edu
+
+"""
+The HDF5 writer creates HDF5 files with data arrays from satpy.Scene.
+
+All selected products are in one file.
+Products are subgrouped together under a parent HDF5 data group
+based on the data product projection/remapping (parent projection group).
+Each parent projection group contains attributes describing the projection.
+Product subgroups contain attributes of the data including timestamps,
+sensor and platform information.
+See the command line arguments for HDF5 compression options, the flag to include
+longitude and latitude data in the file, instructions for output-filename
+patterns, and product selection.
+"""
 from __future__ import annotations
 from typing import TextIO
 
 import os
-import sys
 import logging
 
-import satpy
 import h5py
 import numpy as np
 import xarray as xr
-import dask.array as da
 
 from itertools import groupby
-from datetime import datetime as datetime
 from satpy.writers import Writer
 from satpy.writers import split_results, compute_writer_results
 
@@ -27,17 +66,21 @@ DEFAULT_OUTPUT_FILENAMES = {None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%
 
 
 def all_equal(iterable: list[str]) -> bool:
-    """Returns True if all the elements are equal to each other."""
+    """Return True if all the elements are equal to each other."""
     g = groupby(iterable)
     return next(g, True) and not next(g, False)
 
 
 class FakeHDF5:
+    """Use fake hdf class to create targets for da.store and delayed sources."""
+
     def __init__(self, output_filename: str, var_name: str):
+        """Initialize filename target with appropriate var_name for the data."""
         self.output_filename = output_filename
         self.var_name = var_name
 
     def __setitem__(self, write_slice, data):
+        """Write data arrays to HDF5 file either delayed or not."""
         with h5py.File(self.output_filename, mode="a") as fh:
             fh[self.var_name][write_slice] = data
 
@@ -125,14 +168,6 @@ class HDF5Writer(Writer):
 
         return projection_name
 
-    @staticmethod
-    def check_variable(fh, var_name: str, data: da.array, dtype: np.dtype, append: bool, compression: bool):
-        if append:
-            if var_name in fh:
-                LOG.warning("Product %s already exists in hdf5 group, will delete existing dataset", var_name)
-                del fh[var_name]
-        dset = fh.create_dataset(var_name, shape=data.shape, dtype=dtype, compression=compression)
-
     def write_geolocation(
         self, fh, fname: str, parent: str, area_def, dtype: np.dtype, append: bool, compression, chunks: tuple[int, int]
     ) -> tuple[list, list[FakeHDF5]]:
@@ -142,29 +177,39 @@ class HDF5Writer(Writer):
         lon_data, lat_data = area_def.get_lonlats(chunks=chunks)
 
         dtype = lon_data.dtype if dtype is None else dtype
+        data_shape = lon_data.shape
 
         lon_grp = "{}/longitude".format(parent)
         lat_grp = "{}/latitude".format(parent)
 
+        if append:
+            for var_name in [lon_grp, lat_grp]:
+                if var_name in fh:
+                    LOG.warning("Product %s already exists in hdf5 group, will delete existing dataset", var_name)
+                    del fh[var_name]
+
         lon_dataset = FakeHDF5(fname, lon_grp)
-        lon_dset = self.check_variable(fh, lon_grp, lon_data, dtype, append, compression)
         lat_dataset = FakeHDF5(fname, lat_grp)
-        lat_dset = self.check_variable(fh, lat_grp, lat_data, dtype, append, compression)
+        fh.create_dataset(lon_grp, shape=data_shape, dtype=dtype, compression=compression)
+        fh.create_dataset(lat_grp, shape=data_shape, dtype=dtype, compression=compression)
 
         return [lon_data, lat_data], [lon_dataset, lat_dataset]
 
     @staticmethod
-    def create_variable(filename: str, parent, hdf_subgroup: str, dataset_id: xr.DataArray, dtype: np.dtype, **kwargs):
-        """Create a hdf5 subgroup and it's attributes."""
+    def create_variable(
+        filename: str, hdf_fh, hdf_subgroup: str, data_arr: xr.DataArray, dtype: np.dtype, compression: bool
+    ):
+        """Create a hdf5 data variable and attributes for the variable."""
+        ds_attrs = data_arr.attrs
 
-        ds_attrs = dataset_id.attrs
+        d_dtype = data_arr.dtype if dtype is None else dtype
 
-        if hdf_subgroup in parent:
+        if hdf_subgroup in hdf_fh:
             LOG.warning("Product %s already in hdf5 group," "will delete existing dataset", hdf_subgroup)
-            del parent[hdf_subgroup]
+            del hdf_fh[hdf_subgroup]
 
         try:
-            dset = parent.create_dataset(hdf_subgroup, shape=dataset_id.shape, dtype=dtype, **kwargs)
+            dset = hdf_fh.create_dataset(hdf_subgroup, shape=data_arr.shape, dtype=d_dtype, compression=compression)
         except ValueError:
             if os.path.isfile(filename):
                 os.remove(filename)
@@ -174,8 +219,6 @@ class HDF5Writer(Writer):
         dset.attrs["instrument"] = ds_attrs["sensor"]
         dset.attrs["begin_time"] = ds_attrs["start_time"].isoformat()
         dset.attrs["end_time"] = ds_attrs["end_time"].isoformat()
-
-        return
 
     def save_datasets(
         self,
@@ -188,7 +231,6 @@ class HDF5Writer(Writer):
         **kwargs,
     ):
         """Save hdf5 datasets."""
-
         compression = kwargs.pop("compression", None) if "compression" in kwargs else None
         if compression == "none":
             compression = None
@@ -199,10 +241,9 @@ class HDF5Writer(Writer):
         output_names = []
 
         for dataset_id in dataset:
-            args = self._output_file_kwargs(dataset_id, dtype)
-            out_filename = filename or self.get_filename(**args)
+            file_attrs = self._output_file_kwargs(dataset_id, dtype)
+            out_filename = filename or self.get_filename(**file_attrs)
             output_names.append(out_filename)
-        one_file = all_equal(output_names)
 
         filename = output_names[0]
         if not all_equal(output_names):
@@ -228,11 +269,11 @@ class HDF5Writer(Writer):
                 targets.append(fnames)
 
             for data_arr in data_arrs:
-                d_dtype = data_arr.dtype if dtype is None else dtype
                 hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["name"])
 
                 file_var = FakeHDF5(filename, hdf_subgroup)
-                arr_dset = self.check_variable(hdf5_fh, hdf_subgroup, data_arr.data, d_dtype, append, compression)
+                self.create_variable(filename, hdf5_fh, hdf_subgroup, data_arr, dtype, compression)
+
                 dsets.append(data_arr.data)
                 targets.append(file_var)
 
@@ -251,8 +292,6 @@ class HDF5Writer(Writer):
 
 def add_writer_argument_groups(parser, group=None):
     """Create writer argument groups."""
-    from argparse import SUPPRESS
-
     if group is None:
         group = parser.add_argument_group(title="hdf5 Writer")
     group.add_argument(
