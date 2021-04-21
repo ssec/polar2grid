@@ -100,8 +100,12 @@ class HDF5Writer(Writer):
         if isinstance(dataset, list):
             dataset = dataset[0]
             area = dataset[0].attrs["area"]
+            d_dtype = dataset[0].dtype
         else:
             area = dataset.attrs["area"]
+            d_dtype = dataset.dtype
+
+        dtype = d_dtype if dtype is None else dtype
 
         args = dataset.attrs
         args["grid_name"] = "native" if isinstance(area, SwathDefinition) else area.area_id
