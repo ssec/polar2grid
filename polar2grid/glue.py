@@ -110,13 +110,47 @@ def get_default_output_filename(reader: str, writer: str):
     return ofile_map.get(reader)
 
 
-def get_input_files(input_filenames):
-    """Convert directories to list of files."""
+def _fsfiles_for_s3(input_filenames):
+    """Convert S3 URLs to something Satpy can understand and use.
+
+    Examples:
+        Example S3 URLs (no caching):
+
+        .. code-block:: bash
+
+            polar2grid.sh ... -f s3://noaa-goes16/ABI-L1b-RadC/2019/001/17/*_G16_s20190011702186*
+
+        Example S3 URLs using fsspec caching:
+
+        .. code-block:: bash
+
+            polar2grid.sh ... -f simplecache::s3://noaa-goes16/ABI-L1b-RadC/2019/001/17/*_G16_s20190011702186*
+
+    """
+    import fsspec
+    from satpy.readers import FSFile
+
+    kwargs = {"anon": True}
+    if "simplecache::" in input_filenames[0]:
+        kwargs = {"s3": kwargs}
+    for open_file in fsspec.open_files(input_filenames, **kwargs):
+        yield FSFile(open_file)
+
+
+def _filenames_from_local(input_filenames):
     for fn in input_filenames:
         if os.path.isdir(fn):
             yield from glob(os.path.join(fn, "*"))
         else:
             yield fn
+
+
+def get_input_files(input_filenames):
+    """Convert directories to list of files."""
+    if "s3://" in input_filenames[0]:
+        yield from _fsfiles_for_s3(input_filenames)
+    else:
+        yield from _filenames_from_local(input_filenames)
 
 
 def write_scene(scn, writers, writer_args, datasets, to_save=None):
@@ -666,6 +700,10 @@ basic processing with limited products:
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
     logging.getLogger("rasterio").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("fsspec").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("s3fs").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("aiobotocore").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("botocore").setLevel(levels[min(2, args.verbosity)])
     sys.excepthook = create_exc_handler(LOG.name)
     if levels[min(3, args.verbosity)] > logging.DEBUG:
         import warnings
