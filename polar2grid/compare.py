@@ -269,18 +269,19 @@ def main(argv=sys.argv[1:]):
     parser.add_argument(
         "--variables",
         nargs="+",
-        help="NetCDF/HDF5 variables to read and compare. " "If not provided all variables will be compared.",
+        help="NetCDF/HDF5 variables to read and compare. If not provided all variables will be compared.",
+    )
     parser.add_argument(
         "--plot",
         action="store_true",
-        help="Show a plot of the two arrays instead of " "checking equality. Used for debugging.",
+        help="Show a plot of the two arrays instead of checking equality. Used for debugging.",
     )
     parser.add_argument("--margin-of-error", type=float, default=0.0, help="percent of total pixels that can be wrong")
     parser.add_argument(
         "file_type",
         type=_file_type,
         nargs="?",
-        help="type of files being compare. If not provided it " "will be determined based on file extension.",
+        help="type of files being compare. If not provided it will be determined based on file extension.",
     )
     parser.add_argument("file1", help="filename of the first file to compare")
     parser.add_argument("file2", help="filename of the second file to compare")
