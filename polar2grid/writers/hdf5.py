@@ -86,7 +86,7 @@ class FakeHDF5:
 
 
 class HDF5Writer(Writer):
-    """Writer for hdf5 files."""
+    """Writer for HDF5 files."""
 
     def __init__(self, **kwargs):
         """Init the writer."""
@@ -129,7 +129,7 @@ class HDF5Writer(Writer):
         return datasets_by_area.items()
 
     @staticmethod
-    def open_hdf5_filehandle(output_filename: str, append: bool = True):
+    def open_HDF5_filehandle(output_filename: str, append: bool = True):
         """Open a HDF5 file handle."""
         if os.path.isfile(output_filename):
             if append:
@@ -189,7 +189,7 @@ class HDF5Writer(Writer):
         if append:
             for var_name in [lon_grp, lat_grp]:
                 if var_name in fh:
-                    LOG.warning("Product %s already exists in hdf5 group, will delete existing dataset", var_name)
+                    LOG.warning("Product %s already exists in HDF5 group, will delete existing dataset", var_name)
                     del fh[var_name]
 
         lon_dataset = FakeHDF5(fname, lon_grp)
@@ -203,13 +203,13 @@ class HDF5Writer(Writer):
     def create_variable(
         filename: str, hdf_fh, hdf_subgroup: str, data_arr: xr.DataArray, dtype: np.dtype, compression: bool
     ):
-        """Create a hdf5 data variable and attributes for the variable."""
+        """Create a HDF5 data variable and attributes for the variable."""
         ds_attrs = data_arr.attrs
 
         d_dtype = data_arr.dtype if dtype is None else dtype
 
         if hdf_subgroup in hdf_fh:
-            LOG.warning("Product %s already in hdf5 group," "will delete existing dataset", hdf_subgroup)
+            LOG.warning("Product %s already in HDF5 group," "will delete existing dataset", hdf_subgroup)
             del hdf_fh[hdf_subgroup]
 
         try:
@@ -234,7 +234,7 @@ class HDF5Writer(Writer):
         chunks=None,
         **kwargs,
     ):
-        """Save hdf5 datasets."""
+        """Save HDF5 datasets."""
         compression = kwargs.pop("compression", None) if "compression" in kwargs else None
         if compression == "none":
             compression = None
@@ -253,7 +253,7 @@ class HDF5Writer(Writer):
         if not all_equal(output_names):
             LOG.warning("Writing to {}".format(filename))
 
-        hdf5_fh = self.open_hdf5_filehandle(filename, append=append)
+        HDF5_fh = self.open_HDF5_filehandle(filename, append=append)
 
         datasets_by_area = self.iter_by_area(dataset)
         # Initialize source/targets at start of each new AREA grouping.
@@ -261,13 +261,13 @@ class HDF5Writer(Writer):
         targets = []
 
         for area, data_arrs in datasets_by_area:
-            # open hdf5 file handle, check if group already exists.
-            parent_group = self.create_proj_group(filename, hdf5_fh, area)
+            # open HDF5 file handle, check if group already exists.
+            parent_group = self.create_proj_group(filename, HDF5_fh, area)
 
             if add_geolocation:
                 chunks = data_arrs[0].chunks
                 geo_sets, fnames = self.write_geolocation(
-                    hdf5_fh, filename, parent_group, area, dtype, append, compression, chunks
+                    HDF5_fh, filename, parent_group, area, dtype, append, compression, chunks
                 )
                 dsets.append(geo_sets)
                 targets.append(fnames)
@@ -276,7 +276,7 @@ class HDF5Writer(Writer):
                 hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["name"])
 
                 file_var = FakeHDF5(filename, hdf_subgroup)
-                self.create_variable(filename, hdf5_fh, hdf_subgroup, data_arr, dtype, compression)
+                self.create_variable(filename, HDF5_fh, hdf_subgroup, data_arr, dtype, compression)
 
                 dsets.append(data_arr.data)
                 targets.append(file_var)
@@ -297,7 +297,7 @@ class HDF5Writer(Writer):
 def add_writer_argument_groups(parser, group=None):
     """Create writer argument groups."""
     if group is None:
-        group = parser.add_argument_group(title="hdf5 Writer")
+        group = parser.add_argument_group(title="HDF5 Writer")
     group.add_argument(
         "--output-filename",
         dest="filename",
@@ -321,7 +321,7 @@ def add_writer_argument_groups(parser, group=None):
         "--no-append",
         dest="append",
         action="store_false",
-        help="Don't append to the hdf5 file if it already exists (otherwise may overwrite data)",
+        help="Don't append to the HDF5 file if it already exists (otherwise may overwrite data)",
     )
 
     return group, None
