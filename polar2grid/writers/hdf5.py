@@ -28,8 +28,7 @@
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
 
-"""
-The HDF5 writer creates HDF5 files with data arrays from satpy.Scene.
+"""The HDF5 writer creates HDF5 files with groups for each gridded area.
 
 All selected products are in one file.
 Products are subgrouped together under a parent HDF5 data group
