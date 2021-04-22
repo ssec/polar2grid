@@ -51,7 +51,6 @@ import h5py
 import numpy as np
 import xarray as xr
 
-from itertools import groupby
 from satpy.writers import Writer
 from satpy.writers import split_results, compute_writer_results
 
@@ -67,8 +66,7 @@ DEFAULT_OUTPUT_FILENAMES = {None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%
 
 def all_equal(iterable: list[str]) -> bool:
     """Return True if all the elements are equal to each other."""
-    g = groupby(iterable)
-    return next(g, True) and not next(g, False)
+    return all(iterable[0] == item for item in iterable[1:])
 
 
 class FakeHDF5:
@@ -251,7 +249,8 @@ class HDF5Writer(Writer):
 
         filename = output_names[0]
         if not all_equal(output_names):
-            LOG.warning("Writing to {}".format(filename))
+            LOG.warning("More than one output filename possible. "
+                        "Writing to only '{}'.".format(filename))
 
         HDF5_fh = self.open_HDF5_filehandle(filename, append=append)
 
