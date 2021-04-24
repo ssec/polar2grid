@@ -22,60 +22,12 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
-# Checks arguments
-if [ $# -lt 2 ] || [[ $* =~ (^|[[:space:]])("-h"|"--help")($|[[:space:]]) ]]; then
-    echo "Usage: p2g_compare.sh verification_dir work_dir"
-    # Prints only the optional arguments
-    print=0
-    options=`python -m polar2grid.compare -h`
-    while IFS= read line
-    do
-        if [[ "$line" =~ "optional" ]]; then
-            print=1
-        fi
-        if [[ $print -eq 1 ]]; then
-            echo "$line"
-        fi
-    done <<< "$options"
-    if [[ $* =~ (^|[[:space:]])("-h"|"--help")($|[[:space:]]) ]]; then
-        exit 0
-    fi
-    exit 1
-fi
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+export POLAR2GRID_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
 
-# Get primary and secondary directory names
-VERIFY_BASE=$1
-WORK_DIR=$2
-oops() {
-    echo "ERROR: $*"
-    echo "FAILURE"
-    exit 1
-}
-
-if [ ! -d $VERIFY_BASE ]; then
-    oops "Verification directory $VERIFY_BASE does not exist"
-fi
-
-if [ ! -d $WORK_DIR ]; then
-    oops "Working directory $WORK_DIR does not exist"
-fi
+# Setup necessary environments
+# __SWBUNDLE_ENVIRONMENT_INJECTION__
 
 # Run tests for each test data directory in the base directory
-BAD_COUNT=0
-for VFILE in $VERIFY_BASE/*; do
-    if [ ${VFILE:(-3)} == "log" ]; then
-        continue
-    fi
-    WFILE=$WORK_DIR/`basename $VFILE`
-    echo "INFO: Comparing $WFILE to known valid file $VFILE"
-    python -m polar2grid.compare "$VFILE" "$WFILE" `echo "${@:3}"`
-    [ $? -eq 0 ] || BAD_COUNT=$(($BAD_COUNT + 1))
-done
-
-if [ $BAD_COUNT -ne 0 ]; then
-    oops "$BAD_COUNT files were found to be unequal"
-fi
-
-# End of all tests
-echo "All files passed"
-echo "SUCCESS"
+python3 -m polar2grid.compare -vv "$@"

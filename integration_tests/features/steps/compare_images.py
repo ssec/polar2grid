@@ -54,7 +54,9 @@ def step_impl(context, output):
         os.chdir(context.datapath)
         # NOTE: 81231 / 151404144 (0.054%) pixels are currently wrong in VIIRS_L1B.
         compare_command = [
-            os.path.join(context.p2g_path, "p2g_compare.sh"),
+            "python3",
+            "-m",
+            "polar2grid.compare",
             output,
             context.temp_dir,
             "-vv",
@@ -63,6 +65,10 @@ def step_impl(context, output):
             "--margin-of-error",
             str(81231 / 1514041.44),
         ]
+        if context.genhtml:
+            html_fn = "{}.html".format(output.replace(os.sep, "_"))
+            compare_command.extend(["--html", os.path.join(context.temp_dir, html_fn)])
+        print(compare_command)
         exit_status = subprocess.call(" ".join(compare_command), shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:

@@ -5,6 +5,7 @@ import tempfile
 
 
 def before_all(context):
+    context.genhtml = bool(context.config.userdata.get("genhtml") or False)
     context.datapath = context.config.userdata["datapath"]
     if not context.datapath.startswith(os.sep):
         context.datapath = os.path.join(os.getcwd(), context.datapath)

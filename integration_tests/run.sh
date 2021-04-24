@@ -148,12 +148,31 @@ run_tests()
 
     # Prints output to stdout and to an output file. Note that datapath MUST be specified.
     behave "${WORKSPACE}/integration_tests/features" --no-logcapture --no-color\
-     --no-capture -D datapath=/data/test_data -i "${prefix}2grid.feature" --format pretty\
+     --no-capture -D datapath=/data/test_data -D genhtml=1 -i "${prefix}2grid.feature" --format pretty\
      --format json.pretty 2>&1 | tee "$test_output" || status=$?
     # Still makes test details even if not all tests pass.
     format_test_details "$prefix" "$test_output"
     # Replaces FAILED with SUCCESSFUL if all tests passed.
     [[ ${status} -eq 0 ]] && save_vars "${prefix:0:1}2g_tests=SUCCESSFUL"
+
+    # Generate HTML test summary page
+    cat <<HTMLFILE > test_summary.html
+<html lang="en">
+<head>
+<title>Test Summary</title>
+</head>
+<body>
+HTMLFILE
+
+    # Add a link to each sub-file to the summary page
+    for html_file in *.html; do
+        if [ $html_file == "test_summary.html" ]; then
+            continue
+        fi
+        echo "<p><a href=\"$html_file\"></a></p><br>" >> test_summary.html
+    done
+    echo "</body>" >> test_summary.html
+    echo "</html>" >> test_summary.html
 
     return ${status}
 }
