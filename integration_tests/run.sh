@@ -163,6 +163,7 @@ run_tests()
 <title>Test Summary</title>
 </head>
 <body>
+<h1>Comparison Tests</h1>
 HTMLFILE
 
     # Use -mindepth 2 so the root test_status directory isn't searched
@@ -172,7 +173,7 @@ HTMLFILE
         # remove base directory
         html_file="${html_file/${base_html_dir}\//}"
         # Add a link to each sub-file to the summary page
-        echo "<p><a href=\"$html_file\"></a></p><br>" >> $summary_page
+        echo "<p><a href=\"$html_file\">$html_file</a></p><br>" >> $summary_page
     done
     echo "</body>" >> $summary_page
     echo "</html>" >> $summary_page
