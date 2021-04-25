@@ -44,9 +44,6 @@ def step_impl(context, command):
     finally:
         os.chdir(orig_dir)
 
-    assert os.path.exists(context.temp_dir), "Temporary directory not created"
-    assert [x for x in os.listdir(context.temp_dir) if not x.endswith(".log")], "No files were created"
-
 
 @then("the output matches with the files in {output}")
 def step_impl(context, output):
@@ -68,12 +65,17 @@ def step_impl(context, output):
             str(81231 / 1514041.44),
         ]
         if context.html_dst:
-            html_fn = os.path.join(context.html_dst, "{}.html".format(output))
-            compare_command.extend(["--html", os.path.join(context.temp_dir, html_fn)])
+            html_path = _html_output_filename(context, output)
+            compare_command.extend(["--html", html_path])
         exit_status = subprocess.call(" ".join(compare_command), shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
         os.chdir(orig_dir)
+
+
+def _html_output_filename(context, output_dir: str) -> str:
+    html_fn = os.path.join(context.html_dst, "{}.html".format(output_dir))
+    return os.path.join(context.temp_dir, html_fn)
 
 
 @when("{command} runs with --list-products")

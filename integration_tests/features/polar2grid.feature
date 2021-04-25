@@ -33,7 +33,7 @@ Feature: Test polar2grid output images
       | polar2grid.sh -r viirs_sdr -w geotiff -vv --i-bands --m-bands -p adaptive_dnb dynamic_dnb -f | viirs_sdr_day/input/test1   | viirs_sdr_day/output/test1   |
       | polar2grid.sh -r viirs_sdr -w geotiff -vv -f                                                 | viirs_sdr_day/input/test2   | viirs_sdr_day/output/test2   |
       | polar2grid.sh -r viirs_sdr -w geotiff -vv -p adaptive_dnb dynamic_dnb -f                     | viirs_sdr_night/input/test1 | viirs_sdr_night/output/test1 |
-      | polar2grid.sh -r viirs_sdr -w geotiff -vv -p true_color false_color --grid-configs ${datapath}/grid_configs/grid_example.conf -g miami -f  | viirs/input/test1 | viirs/output/test1 |
+      | polar2grid.sh -r viirs_sdr -w geotiff -vv -p true_color false_color --awips-true-color --awips-false-color --grid-configs ${datapath}/grid_configs/grid_example.conf -g miami -f  | viirs/input/test1 | viirs/output/test1 |
 
     Examples: MiRS
       | command                                                                                           | source                      | output                       |
