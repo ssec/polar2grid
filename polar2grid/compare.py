@@ -143,15 +143,19 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwarg
         comparison.
 
     """
+    array1 = _get_geotiff_array(gtiff_fn1, dtype=np.float32)
+    array2 = _get_geotiff_array(gtiff_fn2, dtype=np.float32)
+    return [compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
+
+
+def _get_geotiff_array(gtiff_fn, dtype=None):
     from osgeo import gdal
 
-    gtiff1 = gdal.Open(gtiff_fn1, gdal.GA_ReadOnly)
-    gtiff2 = gdal.Open(gtiff_fn2, gdal.GA_ReadOnly)
-
-    array1 = gtiff1.GetRasterBand(1).ReadAsArray().astype(np.float32)
-    array2 = gtiff2.GetRasterBand(1).ReadAsArray().astype(np.float32)
-
-    return [compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
+    gtiff = gdal.Open(gtiff_fn, gdal.GA_ReadOnly)
+    arr = gtiff.GetRasterBand(1).ReadAsArray()
+    if dtype is not None:
+        arr = arr.astype(dtype)
+    return arr
 
 
 def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
@@ -357,9 +361,12 @@ ROW_TEMPLATE = """
 
 
 def _generate_table_rows(
+    output_filename: str,
     file_comparison_results: list[FileComparisonResults],
 ) -> str:
     img_entry_tmpl = '<img src="{}"></img>'
+    img_dst_dir = os.path.join(os.path.dirname(output_filename), "_images")
+    os.makedirs(img_dst_dir, exist_ok=True)
     row_infos = []
     for fc in file_comparison_results:
         exp_filename = os.path.basename(fc.file1)
@@ -384,12 +391,24 @@ def _generate_table_rows(
             elif sub_result.failed:
                 notes = "Too many differing pixels"
 
+            variable = getattr(sub_result, "variable", None)
+            exp_tn_html = "N/A"
+            act_tn_html = "N/A"
+            if variable is None and exp_filename.endswith(".tif"):
+                # TODO: Support multi-variable and non-tif formats
+                exp_tn_fn = exp_filename.replace(".tif", f".{variable}.expected.png")
+                exp_tn_html = img_entry_tmpl.format("_images/" + exp_tn_fn)
+                _generate_thumbnail(fc.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
+                act_tn_fn = exp_filename.replace(".tif", f".{variable}.expected.png")
+                act_tn_html = img_entry_tmpl.format("_images/" + act_tn_fn)
+                _generate_thumbnail(fc.file2, os.path.join(img_dst_dir, act_tn_fn), max_width=512)
+
             row_info = ROW_TEMPLATE.format(
                 filename=exp_filename,
                 status=status,
-                variable=getattr(sub_result, "variable", None) or "N/A",
-                expected_img="TODO",
-                actual_img="TODO",
+                variable=variable or "N/A",
+                expected_img=exp_tn_html,
+                actual_img=act_tn_html,
                 diff_percent=sub_result.num_diff_pixels / sub_result.total_pixels * 100,
                 notes=notes,
             )
@@ -399,15 +418,30 @@ def _generate_table_rows(
 
 def _generate_html_summary(output_filename, file_comparison_results):
     filename = os.path.basename(output_filename)
-    row_html = "\n\t" + "\n\t".join(_generate_table_rows(file_comparison_results))
+    row_html = "\n\t" + "\n\t".join(_generate_table_rows(output_filename, file_comparison_results))
     LOG.info(f"Creating HTML file {output_filename}")
-    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+    dst_dir = os.path.dirname(output_filename)
+    if dst_dir:
+        os.makedirs(dst_dir, exist_ok=True)
     with open(output_filename, "w") as html_file:
         html_text = HTML_TEMPLATE.format(
             title=filename,
             rows=row_html,
         )
         html_file.write(html_text)
+
+
+def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
+    from PIL import Image
+
+    input_arr = _get_geotiff_array(input_data_path)
+    full_img = Image.fromarray(input_arr)
+    full_size = full_img.size
+    width_ratio = full_size[0] // max_width
+    new_size = (max_width, full_size[1] // width_ratio)
+    scaled_img = full_img.resize(new_size)
+    print(output_thumbnail_path, input_arr.shape, scaled_img.size)
+    scaled_img.save(output_thumbnail_path, format="PNG")
 
 
 def main(argv=sys.argv[1:]):

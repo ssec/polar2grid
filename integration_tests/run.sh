@@ -156,7 +156,8 @@ run_tests()
     [[ ${status} -eq 0 ]] && save_vars "${prefix:0:1}2g_tests=SUCCESSFUL"
 
     # Generate HTML test summary page
-    cat <<HTMLFILE > test_summary.html
+    summary_page="${WORKSPACE}/test_status/test_summary.html"
+    cat <<HTMLFILE > $summary_page
 <html lang="en">
 <head>
 <title>Test Summary</title>
@@ -164,15 +165,17 @@ run_tests()
 <body>
 HTMLFILE
 
-    # Add a link to each sub-file to the summary page
-    for html_file in *.html; do
-        if [ $html_file == "test_summary.html" ]; then
-            continue
-        fi
-        echo "<p><a href=\"$html_file\"></a></p><br>" >> test_summary.html
+    # Use -mindepth 2 so the root test_status directory isn't searched
+    # Otherwise we would find 'test_summary.html'
+    base_html_dir="${WORKSPACE}/test_status"
+    for html_file in `find ${base_html_dir} -mindepth 2 -name "*.html"`; do
+        # remove base directory
+        html_file="${html_file/${base_html_dir}\//}""
+        # Add a link to each sub-file to the summary page
+        echo "<p><a href=\"$html_file\"></a></p><br>" >> $summary_page
     done
-    echo "</body>" >> test_summary.html
-    echo "</html>" >> test_summary.html
+    echo "</body>" >> $summary_page
+    echo "</html>" >> $summary_page
 
     return ${status}
 }
