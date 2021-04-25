@@ -401,6 +401,7 @@ def _generate_html_summary(output_filename, file_comparison_results):
     filename = os.path.basename(output_filename)
     row_html = "\n\t" + "\n\t".join(_generate_table_rows(file_comparison_results))
     LOG.info(f"Creating HTML file {output_filename}")
+    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     with open(output_filename, "w") as html_file:
         html_text = HTML_TEMPLATE.format(
             title=filename,
@@ -458,7 +459,8 @@ def main(argv=sys.argv[1:]):
         nargs="?",
         default=False,
         help="Generate an HTML page summarizing comparison status and save it to this filename. "
-        "If specified with no argument then defaults to 'comparison_summary.html'.",
+        "If specified with no argument then defaults to 'comparison_summary.html'. All additional "
+        "files (images, CSS, etc) will be placed in the same directory.",
     )
     parser.add_argument("--margin-of-error", type=float, default=0.0, help="percent of total pixels that can be wrong")
     parser.add_argument(
