@@ -170,7 +170,7 @@ HTMLFILE
     base_html_dir="${WORKSPACE}/test_status"
     for html_file in `find ${base_html_dir} -mindepth 2 -name "*.html"`; do
         # remove base directory
-        html_file="${html_file/${base_html_dir}\//}""
+        html_file="${html_file/${base_html_dir}\//}"
         # Add a link to each sub-file to the summary page
         echo "<p><a href=\"$html_file\"></a></p><br>" >> $summary_page
     done
