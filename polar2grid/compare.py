@@ -199,7 +199,7 @@ def compare_netcdf(
         image2_var.set_auto_maskandscale(False)
         LOG.debug("Comparing data for variable '{}'".format(v))
         array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
-        var_result = VariableComparisonResult(*array_result, variable=v)
+        var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
         results.append(var_result)
     return results
 
@@ -230,7 +230,7 @@ def compare_hdf5(h1_name, h2_name, variables, atol=0.0, margin_of_error=0.0, **k
         image2_var = h2[v]
         LOG.debug("Comparing data for variable '{}'".format(v))
         array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
-        var_result = VariableComparisonResult(*array_result, variable=v)
+        var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
         results.append(var_result)
     return results
 
@@ -386,10 +386,13 @@ def _generate_table_rows(
         for sub_result in fc.sub_results:
             status = "FAILED" if sub_result.failed else "PASSED"
             notes = ""
+            diff_percent = 100
             if sub_result.different_shape:
                 notes = "Different array shapes"
             elif sub_result.failed:
                 notes = "Too many differing pixels"
+            else:
+                diff_percent = sub_result.num_diff_pixels / sub_result.total_pixels * 100
 
             variable = getattr(sub_result, "variable", None)
             exp_tn_html = "N/A"
@@ -409,7 +412,7 @@ def _generate_table_rows(
                 variable=variable or "N/A",
                 expected_img=exp_tn_html,
                 actual_img=act_tn_html,
-                diff_percent=sub_result.num_diff_pixels / sub_result.total_pixels * 100,
+                diff_percent=diff_percent,
                 notes=notes,
             )
             row_infos.append(row_info)
