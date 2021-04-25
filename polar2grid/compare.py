@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2014-2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -20,36 +20,57 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    December 2014
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
-"""Script for comparing backend outputs. Generic enough to handle any
-supported backend's output.
+"""Script for comparing writer output."""
 
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Dec 2014
-:license:      GNU GPLv3
-"""
-__docformat__ = "restructuredtext en"
+from __future__ import annotations
 
-import os.path
-from os.path import exists
+import os
 import sys
-
 import logging
+from glob import glob
+from dataclasses import dataclass, field
+
 import numpy as np
 
 LOG = logging.getLogger(__name__)
 
 
-def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwargs):
+@dataclass
+class ArrayComparisonResult:
+    almost_equal: bool
+    num_diff_pixels: int
+    total_pixels: int
+    different_shape: bool
+
+    @property
+    def failed(self):
+        return self.different_shape or not self.almost_equal
+
+
+@dataclass
+class VariableComparisonResult(ArrayComparisonResult):
+    variable: str
+
+
+@dataclass
+class FileComparisonResults:
+    file1: str
+    file2: str
+    files_missing: bool
+    unknown_file_type: bool
+    sub_results: list[ArrayComparisonResult] = field(default_factory=list)
+
+    @property
+    def any_failed(self) -> bool:
+        if self.files_missing or self.unknown_file_type:
+            return True
+        for sub_result in self.sub_results:
+            if sub_result.failed:
+                return True
+        return False
+
+
+def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwargs) -> ArrayComparisonResult:
     """Compare 2 binary arrays per pixel
 
     Two pixels are considered different if the absolute value of their
@@ -59,24 +80,26 @@ def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwa
     negative value overflow will occur and the threshold will likely not
     be met.
 
-    :arg array1:        numpy array for comparison
-    :arg array2:        numpy array for comparison
-    :keyword atol: float threshold
+    Args:
+        array1: numpy array for comparison
+        array2: numpy array for comparison
 
-    :returns: number of different pixels
+    Returns:
+        1 if more than margin_of_error pixels are different, 0 otherwise.
+
     """
     if array1.shape != array2.shape:
         LOG.error("Data shapes were not equal: %r | %r", array1.shape, array2.shape)
-        raise ValueError("Data shapes were not equal: {} | {}".format(array1.shape, array2.shape))
+        return ArrayComparisonResult(False, 0, 0, True)
 
     total_pixels = array1.size
     equal_pixels = np.count_nonzero(np.isclose(array1, array2, rtol=rtol, atol=atol, equal_nan=True))
     diff_pixels = total_pixels - equal_pixels
     if diff_pixels > margin_of_error / 100 * total_pixels:
         LOG.warning("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
-        return 1
+        return ArrayComparisonResult(False, diff_pixels, total_pixels, False)
     LOG.info("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
-    return 0
+    return ArrayComparisonResult(True, diff_pixels, total_pixels, False)
 
 
 def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
@@ -91,17 +114,15 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
     ax1.imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
     ax2.imshow(array2, cmap=cmap, vmin=vmin, vmax=vmax)
     plt.show()
-    return 0
 
 
-def compare_array(array1, array2, plot=False, **kwargs):
+def compare_array(array1, array2, plot=False, **kwargs) -> ArrayComparisonResult:
     if plot:
-        return plot_array(array1, array2, **kwargs)
-    else:
-        return isclose_array(array1, array2, **kwargs)
+        plot_array(array1, array2, **kwargs)
+    return isclose_array(array1, array2, **kwargs)
 
 
-def compare_binary(fn1, fn2, shape, dtype, atol=0.0, margin_of_error=0.0, **kwargs):
+def compare_binary(fn1, fn2, shape, dtype, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
     if dtype is None:
         dtype = np.float32
     mmap_kwargs = {"dtype": dtype, "mode": "r"}
@@ -110,10 +131,10 @@ def compare_binary(fn1, fn2, shape, dtype, atol=0.0, margin_of_error=0.0, **kwar
     array1 = np.memmap(fn1, **mmap_kwargs)
     array2 = np.memmap(fn2, **mmap_kwargs)
 
-    return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)
+    return [compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
 
 
-def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwargs):
+def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
     """Compare 2 single banded geotiff files
 
     .. note::
@@ -130,10 +151,10 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwarg
     array1 = gtiff1.GetRasterBand(1).ReadAsArray().astype(np.float32)
     array2 = gtiff2.GetRasterBand(1).ReadAsArray().astype(np.float32)
 
-    return compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)
+    return [compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
 
 
-def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs):
+def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
     """Compare 2 8-bit AWIPS-compatible NetCDF3 files
 
     .. note::
@@ -153,26 +174,30 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kw
     image1_data = image1_var[:].astype(np.uint8).astype(np.float32)
     image2_data = image2_var[:].astype(np.uint8).astype(np.float32)
 
-    return compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error, **kwargs)
+    return [compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error, **kwargs)]
 
 
-def compare_netcdf(nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs):
+def compare_netcdf(
+    nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs
+) -> list[VariableComparisonResult]:
     from netCDF4 import Dataset
 
     nc1 = Dataset(nc1_name, "r")
     nc2 = Dataset(nc2_name, "r")
-    num_diff = 0
     if variables is None:
         # TODO: Handle groups
         variables = list(nc1.variables.keys())
+    results = []
     for v in variables:
         image1_var = nc1[v]
         image2_var = nc2[v]
         image1_var.set_auto_maskandscale(False)
         image2_var.set_auto_maskandscale(False)
         LOG.debug("Comparing data for variable '{}'".format(v))
-        num_diff += compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
-    return num_diff
+        array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
+        var_result = VariableComparisonResult(*array_result, variable=v)
+        results.append(var_result)
+    return results
 
 
 def _get_hdf5_variables(variables, name, obj):
@@ -183,25 +208,27 @@ def _get_hdf5_variables(variables, name, obj):
     variables.append(name)
 
 
-def compare_hdf5(nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs):
+def compare_hdf5(h1_name, h2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
     import h5py
 
-    nc1 = h5py.File(nc1_name, "r")
-    nc2 = h5py.File(nc2_name, "r")
-    num_diff = 0
+    h1 = h5py.File(h1_name, "r")
+    h2 = h5py.File(h2_name, "r")
     if variables is None:
         from functools import partial
 
         variables = []
         cb = partial(_get_hdf5_variables, variables)
-        nc1.visititems(cb)
+        h1.visititems(cb)
 
+    results = []
     for v in variables:
-        image1_var = nc1[v]
-        image2_var = nc2[v]
+        image1_var = h1[v]
+        image2_var = h2[v]
         LOG.debug("Comparing data for variable '{}'".format(v))
-        num_diff += compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
-    return num_diff
+        array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
+        var_result = VariableComparisonResult(*array_result, variable=v)
+        results.append(var_result)
+    return results
 
 
 type_name_to_compare_func = {
@@ -230,6 +257,157 @@ def _file_type(str_val):
     print("ERROR: Unknown file type '%s'" % (str_val,))
     print("Possible file types: \n\t%s" % ("\n\t".join(type_name_to_compare_func.keys())))
     raise ValueError("Unknown file type '%s'" % (str_val,))
+
+
+class CompareHelper:
+    """Wrapper around various comparison operations."""
+
+    def __init__(self, atol: float = 0.0, rtol: float = 0.0, margin_of_error: float = 0.0, create_plot: bool = False):
+        self.atol = atol
+        self.rtol = rtol
+        self.margin_of_error = margin_of_error
+        self.create_plot = create_plot
+
+    def compare_files(self, file1, file2, file_type=None, **kwargs):
+        if file_type is None:
+            # guess based on file extension
+            ext = os.path.splitext(file1)[-1]
+            file_type = file_ext_to_compare_func.get(ext)
+        if file_type is None:
+            LOG.error(f"Could not determine how to compare file type (extension not recognized): {file1}.")
+            return FileComparisonResults(file1, file2, False, True)
+        LOG.info(f"Comparing '{file2}' to known valid file '{file1}'.")
+        comparison_results = file_type(
+            file1, file2, atol=self.atol, rtol=self.rtol, margin_of_error=self.margin_of_error, **kwargs
+        )
+        return FileComparisonResults(file1, file2, False, False, comparison_results)
+
+    def compare_dirs(self, dir1, dir2, **kwargs) -> list[FileComparisonResults]:
+        results = []
+        for expected_path in glob(os.path.join(dir1, "*")):
+            if expected_path.endswith(".log"):
+                continue
+            test_path = os.path.join(dir2, os.path.basename(expected_path))
+            if not os.path.isfile(test_path):
+                LOG.error(f"File from first directory is not present in second directory: {test_path}")
+                results.append(FileComparisonResults(expected_path, test_path, True, False))
+                continue
+
+            file_comparison_results = self.compare(expected_path, test_path, **kwargs)
+            results.extend(file_comparison_results)
+        return results
+
+    def compare(self, input1, input2, **kwargs) -> list[FileComparisonResults]:
+        if os.path.isdir(input1) and os.path.isdir(input2):
+            return self.compare_dirs(input1, input2, **kwargs)
+        elif os.path.isfile(input1) and os.path.isfile(input2):
+            return [self.compare_files(input1, input2, **kwargs)]
+        elif not os.path.exists(input1):
+            LOG.error("Could not find input directory or file {}".format(input1))
+            return [FileComparisonResults(input1, input2, True, False)]
+        elif not os.path.exists(input2):
+            LOG.error("Could not find input directory or file {}".format(input2))
+            return [FileComparisonResults(input1, input2, True, False)]
+        else:
+            LOG.error("Inputs are not both files or both directories.")
+            return [FileComparisonResults(input1, input2, True, False)]
+
+
+def num_failed_files(file_comparison_results: list[FileComparisonResults]) -> int:
+    return sum(int(fc.any_failed) for fc in file_comparison_results)
+
+
+HTML_TEMPLATE = """
+<html lang="en">
+<head>
+<title>{title}</title>
+</head>
+
+<h1>{title}</h1>
+
+<table>
+<tr>
+    <th>Filename</th>
+    <th>Status</th>
+    <th>Variable</th>
+    <th>Expected</th>
+    <th>Actual</th>
+    <th>Diff. Pixels (%)</th>
+    <th>Notes</th>
+</tr>
+{rows}
+</table>
+
+<body>
+</body>
+</html>
+"""
+
+ROW_TEMPLATE = """
+<tr>
+    <td>{filename}</td>
+    <td>{status}</td>
+    <td>{variable}</td>
+    <td>{expected_img}</td>
+    <td>{actual_img}</td>
+    <td>{diff_percent:0.02f}%</td>
+    <td>{notes}</td>
+</tr>
+"""
+
+
+def _generate_table_rows(
+    file_comparison_results: list[FileComparisonResults],
+) -> str:
+    img_entry_tmpl = '<img src="{}"></img>'
+    row_infos = []
+    for fc in file_comparison_results:
+        exp_filename = os.path.basename(fc.file1)
+        if fc.files_missing or fc.unknown_file_type:
+            row_info = ROW_TEMPLATE.format(
+                filename=exp_filename,
+                status="FAILED",
+                variable="N/A",
+                expected_img="N/A",
+                actual_img="N/A",
+                diff_percent=100.0,
+                notes="Missing file" if fc.files_missing else "Unknown file type",
+            )
+            row_infos.append(row_info)
+            continue
+
+        for sub_result in fc.sub_results:
+            status = "FAILED" if sub_result.failed else "PASSED"
+            notes = ""
+            if sub_result.different_shape:
+                notes = "Different array shapes"
+            elif sub_result.failed:
+                notes = "Too many differing pixels"
+
+            row_info = ROW_TEMPLATE.format(
+                filename=exp_filename,
+                status=status,
+                variable=getattr(sub_result, "variable", None) or "N/A",
+                expected_img="TODO",
+                actual_img="TODO",
+                diff_percent=sub_result.num_diff_pixels / sub_result.total_pixels * 100,
+                notes=notes,
+            )
+            row_infos.append(row_info)
+    return row_infos
+
+
+def _generate_html_summary(output_filename, file_comparison_results):
+    filename = os.path.basename(output_filename)
+    row_html = "\n\t" + "\n\t".join(_generate_table_rows(file_comparison_results))
+    LOG.info(f"Creating HTML file {output_filename}")
+    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
+    with open(output_filename, "w") as html_file:
+        html_text = HTML_TEMPLATE.format(
+            title=filename,
+            rows=row_html,
+        )
+        html_file.write(html_text)
 
 
 def main(argv=sys.argv[1:]):
@@ -276,6 +454,14 @@ def main(argv=sys.argv[1:]):
         action="store_true",
         help="Show a plot of the two arrays instead of checking equality. Used for debugging.",
     )
+    parser.add_argument(
+        "--html",
+        nargs="?",
+        default=False,
+        help="Generate an HTML page summarizing comparison status and save it to this filename. "
+        "If specified with no argument then defaults to 'comparison_summary.html'. All additional "
+        "files (images, CSS, etc) will be placed in the same directory.",
+    )
     parser.add_argument("--margin-of-error", type=float, default=0.0, help="percent of total pixels that can be wrong")
     parser.add_argument(
         "file_type",
@@ -283,30 +469,33 @@ def main(argv=sys.argv[1:]):
         nargs="?",
         help="type of files being compare. If not provided it will be determined based on file extension.",
     )
-    parser.add_argument("file1", help="filename of the first file to compare")
-    parser.add_argument("file2", help="filename of the second file to compare")
+    parser.add_argument("input1", help="First filename or directory to compare. This is typically the expected output.")
+    parser.add_argument("input2", help="Second filename or directory to compare. This is typicall the actual output.")
     args = parser.parse_args(argv)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
-    kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, "variables": args.variables, "plot": args.plot}
+    compare_kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, "variables": args.variables}
 
-    if not exists(args.file1):
-        LOG.error("Could not find file {}".format(args.file1))
-        return 1
-    if not exists(args.file2):
-        LOG.error("Could not find file {}".format(args.file2))
-        return 1
-    if args.file_type is None:
-        # guess based on file extension
-        ext = os.path.splitext(args.file1)[-1]
-        args.file_type = file_ext_to_compare_func.get(ext)
-    if args.file_type is None:
-        LOG.error("Could not determine how to compare file type (extension not recognized).")
-        return 1
-    return args.file_type(
-        args.file1, args.file2, atol=args.atol, rtol=args.rtol, margin_of_error=args.margin_of_error, **kwargs
+    comparer = CompareHelper(
+        atol=args.atol, rtol=args.rtol, margin_of_error=args.margin_of_error, create_plot=args.plot
     )
+    file_comparison_results = comparer.compare(args.input1, args.input2, **compare_kwargs)
+    num_files = num_failed_files(file_comparison_results)
+
+    if args.html is None:
+        args.html = "comparison_summary.html"
+    if args.html:
+        _generate_html_summary(args.html, file_comparison_results)
+
+    if num_files == 0:
+        print("All files passed")
+        print("SUCCESS")
+    else:
+        print(f"ERROR: {num_files} files were found to be unequal")
+
+    # 0 if successful, otherwise number of failed files
+    return num_files
 
 
 if __name__ == "__main__":

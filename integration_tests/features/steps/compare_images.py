@@ -1,3 +1,5 @@
+import shutil
+
 from behave import given, when, then
 import os
 import tempfile
@@ -43,7 +45,7 @@ def step_impl(context, command):
         os.chdir(orig_dir)
 
     assert os.path.exists(context.temp_dir), "Temporary directory not created"
-    assert os.listdir(context.temp_dir), "No files were created"
+    assert [x for x in os.listdir(context.temp_dir) if not x.endswith(".log")], "No files were created"
 
 
 @then("the output matches with the files in {output}")
@@ -54,7 +56,9 @@ def step_impl(context, output):
         os.chdir(context.datapath)
         # NOTE: 81231 / 151404144 (0.054%) pixels are currently wrong in VIIRS_L1B.
         compare_command = [
-            os.path.join(context.p2g_path, "p2g_compare.sh"),
+            "python3",
+            "-m",
+            "polar2grid.compare",
             output,
             context.temp_dir,
             "-vv",
@@ -63,6 +67,9 @@ def step_impl(context, output):
             "--margin-of-error",
             str(81231 / 1514041.44),
         ]
+        if context.html_dst:
+            html_fn = os.path.join(context.html_dst, "{}.html".format(output))
+            compare_command.extend(["--html", os.path.join(context.temp_dir, html_fn)])
         exit_status = subprocess.call(" ".join(compare_command), shell=True)
         assert exit_status == 0, "Files did not match with the correct output"
     finally:
