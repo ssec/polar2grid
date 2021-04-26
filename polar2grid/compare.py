@@ -402,7 +402,7 @@ def _generate_table_rows(
                 exp_tn_fn = exp_filename.replace(".tif", f".{variable}.expected.png")
                 exp_tn_html = img_entry_tmpl.format("_images/" + exp_tn_fn)
                 _generate_thumbnail(fc.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
-                act_tn_fn = exp_filename.replace(".tif", f".{variable}.expected.png")
+                act_tn_fn = exp_filename.replace(".tif", f".{variable}.actual.png")
                 act_tn_html = img_entry_tmpl.format("_images/" + act_tn_fn)
                 _generate_thumbnail(fc.file2, os.path.join(img_dst_dir, act_tn_fn), max_width=512)
 
