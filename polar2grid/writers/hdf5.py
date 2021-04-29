@@ -165,10 +165,11 @@ class HDF5Writer(Writer):
                     pass
                 else:
                     group.attrs[a] = ds_attr
-            group.attrs["cell_height"] = np.format_float_positional(area_def.pixel_size_y, precision=4)
-            group.attrs["cell_width"] = np.format_float_positional(area_def.pixel_size_x, precision=4)
-            group.attrs["origin_x"] = area_def.area_extent[0]
-            group.attrs["origin_y"] = area_def.area_extent[1]
+
+            group.attrs["cell_height"] = np.round(-area_def.pixel_size_y, 5)
+            group.attrs["cell_width"] = np.round(area_def.pixel_size_x, 5)
+            group.attrs["origin_x"] = area_def.pixel_upper_left[0]
+            group.attrs["origin_y"] = area_def.pixel_upper_left[1]
 
         return projection_name
 
@@ -273,7 +274,7 @@ class HDF5Writer(Writer):
                 targets.append(fnames)
 
             for data_arr in data_arrs:
-                hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["name"])
+                hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["p2g_name"])
 
                 file_var = FakeHDF5(filename, hdf_subgroup)
                 self.create_variable(filename, HDF5_fh, hdf_subgroup, data_arr, dtype, compression)
