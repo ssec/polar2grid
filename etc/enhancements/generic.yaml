@@ -49,7 +49,60 @@ enhancements:
           min_stretch: -10.0
           max_stretch: 10.0
 
+  tpw:
+    name: TPW
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -1.333, max_stretch: 7.1666}
+  mirs_tpw:
+    name: TPW
+    units: mm
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -13.33, max_stretch: 71.666}
+
   # Polar2Grid - MiRS Products
+  # MIRS non-BT products
+  snow_cover:
+    name: Snow
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 1.0}
+  sea_ice:
+    name: SIce
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 100.0}
+  snow_water_equivalence:
+    name: SWE
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 20.0}
+  cloud_liquid_water:
+    name: CLW
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 0.7}
+  snow_fall_rate:
+    name: SFR
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 5.0}
+  mirs_rain_rate:
+    name: RR
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 50.0}
+  # mirs_tpw: See higher up in configuration
+
   # MIRS BTs - ATMS
   btemp_23v:
     name: btemp_23v
