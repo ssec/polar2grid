@@ -39,5 +39,7 @@ dependencies:
   - scipy
   - zarr
   - xarray
+  - fsspec
+  - s3fs
   - pip:
     - git+https://github.com/pytroll/satpy.git
