@@ -25,7 +25,6 @@
 from __future__ import annotations
 
 import logging
-import re
 
 from typing import Union, Iterable, Generator, Optional
 from satpy import Scene, DataID, DataQuery
@@ -66,9 +65,7 @@ def convert_p2g_pattern_to_satpy(pattern):
     # If there is no other formatting before replacing begin_time,
     # add the old default formatting to the pattern and changed begin_time to
     # start_time
-    abs_search = re.compile(r"{begin_time}").search
-    if bool(abs_search(pattern)):
-        pattern = pattern.replace("{begin_time}", "{start_time:%Y%m%d_%H%M}")
+    pattern = pattern.replace("{begin_time}", "{start_time:%Y%m%d_%H%M}")
 
     for p2g_kw, satpy_kw in replacements.items():
         pattern = pattern.replace(p2g_kw, satpy_kw)
