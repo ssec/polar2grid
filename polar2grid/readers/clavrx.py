@@ -128,13 +128,13 @@ class ReaderProxy(ReaderProxyBase):
     def available_product_names(self) -> sorted(set(str)):
         return sorted(set(self.scn.available_dataset_names()))
 
-    def available_product_names(self) -> list[str]:
+    def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
         return set(ADVERTISED_DATASETS) & set(self.scn.all_dataset_names())
 
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
-        return set(DEFAULT_DATASETS) & self.available_product_names()
+        return set(DEFAULT_DATASETS) & self.get_all_products()
 
     def filter(self, scn):
         self.filter_daynight_datasets(scn)
