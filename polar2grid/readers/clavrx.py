@@ -118,6 +118,17 @@ DEFAULT_DATASETS = [
     "rain_rate",
 ]
 
+FILTERS = {
+    "day_only": {
+        "standard_name": [
+            "toa_bidirectional_reflectance",
+            "effective_radius_of_cloud_condensed_water_particles_at_cloud_top",
+            "atmosphere_optical_thickness_due_to_cloud",
+        ]
+    },
+    "night_only": {"standard_name": ["refl_lunar_dnb_nom"]},
+}
+
 
 class ReaderProxy(ReaderProxyBase):
     """Provide Polar2Grid-specific information about this reader's products."""
