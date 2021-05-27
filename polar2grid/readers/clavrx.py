@@ -100,11 +100,6 @@ else:
         ]
     )
 
-DAY_ONLY = ["cld_opd_dcomp", "cld_reff_dcomp"]
-NIGHT_ONLY = ["cld_opd_nlcomp", "cld_reff_nlcomp", "refl_lunar_dnb_nom"]
-
-FILE_EXTENSIONS = [".hdf"]
-DEFAULT_READER_NAME = "clavrx"
 DEFAULT_DATASETS = [
     "cloud_type" "cld_temp_acha",
     "cld_height_acha",
@@ -146,16 +141,6 @@ class ReaderProxy(ReaderProxyBase):
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
         return set(DEFAULT_DATASETS) & self.get_all_products()
-
-    def filter(self, scn):
-        self.filter_daynight_datasets(scn)
-
-    def filter_daynight_datasets(self, scene):
-        """Some products are only available at daytime or nighttime"""
-        for k in DAY_ONLY + NIGHT_ONLY:
-            if k in scene and scene[k].isnull().all():
-                LOG.info("Removing dataset '{}' because it is completely empty".format(k))
-                del scene[k]
 
 
 def add_reader_argument_groups(
