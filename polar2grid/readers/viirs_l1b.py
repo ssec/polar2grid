@@ -166,6 +166,12 @@ I_PRODUCTS = [
     "i04",
     "i05",
 ]
+I_ANGLE_PRODUCTS = [
+    "i_solar_zenith_angle",
+    "i_solar_azimuth_angle",
+    "i_sat_zenith_angle",
+    "i_sat_azimuth_angle",
+]
 M_PRODUCTS = [
     "m01",
     "m02",
@@ -184,18 +190,62 @@ M_PRODUCTS = [
     "m15",
     "m16",
 ]
+
+M_ANGLE_PRODUCTS = [
+    "m_solar_zenith_angle",
+    "m_solar_azimuth_angle",
+    "m_sat_zenith_angle",
+    "m_sat_azimuth_angle",
+]
 DNB_PRODUCTS = [
     "histogram_dnb",
     "adaptive_dnb",
     "dynamic_dnb",
     "hncc_dnb",
 ]
-TRUE_COLOR_PRODUCTS = [
-    "true_color"
+
+DNB_ANGLE_PRODUCTS = [
+    "dnb_solar_zenith_angle",
+    "dnb_solar_azimuth_angle",
+    "dnb_lunar_zenith_angle",
+    "dnb_lunar_azimuth_angle",
 ]
-FALSE_COLOR_PRODUCTS = [
-    "false_color"
-]
+
+TRUE_COLOR_PRODUCTS = ["true_color"]
+FALSE_COLOR_PRODUCTS = ["false_color"]
+
+PRODUCT_ALIASES = {}
+
+_AWIPS_TRUE_COLOR = ["viirs_crefl08", "viirs_crefl04", "viirs_crefl03"]
+_AWIPS_FALSE_COLOR = ["viirs_crefl07", "viirs_crefl09", "viirs_crefl08"]
+
+PRODUCT_ALIASES["dnb_solar_zenith_angle"] = DataQuery(name="dnb_solar_zenith_angle")
+PRODUCT_ALIASES["dnb_solar_azimuth_angle"] = DataQuery(name="dnb_solar_azimuth_angle")
+# PRODUCT_ALIASES["dnb_sat_zenith_angle"] = DataQuery(name="dnb_satellite_zenith_angle")
+# PRODUCT_ALIASES["dnb_sat_azimuth_angle"] = DataQuery(name="dnb_satellite_azimuth_angle")
+PRODUCT_ALIASES["dnb_lunar_zenith_angle"] = DataQuery(name="dnb_lunar_zenith_angle")
+PRODUCT_ALIASES["dnb_lunar_azimuth_angle"] = DataQuery(name="dnb_lunar_azimuth_angle")
+PRODUCT_ALIASES["m_solar_zenith_angle"] = DataQuery(name="solar_zenith_angle", resolution=742)
+PRODUCT_ALIASES["m_solar_azimuth_angle"] = DataQuery(name="solar_azimuth_angle", resolution=742)
+PRODUCT_ALIASES["m_sat_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=742)
+PRODUCT_ALIASES["m_sat_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=742)
+PRODUCT_ALIASES["i_solar_zenith_angle"] = DataQuery(name="solar_zenith_angle", resolution=371)
+PRODUCT_ALIASES["i_solar_azimuth_angle"] = DataQuery(name="solar_azimuth_angle", resolution=371)
+PRODUCT_ALIASES["i_sat_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=371)
+PRODUCT_ALIASES["i_sat_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=371)
+
+DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS[1:]
+
+P2G_PRODUCTS = (
+    I_PRODUCTS
+    + M_PRODUCTS
+    + TRUE_COLOR_PRODUCTS
+    + FALSE_COLOR_PRODUCTS
+    + DNB_PRODUCTS
+    + DNB_ANGLE_PRODUCTS
+    + M_ANGLE_PRODUCTS,
+    I_ANGLE_PRODUCTS,
+)
 
 
 class Frontend(ReaderWrapper):
@@ -205,11 +255,11 @@ class Frontend(ReaderWrapper):
     GENERATE_COMPOSITES = True
 
     def __init__(self, *args, **kwargs):
-        self.day_fraction = kwargs.pop('day_fraction', 0.1)
+        self.day_fraction = kwargs.pop("day_fraction", 0.1)
         LOG.debug("Day fraction set to %f", self.day_fraction)
-        self.night_fraction = kwargs.pop('night_fraction', 0.1)
+        self.night_fraction = kwargs.pop("night_fraction", 0.1)
         LOG.debug("Night fraction set to %f", self.night_fraction)
-        self.sza_threshold = kwargs.pop('sza_threshold', 100.)
+        self.sza_threshold = kwargs.pop("sza_threshold", 100.0)
         LOG.debug("SZA threshold set to %f", self.sza_threshold)
         self.fraction_day_scene = None
         self.fraction_night_scene = None
@@ -218,22 +268,22 @@ class Frontend(ReaderWrapper):
     @property
     def available_product_names(self):
         available = set(self.scene.available_dataset_names(reader_name=self.reader, composites=True))
-        return sorted(available & set(self.all_product_names))
+        return sorted(available & self.get_default_products)
 
     @property
-    def all_product_names(self):
+    def get_default_products(self) -> list[str]:
         # return self.scene.all_dataset_names(reader_name=self.reader, composites=True)
-        return I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS[1:]
+        return DEFAULT_PRODUCTS
 
     def _calc_percent_day(self, scene):
-        if 'solar_zenith_angle' in scene:
-            sza_data = scene['solar_zenith_angle']
-        elif 'i_solar_zenith_angle' in scene:
-            sza_data = scene['i_solar_zenith_angle']
-        elif 'dnb_solar_zenith_angle' in scene:
-            sza_data = scene['dnb_solar_zenith_angle']
+        if "solar_zenith_angle" in scene:
+            sza_data = scene["solar_zenith_angle"]
+        elif "i_solar_zenith_angle" in scene:
+            sza_data = scene["i_solar_zenith_angle"]
+        elif "dnb_solar_zenith_angle" in scene:
+            sza_data = scene["dnb_solar_zenith_angle"]
         else:
-            for sza_name in ('solar_zenith_angle', 'i_solar_zenith_angle', 'dnb_solar_zenith_angle'):
+            for sza_name in ("solar_zenith_angle", "i_solar_zenith_angle", "dnb_solar_zenith_angle"):
                 scene.load([sza_name])
                 if sza_name not in scene:
                     continue
@@ -247,10 +297,14 @@ class Frontend(ReaderWrapper):
         invalid_mask = sza_data.isnull().compute().data
         valid_day_mask = (sza_data < self.sza_threshold) & ~invalid_mask
         valid_night_mask = (sza_data >= self.sza_threshold) & ~invalid_mask
-        self.fraction_day_scene = np.count_nonzero(valid_day_mask) / (float(sza_data.size) - np.count_nonzero(invalid_mask))
-        self.fraction_night_scene = np.count_nonzero(valid_night_mask) / (float(sza_data.size) - np.count_nonzero(invalid_mask))
-        LOG.debug("Fraction of scene that is valid day pixels: %f%%", self.fraction_day_scene * 100.)
-        LOG.debug("Fraction of scene that is valid night pixels: %f%%", self.fraction_night_scene * 100.)
+        self.fraction_day_scene = np.count_nonzero(valid_day_mask) / (
+            float(sza_data.size) - np.count_nonzero(invalid_mask)
+        )
+        self.fraction_night_scene = np.count_nonzero(valid_night_mask) / (
+            float(sza_data.size) - np.count_nonzero(invalid_mask)
+        )
+        LOG.debug("Fraction of scene that is valid day pixels: %f%%", self.fraction_day_scene * 100.0)
+        LOG.debug("Fraction of scene that is valid night pixels: %f%%", self.fraction_night_scene * 100.0)
 
     def filter(self, scene):
         self.filter_daytime(scene)
@@ -261,11 +315,16 @@ class Frontend(ReaderWrapper):
             self._calc_percent_day(scene)
         # make a copy of the scene list so we can edit it later
         for ds in list(scene):
-            if ds.attrs['standard_name'] in ('toa_bidirectional_reflectance',) and \
-                    self.fraction_day_scene <= self.day_fraction:
+            if (
+                ds.attrs["standard_name"] in ("toa_bidirectional_reflectance",)
+                and self.fraction_day_scene <= self.day_fraction
+            ):
                 ds_id = DatasetID.from_dict(ds.attrs)
-                LOG.info("Will not create product '%s' because there is less than %f%% of day data",
-                         ds.attrs['name'], self.day_fraction * 100.)
+                LOG.info(
+                    "Will not create product '%s' because there is less than %f%% of day data",
+                    ds.attrs["name"],
+                    self.day_fraction * 100.0,
+                )
                 del scene[ds_id]
 
     def filter_nighttime(self, scene):
@@ -273,11 +332,13 @@ class Frontend(ReaderWrapper):
             self._calc_percent_day(scene)
         # make a copy of the scene list so we can edit it later
         for ds in list(scene):
-            if ds.attrs['name'] in ('ifog',) and \
-                            self.fraction_night_scene <= self.night_fraction:
+            if ds.attrs["name"] in ("ifog",) and self.fraction_night_scene <= self.night_fraction:
                 ds_id = DatasetID.from_dict(ds.attrs)
-                LOG.info("Will not create product '%s' because there is less than %f%% of night data",
-                         ds.attrs['name'], self.night_fraction * 100.)
+                LOG.info(
+                    "Will not create product '%s' because there is less than %f%% of night data",
+                    ds.attrs["name"],
+                    self.night_fraction * 100.0,
+                )
                 del scene[ds_id]
 
 
@@ -287,35 +348,79 @@ def add_frontend_argument_groups(parser):
     :returns: list of group titles added
     """
     from polar2grid.core.script_utils import ExtendAction, ExtendConstAction
+
     # Set defaults for other components that may be used in polar2grid processing
     parser.set_defaults(fornav_D=40, fornav_d=2)
 
     # Use the append_const action to handle adding products to the list
     group_title = "Frontend Initialization"
     group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
-    group.add_argument("--list-products", dest="list_products", action="store_true",
-                       help="List available frontend products and exit")
-    group.add_argument("--day-fraction", dest="day_fraction", type=float, default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
-                       help="Fraction of day required to produce reflectance products")
-    group.add_argument("--night-fraction", dest="night_fraction", type=float, default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
-                       help="Fraction of night required to produce products like fog")
-    group.add_argument("--sza-threshold", dest="sza_threshold", type=float, default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
-                       help="Angle threshold of solar zenith angle used when deciding day or night")
+    group.add_argument(
+        "--list-products", dest="list_products", action="store_true", help="List available frontend products and exit"
+    )
+    group.add_argument(
+        "--day-fraction",
+        dest="day_fraction",
+        type=float,
+        default=float(os.environ.get("P2G_DAY_FRACTION", 0.10)),
+        help="Fraction of day required to produce reflectance products",
+    )
+    group.add_argument(
+        "--night-fraction",
+        dest="night_fraction",
+        type=float,
+        default=float(os.environ.get("P2G_NIGHT_FRACTION", 0.10)),
+        help="Fraction of night required to produce products like fog",
+    )
+    group.add_argument(
+        "--sza-threshold",
+        dest="sza_threshold",
+        type=float,
+        default=float(os.environ.get("P2G_SZA_THRESHOLD", 100)),
+        help="Angle threshold of solar zenith angle used when deciding day or night",
+    )
     # group.add_argument("--dnb-saturation-correction", action="store_true",
     #                    help="Enable dynamic DNB saturation correction (normally used for aurora scenes)")
     group_title = "Frontend Swath Extraction"
     group = parser.add_argument_group(title=group_title, description="swath extraction options")
     # FIXME: Probably need some proper defaults
-    group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
-                       help="Specify frontend products to process")
-    group.add_argument('--i-bands', dest='products', action=ExtendConstAction, const=I_PRODUCTS,
-                       help="Add all I-band raw products to list of products")
-    group.add_argument('--m-bands', dest='products', action=ExtendConstAction, const=M_PRODUCTS,
-                       help="Add all M-band raw products to list of products")
-    group.add_argument("--true-color", dest='products', action=ExtendConstAction, const=TRUE_COLOR_PRODUCTS,
-                       help="Add the True Color product to the list of products")
-    group.add_argument("--false-color", dest='products', action=ExtendConstAction, const=FALSE_COLOR_PRODUCTS,
-                       help="Add the False Color product to the list of products")
+    group.add_argument(
+        "-p",
+        "--products",
+        dest="products",
+        nargs="+",
+        default=None,
+        action=ExtendAction,
+        help="Specify frontend products to process",
+    )
+    group.add_argument(
+        "--i-bands",
+        dest="products",
+        action=ExtendConstAction,
+        const=I_PRODUCTS,
+        help="Add all I-band raw products to list of products",
+    )
+    group.add_argument(
+        "--m-bands",
+        dest="products",
+        action=ExtendConstAction,
+        const=M_PRODUCTS,
+        help="Add all M-band raw products to list of products",
+    )
+    group.add_argument(
+        "--true-color",
+        dest="products",
+        action=ExtendConstAction,
+        const=TRUE_COLOR_PRODUCTS,
+        help="Add the True Color product to the list of products",
+    )
+    group.add_argument(
+        "--false-color",
+        dest="products",
+        action=ExtendConstAction,
+        const=FALSE_COLOR_PRODUCTS,
+        help="Add the False Color product to the list of products",
+    )
     # group.add_argument('--dnb-angle-products', dest='products', action=ExtendConstAction, const=DNB_ANGLE_PRODUCTS,
     #                    help="Add DNB-band geolocation 'angle' products to list of products")
     # group.add_argument('--i-angle-products', dest='products', action=ExtendConstAction, const=I_ANGLE_PRODUCTS,
@@ -328,6 +433,11 @@ def add_frontend_argument_groups(parser):
     #                    help="Add I-band geolocation radiance products to list of products")
     return ["Frontend Initialization", "Frontend Swath Extraction"]
 
+
 if __name__ == "__main__":
-    sys.exit(main(description="Extract VIIRS L1B swath data into binary files",
-                  add_argument_groups=add_frontend_argument_groups))
+    sys.exit(
+        main(
+            description="Extract VIIRS L1B swath data into binary files",
+            add_argument_groups=add_frontend_argument_groups,
+        )
+    )
