@@ -157,15 +157,19 @@ class HDF5Writer(Writer):
             group.attrs["height"], group.attrs["width"] = area_def.shape
             group.attrs["description"] = "No projection: native format"
         else:
-            for a in ["height", "width", "origin_x", "origin_y"]:
+
+            group.attrs["proj4_definition"] = area_def.proj4_string
+            for a in ["height", "width"]:
                 ds_attr = getattr(area_def, a, None)
                 if ds_attr is None:
                     pass
                 else:
                     group.attrs[a] = ds_attr
-            group.attrs["proj4_string"] = area_def.proj_str
-            group.attrs["cell_height"] = area_def.pixel_size_y
-            group.attrs["cell_width"] = area_def.pixel_size_x
+
+            group.attrs["cell_height"] = np.round(-area_def.pixel_size_y, 5)
+            group.attrs["cell_width"] = np.round(area_def.pixel_size_x, 5)
+            group.attrs["origin_x"] = area_def.pixel_upper_left[0]
+            group.attrs["origin_y"] = area_def.pixel_upper_left[1]
 
         return projection_name
 
@@ -248,8 +252,7 @@ class HDF5Writer(Writer):
 
         filename = output_names[0]
         if not all_equal(output_names):
-            LOG.warning("More than one output filename possible. "
-                        "Writing to only '{}'.".format(filename))
+            LOG.warning("More than one output filename possible. " "Writing to only '{}'.".format(filename))
 
         HDF5_fh = self.open_HDF5_filehandle(filename, append=append)
 
@@ -271,7 +274,7 @@ class HDF5Writer(Writer):
                 targets.append(fnames)
 
             for data_arr in data_arrs:
-                hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["name"])
+                hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["p2g_name"])
 
                 file_var = FakeHDF5(filename, hdf_subgroup)
                 self.create_variable(filename, HDF5_fh, hdf_subgroup, data_arr, dtype, compression)
