@@ -63,6 +63,7 @@ Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 | true_color                | Ratio sharpened rayleigh corrected true color       |N/A                      |
 +---------------------------+-----------------------------------------------------+-------------------------+
 """
+from __future__ import annotations
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
@@ -72,11 +73,11 @@ from satpy import DataQuery
 
 import numpy as np
 
-LOG = logging.getLogger(__name__)
-
 ALL_BANDS = [str(x) for x in range(1, 11)]
 ALL_COMPS = ["true_color"]
 ALL_ANGLES = ["solar_zenith_angle", "solar_azimuth_angle", "sensor_zenith_angle", "sensor_azimuth_angle"]
+
+PRODUCT_ALIASES = {}
 
 for angle_product in ALL_ANGLES:
     PRODUCT_ALIASES[angle_product] = DataQuery(name=angle_product)
@@ -103,12 +104,12 @@ class ReaderProxy(ReaderProxyBase):
         """Get products to load if users hasn't specified any others."""
         return DEFAULT_PRODUCTS
 
-    def get_all_products(self):
+    def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
         return DEFAULT_PRODUCTS
 
     @property
-    def _aliases(self):
+    def _aliases(self) -> dict:
         return PRODUCT_ALIASES
 
 
