@@ -1,4 +1,18 @@
 enhancements:
+  adaptive_dnb:
+    sensor: viirs
+    standard_name: equalized_radiance
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: { stretch: 'crude', min_stretch: 0.0, max_stretch: 1.0 }
+  histogram_dnb:
+    sensor: viirs
+    standard_name: equalized_radiance
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: { stretch: 'crude', min_stretch: 0.0, max_stretch: 1.0 }
   true_color_crefl:
     sensor: viirs
     standard_name: true_color
