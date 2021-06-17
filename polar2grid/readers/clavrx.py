@@ -101,7 +101,8 @@ else:
     )
 
 DEFAULT_DATASETS = [
-    "cloud_type" "cld_temp_acha",
+    "cloud_type",
+    "cld_temp_acha",
     "cld_height_acha",
     "cloud_phase",
     "cld_opd_dcomp",
@@ -131,7 +132,7 @@ class ReaderProxy(ReaderProxyBase):
     is_geo2grid_reader = True
     is_polar2grid_reader = True
 
-    def available_product_names(self) -> sorted(set(str)):
+    def available_product_names(self) -> set(str):
         return sorted(set(self.scn.available_dataset_names()))
 
     def get_all_products(self) -> list[str]:
