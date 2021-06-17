@@ -289,12 +289,12 @@ class ReaderProxy(ReaderProxyBase):
         """Get products to load if users hasn't specified any others."""
         return DEFAULT_PRODUCTS
 
-    def get_all_products(self):
+    def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
         return P2G_PRODUCTS
 
     @property
-    def _aliases(self):
+    def _aliases(self) -> dict[DataQuery]:
         return PRODUCT_ALIASES
 
 
