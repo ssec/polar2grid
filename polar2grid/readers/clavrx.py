@@ -132,9 +132,6 @@ class ReaderProxy(ReaderProxyBase):
     is_geo2grid_reader = True
     is_polar2grid_reader = True
 
-    def available_product_names(self) -> set(str):
-        return sorted(set(self.scn.available_dataset_names()))
-
     def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
         return set(ADVERTISED_DATASETS) & set(self.scn.all_dataset_names())
