@@ -311,7 +311,10 @@ enhancements:
   # Polar2Grid - CLAVR-x products
   clavrx_cloud_type:
     name: cloud_type
-    operations: {}
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 13.}
   clavrx_cld_temp_acha:
     name: cld_temp_acha
     operations:
@@ -326,7 +329,10 @@ enhancements:
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 20000.}
   clavrx_cloud_phase:
     name: cloud_phase
-    operations: {}
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 6.}
   clavrx_cld_opd_dcomp:
     name: cld_opd_dcomp
     operations:
