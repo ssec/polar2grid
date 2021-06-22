@@ -28,6 +28,7 @@
 #     Madison, WI  53706
 #     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
 """The VIRR Level 1B reader operates on Level 1B (L1B) HDF5 files.
+
 Files usually have the following naming scheme:
 
     tf2018343030324.FY3C-L_VIRRX_L1B.HDF or tf2018343092538.FY3B-L_VIRRX_L1B.HDF
@@ -68,10 +69,7 @@ from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
 from ._base import ReaderProxyBase
-from polar2grid.core.script_utils import ExtendConstAction
 from satpy import DataQuery
-
-import numpy as np
 
 ALL_BANDS = [str(x) for x in range(1, 11)]
 ALL_COMPS = ["true_color"]
