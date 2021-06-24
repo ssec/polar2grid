@@ -51,6 +51,7 @@ DEFAULT_OUTPUT_FILENAMES = {
     "{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
     "viirs_sdr": "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
     "mirs": "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
+    "mersi2_l1b": "{platform_name!l}_{sensor!l}_{name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
 }
 
 
