@@ -58,6 +58,7 @@ def dist_is_editable(dist) -> bool:
 def get_reader_parser_function(reader_name: str) -> Optional[ComponentParserFunc]:
     return get_reader_attr(reader_name, "add_reader_argument_groups")
 
+
 def get_writer_parser_function(writer_name: str) -> Optional[ComponentParserFunc]:
     return get_writer_attr(writer_name, "add_writer_argument_groups")
 
@@ -77,6 +78,8 @@ PLATFORM_ALIASES = {
     "j2": "noaa21",
     "j3": "noaa22",
     "j4": "noaa23",
+    "fy-3b": "fy3b",
+    "fy-3c": "fy3c",
 }
 
 READER_ALIASES = {
