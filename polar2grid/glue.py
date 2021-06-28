@@ -78,7 +78,7 @@ PLATFORM_ALIASES = {
     "j2": "noaa21",
     "j3": "noaa22",
     "j4": "noaa23",
-    "fy3d": "fy-3d",
+    "fy-3d": "fy3d",
 }
 
 READER_ALIASES = {
