@@ -113,7 +113,7 @@ ALL_BANDS = [str(x) for x in range(1, 26)]
 ALL_ANGLES = ["solar_zenith_angle", "solar_azimuth_angle", "sensor_zenith_angle", "sensor_azimuth_angle"]
 ALL_COMPS = ["true_color", "false_color", "natural_color"]
 
-DEFAULT_PRODUCTS = ALL_BANDS + ALL_COMPS
+DEFAULT_PRODUCTS = ALL_BANDS + ALL_COMPS + ALL_ANGLES
 
 PRODUCT_ALIASES = {}
 
