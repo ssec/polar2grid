@@ -80,8 +80,6 @@ PRODUCT_ALIASES = {}
 for angle_product in ALL_ANGLES:
     PRODUCT_ALIASES[angle_product] = DataQuery(name=angle_product)
 
-DEFAULT_PRODUCTS = ALL_BANDS + ALL_COMPS
-
 FILTERS = {
     "day_only": {
         "standard_name": [
@@ -100,7 +98,7 @@ class ReaderProxy(ReaderProxyBase):
 
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
-        return DEFAULT_PRODUCTS
+        return ALL_BANDS + ALL_ANGLES + ALL_COMPS
 
     def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
