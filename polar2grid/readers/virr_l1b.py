@@ -75,6 +75,8 @@ ALL_BANDS = [str(x) for x in range(1, 11)]
 ALL_COMPS = ["true_color"]
 ALL_ANGLES = ["solar_zenith_angle", "solar_azimuth_angle", "sensor_zenith_angle", "sensor_azimuth_angle"]
 
+DEFAULT_PRODUCTS = ALL_BANDS + ALL_ANGLES + ALL_COMPS
+
 PRODUCT_ALIASES = {}
 
 for angle_product in ALL_ANGLES:
@@ -98,7 +100,7 @@ class ReaderProxy(ReaderProxyBase):
 
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
-        return ALL_BANDS + ALL_ANGLES + ALL_COMPS
+        return DEFAULT_PRODUCTS
 
     def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
