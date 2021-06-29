@@ -117,6 +117,17 @@ DEFAULT_PRODUCTS = ALL_BANDS + ALL_COMPS + ALL_ANGLES
 
 PRODUCT_ALIASES = {}
 
+FILTERS = {
+    "day_only": {
+        "standard_name": [
+            "toa_bidirectional_reflectance",
+            "true_color",
+            "false_color",
+            "natural_color",
+        ],
+    },
+}
+
 
 class ReaderProxy(ReaderProxyBase):
     """Provide Polar2Grid-specific information about this reader's products."""
