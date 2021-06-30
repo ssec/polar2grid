@@ -65,16 +65,11 @@ support for the VIIRS Day/Night Band Lunar Reflectance:
 
 """
 from __future__ import annotations
+from typing import Optional
 
-from argparse import ArgumentParser, _ArgumentGroup
 import os
-import sys
-import logging
-import numpy as np
+from argparse import ArgumentParser, _ArgumentGroup
 from ._base import ReaderProxyBase
-from polar2grid.readers import ReaderWrapper, main
-
-LOG = logging.getLogger(__name__)
 
 # Limit the number of products shown to Polar2Grid users
 # if the user uses the environment variable they can display more
@@ -134,11 +129,11 @@ class ReaderProxy(ReaderProxyBase):
 
     def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
-        return set(ADVERTISED_DATASETS) & set(self.scn.all_dataset_names())
+        return ADVERTISED_DATASETS
 
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
-        return set(DEFAULT_DATASETS) & self.get_all_products()
+        return DEFAULT_DATASETS
 
 
 def add_reader_argument_groups(
