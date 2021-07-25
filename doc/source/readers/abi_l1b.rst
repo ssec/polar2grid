@@ -66,9 +66,10 @@ Examples:
     Night Microphysics
     ^^^^^^^^^^^^^^^^^^
 
-    The Cooperative Institute for Research in the Atmosphere (CIRA) has put
-    together a complete guide on the Night Microphysics RGB image. You can
-    access the PDF
+    The Cooperative Institute for Research in the Atmosphere (CIRA) hosts
+    various Quick Guides for common GOES-R ABI RGB recipes. Kevin Fuell of
+    NASA SPoRT has put together a guide on the Night Microphysics RGB image.
+    You can access the PDF
     `here <http://rammb.cira.colostate.edu/training/visit/quick_guides/QuickGuide_GOESR_NtMicroRGB_Final_20191206.pdf>`_.
 
     C01 through C06
