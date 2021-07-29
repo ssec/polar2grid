@@ -58,6 +58,7 @@ def dist_is_editable(dist) -> bool:
 def get_reader_parser_function(reader_name: str) -> Optional[ComponentParserFunc]:
     return get_reader_attr(reader_name, "add_reader_argument_groups")
 
+
 def get_writer_parser_function(writer_name: str) -> Optional[ComponentParserFunc]:
     return get_writer_attr(writer_name, "add_writer_argument_groups")
 
@@ -168,7 +169,7 @@ def write_scene(scn, writers, writer_args, datasets, to_save=None):
     for writer_name in writers:
         wargs = writer_args[writer_name]
         res = scn.save_datasets(writer=writer_name, compute=False, datasets=datasets, **wargs)
-        if isinstance(res[0], (tuple, list)):
+        if res and isinstance(res[0], (tuple, list)):
             # list of (dask-array, file-obj) tuples
             to_save.extend(zip(*res))
         else:
@@ -785,6 +786,13 @@ basic processing with limited products:
         pbar.register()
 
     LOG.info("Computing products and saving data to writers...")
+    if not to_save:
+        LOG.warning(
+            "No product files produced given available valid data and "
+            "resampling settings. This can happen if the writer "
+            "detects that no valid output will be written or the "
+            "input data does not overlap with the target grid."
+        )
     compute_writer_results(to_save)
     LOG.info("SUCCESS")
     return 0
