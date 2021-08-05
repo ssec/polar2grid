@@ -27,8 +27,7 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""
-The VIIRS Level 1B Reader operates on NASA Level 1B (L1B) NetCDF files.
+"""The VIIRS Level 1B Reader operates on NASA Level 1B (L1B) NetCDF files.
 
 The files are from the Suomi National Polar-orbiting Partnership's (NPP) Visible/Infrared
 Imager Radiometer Suite (VIIRS) instrument. The VIIRS L1B reader analyzes
