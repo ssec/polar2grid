@@ -64,102 +64,80 @@ support for the VIIRS Day/Night Band Lunar Reflectance:
 +------------------------+---------------------------------------------+
 
 """
+from __future__ import annotations
+from typing import Optional
 
 import os
-import sys
-import logging
-import numpy as np
-from polar2grid.readers import ReaderWrapper, main
-
-LOG = logging.getLogger(__name__)
+from argparse import ArgumentParser, _ArgumentGroup
+from ._base import ReaderProxyBase
 
 # Limit the number of products shown to Polar2Grid users
 # if the user uses the environment variable they can display more
-ADVERTISED_DATASETS = os.environ.get('CLAVRX_AD_DATASETS', None)
-if ADVERTISED_DATASETS == 'all':
+ADVERTISED_DATASETS = os.environ.get("CLAVRX_AD_DATASETS", None)
+if ADVERTISED_DATASETS == "all":
     ADVERTISED_DATASETS = None
 elif ADVERTISED_DATASETS:
     ADVERTISED_DATASETS = ADVERTISED_DATASETS.split(" ")
 else:
-    ADVERTISED_DATASETS = set([
-        'cloud_type',
-        'cld_temp_acha',
-        'cld_height_acha',
-        'cloud_phase',
-        'cld_opd_dcomp',
-        'cld_opd_nlcomp',
-        'cld_reff_dcomp',
-        'cld_reff_nlcomp',
-        'cld_emiss_acha',
-        'refl_lunar_dnb_nom',
-        'rain_rate',
-    ])
+    ADVERTISED_DATASETS = set(
+        [
+            "cloud_type",
+            "cld_temp_acha",
+            "cld_height_acha",
+            "cloud_phase",
+            "cld_opd_dcomp",
+            "cld_opd_nlcomp",
+            "cld_reff_dcomp",
+            "cld_reff_nlcomp",
+            "cld_emiss_acha",
+            "refl_lunar_dnb_nom",
+            "rain_rate",
+        ]
+    )
 
-DAY_ONLY = ['cld_opd_dcomp', 'cld_reff_dcomp']
-NIGHT_ONLY = ['cld_opd_nlcomp', 'cld_reff_nlcomp', 'refl_lunar_dnb_nom']
+DEFAULT_DATASETS = [
+    "cloud_type",
+    "cld_temp_acha",
+    "cld_height_acha",
+    "cloud_phase",
+    "cld_opd_dcomp",
+    "cld_opd_nlcomp",
+    "cld_reff_dcomp",
+    "cld_reff_nlcomp",
+    "cld_emiss_acha",
+    "refl_lunar_dnb_nom",
+    "rain_rate",
+]
 
-
-class Frontend(ReaderWrapper):
-    FILE_EXTENSIONS = ['.hdf']
-    DEFAULT_READER_NAME = 'clavrx'
-    DEFAULT_DATASETS = [
-        'cloud_type'
-        'cld_temp_acha',
-        'cld_height_acha',
-        'cloud_phase',
-        'cld_opd_dcomp',
-        'cld_opd_nlcomp',
-        'cld_reff_dcomp',
-        'cld_reff_nlcomp',
-        'cld_emiss_acha',
-        'refl_lunar_dnb_nom',
-        'rain_rate',
-    ]
-
-    @property
-    def default_products(self):
-        return set(self.DEFAULT_DATASETS) & set(self.available_product_names)
-
-    @property
-    def available_product_names(self):
-        available = set(self.scene.available_dataset_names(reader_name=self.reader, composites=True))
-        return sorted(available & set(self.all_product_names))
-
-    @property
-    def all_product_names(self):
-        return ADVERTISED_DATASETS & set(self.scene.all_dataset_names(reader_name=self.reader))
-
-    def filter(self, scene):
-        self.filter_daynight_datasets(scene)
-
-    def filter_daynight_datasets(self, scene):
-        """Some products are only available at daytime or nighttime"""
-        for k in DAY_ONLY + NIGHT_ONLY:
-            if k in scene and scene[k].isnull().all():
-                LOG.info("Removing dataset '{}' because it is completely empty".format(k))
-                del scene[k]
+FILTERS = {
+    "day_only": {
+        "standard_name": [
+            "toa_bidirectional_reflectance",
+            "effective_radius_of_cloud_condensed_water_particles_at_cloud_top",
+            "atmosphere_optical_thickness_due_to_cloud",
+        ]
+    },
+    "night_only": {"standard_name": ["refl_lunar_dnb_nom"]},
+}
 
 
-def add_frontend_argument_groups(parser):
-    """Add command line arguments to an existing parser.
+class ReaderProxy(ReaderProxyBase):
+    """Provide Polar2Grid-specific information about this reader's products."""
 
-    :returns: list of group titles added
-    """
-    from polar2grid.core.script_utils import ExtendAction
-    # Set defaults for other components that may be used in polar2grid processing
-    parser.set_defaults(fornav_D=40, fornav_d=1)
+    is_geo2grid_reader = True
+    is_polar2grid_reader = True
 
-    # Use the append_const action to handle adding products to the list
-    group_title = "Frontend Initialization"
-    group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
-    group.add_argument("--list-products", dest="list_products", action="store_true",
-                       help="List available frontend products and exit")
-    group_title = "Frontend Swath Extraction"
-    group = parser.add_argument_group(title=group_title, description="swath extraction options")
-    group.add_argument("-p", "--products", dest="products", nargs="+", default=None, action=ExtendAction,
-                       help="Specify frontend products to process")
-    return ["Frontend Initialization", "Frontend Swath Extraction"]
+    def get_all_products(self) -> list[str]:
+        """Get all polar2grid products that could be loaded."""
+        return ADVERTISED_DATASETS
 
-if __name__ == "__main__":
-    sys.exit(main(description="Extract CLAVR-X swath data into binary files",
-                  add_argument_groups=add_frontend_argument_groups))
+    def get_default_products(self) -> list[str]:
+        """Get products to load if users hasn't specified any others."""
+        return DEFAULT_DATASETS
+
+
+def add_reader_argument_groups(
+    parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
+) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
+    """Add reader-specific command line arguments to an existing argument parser."""
+    return None, None
