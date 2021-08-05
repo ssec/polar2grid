@@ -323,14 +323,14 @@ def add_reader_argument_groups(
         help="Add all M-band raw products to list of products",
     )
     group.add_argument(
-        "--true-color",
+        "--awips-true-color",
         dest="products",
         action=ExtendConstAction,
         const=_AWIPS_TRUE_COLOR,
         help="Add the True Color product to the list of products",
     )
     group.add_argument(
-        "--false-color",
+        "--awips-false-color",
         dest="products",
         action=ExtendConstAction,
         const=_AWIPS_FALSE_COLOR,
