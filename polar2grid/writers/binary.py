@@ -54,6 +54,7 @@ DEFAULT_OUTPUT_FILENAMES = {
     "viirs_sdr": "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
     "mirs": "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
     "clavrx": "{platform_name!l}_{sensor!l}_{name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
+    "virr_l1b": "{platform_name!l}_{sensor!l}_{name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.dat",
 }
 
 
