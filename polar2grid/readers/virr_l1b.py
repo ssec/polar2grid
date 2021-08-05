@@ -69,7 +69,6 @@ from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
 from ._base import ReaderProxyBase
-from satpy import DataQuery
 
 ALL_BANDS = [str(x) for x in range(1, 11)]
 ALL_COMPS = ["true_color"]
@@ -78,9 +77,6 @@ ALL_ANGLES = ["solar_zenith_angle", "solar_azimuth_angle", "sensor_zenith_angle"
 DEFAULT_PRODUCTS = ALL_BANDS + ALL_ANGLES + ALL_COMPS
 
 PRODUCT_ALIASES = {}
-
-for angle_product in ALL_ANGLES:
-    PRODUCT_ALIASES[angle_product] = DataQuery(name=angle_product)
 
 FILTERS = {
     "day_only": {
@@ -104,7 +100,7 @@ class ReaderProxy(ReaderProxyBase):
 
     def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
-        return DEFAULT_PRODUCTS
+        return ALL_BANDS + ALL_ANGLES + ALL_COMPS
 
     @property
     def _aliases(self) -> dict:
