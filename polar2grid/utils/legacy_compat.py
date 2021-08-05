@@ -46,9 +46,6 @@ def convert_old_p2g_date_frmts(frmt):
         new_start = "start_time{}".format(new_frmt)
         frmt = frmt.replace(old_start, new_start)
 
-        old_begin = "begin_time{}".format(old_frmt)
-        frmt = frmt.replace(old_begin, new_start)
-
         old_end = "end_time{}".format(old_frmt)
         new_end = "end_time{}".format(new_frmt)
         frmt = frmt.replace(old_end, new_end)
@@ -65,6 +62,11 @@ def convert_p2g_pattern_to_satpy(pattern):
         "begin_time": "start_time",
         "product_name": "p2g_name",
     }
+    # If there is no other formatting before replacing begin_time,
+    # add the old default formatting to the pattern and changed begin_time to
+    # start_time
+    pattern = pattern.replace("{begin_time}", "{start_time:%Y%m%d_%H%M}")
+
     for p2g_kw, satpy_kw in replacements.items():
         pattern = pattern.replace(p2g_kw, satpy_kw)
     pattern = convert_old_p2g_date_frmts(pattern)
