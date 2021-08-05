@@ -27,10 +27,10 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
-"""
-The MERSI2 Level 1B reader operates on Level 1B (L1B) HDF5 files.  The files come in 
-four varieties; band data and geolocation data, both at 250m and 1000m resolution.
-Files usually have the following naming scheme:
+"""The MERSI2 Level 1B reader operates on Level 1B (L1B) HDF5 files.
+
+The files come in four varieties; band data and geolocation data, both at 250m
+and 1000m resolution. Files usually have the following naming scheme:
 
     tf{start_time:%Y%j%H%M%S}.{platform_shortname}-{trans_band:1s}_MERSI_1000M_L1B.{ext}
 
@@ -106,14 +106,11 @@ from typing import Optional
 
 from ._base import ReaderProxyBase
 
-import os
-import sys
-
 ALL_BANDS = [str(x) for x in range(1, 26)]
 ALL_ANGLES = ["solar_zenith_angle", "solar_azimuth_angle", "sensor_zenith_angle", "sensor_azimuth_angle"]
 ALL_COMPS = ["true_color", "false_color", "natural_color"]
 
-DEFAULT_PRODUCTS = ALL_BANDS + ALL_COMPS + ALL_ANGLES
+DEFAULT_PRODUCTS = ALL_BANDS + ALL_COMPS
 
 PRODUCT_ALIASES = {}
 
@@ -140,7 +137,7 @@ class ReaderProxy(ReaderProxyBase):
 
     def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
-        return DEFAULT_PRODUCTS
+        return ALL_BANDS + ALL_COMPS + ALL_ANGLES
 
     @property
     def _aliases(self) -> dict:
