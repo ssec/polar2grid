@@ -53,6 +53,7 @@ DEFAULT_OUTPUT_FILENAMES = {
     "mirs": "{platform_name!l}_{sensor!l}_{p2g_name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
     "clavrx": "{platform_name!l}_{sensor!l}_{name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
     "virr_l1b": "{platform_name!l}_{sensor!l}_{name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
+    "mersi2_l1b": "{platform_name!l}_{sensor!l}_{name}_{start_time:%Y%m%d_%H%M%S}_{area.area_id}.tif",
 }
 
 
