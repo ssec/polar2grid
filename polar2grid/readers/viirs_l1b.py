@@ -120,25 +120,33 @@ Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 +---------------------------+-----------------------------------------------------+
 | i_solar_azimuth_angle     | I Band Solar Azimuth Angle                          |
 +---------------------------+-----------------------------------------------------+
-| i_satellite_zenith_angle  | I Band Satellite Zenith Angle                       |
+| i_sat_zenith_angle        | I Band Satellite Zenith Angle                       |
 +---------------------------+-----------------------------------------------------+
-| i_satellite_azimuth_angle | I Band Satellite Azimuth Angle                      |
+| i_sat_azimuth_angle       | I Band Satellite Azimuth Angle                      |
 +---------------------------+-----------------------------------------------------+
-| solar_zenith_angle        | M Band Solar Zenith Angle                           |
+| m_solar_zenith_angle      | M Band Solar Zenith Angle                           |
 +---------------------------+-----------------------------------------------------+
-| solar_azimuth_angle       | M Band Solar Azimuth Angle                          |
+| m_solar_azimuth_angle     | M Band Solar Azimuth Angle                          |
 +---------------------------+-----------------------------------------------------+
-| satellite_zenith_angle    | M Band Satellite Zenith Angle                       |
+| m_sat_zenith_angle        | M Band Satellite Zenith Angle                       |
 +---------------------------+-----------------------------------------------------+
-| satellite_azimuth_angle   | M Band Satellite Azimuth Angle                      |
+| m_sat_azimuth_angle       | M Band Satellite Azimuth Angle                      |
 +---------------------------+-----------------------------------------------------+
 | dnb_solar_zenith_angle    | DNB Band Solar Zenith Angle                         |
 +---------------------------+-----------------------------------------------------+
+| dnb_solar_azimuth_angle   | DNB Band Solar Azimuth Angle                        |
++---------------------------+-----------------------------------------------------+
+| dnb_sat_zenith_angle      | DNB Band Satellite Zenith Angle                     |
++---------------------------+-----------------------------------------------------+
+| dnb_sat_azimuth_angle     | DNB Band Satellite Azimuth Angle                    |
++---------------------------+-----------------------------------------------------+
 | dnb_lunar_zenith_angle    | DNB Band Lunar Zenith Angle                         |
++---------------------------+-----------------------------------------------------+
+| dnb_lunar_azimuth_angle   | DNB Band Lunar Azimuth Angle                        |
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+
-| false_color               | Ratio sharpened rayleigh corrected natural color    |
+| false_color               | Ratio sharpened rayleigh corrected false color      |
 +---------------------------+-----------------------------------------------------+
 
 
@@ -207,6 +215,8 @@ DNB_PRODUCTS = [
 DNB_ANGLE_PRODUCTS = [
     "dnb_solar_zenith_angle",
     "dnb_solar_azimuth_angle",
+    "dnb_sat_zenith_angle",
+    "dnb_sat_azimuth_angle",
     "dnb_lunar_zenith_angle",
     "dnb_lunar_azimuth_angle",
 ]
@@ -244,10 +254,19 @@ PRODUCT_ALIASES["m_solar_zenith_angle"] = DataQuery(name="solar_zenith_angle", r
 PRODUCT_ALIASES["m_solar_azimuth_angle"] = DataQuery(name="solar_azimuth_angle", resolution=742)
 PRODUCT_ALIASES["m_sat_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=742)
 PRODUCT_ALIASES["m_sat_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=742)
+PRODUCT_ALIASES["solar_zenith_angle"] = DataQuery(name="solar_zenith_angle", resolution=742)
+PRODUCT_ALIASES["solar_azimuth_angle"] = DataQuery(name="solar_azimuth_angle", resolution=742)
+PRODUCT_ALIASES["sat_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=742)
+PRODUCT_ALIASES["sat_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=742)
 PRODUCT_ALIASES["i_solar_zenith_angle"] = DataQuery(name="solar_zenith_angle", resolution=371)
 PRODUCT_ALIASES["i_solar_azimuth_angle"] = DataQuery(name="solar_azimuth_angle", resolution=371)
 PRODUCT_ALIASES["i_sat_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=371)
 PRODUCT_ALIASES["i_sat_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=371)
+# old "satellite" name
+PRODUCT_ALIASES["satellite_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=742)
+PRODUCT_ALIASES["satellite_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=742)
+PRODUCT_ALIASES["i_satellite_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=371)
+PRODUCT_ALIASES["i_satellite_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=371)
 
 DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS[1:] + OTHER_COMPS
 
