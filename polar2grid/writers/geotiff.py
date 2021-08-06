@@ -37,10 +37,11 @@ any invalid or missing data pixels. This results in invalid pixels showing up
 as transparent in most image viewers.
 
 """
+import argparse
 import os
 import logging
 from polar2grid.core.dtype import NUMPY_DTYPE_STRS, str_to_dtype, int_or_float
-from polar2grid.core.script_utils import NumpyDtypeList
+from polar2grid.core.script_utils import NumpyDtypeList, BooleanOptionalAction
 
 LOG = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ def add_writer_argument_groups(parser, group=None):
         default="LZW",
         help="File compression algorithm (DEFLATE, LZW, NONE, etc)",
     )
-    group.add_argument("--tiled", action="store_true", help="Create tiled geotiffs")
+    group.add_argument("--tiled", action=BooleanOptionalAction, help="Tile geotiffs internally (default: True)")
     group.add_argument("--blockxsize", default=SUPPRESS, type=int, help="Set tile block X size")
     group.add_argument("--blockysize", default=SUPPRESS, type=int, help="Set tile block Y size")
     group.add_argument(
