@@ -6,6 +6,24 @@ resampling:
     area_type: area
     resampler: native
     default_target: MAX
+  default_clavrx_rain_rate:
+    name: rain_rate
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
+  default_clavrx_cld_height:
+    name: cld_height_acha
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
+  default_clavrx_temp:
+    name: cld_temp_acha
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
   default_viirs:
     area_type: swath
     sensor: viirs
