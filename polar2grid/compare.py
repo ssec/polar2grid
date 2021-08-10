@@ -103,7 +103,7 @@ def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwa
     LOG.info("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
     return ArrayComparisonResult(True, diff_pixels, total_pixels, False)
 
- 
+
 def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
     """Debug two arrays being different by visually comparing them."""
     import matplotlib.pyplot as plt
@@ -114,14 +114,14 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
         vmax = max(np.nanmax(array1), np.nanmax(array2))
 
     fig, (ax1, ax2) = plt.subplots(2, 2)
-    array3 = (array1 - array2)
-    q=[0,0.25,0.5, 0.75,1.0]
+    array3 = array1 - array2
+    q = [0, 0.25, 0.5, 0.75, 1.0]
     array3_quantiles = np.nanquantile(array3, q)
     fig.suptitle(array3_quantiles)
 
     ax1[0].imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
     ax1[1].imshow(array2, cmap=cmap, vmin=vmin, vmax=vmax)
-    diff_max = max(np.nanmax(array3),np.absolute(np.nanmin(array3)))
+    diff_max = max(np.nanmax(array3), np.absolute(np.nanmin(array3)))
     img3 = ax2[0].imshow(array3, cmap='RdBu', vmin=-diff_max, vmax=diff_max)
     fig.colorbar(img3, ax=ax2[0])
     fig.delaxes(ax2[1])
@@ -194,14 +194,14 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kw
 
     return [compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error, **kwargs)]
 
+
 def compare_netcdf(
     nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs
 ) -> list[VariableComparisonResult]:
-    from netCDF4 import Dataset
 
     nc1 = xr.open_dataset(nc1_name)
     nc2 = xr.open_dataset(nc2_name)
-    
+
     if variables is None:
         # TODO: Handle groups
         variables = list(nc1.variables.keys())
