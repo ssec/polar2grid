@@ -12,7 +12,13 @@ def before_all(context):
     if not context.datapath.startswith(os.sep):
         context.datapath = os.path.join(os.getcwd(), context.datapath)
     p2g_home = os.environ.get("POLAR2GRID_HOME")
-    context.p2g_path = os.path.join(p2g_home, "bin") if p2g_home is not None else ""
+    # if POLAR2GRID_HOME isn't defined, assume things are installed in the python prefix
+    context.p2g_path = os.path.join(p2g_home, "bin") if p2g_home is not None else os.path.join(sys.prefix, "bin")
+    if p2g_home is None:
+        # assume development/editable install
+        import polar2grid
+
+        os.environ["POLAR2GRID_HOME"] = os.path.join(os.path.dirname(polar2grid.__file__), "..", "swbundle")
     tmpdir = tempfile.gettempdir()
     context.base_temp_dir = os.path.join(tmpdir, "p2g_integration_tests")
 

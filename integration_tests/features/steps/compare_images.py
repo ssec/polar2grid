@@ -24,7 +24,7 @@ def step_impl(context, source):
         else:
             assert os.path.exists(f), "Input {} does not exist".format(f)
 
-    context.source = new_source
+    context.source = new_source.rstrip()
 
 
 @given("an empty working directory")
@@ -33,14 +33,15 @@ def step_impl(context):
 
 
 @given("input data is copied to the working directory")
-def step_impl(context, source):
+def step_impl(context):
     new_source = ""
-    for input_path in context.source.split(" "):
-        new_path = os.path.join(context.temp_dir, os.path.basename(input_path))
-        new_source += new_path + " "
-        shutil.copy(input_path, new_path)
+    for input_dir in context.source.split(" "):
+        for input_filename in os.listdir(input_dir):
+            new_path = os.path.join(context.temp_dir, os.path.basename(input_filename))
+            new_source += new_path + " "
+            shutil.copy(os.path.join(input_dir, input_filename), new_path)
 
-    context.source = new_source
+    context.source = new_source.rstrip()
 
 
 @when("{command} runs")

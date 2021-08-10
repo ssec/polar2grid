@@ -117,16 +117,11 @@ setup(
     classifiers=classifiers,
     keywords="",
     url="http://www.ssec.wisc.edu/software/polar2grid/",
-    packages=find_packages(exclude=["ez_setup", "examples", "tests"]),
+    packages=find_packages(),
     include_package_data=True,
     package_data={
         "polar2grid": [
-            "compositors/*.ini",
-            "awips/*.ini",
-            "awips/*.yaml",
             "grids/*.conf",
-            "ninjo/*.ini",
-            "core/rescale_configs/*.ini",
         ]
     },
     # The location of where these are installed are important for the swbundle and glue scripts!
