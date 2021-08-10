@@ -138,7 +138,7 @@ def compare_array(array1, array2, plot=False, **kwargs) -> ArrayComparisonResult
     return isclose_array(array1, array2, **kwargs)
 
 
-def compare_binary(fn1, fn2, shape, dtype,  atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
+def compare_binary(fn1, fn2, shape, dtype, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
     if dtype is None:
         dtype = np.float32
     mmap_kwargs = {"dtype": dtype, "mode": "r"}
