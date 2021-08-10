@@ -1,0 +1,49 @@
+enhancements:
+  amsr2_btemp_36.5v:
+    name: btemp_36.5v
+    sensor: amsr2
+    standard_name: toa_brightness_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}
+  amsr2_btemp_36.5h:
+    name: btemp_36.5h
+    sensor: amsr2
+    standard_name: toa_brightness_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}
+  amsr2_btemp_89.0av:
+    name: btemp_89.0av
+    sensor: amsr2
+    standard_name: toa_brightness_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}
+  amsr2_btemp_89.0ah:
+    name: btemp_89.0ah
+    sensor: amsr2
+    standard_name: toa_brightness_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}
+  amsr2_btemp_89.0bv:
+    name: btemp_89.0bv
+    sensor: amsr2
+    standard_name: toa_brightness_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}
+  amsr2_btemp_89.0bh:
+    name: btemp_89.0bh
+    sensor: amsr2
+    standard_name: toa_brightness_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}

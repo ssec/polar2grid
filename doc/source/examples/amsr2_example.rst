@@ -66,7 +66,7 @@ and rescale the data using the test data set from 19 July 2016:
 
 .. code-block:: bash
 
-    polar2grid.sh amsr2_l1b gtiff --rescale-configs $POLAR2GRID_HOME/rescale_configs/amsr2_png.ini -g lcc_fit -f ../data/GW1AM2_201607191903_137A_L1DLBTBR_1110110.h5
+    polar2grid.sh amsr2_l1b gtiff --extra-config-path $POLAR2GRID_HOME/example_enhancements/amsr2_png -g lcc_fit -f ../data/GW1AM2_201607191903_137A_L1DLBTBR_1110110.h5
 
 Executing this command produces these AMSR2 LCC GeoTIFF files:
 
