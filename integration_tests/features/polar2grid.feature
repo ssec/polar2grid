@@ -4,6 +4,7 @@ Feature: Test polar2grid output images
 
   Scenario Outline: Test polar2grid images
     Given input data from <source>
+    Given an empty working directory
     When <command> runs
     Then the output matches with the files in <output>
 
@@ -15,6 +16,8 @@ Feature: Test polar2grid output images
    Examples: AMSR2_L1B
       | command                                                                  | source            | output             |
       | polar2grid.sh -r amsr2_l1b -w awips_tiled -vv --sector-id LCC --source-name SSEC --letters -g 211e -p btemp_36.5h btemp_89.0av -f | amsr2/input/test1 | amsr2/output/test1 |
+      | polar2grid.sh -r amsr2_l1b -w geotiff -vv -f | amsr2/input/test1 | amsr2/output/test2 |
+      | polar2grid.sh -r amsr2_l1b -w geotiff --extra-config-path ${POLAR2GRID_HOME}/example_enhancements/amsr2_png -g lcc_fit -vv -f | amsr2/input/test1 | amsr2/output/test3 |
 
     Examples: AVHRR
       | command                          | source            | output             |
@@ -44,6 +47,7 @@ Feature: Test polar2grid output images
 
   Scenario Outline: Test list products output
     Given input data from <source>
+    Given an empty working directory
     When <command> runs with --list-products
     Then the printed output includes the products in <output>
 

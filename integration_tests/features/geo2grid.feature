@@ -4,6 +4,7 @@ Feature: Test geo2grid output images
 
   Scenario Outline: Test geo2grid images
     Given input data from <source>
+    Given an empty working directory
     When <command> runs
     Then the output matches with the files in <output>
 
@@ -16,6 +17,7 @@ Feature: Test geo2grid output images
 
   Scenario Outline: Test list products output
     Given input data from <source>
+    Given an empty working directory
     When <command> runs with --list-products
     Then the printed output includes the products in <output>
 

@@ -27,18 +27,34 @@ def step_impl(context, source):
     context.source = new_source
 
 
+@given("an empty working directory")
+def step_impl(context):
+    context.temp_dir = tempfile.mkdtemp(prefix=os.path.join(context.base_temp_dir, "p2g_tests_"))
+
+
+@given("input data is copied to the working directory")
+def step_impl(context, source):
+    new_source = ""
+    for input_path in context.source.split(" "):
+        new_path = os.path.join(context.temp_dir, os.path.basename(input_path))
+        new_source += new_path + " "
+        shutil.copy(input_path, new_path)
+
+    context.source = new_source
+
+
 @when("{command} runs")
 def step_impl(context, command):
     context.script = command.split()[0]
     context.command = "datapath={}; /usr/bin/time {} {}".format(
-        context.datapath, os.path.join(context.p2g_path, command), context.source
+        context.datapath, os.path.join(context.p2g_path, os.path.expandvars(command)), context.source
     )
 
     # creating new data in temporary directory to compare
     orig_dir = os.getcwd()
+    temp_dir = getattr(context, "temp_dir", orig_dir)
     try:
-        context.temp_dir = tempfile.mkdtemp(prefix=os.path.join(context.base_temp_dir, "p2g_tests_"))
-        os.chdir(context.temp_dir)
+        os.chdir(temp_dir)
         exit_status = subprocess.call(context.command, shell=True)
         assert exit_status == 0, "{} ran unsuccessfully".format(context.command)
     finally:
