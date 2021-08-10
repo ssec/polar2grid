@@ -60,7 +60,14 @@ from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList, str_to_
 LOG = logging.getLogger(__name__)
 
 # reader_name -> filename
-DEFAULT_OUTPUT_FILENAMES = {None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.h5"}
+DEFAULT_OUTPUT_FILENAMES = {
+    "polar2grid": {
+        None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.h5",
+    },
+    "geo2grid": {
+        None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.h5",
+    },
+}
 
 
 def all_equal(iterable: list[str]) -> bool:
