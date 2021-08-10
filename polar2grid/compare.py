@@ -31,6 +31,7 @@ from glob import glob
 from dataclasses import dataclass, field
 
 import numpy as np
+import xarray as xr
 
 LOG = logging.getLogger(__name__)
 
@@ -88,6 +89,7 @@ def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwa
         1 if more than margin_of_error pixels are different, 0 otherwise.
 
     """
+
     if array1.shape != array2.shape:
         LOG.error("Data shapes were not equal: %r | %r", array1.shape, array2.shape)
         return ArrayComparisonResult(False, 0, 0, True)
@@ -101,7 +103,7 @@ def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwa
     LOG.info("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
     return ArrayComparisonResult(True, diff_pixels, total_pixels, False)
 
-
+ 
 def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
     """Debug two arrays being different by visually comparing them."""
     import matplotlib.pyplot as plt
@@ -110,19 +112,33 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
     if vmin is None:
         vmin = min(np.nanmin(array1), np.nanmin(array2))
         vmax = max(np.nanmax(array1), np.nanmax(array2))
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    ax1.imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
-    ax2.imshow(array2, cmap=cmap, vmin=vmin, vmax=vmax)
+
+    fig, (ax1, ax2) = plt.subplots(2, 2)
+    array3 = (array1 - array2)
+    q=[0,0.25,0.5, 0.75,1.0]
+    array3_quantiles = np.nanquantile(array3, q)
+    fig.suptitle(array3_quantiles)
+
+    ax1[0].imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
+    ax1[1].imshow(array2, cmap=cmap, vmin=vmin, vmax=vmax)
+
+    
+    diff_max = max(np.nanmax(array3),np.absolute(np.nanmin(array3)))
+    img3 = ax2[0].imshow(array3, cmap='RdBu', vmin=-diff_max, vmax=diff_max)
+    fig.colorbar(img3, ax=ax2[0])
+    fig.delaxes(ax2[1])
+
     plt.show()
 
 
 def compare_array(array1, array2, plot=False, **kwargs) -> ArrayComparisonResult:
+
     if plot:
         plot_array(array1, array2, **kwargs)
     return isclose_array(array1, array2, **kwargs)
 
 
-def compare_binary(fn1, fn2, shape, dtype, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
+def compare_binary(fn1, fn2, shape, dtype,  atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
     if dtype is None:
         dtype = np.float32
     mmap_kwargs = {"dtype": dtype, "mode": "r"}
@@ -158,7 +174,7 @@ def _get_geotiff_array(gtiff_fn, dtype=None):
     return arr
 
 
-def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
+def compare_awips_netcdf(nc1_name, nc2_name, conovert_nan=None, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
     """Compare 2 8-bit AWIPS-compatible NetCDF3 files
 
     .. note::
@@ -171,8 +187,8 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kw
 
     nc1 = Dataset(nc1_name, "r")
     nc2 = Dataset(nc2_name, "r")
-    image1_var = nc1.variables["image"]
-    image2_var = nc2.variables["image"]
+    image1_var = nc1["data"]
+    image2_var = nc2["data"]
     image1_var.set_auto_maskandscale(False)
     image2_var.set_auto_maskandscale(False)
     image1_data = image1_var[:].astype(np.uint8).astype(np.float32)
@@ -180,23 +196,21 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kw
 
     return [compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error, **kwargs)]
 
-
 def compare_netcdf(
     nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs
 ) -> list[VariableComparisonResult]:
     from netCDF4 import Dataset
 
-    nc1 = Dataset(nc1_name, "r")
-    nc2 = Dataset(nc2_name, "r")
+    nc1 = xr.open_dataset(nc1_name)
+    nc2 = xr.open_dataset(nc2_name)
+    
     if variables is None:
         # TODO: Handle groups
         variables = list(nc1.variables.keys())
     results = []
     for v in variables:
-        image1_var = nc1[v]
-        image2_var = nc2[v]
-        image1_var.set_auto_maskandscale(False)
-        image2_var.set_auto_maskandscale(False)
+        image1_var = nc1[v].data
+        image2_var = nc2[v].data
         LOG.debug("Comparing data for variable '{}'".format(v))
         array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
         var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
@@ -277,6 +291,7 @@ class CompareHelper:
             # guess based on file extension
             ext = os.path.splitext(file1)[-1]
             file_type = file_ext_to_compare_func.get(ext)
+            file_type = file_ext_to_compare_func.get(ext)
         if file_type is None:
             LOG.error(f"Could not determine how to compare file type (extension not recognized): {file1}.")
             return FileComparisonResults(file1, file2, False, True)
@@ -302,6 +317,7 @@ class CompareHelper:
         return results
 
     def compare(self, input1, input2, **kwargs) -> list[FileComparisonResults]:
+        kwargs.update({"plot": self.create_plot})
         if os.path.isdir(input1) and os.path.isdir(input2):
             return self.compare_dirs(input1, input2, **kwargs)
         elif os.path.isfile(input1) and os.path.isfile(input2):
@@ -512,7 +528,8 @@ def main(argv=sys.argv[1:]):
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
-    compare_kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, "variables": args.variables}
+    compare_kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, "variables": args.variables,
+                      "file_type": args.file_type}
 
     comparer = CompareHelper(
         atol=args.atol, rtol=args.rtol, margin_of_error=args.margin_of_error, create_plot=args.plot
