@@ -121,8 +121,6 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
 
     ax1[0].imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
     ax1[1].imshow(array2, cmap=cmap, vmin=vmin, vmax=vmax)
-
-    
     diff_max = max(np.nanmax(array3),np.absolute(np.nanmin(array3)))
     img3 = ax2[0].imshow(array3, cmap='RdBu', vmin=-diff_max, vmax=diff_max)
     fig.colorbar(img3, ax=ax2[0])
@@ -138,7 +136,7 @@ def compare_array(array1, array2, plot=False, **kwargs) -> ArrayComparisonResult
     return isclose_array(array1, array2, **kwargs)
 
 
-def compare_binary(fn1, fn2, shape, dtype,  atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
+def compare_binary(fn1, fn2, shape, dtype, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
     if dtype is None:
         dtype = np.float32
     mmap_kwargs = {"dtype": dtype, "mode": "r"}
@@ -174,7 +172,7 @@ def _get_geotiff_array(gtiff_fn, dtype=None):
     return arr
 
 
-def compare_awips_netcdf(nc1_name, nc2_name, conovert_nan=None, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
+def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
     """Compare 2 8-bit AWIPS-compatible NetCDF3 files
 
     .. note::
@@ -290,7 +288,6 @@ class CompareHelper:
         if file_type is None:
             # guess based on file extension
             ext = os.path.splitext(file1)[-1]
-            file_type = file_ext_to_compare_func.get(ext)
             file_type = file_ext_to_compare_func.get(ext)
         if file_type is None:
             LOG.error(f"Could not determine how to compare file type (extension not recognized): {file1}.")
