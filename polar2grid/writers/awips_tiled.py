@@ -84,9 +84,16 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-DEFAULT_OUTPUT_PATTERN = "{source_name}_AII_{platform_name}_{sensor}_{p2g_name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc"
+DEFAULT_OUTPUT_PATTERN = (
+    "{source_name}_AII_{platform_name}_{sensor}_{p2g_name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc"
+)
 DEFAULT_OUTPUT_FILENAMES = {
-    None: DEFAULT_OUTPUT_PATTERN,
+    "polar2grid": {
+        None: DEFAULT_OUTPUT_PATTERN,
+    },
+    "geo2grid": {
+        None: DEFAULT_OUTPUT_PATTERN,
+    },
 }
 
 
@@ -97,9 +104,7 @@ def add_writer_argument_groups(parser, group=None):
         group = parser.add_argument_group(title="AWIPS Tiled Writer")
     # group_1.add_argument('--file-pattern', default=DEFAULT_OUTPUT_PATTERN,
     #                      help="Custom file pattern to save dataset to")
-    group.add_argument(
-        "--compress", action="store_true", help="zlib compress each netcdf file"
-    )
+    group.add_argument("--compress", action="store_true", help="zlib compress each netcdf file")
     group.add_argument("--fix-awips", action="store_true", help=argparse.SUPPRESS)
     # help="modify NetCDF output to work with the old/broken AWIPS NetCDF library")
     group.add_argument(
@@ -165,7 +170,6 @@ def add_writer_argument_groups(parser, group=None):
     group.add_argument(
         "--template",
         default="polar",
-        help="specify name for pre-configured template used to "
-        "determine output file structure and formatting.",
+        help="specify name for pre-configured template used to " "determine output file structure and formatting.",
     )
     return group, None

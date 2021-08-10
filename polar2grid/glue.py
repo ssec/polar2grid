@@ -105,12 +105,14 @@ def overwrite_platform_name_with_aliases(scn):
         data_arr.attrs["platform_name"] = pname
 
 
-def get_default_output_filename(reader: str, writer: str):
+def get_default_output_filename(reader: str, writer: str, is_polar2grid: bool):
     """Get a default output filename based on what reader we are reading."""
     ofile_map = get_writer_attr(writer, "DEFAULT_OUTPUT_FILENAMES", {})
-    if reader not in ofile_map:
+    pkg_name = "polar2grid" if is_polar2grid else "geo2grid"
+    package_filenames = ofile_map[pkg_name]
+    if reader not in package_filenames:
         reader = None
-    return ofile_map.get(reader)
+    return package_filenames.get(reader)
 
 
 def _fsfiles_for_s3(input_filenames):
@@ -506,6 +508,7 @@ def _parse_writer_args(
     writer_names: list[str],
     writer_subgroups: list,
     reader_names: list[str],
+    is_polar2grid: bool,
     args,
 ) -> dict:
     writer_args = {}
@@ -516,7 +519,7 @@ def _parse_writer_args(
         writer_args[writer_name] = wargs
         # get default output filename
         if "filename" in wargs and wargs["filename"] is None:
-            wargs["filename"] = get_default_output_filename(reader_names[0], writer_name)
+            wargs["filename"] = get_default_output_filename(reader_names[0], writer_name, is_polar2grid)
     return writer_args
 
 
@@ -688,7 +691,9 @@ basic processing with limited products:
     scene_creation, load_args = _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     resample_args = _args_to_dict(args, resampling_group._group_actions)
     writer_args = _args_to_dict(args, writer_group._group_actions)
-    writer_specific_args = _parse_writer_args(writer_args["writers"], writer_subgroups, reader_names, args)
+    writer_specific_args = _parse_writer_args(
+        writer_args["writers"], writer_subgroups, reader_names, USE_POLAR2GRID_DEFAULTS, args
+    )
     writer_args.update(writer_specific_args)
 
     if not args.filenames:
