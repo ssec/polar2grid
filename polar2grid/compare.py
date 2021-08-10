@@ -117,15 +117,22 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
     array3 = array1 - array2
     q = [0, 0.25, 0.5, 0.75, 1.0]
     array3_quantiles = np.nanquantile(array3, q)
-    fig.suptitle(array3_quantiles)
+    subtitle = np.array2string(array3_quantiles,  precision=8, separator=',',
+                               suppress_small=True)
+    fig.suptitle(subtitle)
+    img1 = ax1[0].imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
+    fig.colorbar(img1, ax=ax1[0])
+    img2 = ax1[1].imshow(array2, cmap=cmap, vmin=vmin, vmax=vmax)
+    fig.colorbar(img2, ax=ax1[1])
 
-    ax1[0].imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
-    ax1[1].imshow(array2, cmap=cmap, vmin=vmin, vmax=vmax)
-    diff_max = max(np.nanmax(array3), np.absolute(np.nanmin(array3)))
-    img3 = ax2[0].imshow(array3, cmap='RdBu', vmin=-diff_max, vmax=diff_max)
-    fig.colorbar(img3, ax=ax2[0])
+    ax2[0].set_title("Difference")
+    inner_fence_low = q[1] - (q[3] - q[1]) * 1.5
+    inner_fence_high = q[3] + (q[3] - q[1]) * 1.5
+    img4 = ax2[0].imshow(array3, cmap=cmap, vmin=inner_fence_low, vmax=inner_fence_high)
+    fig.colorbar(img4, ax=ax2[0])
     fig.delaxes(ax2[1])
 
+    plt.tight_layout()
     plt.show()
 
 
@@ -241,7 +248,7 @@ def compare_hdf5(h1_name, h2_name, variables, atol=0.0, margin_of_error=0.0, **k
         image1_var = h1[v]
         image2_var = h2[v]
         LOG.debug("Comparing data for variable '{}'".format(v))
-        array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
+        array_result = compare_array(image1_var[:], image2_var[:], atol=atol, margin_of_error=margin_of_error, **kwargs)
         var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
         results.append(var_result)
     return results
@@ -294,7 +301,9 @@ class CompareHelper:
             return FileComparisonResults(file1, file2, False, True)
         LOG.info(f"Comparing '{file2}' to known valid file '{file1}'.")
         comparison_results = file_type(
-            file1, file2, atol=self.atol, rtol=self.rtol, margin_of_error=self.margin_of_error, **kwargs
+            file1, file2, atol=self.atol, rtol=self.rtol,
+            margin_of_error=self.margin_of_error,
+            plot=self.create_plot, **kwargs
         )
         return FileComparisonResults(file1, file2, False, False, comparison_results)
 
@@ -314,7 +323,6 @@ class CompareHelper:
         return results
 
     def compare(self, input1, input2, **kwargs) -> list[FileComparisonResults]:
-        kwargs.update({"plot": self.create_plot})
         if os.path.isdir(input1) and os.path.isdir(input2):
             return self.compare_dirs(input1, input2, **kwargs)
         elif os.path.isfile(input1) and os.path.isfile(input2):
@@ -512,7 +520,8 @@ def main(argv=sys.argv[1:]):
         "If specified with no argument then defaults to 'comparison_summary.html'. All additional "
         "files (images, CSS, etc) will be placed in the same directory.",
     )
-    parser.add_argument("--margin-of-error", type=float, default=0.0, help="percent of total pixels that can be wrong")
+    parser.add_argument("--margin-of-error", type=float, default=0.0,
+                        help="percent of total pixels that can be wrong")
     parser.add_argument(
         "file_type",
         type=_file_type,
