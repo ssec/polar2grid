@@ -12,6 +12,10 @@ Feature: Test polar2grid output images
       | command                                              | source            |  output            |
       | polar2grid.sh -r acspo -w geotiff -vv --grid-coverage=0.0 -f | acspo/input/test1 | acspo/output/test1 |
       | polar2grid.sh -r acspo -w geotiff -vv --grid-coverage=0.0 -f | acspo/input/test2 | acspo/output/test2 |
+      | polar2grid.sh -r acspo -w geotiff -vv --grid-coverage=0.0 -f | acspo/input/test3 | acspo/output/test3 |
+      | polar2grid.sh -r acspo -w geotiff -vv --grid-coverage=0.0 -f | acspo/input/test4 | acspo/output/test4 |
+      | polar2grid.sh -r acspo -w geotiff -vv --grid-coverage=0.0 -f | acspo/input/test5 | acspo/output/test5 |
+      | polar2grid.sh -r acspo -w geotiff -vv --grid-coverage=0.0 -f | acspo/input/test6 | acspo/output/test6 |
 
    Examples: AMSR2_L1B
       | command                                                                  | source            | output             |
