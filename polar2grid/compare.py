@@ -126,11 +126,10 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
     fig.colorbar(img2, ax=ax1[1])
 
     ax2[0].set_title("Difference")
-    inner_fence_low = q[1] - (q[3] - q[1]) * 1.5
-    inner_fence_high = q[3] + (q[3] - q[1]) * 1.5
-    img4 = ax2[0].imshow(array3, cmap=cmap, vmin=inner_fence_low, vmax=inner_fence_high)
+    array3[array3 == 0.0] = np.nan
+    img4 = ax2[0].imshow(array3, cmap=cmap)
     fig.colorbar(img4, ax=ax2[0])
-    fig.delaxes(ax2[1])
+    ax2[1].hist(array3[~np.isnan(array3)], 100)
 
     plt.tight_layout()
     plt.show()
