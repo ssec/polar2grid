@@ -235,6 +235,14 @@ def compare_hdf5(h1_name, h2_name, variables, atol=0.0, margin_of_error=0.0, **k
     return results
 
 
+def compare_image(im1_name, im2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
+    from PIL import Image
+
+    img1 = np.array(Image.open(im1_name))
+    img2 = np.array(Image.open(im2_name))
+    return [compare_array(img1, img2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
+
+
 type_name_to_compare_func = {
     "binary": compare_binary,
     "gtiff": compare_geotiff,
@@ -242,6 +250,7 @@ type_name_to_compare_func = {
     "awips": compare_awips_netcdf,
     "netcdf": compare_netcdf,
     "hdf5": compare_hdf5,
+    "png": compare_image,
 }
 
 file_ext_to_compare_func = {
@@ -250,6 +259,9 @@ file_ext_to_compare_func = {
     ".tiff": compare_geotiff,
     ".nc": compare_netcdf,
     ".h5": compare_hdf5,
+    ".png": compare_image,
+    ".jpg": compare_image,
+    ".jpeg": compare_image,
 }
 
 
@@ -397,12 +409,13 @@ def _generate_table_rows(
             variable = getattr(sub_result, "variable", None)
             exp_tn_html = "N/A"
             act_tn_html = "N/A"
-            if variable is None and exp_filename.endswith(".tif"):
+            file_ext = os.path.splitext(exp_filename)[1]
+            if variable is None and file_ext in (".tif", ".tiff", ".png", ".jpg", ".jpeg"):
                 # TODO: Support multi-variable and non-tif formats
-                exp_tn_fn = exp_filename.replace(".tif", f".{variable}.expected.png")
+                exp_tn_fn = exp_filename.replace(file_ext, f".{variable}.expected.png")
                 exp_tn_html = img_entry_tmpl.format("_images/" + exp_tn_fn)
                 _generate_thumbnail(fc.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
-                act_tn_fn = exp_filename.replace(".tif", f".{variable}.actual.png")
+                act_tn_fn = exp_filename.replace(file_ext, f".{variable}.actual.png")
                 act_tn_html = img_entry_tmpl.format("_images/" + act_tn_fn)
                 _generate_thumbnail(fc.file2, os.path.join(img_dst_dir, act_tn_fn), max_width=512)
 
@@ -443,7 +456,6 @@ def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
     width_ratio = full_size[0] // max_width
     new_size = (max_width, full_size[1] // width_ratio)
     scaled_img = full_img.resize(new_size)
-    print(output_thumbnail_path, input_arr.shape, scaled_img.size)
     scaled_img.save(output_thumbnail_path, format="PNG")
 
 
