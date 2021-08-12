@@ -109,10 +109,9 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
     import matplotlib.pyplot as plt
 
     LOG.info("Plotting arrays...")
-    if vmin is None:
-        vmin = min(np.nanmin(array1), np.nanmin(array2))
-        vmax = max(np.nanmax(array1), np.nanmax(array2))
-
+    vmin = vmin if vmin else -10
+    vmax = vmax if vmax else 10
+        
     fig, (ax1, ax2) = plt.subplots(2, 2)
     array3 = array1 - array2
     q = [0, 0.25, 0.5, 0.75, 1.0]
@@ -127,9 +126,12 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
 
     ax2[0].set_title("Difference")
     array3[array3 == 0.0] = np.nan
-    img4 = ax2[0].imshow(array3, cmap=cmap)
+    img4 = ax2[0].imshow(array3, cmap='RdBu', vmin=vmin, vmax=vmax)
     fig.colorbar(img4, ax=ax2[0])
-    ax2[1].hist(array3[~np.isnan(array3)], 100)
+
+    n_bins = 100
+    nan_array3 = array3[~np.isnan(array3)]
+    ax2[1].hist(nan_array3, density=True, bins=n_bins)
 
     plt.tight_layout()
     plt.show()
