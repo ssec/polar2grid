@@ -387,7 +387,7 @@ def main():
         # P = palette which we assume to be an RGBA colormap
         img = img.convert("RGBA" if num_bands in (2, 4) or "P" in img_bands else "RGB")
         if pycoast_options:
-            area_id = os.path.splitext(input_tiff[0])
+            area_id = os.path.splitext(input_tiff[0])[0]
             area_def = get_area_def_from_raster(input_tiff, area_id=area_id)
             cw = ContourWriterAGG(args.shapes_dir)
             cw.add_overlay_from_dict(pycoast_options, area_def, background=img)
