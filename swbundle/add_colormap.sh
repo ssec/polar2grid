@@ -36,4 +36,4 @@ export POLAR2GRID_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
 # __SWBUNDLE_ENVIRONMENT_INJECTION__
 
 # Call the python module to do the processing, passing all arguments
-${P2G_SHELLB3_DIR}/bin/python -m polar2grid.add_colormap "$@"
+python3 -m polar2grid.add_colormap "$@"

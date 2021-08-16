@@ -217,7 +217,7 @@ with a color bar in Degrees Celsius.
       --colorbar-text-size 20 --colorbar-height=35
 
 I can perform a similar conversion of the temperature range to 
-Degrees Fahrenheit and create an image with a color bar labelled 
+Degrees Fahrenheit and create an image with a color bar labeled
 in those units.
 
 .. code-block:: bash
@@ -247,7 +247,7 @@ I execute the command,
       --colorbar-text-size 20 --colorbar-height=35
 
 it will result in the creation of the final image product that 
-is a re-gridded, re-scaled, color enhanced image with a color bar labelled in
+is a re-gridded, re-scaled, color enhanced image with a color bar labeled in
 Degrees Celsius and coastline overlays. 
 
 .. raw:: latex

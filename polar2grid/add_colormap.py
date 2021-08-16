@@ -108,11 +108,15 @@ def parse_color_table_file(f):
                 interp_idx = 0
                 while prev_idx < parts[0]:
                     prev_idx += 1
-                    ct.append([prev_idx,
-                               r_interp[interp_idx],
-                               g_interp[interp_idx],
-                               b_interp[interp_idx],
-                               a_interp[interp_idx]])
+                    ct.append(
+                        [
+                            prev_idx,
+                            r_interp[interp_idx],
+                            g_interp[interp_idx],
+                            b_interp[interp_idx],
+                            a_interp[interp_idx],
+                        ]
+                    )
                     interp_idx += 1
             else:
                 ct.append(parts)
@@ -132,17 +136,19 @@ def load_color_table_file_to_colormap(ct_file):
 
     """
     from trollimage.colormap import Colormap
-    p2g_home = os.getenv('POLAR2GRID_HOME', '')
+
+    p2g_home = os.getenv("POLAR2GRID_HOME", "")
     ct_file = ct_file.replace("$POLAR2GRID_HOME", p2g_home)
     ct_file = ct_file.replace("$GEO2GRID_HOME", p2g_home)
-    if ct_file.endswith('.npy') or ct_file.endswith('.npz'):
+    if ct_file.endswith(".npy") or ct_file.endswith(".npz"):
         # binary colormap files (RGB, RGBA, VRGB, VRGBA)
         from satpy.enhancements import create_colormap
-        cmap = create_colormap({'filename': ct_file})
+
+        cmap = create_colormap({"filename": ct_file})
     else:
         # P2G style colormap text files
         ct = parse_color_table_file(ct_file)
-        entries = ((e[0] / 255., [x / 255. for x in e[1:]]) for e in ct)
+        entries = ((e[0] / 255.0, [x / 255.0 for x in e[1:]]) for e in ct)
         cmap = Colormap(*entries)
     return cmap
 
@@ -153,7 +159,7 @@ def create_colortable(ct_file_or_entries):
         ct_entries = parse_color_table_file(ct_file_or_entries)
     elif isinstance(ct_file_or_entries, Colormap):
         ct_entries = enumerate(ct_file_or_entries.colors)
-        ct_entries = (((x,) + tuple(int(c * 255.) for c in color)) for x, color in ct_entries)
+        ct_entries = (((x,) + tuple(int(c * 255.0) for c in color)) for x, color in ct_entries)
     else:
         ct_entries = ct_file_or_entries
 
@@ -175,12 +181,11 @@ def add_colortable(gtiff, ct):
 
 def get_parser():
     import argparse
+
     description = "Add a GeoTIFF colortable to an existing single-band GeoTIFF."
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("ct_file",
-                        help="Color table file to apply (CSV of (int, R, G, B, A)")
-    parser.add_argument("geotiffs", nargs="+",
-                        help="Geotiff files to apply the color table to")
+    parser.add_argument("ct_file", help="Color table file to apply (CSV of (int, R, G, B, A)")
+    parser.add_argument("geotiffs", nargs="+", help="Geotiff files to apply the color table to")
     return parser
 
 
@@ -192,6 +197,7 @@ def main():
     for geotiff_fn in args.geotiffs:
         gtiff = gdal.Open(geotiff_fn, gdal.GF_Write)
         add_colortable(gtiff, ct)
+
 
 if __name__ == "__main__":
     sys.exit(main())

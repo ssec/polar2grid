@@ -40,6 +40,8 @@ from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr
 from polar2grid.core.script_utils import ExtendAction
 from polar2grid.readers._base import ReaderProxyBase
 
+import satpy
+
 # type aliases
 ComponentParserFunc = Callable[[argparse.ArgumentParser], tuple]
 
@@ -561,8 +563,6 @@ def _print_list_products(reader_info, p2g_only=True):
 
 
 def add_polar2grid_config_paths():
-    import satpy
-
     dist = pkg_resources.get_distribution("polar2grid")
     if dist_is_editable(dist):
         p2g_etc = os.path.join(dist.module_path, "etc")
@@ -571,6 +571,12 @@ def add_polar2grid_config_paths():
     config_path = satpy.config.get("config_path")
     if p2g_etc not in config_path:
         satpy.config.set(config_path=config_path + [p2g_etc])
+
+
+def add_extra_config_paths(extra_paths: list[str]):
+    config_path = satpy.config.get("config_path")
+    LOG.info(f"Adding additional configuration paths: {extra_paths}")
+    satpy.config.set(config_path=extra_paths + config_path)
 
 
 def main(argv=sys.argv[1:]):
@@ -626,6 +632,15 @@ basic processing with limited products:
         type=int,
         default=os.getenv("DASK_NUM_WORKERS", 4),
         help="specify number of worker threads to use (default: 4)",
+    )
+    parser.add_argument(
+        "--extra-config-path",
+        action="append",
+        help="Specify the base directory of additional Satpy configuration "
+        "files. For example, to use custom enhancement YAML file named "
+        "'generic.yaml' place it in a directory called 'enhancements' "
+        "like '/path/to/my_configs/enhancements/generic.yaml' and then "
+        "set this flag to '/path/to/my_configs'.",
     )
     parser.add_argument(
         "--match-resolution",
@@ -718,6 +733,9 @@ basic processing with limited products:
 
         warnings.filterwarnings("ignore")
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
+    if args.extra_config_path:
+        add_extra_config_paths(args.extra_config_path)
+    LOG.debug(f"Satpy config path is: {satpy.config.get('config_path')}")
 
     # Set up dask and the number of workers
     if args.num_workers:
