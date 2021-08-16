@@ -31,6 +31,7 @@ from glob import glob
 from dataclasses import dataclass, field
 
 import numpy as np
+import xarray as xr
 
 LOG = logging.getLogger(__name__)
 
@@ -88,6 +89,7 @@ def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwa
         1 if more than margin_of_error pixels are different, 0 otherwise.
 
     """
+
     if array1.shape != array2.shape:
         LOG.error("Data shapes were not equal: %r | %r", array1.shape, array2.shape)
         return ArrayComparisonResult(False, 0, 0, True)
@@ -107,16 +109,36 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
     import matplotlib.pyplot as plt
 
     LOG.info("Plotting arrays...")
-    if vmin is None:
-        vmin = min(np.nanmin(array1), np.nanmin(array2))
-        vmax = max(np.nanmax(array1), np.nanmax(array2))
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    ax1.imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
-    ax2.imshow(array2, cmap=cmap, vmin=vmin, vmax=vmax)
+    vmin = vmin if vmin else -10
+    vmax = vmax if vmax else 10
+        
+    fig, (ax1, ax2) = plt.subplots(2, 2)
+    array3 = array1 - array2
+    q = [0, 0.25, 0.5, 0.75, 1.0]
+    array3_quantiles = np.nanquantile(array3, q)
+    subtitle = np.array2string(array3_quantiles,  precision=8, separator=',',
+                               suppress_small=True)
+    fig.suptitle(subtitle)
+    img1 = ax1[0].imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
+    fig.colorbar(img1, ax=ax1[0])
+    img2 = ax1[1].imshow(array2, cmap=cmap, vmin=vmin, vmax=vmax)
+    fig.colorbar(img2, ax=ax1[1])
+
+    ax2[0].set_title("Difference")
+    array3[array3 == 0.0] = np.nan
+    img4 = ax2[0].imshow(array3, cmap='RdBu', vmin=vmin, vmax=vmax)
+    fig.colorbar(img4, ax=ax2[0])
+
+    n_bins = 100
+    nan_array3 = array3[~np.isnan(array3)]
+    ax2[1].hist(nan_array3, density=True, bins=n_bins)
+
+    plt.tight_layout()
     plt.show()
 
 
 def compare_array(array1, array2, plot=False, **kwargs) -> ArrayComparisonResult:
+
     if plot:
         plot_array(array1, array2, **kwargs)
     return isclose_array(array1, array2, **kwargs)
@@ -171,8 +193,8 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kw
 
     nc1 = Dataset(nc1_name, "r")
     nc2 = Dataset(nc2_name, "r")
-    image1_var = nc1.variables["image"]
-    image2_var = nc2.variables["image"]
+    image1_var = nc1["data"]
+    image2_var = nc2["data"]
     image1_var.set_auto_maskandscale(False)
     image2_var.set_auto_maskandscale(False)
     image1_data = image1_var[:].astype(np.uint8).astype(np.float32)
@@ -184,19 +206,17 @@ def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kw
 def compare_netcdf(
     nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs
 ) -> list[VariableComparisonResult]:
-    from netCDF4 import Dataset
 
-    nc1 = Dataset(nc1_name, "r")
-    nc2 = Dataset(nc2_name, "r")
+    nc1 = xr.open_dataset(nc1_name)
+    nc2 = xr.open_dataset(nc2_name)
+
     if variables is None:
         # TODO: Handle groups
         variables = list(nc1.variables.keys())
     results = []
     for v in variables:
-        image1_var = nc1[v]
-        image2_var = nc2[v]
-        image1_var.set_auto_maskandscale(False)
-        image2_var.set_auto_maskandscale(False)
+        image1_var = nc1[v].data
+        image2_var = nc2[v].data
         LOG.debug("Comparing data for variable '{}'".format(v))
         array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
         var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
@@ -229,7 +249,7 @@ def compare_hdf5(h1_name, h2_name, variables, atol=0.0, margin_of_error=0.0, **k
         image1_var = h1[v]
         image2_var = h2[v]
         LOG.debug("Comparing data for variable '{}'".format(v))
-        array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
+        array_result = compare_array(image1_var[:], image2_var[:], atol=atol, margin_of_error=margin_of_error, **kwargs)
         var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
         results.append(var_result)
     return results
@@ -282,7 +302,9 @@ class CompareHelper:
             return FileComparisonResults(file1, file2, False, True)
         LOG.info(f"Comparing '{file2}' to known valid file '{file1}'.")
         comparison_results = file_type(
-            file1, file2, atol=self.atol, rtol=self.rtol, margin_of_error=self.margin_of_error, **kwargs
+            file1, file2, atol=self.atol, rtol=self.rtol,
+            margin_of_error=self.margin_of_error,
+            plot=self.create_plot, **kwargs
         )
         return FileComparisonResults(file1, file2, False, False, comparison_results)
 
@@ -499,7 +521,8 @@ def main(argv=sys.argv[1:]):
         "If specified with no argument then defaults to 'comparison_summary.html'. All additional "
         "files (images, CSS, etc) will be placed in the same directory.",
     )
-    parser.add_argument("--margin-of-error", type=float, default=0.0, help="percent of total pixels that can be wrong")
+    parser.add_argument("--margin-of-error", type=float, default=0.0,
+                        help="percent of total pixels that can be wrong")
     parser.add_argument(
         "file_type",
         type=_file_type,
@@ -512,7 +535,8 @@ def main(argv=sys.argv[1:]):
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
-    compare_kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, "variables": args.variables}
+    compare_kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, "variables": args.variables,
+                      "file_type": args.file_type}
 
     comparer = CompareHelper(
         atol=args.atol, rtol=args.rtol, margin_of_error=args.margin_of_error, create_plot=args.plot
