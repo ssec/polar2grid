@@ -102,38 +102,27 @@ setup_conda()
 
 format_test_details()
 {
-    prefix=$1
-    test_output=$2
-    test_details="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_details.txt"
-    json_file="${WORKSPACE}/integration_tests/json_file.txt"
-    # Gets the line before json data starts.
-    i=`grep -n "^{$" "$test_output" | grep -oE "[0-9]+"`
-    i=$((i - 1))
-    # Gets the line after json data ends.
-    j=`grep -n "^}$" "$test_output" | grep -oE "[0-9]+"`
-    j=$((j + 1))
-    # Remove lines that are not json data.
-    sed "1,${i}d;${j},\$d" "$test_output" > "$json_file"
+    json_output=$1
+    details_output=$2
     set +x
     # Read the json file data using python.
-    python << EOF > "$test_details"
+    python << EOF > "${details_output}"
 import json
-with open("${json_file}") as json_file:
+with open("${json_output}") as json_file:
     data = json.load(json_file)
     print()
-    for test in data['elements']:
-        name = test['name'].split('@')[1]
-        duration = 0
-        for step in test['steps']:
-            duration += step['result']['duration'] if step.get('result') else 0
-        end = '\n'
-        if test == data['elements'][-1]:
-            end = ''
-        print("\t\t{0}: {1} in {2} seconds".format(name, test['status'], round(duration)), end=end)
+    for feature_output in data:
+        for test in feature_output['elements']:
+            name = test['name'].split('@')[1]
+            duration = 0
+            for step in test['steps']:
+                duration += step['result']['duration'] if step.get('result') else 0
+            end = '\n'
+            if test == data['elements'][-1]:
+                end = ''
+            print("\t\t{0}: {1} in {2} seconds".format(name, test['status'], round(duration)), end=end)
 EOF
     set -x
-    rm "$json_file"
-    rm "$test_output"
 }
 
 run_tests()
@@ -144,14 +133,16 @@ run_tests()
     prefix=$1
     # Keeps track of wether or not an error occurs.
     status=0
-    test_output="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_output.txt"
+    json_output="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_output.json"
+    details_output="${WORKSPACE}/integration_tests/${prefix:0:1}2g_test_details.txt"
 
     # Prints output to stdout and to an output file. Note that datapath MUST be specified.
     behave "${WORKSPACE}/integration_tests/features" --no-logcapture --no-color\
      --no-capture -D datapath=/data/test_data -D html_dst="${WORKSPACE}" -i "(${prefix}2grid|utilities).feature"\
-     --format pretty --format json.pretty 2>&1 | tee "$test_output" || status=$?
+     --format pretty --format json.pretty -o - -o "${json_output}" 2>&1 || status=$?
     # Still makes test details even if not all tests pass.
-    format_test_details "$prefix" "$test_output"
+    format_test_details "${json_output}" "${details_output}"
+    rm "${json_output}"
     # Replaces FAILED with SUCCESSFUL if all tests passed.
     [[ ${status} -eq 0 ]] && save_vars "${prefix:0:1}2g_tests=SUCCESSFUL"
 
