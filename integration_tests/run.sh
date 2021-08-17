@@ -87,7 +87,7 @@ setup_prefixes()
 setup_conda()
 {
     # Activate conda for bash.
-    /var/lib/jenkins/miniconda3/bin/conda init bash
+    /var/lib/jenkins/mambaforge/bin/conda init bash
     # Restart the shell to enable conda.
     source ~/.bashrc
 
