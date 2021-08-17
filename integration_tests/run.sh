@@ -148,9 +148,8 @@ run_tests()
 
     # Prints output to stdout and to an output file. Note that datapath MUST be specified.
     behave "${WORKSPACE}/integration_tests/features" --no-logcapture --no-color\
-     --no-capture -D datapath=/data/test_data -D html_dst="${WORKSPACE}" -i "${prefix}2grid.feature"\
-     -i "utilities.feature" --format pretty\
-     --format json.pretty 2>&1 | tee "$test_output" || status=$?
+     --no-capture -D datapath=/data/test_data -D html_dst="${WORKSPACE}" -i "(${prefix}2grid|utilities).feature"\
+     --format pretty --format json.pretty 2>&1 | tee "$test_output" || status=$?
     # Still makes test details even if not all tests pass.
     format_test_details "$prefix" "$test_output"
     # Replaces FAILED with SUCCESSFUL if all tests passed.
