@@ -118,7 +118,7 @@ with open("${json_output}") as json_file:
             for step in test['steps']:
                 duration += step['result']['duration'] if step.get('result') else 0
             end = '\n'
-            if test == data['elements'][-1]:
+            if test == feature_output['elements'][-1]:
                 end = ''
             print("\t\t{0}: {1} in {2} seconds".format(name, test['status'], round(duration)), end=end)
 EOF
