@@ -29,5 +29,4 @@ def before_all(context):
 
 
 def after_all(context):
-    if context.failed:
-        sys.exit(1)
+    pass
