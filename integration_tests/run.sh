@@ -111,16 +111,19 @@ import json
 with open("${json_output}") as json_file:
     data = json.load(json_file)
     print()
-    for feature_output in data:
-        for test in feature_output['elements']:
-            name = test['name'].split('@')[1]
+    for feature_idx, feature_output in enumerate(data):
+        is_last_feature = feature_idx == len(data)
+        print(f"\t{feature_output['name']}:")
+        for scenario_idx, scenario in enumerate(feature_output['elements']):
+            is_last_scenario = scenario_idx == len(feature_output['elements'])
+            name = scenario['name']
             duration = 0
-            for step in test['steps']:
+            for step in scenario['steps']:
                 duration += step['result']['duration'] if step.get('result') else 0
             end = '\n'
-            if test == feature_output['elements'][-1]:
+            if is_last_scenario:
                 end = ''
-            print("\t\t{0}: {1} in {2} seconds".format(name, test['status'], round(duration)), end=end)
+            print(f"\t\t{name}: {scenario['status']} in {round(duration)} seconds", end=end)
 EOF
     set -x
 }
