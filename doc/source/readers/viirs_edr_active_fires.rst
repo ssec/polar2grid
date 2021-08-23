@@ -9,8 +9,8 @@ Command Line Arguments
 
 .. argparse::
     :module: polar2grid.readers.viirs_edr_active_fires
-    :func: add_frontend_argument_groups
-    :prog: polar2grid.sh viirs_edr_active_fires <writer>
+    :func: add_reader_argument_groups
+    :prog: polar2grid.sh -r viirs_edr_active_fires -w <writer>
     :passparser:
 
 Some output GeoTIFF fire products are color enhanced:
@@ -31,15 +31,15 @@ Examples:
 
 .. code-block:: bash
 
-    $POLAR2GRID_HOME/bin/polar2grid.sh viirs_edr_active_fires gtiff -h
+    $POLAR2GRID_HOME/bin/polar2grid.sh -r viirs_edr_active_fires -w geotiff -h
     
-    polar2grid.sh viirs_edr_active_fires gtiff --list-products -f ../active_fire_edr/AFIMG*.nc
+    polar2grid.sh -r viirs_edr_active_fires -w geotiff --list-products -f ../active_fire_edr/AFIMG*.nc
 
-    polar2grid.sh viirs_edr_active_fires gtiff --list-products -f ../active_fire_edr/AFMOD*.nc
+    polar2grid.sh -r viirs_edr_active_fires -w geotiff --list-products -f ../active_fire_edr/AFMOD*.nc
 
-    polar2grid.sh viirs_edr_active_fires gtiff -p confidence_cat T4 img_edr/AFIMG*.nc
+    polar2grid.sh -r viirs_edr_active_fires -w geotiff -p confidence_cat T4 img_edr/AFIMG*.nc
 
-    polar2grid.sh viirs_edr_active_fires gtiff -g lcc_aus -p confidence_pct T13  -f AFMOD_j01_d20191120_t1513353_e1514581_b10389_c20191121192444396115_cspp_dev.nc
+    polar2grid.sh -r viirs_edr_active_fires -w geotiff -g lcc_aus -p confidence_pct T13  -f AFMOD_j01_d20191120_t1513353_e1514581_b10389_c20191121192444396115_cspp_dev.nc
 
 **NOTE:** The active fire images can be overlaid onto another GeoTIFF. 
 See :ref:`util_script_fireoverlay` for instructions.

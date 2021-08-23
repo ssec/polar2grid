@@ -120,3 +120,41 @@ resampling:
     kwargs:
       weight_delta_max: 10.0
       weight_distance_max: 1.0
+
+  # VIIRS EDR Fire
+    DEFAULT_DATASETS = ['T4', 'T13', 'confidence_cat', 'confidence_pct', 'power']
+  default_viirs_fire_T4:
+    area_type: swath
+    sensor: viirs
+    name: T4
+    resampler: nearest
+    kwargs:
+        grid_coverage: 0
+  default_viirs_fire_T13:
+    area_type: swath
+    sensor: viirs
+    name: T13
+    resampler: nearest
+    kwargs:
+      grid_coverage: 0
+  default_viirs_fire_confidence_cat:
+    area_type: swath
+    sensor: viirs
+    name: confidence_cat
+    resampler: nearest
+    kwargs:
+      grid_coverage: 0
+  default_viirs_fire_confidence_pct:
+    area_type: swath
+    sensor: viirs
+    name: confidence_pct
+    resampler: nearest
+    kwargs:
+      grid_coverage: 0
+  default_viirs_fire_power:
+    area_type: swath
+    sensor: viirs
+    name: power
+    resampler: nearest
+    kwargs:
+      grid_coverage: 0

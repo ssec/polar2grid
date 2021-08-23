@@ -191,7 +191,7 @@ def resample_scene(
     grid_configs,
     resampler,
     preserve_resolution=True,
-    grid_coverage=0.1,
+    grid_coverage=None,
     is_polar2grid=True,
     **resample_kwargs,
 ):
@@ -231,14 +231,17 @@ def resample_scene(
         logger.debug("Products to use new resolution for: {}".format(set(wishlist) - preserved_products))
         # convert hashable tuple to dict
         _resample_kwargs = _redict_hashable_kwargs(_resample_kwargs)
+        _grid_cov = _resample_kwargs.get("grid_coverage", grid_coverage)
+        if _grid_cov is None:
+            _grid_cov = 0.1
         for area_name in areas_to_resample:
             area_def = area_resolver[area_name]
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
             if area_def is not None:
                 scene_to_resample = input_scene
-                if resampler != "native" and grid_coverage > 0:
+                if resampler != "native" and _grid_cov > 0:
                     logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
-                    filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=grid_coverage)
+                    filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=_grid_cov)
                     scene_to_resample = filter.filter_scene(input_scene)
                     if scene_to_resample is None:
                         logger.warning("No products were found to overlap with '%s' grid.", area_name)
