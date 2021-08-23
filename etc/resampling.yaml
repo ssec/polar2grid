@@ -76,3 +76,47 @@ resampling:
       weight_delta_max: 100.0
       weight_distance_max: 1.0
       rows_per_scan: 0
+
+  # AVHRR L1B AAPP
+  default_avhrr_band1_vis:
+    area_type: swath
+    name: band1_vis
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 10.0
+      weight_distance_max: 1.0
+  default_avhrr_band2_vis:
+    area_type: swath
+    name: band2_vis
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 10.0
+      weight_distance_max: 1.0
+  default_avhrr_band3a_vis:
+    area_type: swath
+    name: band3a_vis
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 10.0
+      weight_distance_max: 1.0
+  default_avhrr_band3b_bt:
+    area_type: swath
+    name: band3b_bt
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 10.0
+      weight_distance_max: 1.0
+  default_avhrr_band4_bt:
+    area_type: swath
+    name: band4_bt
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 10.0
+      weight_distance_max: 1.0
+  default_avhrr_band5_bt:
+    area_type: swath
+    name: band5_bt
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 10.0
+      weight_distance_max: 1.0
