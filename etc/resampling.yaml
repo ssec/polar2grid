@@ -158,3 +158,12 @@ resampling:
     resampler: nearest
     kwargs:
       grid_coverage: 0
+
+  # ACSPO SST
+  default_acspo_sst_viirs:
+    area_type: swath
+    name: sst
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
