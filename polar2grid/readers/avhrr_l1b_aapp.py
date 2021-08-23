@@ -56,8 +56,6 @@ from ._base import ReaderProxyBase
 from satpy import DataQuery
 
 
-DEFAULT_PRODUCTS = []
-
 FILTERS = {
     "day_only": {
         "standard_name": [
@@ -96,7 +94,7 @@ class ReaderProxy(ReaderProxyBase):
 
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
-        return DEFAULT_PRODUCTS
+        return VIS_PRODUCTS + IR_PRODUCTS
 
     def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
