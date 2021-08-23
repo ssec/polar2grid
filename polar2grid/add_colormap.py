@@ -40,7 +40,7 @@
 import os
 import sys
 import numpy as np
-import gdal
+import rasterio
 from trollimage.colormap import Colormap
 
 
@@ -163,20 +163,17 @@ def create_colortable(ct_file_or_entries):
     else:
         ct_entries = ct_file_or_entries
 
-    ct = gdal.ColorTable()
-    for entry in ct_entries:
-        ct.SetColorEntry(entry[0], tuple(entry[1:]))
-
-    return ct
+    ct_dict = {entry[0]: tuple(entry[1:]) for entry in ct_entries}
+    return ct_dict
 
 
-def add_colortable(gtiff, ct):
-    num_bands = gtiff.RasterCount
+def add_colortable(gtiff_ds, ct_dict):
+    num_bands = gtiff_ds.count
     if num_bands in (2, 4):
         # don't add a color table to alpha bands
         num_bands -= 1
     for band_num in range(num_bands):
-        gtiff.GetRasterBand(band_num + 1).SetColorTable(ct)
+        gtiff_ds.write_colormap(band_num + 1, ct_dict)
 
 
 def get_parser():
@@ -195,8 +192,8 @@ def main():
 
     ct = create_colortable(args.ct_file)
     for geotiff_fn in args.geotiffs:
-        gtiff = gdal.Open(geotiff_fn, gdal.GF_Write)
-        add_colortable(gtiff, ct)
+        gtiff_ds = rasterio.open(geotiff_fn, "r+")
+        add_colortable(gtiff_ds, ct)
 
 
 if __name__ == "__main__":
