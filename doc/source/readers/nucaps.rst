@@ -2,6 +2,7 @@ NUCAPS Reader
 =============
 
 .. automodule:: polar2grid.readers.nucaps
+    :noindex:
 
 Command Line Arguments
 ----------------------

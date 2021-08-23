@@ -65,6 +65,7 @@ class P2GJSONDecoder(json.JSONDecoder):
     @staticmethod
     def _jsonclass_to_pyclass(json_class_name):
         import importlib
+
         cls_name = json_class_name.split(".")[-1]
         mod_name = ".".join(json_class_name.split(".")[:-1])
         if not mod_name:
@@ -103,7 +104,6 @@ class P2GJSONDecoder(json.JSONDecoder):
 
 
 class P2GJSONEncoder(json.JSONEncoder):
-
     def iterencode(self, o, _one_shot=False):
         """Taken from:
         http://stackoverflow.com/questions/16405969/how-to-change-json-encoding-behaviour-for-serializable-python-object
@@ -136,38 +136,56 @@ class P2GJSONEncoder(json.JSONEncoder):
         #             obj = obj.decode(_encoding)
         #         return _orig_encoder(obj)
 
-        def floatstr(obj, allow_nan=self.allow_nan,
-                     _repr=float.__repr__, _inf=json.encoder.INFINITY, _neginf=-json.encoder.INFINITY):
+        def floatstr(
+            obj,
+            allow_nan=self.allow_nan,
+            _repr=float.__repr__,
+            _inf=json.encoder.INFINITY,
+            _neginf=-json.encoder.INFINITY,
+        ):
             if obj != obj:
-                text = 'NaN'
+                text = "NaN"
             elif obj == _inf:
-                text = 'Infinity'
+                text = "Infinity"
             elif obj == _neginf:
-                text = '-Infinity'
+                text = "-Infinity"
             else:
                 return _repr(obj)
 
             if not allow_nan:
-                raise ValueError(
-                    "Out of range float values are not JSON compliant: " +
-                    repr(obj))
+                raise ValueError("Out of range float values are not JSON compliant: " + repr(obj))
 
             return text
 
         # Instead of forcing _one_shot to False, you can also just
         # remove the first part of this conditional statement and only
         # call _make_iterencode
-        if (_one_shot and json.encoder.c_make_encoder is not None
-                and self.indent is None and not self.sort_keys):
+        if _one_shot and json.encoder.c_make_encoder is not None and self.indent is None and not self.sort_keys:
             _iterencode = json.encoder.c_make_encoder(
-                markers, self.default, _encoder, self.indent,
-                self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, self.allow_nan)
+                markers,
+                self.default,
+                _encoder,
+                self.indent,
+                self.key_separator,
+                self.item_separator,
+                self.sort_keys,
+                self.skipkeys,
+                self.allow_nan,
+            )
         else:
             _iterencode = json.encoder._make_iterencode(
-                markers, self.default, _encoder, self.indent, floatstr,
-                self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, _one_shot, isinstance=self.isinstance)
+                markers,
+                self.default,
+                _encoder,
+                self.indent,
+                floatstr,
+                self.key_separator,
+                self.item_separator,
+                self.sort_keys,
+                self.skipkeys,
+                _one_shot,
+                isinstance=self.isinstance,
+            )
         return _iterencode(o, 0)
 
     def isinstance(self, obj, cls):
@@ -189,7 +207,7 @@ class P2GJSONEncoder(json.JSONEncoder):
             return obj.isoformat()
         elif numpy.issubclass_(obj, numpy.number) or isinstance(obj, numpy.dtype):
             return dtype_to_str(obj)
-        elif hasattr(obj, 'dtype'):
+        elif hasattr(obj, "dtype"):
             if obj.size > 1:
                 return obj.tolist()
             return int(obj) if numpy.issubdtype(obj, numpy.integer) else float(obj)
@@ -205,11 +223,12 @@ class P2GJSONEncoder(json.JSONEncoder):
 class BaseP2GObject(dict):
     """Base object for all Polar2Grid dictionary-like objects.
 
-    :var required_kwargs: Keys that must exist when loading an object from a JSON file
-    :var loadable_kwargs: Keys that may be P2G objects saved on disk and should be loaded on creation.
-    :var cleanup_kwargs: Keys that may be saved files on disk (*not* P2G dict-like objects) and should be removed
+    - required_kwargs: Keys that must exist when loading an object from a JSON file
+    - loadable_kwargs: Keys that may be P2G objects saved on disk and should be loaded on creation.
+    - cleanup_kwargs: Keys that may be saved files on disk (*not* P2G dict-like objects) and should be removed
 
     """
+
     required_kwargs = tuple()
     loadable_kwargs = tuple()
     cleanup_kwargs = tuple()
@@ -234,8 +253,7 @@ class BaseP2GObject(dict):
         self.cleanup()
 
     def cleanup(self):
-        """Delete any files associated with this object.
-        """
+        """Delete any files associated with this object."""
         for kw in self.cleanup_kwargs:
             if kw in self and isinstance(self[kw], str):
                 # Do we not want to delete this file because someone tried to save the state of this object
@@ -281,8 +299,7 @@ class BaseP2GObject(dict):
 
     @classmethod
     def load(cls, filename, object_class=None):
-        """Open a JSON file representing a Polar2Grid object.
-        """
+        """Open a JSON file representing a Polar2Grid object."""
         # Allow the caller to specify the preferred object class if one is not specified in the JSON
         if object_class is None:
             object_class = cls
@@ -317,8 +334,7 @@ class BaseP2GObject(dict):
                 self[child_key] = child_type(**self[child_key])
 
     def save(self, filename):
-        """Write the JSON representation of this class to a file.
-        """
+        """Write the JSON representation of this class to a file."""
         f = open(filename, "w")
         try:
             json.dump(self, f, cls=P2GJSONEncoder, indent=4, sort_keys=True)
@@ -353,14 +369,14 @@ class BaseP2GObject(dict):
 
 
 class GeographicDefinition(BaseP2GObject):
-    """Base class for objects that define a geographic area.
-    """
+    """Base class for objects that define a geographic area."""
+
     pass
 
 
 class BaseProduct(BaseP2GObject):
-    """Base product class for storing metadata.
-    """
+    """Base product class for storing metadata."""
+
     def _memmap(self, fn, dtype, rows, cols, mode):
         # load FBF data from a file if needed
         data = numpy.memmap(fn, dtype=dtype, mode=mode).reshape((-1, rows, cols))
@@ -382,8 +398,7 @@ class BaseProduct(BaseP2GObject):
         return data
 
     def get_data_mask(self, item, fill=numpy.nan, fill_key=None):
-        """Return a boolean mask where the data for `item` is invalid/bad.
-        """
+        """Return a boolean mask where the data for `item` is invalid/bad."""
         data = self.get_data_array(item)
 
         if fill_key is not None:
@@ -424,14 +439,13 @@ class BaseProduct(BaseP2GObject):
 
 
 class BaseScene(BaseP2GObject):
-    """Base scene class mapping product name to product metadata object.
-    """
+    """Base scene class mapping product name to product metadata object."""
+
     # special value when every key is loadable
     loadable_kwargs = None
 
     def get_fill_value(self, products=None):
-        """Get the fill value shared by the products specified (all products by default).
-        """
+        """Get the fill value shared by the products specified (all products by default)."""
         products = products or self.keys()
         fills = [self[product].get("fill_value", numpy.nan) for product in products]
         if numpy.isnan(fills[0]):
@@ -443,14 +457,12 @@ class BaseScene(BaseP2GObject):
         return fills[0]
 
     def get_begin_time(self):
-        """Get the begin time shared by all products in the scene.
-        """
+        """Get the begin time shared by all products in the scene."""
         products = list(self.keys())
         return self[products[0]]["begin_time"]
 
     def get_end_time(self):
-        """Get the end time shared by all products in the scene.
-        """
+        """Get the end time shared by all products in the scene."""
         products = list(self.keys())
         return self[products[0]]["end_time"]
 
@@ -474,6 +486,7 @@ class SwathDefinition(GeographicDefinition, BaseProduct):
         - source_filenames (list of strings): Unordered list of source files that made up this product ([] by default)
         - fill_value: Missing data value in 'swath_data' (defaults to `numpy.nan` if not present)
     """
+
     # Validate required keys when loaded from disk
     required_kwargs = (
         "swath_name",
@@ -484,8 +497,7 @@ class SwathDefinition(GeographicDefinition, BaseProduct):
         "swath_columns",
     )
 
-    loadable_kwargs = (
-    )
+    loadable_kwargs = ()
 
     cleanup_kwargs = (
         "longitude",
@@ -537,6 +549,7 @@ class GridDefinition(GeographicDefinition):
         - origin_x: X-coordinate of the upper-left corner of the grid in the projection domain
         - origin_y: Y-coordinate of the upper-left corner of the grid in the projection domain
     """
+
     required_kwargs = (
         "grid_name",
         "proj4_definition",
@@ -574,9 +587,9 @@ class GridDefinition(GeographicDefinition):
 
     @property
     def is_static(self):
-        return all([self[x] is not None for x in [
-            "height", "width", "cell_height", "cell_width", "origin_x", "origin_y"
-        ]])
+        return all(
+            [self[x] is not None for x in ["height", "width", "cell_height", "cell_width", "origin_x", "origin_y"]]
+        )
 
     @property
     def is_latlong(self):
@@ -584,14 +597,13 @@ class GridDefinition(GeographicDefinition):
 
     @property
     def cell_width_meters(self):
-        """Estimation of what a latlong cell width would be in meters.
-        """
+        """Estimation of what a latlong cell width would be in meters."""
         proj4_dict = self.proj4_dict
         lon0 = proj4_dict.get("lon0", 0.0)
         lat0 = proj4_dict.get("lat0", 0.0)
         p = Proj("+proj=eqc +lon0=%f +lat0=%f" % (lon0, lat0))
         x0, y0 = p(lon0, lat0)
-        x1, y1 = p(lon0+self["cell_width"], lat0)
+        x1, y1 = p(lon0 + self["cell_width"], lat0)
         return abs(x1 - x0)
 
     @property
@@ -655,17 +667,34 @@ class GridDefinition(GeographicDefinition):
 
         proj4_dict = dict(p.split("=") for p in parts)
         # Convert numeric parameters to floats
-        for k in ["lat_0", "lat_1", "lat_2", "lat_ts", "lat_b", "lat_t", "lon_0", "lon_1", "lon_2", "lonc", "a", "b", "f", "es", "h"]:
+        for k in [
+            "lat_0",
+            "lat_1",
+            "lat_2",
+            "lat_ts",
+            "lat_b",
+            "lat_t",
+            "lon_0",
+            "lon_1",
+            "lon_2",
+            "lonc",
+            "a",
+            "b",
+            "f",
+            "es",
+            "h",
+        ]:
             if k in proj4_dict:
                 proj4_dict[k] = float(proj4_dict[k])
 
         # load information from PROJ.4 about the ellipsis if possible
         if "ellps" in proj4_dict and ("a" not in proj4_dict or "b" not in proj4_dict):
             import pyproj
+
             ellps = pyproj.pj_ellps[proj4_dict["ellps"]]
             proj4_dict["a"] = ellps["a"]
             if "b" not in ellps and "rf" in ellps:
-                proj4_dict["f"] = 1. / ellps["rf"]
+                proj4_dict["f"] = 1.0 / ellps["rf"]
             else:
                 proj4_dict["b"] = ellps["b"]
 
@@ -687,15 +716,26 @@ class GridDefinition(GeographicDefinition):
         # upper-left corner of the pixel
         # Polar2Grid and satellite imagery formats assume coordinates for
         # center of the pixel
-        half_pixel_x = self['cell_width'] / 2.
-        half_pixel_y = self['cell_height'] / 2.
+        half_pixel_x = self["cell_width"] / 2.0
+        half_pixel_y = self["cell_height"] / 2.0
         # cell_height is negative so we need to substract instead of add
-        return self["origin_x"] - half_pixel_x, self["cell_width"], 0, self["origin_y"] - half_pixel_y, 0, self["cell_height"]
+        return (
+            self["origin_x"] - half_pixel_x,
+            self["cell_width"],
+            0,
+            self["origin_y"] - half_pixel_y,
+            0,
+            self["cell_height"],
+        )
 
     def get_xy_arrays(self):
         # the [None] indexing adds a dimension to the array
-        x = self["origin_x"] + numpy.repeat(numpy.arange(self["width"])[None] * self["cell_width"], self["height"], axis=0)
-        y = self["origin_y"] + numpy.repeat(numpy.arange(self["height"])[:, None] * self["cell_height"], self["width"], axis=1)
+        x = self["origin_x"] + numpy.repeat(
+            numpy.arange(self["width"])[None] * self["cell_width"], self["height"], axis=0
+        )
+        y = self["origin_y"] + numpy.repeat(
+            numpy.arange(self["height"])[:, None] * self["cell_height"], self["width"], axis=1
+        )
         return x, y
 
     def get_geolocation_arrays(self):
@@ -708,6 +748,7 @@ class GridDefinition(GeographicDefinition):
 
     def to_basemap_object(self):
         from mpl_toolkits.basemap import Basemap
+
         proj4_dict = self.proj4_dict
         proj4_dict.pop("no_defs", None)
         proj4_dict.pop("units", None)
@@ -732,7 +773,7 @@ class GridDefinition(GeographicDefinition):
     def ll_extent(self):
         xy_ll = self.xy_lowerleft
         # NOTE: cell_height is negative
-        return xy_ll[0] - self["cell_width"]/2., xy_ll[1] + self["cell_height"]/2.
+        return xy_ll[0] - self["cell_width"] / 2.0, xy_ll[1] + self["cell_height"] / 2.0
 
     @property
     def ll_extent_lonlat(self):
@@ -742,7 +783,7 @@ class GridDefinition(GeographicDefinition):
     def ur_extent(self):
         xy_ur = self.xy_upperright
         # NOTE: cell_height is negative
-        return xy_ur[0] + self["cell_width"]/2., xy_ur[1] - self["cell_height"]/2.
+        return xy_ur[0] + self["cell_width"] / 2.0, xy_ur[1] - self["cell_height"] / 2.0
 
     @property
     def ur_extent_lonlat(self):
@@ -750,6 +791,7 @@ class GridDefinition(GeographicDefinition):
 
     def to_satpy_area(self):
         from pyresample.geometry import AreaDefinition, DynamicAreaDefinition
+
         if self.is_static:
             xy_ll = self.ll_extent
             xy_ur = self.ur_extent
@@ -803,6 +845,7 @@ class SwathProduct(BaseProduct):
         `GriddedProduct`: Product object for gridded products.
 
     """
+
     # Validate required keys when loaded from disk
     required_kwargs = (
         "product_name",
@@ -815,17 +858,13 @@ class SwathProduct(BaseProduct):
         "swath_definition",
     )
 
-    loadable_kwargs = (
-        "swath_definition",
-    )
+    loadable_kwargs = ("swath_definition",)
 
-    cleanup_kwargs = (
-        "swath_data",
-    )
+    cleanup_kwargs = ("swath_data",)
 
     child_object_types = {
         "swath_definition": SwathDefinition,
-        }
+    }
 
     def __init__(self, *args, **kwargs):
         super(SwathProduct, self).__init__(*args, **kwargs)
@@ -873,6 +912,7 @@ class GriddedProduct(BaseProduct):
         `SwathProduct`: Product object for products using longitude and latitude for geolocation.
 
     """
+
     # Validate required keys when loaded from disk
     required_kwargs = (
         "product_name",
@@ -885,17 +925,13 @@ class GriddedProduct(BaseProduct):
         "grid_definition",
     )
 
-    loadable_kwargs = (
-        "grid_definition",
-    )
+    loadable_kwargs = ("grid_definition",)
 
-    cleanup_kwargs = (
-        "grid_data",
-    )
+    cleanup_kwargs = ("grid_data",)
 
     child_object_types = {
         "grid_definition": GridDefinition,
-        }
+    }
 
     @property
     def shape(self):
@@ -956,13 +992,13 @@ class SwathScene(BaseScene):
         `GriddedScene`: Scene object for gridded products.
 
     """
+
     child_object_types = {
         None: SwathProduct,
     }
 
     def get_data_filepaths(self, product_names=None, data_key=None):
-        """Generator of filepaths for each product provided or all products by default.
-        """
+        """Generator of filepaths for each product provided or all products by default."""
         product_names = product_names if product_names is not None else self.keys()
         data_key = data_key if data_key is not None else list(self.values())[0].cleanup_kwargs[0]
         for pname in product_names:
@@ -988,10 +1024,10 @@ class GriddedScene(BaseScene):
         `SwathScene`: Scene object for geographic longitude/latitude products.
 
     """
+
     child_object_types = {
         None: GriddedProduct,
     }
-
 
 
 def remove_json(json_filename, binary_only=False):
@@ -1014,7 +1050,10 @@ def info_json(json_filename):
         print("Polar2Grid %s Scene" % ("Gridded" if isinstance(obj, GriddedScene) else "Swath",))
         print("Contains the following products:\n\t" + "\n\t".join(obj.keys()))
     elif isinstance(obj, BaseProduct):
-        print("Polar2Grid %s Product: %s" % ("Gridded" if isinstance(obj, GriddedProduct) else "Swath", obj["product_name"]))
+        print(
+            "Polar2Grid %s Product: %s"
+            % ("Gridded" if isinstance(obj, GriddedProduct) else "Swath", obj["product_name"])
+        )
     elif isinstance(obj, GridDefinition):
         print("%s Grid Definition" % (obj["grid_name"],))
         print("PROJ.4 Definition: %s" % (obj["proj4_definition"],))
@@ -1034,12 +1073,14 @@ def info_json(json_filename):
 
 def main():
     from argparse import ArgumentParser
+
     parser = ArgumentParser(description="Utility for working with Polar2Grid metadata objects on disk")
     subparsers = parser.add_subparsers()
     sp_remove = subparsers.add_parser("remove", help="Remove a P2G JSON file and associate files")
     sp_remove.set_defaults(func=remove_json)
-    sp_remove.add_argument("-b", dest="binary_only", action="store_true",
-                           help="Only remove binary files associated with the JSON files")
+    sp_remove.add_argument(
+        "-b", dest="binary_only", action="store_true", help="Only remove binary files associated with the JSON files"
+    )
     sp_remove.add_argument("json_filename", help="JSON file to recursively remove")
 
     sp_info = subparsers.add_parser("info", help="List information about the provided P2G JSON file")

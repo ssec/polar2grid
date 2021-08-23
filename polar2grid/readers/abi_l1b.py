@@ -20,13 +20,6 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    March 2016
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
 """The ABI Level 1B Reader operates on NOAA Level 1B (L1B) NetCDF files
 from the GOES-16 (GOES-East) and GOES-17 (GOES-West) Advanced Baseline 
 Imager (ABI) instrument. The ABI L1B reader works off of the input filenames 
@@ -105,6 +98,9 @@ more information on the creation of RGBs, please see the
 
 from __future__ import annotations
 
+from argparse import ArgumentParser, _ArgumentGroup
+from typing import Optional
+
 from ._base import ReaderProxyBase
 
 READER_PRODUCTS = ["C{:02d}".format(x) for x in range(1, 17)]
@@ -133,5 +129,15 @@ class ReaderProxy(ReaderProxyBase):
         return READER_PRODUCTS + COMPOSITE_PRODUCTS
 
 
-# def add_reader_argument_groups(parser):
-#     return group, None
+def add_reader_argument_groups(
+    parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
+) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
+    """Add reader-specific command line arguments to an existing argument parser.
+
+    If ``group`` is provided then arguments are added to this group. If not,
+    a new group is added to the parser and arguments added to this new group.
+
+    """
+    if group is None:
+        group = parser.add_argument_group(title="ABI L1b Reader")
+    return group, None

@@ -337,7 +337,12 @@ def add_writer_argument_groups(parser, is_polar2grid=False):
     return (group_1,)
 
 
-def add_resample_argument_groups(parser, is_polar2grid=False):
+def add_resample_argument_groups(parser, is_polar2grid=None):
+    if is_polar2grid is None:
+        # if we are being loaded from documentation then this won't be
+        # specified so we need to load it directly from the environment variable
+        is_polar2grid = _get_p2g_defaults_env_var()
+
     group_1 = parser.add_argument_group(title="Resampling")
     if is_polar2grid:
         DEBUG_EWA = bool(int(os.getenv("P2G_EWA_LEGACY", "0")))
@@ -580,6 +585,10 @@ def add_extra_config_paths(extra_paths: list[str]):
     satpy.config.set(config_path=extra_paths + config_path)
 
 
+def _get_p2g_defaults_env_var():
+    return bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
+
+
 def main(argv=sys.argv[1:]):
     global LOG
 
@@ -594,7 +603,7 @@ def main(argv=sys.argv[1:]):
     import argparse
 
     add_polar2grid_config_paths()
-    USE_POLAR2GRID_DEFAULTS = bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
+    USE_POLAR2GRID_DEFAULTS = _get_p2g_defaults_env_var()
     BINARY_NAME = "polar2grid" if USE_POLAR2GRID_DEFAULTS else "geo2grid"
 
     prog = os.getenv("PROG_NAME", sys.argv[0])

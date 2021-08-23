@@ -3,14 +3,18 @@ Remapping
 
 Remapping is the process of mapping satellite data to a uniform grid. Mapping
 data to a uniform grid makes it easier to view, manipulate, and store the data.
-Some instrument data is provided to the user already gridded (ex. ABI L1B data)
+Some instrument data is provided to the user already gridded (ex.
+VIIRS, EDR Flood, ABI L1B data)
 and others are not (ex. VIIRS SDR or older GOES satellites).
+
 In |project| it is possible to perform the gridding (reprojecting) process for
 ungridded data or to re-project already gridded data. Mapping input data in
 order to create a high quality image can be a complicated process. There are
 different techniques that can be used to create an output image based on what
 grid (projection) is chosen and what algorithm is used to map input pixel to
 output pixel.  |project| offers various options that are described below.
+Defaults are also configured to provide a good result without any customization
+necessary.
 
 Native Resampling
 -----------------
@@ -23,6 +27,16 @@ by the user on the command line (``-g MIN``). It can also be specified on the
 command line by using ``--method native``. See the Command Line Arguments
 section below for more details and the options available.
 
+Elliptical Weighted Averaging Resampling
+----------------------------------------
+
+Elliptical Weighted Averaging (EWA) resampling is the default resampling method
+for a lot of scan-based polar-orbiting instrument data. This method uses the
+size of each instrument scan to determine a weight for each pixel. All input
+pixels that map to output pixels are weighted and averaged. This helps
+produce an image that is typically higher quality than those produced by
+nearest neighbor.
+
 Nearest Neighbor Resampling
 ---------------------------
 
@@ -33,13 +47,15 @@ a location then an invalid (transparent) pixel is put in its place. Controlling
 this search distance and other options are described below in the Command Line
 Arguments section. Nearest neighbor resampling can be specified on the command line
 with ``--method nearest`` and is the default when non-native grids are specified
-to the command line (``-g my_grid``).
+to the command line (``-g my_grid``) for gridded data or if polar-orbiting
+instrument data is not scan-based (required for EWA).
 
 Note that nearest neighbor resampling can cache intermediate calculations to files
 on disk when the same grid is used. For example, the calculations required to
 resample ABI L1B data to the same output grid for each time step are the same.
 If a directory is specified with the ``--cache-dir`` command line flag, this can
-greatly improve performance.
+greatly improve performance. This has no benefit for polar-orbiting swath-based
+data.
 
 Grids
 -----
@@ -74,6 +90,7 @@ For information on defining your own custom grids see the
 
 Command Line Argument
 ---------------------
+
 
 .. argparse::
     :module: polar2grid.glue

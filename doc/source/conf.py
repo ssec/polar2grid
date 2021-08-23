@@ -79,6 +79,7 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_new.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes16_abi_naturalcolor.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/flood/Flood_Legend.png",
 )
 script_path = os.path.dirname(os.path.realpath(__file__))
 image_dst = os.path.join(script_path, "_static", "example_images")
@@ -144,19 +145,13 @@ extensions = [
 # API docs
 apidoc_module_dir = "../../polar2grid"
 apidoc_output_dir = "dev_guide/api"
+# TODO: Anything listed here should be removed by Polar2Grid 3.0
 apidoc_excluded_paths = [
-    "avhrr",
-    "awips",
-    "compositors",
     "crefl",
-    "drrtv",
-    "iasi",
     "mirs",
     "modis",
     "ninjo",
     "viirs",
-    "core/fbf.py",
-    "core/histogram.py",
     "core/rescale.py",
     "core/roles.py",
 ]
@@ -198,6 +193,9 @@ else:
     # The full version, including alpha/beta/rc tags.
     release = "2.3"
 
+# Tell Polar2Grid scripts which system we are running
+os.environ["USE_POLAR2GRID_DEFAULTS"] = str(int(not is_geo2grid))
+
 rst_epilog += """
 .. |project| replace:: {}
 .. |script| replace:: {}.sh
@@ -231,7 +229,30 @@ copyright = "2012-{:%Y}, University of Wisconsin SSEC".format(datetime.utcnow())
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["glue_scripts/common_opts.rst"]
+exclude_patterns = [
+    "readers/viirs_edr_flood.rst",  # not advertised
+]
+if is_geo2grid:
+    exclude_patterns.extend(
+        [
+            "readers/acspo.rst",
+            "verification/modis_verification.rst",
+            "verification/viirs_verification.rst",
+        ]
+    )
+else:
+    exclude_patterns.extend(
+        [
+            "data_access.rst",
+            "examples/abi_example.rst",
+            "examples/ahi_example.rst",
+            "examples/creating_animations_example.rst",
+            "readers/abi_l1b.rst",
+            "readers/ahi_hrit.rst",
+            "readers/ahi_hsd.rst",
+            "verification/abi_verification.rst",
+        ]
+    )
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 # default_role = None

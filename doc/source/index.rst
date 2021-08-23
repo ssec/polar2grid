@@ -11,9 +11,8 @@
     installation
     getting_started
     readers/index
-    :geo2grid:compositors
-    :geo2grid:remapping
-    :polar2grid:remapping_polar
+    compositors
+    remapping
     writers/index
     utilscripts
     :polar2grid:viirs_day_night_band
@@ -38,3 +37,12 @@
 
         dev_guide/index
 
+
+.. toctree::
+    :hidden:
+
+    design_overview
+    image_processing_techniques
+    NEWS
+    rescaling
+    misc_recipes

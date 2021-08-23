@@ -47,7 +47,7 @@ Data Container
 --------------
 
 |project|, and the SatPy library it depends on, use
-:doc:`DataArray <xarray:data-structures>` objects provided by the XArray
+:doc:`DataArray <xarray:user-guide/data-structures>` objects provided by the XArray
 library. Additionally, these ``DataArray`` objects use
 :doc:`dask arrays <dask:array>` underneath.
 These libraries and their data structures provide community-supported

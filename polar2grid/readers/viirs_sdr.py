@@ -27,7 +27,7 @@ SDR reader ignores filenames and uses internal file content to determine
 the type of file being provided, but SDR are typically named as below
 and have corresponding geolocation files::
 
-SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
+    SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
 
 The VIIRS SDR reader supports all instrument spectral bands, identified as
 the products shown below. It supports terrain corrected or non-terrain corrected

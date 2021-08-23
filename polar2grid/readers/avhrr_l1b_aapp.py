@@ -48,6 +48,8 @@ The AVHRR reader provides the following products:
 +--------------------+--------------------------------------------+
 
 """
+from __future__ import annotations
+
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
@@ -78,12 +80,12 @@ IR_PRODUCTS = [
 ]
 
 PRODUCT_ALIASES = {
-    "band1_vis": DataQuery("1", calibration="reflectance"),
-    "band2_vis": DataQuery("2", calibration="reflectance"),
-    "band3a_vis": DataQuery("3a", calibration="reflectance"),
-    "band3b_bt": DataQuery("3b", calibration="brightness_temperature"),
-    "band4_bt": DataQuery("4", calibration="brightness_temperature"),
-    "band5_bt": DataQuery("5", calibration="brightness_temperature"),
+    "band1_vis": DataQuery(name="1", calibration="reflectance"),
+    "band2_vis": DataQuery(name="2", calibration="reflectance"),
+    "band3a_vis": DataQuery(name="3a", calibration="reflectance"),
+    "band3b_bt": DataQuery(name="3b", calibration="brightness_temperature"),
+    "band4_bt": DataQuery(name="4", calibration="brightness_temperature"),
+    "band5_bt": DataQuery(name="5", calibration="brightness_temperature"),
 }
 
 

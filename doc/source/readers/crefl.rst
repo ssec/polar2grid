@@ -2,6 +2,7 @@ Corrected Reflectance Reader
 ============================
 
 .. automodule:: polar2grid.crefl.crefl2swath
+    :noindex:
 
 Command Line Arguments
 ----------------------
@@ -72,7 +73,7 @@ created from the ``crefl2gtiff.sh``
 command and ``output_true_color.kmz`` is the name of the KMZ file to create.
 
 For more information see the documentation for the
-the :doc:`GeoTIFF Writer <../writers/gtiff>` and :ref:`util_gtiff2kmz`
+the :doc:`GeoTIFF Writer <../writers/geotiff>` and :ref:`util_gtiff2kmz`
 documentation.
 
 Example 2 - Creating False Color GeoTIFFs and KML/KMZ

@@ -5,7 +5,7 @@ Readers are the first component used in |project| processing. Their main
 responsibility is to extract input satellite imager data and the associated
 metadata from user provided input files.
 The data that readers distribute to other |project| components are called
-:term:`products` ("datasets" in SatPy terminology).
+"products" ("datasets" in SatPy terminology).
 
 The number and type of products that can be created is dependent upon
 the input datasets that are provided. Composites, such as RGBs, require a 

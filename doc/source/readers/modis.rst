@@ -2,6 +2,7 @@ MODIS L1B Reader
 ================
 
 .. automodule:: polar2grid.modis.modis_to_swath
+    :noindex:
 
 Command Line Arguments
 ----------------------

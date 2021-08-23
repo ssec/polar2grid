@@ -2,6 +2,7 @@ ABI L1B Reader
 ==============
 
 .. automodule:: polar2grid.readers.abi_l1b
+    :noindex:
 
 Command Line Usage
 ------------------

@@ -9,9 +9,8 @@ tool that is optimized for viewing the data.
 .. toctree-filt::
     :maxdepth: 1
 
-    :polar2grid:scmi
+    :polar2grid:awips_tiled
     :polar2grid:binary
-    :polar2grid:gtiff
+    :polar2grid:geotiff
     :polar2grid:hdf5
-    :polar2grid:ninjo
     :geo2grid:geotiff
