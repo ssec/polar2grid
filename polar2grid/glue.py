@@ -155,7 +155,7 @@ def _filenames_from_local(input_filenames):
 
 def get_input_files(input_filenames):
     """Convert directories to list of files."""
-    if "s3://" in input_filenames[0]:
+    if input_filenames and "s3://" in input_filenames[0]:
         yield from _fsfiles_for_s3(input_filenames)
     else:
         yield from _filenames_from_local(input_filenames)
@@ -538,7 +538,7 @@ def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
 
     reader_specific_args = _parse_reader_args(reader_names, reader_subgroups, args)
     for _reader_name, _reader_args in reader_specific_args.items():
-        _extended_products = _reader_args.pop("products") or []
+        _extended_products = _reader_args.pop("products", None) or []
         # Shouldn't be needed as argparse combines all destination variables
         # products.extend(_extended_products)
 
