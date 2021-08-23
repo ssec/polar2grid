@@ -9,8 +9,8 @@ Command Line Arguments
 
 .. argparse::
     :module: polar2grid.readers.viirs_edr_flood
-    :func: add_frontend_argument_groups
-    :prog: polar2grid.sh viirs_edr_flood <writer>
+    :func: add_reader_argument_groups
+    :prog: polar2grid.sh -r viirs_edr_flood -w <writer>
     :passparser:
 
 The end product GeoTIFF file is color enhanced using the color map 
@@ -32,9 +32,9 @@ Examples:
 
 .. code-block:: bash
 
-    $POLAR2GRID_HOME/bin/polar2grid.sh viirs_edr_flood gtiff -h
+    $POLAR2GRID_HOME/bin/polar2grid.sh -r viirs_edr_flood -w geotiff -h
 
-    polar2grid.sh viirs_edr_flood gtiff -g lcc_fit -f 
+    polar2grid.sh -r viirs_edr_flood -w geotiff -g lcc_fit -f
 
     
 

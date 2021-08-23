@@ -86,5 +86,5 @@ def add_reader_argument_groups(
 
     """
     if group is None:
-        group = parser.add_argument_group(title="VIIRs EDr Active Fires Reader")
+        group = parser.add_argument_group(title="VIIRS EDR Active Fires Reader")
     return group, None
