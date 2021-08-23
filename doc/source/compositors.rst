@@ -1,22 +1,94 @@
 Composites
 ==========
 
+Compositing is the process in |project| of combining multiple products
+together to make a new one. Most often this is done to make RGB color
+images like ``true_color`` and ``false_color``. The most
+common RGB recipes are already configured internally to |project|, but
+users can make their own combinations too. The following instructions will
+go over some basic examples of how to make your own composites.
+
+.. ifconfig:: not is_geo2grid
+
+    One common request is to make an RGB image by combining 3 bands from the
+    reader's products. We can see an example of this in the ``true_color_raw``
+    composite built in to |project|
+
+    .. code-block:: bash
+
+        $POLAR2GRID_HOME/etc/polar2grid/composites/viirs.yaml
+
+    This ``viirs.yaml`` file is meant to hold all custom user composites for
+    the VIIRS instrument. There are other YAML files for other instruments.
+    The ``true_color_raw`` in this file combines the M05, M04, and M03 bands
+    that it gets from the reader. The contents of the YAML file are displayed
+    below for reference.
+
+    .. code-block:: yaml
+
+      true_color_raw:
+        compositor: !!python/name:satpy.composites.GenericCompositor
+        prerequisites:
+        - name: M05
+          modifiers: [sunz_corrected]
+        - name: M04
+          modifiers: [sunz_corrected]
+        - name: M03
+          modifiers: [sunz_corrected]
+        standard_name: true_color
+
+    A composite recipe consists of 4 main parts:
+
+    1. Name:
+        The name of the composite which will be used to request the product
+        on the command line with the ``-p`` flag. In this example
+        it is ``true_color_raw``. The name for a composite should be unique
+        within a single file or it may be overwritten.
+    2. Compositor:
+        The ``compositor`` is a pointer to the python code that does the work
+        of combining the products together. In this case we are using the
+        ``GenericCompositor`` code from the SatPy package which is a simple
+        way to combine multiple products as RGBs.
+    3. Inputs:
+        The prerequisites are the products that are passed as inputs to this
+        compositor. In this case we have M05 as the Red channel, M04 as Green,
+        and M03 as Blue. These dependencies are specified by their name, but
+        have an added "modifier" specified. All the bands have the
+        ``sunz_corrected`` modifier which applies the ``/ cos(SZA)`` operation
+        necessary to produce proper reflectance data.
+    4. Standard Name:
+        Used later in |project| processing to map
+        a composite to a particular enhancement or scaling. For
+        ``true_color_raw`` we're using the ``true_color`` name which has a
+        pre-configured enhancement in |project|. If you change this and there
+        is no matching enhancement configured, then the default will be used
+        which is a dynamic linear stretch from the minimum to maximum of the
+        data being processed.
+
+    Once the composite recipe has been added to the ``<instrument>.yaml``
+    file it will appear in the list of available products when using the
+    ``--list-products`` option.  It can then be invoked like any other
+    product to |script_literal|.
+
+    The existing ``true_color_raw`` composite can be modified directly or
+    used as a template for additional composites. Make sure to change the
+    composite name and what prerequisites are used in the composite. After
+    that the composite can be loaded with your data by using the following
+    command:
+
+    .. code-block:: bash
+
+        $POLAR2GRID_HOME/bin/polar2grid.sh -r viirs_sdr -w geotiff -p true_color_raw -f /path/to/files*.nc
+
 .. ifconfig:: is_geo2grid
 
-    Compositing is the process in |project| of combining multiple products
-    together to make a new one. Most often this is done to make RGB color
-    images like ``true_color`` and ``false_color``. The most
-    common RGB recipes are already configured internally to |project|, but
-    users can make their own combinations too. The following instructions will
-    go over some basic examples of how to make your own composites.
-
-    One type of composite that you may want to make is an image that combines 
+    One type of composite that you may want to make is an image that combines
     one type of product for the night side of the data and another on the day side.
     An example of this type of day/night composite can be found in:
 
     .. code-block:: bash
 
-        $GEO2GRID_HOME/etc/satpy/composites/abi.yaml
+        $GEO2GRID_HOME/etc/polar2grid/composites/abi.yaml
 
     This ``abi.yaml`` file is meant to hold all custom user composites for the
     ABI instrument. There is also an ``ahi.yaml`` file in the same directory
@@ -64,7 +136,7 @@ Composites
     Once the composite recipe has been added to the ``<instrument>.yaml`` 
     file it will appear in the list of available products when using the 
     ``--list-products`` option.  It can then be invoked like any other
-    product to ``geo2grid.sh``.
+    product to |script_literal|.
 
     The existing ``true_color_night`` composite can be modified directly or
     used as a template for additional composites. Make sure to change the

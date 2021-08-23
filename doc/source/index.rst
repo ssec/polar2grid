@@ -11,7 +11,7 @@
     installation
     getting_started
     readers/index
-    :geo2grid:compositors
+    compositors
     remapping
     writers/index
     utilscripts

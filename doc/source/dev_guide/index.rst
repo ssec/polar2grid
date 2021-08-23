@@ -1,26 +1,12 @@
 Developer's Guide
 =================
 
-.. warning::
-
-    Due to the collaboration with the Pytroll team on the SatPy package
-    much of this documentation will change or is inaccurate. Future
-    versions will have better documentation about contributing. For now,
-    please contact the Polar2Grid or Pytroll team.
-
 This guide is intended to ease the development of additional readers,
-writers, or other components to the polar2grid package. Polar2Grid has
-gone through a major redesign process and it is much easier to modify
-existing components and create new components. However, due to some collaboration
-with the Pytroll team a majority (if not all) of the python functionality
-provided by Polar2Grid will be absorbed by the Pytroll package "mpop" in
-a future version. Polar2Grid will continue to provide the same interface,
-but with more advanced features. Since this refactoring is currently in
-progress, any documentation on modifying source code for Polar2Grid has
-been removed from the Developer's Guide.
+writers, or other components to the polar2grid package.
 
-If you would like to contribute to either Polar2Grid or MPOP or have any
-questions about the collaboration please contact the CSPP/Polar2Grid team.
+If you would like to contribute to either Polar2Grid or the Pytroll Satpy
+package or have any questions about the collaboration please contact the
+CSPP/Polar2Grid team.
 
 Code repository: https://github.com/ssec/polar2grid
 
