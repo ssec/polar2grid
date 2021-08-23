@@ -87,6 +87,7 @@ PLATFORM_ALIASES = {
 
 READER_ALIASES = {
     "modis": "modis_l1b",
+    "avhrr": "avhrr_l1b_aapp",
 }
 
 WRITER_ALIASES = {
