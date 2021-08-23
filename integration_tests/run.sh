@@ -113,7 +113,7 @@ with open("${json_output}") as json_file:
     print()
     for feature_idx, feature_output in enumerate(data):
         is_last_feature = feature_idx == len(data)
-        print(f"\t{feature_output['name']}:")
+        print(f"\t\t{feature_output['name']}:")
         for scenario_idx, scenario in enumerate(feature_output['elements']):
             is_last_scenario = scenario_idx == len(feature_output['elements'])
             name = scenario['name']
@@ -123,7 +123,7 @@ with open("${json_output}") as json_file:
             end = '\n'
             if is_last_scenario:
                 end = ''
-            print(f"\t\t{name}: {scenario['status']} in {round(duration)} seconds", end=end)
+            print(f"\t\t\t{name}: {scenario['status']} in {round(duration)} seconds", end=end)
 EOF
     set -x
 }
