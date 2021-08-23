@@ -89,6 +89,7 @@ Fill in the reader file with the following information:
     ====================
 
     .. automodule:: polar2grid.readers.<reader_module>
+        :noindex:
 
     Command Line Arguments
     ----------------------

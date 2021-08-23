@@ -1,7 +1,8 @@
 AWIPS Tiled Writer
 ==================
 
-.. automodule:: polar2grid.writers.scmi
+.. automodule:: polar2grid.writers.awips_tiled
+    :noindex:
 
 Command Line Arguments
 ----------------------

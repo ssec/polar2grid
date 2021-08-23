@@ -140,4 +140,6 @@ def add_reader_argument_groups(
     parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
 ) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
     """Add reader-specific command line arguments to an existing argument parser."""
-    return None, None
+    if group is None:
+        group = parser.add_argument_group(title="CLAVR-x Reader")
+    return group, None

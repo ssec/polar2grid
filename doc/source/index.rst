@@ -38,3 +38,12 @@
 
         dev_guide/index
 
+
+.. toctree::
+    :hidden:
+
+    design_overview
+    image_processing_techniques
+    NEWS
+    rescaling
+    misc_recipes

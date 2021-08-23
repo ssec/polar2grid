@@ -2,6 +2,7 @@ GeoTIFF Writer
 ==============
 
 .. automodule:: polar2grid.writers.geotiff
+    :noindex:
 
 Command Line Arguments
 ----------------------

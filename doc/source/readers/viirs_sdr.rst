@@ -2,6 +2,7 @@ VIIRS SDR Reader
 ================
 
 .. automodule:: polar2grid.readers.viirs_sdr
+    :noindex:
 
 Command Line Arguments
 ----------------------

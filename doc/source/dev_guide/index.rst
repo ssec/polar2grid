@@ -28,7 +28,6 @@ Code repository: https://github.com/ssec/polar2grid
 
 .. toctree::
     :maxdepth: 1
-    :numbered:
 
     dev_env
     swbundle

@@ -2,6 +2,7 @@ AHI HimawariCast (HRIT) Reader
 ==============================
 
 .. automodule:: polar2grid.readers.ahi_hrit
+    :noindex:
 
 Command Line Usage
 ------------------

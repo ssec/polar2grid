@@ -20,14 +20,7 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    March 2016
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
-"""The AHI HSD Reader operates on standard files from the Japan 
+"""The AHI HSD Reader operates on standard files from the Japan
 Meteorological Agency (JMA) Himawari-8 Advanced Himawari Imager (AHI) 
 instrument. The AHI HSD reader works off of the input filenames
 to determine if a file is supported by Geo2Grid. Files usually 
@@ -102,6 +95,9 @@ more information on the creation of RGBs, please see the
 
 from __future__ import annotations
 
+from argparse import ArgumentParser, _ArgumentGroup
+from typing import Optional
+
 from ._base import ReaderProxyBase
 
 from satpy import DataQuery
@@ -133,5 +129,15 @@ class ReaderProxy(ReaderProxyBase):
         return READER_PRODUCTS + COMPOSITE_PRODUCTS
 
 
-# def add_reader_argument_groups(parser):
-#     return group, None
+def add_reader_argument_groups(
+    parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
+) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
+    """Add reader-specific command line arguments to an existing argument parser.
+
+    If ``group`` is provided then arguments are added to this group. If not,
+    a new group is added to the parser and arguments added to this new group.
+
+    """
+    if group is None:
+        group = parser.add_argument_group(title="AHI HSD Reader")
+    return group, None

@@ -2,6 +2,7 @@ VIIRS EDR Active Fires Reader
 =============================
 
 .. automodule:: polar2grid.readers.viirs_edr_active_fires
+    :noindex:
 
 Command Line Arguments
 ----------------------
@@ -16,13 +17,13 @@ Some output GeoTIFF fire products are color enhanced:
 
 AFIMG 
 
-	confidence_cat - Low (Yellow), Nominal (Orange), High (Red)
+    confidence_cat - Low (Yellow), Nominal (Orange), High (Red)
 
         power - 1 - 250 and above (MW) Yellow->Red
 
 AFMOD 
 
-	confidence_pct - 1-100% Yellow->Red
+    confidence_pct - 1-100% Yellow->Red
 
         power - 1 - 250 and above (MW) Yellow->Red
 

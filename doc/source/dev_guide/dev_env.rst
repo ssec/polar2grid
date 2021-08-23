@@ -16,38 +16,43 @@ which will require creating a
 `fork <https://help.github.com/articles/fork-a-repo>`_ of the repository.
 
 The following instructions will assist in getting an environment up and running
-that will allow for easy development of polar2grid. The instructions will use a
-conda-based Python environment. This isn't strictly required, but is the
-easiest way to get going.
+that will allow for easy development of polar2grid. The instructions will use an
+existing conda-based Python environment. This isn't strictly required, but is the
+easiest way to get going. To avoid possible Terms of Service issues with
+Anaconda.org, we recommend using ``miniforge`` or ``mambaforge`` to install
+conda on your system. See https://github.com/conda-forge/miniforge#miniforge
+for more information.
 
 1. Get a copy of the code repository:
-   
-    ::
 
-        mkdir ~/polar2grid
-        cd ~/polar2grid
-        git clone https://github.com/ssec/polar2grid.git
-        cd polar2grid
+   .. code-block:: bash
+
+       mkdir ~/polar2grid
+       cd ~/polar2grid
+       git clone https://github.com/ssec/polar2grid.git
+       cd polar2grid
 
 
-2. Run the development installation script:
+2. Create a conda environment specifically for Polar2Grid/Geo2Grid work:
 
-    ::
+   .. code-block:: bash
 
-        ./create_dev_env.sh /path/to/your_dev_env
+       conda env create -n p2g_dev --file build_environment.yml
 
     This script will walk you through a few questions including whether or not to use ShellB3 (linux only), provide
     a preinstalled ShellB3, or build and install secondary polar2grid components.
 
-3. Add paths to your environment
+3. Active the conda environment and install "polar2grid" in development mode:
 
-    At the end of step #2 the script prints a couple lines that should be added to your ``.bash_profile`` or
-    ``.bashrc``. Adding these lines, logging out, and logging back in will make polar2grid available to your shell.
+   .. code-block:: bash
 
-    To run polar2grid from your new development environment run the following
-    command. This command uses viirs2awips, but any other :term:`glue script` or polar2grid utility
-    should follow the same basic calling sequence::
+       conda activate p2g_dev
+       pip install --no-deps -e .
 
-        polar2grid.sh viirs awips -vvv -g 211e -f /path/to/test/data/files/SVI01*
-        # for more options run
-        polar2grid.sh viirs awips -h
+4. Run "polar2grid.sh" or "geo2grid.sh" to run example commands. These scripts
+   are made available because you installed the python package above. Any
+   changes made to the source code should be automatically reflected when you
+   run these scripts. There are also "polar2grid" and "geo2grid" helper
+   scripts when on non-bash environments. All of these scripts are simple
+   wrappers around calling `python -m polar2grid.glue ...` which can be used
+   as an alternative.

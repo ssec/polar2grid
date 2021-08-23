@@ -2,6 +2,7 @@ ACSPO SST Reader
 ================
 
 .. automodule:: polar2grid.readers.acspo
+    :noindex:
 
 Command Line Arguments
 ----------------------

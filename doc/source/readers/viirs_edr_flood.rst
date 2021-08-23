@@ -2,6 +2,7 @@ VIIRS EDR Flood Reader
 ======================
 
 .. automodule:: polar2grid.readers.viirs_edr_flood
+    :noindex:
 
 Command Line Arguments
 ----------------------
@@ -15,8 +16,6 @@ Command Line Arguments
 The end product GeoTIFF file is color enhanced using the color map 
 described in the CSPP VIIRS Flood Detection Software Version 1.1 and
 shown below.
-
-.. raw:: latex
 
 .. figure:: ../_static/example_images/Flood_Legend.png
     :width: 30%
