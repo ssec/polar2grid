@@ -193,6 +193,9 @@ else:
     # The full version, including alpha/beta/rc tags.
     release = "2.3"
 
+# Tell Polar2Grid scripts which system we are running
+os.environ["USE_POLAR2GRID_DEFAULTS"] = str(int(not is_geo2grid))
+
 rst_epilog += """
 .. |project| replace:: {}
 .. |script| replace:: {}.sh
@@ -226,7 +229,9 @@ copyright = "2012-{:%Y}, University of Wisconsin SSEC".format(datetime.utcnow())
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = [
+    "readers/viirs_edr_flood.rst",  # not advertised
+]
 if is_geo2grid:
     exclude_patterns.extend(
         [
@@ -240,12 +245,12 @@ else:
         [
             "compositors.rst",
             "data_access.rst",
-            "readers/abi_l1b.rst",
-            "readers/ahi_hrit.rst",
-            "readers/ahi_hsd.rst",
             "examples/abi_example.rst",
             "examples/ahi_example.rst",
             "examples/creating_animations_example.rst",
+            "readers/abi_l1b.rst",
+            "readers/ahi_hrit.rst",
+            "readers/ahi_hsd.rst",
             "verification/abi_verification.rst",
         ]
     )
