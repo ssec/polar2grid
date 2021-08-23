@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2020 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2020-2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -20,13 +20,6 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    March 2016
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
 """
 
 +-----------------------------------+--------------------------------------------+
@@ -54,6 +47,14 @@
 +-----------------------------------+--------------------------------------------+
 
 """
+from __future__ import annotations
+
+from argparse import ArgumentParser, _ArgumentGroup
+from typing import Optional
+
+from ._base import ReaderProxyBase
+
+from satpy import DataQuery
 
 OCEAN_PRECIP_PRODUCTS = [
     "Rain_Rate",
@@ -78,5 +79,33 @@ SEAICE_PRODUCTS = [
 DEFAULT_PRODUCTS = OCEAN_PRECIP_PRODUCTS + SNOW_PRODUCTS + SOIL_PRODUCTS + SEAICE_PRODUCTS
 
 
-def add_reader_argument_groups(parser):
-    return parser
+class ReaderProxy(ReaderProxyBase):
+    """Provide Polar2Grid-specific information about this reader's products."""
+
+    is_polar2grid_reader = True
+
+    def get_default_products(self) -> list[str]:
+        """Get products to load if users hasn't specified any others."""
+        return DEFAULT_PRODUCTS
+
+    def get_all_products(self) -> list[str]:
+        """Get all polar2grid products that could be loaded."""
+        return DEFAULT_PRODUCTS
+
+    @property
+    def _aliases(self) -> dict[DataQuery]:
+        return {}
+
+
+def add_reader_argument_groups(
+    parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
+) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
+    """Add reader-specific command line arguments to an existing argument parser.
+
+    If ``group`` is provided then arguments are added to this group. If not,
+    a new group is added to the parser and arguments added to this new group.
+
+    """
+    if group is None:
+        group = parser.add_argument_group(title="AMSR2 L2 GAASP Reader")
+    return group, None
