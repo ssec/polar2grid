@@ -122,7 +122,6 @@ resampling:
       weight_distance_max: 1.0
 
   # VIIRS EDR Fire
-    DEFAULT_DATASETS = ['T4', 'T13', 'confidence_cat', 'confidence_pct', 'power']
   default_viirs_fire_T4:
     area_type: swath
     sensor: viirs
