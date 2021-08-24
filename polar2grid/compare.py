@@ -297,6 +297,10 @@ def compare_image(im1_name, im2_name, atol=0.0, margin_of_error=0.0, **kwargs) -
 def _get_image_array(img_filename: str):
     from PIL import Image
 
+    # we may be dealing with large images that look like decompression bombs
+    # let's turn off the check for the image size in PIL/Pillow
+    Image.MAX_IMAGE_PIXELS = None
+
     img = Image.open(img_filename)
     if "P" in img.mode:
         img = img.convert("RGB" if img.mode == "P" else "RGBA")
@@ -522,6 +526,10 @@ def _generate_html_summary(output_filename, file_comparison_results):
 
 def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
     from PIL import Image
+
+    # we may be dealing with large images that look like decompression bombs
+    # let's turn off the check for the image size in PIL/Pillow
+    Image.MAX_IMAGE_PIXELS = None
 
     input_ext = os.path.splitext(input_data_path)[1]
     input_arr = file_ext_to_array_func[input_ext](input_data_path)
