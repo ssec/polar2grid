@@ -111,13 +111,12 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
     LOG.info("Plotting arrays...")
     vmin = vmin if vmin else -10
     vmax = vmax if vmax else 10
-        
+
     fig, (ax1, ax2) = plt.subplots(2, 2)
     array3 = array1 - array2
     q = [0, 0.25, 0.5, 0.75, 1.0]
     array3_quantiles = np.nanquantile(array3, q)
-    subtitle = np.array2string(array3_quantiles,  precision=8, separator=',',
-                               suppress_small=True)
+    subtitle = np.array2string(array3_quantiles, precision=8, separator=",", suppress_small=True)
     fig.suptitle(subtitle)
     img1 = ax1[0].imshow(array1, cmap=cmap, vmin=vmin, vmax=vmax)
     fig.colorbar(img1, ax=ax1[0])
@@ -126,7 +125,7 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
 
     ax2[0].set_title("Difference")
     array3[array3 == 0.0] = np.nan
-    img4 = ax2[0].imshow(array3, cmap='RdBu', vmin=vmin, vmax=vmax)
+    img4 = ax2[0].imshow(array3, cmap="RdBu", vmin=vmin, vmax=vmax)
     fig.colorbar(img4, ax=ax2[0])
 
     n_bins = 100
@@ -167,17 +166,51 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwarg
     """
     array1 = _get_geotiff_array(gtiff_fn1, dtype=np.float32)
     array2 = _get_geotiff_array(gtiff_fn2, dtype=np.float32)
-    return [compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
+    arr_compare = compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)
+    if arr_compare.failed:
+        return [arr_compare]
+
+    # array data are equal, but
+    cmap1 = _get_geotiff_colormap(gtiff_fn1)
+    cmap2 = _get_geotiff_colormap(gtiff_fn2)
+    cmap_result = _compare_gtiff_colormaps(cmap1, cmap2, atol=atol, **kwargs)
+    # only return colormap results if there was actually a colormap
+    if cmap_result.total_pixels:
+        return [arr_compare, cmap_result]
+    return [arr_compare]
 
 
-def _get_geotiff_array(gtiff_fn, dtype=None):
-    from osgeo import gdal
+def _get_geotiff_array(gtiff_fn, dtype=None, band_idx=1):
+    import rasterio
 
-    gtiff = gdal.Open(gtiff_fn, gdal.GA_ReadOnly)
-    arr = gtiff.GetRasterBand(1).ReadAsArray()
+    with rasterio.open(gtiff_fn, "r") as gtiff_file:
+        arr = gtiff_file.read(band_idx)
     if dtype is not None:
         arr = arr.astype(dtype)
     return arr
+
+
+def _get_geotiff_colormap(gtiff_fn, band_idx=1):
+    import rasterio
+
+    with rasterio.open(gtiff_fn, "r") as gtiff_file:
+        try:
+            return gtiff_file.colormap(band_idx)
+        except ValueError:
+            return None
+
+
+def _compare_gtiff_colormaps(cmap1: dict, cmap2: dict, **kwargs) -> VariableComparisonResult:
+    if cmap1 is None and cmap2 is None:
+        return VariableComparisonResult(True, 0, 0, False, "colormap")
+    len1 = len(cmap1) if cmap1 is not None else 0
+    len2 = len(cmap2) if cmap2 is not None else 0
+    if len1 != len2:
+        return VariableComparisonResult(False, abs(len2 - len1), max(len1, len2), True, "colormap")
+    arr1 = np.array([[control_point] + list(color) for control_point, color in cmap1.items()])
+    arr2 = np.array([[control_point] + list(color) for control_point, color in cmap2.items()])
+    array_result = compare_array(arr1, arr2, **kwargs)
+    return VariableComparisonResult(**array_result.__dict__, variable="colormap")
 
 
 def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
@@ -256,11 +289,18 @@ def compare_hdf5(h1_name, h2_name, variables, atol=0.0, margin_of_error=0.0, **k
 
 
 def compare_image(im1_name, im2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
+    img1 = _get_image_array(im1_name)
+    img2 = _get_image_array(im2_name)
+    return [compare_array(img1, img2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
+
+
+def _get_image_array(img_filename: str):
     from PIL import Image
 
-    img1 = np.array(Image.open(im1_name))
-    img2 = np.array(Image.open(im2_name))
-    return [compare_array(img1, img2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
+    img = Image.open(img_filename)
+    if "P" in img.mode:
+        img = img.convert("RGB" if img.mode == "P" else "RGBA")
+    return np.array(img)
 
 
 type_name_to_compare_func = {
@@ -282,6 +322,13 @@ file_ext_to_compare_func = {
     ".png": compare_image,
     ".jpg": compare_image,
     ".jpeg": compare_image,
+}
+
+file_ext_to_array_func = {
+    ".tif": _get_image_array,
+    ".png": _get_image_array,
+    ".jpg": _get_image_array,
+    ".jpeg": _get_image_array,
 }
 
 
@@ -314,9 +361,13 @@ class CompareHelper:
             return FileComparisonResults(file1, file2, False, True)
         LOG.info(f"Comparing '{file2}' to known valid file '{file1}'.")
         comparison_results = file_type(
-            file1, file2, atol=self.atol, rtol=self.rtol,
+            file1,
+            file2,
+            atol=self.atol,
+            rtol=self.rtol,
             margin_of_error=self.margin_of_error,
-            plot=self.create_plot, **kwargs
+            plot=self.create_plot,
+            **kwargs,
         )
         return FileComparisonResults(file1, file2, False, False, comparison_results)
 
@@ -432,8 +483,8 @@ def _generate_table_rows(
             exp_tn_html = "N/A"
             act_tn_html = "N/A"
             file_ext = os.path.splitext(exp_filename)[1]
-            if variable is None and file_ext in (".tif", ".tiff", ".png", ".jpg", ".jpeg"):
-                # TODO: Support multi-variable and non-tif formats
+            if variable is None and file_ext in file_ext_to_array_func:
+                # TODO: Support multi-variable formats
                 exp_tn_fn = exp_filename.replace(file_ext, f".{variable}.expected.png")
                 exp_tn_html = img_entry_tmpl.format("_images/" + exp_tn_fn)
                 _generate_thumbnail(fc.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
@@ -472,7 +523,8 @@ def _generate_html_summary(output_filename, file_comparison_results):
 def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
     from PIL import Image
 
-    input_arr = _get_geotiff_array(input_data_path)
+    input_ext = os.path.splitext(input_data_path)[1]
+    input_arr = file_ext_to_array_func[input_ext](input_data_path)
     full_img = Image.fromarray(input_arr)
     full_size = full_img.size
     width_ratio = full_size[0] // max_width
@@ -533,8 +585,7 @@ def main(argv=sys.argv[1:]):
         "If specified with no argument then defaults to 'comparison_summary.html'. All additional "
         "files (images, CSS, etc) will be placed in the same directory.",
     )
-    parser.add_argument("--margin-of-error", type=float, default=0.0,
-                        help="percent of total pixels that can be wrong")
+    parser.add_argument("--margin-of-error", type=float, default=0.0, help="percent of total pixels that can be wrong")
     parser.add_argument(
         "file_type",
         type=_file_type,
@@ -547,8 +598,12 @@ def main(argv=sys.argv[1:]):
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
-    compare_kwargs = {"shape": tuple(args.shape), "dtype": args.dtype, "variables": args.variables,
-                      "file_type": args.file_type}
+    compare_kwargs = {
+        "shape": tuple(args.shape),
+        "dtype": args.dtype,
+        "variables": args.variables,
+        "file_type": args.file_type,
+    }
 
     comparer = CompareHelper(
         atol=args.atol, rtol=args.rtol, margin_of_error=args.margin_of_error, create_plot=args.plot
