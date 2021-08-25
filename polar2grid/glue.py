@@ -500,16 +500,17 @@ def _parse_reader_args(
     reader_names: list[str],
     reader_subgroups: list,
     args,
-) -> dict:
+) -> tuple[dict, dict]:
     reader_args = {}
+    load_args = {}
     for reader_name, (sgrp1, sgrp2) in zip(reader_names, reader_subgroups):
         if sgrp1 is None:
             continue
         rargs = _args_to_dict(args, sgrp1._group_actions)
-        if sgrp2 is not None:
-            rargs.update(_args_to_dict(args, sgrp2._group_actions))
         reader_args[reader_name] = rargs
-    return reader_args
+        if sgrp2 is not None:
+            load_args.update(_args_to_dict(args, sgrp2._group_actions))
+    return reader_args, load_args
 
 
 def _parse_writer_args(
@@ -536,7 +537,7 @@ def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     filenames = reader_args.pop("filenames") or []
     filenames = list(get_input_files(filenames))
 
-    reader_specific_args = _parse_reader_args(reader_names, reader_subgroups, args)
+    reader_specific_args, reader_specific_load_args = _parse_reader_args(reader_names, reader_subgroups, args)
     for _reader_name, _reader_args in reader_specific_args.items():
         _extended_products = _reader_args.pop("products", None) or []
         # Shouldn't be needed as argparse combines all destination variables
@@ -551,6 +552,7 @@ def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     load_args = {
         "products": products,
     }
+    load_args.update(reader_specific_load_args)
     return scene_creation, load_args
 
 
@@ -778,7 +780,8 @@ basic processing with limited products:
     load_args["products"] = reader_info.get_satpy_products_to_load()
     if not load_args["products"]:
         return -1
-    scn.load(load_args["products"])
+    products = load_args.pop("products")
+    scn.load(products, **load_args)
 
     ll_bbox = resample_args.pop("ll_bbox")
     if ll_bbox:

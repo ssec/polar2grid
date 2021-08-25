@@ -44,6 +44,9 @@ logger = logging.getLogger(__name__)
 @cache
 def _get_sunlight_coverage(area_def, start_time, sza_threshold=90, overpass=None):
     """Get the sunlight coverage of *area_def* at *start_time* as a value between 0 and 1."""
+    if area_def.ndim == 1:
+        logger.debug("Source data is 1 dimensional, will not filter based on sunlight coverage.")
+        return False
     adp = polygon_for_area(area_def)
     poly = get_twilight_poly(start_time)
     if overpass is not None:
@@ -79,6 +82,7 @@ def modpi(val, mod=np.pi):
 def get_twilight_poly(utctime):
     """Return a polygon enclosing the sunlit part of the globe at *utctime*."""
     from pyorbital import astronomy
+
     ra, dec = astronomy.sun_ra_dec(utctime)
     lon = modpi(ra - astronomy.gmst(utctime))
     lat = dec
@@ -103,10 +107,7 @@ class SunlightCoverageFilter(BaseFilter):
 
     FILTER_MSG = "Unloading '{}' because there is not enough day/night coverage."
 
-    def __init__(self,
-                 product_filter_criteria: dict = None,
-                 sza_threshold: float = 100.0,
-                 fraction: float = 0.1):
+    def __init__(self, product_filter_criteria: dict = None, sza_threshold: float = 100.0, fraction: float = 0.1):
         """Initialize thresholds and default search criteria."""
         super().__init__(product_filter_criteria)
         self._sza_threshold = sza_threshold
@@ -127,9 +128,9 @@ class SunlightCoverageFilter(BaseFilter):
         if not self._matches_criteria(data_arr):
             return False
 
-        area = data_arr.attrs['area']
-        start_time = data_arr.attrs['start_time']
-        end_time = data_arr.attrs['end_time']
+        area = data_arr.attrs["area"]
+        start_time = data_arr.attrs["start_time"]
+        end_time = data_arr.attrs["end_time"]
         mid_time = start_time + (end_time - start_time) / 2
         sza_threshold = self._sza_threshold
         if area not in _cache:
@@ -144,18 +145,13 @@ class DayCoverageFilter(SunlightCoverageFilter):
 
     FILTER_MSG = "Unloading '{}' because there is not enough day data."
 
-    def __init__(self,
-                 product_filter_criteria: dict = None,
-                 sza_threshold: float = 100.0,
-                 day_fraction: float = 0.1):
+    def __init__(self, product_filter_criteria: dict = None, sza_threshold: float = 100.0, day_fraction: float = 0.1):
         """Initialize thresholds and default search criteria."""
         product_filter_criteria = product_filter_criteria or {}
-        matching_standard_names = ['toa_bidirectional_reflectance', 'true_color', 'natural_color', 'false_color']
-        product_filter_criteria.setdefault('standard_name', matching_standard_names)
+        matching_standard_names = ["toa_bidirectional_reflectance", "true_color", "natural_color", "false_color"]
+        product_filter_criteria.setdefault("standard_name", matching_standard_names)
 
-        super().__init__(product_filter_criteria,
-                         sza_threshold=sza_threshold,
-                         fraction=day_fraction)
+        super().__init__(product_filter_criteria, sza_threshold=sza_threshold, fraction=day_fraction)
 
     def _should_be_filtered(self, sunlight_coverage):
         return sunlight_coverage < self._fraction
@@ -166,18 +162,13 @@ class NightCoverageFilter(SunlightCoverageFilter):
 
     FILTER_MSG = "Unloading '{}' because there is not enough night data."
 
-    def __init__(self,
-                 product_filter_criteria: dict = None,
-                 sza_threshold: float = 100.0,
-                 night_fraction: float = 0.1):
+    def __init__(self, product_filter_criteria: dict = None, sza_threshold: float = 100.0, night_fraction: float = 0.1):
         """Initialize thresholds and default search criteria."""
         product_filter_criteria = product_filter_criteria or {}
-        matching_standard_names = ['temperature_difference']
-        product_filter_criteria.setdefault('standard_name', matching_standard_names)
+        matching_standard_names = ["temperature_difference"]
+        product_filter_criteria.setdefault("standard_name", matching_standard_names)
 
-        super().__init__(product_filter_criteria,
-                         sza_threshold=sza_threshold,
-                         fraction=night_fraction)
+        super().__init__(product_filter_criteria, sza_threshold=sza_threshold, fraction=night_fraction)
 
     def _should_be_filtered(self, sunlight_coverage):
         return (1 - sunlight_coverage) < self._fraction

@@ -30,13 +30,28 @@ resampling:
   default_clavrx_cloud_type:
     name: cloud_type
     resampler: nearest
-  default_viirs:
+  default_viirs_sdr:
     area_type: swath
     sensor: viirs
+    reader: viirs_sdr
     resampler: ewa
     kwargs:
       weight_delta_max: 40.0
       weight_distance_max: 2.0
+  default_viirs_l1b:
+    area_type: swath
+    sensor: viirs
+    reader: viirs_l1b
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 2.0
+  default_nucaps:
+    area_type: swath
+    reader: nucaps
+    resampler: nearest
+    kwargs:
+      radius_of_influence: 40000
   default_modis:
     area_type: swath
     sensor: modis
@@ -55,6 +70,7 @@ resampling:
   default_mirs_amsu:
     area_type: swath
     sensor: amsu
+    reader: mirs
     resampler: ewa
     kwargs:
       weight_delta_max: 100.0
@@ -63,6 +79,7 @@ resampling:
   default_mirs_amsu-mhs:
     area_type: swath
     sensor: amsu-mhs
+    reader: mirs
     resampler: ewa
     kwargs:
       weight_delta_max: 100.0
@@ -71,6 +88,7 @@ resampling:
   default_mirs_atms:
     area_type: swath
     sensor: atms
+    reader: mirs
     resampler: ewa
     kwargs:
       weight_delta_max: 100.0
