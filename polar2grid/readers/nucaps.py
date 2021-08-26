@@ -295,7 +295,7 @@ class ReaderProxy(ReaderProxyBase):
         return products
 
     @property
-    def _aliases(self) -> dict[DataQuery]:
+    def _aliases(self) -> dict[str, DataQuery]:
         return {}
 
 
