@@ -39,6 +39,7 @@ from pyresample.spherical import SphPolygon
 
 logger = logging.getLogger(__name__)
 
+
 @cache
 def _get_intersection_coverage(source_polygon: SphPolygon, target_polygon: SphPolygon) -> float:
     """Get fraction of output grid that will be filled with input data."""
@@ -55,11 +56,12 @@ def _get_intersection_coverage(source_polygon: SphPolygon, target_polygon: SphPo
 class ResampleCoverageFilter(BaseFilter):
     """Remove any DataArrays that would not """
 
-    def __init__(self,
-                 product_filter_criteria: dict = None,
-                 target_area: PRGeometry = None,
-                 coverage_fraction: float = None,
-                 ):
+    def __init__(
+        self,
+        product_filter_criteria: dict = None,
+        target_area: PRGeometry = None,
+        coverage_fraction: float = None,
+    ):
         """Initialize thresholds and default search criteria."""
         super().__init__(product_filter_criteria)
         if target_area is None:
@@ -82,16 +84,21 @@ class ResampleCoverageFilter(BaseFilter):
         if not self._matches_criteria(data_arr):
             return False
 
-        source_area = data_arr.attrs.get('area')
+        source_area = data_arr.attrs.get("area")
         if source_area is None:
             return False
 
+        if source_area.ndim == 1:
+            logger.debug("Source data is 1 dimensional, will not filter based on resampling coverage.")
+            return False
         source_polygon = polygon_for_area(source_area)
         coverage_fraction = _get_intersection_coverage(source_polygon, self._target_polygon)
         if coverage_fraction >= self._coverage_fraction:
             logger.debug("Resampling found %f%% coverage.", coverage_fraction * 100)
             return False
-        logger.warning("Resampling found %f%% of the output grid covered. "
-                       "Will skip producing this product: %s",
-                       coverage_fraction * 100, data_arr.attrs['name'])
+        logger.warning(
+            "Resampling found %f%% of the output grid covered. " "Will skip producing this product: %s",
+            coverage_fraction * 100,
+            data_arr.attrs["name"],
+        )
         return True

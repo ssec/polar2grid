@@ -41,19 +41,21 @@ class ResamplerDecisionTree(DecisionTree):
 
     def __init__(self, *decision_dicts, **kwargs):
         """Init the decision tree."""
-        match_keys = kwargs.pop("match_keys",
-                                ("name",
-                                 "platform_name",
-                                 "sensor",
-                                 "standard_name",
-                                 "area_type",
-                                 "reader",  # not currently available
-                                 "units",
-                                 ))
+        match_keys = kwargs.pop(
+            "match_keys",
+            (
+                "name",
+                "platform_name",
+                "sensor",
+                "standard_name",
+                "area_type",
+                "reader",
+                "units",
+            ),
+        )
         self.prefix = kwargs.pop("config_section", "resampling")
         multival_keys = kwargs.pop("multival_keys", ["sensor"])
-        super(ResamplerDecisionTree, self).__init__(
-            decision_dicts, match_keys, multival_keys)
+        super(ResamplerDecisionTree, self).__init__(decision_dicts, match_keys, multival_keys)
 
     @classmethod
     def from_configs(cls, config_filename="resampling.yaml"):
@@ -70,8 +72,7 @@ class ResamplerDecisionTree(DecisionTree):
                     if resample_config is None:
                         # empty file
                         continue
-                    resampling_section = resample_config.get(
-                        self.prefix, {})
+                    resampling_section = resample_config.get(self.prefix, {})
                     if not resampling_section:
                         logging.debug("Config '{}' has no '{}' section or it is empty".format(config_file, self.prefix))
                         continue
@@ -82,20 +83,16 @@ class ResamplerDecisionTree(DecisionTree):
                 logger.debug("Loading resampling config string")
                 d = yaml.load(config_file, Loader=yaml.UnsafeLoader)
                 if not isinstance(d, dict):
-                    raise ValueError(
-                        "YAML file doesn't exist or string is not YAML dict: {}".format(config_file))
+                    raise ValueError("YAML file doesn't exist or string is not YAML dict: {}".format(config_file))
                 conf = recursive_dict_update(conf, d)
         self._build_tree(conf)
 
     def find_match(self, **query_dict):
         """Find a match."""
-        query_dict['area_type'] = "swath" if isinstance(query_dict['area'], SwathDefinition) else 'area'
+        query_dict["area_type"] = "swath" if isinstance(query_dict["area"], SwathDefinition) else "area"
 
         try:
             return super().find_match(**query_dict)
         except KeyError:
             # give a more understandable error message
-            raise KeyError("No resampling configuration found for %s" %
-                           (query_dict.get("uid", None),))
-
-
+            raise KeyError("No resampling configuration found for %s" % (query_dict.get("uid", None),))
