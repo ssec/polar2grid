@@ -1,0 +1,206 @@
+sensor_name: visir/modis
+modifiers:
+  # overwrite default 'rayleigh_corrected' with crefl
+  rayleigh_corrected:
+    modifier: !!python/name:satpy.modifiers.atmosphere.ReflectanceCorrector
+    url: "https://www.ssec.wisc.edu/~davidh/polar2grid/modis_crefl/tbase.hdf"
+    known_hash: "sha256:ed5183cddce905361c1cac8ae6e3a447212875ea421a05747751efe76f8a068e"
+    dem_sds: "Elevation"
+    prerequisites:
+      - name: satellite_azimuth_angle
+      - name: satellite_zenith_angle
+      - name: solar_azimuth_angle
+      - name: solar_zenith_angle
+composites:
+  true_color:
+    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+    prerequisites:
+      - name: '1'
+        resolution: 500
+        modifiers: [sunz_corrected, rayleigh_corrected]
+      - name: '4'
+        resolution: 500
+        modifiers: [sunz_corrected, rayleigh_corrected]
+      - name: '3'
+        resolution: 500
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    optional_prerequisites:
+      - name: '1'
+        resolution: 250
+        modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
+    standard_name: true_color
+    high_resolution_band: red
+  false_color:
+    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+    prerequisites:
+      - name: '7'
+        resolution: 500
+        modifiers: [sunz_corrected, rayleigh_corrected]
+      - name: '2'
+        resolution: 500
+        modifiers: [sunz_corrected, rayleigh_corrected]
+      - name: '1'
+        resolution: 500
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    optional_prerequisites:
+      - name: '2'
+        resolution: 250
+        modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
+    standard_name: true_color
+    high_resolution_band: green
+  fog:
+    compositor: !!python/name:satpy.composites.DifferenceCompositor
+    prerequisites:
+      - "31"
+      - "20"
+    standard_name: temperature_difference
+
+  _preenhanced_true_color:
+    compositor: !!python/name:polar2grid.composites.enhanced.SingleEnhancedBandCompositor
+    prerequisites:
+      - name: true_color
+
+  _preenhanced_false_color:
+    compositor: !!python/name:polar2grid.composites.enhanced.SingleEnhancedBandCompositor
+    prerequisites:
+      - name: false_color
+
+  # MODIS pre-enhanced versions of the true and false color bands
+  # These are meant to be provided to AWIPS using the "awips_tiled" writer
+  # so they can be joined together into an RGB.
+  modis_crefl01_1000m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_false_color
+    standard_name: preenhanced_crefl
+    band_index: 'B'
+  modis_crefl01_500m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_false_color
+    standard_name: preenhanced_crefl
+    band_index: 'B'
+  # Note: the 250m version of this comes from the true_color where the result
+  #   is from the high resolution band (250m) of channel 1. In the 500m and
+  #   1000m resolution versions above we use false color because if someone is
+  #   requesting these then they are probably building the false_color
+  #   composite which is effected by band 2's ratio sharpening.
+  modis_crefl01_250m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'R'
+
+  modis_crefl02_1000m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_false_color
+    standard_name: preenhanced_crefl
+    band_index: 'G'
+  modis_crefl02_500m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_false_color
+    standard_name: preenhanced_crefl
+    band_index: 'G'
+  modis_crefl02_250m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_false_color
+    standard_name: preenhanced_crefl
+    band_index: 'G'
+
+  modis_crefl03_1000m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'B'
+  modis_crefl03_500m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'B'
+  modis_crefl03_250m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'B'
+
+  modis_crefl04_1000m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'G'
+  modis_crefl04_500m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'G'
+  modis_crefl04_250m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_true_color
+    standard_name: preenhanced_crefl
+    band_index: 'G'
+
+  modis_crefl07_500m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_false_color
+    standard_name: preenhanced_crefl
+    band_index: 'R'
+  modis_crefl07_250m:
+    compositor: !!python/name:polar2grid.composites.enhanced.SubBandCompositor
+    prerequisites:
+      - name: _preenhanced_false_color
+    standard_name: preenhanced_crefl
+    band_index: 'R'
+
+  _crefl01:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: "1"
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl02:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: "2"
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl03:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: "3"
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl04:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: "4"
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl05:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: "5"
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl06:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: "6"
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
+  _crefl07:
+    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    prerequisites:
+      - name: "7"
+        modifiers: [sunz_corrected, rayleigh_corrected]
+    standard_name: corrected_reflectance
