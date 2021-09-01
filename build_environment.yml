@@ -8,7 +8,7 @@ dependencies:
   - conda-pack
   - configobj
   - curl
-  - dask
+  - dask>=2021.8.1
   - distributed
   - ffmpeg
   - fontconfig
@@ -18,13 +18,13 @@ dependencies:
   - netcdf4
   - pillow
   - pip
-  - pycoast
+  - pycoast>=1.5.0
   - pydecorate
   - pyhdf
   - pykdtree
   - pyorbital
-  - pyproj
-  - pyresample>=1.19.0
+  - pyproj>=3.1.0
+  - pyresample>=1.21.0
   - pyshp
   - pyspectral
   - python=3.8
@@ -34,11 +34,11 @@ dependencies:
   - requests
   - setuptools
   - six
-  - trollimage>=1.15.0
+  - trollimage>=1.15.1
   - trollsift
   - scipy
   - zarr
-  - xarray
+  - xarray>=0.19.0
   - fsspec
   - s3fs
   - pip:
