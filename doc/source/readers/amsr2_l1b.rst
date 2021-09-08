@@ -9,7 +9,7 @@ Command Line Arguments
 
 .. argparse::
     :module: polar2grid.readers.amsr2_l1b
-    :func: add_readers_argument_groups
+    :func: add_reader_argument_groups
     :prog: polar2grid.sh -r amsr2_l1b -w <writer>
     :passparser:
 

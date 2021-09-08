@@ -1,17 +1,10 @@
 Corrected Reflectance Reader
 ============================
 
-.. automodule:: polar2grid.crefl.crefl2swath
-    :noindex:
+.. warning::
 
-Command Line Arguments
-----------------------
-
-.. argparse::
-    :module: polar2grid.crefl.crefl2swath
-    :func: add_frontend_argument_groups
-    :prog: polar2grid.sh crefl <writer>
-    :passparser:
+    As of Polar2Grid 3.0 the 'crefl' reader has been deprecated and absorbed
+    into the individual ``viirs_sdr`` and ``modis_l1b`` readers.
 
 Example 1 - Create True Color GeoTIFFs and KML/KMZ
 --------------------------------------------------
