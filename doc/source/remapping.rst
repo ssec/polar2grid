@@ -4,7 +4,7 @@ Remapping
 Remapping is the process of mapping satellite data to a uniform grid. Mapping
 data to a uniform grid makes it easier to view, manipulate, and store the data.
 Some instrument data is provided to the user already gridded (ex.
-VIIRS, EDR Flood, ABI L1B data)
+VIIRS EDR Flood, ABI L1B data)
 and others are not (ex. VIIRS SDR or older GOES satellites).
 
 In |project| it is possible to perform the gridding (reprojecting) process for

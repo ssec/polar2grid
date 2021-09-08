@@ -23,7 +23,7 @@ Examples:
 
     polar2grid.sh -r viirs_sdr -w geotiff --list-products -f ../sdr/*.h5
 
-    polar2grid.sh -r viirs_sdr -w awips_tiled -p i04 adaptive_dnb dynamic_dnb --sza-threshold=90.0 --letters --compress --sector-id Polar -g polar_alaska_1km -f <path to files>
+    polar2grid.sh -r viirs_sdr -w awips_tiled -p i04 adaptive_dnb dynamic_dnb --awips-true-color --awips-false-color --sza-threshold=90.0 --letters --compress --sector-id Polar -g polar_alaska_1km -f <path to files>
 
     polar2grid.sh -r viirs_sdr -w hdf5 --compress gzip --m-bands -f ../sdr/*.h5
 
