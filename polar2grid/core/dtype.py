@@ -42,7 +42,6 @@ __docformat__ = "restructuredtext en"
 
 import numpy as np
 
-import sys
 import logging
 
 log = logging.getLogger(__name__)

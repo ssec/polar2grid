@@ -25,7 +25,7 @@ jobs:
       - name: build website
         shell: bash -l {0}
         run: |
-          cd doc && make html
+          cd doc && make html SPHINXOPTS="-W --keep-going"
 #      - name: deploy website
 #        if: github.event_name == 'push'
 #        uses: peaceiris/actions-gh-pages@v3
