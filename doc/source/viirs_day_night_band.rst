@@ -1,3 +1,5 @@
+:orphan:
+
 Scaling of the VIIRS Day/Night Band in Polar2Grid
 =================================================
 
