@@ -43,19 +43,19 @@ jobs:
 
       - name: Build Geo2Grid Website
         shell: bash -l {0}
-        run:
+        run: |
           make clean
           make html POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
 
       - name: Build Polar2Grid PDF
         shell: bash -l {0}
         run: |
-          cd doc
+          make clean
           make latexpdf SPHINXOPTS="-W --keep-going"
 
       - name: Build Geo2Grid PDF
         shell: bash -l {0}
-        run:
+        run: |
           make clean
           make latexpdf POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
 
