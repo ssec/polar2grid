@@ -21,7 +21,7 @@ jobs:
           # opengl system libraries
           sudo apt-get update
           # Additional latex dependencies
-          sudo apt-get -y install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra latexmk
+          sudo apt-get -y install texlive-xetex texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra latexmk
           sudo apt-get -y install dvipng
 
       - name: Setup Conda Environment
