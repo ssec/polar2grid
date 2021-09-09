@@ -16,6 +16,14 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v2
 
+      - name: Prepare System Environment
+        run: |
+          # opengl system libraries
+          sudo apt-get update
+          # Additional latex dependencies
+          sudo apt-get -y install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
+          sudo apt-get -y install dvipng
+
       - name: Setup Conda Environment
         uses: mamba-org/provision-with-micromamba@main
         with:
@@ -38,15 +46,6 @@ jobs:
         run:
           make clean
           make html POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
-
-      - name: Prepare System Environment
-        id: vars
-        run: |
-          # opengl system libraries
-          sudo apt-get update
-          # Additional latex dependencies
-          sudo apt-get -y install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
-          sudo apt-get -y install dvipng
 
       - name: Build Polar2Grid PDF
         shell: bash -l {0}
