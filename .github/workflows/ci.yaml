@@ -22,10 +22,39 @@ jobs:
         run: |
           pip install --no-deps -e .
 
-      - name: build website
+      - name: Build Polar2Grid Website
         shell: bash -l {0}
         run: |
-          cd doc && make html SPHINXOPTS="-W --keep-going"
+          cd doc
+          make html SPHINXOPTS="-W --keep-going"
+
+      - name: Build Geo2Grid Website
+        shell: bash -l {0}
+        run:
+          make clean
+          make html POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
+
+      - name: Prepare System Environment
+        id: vars
+        run: |
+          # opengl system libraries
+          sudo apt-get update
+          # Additional latex dependencies
+          sudo apt-get -y install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
+          sudo apt-get -y install dvipng
+
+      - name: Build Polar2Grid PDF
+        shell: bash -l {0}
+        run: |
+          cd doc
+          make latexpdf SPHINXOPTS="-W --keep-going"
+
+      - name: Build Geo2Grid PDF
+        shell: bash -l {0}
+        run:
+          make clean
+          make latexpdf POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
+
 #      - name: deploy website
 #        if: github.event_name == 'push'
 #        uses: peaceiris/actions-gh-pages@v3
