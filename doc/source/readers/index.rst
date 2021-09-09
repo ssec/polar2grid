@@ -19,7 +19,6 @@ using the  ``--list-products`` option.
     :polar2grid:viirs_sdr
     :polar2grid:viirs_l1b
     :polar2grid:modis
-    :polar2grid:crefl
     :polar2grid:avhrr
     :polar2grid:amsr2_l1b
     :polar2grid:nucaps

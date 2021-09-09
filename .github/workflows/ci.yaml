@@ -10,7 +10,7 @@ on: [push, pull_request]
 jobs:
   # build website
   website:
-    name: build website
+    name: Build Documentation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -73,6 +73,7 @@ jobs:
 #          full_commit_message: "Deploy vispy.org website for SHA:$GITHUB_SHA (Tag: $GITHUB_REF)"
 
   test:
+    name: Tests
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true

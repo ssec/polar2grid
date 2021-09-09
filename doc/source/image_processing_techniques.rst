@@ -44,6 +44,35 @@ in addition to the radiance measured by the sensor. This modification, used by
 some RGB recipes, involves dividing the channel data by the cosine of the
 solar zenith angle.
 
+.. _crefl_rayleigh_correction:
+
+Rayleigh Scattering Correction - CREFL
+--------------------------------------
+
+Due to the size of molecules that make up our atmosphere, some visible channel
+light is preferentially scattered more than others, especially at larger
+viewing angles.
+The Corrected Reflectance algorithm performs a simple atmospheric correction
+with MODIS visible, near-infrared, and short-wave infrared bands (1 to 16).
+Later versions of the software were adapted to work with VIIRS data. Both
+implementations have been merged and made available as a "modifier" in the
+Satpy Python library and used by |project|.
+This algorithm was originally developed by the MODIS Rapid Response Team
+(http://rapidfire.sci.gsfc.nasa.gov/) and made available by cooperative
+agreement, with subsequent additions by the University of South Florida (USF)
+and the NASA Direct Readout Laboratory (DRL).
+
+The algorithm corrects for molecular (Rayleigh) scattering and gaseous absorption (water
+vapor, ozone) using climatological values for gas contents.  It requires no
+real-time input of ancillary data.  The algorithm performs no aerosol
+correction.  The Corrected Reflectance products are very similar to the MODIS
+Land Surface Reflectance product (MOD09) in clear atmospheric conditions, since
+the algorithms used to derive both are based on the 6S Radiative Transfer Model
+(Vermote et al.1994).  The products show differences in the presence of
+aerosols, however, because the MODIS Land Surface Reflectance product uses a
+more complex atmospheric correction algorithm that includes a correction for
+aerosols.
+
 .. _psp_rayleigh_correction:
 
 Rayleigh Scattering Correction - Pyspectral
@@ -98,7 +127,7 @@ to that in the above ratio sharpening technique.
 Non-linear True Color Scaling
 -----------------------------
 
-As a final step for some images, |project| scales the image values using a
+As a final step for some RGB images, |project| scales the image values using a
 series of linear interpolation ranges to bring out certain regions of the
 image and lessen the
 effect of others. For lack of a better name, these multiple linear stretches
