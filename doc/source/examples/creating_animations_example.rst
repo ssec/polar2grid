@@ -1,7 +1,7 @@
 Using Geo2Grid to Create Animations
 -----------------------------------
 
-The advantage of Geostionary Satellites is the temporal resolution of the 
+The advantage of Geostationary Satellites is the temporal resolution of the
 observations.  Geo2Grid offers an easy interface to creating animations from
 Geo2Grid GeoTIFF files.  The following example demonstrates how
 Geo2Grid software can be used to create an animation of 

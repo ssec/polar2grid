@@ -228,9 +228,26 @@ exclude_patterns = [
 if is_geo2grid:
     exclude_patterns.extend(
         [
+            "examples/acspo_example.rst",
+            "examples/amsr2_example.rst",
+            "examples/modis_example.rst",
+            "examples/viirs_example.rst",
             "readers/acspo.rst",
+            "readers/amsr2_l1b.rst",
+            "readers/avhrr.rst",
+            "readers/clavrx.rst",
+            "readers/mersi2_l1b.rst",
+            "readers/mirs.rst",
+            "readers/modis.rst",
+            "readers/nucaps.rst",
+            "readers/viirs_edr_active_fires.rst",
+            "readers/viirs_l1b.rst",
+            "readers/viirs_sdr.rst",
+            "readers/virr_l1b.rst",
             "verification/modis_verification.rst",
             "verification/viirs_verification.rst",
+            "viirs_day_night_band.rst",
+            "writers/awips_tiled.rst" "writers/binary.rst" "writers/hdf5.rst",
         ]
     )
 else:
