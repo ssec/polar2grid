@@ -247,7 +247,9 @@ if is_geo2grid:
             "verification/modis_verification.rst",
             "verification/viirs_verification.rst",
             "viirs_day_night_band.rst",
-            "writers/awips_tiled.rst" "writers/binary.rst" "writers/hdf5.rst",
+            "writers/awips_tiled.rst",
+            "writers/binary.rst",
+            "writers/hdf5.rst",
         ]
     )
 else:
