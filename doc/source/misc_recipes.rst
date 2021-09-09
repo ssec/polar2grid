@@ -68,6 +68,8 @@ bash scripts.
     More than one image can be combined. There are more options
     available to `gdal_merge.py`.  Execute
 
-        `gdal_merge.py -h`
+    .. code-block:: bash
+
+        gdal_merge.py -h
 
     for a complete list of options.

@@ -8,9 +8,9 @@ files. NOAA GOES-16 and GOES-17 ABI data is now freely
 available through Amazon Web Services (AWS). More information about
 accessing data can be found at this website:
 
-	https://registry.opendata.aws/noaa-goes/
+    https://registry.opendata.aws/noaa-goes/
 
 And a very nice interface that allows direct downloads from
 the AWS can be found here:
 
-	http://home.chpc.utah.edu/~u0553130/Brian_Blaylock/cgi-bin/goes16_download.cgi
+    http://home.chpc.utah.edu/~u0553130/Brian_Blaylock/cgi-bin/goes16_download.cgi

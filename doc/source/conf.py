@@ -145,16 +145,7 @@ extensions = [
 # API docs
 apidoc_module_dir = "../../polar2grid"
 apidoc_output_dir = "dev_guide/api"
-# TODO: Anything listed here should be removed by Polar2Grid 3.0
-apidoc_excluded_paths = [
-    "crefl",
-    "mirs",
-    "modis",
-    "ninjo",
-    "viirs",
-    "core/rescale.py",
-    "core/roles.py",
-]
+apidoc_excluded_paths = []
 apidoc_separate_modules = True
 apidoc_extra_args = ["-P"]
 
@@ -520,14 +511,14 @@ latex_logo = "_static/{}2G_PDF_Logos.png".format("G" if is_geo2grid else "P")
 # Documents to append as an appendix to all manuals.
 if is_geo2grid:
     latex_appendices = [
+        "misc_recipes",
         "design_overview",
-        # 'complex_composites/geo2grid_composites',
     ]
 else:
     latex_appendices = [
         "misc_recipes",
         "design_overview",
-        # 'complex_composites/polar2grid_composites',
+        "viirs_day_night_band",
     ]
 
 # If false, no module index is generated.

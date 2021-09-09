@@ -98,7 +98,7 @@ to that in the above ratio sharpening technique.
 Non-linear True Color Scaling
 -----------------------------
 
-As a final step for some images, Geo2Grid scales the image values using a
+As a final step for some images, |project| scales the image values using a
 series of linear interpolation ranges to bring out certain regions of the
 image and lessen the
 effect of others. For lack of a better name, these multiple linear stretches
