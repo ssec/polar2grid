@@ -96,7 +96,7 @@ data files. However, due to various properties of the instrument basic linear
 scaling is not enough to make useful images from this data. |project| provides
 4 specially normalized versions of the DNB data to bring out more information
 when the data is saved as an image. These products include ``historgram_dnb``,
-``adaptive_dnb``, ``dynamic_dnb``, and `hncc_dnb``. The explanation for these
+``adaptive_dnb``, ``dynamic_dnb``, and ``hncc_dnb``. The explanation for these
 products is described in more detail in the :doc:`../viirs_day_night_band`
 appendix.
 
