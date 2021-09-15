@@ -77,8 +77,8 @@ from satpy import DataQuery
 
 PRODUCTS = [
     "cloud_mask",
-    # "land_sea_mask",
-    # "snow_ice_mask",
+    "land_sea_mask",
+    "snow_ice_mask",
     "sst",
     "lst",
     "ndvi",
