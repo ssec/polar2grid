@@ -22,7 +22,6 @@ dependencies:
   - pykdtree
   - pyorbital
   - pyproj
-  - pyresample
   - pyshp
   - pyspectral
   - python=3.8
@@ -42,9 +41,11 @@ dependencies:
   - pytest-lazy-fixture
   - sphinx
   - pip
-  - satpy
   - python-graphviz
   - sphinx-argparse
   - fsspec
   - s3fs
   - sphinxcontrib-apidoc
+  - pip:
+      - git+https://github.com/pytroll/satpy.git
+      - git+https://github.com/pytroll/pyresample.git
