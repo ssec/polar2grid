@@ -55,6 +55,7 @@ class TestGridManager(object):
 
 def main():
     import os
+
     return pytest.main([os.path.dirname(os.path.realpath(__file__))])
 
 

@@ -35,16 +35,19 @@ import sys
 
 def p2g_main(argv=sys.argv[1:]):
     from polar2grid.glue import main
+
     os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")
     main(argv=argv)
 
 
 def g2g_main(argv=sys.argv[1:]):
     from polar2grid.glue import main
+
     os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "0")
     main(argv=argv)
 
 
 if __name__ == "__main__":
     from polar2grid.glue import main
+
     sys.exit(main())

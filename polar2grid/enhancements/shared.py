@@ -40,5 +40,3 @@ def temperature_difference(img, min_stretch, max_stretch, **kwargs):
     img.data = np.clip(img.data, -offset, 0.8 + offset)  # 4 and 206 offset
     img.data + img.data + 5 * offset  # lower bound of 5
     return img
-
-

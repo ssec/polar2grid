@@ -44,19 +44,16 @@ class SingleEnhancedBandCompositor(SingleBandCompositor):
         new_attrs = data.attrs.copy()
         data = enhance2dataset(data)
         data.attrs = new_attrs
-        if isinstance(data.attrs.get('sensor'), set) and len(data.attrs['sensor']) == 1:
-            data.attrs['sensor'] = list(data.attrs['sensor'])[0]
+        if isinstance(data.attrs.get("sensor"), set) and len(data.attrs["sensor"]) == 1:
+            data.attrs["sensor"] = list(data.attrs["sensor"])[0]
         return super().__call__([data], **attrs)
 
 
 class SubBandCompositor(SingleBandCompositor):
     """Get a single band from a provided multi-band DataArray."""
 
-    def __init__(self, name, prerequisites=None, optional_prerequisites=None,
-                 band_index=None, **kwargs):
-        super().__init__(name, prerequisites=prerequisites,
-                         optional_prerequisites=optional_prerequisites,
-                         **kwargs)
+    def __init__(self, name, prerequisites=None, optional_prerequisites=None, band_index=None, **kwargs):
+        super().__init__(name, prerequisites=prerequisites, optional_prerequisites=optional_prerequisites, **kwargs)
         if band_index is None:
             raise ValueError("'band_index' must be provided.")
         self._band_index = band_index
@@ -67,11 +64,11 @@ class SubBandCompositor(SingleBandCompositor):
             raise ValueError("Can't have more than one band in a single-band composite")
 
         data = projectables[0]
-        if 'bands' not in data.dims:
+        if "bands" not in data.dims:
             raise ValueError("Provided data has no 'bands' dimension.")
 
         band_index = self._band_index
         if isinstance(band_index, int):
-            band_index = data.dims['bands'][band_index]
+            band_index = data.dims["bands"][band_index]
         data = data.sel(bands=band_index)
         return super().__call__([data], **attrs)
