@@ -39,7 +39,7 @@ dependencies:
   - xarray
   - pytest
   - pytest-cov
-  - pytest-lazy-fixtures
+  - pytest-lazy-fixture
   - sphinx
   - pip
   - satpy

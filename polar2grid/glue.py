@@ -414,7 +414,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
             "--grids",
             default=None,
             nargs="*",
-            help="Area definition to resample to. Empty means " 'no resampling (default: "MAX")',
+            help='Area definition to resample to. Empty means no resampling (default: "MAX")',
         )
     # shared options
     group_1.add_argument(

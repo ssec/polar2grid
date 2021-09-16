@@ -22,20 +22,58 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Tests for resampling a Scene."""
 
+import dask
 import pytest
 from polar2grid.resample._resample_scene import resample_scene
 from satpy import Scene
+from satpy.tests.utils import CustomScheduler
+from pytest_lazyfixture import lazy_fixture
 
 
-def test_viirs_sdr_i01_resample(viirs_sdr_i01_scene, builtin_grids_conf):
-    scenes_to_save = resample_scene(
-        viirs_sdr_i01_scene,
-        ["wgs84_fit"],
-        [builtin_grids_conf],
-        None,
-    )
-    assert len(scenes_to_save) == 1
-    scene, data_ids_set = scenes_to_save[0]
-    assert isinstance(scene, Scene)
-    assert len(data_ids_set) == 1
-    assert list(data_ids_set)[0]["name"] == "I01"
+@pytest.mark.parametrize(
+    ("input_scene", "grids", "resampler", "exp_names", "max_computes", "is_polar2grid"),
+    [
+        (
+            lazy_fixture("viirs_sdr_i01_scene"),
+            ["wgs84_fit"],
+            None,
+            ["I01"],
+            2,
+            True,
+        ),
+        (
+            lazy_fixture("abi_l1b_c01_scene"),
+            ["wgs84_fit"],
+            "nearest",
+            ["C01"],
+            0,
+            False,
+        ),
+        (
+            lazy_fixture("abi_l1b_c01_scene"),
+            ["MAX"],
+            None,
+            ["C01"],
+            0,
+            False,
+        ),
+    ],
+)
+def test_resample_single_result_per_grid(
+    input_scene, grids, resampler, exp_names, max_computes, is_polar2grid, builtin_grids_conf
+):
+    with dask.config.set(scheduler=CustomScheduler(max_computes)):
+        scenes_to_save = resample_scene(
+            input_scene,
+            grids,
+            builtin_grids_conf,
+            resampler,
+            is_polar2grid=is_polar2grid,
+        )
+    assert len(scenes_to_save) == len(grids)
+    for scene, data_ids_set in scenes_to_save:
+        assert isinstance(scene, Scene)
+        assert len(data_ids_set) == len(exp_names)
+        id_names = [x["name"] for x in data_ids_set]
+        for exp_name in exp_names:
+            assert exp_name in id_names

@@ -30,7 +30,7 @@ from satpy import Scene
 import xarray as xr
 import dask.array as da
 import numpy as np
-from numpy.typing import ArrayLike, DTypeLike, NDArray
+from numpy.typing import DTypeLike, NDArray
 
 from pyresample.geometry import SwathDefinition, AreaDefinition
 
@@ -44,18 +44,32 @@ def pytest_configure(config):
     add_polar2grid_config_paths()
 
 
-@pytest.fixture
-def builtin_grids_yaml():
-    return os.path.join(PKG_ROOT, "grids", "grids.yaml")
+# Config Files #
 
 
 @pytest.fixture
-def builtin_grids_conf():
-    return os.path.join(PKG_ROOT, "grids", "grids.conf")
+def builtin_grids_yaml() -> list[str]:
+    return [os.path.join(PKG_ROOT, "grids", "grids.yaml")]
 
 
 @pytest.fixture
-def viirs_sdr_i_swath_def():
+def builtin_grids_conf() -> list[str]:
+    return [os.path.join(PKG_ROOT, "grids", "grids.conf")]
+
+
+# Geometries #
+
+
+def _generate_lonlat_data(shape: tuple[int, int], dtype: DTypeLike = np.float32) -> tuple[NDArray, NDArray]:
+    lat = np.repeat(np.linspace(35.0, 45.0, shape[0])[:, None], shape[1], 1)
+    lat *= np.linspace(0.9, 1.1, shape[1])
+    lon = np.repeat(np.linspace(-45.0, -35.0, shape[1])[None, :], shape[0], 0)
+    lon *= np.linspace(0.9, 1.1, shape[0])[:, None]
+    return lon.astype(dtype), lat.astype(dtype)
+
+
+@pytest.fixture
+def viirs_sdr_i_swath_def() -> SwathDefinition:
     lons, lats = _generate_lonlat_data((1536, 6400))
     lons_data_arr = xr.DataArray(
         da.from_array(lons, chunks=VIIRS_I_CHUNKS),
@@ -79,7 +93,23 @@ def viirs_sdr_i_swath_def():
 
 
 @pytest.fixture
-def viirs_sdr_i01_data_array(viirs_sdr_i_swath_def):
+def goes_east_conus_area_def() -> AreaDefinition:
+    return AreaDefinition(
+        "goes_east",
+        "",
+        "",
+        "+proj=geos +lon_0=-75.0 +h=35786023.0 +a=6378137.0 +b=6356752.31414 +sweep=x +units=m +no_defs",
+        5000,
+        3000,
+        (-3627271.2913, 1583173.6575, 1382771.9287, 4589199.5895),
+    )
+
+
+# Data Arrays #
+
+
+@pytest.fixture
+def viirs_sdr_i01_data_array(viirs_sdr_i_swath_def) -> xr.DataArray:
     return xr.DataArray(
         da.zeros((1536, 6400), dtype=np.float32),
         dims=("y", "x"),
@@ -88,20 +118,37 @@ def viirs_sdr_i01_data_array(viirs_sdr_i_swath_def):
             "rows_per_scan": 32,
             "platform_name": "npp",
             "sensor": "viirs",
+            "name": "I01",
         },
     )
 
 
 @pytest.fixture
-def viirs_sdr_i01_scene(viirs_sdr_i01_data_array):
+def abi_l1b_c01_data_array(goes_east_conus_area_def) -> xr.DataArray:
+    return xr.DataArray(
+        da.zeros((3000, 5000), chunks=4096),
+        dims=("y", "x"),
+        attrs={
+            "area": goes_east_conus_area_def,
+            "platform_name": "goes16",
+            "sensor": "abi",
+            "name": "C01",
+        },
+    )
+
+
+# Scenes #
+
+
+@pytest.fixture
+def viirs_sdr_i01_scene(viirs_sdr_i01_data_array) -> Scene:
     scn = Scene()
     scn["I01"] = viirs_sdr_i01_data_array
     return scn
 
 
-def _generate_lonlat_data(shape: tuple[int, int], dtype: DTypeLike = np.float32) -> tuple[NDArray, NDArray]:
-    lat = np.repeat(np.linspace(35.0, 45.0, shape[0])[:, None], shape[1], 1)
-    lat *= np.linspace(0.9, 1.1, shape[1])
-    lon = np.repeat(np.linspace(-45.0, -35.0, shape[1])[None, :], shape[0], 0)
-    lon *= np.linspace(0.9, 1.1, shape[0])[:, None]
-    return lon.astype(dtype), lat.astype(dtype)
+@pytest.fixture
+def abi_l1b_c01_scene(abi_l1b_c01_data_array) -> Scene:
+    scn = Scene()
+    scn["C01"] = abi_l1b_c01_data_array
+    return scn
