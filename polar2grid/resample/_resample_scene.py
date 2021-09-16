@@ -22,17 +22,25 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Helper functions for resampling Satpy Scenes."""
 
+from __future__ import annotations
+
 import logging
+from typing import Union, Optional, List
 
 from .resample_decisions import ResamplerDecisionTree
 from polar2grid.filters.resample_coverage import ResampleCoverageFilter
 
 from pyresample.geometry import DynamicAreaDefinition, AreaDefinition
 from satpy.resample import get_area_def
+from satpy import Scene
 from pyproj import Proj
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+# TypeAlias
+AreaSpecifier = Union[AreaDefinition, str, None]
+ListOfAreas = List[Union[AreaDefinition, str, None]]
 
 
 def _crs_equal(a, b):
@@ -186,15 +194,15 @@ def _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid):
 
 
 def resample_scene(
-    input_scene,
-    areas_to_resample,
-    grid_configs,
-    resampler,
-    preserve_resolution=True,
-    grid_coverage=None,
-    is_polar2grid=True,
+    input_scene: Scene,
+    areas_to_resample: ListOfAreas,
+    grid_configs: list[str],
+    resampler: Optional[str],
+    preserve_resolution: bool = True,
+    grid_coverage: Optional[float] = None,
+    is_polar2grid: bool = True,
     **resample_kwargs,
-):
+) -> list[tuple[Scene, set]]:
     """Resample a single Scene to multiple target areas."""
     area_resolver = AreaDefResolver(input_scene, grid_configs)
     resampling_dtree = ResamplerDecisionTree.from_configs()
@@ -208,24 +216,12 @@ def resample_scene(
     wishlist = input_scene.wishlist.copy()
     scenes_to_save = []
     for (resampler, _resample_kwargs, default_target), data_ids in resampling_groups.items():
-        if areas_to_resample is None:
-            if resampler in ["native"]:
-                logging.debug("Using default resampling target area 'MAX'.")
-                areas_to_resample = ["MAX"]
-            elif default_target is None:
-                raise ValueError("No destination grid/area specified and no default available (use -g flag).")
-            else:
-                logging.debug("Using default resampling target area '%s'.", default_target)
-                areas_to_resample = [default_target]
-        elif not areas_to_resample:
-            areas_to_resample = [None]
-
-        preserve_resolution = _get_preserve_resolution(preserve_resolution, resampler, areas_to_resample)
-        if preserve_resolution:
-            preserved_products = set(wishlist) & set(input_scene.keys())
-            scenes_to_save.append((input_scene, preserved_products))
-        else:
-            preserved_products = set()
+        areas = _areas_to_resample(areas_to_resample, resampler, default_target)
+        scene_to_resample = input_scene.copy(datasets=data_ids)
+        preserve_resolution = _get_preserve_resolution(preserve_resolution, resampler, areas)
+        preserved_products = _products_to_preserve_resolution(preserve_resolution, wishlist, scene_to_resample)
+        if preserved_products:
+            scenes_to_save.append((scene_to_resample, preserved_products))
 
         logger.debug("Products to preserve resolution for: {}".format(preserved_products))
         logger.debug("Products to use new resolution for: {}".format(set(wishlist) - preserved_products))
@@ -234,27 +230,29 @@ def resample_scene(
         _grid_cov = _resample_kwargs.get("grid_coverage", grid_coverage)
         if _grid_cov is None:
             _grid_cov = 0.1
-        for area_name in areas_to_resample:
+        for area_name in areas:
             area_def = area_resolver[area_name]
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
             if area_def is not None:
-                scene_to_resample = input_scene
                 if resampler != "native" and _grid_cov > 0:
                     logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
                     filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=_grid_cov)
-                    scene_to_resample = filter.filter_scene(input_scene)
-                    if scene_to_resample is None:
+                    this_area_scene = filter.filter_scene(scene_to_resample)
+                    if this_area_scene is None:
                         logger.warning("No products were found to overlap with '%s' grid.", area_name)
                         continue
                 logger.info("Resampling to '%s' using '%s' resampling...", area_name, rs)
                 logger.debug("Resampling to '%s' using resampler '%s' with %s", area_name, rs, _resample_kwargs)
-                new_scn = scene_to_resample.resample(area_def, resampler=rs, **_resample_kwargs)
+                new_scn = this_area_scene.resample(area_def, resampler=rs, datasets=data_ids, **_resample_kwargs)
             elif not preserve_resolution:
                 # the user didn't want to resample to any areas
                 # the user also requested that we don't preserve resolution
                 # which means we have to save this Scene's datasets
                 # because they won't be saved
-                new_scn = input_scene.copy(datasets=data_ids)
+                new_scn = scene_to_resample
+            else:
+                # No resampling and any preserved resolution datasets were saved earlier
+                continue
             # we only want to try to save products that we asked for and that
             # we were actually able to generate. Composite generation may have
             # modified the original DataID so we can't use
@@ -263,3 +261,28 @@ def resample_scene(
             scenes_to_save.append((new_scn, _resampled_products))
 
     return scenes_to_save
+
+
+def _areas_to_resample(
+    areas_to_resample: Optional[ListOfAreas], resampler: Optional[str], default_target: Optional[AreaSpecifier]
+) -> ListOfAreas:
+    areas = areas_to_resample
+    if areas is None:
+        if resampler in ["native"]:
+            logging.debug("Using default resampling target area 'MAX'.")
+            areas = ["MAX"]
+        elif default_target is None:
+            raise ValueError("No destination grid/area specified and no default available (use -g flag).")
+        else:
+            logging.debug("Using default resampling target area '%s'.", default_target)
+            areas = [default_target]
+    elif not areas:
+        areas = [None]
+
+    return areas
+
+
+def _products_to_preserve_resolution(preserve_resolution, wishlist, scene_to_resample):
+    if preserve_resolution:
+        return set(wishlist) & set(scene_to_resample.keys())
+    return set()

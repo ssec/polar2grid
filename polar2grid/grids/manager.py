@@ -43,7 +43,6 @@ __docformat__ = "restructuredtext en"
 import logging
 import os
 
-from polar2grid.core import roles
 from polar2grid.core.proj import Proj
 
 try:
@@ -117,26 +116,26 @@ def parse_proj4_config_line(grid_name, parts):
     # Some parts can be None, but not all
     try:
         static = True
-        if parts[3] == "None" or parts[3] == '':
+        if parts[3] == "None" or parts[3] == "":
             static = False
             grid_width = None
         else:
             grid_width = int(parts[3])
 
-        if parts[4] == "None" or parts[4] == '':
+        if parts[4] == "None" or parts[4] == "":
             static = False
             grid_height = None
         else:
             grid_height = int(parts[4])
 
-        if parts[5] == "None" or parts[5] == '':
+        if parts[5] == "None" or parts[5] == "":
             LOG.warning("Grid '%s' may not process properly due to unspecified pixel size", grid_name)
             static = False
             pixel_size_x = None
         else:
             pixel_size_x = float(parts[5])
 
-        if parts[6] == "None" or parts[6] == '':
+        if parts[6] == "None" or parts[6] == "":
             LOG.warning("Grid '%s' may not process properly due to unspecified pixel size", grid_name)
             static = False
             pixel_size_y = None
@@ -144,14 +143,14 @@ def parse_proj4_config_line(grid_name, parts):
             pixel_size_y = float(parts[6])
 
         convert_xorigin_to_meters = False
-        if parts[7] == "None" or parts[7] == '':
+        if parts[7] == "None" or parts[7] == "":
             static = False
             grid_origin_x = None
         else:
             grid_origin_x, convert_xorigin_to_meters = _parse_meter_degree_param(parts[7])
 
         convert_yorigin_to_meters = False
-        if parts[8] == "None" or parts[8] == '':
+        if parts[8] == "None" or parts[8] == "":
             static = False
             grid_origin_y = None
         else:
@@ -160,16 +159,13 @@ def parse_proj4_config_line(grid_name, parts):
         LOG.error("Could not parse proj4 grid configuration: '%s'" % (grid_name,))
         raise
 
-    if (pixel_size_x is None and pixel_size_y is not None) or \
-            (pixel_size_x is not None and pixel_size_y is None):
+    if (pixel_size_x is None and pixel_size_y is not None) or (pixel_size_x is not None and pixel_size_y is None):
         LOG.error("Both or neither pixel sizes must be specified for '%s'" % grid_name)
         raise ValueError("Both or neither pixel sizes must be specified for '%s'" % grid_name)
-    if (grid_width is None and grid_height is not None) or \
-            (grid_width is not None and grid_height is None):
+    if (grid_width is None and grid_height is not None) or (grid_width is not None and grid_height is None):
         LOG.error("Both or neither grid sizes must be specified for '%s'" % grid_name)
         raise ValueError("Both or neither grid sizes must be specified for '%s'" % grid_name)
-    if (grid_origin_x is None and grid_origin_y is not None) or \
-            (grid_origin_x is not None and grid_origin_y is None):
+    if (grid_origin_x is None and grid_origin_y is not None) or (grid_origin_x is not None and grid_origin_y is None):
         LOG.error("Both or neither grid origins must be specified for '%s'" % grid_name)
         raise ValueError("Both or neither grid origins must be specified for '%s'" % grid_name)
     if grid_width is None and pixel_size_x is None:
@@ -183,8 +179,14 @@ def parse_proj4_config_line(grid_name, parts):
     p = Proj(proj4_str)
     if convert_xorigin_to_meters and not p.is_latlong():
         meters_x, meters_y = p(grid_origin_x, grid_origin_y)
-        LOG.debug("Converted grid '%s' origin from (lon: %f, lat: %f) to (x: %f, y: %f)",
-                  grid_name, grid_origin_x, grid_origin_y, meters_x, meters_y)
+        LOG.debug(
+            "Converted grid '%s' origin from (lon: %f, lat: %f) to (x: %f, y: %f)",
+            grid_name,
+            grid_origin_x,
+            grid_origin_y,
+            meters_x,
+            meters_y,
+        )
         grid_origin_x, grid_origin_y = meters_x, meters_y
     elif not convert_xorigin_to_meters and (grid_origin_x is not None and p.is_latlong()):
         LOG.error("Lat/Lon grid '%s' must have its origin in degrees", grid_name)
@@ -274,7 +276,7 @@ def read_grids_config(config_filepath):
     return read_grids_config_str(config_str)
 
 
-class GridManager(roles.CartographerRole):
+class GridManager:
     """Object that holds grid information about the grids added
     to it. This Cartographer can handle PROJ4 and GPD grids.
     """
@@ -310,11 +312,9 @@ class GridManager(roles.CartographerRole):
         grid_information = read_grids_config_str(grid_config_line)
         self.grid_information.update(**grid_information)
 
-    def add_proj4_grid_info(self, grid_name, proj4_str,
-                            width, height, cell_width, cell_height, origin_x, origin_y):
+    def add_proj4_grid_info(self, grid_name, proj4_str, width, height, cell_width, cell_height, origin_x, origin_y):
         # Trick the parse function to think this came from a config line
-        parts = (grid_name, "proj4", proj4_str,
-                 width, height, cell_width, cell_height, origin_x, origin_y)
+        parts = (grid_name, "proj4", proj4_str, width, height, cell_width, cell_height, origin_x, origin_y)
         self.grid_information[grid_name] = parse_proj4_config_line(grid_name, parts)
 
     def get_grid_definition(self, grid_name):
@@ -325,6 +325,7 @@ class GridManager(roles.CartographerRole):
 
         """
         from polar2grid.core.containers import GridDefinition
+
         grid_info = self.get_grid_info(grid_name)
         return GridDefinition(
             grid_name=grid_name,
@@ -334,7 +335,7 @@ class GridManager(roles.CartographerRole):
             cell_width=grid_info["pixel_size_x"],
             cell_height=grid_info["pixel_size_y"],
             origin_x=grid_info["grid_origin_x"],
-            origin_y=grid_info["grid_origin_y"]
+            origin_y=grid_info["grid_origin_y"],
         )
 
     def get_grid_info(self, grid_name):

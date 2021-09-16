@@ -145,19 +145,12 @@ extensions = [
 # API docs
 apidoc_module_dir = "../../polar2grid"
 apidoc_output_dir = "dev_guide/api"
-# TODO: Anything listed here should be removed by Polar2Grid 3.0
-apidoc_excluded_paths = [
-    "crefl",
-    "mirs",
-    "modis",
-    "ninjo",
-    "viirs",
-    "core/rescale.py",
-    "core/roles.py",
-]
+apidoc_excluded_paths = []
 apidoc_separate_modules = True
 apidoc_extra_args = ["-P"]
 
+# Autodoc
+autodoc_mock_imports = ["matplotlib"]
 
 numfig = True
 
@@ -188,10 +181,10 @@ else:
     # built documents.
     #
     # The short X.Y version.
-    version = "2.3"
+    version = "3.0"
 
     # The full version, including alpha/beta/rc tags.
-    release = "2.3"
+    release = "3.0"
 
 # Tell Polar2Grid scripts which system we are running
 os.environ["USE_POLAR2GRID_DEFAULTS"] = str(int(not is_geo2grid))
@@ -235,9 +228,28 @@ exclude_patterns = [
 if is_geo2grid:
     exclude_patterns.extend(
         [
+            "examples/acspo_example.rst",
+            "examples/amsr2_example.rst",
+            "examples/modis_example.rst",
+            "examples/viirs_example.rst",
             "readers/acspo.rst",
+            "readers/amsr2_l1b.rst",
+            "readers/avhrr.rst",
+            "readers/clavrx.rst",
+            "readers/mersi2_l1b.rst",
+            "readers/mirs.rst",
+            "readers/modis.rst",
+            "readers/nucaps.rst",
+            "readers/viirs_edr_active_fires.rst",
+            "readers/viirs_l1b.rst",
+            "readers/viirs_sdr.rst",
+            "readers/virr_l1b.rst",
             "verification/modis_verification.rst",
             "verification/viirs_verification.rst",
+            "viirs_day_night_band.rst",
+            "writers/awips_tiled.rst",
+            "writers/binary.rst",
+            "writers/hdf5.rst",
         ]
     )
 else:
@@ -520,14 +532,14 @@ latex_logo = "_static/{}2G_PDF_Logos.png".format("G" if is_geo2grid else "P")
 # Documents to append as an appendix to all manuals.
 if is_geo2grid:
     latex_appendices = [
+        "misc_recipes",
         "design_overview",
-        # 'complex_composites/geo2grid_composites',
     ]
 else:
     latex_appendices = [
         "misc_recipes",
         "design_overview",
-        # 'complex_composites/polar2grid_composites',
+        "viirs_day_night_band",
     ]
 
 # If false, no module index is generated.

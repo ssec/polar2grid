@@ -1,12 +1,19 @@
 # https://stackoverflow.com/questions/15001888/conditional-toctree-in-sphinx
 import re
 from sphinx.directives.other import TocTree
+from docutils.parsers.rst import directives
+
+
+FILTER_OPTION_SPEC = {
+    "excludebuilder": directives.unchanged,
+}
+FILTER_OPTION_SPEC.update(TocTree.option_spec)
 
 
 def setup(app):
-    app.add_config_value('toc_filter_exclude', [], 'html')
-    app.add_directive('toctree-filt', TocTreeFilt)
-    return {'version': '1.0.0'}
+    app.add_config_value("toc_filter_exclude", [], "html")
+    app.add_directive("toctree-filt", TocTreeFilt)
+    return {"version": "1.0.0"}
 
 
 class TocTreeFilt(TocTree):
@@ -21,17 +28,21 @@ class TocTreeFilt(TocTree):
     form `:secret:ultra-api` or `:draft:new-features` will be excuded from
     the final table of contents. Entries without a prefix are always included.
     """
-    hasPat = re.compile('^\s*:(.+):(.+)$')
+
+    option_spec = FILTER_OPTION_SPEC
+    hasPat = re.compile("^\s*:(.+):(.+)$")
 
     # Remove any entries in the content that we dont want and strip
     # out any filter prefixes that we want but obviously don't want the
     # prefix to mess up the file name.
     def filter_entries(self, entries):
+        if self.env.app.builder.name in self.options.get("excludebuilder", ""):
+            return []
         excl = self.state.document.settings.env.config.toc_filter_exclude
         filtered = []
         for e in entries:
             m = self.hasPat.match(e)
-            if m != None:
+            if m is not None:
                 if not m.groups()[0] in excl:
                     filtered.append(m.groups()[1])
             else:

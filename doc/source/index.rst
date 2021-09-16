@@ -15,34 +15,27 @@
     remapping
     writers/index
     utilscripts
-    :polar2grid:viirs_day_night_band
     verification/index
     examples/index
     :geo2grid:data_access
     grids
     custom_grids
-
-.. only:: html
-
-    Additional Details
-    ------------------
-
-    - :doc:`image_processing_techniques`
-    - :doc:`NEWS`
-    - :doc:`rescaling`
-
-    .. toctree::
-        :maxdepth: 1
-        :numbered:
-
-        dev_guide/index
-
-
-.. toctree::
-    :hidden:
-
-    design_overview
     image_processing_techniques
+
+.. toctree-filt::
+    :caption: Additional Details
+    :maxdepth: 1
+    :numbered:
+    :excludebuilder: latex
+
+    dev_guide/index
     NEWS
     rescaling
+    :polar2grid:viirs_day_night_band
+
+.. toctree-filt::
+    :hidden:
+    :excludebuilder: latex
+
+    design_overview
     misc_recipes

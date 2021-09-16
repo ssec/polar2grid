@@ -33,17 +33,6 @@ access features that typically involve complicated programming interfaces.
 Linux terminal commands included in these instructions assume the bash shell
 is used.
 
-.. ifconfig:: not is_geo2grid
-
-    .. note::
-
-        A collaboration between the Polar2Grid and Pytroll team will change a
-        majority of the low-level code in future versions of Polar2Grid.
-        However, the bash scripts will still be available to provide the same
-        functionality with which users are familiar. Polar2Grid terminology
-        such as "frontend" and "backend" is now used interchangeably with the
-        SatPy terminology "reader" and "writer".
-
 .. ifconfig:: is_geo2grid
 
     .. only:: not html

@@ -72,7 +72,7 @@ class ReaderProxy(ReaderProxyBase):
         return DEFAULT_DATASETS
 
     @property
-    def _aliases(self) -> dict[DataQuery]:
+    def _aliases(self) -> dict[str, DataQuery]:
         return {}
 
 

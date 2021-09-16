@@ -83,6 +83,10 @@ PLATFORM_ALIASES = {
     "fy-3b": "fy3b",
     "fy-3c": "fy3c",
     "fy-3d": "fy3d",
+    "eos-aqua": "aqua",
+    "eos-terra": "terra",
+    "aqua": "aqua",
+    "terra": "terra",
 }
 
 READER_ALIASES = {

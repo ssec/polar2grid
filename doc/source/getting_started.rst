@@ -18,7 +18,7 @@ Basic Usage
 
     .. code-block:: bash
 
-        $POLAR2GRID_HOME/bin/polar2grid.sh viirs_sdr gtiff -f <path to files>/<list of files>
+        $POLAR2GRID_HOME/bin/polar2grid.sh -r viirs_sdr -w geotiff -f <path to files>/<list of files>
 
     This script takes advantage of the modular design of |project|;
     a user only needs to decide on a :doc:`Reader <readers/index>` and a

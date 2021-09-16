@@ -312,7 +312,7 @@ class ReaderProxy(ReaderProxyBase):
         return P2G_PRODUCTS
 
     @property
-    def _aliases(self) -> dict[DataQuery]:
+    def _aliases(self) -> dict[str, DataQuery]:
         return PRODUCT_ALIASES
 
 

@@ -1,15 +1,30 @@
 name: CI
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+# https://docs.github.com/en/developers/webhooks-and-events/events/github-event-types#pullrequestevent
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.type }}
+  cancel-in-progress: true
 
 on: [push, pull_request]
 
 jobs:
   # build website
   website:
-    name: build website
+    name: Build Documentation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
         uses: actions/checkout@v2
+        with:
+          lfs: true
+
+      - name: Prepare System Environment
+        run: |
+          # opengl system libraries
+          sudo apt-get update
+          # Additional latex dependencies
+          sudo apt-get -y install texlive-xetex texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra latexmk
+          sudo apt-get -y install dvipng
 
       - name: Setup Conda Environment
         uses: mamba-org/provision-with-micromamba@main
@@ -22,10 +37,34 @@ jobs:
         run: |
           pip install --no-deps -e .
 
-      - name: build website
+      - name: Build Polar2Grid Website
         shell: bash -l {0}
         run: |
-          cd doc && make html
+          cd doc
+          make clean
+          make html SPHINXOPTS="-W --keep-going"
+
+      - name: Build Geo2Grid Website
+        shell: bash -l {0}
+        run: |
+          cd doc
+          make clean
+          make html POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
+
+      - name: Build Polar2Grid PDF
+        shell: bash -l {0}
+        run: |
+          cd doc
+          make clean
+          make latexpdf SPHINXOPTS="-W --keep-going"
+
+      - name: Build Geo2Grid PDF
+        shell: bash -l {0}
+        run: |
+          cd doc
+          make clean
+          make latexpdf POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
+
 #      - name: deploy website
 #        if: github.event_name == 'push'
 #        uses: peaceiris/actions-gh-pages@v3
@@ -39,6 +78,7 @@ jobs:
 #          full_commit_message: "Deploy vispy.org website for SHA:$GITHUB_SHA (Tag: $GITHUB_REF)"
 
   test:
+    name: Tests
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
