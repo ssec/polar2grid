@@ -29,6 +29,9 @@
 #     david.hoese@ssec.wisc.edu
 """Produce various text and image outputs for debugging input data."""
 
+from pyresample.geometry import AreaDefinition
+from satpy import Scene
+import matplotlib.pyplot as plt
 import sys
 import logging
 import dask
@@ -37,9 +40,6 @@ import numpy as np
 import matplotlib
 
 matplotlib.use("agg")
-import matplotlib.pyplot as plt
-from satpy import Scene
-from pyresample.geometry import AreaDefinition
 
 LOG = logging.getLogger(__name__)
 

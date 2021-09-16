@@ -38,18 +38,19 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     david.hoese@ssec.wisc.edu
 
 """
+import os
+import sys
+from glob import glob
+from netCDF4 import Dataset
+import matplotlib.cm as cm
+from matplotlib import pyplot as plt
+
 __docformat__ = "restructuredtext en"
 
 import numpy as np
 import matplotlib
 
 matplotlib.use("agg")
-from matplotlib import pyplot as plt
-import matplotlib.cm as cm
-from netCDF4 import Dataset
-from glob import glob
-import sys
-import os
 
 DEF_DIR = "."
 DEF_PAT = "SSEC_AWIPS_*"
