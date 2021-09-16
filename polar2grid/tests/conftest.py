@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+# encoding: utf-8
+# Copyright (C) 2021 Space Science and Engineering Center (SSEC),
+#  University of Wisconsin-Madison.
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+# input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+"""Test initialization and fixtures."""
+from __future__ import annotations
+
+import os
+
+import pytest
+from satpy import Scene
+import xarray as xr
+import dask.array as da
+import numpy as np
+from numpy.typing import ArrayLike, DTypeLike, NDArray
+
+from pyresample.geometry import SwathDefinition, AreaDefinition
+
+PKG_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+VIIRS_I_CHUNKS = (32 * 3, 6400)
+
+
+def pytest_configure(config):
+    from polar2grid.utils.config import add_polar2grid_config_paths
+
+    add_polar2grid_config_paths()
+
+
+@pytest.fixture
+def builtin_grids_yaml():
+    return os.path.join(PKG_ROOT, "grids", "grids.yaml")
+
+
+@pytest.fixture
+def builtin_grids_conf():
+    return os.path.join(PKG_ROOT, "grids", "grids.conf")
+
+
+@pytest.fixture
+def viirs_sdr_i_swath_def():
+    lons, lats = _generate_lonlat_data((1536, 6400))
+    lons_data_arr = xr.DataArray(
+        da.from_array(lons, chunks=VIIRS_I_CHUNKS),
+        dims=("y", "x"),
+        attrs={
+            "rows_per_scan": 32,
+            "platform_name": "npp",
+            "sensor": "viirs",
+        },
+    )
+    lats_data_arr = xr.DataArray(
+        da.from_array(lats, chunks=VIIRS_I_CHUNKS),
+        dims=("y", "x"),
+        attrs={
+            "rows_per_scan": 32,
+            "platform_name": "npp",
+            "sensor": "viirs",
+        },
+    )
+    return SwathDefinition(lons_data_arr, lats_data_arr)
+
+
+@pytest.fixture
+def viirs_sdr_i01_data_array(viirs_sdr_i_swath_def):
+    return xr.DataArray(
+        da.zeros((1536, 6400), dtype=np.float32),
+        dims=("y", "x"),
+        attrs={
+            "area": viirs_sdr_i_swath_def,
+            "rows_per_scan": 32,
+            "platform_name": "npp",
+            "sensor": "viirs",
+        },
+    )
+
+
+@pytest.fixture
+def viirs_sdr_i01_scene(viirs_sdr_i01_data_array):
+    scn = Scene()
+    scn["I01"] = viirs_sdr_i01_data_array
+    return scn
+
+
+def _generate_lonlat_data(shape: tuple[int, int], dtype: DTypeLike = np.float32) -> tuple[NDArray, NDArray]:
+    lat = np.repeat(np.linspace(35.0, 45.0, shape[0])[:, None], shape[1], 1)
+    lat *= np.linspace(0.9, 1.1, shape[1])
+    lon = np.repeat(np.linspace(-45.0, -35.0, shape[1])[None, :], shape[0], 0)
+    lon *= np.linspace(0.9, 1.1, shape[0])[:, None]
+    return lon.astype(dtype), lat.astype(dtype)
