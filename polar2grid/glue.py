@@ -68,6 +68,10 @@ def get_writer_parser_function(writer_name: str) -> Optional[ComponentParserFunc
 PLATFORM_ALIASES = {
     "suomi-npp": "npp",
     "snpp": "npp",
+    "n20": "noaa20",
+    "n21": "noaa21",
+    "n22": "noaa22",
+    "n23": "noaa23",
     "noaa-20": "noaa20",
     "noaa-21": "noaa21",
     "noaa-22": "noaa22",
