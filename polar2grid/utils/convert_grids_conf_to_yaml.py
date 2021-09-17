@@ -62,7 +62,7 @@ def ordered_dump(data, stream=None, Dumper=yaml.Dumper, **kwds):
     return yaml.dump(data, stream, OrderedDumper, **kwds)
 
 
-def main():
+def get_parser():
     from argparse import ArgumentParser
 
     prog = os.getenv("PROG_NAME", sys.argv[0])
@@ -74,6 +74,11 @@ To write to a file:
 """,
     )
     parser.add_argument("grids_filename", help="Input grids.conf-style file to convert to YAML.")
+    return parser
+
+
+def main():
+    parser = get_parser()
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     warnings.filterwarnings("ignore", module="pyproj", category=UserWarning)

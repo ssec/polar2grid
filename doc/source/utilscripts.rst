@@ -246,6 +246,23 @@ VIIRS Day/Night Band GeoTIFF image.
   parameter that differs between the input geotiff (``x``) and the output
   geotiff (``y``).
 
+.. _util_convert_grids:
+
+Convert legacy grids.conf to grids.yaml format
+----------------------------------------------
+
+.. argparse::
+    :module: polar2grid.util.convert_grids_conf_to_yaml
+    :func: get_parser
+    :prog: convert_grids_conf_to_yaml.sh
+    :nodefaultconst:
+
+Example:
+
+.. code-block:: bash
+
+    convert_grids_conf_to_yaml.sh old_file.conf > new_file.yaml
+
 .. _util_p2g_proj:
 
 Python Proj
