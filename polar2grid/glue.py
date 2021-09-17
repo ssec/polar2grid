@@ -34,7 +34,7 @@ from typing import Callable, Optional
 import dask
 from polar2grid.resample import resample_scene
 from polar2grid.filters import filter_scene
-from polar2grid.utils import add_polar2grid_config_paths
+from polar2grid.utils.config import add_polar2grid_config_paths
 from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr
 from polar2grid.core.script_utils import ExtendAction
 from polar2grid.readers._base import ReaderProxyBase
