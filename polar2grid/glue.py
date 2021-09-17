@@ -431,7 +431,6 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
     )
     group_1.add_argument(
         "--grid-configs",
-        dest="grid_configs",
         nargs="+",
         default=tuple(),
         help="Specify additional grid configuration files. "

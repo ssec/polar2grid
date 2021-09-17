@@ -42,6 +42,8 @@ logger = logging.getLogger(__name__)
 AreaSpecifier = Union[AreaDefinition, str, None]
 ListOfAreas = List[Union[AreaDefinition, str, None]]
 
+GRIDS_YAML_FILEPATH = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "grids", "grids.yaml"))
+
 
 def _crs_equal(a, b):
     """Compare two projection dictionaries for "close enough" equality."""
@@ -98,9 +100,11 @@ def _get_preserve_resolution(preserve_resolution, resampler, areas_to_resample):
 
 
 def _get_legacy_and_custom_areas(grid_configs):
+    if not grid_configs:
+        grid_configs = [GRIDS_YAML_FILEPATH]
     p2g_grid_configs = [x for x in grid_configs if x.endswith(".conf")]
     pyresample_area_configs = [x for x in grid_configs if not x.endswith(".conf")]
-    if not grid_configs or p2g_grid_configs:
+    if p2g_grid_configs:
         # if we were given p2g grid configs or we weren't given any to choose from
         from polar2grid.grids import GridManager
 
