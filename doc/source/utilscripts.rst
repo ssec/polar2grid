@@ -252,7 +252,7 @@ Convert legacy grids.conf to grids.yaml format
 ----------------------------------------------
 
 .. argparse::
-    :module: polar2grid.util.convert_grids_conf_to_yaml
+    :module: polar2grid.utils.convert_grids_conf_to_yaml
     :func: get_parser
     :prog: convert_grids_conf_to_yaml.sh
     :nodefaultconst:
