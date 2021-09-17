@@ -93,4 +93,3 @@ class BaseFilter:
         new_scn = scene.copy(remaining_ids)
         new_scn._wishlist = scene.wishlist.copy()
         return new_scn
-

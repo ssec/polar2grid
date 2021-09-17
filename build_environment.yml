@@ -28,7 +28,7 @@ dependencies:
   - pyshp
   - pyspectral
   - python=3.8
-  - python-geotiepoints
+  - python-geotiepoints>=1.3.0
   - pyyaml
   - rasterio
   - requests

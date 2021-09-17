@@ -38,49 +38,52 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
     david.hoese@ssec.wisc.edu
 
 """
+import os
+import sys
+from glob import glob
+from netCDF4 import Dataset
+import matplotlib.cm as cm
+from matplotlib import pyplot as plt
+
 __docformat__ = "restructuredtext en"
 
 import numpy as np
 import matplotlib
-matplotlib.use('agg')
-from matplotlib import pyplot as plt
-import matplotlib.cm as cm
-from netCDF4 import Dataset
-from glob import glob
-import sys
-import os
+
+matplotlib.use("agg")
 
 DEF_DIR = "."
 DEF_PAT = "SSEC_AWIPS_*"
 
 DEF_VMIN = 0
 DEF_VMAX = 255
-DEF_DPI  = 100
+DEF_DPI = 100
 
-def _open_file_and_get_var_data (file_name, var_name, var_type=np.uint8) :
+
+def _open_file_and_get_var_data(file_name, var_name, var_type=np.uint8):
     """
     open a file and get the variable from it, converting it to var_type
-    
+
     note: uint8 is the default type which converts AWIPS data to something
     more plotable.
     """
-    
+
     dataset = Dataset(file_name, "r")
     data_var = dataset.variables[var_name]
     data_var.set_auto_maskandscale(False)
     data = data_var[:]
     data = data.astype(var_type)
-    data = np.ma.masked_array(data, data==0)
-    
+    data = np.ma.masked_array(data, data == 0)
+
     return data
 
 
-def _plt_basic_imshow_fig (data, vmin, vmax, cmap=cm.bone, title="image", background_color='white'):
+def _plt_basic_imshow_fig(data, vmin, vmax, cmap=cm.bone, title="image", background_color="white"):
     """
     plot a basic imshow figure using the given data,
     bounds, and colormap
     """
-    
+
     # Create a new figure everytime so things don't get shared
     figure = plt.figure()
     axes = figure.add_subplot(111, facecolor=background_color)
@@ -91,56 +94,59 @@ def _plt_basic_imshow_fig (data, vmin, vmax, cmap=cm.bone, title="image", backgr
 
     # Add a colorbar and force the colormap
     plt.colorbar()
-    
+
     # Add the title
     axes.set_title(title)
-    
+
     return figure
 
 
-def plot_file_patterns(base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DPI, background_color='white'):
+def plot_file_patterns(
+    base_dir=DEF_DIR, base_pat=DEF_PAT, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DPI, background_color="white"
+):
     glob_pat = os.path.join(base_dir, base_pat)
     for nc_name in glob(glob_pat):
         nc_name = os.path.split(nc_name)[1]
         print("Drawing for NC name %s" % (nc_name,))
-        
+
         # Get the data from the file
         data = _open_file_and_get_var_data(nc_name, "image")
-        
+
         # plot and save our figure
         figure = _plt_basic_imshow_fig(data, vmin, vmax, title=nc_name, background_color=background_color)
         figure.savefig("plot_ncdata.%s.png" % nc_name, dpi=dpi_to_use)
         plt.close()
 
-def rough_compare (path1, path2, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DPI):
+
+def rough_compare(path1, path2, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DPI):
     """
     very roughly compare the two data sets and draw some images
     """
-    
+
     data1 = _open_file_and_get_var_data(path1, "image")
     data2 = _open_file_and_get_var_data(path2, "image")
-    
+
     diff = np.zeros(data1.shape, dtype=np.int32)
     diff[:] = data1[:]
     diff = diff - data2
-    
+
     # make a picture of the first data set
     fig = _plt_basic_imshow_fig(data1, vmin, vmax, title="data set 1", cmap=cm.Paired)
     fig.savefig("plot_ncdata.Set1.png", dpi=dpi_to_use)
     plt.close()
-    
+
     # make a picture of the second data set
     fig = _plt_basic_imshow_fig(data2, vmin, vmax, title="data set 2", cmap=cm.Paired)
     fig.savefig("plot_ncdata.Set2.png", dpi=dpi_to_use)
     plt.close()
-    
+
     # make a picture of the difference
     fig = _plt_basic_imshow_fig(diff, np.min(diff), np.max(diff), title="difference", cmap=cm.Spectral)
     fig.savefig("plot_ncdata.diff.png", dpi=dpi_to_use)
     plt.close()
-    
+
     # make a picture of the difference in a more restricted range
-    diff[diff >  10.0] =  10.0
+    diff[diff > 10.0] = 10.0
     diff[diff < -10.0] = -10.0
     fig = _plt_basic_imshow_fig(diff, np.min(diff), np.max(diff), title="difference, restricted", cmap=cm.Spectral)
     fig.savefig("plot_ncdata.diff_r.png", dpi=dpi_to_use)
@@ -149,24 +155,53 @@ def rough_compare (path1, path2, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DP
 
 def get_parser():
     from argparse import ArgumentParser
+
     description = """This script will read a series of NetCDF3 files created using the AWIPS
 backend and plot the data on a b/w color scale.  It searches for any NetCDF
 files with the prefix ``SSEC_AWIPS_``."""
     parser = ArgumentParser(description=description)
-    parser.add_argument('--vmin', dest="vmin", default=None, type=int,
-                        help="Specify minimum brightness value. Defaults to minimum value of data.")
-    parser.add_argument('--vmax', dest="vmax", default=None, type=int,
-                        help="Specify maximum brightness value. Defaults to maximum value of data.")
-    parser.add_argument('-p', '--pat', dest="base_pat", default=DEF_PAT,
-                        help="Specify the glob pattern of NetCDF files to look for. Defaults to '%s'" % DEF_PAT)
-    parser.add_argument('-d', '--dpi', dest="dpi", default=100, type=float,
-                        help="Specify the dpi for the resulting figure, higher dpi will result in larger figures and longer run times")
-    parser.add_argument('-c', dest="do_compare", default=False, action="store_true",
-                        help="Include this flag if you wish to compare two specific files")
-    parser.add_argument('--background-color', default='white',
-                        help="Specify a background color to easier see transparent values")
-    parser.add_argument('search_dir', default=None, nargs="*",
-                        help="Directory to search for NetCDF3 files, default is '.'")
+    parser.add_argument(
+        "--vmin",
+        dest="vmin",
+        default=None,
+        type=int,
+        help="Specify minimum brightness value. Defaults to minimum value of data.",
+    )
+    parser.add_argument(
+        "--vmax",
+        dest="vmax",
+        default=None,
+        type=int,
+        help="Specify maximum brightness value. Defaults to maximum value of data.",
+    )
+    parser.add_argument(
+        "-p",
+        "--pat",
+        dest="base_pat",
+        default=DEF_PAT,
+        help="Specify the glob pattern of NetCDF files to look for. Defaults to '%s'" % DEF_PAT,
+    )
+    parser.add_argument(
+        "-d",
+        "--dpi",
+        dest="dpi",
+        default=100,
+        type=float,
+        help="Specify the dpi for the resulting figure, higher dpi will result in larger figures and longer run times",
+    )
+    parser.add_argument(
+        "-c",
+        dest="do_compare",
+        default=False,
+        action="store_true",
+        help="Include this flag if you wish to compare two specific files",
+    )
+    parser.add_argument(
+        "--background-color", default="white", help="Specify a background color to easier see transparent values"
+    )
+    parser.add_argument(
+        "search_dir", default=None, nargs="*", help="Directory to search for NetCDF3 files, default is '.'"
+    )
     return parser
 
 
@@ -187,11 +222,17 @@ def main():
         return -1
 
     if files_temp is None:
-        return plot_file_patterns(base_dir=base_dir, base_pat=args.base_pat, background_color=args.background_color,
-                    vmin=args.vmin, vmax=args.vmax, dpi_to_use=args.dpi)
+        return plot_file_patterns(
+            base_dir=base_dir,
+            base_pat=args.base_pat,
+            background_color=args.background_color,
+            vmin=args.vmin,
+            vmax=args.vmax,
+            dpi_to_use=args.dpi,
+        )
     else:
-        return rough_compare(files_temp[0], files_temp[1],
-                    vmin=args.vmin, vmax=args.vmax, dpi_to_use=args.dpi)
+        return rough_compare(files_temp[0], files_temp[1], vmin=args.vmin, vmax=args.vmax, dpi_to_use=args.dpi)
+
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -46,7 +46,7 @@ import sys
 
 from polar2grid.core.proj import Proj
 
-#grid_name,proj4, proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y
+# grid_name,proj4, proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y
 CONFIG_LINE_FORMAT = "%(grid_name)s, proj4, %(proj4_str)s, %(width)d, %(height)d, %(pixel_size_x)0.5f, %(pixel_size_y)0.5f, %(origin_x)s, %(origin_y)s"
 
 
@@ -59,7 +59,7 @@ def determine_projection(center_lon, center_lat, proj4_str=None):
         if abs_lat < 15:
             proj4_str = "+proj=eqc +datum=WGS84 +ellps=WGS84 +lat_ts=%(center_lat)0.5f +lon_0=%(center_lon)0.5f +units=m +no_defs"
         elif abs_lat < 70:
-            proj4_str =  "+proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=%(center_lat)0.5f +lat_1=%(center_lat)0.5f +lon_0=%(center_lon)0.5f +units=m +no_defs"
+            proj4_str = "+proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=%(center_lat)0.5f +lat_1=%(center_lat)0.5f +lon_0=%(center_lon)0.5f +units=m +no_defs"
         else:
             proj4_str = "+proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=%(center_lat)0.5f +lon_0=%(center_lon)0.5f +units=m"
 
@@ -69,33 +69,35 @@ def determine_projection(center_lon, center_lat, proj4_str=None):
 
 def get_parser():
     from argparse import ArgumentParser, SUPPRESS
+
     description = """This script is meant to help those unfamiliar with PROJ.4 and projections
 in general. By providing a few grid parameters this script will provide a
 grid configuration line that can be added to a user's custom grid
 configuration. Based on a center longitude and latitude, the script will
 choose an appropriate projection."""
     parser = ArgumentParser(description=description)
-    parser.add_argument('grid_name', type=str,
-                        help="Unique grid name")
-    parser.add_argument('center_longitude', type=float,
-                        help="Decimal longitude value for center of grid (-180 to 180)")
-    parser.add_argument('center_latitude', type=float,
-                        help="Decimal latitude value for center of grid (-90 to 90)")
-    parser.add_argument('pixel_size_x', type=float,
-                        help="""Size of each pixel in the X direction in grid units,
-meters for default projections.""")
-    parser.add_argument('pixel_size_y', type=float,
-                        help="""Size of each pixel in the Y direction in grid units,
-meters for default projections.""")
-    parser.add_argument('grid_width', type=int,
-                        help="Grid width in number of pixels")
-    parser.add_argument('grid_height', type=int,
-                        help="Grid height in number of pixels")
-    parser.add_argument('-p', dest="proj_str", default=None,
-                        help="PROJ.4 projection string to override the default")
+    parser.add_argument("grid_name", type=str, help="Unique grid name")
+    parser.add_argument("center_longitude", type=float, help="Decimal longitude value for center of grid (-180 to 180)")
+    parser.add_argument("center_latitude", type=float, help="Decimal latitude value for center of grid (-90 to 90)")
+    parser.add_argument(
+        "pixel_size_x",
+        type=float,
+        help="""Size of each pixel in the X direction in grid units,
+meters for default projections.""",
+    )
+    parser.add_argument(
+        "pixel_size_y",
+        type=float,
+        help="""Size of each pixel in the Y direction in grid units,
+meters for default projections.""",
+    )
+    parser.add_argument("grid_width", type=int, help="Grid width in number of pixels")
+    parser.add_argument("grid_height", type=int, help="Grid height in number of pixels")
+    parser.add_argument("-p", dest="proj_str", default=None, help="PROJ.4 projection string to override the default")
     # Don't force Y pixel size to be negative (for expert use only)
-    parser.add_argument('--dont-touch-ysize', dest="dont_touch_ysize", action='store_true', default=False,
-                        help=SUPPRESS)
+    parser.add_argument(
+        "--dont-touch-ysize", dest="dont_touch_ysize", action="store_true", default=False, help=SUPPRESS
+    )
     return parser
 
 
@@ -108,7 +110,8 @@ def main():
     clat = args.center_latitude
     pixel_size_x = args.pixel_size_x
     pixel_size_y = args.pixel_size_y
-    if pixel_size_y > 0 and not args.dont_touch_ysize: pixel_size_y *= -1
+    if pixel_size_y > 0 and not args.dont_touch_ysize:
+        pixel_size_y *= -1
     grid_width = args.grid_width
     grid_height = args.grid_height
 
@@ -133,18 +136,17 @@ def main():
         origin_y = "%0.5fdeg" % origin_lat
 
     valid_config_line = CONFIG_LINE_FORMAT % {
-            "grid_name": grid_name,
-            "proj4_str": proj_str,
-            "origin_x": origin_x,
-            "origin_y": origin_y,
-            "pixel_size_x": pixel_size_x,
-            "pixel_size_y": pixel_size_y,
-            "width": grid_width,
-            "height": grid_height,
-            }
+        "grid_name": grid_name,
+        "proj4_str": proj_str,
+        "origin_x": origin_x,
+        "origin_y": origin_y,
+        "pixel_size_x": pixel_size_x,
+        "pixel_size_y": pixel_size_y,
+        "width": grid_width,
+        "height": grid_height,
+    }
     print(valid_config_line)
 
 
 if __name__ == "__main__":
     sys.exit(main())
-

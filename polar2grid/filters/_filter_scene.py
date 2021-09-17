@@ -47,53 +47,49 @@ def _merge_filter_critera(*readers_criteria: Dict[str, Union[List[str], None]]):
 
 
 def _get_single_reader_filter_criteria(reader: str, filter_name: str):
-    reader_mod = importlib.import_module('polar2grid.readers.' + reader)
-    filter_criteria = getattr(reader_mod, 'FILTERS', {})
+    reader_mod = importlib.import_module("polar2grid.readers." + reader)
+    filter_criteria = getattr(reader_mod, "FILTERS", {})
     return filter_criteria.get(filter_name)
 
 
 def get_reader_filter_criteria(reader_names: List[str], filter_name: str):
     """Get reader configured filter information."""
-    readers_criteria = [_get_single_reader_filter_criteria(reader, filter_name)
-                        for reader in reader_names]
+    readers_criteria = [_get_single_reader_filter_criteria(reader, filter_name) for reader in reader_names]
     criteria = _merge_filter_critera(*readers_criteria)
     return criteria
 
 
-def _filter_scene_day_only_products(input_scene: Scene, filter_criteria: dict,
-                                    sza_threshold: float = 100.0,
-                                    day_fraction: Optional[float] = None):
+def _filter_scene_day_only_products(
+    input_scene: Scene, filter_criteria: dict, sza_threshold: float = 100.0, day_fraction: Optional[float] = None
+):
     """Run filtering for products that need a certain amount of day data."""
     if day_fraction is None:
         day_fraction = 0.1
     logger.info("Running day coverage filtering...")
-    day_filter = DayCoverageFilter(filter_criteria,
-                                   sza_threshold=sza_threshold,
-                                   day_fraction=day_fraction)
+    day_filter = DayCoverageFilter(filter_criteria, sza_threshold=sza_threshold, day_fraction=day_fraction)
     return day_filter.filter_scene(input_scene)
 
 
-def _filter_scene_night_only_products(input_scene: Scene, filter_criteria: dict,
-                                      sza_threshold: float = 100.0,
-                                      night_fraction: Optional[float] = None):
+def _filter_scene_night_only_products(
+    input_scene: Scene, filter_criteria: dict, sza_threshold: float = 100.0, night_fraction: Optional[float] = None
+):
     """Run filtering for products that need a certain amount of day data."""
     if night_fraction is None:
         night_fraction = 0.1
     logger.info("Running night coverage filtering...")
-    night_filter = NightCoverageFilter(filter_criteria,
-                                       sza_threshold=sza_threshold,
-                                       night_fraction=night_fraction)
+    night_filter = NightCoverageFilter(filter_criteria, sza_threshold=sza_threshold, night_fraction=night_fraction)
     return night_filter.filter_scene(input_scene)
 
 
-def filter_scene(input_scene: Scene,
-                 reader_names: List[str],
-                 sza_threshold: float = 100.0,
-                 day_fraction: Optional[float] = None,
-                 night_fraction: Optional[float] = None,
-                 ):
+def filter_scene(
+    input_scene: Scene,
+    reader_names: List[str],
+    sza_threshold: float = 100.0,
+    day_fraction: Optional[float] = None,
+    night_fraction: Optional[float] = None,
+):
     if day_fraction is not False:
-        criteria = get_reader_filter_criteria(reader_names, 'day_only')
+        criteria = get_reader_filter_criteria(reader_names, "day_only")
         input_scene = _filter_scene_day_only_products(
             input_scene,
             criteria,
@@ -101,7 +97,7 @@ def filter_scene(input_scene: Scene,
             day_fraction=day_fraction,
         )
     if night_fraction is not False:
-        criteria = get_reader_filter_criteria(reader_names, 'night_only')
+        criteria = get_reader_filter_criteria(reader_names, "night_only")
         input_scene = _filter_scene_night_only_products(
             input_scene,
             criteria,

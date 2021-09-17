@@ -20,8 +20,7 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""Connect various satpy components together to go from satellite data to output imagery format.
-"""
+"""Connect various satpy components together to go from satellite data to output imagery format."""
 
 from __future__ import annotations
 
@@ -29,13 +28,13 @@ import os
 import sys
 import argparse
 import logging
-import pkg_resources
 from glob import glob
 from typing import Callable, Optional
 
 import dask
 from polar2grid.resample import resample_scene
 from polar2grid.filters import filter_scene
+from polar2grid.utils.config import add_polar2grid_config_paths
 from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr
 from polar2grid.core.script_utils import ExtendAction
 from polar2grid.readers._base import ReaderProxyBase
@@ -46,15 +45,6 @@ import satpy
 ComponentParserFunc = Callable[[argparse.ArgumentParser], tuple]
 
 LOG = logging.getLogger(__name__)
-
-
-def dist_is_editable(dist) -> bool:
-    """Is distribution an editable install?"""
-    for path_item in sys.path:
-        egg_link = os.path.join(path_item, dist.project_name + ".egg-link")
-        if os.path.isfile(egg_link):
-            return True
-    return False
 
 
 def get_reader_parser_function(reader_name: str) -> Optional[ComponentParserFunc]:
@@ -68,6 +58,10 @@ def get_writer_parser_function(writer_name: str) -> Optional[ComponentParserFunc
 PLATFORM_ALIASES = {
     "suomi-npp": "npp",
     "snpp": "npp",
+    "n20": "noaa20",
+    "n21": "noaa21",
+    "n22": "noaa22",
+    "n23": "noaa23",
     "noaa-20": "noaa20",
     "noaa-21": "noaa21",
     "noaa-22": "noaa22",
@@ -420,7 +414,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
             "--grids",
             default=None,
             nargs="*",
-            help="Area definition to resample to. Empty means " 'no resampling (default: "MAX")',
+            help='Area definition to resample to. Empty means no resampling (default: "MAX")',
         )
     # shared options
     group_1.add_argument(
@@ -572,17 +566,6 @@ def _print_list_products(reader_info, p2g_only=True):
         print("<None>")
     else:
         print("\n".join(sorted(available_p2g_names)))
-
-
-def add_polar2grid_config_paths():
-    dist = pkg_resources.get_distribution("polar2grid")
-    if dist_is_editable(dist):
-        p2g_etc = os.path.join(dist.module_path, "etc")
-    else:
-        p2g_etc = os.path.join(sys.prefix, "etc", "polar2grid")
-    config_path = satpy.config.get("config_path")
-    if p2g_etc not in config_path:
-        satpy.config.set(config_path=config_path + [p2g_etc])
 
 
 def add_extra_config_paths(extra_paths: list[str]):

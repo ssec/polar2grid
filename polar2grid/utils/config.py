@@ -20,34 +20,29 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    January 2021
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
-"""Simple wrapper around the Polar2Grid and Geo2Grid glue scripts."""
-
+"""Helpers for setting up the Polar2Grid environment and configuration."""
 import os
 import sys
 
-
-def p2g_main(argv=sys.argv[1:]):
-    from polar2grid.glue import main
-
-    os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")
-    main(argv=argv)
+import pkg_resources
+import satpy
 
 
-def g2g_main(argv=sys.argv[1:]):
-    from polar2grid.glue import main
+def add_polar2grid_config_paths():
+    dist = pkg_resources.get_distribution("polar2grid")
+    if dist_is_editable(dist):
+        p2g_etc = os.path.join(dist.module_path, "etc")
+    else:
+        p2g_etc = os.path.join(sys.prefix, "etc", "polar2grid")
+    config_path = satpy.config.get("config_path")
+    if p2g_etc not in config_path:
+        satpy.config.set(config_path=config_path + [p2g_etc])
 
-    os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "0")
-    main(argv=argv)
 
-
-if __name__ == "__main__":
-    from polar2grid.glue import main
-
-    sys.exit(main())
+def dist_is_editable(dist) -> bool:
+    """Is distribution an editable install?"""
+    for path_item in sys.path:
+        egg_link = os.path.join(path_item, dist.project_name + ".egg-link")
+        if os.path.isfile(egg_link):
+            return True
+    return False

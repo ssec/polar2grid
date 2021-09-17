@@ -49,13 +49,14 @@ try:
 except ImportError:
     # This module is loaded by meta.py which could be all a user needs so we shouldn't fail if they don't have pyproj
     import warnings
+
     warnings.warn("Package 'pyproj' could not be imported. Some functionality will be missing")
     Proj = object
 
 
 class Proj(BaseProj):
     def is_latlong(self):
-        if hasattr(self, 'crs'):
+        if hasattr(self, "crs"):
             return self.crs.is_geographic
         return super(Proj, self).is_latlong()
 
@@ -68,15 +69,19 @@ class Proj(BaseProj):
 
 def get_parser():
     from argparse import ArgumentParser
+
     parser = ArgumentParser(description="Convert latitude/longitude coordinates to X/Y values.")
-    parser.add_argument("-i", "--inverse", dest="inv", action="store_true", default=False,
-                        help="Convert X/Y values to latitude/longitude coordinates")
-    parser.add_argument("proj4_str",
-                        help="PROJ.4 projection string (in quotes)")
-    parser.add_argument("lon_point", type=float,
-                        help="Longitude of the point to be converted (single value only)")
-    parser.add_argument("lat_point", type=float,
-                        help="Latitude of the point to be converted (single value only)")
+    parser.add_argument(
+        "-i",
+        "--inverse",
+        dest="inv",
+        action="store_true",
+        default=False,
+        help="Convert X/Y values to latitude/longitude coordinates",
+    )
+    parser.add_argument("proj4_str", help="PROJ.4 projection string (in quotes)")
+    parser.add_argument("lon_point", type=float, help="Longitude of the point to be converted (single value only)")
+    parser.add_argument("lat_point", type=float, help="Latitude of the point to be converted (single value only)")
     return parser
 
 
@@ -88,6 +93,6 @@ def main():
     x, y = p(args.lon_point, args.lat_point, inverse=args.inv)
     print(x, y)
 
+
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -52,9 +52,7 @@ def boundary_for_area(area_def: PRGeometry) -> Boundary:
         lons, lats = da.compute(lons[::freq], lats[::freq])
         adp = Boundary(lons, lats)
     elif area_def.is_geostationary:
-        adp = Boundary(
-            *get_geostationary_bounding_box(area_def,
-                                            nb_points=100))
+        adp = Boundary(*get_geostationary_bounding_box(area_def, nb_points=100))
     else:
         adp = AreaDefBoundary(area_def, frequency=int(area_def.shape[0] * 0.30))
     return adp

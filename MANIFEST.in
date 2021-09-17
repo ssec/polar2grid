@@ -1,11 +1,7 @@
 recursive-include docs/source *
 recursive-include polar2grid/tests/etc *
-include polar2grid/core/rescale_configs/*.ini
 include polar2grid/grids/grids.conf
-include polar2grid/awips/awips_grids/grids.conf
-include polar2grid/awips/awips_grids/grids.conf
-include polar2grid/awips/*.ini
-include polar2grid/ninjo/*.ini
+include polar2grid/grids/grids.yaml
 recursive-include polar2grid/fonts *
 recursive-include etc *
 include LICENSE.txt

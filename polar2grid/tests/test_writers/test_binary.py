@@ -82,7 +82,7 @@ class TestBinaryWriter:
 
     def setup_method(self):
         """Add P2G configs to the Satpy path."""
-        from polar2grid.glue import add_polar2grid_config_paths
+        from polar2grid.utils.config import add_polar2grid_config_paths
 
         self._old_path = satpy.config.get("config_path")
         add_polar2grid_config_paths()

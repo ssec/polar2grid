@@ -234,6 +234,7 @@ def resample_scene(
             area_def = area_resolver[area_name]
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
             if area_def is not None:
+                this_area_scene = scene_to_resample
                 if resampler != "native" and _grid_cov > 0:
                     logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
                     filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=_grid_cov)
@@ -258,7 +259,8 @@ def resample_scene(
             # modified the original DataID so we can't use
             # 'resampled_products'.
             _resampled_products = (new_scn.wishlist & set(new_scn.keys())) - preserved_products
-            scenes_to_save.append((new_scn, _resampled_products))
+            if _resampled_products:
+                scenes_to_save.append((new_scn, _resampled_products))
 
     return scenes_to_save
 

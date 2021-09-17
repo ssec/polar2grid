@@ -29,28 +29,36 @@
 #     david.hoese@ssec.wisc.edu
 """Produce various text and image outputs for debugging input data."""
 
+from pyresample.geometry import AreaDefinition
+from satpy import Scene
+import matplotlib.pyplot as plt
 import sys
 import logging
 import dask
 import dask.array as da
 import numpy as np
 import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
-from satpy import Scene
-from pyresample.geometry import AreaDefinition
+
+matplotlib.use("agg")
 
 LOG = logging.getLogger(__name__)
 
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Produce various debug images and text about input data.")
-    parser.add_argument('-v', '--verbose', dest='verbosity', action="count", default=0,
-                        help='each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)')
-    parser.add_argument('reader', help="Satpy reader to use")
-    parser.add_argument('product', help="Product to load")
-    parser.add_argument('files', nargs='*', help="Files to load data from")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbosity",
+        action="count",
+        default=0,
+        help="each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)",
+    )
+    parser.add_argument("reader", help="Satpy reader to use")
+    parser.add_argument("product", help="Product to load")
+    parser.add_argument("files", nargs="*", help="Files to load data from")
     args = parser.parse_args()
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
@@ -60,8 +68,8 @@ def main():
     scn = Scene(reader=args.reader, filenames=args.files)
     scn.load([args.product])
     data = scn[args.product].compute()
-    start_time = data.attrs['start_time']
-    lons, lats = da.compute(*data.attrs['area'].get_lonlats())
+    start_time = data.attrs["start_time"]
+    lons, lats = da.compute(*data.attrs["area"].get_lonlats())
 
     print("## Longitude:")
     print("   Minimum: ", np.nanmin(lons))
@@ -72,9 +80,9 @@ def main():
     fig, ax = plt.subplots()
     img = ax.imshow(lons, vmin=-180, vmax=180)
     cbar = fig.colorbar(img)
-    ax.set_title('Longitude')
-    cbar.set_label('Degrees')
-    fig.savefig('longitude_{:%Y%m%d_%H%M%S}.png'.format(start_time))
+    ax.set_title("Longitude")
+    cbar.set_label("Degrees")
+    fig.savefig("longitude_{:%Y%m%d_%H%M%S}.png".format(start_time))
 
     print("## Latitude:")
     print("   Minimum: ", np.nanmin(lats))
@@ -85,9 +93,9 @@ def main():
     fig, ax = plt.subplots()
     img = ax.imshow(lats, vmin=-90, vmax=90)
     cbar = fig.colorbar(img)
-    ax.set_title('Latitude')
-    cbar.set_label('Degrees')
-    fig.savefig('latitude_{:%Y%m%d_%H%M%S}.png'.format(start_time))
+    ax.set_title("Latitude")
+    cbar.set_label("Degrees")
+    fig.savefig("latitude_{:%Y%m%d_%H%M%S}.png".format(start_time))
 
     print("## {}:".format(args.product))
     print("   Minimum: ", np.nanmin(data))
@@ -100,8 +108,8 @@ def main():
     img = ax.imshow(data)
     cbar = fig.colorbar(img)
     ax.set_title(args.product)
-    cbar.set_label(data.attrs.get('units', '<unknown>'))
-    fig.savefig('{}_{:%Y%m%d_%H%M%S}.png'.format(args.product, start_time))
+    cbar.set_label(data.attrs.get("units", "<unknown>"))
+    fig.savefig("{}_{:%Y%m%d_%H%M%S}.png".format(args.product, start_time))
 
 
 if __name__ == "__main__":
