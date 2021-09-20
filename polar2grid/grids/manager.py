@@ -273,7 +273,7 @@ def read_grids_config(config_filepath, convert_coords=True):
 
     config_file = open(full_config_filepath, "r")
     config_str = config_file.read()
-    return read_grids_config_str(config_str)
+    return read_grids_config_str(config_str, convert_coords=convert_coords)
 
 
 class GridManager:

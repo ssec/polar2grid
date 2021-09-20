@@ -557,8 +557,8 @@ dwd_germany:
     dy: 400.0
     dx: 400.0
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: -2.003740084625484
+    y: 56.00135806882267
     units: degrees
 australia:
   description: ''
@@ -578,8 +578,8 @@ australia:
     dy: 1015.9
     dx: 1015.9
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: 104.99543700751434
+    y: 5.004545613141294
     units: degrees
 australia2:
   description: ''
@@ -599,8 +599,8 @@ australia2:
     dy: 7111.3
     dx: 7111.3
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: 104.96805905260021
+    y: 5.031818627822129
     units: degrees
 211e:
   description: ''
@@ -620,8 +620,8 @@ australia2:
     dy: 1015.9
     dx: 1015.9
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: -123.05258626573237
+    y: 59.846816693862834
     units: degrees
 211e_10km:
   description: ''
@@ -641,8 +641,8 @@ australia2:
     dy: 10159.0
     dx: 10159.0
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: -123.12989462094596
+    y: 59.87214916199132
     units: degrees
 211e_hi:
   description: ''
@@ -662,8 +662,8 @@ australia2:
     dy: 500.0
     dx: 500.0
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: -123.0482258516551
+    y: 59.845386354052366
     units: degrees
 211w:
   description: ''
@@ -683,8 +683,8 @@ australia2:
     dy: 1015.9
     dx: 1015.9
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: -152.86393178548968
+    y: 54.537942379826546
     units: degrees
 211w_10km:
   description: ''
@@ -704,8 +704,8 @@ australia2:
     dy: 10159.0
     dx: 10159.0
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: -152.94433769937515
+    y: 54.55540643325579
     units: degrees
 '203':
   description: ''
@@ -725,8 +725,8 @@ australia2:
     dy: 1000.0
     dx: 1000.0
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: 115.59569294357532
+    y: 44.64159430957093
     units: degrees
 203_10km:
   description: ''
@@ -746,8 +746,8 @@ australia2:
     dy: 10000.0
     dx: 10000.0
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: 115.54798101590025
+    y: 44.601933749094634
     units: degrees
 '204':
   description: ''
@@ -766,8 +766,8 @@ australia2:
     dy: 1038.964
     dx: 1038.964
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: 109.99502851559393
+    y: 60.64643710133693
     units: degrees
 204_10km:
   description: ''
@@ -786,8 +786,8 @@ australia2:
     dy: 10389.64
     dx: 10389.64
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: 109.9502851559393
+    y: 60.668362720666025
     units: degrees
 '205':
   description: ''
@@ -807,8 +807,8 @@ australia2:
     dy: 999.76145
     dx: 999.76145
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: -115.31061516849354
+    y: 36.25602988653891
     units: degrees
 '210':
   description: ''
@@ -827,7 +827,6 @@ australia2:
     dy: 1041.66
     dx: 1041.66
   upper_left_extent:
-    x: .inf
-    y: .inf
+    x: -77.00498438487419
+    y: 26.426463634448158
     units: degrees
-

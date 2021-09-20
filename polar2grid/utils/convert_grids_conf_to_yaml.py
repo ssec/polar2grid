@@ -39,7 +39,6 @@ logger = logging.getLogger(__name__)
 
 def _conf_to_yaml_dict(grids_filename: str) -> str:
     overall_yaml_dict = {}
-    gm = GridManager(grids_filename)
     grids_information = read_grids_config(grids_filename, convert_coords=False)
     for grid_name, grid_info in grids_information.items():
         area_dict = {}
