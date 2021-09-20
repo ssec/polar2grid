@@ -26,7 +26,7 @@ for more information on what each projection parameter means.
     data during remapping.  This allows for grids that fit to the data (dynamic
     grids).
 
-.. _wgs84_fit:
+.. _grid_wgs84_fit:
 
 WGS84 Dynamic Fit
 ^^^^^^^^^^^^^^^^^

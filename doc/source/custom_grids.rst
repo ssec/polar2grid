@@ -8,7 +8,7 @@ to create their own custom grids.
 Grids can be static, meaning the grid definition specifies the
 projection, pixel size, origin, and grid size. Grids can also be
 dynamic, meaning that only some grid defining parameters are specified.
-An example of a dynamic grid is the :ref:`wgs84_fit` grid. This grid
+An example of a dynamic grid is the :ref:`grid_wgs84_fit` grid. This grid
 does not have an origin or grid size specified, which tells the remapping
 components of |project| to calculate these values from the data.
 
