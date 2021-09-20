@@ -47,9 +47,6 @@ lcc_fit:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -64,9 +61,6 @@ lcc_na:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -81,9 +75,6 @@ lcc_sa:
     lat_1: -25
     lat_0: -25
     lon_0: -55
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -98,9 +89,6 @@ lcc_eu:
     lat_1: 25
     lat_0: 25
     lon_0: 15
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -115,9 +103,6 @@ lcc_south_africa:
     lat_1: -25
     lat_0: -25
     lon_0: 25
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -132,9 +117,6 @@ lcc_aus:
     lat_1: -25
     lat_0: -25
     lon_0: 135
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -149,9 +131,6 @@ lcc_asia:
     lat_1: 25
     lat_0: 25
     lon_0: 105
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -166,9 +145,6 @@ lcc_fit_hr:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -183,9 +159,6 @@ lcc_conus_300:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -200,9 +173,6 @@ lcc_conus_750:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -217,9 +187,6 @@ lcc_conus_1km:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -234,8 +201,6 @@ eqc_fit:
     lat_ts: 0
     lat_0: 0
     lon_0: 0
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -250,8 +215,6 @@ polar_canada:
     lat_0: 90
     lat_ts: 45
     lon_0: -150
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -266,8 +229,6 @@ polar_north_pacific:
     lat_0: 90
     lat_ts: 45
     lon_0: -170
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -282,8 +243,6 @@ polar_south_pacific:
     lat_0: -90
     lat_ts: -45
     lon_0: -170
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -298,8 +257,6 @@ polar_russia:
     lat_0: 90
     lat_ts: 45
     lon_0: 50
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -314,8 +271,6 @@ polar_alaska:
     lat_0: 90
     lat_ts: 60
     lon_0: -150
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -330,8 +285,6 @@ polar_alaska_300:
     lat_0: 90
     lat_ts: 60
     lon_0: -150
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -346,8 +299,6 @@ polar_alaska_750:
     lat_0: 90
     lat_ts: 60
     lon_0: -150
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -362,8 +313,6 @@ polar_alaska_1km:
     lat_0: 90
     lat_ts: 60
     lon_0: -150
-    x_0: 0
-    y_0: 0
     datum: WGS84
     units: m
     no_defs: null
@@ -456,8 +405,6 @@ goesr_test_300:
     sweep: x
     lon_0: -89.5
     h: 35786023
-    x_0: 0
-    y_0: 0
     ellps: GRS80
     units: m
     no_defs: null
@@ -472,8 +419,6 @@ goes_east_1km:
     sweep: x
     lon_0: -75
     h: 35786023
-    x_0: 0
-    y_0: 0
     ellps: GRS80
     units: m
     no_defs: null
@@ -495,8 +440,6 @@ goes_east_4km:
     sweep: x
     lon_0: -75
     h: 35786023
-    x_0: 0
-    y_0: 0
     ellps: GRS80
     units: m
     no_defs: null
@@ -518,8 +461,6 @@ goes_east_8km:
     sweep: x
     lon_0: -75
     h: 35786023
-    x_0: 0
-    y_0: 0
     ellps: GRS80
     units: m
     no_defs: null
@@ -541,8 +482,6 @@ goes_east_10km:
     sweep: x
     lon_0: -75
     h: 35786023
-    x_0: 0
-    y_0: 0
     ellps: GRS80
     units: m
     no_defs: null
@@ -564,8 +503,6 @@ goes_west_1km:
     sweep: x
     lon_0: -137
     h: 35786023
-    x_0: 0
-    y_0: 0
     ellps: GRS80
     units: m
     no_defs: null
@@ -587,8 +524,6 @@ goes_west_4km:
     sweep: x
     lon_0: -137
     h: 35786023
-    x_0: 0
-    y_0: 0
     ellps: GRS80
     units: m
     no_defs: null
@@ -610,8 +545,6 @@ goes_west_8km:
     sweep: x
     lon_0: -137
     h: 35786023
-    x_0: 0
-    y_0: 0
     ellps: GRS80
     units: m
     no_defs: null
@@ -633,8 +566,6 @@ goes_west_10km:
     sweep: x
     lon_0: -137
     h: 35786023
-    x_0: 0
-    y_0: 0
     ellps: GRS80
     units: m
     no_defs: null
@@ -656,8 +587,6 @@ dwd_germany:
     lat_0: 90
     lat_ts: 60
     lon_0: 10
-    x_0: 0
-    y_0: 0
     R: 6370000
     units: m
     no_defs: null
@@ -721,9 +650,6 @@ australia2:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
@@ -745,9 +671,6 @@ australia2:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
@@ -769,9 +692,6 @@ australia2:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
@@ -793,9 +713,6 @@ australia2:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
@@ -817,9 +734,6 @@ australia2:
     lat_1: 25
     lat_0: 25
     lon_0: -95
-    k_0: 1
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
@@ -841,8 +755,6 @@ australia2:
     lat_0: 90
     lat_ts: 60
     lon_0: -150
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
@@ -864,8 +776,6 @@ australia2:
     lat_0: 90
     lat_ts: 60
     lon_0: -150
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
@@ -886,8 +796,6 @@ australia2:
     proj: merc
     lat_ts: 20
     lon_0: -180
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
@@ -908,8 +816,6 @@ australia2:
     proj: merc
     lat_ts: 20
     lon_0: -180
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
@@ -931,8 +837,6 @@ australia2:
     lat_0: 90
     lat_ts: 60
     lon_0: -60
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
@@ -953,8 +857,6 @@ australia2:
     proj: merc
     lat_ts: 20
     lon_0: -77
-    x_0: 0
-    y_0: 0
     R: 6371200
     units: m
     no_defs: null
