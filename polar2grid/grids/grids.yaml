@@ -1,7 +1,7 @@
 # Dynamic Grids - These grids do not provide all necessary information.
 # This information will be filled in at runtime using the input geolocation data.
 wgs84_fit:
-  description: ''
+  description: 'Longitude/Latitude WGS84 Grid'
   projection:
     EPSG: 4326
   resolution:
@@ -539,6 +539,7 @@ goes_west_10km:
     height: 1085
     width: 1085
   area_extent: [-5434894.885056, -5434894.885056, 5434894.885056, 5434894.885056]
+# Static Grids - All necessary information is provided
 dwd_germany:
   description: ''
   projection:
@@ -602,6 +603,7 @@ australia2:
     x: 104.96805905260021
     y: 5.031818627822129
     units: degrees
+# Static AWIPS Grids - Legacy AWIPS 1 grids
 211e:
   description: ''
   projection:

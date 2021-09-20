@@ -52,11 +52,6 @@ def builtin_grids_yaml() -> list[str]:
     return [os.path.join(PKG_ROOT, "grids", "grids.yaml")]
 
 
-@pytest.fixture
-def builtin_grids_conf() -> list[str]:
-    return [os.path.join(PKG_ROOT, "grids", "grids.conf")]
-
-
 # Geometries #
 
 

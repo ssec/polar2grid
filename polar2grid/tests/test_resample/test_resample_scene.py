@@ -60,13 +60,19 @@ from pytest_lazyfixture import lazy_fixture
     ],
 )
 def test_resample_single_result_per_grid(
-    input_scene, grids, resampler, exp_names, max_computes, is_polar2grid, builtin_grids_conf
+    input_scene,
+    grids,
+    resampler,
+    exp_names,
+    max_computes,
+    is_polar2grid,
+    builtin_grids_yaml,
 ):
     with dask.config.set(scheduler=CustomScheduler(max_computes)):
         scenes_to_save = resample_scene(
             input_scene,
             grids,
-            builtin_grids_conf,
+            builtin_grids_yaml,
             resampler,
             is_polar2grid=is_polar2grid,
         )
