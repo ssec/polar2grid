@@ -54,7 +54,7 @@ Grid Configuration File Format
     This format is already supported by |project| but for backwards compatibility
     the legacy format is described below.
 
-Example Grid Configuration File: :download:`grid_example.conf <../../swbundle/grid_configs/grid_example.conf>`
+Example Grid Configuration File: :download:`grid_example.yaml <../../swbundle/grid_configs/grid_example.yaml>`
 
 Grid configuration files are comma-separated text files.
 Comments can be added by prefixing lines
@@ -66,11 +66,11 @@ configuration file linked to above can also be found in the software bundle in
 
 .. ifconfig:: not is_geo2grid
 
-    ``$POLAR2GRID_HOME/grid_configs/grid_example.conf``
+    ``$POLAR2GRID_HOME/grid_configs/grid_example.yaml``
 
 .. ifconfig:: is_geo2grid
 
-    ``$GEO2GRID_HOME/grid_configs/grid_example.conf``
+    ``$GEO2GRID_HOME/grid_configs/grid_example.yaml``
 
 As mentioned earlier, grids can be
 dynamic or static. Dynamic grids may have either grid size parameters
