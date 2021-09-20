@@ -24,6 +24,7 @@
 
 from __future__ import annotations
 
+import os
 import logging
 from typing import Union, Optional, List
 
@@ -31,6 +32,7 @@ from .resample_decisions import ResamplerDecisionTree
 from polar2grid.filters.resample_coverage import ResampleCoverageFilter
 
 from pyresample.geometry import DynamicAreaDefinition, AreaDefinition
+from pyresample.utils import parse_area_file
 from satpy.resample import get_area_def
 from satpy import Scene
 from pyproj import Proj
@@ -41,6 +43,8 @@ logger = logging.getLogger(__name__)
 # TypeAlias
 AreaSpecifier = Union[AreaDefinition, str, None]
 ListOfAreas = List[Union[AreaDefinition, str, None]]
+
+GRIDS_YAML_FILEPATH = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "grids", "grids.yaml"))
 
 
 def _crs_equal(a, b):
@@ -97,10 +101,12 @@ def _get_preserve_resolution(preserve_resolution, resampler, areas_to_resample):
     return any_minmax and (is_native or is_default) and preserve_resolution
 
 
-def _get_legacy_and_custom_areas(grid_configs):
+def _get_legacy_and_yaml_areas(grid_configs):
+    if not grid_configs:
+        grid_configs = [GRIDS_YAML_FILEPATH]
     p2g_grid_configs = [x for x in grid_configs if x.endswith(".conf")]
     pyresample_area_configs = [x for x in grid_configs if not x.endswith(".conf")]
-    if not grid_configs or p2g_grid_configs:
+    if p2g_grid_configs:
         # if we were given p2g grid configs or we weren't given any to choose from
         from polar2grid.grids import GridManager
 
@@ -109,17 +115,15 @@ def _get_legacy_and_custom_areas(grid_configs):
         grid_manager = {}
 
     if pyresample_area_configs:
-        from pyresample.utils import parse_area_file
-
-        custom_areas = parse_area_file(pyresample_area_configs)
-        custom_areas = {x.area_id: x for x in custom_areas}
+        yaml_areas = parse_area_file(pyresample_area_configs)
+        yaml_areas = {x.area_id: x for x in yaml_areas}
     else:
-        custom_areas = {}
+        yaml_areas = {}
 
-    return grid_manager, custom_areas
+    return grid_manager, yaml_areas
 
 
-def _get_area_def_from_name(area_name, input_scene, grid_manager, custom_areas):
+def _get_area_def_from_name(area_name, input_scene, grid_manager, yaml_areas):
     if area_name is None:
         # no resampling
         area_def = None
@@ -127,19 +131,19 @@ def _get_area_def_from_name(area_name, input_scene, grid_manager, custom_areas):
         area_def = input_scene.max_area()
     elif area_name == "MIN":
         area_def = input_scene.min_area()
-    elif area_name in custom_areas:
-        area_def = custom_areas[area_name]
+    elif area_name in yaml_areas:
+        area_def = yaml_areas[area_name]
     elif area_name in grid_manager:
         p2g_def = grid_manager[area_name]
         area_def = p2g_def.to_satpy_area()
-        if isinstance(area_def, DynamicAreaDefinition) and p2g_def["cell_width"] is not None:
-            logger.info("Computing dynamic grid parameters...")
-            area_def = area_def.freeze(
-                input_scene.max_area(), resolution=(abs(p2g_def["cell_width"]), abs(p2g_def["cell_height"]))
-            )
-            logger.debug("Frozen dynamic area: %s", area_def)
     else:
+        # get satpy builtin area
         area_def = get_area_def(area_name)
+
+    if isinstance(area_def, DynamicAreaDefinition):
+        logger.info("Computing dynamic grid parameters...")
+        area_def = area_def.freeze(input_scene.max_area())
+        logger.debug("Frozen dynamic area: %s", area_def)
     return area_def
 
 
@@ -154,13 +158,13 @@ def _get_default_resampler(resampler, area_name, area_def, input_scene):
 
 class AreaDefResolver:
     def __init__(self, input_scene, grid_configs):
-        grid_manager, custom_areas = _get_legacy_and_custom_areas(grid_configs)
+        grid_manager, yaml_areas = _get_legacy_and_yaml_areas(grid_configs)
         self.input_scene = input_scene
         self.grid_manager = grid_manager
-        self.custom_areas = custom_areas
+        self.yaml_areas = yaml_areas
 
     def __getitem__(self, area_name):
-        return _get_area_def_from_name(area_name, self.input_scene, self.grid_manager, self.custom_areas)
+        return _get_area_def_from_name(area_name, self.input_scene, self.grid_manager, self.yaml_areas)
 
 
 def _default_grid(resampler, is_polar2grid):

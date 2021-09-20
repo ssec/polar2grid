@@ -10,13 +10,13 @@ shown in Section 2.2 and execute the following commands:
     mkdir work
     cd work
     polar2grid.sh crefl gtiff --true-color --false-color --fornav-d 1 --grid-configs \
-      ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f ../input
+      ${POLAR2GRID_HOME}/grid_configs/grid_example.yaml -g miami -f ../input
 
 The test case consists of a set of MODIS archived 5 minute HDF 4 Level 1B
 granule files (1KM, HKM, QKM and Geolocation) for a Terra MODIS
 pass observed on 19 March 2017 at 16:30 UTC. In this test, 
 the Polar2Grid software is using the example configuration file 
-(${POLAR2GRID_HOME}/grid_configs/grid_example.conf) and the lambert 
+(${POLAR2GRID_HOME}/grid_configs/grid_example.yaml) and the lambert
 conformal conic (lcc) “miami” grid definition entry located 
 within it. It will first create Corrected REFLectance (CREFL) HDF4 files
 and then use those to create one true and one false color image at 

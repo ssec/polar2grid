@@ -636,10 +636,9 @@ class GridDefinition(BaseP2GObject):
                 self["height"],
                 area_extent=xy_ll + xy_ur,
             )
+        kwargs = {}
+        if self["cell_width"] is not None:
+            kwargs["resolution"] = (self["cell_width"], self["cell_height"])
         return DynamicAreaDefinition(
-            self["grid_name"],
-            self["grid_name"],
-            self.proj4_dict,
-            self["width"],
-            self["height"],
+            self["grid_name"], self["grid_name"], self.proj4_dict, self["width"], self["height"], **kwargs
         )

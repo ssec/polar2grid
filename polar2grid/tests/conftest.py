@@ -53,8 +53,8 @@ def builtin_grids_yaml() -> list[str]:
 
 
 @pytest.fixture
-def builtin_grids_conf() -> list[str]:
-    return [os.path.join(PKG_ROOT, "grids", "grids.conf")]
+def builtin_test_grids_conf() -> list[str]:
+    return [os.path.join(PKG_ROOT, "tests", "etc", "grids.conf")]
 
 
 # Geometries #

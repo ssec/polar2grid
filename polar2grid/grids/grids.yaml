@@ -1,0 +1,834 @@
+# Dynamic Grids - These grids do not provide all necessary information.
+# This information will be filled in at runtime using the input geolocation data.
+wgs84_fit:
+  description: 'Longitude/Latitude WGS84 Grid'
+  projection:
+    EPSG: 4326
+  resolution:
+    dy: 0.0057
+    dx: 0.0057
+latlon:
+  description: 'Longitude/Latitude WGS84 Grid'
+  projection:
+    EPSG: 4326
+  resolution:
+    dy: 0.0057
+    dx: 0.0057
+wgs84_fit_250:
+  description: 'Longitude/Latitude WGS84 Grid at ~250m resolution'
+  projection:
+    EPSG: 4326
+  resolution:
+    dy: 0.00225
+    dx: 0.00225
+latlon_250:
+  description: 'Longitude/Latitude WGS84 Grid at ~250m resolution'
+  projection:
+    EPSG: 4326
+  resolution:
+    dy: 0.00225
+    dx: 0.00225
+wgs84_fit_1km:
+  description: 'Longitude/Latitude WGS84 Grid at ~1km resolution'
+  projection:
+    EPSG: 4326
+  resolution:
+    dy: 0.009
+    dx: 0.009
+latlon_1km:
+  description: 'Longitude/Latitude WGS84 Grid at ~1km resolution'
+  projection:
+    EPSG: 4326
+  resolution:
+    dy: 0.009
+    dx: 0.009
+lcc_fit:
+  description: '1km East CONUS centered lcc grid (alias: lcc_na)'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+lcc_na:
+  description: '1km East CONUS centered lcc grid (alias: lcc_fit)'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+lcc_sa:
+  description: '1km South America centered LCC grid'
+  projection:
+    proj: lcc
+    lat_1: -25
+    lat_0: -25
+    lon_0: -55
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+lcc_eu:
+  description: '1km Europe centered LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: 15
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+lcc_south_africa:
+  description: '1km South Africa centered LCC grid'
+  projection:
+    proj: lcc
+    lat_1: -25
+    lat_0: -25
+    lon_0: 25
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+lcc_aus:
+  description: '1km Australia centered LCC grid'
+  projection:
+    proj: lcc
+    lat_1: -25
+    lat_0: -25
+    lon_0: 135
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+lcc_asia:
+  description: '1km Asia centered LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: 105
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+lcc_fit_hr:
+  description: '400m East CONUS centered LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 400.0
+    dx: 400.0
+lcc_conus_300:
+  description: '300m East CONUS centered LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 300.0
+    dx: 300.0
+lcc_conus_750:
+  description: '750m East CONUS centered LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 750.0
+    dx: 750.0
+lcc_conus_1km:
+  description: '1km East CONUS centered LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+eqc_fit:
+  description: '250m Equirectangular grid'
+  projection:
+    proj: eqc
+    lat_ts: 0
+    lat_0: 0
+    lon_0: 0
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 250.0
+    dx: 250.0
+polar_canada:
+  description: '1km Polar-stereographic Canada centered grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 45
+    lon_0: -150
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+polar_north_pacific:
+  description: '400m Polar-stereographic North Pacific centered grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 45
+    lon_0: -170
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 400.0
+    dx: 400.0
+polar_south_pacific:
+  description: '400m Polar-stereographic South Pacific centered grid'
+  projection:
+    proj: stere
+    lat_0: -90
+    lat_ts: -45
+    lon_0: -170
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 400.0
+    dx: 400.0
+polar_russia:
+  description: '400m Polar-stereographic Russia centered grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 45
+    lon_0: 50
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 400.0
+    dx: 400.0
+polar_alaska:
+  description: '400m Polar-stereographic Alaska centered grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 60
+    lon_0: -150
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 400.0
+    dx: 400.0
+polar_alaska_300:
+  description: '300m Polar-stereographic Alaska centered grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 60
+    lon_0: -150
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 300.0
+    dx: 300.0
+polar_alaska_750:
+  description: '750m Polar-stereographic Alaska centered grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 60
+    lon_0: -150
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 750.0
+    dx: 750.0
+polar_alaska_1km:
+  description: '1km Polar-stereographic Alaska centered grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 60
+    lon_0: -150
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+merc_conus_300:
+  description: '300m Mercator CONUS centered grid'
+  projection:
+    proj: merc
+    datum: WGS84
+    lon_0: -95
+    lat_0: 0
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 300.0
+    dx: 300.0
+merc_conus_750:
+  description: '750m Mercator CONUS centered grid'
+  projection:
+    proj: merc
+    datum: WGS84
+    lon_0: -95
+    lat_0: 0
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 750.0
+    dx: 750.0
+merc_conus_1km:
+  description: '1km Mercator CONUS centered grid'
+  projection:
+    proj: merc
+    datum: WGS84
+    lon_0: -95
+    lat_0: 0
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+merc_pacific_300:
+  description: '300m Mercator Pacific centered grid'
+  projection:
+    proj: merc
+    datum: WGS84
+    lon_0: 170
+    lat_0: 0
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 300.0
+    dx: 300.0
+merc_pacific_750:
+  description: '750m Mercator Pacific centered grid'
+  projection:
+    proj: merc
+    datum: WGS84
+    lon_0: 170
+    lat_0: 0
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 750.0
+    dx: 750.0
+merc_pacific_1km:
+  description: '1km Mercator Pacific centered grid'
+  projection:
+    proj: merc
+    datum: WGS84
+    lon_0: 170
+    lat_0: 0
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+# GOES Grids
+goesr_test_300:
+  description: '300m Geostationary grid centered at the GOES-R Test position'
+  projection:
+    proj: geos
+    sweep: x
+    lon_0: -89.5
+    h: 35786023
+    ellps: GRS80
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 300.0
+    dx: 300.0
+# Static GOES-R Full Disk Grids
+# Note: Pixel resolution is not exactly the described size in the name, but
+# this matches the actual geolocation of the instrument. For example, the 1km
+# grids are actually 1002.008644 meters per pixel, not 1000.0km.
+goes_east_1km:
+  description: 'GOES-East 1km Full Disk Grid'
+  projection:
+    proj: geos
+    sweep: x
+    lon_0: -75
+    h: 35786023
+    ellps: GRS80
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 10848
+    width: 10848
+  area_extent: [-5434894.885056, -5434894.885056, 5434894.885056, 5434894.885056]
+goes_east_4km:
+  description: 'GOES-East 4km Full Disk Grid'
+  projection:
+    proj: geos
+    sweep: x
+    lon_0: -75
+    h: 35786023
+    ellps: GRS80
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 2712
+    width: 2712
+  area_extent: [-5434894.885056, -5434894.885056, 5434894.885056, 5434894.885056]
+goes_east_8km:
+  description: 'GOES-East 8km Full Disk Grid'
+  projection:
+    proj: geos
+    sweep: x
+    lon_0: -75
+    h: 35786023
+    ellps: GRS80
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 1356
+    width: 1356
+  area_extent: [-5434894.885056, -5434894.885056, 5434894.885056, 5434894.885056]
+goes_east_10km:
+  description: 'GOES-East 10km Full Disk Grid'
+  projection:
+    proj: geos
+    sweep: x
+    lon_0: -75
+    h: 35786023
+    ellps: GRS80
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 1085
+    width: 1085
+  area_extent: [-5434894.885056, -5434894.885056, 5434894.885056, 5434894.885056]
+goes_west_1km:
+  description: 'GOES-West 1km Full Disk Grid'
+  projection:
+    proj: geos
+    sweep: x
+    lon_0: -137
+    h: 35786023
+    ellps: GRS80
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 10848
+    width: 10848
+  area_extent: [-5434894.885056, -5434894.885056, 5434894.885056, 5434894.885056]
+goes_west_4km:
+  description: 'GOES-West 4km Full Disk Grid'
+  projection:
+    proj: geos
+    sweep: x
+    lon_0: -137
+    h: 35786023
+    ellps: GRS80
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 2712
+    width: 2712
+  area_extent: [-5434894.885056, -5434894.885056, 5434894.885056, 5434894.885056]
+goes_west_8km:
+  description: 'GOES-West 8km Full Disk Grid'
+  projection:
+    proj: geos
+    sweep: x
+    lon_0: -137
+    h: 35786023
+    ellps: GRS80
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 1356
+    width: 1356
+  area_extent: [-5434894.885056, -5434894.885056, 5434894.885056, 5434894.885056]
+goes_west_10km:
+  description: 'GOES-West 10km Full Disk Grid'
+  projection:
+    proj: geos
+    sweep: x
+    lon_0: -137
+    h: 35786023
+    ellps: GRS80
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 1085
+    width: 1085
+  area_extent: [-5434894.885056, -5434894.885056, 5434894.885056, 5434894.885056]
+# Static Grids - All necessary information is provided
+dwd_germany:
+  description: '400m Germany-centered Polar-stereographic grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 60
+    lon_0: 10
+    R: 6370000
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 4000
+    width: 3000
+  resolution:
+    dy: 400.0
+    dx: 400.0
+  upper_left_extent:
+    x: -2.003740084625484
+    y: 56.00135806882267
+    units: degrees
+australia:
+  description: '1km Mercator Australia-centered'
+  projection:
+    proj: merc
+    a: 6378137
+    b: 6378137
+    lat_0: -30
+    lon_0: 140
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 7700
+    width: 7700
+  resolution:
+    dy: 1015.9
+    dx: 1015.9
+  upper_left_extent:
+    x: 104.99543700751434
+    y: 5.004545613141294
+    units: degrees
+australia2:
+  description: '7km Mercator Australia-centered'
+  projection:
+    proj: merc
+    a: 6378137
+    b: 6378137
+    lat_0: -30
+    lon_0: 140
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 1100
+    width: 1100
+  resolution:
+    dy: 7111.3
+    dx: 7111.3
+  upper_left_extent:
+    x: 104.96805905260021
+    y: 5.031818627822129
+    units: degrees
+# Static AWIPS Grids - Legacy AWIPS 1 grids
+211e:
+  description: '1km East CONUS AWIPS LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 5120
+    width: 5120
+  resolution:
+    dy: 1015.9
+    dx: 1015.9
+  upper_left_extent:
+    x: -123.05258626573237
+    y: 59.846816693862834
+    units: degrees
+211e_10km:
+  description: '10km East CONUS AWIPS LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 512
+    width: 512
+  resolution:
+    dy: 10159.0
+    dx: 10159.0
+  upper_left_extent:
+    x: -123.12989462094596
+    y: 59.87214916199132
+    units: degrees
+211e_hi:
+  description: '500m East CONUS AWIPS LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 10000
+    width: 10000
+  resolution:
+    dy: 500.0
+    dx: 500.0
+  upper_left_extent:
+    x: -123.0482258516551
+    y: 59.845386354052366
+    units: degrees
+211w:
+  description: '1km West CONUS AWIPS LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 5120
+    width: 4400
+  resolution:
+    dy: 1015.9
+    dx: 1015.9
+  upper_left_extent:
+    x: -152.86393178548968
+    y: 54.537942379826546
+    units: degrees
+211w_10km:
+  description: '10km West CONUS AWIPS LCC grid'
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 512
+    width: 440
+  resolution:
+    dy: 10159.0
+    dx: 10159.0
+  upper_left_extent:
+    x: -152.94433769937515
+    y: 54.55540643325579
+    units: degrees
+'203':
+  description: '1km Alaska AWIPS Polar-stereographic grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 60
+    lon_0: -150
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 7239
+    width: 8384
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+  upper_left_extent:
+    x: 115.59569294357532
+    y: 44.64159430957093
+    units: degrees
+203_10km:
+  description: '10km Alaska AWIPS Polar-stereographic grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 60
+    lon_0: -150
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 724
+    width: 838
+  resolution:
+    dy: 10000.0
+    dx: 10000.0
+  upper_left_extent:
+    x: 115.54798101590025
+    y: 44.601933749094634
+    units: degrees
+'204':
+  description: '1km Hawaii AWIPS Mercator grid'
+  projection:
+    proj: merc
+    lat_ts: 20
+    lon_0: -180
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 10318
+    width: 14168
+  resolution:
+    dy: 1038.964
+    dx: 1038.964
+  upper_left_extent:
+    x: 109.99502851559393
+    y: 60.64643710133693
+    units: degrees
+204_10km:
+  description: '10km Hawaii AWIPS Mercator grid'
+  projection:
+    proj: merc
+    lat_ts: 20
+    lon_0: -180
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 1032
+    width: 1417
+  resolution:
+    dy: 10389.64
+    dx: 10389.64
+  upper_left_extent:
+    x: 109.9502851559393
+    y: 60.668362720666025
+    units: degrees
+'205':
+  description: '1km AWIPS Polar-stereographic grid'
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 60
+    lon_0: -60
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 7240
+    width: 8384
+  resolution:
+    dy: 999.76145
+    dx: 999.76145
+  upper_left_extent:
+    x: -115.31061516849354
+    y: 36.25602988653891
+    units: degrees
+'210':
+  description: '1km AWIPS Mercator grid'
+  projection:
+    proj: merc
+    lat_ts: 20
+    lon_0: -77
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 1920
+    width: 1920
+  resolution:
+    dy: 1041.66
+    dx: 1041.66
+  upper_left_extent:
+    x: -77.00498438487419
+    y: 26.426463634448158
+    units: degrees

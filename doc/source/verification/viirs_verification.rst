@@ -10,13 +10,13 @@ shown in Section 2.2 and execute the following commands:
     mkdir work
     cd work
     polar2grid.sh crefl gtiff --true-color --false-color --fornav-d 1 --grid-configs \
-      ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g miami -f ../input
+      ${POLAR2GRID_HOME}/grid_configs/grid_example.yaml -g miami -f ../input
 
 The test case consists of 6 input direct broadcast HDF 5 SDR granules 
 for a selection of VIIRS bands from a pass acquired on 19 March 2017
 at 18:32 UTC. In this test, the Polar2Grid software 
 is using the example configuration file 
-(${POLAR2GRID_HOME}/grid_configs/grid_example.conf) and the lambert 
+(${POLAR2GRID_HOME}/grid_configs/grid_example.yaml) and the lambert
 conformal conic (lcc) “miami” grid definition entry located 
 within it. It will first create 6 VIIRS Corrected REFLectance 
 (CREFL) I-Band and 6 CREFL M-Band HDF4 files, and then use those to 

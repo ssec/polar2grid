@@ -25,7 +25,7 @@ Examples:
 
     polar2grid.sh -r modis_l1b -w geotiff -p vis01 -f ../l1b/a1.17006.1855.250m.hdf ../l1b/a1.17006.1855.geo.hdf
 
-    polar2grid.sh -r modis_l1b -w geotiff --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.conf -g my_latlon -f ../l1b/a1.17006.1855.250m.hdf ../l1b/a1.17006.1855.geo.hdf
+    polar2grid.sh -r modis_l1b -w geotiff --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.yaml -g my_latlon -f ../l1b/a1.17006.1855.250m.hdf ../l1b/a1.17006.1855.geo.hdf
 
     polar2grid.sh -r modis_l1b -w awips_tiled --sector-id LCC -g lcc_conus_1km --letters --compress --bt-products --grid-coverage=.05 -f MOD021KM.A2017004.1732*.hdf MOD03.A2017004.1732*.hdf
 

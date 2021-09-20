@@ -1,0 +1,126 @@
+###############################################################################
+###                Polar2Grid Example Grid Configuration File               ###
+###############################################################################
+# Description: This file provides a few working examples of various types of
+#              grids that can be added to polar2grid. This file is to help
+#              a user add their own grids to polar2grid in addition to the
+#              documentation at
+#              http://www.ssec.wisc.edu/software/polar2grid/dev_guide/grids.html
+#              There is also additional information about this format from the
+#              pyresample documentation at
+#              https://pyresample.readthedocs.io/en/latest/geometry_utils.html
+#
+# Grids (a.k.a "areas") can be specified with as much information as is known
+# and anything that is missing will be filled in at runtime with the input
+# geolocation data. Grids that need this additional information are known as
+# "dynamics" grids.
+# Note that "extent" information defines the outer edge of the grid and not the
+# center of the pixels.
+#
+###############################################################################
+### NOTE: Polar2Grid does not use this file by default                      ###
+###       Use `--grid-configs my_grids.yaml` to add your own grids          ###
+###############################################################################
+my_211e:
+  description: ''
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    R: 6371200
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 5120
+    width: 5120
+  resolution:
+    dy: 1015.9
+    dx: 1015.9
+  upper_left_extent:
+    x: -122.9485839789149
+    y: 59.86281930852158
+    units: degrees
+my_lcc_fit:
+  description: ''
+  projection:
+    proj: lcc
+    lat_1: 25
+    lat_0: 25
+    lon_0: -95
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+my_simple_square:
+  description: ''
+  projection:
+    proj: lcc
+    lat_0: 25
+    lon_0: -95
+    lat_1: 35
+    lat_2: 0
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 1500
+    width: 1500
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+my_latlon:
+  description: ''
+  projection:
+    EPSG: 4326
+  resolution:
+    dy: 0.0057
+    dx: 0.0057
+my_latlon_250:
+  description: ''
+  projection:
+    EPSG: 4326
+  resolution:
+    dy: 0.00225
+    dx: 0.00225
+my_polar_canada:
+  description: ''
+  projection:
+    proj: stere
+    lat_0: 90
+    lat_ts: 45
+    lon_0: -150
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  resolution:
+    dy: 1000.0
+    dx: 1000.0
+miami:
+  description: ''
+  projection:
+    proj: lcc
+    lat_1: 25.7
+    lat_0: 25.7
+    lon_0: -80.2
+    datum: WGS84
+    units: m
+    no_defs: null
+    type: crs
+  shape:
+    height: 750
+    width: 1000
+  resolution:
+    dy: 300.0
+    dx: 300.0
+  upper_left_extent:
+    x: -81.70852426360605
+    y: 26.709338059236643
+    units: degrees
+

@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env bash
 # encoding: utf-8
-# Copyright (C) 2015-2021 Space Science and Engineering Center (SSEC),
-# University of Wisconsin-Madison.
+# Copyright (C) 2021 Space Science and Engineering Center (SSEC),
+#  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
@@ -20,11 +20,14 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""Test grid manager."""
 
-from polar2grid.grids import GridManager
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+export POLAR2GRID_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
 
+# Setup necessary environments
+# __SWBUNDLE_ENVIRONMENT_INJECTION__
 
-def test_grid_manager_basic(builtin_test_grids_conf):
-    """Test basic parsing of .conf files."""
-    GridManager(*builtin_test_grids_conf)
+# Call the python module to do the processing, passing all arguments
+export PROG_NAME="convert_grids_conf_to_yaml.sh"
+python3 -m polar2grid.utils.convert_grids_conf_to_yaml "$@"

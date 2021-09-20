@@ -27,23 +27,16 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Utilities and accessor functions to grids and projections used in
-polar2grid.
-
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Mar 2015
-:license:      GNU GPLv3
-
-"""
-__docformat__ = "restructuredtext en"
+"""Utilities and accessor functions to grids and projections used in polar2grid."""
+from __future__ import annotations
 
 import logging
 import os
 
 from polar2grid.core.proj import Proj
+from pyproj import CRS
+from polar2grid.core.containers import GridDefinition
+
 
 try:
     # try getting setuptools/distribute's version of resource retrieval first
@@ -57,22 +50,22 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 GRIDS_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
 
 
-def _parse_meter_degree_param(param):
+def _parse_meter_degree_param(param) -> tuple[float, bool]:
     """Parse a configuration parameter that could be meters or degrees.
 
     Degrees are denoted with a suffix of 'deg'. Meters are denoted with a suffix of either 'm' or no suffix at all.
 
     :returns: (float param, True if degrees/False if meters)
     """
-    convert_to_meters = False
+    is_deg = False
     if param.endswith("deg"):
         # Parameter is in degrees
-        convert_to_meters = True
+        is_deg = True
         param = param[:-3]
     elif param.endswith("m"):
         # Parameter is in meters
         param = param[:-1]
-    return float(param), convert_to_meters
+    return float(param), is_deg
 
 
 def get_proj4_info(proj4_str):
@@ -98,17 +91,10 @@ def get_proj4_info(proj4_str):
 
 
 def parse_proj4_config_line(grid_name, parts):
-    """Return a dictionary of information for a specific PROJ.4 grid from
-    a grid configuration line. ``parts`` should be every comma-separated
-    part of the line including the ``grid_name``.
-    """
-    info = {}
-
     proj4_str = parts[2]
     # Test to make sure the proj4_str is valid in pyproj's eyes
     try:
-        p = Proj(proj4_str)
-        del p
+        crs = CRS.from_proj4(proj4_str)
     except ValueError:
         LOG.error("Invalid proj4 string in '%s' : '%s'" % (grid_name, proj4_str))
         raise
@@ -142,19 +128,19 @@ def parse_proj4_config_line(grid_name, parts):
         else:
             pixel_size_y = float(parts[6])
 
-        convert_xorigin_to_meters = False
+        xorigin_is_deg = False
         if parts[7] == "None" or parts[7] == "":
             static = False
             grid_origin_x = None
         else:
-            grid_origin_x, convert_xorigin_to_meters = _parse_meter_degree_param(parts[7])
+            grid_origin_x, xorigin_is_deg = _parse_meter_degree_param(parts[7])
 
-        convert_yorigin_to_meters = False
+        yorigin_is_deg = False
         if parts[8] == "None" or parts[8] == "":
             static = False
             grid_origin_y = None
         else:
-            grid_origin_y, convert_yorigin_to_meters = _parse_meter_degree_param(parts[8])
+            grid_origin_y, yorigin_is_deg = _parse_meter_degree_param(parts[8])
     except ValueError:
         LOG.error("Could not parse proj4 grid configuration: '%s'" % (grid_name,))
         raise
@@ -171,30 +157,11 @@ def parse_proj4_config_line(grid_name, parts):
     if grid_width is None and pixel_size_x is None:
         LOG.error("Either grid size or pixel size must be specified for '%s'" % grid_name)
         raise ValueError("Either grid size or pixel size must be specified for '%s'" % grid_name)
-    if convert_xorigin_to_meters != convert_yorigin_to_meters:
+    if xorigin_is_deg != yorigin_is_deg:
         LOG.error("Grid origin parameters must be in the same units (meters vs degrees)")
         raise ValueError("Grid origin parameters must be in the same units (meters vs degrees)")
 
-    # Convert any parameters from degrees to meters (we already made sure both need to be converted above)
-    p = Proj(proj4_str)
-    if convert_xorigin_to_meters and not p.is_latlong():
-        meters_x, meters_y = p(grid_origin_x, grid_origin_y)
-        LOG.debug(
-            "Converted grid '%s' origin from (lon: %f, lat: %f) to (x: %f, y: %f)",
-            grid_name,
-            grid_origin_x,
-            grid_origin_y,
-            meters_x,
-            meters_y,
-        )
-        grid_origin_x, grid_origin_y = meters_x, meters_y
-    elif not convert_xorigin_to_meters and (grid_origin_x is not None and p.is_latlong()):
-        LOG.error("Lat/Lon grid '%s' must have its origin in degrees", grid_name)
-        raise ValueError("Lat/Lon grid '%s' must have its origin in degrees" % (grid_name,))
-
-    proj4_dict = get_proj4_info(proj4_str)
-
-    info.update(**proj4_dict)
+    info = {}
     info["grid_kind"] = "proj4"
     info["static"] = static
     info["proj4_str"] = proj4_str
@@ -204,11 +171,41 @@ def parse_proj4_config_line(grid_name, parts):
     info["grid_origin_y"] = grid_origin_y
     info["grid_width"] = grid_width
     info["grid_height"] = grid_height
-
+    info["grid_origin_units"] = "degrees" if xorigin_is_deg or crs.is_geographic else "meters"
     return info
 
 
-def read_grids_config_str(config_str):
+def parse_and_convert_proj4_config_line(grid_name, parts):
+    """Return a dictionary of information for a specific PROJ.4 grid from
+    a grid configuration line. ``parts`` should be every comma-separated
+    part of the line including the ``grid_name``.
+    """
+    info = parse_proj4_config_line(grid_name, parts)
+
+    # Convert any parameters from degrees to meters (we already made sure both need to be converted above)
+    p = Proj(info["proj4_str"])
+    if info["grid_origin_units"] == "degrees" and not p.is_latlong():
+        meters_x, meters_y = p(info["grid_origin_x"], info["grid_origin_y"])
+        LOG.debug(
+            "Converted grid '%s' origin from (lon: %f, lat: %f) to (x: %f, y: %f)",
+            grid_name,
+            info["grid_origin_x"],
+            info["grid_origin_y"],
+            meters_x,
+            meters_y,
+        )
+        info["grid_origin_x"] = meters_x
+        info["grid_origin_y"] = meters_y
+    elif info["grid_origin_units"] != "degrees" and info["grid_origin_x"] is not None and p.is_latlong():
+        LOG.error("Lat/Lon grid '%s' must have its origin in degrees", grid_name)
+        raise ValueError("Lat/Lon grid '%s' must have its origin in degrees" % (grid_name,))
+
+    proj4_dict = get_proj4_info(info["proj4_str"])
+    info.update(**proj4_dict)
+    return info
+
+
+def read_grids_config_str(config_str, convert_coords=True):
     grid_information = {}
     this_configs_grids = []
 
@@ -236,7 +233,10 @@ def read_grids_config_str(config_str):
         if grid_type == "gpd":
             LOG.warning("GPD grids are no longer supported (ignoring grid '%s')", grid_name)
         elif grid_type == "proj4":
-            grid_information[grid_name] = parse_proj4_config_line(grid_name, parts)
+            if convert_coords:
+                grid_information[grid_name] = parse_and_convert_proj4_config_line(grid_name, parts)
+            else:
+                grid_information[grid_name] = parse_proj4_config_line(grid_name, parts)
         else:
             LOG.error("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type, grid_name))
             raise ValueError("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type, grid_name))
@@ -244,7 +244,7 @@ def read_grids_config_str(config_str):
     return grid_information
 
 
-def read_grids_config(config_filepath):
+def read_grids_config(config_filepath, convert_coords=True):
     """Read the "grids.conf" file and create dictionaries mapping the
     grid name to the necessary information. There are two dictionaries
     created, one for gpd file grids and one for proj4 grids.
@@ -265,7 +265,7 @@ def read_grids_config(config_filepath):
     if not os.path.exists(full_config_filepath):
         try:
             config_str = get_resource_string(__name__, config_filepath).decode()
-            return read_grids_config_str(config_str)
+            return read_grids_config_str(config_str, convert_coords=convert_coords)
         except ValueError:
             LOG.error("Grids configuration file '%s' does not exist" % (config_filepath,))
             LOG.debug("Grid configuration error: ", exc_info=1)
@@ -273,7 +273,7 @@ def read_grids_config(config_filepath):
 
     config_file = open(full_config_filepath, "r")
     config_str = config_file.read()
-    return read_grids_config_str(config_str)
+    return read_grids_config_str(config_str, convert_coords=convert_coords)
 
 
 class GridManager:
@@ -281,7 +281,7 @@ class GridManager:
     to it. This Cartographer can handle PROJ4 and GPD grids.
     """
 
-    grid_information = {}
+    grid_information: dict[str, dict] = {}
 
     def __init__(self, *grid_configs, **kwargs):
         load_defaults = not kwargs.pop("no_defaults", False)
@@ -315,17 +315,15 @@ class GridManager:
     def add_proj4_grid_info(self, grid_name, proj4_str, width, height, cell_width, cell_height, origin_x, origin_y):
         # Trick the parse function to think this came from a config line
         parts = (grid_name, "proj4", proj4_str, width, height, cell_width, cell_height, origin_x, origin_y)
-        self.grid_information[grid_name] = parse_proj4_config_line(grid_name, parts)
+        self.grid_information[grid_name] = parse_and_convert_proj4_config_line(grid_name, parts)
 
-    def get_grid_definition(self, grid_name):
+    def get_grid_definition(self, grid_name: str) -> GridDefinition:
         """Return a standard `GridDefinition` object for the specified grid.
 
         :returns: `GridDefinition` object, updates to this object do not affect information
                   internal to the `Cartographer`.
 
         """
-        from polar2grid.core.containers import GridDefinition
-
         grid_info = self.get_grid_info(grid_name)
         return GridDefinition(
             grid_name=grid_name,

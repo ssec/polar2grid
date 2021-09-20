@@ -87,3 +87,4 @@ ms2gt/src/xy2ll/xy2ll
 # Example images should not be added to the repository
 doc/source/_static/example_images
 doc/source/dev_guide/api/*.rst
+doc/source/grids_list.rst
