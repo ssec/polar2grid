@@ -605,6 +605,32 @@ import yaml
 import warnings
 from pyproj import CRS
 
+grid_titles = {
+    "wgs84_fit": "WGS84 Dynamic Fit",
+    "wgs84_fit_250": "WGS84 Dynamic Fit 250m",
+    "lcc_fit": "Lambert Conic Conformal Dynamic Fit",
+    "lcc_fit_hr": "High Resolution Lambert Conic Conformal Dynamic Fit",
+    "lcc_sa": "Lambert Conic Conformal - South America Centered",
+    "lcc_eu": "Lambert Conic Conformal - Europe Centered",
+    "lcc_south_africa": "Lambert Conic Conformal - South Africa Centered",
+    "lcc_aus": "Lambert Conic Conformal - Australia Centered",
+    "lcc_asia": "Lambert Conic Conformal - Asia Centered",
+    "polar_north_pacific": "Polar-Stereographic North Pacific",
+    "polar_south_pacific": "Polar-Stereographic South Pacific",
+    "polar_alaska": "Polar-Stereographic Alaska",
+    "polar_canada": "Polar-Stereographic Canada",
+    "polar_russia": "Polar-Stereographic Russia",
+    "eqc_fit": "Equirectangular Fit",
+    "goes_east_1km": "GOES-East 1km",
+    "goes_east_4km": "GOES-East 4km",
+    "goes_east_8km": "GOES-East 8km",
+    "goes_east_10km": "GOES-East 10km",
+    "goes_west_1km": "GOES-West 1km",
+    "goes_west_4km": "GOES-West 4km",
+    "goes_west_8km": "GOES-West 8km",
+    "goes_west_10km": "GOES-West 10km",
+}
+
 warnings.filterwarnings("ignore", module="pyproj", category=UserWarning)
 builtin_areas_filename = os.path.join(script_path, "..", "..", "polar2grid", "grids", "grids.yaml")
 with open(builtin_areas_filename, "r") as yaml_file:
@@ -613,7 +639,9 @@ with open(builtin_areas_filename, "r") as yaml_file:
 grids_list_filename = os.path.join(script_path, "grids_list.rst")
 with open(grids_list_filename, "w") as grids_list_file:
     for area_name, area_dict in areas_dict.items():
-        area_title = area_name
+        area_title = grid_titles.get(area_name)
+        if area_title is None:
+            continue
         proj = area_dict["projection"]
         crs = CRS.from_user_input(proj["EPSG"] if "EPSG" in proj else proj)
         title_underline = "^" * len(area_title)
@@ -625,7 +653,7 @@ with open(grids_list_filename, "w") as grids_list_file:
 
 :Grid Name: {area_name}
 :Description: {area_dict['description']}
-:PROJ.4 String: {crs.to_string()}
+:Projection: {crs.to_string()}
 """
 
         if "resolution" in area_dict:
