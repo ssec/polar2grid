@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2015 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2015-2021 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -20,44 +20,11 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    March 2015
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
-"""Test grid manager
-
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Mar 2015
-:license:      GNU GPLv3
-
-"""
-__docformat__ = "restructuredtext en"
-
-import sys
-import logging
-import pytest
+"""Test grid manager."""
 
 from polar2grid.grids import GridManager
 
-LOG = logging.getLogger(__name__)
 
-
-class TestGridManager(object):
-    def test_init_basic1(self):
-        gm = GridManager()
-
-
-def main():
-    import os
-
-    return pytest.main([os.path.dirname(os.path.realpath(__file__))])
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+def test_grid_manager_basic(builtin_test_grids_conf):
+    """Test basic parsing of .conf files."""
+    GridManager(*builtin_test_grids_conf)
