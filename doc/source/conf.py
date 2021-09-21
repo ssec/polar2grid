@@ -118,7 +118,6 @@ rst_epilog = """
 .. |ssec| replace:: :abbr:`SSEC (Space Science and Engineering Center)`
 .. |cspp| replace:: :abbr:`CSPP (Community Satellite Processing Package)`
 .. |viirs| replace:: :abbr:`VIIRS (Visible/Infrared Imager Radiometer Suite)`
-.. |default_grid_config| replace:: "grids.conf"
 """
 
 # If your documentation needs a minimal Sphinx version, state it here.
