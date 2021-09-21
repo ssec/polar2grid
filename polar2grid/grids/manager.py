@@ -33,10 +33,9 @@ from __future__ import annotations
 import logging
 import os
 
-from polar2grid.core.proj import Proj
-from pyproj import CRS
-from polar2grid.core.containers import GridDefinition
+from pyproj import CRS, Proj
 
+from polar2grid.core.containers import GridDefinition
 
 try:
     # try getting setuptools/distribute's version of resource retrieval first
@@ -184,7 +183,7 @@ def parse_and_convert_proj4_config_line(grid_name, parts):
 
     # Convert any parameters from degrees to meters (we already made sure both need to be converted above)
     p = Proj(info["proj4_str"])
-    if info["grid_origin_units"] == "degrees" and not p.is_latlong():
+    if info["grid_origin_units"] == "degrees" and not p.crs.is_geographic:
         meters_x, meters_y = p(info["grid_origin_x"], info["grid_origin_y"])
         LOG.debug(
             "Converted grid '%s' origin from (lon: %f, lat: %f) to (x: %f, y: %f)",
@@ -196,7 +195,7 @@ def parse_and_convert_proj4_config_line(grid_name, parts):
         )
         info["grid_origin_x"] = meters_x
         info["grid_origin_y"] = meters_y
-    elif info["grid_origin_units"] != "degrees" and info["grid_origin_x"] is not None and p.is_latlong():
+    elif info["grid_origin_units"] != "degrees" and info["grid_origin_x"] is not None and p.crs.is_geographic:
         LOG.error("Lat/Lon grid '%s' must have its origin in degrees", grid_name)
         raise ValueError("Lat/Lon grid '%s' must have its origin in degrees" % (grid_name,))
 

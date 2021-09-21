@@ -40,10 +40,10 @@
 """
 __docformat__ = "restructuredtext en"
 
+import argparse
+import logging
 import os
 import sys
-import logging
-import argparse
 from collections import defaultdict
 from glob import glob
 

@@ -162,10 +162,11 @@ __docformat__ = "restructuredtext en"
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
-from ._base import ReaderProxyBase
+from satpy import DataQuery
+
 from polar2grid.core.script_utils import ExtendConstAction
 
-from satpy import DataQuery
+from ._base import ReaderProxyBase
 
 I_PRODUCTS = [
     "i01",

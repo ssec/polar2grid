@@ -23,10 +23,11 @@
 """Helper functions for filtering certain products."""
 
 import importlib
-from typing import Union, Optional, List, Dict
 import logging
+from typing import Dict, List, Optional, Union
 
 from satpy import Scene
+
 from .day_night import DayCoverageFilter, NightCoverageFilter
 
 logger = logging.getLogger(__name__)

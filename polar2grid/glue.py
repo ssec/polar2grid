@@ -24,22 +24,22 @@
 
 from __future__ import annotations
 
-import os
-import sys
 import argparse
 import logging
+import os
+import sys
 from glob import glob
 from typing import Callable, Optional
 
 import dask
-from polar2grid.resample import resample_scene
+import satpy
+
+from polar2grid.core.script_utils import ExtendAction
 from polar2grid.filters import filter_scene
+from polar2grid.readers._base import ReaderProxyBase
+from polar2grid.resample import resample_scene
 from polar2grid.utils.config import add_polar2grid_config_paths
 from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr
-from polar2grid.core.script_utils import ExtendAction
-from polar2grid.readers._base import ReaderProxyBase
-
-import satpy
 
 # type aliases
 ComponentParserFunc = Callable[[argparse.ArgumentParser], tuple]
@@ -580,15 +580,17 @@ def _get_p2g_defaults_env_var():
 def main(argv=sys.argv[1:]):
     global LOG
 
+    import argparse
+
+    from dask.diagnostics import ProgressBar
     from satpy import Scene
     from satpy.writers import compute_writer_results
-    from dask.diagnostics import ProgressBar
+
     from polar2grid.core.script_utils import (
-        setup_logging,
-        rename_log_file,
         create_exc_handler,
+        rename_log_file,
+        setup_logging,
     )
-    import argparse
 
     add_polar2grid_config_paths()
     USE_POLAR2GRID_DEFAULTS = _get_p2g_defaults_env_var()

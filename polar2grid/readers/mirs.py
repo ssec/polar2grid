@@ -166,9 +166,9 @@ from __future__ import annotations
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional, Union
 
-from ._base import ReaderProxyBase
-
 from satpy import DataID
+
+from ._base import ReaderProxyBase
 
 PRECIP_PRODUCTS = [
     "rain_rate",

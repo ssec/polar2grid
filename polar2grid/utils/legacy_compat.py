@@ -25,9 +25,9 @@
 from __future__ import annotations
 
 import logging
+from typing import Generator, Iterable, Optional, Union
 
-from typing import Union, Iterable, Generator, Optional
-from satpy import Scene, DataID, DataQuery
+from satpy import DataID, DataQuery, Scene
 
 logger = logging.getLogger(__name__)
 

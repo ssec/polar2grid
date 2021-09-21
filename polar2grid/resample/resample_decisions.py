@@ -22,16 +22,14 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Decision utilties for resampling."""
 
-import os
 import logging
-
-from satpy.writers import DecisionTree
-from satpy._config import config_search_paths
-from satpy.utils import recursive_dict_update
-
-from pyresample.geometry import SwathDefinition
+import os
 
 import yaml
+from pyresample.geometry import SwathDefinition
+from satpy._config import config_search_paths
+from satpy.utils import recursive_dict_update
+from satpy.writers import DecisionTree
 
 logger = logging.getLogger(__name__)
 

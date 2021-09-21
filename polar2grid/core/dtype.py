@@ -40,9 +40,9 @@ Functions that handle polar2grid data types.
 """
 __docformat__ = "restructuredtext en"
 
-import numpy as np
-
 import logging
+
+import numpy as np
 
 log = logging.getLogger(__name__)
 

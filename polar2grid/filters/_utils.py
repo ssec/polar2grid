@@ -31,10 +31,15 @@ except ImportError:
     from functools import lru_cache as cache
 
 from typing import Union
+
 import dask.array as da
 from pyresample.boundary import AreaDefBoundary, Boundary
+from pyresample.geometry import (
+    AreaDefinition,
+    SwathDefinition,
+    get_geostationary_bounding_box,
+)
 from pyresample.spherical import SphPolygon
-from pyresample.geometry import get_geostationary_bounding_box, SwathDefinition, AreaDefinition
 
 logger = logging.getLogger(__name__)
 

@@ -39,8 +39,9 @@ http://www.ssec.wisc.edu/software/polar2grid/
 :license:      GNU GPLv3
 """
 __docformat__ = "restructuredtext en"
-from setuptools import setup, find_packages, Command
 from glob import glob
+
+from setuptools import Command, find_packages, setup
 
 version = "2.4.1"
 

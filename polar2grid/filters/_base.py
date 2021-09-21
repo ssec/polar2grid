@@ -24,8 +24,8 @@
 
 import logging
 
-from xarray import DataArray
 from satpy import Scene
+from xarray import DataArray
 
 logger = logging.getLogger(__name__)
 

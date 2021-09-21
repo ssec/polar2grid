@@ -29,15 +29,16 @@
 #     david.hoese@ssec.wisc.edu
 """Produce various text and image outputs for debugging input data."""
 
-from pyresample.geometry import AreaDefinition
-from satpy import Scene
-import matplotlib.pyplot as plt
-import sys
 import logging
+import sys
+
 import dask
 import dask.array as da
-import numpy as np
 import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+from pyresample.geometry import AreaDefinition
+from satpy import Scene
 
 matplotlib.use("agg")
 

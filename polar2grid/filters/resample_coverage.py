@@ -30,12 +30,11 @@ try:
 except ImportError:
     from functools import lru_cache as cache
 
-from ._base import BaseFilter
-from ._utils import PRGeometry
-
-from xarray import DataArray
-from ._utils import polygon_for_area
 from pyresample.spherical import SphPolygon
+from xarray import DataArray
+
+from ._base import BaseFilter
+from ._utils import PRGeometry, polygon_for_area
 
 logger = logging.getLogger(__name__)
 

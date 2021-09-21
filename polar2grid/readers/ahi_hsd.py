@@ -98,9 +98,9 @@ from __future__ import annotations
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
-from ._base import ReaderProxyBase
-
 from satpy import DataQuery
+
+from ._base import ReaderProxyBase
 
 READER_PRODUCTS = ["B{:02d}".format(x) for x in range(1, 17)]
 COMPOSITE_PRODUCTS = [

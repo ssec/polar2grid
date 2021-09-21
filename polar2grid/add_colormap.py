@@ -39,6 +39,7 @@
 """
 import os
 import sys
+
 import numpy as np
 import rasterio
 from trollimage.colormap import Colormap

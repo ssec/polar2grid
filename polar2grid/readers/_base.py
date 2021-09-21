@@ -26,12 +26,12 @@ from __future__ import annotations
 
 import logging
 from functools import cached_property
-from typing import Union, Optional
+from typing import Optional, Union
 
-from satpy import Scene, DataQuery, DataID
+from satpy import DataID, DataQuery, Scene
 
-from polar2grid.utils.legacy_compat import AliasHandler
 from polar2grid.utils.dynamic_imports import get_reader_attr
+from polar2grid.utils.legacy_compat import AliasHandler
 
 logger = logging.getLogger(__name__)
 

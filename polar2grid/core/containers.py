@@ -39,19 +39,18 @@
 """
 __docformat__ = "restructuredtext en"
 
-import os
-import sys
 import json
-import shutil
 import logging
+import os
+import shutil
+import sys
 from datetime import datetime
 
 import numpy
+from pyproj import Proj
 
+from polar2grid.core.dtype import dtype_to_str, str_to_dtype
 from polar2grid.core.time_utils import iso8601
-from polar2grid.core.dtype import str_to_dtype, dtype_to_str
-from polar2grid.core.proj import Proj
-
 
 LOG = logging.getLogger(__name__)
 
@@ -422,21 +421,6 @@ class GridDefinition(BaseP2GObject):
         return all(
             [self[x] is not None for x in ["height", "width", "cell_height", "cell_width", "origin_x", "origin_y"]]
         )
-
-    @property
-    def is_latlong(self):
-        return self.proj.is_latlong()
-
-    @property
-    def cell_width_meters(self):
-        """Estimation of what a latlong cell width would be in meters."""
-        proj4_dict = self.proj4_dict
-        lon0 = proj4_dict.get("lon0", 0.0)
-        lat0 = proj4_dict.get("lat0", 0.0)
-        p = Proj("+proj=eqc +lon0=%f +lat0=%f" % (lon0, lat0))
-        x0, y0 = p(lon0, lat0)
-        x1, y1 = p(lon0 + self["cell_width"], lat0)
-        return abs(x1 - x0)
 
     @property
     def lonlat_lowerleft(self):

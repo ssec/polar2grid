@@ -37,13 +37,19 @@ from __future__ import annotations
 
 import logging
 
-from polar2grid.core.script_utils import NumpyDtypeList
-from polar2grid.core.dtype import NUMPY_DTYPE_STRS, str_to_dtype, int_or_float, dtype_to_str, clip_to_data_type
-
-from satpy.writers import ImageWriter, get_enhanced_image
-import xarray as xr
-import numpy as np
 import dask.array as da
+import numpy as np
+import xarray as xr
+from satpy.writers import ImageWriter, get_enhanced_image
+
+from polar2grid.core.dtype import (
+    NUMPY_DTYPE_STRS,
+    clip_to_data_type,
+    dtype_to_str,
+    int_or_float,
+    str_to_dtype,
+)
+from polar2grid.core.script_utils import NumpyDtypeList
 
 logger = logging.getLogger(__name__)
 

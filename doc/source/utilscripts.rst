@@ -262,22 +262,3 @@ Example:
 .. code-block:: bash
 
     convert_grids_conf_to_yaml.sh old_file.conf > new_file.yaml
-
-.. _util_p2g_proj:
-
-Python Proj
------------
-
-.. argparse::
-    :module: polar2grid.core.proj
-    :func: get_parser
-    :prog: p2g_proj.sh
-    :nodefaultconst:
-
-Example:
-
-.. code-block:: bash
-
-    p2g_proj.sh "+proj=lcc +datum=NAD83 +ellps=GRS80 +lat_1=25 +lon_0=-95" -105.23 38.5
-    # Will result in:
-    -878781.238459 4482504.91307

@@ -26,13 +26,12 @@ import os
 from datetime import datetime
 from unittest import mock
 
-import satpy
-from satpy import Scene
-import xarray as xr
 import dask.array as da
 import numpy as np
 import pytest
-
+import satpy
+import xarray as xr
+from satpy import Scene
 
 TEST_ETC_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "etc"))
 

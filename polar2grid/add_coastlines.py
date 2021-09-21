@@ -38,16 +38,16 @@
 
 """
 
+import logging
 import os
 import sys
-import logging
+
+import numpy as np
+import rasterio
+from aggdraw import Font
+from PIL import Image, ImageFont
 from pycoast import ContourWriterAGG
 from pyresample.utils import get_area_def_from_raster
-from PIL import Image, ImageFont
-from aggdraw import Font
-import rasterio
-import numpy as np
-
 
 try:
     # try getting setuptools/distribute's version of resource retrieval first

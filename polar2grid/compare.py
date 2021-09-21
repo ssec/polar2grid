@@ -24,11 +24,11 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
-import logging
-from glob import glob
 from dataclasses import dataclass, field
+from glob import glob
 
 import numpy as np
 import xarray as xr
@@ -543,6 +543,7 @@ def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
 
 def main(argv=sys.argv[1:]):
     from argparse import ArgumentParser
+
     from polar2grid.core.dtype import str_to_dtype
 
     parser = ArgumentParser(description="Compare two files per pixel")

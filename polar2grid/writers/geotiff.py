@@ -38,10 +38,11 @@ as transparent in most image viewers.
 
 """
 import argparse
-import os
 import logging
-from polar2grid.core.dtype import NUMPY_DTYPE_STRS, str_to_dtype, int_or_float
-from polar2grid.core.script_utils import NumpyDtypeList, BooleanOptionalAction
+import os
+
+from polar2grid.core.dtype import NUMPY_DTYPE_STRS, int_or_float, str_to_dtype
+from polar2grid.core.script_utils import BooleanOptionalAction, NumpyDtypeList
 
 LOG = logging.getLogger(__name__)
 

@@ -1,8 +1,8 @@
 # https://stackoverflow.com/questions/15001888/conditional-toctree-in-sphinx
 import re
-from sphinx.directives.other import TocTree
-from docutils.parsers.rst import directives
 
+from docutils.parsers.rst import directives
+from sphinx.directives.other import TocTree
 
 FILTER_OPTION_SPEC = {
     "excludebuilder": directives.unchanged,

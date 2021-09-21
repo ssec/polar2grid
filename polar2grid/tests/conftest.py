@@ -25,14 +25,13 @@ from __future__ import annotations
 
 import os
 
-import pytest
-from satpy import Scene
-import xarray as xr
 import dask.array as da
 import numpy as np
+import pytest
+import xarray as xr
 from numpy.typing import DTypeLike, NDArray
-
-from pyresample.geometry import SwathDefinition, AreaDefinition
+from pyresample.geometry import AreaDefinition, SwathDefinition
+from satpy import Scene
 
 PKG_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
 VIIRS_I_CHUNKS = (32 * 3, 6400)
@@ -47,12 +46,12 @@ def pytest_configure(config):
 # Config Files #
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def builtin_grids_yaml() -> list[str]:
     return [os.path.join(PKG_ROOT, "grids", "grids.yaml")]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def builtin_test_grids_conf() -> list[str]:
     return [os.path.join(PKG_ROOT, "tests", "etc", "grids.conf")]
 
@@ -68,7 +67,7 @@ def _generate_lonlat_data(shape: tuple[int, int], dtype: DTypeLike = np.float32)
     return lon.astype(dtype), lat.astype(dtype)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def viirs_sdr_i_swath_def() -> SwathDefinition:
     lons, lats = _generate_lonlat_data((1536, 6400))
     lons_data_arr = xr.DataArray(
@@ -92,7 +91,7 @@ def viirs_sdr_i_swath_def() -> SwathDefinition:
     return SwathDefinition(lons_data_arr, lats_data_arr)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def goes_east_conus_area_def() -> AreaDefinition:
     return AreaDefinition(
         "goes_east",

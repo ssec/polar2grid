@@ -24,18 +24,38 @@
 
 import dask
 import pytest
-from polar2grid.resample._resample_scene import resample_scene
+from pytest_lazyfixture import lazy_fixture
 from satpy import Scene
 from satpy.tests.utils import CustomScheduler
-from pytest_lazyfixture import lazy_fixture
+
+from polar2grid.resample._resample_scene import resample_scene
 
 
 @pytest.mark.parametrize(
-    ("input_scene", "grids", "resampler", "exp_names", "max_computes", "is_polar2grid"),
+    ("input_scene", "grids", "grid_configs", "resampler", "exp_names", "max_computes", "is_polar2grid"),
     [
         (
             lazy_fixture("viirs_sdr_i01_scene"),
             ["wgs84_fit"],
+            lazy_fixture("builtin_grids_yaml"),
+            None,
+            ["I01"],
+            2,
+            True,
+        ),
+        (
+            lazy_fixture("viirs_sdr_i01_scene"),
+            ["wgs84_fit"],
+            [],
+            None,
+            ["I01"],
+            2,
+            True,
+        ),
+        (
+            lazy_fixture("viirs_sdr_i01_scene"),
+            ["wgs84_fit"],
+            ["grids.conf"],
             None,
             ["I01"],
             2,
@@ -44,6 +64,7 @@ from pytest_lazyfixture import lazy_fixture
         (
             lazy_fixture("abi_l1b_c01_scene"),
             ["wgs84_fit"],
+            lazy_fixture("builtin_grids_yaml"),
             "nearest",
             ["C01"],
             0,
@@ -52,6 +73,7 @@ from pytest_lazyfixture import lazy_fixture
         (
             lazy_fixture("abi_l1b_c01_scene"),
             ["MAX"],
+            [],
             None,
             ["C01"],
             0,
@@ -62,17 +84,17 @@ from pytest_lazyfixture import lazy_fixture
 def test_resample_single_result_per_grid(
     input_scene,
     grids,
+    grid_configs,
     resampler,
     exp_names,
     max_computes,
     is_polar2grid,
-    builtin_grids_yaml,
 ):
     with dask.config.set(scheduler=CustomScheduler(max_computes)):
         scenes_to_save = resample_scene(
             input_scene,
             grids,
-            builtin_grids_yaml,
+            grid_configs,
             resampler,
             is_polar2grid=is_polar2grid,
         )

@@ -24,19 +24,21 @@
 
 from __future__ import annotations
 
-import os
 import logging
-from typing import Union, Optional, List
+import os
+from typing import List, Optional, Union
+
+import numpy as np
+from pyproj import Proj
+from pyresample.geometry import AreaDefinition, DynamicAreaDefinition
+from pyresample.utils import parse_area_file
+from satpy import Scene
+from satpy.resample import get_area_def
+
+from polar2grid.filters.resample_coverage import ResampleCoverageFilter
+from polar2grid.grids import GridManager
 
 from .resample_decisions import ResamplerDecisionTree
-from polar2grid.filters.resample_coverage import ResampleCoverageFilter
-
-from pyresample.geometry import DynamicAreaDefinition, AreaDefinition
-from pyresample.utils import parse_area_file
-from satpy.resample import get_area_def
-from satpy import Scene
-from pyproj import Proj
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -101,15 +103,15 @@ def _get_preserve_resolution(preserve_resolution, resampler, areas_to_resample):
     return any_minmax and (is_native or is_default) and preserve_resolution
 
 
-def _get_legacy_and_yaml_areas(grid_configs):
+def _get_legacy_and_yaml_areas(grid_configs: list[str, ...]) -> tuple[GridManager, dict[str, AreaDefinition]]:
+    if "grids.conf" in grid_configs:
+        logger.debug("Replacing 'grids.conf' with builtin YAML grid configuration file.")
+        grid_configs[grid_configs.index("grids.conf")] = GRIDS_YAML_FILEPATH
     if not grid_configs:
         grid_configs = [GRIDS_YAML_FILEPATH]
     p2g_grid_configs = [x for x in grid_configs if x.endswith(".conf")]
     pyresample_area_configs = [x for x in grid_configs if not x.endswith(".conf")]
     if p2g_grid_configs:
-        # if we were given p2g grid configs or we weren't given any to choose from
-        from polar2grid.grids import GridManager
-
         grid_manager = GridManager(*p2g_grid_configs)
     else:
         grid_manager = {}
@@ -200,7 +202,7 @@ def _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid):
 def resample_scene(
     input_scene: Scene,
     areas_to_resample: ListOfAreas,
-    grid_configs: list[str],
+    grid_configs: list[str, ...],
     resampler: Optional[str],
     preserve_resolution: bool = True,
     grid_coverage: Optional[float] = None,
