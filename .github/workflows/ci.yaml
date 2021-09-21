@@ -129,13 +129,20 @@ jobs:
           pytest --cov=polar2grid polar2grid/tests --cov-report=xml
           polar2grid --help
           geo2grid --help
-
         if: runner.os == 'Windows'
 
-#      - name: Upload unittest coverage to Codecov
-#        uses: codecov/codecov-action@v1
-#        with:
-#          flags: unittests
-#          file: ./coverage.xml
-#          env_vars: OS,PYTHON_VERSION,UNSTABLE
+      - name: Coveralls Parallel
+        uses: AndreMiras/coveralls-python-action@develop
+        with:
+          flag-name: run-${{ matrix.test_number }}
+          parallel: true
+        if: runner.os == 'Linux'
 
+  coveralls:
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls Finished
+        uses: AndreMiras/coveralls-python-action@develop
+        with:
+          parallel-finished: true
