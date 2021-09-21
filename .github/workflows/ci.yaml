@@ -126,7 +126,7 @@ jobs:
       - name: Run unit tests on Windows
         shell: powershell
         run: |
-          pytest --cov=polar2grid polar2grid/tests --cov-report=xml
+          pytest --cov=polar2grid polar2grid/tests
           polar2grid --help
           geo2grid --help
         if: runner.os == 'Windows'
