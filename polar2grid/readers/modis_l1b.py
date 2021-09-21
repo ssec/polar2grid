@@ -133,11 +133,11 @@ from __future__ import annotations
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
-from ._base import ReaderProxyBase
-from polar2grid.core.script_utils import ExtendConstAction
-
 from satpy import DataQuery
 
+from polar2grid.core.script_utils import ExtendConstAction
+
+from ._base import ReaderProxyBase
 
 FILTERS = {
     "day_only": {

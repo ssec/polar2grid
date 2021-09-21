@@ -52,9 +52,9 @@ from __future__ import annotations
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
-from ._base import ReaderProxyBase
-
 from satpy import DataQuery
+
+from ._base import ReaderProxyBase
 
 OCEAN_PRECIP_PRODUCTS = [
     "Rain_Rate",

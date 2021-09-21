@@ -33,10 +33,10 @@ from __future__ import annotations
 import logging
 import os
 
-from polar2grid.core.proj import Proj
 from pyproj import CRS
-from polar2grid.core.containers import GridDefinition
 
+from polar2grid.core.containers import GridDefinition
+from polar2grid.core.proj import Proj
 
 try:
     # try getting setuptools/distribute's version of resource retrieval first

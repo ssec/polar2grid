@@ -41,19 +41,17 @@ longitude and latitude data in the file, instructions for output-filename
 patterns, and product selection.
 """
 from __future__ import annotations
-from typing import TextIO
 
-import os
 import logging
+import os
+from typing import TextIO
 
 import h5py
 import numpy as np
 import xarray as xr
-
-from satpy.writers import Writer
-from satpy.writers import split_results, compute_writer_results
-
 from pyresample.geometry import SwathDefinition
+from satpy.writers import Writer, compute_writer_results, split_results
+
 from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
 from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList, str_to_dtype
 

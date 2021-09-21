@@ -31,7 +31,7 @@ import warnings
 
 import yaml
 from pyproj import CRS, Proj
-from polar2grid.grids import GridManager
+
 from polar2grid.grids.manager import read_grids_config
 
 logger = logging.getLogger(__name__)
@@ -41,25 +41,30 @@ def _conf_to_yaml_dict(grids_filename: str) -> str:
     overall_yaml_dict = {}
     grids_information = read_grids_config(grids_filename, convert_coords=False)
     for grid_name, grid_info in grids_information.items():
-        area_dict = {}
-        area_dict["description"] = ""
-
-        crs = CRS.from_proj4(grid_info["proj4_str"])
-        proj_dict = _crs_to_proj_dict(crs)
-        area_dict["projection"] = proj_dict
-
-        _add_shape(grid_info, area_dict)
-        dx, dy = _add_resolution(grid_info, area_dict)
         try:
-            _add_origin(grid_info, area_dict, crs, dx, dy)
+            area_dict = grid_info_to_yaml_dict(grid_info)
         except ValueError:
             continue
 
-        overall_yaml_dict[grid_name] = area_dict
+    overall_yaml_dict[grid_name] = area_dict
     return overall_yaml_dict
 
 
-def _crs_to_proj_dict(crs: CRS) -> dict:
+def grid_info_to_yaml_dict(grid_info: dict) -> dict:
+    area_dict = {}
+    area_dict["description"] = ""
+
+    crs = grid_info["crs"] if "crs" in grid_info else CRS.from_proj4(grid_info["proj4_str"])
+    proj_dict = crs_to_proj_dict(crs)
+    area_dict["projection"] = proj_dict
+
+    _add_shape(grid_info, area_dict)
+    dx, dy = _add_resolution(grid_info, area_dict)
+    _add_origin(grid_info, area_dict, crs, dx, dy)
+    return area_dict
+
+
+def crs_to_proj_dict(crs: CRS) -> dict:
     warnings.filterwarnings("ignore", module="pyproj", category=UserWarning)
     if crs.to_epsg() is not None:
         proj_dict = {"EPSG": crs.to_epsg()}

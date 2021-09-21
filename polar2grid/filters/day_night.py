@@ -30,13 +30,13 @@ try:
 except ImportError:
     from functools import lru_cache as cache
 
-from ._utils import polygon_for_area
-from ._base import BaseFilter
-
 import numpy as np
-from xarray import DataArray
 from pyorbital.astronomy import sun_zenith_angle
 from pyresample.spherical import SphPolygon
+from xarray import DataArray
+
+from ._base import BaseFilter
+from ._utils import polygon_for_area
 
 logger = logging.getLogger(__name__)
 

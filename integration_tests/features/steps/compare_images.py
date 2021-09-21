@@ -1,11 +1,11 @@
-import shutil
-
-from behave import given, when, then
-import os
-import tempfile
-import subprocess
 import glob
+import os
 import re
+import shutil
+import subprocess
+import tempfile
+
+from behave import given, then, when
 
 DTYPE_REGEX = re.compile(r"--dtype (P?<dtype>\S+) ")
 

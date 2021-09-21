@@ -20,21 +20,21 @@ provided set you'll have to make your own grid configuration file.
 The instructions below describe how to create your own configuration file
 and how it can be provided to |script_literal|:
 
-1. Create a text file named anything besides "grids.conf". Open it for editing.
-   The package includes a ``grid_configs`` directory
+1. Create a text file named something ending in ".yaml" (ex. "my_grids.yaml").
+   Open it for editing. The package includes a ``grid_configs`` directory
    where user configuration files can be stored.
-2. Add a line to this text file for each grid you would like to add to
-   |project|. Follow the
-   :ref:`grid_configuration_format` section below. This section also has
-   header comments specifying each column that can be added to your file
-   for clarity.
+2. Add an entry to this file for each grid you would like to add
+   |project|. Follow the :ref:`grid_configuration_format` section below.
+   The grid file is in the
+   `YAML text format <https://en.wikipedia.org/wiki/YAML>`_.
 3. Call the |script_literal| script and add the command line option
-   ``--grid-configs grids.conf <your-file.conf>``. If you would like only
-   your grids and not the |project| provided grids don't include the
+   ``--grid-configs grids.conf <your-file.yaml>``. The builtin grids
+   in |project| are included when "grids.conf" is provided. If you would like
+   only your grids and not the |project| provided grids don't include the
    "grids.conf" in the command line option.
 
 |project| also includes a simple script that can generate the
-required text string when provided with general information about the grid
+required YAML text when provided with general information about the grid
 you wish to create. See the :ref:`util_p2g_grid_helper` section.
 
 .. note::
@@ -49,20 +49,17 @@ Grid Configuration File Format
 
 .. note::
 
-    In the future this format will be replaced with
-    `SatPy's areas.yaml format <https://pyresample.readthedocs.io/en/latest/geo_def.html#pyresample-utils>`_.
-    This format is already supported by |project| but for backwards compatibility
-    the legacy format is described below.
+    The legacy ".conf" format is still supported for backwards compatibility,
+    but should not be used for new grid definition files.
 
 Example Grid Configuration File: :download:`grid_example.yaml <../../swbundle/grid_configs/grid_example.yaml>`
 
-Grid configuration files are comma-separated text files.
-Comments can be added by prefixing lines
-with a ``#`` character. Spaces are allowed between values to make aligning columns
-easier. The following describes each column that must
-be specified (in order). A sample header comment is also provided to add to your
-grid configuration file for better self-documentation. The example grid
-configuration file linked to above can also be found in the software bundle in
+Grid configuration files follow the format used by the Satpy and Pyresample
+Python libraries in their
+:doc:`areas.yaml files <geometry_utils>` and are in the
+`YAML text format <https://en.wikipedia.org/wiki/YAML>`_.
+Comments can be added by prefixing lines with a ``#`` character. There is an
+example file provided in the |project| bundle at:
 
 .. ifconfig:: not is_geo2grid
 
@@ -72,54 +69,61 @@ configuration file linked to above can also be found in the software bundle in
 
     ``$GEO2GRID_HOME/grid_configs/grid_example.yaml``
 
-As mentioned earlier, grids can be
-dynamic or static. Dynamic grids may have either grid size parameters
-or grid origin parameters or both unspecified. All other parameters must
-be specified.
+Grids can be dynamic or static. Dynamic grids have some amount of information
+unspecified that will be filled in later at runtime using the provided input
+geolocation data. The most common case for a dynamic grid is specifying only
+"resolution", but not "shape" or any extent information. If enough information
+is provided in the definition then a static grid is created which will always
+be in the same location at the same resolution, but will process faster as
+the other grid parameters don't need to be computed.
 
 If you are unfamiliar with projections, try the :ref:`util_p2g_grid_helper` script.
+One example of a grid is shown below.
 
-# grid_name,proj4,proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y
+.. code-block:: yaml
 
- #. **grid_name**:
-     A unique grid name describing the behavior of the grid. Grid names should not contain spaces.
- #. **proj4**:
-     A constant value, "proj4" without the quotes. This tells the software
-     reading the configuration file that this grid is a PROJ.4 grid.
- #. **proj4_str**:
-     A PROJ.4 projection definition string. Some examples can be found in the
-     :doc:`grids` list, but for more information on possible parameters see
-     the `PROJ documentation <https://proj4.org/usage/projections.html>`_. Note that
-     compatiblity with certain PROJ.4 string components may be dependent on the
-     version of the PROJ.4(pyproj) library that |project| uses, so testing
-     should be done to verify that your string works as expected.
- #. **width**:
-     Width of the grid in number of pixels. This value may be 'None' if it
-     should be dynamically determined. Width and height must both be specified
-     or both not specified.
- #. **height**:
-     Height of the grid in number of pixels. This value may be 'None' if it
-     should be dynamically determined. Width and height must both be specified
-     or both not specified.
- #. **cell_width**:
-     Size of one pixel in the X direction in grid units. Most grids are in
-     metered units, except for ``+proj=latlong`` which expects degrees.
- #. **cell_height**:
-     Size of one pixel in the Y direction in grid units (**MUST** be negative).
-     Most grids are in metered units, except for ``+proj=latlong`` which expects degrees.
- #. **origin_x**:
-     The grid's top left corner's X coordinate in grid units. Most grids are in
-     metered units, except for ``+proj=latlong`` which expects degrees.
-     This can be specified in degrees by using the "deg" suffix.
-     This value may be 'None' if it should be dynamically determined.
-     X and Y origin coordinates must both be specified or both not specified.
-     For help with converting lon/lat values into X/Y values see the
-     documentation for the utility script :ref:`util_p2g_proj`.
- #. **origin_y**:
-     The grid's top left corner's Y coordinate in grid units. Most grids are in
-     metered units, except for ``+proj=latlong`` which expects degrees.
-     This can be specified in degrees by using the "deg" suffix.
-     This value may be 'None' if it should be dynamically determined.
-     X and Y origin coordinates must both be specified or both not specified.
-     For help with converting lon/lat values into X/Y values see the
-     documentation for the utility script :ref:`util_p2g_proj`.
+    my_211e:
+      description: 'My LCC grid'
+      projection:
+        proj: lcc
+        lat_1: 25
+        lat_0: 25
+        lon_0: -95
+        R: 6371200
+        units: m
+        no_defs: null
+        type: crs
+      shape:
+        height: 5120
+        width: 5120
+      resolution:
+        dy: 1015.9
+        dx: 1015.9
+      upper_left_extent:
+        x: -122.9485839789149
+        y: 59.86281930852158
+        units: degrees
+
+This static grid is named ``my_211e`` and has the following parameters:
+
+ #. **description**:
+    Optional human-readable description of the grid. This is not currently
+    used by |project|.
+ #. **projection**:
+    PROJ.4 parameters of the projection of the grid. Can also
+    be specified as a string. Or as an EPSG code integer.
+ #. **shape**:
+    Number of pixels in each dimension.
+ #. **resolution**:
+    Resolution of each pixel in projection units (usually meters). This can
+    also be specified in degrees by adding a ``units: degrees`` in this
+    section.
+ #. **upper_left_extent**:
+    Location of the upper-left corner of the upper-left pixel of the grid. By
+    default this is in projection units (usually meters), but is specified
+    in degrees here with the extra ``units:`` parameter.
+    Note this differs from the legacy ``.conf`` format which used the
+    center of the upper-left pixel.
+
+See the example grids file linked above for more examples and other available
+parameters like **center** or **area_extent**.

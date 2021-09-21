@@ -38,9 +38,8 @@
 """
 __docformat__ = "restructuredtext en"
 
-import re
 import datetime
-
+import re
 
 ISO8601_REGEX = r"^(?P<year>-?(?:[1-9][0-9]*)?[0-9]{4})-?(?P<month>1[0-2]|0[1-9])-?(?P<day>3[0-1]|0[1-9]|[1-2][0-9])T(?P<hour>2[0-3]|[0-1][0-9]):?(?P<minute>[0-5][0-9]):?(?P<second>[0-5][0-9])(?P<ms>\.[0-9]+)??(?P<timezone>Z|[+-](?:2[0-3]|[0-1][0-9]):?[0-5][0-9])?$"
 iso8601_re = re.compile(ISO8601_REGEX)

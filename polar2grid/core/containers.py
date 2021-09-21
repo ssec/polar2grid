@@ -39,19 +39,18 @@
 """
 __docformat__ = "restructuredtext en"
 
-import os
-import sys
 import json
-import shutil
 import logging
+import os
+import shutil
+import sys
 from datetime import datetime
 
 import numpy
 
-from polar2grid.core.time_utils import iso8601
-from polar2grid.core.dtype import str_to_dtype, dtype_to_str
+from polar2grid.core.dtype import dtype_to_str, str_to_dtype
 from polar2grid.core.proj import Proj
-
+from polar2grid.core.time_utils import iso8601
 
 LOG = logging.getLogger(__name__)
 

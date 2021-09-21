@@ -13,9 +13,9 @@ FUTURE: This script will be included in the functionality of the CSPP Geo2Grid p
 
 """
 
+import logging
 import os
 import sys
-import logging
 
 
 def add_scene_argument_groups(parser):
@@ -28,9 +28,12 @@ def add_scene_argument_groups(parser):
 
 
 def main():
-    from satpy import Scene
-    from satpy.writers.scmi import add_backend_argument_groups as add_writer_argument_groups
     import argparse
+
+    from satpy import Scene
+    from satpy.writers.scmi import (
+        add_backend_argument_groups as add_writer_argument_groups,
+    )
 
     parser = argparse.ArgumentParser(description="Convert GEOCAT Level 1 and 2 to AWIPS SCMI files")
     parser.add_argument(

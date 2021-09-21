@@ -21,4 +21,4 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
-from ._filter_scene import filter_scene
+from ._filter_scene import filter_scene  # noqa

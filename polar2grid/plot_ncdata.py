@@ -41,14 +41,15 @@ Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 import os
 import sys
 from glob import glob
-from netCDF4 import Dataset
+
 import matplotlib.cm as cm
 from matplotlib import pyplot as plt
+from netCDF4 import Dataset
 
 __docformat__ = "restructuredtext en"
 
-import numpy as np
 import matplotlib
+import numpy as np
 
 matplotlib.use("agg")
 

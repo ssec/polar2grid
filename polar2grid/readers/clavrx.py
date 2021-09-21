@@ -65,10 +65,11 @@ support for the VIIRS Day/Night Band Lunar Reflectance:
 
 """
 from __future__ import annotations
-from typing import Optional
 
 import os
 from argparse import ArgumentParser, _ArgumentGroup
+from typing import Optional
+
 from ._base import ReaderProxyBase
 
 # Limit the number of products shown to Polar2Grid users
