@@ -112,6 +112,9 @@ This static grid is named ``my_211e`` and has the following parameters:
  #. **projection**:
     PROJ.4 parameters of the projection of the grid. Can also
     be specified as a string. Or as an EPSG code integer.
+    In addition to the example grids file linked above, for more information
+    on possible parameters see the
+    `PROJ documentation <https://proj4.org/usage/projections.html>`_.
  #. **shape**:
     Number of pixels in each dimension.
  #. **resolution**:
