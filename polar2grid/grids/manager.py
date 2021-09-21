@@ -195,7 +195,7 @@ def parse_and_convert_proj4_config_line(grid_name, parts):
         )
         info["grid_origin_x"] = meters_x
         info["grid_origin_y"] = meters_y
-    elif info["grid_origin_units"] != "degrees" and info["grid_origin_x"] is not None and p.is_latlong():
+    elif info["grid_origin_units"] != "degrees" and info["grid_origin_x"] is not None and p.crs.is_geographic:
         LOG.error("Lat/Lon grid '%s' must have its origin in degrees", grid_name)
         raise ValueError("Lat/Lon grid '%s' must have its origin in degrees" % (grid_name,))
 

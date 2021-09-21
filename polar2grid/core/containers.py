@@ -423,10 +423,6 @@ class GridDefinition(BaseP2GObject):
         )
 
     @property
-    def is_latlong(self):
-        return self.proj.is_latlong()
-
-    @property
     def lonlat_lowerleft(self):
         x_ll, y_ll = self.xy_lowerleft
         return self.proj(x_ll, y_ll, inverse=True)
