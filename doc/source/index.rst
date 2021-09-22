@@ -32,6 +32,7 @@
     NEWS
     rescaling
     :polar2grid:viirs_day_night_band
+    custom_config
 
 .. toctree-filt::
     :hidden:
