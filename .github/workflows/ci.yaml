@@ -111,7 +111,7 @@ jobs:
       - name: Run unit tests on non-Windows
         shell: bash -l {0}
         run: |
-          pytest --cov=polar2grid polar2grid/tests
+          pytest --cov=polar2grid polar2grid/tests --cov-report=
           polar2grid --help
           geo2grid --help
         if: runner.os != 'Windows'
@@ -126,7 +126,7 @@ jobs:
       - name: Run unit tests on Windows
         shell: powershell
         run: |
-          pytest --cov=polar2grid polar2grid/tests
+          pytest --cov=polar2grid polar2grid/tests --cov-report=
           polar2grid --help
           geo2grid --help
         if: runner.os == 'Windows'
