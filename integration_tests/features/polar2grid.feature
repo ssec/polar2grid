@@ -29,7 +29,7 @@ Feature: Test polar2grid output images
 
     Examples: MODIS
       | command                                                                                                                                   | source            | output             |
-      | polar2grid.sh -r modis_l1b -w geotiff -vv -p true_color false_color --grid-configs ${datapath}/grid_configs/grid_example.yaml -g miami -f | modis/input/test1 | modis/output/test1 |
+      | polar2grid.sh -r modis_l1b -w geotiff -vv -p true_color false_color --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.yaml -g miami -f | modis/input/test1 | modis/output/test1 |
 
     Examples: VIIRS_L1B
       | command                                                                                                                                                                                           | source                      | output                        |

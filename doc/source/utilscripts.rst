@@ -37,31 +37,56 @@ Example:
 .. code-block:: bash
 
     p2g_grid_helper.sh my_grid_name -150.1 56.3 250 -250 1000 1000
-    # Will result in:
-    my_grid_name, proj4, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=56.30000 +lat_1=56.30000 +lon_0=-150.10000 +units=m +no_defs, 1000, 1000, 250.00000, -250.00000, -152.17946deg, 57.40550deg
 
-The above example creates a proj4 text grid line named 'my_grid_name' defined
-to be at 250m resolution, 1000 pixels width and height, and centered at 
--150.1 degrees longitude and 56.3 degrees latitude. The projection 
+Will result in:
+
+.. code-block:: yaml
+
+    my_grid_name:
+      projection:
+        proj: lcc
+        lat_1: 56.3
+        lat_0: 56.3
+        lon_0: -150.1
+        datum: WGS84
+        units: m
+        no_defs: null
+        type: crs
+      shape:
+        height: 1000
+        width: 1000
+      center:
+        x: -150.1
+        y: 56.3
+      resolution:
+        dx: 250.0
+        dy: 250.0
+
+The above example creates a
+`YAML formatted <https://en.wikipedia.org/wiki/YAML>`_ block of text for the
+grid named 'my_grid_name'. It is defined to have a pixel resolution of 250m,
+have 1000 rows and 1000 columns, and be centered at
+-150.1 degrees longitude and 56.3 degrees latitude. The projection
 is a lambert conic conformal projection which was chosen based on the 
 center longitude and latitude.
 
-Once this text line has been output, it can be added to a text file and
-referenced in the |script_literal| command line.  For instance, if I save
-the output text grid line to a file named ``/home/user/my_grids.conf``, I can
+Once this text has been output, it can be added to a text file ending in
+``.yaml`` and referenced in the |script_literal| command line.  For instance,
+if I save
+the output text grid line to a file named ``/home/user/my_grids.yaml``, I can
 create a GeoTIFF from satellite data by executing a command like this:
 
 .. ifconfig:: is_geo2grid
 
     .. code-block:: bash
 
-       geo2grid.sh -r abi_l1b -w geotiff --grid-configs /home/user/my_grids.conf -g my_grid_name -f <path_to_files>
+       geo2grid.sh -r abi_l1b -w geotiff --grid-configs /home/user/my_grids.yaml -g my_grid_name -f <path_to_files>
 
 .. ifconfig:: not is_geo2grid
 
     .. code-block:: bash
 
-       polar2grid.sh viirs_sdr gtiff --grid-configs /home/p2g/my_grids.conf -g my_grid_name -f <path_to_files>
+       polar2grid.sh -r viirs_sdr -w geotiff --grid-configs /home/p2g/my_grids.yaml -g my_grid_name -f <path_to_files>
 
 .. _util_add_coastlines:
 
