@@ -18,7 +18,7 @@
 #
 # This file is part of the polar2grid software package. Polar2grid takes
 # satellite observation data, remaps it, and writes it to a file format for
-#     input into another program.
+# input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Helper script for creating valid grid configuration entries.
 
@@ -141,15 +141,15 @@ def _create_yaml_entry(
     area_dict = {
         "projection": proj_dict,
         "shape": {"height": grid_height, "width": grid_width},
-        "center": {"x": clon, "y": clat},
+        "center": {"x": clon, "y": clat, "units": "degrees"},
         "resolution": {"dx": abs(pixel_size_x), "dy": abs(pixel_size_y)},
     }
     return {grid_name: area_dict}
 
 
-def main():
+def main(argv=sys.argv[1:]):
     parser = get_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     grid_name = args.grid_name
     clon = args.center_longitude
