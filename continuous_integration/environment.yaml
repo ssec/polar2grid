@@ -27,7 +27,7 @@ dependencies:
   - python=3.8
   - python-geotiepoints
   - pyyaml
-  - rasterio<1.2.9
+  - rasterio
   - requests
   - setuptools
   - six
@@ -46,6 +46,7 @@ dependencies:
   - fsspec
   - s3fs
   - sphinxcontrib-apidoc
+  - click=7.1.2
   - pip:
       - git+https://github.com/pytroll/satpy.git
       - git+https://github.com/pytroll/pyresample.git
