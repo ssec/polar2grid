@@ -27,10 +27,13 @@ jobs:
           sudo apt-get -y install dvipng
 
       - name: Setup Conda Environment
-        uses: mamba-org/provision-with-micromamba@main
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          #          python-version: ${{ matrix.python-version }}
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          use-mamba: true
           environment-file: continuous_integration/environment.yaml
+          activate-environment: test-environment
 
       - name: Install Polar2Grid
         shell: bash -l {0}
@@ -96,10 +99,14 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup Conda Environment
-        uses: mamba-org/provision-with-micromamba@main
+        uses: conda-incubator/setup-miniconda@v2
         with:
-#          python-version: ${{ matrix.python-version }}
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          use-mamba: true
+          python-version: ${{ matrix.python-version }}
           environment-file: continuous_integration/environment.yaml
+          activate-environment: test-environment
 
       - name: Install Polar2Grid on non-Windows
         shell: bash -l {0}
