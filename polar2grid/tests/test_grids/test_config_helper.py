@@ -25,7 +25,7 @@
 from io import StringIO
 
 import pytest
-from pyresample.area_config import parse_area_file
+from pyresample import parse_area_file
 from pyresample.geometry import AreaDefinition
 
 from polar2grid.grids.config_helper import main as ch_main
