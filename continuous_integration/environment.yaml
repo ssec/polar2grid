@@ -46,7 +46,7 @@ dependencies:
   - fsspec
   - s3fs
   - sphinxcontrib-apidoc
-  - click<=8.0.0
+  - click<8.0.0
   - pip:
       - git+https://github.com/pytroll/satpy.git
       - git+https://github.com/pytroll/pyresample.git
