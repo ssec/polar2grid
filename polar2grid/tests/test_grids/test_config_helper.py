@@ -22,7 +22,11 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Test grid config helper script."""
 
+from io import StringIO
+
 import pytest
+from pyresample.area_config import parse_area_file
+from pyresample.geometry import AreaDefinition
 
 from polar2grid.grids.config_helper import main as ch_main
 
@@ -130,3 +134,11 @@ def test_yaml_format(lon, lat, exp, capsys):
     assert ret is None or ret == 0
     sout = capsys.readouterr()
     assert sout.out == exp
+
+    # temp file
+    s = StringIO()
+    s.write(sout.out)
+    s.seek(0)
+    areas = parse_area_file([s])
+    assert len(areas) == 1
+    assert isinstance(areas[0], AreaDefinition)
