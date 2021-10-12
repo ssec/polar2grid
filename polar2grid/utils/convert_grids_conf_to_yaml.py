@@ -46,7 +46,7 @@ def _conf_to_yaml_dict(grids_filename: str) -> str:
         except ValueError:
             continue
 
-    overall_yaml_dict[grid_name] = area_dict
+        overall_yaml_dict[grid_name] = area_dict
     return overall_yaml_dict
 
 
@@ -129,6 +129,7 @@ def get_parser():
 
     prog = os.getenv("PROG_NAME", sys.argv[0])
     parser = ArgumentParser(
+        prog=prog,
         description="Convert legacy grids.conf format to Pyresample YAML format.",
         usage="""
 To write to a file:
@@ -139,9 +140,11 @@ To write to a file:
     return parser
 
 
-def main():
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
     parser = get_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO)
     yaml_dict = _conf_to_yaml_dict(args.grids_filename)
     yml_str = ordered_dump(yaml_dict, default_flow_style=None)

@@ -38,6 +38,7 @@ fi
 # __SWBUNDLE_ENVIRONMENT_INJECTION__
 
 # Call the script
+export PROG_NAME="p2g_grid_helper.sh"
 python3 -m polar2grid.grids.config_helper "$@"
 
 
