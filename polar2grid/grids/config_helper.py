@@ -18,7 +18,7 @@
 #
 # This file is part of the polar2grid software package. Polar2grid takes
 # satellite observation data, remaps it, and writes it to a file format for
-#     input into another program.
+# input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Helper script for creating valid grid configuration entries.
 
@@ -29,6 +29,7 @@ to a user's own grid configuration file.
 """
 from __future__ import annotations
 
+import os
 import sys
 import warnings
 
@@ -60,12 +61,13 @@ def determine_projection(center_lon: float, center_lat: float, proj4_str: str = 
 def get_parser():
     from argparse import SUPPRESS, ArgumentParser
 
+    prog = os.getenv("PROG_NAME", sys.argv[0])
     description = """This script is meant to help those unfamiliar with PROJ.4 and projections
 in general. By providing a few grid parameters this script will provide a
 grid configuration line that can be added to a user's custom grid
 configuration. Based on a center longitude and latitude, the script will
 choose an appropriate projection."""
-    parser = ArgumentParser(description=description)
+    parser = ArgumentParser(prog=prog, description=description)
     parser.add_argument("grid_name", type=str, help="Unique grid name")
     parser.add_argument("center_longitude", type=float, help="Decimal longitude value for center of grid (-180 to 180)")
     parser.add_argument("center_latitude", type=float, help="Decimal latitude value for center of grid (-90 to 90)")
@@ -141,15 +143,17 @@ def _create_yaml_entry(
     area_dict = {
         "projection": proj_dict,
         "shape": {"height": grid_height, "width": grid_width},
-        "center": {"x": clon, "y": clat},
+        "center": {"x": clon, "y": clat, "units": "degrees"},
         "resolution": {"dx": abs(pixel_size_x), "dy": abs(pixel_size_y)},
     }
     return {grid_name: area_dict}
 
 
-def main():
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
     parser = get_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     grid_name = args.grid_name
     clon = args.center_longitude
