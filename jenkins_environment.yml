@@ -6,6 +6,7 @@ dependencies:
   - graphviz
   - pip
   - sphinx
+  - pytest
   - pip:
     - graphviz
     - sphinx-argparse

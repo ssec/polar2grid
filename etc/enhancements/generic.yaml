@@ -494,18 +494,6 @@ enhancements:
           xp: [0., 25., 55., 100., 255.]
           fp: [0., 90., 140., 175., 255.]
           reference_scale_factor: 255
-  natural_color_crefl:
-    standard_name: natural_color
-    operations:
-      - name: reflectance_range
-        method: !!python/name:satpy.enhancements.stretch
-        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
-      - name: Linear interpolation
-        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
-        kwargs:
-          xp: [0., 25., 55., 100., 255.]
-          fp: [0., 90., 140., 175., 255.]
-          reference_scale_factor: 255
   independent_crefl:
     standard_name: corrected_reflectance
     operations:
