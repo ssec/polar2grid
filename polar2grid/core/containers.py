@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2014 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2014-2021 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -20,354 +20,17 @@
 # satellite observation data, remaps it, and writes it to a file format for
 #     input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-# Written by David Hoese    September 2014
-# University of Wisconsin-Madison
-# Space Science and Engineering Center
-# 1225 West Dayton Street
-# Madison, WI  53706
-# david.hoese@ssec.wisc.edu
-"""Classes for metadata operations in polar2grid.
+"""Classes for metadata operations in polar2grid."""
 
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Sept 2014
-:license:      GNU GPLv3
-
-"""
-__docformat__ = "restructuredtext en"
-
-import json
 import logging
-import os
-import shutil
-import sys
-from datetime import datetime
 
 import numpy
 from pyproj import Proj
 
-from polar2grid.core.dtype import dtype_to_str, str_to_dtype
-from polar2grid.core.time_utils import iso8601
-
 LOG = logging.getLogger(__name__)
 
 
-# FUTURE: Add a register function to register custom P2G objects so no imports and short __class__ names
-# FUTURE: Handling duplicate sub-objects better (ex. geolocation)
-class P2GJSONDecoder(json.JSONDecoder):
-    def __init__(self, *args, **kwargs):
-        super(P2GJSONDecoder, self).__init__(object_hook=self.dict_to_object, **kwargs)
-
-    @staticmethod
-    def _jsonclass_to_pyclass(json_class_name):
-        import importlib
-
-        cls_name = json_class_name.split(".")[-1]
-        mod_name = ".".join(json_class_name.split(".")[:-1])
-        if not mod_name:
-            try:
-                cls = globals()[cls_name]
-            except KeyError:
-                LOG.error("Unknown class in JSON file: %s", json_class_name)
-                raise
-        else:
-            cls = getattr(importlib.import_module(mod_name), cls_name)
-        return cls
-
-    def dict_to_object(self, obj):
-        for k, v in obj.items():
-            if isinstance(v, str):
-                try:
-                    obj[k] = iso8601(v)
-                    continue
-                except ValueError:
-                    pass
-
-                try:
-                    obj[k] = str_to_dtype(v)
-                    continue
-                except ValueError:
-                    pass
-
-        if "__class__" not in obj:
-            LOG.warning("No '__class__' element in JSON file. Using BaseP2GObject by default for now.")
-            obj["__class__"] = "BaseP2GObject"
-            return BaseP2GObject(**obj)
-
-        cls = self._jsonclass_to_pyclass(obj["__class__"])
-        inst = cls(**obj)
-        return inst
-
-
-class P2GJSONEncoder(json.JSONEncoder):
-    def iterencode(self, o, _one_shot=False):
-        """Taken from:
-        http://stackoverflow.com/questions/16405969/how-to-change-json-encoding-behaviour-for-serializable-python-object
-
-        Most of the original method has been left untouched.
-
-        _one_shot is forced to False to prevent c_make_encoder from
-        being used. c_make_encoder is a funcion defined in C, so it's easier
-        to avoid using it than overriding/redefining it.
-
-        The keyword argument isinstance for _make_iterencode has been set
-        to self.isinstance. This allows for a custom isinstance function
-        to be defined, which can be used to defer the serialization of custom
-        objects to the default method.
-        """
-        # Force the use of _make_iterencode instead of c_make_encoder
-        _one_shot = False
-
-        if self.check_circular:
-            markers = {}
-        else:
-            markers = None
-        if self.ensure_ascii:
-            _encoder = json.encoder.encode_basestring_ascii
-        else:
-            _encoder = json.encoder.encode_basestring
-        # if self.encoding != 'utf-8':
-        #     def _encoder(obj, _orig_encoder=_encoder, _encoding=self.encoding):
-        #         if isinstance(obj, str):
-        #             obj = obj.decode(_encoding)
-        #         return _orig_encoder(obj)
-
-        def floatstr(
-            obj,
-            allow_nan=self.allow_nan,
-            _repr=float.__repr__,
-            _inf=json.encoder.INFINITY,
-            _neginf=-json.encoder.INFINITY,
-        ):
-            if obj != obj:
-                text = "NaN"
-            elif obj == _inf:
-                text = "Infinity"
-            elif obj == _neginf:
-                text = "-Infinity"
-            else:
-                return _repr(obj)
-
-            if not allow_nan:
-                raise ValueError("Out of range float values are not JSON compliant: " + repr(obj))
-
-            return text
-
-        # Instead of forcing _one_shot to False, you can also just
-        # remove the first part of this conditional statement and only
-        # call _make_iterencode
-        if _one_shot and json.encoder.c_make_encoder is not None and self.indent is None and not self.sort_keys:
-            _iterencode = json.encoder.c_make_encoder(
-                markers,
-                self.default,
-                _encoder,
-                self.indent,
-                self.key_separator,
-                self.item_separator,
-                self.sort_keys,
-                self.skipkeys,
-                self.allow_nan,
-            )
-        else:
-            _iterencode = json.encoder._make_iterencode(
-                markers,
-                self.default,
-                _encoder,
-                self.indent,
-                floatstr,
-                self.key_separator,
-                self.item_separator,
-                self.sort_keys,
-                self.skipkeys,
-                _one_shot,
-                isinstance=self.isinstance,
-            )
-        return _iterencode(o, 0)
-
-    def isinstance(self, obj, cls):
-        if isinstance(obj, BaseP2GObject):
-            return False
-        return isinstance(obj, cls)
-
-    def default(self, obj):
-        if isinstance(obj, BaseP2GObject):
-            mod_str = str(obj.__class__.__module__)
-            mod_str = mod_str + "." if mod_str != __name__ else ""
-            cls_str = str(obj.__class__.__name__)
-            obj = obj.copy(as_dict=True)
-            # object should now be a builtin dict
-            obj["__class__"] = mod_str + cls_str
-            return obj
-            # return super(P2GJSONEncoder, self).encode(obj)
-        elif isinstance(obj, datetime):
-            return obj.isoformat()
-        elif numpy.issubclass_(obj, numpy.number) or isinstance(obj, numpy.dtype):
-            return dtype_to_str(obj)
-        elif hasattr(obj, "dtype"):
-            if obj.size > 1:
-                return obj.tolist()
-            return int(obj) if numpy.issubdtype(obj, numpy.integer) else float(obj)
-        else:
-            try:
-                return super(P2GJSONEncoder, self).default(obj)
-            except TypeError as e:
-                print("TypeError:", str(e), type(obj))
-                print(obj)
-                raise
-
-
-class BaseP2GObject(dict):
-    """Base object for all Polar2Grid dictionary-like objects.
-
-    - required_kwargs: Keys that must exist when loading an object from a JSON file
-    - loadable_kwargs: Keys that may be P2G objects saved on disk and should be loaded on creation.
-    - cleanup_kwargs: Keys that may be saved files on disk (*not* P2G dict-like objects) and should be removed
-
-    """
-
-    required_kwargs = tuple()
-    loadable_kwargs = tuple()
-    cleanup_kwargs = tuple()
-    child_object_types = {}
-
-    def __init__(self, *args, **kwargs):
-        cls = kwargs.pop("__class__", None)
-        super(BaseP2GObject, self).__init__(*args, **kwargs)
-        self.load_loadable_kwargs()
-        self._initialize_children()
-
-        self.persist = False
-        if cls:
-            # this is being loaded from a serialized/JSON copy
-            # we don't have the 'right' to delete any binary files associated with it
-            self.set_persist(True)
-            self.validate_keys(kwargs)
-        else:
-            self.set_persist(False)
-
-    def __del__(self):
-        self.cleanup()
-
-    def cleanup(self):
-        """Delete any files associated with this object."""
-        for kw in self.cleanup_kwargs:
-            if kw in self and isinstance(self[kw], str):
-                # Do we not want to delete this file because someone tried to save the state of this object
-                if hasattr(self, "persist") and not self.persist:
-                    try:
-                        # LOG.debug("Removing associated file that is no longer needed: '%s'", self[kw])
-                        os.remove(self[kw])
-                    except OSError as e:
-                        # if hasattr(e, "errno") and e.errno == 2:
-                        #     LOG.debug("Unable to remove file because it doesn't exist: '%s'", self[kw])
-                        # else:
-                        #     LOG.warning("Unable to remove file: '%s'", self[kw])
-                        #     LOG.debug("Unable to remove file traceback:", exc_info=True)
-                        pass
-
-    def set_persist(self, persist=True):
-        """Set the object to keep associated files on disk even after it has been garbage collected.
-
-        :param persist: Whether to persist or not (True by default)
-
-        """
-        self.persist = persist
-        for child_key, child in self.items():
-            if isinstance(child, BaseP2GObject):
-                LOG.debug("Setting persist to %s for child '%s'", str(persist), child_key)
-                child.set_persist(persist=persist)
-
-    def validate_keys(self, kwargs):
-        # sanity check, does this dictionary have everything the class expects it to
-        for k in self.required_kwargs:
-            if k not in kwargs:
-                raise ValueError("Missing required keyword '%s'" % (k,))
-
-    def load_loadable_kwargs(self):
-        if self.loadable_kwargs is None:
-            # when every key is loadable
-            self.loadable_kwargs = self.keys()
-
-        for kw in self.loadable_kwargs:
-            if kw in self and isinstance(self[kw], str):
-                LOG.debug("Loading associated JSON file from key {}: '{}'".format(kw, self[kw]))
-                self[kw] = BaseP2GObject.load(self[kw])
-
-    @classmethod
-    def load(cls, filename, object_class=None):
-        """Open a JSON file representing a Polar2Grid object."""
-        # Allow the caller to specify the preferred object class if one is not specified in the JSON
-        if object_class is None:
-            object_class = cls
-        if isinstance(filename, str):
-            # we are dealing with a string filename
-            file_obj = open(filename, "r")
-        else:
-            # we are dealing with a file-like object
-            file_obj = filename
-
-        inst = json.load(file_obj, cls=P2GJSONDecoder)
-
-        if not isinstance(inst, object_class):
-            # Need to tell the class that we are loading something from a file so it can take care of persist and such
-            inst["__class__"] = object_class.__name__
-            return object_class(**inst)
-        return inst
-
-    def _initialize_children(self):
-        # LOG.debug("Initializing children for {}".format(self.__class__.__name__))
-        for child_key, child_type in self.child_object_types.items():
-            if child_key is None:
-                # Child key being None, means that all children should be of this type
-                for ck in self.keys():
-                    if self.get(ck, None) and not isinstance(self[ck], child_type):
-                        LOG.debug("Reinitializing child {} to {}".format(ck, child_type.__name__))
-                        self[ck] = child_type(**self[ck])
-                continue
-
-            if self.get(child_key, None) and not isinstance(self[child_key], child_type):
-                LOG.debug("Reinitializing child {} to {}".format(child_key, child_type.__name__))
-                self[child_key] = child_type(**self[child_key])
-
-    def save(self, filename):
-        """Write the JSON representation of this class to a file."""
-        f = open(filename, "w")
-        try:
-            json.dump(self, f, cls=P2GJSONEncoder, indent=4, sort_keys=True)
-            self.set_persist()
-        except TypeError:
-            LOG.error("Could not write P2G object to JSON file: '%s'", filename, exc_info=True)
-            f.close()
-            os.remove(filename)
-            raise
-
-    def dumps(self, persist=False):
-        """Return a JSON string version of the object.
-
-        :param persist: If True, change 'persist' attribute of object so files already on disk don't get deleted
-        """
-        if persist:
-            self.set_persist()
-        return json.dumps(self, cls=P2GJSONEncoder, indent=4, sort_keys=True)
-
-    def copy(self, as_dict=False):
-        """Copy this object in to a separate object.
-
-        .. note::
-
-            Any on-disk files or external references must be handled separately.
-
-        """
-        if as_dict:
-            return dict.copy(self)
-        else:
-            return self.__class__(dict.copy(self))
-
-
-class GridDefinition(BaseP2GObject):
+class GridDefinition(dict):
     """Projected grid defined by a PROJ.4 projection string and other grid parameters.
 
     Required Information:
@@ -399,6 +62,13 @@ class GridDefinition(BaseP2GObject):
             # pyproj doesn't like unicode
             kwargs["proj4_definition"] = str(kwargs["proj4_definition"])
         super(GridDefinition, self).__init__(*args, **kwargs)
+        self.validate_keys()
+
+    def validate_keys(self, kwargs):
+        # sanity check, does this dictionary have everything the class expects it to
+        for k in self.required_kwargs:
+            if k not in kwargs:
+                raise ValueError("Missing required keyword '%s'" % (k,))
 
     def __str__(self):
         keys = sorted(self.keys())
