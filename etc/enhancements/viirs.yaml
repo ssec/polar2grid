@@ -6,45 +6,6 @@ enhancements:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.stretch
         kwargs: { stretch: 'crude', min_stretch: 0.0, max_stretch: 1.0 }
-  true_color_crefl:
-    sensor: viirs
-    standard_name: true_color
-    operations:
-      - name: reflectance_range
-        method: !!python/name:satpy.enhancements.stretch
-        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
-      - name: Linear interpolation
-        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
-        kwargs:
-          xp: [0., 25., 55., 100., 255.]
-          fp: [0., 90., 140., 175., 255.]
-          reference_scale_factor: 255
-  false_color_crefl:
-    sensor: viirs
-    standard_name: false_color
-    operations:
-      - name: reflectance_range
-        method: !!python/name:satpy.enhancements.stretch
-        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
-      - name: Linear interpolation
-        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
-        kwargs:
-          xp: [0., 25., 55., 100., 255.]
-          fp: [0., 90., 140., 175., 255.]
-          reference_scale_factor: 255
-  viirs_crefl:
-    sensor: viirs
-    standard_name: corrected_reflectance
-    operations:
-      - name: reflectance_range
-        method: !!python/name:satpy.enhancements.stretch
-        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
-      - name: Linear interpolation
-        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
-        kwargs:
-          xp: [0., 25., 55., 100., 255.]
-          fp: [0., 90., 140., 175., 255.]
-          reference_scale_factor: 255
   pre_enhanced_viirs_crefl:
     sensor: viirs
     standard_name: preenhanced_crefl

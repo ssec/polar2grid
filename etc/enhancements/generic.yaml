@@ -97,6 +97,7 @@ enhancements:
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 5.0}
   mirs_rain_rate:
     name: RR
+    reader: mirs
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.stretch
@@ -366,7 +367,154 @@ enhancements:
   # NOTE: rain_rate is slightly different in CLAVR-X versus MiRS
   clavrx_rain_rate:
     name: rain_rate
+    reader: clavrx
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.stretch
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 32.}
+
+  # Various SST products
+  sea_surface_temperature1:
+    standard_name: sea_surface_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
+  sea_surface_temperature2:
+    standard_name: sea_surface_skin_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
+  sea_surface_temperature3:
+    standard_name: sea_surface_sub-skin_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
+  sea_surface_temperature4:
+    standard_name: sea_surface_subskin_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
+  # SST - celsius
+  sea_surface_temperature_celsius:
+    standard_name: sea_surface_subskin_temperature
+    units: C
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -5.8333, max_stretch: 36.666}
+
+  land_surface_temperature:
+    sensor: modis
+    standard_name: land_surface_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 233.2, max_stretch: 322.0}
+  total_precipitable_water:
+    standard_name: total_precipitable_water
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -1.333, max_stretch: 7.1666}
+  total_precipitable_water_mm:
+    units: mm
+    standard_name: total_precipitable_water
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -13.33, max_stretch: 71.666}
+  cloud_top_temperature:
+    standard_name: cloud_top_temperature
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 173.16, max_stretch: 300.26}
+  cloud_top_pressure:
+    standard_name: cloud_top_pressure
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 1.0, max_stretch: 851.0}
+  lifted_index:
+    standard_name: lifted_index
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 41.9562, max_stretch: -20.4018}
+  cloud_optical_thickness:
+    standard_name: cloud_optical_thickness
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 12.75}
+  depth:
+    standard_name: depth
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -1.33, max_stretch: 7.17}
+  ndvi:
+    standard_name: ndvi
+    operations:
+      # map data in range -1 to 1 to output range 0 to 1
+      # with control point mapping 0 to 0.19 in the output.
+      # output threshold is ~49/255 to match legacy AWIPS scaling
+      - name: Linear interpolation
+        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        kwargs:
+          xp: [-1.0, 0.0, 1.0]
+          fp: [0.0, 0.192156863, 1.0]
+
+  # Polar2Grid True and False Color
+  true_color_crefl:
+    standard_name: true_color
+    operations:
+      - name: reflectance_range
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
+      - name: Linear interpolation
+        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        kwargs:
+          xp: [0., 25., 55., 100., 255.]
+          fp: [0., 90., 140., 175., 255.]
+          reference_scale_factor: 255
+  false_color_crefl:
+    standard_name: false_color
+    operations:
+      - name: reflectance_range
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
+      - name: Linear interpolation
+        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        kwargs:
+          xp: [0., 25., 55., 100., 255.]
+          fp: [0., 90., 140., 175., 255.]
+          reference_scale_factor: 255
+  natural_color_crefl:
+    standard_name: natural_color
+    operations:
+      - name: reflectance_range
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
+      - name: Linear interpolation
+        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        kwargs:
+          xp: [0., 25., 55., 100., 255.]
+          fp: [0., 90., 140., 175., 255.]
+          reference_scale_factor: 255
+  independent_crefl:
+    standard_name: corrected_reflectance
+    operations:
+      - name: reflectance_range
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
+      - name: Linear interpolation
+        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        kwargs:
+          xp: [0., 25., 55., 100., 255.]
+          fp: [0., 90., 140., 175., 255.]
+          reference_scale_factor: 255
