@@ -41,26 +41,9 @@ http://www.ssec.wisc.edu/software/polar2grid/
 __docformat__ = "restructuredtext en"
 from glob import glob
 
-from setuptools import Command, find_packages, setup
+from setuptools import find_packages, setup
 
-version = "2.4.1"
-
-
-class PyTest(Command):
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        import subprocess
-        import sys
-
-        errno = subprocess.call([sys.executable, "runtests.py"])
-        raise SystemExit(errno)
+version = "3.0.0"
 
 
 def readme():
@@ -83,20 +66,11 @@ classifiers = [
 ]
 
 extras_require = {
-    # Backends:
-    "awips": ["netCDF4"],
-    "geotiff": ["rasterio"],
-    "hdf5": ["h5py"],
     # Other:
     "utils": ["matplotlib"],
-    "docs": ["sphinx", "rst2pdf", "sphinx-argparse", "sphinxcontrib-apidoc"],
+    "docs": ["sphinx", "rst2pdf", "sphinx-argparse", "sphinxcontrib-apidoc", "pytest"],
+    "tests": ["pytest"],
     "coastlines": ["pycoast", "pydecorate"],
-    # Frontends (included separately):
-    "viirs_sdr": ["h5py"],
-    "modis_l1b": ["pyhdf"],
-    "mirs": ["netCDF4"],
-    "drrtv": ["h5py"],
-    "acspo": ["netCDF4"],
 }
 extras_require["all"] = list(set([x for y in extras_require.values() for x in y]))
 
@@ -117,7 +91,7 @@ setup(
     long_description=readme(),
     classifiers=classifiers,
     keywords="",
-    url="http://www.ssec.wisc.edu/software/polar2grid/",
+    url="https://www.ssec.wisc.edu/software/polar2grid/",
     packages=find_packages(),
     include_package_data=True,
     package_data={
@@ -136,8 +110,6 @@ setup(
         ("etc/polar2grid", ["etc/resampling.yaml"]),
     ],
     zip_safe=True,
-    tests_require=["py.test"],
-    cmdclass={"test": PyTest},
     install_requires=[
         "setuptools",  # reading configuration files
         "satpy",
