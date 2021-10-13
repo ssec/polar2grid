@@ -20,25 +20,7 @@
 # satellite observation data, remaps it, and writes it to a file format for
 #     input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-# Written by David Hoese    September 2014
-# University of Wisconsin-Madison
-# Space Science and Engineering Center
-# 1225 West Dayton Street
-# Madison, WI  53706
-# david.hoese@ssec.wisc.edu
-"""
-Functions that handle polar2grid data types.
-
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Sept 2014
-:license:      GNU GPLv3
-
-"""
-__docformat__ = "restructuredtext en"
+"""Functions that handle polar2grid data types."""
 
 import logging
 
