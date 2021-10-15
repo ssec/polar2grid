@@ -32,7 +32,6 @@ def temperature_difference(img, min_stretch, max_stretch, **kwargs):
     set to 4 and 206.
 
     """
-
     img.crude_stretch(min_stretch, max_stretch)
     # we assume uint8 images for legacy AWIPS comparisons
     offset = 1 / 255.0

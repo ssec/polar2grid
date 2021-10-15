@@ -30,7 +30,7 @@
 
     dev_guide/index
     NEWS
-    rescaling
+    enhancements
     :polar2grid:viirs_day_night_band
     custom_config
 
