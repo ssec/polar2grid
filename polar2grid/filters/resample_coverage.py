@@ -53,7 +53,7 @@ def _get_intersection_coverage(source_polygon: SphPolygon, target_polygon: SphPo
 
 
 class ResampleCoverageFilter(BaseFilter):
-    """Remove any DataArrays that would not """
+    """Remove any DataArrays that would not"""
 
     def __init__(
         self,
