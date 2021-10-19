@@ -89,7 +89,8 @@ DEFAULT_OUTPUT_PATTERN = (
 )
 DEFAULT_OUTPUT_FILENAMES = {
     "polar2grid": {
-        None: DEFAULT_OUTPUT_PATTERN,
+        None: "{source_name}_AII_{platform_name}_{sensor!l}_{p2g_name}"
+        "_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc",
     },
     "geo2grid": {
         None: DEFAULT_OUTPUT_PATTERN,
