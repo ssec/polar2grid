@@ -130,9 +130,9 @@ def _get_area_def_from_name(area_name, input_scene, grid_manager, yaml_areas):
         # no resampling
         area_def = None
     elif area_name == "MAX":
-        area_def = input_scene.max_area()
+        area_def = input_scene.finest_area()
     elif area_name == "MIN":
-        area_def = input_scene.min_area()
+        area_def = input_scene.coarsest_area()
     elif area_name in yaml_areas:
         area_def = yaml_areas[area_name]
     elif area_name in grid_manager:
