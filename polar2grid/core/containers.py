@@ -64,10 +64,10 @@ class GridDefinition(dict):
         super(GridDefinition, self).__init__(*args, **kwargs)
         self.validate_keys()
 
-    def validate_keys(self, kwargs):
+    def validate_keys(self):
         # sanity check, does this dictionary have everything the class expects it to
         for k in self.required_kwargs:
-            if k not in kwargs:
+            if k not in self:
                 raise ValueError("Missing required keyword '%s'" % (k,))
 
     def __str__(self):

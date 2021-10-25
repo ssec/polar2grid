@@ -130,9 +130,9 @@ def _get_area_def_from_name(area_name, input_scene, grid_manager, yaml_areas):
         # no resampling
         area_def = None
     elif area_name == "MAX":
-        area_def = input_scene.max_area()
+        area_def = input_scene.finest_area()
     elif area_name == "MIN":
-        area_def = input_scene.min_area()
+        area_def = input_scene.coarsest_area()
     elif area_name in yaml_areas:
         area_def = yaml_areas[area_name]
     elif area_name in grid_manager:
@@ -248,6 +248,8 @@ def resample_scene(
                     if this_area_scene is None:
                         logger.warning("No products were found to overlap with '%s' grid.", area_name)
                         continue
+                    if data_ids is not None:
+                        data_ids = list(set(data_ids) & set(this_area_scene.keys()))
                 logger.info("Resampling to '%s' using '%s' resampling...", area_name, rs)
                 logger.debug("Resampling to '%s' using resampler '%s' with %s", area_name, rs, _resample_kwargs)
                 new_scn = this_area_scene.resample(area_def, resampler=rs, datasets=data_ids, **_resample_kwargs)

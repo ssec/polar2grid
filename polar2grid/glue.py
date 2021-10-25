@@ -81,6 +81,7 @@ PLATFORM_ALIASES = {
     "eos-terra": "terra",
     "aqua": "aqua",
     "terra": "terra",
+    "gcom-w1": "gcom-w1",
 }
 
 READER_ALIASES = {

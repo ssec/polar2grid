@@ -60,9 +60,9 @@ def builtin_test_grids_conf() -> list[str]:
 
 
 def _generate_lonlat_data(shape: tuple[int, int], dtype: DTypeLike = np.float32) -> tuple[NDArray, NDArray]:
-    lat = np.repeat(np.linspace(35.0, 45.0, shape[0])[:, None], shape[1], 1)
+    lat = np.repeat(np.linspace(25.0, 55.0, shape[0])[:, None], shape[1], 1)
     lat *= np.linspace(0.9, 1.1, shape[1])
-    lon = np.repeat(np.linspace(-45.0, -35.0, shape[1])[None, :], shape[0], 0)
+    lon = np.repeat(np.linspace(-45.0, -65.0, shape[1])[None, :], shape[0], 0)
     lon *= np.linspace(0.9, 1.1, shape[0])[:, None]
     return lon.astype(dtype), lat.astype(dtype)
 
