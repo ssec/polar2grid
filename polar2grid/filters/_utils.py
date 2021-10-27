@@ -33,7 +33,10 @@ except ImportError:
 from typing import Union
 
 import dask.array as da
-from pyresample.boundary import AreaDefBoundary, Boundary
+import numpy as np
+import pyresample
+from packaging.version import Version, parse
+from pyresample.boundary import AreaBoundary, AreaDefBoundary, Boundary
 from pyresample.geometry import (
     AreaDefinition,
     SwathDefinition,
@@ -42,24 +45,28 @@ from pyresample.geometry import (
 from pyresample.spherical import SphPolygon
 
 logger = logging.getLogger(__name__)
+FIXED_PR = parse(pyresample.__version__) > Version("1.21.1")
 
 PRGeometry = Union[SwathDefinition, AreaDefinition]
 
 
 def boundary_for_area(area_def: PRGeometry) -> Boundary:
     """Create Boundary object representing the provided area."""
-    if isinstance(area_def, SwathDefinition):
+    if not FIXED_PR and isinstance(area_def, SwathDefinition):
         # TODO: Persist lon/lats if requested
         lons, lats = area_def.get_bbox_lonlats()
-        lons = da.concatenate(lons)
-        lats = da.concatenate(lats)
-        freq = int(lons.shape[0] * 0.05)
-        lons, lats = da.compute(lons[::freq], lats[::freq])
-        adp = Boundary(lons, lats)
-    elif area_def.is_geostationary:
+        freq = int(area_def.shape[0] * 0.05)
+        if hasattr(lons[0], "compute") and da is not None:
+            lons, lats = da.compute(lons, lats)
+        lons = [lon_side.astype(np.float64) for lon_side in lons]
+        lats = [lat_side.astype(np.float64) for lat_side in lats]
+        adp = AreaBoundary(*zip(lons, lats))
+        adp.decimate(freq)
+    elif getattr(area_def, "is_geostationary", False):
         adp = Boundary(*get_geostationary_bounding_box(area_def, nb_points=100))
     else:
-        adp = AreaDefBoundary(area_def, frequency=int(area_def.shape[0] * 0.30))
+        freq_fraction = 0.05 if isinstance(area_def, SwathDefinition) else 0.30
+        adp = AreaDefBoundary(area_def, frequency=int(area_def.shape[0] * freq_fraction))
     return adp
 
 

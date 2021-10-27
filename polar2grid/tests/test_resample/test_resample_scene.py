@@ -24,6 +24,7 @@
 
 import dask
 import pytest
+from pyresample.geometry import SwathDefinition
 from pytest_lazyfixture import lazy_fixture
 from satpy import Scene
 from satpy.tests.utils import CustomScheduler
@@ -105,3 +106,32 @@ def test_resample_single_result_per_grid(
         id_names = [x["name"] for x in data_ids_set]
         for exp_name in exp_names:
             assert exp_name in id_names
+
+
+def test_partial_filter(viirs_sdr_i01_scene):
+    """Test that resampling completes even when coverage filters some datasets."""
+    # make another DataArray that is shifted away from the target area
+    # orig_lons, orig_lats = viirs_sdr_i01_scene['I01'].attrs['area'].get_lonlats()
+    new_i01 = viirs_sdr_i01_scene["I01"].copy()
+    orig_lons = new_i01.attrs["area"].lons
+    orig_lats = new_i01.attrs["area"].lats
+    new_lons = orig_lons + 180.0
+    new_swath_def = SwathDefinition(new_lons, orig_lats)
+    new_i01.attrs["name"] = "I01_2"
+    new_i01.attrs["area"] = new_swath_def
+    new_scn = Scene()
+    new_scn["I01"] = viirs_sdr_i01_scene["I01"]
+    new_scn["I01_2"] = new_i01
+
+    with dask.config.set(scheduler=CustomScheduler(2)):
+        scenes_to_save = resample_scene(
+            new_scn,
+            ["211e"],
+            ["grids.conf"],
+            None,
+            is_polar2grid=True,
+            grid_coverage=0.05,
+        )
+    assert len(scenes_to_save) == 1
+    new_scn, data_ids = scenes_to_save[0]
+    assert len(new_scn.keys()) == 1  # I01
