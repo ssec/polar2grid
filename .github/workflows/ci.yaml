@@ -74,7 +74,7 @@ jobs:
 #        with:
 #          personal_token: ${{ secrets.VISPY_WEBSITE_TOKEN }}
 #          publish_dir: doc/_build/html
-#          publish_branch: master
+#          publish_branch: main
 #          cname: vispy.org
 #          allow_empty_commit: true
 #          external_repository: vispy/vispy.github.com

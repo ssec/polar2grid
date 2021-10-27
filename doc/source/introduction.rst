@@ -56,7 +56,7 @@ What's New?
         :end-line: 14
 
     For more details on what's new in this version and past versions see the
-    `Polar2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/master/NEWS.rst>`_
+    `Polar2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/main/NEWS.rst>`_
     in the github repository.
 
 .. ifconfig:: is_geo2grid
@@ -68,7 +68,7 @@ What's New?
         :end-line: 7
 
     For more details on what's new in this version and past versions see the
-    `Geo2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/master/NEWS_GEO2GRID.rst>`_
+    `Geo2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/main/NEWS_GEO2GRID.rst>`_
     in the github repository.
 
 

@@ -35,7 +35,7 @@ image.
 
 The data set is re-projected into the WGS84 (Platte Carrée) projection
 by default. The image scaling is defined in the
-`resclale.ini <https://github.com/ssec/polar2grid/blob/master/polar2grid/core/rescale_configs/rescale.ini>`_ file. This file contains product 
+`resclale.ini <https://github.com/ssec/polar2grid/blob/main/polar2grid/core/rescale_configs/rescale.ini>`_ file. This file contains product
 scaling information for all data parameters supported by Polar2Grid. 
 The default scaling used for the ACSPO Version 
 2.61 SST files can be found under data_kind `sea_surface_sub-skin_temperature`
@@ -111,7 +111,7 @@ To add a color enhancement to this image, I use the *add_colormap.sh* utility
 script and a rainbow color table `p2g_sst_palette.txt` that is included as part of 
 the Polar2Grid package.  This table is formatted as described in the 
 :ref:`util_add_colormap` section. You can view the file 
-`online <https://github.com/ssec/polar2grid/blob/master/swbundle/colormaps/p2g_sst_palette.txt>`_.
+`online <https://github.com/ssec/polar2grid/blob/main/swbundle/colormaps/p2g_sst_palette.txt>`_.
 
 This colormap will assign a color value to each of the 0-255 brightness range
 in the GeoTIFF image.  Again, the default brightness range is associated with a

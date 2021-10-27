@@ -1,7 +1,7 @@
 Polar2Grid and Geo2Grid
 =======================
 
-.. image:: https://github.com/ssec/polar2grid/workflows/CI/badge.svg?branch=master
+.. image:: https://github.com/ssec/polar2grid/workflows/CI/badge.svg?branch=main
     :target: https://github.com/ssec/polar2grid/actions?query=workflow%3A%22CI%22
 
 .. image:: https://coveralls.io/repos/github/ssec/polar2grid/badge.svg
