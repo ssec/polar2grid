@@ -5,3 +5,53 @@ enhancements:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 500.}
+  test_temperature_difference:
+    name: test_temperature_difference
+    operations:
+      - name: temp_diff_stretch
+        method: !!python/name:polar2grid.enhancements.shared.temperature_difference
+        kwargs:
+          min_stretch: -10.0
+          max_stretch: 10.0
+  test_p2g_palettize:
+    name: test_p2g_palettize
+    operations:
+      - name: add_colormap
+        method: !!python/name:polar2grid.enhancements.palettize
+        kwargs:
+          palettes:
+            - filename: $POLAR2GRID_HOME/colormaps/amsr2_36h.cmap
+              min_value: 180
+              max_value: 280
+  test_p2g_palettize2:
+    name: test_p2g_palettize2
+    operations:
+      - name: custom_palette
+        method: !!python/name:polar2grid.enhancements.palettize
+        kwargs:
+          palettes:
+            - {colors:
+                 [[14, 0.0, 0.0, 0.0],
+                  [201, 1.0, 0.0, 0.0]],
+               min_value: 0,
+               max_value: 201}
+  test_p2g_palettize3:
+    name: test_p2g_palettize3
+    operations:
+      - name: custom_palette
+        method: !!python/name:polar2grid.enhancements.palettize
+        kwargs:
+          palettes:
+            - {filename: "test_p2g_palettize3.npy",
+               min_value: 0,
+               max_value: 201}
+  test_p2g_colorize:
+    name: test_p2g_colorize
+    operations:
+      - name: add_colormap
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: $POLAR2GRID_HOME/colormaps/amsr2_36h.cmap
+              min_value: 180
+              max_value: 280

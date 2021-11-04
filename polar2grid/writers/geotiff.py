@@ -95,6 +95,12 @@ def add_writer_argument_groups(parser, group=None):
         default="LZW",
         help="File compression algorithm (DEFLATE, LZW, NONE, etc)",
     )
+    group.add_argument(
+        "--keep-palette",
+        action="store_true",
+        help="When saving 'palettized' enhanced images, save the colormap as a "
+        "geotiff color table instead of converting the image to RGB/A",
+    )
     group.add_argument("--tiled", action=BooleanOptionalAction, help="Tile geotiffs internally (default: True)")
     group.add_argument("--blockxsize", default=SUPPRESS, type=int, help="Set tile block X size")
     group.add_argument("--blockysize", default=SUPPRESS, type=int, help="Set tile block Y size")

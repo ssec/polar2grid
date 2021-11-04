@@ -7,6 +7,7 @@ dependencies:
   - pip
   - sphinx
   - pytest
+  - pytest-lazy-fixture
   - pip:
     - graphviz
     - sphinx-argparse

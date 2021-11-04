@@ -24,7 +24,7 @@ dependencies:
   - pykdtree
   - pyorbital
   - pyproj>=3.1.0
-  - pyresample>=1.21.0
+  - pyresample>=1.22.0
   - pyshp
   - pyspectral
   - python=3.8
@@ -34,7 +34,7 @@ dependencies:
   - requests
   - setuptools
   - six
-  - trollimage>=1.15.1
+  - trollimage>=1.16.0
   - trollsift
   - scipy
   - zarr

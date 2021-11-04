@@ -28,13 +28,28 @@ import pkg_resources
 import satpy
 
 
-def add_polar2grid_config_paths():
+def get_polar2grid_etc():
     dist = pkg_resources.get_distribution("polar2grid")
     if dist_is_editable(dist):
         p2g_etc = os.path.join(dist.module_path, "etc")
     else:
         p2g_etc = os.path.join(sys.prefix, "etc", "polar2grid")
+    return p2g_etc
+
+
+def get_polar2grid_home():
+    p2g_home = os.environ.get("POLAR2GRID_HOME")
+    if p2g_home is None:
+        # assume development/editable install
+        import polar2grid
+
+        os.environ["POLAR2GRID_HOME"] = os.path.join(os.path.dirname(polar2grid.__file__), "..", "swbundle")
+    return os.environ["POLAR2GRID_HOME"]
+
+
+def add_polar2grid_config_paths():
     config_path = satpy.config.get("config_path")
+    p2g_etc = get_polar2grid_etc()
     if p2g_etc not in config_path:
         satpy.config.set(config_path=config_path + [p2g_etc])
 

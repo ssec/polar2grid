@@ -58,6 +58,7 @@ Will result in:
       center:
         x: -150.1
         y: 56.3
+        units: degrees
       resolution:
         dx: 250.0
         dy: 250.0
@@ -162,20 +163,29 @@ following:
 
 Blank lines are allowed as well as spaces between line elements.
 
-Note this script is no longer needed as of |project| 2.3 where colormaps
-can be specified directly in rescaling configuration files. For example:
+Note this script is no longer needed in modern versions of |project| if the
+original geotiff (no color) is not needed. The colormap can be specified
+directly in the enhancement YAML file for a product. For example, for the
+AMSR-2 L1B product "btemp_36.5h" we could add the following to a
+``etc/enhancements/amsr2.yaml`` (or ``generic.yaml``):
 
-.. parsed-literal::
+.. parsed-literal:: yaml
 
-    [rescale:amsr2_btemp_36.5h]
-    data_kind=toa_brightness_temperature
-    instrument=amsr2
-    product_name=btemp_36.5h
-    method=palettize
-    min_in=180
-    max_in=280
-    colormap=$POLAR2GRID_HOME/colormaps/amsr2_36h.cmap
-    alpha=False
+  amsr2_btemp_365h:
+    name: btemp_36.5h
+    sensor: amsr2
+    operations:
+      - name: add_colormap
+        method: !!python/name:polar2grid.enhancements.palettize
+        kwargs:
+          palettes:
+            - filename: $POLAR2GRID_HOME/colormaps/amsr2_36h.cmap
+              min_value: 180
+              max_value: 280
+
+When saved using the 'geotiff' writer this will be converted to an RGB/RGBA
+image. Optionally you can provide the ``--keep-palette`` flag to your
+|script_literal| call which will add the colormap as a geotiff color table.
 
 .. _util_gtiff2kmz:
 
