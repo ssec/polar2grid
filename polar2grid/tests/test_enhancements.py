@@ -22,7 +22,9 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Test Polar2Grid-specific enhancement functions."""
 
+import contextlib
 import os
+import shutil
 
 import dask.array as da
 import numpy as np
@@ -32,6 +34,17 @@ import satpy
 from satpy import Scene
 
 TEST_ETC_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), "etc"))
+
+
+@contextlib.contextmanager
+def easy_cwd(new_dir=None):
+    cur_dir = os.getcwd()
+    try:
+        if new_dir:
+            os.chdir(new_dir)
+        yield
+    finally:
+        os.chdir(cur_dir)
 
 
 class TestP2GEnhancements:
@@ -70,9 +83,13 @@ class TestP2GEnhancements:
             exp_out = np.round(np.linspace(5.0, 205.0, data.size)).astype(np.uint8)
             np.testing.assert_allclose(flat_l_data, exp_out)
 
-    @pytest.mark.parametrize("ds_name", ["test_p2g_palettize", "test_p2g_colorize"])
+    @pytest.mark.parametrize(
+        "ds_name", ["test_p2g_palettize", "test_p2g_palettize2", "test_p2g_palettize3", "test_p2g_colorize"]
+    )
     @pytest.mark.parametrize("keep_palette", [False, True])
     def test_p2g_palettize(self, keep_palette, ds_name, tmpdir, abi_l1b_c01_data_array):
+        if ds_name == "test_p2g_palettize3":
+            shutil.copy(os.path.join(TEST_ETC_DIR, f"{ds_name}.npy"), tmpdir)
         new_data_arr = abi_l1b_c01_data_array.copy()
         data = da.linspace(180, 280, new_data_arr.size).reshape(new_data_arr.shape)
         new_data_arr.data = data
@@ -80,7 +97,8 @@ class TestP2GEnhancements:
         scn = Scene()
         scn[ds_name] = new_data_arr
         out_fn = str(tmpdir + f"{ds_name}_{keep_palette}.tif")
-        scn.save_datasets(filename=out_fn, keep_palette=keep_palette)
+        with easy_cwd(tmpdir):
+            scn.save_datasets(filename=out_fn, keep_palette=keep_palette)
 
         with rasterio.open(out_fn, "r") as out_ds:
             is_palette = keep_palette and "palettize" in ds_name

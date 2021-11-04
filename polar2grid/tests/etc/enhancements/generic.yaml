@@ -23,6 +23,28 @@ enhancements:
             - filename: $POLAR2GRID_HOME/colormaps/amsr2_36h.cmap
               min_value: 180
               max_value: 280
+  test_p2g_palettize2:
+    name: test_p2g_palettize2
+    operations:
+      - name: custom_palette
+        method: !!python/name:polar2grid.enhancements.palettize
+        kwargs:
+          palettes:
+            - {colors:
+                 [[14, 0.0, 0.0, 0.0],
+                  [201, 1.0, 0.0, 0.0]],
+               min_value: 0,
+               max_value: 201}
+  test_p2g_palettize3:
+    name: test_p2g_palettize3
+    operations:
+      - name: custom_palette
+        method: !!python/name:polar2grid.enhancements.palettize
+        kwargs:
+          palettes:
+            - {filename: "test_p2g_palettize3.npy",
+               min_value: 0,
+               max_value: 201}
   test_p2g_colorize:
     name: test_p2g_colorize
     operations:
