@@ -50,7 +50,7 @@ def temperature_difference(img, min_stretch, max_stretch, **kwargs):
 def _parse_palettes_for_p2g_cmap(palettes: list):
     for palette in palettes:
         filename = palette.get("filename", "")
-        if filename and (filename.endswith(".npy") or filename.endswith(".npz")):
+        if not filename or (filename.endswith(".npy") or filename.endswith(".npz")):
             yield palette
             continue
         p2g_home = get_polar2grid_home()

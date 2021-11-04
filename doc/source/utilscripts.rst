@@ -58,6 +58,7 @@ Will result in:
       center:
         x: -150.1
         y: 56.3
+        units: degrees
       resolution:
         dx: 250.0
         dy: 250.0

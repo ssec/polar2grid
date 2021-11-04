@@ -23,3 +23,13 @@ enhancements:
             - filename: $POLAR2GRID_HOME/colormaps/amsr2_36h.cmap
               min_value: 180
               max_value: 280
+  test_p2g_colorize:
+    name: test_p2g_colorize
+    operations:
+      - name: add_colormap
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: $POLAR2GRID_HOME/colormaps/amsr2_36h.cmap
+              min_value: 180
+              max_value: 280
