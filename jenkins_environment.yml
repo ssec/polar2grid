@@ -8,6 +8,7 @@ dependencies:
   - sphinx
   - pytest
   - pytest-lazy-fixture
+  - matplotlib
   - pip:
     - graphviz
     - sphinx-argparse
