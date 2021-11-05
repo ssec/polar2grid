@@ -150,7 +150,7 @@ apidoc_separate_modules = True
 apidoc_extra_args = ["-P"]
 
 # Autodoc
-autodoc_mock_imports = ["matplotlib"]
+autodoc_mock_imports = []
 
 numfig = True
 

@@ -14,6 +14,7 @@ dependencies:
   - freetype
   - gdal
   - h5py
+  - matplotlib
   - netcdf4
   - pillow
   - pycoast

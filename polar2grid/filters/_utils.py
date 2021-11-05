@@ -45,7 +45,7 @@ from pyresample.geometry import (
 from pyresample.spherical import SphPolygon
 
 logger = logging.getLogger(__name__)
-FIXED_PR = parse(pyresample.__version__) > Version("1.21.1")
+FIXED_PR = parse(pyresample.__version__) >= Version("1.22.1")
 
 PRGeometry = Union[SwathDefinition, AreaDefinition]
 
@@ -60,6 +60,17 @@ def boundary_for_area(area_def: PRGeometry) -> Boundary:
             lons, lats = da.compute(lons, lats)
         lons = [lon_side.astype(np.float64) for lon_side in lons]
         lats = [lat_side.astype(np.float64) for lat_side in lats]
+        # compare the first two pixels in the right column
+        lat_is_increasing = lats[1][0] < lats[1][1]
+        # compare the first two pixels in the "top" column
+        lon_is_increasing = lons[0][0] < lons[0][1]
+        is_ccw = (lon_is_increasing and lat_is_increasing) or (not lon_is_increasing and not lat_is_increasing)
+        if is_ccw:
+            # going counter-clockwise
+            # swap the side order and the order of the values in each side
+            # to make it clockwise
+            lons = [lon[::-1] for lon in lons[::-1]]
+            lats = [lat[::-1] for lat in lats[::-1]]
         adp = AreaBoundary(*zip(lons, lats))
         adp.decimate(freq)
     elif getattr(area_def, "is_geostationary", False):
