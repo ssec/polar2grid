@@ -180,7 +180,7 @@ from __future__ import annotations
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
-from satpy import DataQuery
+from satpy import DataQuery, Scene
 
 from polar2grid.core.script_utils import ExtendConstAction
 
@@ -312,6 +312,17 @@ class ReaderProxy(ReaderProxyBase):
 
     is_polar2grid_reader = True
 
+    def __init__(self, scn: Scene, user_products: list[str]):
+        self.scn = scn
+        self._modified_aliases = PRODUCT_ALIASES.copy()
+        if "dynamic_dnb_saturation" in user_products:
+            # they specified --dnb-saturation-correction
+            # let's modify the aliases so dynamic_dnb points to this product
+            user_products.remove("dynamic_dnb_saturation")
+            user_products.append("dynamic_dnb")
+            self._modified_aliases["dynamic_dnb"] = DataQuery(name="dynamic_dnb_saturation")
+        self._orig_user_products = user_products
+
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
         return DEFAULT_PRODUCTS
@@ -322,7 +333,7 @@ class ReaderProxy(ReaderProxyBase):
 
     @property
     def _aliases(self):
-        return PRODUCT_ALIASES
+        return self._modified_aliases
 
 
 def add_reader_argument_groups(
@@ -357,6 +368,13 @@ def add_reader_argument_groups(
         action=ExtendConstAction,
         const=DNB_ANGLE_PRODUCTS,
         help="Add DNB-band geolocation 'angle' products to list of products",
+    )
+    group.add_argument(
+        "--dnb-saturation-correction",
+        dest="products",
+        action=ExtendConstAction,
+        const=["dynamic_dnb_saturation"],
+        help="Enable dynamic DNB saturation correction (normally used for aurora scenes)",
     )
     group.add_argument(
         "--i-angle-products",

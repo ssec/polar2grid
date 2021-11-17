@@ -297,3 +297,24 @@ composites:
     - I05
     - I04
     standard_name: temperature_difference
+
+  dynamic_dnb:
+    compositor: !!python/name:satpy.composites.viirs.ERFDNB
+    prerequisites:
+      - DNB
+      - dnb_solar_zenith_angle
+      - dnb_lunar_zenith_angle
+      - dnb_moon_illumination_fraction
+    standard_name: equalized_radiance
+    units: "1"
+
+  dynamic_dnb_saturation:
+    compositor: !!python/name:satpy.composites.viirs.ERFDNB
+    prerequisites:
+      - DNB
+      - dnb_solar_zenith_angle
+      - dnb_lunar_zenith_angle
+      - dnb_moon_illumination_fraction
+    standard_name: equalized_radiance
+    units: "1"
+    saturation_correction: true
