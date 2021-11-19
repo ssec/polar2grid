@@ -27,7 +27,10 @@ from typing import Any
 
 
 def _get_component_attr(component_type: str, component_name: str, attr_name: str, default: Any = None) -> Any:
-    comp_mod = importlib.import_module(f"polar2grid.{component_type}.{component_name}")
+    try:
+        comp_mod = importlib.import_module(f"polar2grid.{component_type}.{component_name}")
+    except ModuleNotFoundError:
+        return default
     return getattr(comp_mod, attr_name, default)
 
 
