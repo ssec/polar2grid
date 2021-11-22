@@ -28,6 +28,7 @@ from typing import Dict, List, Optional, Union
 
 from satpy import Scene
 
+from ..utils.dynamic_imports import get_reader_attr
 from .day_night import DayCoverageFilter, NightCoverageFilter
 
 logger = logging.getLogger(__name__)
@@ -48,8 +49,7 @@ def _merge_filter_critera(*readers_criteria: Dict[str, Union[List[str], None]]):
 
 
 def _get_single_reader_filter_criteria(reader: str, filter_name: str):
-    reader_mod = importlib.import_module("polar2grid.readers." + reader)
-    filter_criteria = getattr(reader_mod, "FILTERS", {})
+    filter_criteria = get_reader_attr(reader, "FILTERS", {})
     return filter_criteria.get(filter_name)
 
 
@@ -89,7 +89,7 @@ def filter_scene(
     day_fraction: Optional[float] = None,
     night_fraction: Optional[float] = None,
 ):
-    if day_fraction is not False:
+    if input_scene is not None and day_fraction is not False:
         criteria = get_reader_filter_criteria(reader_names, "day_only")
         input_scene = _filter_scene_day_only_products(
             input_scene,
@@ -97,7 +97,7 @@ def filter_scene(
             sza_threshold=sza_threshold,
             day_fraction=day_fraction,
         )
-    if night_fraction is not False:
+    if input_scene is not None and night_fraction is not False:
         criteria = get_reader_filter_criteria(reader_names, "night_only")
         input_scene = _filter_scene_night_only_products(
             input_scene,

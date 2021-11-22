@@ -390,7 +390,16 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
             dest="maximum_weight_mode",
             default=argparse.SUPPRESS,
             action="store_true",
-            help='Use maximum weight mode (--method "ewa"). ' "Default is off.",
+            help='Use maximum weight mode (--method "ewa"). Default is off.',
+        )
+        group_1.add_argument(
+            "--rows-per-scan",
+            dest="rows_per_scan",
+            default=argparse.SUPPRESS,
+            type=int,
+            help="Number of data rows making up one instrument scan. "
+            '(--method "ewa"). Defaults to value extracted from '
+            "reader.",
         )
         group_1.add_argument(
             "--ewa-persist",
@@ -757,7 +766,8 @@ basic processing with limited products:
 
     # Rename the log file
     if rename_log:
-        rename_log_file(glue_name + scn.attrs["start_time"].strftime("_%Y%m%d_%H%M%S.log"))
+        stime = getattr(scn, "start_time", scn.attrs.get("start_time"))
+        rename_log_file(glue_name + stime.strftime("_%Y%m%d_%H%M%S.log"))
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
     LOG.info("Loading product metadata from files...")

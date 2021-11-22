@@ -30,8 +30,8 @@ from typing import List, Optional, Union
 
 import numpy as np
 from pyproj import Proj
+from pyresample import parse_area_file
 from pyresample.geometry import AreaDefinition, DynamicAreaDefinition
-from pyresample.utils import parse_area_file
 from satpy import Scene
 from satpy.resample import get_area_def
 
