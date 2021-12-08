@@ -797,7 +797,6 @@ basic processing with limited products:
         LOG.info("No remaining products after filtering.")
         return 0
 
-    to_save = []
     areas_to_resample = resample_args.pop("grids")
     if "ewa_persist" in resample_args:
         resample_args["persist"] = resample_args.pop("ewa_persist")
@@ -808,6 +807,7 @@ basic processing with limited products:
         is_polar2grid=USE_POLAR2GRID_DEFAULTS,
         **resample_args,
     )
+    to_save = []
     for scene_to_save, products_to_save in scenes_to_save:
         overwrite_platform_name_with_aliases(scene_to_save)
         reader_info.apply_p2g_name_to_scene(scene_to_save)
