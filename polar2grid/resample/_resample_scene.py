@@ -219,11 +219,11 @@ def resample_scene(
         rs_kwargs = _hashable_kwargs(resample_kwargs)
         resampling_groups = {(resampler, rs_kwargs, default_target): None}
 
-    wishlist = input_scene.wishlist.copy()
+    wishlist: set = input_scene.wishlist.copy()
     scenes_to_save = []
     for (resampler, _resample_kwargs, default_target), data_ids in resampling_groups.items():
         areas = _areas_to_resample(areas_to_resample, resampler, default_target)
-        scene_to_resample = input_scene.copy(datasets=data_ids)
+        scene_to_resample: Scene = input_scene.copy(datasets=data_ids)
         preserve_resolution = _get_preserve_resolution(preserve_resolution, resampler, areas)
         preserved_products = _products_to_preserve_resolution(preserve_resolution, wishlist, scene_to_resample)
         if preserved_products:
@@ -240,7 +240,7 @@ def resample_scene(
             area_def = area_resolver[area_name]
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
             if area_def is not None:
-                this_area_scene = scene_to_resample
+                this_area_scene: Scene = scene_to_resample
                 if resampler != "native" and _grid_cov > 0:
                     logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
                     filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=_grid_cov)
@@ -270,6 +270,7 @@ def resample_scene(
             if _resampled_products:
                 scenes_to_save.append((new_scn, _resampled_products))
 
+    # import ipdb; ipdb.set_trace()
     return scenes_to_save
 
 
