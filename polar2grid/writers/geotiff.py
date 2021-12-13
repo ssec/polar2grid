@@ -27,8 +27,9 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The GeoTIFF writer puts gridded image data into a standard GeoTIFF file.  It
-uses the GDAL python API and rasterio python package to create the GeoTIFF files.
+"""The GeoTIFF writer puts gridded image data into a standard GeoTIFF file.
+
+It uses the GDAL python API and rasterio python package to create the GeoTIFF files.
 It can handle any grid that can be described by PROJ.4 and understood by the
 GeoTIFF format.
 
@@ -37,7 +38,6 @@ any invalid or missing data pixels. This results in invalid pixels showing up
 as transparent in most image viewers.
 
 """
-import argparse
 import logging
 import os
 
@@ -119,6 +119,14 @@ def add_writer_argument_groups(parser, group=None):
         "for better performance in some clients. "
         "Specified as a space separate list of numbers, "
         "typically as powers of 2. Example: '2 4 8 16'",
+    )
+    group.add_argument(
+        "--gdal-driver",
+        dest="driver",
+        help="Name of the GDAL driver to use when writing the geotiff. "
+        "By default the 'geotiff' driver is used. If '--driver COG' "
+        "is used then the GDAL 'COG' driver will be used and will create "
+        "a tiled COG-compatible geotiff.",
     )
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
