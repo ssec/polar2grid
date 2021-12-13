@@ -25,6 +25,8 @@
 import contextlib
 import os
 
+import pytest
+
 
 @contextlib.contextmanager
 def set_env(**environ):
@@ -52,12 +54,14 @@ def set_env(**environ):
 def test_polar2grid_help():
     from polar2grid.glue import main
 
-    with set_env(USE_POLAR2GRID_DEFAULTS=True):
+    with pytest.raises(SystemExit) as e, set_env(USE_POLAR2GRID_DEFAULTS="1"):
         main(["--help"])
+    assert e.value.code == 0
 
 
 def test_geo2grid_help():
     from polar2grid.glue import main
 
-    with set_env(USE_POLAR2GRID_DEFAULTS=False):
+    with pytest.raises(SystemExit) as e, set_env(USE_POLAR2GRID_DEFAULTS="0"):
         main(["--help"])
+    assert e.value.code == 0
