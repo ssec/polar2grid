@@ -20,8 +20,9 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""AMSR2 L1B files contain various parameters from the GCOM-W1 AMSR2
-instrument. This reader can be used by specifying the reader name
+"""AMSR2 L1B files contain various parameters from the GCOM-W1 AMSR2 instrument.
+
+This reader can be used by specifying the reader name
 ``amsr2_l1b`` to the ``polar2grid.sh`` script.
 Supported files usually have the following naming scheme::
 
@@ -58,7 +59,7 @@ coastlines. This requires using an alternate non-default scaling configuration
 provided in the tarball. It can be used by providing the
 ``--rescale-configs $POLAR2GRID_HOME/rescale_configs/amsr2_png.ini``
 flag when generating AMSR2 L1B GeoTIFFs.
-Once this rescaling has been done, colormap files can be found in 
+Once this rescaling has been done, colormap files can be found in
 ``$POLAR2GRID_HOME/colormaps`` which can then be applied using the
 the `add_colormap.sh` script.
 

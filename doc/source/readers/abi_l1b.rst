@@ -17,7 +17,7 @@ Examples:
 
 .. code-block:: bash
 
-    geo2grid.sh -r abi_l1b -h 
+    geo2grid.sh -r abi_l1b -h
 
     geo2grid.sh -r abi_l1b -w geotiff --list-products -f /goes16/abi
 

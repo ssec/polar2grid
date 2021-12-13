@@ -10,13 +10,18 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
+"""Polar2Grid project's sphinx documentation configuration."""
 
 import ftplib
 import os
 import sys
 import urllib.request
+import warnings
 from datetime import datetime
 from shutil import copyfileobj
+
+import yaml
+from pyproj import CRS
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -373,9 +378,9 @@ htmlhelp_basename = project.lower() + "doc"
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
-    #'papersize': 'letterpaper',
+    # 'papersize': 'letterpaper',
     # The font size ('10pt', '11pt' or '12pt').
-    #'pointsize': '10pt',
+    # 'pointsize': '10pt',
     # Additional stuff for the LaTeX preamble.
     "preamble": r"""
 \setcounter{tocdepth}{1}
@@ -390,109 +395,6 @@ latex_elements = {
     "babel": "\\usepackage[english]{babel}",
     "printindex": "",
 }
-
-# new
-"""
-\renewcommand{\maketitle}{%
-  \let\spx@tempa\relax
-  \ifHy@pageanchor\def\spx@tempa{\Hy@pageanchortrue}\fi
-  \hypersetup{pageanchor=false}% avoid duplicate destination warnings
-  \begin{titlepage}%
-    \let\footnotesize\small
-    \let\footnoterule\relax
-    \noindent\rule{\textwidth}{1pt}\par
-      \begingroup % for PDF information dictionary
-       \def\endgraf{ }\def\and{\& }%
-       \pdfstringdefDisableCommands{\def\\{, }}% overwrite hyperref setup
-       \hypersetup{pdfauthor={\@author}, pdftitle={\@title}}%
-      \endgroup
-    \begin{flushright}%
-      \sphinxlogo
-      \py@HeaderFamily
-      {\Huge \@title \par}
-      {\itshape\LARGE \py@release\releaseinfo \par}
-      \vfill
-      {\LARGE
-        \begin{tabular}[t]{c}
-          \@author
-        \end{tabular}
-        \par}
-      \vfill\vfill
-      {\large
-       \@date \par
-       \vfill
-       \py@authoraddress \par
-      }%
-    \end{flushright}%\par
-    \@thanks
-  \end{titlepage}%
-  \setcounter{footnote}{0}%
-  \let\thanks\relax\let\maketitle\relax
-  %\gdef\@thanks{}\gdef\@author{}\gdef\@title{}
-  \if@openright\cleardoublepage\else\clearpage\fi
-  \spx@tempa
-}
-"""
-
-
-"""
-
-% Change the title page to look a bit better, and fit in with the fncychap
-% ``Bjarne'' style a bit better.
-%
-\makeatletter
-\renewcommand{\maketitle}{%
-  \let\spx@tempa\relax
-  \ifHy@pageanchor\def\spx@tempa{\Hy@pageanchortrue}\fi
-  \hypersetup{pageanchor=false}% avoid duplicate destination warnings
-  \begin{titlepage}%
-    \let\footnotesize\small
-    \let\footnoterule\relax
-    \noindent\rule{\textwidth}{1pt}\ifsphinxpdfoutput\newline\null\fi\par
-    \ifsphinxpdfoutput
-      \begingroup
-      % These \defs are required to deal with multi-line authors; it
-      % changes \\ to ', ' (comma-space), making it pass muster for
-      % generating document info in the PDF file.
-      \def\\{, }%
-      \def\and{and }%
-      \pdfinfo{
-        /Author (\@author)
-        /Title (\@title)
-      }%
-      \endgroup
-    \fi
-    \begin{flushright}%
-      \sphinxlogo
-      \py@HeaderFamily
-      {\Huge \@title \par}
-      {\itshape\LARGE \py@release\releaseinfo \par}
-      \vfill
-      {\large %changed by davidh, was LARGE
-        \begin{tabular}[t]{c}
-          \@author
-        \end{tabular}
-        \par}
-      \vfill\vfill
-      {\large
-       \@date \par
-       \vfill
-       \py@authoraddress \par
-      }%
-    \end{flushright}%\par
-    \@thanks
-  \end{titlepage}%
-  \setcounter{footnote}{0}%
-  \let\thanks\relax\let\maketitle\relax
-  %\gdef\@thanks{}\gdef\@author{}\gdef\@title{}
-  \if@openright\cleardoublepage\else\clearpage\fi
-  \spx@tempa
-}
-\def\ttl@save@mkschap #1{\vspace *{-20\p@ }{\parindent \z@ \raggedright
-    \normalfont \interlinepenalty \@M \DOTIS {#1} \vskip -20\p@ }}
-\makeatother
-"""
-
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]), toctree_only.
@@ -598,13 +500,7 @@ intersphinx_mapping = {
     "trollimage": ("https://trollimage.readthedocs.io/en/stable", None),
 }
 
-
-import warnings
-
 # Generate builtin grids list
-# from pyresample import parse_area_file
-import yaml
-from pyproj import CRS
 
 grid_titles = {
     "wgs84_fit": "WGS84 Dynamic Fit",

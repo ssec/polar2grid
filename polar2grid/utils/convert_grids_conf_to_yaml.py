@@ -99,7 +99,7 @@ def _add_origin(grid_info: dict, area_dict: dict, crs: CRS, dx: float, dy: float
     ox = grid_info["grid_origin_x"]
     oy = grid_info["grid_origin_y"]
     if ox is not None and dx is None:
-        logger.error("Can't convert grid with origin but no pixel resolution: %s", grid_name)
+        logger.error("Can't convert grid with origin but no pixel resolution")
         raise ValueError("Can't convert grid with origin but no pixel resolution")
     if ox is not None and oy is not None:
         convert_to_meters = not crs.is_geographic and grid_info["grid_origin_units"] == "degrees"

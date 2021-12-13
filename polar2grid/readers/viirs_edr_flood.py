@@ -20,8 +20,8 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""
-The VIIRS EDR FLOOD reader operates on HDF4 files.
+"""The VIIRS EDR FLOOD reader operates on HDF4 files.
+
 Files usually have the following naming scheme:
 
     WATER_VIIRS_Prj_SVI_{platform_shortname}_d{start_time:%Y%m%d_t%H%M%S%f}_e{end_time:%H%M%S%f}_b{orbit:5d}_{source:8s}_{dim0}_{dim1}_01.hdf

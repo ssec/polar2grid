@@ -89,57 +89,49 @@ def get_proj4_info(proj4_str):
     return proj4_dict
 
 
-def parse_proj4_config_line(grid_name, parts):
-    proj4_str = parts[2]
+def _parse_proj4_str(proj4_str, grid_name):
     # Test to make sure the proj4_str is valid in pyproj's eyes
     try:
         crs = CRS.from_proj4(proj4_str)
     except ValueError:
         LOG.error("Invalid proj4 string in '%s' : '%s'" % (grid_name, proj4_str))
         raise
+    return proj4_str, crs
 
-    # Some parts can be None, but not all
+
+def _parse_optional_config_param(str_part, convert_func, unspecified_info=None):
+    static = True
+    if str_part == "None" or str_part == "":
+        if unspecified_info is not None:
+            grid_name, param_name = unspecified_info
+            LOG.warning(f"Grid '{grid_name}' may not process properly due to unspecified {param_name}")
+        static = False
+        param_value = None
+    else:
+        param_value = convert_func(str_part)
+    return static, param_value
+
+
+def parse_proj4_config_line(grid_name, parts):
+    proj4_str, crs = _parse_proj4_str(parts[2], grid_name)
+
     try:
+        # Some parts can be None, but not all
         static = True
-        if parts[3] == "None" or parts[3] == "":
-            static = False
-            grid_width = None
-        else:
-            grid_width = int(parts[3])
-
-        if parts[4] == "None" or parts[4] == "":
-            static = False
-            grid_height = None
-        else:
-            grid_height = int(parts[4])
-
-        if parts[5] == "None" or parts[5] == "":
-            LOG.warning("Grid '%s' may not process properly due to unspecified pixel size", grid_name)
-            static = False
-            pixel_size_x = None
-        else:
-            pixel_size_x = float(parts[5])
-
-        if parts[6] == "None" or parts[6] == "":
-            LOG.warning("Grid '%s' may not process properly due to unspecified pixel size", grid_name)
-            static = False
-            pixel_size_y = None
-        else:
-            pixel_size_y = float(parts[6])
-
-        xorigin_is_deg = False
-        if parts[7] == "None" or parts[7] == "":
-            static = False
-            grid_origin_x = None
-        else:
-            grid_origin_x, xorigin_is_deg = _parse_meter_degree_param(parts[7])
-
-        yorigin_is_deg = False
-        if parts[8] == "None" or parts[8] == "":
-            static = False
-            grid_origin_y = None
-        else:
-            grid_origin_y, yorigin_is_deg = _parse_meter_degree_param(parts[8])
+        _static, grid_width = _parse_optional_config_param(parts[3], int)
+        static = static and _static
+        _static, grid_height = _parse_optional_config_param(parts[4], int)
+        static = static and _static
+        _static, pixel_size_x = _parse_optional_config_param(parts[5], float, (grid_name, "pixel_size"))
+        static = static and _static
+        _static, pixel_size_y = _parse_optional_config_param(parts[6], float, (grid_name, "pixel size"))
+        static = static and _static
+        _static, xorigin_res = _parse_optional_config_param(parts[7], _parse_meter_degree_param)
+        grid_origin_x, xorigin_is_deg = xorigin_res if xorigin_res is not None else (None, False)
+        static = static and _static
+        _static, yorigin_res = _parse_optional_config_param(parts[8], _parse_meter_degree_param)
+        grid_origin_y, yorigin_is_deg = yorigin_res if yorigin_res is not None else (None, False)
+        static = static and _static
     except ValueError:
         LOG.error("Could not parse proj4 grid configuration: '%s'" % (grid_name,))
         raise
@@ -175,9 +167,9 @@ def parse_proj4_config_line(grid_name, parts):
 
 
 def parse_and_convert_proj4_config_line(grid_name, parts):
-    """Return a dictionary of information for a specific PROJ.4 grid from
-    a grid configuration line. ``parts`` should be every comma-separated
-    part of the line including the ``grid_name``.
+    """Return a dictionary of information for a specific PROJ.4 grid from a grid configuration line.
+
+    ``parts`` should be every comma-separated part of the line including the ``grid_name``.
     """
     info = parse_proj4_config_line(grid_name, parts)
 
@@ -244,20 +236,14 @@ def read_grids_config_str(config_str, convert_coords=True):
 
 
 def read_grids_config(config_filepath, convert_coords=True):
-    """Read the "grids.conf" file and create dictionaries mapping the
-    grid name to the necessary information. There are two dictionaries
-    created, one for gpd file grids and one for proj4 grids.
+    """Read the "grids.conf" file and create dictionaries mapping the grid name to the necessary information.
 
-    Format for gpd grids:
-    grid_name,gpd,gpd_filename
-
-    where 'gpd' is the actual text 'gpd' to define the grid as a gpd grid.
+    There are two dictionaries created, one for gpd file grids and one for proj4 grids.
 
     Format for proj4 grids:
     grid_name,proj4,proj4_str,pixel_size_x,pixel_size_y,origin_x,origin_y,width,height
 
-    where 'proj4' is the actual text 'proj4' to define the grid as a proj4
-    grid.
+    where 'proj4' is the actual text 'proj4' to define the grid as a proj4 grid.
 
     """
     full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
@@ -276,9 +262,7 @@ def read_grids_config(config_filepath, convert_coords=True):
 
 
 class GridManager:
-    """Object that holds grid information about the grids added
-    to it. This Cartographer can handle PROJ4 and GPD grids.
-    """
+    """Object that holds grid information about the grids added to it."""
 
     grid_information: dict[str, dict] = {}
 
@@ -301,8 +285,9 @@ class GridManager:
         return self.get_grid_definition(item)
 
     def add_grid_config(self, grid_config_filename):
-        """Load a grid configuration file. If a ``grid_name`` was already
-        added its information is overwritten.
+        """Load a grid configuration file.
+
+        If a ``grid_name`` was already added its information is overwritten.
         """
         grid_information = read_grids_config(grid_config_filename)
         self.grid_information.update(**grid_information)

@@ -33,8 +33,16 @@ from typing import Callable, Optional
 
 import dask
 import satpy
+from dask.diagnostics import ProgressBar
+from satpy import Scene
+from satpy.writers import compute_writer_results
 
-from polar2grid.core.script_utils import ExtendAction
+from polar2grid.core.script_utils import (
+    ExtendAction,
+    create_exc_handler,
+    rename_log_file,
+    setup_logging,
+)
 from polar2grid.filters import filter_scene
 from polar2grid.readers._base import ReaderProxyBase
 from polar2grid.resample import resample_scene
@@ -544,11 +552,8 @@ def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     filenames = reader_args.pop("filenames") or []
     filenames = list(get_input_files(filenames))
 
+    # Note: argparse will combine "extended" arguments like `products` automatically
     reader_specific_args, reader_specific_load_args = _parse_reader_args(reader_names, reader_subgroups, args)
-    for _reader_name, _reader_args in reader_specific_args.items():
-        _extended_products = _reader_args.pop("products", None) or []
-        # Shouldn't be needed as argparse combines all destination variables
-        # products.extend(_extended_products)
 
     # Parse provided files and search for files if provided directories
     scene_creation = {
@@ -587,25 +592,8 @@ def _get_p2g_defaults_env_var():
     return bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
 
 
-def main(argv=sys.argv[1:]):
-    global LOG
-
-    import argparse
-
-    from dask.diagnostics import ProgressBar
-    from satpy import Scene
-    from satpy.writers import compute_writer_results
-
-    from polar2grid.core.script_utils import (
-        create_exc_handler,
-        rename_log_file,
-        setup_logging,
-    )
-
-    add_polar2grid_config_paths()
-    USE_POLAR2GRID_DEFAULTS = _get_p2g_defaults_env_var()
-    BINARY_NAME = "polar2grid" if USE_POLAR2GRID_DEFAULTS else "geo2grid"
-
+def _main_args(argv, use_polar2grid_defaults):
+    binary_name = "polar2grid" if use_polar2grid_defaults else "geo2grid"
     prog = os.getenv("PROG_NAME", sys.argv[0])
     # "usage: " will be printed at the top of this:
     usage = """
@@ -664,37 +652,31 @@ basic processing with limited products:
         "--list-products",
         dest="list_products",
         action="store_true",
-        help="List available {} products and exit".format(BINARY_NAME),
+        help="List available {} products and exit".format(binary_name),
     )
     parser.add_argument(
         "--list-products-all",
         dest="list_products_all",
         action="store_true",
-        help="List available {} products and custom/Satpy products and exit".format(BINARY_NAME),
+        help="List available {} products and custom/Satpy products and exit".format(binary_name),
     )
-    reader_group = add_scene_argument_groups(parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
-    resampling_group = add_resample_argument_groups(parser, is_polar2grid=USE_POLAR2GRID_DEFAULTS)[0]
+    reader_group = add_scene_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
+    resampling_group = add_resample_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
     writer_group = add_writer_argument_groups(parser)[0]
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
 
     _retitle_optional_arguments(parser)
-    args, remaining_args = parser.parse_known_args(argv_without_help)
-    os.environ["DASK_NUM_WORKERS"] = str(args.num_workers)
+    args, _ = parser.parse_known_args(argv_without_help)
+    return parser, args, reader_group, resampling_group, writer_group
 
-    # get the logger if we know the readers and writers that will be used
-    if args.readers is not None and args.writers is not None:
-        glue_name = args.readers[0] + "_" + "-".join(args.writers or [])
-        LOG = logging.getLogger(glue_name)
-    reader_subgroups = _add_component_parser_args(parser, "readers", args.readers or [])
-    writer_subgroups = _add_component_parser_args(parser, "writers", args.writers or [])
-    args = parser.parse_args(argv)
 
+def _validate_reader_writer_args(parser, args, use_polar2grid_defaults):
     if args.readers is None:
         parser.print_usage()
         parser.exit(
             1,
             "\nERROR: Reader must be provided (-r flag).\n"
-            "Supported readers:\n\t{}\n".format("\n\t".join(_supported_readers(USE_POLAR2GRID_DEFAULTS))),
+            "Supported readers:\n\t{}\n".format("\n\t".join(_supported_readers(use_polar2grid_defaults))),
         )
     elif len(args.readers) > 1:
         parser.print_usage()
@@ -708,22 +690,13 @@ basic processing with limited products:
         parser.exit(
             1,
             "\nERROR: Writer must be provided (-w flag) with one or more writer.\n"
-            "Supported writers:\n\t{}\n".format("\n\t".join(_supported_writers(USE_POLAR2GRID_DEFAULTS))),
+            "Supported writers:\n\t{}\n".format("\n\t".join(_supported_writers(use_polar2grid_defaults))),
         )
 
-    reader_args = _args_to_dict(args, reader_group._group_actions)
-    reader_names = reader_args.pop("readers")
-    scene_creation, load_args = _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
-    resample_args = _args_to_dict(args, resampling_group._group_actions)
-    writer_args = _args_to_dict(args, writer_group._group_actions)
-    writer_specific_args = _parse_writer_args(
-        writer_args["writers"], writer_subgroups, reader_names, USE_POLAR2GRID_DEFAULTS, args
-    )
-    writer_args.update(writer_specific_args)
 
-    if not args.filenames:
-        parser.print_usage()
-        parser.exit(1, "\nERROR: No data files provided (-f flag)\n")
+def _prepare_initial_logging(args, glue_name):
+    global LOG
+    LOG = logging.getLogger(glue_name)
 
     # Prepare logging
     rename_log = False
@@ -746,22 +719,121 @@ basic processing with limited products:
     if args.extra_config_path:
         add_extra_config_paths(args.extra_config_path)
     LOG.debug(f"Satpy config path is: {satpy.config.get('config_path')}")
+    return rename_log, glue_name
 
+
+def _create_scene(scene_creation: dict) -> Optional[Scene]:
+    try:
+        scn = Scene(**scene_creation)
+    except ValueError as e:
+        LOG.error("{} | Enable debug message (-vvv) or see log file for details.".format(str(e)))
+        LOG.debug("Further error information: ", exc_info=True)
+        return
+    except OSError:
+        LOG.error("Could not open files. Enable debug message (-vvv) or see log file for details.")
+        LOG.debug("Further error information: ", exc_info=True)
+        return
+    return scn
+
+
+def _resample_scene_to_grids(
+    scn: Scene,
+    reader_names: list[str],
+    resample_args: dict,
+    filter_kwargs: dict,
+    preserve_resolution: bool,
+    use_polar2grid_defaults: bool,
+) -> list[tuple]:
+    ll_bbox = resample_args.pop("ll_bbox")
+    if ll_bbox:
+        scn = scn.crop(ll_bbox=ll_bbox)
+
+    scn = filter_scene(
+        scn,
+        reader_names,
+        **filter_kwargs,
+    )
+    if scn is None:
+        LOG.info("No remaining products after filtering.")
+        return []
+
+    areas_to_resample = resample_args.pop("grids")
+    if "ewa_persist" in resample_args:
+        resample_args["persist"] = resample_args.pop("ewa_persist")
+    scenes_to_save = resample_scene(
+        scn,
+        areas_to_resample,
+        preserve_resolution=preserve_resolution,
+        is_polar2grid=use_polar2grid_defaults,
+        **resample_args,
+    )
+    return scenes_to_save
+
+
+def _save_scenes(scenes_to_save: list[tuple], reader_info, writer_args) -> list:
+    to_save = []
+    for scene_to_save, products_to_save in scenes_to_save:
+        overwrite_platform_name_with_aliases(scene_to_save)
+        reader_info.apply_p2g_name_to_scene(scene_to_save)
+        to_save = write_scene(
+            scene_to_save,
+            writer_args["writers"],
+            writer_args,
+            products_to_save,
+            to_save=to_save,
+        )
+    return to_save
+
+
+def _parse_glue_args(argv: list[str], use_polar2grid_defaults: bool):
+    parser, args, reader_group, resampling_group, writer_group = _main_args(argv, use_polar2grid_defaults)
+    # env used by some writers for default number of threads (ex. geotiff)
+    # must be done before writer args are parsed
+    os.environ["DASK_NUM_WORKERS"] = str(args.num_workers)
+
+    reader_subgroups = _add_component_parser_args(parser, "readers", args.readers or [])
+    writer_subgroups = _add_component_parser_args(parser, "writers", args.writers or [])
+    args = parser.parse_args(argv)
+    _validate_reader_writer_args(parser, args, use_polar2grid_defaults)
+
+    reader_args = _args_to_dict(args, reader_group._group_actions)
+    reader_names = reader_args.pop("readers")
+    scene_creation, load_args = _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
+    resample_args = _args_to_dict(args, resampling_group._group_actions)
+    writer_args = _args_to_dict(args, writer_group._group_actions)
+    writer_specific_args = _parse_writer_args(
+        writer_args["writers"], writer_subgroups, reader_names, use_polar2grid_defaults, args
+    )
+    writer_args.update(writer_specific_args)
+
+    if not args.filenames:
+        parser.print_usage()
+        parser.exit(1, "\nERROR: No data files provided (-f flag)\n")
+    return args, reader_args, reader_names, scene_creation, load_args, resample_args, writer_args
+
+
+def _get_glue_name(args):
+    reader_name = "NONE" if args.readers is None else args.readers[0]
+    writer_names = "-".join(args.writers or [])
+    return f"{reader_name}_{writer_names}"
+
+
+def main(argv=sys.argv[1:]):
+    add_polar2grid_config_paths()
+    USE_POLAR2GRID_DEFAULTS = _get_p2g_defaults_env_var()
+    args, reader_args, reader_names, scene_creation, load_args, resample_args, writer_args = _parse_glue_args(
+        argv, USE_POLAR2GRID_DEFAULTS
+    )
+    glue_name = _get_glue_name(args)
+    rename_log = _prepare_initial_logging(args, glue_name)
     # Set up dask and the number of workers
     if args.num_workers:
         dask.config.set(num_workers=args.num_workers)
 
     # Create a Scene, analyze the provided files
     LOG.info("Sorting and reading input files...")
-    try:
-        scn = Scene(**scene_creation)
-    except ValueError as e:
-        LOG.error("{} | Enable debug message (-vvv) or see log file for details.".format(str(e)))
-        LOG.debug("Further error information: ", exc_info=True)
-        return -1
-    except OSError:
-        LOG.error("Could not open files. Enable debug message (-vvv) or see log file for details.")
-        LOG.debug("Further error information: ", exc_info=True)
+    scn = _create_scene(scene_creation)
+    if scn is None:
         return -1
 
     # Rename the log file
@@ -782,42 +854,15 @@ basic processing with limited products:
     products = load_args.pop("products")
     scn.load(products, **load_args)
 
-    ll_bbox = resample_args.pop("ll_bbox")
-    if ll_bbox:
-        scn = scn.crop(ll_bbox=ll_bbox)
-
-    scn = filter_scene(
-        scn,
-        reader_names,
-        sza_threshold=reader_args["sza_threshold"],
-        day_fraction=reader_args["filter_day_products"],
-        night_fraction=reader_args["filter_night_products"],
+    filter_kwargs = {
+        "sza_threshold": reader_args["sza_threshold"],
+        "day_fraction": reader_args["filter_day_products"],
+        "night_fraction": reader_args["filter_night_products"],
+    }
+    scenes_to_save = _resample_scene_to_grids(
+        scn, reader_names, resample_args, filter_kwargs, args.preserve_resolution, USE_POLAR2GRID_DEFAULTS
     )
-    if scn is None:
-        LOG.info("No remaining products after filtering.")
-        return 0
-
-    areas_to_resample = resample_args.pop("grids")
-    if "ewa_persist" in resample_args:
-        resample_args["persist"] = resample_args.pop("ewa_persist")
-    scenes_to_save = resample_scene(
-        scn,
-        areas_to_resample,
-        preserve_resolution=args.preserve_resolution,
-        is_polar2grid=USE_POLAR2GRID_DEFAULTS,
-        **resample_args,
-    )
-    to_save = []
-    for scene_to_save, products_to_save in scenes_to_save:
-        overwrite_platform_name_with_aliases(scene_to_save)
-        reader_info.apply_p2g_name_to_scene(scene_to_save)
-        to_save = write_scene(
-            scene_to_save,
-            writer_args["writers"],
-            writer_args,
-            products_to_save,
-            to_save=to_save,
-        )
+    to_save = _save_scenes(scenes_to_save, reader_info, writer_args)
 
     if args.progress:
         pbar = ProgressBar()

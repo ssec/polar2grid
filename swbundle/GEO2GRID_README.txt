@@ -22,7 +22,7 @@ input into another program.
 Documentation: http://www.ssec.wisc.edu/software/geo2grid/
 
     Written by David Hoese    February 2019
-    University of Wisconsin-Madison 
+    University of Wisconsin-Madison
     Space Science and Engineering Center
     1225 West Dayton Street
     Madison, WI  53706

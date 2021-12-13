@@ -34,4 +34,3 @@ Examples:
     polar2grid.sh -r modis_l1b -w hdf5 -g wgs84_fit_250 -f /data/rad/MOD02QKM.*.hdf /data/geo/MOD03.*.hdf
 
     polar2grid.sh -r modis_l1b -w binary -f /aqua/a1.17006.1855.500m.hdf /aqua/a1.17006.1855.geo.hdf
-    

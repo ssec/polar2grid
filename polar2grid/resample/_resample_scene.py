@@ -70,7 +70,7 @@ def _crs_equal(a, b):
 
 
 def _is_native_grid(grid, max_native_area):
-    """Is the desired grid a version of the native Area?"""
+    """Check if the current grid is in the native data projection."""
     if not isinstance(max_native_area, AreaDefinition):
         return False
     if not isinstance(grid, AreaDefinition):
@@ -239,28 +239,18 @@ def resample_scene(
         for area_name in areas:
             area_def = area_resolver[area_name]
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
-            if area_def is not None:
-                this_area_scene: Scene = scene_to_resample
-                if resampler != "native" and _grid_cov > 0:
-                    logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
-                    filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=_grid_cov)
-                    this_area_scene = filter.filter_scene(scene_to_resample)
-                    if this_area_scene is None:
-                        logger.warning("No products were found to overlap with '%s' grid.", area_name)
-                        continue
-                    if data_ids is not None:
-                        data_ids = list(set(data_ids) & set(this_area_scene.keys()))
-                logger.info("Resampling to '%s' using '%s' resampling...", area_name, rs)
-                logger.debug("Resampling to '%s' using resampler '%s' with %s", area_name, rs, _resample_kwargs)
-                new_scn = this_area_scene.resample(area_def, resampler=rs, datasets=data_ids, **_resample_kwargs)
-            elif not preserve_resolution:
-                # the user didn't want to resample to any areas
-                # the user also requested that we don't preserve resolution
-                # which means we have to save this Scene's datasets
-                # because they won't be saved
-                new_scn = scene_to_resample
-            else:
-                # No resampling and any preserved resolution datasets were saved earlier
+            new_scn = _resample_scene_to_single_area(
+                scene_to_resample,
+                area_name,
+                area_def,
+                rs,
+                data_ids,
+                _grid_cov,
+                resampler,
+                _resample_kwargs,
+                preserve_resolution,
+            )
+            if new_scn is None:
                 continue
             # we only want to try to save products that we asked for and that
             # we were actually able to generate. Composite generation may have
@@ -270,8 +260,43 @@ def resample_scene(
             if _resampled_products:
                 scenes_to_save.append((new_scn, _resampled_products))
 
-    # import ipdb; ipdb.set_trace()
     return scenes_to_save
+
+
+def _resample_scene_to_single_area(
+    scene_to_resample: Scene,
+    area_name,
+    area_def,
+    rs,
+    data_ids,
+    coverage_threshold,
+    resampler,
+    resample_kwargs,
+    preserve_resolution,
+):
+    if area_def is not None:
+        if resampler != "native" and coverage_threshold > 0:
+            logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
+            filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=coverage_threshold)
+            scene_to_resample = filter.filter_scene(scene_to_resample)
+            if scene_to_resample is None:
+                logger.warning("No products were found to overlap with '%s' grid.", area_name)
+                return
+            if data_ids is not None:
+                data_ids = list(set(data_ids) & set(scene_to_resample.keys()))
+        logger.info("Resampling to '%s' using '%s' resampling...", area_name, rs)
+        logger.debug("Resampling to '%s' using resampler '%s' with %s", area_name, rs, resample_kwargs)
+        new_scn = scene_to_resample.resample(area_def, resampler=rs, datasets=data_ids, **resample_kwargs)
+    elif not preserve_resolution:
+        # the user didn't want to resample to any areas
+        # the user also requested that we don't preserve resolution
+        # which means we have to save this Scene's datasets
+        # because they won't be saved
+        new_scn = scene_to_resample
+    else:
+        # No resampling and any preserved resolution datasets were saved earlier
+        return
+    return new_scn
 
 
 def _areas_to_resample(

@@ -40,19 +40,19 @@ Basic Usage
 
     The purpose of |project| is to convert satellite data files into
     high quality gridded image files. The main run script is ``geo2grid.sh``
-    and requires users to choose an input reader (-r what instrument 
+    and requires users to choose an input reader (-r what instrument
     data would you like to use) and an output writer (-w what output format
-    would you like to create). The only other required input is the 
-    list of files or a directory pointing to the location of the input 
+    would you like to create). The only other required input is the
+    list of files or a directory pointing to the location of the input
     files (-f). Each instrument data reader by default will create
     single band output image GeoTIFF files for whatever bands are provided,
     along with true and natural color images. Only one time step
     can be processed with each script execution.
-    
-    For example, executing the following command above will create 
-    8-bit GeoTIFF files of all 16 ABI imager channels, a true 
-    color RGB, and natural color RGB in the native resolution of the 
-    instrument channel (500m for RGB composites).  This can be 
+
+    For example, executing the following command above will create
+    8-bit GeoTIFF files of all 16 ABI imager channels, a true
+    color RGB, and natural color RGB in the native resolution of the
+    instrument channel (500m for RGB composites).  This can be
     customized with command line arguments.
 
     .. code-block:: bash
@@ -63,7 +63,7 @@ Basic Usage
     a user only needs to decide on a :doc:`Reader <readers/index>` and a
     :doc:`Writer <writers/index>` and provide them to |script_literal|.
 
-    If processing errors occur |project| will attempt to continue 
+    If processing errors occur |project| will attempt to continue
     processing to make as many products as it can.
 
 Common Script Options
@@ -139,7 +139,7 @@ are always available:
 
 
 For information on other scripts and features provided by |project| see
-the :doc:`utilscripts` section or the various examples throughout 
+the :doc:`utilscripts` section or the various examples throughout
 the document.
 
 .. _reader_writer_combos:
@@ -217,7 +217,7 @@ Creating Your Own Custom Grids
 The |project| software bundle comes with a wrapper script for the
 :ref:`Custom Grid Utility <util_p2g_grid_helper>` for easily creating |project| grid definitions over
 a user determined longitude and latitude region. Once these definitions have
-been created, they can be provided to polar2grid.sh. To run the utility script  
+been created, they can be provided to polar2grid.sh. To run the utility script
 from the software bundle wrapper run:
 
 .. ifconfig:: not is_geo2grid

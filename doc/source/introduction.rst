@@ -156,4 +156,3 @@ suitability of this software for any purpose. All risk of use is assumed by
 the user. Users agree not to hold SSEC, the University of Wisconsin-Madison,
 or any of its employees or assigns liable for any consequences resulting from
 the use of the |cspp_abbr| software.
-

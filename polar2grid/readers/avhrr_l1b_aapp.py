@@ -21,6 +21,7 @@
 #     input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The AVHRR reader is for reading AAPP L1B files for the AVHRR instrument.
+
 These files are a custom binary format. The reader can be specified with
 the ``polar2grid.sh`` command using the ``avhrr`` or ``avhrr_l1b_aapp`` reader
 name.

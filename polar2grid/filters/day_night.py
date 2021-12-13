@@ -75,7 +75,7 @@ def _get_sunlight_coverage(area_def, start_time, sza_threshold=90, overpass=None
 
 
 def modpi(val, mod=np.pi):
-    """Puts *val* between -*mod* and *mod*."""
+    """Put *val* between -*mod* and *mod*."""
     return (val + mod) % (2 * mod) - mod
 
 

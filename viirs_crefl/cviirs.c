@@ -34,7 +34,7 @@ Revision history:
                          1) removed most code within #ifdef DEBUG clauses
                          2) left command line options for nearest, TOA, and sealevel; note that these options
                             were in Version 1.4.2 but were not available from the command line
-                         3) changes by DRL to 1.4.2 to write scale factor and offset has already been 
+                         3) changes by DRL to 1.4.2 to write scale factor and offset has already been
                             incorporated into 1.5.2
                          4) Added in the modifications from Chuanmin Hu & Brock Murch of Univ South Florida
                             IMaRS to add bands 9-16.  The aO3 and taur0 parameters came "from SeaDAS codes"
@@ -569,7 +569,7 @@ commented that too Eric*/
     printf("band %d \n",ib);
     if ( (attr_index = SDfindattr(sds[ib].id, attr_name)) != -1  &&
          SDattrinfo(sds[ib].id, attr_index, dummy, &num_type, &count) != -1  &&
-         SDreadattr(sds[ib].id, attr_index, scale_factor) != -1 ) 
+         SDreadattr(sds[ib].id, attr_index, scale_factor) != -1 )
       sds[ib].factor = ((float32 *)scale_factor)[indexlocator[ib]];
     else {
 	attr_name = "Scale";
@@ -691,7 +691,7 @@ commented that too Eric*/
 		fprintf(stderr, "No L1B SDS can be read successfully.\n");
 		exit(1);
 		}
- 
+
 	Nscans = sds[ib].Nl / sds[ib].rowsperscan;
 
 
@@ -870,13 +870,13 @@ commented that too Eric*/
 							(solz[crsidx12] == *solzfill) ||
 							(solz[crsidx21] == *solzfill) ||
 							(solz[crsidx22] == *solzfill);
-commented by eric to handle the viirs fill value hardcoding */ 
+commented by eric to handle the viirs fill value hardcoding */
 
 						bad = (solz[crsidx11] <-900.) ||
 							(solz[crsidx12] <-900.) ||
 							(solz[crsidx21] <-900.) ||
 							(solz[crsidx22] <-900.);
- 
+
 						if (bad) {
 							((int16 *)outsds[ib].data)[idx] = *(int16 *)outsds[ib].fillvalue;
 							continue;
@@ -1080,7 +1080,7 @@ void set_dimnames(int samples, char **dimname1, char **dimname2)
 		default:
 			*dimname1 = *dimname2 = (char *) NULL;
 			break;
-		}	
+		}
 }
 
 
@@ -1094,7 +1094,7 @@ int interp_dem(float lat, float lon, SDS *dem)
 	int height;
 
         if (lat < -99.0F) return 0;
-	
+
 	fractrow = (90.0F - lat) * dem->Nl / 180.0F;
 	demrow1 = (int) floorf(fractrow);
 	demrow2 = demrow1 + 1;

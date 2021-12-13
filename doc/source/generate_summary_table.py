@@ -190,7 +190,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser()
-    args = parser.parse_args()
+    parser.parse_args()
 
     out_file = open(output_pathname, "w")
 

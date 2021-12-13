@@ -21,11 +21,12 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
-#     Written by David Hoese    Feb 2021
+#     Written by David Hoese Feb 2021
 #     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
+"""Functionality related to resampling data or other geolocation specific utilities."""
 
-from ._resample_scene import resample_scene
+from ._resample_scene import resample_scene  # noqa

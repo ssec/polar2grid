@@ -54,7 +54,7 @@ if [[ "$F3" == "MOD" || "$F3" == "MYD" ]] ; then
   FILQKM=$l1b250m_file
   if [[ "$F2" == "O" ]] ; then
      PREFIX="t1."
-  else 
+  else
      PREFIX="a1."
   fi
   LINK=0
@@ -68,9 +68,9 @@ elif [[ "$F2" == "1" ]] ; then
   FILHKM=MOD02HKM.A20${date}.hdf
   FILQKM=MOD02QKM.A20${date}.hdf
   LINK=1
-else 
+else
   echo "Satellite name incorrect" $SAT
-  exit 1 
+  exit 1
 fi
 
 

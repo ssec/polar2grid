@@ -21,22 +21,22 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The AHI HSD Reader operates on standard files from the Japan
-Meteorological Agency (JMA) Himawari-8 Advanced Himawari Imager (AHI) 
+Meteorological Agency (JMA) Himawari-8 Advanced Himawari Imager (AHI)
 instrument. The AHI HSD reader works off of the input filenames
-to determine if a file is supported by Geo2Grid. Files usually 
+to determine if a file is supported by Geo2Grid. Files usually
 have the following naming scheme:
 
     HS_H08_20181022_0300_B09_FLDK_R20_S1010.DAT
 
 These are the mission compliant radiance file naming conventions
-used by JMA. The AHI HSD reader supports all instrument spectral bands, 
+used by JMA. The AHI HSD reader supports all instrument spectral bands,
 identified in Geo2Grid as the products shown in the table below. The
 AHI HSD reader can be provided to the main geo2grid.sh script
 using the ``-r`` option and the reader name ``ahi_hsd``.
 
 The list of supported products includes true and natural color imagery.
 These are created by means of a python based atmospheric Rayleigh
-scattering correction algorithm that is executed as part of the |project| AHI 
+scattering correction algorithm that is executed as part of the |project| AHI
 HSD reader, along with sharpening to the highest spatial resolution. For
 more information on the creation of RGBs, please see the
 :ref:`RGB section <getting_started_rgb>`.
@@ -97,8 +97,6 @@ from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
-
-from satpy import DataQuery
 
 from ._base import ReaderProxyBase
 

@@ -21,26 +21,26 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The ABI Level 1B Reader operates on NOAA Level 1B (L1B) NetCDF files
-from the GOES-16 (GOES-East) and GOES-17 (GOES-West) Advanced Baseline 
-Imager (ABI) instrument. The ABI L1B reader works off of the input filenames 
-to determine if a file is supported by Geo2Grid. Files usually have the 
+from the GOES-16 (GOES-East) and GOES-17 (GOES-West) Advanced Baseline
+Imager (ABI) instrument. The ABI L1B reader works off of the input filenames
+to determine if a file is supported by Geo2Grid. Files usually have the
 following naming scheme:
 
     OR_ABI-L1b-RadF-M3C16_G16_s20182531700311_e20182531711090_c20182531711149.nc
 
-These are the mission compliant radiance file naming conventions 
-used by the NOAA Comprehensive Large Array-data Stewardship 
-System (CLASS) archive and the CSPP GOES Rebroadcast (GRB) software.  
-The ABI L1B reader supports all instrument spectral bands, identified in 
-Geo2Grid as the products shown in the table below. The 
-ABI L1B reader can be provided to the main geo2grid.sh script 
-using the ``-r`` option and the reader name ``abi_l1b``. 
+These are the mission compliant radiance file naming conventions
+used by the NOAA Comprehensive Large Array-data Stewardship
+System (CLASS) archive and the CSPP GOES Rebroadcast (GRB) software.
+The ABI L1B reader supports all instrument spectral bands, identified in
+Geo2Grid as the products shown in the table below. The
+ABI L1B reader can be provided to the main geo2grid.sh script
+using the ``-r`` option and the reader name ``abi_l1b``.
 
 The list of supported products includes true and natural color imagery.
-These are created by means of a python based atmospheric Rayleigh 
+These are created by means of a python based atmospheric Rayleigh
 scattering correction algorithm that is executed as part of the |project| ABI
 L1B reader, along with sharpening to the highest spatial resolution. For
-more information on the creation of RGBs, please see the 
+more information on the creation of RGBs, please see the
 :ref:`RGB section <getting_started_rgb>`.
 
 

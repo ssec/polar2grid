@@ -470,7 +470,7 @@ enhancements:
           fp: [0.0, 0.192156863, 1.0]
 
   # Polar2Grid True and False Color
-  true_color_crefl:
+  true_color_default:
     standard_name: true_color
     operations:
       - name: reflectance_range
@@ -482,7 +482,7 @@ enhancements:
           xp: [0., 25., 55., 100., 255.]
           fp: [0., 90., 140., 175., 255.]
           reference_scale_factor: 255
-  false_color_crefl:
+  false_color_default:
     standard_name: false_color
     operations:
       - name: reflectance_range

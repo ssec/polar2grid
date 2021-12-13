@@ -38,21 +38,31 @@ from pyproj import CRS, Proj
 from polar2grid.utils.convert_grids_conf_to_yaml import crs_to_proj_dict, ordered_dump
 
 # grid_name,proj4, proj4_str,width,height,pixel_size_x,pixel_size_y,origin_x,origin_y
-CONFIG_LINE_FORMAT = "%(grid_name)s, proj4, %(proj4_str)s, %(width)d, %(height)d, %(pixel_size_x)0.5f, %(pixel_size_y)0.5f, %(origin_x)s, %(origin_y)s"
+CONFIG_LINE_FORMAT = (
+    "%(grid_name)s, proj4, %(proj4_str)s, %(width)d, %(height)d, %(pixel_size_x)0.5f, "
+    "%(pixel_size_y)0.5f, %(origin_x)s, %(origin_y)s"
+)
 
 
 def determine_projection(center_lon: float, center_lat: float, proj4_str: str = None) -> CRS:
-    """Return the 'best' projection to be used based on the center
-    longitude and latitude provided.
-    """
+    """Get the 'best' projection to be used based on the center longitude and latitude provided."""
     abs_lat = abs(center_lat)
     if proj4_str is None:
         if abs_lat < 15:
-            proj4_str = "+proj=eqc +datum=WGS84 +ellps=WGS84 +lat_ts=%(center_lat)0.5f +lon_0=%(center_lon)0.5f +units=m +no_defs"
+            proj4_str = (
+                "+proj=eqc +datum=WGS84 +ellps=WGS84 +lat_ts=%(center_lat)0.5f +lon_0=%(center_lon)0.5f "
+                "+units=m +no_defs"
+            )
         elif abs_lat < 70:
-            proj4_str = "+proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=%(center_lat)0.5f +lat_1=%(center_lat)0.5f +lon_0=%(center_lon)0.5f +units=m +no_defs"
+            proj4_str = (
+                "+proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=%(center_lat)0.5f +lat_1=%(center_lat)0.5f "
+                "+lon_0=%(center_lon)0.5f +units=m +no_defs"
+            )
         else:
-            proj4_str = "+proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=%(center_lat)0.5f +lon_0=%(center_lon)0.5f +units=m"
+            proj4_str = (
+                "+proj=stere +datum=WGS84 +ellps=WGS84 +lat_0=90 +lat_ts=%(center_lat)0.5f "
+                "+lon_0=%(center_lon)0.5f +units=m"
+            )
 
     proj4_str = proj4_str % dict(center_lon=center_lon, center_lat=center_lat)
     return CRS.from_user_input(proj4_str)

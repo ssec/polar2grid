@@ -17,14 +17,14 @@ Find the options available when creating MODIS AWIPS files:
 
 List the products that can be created from your MODIS L1B dataset.  For
 the new Sectorized Cloud and Moisture Imagery (SCMI) AWIPS writer, include
-the sector name (see Section 6.1.3) either Lambert Conic Conformal (LCC), 
+the sector name (see Section 6.1.3) either Lambert Conic Conformal (LCC),
 Pacific, Mercator, or Polar:
 
     ``polar2grid.sh modis scmi --sector-id LCC --list-products -f <path_to_files>``
 
-Follow the command below to create MODIS AWIPS NetCDF files of all 
-Level 1B products found in your data set for your sector.  When 
-using the scmi server, it is advised that a specific grid be chosen, and 
+Follow the command below to create MODIS AWIPS NetCDF files of all
+Level 1B products found in your data set for your sector.  When
+using the scmi server, it is advised that a specific grid be chosen, and
 that the --letters and --compress options are used.
 In our LCC example, we will use the 1km grid:
 
@@ -42,7 +42,7 @@ Create a subset of MODIS reprojected AWIPS products for a specfic AWIPS grid:
     :align: center
 
     AWIPS display of Aqua MODIS Band 2 (.86 micron) reflectances from 18:18 UTC, 8 March 2017.
-    
+
 
 Create true color and false color Aqua MODIS AWIPS NetCDF files from the 1000m, 500m, 250m and geolocation pass files acquired on 8 March 2017 at 18:18 UTC, reprojected onto the LCC 300m lettered grid.
 

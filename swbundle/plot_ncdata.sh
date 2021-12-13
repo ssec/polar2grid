@@ -23,7 +23,7 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
 #     Written by David Hoese    January 2013
-#     University of Wisconsin-Madison 
+#     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
 #     Madison, WI  53706
@@ -47,4 +47,3 @@ ${P2G_SHELLB3_DIR}/bin/python -m polar2grid.plot_ncdata $@ || oops "Could not ge
 
 # End of all tests
 echo "SUCCESS"
-

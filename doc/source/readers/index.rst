@@ -8,8 +8,8 @@ The data that readers distribute to other |project| components are called
 "products" ("datasets" in SatPy terminology).
 
 The number and type of products that can be created is dependent upon
-the input datasets that are provided. Composites, such as RGBs, require a 
-specific set of band combinations to be present. All products that 
+the input datasets that are provided. Composites, such as RGBs, require a
+specific set of band combinations to be present. All products that
 can be created for a given input dataset can be determined by
 using the  ``--list-products`` option.
 

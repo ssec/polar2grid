@@ -18,9 +18,9 @@ Examples:
 .. code-block:: bash
 
     polar2grid.sh -r clavrx -w geotiff -h
-  
+
     polar2grid.sh -r clavrx -w awips_tiled --sector-id LCC --list-products -f snpp/clavrx_npp*.hdf
-  
+
     polar2grid.sh -r clavrx -w geotiff -p cld_height_acha cloud_phase cloud_type -f clavrx_npp_d20170520_t2058143_e2059385_b28822.level2.hdf
 
     polar2grid.sh -r clavrx -w hdf5 --grid-coverage=.01 -p cld_opd_nlcomp cld_reff_nlcomp refl_lunar_dnb_nom -f snpp/night/clavrx_npp*.hdf

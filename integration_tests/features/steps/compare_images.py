@@ -1,3 +1,4 @@
+"""Various behavior test steps."""
 import glob
 import os
 import re
@@ -11,7 +12,7 @@ DTYPE_REGEX = re.compile(r"--dtype (P?<dtype>\S+) ")
 
 
 @given("input data from {source}")
-def step_impl(context, source):
+def step_impl_input_data(context, source):
     new_source = ""
 
     for f in source.split(" "):
@@ -28,12 +29,12 @@ def step_impl(context, source):
 
 
 @given("an empty working directory")
-def step_impl(context):
+def step_impl_empty_work_dir(context):
     context.temp_dir = tempfile.mkdtemp(prefix=os.path.join(context.base_temp_dir, "p2g_tests_"))
 
 
 @given("input data is copied to the working directory")
-def step_impl(context):
+def step_impl_copy_input_data(context):
     new_source = ""
     for input_dir in context.source.split(" "):
         for input_filename in os.listdir(input_dir):
@@ -45,7 +46,7 @@ def step_impl(context):
 
 
 @when("{command} runs")
-def step_impl(context, command):
+def step_impl_run_command(context, command):
     context.script = command.split()[0]
     context.command = "datapath={}; /usr/bin/time {} {}".format(
         context.datapath, os.path.join(context.p2g_path, os.path.expandvars(command)), context.source
@@ -63,7 +64,7 @@ def step_impl(context, command):
 
 
 @then("the output matches with the files in {output}")
-def step_impl(context, output):
+def step_impl_match_output_files(context, output):
     orig_dir = os.getcwd()
     dtype = _get_dtype_from_command(context.command)
     try:
@@ -96,7 +97,7 @@ def _html_output_filename(context, output_dir: str) -> str:
 
 
 @when("{command} runs with --list-products")
-def step_impl(context, command):
+def step_impl_run_list_products(context, command):
     context.script = command.split()[0]
     context.command = "datapath={}; /usr/bin/time {} {} --list-products".format(
         context.datapath, os.path.join(context.p2g_path, command), context.source
@@ -117,7 +118,7 @@ def step_impl(context, command):
 
 
 @then("the printed output includes the products in {output}")
-def step_impl(context, output):
+def step_impl_compare_output(context, output):
     orig_dir = os.getcwd()
     names_to_check = output.split(",")
     output = context.output

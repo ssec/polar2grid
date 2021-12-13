@@ -1,7 +1,7 @@
 Creating VIIRS SDR GeoTIFF Files
 --------------------------------
 
-This example walks through the creation of VIIRS 
+This example walks through the creation of VIIRS
 GeoTIFF output files and adding overlays.
 
 Basic VIIRS SDR GeoTIFF file creation
@@ -27,7 +27,7 @@ Create a subset of VIIRS I- and M-Band reprojected GeoTIFFs:
 Create a true color and false color GeoTIFF:
 
     ``polar2grid.sh crefl gtiff --true-color --false-color -f <path_to_sdr_files>``
-    
+
 Create a true color image from a S-NPP VIIRS pass acquired on 5 March 2016, 19:32 UTC,
 in Lambert Conic Conformal (LCC) projection:
 
@@ -61,7 +61,7 @@ Add coastlines,borders and latitude/longitude grid lines to the image, and write
 
     VIIRS True color image with overlays (myfile.png).
 
-Convert the true color GeoTIFF file into a Google Earth compatible 
+Convert the true color GeoTIFF file into a Google Earth compatible
 Keyhole Markup language Zipped (KMZ) file.
 
 .. code-block:: bash

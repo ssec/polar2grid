@@ -23,4 +23,3 @@ To create a software bundle tarball run the software bundle creation script::
 
     cd /path/to/repos/polar2grid/
     ./create_conda_software_bundle.sh /path/to/swbundle
-

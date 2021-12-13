@@ -110,7 +110,7 @@ See :doc:`getting_started` for more information on running |project|.
 
     To confirm a successful installation download the following verification
     test data set:
-	
+
     .. code-block:: bash
 
         CSPP_GEO2GRID_V1.0.2_TEST_DATA.tar.gz
@@ -148,4 +148,3 @@ See :doc:`getting_started` for more information on running |project|.
 
 See :doc:`verification/index` for instructions on using the verification
 test data.
-

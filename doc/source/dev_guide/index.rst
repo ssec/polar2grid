@@ -43,4 +43,3 @@ for polar2grid:
  - git source code management system and the 'forking' and 'pull request'
    features of http://github.com
  - Xarray and dask programming and how it is used by the Satpy library
-

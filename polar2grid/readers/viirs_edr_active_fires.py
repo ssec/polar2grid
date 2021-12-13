@@ -20,10 +20,10 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""
-The VIIRS EDR Active Fires reader operates on CSPP NetCDF I-Band (AFIMG) Resolution or 
+"""The VIIRS EDR Active Fires reader operates on CSPP NetCDF I-Band (AFIMG) Resolution or
 M-Band Resolution (AFMOD) Environmental Data Record files.
-Files usually have the following naming schemes:
+
+Files supported usually have the following naming schemes:
 
    AFIMG_npp_d20200109_t0959025_e1000267_b42492_c20200109101744000538_cspp_dev.nc, and/or
    AFMOD_j01_d20200109_t1711298_e1712525_b11100_c20200109173628141913_cspp_dev.nc
@@ -34,7 +34,7 @@ The ``--remap_method`` parameter is set to ``nearest``.
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
-| confidence_cat            | Fire Confidence Category   (AFIMG Resolution Only)  | 
+| confidence_cat            | Fire Confidence Category   (AFIMG Resolution Only)  |
 +---------------------------+-----------------------------------------------------+
 | T4                        | I-Band 4 Temperature       (AFIMG Resolution Only)  |
 +---------------------------+-----------------------------------------------------+

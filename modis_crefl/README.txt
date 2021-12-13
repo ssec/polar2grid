@@ -2,7 +2,7 @@ Corrected Reflectance
 
 OVERVIEW:
 
-Corrected Reflectance (Version 1.7.1) 
+Corrected Reflectance (Version 1.7.1)
 
 The Corrected Reflectance algorithm performs a simple atmospheric correction
 with MODIS visible, near-infrared, and short-wave infrared bands (1 to 16).
@@ -39,7 +39,7 @@ VERSION CHANGES:
 
   Added code to write global metadata as standard HDF attributes to the output
   file.
- 
+
   Added code to check memory allocation and to free allocated memory.
 
   Eliminated superfluous double precision floating point calculations.
@@ -103,4 +103,3 @@ EXECUTION:
 
 A script is provided in this directory, 'run.csh', which demonstrates
 the input requirements and calling sequence.
-

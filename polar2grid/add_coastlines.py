@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2016 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2016-2021 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -27,16 +27,7 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Script to add coastlines and borders to a geotiff while also creating a PNG.
-
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2016 University of Wisconsin SSEC. All rights reserved.
-:date:         July 2016
-:license:      GNU GPLv3
-
-"""
+"""Script to add coastlines and borders to a geotiff while also creating a PNG."""
 
 import logging
 import os
@@ -179,6 +170,78 @@ def _args_to_pycoast_dict(args):
         }
 
     return opts
+
+
+def _get_colorbar_vmin_vmax(arg_min, arg_max, rio_ds, input_dtype):
+    metadata = rio_ds.tags()
+    vmin = arg_min or metadata.get("min_in")
+    vmax = arg_max or metadata.get("max_in")
+    if isinstance(vmin, str):
+        vmin = float(vmin)
+    if isinstance(vmax, str):
+        vmax = float(vmax)
+    if vmin is None or vmax is None:
+        vmin = vmin or np.iinfo(input_dtype).min
+        vmax = vmax or np.iinfo(input_dtype).max
+    return vmin, vmax
+
+
+def _apply_decorator_alignment(dc, align):
+    if align == "top":
+        dc.align_top()
+    elif align == "bottom":
+        dc.align_bottom()
+    elif align == "left":
+        dc.align_left()
+    elif align == "right":
+        dc.align_right()
+
+
+def _add_colorbar_to_image(input_tiff, img, num_bands, args):
+    from pydecorate import DecoratorAGG
+
+    font_color = args.colorbar_text_color
+    font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
+    font_path = find_font(args.colorbar_font, args.colorbar_text_size)
+    # this actually needs an aggdraw font
+    font = Font(font_color, font_path, size=args.colorbar_text_size)
+    if num_bands not in (1, 2):
+        raise ValueError("Can't add colorbar to RGB/RGBA image")
+
+    # figure out what colormap we are dealing with
+    rio_ds = rasterio.open(input_tiff)
+    input_dtype = np.dtype(rio_ds.meta["dtype"])
+    rio_ct = _get_rio_colormap(rio_ds, 1)
+    cmap = get_colormap(input_dtype, rio_ct, num_bands)
+    vmin, vmax = _get_colorbar_vmin_vmax(args.colorbar_vmin, args.colorbar_vmax, rio_ds, input_dtype)
+    cmap.set_range(vmin, vmax)
+
+    dc = DecoratorAGG(img)
+    _apply_decorator_alignment(dc, args.colorbar_align)
+
+    if args.colorbar_vertical:
+        dc.write_vertically()
+    else:
+        dc.write_horizontally()
+
+    if args.colorbar_width is None or args.colorbar_height is None:
+        LOG.warning("'--colorbar-width' or '--colorbar-height' were " "not specified. Forcing '--colorbar-extend'.")
+        args.colorbar_extend = True
+    kwargs = {}
+    if args.colorbar_width:
+        kwargs["width"] = args.colorbar_width
+    if args.colorbar_height:
+        kwargs["height"] = args.colorbar_height
+    dc.add_scale(
+        cmap,
+        extend=args.colorbar_extend,
+        font=font,
+        line=font_color,
+        tick_marks=args.colorbar_tick_marks,
+        title=args.colorbar_title,
+        unit=args.colorbar_units,
+        **kwargs,
+    )
 
 
 def get_parser():
@@ -393,72 +456,7 @@ def main():
             cw.add_overlay_from_dict(pycoast_options, area_def, background=img)
 
         if args.add_colorbar:
-            from pydecorate import DecoratorAGG
-
-            font_color = args.colorbar_text_color
-            font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
-            font_path = find_font(args.colorbar_font, args.colorbar_text_size)
-            # this actually needs an aggdraw font
-            font = Font(font_color, font_path, size=args.colorbar_text_size)
-            if num_bands not in (1, 2):
-                raise ValueError("Can't add colorbar to RGB/RGBA image")
-
-            # figure out what colormap we are dealing with
-            rio_ds = rasterio.open(input_tiff)
-            input_dtype = np.dtype(rio_ds.meta["dtype"])
-            rio_ct = _get_rio_colormap(rio_ds, 1)
-            cmap = get_colormap(input_dtype, rio_ct, num_bands)
-
-            # figure out our limits
-            vmin = args.colorbar_min
-            vmax = args.colorbar_max
-            metadata = rio_ds.tags()
-            vmin = vmin or metadata.get("min_in")
-            vmax = vmax or metadata.get("max_in")
-            if isinstance(vmin, str):
-                vmin = float(vmin)
-            if isinstance(vmax, str):
-                vmax = float(vmax)
-            if vmin is None or vmax is None:
-                vmin = vmin or np.iinfo(input_dtype).min
-                vmax = vmax or np.iinfo(input_dtype).max
-            cmap.set_range(vmin, vmax)
-
-            dc = DecoratorAGG(img)
-            if args.colorbar_align == "top":
-                dc.align_top()
-            elif args.colorbar_align == "bottom":
-                dc.align_bottom()
-            elif args.colorbar_align == "left":
-                dc.align_left()
-            elif args.colorbar_align == "right":
-                dc.align_right()
-
-            if args.colorbar_vertical:
-                dc.write_vertically()
-            else:
-                dc.write_horizontally()
-
-            if args.colorbar_width is None or args.colorbar_height is None:
-                LOG.warning(
-                    "'--colorbar-width' or '--colorbar-height' were " "not specified. Forcing '--colorbar-extend'."
-                )
-                args.colorbar_extend = True
-            kwargs = {}
-            if args.colorbar_width:
-                kwargs["width"] = args.colorbar_width
-            if args.colorbar_height:
-                kwargs["height"] = args.colorbar_height
-            dc.add_scale(
-                cmap,
-                extend=args.colorbar_extend,
-                font=font,
-                line=font_color,
-                tick_marks=args.colorbar_tick_marks,
-                title=args.colorbar_title,
-                unit=args.colorbar_units,
-                **kwargs,
-            )
+            _add_colorbar_to_image(input_tiff, img, num_bands, args)
 
         img.save(output_filename)
 

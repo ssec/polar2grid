@@ -22,7 +22,6 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Helper functions for filtering certain products."""
 
-import importlib
 import logging
 from typing import Dict, List, Optional, Union
 

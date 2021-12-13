@@ -34,7 +34,7 @@ Revision history:
                          1) removed most code within #ifdef DEBUG clauses
                          2) left command line options for nearest, TOA, and sealevel; note that these options
                             were in Version 1.4.2 but were not available from the command line
-                         3) changes by DRL to 1.4.2 to write scale factor and offset has already been 
+                         3) changes by DRL to 1.4.2 to write scale factor and offset has already been
                             incorporated into 1.5.2
                          4) Added in the modifications from Chuanmin Hu & Brock Murch of Univ South Florida
                             IMaRS to add bands 9-16.  The aO3 and taur0 parameters came "from SeaDAS codes"
@@ -688,7 +688,7 @@ if (MOD02QKMfile) printf("MOD/MYD02QKMfile = %s\n", MOD02QKMfile);
 		fprintf(stderr, "No L1B SDS can be read successfully.\n");
 		exit(1);
 		}
- 
+
 	Nscans = sds[ib].Nl / sds[ib].rowsperscan;
 
 
@@ -1073,7 +1073,7 @@ void set_dimnames(int samples, char **dimname1, char **dimname2)
 		default:
 			*dimname1 = *dimname2 = (char *) NULL;
 			break;
-		}	
+		}
 }
 
 

@@ -23,15 +23,15 @@
 """The MiRS frontend extracts data from files created by the Community
 Satellite Processing Package (CSPP) direct broadcast version of the
 NOAA/STAR Microwave Integrated Retrieval System (MIRS). The software
-supports the creation of atmospheric profile and surface parameters from 
+supports the creation of atmospheric profile and surface parameters from
 ATMS, AMSU-A, and MHS microwave sensor data. For more information
-on this product, please see the 
+on this product, please see the
 
-When executed on Suomi-NPP Advanced Technology Microwave Sounder (ATMS) 
-MIRS product files, a limb correction algorithm is applied for  
-brightness temperatures reprojections for each of the 22 spectral bands.  
+When executed on Suomi-NPP Advanced Technology Microwave Sounder (ATMS)
+MIRS product files, a limb correction algorithm is applied for
+brightness temperatures reprojections for each of the 22 spectral bands.
 The correction software was provided by Kexin Zhang of NOAA STAR, and
-is applied as part of the MIRS ATMS Polar2Grid execution. 
+is applied as part of the MIRS ATMS Polar2Grid execution.
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--fornav-D`` option is set to 100 and the
@@ -65,7 +65,7 @@ As an example, the ATMS band options are:
 
 .. list-table:: ATMS Brightness Temperature Channels
     :header-rows: 1
-    
+
     * - **Band Number**
       - **Frequency (GHz)**
       - **Polarization**

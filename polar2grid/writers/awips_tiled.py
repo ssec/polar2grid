@@ -27,8 +27,9 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The AWIPS Tiled writer is used to create AWIPS compatible tiled NetCDF4
-files. The Advanced Weather Interactive Processing System (AWIPS) is a
+"""The AWIPS Tiled writer is used to create AWIPS compatible tiled NetCDF4 files.
+
+The Advanced Weather Interactive Processing System (AWIPS) is a
 program used by the United States National Weather Service (NWS) and others
 to view
 different forms of weather imagery. Sectorized Cloud and Moisture Imagery

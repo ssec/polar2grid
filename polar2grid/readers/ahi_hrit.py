@@ -21,11 +21,11 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The AHI High Rate Information Transmission (HRIT) Reader operates on
-standard Japan Meteorological Agency (JMA) Himawari-8 Advanced Himawari 
-Imager (AHI) HRIT Digital Video Broadcast (DVB) HimawariCast files.  This 
-broadcast consists of a subset of 14 bands at reduced spatial resolution. 
-The AHI HRIT reader works off of the input filenames to determine if a 
-file is supported by Geo2Grid.  Files usually have the following naming 
+standard Japan Meteorological Agency (JMA) Himawari-8 Advanced Himawari
+Imager (AHI) HRIT Digital Video Broadcast (DVB) HimawariCast files.  This
+broadcast consists of a subset of 14 bands at reduced spatial resolution.
+The AHI HRIT reader works off of the input filenames to determine if a
+file is supported by Geo2Grid.  Files usually have the following naming
 scheme:
 
     IMG_DK01B04_201809100300
@@ -39,9 +39,9 @@ using the ``-r`` option and the reader name ``ahi_hrit``.
 The list of supported products includes natural color imagery.
 This is created by means of a python based atmospheric Rayleigh
 scattering correction algorithm that is executed as part of the |project| AHI
-HRIT reader, along with sharpening to the highest spatial resolution. 
+HRIT reader, along with sharpening to the highest spatial resolution.
 
-Please note that true color image RGB creation is not supported for 
+Please note that true color image RGB creation is not supported for
 HimawariCast because AHI Band 1 (Blue) and Band 2 (Green) are not
 included.
 

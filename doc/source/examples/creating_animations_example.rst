@@ -4,21 +4,21 @@ Using Geo2Grid to Create Animations
 The advantage of Geostationary Satellites is the temporal resolution of the
 observations.  Geo2Grid offers an easy interface to creating animations from
 Geo2Grid GeoTIFF files.  The following example demonstrates how
-Geo2Grid software can be used to create an animation of 
-files from a latitude/longitude subset of GOES-16 ABI CONUS GeoTIFF images 
+Geo2Grid software can be used to create an animation of
+files from a latitude/longitude subset of GOES-16 ABI CONUS GeoTIFF images
 located over the Southeastern United States.
 
 Create a series of GOES-16 ABI GeoTIFF files from a time sequence of data. In
-the bash shell script example below, I use the ABI CONUS Band 1 files to 
-search for all files we have available from 4 January 2019. The files for 
-this day are all located in the same directory.  I then create true and 
-natural color images from all time periods that are available. 
+the bash shell script example below, I use the ABI CONUS Band 1 files to
+search for all files we have available from 4 January 2019. The files for
+this day are all located in the same directory.  I then create true and
+natural color images from all time periods that are available.
 
 .. code-block:: bash
 
 	#!/bin/bash
 
-	# Set GEO2GRID environment variables 
+	# Set GEO2GRID environment variables
 
 	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_0_2
 	export PATH=$PATH:$GEO2GRID_HOME/bin
@@ -44,8 +44,8 @@ natural color images from all time periods that are available.
 
 	exit 0
 
-This script created 120 GeoTIFF images for my time period 10:00 UTC through 20:00 UTC, 
-with a time step of every 5 minutes. 
+This script created 120 GeoTIFF images for my time period 10:00 UTC through 20:00 UTC,
+with a time step of every 5 minutes.
 
 To create a 120 image animation, I use the Geo2Grid utility script
 ``gtiff2mp4.sh``.
@@ -57,7 +57,7 @@ To create a 120 image animation, I use the Geo2Grid utility script
 The script wraps the ``ffmpeg`` video software, and combines all of the
 ``*true_color*.tif`` files found in the directory into an animation
 based upon defaults that make the output animations most compatible
-with modern video players. The output frame rate is 24 frames per 
+with modern video players. The output frame rate is 24 frames per
 second. The images will automatically be resized if they are
 large in order to ensure a smooth animation. I chose an output
 filename of ``my_true_color_animation.mp4``. The software can also

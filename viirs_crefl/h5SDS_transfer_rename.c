@@ -1,11 +1,11 @@
 /* Compile with:
    cc -O0 -o h5SDS_transfer_rename h5SDS_transfer_rename.c -I$HDF5INC -I$HDFINC -L$HDF5LIB -lhdf5 -L$HDFLIB -lmfhdf -ldf -ljpeg -lz -lm
- 
- or 
- 
-   cc -O0 -o h5SDS_transfer_rename h5SDS_transfer_rename.c -I/usr/local/opt/TOOLKIT-5.2.16.orig/hdf5/linux64/hdf5-1.8.3/include -I$HDFINC -L/usr/local/opt/TOOLKIT-5.2.16.orig/hdf5/linux64/hdf5-1.8.3/lib -lhdf5 -L$HDFLIB -lmfhdf -ldf -ljpeg -lz -lm /usr/local/opt/TOOLKIT-5.2.16.orig/szip/linux64/szip-2.1/lib/libsz.a 
 
- 
+ or
+
+   cc -O0 -o h5SDS_transfer_rename h5SDS_transfer_rename.c -I/usr/local/opt/TOOLKIT-5.2.16.orig/hdf5/linux64/hdf5-1.8.3/include -I$HDFINC -L/usr/local/opt/TOOLKIT-5.2.16.orig/hdf5/linux64/hdf5-1.8.3/lib -lhdf5 -L$HDFLIB -lmfhdf -ldf -ljpeg -lz -lm /usr/local/opt/TOOLKIT-5.2.16.orig/szip/linux64/szip-2.1/lib/libsz.a
+
+
  */
 #include <stdlib.h>
 #include <libgen.h>
@@ -29,7 +29,7 @@ char groups[MAX_DATASETS][MAX_DATASETNAME];
 void *get_memory(int32 count, int32 type);
 
 int main(int argc, char **argv)
-{ 
+{
 FILE *fd;
 hid_t file, file2;
 herr_t status;
@@ -77,7 +77,7 @@ int *big_ints;
 int atrank;
 hsize_t *atcurrent_dims;
 hsize_t *atmax_dims;
-void write_local_SDS_attribute(int32 sds_out, int buf_size, char charbuf[1000], int big_array[10000], 
+void write_local_SDS_attribute(int32 sds_out, int buf_size, char charbuf[1000], int big_array[10000],
                                ssize_t ord, ssize_t sign, ssize_t size, ssize_t class);
 void transfer_attributes_to_HDF5(int32 sds_id1, hid_t dataset);
 
@@ -116,7 +116,7 @@ if (f1_is_H5) {
       idx[1] = n_groups;
       idx_f = H5Giterate(file, groups[i], NULL, group_info, (void *)idx);
       }
-   
+
    /* third iteration */
    jj = j;
    j = idx[1];
@@ -125,7 +125,7 @@ if (f1_is_H5) {
       idx[1] = n_groups;
       idx_f = H5Giterate(file, groups[i], NULL, group_info, (void *)idx);
       }
-   
+
    /* forth, fifth iteration */
    jj = j;
    j = idx[1];
@@ -151,24 +151,24 @@ else {
    if (  (j = SDnametoindex(sd_id1, argv[3]) ) < 0 )   {
       printf("error: SDS '%s' not found in file '%s'.\n", argv[3], argv[1]);
       exit(-1);
-      } 
-   else sds_id1 = SDselect(sd_id1, j); 
+      }
+   else sds_id1 = SDselect(sd_id1, j);
    }
 
 /* get some OBJECTIVE idea of whether/not output file exists... */
 
 fd = fopen(argv[2], "r");
 if (fd == NULL) {    /* it doesn't exist, try to create it. */
-   
+
    /* create an HDF5 if input is HDF5, otherwise create an HDF4 */
-   
+
    if ( strstr(argv[2], ".h5\0"))       f2_is_H5 = 1;
    else if ( strstr(argv[2], ".hdf\0")) f2_is_H5 = 0;
    else                                 f2_is_H5 = f1_is_H5;
-   
-   
+
+
    if (f2_is_H5) {
-   
+
       if ((file2 = H5Fcreate(argv[2], H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT)) == -1) {
          printf("error: file '%s' can't be opened with H5Fcreate().\n", argv[2]);
          H5Fclose(file);
@@ -182,7 +182,7 @@ if (fd == NULL) {    /* it doesn't exist, try to create it. */
          SDend(sd_id1);
          exit(-1);
          }
-   	
+
 	}
       }
 else {               /* it exists! Open for read/writing... */
@@ -214,7 +214,7 @@ if (f1_is_H5) {
 
 for(i=0;i<n_datasets;i++) {
    /*printf("%d %s\n", i, datasets[i]); */
-   
+
    strcpy(tmpstring, basename(datasets[i]));
 
    if (  strcmp(tmpstring, argv[3])) continue;   /* skip ones we don't want */
@@ -243,31 +243,31 @@ for(i=0;i<n_datasets;i++) {
    size = H5Tget_size(datatype);
    class = H5Tget_class(datatype);
    ord = H5Tget_order(datatype);
- 
-#ifdef DEBUG   
+
+#ifdef DEBUG
    printf("%d dataset '%s': rank %d: %d", i, basename(datasets[i]), rank, current_dims[0]);
    for(j=1;j<rank;j++) {
       printf(" by %d", current_dims[j]);
       }
    printf(" ---- ");
-      
+
    order_check(ord, charord);
-   class_check(class, charclass);   
-   
+   class_check(class, charclass);
+
    if (class == H5T_INTEGER)
       printf("%s, %s %s, %d byte%c\n", charord, ((sign==H5T_SGN_NONE) ? "unsigned\0" : "signed\0"), charclass, size, ((size>1) ? 's' : ' '));
    else
       printf("%s, %s, %d byte%c\n", charord, charclass, size, ((size>1) ? 's' : ' '));
 #endif
-   
+
    data = (void *)NULL;
 
    /*if (rank != 2) continue;*/
-   
+
    if (class == H5T_INTEGER) {
        if (sign == H5T_SGN_NONE) {
            if (size == 1) number_type1 =  DFNT_UINT8;
-           else if (size == 2) number_type1 =  DFNT_UINT16;	   
+           else if (size == 2) number_type1 =  DFNT_UINT16;
            else if (size == 4) number_type1 =  DFNT_UINT32;
            else if (size == 8) number_type1 =  DFNT_UINT64;
 	   else continue;
@@ -288,9 +288,9 @@ for(i=0;i<n_datasets;i++) {
    else continue;
 
    data = get_memory(l, number_type1);
-   
+
    status = H5Dread(dataset1, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-   
+
    /* Close all dataset/type/space for the donor data */
    /* IF, you are NOT writing to an HDF5 file.  If you ARE
       writing to an HDF5 file, close these AFTER you are done transferring
@@ -298,11 +298,11 @@ for(i=0;i<n_datasets;i++) {
    if (f2_is_H5 == 0) {
       H5Dclose(dataset1);
       / *H5Tclose(datatype);* /
-      H5Sclose(dataspace1); 
-      H5Fclose(file); 
+      H5Sclose(dataspace1);
+      H5Fclose(file);
       }
       */
-   
+
    }   /*  for(i=0;i<n_datasets;i++)  */
 }
 else {
@@ -312,18 +312,18 @@ else {
     for (k=0;k<rank1;k++) {
       SDdiminfo(SDgetdimid(sds_id1, k), dimnames[k], &dcount, &dnt, &dattr);
        }
-       
-    data = get_image(sds_id1, dims1, number_type1, &syze);   
-    
-    
+
+    data = get_image(sds_id1, dims1, number_type1, &syze);
+
+
     /*if (f2_is_H5) {   / * IF we're writing to an HDF5, we can close this now, because
                           we can't xfer metadata from HDF4 to HDF5 (for now). But we
-			  CAN xfer metadata from HDF4 to HDF4, so in that case KEEP THESE 
+			  CAN xfer metadata from HDF4 to HDF4, so in that case KEEP THESE
 			  OPEN and close 'em after the xfer * /
       SDendaccess(sds_id1);
       SDend(sd_id1);
       }*/
-   }   
+   }
 
 if (number_type1 == -1) {
       printf("error: cannot find SDS '%s' in file '%s'.\n", argv[3], argv[1]);
@@ -331,10 +331,10 @@ if (number_type1 == -1) {
       else          SDend(sd_id1);
       exit(-1);
      }
-   
+
 if (f2_is_H5) {
-   
-   
+
+
    if (f1_is_H5 == 0) {
       current_dims = (hsize_t *)malloc(rank1*sizeof(hsize_t));
       for (k=0;k<rank1;k++) {
@@ -345,9 +345,9 @@ if (f2_is_H5) {
       }
 
    /* Open all dataset/type/space for the output data */
-   dataspace = H5Screate_simple(rank, current_dims, NULL); 
+   dataspace = H5Screate_simple(rank, current_dims, NULL);
 
-   /*status = H5Tset_order(datatype, H5T_ORDER_LE);*/      
+   /*status = H5Tset_order(datatype, H5T_ORDER_LE);*/
 
    dataset = H5Dcreate(file2, argv[4], datatype, dataspace, H5P_DEFAULT);
 
@@ -357,7 +357,7 @@ if (f2_is_H5) {
 
 
    if (f1_is_H5 == 1) {
-     
+
       /* Transfer metadata from the input HDF5 to the output HDF5 */
       n_attrs = H5Aget_num_attrs(dataset1);
       /*printf("%d attributes \n", n_attrs);*/
@@ -365,15 +365,15 @@ if (f2_is_H5) {
           attrid = H5Aopen_idx (dataset1, (unsigned int)k);
 	  attrdataspace = H5Aget_space(attrid);
 	  attrdatatype = H5Aget_type(attrid);
-	  
+
 	  /* Note, charbuf (the name of the attribute) is hard-coded as
 	     1000 characters, which should not be a problem.
-	     However, big_array (the values of the attributes) is 
+	     However, big_array (the values of the attributes) is
 	     hard-coded as 10000 ints, which may represent a problem.
 	     However, floats, ints, and character strings can be transferred
 	     this way without any trouble...
 	   */
-	  
+
 	  H5Aget_name(attrid, buf_size, charbuf);
 	  /*printf(" attribute %s \n", charbuf);*/
 	  H5Aread(attrid, attrdatatype, (void *)big_array);
@@ -384,13 +384,13 @@ if (f2_is_H5) {
           H5Tclose(attrdatatype);
           H5Aclose(attr_id);
           H5Aclose(attrid);
-	  
+
          }
-   
+
       /* and close everything */
       H5Dclose(dataset1);
-      H5Sclose(dataspace1); 
-      H5Fclose(file); 
+      H5Sclose(dataspace1);
+      H5Fclose(file);
       }
    else {  /* then we're xferring attributes from an HDF4 to an HDF5 */
       transfer_attributes_to_HDF5(sds_id1, dataset);
@@ -399,14 +399,14 @@ if (f2_is_H5) {
       }
 
    free(data);
-   
+
    H5Dclose(dataset);
 
    if (f1_is_H5 == 1) H5Tclose(datatype);
 
-   H5Sclose(dataspace); 
-   
-   H5Fclose(file2); 
+   H5Sclose(dataspace);
+
+   H5Fclose(file2);
   }
 else {
 
@@ -416,8 +416,8 @@ else {
         dims1[k] = (int32)current_dims[k];
 	}
       rank1 = rank;
-      
-      /* if data is BE, may have to swap data around 
+
+      /* if data is BE, may have to swap data around
          (assuming machine we're on is little-endian)  */
       if ((ord == H5T_ORDER_BE)&&(size > 1)) {
 
@@ -438,9 +438,9 @@ else {
 	          ui32_array = (uint32 *)data;
                   for(ll=0;ll<l;ll++) swapbytes(&(ui32_array[ll]), size);
 		  break;
-		  
-	       /* Does plain old HDF4 have DFNT_INT64, DFNT_UINT64?  
-	          I keep getting error messages when trying to SDcreate() 
+
+	       /* Does plain old HDF4 have DFNT_INT64, DFNT_UINT64?
+	          I keep getting error messages when trying to SDcreate()
 		  SDSs of these types... */
                case(DFNT_INT64):
 	          lng_array = (long *)data;
@@ -450,8 +450,8 @@ else {
 	          ulng_array = (unsigned long *)data;
                   for(ll=0;ll<l;ll++) swapbytes(&(ulng_array[ll]), size);
 		  break;
-		  
-		  
+
+
                case(DFNT_FLOAT):
 	          f32_array = (float *)data;
                   for(ll=0;ll<l;ll++) swapbytes(&(f32_array[ll]), size);
@@ -462,14 +462,14 @@ else {
 		  break;
 	    }
          }
-      
+
       }
-      
+
    if ((sds_out = SDcreate(sd_id2, argv[4], number_type1, rank1, dims1)) == -1) {
       printf("Error creating SDS in output file '%s', cannot continue\n", argv[2]);
       exit(-3);
        }
-	    
+
    for (k=0;k<5;k++) start[k] = 0;
    printf("Transferring SDS '%s' as '%s'...\n", argv[3], argv[4]);
    if ((SDwritedata(sds_out, start, NULL, dims1, (VOID *)data)) == -1) {
@@ -491,43 +491,43 @@ else {
           attrid = H5Aopen_idx (dataset1, (unsigned int)k);
 	  attrdataspace = H5Aget_space(attrid);
 	  attrdatatype = H5Aget_type(attrid);
-	  
+
 	  /* Note, charbuf (the name of the attribute) is hard-coded as
 	     1000 characters, which should not be a problem.
-	     However, big_array (the values of the attributes) is 
+	     However, big_array (the values of the attributes) is
 	     hard-coded as 10000 ints, which may represent a problem.
 	     However, floats, ints, and character strings can be transferred
 	     this way without any trouble...
 	   */
-	   
+
 	  atrank = H5Sget_simple_extent_ndims(attrdataspace);
 	  if (atrank < 2) {
 
              atcurrent_dims = (hsize_t *)malloc(atrank*sizeof(hsize_t));
-             atmax_dims = (hsize_t *)malloc(atrank*sizeof(hsize_t));  
+             atmax_dims = (hsize_t *)malloc(atrank*sizeof(hsize_t));
 
              H5Sget_simple_extent_dims(attrdataspace, atcurrent_dims, atmax_dims);  /* assuming made with H5Screate_simple() */
 
-	  
+
 	     H5Aget_name(attrid, buf_size, charbuf);
 	     /*printf(" attribute %s rank %d\n", charbuf, atrank);*/
-	     
+
 	     if (atrank == 0) { /* this happens for strings */
-	        atmax_dims = (hsize_t *)malloc(1*sizeof(hsize_t)); 
-	        atcurrent_dims = (hsize_t *)malloc(1*sizeof(hsize_t)); 
+	        atmax_dims = (hsize_t *)malloc(1*sizeof(hsize_t));
+	        atcurrent_dims = (hsize_t *)malloc(1*sizeof(hsize_t));
 		atmax_dims[0] = H5Tget_size(attrdatatype);
 	        }
-	     
+
 	     H5Aread(attrid, attrdatatype, (void *)big_array);
-	     write_local_SDS_attribute(sds_out, atmax_dims[0], charbuf, big_array, H5Tget_order(attrdatatype), 
+	     write_local_SDS_attribute(sds_out, atmax_dims[0], charbuf, big_array, H5Tget_order(attrdatatype),
 	                            H5Tget_sign(attrdatatype), H5Tget_size(attrdatatype),
 				    H5Tget_class(attrdatatype));
- 
+
              free(atmax_dims);
              free(atcurrent_dims);
-	     
+
 	      }
-          H5Sclose(attrdataspace); 
+          H5Sclose(attrdataspace);
 	  H5Aclose(attrid);
 	  }
 
@@ -542,7 +542,7 @@ else {
 
  for(i=0;i<n_datasets;i++) {
    /*printf("%d %s\n", i, datasets[i]); */
-   
+
    strcpy(tmpstring, basename(datasets[i]));
 
    if (  strcmp(tmpstring, "ReflectanceFactors")) continue;   /* skip ones we don't want */
@@ -574,11 +574,11 @@ else {
    data = (void *)NULL;
 
    /*if (rank != 2) continue;*/
-   
+
    if (class == H5T_INTEGER) {
        if (sign == H5T_SGN_NONE) {
            if (size == 1) number_type1 =  DFNT_UINT8;
-           else if (size == 2) number_type1 =  DFNT_UINT16;	   
+           else if (size == 2) number_type1 =  DFNT_UINT16;
            else if (size == 4) number_type1 =  DFNT_UINT32;
            else if (size == 8) number_type1 =  DFNT_UINT64;
           }
@@ -593,11 +593,11 @@ else {
       if (size == 4) number_type1 =  DFNT_FLOAT;
       else if (size == 8) number_type1 =  DFNT_FLOAT64;
       }
- 
+
    data = get_memory(l, number_type1);
-   
+
    status = H5Dread(dataset1, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data); //DRL
-   
+
    current_dims[0] = 1;
    fdata = (float *)data;
    SDsetattr(sds_out, "scale_factor", DFNT_FLOAT, current_dims[0], (VOIDP)&(fdata[0]));
@@ -612,13 +612,13 @@ else {
 
 
       /* and close everything */
-      H5Sclose(dataspace1); 
-      H5Fclose(file); 
+      H5Sclose(dataspace1);
+      H5Fclose(file);
       }
-   SDendaccess(sds_out); 
-   SDend(sd_id2); 
+   SDendaccess(sds_out);
+   SDend(sd_id2);
 
-   }   
+   }
 
 
 } /*   end of main()   */
@@ -638,21 +638,21 @@ idx = (int *)opdata;
     opdata = opdata;
 
     /*
-     * Display group name. The name is passed to the function by 
+     * Display group name. The name is passed to the function by
      * the Library.
      */
 /*    printf("\n");
     printf("%d %d Group Name : ", idx[0], idx[1]);
     puts(name);
-*/    
-    /* if this "group name" is actually a dataset name, start populating the 
-       dataset character grid */       
+*/
+    /* if this "group name" is actually a dataset name, start populating the
+       dataset character grid */
 
     H5Gget_objinfo(loc_id, name, FALSE, &statbuf);
     switch (statbuf.type) {
-    case H5G_GROUP: 
+    case H5G_GROUP:
 
-       if(n_groups < MAX_DATASETS) {       
+       if(n_groups < MAX_DATASETS) {
           if (idx[0] == -1) {
              sprintf(groups[idx[1]++], "/%s", name);
 	     }
@@ -662,9 +662,9 @@ idx = (int *)opdata;
           n_groups++;
            }
          break;
-    case H5G_DATASET: 
+    case H5G_DATASET:
 
-       if(n_datasets < MAX_DATASETS) {       
+       if(n_datasets < MAX_DATASETS) {
           if (idx[0] == -1) {
              sprintf(datasets[n_datasets], "/%s", name);
 	     }
@@ -674,15 +674,15 @@ idx = (int *)opdata;
           n_datasets++;
            }
          break;
-    case H5G_TYPE: 
+    case H5G_TYPE:
              /*printf("Type, %s\n", name);*/
          break;
     default:
              /*printf("Other, %s\n", name);*/
          break;
     }
-    
-/*    if(n_groups < MAX_DATASETS) {       
+
+/*    if(n_groups < MAX_DATASETS) {
        if (idx[0] == -1) {
           sprintf(groups[idx[1]++], "/%s", name);
 	  }
@@ -690,13 +690,13 @@ idx = (int *)opdata;
           sprintf(groups[idx[1]++], "%s/%s", groups[idx[0]], name);
 	  }
        n_groups++;
-	  
+
        }
- */   
+ */
     return 0;
  }
- 
- 
+
+
 hid_t get_H5_datatype_from_H4(int32 i)
 {
 switch (i) {
@@ -758,7 +758,7 @@ unsigned long *ulongattr;
 hsize_t dims[1];
 hid_t attr, dataspace, datatype;
 
-SDgetinfo(id1, name1, &rank1, dims1, &number_type1, &n_attr1);	   		   
+SDgetinfo(id1, name1, &rank1, dims1, &number_type1, &n_attr1);
 
 for (j=0;j<n_attr1;j++) {
      SDattrinfo(id1, j, attrib1, &number_type1, &count1);
@@ -766,137 +766,137 @@ for (j=0;j<n_attr1;j++) {
      if (count1 == 1) dataspace = H5Screate(H5S_SCALAR);
      else dataspace = H5Screate_simple(1, dims, NULL);
 
-     switch(number_type1) {   
-       case DFNT_CHAR8:      
+     switch(number_type1) {
+       case DFNT_CHAR8:
        case DFNT_UCHAR8:
   	     if ((charattr = (char *)malloc((count1+1)*sizeof(char))) == NULL) {
 	         printf("Out of memory, array 'charattr'\n");
 		 return;
 		 }
 	     datatype = H5Tcopy(H5T_C_S1);
-             H5Tset_size(datatype, dims[0]);      
+             H5Tset_size(datatype, dims[0]);
 	     dims[0] = 1;  /* one string */
 	     dataspace = H5Screate_simple(1, dims, NULL);
-	     
-             SDreadattr(id1, j, charattr);  
+
+             SDreadattr(id1, j, charattr);
 	     charattr[count1] = '\0';
-	     	     
+
 	     attr = H5Acreate(dataset, attrib1, datatype, dataspace, H5P_DEFAULT);
 	     H5Awrite(attr, datatype, charattr);
              H5Aclose(attr);
  	     free(charattr);
              break;
-       case DFNT_INT8: 
+       case DFNT_INT8:
 	     if ((i8attr = (int8 *)malloc(count1*sizeof(int8))) == NULL) {
 	         printf("Out of memory, array 'i8attr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, i8attr);  
-	     
+             SDreadattr(id1, j, i8attr);
+
 	     attr = H5Acreate(dataset, attrib1, H5T_NATIVE_CHAR, dataspace, H5P_DEFAULT);
 	     H5Awrite(attr, H5T_NATIVE_CHAR, i8attr);
              H5Aclose(attr);
              free(i8attr);
-	        
+
              break;
-       case DFNT_UINT8:   
+       case DFNT_UINT8:
 	     if ((ui8attr = (uint8 *)malloc(count1*sizeof(uint8))) == NULL) {
 	         printf("Out of memory, array 'ui8attr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, ui8attr);  
-	     
+             SDreadattr(id1, j, ui8attr);
+
 	     attr = H5Acreate(dataset, attrib1, H5T_NATIVE_UCHAR, dataspace, H5P_DEFAULT);
 	     H5Awrite(attr, H5T_NATIVE_UCHAR, ui8attr);
              H5Aclose(attr);
              free(ui8attr);
-	        
+
              break;
-       case DFNT_INT16: 
+       case DFNT_INT16:
 	     if ((shortattr = (short *)malloc(count1*sizeof(short))) == NULL) {
 	         printf("Out of memory, array 'shortattr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, shortattr);  
-	     
+             SDreadattr(id1, j, shortattr);
+
 	     attr = H5Acreate(dataset, attrib1, H5T_NATIVE_SHORT, dataspace, H5P_DEFAULT);
 	     H5Awrite(attr, H5T_NATIVE_SHORT, shortattr);
              H5Aclose(attr);
              free(shortattr);
-	        
+
              break;
-       case DFNT_UINT16: 
+       case DFNT_UINT16:
 	     if ((ushortattr = (unsigned short *)malloc(count1*sizeof(unsigned short))) == NULL) {
 	         printf("Out of memory, array 'ushortattr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, ushortattr);  
-	     
+             SDreadattr(id1, j, ushortattr);
+
 	     attr = H5Acreate(dataset, attrib1, H5T_NATIVE_USHORT, dataspace, H5P_DEFAULT);
 	     H5Awrite(attr, H5T_NATIVE_USHORT, ushortattr);
              H5Aclose(attr);
              free(ushortattr);
-	        
+
              break;
-       case DFNT_INT32: 
+       case DFNT_INT32:
 	     if ((intattr = (int32 *)malloc(count1*sizeof(int32))) == NULL) {
 	         printf("Out of memory, array 'intattr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, intattr);  
-	     
+             SDreadattr(id1, j, intattr);
+
 	     attr = H5Acreate(dataset, attrib1, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
 	     H5Awrite(attr, H5T_NATIVE_INT, intattr);
              H5Aclose(attr);
              free(intattr);
-	        
+
              break;
-       case DFNT_UINT32: 
+       case DFNT_UINT32:
 	     if ((uintattr = (uint32 *)malloc(count1*sizeof(uint32))) == NULL) {
 	         printf("Out of memory, array 'uintattr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, uintattr);  
-	     
+             SDreadattr(id1, j, uintattr);
+
 	     attr = H5Acreate(dataset, attrib1, H5T_NATIVE_UINT, dataspace, H5P_DEFAULT);
 	     H5Awrite(attr, H5T_NATIVE_UINT, uintattr);
              H5Aclose(attr);
              free(uintattr);
-	        
+
              break;
-       case DFNT_FLOAT: 
+       case DFNT_FLOAT:
 	     if ((floatattr = (float *)malloc(count1*sizeof(float))) == NULL) {
 	         printf("Out of memory, array 'floatattr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, floatattr);  
-	     
+             SDreadattr(id1, j, floatattr);
+
 	     attr = H5Acreate(dataset, attrib1, H5T_NATIVE_FLOAT, dataspace, H5P_DEFAULT);
 	     H5Awrite(attr, H5T_NATIVE_FLOAT, floatattr);
              H5Aclose(attr);
              free(floatattr);
-	        
+
              break;
-       case DFNT_FLOAT64: 
+       case DFNT_FLOAT64:
 	     if ((doubleattr = (double *)malloc(count1*sizeof(double))) == NULL) {
 	         printf("Out of memory, array 'doubleattr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, doubleattr);  
-	     
+             SDreadattr(id1, j, doubleattr);
+
 	     attr = H5Acreate(dataset, attrib1, H5T_NATIVE_DOUBLE, dataspace, H5P_DEFAULT);
 	     H5Awrite(attr, H5T_NATIVE_DOUBLE, doubleattr);
              H5Aclose(attr);
              free(doubleattr);
-	        
+
              break;
 
-   
+
    }
    }  /*   for (j=0;j<n_attr1;j++)  */
 }
 
-void write_local_SDS_attribute(int32 sds_out, int dim, char name[1000], int big_array[10000], 
+void write_local_SDS_attribute(int32 sds_out, int dim, char name[1000], int big_array[10000],
                                ssize_t ord, ssize_t sign, ssize_t size, ssize_t class)
 {  /* Writes from HDF5 file to HDF4 file */
 char charclass[22], charord[22];
@@ -926,9 +926,9 @@ printf("Attr: '%s', ", name);
    else
       printf("length=%d, %s, %s, %d byte%c\n", dim, charord, charclass, size, ((size>1) ? 's' : ' '));
  */
- 
+
    switch (class) {
-      case H5T_STRING:     
+      case H5T_STRING:
          SDsetattr(sds_out, name, DFNT_CHAR, dim, (VOIDP)big_array);
 	 break;
      case H5T_FLOAT:
@@ -1013,7 +1013,7 @@ printf("Attr: '%s', ", name);
 
 return;
 }
-			       
+
 
 herr_t attr_info(hid_t loc_id, const char *name, void *opdata)
 {
@@ -1051,22 +1051,22 @@ printf("Attr: '%s', ", name);
 dataspace = H5Aget_space(attr_id);
 
    rank = H5Sget_simple_extent_ndims(dataspace);
-   
+
    if (rank == 0) {  /* then it's scalar? */
       rank = 1;
       dim = 1;
       }
    else {
       current_dims = (hsize_t *)malloc(rank*sizeof(hsize_t));
-      max_dims = (hsize_t *)malloc(rank*sizeof(hsize_t));  
+      max_dims = (hsize_t *)malloc(rank*sizeof(hsize_t));
 
       H5Sget_simple_extent_dims(dataspace, current_dims, max_dims);  /* assuming made with H5Screate_simple() */
       dim = current_dims[0];
       free(current_dims);
       free(max_dims);
- 
+
       }
-   
+
    H5Sclose(dataspace);
 
 /* get datatype-related information */
@@ -1078,11 +1078,11 @@ datatype = H5Aget_type (attr_id);
    sign = H5Tget_sign(datatype);
    size = H5Tget_size(datatype);
    class = H5Tget_class(datatype);
-   
+
    order_check(ord, charord);
    class_check(class, charclass);
-   
-   
+
+
 /* let's assume no float/integer value has more than 256 entries */
 fltarr = (float *)malloc(256*sizeof(float));
 dblarr = (double *)malloc(256*sizeof(double));
@@ -1107,8 +1107,8 @@ ui8_array = (uint8 *)malloc(256*sizeof(uint8));
 	 H5Aread (attr_id, datatype, char_array);
 	 tmpchar = char_array;
 	 for(i=0;i<dim;i++) {
-	    printf("      %s\n", tmpchar);	
-	    tmpchar += size;    
+	    printf("      %s\n", tmpchar);
+	    tmpchar += size;
 	    }
 	 free(char_array);
 	 break;
@@ -1195,11 +1195,11 @@ ui8_array = (uint8 *)malloc(256*sizeof(uint8));
 	 default:
 	 break;
       }
-      
+
 H5Tclose(datatype);
 
 free(fltarr);
-free(dblarr);   
+free(dblarr);
 free(i32_array);
 free(ui32_array);
 free(i8_array);
@@ -1238,7 +1238,7 @@ switch(ord) {
       strcpy(ret, "\0");
       break;
    }
-return;    
+return;
 }
 
 void class_check(ssize_t class, char ret[22])
@@ -1286,7 +1286,7 @@ return;
 /*****************************************************************************************************************
  **************  start of get_memory() ***************************************************************************
  ************  Can be deleted once integrated into imager    **********************************************/
- 
+
 void *get_memory(int32 count, int32 type)
 {
     /* New, v3.5: will pass NULL pointers through to calling routine during zooms */
@@ -1350,7 +1350,7 @@ if (count <= 0) printf("Bug in program: call to allocate %d pixels...\n", count)
 	         }
 	      return((void *)ui8_array);
               break;
-           case 22:	   
+           case 22:
              i16_array = (int16 *)calloc(count, sizeof(int16));
 	      if (i16_array == (int16 *)NULL) {
 	         mem_error_message();
@@ -1412,15 +1412,15 @@ void swapbytes(void *val,int nbbytes) {
 
 !Input Parameters:
         val           an array of values (cast to void)
-        nbbytes       the length of val (in bytes; cannot be greater than 17 
+        nbbytes       the length of val (in bytes; cannot be greater than 17
                       bytes)
-        
+
 !Output Parameters:
         val           (updated)
 
 !Return value:
         none
-                
+
 !References and Credits:
 
 !Developers:
@@ -1429,18 +1429,18 @@ void swapbytes(void *val,int nbbytes) {
       University of Maryland / Dept. of Geography
       nazmi.elsaleous@gsfc.nasa.gov
 
-!Design Notes:  
-      
+!Design Notes:
+
 !END
 *******************************************************************************/
    char *tmpptr1,*tmpptr2,tmpstr[17];
    int i;
-   
+
    memcpy(tmpstr,val,nbbytes);
    tmpptr1=(char *) val;
    tmpptr2=(char *) tmpstr;
    for (i=0;i<nbbytes;i++)
-    tmpptr1[i]=tmpptr2[nbbytes-i-1];   
+    tmpptr1[i]=tmpptr2[nbbytes-i-1];
 }
 
 
@@ -1465,7 +1465,7 @@ start[0] = start[1] = start[2] = start[3] = start[4] = *size = 0;
 i=0;
 count = dims[i++];
 while(dims[i] != 0) count *= dims[i++];
-    
+
 
        switch(type) {
            case 4:
@@ -1574,16 +1574,16 @@ unsigned long ulongatt;
 float32 floatatt;
 float64 doubleatt;
 
-SDgetinfo(id1, name1, &rank1, dims1, &number_type1, &n_attr1);	   		   
+SDgetinfo(id1, name1, &rank1, dims1, &number_type1, &n_attr1);
 
 for (j=0;j<n_attr1;j++) {
      SDattrinfo(id1, j, attrib1, &number_type1, &count1);
 
-     switch(number_type1) {   
-       case DFNT_CHAR8:      
-       case DFNT_INT8: 
+     switch(number_type1) {
+       case DFNT_CHAR8:
+       case DFNT_INT8:
            if (count1 == 1) {
-             SDreadattr(id1, j, &charatt);  
+             SDreadattr(id1, j, &charatt);
 	     SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)&charatt);
 	                    }
 	   else {
@@ -1591,32 +1591,32 @@ for (j=0;j<n_attr1;j++) {
 	         printf("Out of memory, array 'charattr'\n");
 		 return;
 	                                                                       }
-             SDreadattr(id1, j, charattr);  
+             SDreadattr(id1, j, charattr);
 	     charattr[count1] = '\0';
 	     SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)charattr);
  	     free(charattr);
 	        }
            break;
        case DFNT_UCHAR8:    /* treat them like integers */
-       case DFNT_UINT8:   
+       case DFNT_UINT8:
            if (count1 == 1) {
-             SDreadattr(id1, j, &ucharatt);  
+             SDreadattr(id1, j, &ucharatt);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)&ucharatt);
  	                    }
 	   else {
-	     if ((ucharattr = 
+	     if ((ucharattr =
 	       (unsigned char *)malloc(count1*sizeof(unsigned char))) == NULL) {
 	         printf("Out of memory, array 'ucharattr'\n");
 		 return;
 	                                                                       }
-             SDreadattr(id1, j, ucharattr);  
+             SDreadattr(id1, j, ucharattr);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)ucharattr);
 	     free(ucharattr);
 	        }
            break;
-       case DFNT_INT16: 
+       case DFNT_INT16:
            if (count1 == 1) {
-             SDreadattr(id1, j, &shortatt);  
+             SDreadattr(id1, j, &shortatt);
 	     SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)&shortatt);
 	                    }
 	   else {
@@ -1624,14 +1624,14 @@ for (j=0;j<n_attr1;j++) {
 	         printf("Out of memory, array 'shortattr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, shortattr);  
+             SDreadattr(id1, j, shortattr);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)shortattr);
              free(shortattr);
 	        }
            break;
-       case DFNT_UINT16: 
+       case DFNT_UINT16:
            if (count1 == 1) {
-             SDreadattr(id1, j, &ushortatt);  
+             SDreadattr(id1, j, &ushortatt);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)&ushortatt);
  	                    }
 	   else {
@@ -1639,14 +1639,14 @@ for (j=0;j<n_attr1;j++) {
 	         printf("Out of memory, array 'ushortattr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, ushortattr);  
+             SDreadattr(id1, j, ushortattr);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)ushortattr);
 	     free(ushortattr);
 	        }
            break;
-       case DFNT_INT32: 
+       case DFNT_INT32:
            if (count1 == 1) {
-             SDreadattr(id1, j, &intatt);  
+             SDreadattr(id1, j, &intatt);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)&intatt);
 	                   }
 	   else {
@@ -1654,14 +1654,14 @@ for (j=0;j<n_attr1;j++) {
 	         printf("Out of memory, array 'intattr'\n");
 		 return;
 	                                                                    }
-             SDreadattr(id1, j, intattr);  
+             SDreadattr(id1, j, intattr);
 	     SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)intattr);
 	     free(intattr);
 	        }
            break;
-       case DFNT_UINT32: 
+       case DFNT_UINT32:
            if (count1 == 1) {
-             SDreadattr(id1, j, &uintatt);  
+             SDreadattr(id1, j, &uintatt);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)&uintatt);
  	                     }
 	   else {
@@ -1669,14 +1669,14 @@ for (j=0;j<n_attr1;j++) {
 	         printf("Out of memory, array 'uintattr'\n");
 		 return;
 	                                                                       }
-             SDreadattr(id1, j, uintattr);  
+             SDreadattr(id1, j, uintattr);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)uintattr);
 	     free(uintattr);
 	        }
            break;
-       case DFNT_INT64: 
+       case DFNT_INT64:
            if (count1 == 1) {
-             SDreadattr(id1, j, &longatt);  
+             SDreadattr(id1, j, &longatt);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)&longatt);
 	                   }
 	   else {
@@ -1684,14 +1684,14 @@ for (j=0;j<n_attr1;j++) {
 	         printf("Out of memory, array 'longattr'\n");
 		 return;
 	                                                                    }
-             SDreadattr(id1, j, longattr);  
+             SDreadattr(id1, j, longattr);
 	     SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)longattr);
 	     free(longattr);
 	        }
            break;
-       case DFNT_UINT64: 
+       case DFNT_UINT64:
            if (count1 == 1) {
-             SDreadattr(id1, j, &ulongatt);  
+             SDreadattr(id1, j, &ulongatt);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)&ulongatt);
  	                     }
 	   else {
@@ -1699,14 +1699,14 @@ for (j=0;j<n_attr1;j++) {
 	         printf("Out of memory, array 'ulongattr'\n");
 		 return;
 	                                                                       }
-             SDreadattr(id1, j, ulongattr);  
+             SDreadattr(id1, j, ulongattr);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)ulongattr);
 	     free(ulongattr);
 	        }
            break;
-       case DFNT_FLOAT: 
+       case DFNT_FLOAT:
            if (count1 == 1) {
-             SDreadattr(id1, j, &floatatt);  
+             SDreadattr(id1, j, &floatatt);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)&floatatt);
  	                     }
 	   else {
@@ -1714,15 +1714,15 @@ for (j=0;j<n_attr1;j++) {
 	         printf("Out of memory, array 'floatattr'\n");
 		 return;
 	                                                                      }
-	                                                                      
-             SDreadattr(id1, j, floatattr);  
+
+             SDreadattr(id1, j, floatattr);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)floatattr);
 	     free(floatattr);
 	        }
            break;
-       case DFNT_DOUBLE: 
+       case DFNT_DOUBLE:
            if (count1 == 1) {
-             SDreadattr(id1, j, &doubleatt);  
+             SDreadattr(id1, j, &doubleatt);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)&doubleatt);
  	                     }
 	   else {
@@ -1730,7 +1730,7 @@ for (j=0;j<n_attr1;j++) {
 	         printf("Out of memory, array 'doubleattr'\n");
 		 return;
 	                                                                      }
-             SDreadattr(id1, j, doubleattr);  
+             SDreadattr(id1, j, doubleattr);
              SDsetattr(id_out, attrib1, number_type1, count1, (VOIDP)doubleattr);
 	     free(doubleattr);
 	        }
@@ -1740,8 +1740,3 @@ for (j=0;j<n_attr1;j++) {
 
 
 }
-
-
-
-
-
