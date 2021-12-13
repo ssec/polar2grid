@@ -118,21 +118,6 @@ def dtype_to_str(numpy_dtype):
         raise ValueError("Unsupported np data type: %r" % (numpy_dtype,))
 
 
-def convert_to_data_type(data, data_type):
-    """Convert a numpy array to a different data type represented by a
-    polar2grid data type constant.
-    """
-    if isinstance(data_type, str):
-        if data_type not in str2dtype:
-            log.error("Unknown data_type '%s', don't know how to convert data" % (data_type,))
-            raise ValueError("Unknown data_type '%s', don't know how to convert data" % (data_type,))
-        np_type = str2dtype[data_type]
-    else:
-        np_type = data_type
-
-    return data.astype(np_type)
-
-
 def clip_to_data_type(data, data_type):
     if np.issubdtype(np.dtype(data_type), np.floating):
         return data

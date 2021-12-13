@@ -20,3 +20,4 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+"""Compositors specific to polar2grid and geo2grid products."""

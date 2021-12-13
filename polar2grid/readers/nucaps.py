@@ -261,8 +261,13 @@ pressure value:
 # sep_fmt = "+{:<20}+{:<20}+"
 # sep_line = sep_fmt.format('-'*20, '-'*20)
 # title_line = sep_fmt.format('='*20, '='*20)
-# pressure_lines = list(line_fmt.format(" {:0.03f}".format(x), "{:0.0f}".format(x) if x >= 5.else "{:0.03f}".format(x)) for x in ALL_PRESSURE_LEVELS)
-# pressure_lines = "\n".join([x + "\n" + y for x, y in itertools.izip_longest(pressure_lines, [sep_line]*len(pressure_lines))])
+# pressure_lines = list(
+#     line_fmt.format(" {:0.03f}".format(x),
+#                     "{:0.0f}".format(x) if x >= 5. else "{:0.03f}".format(x)) for x in ALL_PRESSURE_LEVELS
+# )
+# pressure_lines = "\n".join(
+#     [x + "\n" + y for x, y in itertools.izip_longest(pressure_lines, [sep_line]*len(pressure_lines))]
+# )
 # print("\n".join([sep_line, line_fmt.format("Pressure Value", "Name Value"), title_line] + [pressure_lines]))
 
 from __future__ import annotations

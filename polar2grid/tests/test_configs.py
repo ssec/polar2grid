@@ -29,7 +29,11 @@ import yaml
 
 
 def pytest_generate_tests(metafunc):
-    """Helper pytest hook to run tests on each YAML file."""
+    """Generate parametrized tests to run on all YAML files.
+
+    Automatically used by pytest as a hook..
+
+    """
     if "yaml_config_file" in metafunc.fixturenames:
         root_dir = os.path.join(os.path.dirname(__file__), "..", "..")
         glob_pat = os.path.join(root_dir, "etc", "**", "*.yaml")

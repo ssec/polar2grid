@@ -70,7 +70,7 @@ def _crs_equal(a, b):
 
 
 def _is_native_grid(grid, max_native_area):
-    """Is the desired grid a version of the native Area?"""
+    """Check if the current grid is in the native data projection."""
     if not isinstance(max_native_area, AreaDefinition):
         return False
     if not isinstance(grid, AreaDefinition):

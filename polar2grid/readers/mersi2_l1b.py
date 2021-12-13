@@ -101,7 +101,7 @@ Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 
 from __future__ import annotations
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
 from ._base import ReaderProxyBase

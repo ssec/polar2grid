@@ -1,43 +1,26 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-"""Simple script to plot AWIPS NetCDF files onto a png file using matplotlib.
-
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
-:license:      GNU GPLv3
-
-Copyright (C) 2013 Space Science and Engineering Center (SSEC),
- University of Wisconsin-Madison.
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-This file is part of the polar2grid software package. Polar2grid takes
-satellite observation data, remaps it, and writes it to a file format for
-input into another program.
-Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-
-    Written by David Hoese    January 2013
-    University of Wisconsin-Madison
-    Space Science and Engineering Center
-    1225 West Dayton Street
-    Madison, WI  53706
-    david.hoese@ssec.wisc.edu
-
-"""
+# Copyright (C) 2013-2021 Space Science and Engineering Center (SSEC),
+# University of Wisconsin-Madison.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# This file is part of the polar2grid software package. Polar2grid takes
+# satellite observation data, remaps it, and writes it to a file format for
+# input into another program.
+# Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+"""Simple script to plot AWIPS NetCDF files onto a png file using matplotlib."""
 import os
 import sys
 from glob import glob
@@ -62,13 +45,10 @@ DEF_DPI = 100
 
 
 def _open_file_and_get_var_data(file_name, var_name, var_type=np.uint8):
-    """
-    open a file and get the variable from it, converting it to var_type
+    """Open a file and get the variable from it, converting it to var_type.
 
-    note: uint8 is the default type which converts AWIPS data to something
-    more plotable.
+    Note: uint8 is the default type which converts AWIPS data to something more plottable.
     """
-
     dataset = Dataset(file_name, "r")
     data_var = dataset.variables[var_name]
     data_var.set_auto_maskandscale(False)
@@ -80,11 +60,7 @@ def _open_file_and_get_var_data(file_name, var_name, var_type=np.uint8):
 
 
 def _plt_basic_imshow_fig(data, vmin, vmax, cmap=cm.bone, title="image", background_color="white"):
-    """
-    plot a basic imshow figure using the given data,
-    bounds, and colormap
-    """
-
+    """Plot a basic imshow figure using the given data, bounds, and colormap."""
     # Create a new figure everytime so things don't get shared
     figure = plt.figure()
     axes = figure.add_subplot(111, facecolor=background_color)
@@ -120,10 +96,7 @@ def plot_file_patterns(
 
 
 def rough_compare(path1, path2, vmin=DEF_VMIN, vmax=DEF_VMAX, dpi_to_use=DEF_DPI):
-    """
-    very roughly compare the two data sets and draw some images
-    """
-
+    """Compare two data sets using various basic checks and draw some images."""
     data1 = _open_file_and_get_var_data(path1, "image")
     data2 = _open_file_and_get_var_data(path2, "image")
 

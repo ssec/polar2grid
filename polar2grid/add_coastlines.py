@@ -27,16 +27,7 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Script to add coastlines and borders to a geotiff while also creating a PNG.
-
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2016 University of Wisconsin SSEC. All rights reserved.
-:date:         July 2016
-:license:      GNU GPLv3
-
-"""
+"""Script to add coastlines and borders to a geotiff while also creating a PNG."""
 
 import logging
 import os

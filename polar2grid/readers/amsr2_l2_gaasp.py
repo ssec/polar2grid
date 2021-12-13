@@ -20,7 +20,7 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""
+"""The AMSR-2 L2 GAASP reader is for reading NetCDF4 from the NOAA GAASP software.
 
 +-----------------------------------+--------------------------------------------+
 | Product Name                      | Description                                |

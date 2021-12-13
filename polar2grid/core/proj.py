@@ -28,19 +28,12 @@
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
 """Script for converting lon/lat decimal values to X/Y values of the grid provided.
+
 This script mimics the `proj` binary that comes with the PROJ.4 library, but
 handles any projection string that `pyproj` can handle (like 'latlong' which the
 `proj` binary does not handle).
 
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Mar 2013
-:license:      GNU GPLv3
-
 """
-__docformat__ = "restructuredtext en"
 
 import sys
 

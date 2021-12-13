@@ -114,9 +114,3 @@ def add_frontend_argument_groups(parser):
         help="Specify frontend products to process",
     )
     return ["Frontend Initialization", "Frontend Swath Extraction"]
-
-
-if __name__ == "__main__":
-    sys.exit(
-        main(description="Extract ACSPO swath data into binary files", add_argument_groups=add_frontend_argument_groups)
-    )

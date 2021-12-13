@@ -20,5 +20,6 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
+"""Filter components for removing entire datasets from a Scene."""
 
 from ._filter_scene import filter_scene  # noqa

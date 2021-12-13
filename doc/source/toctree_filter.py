@@ -1,4 +1,9 @@
-# https://stackoverflow.com/questions/15001888/conditional-toctree-in-sphinx
+"""Special TOC directive to filter out specific enries based on configured options.
+
+See https://stackoverflow.com/questions/15001888/conditional-toctree-in-sphinx
+for more information.
+
+"""
 import re
 
 from docutils.parsers.rst import directives
@@ -17,7 +22,8 @@ def setup(app):
 
 
 class TocTreeFilt(TocTree):
-    """
+    """Directive to allow filtering of TOC entries based on configured options.
+
     Directive to notify Sphinx about the hierarchical structure of the docs,
     and to include a table-of-contents like tree in the current document. This
     version filters the entries based on a list of prefixes. We simply filter
@@ -30,7 +36,7 @@ class TocTreeFilt(TocTree):
     """
 
     option_spec = FILTER_OPTION_SPEC
-    hasPat = re.compile("^\s*:(.+):(.+)$")
+    hasPat = re.compile(r"^\s*:(.+):(.+)$")
 
     # Remove any entries in the content that we dont want and strip
     # out any filter prefixes that we want but obviously don't want the

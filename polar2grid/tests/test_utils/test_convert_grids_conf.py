@@ -44,7 +44,7 @@ wgs84_fit, proj4, +proj=latlong +datum=WGS84 +no_defs, None, None, 0.0057, -0.00
 211e, proj4, +proj=lcc +a=6371200 +b=6371200 +lat_0=25 +lat_1=25 +lon_0=-95 +units=m +no_defs, 5120, 5120, 1015.9, -1015.9, -123.044deg, 59.844deg
 211e_10km, proj4, +proj=lcc +a=6371200 +b=6371200 +lat_0=25 +lat_1=25 +lon_0=-95 +units=m +no_defs, 512, 512, 10159, -10159, -123.044deg, 59.844deg
 211e_hi, proj4, +proj=lcc +a=6371200 +b=6371200 +lat_0=25 +lat_1=25 +lon_0=-95 +units=m +no_defs, 10000, 10000, 500, -500, -123.044deg, 59.844deg
-""",
+""",  # noqa
             3,
             [AreaDefinition] * 3,
         ),

@@ -72,7 +72,7 @@ class FileComparisonResults:
 
 
 def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwargs) -> ArrayComparisonResult:
-    """Compare 2 binary arrays per pixel
+    """Compare 2 binary arrays per pixel.
 
     Two pixels are considered different if the absolute value of their
     difference is greater than 1. This function assumes the arrays are
@@ -89,7 +89,6 @@ def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwa
         1 if more than margin_of_error pixels are different, 0 otherwise.
 
     """
-
     if array1.shape != array2.shape:
         LOG.error("Data shapes were not equal: %r | %r", array1.shape, array2.shape)
         return ArrayComparisonResult(False, 0, 0, True)
@@ -156,7 +155,7 @@ def compare_binary(fn1, fn2, shape, dtype, atol=0.0, margin_of_error=0.0, **kwar
 
 
 def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
-    """Compare 2 single banded geotiff files
+    """Compare 2 single banded geotiff files.
 
     .. note::
 
@@ -214,7 +213,7 @@ def _compare_gtiff_colormaps(cmap1: dict, cmap2: dict, **kwargs) -> VariableComp
 
 
 def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
-    """Compare 2 8-bit AWIPS-compatible NetCDF3 files
+    """Compare 2 8-bit AWIPS-compatible NetCDF3 files.
 
     .. note::
 
