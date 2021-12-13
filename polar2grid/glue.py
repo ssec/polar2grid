@@ -821,7 +821,9 @@ def _get_glue_name(args):
 def main(argv=sys.argv[1:]):
     add_polar2grid_config_paths()
     USE_POLAR2GRID_DEFAULTS = _get_p2g_defaults_env_var()
-    args, reader_args, reader_names, scene_creation, load_args, resample_args, writer_args = _parse_glue_args(argv)
+    args, reader_args, reader_names, scene_creation, load_args, resample_args, writer_args = _parse_glue_args(
+        argv, USE_POLAR2GRID_DEFAULTS
+    )
     glue_name = _get_glue_name(args)
     rename_log = _prepare_initial_logging(args, glue_name)
     # Set up dask and the number of workers
