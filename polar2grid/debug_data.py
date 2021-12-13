@@ -37,7 +37,6 @@ import dask.array as da
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from pyresample.geometry import AreaDefinition
 from satpy import Scene
 
 matplotlib.use("agg")

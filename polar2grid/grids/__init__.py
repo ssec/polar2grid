@@ -27,16 +27,6 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Location for grid utility functions and grid configuration files
+"""Grid utility functions and grid configuration files."""
 
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2013 University of Wisconsin SSEC. All rights reserved.
-:date:         Jan 2013
-:license:      GNU GPLv3
-
-"""
-__docformat__ = "restructuredtext en"
-
-from polar2grid.grids.manager import GridManager
+from polar2grid.grids.manager import GridManager  # noqa

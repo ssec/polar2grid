@@ -20,13 +20,15 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""The MODIS L2 Reader operates on HDF4 Level 2 files from the Moderate Resolution
+"""The MODIS L2 Reader operates on HDF4 Level 2 files from the MODIS instrument.
+
+These files are created from Level 1b data from the Moderate Resolution
 Imaging Spectroradiometer (MODIS) instruments on the Aqua and Terra
 satellites. The reader is designed to work with files created by the IMAPP
 direct broadcast processing system (file naming conventions such as
-a1.17006.1855.1000m.hdf), but can support other types of L2 files, including
+a1.17006.1855.mod35.hdf), but can support other types of L2 files, including
 the NASA archived files (file naming conventions such as
-MOD021KM.A2017004.1732.005.2017023210017.hdf).  The
+MOD35_L2.A2017004.1732.005.2017023210017.hdf).  The
 reader can be specified to the ``polar2grid.sh`` script by using the reader
 name ``modis_l2``.
 
@@ -59,10 +61,6 @@ It provides the following products:
     +--------------------+--------------------------------------------+
     | tpw                | Total Precipitable Water                   |
     +--------------------+--------------------------------------------+
-
-For reflectance/visible products a check is done to make sure that at least
-10% of the swath is day time. Data is considered day time where solar zenith
-angle is less than 90 degrees.
 
 """
 from __future__ import annotations

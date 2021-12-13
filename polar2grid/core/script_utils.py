@@ -45,7 +45,6 @@ import logging
 import os
 import sys
 from collections import defaultdict
-from glob import glob
 
 try:
     from argparse import BooleanOptionalAction
@@ -84,8 +83,9 @@ class ThirdPartyFilter(logging.Filter):
 
 
 def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log_numpy=True):
-    """Setup the logger to the console to the logging level defined in the
-    command line (default INFO).  Sets up a file logging for everything,
+    """Set up the logger to the console to the logging level defined in the command line (default INFO).
+
+    Sets up a file logging for everything,
     regardless of command line level specified.  Adds extra logger for
     tracebacks to go to the log file if the exception is caught.  See
     `exc_handler` for more information.
@@ -174,9 +174,9 @@ def rename_log_file(new_filename):
 
 def create_exc_handler(glue_name):
     def exc_handler(exc_type, exc_value, traceback):
-        """An execption handler/hook that will only be called if an exception
-        isn't called.  This will save us from print tracebacks or unrecognizable
-        errors to the user's console.
+        """Handle logging/printing an exception if it occurs.
+
+        This will save us from print tracebacks or unrecognizable errors to the user's console.
 
         Note, however, that this doesn't effect code in a separate process as the
         exception never gets raised in the parent.
@@ -192,50 +192,6 @@ def create_exc_handler(glue_name):
     return exc_handler
 
 
-def _force_symlink(dst, linkname):
-    """Create a symbolic link named `linkname` pointing to `dst`.  If the
-    symbolic link already exists, remove it and create the new one.
-
-    :Parameters:
-        dst : str
-            Filename to be pointed to.
-        linkname : str
-            Filename of the symbolic link being created or overwritten.
-    """
-    if os.path.exists(linkname):
-        LOG.debug("Removing old file %s" % linkname)
-        os.remove(linkname)
-    LOG.debug("Symlinking %s -> %s" % (linkname, dst))
-    os.symlink(dst, linkname)
-
-
-def _safe_remove(fn):
-    """Remove the file `fn` if you can, if not log an error message,
-    but continue on.
-
-    :Parameters:
-        fn : str
-            Filename of the file to be removed.
-    """
-    try:
-        LOG.debug("Removing %s" % fn)
-        os.remove(fn)
-    except IOError:
-        LOG.error("Could not remove %s" % fn)
-
-
-def remove_file_patterns(*args):
-    """Remove as many of the possible files that were created from a previous
-    run of a glue script, including temporary files, that may conflict with
-    future processing.
-
-    """
-    for pat_list in args:
-        for pat in pat_list:
-            for f in glob(pat):
-                _safe_remove(f)
-
-
 class NumpyDtypeList(list):
     """Magic list to allow dtype objects to match string versions of themselves."""
 
@@ -246,9 +202,6 @@ class NumpyDtypeList(list):
             return super(NumpyDtypeList, self).__contains__(item().dtype.name)
         except AttributeError:
             return False
-
-
-### Argument Parsing ###
 
 
 class ExtendAction(argparse.Action):
@@ -291,7 +244,7 @@ class ArgumentParser(argparse.ArgumentParser):
         return these_actions
 
     def parse_args(self, *args, **kwargs):
-        """Custom argument parsing for polar2grid basic behavior.
+        """Parse arguments to support custom polar2grid 'subgroup' behavior.
 
         :param subgroup_titles: Groups and their arguments that will be put
                                 in a separate dictionary in the 'subgroup_args' attribute

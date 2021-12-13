@@ -20,8 +20,9 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""AMSR2 L1B files contain various parameters from the GCOM-W1 AMSR2
-instrument. This reader can be used by specifying the reader name
+"""AMSR2 L1B files contain various parameters from the GCOM-W1 AMSR2 instrument.
+
+This reader can be used by specifying the reader name
 ``amsr2_l1b`` to the ``polar2grid.sh`` script.
 Supported files usually have the following naming scheme::
 

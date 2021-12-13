@@ -55,7 +55,7 @@ def add_polar2grid_config_paths():
 
 
 def dist_is_editable(dist) -> bool:
-    """Is distribution an editable install?"""
+    """Determine if the current installation is an editable/dev install."""
     for path_item in sys.path:
         egg_link = os.path.join(path_item, dist.project_name + ".egg-link")
         if os.path.isfile(egg_link):

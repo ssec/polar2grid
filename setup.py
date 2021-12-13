@@ -27,18 +27,13 @@
 # 1225 West Dayton Street
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
-"""Script for installing the polar2grid package. See the documentation site for more information:
+"""Script for installing the polar2grid package.
+
+See the documentation site for more information:
 
 http://www.ssec.wisc.edu/software/polar2grid/
 
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2014 University of Wisconsin SSEC. All rights reserved.
-:date:         Nov 2014
-:license:      GNU GPLv3
 """
-__docformat__ = "restructuredtext en"
 from glob import glob
 
 from setuptools import find_packages, setup
@@ -57,7 +52,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: Implementation :: CPython",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "Operating System :: POSIX :: Linux",  # Not sure if it works on Windows, since we don't normally support it, needs testing
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
     "Operating System :: MacOS :: MacOS X",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",

@@ -55,7 +55,6 @@ def convert_old_p2g_date_frmts(frmt):
 
 def convert_p2g_pattern_to_satpy(pattern):
     """Convert old P2G output patterns to new format."""
-
     replacements = {
         "satellite": "platform_name",
         "instrument": "sensor",

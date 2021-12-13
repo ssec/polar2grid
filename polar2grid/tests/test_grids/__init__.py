@@ -27,14 +27,4 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""Grid subpackage tests
-
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2015 University of Wisconsin SSEC. All rights reserved.
-:date:         Mar 2015
-:license:      GNU GPLv3
-
-"""
-__docformat__ = "restructuredtext en"
+"""Tests for grid related functionality."""
