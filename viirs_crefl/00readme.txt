@@ -78,4 +78,3 @@ IDL> crefl, 'CREFLM_npp_d20130331_t1802568_e1804210.hdf'
 
 A future tutorial will describe how to create VIIRS true color images in a map projection with all sensor artifacts
 (like the bowtie-deleted pixels) removed.
-

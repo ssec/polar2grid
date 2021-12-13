@@ -12,4 +12,3 @@ Command Line Arguments
     :func: add_writer_argument_groups
     :prog: polar2grid.sh -r <reader> -w binary
     :passparser:
-

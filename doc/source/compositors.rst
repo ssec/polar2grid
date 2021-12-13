@@ -93,9 +93,9 @@ go over some basic examples of how to make your own composites.
     This ``abi.yaml`` file is meant to hold all custom user composites for the
     ABI instrument. There is also an ``ahi.yaml`` file in the same directory
     for the AHI instrument. This file contains the ``true_color_night``
-    composite recipe which combines the visible reflectance daytime ``true_color`` 
-    composite with the nighttime ABI Channel 14 ``C14`` infrared 11 micron 
-    brightness temperatures into one image. The ``abi.yaml`` file contents 
+    composite recipe which combines the visible reflectance daytime ``true_color``
+    composite with the nighttime ABI Channel 14 ``C14`` infrared 11 micron
+    brightness temperatures into one image. The ``abi.yaml`` file contents
     are displayed below for reference:
 
     .. code-block:: yaml
@@ -116,7 +116,7 @@ go over some basic examples of how to make your own composites.
         The name of the composite which will be used to request the product
         on the command line with the ``-p`` flag. In this example
         it is ``true_color_night``. The name for a composite should be unique
-        within a single file or it may be overwritten. 
+        within a single file or it may be overwritten.
     2. Compositor:
         The ``compositor`` is a pointer to the python code that does the work
         of combining the products together. In this case we are using the
@@ -126,15 +126,15 @@ go over some basic examples of how to make your own composites.
     3. Inputs:
         The prerequisites are the products that are passed as inputs to this
         compositor. In the case of the day/night compositor the first product
-        listed will be used for day time observations and the second product 
+        listed will be used for day time observations and the second product
         listed will be used for night time data.
     4. Standard Name:
         Used later in |project| processing to map
         a composite to a particular enhancement or scaling. For the
         ``DayNightCompositor`` this should almost always be ``day_night_mix``.
 
-    Once the composite recipe has been added to the ``<instrument>.yaml`` 
-    file it will appear in the list of available products when using the 
+    Once the composite recipe has been added to the ``<instrument>.yaml``
+    file it will appear in the list of available products when using the
     ``--list-products`` option.  It can then be invoked like any other
     product to |script_literal|.
 
@@ -148,19 +148,19 @@ go over some basic examples of how to make your own composites.
 
         $GEO2GRID_HOME/bin/geo2grid.sh -r abi_l1b -w geotiff -p true_color_night -f /path/to/files*.nc
 
-    The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC, 
+    The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC,
     12 November 2018 is shown below.
 
     .. figure:: _static/example_images/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East_new.png
         :width: 90%
         :align: center
 
-    GOES-16 ABI true color day/Channel 14 brightness temperature night composite using input Full Disk 
+    GOES-16 ABI true color day/Channel 14 brightness temperature night composite using input Full Disk
     observations from 12:30 UTC, 12 November 2018.
 
     It is possible to use the compositor to combine RGBs as well.  In the following example, I want
     to use the day/night compositor to combine the true color RGB for day data and the nighttime
-    microphysics RGB for nighttime data.  In this case, I can add the following lines to the 
+    microphysics RGB for nighttime data.  In this case, I can add the following lines to the
     ``abi.yaml`` file.  Make sure to follow the formatting exactly, including the indentations.
 
     .. code-block:: yaml
@@ -179,7 +179,7 @@ go over some basic examples of how to make your own composites.
 
         $GEO2GRID_HOME/bin/geo2grid.sh -r abi_l1b -w geotiff -p true_color_night_microphysics -f /path/to/files*.nc
 
-    The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC, 
+    The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC,
     12 November 2018 is shown below.
 
     .. figure:: _static/example_images/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_new.png

@@ -74,4 +74,3 @@ fi
 # Clean up and exit
 rm $svm_file $svi_file
 exit 0
-

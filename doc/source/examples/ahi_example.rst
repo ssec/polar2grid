@@ -16,7 +16,7 @@ List the products that can be created from your AHI HSD dataset:
 
     ``geo2grid.sh -r ahi_hsd -w geotiff --list-products -f <path_to_files>``
 
-To create GeoTIFF output files of all bands found in your data set, 
+To create GeoTIFF output files of all bands found in your data set,
 including true and natural color full resolution sharpened 24 bit
 RGBs in standard satellite projection using 8 worker threads:
 
@@ -27,7 +27,7 @@ Create a subset of AHI band output Geotiff image files for Bands 1, 2, 3, 4 and 
     ``geo2grid.sh -r ahi_hsd -w geotiff -p B01 B02 B03 B04 B05 natural_color -f <path_to_ahi_files>``
 
 Create AHI images over a Lambert Conic Conformal (LCC) grid centered over
-Perth, Australia.  
+Perth, Australia.
 
 Run the grid helper script to define the grid center, areal extent, spatial
 resolution and projection .
@@ -37,7 +37,7 @@ resolution and projection .
     ``perth, proj4, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=-32.40000 +lat_1=-32.40000 +lon_0=117.90000 +units=m +no_defs, 1500, 1500, 500.00000, -500.00000, 114.05895deg, -28.95876deg``
 
 Copy the output grid projection information into a grid configuration
-text file. Use the grid to create an HSD AHI true color image from 
+text file. Use the grid to create an HSD AHI true color image from
 data observed on 12 November 2017, at 23:30 UTC.
 
 .. code-block:: bash

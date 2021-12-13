@@ -58,7 +58,7 @@ coastlines. This requires using an alternate non-default scaling configuration
 provided in the tarball. It can be used by providing the
 ``--rescale-configs $POLAR2GRID_HOME/rescale_configs/amsr2_png.ini``
 flag when generating AMSR2 L1B GeoTIFFs.
-Once this rescaling has been done, colormap files can be found in 
+Once this rescaling has been done, colormap files can be found in
 ``$POLAR2GRID_HOME/colormaps`` which can then be applied using the
 the `add_colormap.sh` script.
 

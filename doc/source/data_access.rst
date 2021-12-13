@@ -4,7 +4,7 @@ Data Access
 Geo2Grid software is designed with the direct broadcast community
 in mind as the target end user.  However, the software can be used
 by anyone to create images from standard mission compliant input
-files. NOAA GOES-16 and GOES-17 ABI data is now freely 
+files. NOAA GOES-16 and GOES-17 ABI data is now freely
 available through Amazon Web Services (AWS). More information about
 accessing data can be found at this website:
 

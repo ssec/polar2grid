@@ -7,7 +7,7 @@ GeoTIFF subset image files and adding overlays.
 The Basics of Geo2Grid for ABI GeoTIFF File Creation
 ****************************************************
 
-Find the options available when creating GOES-16 and GOES-17 
+Find the options available when creating GOES-16 and GOES-17
 GeoTIFFs:
 
     ``geo2grid.sh -r abi_l1b -w geotiff -h``
@@ -16,7 +16,7 @@ List the products that can be created from your ABI dataset:
 
     ``geo2grid.sh -r abi_l1b -w geotiff --list-products -f <path_to_files>``
 
-To create GeoTIFF output files of all bands found in your data set, 
+To create GeoTIFF output files of all bands found in your data set,
 including true and natural color full resolution sharpened 24 bit
 RGBs in standard satellite projection using 8 worker threads:
 
@@ -30,10 +30,10 @@ Create ABI images over the given latitude/longitude region:
 
     ``geo2grid.sh -r abi_l1b -w geotiff --ll-bbox <lonmin latmin lonmax latmax> -f <path_to_abi_files>``
 
-    
-Create a natural color full resolution GeoTIFF from GOES-16 ABI CONUS 
-observations acquired on 19 December 2018, 17:42 UTC over a bounding 
-box of 95W,40N to 85W,50N.  This command assumes that all bands 
+
+Create a natural color full resolution GeoTIFF from GOES-16 ABI CONUS
+observations acquired on 19 December 2018, 17:42 UTC over a bounding
+box of 95W,40N to 85W,50N.  This command assumes that all bands
 required to create the false color image are available:
 
 .. code-block:: bash
@@ -50,7 +50,7 @@ The resulting image is displayed below.
     :width: 100%
     :align: center
 
-    ABI Natural color GeoTIFF image (GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.tif) 
+    ABI Natural color GeoTIFF image (GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.tif)
 
 .. raw:: latex
 
@@ -68,7 +68,7 @@ Add coastlines, borders and latitude/longitude grid lines to the image, and writ
 
     GOES-16 natural color image with overlays (my_goes16_abi_naturalcolor.png).
 
-Convert the natural color GeoTIFF file into a Google Earth compatible 
+Convert the natural color GeoTIFF file into a Google Earth compatible
 Keyhole Markup language Zipped (KMZ) file.
 
 .. code-block:: bash

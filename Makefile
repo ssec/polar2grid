@@ -22,7 +22,7 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
 #     Written by David Hoese    January 2013
-#     University of Wisconsin-Madison 
+#     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
 #     Madison, WI  53706
@@ -110,4 +110,3 @@ clean_sdist_build:
 	rm -rf $$pkg_dir/build;
 
 clean:	clean_sdist	clean_sdist_build
-

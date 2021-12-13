@@ -40,7 +40,7 @@ is used.
         `Documentation Website <http://www.ssec.wisc.edu/software/geo2grid/>`__
 
     `GitHub Repository <https://github.com/ssec/polar2grid>`__
- 
+
     `CSPP Geo2Grid Forum <https://forums.ssec.wisc.edu/viewforum.php?f=72>`_
 
 .. ifconfig:: not is_geo2grid

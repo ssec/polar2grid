@@ -24,13 +24,13 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 #
 #     Written by David Hoese    April 2013
-#     University of Wisconsin-Madison 
+#     University of Wisconsin-Madison
 #     Space Science and Engineering Center
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
-if [ -z "$POLAR2GRID_HOME" ]; then 
+if [ -z "$POLAR2GRID_HOME" ]; then
   export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
 fi
 
@@ -40,5 +40,3 @@ fi
 # Call the script
 export PROG_NAME="p2g_grid_helper.sh"
 python3 -m polar2grid.grids.config_helper "$@"
-
-

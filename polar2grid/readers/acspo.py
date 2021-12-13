@@ -22,9 +22,9 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The ACSPO reader is for reading files created by the NOAA Community
 Satellite Processing Package (CSPP) Advanced Clear-Sky
-Processor for Oceans (ACSPO) system software. The ACSPO reader supports 
-product files created from VIIRS, MODIS and AVHRR imaging sensors. The 
-ACSPO output product format is NetCDF4.  The frontend can be specified 
+Processor for Oceans (ACSPO) system software. The ACSPO reader supports
+product files created from VIIRS, MODIS and AVHRR imaging sensors. The
+ACSPO output product format is NetCDF4.  The frontend can be specified
 with the ``polar2grid.sh`` command using the ``acspo`` frontend name.
 The ACSPO frontend provides the following products:
 

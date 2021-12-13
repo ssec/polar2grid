@@ -14,23 +14,23 @@ shown in Section 2.2 and execute the following commands:
 
 The test case consists of a set of MODIS archived 5 minute HDF 4 Level 1B
 granule files (1KM, HKM, QKM and Geolocation) for a Terra MODIS
-pass observed on 19 March 2017 at 16:30 UTC. In this test, 
-the Polar2Grid software is using the example configuration file 
+pass observed on 19 March 2017 at 16:30 UTC. In this test,
+the Polar2Grid software is using the example configuration file
 (${POLAR2GRID_HOME}/grid_configs/grid_example.yaml) and the lambert
-conformal conic (lcc) “miami” grid definition entry located 
+conformal conic (lcc) “miami” grid definition entry located
 within it. It will first create Corrected REFLectance (CREFL) HDF4 files
-and then use those to create one true and one false color image at 
-300 m resolution, 500 lines x 700 elements centered on the US city of 
-Miami in the state of Florida. The processing should run in less than 
-2 minutes and create 9 CREFL output MODIS GeoTIFF files, including 
-both true and false color output images, and the individual Corrected 
-Reflectance images that went into producing the final products. 
+and then use those to create one true and one false color image at
+300 m resolution, 500 lines x 700 elements centered on the US city of
+Miami in the state of Florida. The processing should run in less than
+2 minutes and create 9 CREFL output MODIS GeoTIFF files, including
+both true and false color output images, and the individual Corrected
+Reflectance images that went into producing the final products.
 
-If the MODIS Polar2Grid processing script runs normally, it will return 
-a status code equal to zero. If the MODIS Polar2Grid processing script 
+If the MODIS Polar2Grid processing script runs normally, it will return
+a status code equal to zero. If the MODIS Polar2Grid processing script
 encounters a fatal error, it will return a non-zero status code.
 
-To verify your output files against the output files created at 
+To verify your output files against the output files created at
 UW/SSEC, execute the following commands:
 
 
@@ -39,8 +39,8 @@ UW/SSEC, execute the following commands:
     cd ..
     ./p2g_compare_geotiff.sh output work
 
-This script compares the values of all the GeoTIFF files for all 
-MODIS Bands found. The output from our test system is shown below. 
+This script compares the values of all the GeoTIFF files for all
+MODIS Bands found. The output from our test system is shown below.
 
 .. code-block:: bash
 
@@ -64,7 +64,7 @@ MODIS Bands found. The output from our test system is shown below.
     All files passed
     SUCCESS
 
-The Terra MODIS false color GeoTIFF image created from the test data 
+The Terra MODIS false color GeoTIFF image created from the test data
 is displayed below:
 
 .. figure:: ../_static/example_images/terra_modis_false_color_20170319_163000_miami.jpg

@@ -19,7 +19,7 @@ List the products that can be created from your AMSR2 HDF5 dataset:
 
     ``polar2grid.sh amsr2_l1b gtiff --list-products -f <path_to_l1b_file>``
 
-To create AMSR2 GeoTIFF files of all bands found in your data set 
+To create AMSR2 GeoTIFF files of all bands found in your data set
 and reprojected in default Platte Carrée projection:
 
      ``polar2grid.sh amsr2_l1b gtiff -f <path_to_l1b_file>``

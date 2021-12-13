@@ -39,9 +39,9 @@
     * - **Aqua and Terra MODIS Level 1b (IMAPP or NASA archive files)**
       - MOD021KM*.hdf
         MOD03*.hdf
-        
+
         or
-        
+
         t1.*1000m.hdf
         t1.*.geo.hdf
       - 8 bit single band GeoTIFF

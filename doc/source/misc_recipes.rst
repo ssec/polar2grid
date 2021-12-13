@@ -4,7 +4,7 @@ Third-Party Recipes
 ===================
 
 Third-party tools like those provided by
-the Geospatial Data Abstraction Library (GDAL) can be 
+the Geospatial Data Abstraction Library (GDAL) can be
 found in the ``libexec/python_runtime/bin`` directory alongside the Python
 executable used by |project|.
 

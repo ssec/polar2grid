@@ -1,7 +1,7 @@
 Utility Scripts
 ===============
 
-The following are scripts that can be used to aid in the 
+The following are scripts that can be used to aid in the
 creation of customized |project| products. All utility
 scripts are stored in the bin directory:
 
@@ -68,7 +68,7 @@ The above example creates a
 grid named 'my_grid_name'. It is defined to have a pixel resolution of 250m,
 have 1000 rows and 1000 columns, and be centered at
 -150.1 degrees longitude and 56.3 degrees latitude. The projection
-is a lambert conic conformal projection which was chosen based on the 
+is a lambert conic conformal projection which was chosen based on the
 center longitude and latitude.
 
 Once this text has been output, it can be added to a text file ending in
@@ -193,7 +193,7 @@ GeoTIFF to KMZ Conversion
 -------------------------
 
 The ``gtiff2kmz.sh`` script converts a single GeoTIFF file into a Google Earth
-compatible Keyhole Markup language Zipped (KMZ) file. It is a wrapper around the 
+compatible Keyhole Markup language Zipped (KMZ) file. It is a wrapper around the
 GDAL tool ``gdal2tiles.py``.  The script can be executed with:
 
 .. code-block:: bash
@@ -227,13 +227,13 @@ everything to RGBA format first for better consistency in output images.
 
 Example:
 The following example shows how you would overlay the VIIRS Active
-Fire AFMOD resolution Fire Confidence Percentage GeoTIFF image on top of a 
+Fire AFMOD resolution Fire Confidence Percentage GeoTIFF image on top of a
 VIIRS Day/Night Band GeoTIFF image.
 
 .. code-block:: bash
 
     overlay.sh noaa20_viirs_dynamic_dnb_20191120_151043_wgs84_fit.tif noaa20_viirs_confidence_pct_20191120_151043_wgs84_fit.tif afmod_overlay_confidence_cat.tif
-      
+
 
 .. ifconfig:: is_geo2grid
 
@@ -268,7 +268,7 @@ VIIRS Day/Night Band GeoTIFF image.
   While new versions of GDAL and PROJ.4 libraries can often fix these issues,
   this is not always an option. |project| provides the ``reproject_goes.sh``
   script to remap GOES GeoTIFFs to a nearly identical projection that is more
-  compatible with older visualization tools. The script can be called by 
+  compatible with older visualization tools. The script can be called by
   executing:
 
   .. code-block:: bash
