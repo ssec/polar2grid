@@ -213,7 +213,7 @@ def _add_colorbar_to_image(input_tiff, img, num_bands, args):
     input_dtype = np.dtype(rio_ds.meta["dtype"])
     rio_ct = _get_rio_colormap(rio_ds, 1)
     cmap = get_colormap(input_dtype, rio_ct, num_bands)
-    vmin, vmax = _get_colorbar_vmin_vmax(args.colorbar_vmin, args.colorbar_vmax, rio_ds, input_dtype)
+    vmin, vmax = _get_colorbar_vmin_vmax(args.colorbar_min, args.colorbar_max, rio_ds, input_dtype)
     cmap.set_range(vmin, vmax)
 
     dc = DecoratorAGG(img)
@@ -415,9 +415,9 @@ def get_parser():
     return parser
 
 
-def main():
+def main(argv=sys.argv[1:]):
     parser = get_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
