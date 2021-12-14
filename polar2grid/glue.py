@@ -552,8 +552,11 @@ def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     filenames = reader_args.pop("filenames") or []
     filenames = list(get_input_files(filenames))
 
-    # Note: argparse will combine "extended" arguments like `products` automatically
     reader_specific_args, reader_specific_load_args = _parse_reader_args(reader_names, reader_subgroups, args)
+    # argparse will combine "extended" arguments like `products` automatically
+    # and products should only be provided to the load arguments, not reader creation
+    for _reader_name, _reader_args in reader_specific_args.items():
+        _reader_args.pop("products", None)
 
     # Parse provided files and search for files if provided directories
     scene_creation = {

@@ -24,6 +24,7 @@
 
 import contextlib
 import os
+from unittest import mock
 
 import pytest
 
@@ -32,15 +33,9 @@ import pytest
 def set_env(**environ):
     """Temporarily set the process environment variables.
 
-    >>> with set_env(PLUGINS_DIR=u'test/plugins'):
-    ...   "PLUGINS_DIR" in os.environ
-    True
+    Args:
+        environ (dict[str, unicode]): New environment variables to set.
 
-    >>> "PLUGINS_DIR" in os.environ
-    False
-
-    :type environ: dict[str, unicode]
-    :param environ: Environment variables to set
     """
     old_environ = dict(os.environ)
     os.environ.update(environ)
@@ -49,6 +44,43 @@ def set_env(**environ):
     finally:
         os.environ.clear()
         os.environ.update(old_environ)
+
+
+VIIRS_SDR_FILENAMES = [
+    "GDNBO_npp_d20120225_t1801245_e1802487_b01708_c20120226001636568470_noaa_ops.h5",
+    "GITCO_npp_d20120225_t1801245_e1802487_b01708_c20120226001734123892_noaa_ops.h5",
+    "GMTCO_npp_d20120225_t1801245_e1802487_b01708_c20120226001559910679_noaa_ops.h5",
+    "SVDNB_npp_d20120225_t1801245_e1802487_b01708_c20120226002239040837_noaa_ops.h5",
+    "SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5",
+    "SVI02_npp_d20120225_t1801245_e1802487_b01708_c20120226002313514280_noaa_ops.h5",
+    "SVI03_npp_d20120225_t1801245_e1802487_b01708_c20120226002348811096_noaa_ops.h5",
+    "SVI04_npp_d20120225_t1801245_e1802487_b01708_c20120226002313755405_noaa_ops.h5",
+    "SVI05_npp_d20120225_t1801245_e1802487_b01708_c20120226002349115396_noaa_ops.h5",
+    "SVM01_npp_d20120225_t1801245_e1802487_b01708_c20120226002049115233_noaa_ops.h5",
+    "SVM02_npp_d20120225_t1801245_e1802487_b01708_c20120226002132385368_noaa_ops.h5",
+    "SVM03_npp_d20120225_t1801245_e1802487_b01708_c20120226002053795183_noaa_ops.h5",
+    "SVM04_npp_d20120225_t1801245_e1802487_b01708_c20120226002204554472_noaa_ops.h5",
+    "SVM05_npp_d20120225_t1801245_e1802487_b01708_c20120226002048565595_noaa_ops.h5",
+    "SVM06_npp_d20120225_t1801245_e1802487_b01708_c20120226002138321916_noaa_ops.h5",
+    "SVM07_npp_d20120225_t1801245_e1802487_b01708_c20120226002208157737_noaa_ops.h5",
+    "SVM08_npp_d20120225_t1801245_e1802487_b01708_c20120226002205860744_noaa_ops.h5",
+    "SVM09_npp_d20120225_t1801245_e1802487_b01708_c20120226002205633207_noaa_ops.h5",
+    "SVM10_npp_d20120225_t1801245_e1802487_b01708_c20120226002316653329_noaa_ops.h5",
+    "SVM11_npp_d20120225_t1801245_e1802487_b01708_c20120226002207165715_noaa_ops.h5",
+    "SVM12_npp_d20120225_t1801245_e1802487_b01708_c20120226002134281104_noaa_ops.h5",
+    "SVM13_npp_d20120225_t1801245_e1802487_b01708_c20120226002316702845_noaa_ops.h5",
+    "SVM14_npp_d20120225_t1801245_e1802487_b01708_c20120226002317383363_noaa_ops.h5",
+    "SVM15_npp_d20120225_t1801245_e1802487_b01708_c20120226002348350715_noaa_ops.h5",
+    "SVM16_npp_d20120225_t1801245_e1802487_b01708_c20120226002204855751_noaa_ops.h5",
+]
+
+
+def _create_empty_viirs_sdrs(dst_dir):
+    import h5py
+
+    for viirs_fn in VIIRS_SDR_FILENAMES:
+        viirs_path = dst_dir / viirs_fn
+        h5py.File(viirs_path, "w")
 
 
 def test_polar2grid_help():
@@ -65,3 +97,29 @@ def test_geo2grid_help():
     with pytest.raises(SystemExit) as e, set_env(USE_POLAR2GRID_DEFAULTS="0"):
         main(["--help"])
     assert e.value.code == 0
+
+
+class TestGlueWithVIIRS:
+    def setup_method(self):
+        """Wrap HDF5 file handler with our own fake handler."""
+        from satpy._config import config_search_paths
+        from satpy.readers.viirs_sdr import VIIRSSDRFileHandler
+        from satpy.tests.reader_tests.test_viirs_sdr import FakeHDF5FileHandler2
+
+        self.reader_configs = config_search_paths(os.path.join("readers", "viirs_sdr.yaml"))
+        # http://stackoverflow.com/questions/12219967/how-to-mock-a-base-class-with-python-mock-library
+        self.p = mock.patch.object(VIIRSSDRFileHandler, "__bases__", (FakeHDF5FileHandler2,))
+        self.fake_handler = self.p.start()
+        self.p.is_local = True
+
+    def teardown_method(self):
+        """Stop wrapping the HDF5 file handler."""
+        self.p.stop()
+
+    def test_polar2grid_viirs_sdr_list_products(self, tmp_path):
+        from polar2grid.glue import main
+
+        _create_empty_viirs_sdrs(tmp_path)
+        with set_env(USE_POLAR2GRID_DEFAULTS="1"):
+            ret = main(["-r", "viirs_sdr", "-w", "geotiff", "-f", str(tmp_path), "--list-products"])
+        assert ret == 0
