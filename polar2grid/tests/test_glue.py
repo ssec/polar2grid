@@ -36,16 +36,6 @@ def set_env(**environ):
     Args:
         environ (dict[str, unicode]): New environment variables to set.
 
-    Examples:
-        ::
-
-        with set_env(PLUGINS_DIR=u'test/plugins'):
-          "PLUGINS_DIR" in os.environ
-        # True
-
-        "PLUGINS_DIR" in os.environ
-        # False
-
     """
     old_environ = dict(os.environ)
     os.environ.update(environ)
