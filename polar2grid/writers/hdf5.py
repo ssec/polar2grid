@@ -206,9 +206,7 @@ class HDF5Writer(Writer):
         return [lon_data, lat_data], [lon_dataset, lat_dataset]
 
     @staticmethod
-    def create_variable(
-        filename: str, hdf_fh, hdf_subgroup: str, data_arr: xr.DataArray, dtype: np.dtype, compression: bool
-    ):
+    def create_variable(hdf_fh, hdf_subgroup: str, data_arr: xr.DataArray, dtype: np.dtype, compression: bool):
         """Create a HDF5 data variable and attributes for the variable."""
         ds_attrs = data_arr.attrs
 
@@ -218,12 +216,7 @@ class HDF5Writer(Writer):
             LOG.warning("Product %s already in HDF5 group," "will delete existing dataset", hdf_subgroup)
             del hdf_fh[hdf_subgroup]
 
-        try:
-            dset = hdf_fh.create_dataset(hdf_subgroup, shape=data_arr.shape, dtype=d_dtype, compression=compression)
-        except ValueError:
-            if os.path.isfile(filename):
-                os.remove(filename)
-            raise
+        dset = hdf_fh.create_dataset(hdf_subgroup, shape=data_arr.shape, dtype=d_dtype, compression=compression)
 
         dset.attrs["satellite"] = ds_attrs["platform_name"]
         dset.attrs["instrument"] = ds_attrs["sensor"]
@@ -241,11 +234,11 @@ class HDF5Writer(Writer):
         **kwargs,
     ):
         """Save HDF5 datasets."""
-        compression = kwargs.pop("compression", None) if "compression" in kwargs else None
+        compression = kwargs.pop("compression", None)
         if compression == "none":
             compression = None
 
-        add_geolocation = kwargs.pop("add_geolocation") if "add_geolocation" in kwargs else False
+        add_geolocation = kwargs.pop("add_geolocation", False)
 
         # will this be written to one or multiple files?
         output_names = []
@@ -267,25 +260,18 @@ class HDF5Writer(Writer):
         targets = []
 
         for area, data_arrs in datasets_by_area:
-            # open HDF5 file handle, check if group already exists.
-            parent_group = self.create_proj_group(filename, HDF5_fh, area)
-
-            if add_geolocation:
-                chunks = data_arrs[0].chunks
-                geo_sets, fnames = self.write_geolocation(
-                    HDF5_fh, filename, parent_group, area, dtype, append, compression, chunks
-                )
-                dsets.append(geo_sets)
-                targets.append(fnames)
-
-            for data_arr in data_arrs:
-                hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs["p2g_name"])
-
-                file_var = FakeHDF5(filename, hdf_subgroup)
-                self.create_variable(filename, HDF5_fh, hdf_subgroup, data_arr, dtype, compression)
-
-                dsets.append(data_arr.data)
-                targets.append(file_var)
+            dask_arrays, file_targets = self._save_data_arrays_and_area(
+                area,
+                data_arrs,
+                filename,
+                HDF5_fh,
+                dtype,
+                append,
+                compression,
+                add_geolocation,
+            )
+            dsets.extend(dask_arrays)
+            targets.extend(file_targets)
 
         results = (dsets, targets)
         if compute:
@@ -298,6 +284,41 @@ class HDF5Writer(Writer):
             return delayeds
         else:
             return targets, sources
+
+    def _save_data_arrays_and_area(
+        self, area, data_arrs, filename, HDF5_fh, dtype, append, compression, add_geolocation
+    ):
+        # open HDF5 file handle, check if group already exists.
+        parent_group = self.create_proj_group(filename, HDF5_fh, area)
+
+        dsets = []
+        targets = []
+        if add_geolocation:
+            chunks = data_arrs[0].chunks
+            geo_sets, file_targets = self.write_geolocation(
+                HDF5_fh, filename, parent_group, area, dtype, append, compression, chunks
+            )
+            dsets.extend(geo_sets)
+            targets.extend(file_targets)
+
+        for data_arr in data_arrs:
+            try:
+                dask_arr, target_file = self._save_data_array(
+                    HDF5_fh, filename, data_arr, parent_group, dtype, compression
+                )
+            except ValueError:
+                if os.path.isfile(filename):
+                    os.remove(filename)
+                raise
+            dsets.append(dask_arr)
+            targets.append(target_file)
+        return dsets, targets
+
+    def _save_data_array(self, HDF5_fh, filename, data_arr, parent_group, dtype, compression):
+        hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs.get("p2g_name", data_arr.attrs["name"]))
+        file_var = FakeHDF5(filename, hdf_subgroup)
+        self.create_variable(HDF5_fh, hdf_subgroup, data_arr, dtype, compression)
+        return data_arr.data, file_var
 
 
 def add_writer_argument_groups(parser, group=None):
