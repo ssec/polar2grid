@@ -24,6 +24,7 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 
 import dask.array as da
 import numpy as np
@@ -35,6 +36,7 @@ from satpy import Scene
 
 PKG_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
 VIIRS_I_CHUNKS = (32 * 3, 6400)
+START_TIME = datetime(2021, 1, 1, 12, 0, 0)
 
 
 def pytest_configure(config):
@@ -77,6 +79,8 @@ def viirs_sdr_i_swath_def() -> SwathDefinition:
             "rows_per_scan": 32,
             "platform_name": "npp",
             "sensor": "viirs",
+            "start_time": START_TIME,
+            "end_time": START_TIME,
         },
     )
     lats_data_arr = xr.DataArray(
@@ -86,6 +90,8 @@ def viirs_sdr_i_swath_def() -> SwathDefinition:
             "rows_per_scan": 32,
             "platform_name": "npp",
             "sensor": "viirs",
+            "start_time": START_TIME,
+            "end_time": START_TIME,
         },
     )
     return SwathDefinition(lons_data_arr, lats_data_arr)
@@ -118,6 +124,8 @@ def viirs_sdr_i01_data_array(viirs_sdr_i_swath_def) -> xr.DataArray:
             "platform_name": "npp",
             "sensor": "viirs",
             "name": "I01",
+            "start_time": START_TIME,
+            "end_time": START_TIME,
         },
     )
 
@@ -132,6 +140,8 @@ def abi_l1b_c01_data_array(goes_east_conus_area_def) -> xr.DataArray:
             "platform_name": "goes16",
             "sensor": "abi",
             "name": "C01",
+            "start_time": START_TIME,
+            "end_time": START_TIME,
         },
     )
 
