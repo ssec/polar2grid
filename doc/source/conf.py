@@ -267,6 +267,7 @@ else:
             "examples/ahi_example.rst",
             "examples/creating_animations_example.rst",
             "readers/abi_l1b.rst",
+            "readers/abi_l2_nc.rst",
             "readers/ahi_hrit.rst",
             "readers/ahi_hsd.rst",
             "verification/abi_verification.rst",

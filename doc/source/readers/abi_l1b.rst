@@ -19,7 +19,7 @@ Examples:
 
     geo2grid.sh -r abi_l1b -h
 
-    geo2grid.sh -r abi_l1b -w geotiff --list-products -f /goes16/abi
+    geo2grid.sh -r abi_l1b -w geotiff --list-products -f /data/goes16/abi
 
     geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 -f /data/goes16/abi
 
