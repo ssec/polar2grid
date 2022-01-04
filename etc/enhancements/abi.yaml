@@ -30,3 +30,29 @@ enhancements:
       - name: linear
         method: !!python/name:satpy.enhancements.stretch
         kwargs: {stretch: 'crude', min_stretch: 280., max_stretch: 180.}
+
+  # Level 2
+  cloud_top_height:
+    name: HT
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - colors: [[127, 0, 127],
+                       [150, 75, 20],
+                       [255, 171, 127],
+                       [255, 127, 0],
+                       [255, 255, 50],
+                       [220, 220, 40],
+                       [0, 200, 100],
+                       [75, 175, 0],
+                       [100, 200, 130],
+                       [112, 219, 147],
+                       [120, 120, 240],
+                       [150, 150, 245],
+                       [180, 180, 250],
+                       [225, 225, 255],
+                       [255, 255, 255]]
+              min_value: 0
+              max_value: 20000
