@@ -27,6 +27,8 @@ from unittest import mock
 
 import numpy as np
 import pytest
+import rasterio
+from PIL import Image
 
 
 def test_add_coastlines_help():
@@ -37,9 +39,7 @@ def test_add_coastlines_help():
     assert e.value.code == 0
 
 
-def _create_fake_l_geotiff(fp):
-    import rasterio
-
+def _shared_fake_geotiff_kwargs():
     kwargs = {
         "driver": "GTiff",
         "height": 1000,
@@ -49,18 +49,58 @@ def _create_fake_l_geotiff(fp):
         "crs": "+proj=latlong",
         "transform": (0.033, 0.0, 0.0, 0.0, 0.033, 0.0),
     }
+    return kwargs
+
+
+def _shared_fake_geotiff_data():
+    data = np.zeros((500, 1000), dtype=np.uint8)
+    data[200:300, :] = 128
+    data[300:, :] = 255
+    return data
+
+
+def _create_fake_l_geotiff(fp):
+    kwargs = _shared_fake_geotiff_kwargs()
     with rasterio.open(fp, "w", **kwargs) as ds:
-        ds.write(np.zeros((500, 1000), dtype=np.uint8), 1)
+        ds.write(_shared_fake_geotiff_data(), 1)
 
 
+def _create_fake_l_geotiff_colormap(fp):
+    kwargs = _shared_fake_geotiff_kwargs()
+    with rasterio.open(fp, "w", **kwargs) as ds:
+        ds.write(_shared_fake_geotiff_data(), 1)
+        ds.write_colormap(
+            1,
+            {
+                0: (0, 0, 0, 255),
+                128: (128, 0, 0, 255),
+                255: (255, 0, 0, 255),
+            },
+        )
+
+
+@pytest.mark.parametrize("gen_func", [_create_fake_l_geotiff, _create_fake_l_geotiff_colormap])
 @mock.patch("polar2grid.add_coastlines.ContourWriterAGG.add_overlay_from_dict")
-def test_add_coastlines_basic_l(add_overlay_mock, tmp_path):
+def test_add_coastlines_basic_l(add_overlay_mock, tmp_path, gen_func):
     from polar2grid.add_coastlines import main
 
     fp = str(tmp_path / "test.tif")
-    _create_fake_l_geotiff(fp)
+    gen_func(fp)
     ret = main(["--add-coastlines", "--add-colorbar", fp])
     assert ret in [None, 0]
     assert os.path.isfile(tmp_path / "test.png")
     add_overlay_mock.assert_called_once()
     assert "coasts" in add_overlay_mock.call_args.args[0]
+    img = Image.open(tmp_path / "test.png")
+    arr = np.asarray(img)
+    # bottom of the image is a colorbar
+    image_arr = arr[:940]
+    r_uniques = np.unique(image_arr[:, :, 0])
+    np.testing.assert_allclose(r_uniques, [0, 128, 255])
+    g_colors = [0, 128, 255] if "colormap" not in gen_func.__name__ else [0]
+    g_uniques = np.unique(image_arr[:, :, 1])
+    np.testing.assert_allclose(g_uniques, g_colors)
+    b_colors = [0, 128, 255] if "colormap" not in gen_func.__name__ else [0]
+    b_uniques = np.unique(image_arr[:, :, 2])
+    np.testing.assert_allclose(b_uniques, b_colors)
+    assert (arr[940:] != 0).any()
