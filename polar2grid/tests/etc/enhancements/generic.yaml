@@ -45,6 +45,16 @@ enhancements:
             - {filename: "test_p2g_palettize3.npy",
                min_value: 0,
                max_value: 201}
+  test_p2g_palettize4:
+    name: test_p2g_palettize4
+    operations:
+      - name: custom_palette
+        method: !!python/name:polar2grid.enhancements.palettize
+        kwargs:
+          palettes:
+            - {filename: "colormaps/amsr2_36h.cmap",
+               min_value: 0,
+               max_value: 201}
   test_p2g_colorize:
     name: test_p2g_colorize
     operations:

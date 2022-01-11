@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2016 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2016-2022 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -20,113 +20,12 @@
 # satellite observation data, remaps it, and writes it to a file format for
 #     input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-# Written by David Hoese    July 2016
-# University of Wisconsin-Madison
-# Space Science and Engineering Center
-# 1225 West Dayton Street
-# Madison, WI  53706
-# david.hoese@ssec.wisc.edu
-"""Add a colortable to an existing GeoTIFF.
-
-:author:       David Hoese (davidh)
-:contact:      david.hoese@ssec.wisc.edu
-:organization: Space Science and Engineering Center (SSEC)
-:copyright:    Copyright (c) 2016 University of Wisconsin SSEC. All rights reserved.
-:date:         July 2016
-:license:      GNU GPLv3
-
-"""
+"""Add a colortable to an existing GeoTIFF."""
 import os
 import sys
 
-import numpy as np
 import rasterio
 from trollimage.colormap import Colormap
-
-
-def parse_color_table_file(f):
-    """Colormap files are comma-separated 'integer,R,G,B,A' text files.
-
-    A basic greyscale example for an 8-bit GeoTIFF would be::
-
-        0,0,0,0,255
-        1,1,1,1,255
-        ...
-        254,254,254,254,255
-        255,255,255,255,255
-
-    Where the `...` represents the lines in between, meaning every input
-    GeoTIFF value has a corresponding RGBA value specified. The first value
-    is the input GeoTIFF value, followed by R (red), G (green), B (blue),
-    and A (alpha).
-
-    This script will also linearly interpolate between two values.
-    So the above colormap file could also be written in just two lines::
-
-        0,0,0,0,255
-        255,255,255,255,255
-
-    Often times you may want to have the 0 value as a transparent 'fill' value
-    and continue the colormap after that. This can be done by doing the
-    following::
-
-        # 0 is a fill value
-        0,0,0,0,0
-        # 1 starts at bright red
-        1,255,0,0,255
-        # and we end with black at the end
-        255,0,0,0,255
-
-    .. note::
-
-        Not all image viewers will obey the transparent (alpha) settings
-
-    Blank lines are allowed as well as spaces between line elements.
-
-    """
-    ct = []
-    with open(f, "r") as ct_file:
-        prev_idx = None
-        for line in ct_file:
-            if line.startswith("#") or not line:
-                continue
-            parts = [int(x.strip()) for x in line.split(",")]
-            assert len(parts) == 5
-            if prev_idx is None:
-                # this is the first line we're adding, prefill everything before
-                prev_idx = 0
-                while prev_idx <= parts[0]:
-                    ct.append([prev_idx] + parts[1:])
-                    prev_idx += 1
-            elif parts[0] != prev_idx + 1:
-                # interpolate from the previous to the current
-                num_samples = parts[0] - prev_idx
-                r_interp = np.linspace(ct[-1][1], parts[1], num_samples).astype(np.int)
-                g_interp = np.linspace(ct[-1][2], parts[2], num_samples).astype(np.int)
-                b_interp = np.linspace(ct[-1][3], parts[3], num_samples).astype(np.int)
-                a_interp = np.linspace(ct[-1][4], parts[4], num_samples).astype(np.int)
-                interp_idx = 0
-                while prev_idx < parts[0]:
-                    prev_idx += 1
-                    ct.append(
-                        [
-                            prev_idx,
-                            r_interp[interp_idx],
-                            g_interp[interp_idx],
-                            b_interp[interp_idx],
-                            a_interp[interp_idx],
-                        ]
-                    )
-                    interp_idx += 1
-            else:
-                ct.append(parts)
-            prev_idx = parts[0]
-
-    if prev_idx < 255:
-        last_entry = ct[-1]
-        ct.extend([last_entry] * (255 - prev_idx))
-    return ct
 
 
 def load_color_table_file_to_colormap(ct_file):
@@ -136,35 +35,24 @@ def load_color_table_file_to_colormap(ct_file):
     with the current environment variable value of ``POLAR2GRID_HOME``.
 
     """
-    from trollimage.colormap import Colormap
+    from satpy.enhancements import create_colormap
 
     p2g_home = os.getenv("POLAR2GRID_HOME", "")
     ct_file = ct_file.replace("$POLAR2GRID_HOME", p2g_home)
     ct_file = ct_file.replace("$GEO2GRID_HOME", p2g_home)
-    if ct_file.endswith(".npy") or ct_file.endswith(".npz"):
-        # binary colormap files (RGB, RGBA, VRGB, VRGBA)
-        from satpy.enhancements import create_colormap
-
-        cmap = create_colormap({"filename": ct_file})
-    else:
-        # P2G style colormap text files
-        ct = parse_color_table_file(ct_file)
-        entries = ((e[0] / 255.0, [x / 255.0 for x in e[1:]]) for e in ct)
-        cmap = Colormap(*entries)
+    cmap = create_colormap({"filename": ct_file})
     return cmap
 
 
 def create_colortable(ct_file_or_entries):
     """Create GDAL ColorTable object from Colormap object."""
     if isinstance(ct_file_or_entries, str):
-        ct_entries = parse_color_table_file(ct_file_or_entries)
-    elif isinstance(ct_file_or_entries, Colormap):
-        ct_entries = enumerate(ct_file_or_entries.colors)
-        ct_entries = (((x,) + tuple(int(c * 255.0) for c in color)) for x, color in ct_entries)
-    else:
-        ct_entries = ct_file_or_entries
+        ct_file_or_entries = load_color_table_file_to_colormap(ct_file_or_entries)
+    if isinstance(ct_file_or_entries, Colormap):
+        ct_file_or_entries = enumerate(ct_file_or_entries.colors)
+        ct_file_or_entries = (((x,) + tuple(int(c * 255.0) for c in color)) for x, color in ct_file_or_entries)
 
-    ct_dict = {entry[0]: tuple(entry[1:]) for entry in ct_entries}
+    ct_dict = {entry[0]: tuple(entry[1:]) for entry in ct_file_or_entries}
     return ct_dict
 
 
@@ -187,9 +75,9 @@ def get_parser():
     return parser
 
 
-def main():
+def main(argv=sys.argv[1:]):
     parser = get_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     ct = create_colortable(args.ct_file)
     for geotiff_fn in args.geotiffs:

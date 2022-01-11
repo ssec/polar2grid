@@ -33,7 +33,7 @@ import rasterio
 import satpy
 from satpy import Scene
 
-TEST_ETC_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), "etc"))
+from polar2grid.tests import TEST_ETC_DIR
 
 
 @contextlib.contextmanager
@@ -84,7 +84,14 @@ class TestP2GEnhancements:
             np.testing.assert_allclose(flat_l_data, exp_out)
 
     @pytest.mark.parametrize(
-        "ds_name", ["test_p2g_palettize", "test_p2g_palettize2", "test_p2g_palettize3", "test_p2g_colorize"]
+        "ds_name",
+        [
+            "test_p2g_palettize",
+            "test_p2g_palettize2",
+            "test_p2g_palettize3",
+            "test_p2g_palettize4",
+            "test_p2g_colorize",
+        ],
     )
     @pytest.mark.parametrize("keep_palette", [False, True])
     def test_p2g_palettize(self, keep_palette, ds_name, tmpdir, abi_l1b_c01_data_array):
