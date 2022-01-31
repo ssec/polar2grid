@@ -101,7 +101,9 @@ def add_writer_argument_groups(parser, group=None):
         help="When saving 'palettized' enhanced images, save the colormap as a "
         "geotiff color table instead of converting the image to RGB/A",
     )
-    group.add_argument("--tiled", action=BooleanOptionalAction, help="Tile geotiffs internally (default: True)")
+    group.add_argument(
+        "--tiled", action=BooleanOptionalAction, default=True, help="Tile geotiffs internally (default: True)"
+    )
     group.add_argument("--blockxsize", default=SUPPRESS, type=int, help="Set tile block X size")
     group.add_argument("--blockysize", default=SUPPRESS, type=int, help="Set tile block Y size")
     group.add_argument(
