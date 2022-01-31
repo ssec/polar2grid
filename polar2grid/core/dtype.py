@@ -71,14 +71,14 @@ dtype2str = dict((v, k) for k, v in str2dtype.items())
 # Since float32 is polar2grid's intermediate type, float32 and float64 don't
 # get clipped
 dtype2range = {
-    DTYPE_UINT8: (0, 2 ** 8 - 1),
-    DTYPE_UINT16: (0, 2 ** 16 - 1),
-    DTYPE_UINT32: (0, 2 ** 32 - 1),
-    DTYPE_UINT64: (0, 2 ** 64 - 1),
-    DTYPE_INT8: (-1 * (2 ** 7), 2 ** 7 - 1),
-    DTYPE_INT16: (-1 * (2 ** 15), 2 ** 15 - 1),
-    DTYPE_INT32: (-1 * (2 ** 31), 2 ** 31 - 1),
-    DTYPE_INT64: (-1 * (2 ** 63), 2 ** 63 - 1),
+    DTYPE_UINT8: (0, 2**8 - 1),
+    DTYPE_UINT16: (0, 2**16 - 1),
+    DTYPE_UINT32: (0, 2**32 - 1),
+    DTYPE_UINT64: (0, 2**64 - 1),
+    DTYPE_INT8: (-1 * (2**7), 2**7 - 1),
+    DTYPE_INT16: (-1 * (2**15), 2**15 - 1),
+    DTYPE_INT32: (-1 * (2**31), 2**31 - 1),
+    DTYPE_INT64: (-1 * (2**63), 2**63 - 1),
     DTYPE_FLOAT32: None,
     DTYPE_FLOAT64: None,
 }
