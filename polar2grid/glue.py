@@ -210,6 +210,8 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
             "clavrx",
             "mersi2_l1b",
             "mirs",
+            "modis_l1b",
+            "modis_l2",
             "nucaps",
             "viirs_edr_active_fires",
             "viirs_edr_flood",
@@ -223,7 +225,7 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
             "ahi_hrit",
             "ahi_hsd",
         ]
-    return readers
+    return sorted(readers)
 
 
 def add_scene_argument_groups(parser, is_polar2grid=False):
@@ -318,10 +320,12 @@ def _supported_writers(is_polar2grid: bool = False) -> list[str]:
             "geotiff",
             "awips_tiled",
             "binary",
+            "hdf5",
         ]
     else:
         writers = [
             "geotiff",
+            "awips_tiled",
         ]
     return writers
 
@@ -665,7 +669,7 @@ basic processing with limited products:
     )
     reader_group = add_scene_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
     resampling_group = add_resample_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
-    writer_group = add_writer_argument_groups(parser)[0]
+    writer_group = add_writer_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
     argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
 
     _retitle_optional_arguments(parser)
