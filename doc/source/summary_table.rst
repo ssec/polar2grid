@@ -20,7 +20,7 @@
       - "
       - AWIPS NetCDF
       - viirs_sdr
-      - scmi
+      - awips_tiled
     * - "
       - "
       - HDF5
@@ -34,7 +34,7 @@
     * - "
       - "
       - 24-bit true and false color GeoTIFF
-      - crefl
+      - viirs_sdr
       - geotiff
     * - **Aqua and Terra MODIS Level 1b (IMAPP or NASA archive files)**
       - MOD021KM*.hdf
@@ -45,47 +45,47 @@
         t1.*1000m.hdf
         t1.*.geo.hdf
       - 8 bit single band GeoTIFF
-      - modis
+      - modis_l1b
       - geotiff
     * - "
       - "
       - AWIPS NetCDF
-      - modis
-      - scmi
+      - modis_l1b
+      - awips_tiled
     * - "
       - "
       - HDF5
-      - modis
+      - modis_l1b
       - hdf5
     * - "
       - "
       - Binary
-      - modis
+      - modis_l1b
       - binary
     * - "
       - "
       - 24-bit true and false color GeoTIFF
-      - crefl
+      - modis_l1b
       - geotiff
     * - **NOAA-18, NOAA-19,Metop-A,-B,-C AVHRR AAPP Level 1b**
       - hrpt_noaa18_*.l1b
       - 8 bit single band GeoTIFF
-      - avhrr
+      - avhrr_l1b
       - geotiff
     * - "
       - "
       - AWIPS NetCDF
-      - avhrr
-      - scmi
+      - avhrr_l1b
+      - awips_tiled
     * - "
       - "
       - HDF5
-      - avhrr
+      - avhrr_l1b
       - hdf5
     * - "
       - "
       - Binary
-      - avhrr
+      - avhrr_l1b
       - binary
     * - **GCOM-W1 ASMR2 L1B**
       - GW1AM2\*L1DLBTBR\*.h5
@@ -96,7 +96,7 @@
       - "
       - AWIPS NetCDF
       - amsr2_l1b
-      - scmi
+      - awips_tiled
     * - "
       - "
       - HDF5
@@ -131,7 +131,7 @@
       - "
       - AWIPS NetCDF
       - clavrx
-      - scmi
+      - awips_tiled
     * - "
       - "
       - HDF5
@@ -151,7 +151,7 @@
       - "
       - AWIPS NetCDF
       - acspo
-      - scmi
+      - awips_tiled
     * - "
       - "
       - HDF5

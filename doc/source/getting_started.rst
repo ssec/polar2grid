@@ -104,7 +104,7 @@ are always available:
 
         polar2grid.sh -r viirs_sdr -w geotiff -p i01 adaptive_dnb -g polar_alaska_300 --grid-coverage=.25 -v -f <path to files>
 
-        polar2grid.sh -r modis -w geotiff --list-products -f <path to files>/<list of files>
+        polar2grid.sh -r modis_l1b -w geotiff --list-products -f <path to files>/<list of files>
 
 .. ifconfig:: is_geo2grid
 
