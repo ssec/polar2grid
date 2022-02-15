@@ -15,7 +15,7 @@
         GITCO_npp_*.h5
       - 8-bit single band GeoTIFF
       - viirs_sdr
-      - gtiff
+      - geotiff
     * - "
       - "
       - AWIPS NetCDF
@@ -35,7 +35,7 @@
       - "
       - 24-bit true and false color GeoTIFF
       - crefl
-      - gtiff
+      - geotiff
     * - **Aqua and Terra MODIS Level 1b (IMAPP or NASA archive files)**
       - MOD021KM*.hdf
         MOD03*.hdf
@@ -46,7 +46,7 @@
         t1.*.geo.hdf
       - 8 bit single band GeoTIFF
       - modis
-      - gtiff
+      - geotiff
     * - "
       - "
       - AWIPS NetCDF
@@ -66,12 +66,12 @@
       - "
       - 24-bit true and false color GeoTIFF
       - crefl
-      - gtiff
+      - geotiff
     * - **NOAA-18, NOAA-19,Metop-A,-B,-C AVHRR AAPP Level 1b**
       - hrpt_noaa18_*.l1b
       - 8 bit single band GeoTIFF
       - avhrr
-      - gtiff
+      - geotiff
     * - "
       - "
       - AWIPS NetCDF
@@ -91,7 +91,7 @@
       - GW1AM2\*L1DLBTBR\*.h5
       - 8 bit single band GeoTIFF
       - amsr2_l1b
-      - gtiff
+      - geotiff
     * - "
       - "
       - AWIPS NetCDF
@@ -111,7 +111,7 @@
       - tf\*.FY3D\-X_MERSI_*_L1B.HDF
       - 8 bit single band GeoTIFF, 24-bit true and false color GeoTIFF
       - mersi2_l1b
-      - gtiff
+      - geotiff
     * - "
       - "
       - HDF5
@@ -126,7 +126,7 @@
       - clavrx*.hdf
       - 8 bit single band GeoTIFF
       - clavrx
-      - gtiff
+      - geotiff
     * - "
       - "
       - AWIPS NetCDF
@@ -146,7 +146,7 @@
       - \*-STAR-L2P_GHRSST-SSTskin-\*.nc
       - 8 bit single band GeoTIFF
       - acspo
-      - gtiff
+      - geotiff
     * - "
       - "
       - AWIPS NetCDF

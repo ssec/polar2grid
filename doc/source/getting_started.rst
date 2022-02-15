@@ -83,23 +83,28 @@ are always available:
 
     .. rst-class:: full_width_table
 
+        -r                    Instrument input files to read from.
+        -w                    Output format to write to.
         -h                    Print helpful information.
         --list-products       List all possible product options to use with -p from the given input data.
+        --list-products-all   List available polar2grid products options and custom/Satpy products and exit.
         -p                    List of products you want to create.
         -f                    Input files and paths.
         --grid-coverage       Fraction of grid that must be covered by valid data. Default is 0.1.
         -g <grid_name>        Specify the output grid to use. Default is the Platte Carrée projection, also
                               known as the wgs84 coordinate system. See :doc:`grids` and :doc:`custom_grids`
                               for information on possible values.
+        --num-workers NUM_WORKERS   Specify number of worker threads to use (Default: 4).
+        --progress            Show processing progress bar (Not recommended for logged output).
         -v                    Print detailed log information.
 
     Examples:
 
     .. code-block:: bash
 
-        polar2grid.sh modis gtiff --list-products -f <path to files>/<list of files>
+        polar2grid.sh -r viirs_sdr -w geotiff -p i01 adaptive_dnb -g polar_alaska_300 --grid-coverage=.25 -v -f <path to files>
 
-        polar2grid.sh viirs gtiff -p i01 adaptive_dnb -g polar_alaska_300 --grid-coverage=.25 -v -f <path to files>
+        polar2grid.sh -r modis -w geotiff --list-products -f <path to files>/<list of files>
 
 .. ifconfig:: is_geo2grid
 

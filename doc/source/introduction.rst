@@ -48,8 +48,11 @@ What's New?
 
 .. ifconfig:: not is_geo2grid
 
-    Polar2Grid Version 2.3 is now available. Changes in this
-    version include:
+    Polar2Grid Version 3.0 is now available. This is a major 
+    update that includes changes to basic Polar2Grid execution.
+    These changes bring Polar2Grid in conformity with the execution strategy
+    of Geo2Grid, taking advantage of the xarray Dask python library.
+    Major changes include .......
 
     .. include:: NEWS.rst
         :start-line: 6
@@ -131,7 +134,7 @@ System Requirements
 
     * Intel or AMD CPU with 64-bit instruction support (2+ cores - 2.4GHz)
     * 16 GB RAM (minimum)
-    * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)
+    * CentOS 7.9 64-bit Linux; the software has been tested successfully on Rocky Linux 8.5
     * 5 GB disk space (minimum)
 
 License and Disclaimer
