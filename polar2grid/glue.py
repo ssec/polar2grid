@@ -340,10 +340,11 @@ def add_writer_argument_groups(parser, is_polar2grid=False):
         dest="writers",
         type=_convert_writer_name,
         metavar="WRITER",
-        help="Writers to save datasets with. Multiple writers "
-        "can be provided by specifying '-w' multiple "
-        "times (ex. '-w geotiff -w awips_tiled'). "
-        "Supported writers: " + ", ".join(writers),
+        help="Writer used to save datasets. " "Supported writers: " + ", ".join(writers),
+        # help="Writers to save datasets with. Multiple writers "
+        #      "can be provided by specifying '-w' multiple "
+        #      "times (ex. '-w geotiff -w awips_tiled'). "
+        #      "Supported writers: " + ", ".join(writers),
     )
     return (group_1,)
 
