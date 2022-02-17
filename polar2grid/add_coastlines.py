@@ -40,6 +40,9 @@ from PIL import Image, ImageFont
 from pycoast import ContourWriterAGG
 from pyresample.utils import get_area_def_from_raster
 
+from polar2grid.add_colormap import load_color_table_file_to_colormap
+from polar2grid.utils.config import add_polar2grid_config_paths
+
 try:
     # try getting setuptools/distribute's version of resource retrieval first
     from pkg_resources import resource_filename as get_resource_filename
@@ -174,19 +177,39 @@ def _args_to_pycoast_dict(args):
 
 def _get_colorbar_vmin_vmax(arg_min, arg_max, rio_ds, input_dtype):
     metadata = rio_ds.tags()
-    vmin = arg_min or metadata.get("min_in")
-    vmax = arg_max or metadata.get("max_in")
-    if isinstance(vmin, str):
-        vmin = float(vmin)
-    if isinstance(vmax, str):
-        vmax = float(vmax)
-    if vmin is None or vmax is None:
-        vmin = vmin or np.iinfo(input_dtype).min
-        vmax = vmax or np.iinfo(input_dtype).max
+    scale = metadata.get("scale", metadata.get("scale_factor"))
+    offset = metadata.get("offset", metadata.get("add_offset"))
+    dtype_min = float(np.iinfo(input_dtype).min)
+    dtype_max = float(np.iinfo(input_dtype).max)
+
+    if arg_min is None and scale is None:
+        LOG.warning(
+            "Colorbar min/max metadata not found and not provided "
+            "on the command line. Defaulting to data type limits."
+        )
+        return dtype_min, dtype_max
+
+    if arg_min is not None:
+        vmin = float(arg_min)
+        vmax = float(arg_max)
+    else:
+        scale = float(scale)
+        offset = float(offset)
+        delta = dtype_max - dtype_min
+        vmin = offset
+        vmax = delta * scale + offset
+        # floating point error made it not an integer
+        if abs(vmin - np.round(vmin, 0)) <= 0.0001:
+            vmin = np.round(vmin, 0)
+        if abs(vmax - np.round(vmax, 0)) <= 0.0001:
+            vmax = np.round(vmax, 0)
     return vmin, vmax
 
 
-def _apply_decorator_alignment(dc, align):
+def _apply_decorator_alignment(dc, align, is_vertical):
+    default_align = "left" if is_vertical else "bottom"
+    if align is None:
+        align = default_align
     if align == "top":
         dc.align_top()
     elif align == "bottom":
@@ -205,19 +228,22 @@ def _add_colorbar_to_image(input_tiff, img, num_bands, args):
     font_path = find_font(args.colorbar_font, args.colorbar_text_size)
     # this actually needs an aggdraw font
     font = Font(font_color, font_path, size=args.colorbar_text_size)
-    if num_bands not in (1, 2):
-        raise ValueError("Can't add colorbar to RGB/RGBA image")
 
     # figure out what colormap we are dealing with
     rio_ds = rasterio.open(input_tiff)
     input_dtype = np.dtype(rio_ds.meta["dtype"])
-    rio_ct = _get_rio_colormap(rio_ds, 1)
-    cmap = get_colormap(input_dtype, rio_ct, num_bands)
+    if num_bands in (3, 4) and args.colorbar_colormap_file is None:
+        raise ValueError("RGB and RGBA geotiffs must have a colormap " "specified with '--colorbar-colormap-file'.")
+    elif num_bands in (3, 4):
+        cmap = load_color_table_file_to_colormap(args.colorbar_colormap_file)
+    else:
+        rio_ct = _get_rio_colormap(rio_ds, 1)
+        cmap = get_colormap(input_dtype, rio_ct, num_bands)
     vmin, vmax = _get_colorbar_vmin_vmax(args.colorbar_min, args.colorbar_max, rio_ds, input_dtype)
-    cmap.set_range(vmin, vmax)
+    cmap = cmap.set_range(vmin, vmax, inplace=False)
 
     dc = DecoratorAGG(img)
-    _apply_decorator_alignment(dc, args.colorbar_align)
+    _apply_decorator_alignment(dc, args.colorbar_align, args.colorbar_vertical)
 
     if args.colorbar_vertical:
         dc.write_vertically()
@@ -337,6 +363,14 @@ def get_parser():
 
     group = parser.add_argument_group("colorbar")
     group.add_argument("--add-colorbar", action="store_true", help="Add colorbar on top of image")
+    group.add_argument(
+        "--colorbar-colormap-file",
+        help="Specify the colormap file that was used to "
+        "colorize the provided RGB geotiff. Only used if "
+        "the provided geotiff is RGB/A. Otherwise the "
+        "geotiff is expected to include the colormap as "
+        "a geotiff color table.",
+    )
     group.add_argument("--colorbar-width", type=int, help="Number of pixels wide")
     group.add_argument("--colorbar-height", type=int, help="Number of pixels high")
     group.add_argument(
@@ -351,7 +385,7 @@ def get_parser():
     group.add_argument(
         "--colorbar-align",
         choices=["left", "top", "right", "bottom"],
-        default="bottom",
+        default=None,
         help="Which direction to align colorbar (see --colorbar-vertical)",
     )
     group.add_argument("--colorbar-vertical", action="store_true", help="Position the colorbar vertically")
@@ -421,6 +455,7 @@ def main(argv=sys.argv[1:]):
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
+    add_polar2grid_config_paths()
 
     if args.output_filename is None:
         args.output_filename = [x[:-3] + "png" for x in args.input_tiff]

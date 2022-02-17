@@ -21,7 +21,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Basic usability tests for the add_coastlines script."""
-
+import contextlib
 import os
 from unittest import mock
 
@@ -39,12 +39,12 @@ def test_add_coastlines_help():
     assert e.value.code == 0
 
 
-def _shared_fake_geotiff_kwargs():
+def _shared_fake_geotiff_kwargs(num_bands):
     kwargs = {
         "driver": "GTiff",
         "height": 1000,
         "width": 500,
-        "count": 1,
+        "count": num_bands,
         "dtype": np.uint8,
         "crs": "+proj=latlong",
         "transform": (0.033, 0.0, 0.0, 0.0, 0.033, 0.0),
@@ -52,23 +52,37 @@ def _shared_fake_geotiff_kwargs():
     return kwargs
 
 
-def _shared_fake_geotiff_data():
+def _shared_fake_l_geotiff_data():
     data = np.zeros((500, 1000), dtype=np.uint8)
     data[200:300, :] = 128
     data[300:, :] = 255
     return data
 
 
+@contextlib.contextmanager
+def _create_fake_geotiff(fp, num_bands):
+    kwargs = _shared_fake_geotiff_kwargs(num_bands)
+    with rasterio.open(fp, "w", **kwargs) as ds:
+        for band_num in range(1, num_bands + 1):
+            ds.write(_shared_fake_l_geotiff_data(), band_num)
+        yield ds
+
+
+@contextlib.contextmanager
 def _create_fake_l_geotiff(fp):
-    kwargs = _shared_fake_geotiff_kwargs()
-    with rasterio.open(fp, "w", **kwargs) as ds:
-        ds.write(_shared_fake_geotiff_data(), 1)
+    with _create_fake_geotiff(fp, 1) as ds:
+        yield ds
 
 
+@contextlib.contextmanager
+def _create_fake_rgb_geotiff(fp):
+    with _create_fake_geotiff(fp, num_bands=3) as ds:
+        yield ds
+
+
+@contextlib.contextmanager
 def _create_fake_l_geotiff_colormap(fp):
-    kwargs = _shared_fake_geotiff_kwargs()
-    with rasterio.open(fp, "w", **kwargs) as ds:
-        ds.write(_shared_fake_geotiff_data(), 1)
+    with _create_fake_l_geotiff(fp) as ds:
         ds.write_colormap(
             1,
             {
@@ -77,15 +91,20 @@ def _create_fake_l_geotiff_colormap(fp):
                 255: (255, 0, 0, 255),
             },
         )
+        yield ds
 
 
-@pytest.mark.parametrize("gen_func", [_create_fake_l_geotiff, _create_fake_l_geotiff_colormap])
+@pytest.mark.parametrize(
+    "gen_func",
+    [_create_fake_l_geotiff, _create_fake_l_geotiff_colormap],
+)
 @mock.patch("polar2grid.add_coastlines.ContourWriterAGG.add_overlay_from_dict")
 def test_add_coastlines_basic_l(add_overlay_mock, tmp_path, gen_func):
     from polar2grid.add_coastlines import main
 
     fp = str(tmp_path / "test.tif")
-    gen_func(fp)
+    with gen_func(fp):
+        pass
     ret = main(["--add-coastlines", "--add-colorbar", fp])
     assert ret in [None, 0]
     assert os.path.isfile(tmp_path / "test.png")

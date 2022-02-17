@@ -107,6 +107,13 @@ def add_writer_argument_groups(parser, group=None):
     group.add_argument("--blockxsize", default=SUPPRESS, type=int, help="Set tile block X size")
     group.add_argument("--blockysize", default=SUPPRESS, type=int, help="Set tile block Y size")
     group.add_argument(
+        "--scale-offset-tags",
+        default=["scale", "offset"],
+        nargs=2,
+        type=lambda input_str: [None, None] if "NONE" in input_str else input_str,
+        help="Specify custom geotiff tags for enhancement metadata",
+    )
+    group.add_argument(
         "--gdal-num-threads",
         dest="num_threads",
         default=os.environ.get("DASK_NUM_WORKERS", 4),
