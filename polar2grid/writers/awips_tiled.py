@@ -83,18 +83,17 @@ see the Satpy documentation :mod:`here <satpy.writers.awips_tiled>`.
 """
 import logging
 
+from polar2grid.core.script_utils import BooleanOptionalAction
+
 LOG = logging.getLogger(__name__)
 
-DEFAULT_OUTPUT_PATTERN = (
-    "{source_name}_AII_{platform_name}_{sensor}_{p2g_name}_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc"
-)
 DEFAULT_OUTPUT_FILENAMES = {
     "polar2grid": {
         None: "{source_name}_AII_{platform_name}_{sensor!l}_{p2g_name}"
         "_{sector_id}_{tile_id}_{start_time:%Y%m%d_%H%M}.nc",
     },
     "geo2grid": {
-        None: DEFAULT_OUTPUT_PATTERN,
+        None: None,  # default to template filename
     },
 }
 
@@ -172,6 +171,20 @@ def add_writer_argument_groups(parser, group=None):
     group.add_argument(
         "--template",
         default="polar",
-        help="specify name for pre-configured template used to " "determine output file structure and formatting.",
+        help="specify name for pre-configured template used to determine output file structure and formatting.",
+    )
+    group.add_argument(
+        "--environment-prefix",
+        default="DR",
+        help="Force value for templates that support an 'environment_prefix' in the filename (default 'OR').",
+    )
+    group.add_argument(
+        "--check-categories",
+        default=True,
+        action=BooleanOptionalAction,
+        help="Specify whether category/flag products should be checked for empty tiles. "
+        "By default (True), tiles consisting entirely of 'missing' pixels will not "
+        "be written. For category products this may not be desired as the missing "
+        "or invalid value is something users are interested in.",
     )
     return group, None
