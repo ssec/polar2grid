@@ -37,31 +37,18 @@ import numpy as np
 import rasterio
 from aggdraw import Font
 from PIL import Image, ImageFont
+from pkg_resources import resource_filename as get_resource_filename
 from pycoast import ContourWriterAGG
 from pyresample.utils import get_area_def_from_raster
+from trollimage.colormap import Colormap
 
-from polar2grid.add_colormap import load_color_table_file_to_colormap
 from polar2grid.utils.config import add_polar2grid_config_paths
-
-try:
-    # try getting setuptools/distribute's version of resource retrieval first
-    from pkg_resources import resource_filename as get_resource_filename
-except ImportError:
-    print("WARNING: Missing 'pkg_resources' dependency")
-
-    def get_resource_filename(mod_name, resource_name):
-        if mod_name != "polar2grid.fonts":
-            raise ValueError("Can only import resources from polar2grid (missing pkg_resources dependency)")
-        return os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "fonts", resource_name)
-
 
 LOG = logging.getLogger(__name__)
 PYCOAST_DIR = os.environ.get("GSHHS_DATA_ROOT")
 
 
-def get_colormap(band_dtype, band_ct, band_count):
-    from trollimage.colormap import Colormap
-
+def _convert_table_to_cmap_or_default_bw(band_dtype, band_ct, band_count):
     max_val = np.iinfo(band_dtype).max
     # if we have an alpha band then include the entire colormap
     # otherwise assume it is using 0 as a fill value
@@ -175,12 +162,15 @@ def _args_to_pycoast_dict(args):
     return opts
 
 
-def _get_colorbar_vmin_vmax(arg_min, arg_max, rio_ds, input_dtype):
+def _get_colorbar_vmin_vmax(arg_min, arg_max, rio_ds, input_dtype, is_palette=False):
     metadata = rio_ds.tags()
     scale = metadata.get("scale", metadata.get("scale_factor"))
     offset = metadata.get("offset", metadata.get("add_offset"))
     dtype_min = float(np.iinfo(input_dtype).min)
     dtype_max = float(np.iinfo(input_dtype).max)
+    if is_palette:
+        dtype_min = 0.0
+        dtype_max = 1.0
 
     if arg_min is None and scale is None:
         LOG.warning(
@@ -199,9 +189,9 @@ def _get_colorbar_vmin_vmax(arg_min, arg_max, rio_ds, input_dtype):
         vmin = offset
         vmax = delta * scale + offset
         # floating point error made it not an integer
-        if abs(vmin - np.round(vmin, 0)) <= 0.0001:
+        if abs(vmin - np.round(vmin, 0)) <= 0.001:
             vmin = np.round(vmin, 0)
-        if abs(vmax - np.round(vmax, 0)) <= 0.0001:
+        if abs(vmax - np.round(vmax, 0)) <= 0.001:
             vmax = np.round(vmax, 0)
     return vmin, vmax
 
@@ -232,14 +222,17 @@ def _add_colorbar_to_image(input_tiff, img, num_bands, args):
     # figure out what colormap we are dealing with
     rio_ds = rasterio.open(input_tiff)
     input_dtype = np.dtype(rio_ds.meta["dtype"])
-    if num_bands in (3, 4) and args.colorbar_colormap_file is None:
+    colormap_csv = rio_ds.tags().get("colormap")
+    rio_ct = _get_rio_colormap(rio_ds, 1)
+    is_palette = rio_ct is not None
+    cmap = _convert_table_to_cmap_or_default_bw(input_dtype, rio_ct, num_bands)
+    if num_bands in (3, 4) and colormap_csv is None:
         raise ValueError("RGB and RGBA geotiffs must have a colormap " "specified with '--colorbar-colormap-file'.")
-    elif num_bands in (3, 4):
-        cmap = load_color_table_file_to_colormap(args.colorbar_colormap_file)
-    else:
-        rio_ct = _get_rio_colormap(rio_ds, 1)
-        cmap = get_colormap(input_dtype, rio_ct, num_bands)
-    vmin, vmax = _get_colorbar_vmin_vmax(args.colorbar_min, args.colorbar_max, rio_ds, input_dtype)
+    if num_bands in (3, 4) or colormap_csv is not None:
+        cmap = Colormap.from_file(colormap_csv)
+    vmin, vmax = _get_colorbar_vmin_vmax(
+        args.colorbar_min, args.colorbar_max, rio_ds, input_dtype, is_palette=is_palette
+    )
     cmap = cmap.set_range(vmin, vmax, inplace=False)
 
     dc = DecoratorAGG(img)
@@ -365,11 +358,12 @@ def get_parser():
     group.add_argument("--add-colorbar", action="store_true", help="Add colorbar on top of image")
     group.add_argument(
         "--colorbar-colormap-file",
-        help="Specify the colormap file that was used to "
-        "colorize the provided RGB geotiff. Only used if "
-        "the provided geotiff is RGB/A. Otherwise the "
-        "geotiff is expected to include the colormap as "
-        "a geotiff color table.",
+        help=argparse.SUPPRESS,
+        # help="Specify the colormap file that was used to "
+        # "colorize the provided RGB geotiff. Only used if "
+        # "the provided geotiff is RGB/A. Otherwise the "
+        # "geotiff is expected to include the colormap as "
+        # "a geotiff color table.",
     )
     group.add_argument("--colorbar-width", type=int, help="Number of pixels wide")
     group.add_argument("--colorbar-height", type=int, help="Number of pixels high")

@@ -64,22 +64,26 @@ def _shared_fake_l_geotiff_data():
     return data
 
 
-def _create_fake_l_geotiff(fp):
+def _create_fake_l_geotiff(fp, include_colormap_tag=False):
     kwargs = _shared_fake_geotiff_kwargs(1)
     with rasterio.open(fp, "w", **kwargs) as ds:
         ds.write(_shared_fake_l_geotiff_data(), 1)
+        if include_colormap_tag:
+            ds.update_tags(**_create_csv_cmap_and_extra_tags())
 
 
-def _create_fake_rgb_geotiff(fp):
+def _create_fake_rgb_geotiff(fp, include_colormap_tag=False):
     kwargs = _shared_fake_geotiff_kwargs(3)
     with rasterio.open(fp, "w", **kwargs) as ds:
         r_data = _shared_fake_l_geotiff_data()
         ds.write(r_data, 1)
         ds.write(np.zeros_like(r_data), 2)
         ds.write(np.zeros_like(r_data), 3)
+        if include_colormap_tag:
+            ds.update_tags(**_create_csv_cmap_and_extra_tags())
 
 
-def _create_fake_rgb_geotiff_with_factor_offset(fp):
+def _create_fake_rgb_geotiff_with_factor_offset(fp, include_colormap_tag=False):
     kwargs = _shared_fake_geotiff_kwargs(3)
     with rasterio.open(fp, "w", **kwargs) as ds:
         r_data = _shared_fake_l_geotiff_data()
@@ -87,25 +91,27 @@ def _create_fake_rgb_geotiff_with_factor_offset(fp):
         ds.write(np.zeros_like(r_data), 2)
         ds.write(np.zeros_like(r_data), 3)
         ds.update_tags(scale=0.5, offset=0.0)
+        if include_colormap_tag:
+            ds.update_tags(**_create_csv_cmap_and_extra_tags())
 
 
-def _create_fake_l_geotiff_colormap(fp):
+def _create_fake_l_geotiff_colormap(fp, include_colormap_tag=False):
     kwargs = _shared_fake_geotiff_kwargs(1)
     with rasterio.open(fp, "w", **kwargs) as ds:
         ds.write(_shared_fake_l_geotiff_data(), 1)
         ds.write_colormap(1, REDS_CMAP)
+        if include_colormap_tag:
+            ds.update_tags(**_create_csv_cmap_and_extra_tags())
 
 
-def _create_ondisk_cmap_and_extra_args(tmp_path):
-    cmap_fn = str(tmp_path / "reds.cmap")
-    with open(cmap_fn, "w") as cmap_file:
-        cmap_csv = [",".join(str(x) for x in [v] + list(color)) for v, color in REDS_CMAP.items()]
-        cmap_file.write("\n".join(cmap_csv))
-    return ["--colorbar-colormap-file", cmap_fn]
+def _create_csv_cmap_and_extra_tags():
+    cmap_csv = [",".join(str(x) for x in [v] + list(color)) for v, color in REDS_CMAP.items()]
+    cmap_csv_str = "\n".join(cmap_csv)
+    return {"colormap": cmap_csv_str}
 
 
 @pytest.mark.parametrize(
-    ("gen_func", "has_colors", "create_cmap_file"),
+    ("gen_func", "has_colors", "create_cmap_tag"),
     [
         (_create_fake_l_geotiff, False, False),
         (_create_fake_l_geotiff_colormap, True, False),
@@ -114,14 +120,12 @@ def _create_ondisk_cmap_and_extra_args(tmp_path):
     ],
 )
 @mock.patch("polar2grid.add_coastlines.ContourWriterAGG.add_overlay_from_dict")
-def test_add_coastlines_basic(add_overlay_mock, tmp_path, gen_func, has_colors, create_cmap_file):
+def test_add_coastlines_basic(add_overlay_mock, tmp_path, gen_func, has_colors, create_cmap_tag):
     from polar2grid.add_coastlines import main
 
     fp = str(tmp_path / "test.tif")
-    gen_func(fp)
+    gen_func(fp, include_colormap_tag=create_cmap_tag)
     extra_args = []
-    if create_cmap_file:
-        extra_args.extend(_create_ondisk_cmap_and_extra_args(tmp_path))
     ret = main(["--add-coastlines", "--add-colorbar", fp] + extra_args)
     assert ret in [None, 0]
     assert os.path.isfile(tmp_path / "test.png")
