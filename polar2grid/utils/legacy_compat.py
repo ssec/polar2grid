@@ -97,7 +97,12 @@ class AliasHandler:
     ):
 
         self._all_aliases = all_aliases
-        self._user_products = user_products
+        self._user_products = self._unique_ordered_list(user_products)
+
+    @staticmethod
+    def _unique_ordered_list(orig_list):
+        seen = set()
+        return [item for item in orig_list if not (item in seen or seen.add(item))]
 
     def remove_unknown_user_products(
         self,
@@ -167,7 +172,6 @@ class AliasHandler:
 
             if matching_satpy_id in satpy_id_to_p2g_name:
                 logger.warning("Multiple product names map to the same identifier in Satpy")
-                print(matching_satpy_id, satpy_id_to_p2g_name[matching_satpy_id], p2g_name)
             satpy_id_to_p2g_name[matching_satpy_id] = p2g_name
 
         for satpy_product in satpy_products:
