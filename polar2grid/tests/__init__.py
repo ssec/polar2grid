@@ -21,3 +21,6 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Tests for polar2grid."""
+import os
+
+TEST_ETC_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), "etc"))

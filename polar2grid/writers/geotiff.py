@@ -101,9 +101,24 @@ def add_writer_argument_groups(parser, group=None):
         help="When saving 'palettized' enhanced images, save the colormap as a "
         "geotiff color table instead of converting the image to RGB/A",
     )
-    group.add_argument("--tiled", action=BooleanOptionalAction, help="Tile geotiffs internally (default: True)")
+    group.add_argument(
+        "--tiled", action=BooleanOptionalAction, default=True, help="Tile geotiffs internally (default: True)"
+    )
     group.add_argument("--blockxsize", default=SUPPRESS, type=int, help="Set tile block X size")
     group.add_argument("--blockysize", default=SUPPRESS, type=int, help="Set tile block Y size")
+    group.add_argument(
+        "--scale-offset-tags",
+        default=["scale", "offset"],
+        nargs=2,
+        type=lambda input_str: [None, None] if "NONE" in input_str else input_str,
+        help="Specify custom geotiff tags for enhancement metadata",
+    )
+    group.add_argument(
+        "--colormap-tag",
+        default="colormap",
+        type=lambda input_str: None if input_str == "NONE" else input_str,
+        help="Specify the custom geotiff tag where a CSV version of an applied " "colormap (if any) will be saved.",
+    )
     group.add_argument(
         "--gdal-num-threads",
         dest="num_threads",

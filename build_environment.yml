@@ -19,23 +19,23 @@ dependencies:
   - pillow
   - pip
   - pycoast>=1.5.0
-  - pydecorate
+  - pydecorate>=0.3.2
   - pyhdf
   - pykdtree
-  - pyorbital
+  - pyorbital>=1.7.1
   - pyproj>=3.1.0
   - pyresample>=1.22.3
   - pyshp
-  - pyspectral
-  - python=3.8
-  - python-geotiepoints>=1.3.0
+  - pyspectral>=0.10.6
+  - python=3.10
+  - python-geotiepoints>=1.4.0
   - pyyaml
-  - rasterio
+  - rasterio>=1.2.10
   - requests
   - setuptools
   - six
-  - trollimage>=1.17.0
-  - trollsift
+  - trollimage>=1.18.1
+  - trollsift>=0.4.0
   - scipy
   - zarr
   - xarray>=0.20.1
