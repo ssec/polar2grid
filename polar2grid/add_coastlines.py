@@ -29,6 +29,7 @@
 # david.hoese@ssec.wisc.edu
 """Script to add coastlines and borders to a geotiff while also creating a PNG."""
 
+import argparse
 import logging
 import os
 import sys
@@ -264,12 +265,21 @@ def _add_colorbar_to_image(input_tiff, img, num_bands, args):
 
 
 def get_parser():
-    import argparse
-
     parser = argparse.ArgumentParser(
         description="Add overlays to a GeoTIFF file and save as a PNG file.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    _add_coastlines_arguments(parser)
+    _add_rivers_arguments(parser)
+    _add_grid_arguments(parser)
+    _add_borders_arguments(parser)
+    _add_colorbar_arguments(parser)
+    _add_global_arguments(parser)
+    parser.add_argument("input_tiff", nargs="+", help="Input geotiff(s) to process")
+    return parser
+
+
+def _add_coastlines_arguments(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("coastlines")
     group.add_argument("--add-coastlines", action="store_true", help="Add coastlines")
     group.add_argument(
@@ -294,6 +304,8 @@ def get_parser():
     group.add_argument("--coastlines-fill", default=None, nargs="*", help="Color of land")
     group.add_argument("--coastlines-width", default=1.0, type=float, help="Width of coastline lines")
 
+
+def _add_rivers_arguments(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("rivers")
     group.add_argument("--add-rivers", action="store_true", help="Add rivers grid")
     group.add_argument(
@@ -310,6 +322,8 @@ def get_parser():
     )
     group.add_argument("--rivers-width", default=1.0, type=float, help="Width of rivers lines")
 
+
+def _add_grid_arguments(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("grid")
     group.add_argument("--add-grid", action="store_true", help="Add lat/lon grid")
     group.add_argument("--grid-no-text", dest="grid_text", action="store_false", help="Add labels to lat/lon grid")
@@ -338,6 +352,8 @@ def get_parser():
     )
     group.add_argument("--grid-width", default=1.0, type=float, help="Width of grid lines")
 
+
+def _add_borders_arguments(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("borders")
     group.add_argument("--add-borders", action="store_true", help="Add country and/or region borders")
     group.add_argument(
@@ -354,6 +370,8 @@ def get_parser():
     )
     group.add_argument("--borders-width", default=1.0, type=float, help="Width of border lines")
 
+
+def _add_colorbar_arguments(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("colorbar")
     group.add_argument("--add-colorbar", action="store_true", help="Add colorbar on top of image")
     group.add_argument(
@@ -406,6 +424,8 @@ def get_parser():
     group.add_argument("--colorbar-units", help="Units marker to include in the colorbar text")
     group.add_argument("--colorbar-title", help="Title shown with the colorbar")
 
+
+def _add_global_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--shapes-dir",
         default=PYCOAST_DIR,
@@ -438,9 +458,6 @@ def get_parser():
         default=0,
         help="each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)",
     )
-    parser.add_argument("input_tiff", nargs="+", help="Input geotiff(s) to process")
-
-    return parser
 
 
 def main(argv=sys.argv[1:]):
