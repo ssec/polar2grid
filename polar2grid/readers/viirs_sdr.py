@@ -313,15 +313,15 @@ class ReaderProxy(ReaderProxyBase):
     is_polar2grid_reader = True
 
     def __init__(self, scn: Scene, user_products: list[str]):
-        self.scn = scn
         self._modified_aliases = PRODUCT_ALIASES.copy()
         if "dynamic_dnb_saturation" in user_products:
             # they specified --dnb-saturation-correction
             # let's modify the aliases so dynamic_dnb points to this product
             user_products.remove("dynamic_dnb_saturation")
-            user_products.append("dynamic_dnb")
+            if "dynamic_dnb" not in user_products:
+                user_products.append("dynamic_dnb")
             self._modified_aliases["dynamic_dnb"] = DataQuery(name="dynamic_dnb_saturation")
-        self._orig_user_products = user_products
+        super().__init__(scn, user_products)
 
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""

@@ -856,10 +856,10 @@ def main(argv=sys.argv[1:]):
         _print_list_products(reader_info, p2g_only=not args.list_products_all)
         return 0
 
-    load_args["products"] = reader_info.get_satpy_products_to_load()
-    if not load_args["products"]:
+    load_args.pop("products")
+    products = reader_info.get_satpy_products_to_load()
+    if not products:
         return -1
-    products = load_args.pop("products")
     scn.load(products, **load_args)
 
     filter_kwargs = {
