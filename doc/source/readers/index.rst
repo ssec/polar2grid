@@ -33,3 +33,4 @@ using the  ``--list-products`` option.
     :geo2grid:abi_l2_nc
     :geo2grid:ahi_hsd
     :geo2grid:ahi_hrit
+    :geo2grid:ami_l1b
