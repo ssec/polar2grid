@@ -41,55 +41,48 @@ L1B reader, along with sharpening to the highest spatial resolution. For
 more information on the creation of RGBs, please see the
 :ref:`RGB section <getting_started_rgb>`.
 
-
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
 | VI004                     | 0.47um Reflectance Band                             |
 +---------------------------+-----------------------------------------------------+
-| VI005                       | Channel 2 Reflectance Band                          |
+| VI005                     | 0.51um Reflectance Band                             |
 +---------------------------+-----------------------------------------------------+
-| VI006                       | Channel 3 Reflectance Band                          |
+| VI006                     | 0.64um Reflectance Band                             |
 +---------------------------+-----------------------------------------------------+
-| VI008                       | Channel 4 Reflectance Band                          |
+| VI008                     | 0.86um Reflectance Band                             |
 +---------------------------+-----------------------------------------------------+
-| NR013                       | Channel 5 Reflectance Band                          |
+| NR013                     | 1.37um Reflectance Band                             |
 +---------------------------+-----------------------------------------------------+
-| NR016                       | Channel 6 Reflectance Band                          |
+| NR016                     | 1.61um Reflectance Band                             |
 +---------------------------+-----------------------------------------------------+
-| SW038                       | Channel 7 Brightness Temperature Band               |
+| SW038                     | 3.83um Brightness Temperature Band                  |
 +---------------------------+-----------------------------------------------------+
-| WV063                       | Channel 8 Brightness Temperature Band               |
+| WV063                     | 6.21um Brightness Temperature Band                  |
 +---------------------------+-----------------------------------------------------+
-| WV069                       | Channel 9 Brightness Temperature Band               |
+| WV069                     | 6.94um Brightness Temperature Band                  |
 +---------------------------+-----------------------------------------------------+
-| WV073                       | Channel 10 Brightness Temperature Band              |
+| WV073                     | 7.33um Brightness Temperature Band                  |
 +---------------------------+-----------------------------------------------------+
-| IR087                       | Channel 11 Brightness Temperature Band              |
+| IR087                     | 8.59um Brightness Temperature Band                  |
 +---------------------------+-----------------------------------------------------+
-| IR096                       | Channel 12 Brightness Temperature Band              |
+| IR096                     | 9.62um Brightness Temperature Band                  |
 +---------------------------+-----------------------------------------------------+
-| IR105                       | Channel 13 Brightness Temperature Band              |
+| IR105                     | 10.35um Brightness Temperature Band                 |
 +---------------------------+-----------------------------------------------------+
-| IR112                       | Channel 14 Brightness Temperature Band              |
+| IR112                     | 11.23um Brightness Temperature Band                 |
 +---------------------------+-----------------------------------------------------+
-| IR123                       | Channel 15 Brightness Temperature Band              |
+| IR123                     | 12.36um Brightness Temperature Band                 |
 +---------------------------+-----------------------------------------------------+
-| IR133                       | Channel 16 Brightness Temperature Band              |
+| IR133                     | 13.29um Brightness Temperature Band                 |
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+
-| natural_color             | Ratio sharpened corrected natural color    |
+| natural_color             | Ratio sharpened corrected natural color             |
 +---------------------------+-----------------------------------------------------+
 | airmass                   | Air mass RGB                                        |
 +---------------------------+-----------------------------------------------------+
 | ash                       | Ash RGB                                             |
-+---------------------------+-----------------------------------------------------+
-| dust                      | Dust RGB                                            |
-+---------------------------+-----------------------------------------------------+
-| fog                       | Fog RGB                                             |
-+---------------------------+-----------------------------------------------------+
-| night_microphysics        | Night Microphysics RGB                              |
 +---------------------------+-----------------------------------------------------+
 
 """
