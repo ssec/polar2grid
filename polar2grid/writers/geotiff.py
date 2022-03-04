@@ -38,6 +38,7 @@ any invalid or missing data pixels. This results in invalid pixels showing up
 as transparent in most image viewers.
 
 """
+import argparse
 import logging
 import os
 
@@ -109,9 +110,10 @@ def add_writer_argument_groups(parser, group=None):
     group.add_argument(
         "--scale-offset-tags",
         default=["scale", "offset"],
-        nargs=2,
-        type=lambda input_str: [None, None] if "NONE" in input_str else input_str,
-        help="Specify custom geotiff tags for enhancement metadata",
+        type=_check_tags,
+        help="Specify custom geotiff tags for enhancement metadata. Should be "
+        "two comma-separated names for the metadata tags. Defaults to "
+        "'scale,offset'. Specify 'NONE' to not save the tags.",
     )
     group.add_argument(
         "--colormap-tag",
@@ -146,3 +148,12 @@ def add_writer_argument_groups(parser, group=None):
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
     return group, None
+
+
+def _check_tags(input_str):
+    if "none" in input_str.lower():
+        return None
+    split_names = input_str.split(",")
+    if len(split_names) != 2:
+        raise argparse.ArgumentError("Expected 2 comma-separated names or 'NONE'.")
+    return split_names

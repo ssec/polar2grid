@@ -163,6 +163,26 @@ def abi_l1b_c01_data_array(goes_east_conus_area_def) -> xr.DataArray:
     )
 
 
+@pytest.fixture
+def abi_l1b_airmass_data_array(goes_east_conus_area_def) -> xr.DataArray:
+    return xr.DataArray(
+        da.zeros((3, 3000, 5000), chunks=4096),
+        coords={"bands": ["R", "G", "B"]},
+        dims=("bands", "y", "x"),
+        attrs={
+            "area": goes_east_conus_area_def,
+            "platform_name": "goes16",
+            "sensor": "abi",
+            "name": "airmass",
+            "start_time": START_TIME,
+            "end_time": START_TIME,
+            "observation_type": "Rad",
+            "standard_name": "airmass",
+            "scene_abbr": "C",
+        },
+    )
+
+
 # Scenes #
 
 
@@ -177,4 +197,11 @@ def viirs_sdr_i01_scene(viirs_sdr_i01_data_array) -> Scene:
 def abi_l1b_c01_scene(abi_l1b_c01_data_array) -> Scene:
     scn = Scene()
     scn["C01"] = abi_l1b_c01_data_array
+    return scn
+
+
+@pytest.fixture
+def abi_l1b_airmass_scene(abi_l1b_airmass_data_array) -> Scene:
+    scn = Scene()
+    scn["airmass"] = abi_l1b_airmass_data_array
     return scn

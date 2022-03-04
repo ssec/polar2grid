@@ -28,6 +28,7 @@ from glob import glob
 from unittest import mock
 
 import pytest
+from pytest_lazyfixture import lazy_fixture
 
 
 @contextlib.contextmanager
@@ -127,12 +128,19 @@ class TestGlueWithVIIRS:
 
 
 class TestGlueFakeScene:
-    def test_abi_scene(self, abi_l1b_c01_scene, chtmpdir):
+    @pytest.mark.parametrize(
+        ("scene_fixture", "product_names", "num_outputs"),
+        [
+            (lazy_fixture("abi_l1b_c01_scene"), ["C01"], 1),
+            (lazy_fixture("abi_l1b_airmass_scene"), ["airmass"], 1),
+        ],
+    )
+    def test_abi_scene(self, scene_fixture, product_names, num_outputs, chtmpdir):
         from polar2grid.glue import main
 
         with set_env(USE_POLAR2GRID_DEFAULTS="0"), mock.patch("polar2grid.glue._create_scene") as create_scene:
-            create_scene.return_value = abi_l1b_c01_scene
-            ret = main(["-r", "abi_l1b", "-w", "geotiff", "-f", str(chtmpdir), "-p", "C01"])
+            create_scene.return_value = scene_fixture
+            ret = main(["-r", "abi_l1b", "-w", "geotiff", "-f", str(chtmpdir), "-p"] + product_names)
         output_files = glob(str(chtmpdir / "*.tif"))
-        assert len(output_files) == 1
+        assert len(output_files) == num_outputs
         assert ret == 0
