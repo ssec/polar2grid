@@ -24,6 +24,7 @@
 
 import contextlib
 import os
+from glob import glob
 from unittest import mock
 
 import pytest
@@ -122,4 +123,16 @@ class TestGlueWithVIIRS:
         _create_empty_viirs_sdrs(tmp_path)
         with set_env(USE_POLAR2GRID_DEFAULTS="1"):
             ret = main(["-r", "viirs_sdr", "-w", "geotiff", "-f", str(tmp_path), "--list-products"])
+        assert ret == 0
+
+
+class TestGlueFakeScene:
+    def test_abi_scene(self, abi_l1b_c01_scene, chtmpdir):
+        from polar2grid.glue import main
+
+        with set_env(USE_POLAR2GRID_DEFAULTS="0"), mock.patch("polar2grid.glue._create_scene") as create_scene:
+            create_scene.return_value = abi_l1b_c01_scene
+            ret = main(["-r", "abi_l1b", "-w", "geotiff", "-f", str(chtmpdir), "-p", "C01"])
+        output_files = glob(str(chtmpdir / "*.tif"))
+        assert len(output_files) == 1
         assert ret == 0

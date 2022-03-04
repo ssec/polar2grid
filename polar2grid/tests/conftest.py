@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from pathlib import Path
 
 import dask.array as da
 import numpy as np
@@ -43,6 +44,19 @@ def pytest_configure(config):
     from polar2grid.utils.config import add_polar2grid_config_paths
 
     add_polar2grid_config_paths()
+
+
+# Utilities #
+
+
+@pytest.fixture
+def chtmpdir(tmp_path: Path):
+    lwd = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        yield tmp_path
+    finally:
+        os.chdir(lwd)
 
 
 # Config Files #
@@ -142,6 +156,9 @@ def abi_l1b_c01_data_array(goes_east_conus_area_def) -> xr.DataArray:
             "name": "C01",
             "start_time": START_TIME,
             "end_time": START_TIME,
+            "observation_type": "Rad",
+            "standard_name": "toa_bidirectional_reflectance",
+            "scene_abbr": "C",
         },
     )
 
