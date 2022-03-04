@@ -24,7 +24,7 @@
 from the GOES-16 (GOES-East) and GOES-17 (GOES-West) Advanced Baseline
 Imager (ABI) instrument. The ABI L1B reader works off of the input filenames
 to determine if a file is supported by Geo2Grid. Files usually have the
-following naming scheme:
+following naming scheme::
 
     OR_ABI-L1b-RadF-M3C16_G16_s20182531700311_e20182531711090_c20182531711149.nc
 
@@ -81,7 +81,7 @@ more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+
-| natural_color             | Ratio sharpened rayleigh corrected natural color    |
+| natural_color             | Ratio sharpened corrected natural color             |
 +---------------------------+-----------------------------------------------------+
 | airmass                   | Air mass RGB                                        |
 +---------------------------+-----------------------------------------------------+
