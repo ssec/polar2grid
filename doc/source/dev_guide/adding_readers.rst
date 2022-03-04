@@ -113,3 +113,10 @@ specifically for Geo2Grid instead of Polar2Grid
 
 More examples can be added to show specific use cases or features of the reader
 and the available command line arguments.
+
+Other References
+----------------
+
+The reader is also mentioned in other places in addition to the above
+documentation. The main thing is to add it to the list of readers for the
+``-r`` flag in the ``polar2grid/glue.py`` script.
