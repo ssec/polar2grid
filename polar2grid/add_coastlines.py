@@ -186,6 +186,14 @@ def _get_colorbar_vmin_vmax(arg_min, arg_max, rio_ds, input_dtype, is_palette=Fa
     else:
         scale = float(scale)
         offset = float(offset)
+        if np.isnan(scale) or np.isnan(offset):
+            raise ValueError(
+                "Can't automatically set colorbar limits with "
+                "geotiff metadata as scale/offset are set to "
+                "NaN. This indicates a non-linear enhancement or "
+                "RGB/A composite that was enhanced. These cases "
+                "cannot be represented properly by a colorbar."
+            )
         delta = dtype_max - dtype_min
         vmin = offset
         vmax = delta * scale + offset
