@@ -21,7 +21,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The ABI Level 1B Reader operates on NOAA Level 1B (L1B) NetCDF files
-from the GOES-16 (GOES-East) and GOES-17 (GOES-West) Advanced Baseline
+from the GOES-16 (GOES-East) and GOES-17/18 (GOES-West) Advanced Baseline
 Imager (ABI) instrument. The ABI L1B reader works off of the input filenames
 to determine if a file is supported by Geo2Grid. Files usually have the
 following naming scheme::
