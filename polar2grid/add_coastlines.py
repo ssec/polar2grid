@@ -28,6 +28,7 @@
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
 """Script to add coastlines and borders to a geotiff while also creating a PNG."""
+from __future__ import annotations
 
 import argparse
 import logging
@@ -184,24 +185,34 @@ def _get_colorbar_vmin_vmax(arg_min, arg_max, rio_ds, input_dtype, is_palette=Fa
         vmin = float(arg_min)
         vmax = float(arg_max)
     else:
-        scale = float(scale)
-        offset = float(offset)
-        if np.isnan(scale) or np.isnan(offset):
-            raise ValueError(
-                "Can't automatically set colorbar limits with "
-                "geotiff metadata as scale/offset are set to "
-                "NaN. This indicates a non-linear enhancement or "
-                "RGB/A composite that was enhanced. These cases "
-                "cannot be represented properly by a colorbar."
-            )
-        delta = dtype_max - dtype_min
-        vmin = offset
-        vmax = delta * scale + offset
-        # floating point error made it not an integer
-        if abs(vmin - np.round(vmin, 0)) <= 0.001:
-            vmin = np.round(vmin, 0)
-        if abs(vmax - np.round(vmax, 0)) <= 0.001:
-            vmax = np.round(vmax, 0)
+        scale, offset = _convert_scale_offset_to_float(scale, offset)
+        vmin, vmax = _vmin_vmax_from_scale_offset(scale, offset, dtype_min, dtype_max)
+    return vmin, vmax
+
+
+def _convert_scale_offset_to_float(scale: str, offset: str) -> tuple[float, float]:
+    scale = float(scale)
+    offset = float(offset)
+    if np.isnan(scale) or np.isnan(offset):
+        raise ValueError(
+            "Can't automatically set colorbar limits with "
+            "geotiff metadata as scale/offset are set to "
+            "NaN. This indicates a non-linear enhancement or "
+            "RGB/A composite that was enhanced. These cases "
+            "cannot be represented properly by a colorbar."
+        )
+    return scale, offset
+
+
+def _vmin_vmax_from_scale_offset(scale: float, offset: float, dtype_min: int, dtype_max: int) -> tuple[float, float]:
+    delta = dtype_max - dtype_min
+    vmin = offset
+    vmax = delta * scale + offset
+    # floating point error made it not an integer
+    if abs(vmin - np.round(vmin, 0)) <= 0.001:
+        vmin = np.round(vmin, 0)
+    if abs(vmax - np.round(vmax, 0)) <= 0.001:
+        vmax = np.round(vmax, 0)
     return vmin, vmax
 
 
