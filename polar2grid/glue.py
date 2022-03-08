@@ -578,14 +578,15 @@ def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
     return scene_creation, load_args
 
 
-def _print_list_products(reader_info, p2g_only=True):
+def _print_list_products(reader_info, is_polar2grid: bool, p2g_only: bool):
     available_satpy_names, available_p2g_names = reader_info.get_available_products()
     available_satpy_names = ["*" + _sname for _sname in available_satpy_names]
+    project_name = "Polar2Grid" if is_polar2grid else "Geo2Grid"
     if available_satpy_names and not p2g_only:
         print("### Custom/Satpy Products")
         print("\n".join(available_satpy_names) + "\n")
     if not p2g_only:
-        print("### Standard Available Polar2Grid Products")
+        print(f"### Standard Available {project_name} Products")
     if not available_p2g_names:
         print("<None>")
     else:
@@ -855,7 +856,7 @@ def main(argv=sys.argv[1:]):
     LOG.info("Loading product metadata from files...")
     reader_info = ReaderProxyBase.from_reader_name(scene_creation["reader"], scn, load_args["products"])
     if args.list_products or args.list_products_all:
-        _print_list_products(reader_info, p2g_only=not args.list_products_all)
+        _print_list_products(reader_info, USE_POLAR2GRID_DEFAULTS, not args.list_products_all)
         return 0
 
     load_args.pop("products")
