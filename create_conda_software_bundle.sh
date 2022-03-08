@@ -79,17 +79,16 @@ mkdir -p bin || oops "Couldn't make 'bin' directory"
 mkdir -p etc || oops "Couldn't make 'etc' directory"
 ln -s ../libexec/python_runtime/etc/polar2grid etc/polar2grid
 cp -P ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/ || echo "Couldn't copy scripts to bin/ directory"
-# clean up readmes
+# clean up readmes and add release notes
 if [[ $PROJECT == "P2G" ]]; then
     rm -f bin/GEO2GRID_README.txt
     mv bin/POLAR2GRID_README.txt README.txt
+    cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 else
     rm -f bin/POLAR2GRID_README.txt
     mv bin/GEO2GRID_README.txt README.txt
+    cp $BASE_P2G_DIR/NEWS_GEO2GRID.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 fi
-
-# Copy the release notes to the tarball
-cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 
 # Inject environment code into swbundle only.
 cd $SB_NAME/bin
