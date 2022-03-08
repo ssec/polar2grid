@@ -226,6 +226,7 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
             "ahi_hrit",
             "ahi_hsd",
             "ami_l1b",
+            "glm_l2",
         ]
     return sorted(readers)
 
