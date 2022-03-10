@@ -116,13 +116,17 @@ def test_partial_filter(viirs_sdr_i01_scene):
     orig_lons = new_i01.attrs["area"].lons
     orig_lats = new_i01.attrs["area"].lats
     new_lons = orig_lons + 180.0
+    new_lons.attrs = orig_lons.attrs.copy()
     new_swath_def = SwathDefinition(new_lons, orig_lats)
     new_i01.attrs["name"] = "I01_2"
     new_i01.attrs["area"] = new_swath_def
+    new_i01.attrs["sensor"] = {"viirs", "modis"}
     new_scn = Scene()
     new_scn["I01"] = viirs_sdr_i01_scene["I01"]
     new_scn["I01_2"] = new_i01
 
+    # computation 1: input swath 1 polygon
+    # computation 3: input swath 2 polygon (filtered and not resampled)
     with dask.config.set(scheduler=CustomScheduler(2)):
         scenes_to_save = resample_scene(
             new_scn,

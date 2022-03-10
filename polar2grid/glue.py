@@ -25,11 +25,13 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import logging
 import os
 import sys
+from datetime import datetime
 from glob import glob
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 import dask
 import satpy
@@ -461,7 +463,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
         nargs="+",
         default=tuple(),
         help="Specify additional grid configuration files. "
-        "(.conf for P2G-style grids, .yaml for "
+        "(.conf for legacy CSV grids, .yaml for "
         "SatPy-style areas)",
     )
     group_1.add_argument(
@@ -637,6 +639,14 @@ basic processing with limited products:
         "--progress",
         action="store_true",
         help="show processing progress bar (not recommended for logged output)",
+    )
+    parser.add_argument(
+        "--create-profile",
+        nargs="?",
+        default=False,
+        help=argparse.SUPPRESS,
+        # help="Create an HTML document profiling the execution of the script "
+        #      "using dask diagnostic tools.",
     )
     parser.add_argument(
         "--num-workers",
@@ -831,6 +841,34 @@ def _get_glue_name(args):
     return f"{reader_name}_{writer_names}"
 
 
+@contextlib.contextmanager
+def _create_profile_html_if(create_profile: Union[False, None, str], project_name: str, glue_name: str):
+    from dask.diagnostics import CacheProfiler, Profiler, ResourceProfiler, visualize
+
+    if create_profile is False:
+        yield
+        return
+    if create_profile is None:
+        profile_filename = "{project_name}_{glue_name}_{start_time:%Y%m%d_%H%M%S}.html"
+    else:
+        profile_filename = create_profile
+
+    start_time = datetime.now()
+    with CacheProfiler() as cprof, ResourceProfiler() as rprof, Profiler() as prof:
+        yield
+    end_time = datetime.now()
+
+    profile_filename = profile_filename.format(
+        project_name=project_name,
+        glue_name=glue_name,
+        start_time=start_time,
+        end_time=end_time,
+    )
+    profile_filename = os.path.abspath(profile_filename)
+    visualize([prof, rprof, cprof], file_path=profile_filename, show=False)
+    print(f"Profile HTML: file://{profile_filename}")
+
+
 def main(argv=sys.argv[1:]):
     add_polar2grid_config_paths()
     USE_POLAR2GRID_DEFAULTS = _get_p2g_defaults_env_var()
@@ -843,6 +881,37 @@ def main(argv=sys.argv[1:]):
     if args.num_workers:
         dask.config.set(num_workers=args.num_workers)
 
+    with _create_profile_html_if(
+        args.create_profile,
+        "polar2grid" if USE_POLAR2GRID_DEFAULTS else "geo2grid",
+        glue_name,
+    ):
+        return _run_processing(
+            args,
+            reader_args,
+            reader_names,
+            scene_creation,
+            load_args,
+            resample_args,
+            writer_args,
+            glue_name,
+            rename_log,
+            is_polar2grid=USE_POLAR2GRID_DEFAULTS,
+        )
+
+
+def _run_processing(
+    args,
+    reader_args,
+    reader_names,
+    scene_creation,
+    load_args,
+    resample_args,
+    writer_args,
+    glue_name,
+    rename_log,
+    is_polar2grid,
+):
     # Create a Scene, analyze the provided files
     LOG.info("Sorting and reading input files...")
     scn = _create_scene(scene_creation)
@@ -858,7 +927,7 @@ def main(argv=sys.argv[1:]):
     LOG.info("Loading product metadata from files...")
     reader_info = ReaderProxyBase.from_reader_name(scene_creation["reader"], scn, load_args["products"])
     if args.list_products or args.list_products_all:
-        _print_list_products(reader_info, USE_POLAR2GRID_DEFAULTS, not args.list_products_all)
+        _print_list_products(reader_info, is_polar2grid, not args.list_products_all)
         return 0
 
     load_args.pop("products")
@@ -873,7 +942,12 @@ def main(argv=sys.argv[1:]):
         "night_fraction": reader_args["filter_night_products"],
     }
     scenes_to_save = _resample_scene_to_grids(
-        scn, reader_names, resample_args, filter_kwargs, args.preserve_resolution, USE_POLAR2GRID_DEFAULTS
+        scn,
+        reader_names,
+        resample_args,
+        filter_kwargs,
+        args.preserve_resolution,
+        is_polar2grid,
     )
     to_save = _save_scenes(scenes_to_save, reader_info, writer_args)
 

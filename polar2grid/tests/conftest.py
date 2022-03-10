@@ -95,6 +95,8 @@ def viirs_sdr_i_swath_def() -> SwathDefinition:
             "sensor": "viirs",
             "start_time": START_TIME,
             "end_time": START_TIME,
+            "resolution": 371,
+            "reader": "viirs_sdr",
         },
     )
     lats_data_arr = xr.DataArray(
@@ -106,6 +108,8 @@ def viirs_sdr_i_swath_def() -> SwathDefinition:
             "sensor": "viirs",
             "start_time": START_TIME,
             "end_time": START_TIME,
+            "resolution": 371,
+            "reader": "viirs_sdr",
         },
     )
     return SwathDefinition(lons_data_arr, lats_data_arr)
@@ -140,6 +144,8 @@ def viirs_sdr_i01_data_array(viirs_sdr_i_swath_def) -> xr.DataArray:
             "name": "I01",
             "start_time": START_TIME,
             "end_time": START_TIME,
+            "resolution": 371,
+            "reader": "viirs_sdr",
         },
     )
 
@@ -159,6 +165,8 @@ def abi_l1b_c01_data_array(goes_east_conus_area_def) -> xr.DataArray:
             "observation_type": "Rad",
             "standard_name": "toa_bidirectional_reflectance",
             "scene_abbr": "C",
+            "resolution": 1000,
+            "reader": "abi_l1b",
         },
     )
 
