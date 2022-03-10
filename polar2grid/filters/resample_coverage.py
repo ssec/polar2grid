@@ -103,6 +103,8 @@ class ResampleCoverageFilter(BaseFilter):
     def _get_and_cache_coverage_fraction(self, source_data: DataArray, source_area: PRGeometry, cache: dict) -> float:
         platform_name = source_data.attrs.get("platform_name")
         sensor_name = source_data.attrs.get("sensor")
+        if sensor_name and not isinstance(sensor_name, str):
+            sensor_name = "-".join(sorted(sensor_name))
         key = (platform_name, sensor_name)
         if key in cache:
             logger.debug(f"Reusing cache coverage fraction for {key}")

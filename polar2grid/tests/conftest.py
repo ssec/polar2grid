@@ -140,6 +140,8 @@ def viirs_sdr_i01_data_array(viirs_sdr_i_swath_def) -> xr.DataArray:
             "name": "I01",
             "start_time": START_TIME,
             "end_time": START_TIME,
+            "resolution": 371,
+            "reader": "viirs_sdr",
         },
     )
 
@@ -159,6 +161,8 @@ def abi_l1b_c01_data_array(goes_east_conus_area_def) -> xr.DataArray:
             "observation_type": "Rad",
             "standard_name": "toa_bidirectional_reflectance",
             "scene_abbr": "C",
+            "resolution": 1000,
+            "reader": "abi_l1b",
         },
     )
 
