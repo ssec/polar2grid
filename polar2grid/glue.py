@@ -31,7 +31,7 @@ import os
 import sys
 from datetime import datetime
 from glob import glob
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 import dask
 import satpy
@@ -641,7 +641,7 @@ basic processing with limited products:
         help="show processing progress bar (not recommended for logged output)",
     )
     parser.add_argument(
-        "--profile-filename",
+        "--create-profile",
         nargs="?",
         default=False,
         help=argparse.SUPPRESS,
@@ -842,14 +842,16 @@ def _get_glue_name(args):
 
 
 @contextlib.contextmanager
-def _create_profile_html_if(profile_filename, project_name, glue_name):
+def _create_profile_html_if(create_profile: Union[False, None, str], project_name: str, glue_name: str):
     from dask.diagnostics import CacheProfiler, Profiler, ResourceProfiler, visualize
 
-    if profile_filename is False:
+    if create_profile is False:
         yield
         return
-    if profile_filename is None:
+    if create_profile is None:
         profile_filename = "{project_name}_{glue_name}_{start_time:%Y%m%d_%H%M%S}.html"
+    else:
+        profile_filename = create_profile
 
     start_time = datetime.now()
     with CacheProfiler() as cprof, ResourceProfiler() as rprof, Profiler() as prof:
@@ -862,6 +864,7 @@ def _create_profile_html_if(profile_filename, project_name, glue_name):
         start_time=start_time,
         end_time=end_time,
     )
+    profile_filename = os.path.abspath(profile_filename)
     visualize([prof, rprof, cprof], file_path=profile_filename, show=False)
     print(f"Profile HTML: file://{profile_filename}")
 
@@ -879,7 +882,7 @@ def main(argv=sys.argv[1:]):
         dask.config.set(num_workers=args.num_workers)
 
     with _create_profile_html_if(
-        args.profile_filename,
+        args.create_profile,
         "polar2grid" if USE_POLAR2GRID_DEFAULTS else "geo2grid",
         glue_name,
     ):
