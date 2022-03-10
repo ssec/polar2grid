@@ -95,6 +95,8 @@ def viirs_sdr_i_swath_def() -> SwathDefinition:
             "sensor": "viirs",
             "start_time": START_TIME,
             "end_time": START_TIME,
+            "resolution": 371,
+            "reader": "viirs_sdr",
         },
     )
     lats_data_arr = xr.DataArray(
@@ -106,6 +108,8 @@ def viirs_sdr_i_swath_def() -> SwathDefinition:
             "sensor": "viirs",
             "start_time": START_TIME,
             "end_time": START_TIME,
+            "resolution": 371,
+            "reader": "viirs_sdr",
         },
     )
     return SwathDefinition(lons_data_arr, lats_data_arr)

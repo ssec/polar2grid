@@ -116,6 +116,7 @@ def test_partial_filter(viirs_sdr_i01_scene):
     orig_lons = new_i01.attrs["area"].lons
     orig_lats = new_i01.attrs["area"].lats
     new_lons = orig_lons + 180.0
+    new_lons.attrs = orig_lons.attrs.copy()
     new_swath_def = SwathDefinition(new_lons, orig_lats)
     new_i01.attrs["name"] = "I01_2"
     new_i01.attrs["area"] = new_swath_def

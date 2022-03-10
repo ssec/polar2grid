@@ -200,8 +200,8 @@ def resample_scene(
 ) -> list[tuple[Scene, set]]:
     """Resample a single Scene to multiple target areas."""
     area_resolver = AreaDefResolver(input_scene, grid_configs)
-    resampling_dtree = ResamplerDecisionTree.from_configs()
     if resampler is None:
+        resampling_dtree = ResamplerDecisionTree.from_configs()
         resampling_groups = _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid)
     else:
         default_target = _default_grid(resampler, is_polar2grid)
@@ -229,15 +229,17 @@ def resample_scene(
             area_def = area_resolver.get_frozen_area(area_name)
             has_dynamic_extents = area_resolver.has_dynamic_extents(area_name)
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
+            filtered_data_ids, filtered_scn = _filter_scene_with_grid_coverage(
+                area_name, area_def, resampler, _grid_cov, has_dynamic_extents, scene_to_resample, data_ids
+            )
+            if filtered_scn is None:
+                continue
             new_scn = _resample_scene_to_single_area(
-                scene_to_resample,
+                filtered_scn,
                 area_name,
                 area_def,
-                has_dynamic_extents,
                 rs,
-                data_ids,
-                _grid_cov,
-                resampler,
+                filtered_data_ids,
                 _resample_kwargs,
                 preserve_resolution,
             )
@@ -280,28 +282,37 @@ def _is_native_grid(grid, max_native_area):
         return (max_native_area.width / grid.width).is_integer()
 
 
+def _filter_scene_with_grid_coverage(
+    area_name: str,
+    area_def: PRGeometry,
+    resampler: str,
+    coverage_threshold: float,
+    has_dynamic_extents: bool,
+    scene_to_resample: Scene,
+    data_ids: list,
+):
+    if area_def is not None and resampler != "native" and coverage_threshold > 0.0 and not has_dynamic_extents:
+        logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
+        filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=coverage_threshold)
+        scene_to_resample = filter.filter_scene(scene_to_resample)
+        if scene_to_resample is None:
+            logger.warning("No products were found to overlap with '%s' grid.", area_name)
+            return None, None
+        if data_ids is not None:
+            data_ids = list(set(data_ids) & set(scene_to_resample.keys()))
+    return data_ids, scene_to_resample
+
+
 def _resample_scene_to_single_area(
     scene_to_resample: Scene,
     area_name: str,
     area_def: PRGeometry,
-    has_dynamic_extents: bool,
     rs: str,
     data_ids: list,
-    coverage_threshold: Optional[float],
-    resampler: str,
     resample_kwargs: dict,
     preserve_resolution: bool,
 ) -> Optional[Scene]:
     if area_def is not None:
-        if resampler != "native" and coverage_threshold > 0.0 and not has_dynamic_extents:
-            logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
-            filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=coverage_threshold)
-            scene_to_resample = filter.filter_scene(scene_to_resample)
-            if scene_to_resample is None:
-                logger.warning("No products were found to overlap with '%s' grid.", area_name)
-                return
-            if data_ids is not None:
-                data_ids = list(set(data_ids) & set(scene_to_resample.keys()))
         logger.info("Resampling to '%s' using '%s' resampling...", area_name, rs)
         logger.debug("Resampling to '%s' using resampler '%s' with %s", area_name, rs, resample_kwargs)
         new_scn = scene_to_resample.resample(area_def, resampler=rs, datasets=data_ids, **resample_kwargs)
