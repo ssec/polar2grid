@@ -38,6 +38,7 @@ from satpy.resample import get_area_def
 from polar2grid.filters.resample_coverage import ResampleCoverageFilter
 from polar2grid.grids import GridManager
 
+from ..filters._utils import PRGeometry
 from .resample_decisions import ResamplerDecisionTree
 
 logger = logging.getLogger(__name__)
@@ -67,23 +68,6 @@ def _crs_equal(a, b):
     s2 = osr.SpatialReference()
     s2.ImportFromProj4(p2.srs)
     return s1.IsSame(s2)
-
-
-def _is_native_grid(grid, max_native_area):
-    """Check if the current grid is in the native data projection."""
-    if not isinstance(max_native_area, AreaDefinition):
-        return False
-    if not isinstance(grid, AreaDefinition):
-        return False
-    if not _crs_equal(max_native_area, grid):
-        return False
-    # if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent), atol=grid.pixel_size_x):
-    if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent)):
-        return False
-    if max_native_area.width < grid.width:
-        return (grid.width / max_native_area.width).is_integer()
-    else:
-        return (max_native_area.width / grid.width).is_integer()
 
 
 def _get_preserve_resolution(preserve_resolution, resampler, areas_to_resample):
@@ -125,7 +109,9 @@ def _get_legacy_and_yaml_areas(grid_configs: list[str, ...]) -> tuple[GridManage
     return grid_manager, yaml_areas
 
 
-def _get_area_def_from_name(area_name, input_scene, grid_manager, yaml_areas):
+def _get_area_def_from_name(
+    area_name: Optional[str], input_scene: Scene, grid_manager: GridManager, yaml_areas: list
+) -> Optional[PRGeometry]:
     if area_name is None:
         # no resampling
         area_def = None
@@ -141,21 +127,7 @@ def _get_area_def_from_name(area_name, input_scene, grid_manager, yaml_areas):
     else:
         # get satpy builtin area
         area_def = get_area_def(area_name)
-
-    if isinstance(area_def, DynamicAreaDefinition):
-        logger.info("Computing dynamic grid parameters...")
-        area_def = area_def.freeze(input_scene.max_area())
-        logger.debug("Frozen dynamic area: %s", area_def)
     return area_def
-
-
-def _get_default_resampler(resampler, area_name, area_def, input_scene):
-    if resampler is None and area_def is not None:
-        rs = "native" if area_name in ["MIN", "MAX"] or _is_native_grid(area_def, input_scene.max_area()) else "nearest"
-        logger.debug("Setting default resampling to '{}' for grid '{}'".format(rs, area_name))
-    else:
-        rs = resampler
-    return rs
 
 
 class AreaDefResolver:
@@ -165,8 +137,25 @@ class AreaDefResolver:
         self.grid_manager = grid_manager
         self.yaml_areas = yaml_areas
 
-    def __getitem__(self, area_name):
-        return _get_area_def_from_name(area_name, self.input_scene, self.grid_manager, self.yaml_areas)
+    def has_dynamic_extents(self, area_name: Optional[str]) -> bool:
+        area_def = self[area_name]
+        is_dynamic = isinstance(area_def, DynamicAreaDefinition)
+        return is_dynamic and area_def.area_extent is None
+
+    def __getitem__(self, area_name: Optional[str]) -> Optional[PRGeometry]:
+        area_def = _get_area_def_from_name(area_name, self.input_scene, self.grid_manager, self.yaml_areas)
+        return area_def
+
+    def get_frozen_area(self, area_name: Optional[str]) -> Optional[PRGeometry]:
+        area_def = self[area_name]
+        return self._freeze_area_if_dynamic(area_def)
+
+    def _freeze_area_if_dynamic(self, area_def: PRGeometry) -> PRGeometry:
+        if isinstance(area_def, DynamicAreaDefinition):
+            logger.info("Computing dynamic grid parameters...")
+            area_def = area_def.freeze(self.input_scene.max_area())
+            logger.debug("Frozen dynamic area: %s", area_def)
+        return area_def
 
 
 def _default_grid(resampler, is_polar2grid):
@@ -237,12 +226,14 @@ def resample_scene(
         if _grid_cov is None:
             _grid_cov = 0.1
         for area_name in areas:
-            area_def = area_resolver[area_name]
+            area_def = area_resolver.get_frozen_area(area_name)
+            has_dynamic_extents = area_resolver.has_dynamic_extents(area_name)
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
             new_scn = _resample_scene_to_single_area(
                 scene_to_resample,
                 area_name,
                 area_def,
+                has_dynamic_extents,
                 rs,
                 data_ids,
                 _grid_cov,
@@ -263,19 +254,46 @@ def resample_scene(
     return scenes_to_save
 
 
+def _get_default_resampler(resampler, area_name, area_def, input_scene):
+    if resampler is None and area_def is not None:
+        rs = "native" if area_name in ["MIN", "MAX"] or _is_native_grid(area_def, input_scene.max_area()) else "nearest"
+        logger.debug("Setting default resampling to '{}' for grid '{}'".format(rs, area_name))
+    else:
+        rs = resampler
+    return rs
+
+
+def _is_native_grid(grid, max_native_area):
+    """Check if the current grid is in the native data projection."""
+    if not isinstance(max_native_area, AreaDefinition):
+        return False
+    if not isinstance(grid, AreaDefinition):
+        return False
+    if not _crs_equal(max_native_area, grid):
+        return False
+    # if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent), atol=grid.pixel_size_x):
+    if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent)):
+        return False
+    if max_native_area.width < grid.width:
+        return (grid.width / max_native_area.width).is_integer()
+    else:
+        return (max_native_area.width / grid.width).is_integer()
+
+
 def _resample_scene_to_single_area(
     scene_to_resample: Scene,
-    area_name,
-    area_def,
-    rs,
-    data_ids,
-    coverage_threshold,
-    resampler,
-    resample_kwargs,
-    preserve_resolution,
-):
+    area_name: str,
+    area_def: PRGeometry,
+    has_dynamic_extents: bool,
+    rs: str,
+    data_ids: list,
+    coverage_threshold: Optional[float],
+    resampler: str,
+    resample_kwargs: dict,
+    preserve_resolution: bool,
+) -> Optional[Scene]:
     if area_def is not None:
-        if resampler != "native" and coverage_threshold > 0:
+        if resampler != "native" and coverage_threshold > 0.0 and not has_dynamic_extents:
             logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
             filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=coverage_threshold)
             scene_to_resample = filter.filter_scene(scene_to_resample)
