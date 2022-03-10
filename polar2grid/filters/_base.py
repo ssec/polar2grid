@@ -81,7 +81,7 @@ class BaseFilter:
         _cache = {}
         remaining_ids = []
         filtered_ids = []
-        for data_id in scene.keys():
+        for data_id in self._iter_scene_coarsest_to_finest_area(scene):
             logger.debug("Analyzing '{}' for filtering...".format(data_id))
             if not self._filter_data_array(scene[data_id], _cache):
                 remaining_ids.append(data_id)
@@ -93,3 +93,10 @@ class BaseFilter:
         new_scn = scene.copy(remaining_ids)
         new_scn._wishlist = scene.wishlist.copy()
         return new_scn
+
+    @staticmethod
+    def _iter_scene_coarsest_to_finest_area(scene: Scene):
+        by_area_list = list(scene.iter_by_area())
+        by_area_list = sorted(by_area_list, key=lambda x: x[0].shape[0])
+        for _, data_arrays in by_area_list:
+            yield from data_arrays
