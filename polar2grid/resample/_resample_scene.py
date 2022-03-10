@@ -200,14 +200,7 @@ def resample_scene(
 ) -> list[tuple[Scene, set]]:
     """Resample a single Scene to multiple target areas."""
     area_resolver = AreaDefResolver(input_scene, grid_configs)
-    if resampler is None:
-        resampling_dtree = ResamplerDecisionTree.from_configs()
-        resampling_groups = _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid)
-    else:
-        default_target = _default_grid(resampler, is_polar2grid)
-        rs_kwargs = _hashable_kwargs(resample_kwargs)
-        resampling_groups = {(resampler, rs_kwargs, default_target): None}
-
+    resampling_groups = _get_groups_to_resample(resampler, input_scene, is_polar2grid, resample_kwargs)
     wishlist: set = input_scene.wishlist.copy()
     scenes_to_save = []
     for (resampler, _resample_kwargs, default_target), data_ids in resampling_groups.items():
@@ -229,22 +222,21 @@ def resample_scene(
             area_def = area_resolver.get_frozen_area(area_name)
             has_dynamic_extents = area_resolver.has_dynamic_extents(area_name)
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
-            filtered_data_ids, filtered_scn = _filter_scene_with_grid_coverage(
-                area_name, area_def, resampler, _grid_cov, has_dynamic_extents, scene_to_resample, data_ids
-            )
-            if filtered_scn is None:
-                continue
-            new_scn = _resample_scene_to_single_area(
-                filtered_scn,
+            new_scn = _filter_and_resample_scene_to_single_area(
                 area_name,
                 area_def,
+                resampler,
+                _grid_cov,
+                has_dynamic_extents,
+                scene_to_resample,
+                data_ids,
                 rs,
-                filtered_data_ids,
                 _resample_kwargs,
                 preserve_resolution,
             )
             if new_scn is None:
                 continue
+
             # we only want to try to save products that we asked for and that
             # we were actually able to generate. Composite generation may have
             # modified the original DataID so we can't use
@@ -256,6 +248,22 @@ def resample_scene(
     return scenes_to_save
 
 
+def _get_groups_to_resample(
+    resampler: str,
+    input_scene: Scene,
+    is_polar2grid: bool,
+    resample_kwargs: dict,
+) -> dict:
+    if resampler is None:
+        resampling_dtree = ResamplerDecisionTree.from_configs()
+        resampling_groups = _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid)
+    else:
+        default_target = _default_grid(resampler, is_polar2grid)
+        rs_kwargs = _hashable_kwargs(resample_kwargs)
+        resampling_groups = {(resampler, rs_kwargs, default_target): None}
+    return resampling_groups
+
+
 def _get_default_resampler(resampler, area_name, area_def, input_scene):
     if resampler is None and area_def is not None:
         rs = "native" if area_name in ["MIN", "MAX"] or _is_native_grid(area_def, input_scene.max_area()) else "nearest"
@@ -263,6 +271,41 @@ def _get_default_resampler(resampler, area_name, area_def, input_scene):
     else:
         rs = resampler
     return rs
+
+
+def _filter_and_resample_scene_to_single_area(
+    area_name: str,
+    area_def: Optional[PRGeometry],
+    resampler: str,
+    grid_coverage: float,
+    has_dynamic_extents: bool,
+    input_scene: Scene,
+    data_ids_to_resample: list,
+    rs: str,
+    resample_kwargs: dict,
+    preserve_resolution: bool,
+) -> Optional[Scene]:
+    filtered_data_ids, filtered_scn = _filter_scene_with_grid_coverage(
+        area_name,
+        area_def,
+        resampler,
+        grid_coverage,
+        has_dynamic_extents,
+        input_scene,
+        data_ids_to_resample,
+    )
+    if filtered_scn is None:
+        return
+    new_scn = _resample_scene_to_single_area(
+        filtered_scn,
+        area_name,
+        area_def,
+        rs,
+        filtered_data_ids,
+        resample_kwargs,
+        preserve_resolution,
+    )
+    return new_scn
 
 
 def _is_native_grid(grid, max_native_area):
