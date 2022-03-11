@@ -1,0 +1,5 @@
+enhancements:
+  pre_enhanced_modis_crefl:
+    sensor: modis
+    standard_name: preenhanced_crefl
+    operations: []
