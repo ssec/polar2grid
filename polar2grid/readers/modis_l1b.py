@@ -135,7 +135,7 @@ from typing import Optional
 
 from satpy import DataQuery
 
-from polar2grid.core.script_utils import ExtendConstAction
+from polar2grid.core.script_utils import BooleanOptionalAction, ExtendConstAction
 
 from ._base import ReaderProxyBase
 
@@ -249,5 +249,11 @@ def add_reader_argument_groups(
         action=ExtendConstAction,
         const=_AWIPS_FALSE_COLOR,
         help="Add individual CREFL corrected products to create " "the 'false_color' composite in AWIPS.",
+    )
+    group.add_argument(
+        "--mask-saturated",
+        default=False,
+        action=BooleanOptionalAction,
+        help="Mask saturated band 2 pixels as invalid instead of clipping to max reflectance",
     )
     return group, None
