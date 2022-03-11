@@ -130,12 +130,13 @@ angle is less than 90 degrees.
 """
 from __future__ import annotations
 
+import argparse
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
 from satpy import DataQuery
 
-from polar2grid.core.script_utils import BooleanOptionalAction, ExtendConstAction
+from polar2grid.core.script_utils import ExtendConstAction
 
 from ._base import ReaderProxyBase
 
@@ -253,7 +254,8 @@ def add_reader_argument_groups(
     group.add_argument(
         "--mask-saturated",
         default=False,
-        action=BooleanOptionalAction,
-        help="Mask saturated band 2 pixels as invalid instead of clipping to max reflectance",
+        action="store_true",
+        help=argparse.SUPPRESS,
+        # help="Mask saturated band 2 pixels as invalid instead of clipping to max reflectance",
     )
     return group, None
