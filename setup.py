@@ -98,8 +98,9 @@ setup(
     # The location of where these are installed are important for the swbundle and glue scripts!
     # Look at env.sh, glue.py, and glue_legacy.py for where these are pointed to.
     data_files=[
-        ("etc/polar2grid/enhancements", glob("etc/enhancements/*")),
+        ("etc/polar2grid/colormaps", glob("etc/colormaps/*")),
         ("etc/polar2grid/composites", glob("etc/composites/*")),
+        ("etc/polar2grid/enhancements", glob("etc/enhancements/*")),
         ("etc/polar2grid/readers", glob("etc/readers/*")),
         ("etc/polar2grid/writers", glob("etc/writers/*")),
         ("etc/polar2grid", ["etc/pyspectral.yaml"]),
