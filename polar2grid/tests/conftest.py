@@ -545,11 +545,11 @@ def full_viirs_data_array_dict(
         data_arrays[data_id] = viirs_sdr_i01_data_array.copy()
     for data_id in VIIRS_I_IDS[3:]:
         data_arrays[data_id] = viirs_sdr_i04_data_array.copy()
-    for data_id in VIIRS_M_IDS[:12] + VIIRS_M_ANGLES_IDS:
+    for data_id in VIIRS_M_IDS[:12]:
         data_arrays[data_id] = viirs_sdr_m01_data_array.copy()
     for data_id in VIIRS_M_IDS[12:]:
         data_arrays[data_id] = viirs_sdr_m12_data_array.copy()
-    for data_id in VIIRS_DNB_IDS + VIIRS_DNB_ANGLES_IDS:
+    for data_id in VIIRS_DNB_IDS:
         data_arrays[data_id] = viirs_sdr_dnb_data_array.copy()
 
     all_angle_arrays = [viirs_sdr_i01_data_array, viirs_sdr_m01_data_array, viirs_sdr_dnb_data_array]
@@ -573,17 +573,22 @@ def viirs_sdr_full_scene(full_viirs_data_array_dict) -> Scene:
         all_dataset_ids=VIIRS_ALL_IDS,
         available_dataset_ids=list(data_arrays.keys()),
     )
-    # remove angles and other ancillary datasets that shouldn't be in the wishlist
-    # scn._wishlist.clear()
-    # for angle_data_id in VIIRS_M_ANGLES_IDS + VIIRS_I_ANGLES_IDS + VIIRS_DNB_ANGLES_IDS:
-    #     scn._wishlist.remove(angle_data_id)
     return scn
 
 
 @pytest.fixture
 def abi_l1b_c01_scene(abi_l1b_c01_data_array) -> Scene:
-    scn = Scene()
-    scn["C01"] = abi_l1b_c01_data_array
+    c01_id = make_dataid(name="C01", calibration="reflectance", resolution=1000)
+    data_arrays = {
+        c01_id: abi_l1b_c01_data_array,
+    }
+    scn = _TestingScene(
+        reader="abi_l1b",
+        filenames=["/fake/filename"],
+        data_array_dict=data_arrays,
+        all_dataset_ids=[c01_id],
+        available_dataset_ids=[c01_id],
+    )
     return scn
 
 
