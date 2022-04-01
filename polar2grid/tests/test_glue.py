@@ -144,3 +144,27 @@ class TestGlueFakeScene:
         output_files = glob(str(chtmpdir / "*.tif"))
         assert len(output_files) == num_outputs
         assert ret == 0
+
+    @pytest.mark.parametrize(
+        ("scene_fixture", "product_names", "num_outputs", "extra_flags"),
+        [
+            (lazy_fixture("viirs_sdr_i01_scene"), [], 1, []),
+            (lazy_fixture("viirs_sdr_i01_scene"), [], 1, ["--dnb-saturation-correction"]),
+            (lazy_fixture("viirs_sdr_full_scene"), [], 5 + 16 + 3 + 1 + 1 + 1, ["--dnb-saturation-correction"]),
+        ],
+    )
+    def test_viirs_sdr_scene(self, scene_fixture, product_names, num_outputs, extra_flags, chtmpdir):
+        from polar2grid.glue import main
+
+        with set_env(USE_POLAR2GRID_DEFAULTS="1"), mock.patch("polar2grid.glue._create_scene") as create_scene:
+            create_scene.return_value = scene_fixture
+            args = ["-r", "viirs_sdr", "-w", "geotiff", "-vvv", "-f", str(chtmpdir)]
+            if product_names:
+                args.append("-p")
+                args.extend(product_names)
+            if extra_flags:
+                args.extend(extra_flags)
+            ret = main(args)
+        output_files = glob(str(chtmpdir / "*.tif"))
+        assert len(output_files) == num_outputs
+        assert ret == 0
