@@ -64,17 +64,18 @@ class TestP2GEnhancements:
         """Reset Satpy config path back to the original value."""
         satpy.config.set(config_path=self._old_path)
 
-    def test_temperature_difference(self, tmpdir, abi_l1b_c01_data_array):
+    def test_temperature_difference(self, tmp_path, abi_l1b_c01_data_array):
         new_data_arr = abi_l1b_c01_data_array.copy()
         data = da.linspace(-10, 10, new_data_arr.size).reshape(new_data_arr.shape)
         new_data_arr.data = data
         new_data_arr.attrs["name"] = "test_temperature_difference"
         scn = Scene()
         scn["test_temperature_difference"] = new_data_arr
-        out_fn = str(tmpdir + "test_temperature_difference.tif")
-        scn.save_datasets(filename=out_fn)
+        scn.save_datasets(filename="{name}_{standard_name}.tif", base_dir=str(tmp_path))
 
-        with rasterio.open(out_fn, "r") as out_ds:
+        exp_fn = tmp_path / "test_temperature_difference_toa_bidirectional_reflectance.tif"
+        assert os.path.isfile(exp_fn)
+        with rasterio.open(exp_fn, "r") as out_ds:
             assert out_ds.count == 2
             l_data = out_ds.read(1)
             # see polar2grid/tests/etc/enhancements/generic.yaml

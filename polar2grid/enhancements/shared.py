@@ -40,9 +40,9 @@ def temperature_difference(img, min_stretch, max_stretch, **kwargs):
     # we assume uint8 images for legacy AWIPS comparisons
     offset = 1 / 255.0
     factor = (205.0 - 5.0) / 255.0
-    img.data = img.data * factor
+    img.data.data = img.data.data * factor
     img.data.data = np.clip(img.data.data, -offset, factor + offset)  # 4 and 206 offset
-    img.data = img.data + 5 * offset  # lower bound of 5
+    img.data.data = img.data.data + 5 * offset  # lower bound of 5
     return img
 
 
