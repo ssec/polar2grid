@@ -185,6 +185,7 @@ def _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid):
             default_target = _default_grid(resampler, is_polar2grid)
         hashable_kwargs = _hashable_kwargs(resampler_kwargs)
         resampling_groups.setdefault((resampler, hashable_kwargs, default_target), []).append(data_id)
+    print(resampling_groups)
     return resampling_groups
 
 

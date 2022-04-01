@@ -22,18 +22,31 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Tests for resampling a Scene."""
 
+from unittest import mock
+
 import dask
 import pytest
 from pyresample.geometry import SwathDefinition
 from pytest_lazyfixture import lazy_fixture
 from satpy import Scene
+from satpy.resample import DaskEWAResampler, KDTreeResampler, NativeResampler
 from satpy.tests.utils import CustomScheduler
 
 from polar2grid.resample._resample_scene import resample_scene
 
 
 @pytest.mark.parametrize(
-    ("input_scene", "grids", "grid_configs", "resampler", "exp_names", "max_computes", "is_polar2grid"),
+    (
+        "input_scene",
+        "grids",
+        "grid_configs",
+        "resampler",
+        "exp_names",
+        "max_computes",
+        "is_polar2grid",
+        "exp_resampler_cls",
+        "exp_kwargs",
+    ),
     [
         (
             lazy_fixture("viirs_sdr_i01_scene"),
@@ -43,6 +56,8 @@ from polar2grid.resample._resample_scene import resample_scene
             ["I01"],
             2,
             True,
+            DaskEWAResampler,
+            {"weight_delta_max": 40.0, "weight_distance_max": 2.0},
         ),
         (
             lazy_fixture("viirs_sdr_i01_scene"),
@@ -52,6 +67,8 @@ from polar2grid.resample._resample_scene import resample_scene
             ["I01"],
             2,
             True,
+            DaskEWAResampler,
+            {"weight_delta_max": 40.0, "weight_distance_max": 2.0},
         ),
         (
             lazy_fixture("viirs_sdr_i01_scene"),
@@ -61,6 +78,8 @@ from polar2grid.resample._resample_scene import resample_scene
             ["I01"],
             2,
             True,
+            DaskEWAResampler,
+            {"weight_delta_max": 40.0, "weight_distance_max": 2.0},
         ),
         (
             lazy_fixture("abi_l1b_c01_scene"),
@@ -70,6 +89,8 @@ from polar2grid.resample._resample_scene import resample_scene
             ["C01"],
             0,
             False,
+            KDTreeResampler,
+            {},
         ),
         (
             lazy_fixture("abi_l1b_c01_scene"),
@@ -79,6 +100,8 @@ from polar2grid.resample._resample_scene import resample_scene
             ["C01"],
             0,
             False,
+            NativeResampler,
+            {},
         ),
     ],
 )
@@ -90,8 +113,14 @@ def test_resample_single_result_per_grid(
     exp_names,
     max_computes,
     is_polar2grid,
+    exp_resampler_cls,
+    exp_kwargs,
 ):
-    with dask.config.set(scheduler=CustomScheduler(max_computes)):
+    from satpy.resample import resample
+
+    with dask.config.set(scheduler=CustomScheduler(max_computes)), mock.patch(
+        "satpy.resample.resample", wraps=resample
+    ) as satpy_resample:
         input_scene.load(exp_names)
         scenes_to_save = resample_scene(
             input_scene,
@@ -100,6 +129,12 @@ def test_resample_single_result_per_grid(
             resampler,
             is_polar2grid=is_polar2grid,
         )
+    satpy_resample.assert_called_once()
+    satpy_resample.assert_called_once_with(
+        mock.ANY, mock.ANY, mock.ANY, fill_value=mock.ANY, resampler=mock.ANY, **exp_kwargs
+    )
+    resample_kwargs = satpy_resample.call_args.kwargs
+    assert isinstance(resample_kwargs["resampler"], exp_resampler_cls)
     assert len(scenes_to_save) == len(grids)
     for scene, data_ids_set in scenes_to_save:
         assert isinstance(scene, Scene)
