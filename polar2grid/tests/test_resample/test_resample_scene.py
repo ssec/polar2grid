@@ -92,6 +92,7 @@ def test_resample_single_result_per_grid(
     is_polar2grid,
 ):
     with dask.config.set(scheduler=CustomScheduler(max_computes)):
+        input_scene.load(exp_names)
         scenes_to_save = resample_scene(
             input_scene,
             grids,
@@ -108,11 +109,11 @@ def test_resample_single_result_per_grid(
             assert exp_name in id_names
 
 
-def test_partial_filter(viirs_sdr_i01_scene):
+def test_partial_filter(viirs_sdr_i01_data_array):
     """Test that resampling completes even when coverage filters some datasets."""
     # make another DataArray that is shifted away from the target area
     # orig_lons, orig_lats = viirs_sdr_i01_scene['I01'].attrs['area'].get_lonlats()
-    new_i01 = viirs_sdr_i01_scene["I01"].copy()
+    new_i01 = viirs_sdr_i01_data_array.copy()
     orig_lons = new_i01.attrs["area"].lons
     orig_lats = new_i01.attrs["area"].lats
     new_lons = orig_lons + 180.0
@@ -122,7 +123,7 @@ def test_partial_filter(viirs_sdr_i01_scene):
     new_i01.attrs["area"] = new_swath_def
     new_i01.attrs["sensor"] = {"viirs", "modis"}
     new_scn = Scene()
-    new_scn["I01"] = viirs_sdr_i01_scene["I01"]
+    new_scn["I01"] = viirs_sdr_i01_data_array
     new_scn["I01_2"] = new_i01
 
     # computation 1: input swath 1 polygon

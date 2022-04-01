@@ -318,8 +318,6 @@ class ReaderProxy(ReaderProxyBase):
             # they specified --dnb-saturation-correction
             # let's modify the aliases so dynamic_dnb points to this product
             user_products.remove("dynamic_dnb_saturation")
-            if "dynamic_dnb" not in user_products:
-                user_products.append("dynamic_dnb")
             self._modified_aliases["dynamic_dnb"] = DataQuery(name="dynamic_dnb_saturation")
         super().__init__(scn, user_products)
 
