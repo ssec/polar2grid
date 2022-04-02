@@ -45,6 +45,7 @@ from polar2grid.resample._resample_scene import resample_scene
         "max_computes",
         "is_polar2grid",
         "exp_resampler_cls",
+        "extra_kwargs",
         "exp_kwargs",
     ),
     [
@@ -57,6 +58,7 @@ from polar2grid.resample._resample_scene import resample_scene
             2,
             True,
             DaskEWAResampler,
+            {},
             {"weight_delta_max": 40.0, "weight_distance_max": 2.0},
         ),
         (
@@ -68,6 +70,7 @@ from polar2grid.resample._resample_scene import resample_scene
             2,
             True,
             DaskEWAResampler,
+            {},
             {"weight_delta_max": 40.0, "weight_distance_max": 2.0},
         ),
         (
@@ -79,7 +82,32 @@ from polar2grid.resample._resample_scene import resample_scene
             2,
             True,
             DaskEWAResampler,
+            {},
             {"weight_delta_max": 40.0, "weight_distance_max": 2.0},
+        ),
+        (
+            lazy_fixture("viirs_sdr_i01_scene"),
+            ["wgs84_fit"],
+            ["grids.conf"],
+            "ewa",
+            ["I01"],
+            2,
+            True,
+            DaskEWAResampler,
+            {"weight_distance_max": 3.0, "maximum_weight_mode": True},
+            {"weight_distance_max": 3.0, "maximum_weight_mode": True},
+        ),
+        (
+            lazy_fixture("viirs_sdr_i01_scene"),
+            ["wgs84_fit"],
+            ["grids.conf"],
+            None,
+            ["I01"],
+            2,
+            True,
+            DaskEWAResampler,
+            {"weight_distance_max": 3.0, "maximum_weight_mode": True},
+            {"weight_delta_max": 40.0, "weight_distance_max": 3.0, "maximum_weight_mode": True},
         ),
         (
             lazy_fixture("abi_l1b_c01_scene"),
@@ -91,6 +119,7 @@ from polar2grid.resample._resample_scene import resample_scene
             False,
             KDTreeResampler,
             {},
+            {},
         ),
         (
             lazy_fixture("abi_l1b_c01_scene"),
@@ -102,6 +131,7 @@ from polar2grid.resample._resample_scene import resample_scene
             False,
             KDTreeResampler,
             {},
+            {},
         ),
         (
             lazy_fixture("abi_l1b_c01_scene"),
@@ -112,6 +142,7 @@ from polar2grid.resample._resample_scene import resample_scene
             0,
             False,
             NativeResampler,
+            {},
             {},
         ),
     ],
@@ -125,6 +156,7 @@ def test_resample_single_result_per_grid(
     max_computes,
     is_polar2grid,
     exp_resampler_cls,
+    extra_kwargs,
     exp_kwargs,
 ):
     from satpy.resample import resample
@@ -139,6 +171,7 @@ def test_resample_single_result_per_grid(
             grid_configs,
             resampler,
             is_polar2grid=is_polar2grid,
+            **extra_kwargs,
         )
     satpy_resample.assert_called_once()
     satpy_resample.assert_called_once_with(
