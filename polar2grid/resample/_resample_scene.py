@@ -159,33 +159,11 @@ class AreaDefResolver:
 
 
 def _default_grid(resampler, is_polar2grid):
-    if resampler in ["native"]:
+    if resampler in [None, "native"]:
         default_target = "MAX"
     else:
         default_target = "wgs84_fit" if is_polar2grid else "MAX"
     return default_target
-
-
-def _hashable_kwargs(kwargs):
-    return tuple(sorted(kwargs.items()))
-
-
-def _redict_hashable_kwargs(kwargs_tuple):
-    return dict(kwargs_tuple)
-
-
-def _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid):
-    resampling_groups = {}
-    for data_id in input_scene.keys():
-        resampling_args = resampling_dtree.find_match(**input_scene[data_id].attrs)
-        resampler = resampling_args["resampler"]
-        resampler_kwargs = resampling_args.get("kwargs", {})
-        default_target = resampling_args.get("default_target", None)
-        if default_target is None:
-            default_target = _default_grid(resampler, is_polar2grid)
-        hashable_kwargs = _hashable_kwargs(resampler_kwargs)
-        resampling_groups.setdefault((resampler, hashable_kwargs, default_target), []).append(data_id)
-    return resampling_groups
 
 
 def resample_scene(
@@ -252,16 +230,41 @@ def _get_groups_to_resample(
     resampler: str,
     input_scene: Scene,
     is_polar2grid: bool,
-    resample_kwargs: dict,
+    user_resample_kwargs: dict,
 ) -> dict:
     if resampler is None:
         resampling_dtree = ResamplerDecisionTree.from_configs()
-        resampling_groups = _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid)
+        resampling_groups = _create_resampling_groups(
+            input_scene, resampling_dtree, user_resample_kwargs, is_polar2grid
+        )
     else:
         default_target = _default_grid(resampler, is_polar2grid)
-        rs_kwargs = _hashable_kwargs(resample_kwargs)
+        rs_kwargs = _hashable_kwargs(user_resample_kwargs)
         resampling_groups = {(resampler, rs_kwargs, default_target): None}
     return resampling_groups
+
+
+def _create_resampling_groups(input_scene, resampling_dtree, user_resample_kwargs, is_polar2grid):
+    resampling_groups = {}
+    for data_id in input_scene.keys():
+        resampling_args = resampling_dtree.find_match(**input_scene[data_id].attrs)
+        resampler = resampling_args.get("resampler")
+        resampler_kwargs = resampling_args.get("kwargs", {}).copy()
+        resampler_kwargs.update(user_resample_kwargs)
+        default_target = resampling_args.get("default_target", None)
+        if default_target is None:
+            default_target = _default_grid(resampler, is_polar2grid)
+        hashable_kwargs = _hashable_kwargs(resampler_kwargs)
+        resampling_groups.setdefault((resampler, hashable_kwargs, default_target), []).append(data_id)
+    return resampling_groups
+
+
+def _hashable_kwargs(kwargs):
+    return tuple(sorted(kwargs.items()))
+
+
+def _redict_hashable_kwargs(kwargs_tuple):
+    return dict(kwargs_tuple)
 
 
 def _get_default_resampler(resampler, area_name, area_def, input_scene):

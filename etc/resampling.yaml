@@ -4,7 +4,7 @@ resampling:
     resampler: nearest
   default_area:
     area_type: area
-    resampler: native
+    # Default 'resampler' will be determined at runtime based on target area
     default_target: MAX
   default_clavrx_rain_rate:
     name: rain_rate
