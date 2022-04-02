@@ -94,6 +94,17 @@ from polar2grid.resample._resample_scene import resample_scene
         ),
         (
             lazy_fixture("abi_l1b_c01_scene"),
+            ["wgs84_fit"],
+            lazy_fixture("builtin_grids_yaml"),
+            None,
+            ["C01"],
+            0,
+            False,
+            KDTreeResampler,
+            {},
+        ),
+        (
+            lazy_fixture("abi_l1b_c01_scene"),
             ["MAX"],
             [],
             None,

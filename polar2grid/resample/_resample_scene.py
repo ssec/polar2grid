@@ -159,7 +159,7 @@ class AreaDefResolver:
 
 
 def _default_grid(resampler, is_polar2grid):
-    if resampler in ["native"]:
+    if resampler in [None, "native"]:
         default_target = "MAX"
     else:
         default_target = "wgs84_fit" if is_polar2grid else "MAX"
@@ -178,14 +178,13 @@ def _create_resampling_groups(input_scene, resampling_dtree, is_polar2grid):
     resampling_groups = {}
     for data_id in input_scene.keys():
         resampling_args = resampling_dtree.find_match(**input_scene[data_id].attrs)
-        resampler = resampling_args["resampler"]
+        resampler = resampling_args.get("resampler")
         resampler_kwargs = resampling_args.get("kwargs", {})
         default_target = resampling_args.get("default_target", None)
         if default_target is None:
             default_target = _default_grid(resampler, is_polar2grid)
         hashable_kwargs = _hashable_kwargs(resampler_kwargs)
         resampling_groups.setdefault((resampler, hashable_kwargs, default_target), []).append(data_id)
-    print(resampling_groups)
     return resampling_groups
 
 
