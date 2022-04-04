@@ -130,9 +130,7 @@ class GlueArgumentParser:
         self._separate_scene_init_load_args(reader_subgroups)
         self._resample_args = _args_to_dict(self._args, resampling_group._group_actions)
         self._writer_args = _args_to_dict(self._args, writer_group._group_actions)
-        writer_specific_args = _parse_writer_args(
-            self._writer_args["writers"], writer_subgroups, self._reader_names, self._is_polar2grid, self._args
-        )
+        writer_specific_args = self._parse_one_writer_args(writer_subgroups)
         self._writer_args.update(writer_specific_args)
 
         if not self._args.filenames:
@@ -144,9 +142,7 @@ class GlueArgumentParser:
         filenames = self._reader_args.pop("filenames") or []
         filenames = list(get_input_files(filenames))
 
-        reader_specific_args, reader_specific_load_args = _parse_reader_args(
-            self._reader_names, reader_subgroups, self._args
-        )
+        reader_specific_args, reader_specific_load_args = self._parse_reader_args(reader_subgroups)
         # argparse will combine "extended" arguments like `products` automatically
         # and products should only be provided to the load arguments, not reader creation
         for _reader_name, _reader_args in reader_specific_args.items():
@@ -162,6 +158,31 @@ class GlueArgumentParser:
             "products": products,
         }
         self._load_args.update(reader_specific_load_args)
+
+    def _parse_reader_args(self, reader_subgroups: list) -> tuple[dict, dict]:
+        reader_args = {}
+        load_args = {}
+        for reader_name, (sgrp1, sgrp2) in zip(self._reader_names, reader_subgroups):
+            if sgrp1 is None:
+                continue
+            rargs = _args_to_dict(self._args, sgrp1._group_actions)
+            reader_args[reader_name] = rargs
+            if sgrp2 is not None:
+                load_args.update(_args_to_dict(self._args, sgrp2._group_actions))
+        return reader_args, load_args
+
+    def _parse_one_writer_args(self, writer_subgroups: list) -> dict:
+        writer_names: list[str] = self._writer_args["writers"]
+        writer_specific_args = {}
+        for writer_name, (sgrp1, sgrp2) in zip(writer_names, writer_subgroups):
+            wargs = _args_to_dict(self._args, sgrp1._group_actions)
+            if sgrp2 is not None:
+                wargs.update(_args_to_dict(self._args, sgrp2._group_actions))
+            writer_specific_args[writer_name] = wargs
+            # get default output filename
+            if "filename" in wargs and wargs["filename"] is None:
+                wargs["filename"] = get_default_output_filename(self._reader_names[0], writer_name, self._is_polar2grid)
+        return writer_specific_args
 
 
 def _main_args(argv, use_polar2grid_defaults):
@@ -299,42 +320,6 @@ def _args_to_dict(args, group_actions, exclude=None):
     return {
         ga.dest: getattr(args, ga.dest) for ga in group_actions if hasattr(args, ga.dest) and ga.dest not in exclude
     }
-
-
-def _parse_reader_args(
-    reader_names: list[str],
-    reader_subgroups: list,
-    args,
-) -> tuple[dict, dict]:
-    reader_args = {}
-    load_args = {}
-    for reader_name, (sgrp1, sgrp2) in zip(reader_names, reader_subgroups):
-        if sgrp1 is None:
-            continue
-        rargs = _args_to_dict(args, sgrp1._group_actions)
-        reader_args[reader_name] = rargs
-        if sgrp2 is not None:
-            load_args.update(_args_to_dict(args, sgrp2._group_actions))
-    return reader_args, load_args
-
-
-def _parse_writer_args(
-    writer_names: list[str],
-    writer_subgroups: list,
-    reader_names: list[str],
-    is_polar2grid: bool,
-    args,
-) -> dict:
-    writer_args = {}
-    for writer_name, (sgrp1, sgrp2) in zip(writer_names, writer_subgroups):
-        wargs = _args_to_dict(args, sgrp1._group_actions)
-        if sgrp2 is not None:
-            wargs.update(_args_to_dict(args, sgrp2._group_actions))
-        writer_args[writer_name] = wargs
-        # get default output filename
-        if "filename" in wargs and wargs["filename"] is None:
-            wargs["filename"] = get_default_output_filename(reader_names[0], writer_name, is_polar2grid)
-    return writer_args
 
 
 def _convert_reader_name(reader_name: str) -> str:
