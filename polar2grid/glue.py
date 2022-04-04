@@ -635,6 +635,18 @@ basic processing with limited products:
         fromfile_prefix_chars="@",
         description="Load, composite, resample, and save datasets.",
     )
+    _add_common_arguments(parser, binary_name)
+    reader_group = add_scene_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
+    resampling_group = add_resample_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
+    writer_group = add_writer_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
+    argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
+
+    _retitle_optional_arguments(parser)
+    args, _ = parser.parse_known_args(argv_without_help)
+    return parser, args, reader_group, resampling_group, writer_group
+
+
+def _add_common_arguments(parser: argparse.ArgumentParser, binary_name: str) -> None:
     parser.add_argument(
         "-v",
         "--verbose",
@@ -692,14 +704,6 @@ basic processing with limited products:
         action="store_true",
         help="List available {} products and custom/Satpy products and exit".format(binary_name),
     )
-    reader_group = add_scene_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
-    resampling_group = add_resample_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
-    writer_group = add_writer_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
-    argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
-
-    _retitle_optional_arguments(parser)
-    args, _ = parser.parse_known_args(argv_without_help)
-    return parser, args, reader_group, resampling_group, writer_group
 
 
 def _validate_reader_writer_args(parser, args, use_polar2grid_defaults):
