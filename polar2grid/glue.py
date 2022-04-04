@@ -300,76 +300,66 @@ class _GlueProcessor:
             "polar2grid" if self.is_polar2grid else "geo2grid",
             self.glue_name,
         ):
-            return _run_processing(
-                self.arg_parser,
-                self.glue_name,
-                self.rename_log,
-                is_polar2grid=self.is_polar2grid,
-            )
+            return self._run_processing()
 
+    def _run_processing(self):
+        # Create a Scene, analyze the provided files
+        LOG.info("Sorting and reading input files...")
+        arg_parser = self.arg_parser
+        scn = _create_scene(arg_parser._scene_creation)
+        if scn is None:
+            return -1
 
-def _run_processing(
-    arg_parser,
-    glue_name,
-    rename_log,
-    is_polar2grid,
-):
-    # Create a Scene, analyze the provided files
-    LOG.info("Sorting and reading input files...")
-    scn = _create_scene(arg_parser._scene_creation)
-    if scn is None:
-        return -1
+        # Rename the log file
+        if self.rename_log:
+            stime = getattr(scn, "start_time", scn.attrs.get("start_time"))
+            rename_log_file(self.glue_name + stime.strftime("_%Y%m%d_%H%M%S.log"))
 
-    # Rename the log file
-    if rename_log:
-        stime = getattr(scn, "start_time", scn.attrs.get("start_time"))
-        rename_log_file(glue_name + stime.strftime("_%Y%m%d_%H%M%S.log"))
+        # Load the actual data arrays and metadata (lazy loaded as dask arrays)
+        LOG.info("Loading product metadata from files...")
+        load_args = arg_parser._load_args.copy()
+        user_products = load_args.pop("products")
+        reader_info = ReaderProxyBase.from_reader_name(arg_parser._scene_creation["reader"], scn, user_products)
+        if arg_parser._args.list_products or arg_parser._args.list_products_all:
+            _print_list_products(reader_info, self.is_polar2grid, not arg_parser._args.list_products_all)
+            return 0
 
-    # Load the actual data arrays and metadata (lazy loaded as dask arrays)
-    LOG.info("Loading product metadata from files...")
-    load_args = arg_parser._load_args.copy()
-    user_products = load_args.pop("products")
-    reader_info = ReaderProxyBase.from_reader_name(arg_parser._scene_creation["reader"], scn, user_products)
-    if arg_parser._args.list_products or arg_parser._args.list_products_all:
-        _print_list_products(reader_info, is_polar2grid, not arg_parser._args.list_products_all)
-        return 0
+        products = reader_info.get_satpy_products_to_load()
+        if not products:
+            return -1
+        scn.load(products, **load_args)
 
-    products = reader_info.get_satpy_products_to_load()
-    if not products:
-        return -1
-    scn.load(products, **load_args)
-
-    reader_args = arg_parser._reader_args
-    filter_kwargs = {
-        "sza_threshold": reader_args["sza_threshold"],
-        "day_fraction": reader_args["filter_day_products"],
-        "night_fraction": reader_args["filter_night_products"],
-    }
-    scenes_to_save = _resample_scene_to_grids(
-        scn,
-        arg_parser._reader_names,
-        arg_parser._resample_args,
-        filter_kwargs,
-        arg_parser._args.preserve_resolution,
-        is_polar2grid,
-    )
-    to_save = _save_scenes(scenes_to_save, reader_info, arg_parser._writer_args)
-
-    if arg_parser._args.progress:
-        pbar = ProgressBar()
-        pbar.register()
-
-    LOG.info("Computing products and saving data to writers...")
-    if not to_save:
-        LOG.warning(
-            "No product files produced given available valid data and "
-            "resampling settings. This can happen if the writer "
-            "detects that no valid output will be written or the "
-            "input data does not overlap with the target grid."
+        reader_args = arg_parser._reader_args
+        filter_kwargs = {
+            "sza_threshold": reader_args["sza_threshold"],
+            "day_fraction": reader_args["filter_day_products"],
+            "night_fraction": reader_args["filter_night_products"],
+        }
+        scenes_to_save = _resample_scene_to_grids(
+            scn,
+            arg_parser._reader_names,
+            arg_parser._resample_args,
+            filter_kwargs,
+            arg_parser._args.preserve_resolution,
+            self.is_polar2grid,
         )
-    compute_writer_results(to_save)
-    LOG.info("SUCCESS")
-    return 0
+        to_save = _save_scenes(scenes_to_save, reader_info, arg_parser._writer_args)
+
+        if arg_parser._args.progress:
+            pbar = ProgressBar()
+            pbar.register()
+
+        LOG.info("Computing products and saving data to writers...")
+        if not to_save:
+            LOG.warning(
+                "No product files produced given available valid data and "
+                "resampling settings. This can happen if the writer "
+                "detects that no valid output will be written or the "
+                "input data does not overlap with the target grid."
+            )
+        compute_writer_results(to_save)
+        LOG.info("SUCCESS")
+        return 0
 
 
 if __name__ == "__main__":
