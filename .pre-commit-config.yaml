@@ -2,15 +2,15 @@ exclude: '^$'
 fail_fast: false
 repos:
   - repo: https://github.com/psf/black
-    rev: 22.1.0 # Replace by any tag/version: https://github.com/psf/black/tags
+    rev: 22.3.0 # Replace by any tag/version: https://github.com/psf/black/tags
     hooks:
       - id: black
-        language_version: python3 # Should be a command that runs python3.6+
+        language_version: python3.9 # Should be a command that runs python3.6+
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
       - id: isort
-        language_version: python3
+        language_version: python3.9
   - repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
