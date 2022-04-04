@@ -91,6 +91,8 @@ are always available:
         -g <grid_name>        Specify the output grid to use. Default is the Platte Carrée projection, also
                               known as the wgs84 coordinate system. See :doc:`grids` and :doc:`custom_grids`
                               for information on possible values.
+        --num-workers         Specify number of parallel processing worker threads to use (default: 4)
+        --progress            Display a timed progress bar to show processing progress
         -v                    Print detailed log information.
 
     Examples:

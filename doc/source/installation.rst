@@ -101,6 +101,15 @@ beyond the scope of this documentation.
 
         export PATH=$PATH:$POLAR2GRID_HOME/bin
 
+.. note::
+
+    A one-time initialization process is performed the first time any of
+    the bash scripts is run. The extracted directory can *NOT* be moved
+    after this is performed. In a shared user installation (multiple users
+    running the same installation), the user that extracted the tarball
+    should run a script to perform this initialization before any other
+    users (ex. ``-h`` to |script_literal|).
+
 See :doc:`getting_started` for more information on running |project|.
 
 |project| Test Data
