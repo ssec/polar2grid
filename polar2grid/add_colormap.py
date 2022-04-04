@@ -24,6 +24,7 @@
 import os
 import sys
 
+import numpy as np
 import rasterio
 from trollimage.colormap import Colormap
 
@@ -49,8 +50,11 @@ def create_colortable(ct_file_or_entries):
     if isinstance(ct_file_or_entries, str):
         ct_file_or_entries = load_color_table_file_to_colormap(ct_file_or_entries)
     if isinstance(ct_file_or_entries, Colormap):
-        ct_file_or_entries = enumerate(ct_file_or_entries.colors)
-        ct_file_or_entries = (((x,) + tuple(int(c * 255.0) for c in color)) for x, color in ct_file_or_entries)
+        values = np.arange(256)
+        new_colors = ct_file_or_entries.colorize(values)
+        ct_file_or_entries = (
+            (color_idx,) + tuple(np.round(new_colors[:, color_idx] * 255.0)) for color_idx in range(new_colors.shape[1])
+        )
 
     ct_dict = {entry[0]: tuple(entry[1:]) for entry in ct_file_or_entries}
     return ct_dict
