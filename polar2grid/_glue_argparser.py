@@ -114,45 +114,32 @@ class GlueArgumentParser:
     """Helper class for parsing and grouping command line arguments."""
 
     def __init__(self, argv: list[str], is_polar2grid: bool):
-        self._argv = argv
         self._is_polar2grid = is_polar2grid
-        args, reader_args, reader_names, scene_creation, load_args, resample_args, writer_args = _parse_glue_args(
-            argv, is_polar2grid
+        parser, known_args, reader_group, resampling_group, writer_group = _main_args(argv, self._is_polar2grid)
+        # env used by some writers for default number of threads (ex. geotiff)
+        # must be done before writer args are parsed
+        os.environ["DASK_NUM_WORKERS"] = str(known_args.num_workers)
+
+        reader_subgroups = _add_component_parser_args(parser, "readers", known_args.readers or [])
+        writer_subgroups = _add_component_parser_args(parser, "writers", known_args.writers or [])
+        self._args = parser.parse_args(argv)
+        _validate_reader_writer_args(parser, self._args, self._is_polar2grid)
+
+        self._reader_args = _args_to_dict(self._args, reader_group._group_actions)
+        self._reader_names = self._reader_args.pop("readers")
+        self._scene_creation, self._load_args = _get_scene_init_load_args(
+            self._args, self._reader_args, self._reader_names, reader_subgroups
         )
-        self._args = args
-        self._reader_args = reader_args
-        self._reader_names = reader_names
-        self._scene_creation = scene_creation
-        self._load_args = load_args
-        self._resample_args = resample_args
-        self._writer_args = writer_args
+        self._resample_args = _args_to_dict(self._args, resampling_group._group_actions)
+        self._writer_args = _args_to_dict(self._args, writer_group._group_actions)
+        writer_specific_args = _parse_writer_args(
+            self._writer_args["writers"], writer_subgroups, self._reader_names, self._is_polar2grid, self._args
+        )
+        self._writer_args.update(writer_specific_args)
 
-
-def _parse_glue_args(argv: list[str], use_polar2grid_defaults: bool):
-    parser, args, reader_group, resampling_group, writer_group = _main_args(argv, use_polar2grid_defaults)
-    # env used by some writers for default number of threads (ex. geotiff)
-    # must be done before writer args are parsed
-    os.environ["DASK_NUM_WORKERS"] = str(args.num_workers)
-
-    reader_subgroups = _add_component_parser_args(parser, "readers", args.readers or [])
-    writer_subgroups = _add_component_parser_args(parser, "writers", args.writers or [])
-    args = parser.parse_args(argv)
-    _validate_reader_writer_args(parser, args, use_polar2grid_defaults)
-
-    reader_args = _args_to_dict(args, reader_group._group_actions)
-    reader_names = reader_args.pop("readers")
-    scene_creation, load_args = _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
-    resample_args = _args_to_dict(args, resampling_group._group_actions)
-    writer_args = _args_to_dict(args, writer_group._group_actions)
-    writer_specific_args = _parse_writer_args(
-        writer_args["writers"], writer_subgroups, reader_names, use_polar2grid_defaults, args
-    )
-    writer_args.update(writer_specific_args)
-
-    if not args.filenames:
-        parser.print_usage()
-        parser.exit(1, "\nERROR: No data files provided (-f flag)\n")
-    return args, reader_args, reader_names, scene_creation, load_args, resample_args, writer_args
+        if not self._args.filenames:
+            parser.print_usage()
+            parser.exit(1, "\nERROR: No data files provided (-f flag)\n")
 
 
 def _main_args(argv, use_polar2grid_defaults):

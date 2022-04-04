@@ -302,14 +302,12 @@ class _GlueProcessor:
             return self._run_processing()
 
     def _run_processing(self):
-        # Create a Scene, analyze the provided files
         LOG.info("Sorting and reading input files...")
         arg_parser = self.arg_parser
         scn = _create_scene(arg_parser._scene_creation)
         if scn is None:
             return -1
 
-        # Rename the log file
         if self.rename_log:
             stime = getattr(scn, "start_time", scn.attrs.get("start_time"))
             rename_log_file(self.glue_name + stime.strftime("_%Y%m%d_%H%M%S.log"))
