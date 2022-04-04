@@ -42,13 +42,14 @@ def test_add_colormap_help():
 
 
 @pytest.mark.parametrize(
-    "cmap_path",
+    ("cmap_path", "exp_first_color", "exp_last_color"),
     [
-        os.path.join(TEST_ETC_DIR, "colormaps", "amsr2_36h.cmap"),
-        os.path.join("colormaps", "amsr2_36h.cmap"),
+        (os.path.join(TEST_ETC_DIR, "colormaps", "amsr2_36h.cmap"), (0, 0, 0, 255), (128, 0, 0, 255)),
+        (os.path.join("colormaps", "amsr2_36h.cmap"), (0, 0, 0, 255), (128, 0, 0, 255)),
+        (os.path.join(TEST_ETC_DIR, "colormaps", "WV_Chile_Short.cmap"), (0, 0, 0, 255), (127, 127, 127, 255)),
     ],
 )
-def test_add_colormap_basic_l(tmp_path, cmap_path):
+def test_add_colormap_basic_l(tmp_path, cmap_path, exp_first_color, exp_last_color):
     from polar2grid.add_colormap import main
 
     fp = str(tmp_path / "test.tif")
@@ -60,5 +61,5 @@ def test_add_colormap_basic_l(tmp_path, cmap_path):
     with rasterio.open(fp, "r") as ds:
         cmap = ds.colormap(1)
         assert len(cmap) == 256
-        assert cmap[0] == (0, 0, 0, 255)  # asmr2_36h.cmap first color
-        assert cmap[255] == (128, 0, 0, 255)  # asmr2_36h.cmap last color
+        assert cmap[0] == exp_first_color
+        assert cmap[255] == exp_last_color
