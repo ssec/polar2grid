@@ -274,26 +274,38 @@ def _create_profile_html_if(create_profile: Union[False, None, str], project_nam
 
 
 def main(argv=sys.argv[1:]):
-    add_polar2grid_config_paths()
-    USE_POLAR2GRID_DEFAULTS = get_p2g_defaults_env_var()
-    arg_parser = GlueArgumentParser(argv, USE_POLAR2GRID_DEFAULTS)
-    glue_name = _get_glue_name(arg_parser._args)
-    rename_log = _prepare_initial_logging(arg_parser._args, glue_name)
-    # Set up dask and the number of workers
-    if arg_parser._args.num_workers:
-        dask.config.set(num_workers=arg_parser._args.num_workers)
+    processor = _GlueProcessor(argv)
+    return processor()
 
-    with _create_profile_html_if(
-        arg_parser._args.create_profile,
-        "polar2grid" if USE_POLAR2GRID_DEFAULTS else "geo2grid",
-        glue_name,
-    ):
-        return _run_processing(
-            arg_parser,
-            glue_name,
-            rename_log,
-            is_polar2grid=USE_POLAR2GRID_DEFAULTS,
-        )
+
+class _GlueProcessor:
+    """Helper class to make calling processing steps easier."""
+
+    def __init__(self, argv):
+        add_polar2grid_config_paths()
+        USE_POLAR2GRID_DEFAULTS = get_p2g_defaults_env_var()
+        self.is_polar2grid = USE_POLAR2GRID_DEFAULTS
+        self.arg_parser = GlueArgumentParser(argv, self.is_polar2grid)
+        self.glue_name = _get_glue_name(self.arg_parser._args)
+        self.rename_log = _prepare_initial_logging(self.arg_parser._args, self.glue_name)
+
+    def __call__(self):
+        # Set up dask and the number of workers
+        common_args = self.arg_parser._args
+        if common_args.num_workers:
+            dask.config.set(num_workers=common_args.num_workers)
+
+        with _create_profile_html_if(
+            common_args.create_profile,
+            "polar2grid" if self.is_polar2grid else "geo2grid",
+            self.glue_name,
+        ):
+            return _run_processing(
+                self.arg_parser,
+                self.glue_name,
+                self.rename_log,
+                is_polar2grid=self.is_polar2grid,
+            )
 
 
 def _run_processing(
