@@ -36,7 +36,7 @@ from typing import Callable, Optional, Union
 import dask
 import satpy
 from dask.diagnostics import ProgressBar
-from satpy import Scene
+from satpy import DataID, Scene
 from satpy.writers import compute_writer_results
 
 from polar2grid.core.script_utils import (
@@ -170,29 +170,38 @@ def get_input_files(input_filenames):
         yield from _filenames_from_local(input_filenames)
 
 
-def write_scene(scn, writers, writer_args, datasets, to_save=None):
+def write_scene(
+    scn: Scene, writers: list[str], writer_args: dict[str, dict], data_ids: list[DataID], to_save: Optional[list] = None
+):
     if to_save is None:
         to_save = []
-    if not datasets:
+    if not data_ids:
         # no datasets to save
         return to_save
 
-    for data_id in datasets:
+    _assign_default_native_area_id(scn, data_ids)
+    for writer_name in writers:
+        wargs = writer_args[writer_name]
+        _write_scene_with_writer(scn, writer_name, data_ids, wargs, to_save)
+    return to_save
+
+
+def _assign_default_native_area_id(scn: Scene, data_ids: list[DataID]) -> None:
+    for data_id in data_ids:
         area_def = scn[data_id].attrs.get("area")
         if area_def is None or hasattr(area_def, "area_id"):
             continue
         scn[data_id].attrs["area"].area_id = "native"
 
-    for writer_name in writers:
-        wargs = writer_args[writer_name]
-        res = scn.save_datasets(writer=writer_name, compute=False, datasets=datasets, **wargs)
-        if res and isinstance(res[0], (tuple, list)):
-            # list of (dask-array, file-obj) tuples
-            to_save.extend(zip(*res))
-        else:
-            # list of delayed objects
-            to_save.extend(res)
-    return to_save
+
+def _write_scene_with_writer(scn: Scene, writer_name: str, data_ids: list[DataID], wargs: dict, to_save: list) -> None:
+    res = scn.save_datasets(writer=writer_name, compute=False, datasets=data_ids, **wargs)
+    if res and isinstance(res[0], (tuple, list)):
+        # list of (dask-array, file-obj) tuples
+        to_save.extend(zip(*res))
+    else:
+        # list of delayed objects
+        to_save.extend(res)
 
 
 def _convert_reader_name(reader_name: str) -> str:
