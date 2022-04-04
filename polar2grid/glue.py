@@ -289,13 +289,7 @@ def main(argv=sys.argv[1:]):
         glue_name,
     ):
         return _run_processing(
-            arg_parser._args,
-            arg_parser._reader_args,
-            arg_parser._reader_names,
-            arg_parser._scene_creation,
-            arg_parser._load_args,
-            arg_parser._resample_args,
-            arg_parser._writer_args,
+            arg_parser,
             glue_name,
             rename_log,
             is_polar2grid=USE_POLAR2GRID_DEFAULTS,
@@ -303,20 +297,14 @@ def main(argv=sys.argv[1:]):
 
 
 def _run_processing(
-    args,
-    reader_args,
-    reader_names,
-    scene_creation,
-    load_args,
-    resample_args,
-    writer_args,
+    arg_parser,
     glue_name,
     rename_log,
     is_polar2grid,
 ):
     # Create a Scene, analyze the provided files
     LOG.info("Sorting and reading input files...")
-    scn = _create_scene(scene_creation)
+    scn = _create_scene(arg_parser._scene_creation)
     if scn is None:
         return -1
 
@@ -327,17 +315,19 @@ def _run_processing(
 
     # Load the actual data arrays and metadata (lazy loaded as dask arrays)
     LOG.info("Loading product metadata from files...")
-    reader_info = ReaderProxyBase.from_reader_name(scene_creation["reader"], scn, load_args["products"])
-    if args.list_products or args.list_products_all:
-        _print_list_products(reader_info, is_polar2grid, not args.list_products_all)
+    load_args = arg_parser._load_args.copy()
+    user_products = load_args.pop("products")
+    reader_info = ReaderProxyBase.from_reader_name(arg_parser._scene_creation["reader"], scn, user_products)
+    if arg_parser._args.list_products or arg_parser._args.list_products_all:
+        _print_list_products(reader_info, is_polar2grid, not arg_parser._args.list_products_all)
         return 0
 
-    load_args.pop("products")
     products = reader_info.get_satpy_products_to_load()
     if not products:
         return -1
     scn.load(products, **load_args)
 
+    reader_args = arg_parser._reader_args
     filter_kwargs = {
         "sza_threshold": reader_args["sza_threshold"],
         "day_fraction": reader_args["filter_day_products"],
@@ -345,15 +335,15 @@ def _run_processing(
     }
     scenes_to_save = _resample_scene_to_grids(
         scn,
-        reader_names,
-        resample_args,
+        arg_parser._reader_names,
+        arg_parser._resample_args,
         filter_kwargs,
-        args.preserve_resolution,
+        arg_parser._args.preserve_resolution,
         is_polar2grid,
     )
-    to_save = _save_scenes(scenes_to_save, reader_info, writer_args)
+    to_save = _save_scenes(scenes_to_save, reader_info, arg_parser._writer_args)
 
-    if args.progress:
+    if arg_parser._args.progress:
         pbar = ProgressBar()
         pbar.register()
 
