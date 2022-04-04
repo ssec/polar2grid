@@ -157,6 +157,7 @@ class TestGlueFakeScene:
                 5,
                 ["-g", "lcc_conus_1km", "--awips-true-color", "--awips-false-color"],
             ),
+            (lazy_fixture("viirs_sdr_i01_scene"), [], 1, ["--method", "native", "-g", "MAX"]),
         ],
     )
     def test_viirs_sdr_scene(self, scene_fixture, product_names, num_outputs, extra_flags, chtmpdir):
