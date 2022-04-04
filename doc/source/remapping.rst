@@ -93,7 +93,7 @@ Command Line Argument
 
 
 .. argparse::
-    :module: polar2grid.glue
+    :module: polar2grid._glue_argparser
     :func: add_resample_argument_groups
     :prog: geo2grid.sh -r <reader> -w <writer>
     :passparser:
