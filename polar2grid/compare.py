@@ -448,11 +448,13 @@ ROW_TEMPLATE = """
 """
 
 
+img_entry_tmpl = '<img src="{}"></img>'
+
+
 def _generate_table_rows(
     output_filename: str,
     file_comparison_results: list[FileComparisonResults],
 ) -> str:
-    img_entry_tmpl = '<img src="{}"></img>'
     img_dst_dir = os.path.join(os.path.dirname(output_filename), "_images")
     os.makedirs(img_dst_dir, exist_ok=True)
     row_infos = []
@@ -472,40 +474,50 @@ def _generate_table_rows(
             continue
 
         for sub_result in fc.sub_results:
-            status = "FAILED" if sub_result.failed else "PASSED"
-            notes = ""
-            diff_percent = 100
-            if sub_result.different_shape:
-                notes = "Different array shapes"
-            elif sub_result.failed:
-                notes = "Too many differing pixels"
-            else:
-                diff_percent = sub_result.num_diff_pixels / sub_result.total_pixels * 100
-
-            variable = getattr(sub_result, "variable", None)
-            exp_tn_html = "N/A"
-            act_tn_html = "N/A"
-            file_ext = os.path.splitext(exp_filename)[1]
-            if variable is None and file_ext in file_ext_to_array_func:
-                # TODO: Support multi-variable formats
-                exp_tn_fn = exp_filename.replace(file_ext, f".{variable}.expected.png")
-                exp_tn_html = img_entry_tmpl.format("_images/" + exp_tn_fn)
-                _generate_thumbnail(fc.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
-                act_tn_fn = exp_filename.replace(file_ext, f".{variable}.actual.png")
-                act_tn_html = img_entry_tmpl.format("_images/" + act_tn_fn)
-                _generate_thumbnail(fc.file2, os.path.join(img_dst_dir, act_tn_fn), max_width=512)
-
-            row_info = ROW_TEMPLATE.format(
-                filename=exp_filename,
-                status=status,
-                variable=variable or "N/A",
-                expected_img=exp_tn_html,
-                actual_img=act_tn_html,
-                diff_percent=diff_percent,
-                notes=notes,
-            )
+            row_info = _generate_subresult_table_row(img_dst_dir, exp_filename, fc, sub_result)
             row_infos.append(row_info)
     return row_infos
+
+
+def _generate_subresult_table_row(
+    img_dst_dir: str,
+    exp_filename: str,
+    file_comparison_result: FileComparisonResults,
+    sub_result: ArrayComparisonResult,
+) -> str:
+    status = "FAILED" if sub_result.failed else "PASSED"
+    notes = ""
+    diff_percent = 100
+    if sub_result.different_shape:
+        notes = "Different array shapes"
+    elif sub_result.failed:
+        notes = "Too many differing pixels"
+    else:
+        diff_percent = sub_result.num_diff_pixels / sub_result.total_pixels * 100
+
+    variable = getattr(sub_result, "variable", None)
+    exp_tn_html = "N/A"
+    act_tn_html = "N/A"
+    file_ext = os.path.splitext(exp_filename)[1]
+    if variable is None and file_ext in file_ext_to_array_func:
+        # TODO: Support multi-variable formats
+        exp_tn_fn = exp_filename.replace(file_ext, f".{variable}.expected.png")
+        exp_tn_html = img_entry_tmpl.format("_images/" + exp_tn_fn)
+        _generate_thumbnail(file_comparison_result.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
+        act_tn_fn = exp_filename.replace(file_ext, f".{variable}.actual.png")
+        act_tn_html = img_entry_tmpl.format("_images/" + act_tn_fn)
+        _generate_thumbnail(file_comparison_result.file2, os.path.join(img_dst_dir, act_tn_fn), max_width=512)
+
+    row_info = ROW_TEMPLATE.format(
+        filename=exp_filename,
+        status=status,
+        variable=variable or "N/A",
+        expected_img=exp_tn_html,
+        actual_img=act_tn_html,
+        diff_percent=diff_percent,
+        notes=notes,
+    )
+    return row_info
 
 
 def _generate_html_summary(output_filename, file_comparison_results):
