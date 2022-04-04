@@ -127,9 +127,7 @@ class GlueArgumentParser:
 
         self._reader_args = _args_to_dict(self._args, reader_group._group_actions)
         self._reader_names = self._reader_args.pop("readers")
-        self._scene_creation, self._load_args = _get_scene_init_load_args(
-            self._args, self._reader_args, self._reader_names, reader_subgroups
-        )
+        self._separate_scene_init_load_args(reader_subgroups)
         self._resample_args = _args_to_dict(self._args, resampling_group._group_actions)
         self._writer_args = _args_to_dict(self._args, writer_group._group_actions)
         writer_specific_args = _parse_writer_args(
@@ -140,6 +138,30 @@ class GlueArgumentParser:
         if not self._args.filenames:
             parser.print_usage()
             parser.exit(1, "\nERROR: No data files provided (-f flag)\n")
+
+    def _separate_scene_init_load_args(self, reader_subgroups) -> None:
+        products = self._reader_args.pop("products") or []
+        filenames = self._reader_args.pop("filenames") or []
+        filenames = list(get_input_files(filenames))
+
+        reader_specific_args, reader_specific_load_args = _parse_reader_args(
+            self._reader_names, reader_subgroups, self._args
+        )
+        # argparse will combine "extended" arguments like `products` automatically
+        # and products should only be provided to the load arguments, not reader creation
+        for _reader_name, _reader_args in reader_specific_args.items():
+            _reader_args.pop("products", None)
+
+        # Parse provided files and search for files if provided directories
+        self._scene_creation = {
+            "filenames": filenames,
+            "reader": self._reader_names[0],
+            "reader_kwargs": reader_specific_args.get(self._reader_names[0], {}),
+        }
+        self._load_args = {
+            "products": products,
+        }
+        self._load_args.update(reader_specific_load_args)
 
 
 def _main_args(argv, use_polar2grid_defaults):
@@ -313,30 +335,6 @@ def _parse_writer_args(
         if "filename" in wargs and wargs["filename"] is None:
             wargs["filename"] = get_default_output_filename(reader_names[0], writer_name, is_polar2grid)
     return writer_args
-
-
-def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups):
-    products = reader_args.pop("products") or []
-    filenames = reader_args.pop("filenames") or []
-    filenames = list(get_input_files(filenames))
-
-    reader_specific_args, reader_specific_load_args = _parse_reader_args(reader_names, reader_subgroups, args)
-    # argparse will combine "extended" arguments like `products` automatically
-    # and products should only be provided to the load arguments, not reader creation
-    for _reader_name, _reader_args in reader_specific_args.items():
-        _reader_args.pop("products", None)
-
-    # Parse provided files and search for files if provided directories
-    scene_creation = {
-        "filenames": filenames,
-        "reader": reader_names[0],
-        "reader_kwargs": reader_specific_args.get(reader_names[0], {}),
-    }
-    load_args = {
-        "products": products,
-    }
-    load_args.update(reader_specific_load_args)
-    return scene_creation, load_args
 
 
 def _convert_reader_name(reader_name: str) -> str:
