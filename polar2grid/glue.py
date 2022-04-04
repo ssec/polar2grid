@@ -50,7 +50,7 @@ from polar2grid.utils.config import add_polar2grid_config_paths
 
 LOG = logging.getLogger(__name__)
 
-PLATFORM_ALIASES = {
+_PLATFORM_ALIASES = {
     "suomi-npp": "npp",
     "snpp": "npp",
     "n20": "noaa20",
@@ -80,20 +80,20 @@ PLATFORM_ALIASES = {
 }
 
 
-def get_platform_name_alias(satpy_platform_name):
-    return PLATFORM_ALIASES.get(satpy_platform_name.lower(), satpy_platform_name)
+def _get_platform_name_alias(satpy_platform_name):
+    return _PLATFORM_ALIASES.get(satpy_platform_name.lower(), satpy_platform_name)
 
 
-def overwrite_platform_name_with_aliases(scn):
+def _overwrite_platform_name_with_aliases(scn):
     """Change 'platform_name' for every DataArray to Polar2Grid expectations."""
     for data_arr in scn:
         if "platform_name" not in data_arr.attrs:
             continue
-        pname = get_platform_name_alias(data_arr.attrs["platform_name"])
+        pname = _get_platform_name_alias(data_arr.attrs["platform_name"])
         data_arr.attrs["platform_name"] = pname
 
 
-def write_scene(
+def _write_scene(
     scn: Scene, writers: list[str], writer_args: dict[str, dict], data_ids: list[DataID], to_save: Optional[list] = None
 ):
     if to_save is None:
@@ -142,7 +142,7 @@ def _print_list_products(reader_info, is_polar2grid: bool, p2g_only: bool):
         print("\n".join(sorted(available_p2g_names)))
 
 
-def add_extra_config_paths(extra_paths: list[str]):
+def _add_extra_config_paths(extra_paths: list[str]):
     config_path = satpy.config.get("config_path")
     LOG.info(f"Adding additional configuration paths: {extra_paths}")
     satpy.config.set(config_path=extra_paths + config_path)
@@ -171,7 +171,7 @@ def _prepare_initial_logging(args, glue_name: str) -> bool:
         warnings.filterwarnings("ignore")
     LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
     if args.extra_config_path:
-        add_extra_config_paths(args.extra_config_path)
+        _add_extra_config_paths(args.extra_config_path)
     LOG.debug(f"Satpy config path is: {satpy.config.get('config_path')}")
     return rename_log
 
@@ -227,9 +227,9 @@ def _resample_scene_to_grids(
 def _save_scenes(scenes_to_save: list[tuple], reader_info, writer_args) -> list:
     to_save = []
     for scene_to_save, products_to_save in scenes_to_save:
-        overwrite_platform_name_with_aliases(scene_to_save)
+        _overwrite_platform_name_with_aliases(scene_to_save)
         reader_info.apply_p2g_name_to_scene(scene_to_save)
-        to_save = write_scene(
+        to_save = _write_scene(
             scene_to_save,
             writer_args["writers"],
             writer_args,
@@ -283,8 +283,7 @@ class _GlueProcessor:
 
     def __init__(self, argv):
         add_polar2grid_config_paths()
-        USE_POLAR2GRID_DEFAULTS = get_p2g_defaults_env_var()
-        self.is_polar2grid = USE_POLAR2GRID_DEFAULTS
+        self.is_polar2grid = get_p2g_defaults_env_var()
         self.arg_parser = GlueArgumentParser(argv, self.is_polar2grid)
         self.glue_name = _get_glue_name(self.arg_parser._args)
         self.rename_log = _prepare_initial_logging(self.arg_parser._args, self.glue_name)
