@@ -151,6 +151,12 @@ class TestGlueFakeScene:
             (lazy_fixture("viirs_sdr_i01_scene"), [], 1, []),
             (lazy_fixture("viirs_sdr_i01_scene"), [], 1, ["--dnb-saturation-correction"]),
             (lazy_fixture("viirs_sdr_full_scene"), [], 5 + 16 + 3 + 1 + 1 + 1, ["--dnb-saturation-correction"]),
+            (
+                lazy_fixture("viirs_sdr_full_scene"),
+                [],
+                5,
+                ["-g", "lcc_conus_1km", "--awips-true-color", "--awips-false-color"],
+            ),
         ],
     )
     def test_viirs_sdr_scene(self, scene_fixture, product_names, num_outputs, extra_flags, chtmpdir):
