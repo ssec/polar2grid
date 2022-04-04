@@ -204,6 +204,495 @@ def _write_scene_with_writer(scn: Scene, writer_name: str, data_ids: list[DataID
         to_save.extend(res)
 
 
+def _print_list_products(reader_info, is_polar2grid: bool, p2g_only: bool):
+    available_satpy_names, available_p2g_names = reader_info.get_available_products()
+    available_satpy_names = ["*" + _sname for _sname in available_satpy_names]
+    project_name = "Polar2Grid" if is_polar2grid else "Geo2Grid"
+    if available_satpy_names and not p2g_only:
+        print("### Custom/Satpy Products")
+        print("\n".join(available_satpy_names) + "\n")
+    if not p2g_only:
+        print(f"### Standard Available {project_name} Products")
+    if not available_p2g_names:
+        print("<None>")
+    else:
+        print("\n".join(sorted(available_p2g_names)))
+
+
+def add_extra_config_paths(extra_paths: list[str]):
+    config_path = satpy.config.get("config_path")
+    LOG.info(f"Adding additional configuration paths: {extra_paths}")
+    satpy.config.set(config_path=extra_paths + config_path)
+
+
+def _get_p2g_defaults_env_var():
+    return bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
+
+
+def _prepare_initial_logging(args, glue_name):
+    global LOG
+    LOG = logging.getLogger(glue_name)
+
+    # Prepare logging
+    rename_log = False
+    if args.log_fn is None:
+        rename_log = True
+        args.log_fn = glue_name + "_fail.log"
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    logging.getLogger("rasterio").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("fsspec").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("s3fs").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("aiobotocore").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("botocore").setLevel(levels[min(2, args.verbosity)])
+    sys.excepthook = create_exc_handler(LOG.name)
+    if levels[min(3, args.verbosity)] > logging.DEBUG:
+        import warnings
+
+        warnings.filterwarnings("ignore")
+    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
+    if args.extra_config_path:
+        add_extra_config_paths(args.extra_config_path)
+    LOG.debug(f"Satpy config path is: {satpy.config.get('config_path')}")
+    return rename_log, glue_name
+
+
+def _create_scene(scene_creation: dict) -> Optional[Scene]:
+    try:
+        scn = Scene(**scene_creation)
+    except ValueError as e:
+        LOG.error("{} | Enable debug message (-vvv) or see log file for details.".format(str(e)))
+        LOG.debug("Further error information: ", exc_info=True)
+        return
+    except OSError:
+        LOG.error("Could not open files. Enable debug message (-vvv) or see log file for details.")
+        LOG.debug("Further error information: ", exc_info=True)
+        return
+    return scn
+
+
+def _resample_scene_to_grids(
+    scn: Scene,
+    reader_names: list[str],
+    resample_args: dict,
+    filter_kwargs: dict,
+    preserve_resolution: bool,
+    use_polar2grid_defaults: bool,
+) -> list[tuple]:
+    ll_bbox = resample_args.pop("ll_bbox")
+    if ll_bbox:
+        scn = scn.crop(ll_bbox=ll_bbox)
+
+    scn = filter_scene(
+        scn,
+        reader_names,
+        **filter_kwargs,
+    )
+    if scn is None:
+        LOG.info("No remaining products after filtering.")
+        return []
+
+    areas_to_resample = resample_args.pop("grids")
+    if "ewa_persist" in resample_args:
+        resample_args["persist"] = resample_args.pop("ewa_persist")
+    scenes_to_save = resample_scene(
+        scn,
+        areas_to_resample,
+        preserve_resolution=preserve_resolution,
+        is_polar2grid=use_polar2grid_defaults,
+        **resample_args,
+    )
+    return scenes_to_save
+
+
+def _save_scenes(scenes_to_save: list[tuple], reader_info, writer_args) -> list:
+    to_save = []
+    for scene_to_save, products_to_save in scenes_to_save:
+        overwrite_platform_name_with_aliases(scene_to_save)
+        reader_info.apply_p2g_name_to_scene(scene_to_save)
+        to_save = write_scene(
+            scene_to_save,
+            writer_args["writers"],
+            writer_args,
+            products_to_save,
+            to_save=to_save,
+        )
+    return to_save
+
+
+def _get_glue_name(args):
+    reader_name = "NONE" if args.readers is None else args.readers[0]
+    writer_names = "-".join(args.writers or [])
+    return f"{reader_name}_{writer_names}"
+
+
+@contextlib.contextmanager
+def _create_profile_html_if(create_profile: Union[False, None, str], project_name: str, glue_name: str):
+    from dask.diagnostics import CacheProfiler, Profiler, ResourceProfiler, visualize
+
+    if create_profile is False:
+        yield
+        return
+    if create_profile is None:
+        profile_filename = "{project_name}_{glue_name}_{start_time:%Y%m%d_%H%M%S}.html"
+    else:
+        profile_filename = create_profile
+
+    start_time = datetime.now()
+    with CacheProfiler() as cprof, ResourceProfiler() as rprof, Profiler() as prof:
+        yield
+    end_time = datetime.now()
+
+    profile_filename = profile_filename.format(
+        project_name=project_name,
+        glue_name=glue_name,
+        start_time=start_time,
+        end_time=end_time,
+    )
+    profile_filename = os.path.abspath(profile_filename)
+    visualize([prof, rprof, cprof], file_path=profile_filename, show=False)
+    print(f"Profile HTML: file://{profile_filename}")
+
+
+def main(argv=sys.argv[1:]):
+    add_polar2grid_config_paths()
+    USE_POLAR2GRID_DEFAULTS = _get_p2g_defaults_env_var()
+    arg_parser = GlueArgumentParser(argv, USE_POLAR2GRID_DEFAULTS)
+    glue_name = _get_glue_name(arg_parser._args)
+    rename_log = _prepare_initial_logging(arg_parser._args, glue_name)
+    # Set up dask and the number of workers
+    if arg_parser._args.num_workers:
+        dask.config.set(num_workers=arg_parser._args.num_workers)
+
+    with _create_profile_html_if(
+        arg_parser._args.create_profile,
+        "polar2grid" if USE_POLAR2GRID_DEFAULTS else "geo2grid",
+        glue_name,
+    ):
+        return _run_processing(
+            arg_parser._args,
+            arg_parser._reader_args,
+            arg_parser._reader_names,
+            arg_parser._scene_creation,
+            arg_parser._load_args,
+            arg_parser._resample_args,
+            arg_parser._writer_args,
+            glue_name,
+            rename_log,
+            is_polar2grid=USE_POLAR2GRID_DEFAULTS,
+        )
+
+
+def _run_processing(
+    args,
+    reader_args,
+    reader_names,
+    scene_creation,
+    load_args,
+    resample_args,
+    writer_args,
+    glue_name,
+    rename_log,
+    is_polar2grid,
+):
+    # Create a Scene, analyze the provided files
+    LOG.info("Sorting and reading input files...")
+    scn = _create_scene(scene_creation)
+    if scn is None:
+        return -1
+
+    # Rename the log file
+    if rename_log:
+        stime = getattr(scn, "start_time", scn.attrs.get("start_time"))
+        rename_log_file(glue_name + stime.strftime("_%Y%m%d_%H%M%S.log"))
+
+    # Load the actual data arrays and metadata (lazy loaded as dask arrays)
+    LOG.info("Loading product metadata from files...")
+    reader_info = ReaderProxyBase.from_reader_name(scene_creation["reader"], scn, load_args["products"])
+    if args.list_products or args.list_products_all:
+        _print_list_products(reader_info, is_polar2grid, not args.list_products_all)
+        return 0
+
+    load_args.pop("products")
+    products = reader_info.get_satpy_products_to_load()
+    if not products:
+        return -1
+    scn.load(products, **load_args)
+
+    filter_kwargs = {
+        "sza_threshold": reader_args["sza_threshold"],
+        "day_fraction": reader_args["filter_day_products"],
+        "night_fraction": reader_args["filter_night_products"],
+    }
+    scenes_to_save = _resample_scene_to_grids(
+        scn,
+        reader_names,
+        resample_args,
+        filter_kwargs,
+        args.preserve_resolution,
+        is_polar2grid,
+    )
+    to_save = _save_scenes(scenes_to_save, reader_info, writer_args)
+
+    if args.progress:
+        pbar = ProgressBar()
+        pbar.register()
+
+    LOG.info("Computing products and saving data to writers...")
+    if not to_save:
+        LOG.warning(
+            "No product files produced given available valid data and "
+            "resampling settings. This can happen if the writer "
+            "detects that no valid output will be written or the "
+            "input data does not overlap with the target grid."
+        )
+    compute_writer_results(to_save)
+    LOG.info("SUCCESS")
+    return 0
+
+
+class GlueArgumentParser:
+    """Helper class for parsing and grouping command line arguments."""
+
+    def __init__(self, argv: list[str], is_polar2grid: bool):
+        self._argv = argv
+        self._is_polar2grid = is_polar2grid
+        args, reader_args, reader_names, scene_creation, load_args, resample_args, writer_args = _parse_glue_args(
+            argv, is_polar2grid
+        )
+        self._args = args
+        self._reader_args = reader_args
+        self._reader_names = reader_names
+        self._scene_creation = scene_creation
+        self._load_args = load_args
+        self._resample_args = resample_args
+        self._writer_args = writer_args
+
+
+def _parse_glue_args(argv: list[str], use_polar2grid_defaults: bool):
+    parser, args, reader_group, resampling_group, writer_group = _main_args(argv, use_polar2grid_defaults)
+    # env used by some writers for default number of threads (ex. geotiff)
+    # must be done before writer args are parsed
+    os.environ["DASK_NUM_WORKERS"] = str(args.num_workers)
+
+    reader_subgroups = _add_component_parser_args(parser, "readers", args.readers or [])
+    writer_subgroups = _add_component_parser_args(parser, "writers", args.writers or [])
+    args = parser.parse_args(argv)
+    _validate_reader_writer_args(parser, args, use_polar2grid_defaults)
+
+    reader_args = _args_to_dict(args, reader_group._group_actions)
+    reader_names = reader_args.pop("readers")
+    scene_creation, load_args = _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
+    resample_args = _args_to_dict(args, resampling_group._group_actions)
+    writer_args = _args_to_dict(args, writer_group._group_actions)
+    writer_specific_args = _parse_writer_args(
+        writer_args["writers"], writer_subgroups, reader_names, use_polar2grid_defaults, args
+    )
+    writer_args.update(writer_specific_args)
+
+    if not args.filenames:
+        parser.print_usage()
+        parser.exit(1, "\nERROR: No data files provided (-f flag)\n")
+    return args, reader_args, reader_names, scene_creation, load_args, resample_args, writer_args
+
+
+def _main_args(argv, use_polar2grid_defaults):
+    binary_name = "polar2grid" if use_polar2grid_defaults else "geo2grid"
+    prog = os.getenv("PROG_NAME", sys.argv[0])
+    # "usage: " will be printed at the top of this:
+    usage = """
+    %(prog)s -h
+see available products:
+    %(prog)s -r <reader> -w <writer> --list-products -f file1 [file2 ...]
+basic processing:
+    %(prog)s -r <reader> -w <writer> [options] -f file1 [file2 ...]
+basic processing with limited products:
+    %(prog)s -r <reader> -w <writer> [options] -p prod1 prod2 -f file1 [file2 ...]
+"""
+    parser = argparse.ArgumentParser(
+        prog=prog,
+        usage=usage,
+        fromfile_prefix_chars="@",
+        description="Load, composite, resample, and save datasets.",
+    )
+    _add_common_arguments(parser, binary_name)
+    reader_group = add_scene_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
+    resampling_group = add_resample_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
+    writer_group = add_writer_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
+    argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
+
+    _retitle_optional_arguments(parser)
+    args, _ = parser.parse_known_args(argv_without_help)
+    return parser, args, reader_group, resampling_group, writer_group
+
+
+def _add_common_arguments(parser: argparse.ArgumentParser, binary_name: str) -> None:
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbosity",
+        action="count",
+        default=0,
+        help="each occurrence increases verbosity 1 level through " "ERROR-WARNING-INFO-DEBUG (default INFO)",
+    )
+    parser.add_argument("-l", "--log", dest="log_fn", default=None, help="specify the log filename")
+    parser.add_argument(
+        "--progress",
+        action="store_true",
+        help="show processing progress bar (not recommended for logged output)",
+    )
+    parser.add_argument(
+        "--create-profile",
+        nargs="?",
+        default=False,
+        help=argparse.SUPPRESS,
+        # help="Create an HTML document profiling the execution of the script "
+        #      "using dask diagnostic tools.",
+    )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=os.getenv("DASK_NUM_WORKERS", 4),
+        help="specify number of worker threads to use (default: 4)",
+    )
+    parser.add_argument(
+        "--extra-config-path",
+        action="append",
+        help="Specify the base directory of additional Satpy configuration "
+        "files. For example, to use custom enhancement YAML file named "
+        "'generic.yaml' place it in a directory called 'enhancements' "
+        "like '/path/to/my_configs/enhancements/generic.yaml' and then "
+        "set this flag to '/path/to/my_configs'.",
+    )
+    parser.add_argument(
+        "--match-resolution",
+        dest="preserve_resolution",
+        action="store_false",
+        help="When using the 'native' resampler for composites, don't save data "
+        "at its native resolution, use the resolution used to create the "
+        "composite.",
+    )
+    parser.add_argument(
+        "--list-products",
+        dest="list_products",
+        action="store_true",
+        help="List available {} products and exit".format(binary_name),
+    )
+    parser.add_argument(
+        "--list-products-all",
+        dest="list_products_all",
+        action="store_true",
+        help="List available {} products and custom/Satpy products and exit".format(binary_name),
+    )
+
+
+def _validate_reader_writer_args(parser, args, use_polar2grid_defaults):
+    if args.readers is None:
+        parser.print_usage()
+        parser.exit(
+            1,
+            "\nERROR: Reader must be provided (-r flag).\n"
+            "Supported readers:\n\t{}\n".format("\n\t".join(_supported_readers(use_polar2grid_defaults))),
+        )
+    elif len(args.readers) > 1:
+        parser.print_usage()
+        parser.exit(
+            1,
+            "\nMultiple readers is not currently supported. Got:\n\t" "{}\n".format("\n\t".join(args.readers)),
+        )
+        return -1
+    if args.writers is None:
+        parser.print_usage()
+        parser.exit(
+            1,
+            "\nERROR: Writer must be provided (-w flag) with one or more writer.\n"
+            "Supported writers:\n\t{}\n".format("\n\t".join(_supported_writers(use_polar2grid_defaults))),
+        )
+
+
+def _add_component_parser_args(
+    parser: argparse.ArgumentParser, component_type: str, component_names: list[str]
+) -> list:
+    _get_args_func = get_writer_parser_function if component_type == "writers" else get_reader_parser_function
+    subgroups = []
+    for component_name in component_names:
+        parser_func = _get_args_func(component_name)
+        if parser_func is None:
+            # two items in each tuple
+            subgroups += [(None, None)]
+            continue
+        subgroups += [parser_func(parser)]
+    return subgroups
+
+
+def _args_to_dict(args, group_actions, exclude=None):
+    if exclude is None:
+        exclude = []
+    return {
+        ga.dest: getattr(args, ga.dest) for ga in group_actions if hasattr(args, ga.dest) and ga.dest not in exclude
+    }
+
+
+def _parse_reader_args(
+    reader_names: list[str],
+    reader_subgroups: list,
+    args,
+) -> tuple[dict, dict]:
+    reader_args = {}
+    load_args = {}
+    for reader_name, (sgrp1, sgrp2) in zip(reader_names, reader_subgroups):
+        if sgrp1 is None:
+            continue
+        rargs = _args_to_dict(args, sgrp1._group_actions)
+        reader_args[reader_name] = rargs
+        if sgrp2 is not None:
+            load_args.update(_args_to_dict(args, sgrp2._group_actions))
+    return reader_args, load_args
+
+
+def _parse_writer_args(
+    writer_names: list[str],
+    writer_subgroups: list,
+    reader_names: list[str],
+    is_polar2grid: bool,
+    args,
+) -> dict:
+    writer_args = {}
+    for writer_name, (sgrp1, sgrp2) in zip(writer_names, writer_subgroups):
+        wargs = _args_to_dict(args, sgrp1._group_actions)
+        if sgrp2 is not None:
+            wargs.update(_args_to_dict(args, sgrp2._group_actions))
+        writer_args[writer_name] = wargs
+        # get default output filename
+        if "filename" in wargs and wargs["filename"] is None:
+            wargs["filename"] = get_default_output_filename(reader_names[0], writer_name, is_polar2grid)
+    return writer_args
+
+
+def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups):
+    products = reader_args.pop("products") or []
+    filenames = reader_args.pop("filenames") or []
+    filenames = list(get_input_files(filenames))
+
+    reader_specific_args, reader_specific_load_args = _parse_reader_args(reader_names, reader_subgroups, args)
+    # argparse will combine "extended" arguments like `products` automatically
+    # and products should only be provided to the load arguments, not reader creation
+    for _reader_name, _reader_args in reader_specific_args.items():
+        _reader_args.pop("products", None)
+
+    # Parse provided files and search for files if provided directories
+    scene_creation = {
+        "filenames": filenames,
+        "reader": reader_names[0],
+        "reader_kwargs": reader_specific_args.get(reader_names[0], {}),
+    }
+    load_args = {
+        "products": products,
+    }
+    load_args.update(reader_specific_load_args)
+    return scene_creation, load_args
+
+
 def _convert_reader_name(reader_name: str) -> str:
     return READER_ALIASES.get(reader_name, reader_name)
 
@@ -506,479 +995,6 @@ def _retitle_optional_arguments(parser):
     if len(opt_args) == 1:
         opt_args = opt_args[0]
         opt_args.title = "Global Options"
-
-
-def _add_component_parser_args(
-    parser: argparse.ArgumentParser, component_type: str, component_names: list[str]
-) -> list:
-    _get_args_func = get_writer_parser_function if component_type == "writers" else get_reader_parser_function
-    subgroups = []
-    for component_name in component_names:
-        parser_func = _get_args_func(component_name)
-        if parser_func is None:
-            # two items in each tuple
-            subgroups += [(None, None)]
-            continue
-        subgroups += [parser_func(parser)]
-    return subgroups
-
-
-def _args_to_dict(args, group_actions, exclude=None):
-    if exclude is None:
-        exclude = []
-    return {
-        ga.dest: getattr(args, ga.dest) for ga in group_actions if hasattr(args, ga.dest) and ga.dest not in exclude
-    }
-
-
-def _parse_reader_args(
-    reader_names: list[str],
-    reader_subgroups: list,
-    args,
-) -> tuple[dict, dict]:
-    reader_args = {}
-    load_args = {}
-    for reader_name, (sgrp1, sgrp2) in zip(reader_names, reader_subgroups):
-        if sgrp1 is None:
-            continue
-        rargs = _args_to_dict(args, sgrp1._group_actions)
-        reader_args[reader_name] = rargs
-        if sgrp2 is not None:
-            load_args.update(_args_to_dict(args, sgrp2._group_actions))
-    return reader_args, load_args
-
-
-def _parse_writer_args(
-    writer_names: list[str],
-    writer_subgroups: list,
-    reader_names: list[str],
-    is_polar2grid: bool,
-    args,
-) -> dict:
-    writer_args = {}
-    for writer_name, (sgrp1, sgrp2) in zip(writer_names, writer_subgroups):
-        wargs = _args_to_dict(args, sgrp1._group_actions)
-        if sgrp2 is not None:
-            wargs.update(_args_to_dict(args, sgrp2._group_actions))
-        writer_args[writer_name] = wargs
-        # get default output filename
-        if "filename" in wargs and wargs["filename"] is None:
-            wargs["filename"] = get_default_output_filename(reader_names[0], writer_name, is_polar2grid)
-    return writer_args
-
-
-def _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups):
-    products = reader_args.pop("products") or []
-    filenames = reader_args.pop("filenames") or []
-    filenames = list(get_input_files(filenames))
-
-    reader_specific_args, reader_specific_load_args = _parse_reader_args(reader_names, reader_subgroups, args)
-    # argparse will combine "extended" arguments like `products` automatically
-    # and products should only be provided to the load arguments, not reader creation
-    for _reader_name, _reader_args in reader_specific_args.items():
-        _reader_args.pop("products", None)
-
-    # Parse provided files and search for files if provided directories
-    scene_creation = {
-        "filenames": filenames,
-        "reader": reader_names[0],
-        "reader_kwargs": reader_specific_args.get(reader_names[0], {}),
-    }
-    load_args = {
-        "products": products,
-    }
-    load_args.update(reader_specific_load_args)
-    return scene_creation, load_args
-
-
-def _print_list_products(reader_info, is_polar2grid: bool, p2g_only: bool):
-    available_satpy_names, available_p2g_names = reader_info.get_available_products()
-    available_satpy_names = ["*" + _sname for _sname in available_satpy_names]
-    project_name = "Polar2Grid" if is_polar2grid else "Geo2Grid"
-    if available_satpy_names and not p2g_only:
-        print("### Custom/Satpy Products")
-        print("\n".join(available_satpy_names) + "\n")
-    if not p2g_only:
-        print(f"### Standard Available {project_name} Products")
-    if not available_p2g_names:
-        print("<None>")
-    else:
-        print("\n".join(sorted(available_p2g_names)))
-
-
-def add_extra_config_paths(extra_paths: list[str]):
-    config_path = satpy.config.get("config_path")
-    LOG.info(f"Adding additional configuration paths: {extra_paths}")
-    satpy.config.set(config_path=extra_paths + config_path)
-
-
-def _get_p2g_defaults_env_var():
-    return bool(int(os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")))
-
-
-def _main_args(argv, use_polar2grid_defaults):
-    binary_name = "polar2grid" if use_polar2grid_defaults else "geo2grid"
-    prog = os.getenv("PROG_NAME", sys.argv[0])
-    # "usage: " will be printed at the top of this:
-    usage = """
-    %(prog)s -h
-see available products:
-    %(prog)s -r <reader> -w <writer> --list-products -f file1 [file2 ...]
-basic processing:
-    %(prog)s -r <reader> -w <writer> [options] -f file1 [file2 ...]
-basic processing with limited products:
-    %(prog)s -r <reader> -w <writer> [options] -p prod1 prod2 -f file1 [file2 ...]
-"""
-    parser = argparse.ArgumentParser(
-        prog=prog,
-        usage=usage,
-        fromfile_prefix_chars="@",
-        description="Load, composite, resample, and save datasets.",
-    )
-    _add_common_arguments(parser, binary_name)
-    reader_group = add_scene_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
-    resampling_group = add_resample_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
-    writer_group = add_writer_argument_groups(parser, is_polar2grid=use_polar2grid_defaults)[0]
-    argv_without_help = [x for x in argv if x not in ["-h", "--help"]]
-
-    _retitle_optional_arguments(parser)
-    args, _ = parser.parse_known_args(argv_without_help)
-    return parser, args, reader_group, resampling_group, writer_group
-
-
-def _add_common_arguments(parser: argparse.ArgumentParser, binary_name: str) -> None:
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        dest="verbosity",
-        action="count",
-        default=0,
-        help="each occurrence increases verbosity 1 level through " "ERROR-WARNING-INFO-DEBUG (default INFO)",
-    )
-    parser.add_argument("-l", "--log", dest="log_fn", default=None, help="specify the log filename")
-    parser.add_argument(
-        "--progress",
-        action="store_true",
-        help="show processing progress bar (not recommended for logged output)",
-    )
-    parser.add_argument(
-        "--create-profile",
-        nargs="?",
-        default=False,
-        help=argparse.SUPPRESS,
-        # help="Create an HTML document profiling the execution of the script "
-        #      "using dask diagnostic tools.",
-    )
-    parser.add_argument(
-        "--num-workers",
-        type=int,
-        default=os.getenv("DASK_NUM_WORKERS", 4),
-        help="specify number of worker threads to use (default: 4)",
-    )
-    parser.add_argument(
-        "--extra-config-path",
-        action="append",
-        help="Specify the base directory of additional Satpy configuration "
-        "files. For example, to use custom enhancement YAML file named "
-        "'generic.yaml' place it in a directory called 'enhancements' "
-        "like '/path/to/my_configs/enhancements/generic.yaml' and then "
-        "set this flag to '/path/to/my_configs'.",
-    )
-    parser.add_argument(
-        "--match-resolution",
-        dest="preserve_resolution",
-        action="store_false",
-        help="When using the 'native' resampler for composites, don't save data "
-        "at its native resolution, use the resolution used to create the "
-        "composite.",
-    )
-    parser.add_argument(
-        "--list-products",
-        dest="list_products",
-        action="store_true",
-        help="List available {} products and exit".format(binary_name),
-    )
-    parser.add_argument(
-        "--list-products-all",
-        dest="list_products_all",
-        action="store_true",
-        help="List available {} products and custom/Satpy products and exit".format(binary_name),
-    )
-
-
-def _validate_reader_writer_args(parser, args, use_polar2grid_defaults):
-    if args.readers is None:
-        parser.print_usage()
-        parser.exit(
-            1,
-            "\nERROR: Reader must be provided (-r flag).\n"
-            "Supported readers:\n\t{}\n".format("\n\t".join(_supported_readers(use_polar2grid_defaults))),
-        )
-    elif len(args.readers) > 1:
-        parser.print_usage()
-        parser.exit(
-            1,
-            "\nMultiple readers is not currently supported. Got:\n\t" "{}\n".format("\n\t".join(args.readers)),
-        )
-        return -1
-    if args.writers is None:
-        parser.print_usage()
-        parser.exit(
-            1,
-            "\nERROR: Writer must be provided (-w flag) with one or more writer.\n"
-            "Supported writers:\n\t{}\n".format("\n\t".join(_supported_writers(use_polar2grid_defaults))),
-        )
-
-
-def _prepare_initial_logging(args, glue_name):
-    global LOG
-    LOG = logging.getLogger(glue_name)
-
-    # Prepare logging
-    rename_log = False
-    if args.log_fn is None:
-        rename_log = True
-        args.log_fn = glue_name + "_fail.log"
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
-    logging.getLogger("rasterio").setLevel(levels[min(2, args.verbosity)])
-    logging.getLogger("fsspec").setLevel(levels[min(2, args.verbosity)])
-    logging.getLogger("s3fs").setLevel(levels[min(2, args.verbosity)])
-    logging.getLogger("aiobotocore").setLevel(levels[min(2, args.verbosity)])
-    logging.getLogger("botocore").setLevel(levels[min(2, args.verbosity)])
-    sys.excepthook = create_exc_handler(LOG.name)
-    if levels[min(3, args.verbosity)] > logging.DEBUG:
-        import warnings
-
-        warnings.filterwarnings("ignore")
-    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
-    if args.extra_config_path:
-        add_extra_config_paths(args.extra_config_path)
-    LOG.debug(f"Satpy config path is: {satpy.config.get('config_path')}")
-    return rename_log, glue_name
-
-
-def _create_scene(scene_creation: dict) -> Optional[Scene]:
-    try:
-        scn = Scene(**scene_creation)
-    except ValueError as e:
-        LOG.error("{} | Enable debug message (-vvv) or see log file for details.".format(str(e)))
-        LOG.debug("Further error information: ", exc_info=True)
-        return
-    except OSError:
-        LOG.error("Could not open files. Enable debug message (-vvv) or see log file for details.")
-        LOG.debug("Further error information: ", exc_info=True)
-        return
-    return scn
-
-
-def _resample_scene_to_grids(
-    scn: Scene,
-    reader_names: list[str],
-    resample_args: dict,
-    filter_kwargs: dict,
-    preserve_resolution: bool,
-    use_polar2grid_defaults: bool,
-) -> list[tuple]:
-    ll_bbox = resample_args.pop("ll_bbox")
-    if ll_bbox:
-        scn = scn.crop(ll_bbox=ll_bbox)
-
-    scn = filter_scene(
-        scn,
-        reader_names,
-        **filter_kwargs,
-    )
-    if scn is None:
-        LOG.info("No remaining products after filtering.")
-        return []
-
-    areas_to_resample = resample_args.pop("grids")
-    if "ewa_persist" in resample_args:
-        resample_args["persist"] = resample_args.pop("ewa_persist")
-    scenes_to_save = resample_scene(
-        scn,
-        areas_to_resample,
-        preserve_resolution=preserve_resolution,
-        is_polar2grid=use_polar2grid_defaults,
-        **resample_args,
-    )
-    return scenes_to_save
-
-
-def _save_scenes(scenes_to_save: list[tuple], reader_info, writer_args) -> list:
-    to_save = []
-    for scene_to_save, products_to_save in scenes_to_save:
-        overwrite_platform_name_with_aliases(scene_to_save)
-        reader_info.apply_p2g_name_to_scene(scene_to_save)
-        to_save = write_scene(
-            scene_to_save,
-            writer_args["writers"],
-            writer_args,
-            products_to_save,
-            to_save=to_save,
-        )
-    return to_save
-
-
-def _parse_glue_args(argv: list[str], use_polar2grid_defaults: bool):
-    parser, args, reader_group, resampling_group, writer_group = _main_args(argv, use_polar2grid_defaults)
-    # env used by some writers for default number of threads (ex. geotiff)
-    # must be done before writer args are parsed
-    os.environ["DASK_NUM_WORKERS"] = str(args.num_workers)
-
-    reader_subgroups = _add_component_parser_args(parser, "readers", args.readers or [])
-    writer_subgroups = _add_component_parser_args(parser, "writers", args.writers or [])
-    args = parser.parse_args(argv)
-    _validate_reader_writer_args(parser, args, use_polar2grid_defaults)
-
-    reader_args = _args_to_dict(args, reader_group._group_actions)
-    reader_names = reader_args.pop("readers")
-    scene_creation, load_args = _get_scene_init_load_args(args, reader_args, reader_names, reader_subgroups)
-    resample_args = _args_to_dict(args, resampling_group._group_actions)
-    writer_args = _args_to_dict(args, writer_group._group_actions)
-    writer_specific_args = _parse_writer_args(
-        writer_args["writers"], writer_subgroups, reader_names, use_polar2grid_defaults, args
-    )
-    writer_args.update(writer_specific_args)
-
-    if not args.filenames:
-        parser.print_usage()
-        parser.exit(1, "\nERROR: No data files provided (-f flag)\n")
-    return args, reader_args, reader_names, scene_creation, load_args, resample_args, writer_args
-
-
-def _get_glue_name(args):
-    reader_name = "NONE" if args.readers is None else args.readers[0]
-    writer_names = "-".join(args.writers or [])
-    return f"{reader_name}_{writer_names}"
-
-
-@contextlib.contextmanager
-def _create_profile_html_if(create_profile: Union[False, None, str], project_name: str, glue_name: str):
-    from dask.diagnostics import CacheProfiler, Profiler, ResourceProfiler, visualize
-
-    if create_profile is False:
-        yield
-        return
-    if create_profile is None:
-        profile_filename = "{project_name}_{glue_name}_{start_time:%Y%m%d_%H%M%S}.html"
-    else:
-        profile_filename = create_profile
-
-    start_time = datetime.now()
-    with CacheProfiler() as cprof, ResourceProfiler() as rprof, Profiler() as prof:
-        yield
-    end_time = datetime.now()
-
-    profile_filename = profile_filename.format(
-        project_name=project_name,
-        glue_name=glue_name,
-        start_time=start_time,
-        end_time=end_time,
-    )
-    profile_filename = os.path.abspath(profile_filename)
-    visualize([prof, rprof, cprof], file_path=profile_filename, show=False)
-    print(f"Profile HTML: file://{profile_filename}")
-
-
-def main(argv=sys.argv[1:]):
-    add_polar2grid_config_paths()
-    USE_POLAR2GRID_DEFAULTS = _get_p2g_defaults_env_var()
-    args, reader_args, reader_names, scene_creation, load_args, resample_args, writer_args = _parse_glue_args(
-        argv, USE_POLAR2GRID_DEFAULTS
-    )
-    glue_name = _get_glue_name(args)
-    rename_log = _prepare_initial_logging(args, glue_name)
-    # Set up dask and the number of workers
-    if args.num_workers:
-        dask.config.set(num_workers=args.num_workers)
-
-    with _create_profile_html_if(
-        args.create_profile,
-        "polar2grid" if USE_POLAR2GRID_DEFAULTS else "geo2grid",
-        glue_name,
-    ):
-        return _run_processing(
-            args,
-            reader_args,
-            reader_names,
-            scene_creation,
-            load_args,
-            resample_args,
-            writer_args,
-            glue_name,
-            rename_log,
-            is_polar2grid=USE_POLAR2GRID_DEFAULTS,
-        )
-
-
-def _run_processing(
-    args,
-    reader_args,
-    reader_names,
-    scene_creation,
-    load_args,
-    resample_args,
-    writer_args,
-    glue_name,
-    rename_log,
-    is_polar2grid,
-):
-    # Create a Scene, analyze the provided files
-    LOG.info("Sorting and reading input files...")
-    scn = _create_scene(scene_creation)
-    if scn is None:
-        return -1
-
-    # Rename the log file
-    if rename_log:
-        stime = getattr(scn, "start_time", scn.attrs.get("start_time"))
-        rename_log_file(glue_name + stime.strftime("_%Y%m%d_%H%M%S.log"))
-
-    # Load the actual data arrays and metadata (lazy loaded as dask arrays)
-    LOG.info("Loading product metadata from files...")
-    reader_info = ReaderProxyBase.from_reader_name(scene_creation["reader"], scn, load_args["products"])
-    if args.list_products or args.list_products_all:
-        _print_list_products(reader_info, is_polar2grid, not args.list_products_all)
-        return 0
-
-    load_args.pop("products")
-    products = reader_info.get_satpy_products_to_load()
-    if not products:
-        return -1
-    scn.load(products, **load_args)
-
-    filter_kwargs = {
-        "sza_threshold": reader_args["sza_threshold"],
-        "day_fraction": reader_args["filter_day_products"],
-        "night_fraction": reader_args["filter_night_products"],
-    }
-    scenes_to_save = _resample_scene_to_grids(
-        scn,
-        reader_names,
-        resample_args,
-        filter_kwargs,
-        args.preserve_resolution,
-        is_polar2grid,
-    )
-    to_save = _save_scenes(scenes_to_save, reader_info, writer_args)
-
-    if args.progress:
-        pbar = ProgressBar()
-        pbar.register()
-
-    LOG.info("Computing products and saving data to writers...")
-    if not to_save:
-        LOG.warning(
-            "No product files produced given available valid data and "
-            "resampling settings. This can happen if the writer "
-            "detects that no valid output will be written or the "
-            "input data does not overlap with the target grid."
-        )
-    compute_writer_results(to_save)
-    LOG.info("SUCCESS")
-    return 0
 
 
 if __name__ == "__main__":
