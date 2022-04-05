@@ -158,14 +158,6 @@ class AreaDefResolver:
         return area_def
 
 
-def _default_grid(resampler, is_polar2grid):
-    if resampler in [None, "native"]:
-        default_target = "MAX"
-    else:
-        default_target = "wgs84_fit" if is_polar2grid else "MAX"
-    return default_target
-
-
 def resample_scene(
     input_scene: Scene,
     areas_to_resample: ListOfAreas,
@@ -232,31 +224,28 @@ def _get_groups_to_resample(
     is_polar2grid: bool,
     user_resample_kwargs: dict,
 ) -> dict:
-    if resampler is None:
-        resampling_dtree = ResamplerDecisionTree.from_configs()
-        resampling_groups = _create_resampling_groups(
-            input_scene, resampling_dtree, user_resample_kwargs, is_polar2grid
-        )
-    else:
-        default_target = _default_grid(resampler, is_polar2grid)
-        rs_kwargs = _hashable_kwargs(user_resample_kwargs)
-        resampling_groups = {(resampler, rs_kwargs, default_target): None}
-    return resampling_groups
-
-
-def _create_resampling_groups(input_scene, resampling_dtree, user_resample_kwargs, is_polar2grid):
+    resampling_dtree = ResamplerDecisionTree.from_configs()
     resampling_groups = {}
     for data_id in input_scene.keys():
         resampling_args = resampling_dtree.find_match(**input_scene[data_id].attrs)
-        resampler = resampling_args.get("resampler")
+        default_resampler = resampling_args.get("resampler")
         resampler_kwargs = resampling_args.get("kwargs", {}).copy()
         resampler_kwargs.update(user_resample_kwargs)
         default_target = resampling_args.get("default_target", None)
+        resampler = resampler if resampler is not None else default_resampler
         if default_target is None:
             default_target = _default_grid(resampler, is_polar2grid)
         hashable_kwargs = _hashable_kwargs(resampler_kwargs)
         resampling_groups.setdefault((resampler, hashable_kwargs, default_target), []).append(data_id)
     return resampling_groups
+
+
+def _default_grid(resampler, is_polar2grid):
+    if resampler in [None, "native"]:
+        default_target = "MAX"
+    else:
+        default_target = "wgs84_fit" if is_polar2grid else "MAX"
+    return default_target
 
 
 def _hashable_kwargs(kwargs):

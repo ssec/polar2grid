@@ -95,7 +95,7 @@ from polar2grid.resample._resample_scene import resample_scene
             True,
             DaskEWAResampler,
             {"weight_distance_max": 3.0, "maximum_weight_mode": True},
-            {"weight_distance_max": 3.0, "maximum_weight_mode": True},
+            {"weight_delta_max": 40.0, "weight_distance_max": 3.0, "maximum_weight_mode": True},
         ),
         (
             lazy_fixture("viirs_sdr_i01_scene"),
