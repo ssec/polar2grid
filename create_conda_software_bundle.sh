@@ -61,8 +61,7 @@ cd ${SB_NAME} || oops "Couldn't change to software bundle directory"
 
 echo "Copying user grid directory to software bundle"
 cp -r ${BUNDLE_SCRIPTS_DIR}/grid_configs .
-cp -r ${BUNDLE_SCRIPTS_DIR}/colormaps .
-cp -r ${BUNDLE_SCRIPTS_DIR}/rescale_configs .
+ln -s etc/polar2grid/colormaps .
 
 mkdir -p gshhg_data || oops "Could not make GSHHG data directory"
 pushd gshhg_data
