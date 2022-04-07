@@ -27,7 +27,7 @@ composites:
     optional_prerequisites:
       - name: '1'
         resolution: 250
-        modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
+        modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: true_color
     high_resolution_band: red
   false_color:
@@ -45,7 +45,7 @@ composites:
     optional_prerequisites:
       - name: '2'
         resolution: 250
-        modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
+        modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: true_color
     high_resolution_band: green
   fog:
