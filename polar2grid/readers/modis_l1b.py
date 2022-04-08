@@ -130,6 +130,7 @@ angle is less than 90 degrees.
 """
 from __future__ import annotations
 
+import argparse
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
@@ -249,5 +250,12 @@ def add_reader_argument_groups(
         action=ExtendConstAction,
         const=_AWIPS_FALSE_COLOR,
         help="Add individual CREFL corrected products to create " "the 'false_color' composite in AWIPS.",
+    )
+    group.add_argument(
+        "--mask-saturated",
+        default=False,
+        action="store_true",
+        help=argparse.SUPPRESS,
+        # help="Mask saturated band 2 pixels as invalid instead of clipping to max reflectance",
     )
     return group, None
