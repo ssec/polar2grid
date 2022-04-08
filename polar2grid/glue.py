@@ -77,6 +77,8 @@ _PLATFORM_ALIASES = {
     "aqua": "aqua",
     "terra": "terra",
     "gcom-w1": "gcom-w1",
+    "metop-a": "metopa",
+    "metop-b": "metopb",
 }
 
 
