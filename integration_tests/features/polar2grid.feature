@@ -25,7 +25,7 @@ Feature: Test polar2grid output images
 
     Examples: AVHRR
       | command                          | source            | output             |
-      | polar2grid.sh -r avhrr -w geotiff -vv -f | avhrr/input/test1 | avhrr/output/test1 |
+      | polar2grid.sh -r avhrr_l1b_aapp -w geotiff -vv -f | avhrr/input/test1 | avhrr/output/test1 |
 
     Examples: MODIS
       | command                                                                                                                                   | source            | output             |
