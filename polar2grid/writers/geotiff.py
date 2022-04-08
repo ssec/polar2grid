@@ -111,15 +111,17 @@ def add_writer_argument_groups(parser, group=None):
         "--scale-offset-tags",
         default=["scale", "offset"],
         type=_check_tags,
-        help="Specify custom geotiff tags for enhancement metadata. Should be "
-        "two comma-separated names for the metadata tags. Defaults to "
-        "'scale,offset'. Specify 'NONE' to not save the tags.",
+        # help="Specify custom geotiff tags for enhancement metadata. Should be "
+        # "two comma-separated names for the metadata tags. Defaults to "
+        # "'scale,offset'. Specify 'NONE' to not save the tags.",
+        help=SUPPRESS,
     )
     group.add_argument(
         "--colormap-tag",
         default="colormap",
         type=lambda input_str: None if input_str == "NONE" else input_str,
-        help="Specify the custom geotiff tag where a CSV version of an applied " "colormap (if any) will be saved.",
+        # help="Specify the custom geotiff tag where a CSV version of an applied " "colormap (if any) will be saved.",
+        help=SUPPRESS,
     )
     group.add_argument(
         "--gdal-num-threads",

@@ -336,6 +336,7 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
             "acspo",
             "amsr2_l1b",
             "amsr_l2_gaasp",
+            "avhrr_l1b_aapp",
             "clavrx",
             "mersi2_l1b",
             "mirs",

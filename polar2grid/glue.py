@@ -77,6 +77,13 @@ _PLATFORM_ALIASES = {
     "aqua": "aqua",
     "terra": "terra",
     "gcom-w1": "gcom-w1",
+    "metop-a": "metopa",
+    "metop-b": "metopb",
+}
+
+
+_SENSOR_ALIASES = {
+    "avhrr-3": "avhrr",
 }
 
 
@@ -91,6 +98,24 @@ def _overwrite_platform_name_with_aliases(scn):
             continue
         pname = _get_platform_name_alias(data_arr.attrs["platform_name"])
         data_arr.attrs["platform_name"] = pname
+
+
+def _get_sensor_alias(satpy_sensor):
+    if not isinstance(satpy_sensor, set):
+        satpy_sensor = {satpy_sensor}
+    new_sensor = {_SENSOR_ALIASES.get(sname, sname) for sname in satpy_sensor}
+    if len(new_sensor) == 1:
+        return new_sensor.pop()
+    return new_sensor
+
+
+def _overwrite_sensor_with_aliases(scn):
+    """Change 'sensor' for every DataArray to Polar2Grid expectations."""
+    for data_arr in scn:
+        if "sensor" not in data_arr.attrs:
+            continue
+        pname = _get_sensor_alias(data_arr.attrs["sensor"])
+        data_arr.attrs["sensor"] = pname
 
 
 def _write_scene(
@@ -228,6 +253,7 @@ def _save_scenes(scenes_to_save: list[tuple], reader_info, writer_args) -> list:
     to_save = []
     for scene_to_save, products_to_save in scenes_to_save:
         _overwrite_platform_name_with_aliases(scene_to_save)
+        _overwrite_sensor_with_aliases(scene_to_save)
         reader_info.apply_p2g_name_to_scene(scene_to_save)
         to_save = _write_scene(
             scene_to_save,
