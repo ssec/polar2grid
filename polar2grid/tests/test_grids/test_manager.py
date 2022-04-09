@@ -22,9 +22,21 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Test grid manager."""
 
+from pyresample import AreaDefinition, DynamicAreaDefinition
+
 from polar2grid.grids import GridManager
 
 
-def test_grid_manager_basic(builtin_test_grids_conf):
+def test_grid_manager_basic(builtin_test_grids_conf, viirs_sdr_i_swath_def):
     """Test basic parsing of .conf files."""
-    GridManager(*builtin_test_grids_conf)
+    gm = GridManager(*builtin_test_grids_conf)
+    for grid_name in gm.grid_information:
+        grid_def = gm.get_grid_definition(grid_name)
+        area_def = grid_def.to_satpy_area()
+        assert isinstance(area_def, (AreaDefinition, DynamicAreaDefinition))
+        if isinstance(area_def, DynamicAreaDefinition):
+            new_area_def = area_def.freeze(viirs_sdr_i_swath_def)
+            assert new_area_def.shape[0] > 0
+            assert new_area_def.shape[1] > 0
+            assert new_area_def.area_extent[0] < new_area_def.area_extent[2]
+            assert new_area_def.area_extent[1] < new_area_def.area_extent[3]
