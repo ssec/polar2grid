@@ -144,17 +144,33 @@ jobs:
         run: mamba env update -n test-environment -f continuous_integration/environment.yaml
         if: steps.cache.outputs.cache-hit != 'true'
 
-      - name: Install Polar2Grid
+      - name: Install Polar2Grid on non-Windows
         shell: bash -l {0}
         run: |
           pip install --no-deps -e .
+        if: runner.os != 'Windows'
 
-      - name: Run unit tests
+      - name: Run unit tests on non-Windows
         shell: bash -l {0}
         run: |
           pytest --cov=polar2grid polar2grid/tests --cov-report=
           polar2grid --help
           geo2grid --help
+        if: runner.os != 'Windows'
+
+      - name: Install Polar2Grid on Windows
+        shell: powershell
+        run: |
+          pip install --no-deps -e .
+        if: runner.os == 'Windows'
+
+      - name: Run unit tests on Windows
+        shell: powershell
+        run: |
+          pytest --cov=polar2grid polar2grid/tests --cov-report=
+          polar2grid --help
+          geo2grid --help
+        if: runner.os == 'Windows'
 
       - name: Coveralls Parallel
         uses: AndreMiras/coveralls-python-action@develop
