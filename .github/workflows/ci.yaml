@@ -38,7 +38,8 @@ jobs:
           python-version: "3.10"
           activate-environment: test-environment
 
-      - name: Set cache date
+      - name: Set cache environment variablesyy
+        shell: bash -l {0}
         run: |
           echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
           CONDA_PREFIX=$(python -c "import sys; print(sys.prefix)")
@@ -126,7 +127,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           activate-environment: test-environment
 
-      - name: Set cache date
+      - name: Set cache environment variablesyy
+        shell: bash -l {0}
         run: |
           echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
           CONDA_PREFIX=$(python -c "import sys; print(sys.prefix)")
