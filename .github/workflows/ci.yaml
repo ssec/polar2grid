@@ -7,6 +7,9 @@ concurrency:
 
 on: [push, pull_request]
 
+env:
+  CACHE_NUMBER: 0
+
 jobs:
   # build website
   website:
@@ -37,14 +40,13 @@ jobs:
 
       - name: Set cache date
         run: |
-          env
           echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+          CONDA_PREFIX=$(python -c "import sys; print(sys.prefix)")
           echo "CONDA_PREFIX=$CONDA_PREFIX" >> $GITHUB_ENV
 
       - uses: actions/cache@v3
         with:
-          path: "${{ env.CONDA }}/envs/test-environment"
-          #path: ${{ env.CONDA_PREFIX }}
+          path: ${{ env.CONDA_PREFIX }}
           key: ubuntu-latest-3.10-conda-${{ hashFiles('continuous_integration/environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
@@ -126,14 +128,13 @@ jobs:
 
       - name: Set cache date
         run: |
-          env
           echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+          CONDA_PREFIX=$(python -c "import sys; print(sys.prefix)")
           echo "CONDA_PREFIX=$CONDA_PREFIX" >> $GITHUB_ENV
 
       - uses: actions/cache@v3
         with:
-          path: "${{ env.CONDA }}/envs/test-environment"
-#          path: ${{ env.CONDA_PREFIX }}
+          path: ${{ env.CONDA_PREFIX }}
           key: ${{ matrix.os }}-${{matrix.python-version}}-conda-${{ hashFiles('continuous_integration/environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
