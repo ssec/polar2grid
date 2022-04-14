@@ -105,8 +105,20 @@ jobs:
           miniforge-version: latest
           use-mamba: true
           python-version: ${{ matrix.python-version }}
-          environment-file: continuous_integration/environment.yaml
           activate-environment: test-environment
+
+      - name: Set cache date
+        run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+
+      - uses: actions/cache@v2
+        with:
+          path: ${{ env.CONDA_PREFIX }}
+          key: ${{ matrix.os }}-${{matrix.python-version}}-conda-${{ hashFiles('continuous_integration/environment.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+        id: cache
+
+      - name: Update environment
+        run: mamba env update -n test-environment -f continuous_integration/environment.yml
+        if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Install Polar2Grid on non-Windows
         shell: bash -l {0}
