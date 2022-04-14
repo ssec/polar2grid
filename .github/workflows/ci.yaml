@@ -32,8 +32,25 @@ jobs:
           miniforge-variant: Mambaforge
           miniforge-version: latest
           use-mamba: true
-          environment-file: continuous_integration/environment.yaml
+          python-version: "3.10"
           activate-environment: test-environment
+
+      - name: Set cache date
+        run: |
+          env
+          echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+          echo "CONDA_PREFIX=$CONDA_PREFIX" >> $GITHUB_ENV
+
+      - uses: actions/cache@v3
+        with:
+          path: "${{ env.CONDA }}/envs/test-environment"
+          #path: ${{ env.CONDA_PREFIX }}
+          key: ubuntu-latest-3.10-conda-${{ hashFiles('continuous_integration/environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+        id: cache
+
+      - name: Update environment
+        run: mamba env update -n test-environment -f continuous_integration/environment.yaml
+        if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Install Polar2Grid
         shell: bash -l {0}
@@ -109,12 +126,14 @@ jobs:
 
       - name: Set cache date
         run: |
+          env
           echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
           echo "CONDA_PREFIX=$CONDA_PREFIX" >> $GITHUB_ENV
 
       - uses: actions/cache@v3
         with:
-          path: ${{ env.CONDA_PREFIX }}
+          path: "${{ env.CONDA }}/envs/test-environment"
+#          path: ${{ env.CONDA_PREFIX }}
           key: ${{ matrix.os }}-${{matrix.python-version}}-conda-${{ hashFiles('continuous_integration/environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
