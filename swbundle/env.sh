@@ -42,7 +42,7 @@ done
 THIS_SCRIPT_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
 P2G_CONDA_BASE="${THIS_SCRIPT_HOME}/libexec/python_runtime"
 P2G_METADATA="${P2G_CONDA_BASE}/lib/python*/site-packages/polar2grid-*.dist-info/METADATA"
-METADATA_CHECKSUM=$(openssl sha256 $P2G_METADATA)
+METADATA_CHECKSUM=$(${P2G_CONDA_BASE}/bin/openssl sha256 $P2G_METADATA)
 
 
 oops() {
