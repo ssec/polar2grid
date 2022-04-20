@@ -1,7 +1,7 @@
 Geo2Grid software bundle
 ========================
 
-Copyright (C) 2012-2019 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
+Copyright (C) 2012-2022 Space Science and Engineering Center (SSEC), University of Wisconsin-Madison.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

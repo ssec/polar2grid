@@ -37,7 +37,8 @@ else
     exit 1
 fi
 
-if [[ $SB_NAME == *"polar"* ]]; then
+sb_base_name=$(basename $SB_NAME)
+if [[ $sb_base_name == *"polar"* ]]; then
     PROJECT="P2G"
 else
     PROJECT="G2G"
