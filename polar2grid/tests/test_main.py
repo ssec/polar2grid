@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2021 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2022 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -20,34 +20,29 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    January 2021
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
-"""Simple wrapper around the Polar2Grid and Geo2Grid glue scripts."""
+"""Tests for the __main__.py script."""
 
-import os
-import sys
+import pytest
+
+from polar2grid.__main__ import g2g_main, p2g_main
 
 
-def p2g_main(argv=sys.argv[1:]):
-    from polar2grid.glue import main
+@pytest.mark.parametrize(
+    ("main_func", "exp_reader"),
+    [
+        (p2g_main, "viirs_sdr"),
+        (g2g_main, "abi_l1b"),
+    ],
+)
+def test_main_call(main_func, exp_reader, capsys):
+    with pytest.raises(SystemExit) as e:
+        main_func(["-h"])
+    assert e.value.code == 0
+    sout = capsys.readouterr()
+    assert exp_reader in sout.out
 
-    os.environ["USE_POLAR2GRID_DEFAULTS"] = "1"
-    return main(argv=argv)
 
+def test_call_main_script():
+    import subprocess
 
-def g2g_main(argv=sys.argv[1:]):
-    from polar2grid.glue import main
-
-    os.environ["USE_POLAR2GRID_DEFAULTS"] = "0"
-    return main(argv=argv)
-
-
-if __name__ == "__main__":
-    from polar2grid.glue import main
-
-    sys.exit(main())
+    subprocess.check_call(["python3", "-m", "polar2grid", "-h"])
