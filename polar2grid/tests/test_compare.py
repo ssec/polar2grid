@@ -119,16 +119,6 @@ def _create_awips_tiled(base_dir, img_data):
             x_var[:] = np.arange(img_arr.shape[-1], dtype=np.float32)
 
 
-def _is_multivar_format(expected_file_func):
-    return {
-        _create_hdf5: True,
-    }.get(expected_file_func, False)
-
-
-def _files_per_variable(expected_file_func):
-    return {_create_awips_tiled: 2}.get(expected_file_func, 1)
-
-
 @pytest.mark.parametrize(
     ("expected_file_func", "actual_file_func"),
     [
@@ -184,8 +174,8 @@ def test_basic_compare(
     dtype = None
     if dtype is not None:
         args.extend(["--dtype", dtype])
+    html_file = tmp_path / "test_output.html"
     if include_html:
-        html_file = tmp_path / "test_output.html"
         args.extend(["--html", str(html_file)])
 
     num_diff_files = main(args)
@@ -206,10 +196,20 @@ def _check_num_diff_files(num_diff_files, exp_num_diff, expected_file_func, actu
         assert num_diff_files == exp_num_diff * _files_per_variable(expected_file_func)
 
 
+def _is_multivar_format(expected_file_func):
+    return {
+        _create_hdf5: True,
+    }.get(expected_file_func, False)
+
+
+def _files_per_variable(expected_file_func):
+    return {_create_awips_tiled: 2}.get(expected_file_func, 1)
+
+
 def _check_html_output(include_html, html_file, expected_file_func, actual_file_func):
+    base_dir = os.path.dirname(html_file)
     if include_html:
         assert os.path.isfile(html_file)
-        base_dir = os.path.dirname(html_file)
         img_glob = os.path.join(base_dir, "_images", "*.png")
         if actual_file_func is not expected_file_func:
             # no files produced when files are missing
@@ -221,4 +221,4 @@ def _check_html_output(include_html, html_file, expected_file_func, actual_file_
         else:
             assert len(glob(img_glob)) == 0
     else:
-        assert not os.path.isfile(html_file)
+        assert len(glob(os.path.join(base_dir, "*.html"))) == 0
