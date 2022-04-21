@@ -22,6 +22,9 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Tests for the compare.py script."""
 
+import os
+from glob import glob
+
 import numpy as np
 import pytest
 
@@ -87,8 +90,6 @@ def test_basic_compare(
     args = [
         str(expected_dir),
         str(actual_dir),
-        "--dtype",
-        dtype or "float32",
         "--margin-of-error",
         str(margin_of_error),
     ]
@@ -98,9 +99,25 @@ def test_basic_compare(
         args.extend(["--html", str(html_file)])
 
     num_diff_files = main(args)
-    if actual_file_func is None and expected_file_func is None:
+    have_files = actual_file_func is not None and expected_file_func is not None
+    if not have_files:
         assert num_diff_files == 0
     elif actual_file_func is not expected_file_func:
         assert num_diff_files != 0
     else:
         assert num_diff_files == exp_num_diff
+
+    _check_html_output(include_html, html_file, have_files)
+
+
+def _check_html_output(include_html, html_file, have_files):
+    if include_html:
+        assert os.path.isfile(html_file)
+        base_dir = os.path.dirname(html_file)
+        img_glob = os.path.join(base_dir, "_images", "*.png")
+        if have_files:
+            assert len(glob(img_glob)) != 0
+        else:
+            assert len(glob(img_glob)) == 0
+    else:
+        assert not os.path.isfile(html_file)
