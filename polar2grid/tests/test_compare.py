@@ -66,9 +66,10 @@ def _create_geotiffs(base_dir, img_data):
 
 
 def _create_hdf5(base_dir, img_data):
+    import h5py
+
     if not isinstance(img_data, (list, tuple)):
         img_data = [img_data]
-    import h5py
 
     h5_fn = os.path.join(base_dir, "test.h5")
     with h5py.File(h5_fn, "w") as h:
@@ -85,10 +86,48 @@ def _create_binaries(base_dir, img_data):
         img_arr.tofile(bin_fn)
 
 
+def _create_awips_tiled(base_dir, img_data):
+    from netCDF4 import Dataset
+
+    if not isinstance(img_data, (list, tuple)):
+        img_data = [img_data]
+    # 2 tiles per dataset
+    for idx, img_arr in enumerate(img_data):
+        for tile_id in ("T01", "T02"):
+            fn = f"SSEC_AII_gcom-w1_amsr2_image{idx}_LCC_T{tile_id}_20160719_1903.nc"
+            fp = os.path.join(base_dir, fn)
+            nc = Dataset(fp, "w")
+            nc.createDimension("y", img_arr.shape[-2])
+            nc.createDimension("x", img_arr.shape[-1])
+            dims = ("y", "x")
+            if img_arr.ndim == 3:
+                dims = ("bands",) + dims
+                nc.createDimension("bands", img_arr.shape[0])
+            nc_var = nc.createVariable("data", img_arr.dtype, dimensions=dims)
+            nc_var[:] = img_arr
+            nc_var.grid_mapping = "lcc_grid_mapping"
+
+            lcc_grid_mapping = nc.createVariable("lcc_grid_mapping", np.int32)
+            lcc_grid_mapping.grid_mapping_name = "lambert_conformal_conic"
+            lcc_grid_mapping.standard_parallel = 25.0
+            lcc_grid_mapping.longitude_of_central_meridian = 0.0
+            lcc_grid_mapping.latitude_of_projection_origin = 35.0
+
+            y_var = nc.createVariable("y", np.float32, dimensions=("y",))
+            y_var[:] = np.arange(img_arr.shape[-2], dtype=np.float32)
+            x_var = nc.createVariable("x", np.float32, dimensions=("x",))
+            x_var[:] = np.arange(img_arr.shape[-1], dtype=np.float32)
+
+
 def _is_multivar_format(expected_file_func):
     return {
         _create_hdf5: True,
+        # _create_awips_tiled: True,
     }.get(expected_file_func, False)
+
+
+def _files_per_variable(expected_file_func):
+    return {_create_awips_tiled: 2}.get(expected_file_func, 1)
 
 
 @pytest.mark.parametrize(
@@ -99,6 +138,7 @@ def _is_multivar_format(expected_file_func):
         (_create_geotiffs, _create_geotiffs),
         (_create_hdf5, _create_hdf5),
         (_create_binaries, _create_binaries),
+        (_create_awips_tiled, _create_awips_tiled),
     ],
 )
 @pytest.mark.parametrize(
@@ -134,8 +174,6 @@ def test_basic_compare(
     if actual_file_func:
         actual_file_func(actual_dir, actual_data)
 
-    html_file = tmp_path / "test_output.html"
-    dtype = None
     margin_of_error = 81231 / 1514041.44
 
     args = [
@@ -144,12 +182,19 @@ def test_basic_compare(
         "--margin-of-error",
         str(margin_of_error),
     ]
+    dtype = None
     if dtype is not None:
         args.extend(["--dtype", dtype])
     if include_html:
+        html_file = tmp_path / "test_output.html"
         args.extend(["--html", str(html_file)])
 
     num_diff_files = main(args)
+    _check_num_diff_files(num_diff_files, exp_num_diff, expected_file_func, actual_file_func)
+    _check_html_output(include_html, html_file, expected_file_func, actual_file_func)
+
+
+def _check_num_diff_files(num_diff_files, exp_num_diff, expected_file_func, actual_file_func):
     have_files = actual_file_func is not None and expected_file_func is not None
     if not have_files:
         assert num_diff_files == 0
@@ -159,12 +204,10 @@ def test_basic_compare(
         # multiple variables in one file
         assert num_diff_files == (1 if exp_num_diff > 0 else 0)
     else:
-        assert num_diff_files == exp_num_diff
-
-    _check_html_output(include_html, html_file, actual_file_func, expected_file_func)
+        assert num_diff_files == exp_num_diff * _files_per_variable(expected_file_func)
 
 
-def _check_html_output(include_html, html_file, actual_file_func, expected_file_func):
+def _check_html_output(include_html, html_file, expected_file_func, actual_file_func):
     if include_html:
         assert os.path.isfile(html_file)
         base_dir = os.path.dirname(html_file)
