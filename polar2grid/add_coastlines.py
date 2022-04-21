@@ -138,14 +138,8 @@ def _apply_decorator_alignment(dc, align, is_vertical):
         dc.align_right()
 
 
-def _add_colorbar_to_image(input_tiff, img, num_bands, args):
+def _add_colorbar_to_image(input_tiff, img, num_bands, font, tick_color, cmin, cmax, align, vertical, **kwargs):
     from pydecorate import DecoratorAGG
-
-    font_color = args.colorbar_text_color
-    font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
-    font_path = find_font(args.colorbar_font, args.colorbar_text_size)
-    # this actually needs an aggdraw font
-    font = Font(font_color, font_path, size=args.colorbar_text_size)
 
     # figure out what colormap we are dealing with
     rio_ds = rasterio.open(input_tiff)
@@ -158,35 +152,20 @@ def _add_colorbar_to_image(input_tiff, img, num_bands, args):
         raise ValueError("RGB and RGBA geotiffs must have a colormap " "specified with '--colorbar-colormap-file'.")
     if num_bands in (3, 4) or colormap_csv is not None:
         cmap = Colormap.from_file(colormap_csv)
-    vmin, vmax = _get_colorbar_vmin_vmax(
-        args.colorbar_min, args.colorbar_max, rio_ds, input_dtype, is_palette=is_palette
-    )
+    vmin, vmax = _get_colorbar_vmin_vmax(cmin, cmax, rio_ds, input_dtype, is_palette=is_palette)
     cmap = cmap.set_range(vmin, vmax, inplace=False)
 
     dc = DecoratorAGG(img)
-    _apply_decorator_alignment(dc, args.colorbar_align, args.colorbar_vertical)
-
-    if args.colorbar_vertical:
+    _apply_decorator_alignment(dc, align, vertical)
+    if vertical:
         dc.write_vertically()
     else:
         dc.write_horizontally()
 
-    if args.colorbar_width is None or args.colorbar_height is None:
-        LOG.warning("'--colorbar-width' or '--colorbar-height' were " "not specified. Forcing '--colorbar-extend'.")
-        args.colorbar_extend = True
-    kwargs = {}
-    if args.colorbar_width:
-        kwargs["width"] = args.colorbar_width
-    if args.colorbar_height:
-        kwargs["height"] = args.colorbar_height
     dc.add_scale(
         cmap,
-        extend=args.colorbar_extend,
         font=font,
-        line=font_color,
-        tick_marks=args.colorbar_tick_marks,
-        title=args.colorbar_title,
-        unit=args.colorbar_units,
+        line=tick_color,
         **kwargs,
     )
 
@@ -524,7 +503,34 @@ def _process_one_image(input_tiff, output_filename, pycoast_options, shapes_dir,
         cw.add_overlay_from_dict(pycoast_options, area_def, background=img)
 
     if args.add_colorbar:
-        _add_colorbar_to_image(input_tiff, img, num_bands, args)
+        font_color = args.colorbar_text_color
+        font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
+        font_path = find_font(args.colorbar_font, args.colorbar_text_size)
+        # this actually needs an aggdraw font
+        font = Font(font_color, font_path, size=args.colorbar_text_size)
+
+        if args.colorbar_width is None or args.colorbar_height is None:
+            LOG.warning("'--colorbar-width' or '--colorbar-height' were " "not specified. Forcing '--colorbar-extend'.")
+            args.colorbar_extend = True
+
+        colorbar_kwargs = {
+            "font": font,
+            "tick_color": font_color,
+            "cmin": args.colorbar_min,
+            "cmax": args.colorbar_max,
+            "align": args.colorbar_align,
+            "vertical": args.colorbar_vertical,
+            "extend": args.colorbar_extend,
+            "tick_marks": args.colorbar_tick_marks,
+            "title": args.colorbar_title,
+            "unit": args.colorbar_units,
+        }
+        if args.colorbar_width:
+            colorbar_kwargs["width"] = args.colorbar_width
+        if args.colorbar_height:
+            colorbar_kwargs["height"] = args.colorbar_height
+
+        _add_colorbar_to_image(input_tiff, img, num_bands, **colorbar_kwargs)
 
     img.save(output_filename)
 
