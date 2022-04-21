@@ -138,22 +138,8 @@ def _apply_decorator_alignment(dc, align, is_vertical):
         dc.align_right()
 
 
-def _add_colorbar_to_image(input_tiff, img, num_bands, font, tick_color, cmin, cmax, align, vertical, **kwargs):
+def _add_colorbar_to_image(img, font, tick_color, align, vertical, **kwargs):
     from pydecorate import DecoratorAGG
-
-    # figure out what colormap we are dealing with
-    rio_ds = rasterio.open(input_tiff)
-    input_dtype = np.dtype(rio_ds.meta["dtype"])
-    colormap_csv = rio_ds.tags().get("colormap")
-    rio_ct = _get_rio_colormap(rio_ds, 1)
-    is_palette = rio_ct is not None
-    cmap = _convert_table_to_cmap_or_default_bw(input_dtype, rio_ct, num_bands)
-    if num_bands in (3, 4) and colormap_csv is None:
-        raise ValueError("RGB and RGBA geotiffs must have a colormap " "specified with '--colorbar-colormap-file'.")
-    if num_bands in (3, 4) or colormap_csv is not None:
-        cmap = Colormap.from_file(colormap_csv)
-    vmin, vmax = _get_colorbar_vmin_vmax(cmin, cmax, rio_ds, input_dtype, is_palette=is_palette)
-    cmap = cmap.set_range(vmin, vmax, inplace=False)
 
     dc = DecoratorAGG(img)
     _apply_decorator_alignment(dc, align, vertical)
@@ -163,7 +149,6 @@ def _add_colorbar_to_image(input_tiff, img, num_bands, font, tick_color, cmin, c
         dc.write_horizontally()
 
     dc.add_scale(
-        cmap,
         font=font,
         line=tick_color,
         **kwargs,
@@ -393,8 +378,9 @@ def main(argv=sys.argv[1:]):
     Image.MAX_IMAGE_PIXELS = None
     # gather all options into a single dictionary that we can pass to pycoast
     pycoast_options = _args_to_pycoast_dict(args)
+    colorbar_kwargs = _args_to_colorbar_kwargs(args) if args.add_colorbar else {}
     for input_tiff, output_filename in zip(args.input_tiff, args.output_filename):
-        _process_one_image(input_tiff, output_filename, pycoast_options, args.shapes_dir, args)
+        _process_one_image(input_tiff, output_filename, pycoast_options, args.shapes_dir, colorbar_kwargs)
 
 
 def _args_to_pycoast_dict(args):
@@ -478,6 +464,36 @@ def _args_to_pycoast_dict(args):
     return opts
 
 
+def _args_to_colorbar_kwargs(args):
+    font_color = args.colorbar_text_color
+    font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
+    font_path = find_font(args.colorbar_font, args.colorbar_text_size)
+    # this actually needs an aggdraw font
+    font = Font(font_color, font_path, size=args.colorbar_text_size)
+
+    if args.colorbar_width is None or args.colorbar_height is None:
+        LOG.warning("'--colorbar-width' or '--colorbar-height' were " "not specified. Forcing '--colorbar-extend'.")
+        args.colorbar_extend = True
+
+    colorbar_kwargs = {
+        "font": font,
+        "tick_color": font_color,
+        "cmin": args.colorbar_min,
+        "cmax": args.colorbar_max,
+        "align": args.colorbar_align,
+        "vertical": args.colorbar_vertical,
+        "extend": args.colorbar_extend,
+        "tick_marks": args.colorbar_tick_marks,
+        "title": args.colorbar_title,
+        "unit": args.colorbar_units,
+    }
+    if args.colorbar_width:
+        colorbar_kwargs["width"] = args.colorbar_width
+    if args.colorbar_height:
+        colorbar_kwargs["height"] = args.colorbar_height
+    return colorbar_kwargs
+
+
 def find_font(font_name, size):
     try:
         font = ImageFont.truetype(font_name, size)
@@ -489,7 +505,9 @@ def find_font(font_name, size):
         return font_path
 
 
-def _process_one_image(input_tiff, output_filename, pycoast_options, shapes_dir, args):
+def _process_one_image(
+    input_tiff: str, output_filename: str, pycoast_options: dict, shapes_dir: str, colorbar_kwargs: dict
+) -> None:
     LOG.info("Creating {} from {}".format(output_filename, input_tiff))
     img = Image.open(input_tiff)
     img_bands = img.getbands()
@@ -502,37 +520,29 @@ def _process_one_image(input_tiff, output_filename, pycoast_options, shapes_dir,
         cw = ContourWriterAGG(shapes_dir)
         cw.add_overlay_from_dict(pycoast_options, area_def, background=img)
 
-    if args.add_colorbar:
-        font_color = args.colorbar_text_color
-        font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
-        font_path = find_font(args.colorbar_font, args.colorbar_text_size)
-        # this actually needs an aggdraw font
-        font = Font(font_color, font_path, size=args.colorbar_text_size)
-
-        if args.colorbar_width is None or args.colorbar_height is None:
-            LOG.warning("'--colorbar-width' or '--colorbar-height' were " "not specified. Forcing '--colorbar-extend'.")
-            args.colorbar_extend = True
-
-        colorbar_kwargs = {
-            "font": font,
-            "tick_color": font_color,
-            "cmin": args.colorbar_min,
-            "cmax": args.colorbar_max,
-            "align": args.colorbar_align,
-            "vertical": args.colorbar_vertical,
-            "extend": args.colorbar_extend,
-            "tick_marks": args.colorbar_tick_marks,
-            "title": args.colorbar_title,
-            "unit": args.colorbar_units,
-        }
-        if args.colorbar_width:
-            colorbar_kwargs["width"] = args.colorbar_width
-        if args.colorbar_height:
-            colorbar_kwargs["height"] = args.colorbar_height
-
-        _add_colorbar_to_image(input_tiff, img, num_bands, **colorbar_kwargs)
+    if colorbar_kwargs:
+        cmin = colorbar_kwargs.pop("cmin")
+        cmax = colorbar_kwargs.pop("cmax")
+        cmap = _get_colormap_object(input_tiff, num_bands, cmin, cmax)
+        _add_colorbar_to_image(img, colormap=cmap, **colorbar_kwargs)
 
     img.save(output_filename)
+
+
+def _get_colormap_object(input_tiff, num_bands, cmin, cmax):
+    rio_ds = rasterio.open(input_tiff)
+    input_dtype = np.dtype(rio_ds.meta["dtype"])
+    colormap_csv = rio_ds.tags().get("colormap")
+    rio_ct = _get_rio_colormap(rio_ds, 1)
+    is_palette = rio_ct is not None
+    cmap = _convert_table_to_cmap_or_default_bw(input_dtype, rio_ct, num_bands)
+    if num_bands in (3, 4) and colormap_csv is None:
+        raise ValueError("RGB and RGBA geotiffs must have a colormap " "specified with '--colorbar-colormap-file'.")
+    if num_bands in (3, 4) or colormap_csv is not None:
+        cmap = Colormap.from_file(colormap_csv)
+    vmin, vmax = _get_colorbar_vmin_vmax(cmin, cmax, rio_ds, input_dtype, is_palette=is_palette)
+    cmap = cmap.set_range(vmin, vmax, inplace=False)
+    return cmap
 
 
 if __name__ == "__main__":
