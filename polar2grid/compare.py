@@ -546,6 +546,7 @@ def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
     input_arr = file_ext_to_array_func[input_ext](input_data_path)
     full_img = Image.fromarray(input_arr)
     full_size = full_img.size
+    max_width = min(full_size[0], max_width)
     width_ratio = full_size[0] // max_width
     new_size = (max_width, full_size[1] // width_ratio)
     scaled_img = full_img.resize(new_size)
