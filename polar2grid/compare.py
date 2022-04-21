@@ -51,6 +51,11 @@ class ArrayComparisonResult:
 @dataclass
 class VariableComparisonResult(ArrayComparisonResult):
     variable: str
+    variable_missing: bool
+
+    @property
+    def failed(self):
+        return super().failed or self.variable_missing
 
 
 @dataclass
@@ -136,7 +141,6 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
 
 
 def compare_array(array1, array2, plot=False, **kwargs) -> ArrayComparisonResult:
-
     if plot:
         plot_array(array1, array2, **kwargs)
     return isclose_array(array1, array2, **kwargs)
@@ -179,14 +183,17 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwarg
     return [arr_compare]
 
 
-def _get_geotiff_array(gtiff_fn, dtype=None, band_idx=1):
+def _get_geotiff_array(gtiff_fn, dtype=None):
     import rasterio
 
+    band_arrays = []
     with rasterio.open(gtiff_fn, "r") as gtiff_file:
-        arr = gtiff_file.read(band_idx)
-    if dtype is not None:
-        arr = arr.astype(dtype)
-    return arr
+        for band_idx in range(gtiff_file.count):
+            arr = gtiff_file.read(band_idx + 1)
+            if dtype is not None:
+                arr = arr.astype(dtype)
+            band_arrays.append(arr)
+    return np.concatenate(band_arrays)
 
 
 def _get_geotiff_colormap(gtiff_fn, band_idx=1):
@@ -201,38 +208,15 @@ def _get_geotiff_colormap(gtiff_fn, band_idx=1):
 
 def _compare_gtiff_colormaps(cmap1: dict, cmap2: dict, **kwargs) -> VariableComparisonResult:
     if cmap1 is None and cmap2 is None:
-        return VariableComparisonResult(True, 0, 0, False, "colormap")
+        return VariableComparisonResult(True, 0, 0, False, "colormap", True)
     len1 = len(cmap1) if cmap1 is not None else 0
     len2 = len(cmap2) if cmap2 is not None else 0
     if len1 != len2:
-        return VariableComparisonResult(False, abs(len2 - len1), max(len1, len2), True, "colormap")
+        return VariableComparisonResult(False, abs(len2 - len1), max(len1, len2), True, "colormap", False)
     arr1 = np.array([[control_point] + list(color) for control_point, color in cmap1.items()])
     arr2 = np.array([[control_point] + list(color) for control_point, color in cmap2.items()])
     array_result = compare_array(arr1, arr2, **kwargs)
-    return VariableComparisonResult(**array_result.__dict__, variable="colormap")
-
-
-def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
-    """Compare 2 8-bit AWIPS-compatible NetCDF3 files.
-
-    .. note::
-
-        The binary arrays will be converted to 32-bit floats before
-        comparison.
-
-    """
-    from netCDF4 import Dataset
-
-    nc1 = Dataset(nc1_name, "r")
-    nc2 = Dataset(nc2_name, "r")
-    image1_var = nc1["data"]
-    image2_var = nc2["data"]
-    image1_var.set_auto_maskandscale(False)
-    image2_var.set_auto_maskandscale(False)
-    image1_data = image1_var[:].astype(np.uint8).astype(np.float32)
-    image2_data = image2_var[:].astype(np.uint8).astype(np.float32)
-
-    return [compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error, **kwargs)]
+    return VariableComparisonResult(**array_result.__dict__, variable="colormap", variable_missing=False)
 
 
 def compare_netcdf(
@@ -251,7 +235,7 @@ def compare_netcdf(
         image2_var = nc2[v].data
         LOG.debug("Comparing data for variable '{}'".format(v))
         array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
-        var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
+        var_result = VariableComparisonResult(**array_result.__dict__, variable=v, variable_missing=False)
         results.append(var_result)
     return results
 
@@ -278,11 +262,17 @@ def compare_hdf5(h1_name, h2_name, variables, atol=0.0, margin_of_error=0.0, **k
 
     results = []
     for v in variables:
-        image1_var = h1[v]
-        image2_var = h2[v]
         LOG.debug("Comparing data for variable '{}'".format(v))
-        array_result = compare_array(image1_var[:], image2_var[:], atol=atol, margin_of_error=margin_of_error, **kwargs)
-        var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
+        image1_var = h1[v]
+        if v not in h2:
+            total_pixels = image1_var.size
+            var_result = VariableComparisonResult(False, total_pixels, total_pixels, True, v, True)
+        else:
+            image2_var = h2[v]
+            array_result = compare_array(
+                image1_var[:], image2_var[:], atol=atol, margin_of_error=margin_of_error, **kwargs
+            )
+            var_result = VariableComparisonResult(**array_result.__dict__, variable=v, variable_missing=False)
         results.append(var_result)
     return results
 
@@ -310,7 +300,6 @@ type_name_to_compare_func = {
     "binary": compare_binary,
     "gtiff": compare_geotiff,
     "geotiff": compare_geotiff,
-    "awips": compare_awips_netcdf,
     "netcdf": compare_netcdf,
     "hdf5": compare_hdf5,
     "png": compare_image,
@@ -546,6 +535,7 @@ def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
     input_arr = file_ext_to_array_func[input_ext](input_data_path)
     full_img = Image.fromarray(input_arr)
     full_size = full_img.size
+    max_width = min(full_size[0], max_width)
     width_ratio = full_size[0] // max_width
     new_size = (max_width, full_size[1] // width_ratio)
     scaled_img = full_img.resize(new_size)
@@ -610,7 +600,7 @@ def main(argv=sys.argv[1:]):
         "file_type",
         type=_file_type,
         nargs="?",
-        help="type of files being compare. If not provided it will be determined based on file extension.",
+        help="Type of files being compare. If not provided it will be determined based on file extension.",
     )
     parser.add_argument("input1", help="First filename or directory to compare. This is typically the expected output.")
     parser.add_argument("input2", help="Second filename or directory to compare. This is typicall the actual output.")
