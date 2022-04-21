@@ -51,6 +51,11 @@ class ArrayComparisonResult:
 @dataclass
 class VariableComparisonResult(ArrayComparisonResult):
     variable: str
+    variable_missing: bool
+
+    @property
+    def failed(self):
+        return super().failed or self.variable_missing
 
 
 @dataclass
@@ -203,15 +208,15 @@ def _get_geotiff_colormap(gtiff_fn, band_idx=1):
 
 def _compare_gtiff_colormaps(cmap1: dict, cmap2: dict, **kwargs) -> VariableComparisonResult:
     if cmap1 is None and cmap2 is None:
-        return VariableComparisonResult(True, 0, 0, False, "colormap")
+        return VariableComparisonResult(True, 0, 0, False, "colormap", True)
     len1 = len(cmap1) if cmap1 is not None else 0
     len2 = len(cmap2) if cmap2 is not None else 0
     if len1 != len2:
-        return VariableComparisonResult(False, abs(len2 - len1), max(len1, len2), True, "colormap")
+        return VariableComparisonResult(False, abs(len2 - len1), max(len1, len2), True, "colormap", False)
     arr1 = np.array([[control_point] + list(color) for control_point, color in cmap1.items()])
     arr2 = np.array([[control_point] + list(color) for control_point, color in cmap2.items()])
     array_result = compare_array(arr1, arr2, **kwargs)
-    return VariableComparisonResult(**array_result.__dict__, variable="colormap")
+    return VariableComparisonResult(**array_result.__dict__, variable="colormap", variable_missing=False)
 
 
 def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
@@ -253,7 +258,7 @@ def compare_netcdf(
         image2_var = nc2[v].data
         LOG.debug("Comparing data for variable '{}'".format(v))
         array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
-        var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
+        var_result = VariableComparisonResult(**array_result.__dict__, variable=v, variable_missing=False)
         results.append(var_result)
     return results
 
@@ -280,11 +285,17 @@ def compare_hdf5(h1_name, h2_name, variables, atol=0.0, margin_of_error=0.0, **k
 
     results = []
     for v in variables:
-        image1_var = h1[v]
-        image2_var = h2[v]
         LOG.debug("Comparing data for variable '{}'".format(v))
-        array_result = compare_array(image1_var[:], image2_var[:], atol=atol, margin_of_error=margin_of_error, **kwargs)
-        var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
+        image1_var = h1[v]
+        if v not in h2:
+            total_pixels = image1_var.size
+            var_result = VariableComparisonResult(False, total_pixels, total_pixels, True, v, True)
+        else:
+            image2_var = h2[v]
+            array_result = compare_array(
+                image1_var[:], image2_var[:], atol=atol, margin_of_error=margin_of_error, **kwargs
+            )
+            var_result = VariableComparisonResult(**array_result.__dict__, variable=v, variable_missing=False)
         results.append(var_result)
     return results
 

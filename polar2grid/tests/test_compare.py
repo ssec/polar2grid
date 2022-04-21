@@ -37,54 +37,68 @@ IMAGE4_RGB_UINT8_ZEROS = np.zeros((3,) + SHAPE1, dtype=np.uint8)
 IMAGE5_RGB_UINT8_ZEROS = np.zeros((3,) + SHAPE2, dtype=np.uint8)
 IMAGE6_RGBA_UINT8_ZEROS = np.zeros((4,) + SHAPE1, dtype=np.uint8)
 IMAGE7_RGB_UINT8_ONES = np.ones((3,) + SHAPE1, dtype=np.uint8)
+IMAGE_LIST1 = [IMAGE1_L_UINT8_ZEROS, IMAGE1_L_UINT8_ZEROS]
+IMAGE_LIST2 = [IMAGE1_L_UINT8_ZEROS, IMAGE2_L_UINT8_ZEROS, IMAGE4_RGB_UINT8_ZEROS]
 
 
-def _create_geotiff(gtiff_fn, img_data):
+def _create_geotiffs(base_dir, img_data):
     import rasterio
 
-    band_count = 1 if img_data.ndim == 2 else img_data.shape[0]
-    if isinstance(img_data, (list, tuple)):
-        img_data = np.concatenate(img_data, axis=0)
+    if not isinstance(img_data, (list, tuple)):
+        img_data = [img_data]
 
-    with rasterio.open(
-        gtiff_fn,
-        "w",
-        driver="GTiff",
-        count=band_count,
-        height=img_data.shape[-2],
-        width=img_data.shape[-1],
-        dtype=img_data.dtype,
-    ) as gtiff_file:
-        if img_data.ndim == 2:
-            img_data = img_data[None, :, :]
-        for band_idx, band_arr in enumerate(img_data):
-            gtiff_file.write(band_arr, band_idx + 1)
+    for idx, img_arr in enumerate(img_data):
+        band_count = 1 if img_arr.ndim == 2 else img_arr.shape[0]
+        gtiff_fn = os.path.join(base_dir, f"test{idx}.tif")
+        with rasterio.open(
+            gtiff_fn,
+            "w",
+            driver="GTiff",
+            count=band_count,
+            height=img_arr.shape[-2],
+            width=img_arr.shape[-1],
+            dtype=img_arr.dtype,
+        ) as gtiff_file:
+            if img_arr.ndim == 2:
+                img_arr = img_arr[None, :, :]
+            for band_idx, band_arr in enumerate(img_arr):
+                gtiff_file.write(band_arr, band_idx + 1)
 
 
-def _create_hdf5(h5_fn, img_data):
+def _create_hdf5(base_dir, img_data):
     if not isinstance(img_data, (list, tuple)):
         img_data = [img_data]
     import h5py
 
+    h5_fn = os.path.join(base_dir, "test.h5")
     with h5py.File(h5_fn, "w") as h:
         for idx, img_arr in enumerate(img_data):
             ds = h.create_dataset(f"image{idx}", data=img_arr)
             ds.attrs["some_attr"] = f"some_value{idx}"
 
 
-CREATE_FUNC_TO_EXT = {
-    _create_hdf5: ".h5",
-    _create_geotiff: ".tif",
-}
+def _create_binaries(base_dir, img_data):
+    if not isinstance(img_data, (list, tuple)):
+        img_data = [img_data]
+    for idx, img_arr in enumerate(img_data):
+        bin_fn = os.path.join(base_dir, f"test{idx}.dat")
+        img_arr.tofile(bin_fn)
+
+
+def _is_multivar_format(expected_file_func):
+    return {
+        _create_hdf5: True,
+    }.get(expected_file_func, False)
 
 
 @pytest.mark.parametrize(
     ("expected_file_func", "actual_file_func"),
     [
         (None, None),  # no files
-        (_create_geotiff, _create_hdf5),
-        (_create_geotiff, _create_geotiff),
+        (_create_geotiffs, _create_hdf5),
+        (_create_geotiffs, _create_geotiffs),
         (_create_hdf5, _create_hdf5),
+        (_create_binaries, _create_binaries),
     ],
 )
 @pytest.mark.parametrize(
@@ -99,6 +113,9 @@ CREATE_FUNC_TO_EXT = {
         (IMAGE4_RGB_UINT8_ZEROS, IMAGE5_RGB_UINT8_ZEROS, 1),
         (IMAGE4_RGB_UINT8_ZEROS, IMAGE6_RGBA_UINT8_ZEROS, 1),
         (IMAGE4_RGB_UINT8_ZEROS, IMAGE7_RGB_UINT8_ONES, 1),
+        (IMAGE_LIST1, IMAGE_LIST1, 0),
+        (IMAGE_LIST2, IMAGE_LIST2, 0),
+        (IMAGE_LIST2, IMAGE_LIST1, 2),
     ],
 )
 @pytest.mark.parametrize("include_html", [False, True])
@@ -113,11 +130,9 @@ def test_basic_compare(
     actual_dir.mkdir()
 
     if expected_file_func:
-        fn = "test1" + CREATE_FUNC_TO_EXT[expected_file_func]
-        expected_file_func(expected_dir / fn, expected_data)
+        expected_file_func(expected_dir, expected_data)
     if actual_file_func:
-        fn = "test1" + CREATE_FUNC_TO_EXT[actual_file_func]
-        actual_file_func(actual_dir / fn, actual_data)
+        actual_file_func(actual_dir, actual_data)
 
     html_file = tmp_path / "test_output.html"
     dtype = None
@@ -140,6 +155,9 @@ def test_basic_compare(
         assert num_diff_files == 0
     elif actual_file_func is not expected_file_func:
         assert num_diff_files != 0
+    elif _is_multivar_format(expected_file_func):
+        # multiple variables in one file
+        assert num_diff_files == (1 if exp_num_diff > 0 else 0)
     else:
         assert num_diff_files == exp_num_diff
 
@@ -154,7 +172,9 @@ def _check_html_output(include_html, html_file, actual_file_func, expected_file_
         if actual_file_func is not expected_file_func:
             # no files produced when files are missing
             assert len(glob(img_glob)) == 0
-        elif actual_file_func is not None and expected_file_func is not None and actual_file_func in (_create_geotiff,):
+        elif (
+            actual_file_func is not None and expected_file_func is not None and actual_file_func in (_create_geotiffs,)
+        ):
             assert len(glob(img_glob)) != 0
         else:
             assert len(glob(img_glob)) == 0
