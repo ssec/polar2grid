@@ -219,29 +219,6 @@ def _compare_gtiff_colormaps(cmap1: dict, cmap2: dict, **kwargs) -> VariableComp
     return VariableComparisonResult(**array_result.__dict__, variable="colormap", variable_missing=False)
 
 
-def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
-    """Compare 2 8-bit AWIPS-compatible NetCDF3 files.
-
-    .. note::
-
-        The binary arrays will be converted to 32-bit floats before
-        comparison.
-
-    """
-    from netCDF4 import Dataset
-
-    nc1 = Dataset(nc1_name, "r")
-    nc2 = Dataset(nc2_name, "r")
-    image1_var = nc1["data"]
-    image2_var = nc2["data"]
-    image1_var.set_auto_maskandscale(False)
-    image2_var.set_auto_maskandscale(False)
-    image1_data = image1_var[:].astype(np.uint8).astype(np.float32)
-    image2_data = image2_var[:].astype(np.uint8).astype(np.float32)
-
-    return [compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error, **kwargs)]
-
-
 def compare_netcdf(
     nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs
 ) -> list[VariableComparisonResult]:
@@ -323,7 +300,6 @@ type_name_to_compare_func = {
     "binary": compare_binary,
     "gtiff": compare_geotiff,
     "geotiff": compare_geotiff,
-    "awips": compare_awips_netcdf,
     "netcdf": compare_netcdf,
     "hdf5": compare_hdf5,
     "png": compare_image,
@@ -624,7 +600,7 @@ def main(argv=sys.argv[1:]):
         "file_type",
         type=_file_type,
         nargs="?",
-        help="type of files being compare. If not provided it will be determined based on file extension.",
+        help="Type of files being compare. If not provided it will be determined based on file extension.",
     )
     parser.add_argument("input1", help="First filename or directory to compare. This is typically the expected output.")
     parser.add_argument("input2", help="Second filename or directory to compare. This is typicall the actual output.")
