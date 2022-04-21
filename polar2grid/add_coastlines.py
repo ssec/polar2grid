@@ -386,74 +386,13 @@ def main(argv=sys.argv[1:]):
 def _args_to_pycoast_dict(args):
     opts = {}
     if args.add_coastlines:
-        outline = (
-            args.coastlines_outline[0]
-            if len(args.coastlines_outline) == 1
-            else tuple(int(x) for x in args.coastlines_outline)
-        )
-        if args.coastlines_fill:
-            fill = (
-                args.coastlines_fill[0]
-                if len(args.coastlines_fill) == 1
-                else tuple(int(x) for x in args.coastlines_fill)
-            )
-        else:
-            fill = None
-        opts["coasts"] = {
-            "resolution": args.coastlines_resolution,
-            "level": args.coastlines_level,
-            "width": args.coastlines_width,
-            "outline": outline,
-            "fill": fill,
-        }
-
+        opts["coasts"] = _args_to_coastlines_dict(args)
     if args.add_rivers:
-        outline = (
-            args.rivers_outline[0] if len(args.rivers_outline) == 1 else tuple(int(x) for x in args.rivers_outline)
-        )
-        opts["rivers"] = {
-            "resolution": args.rivers_resolution,
-            "level": args.rivers_level,
-            "width": args.rivers_width,
-            "outline": outline,
-        }
-
+        opts["rivers"] = _args_to_rivers_dict(args)
     if args.add_borders:
-        outline = (
-            args.borders_outline[0] if len(args.borders_outline) == 1 else tuple(int(x) for x in args.borders_outline)
-        )
-        opts["borders"] = {
-            "resolution": args.borders_resolution,
-            "level": args.borders_level,
-            "width": args.borders_width,
-            "outline": outline,
-        }
-
+        opts["borders"] = _args_to_borders_dict(args)
     if args.add_grid:
-        outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
-        minor_outline = (
-            args.grid_minor_outline[0]
-            if len(args.grid_minor_outline) == 1
-            else tuple(int(x) for x in args.grid_minor_outline)
-        )
-        fill = args.grid_fill[0] if len(args.grid_fill) == 1 else tuple(int(x) for x in args.grid_fill)
-        font_path = find_font(args.grid_font, args.grid_text_size)
-        font = Font(outline, font_path, size=args.grid_text_size)
-        opts["grid"] = {
-            "lon_major": args.grid_D[0],
-            "lat_major": args.grid_D[1],
-            "lon_minor": args.grid_d[0],
-            "lat_minor": args.grid_d[1],
-            "font": font,
-            "fill": fill,
-            "outline": outline,
-            "minor_outline": minor_outline,
-            "write_text": args.grid_text,
-            "width": args.grid_width,
-            "lon_placement": args.grid_lon_placement,
-            "lat_placement": args.grid_lat_placement,
-        }
-
+        opts["grid"] = _args_to_grid_dict(args)
     if args.cache_dir:
         opts["cache"] = {
             # add "add_coastlines" prefix to cached image name
@@ -462,6 +401,77 @@ def _args_to_pycoast_dict(args):
         }
 
     return opts
+
+
+def _args_to_coastlines_dict(args):
+    outline = (
+        args.coastlines_outline[0]
+        if len(args.coastlines_outline) == 1
+        else tuple(int(x) for x in args.coastlines_outline)
+    )
+    if args.coastlines_fill:
+        fill = (
+            args.coastlines_fill[0] if len(args.coastlines_fill) == 1 else tuple(int(x) for x in args.coastlines_fill)
+        )
+    else:
+        fill = None
+    coasts_dict = {
+        "resolution": args.coastlines_resolution,
+        "level": args.coastlines_level,
+        "width": args.coastlines_width,
+        "outline": outline,
+        "fill": fill,
+    }
+    return coasts_dict
+
+
+def _args_to_rivers_dict(args):
+    outline = args.rivers_outline[0] if len(args.rivers_outline) == 1 else tuple(int(x) for x in args.rivers_outline)
+    rivers_dict = {
+        "resolution": args.rivers_resolution,
+        "level": args.rivers_level,
+        "width": args.rivers_width,
+        "outline": outline,
+    }
+    return rivers_dict
+
+
+def _args_to_borders_dict(args):
+    outline = args.borders_outline[0] if len(args.borders_outline) == 1 else tuple(int(x) for x in args.borders_outline)
+    borders_dict = {
+        "resolution": args.borders_resolution,
+        "level": args.borders_level,
+        "width": args.borders_width,
+        "outline": outline,
+    }
+    return borders_dict
+
+
+def _args_to_grid_dict(args):
+    outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
+    minor_outline = (
+        args.grid_minor_outline[0]
+        if len(args.grid_minor_outline) == 1
+        else tuple(int(x) for x in args.grid_minor_outline)
+    )
+    fill = args.grid_fill[0] if len(args.grid_fill) == 1 else tuple(int(x) for x in args.grid_fill)
+    font_path = find_font(args.grid_font, args.grid_text_size)
+    font = Font(outline, font_path, size=args.grid_text_size)
+    grid_dict = {
+        "lon_major": args.grid_D[0],
+        "lat_major": args.grid_D[1],
+        "lon_minor": args.grid_d[0],
+        "lat_minor": args.grid_d[1],
+        "font": font,
+        "fill": fill,
+        "outline": outline,
+        "minor_outline": minor_outline,
+        "write_text": args.grid_text,
+        "width": args.grid_width,
+        "lon_placement": args.grid_lon_placement,
+        "lat_placement": args.grid_lat_placement,
+    }
+    return grid_dict
 
 
 def _args_to_colorbar_kwargs(args):
