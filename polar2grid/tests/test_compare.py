@@ -43,6 +43,9 @@ def _create_geotiff(gtiff_fn, img_data):
     import rasterio
 
     band_count = 1 if img_data.ndim == 2 else img_data.shape[0]
+    if isinstance(img_data, (list, tuple)):
+        img_data = np.concatenate(img_data, axis=0)
+
     with rasterio.open(
         gtiff_fn,
         "w",
@@ -58,11 +61,30 @@ def _create_geotiff(gtiff_fn, img_data):
             gtiff_file.write(band_arr, band_idx + 1)
 
 
+def _create_hdf5(h5_fn, img_data):
+    if not isinstance(img_data, (list, tuple)):
+        img_data = [img_data]
+    import h5py
+
+    with h5py.File(h5_fn, "w") as h:
+        for idx, img_arr in enumerate(img_data):
+            ds = h.create_dataset(f"image{idx}", data=img_arr)
+            ds.attrs["some_attr"] = f"some_value{idx}"
+
+
+CREATE_FUNC_TO_EXT = {
+    _create_hdf5: ".h5",
+    _create_geotiff: ".tif",
+}
+
+
 @pytest.mark.parametrize(
     ("expected_file_func", "actual_file_func"),
     [
         (None, None),  # no files
+        (_create_geotiff, _create_hdf5),
         (_create_geotiff, _create_geotiff),
+        (_create_hdf5, _create_hdf5),
     ],
 )
 @pytest.mark.parametrize(
@@ -91,9 +113,11 @@ def test_basic_compare(
     actual_dir.mkdir()
 
     if expected_file_func:
-        _create_geotiff(expected_dir / "test1.tif", expected_data)
+        fn = "test1" + CREATE_FUNC_TO_EXT[expected_file_func]
+        expected_file_func(expected_dir / fn, expected_data)
     if actual_file_func:
-        _create_geotiff(actual_dir / "test1.tif", actual_data)
+        fn = "test1" + CREATE_FUNC_TO_EXT[actual_file_func]
+        actual_file_func(actual_dir / fn, actual_data)
 
     html_file = tmp_path / "test_output.html"
     dtype = None
@@ -119,15 +143,18 @@ def test_basic_compare(
     else:
         assert num_diff_files == exp_num_diff
 
-    _check_html_output(include_html, html_file, have_files)
+    _check_html_output(include_html, html_file, actual_file_func, expected_file_func)
 
 
-def _check_html_output(include_html, html_file, have_files):
+def _check_html_output(include_html, html_file, actual_file_func, expected_file_func):
     if include_html:
         assert os.path.isfile(html_file)
         base_dir = os.path.dirname(html_file)
         img_glob = os.path.join(base_dir, "_images", "*.png")
-        if have_files:
+        if actual_file_func is not expected_file_func:
+            # no files produced when files are missing
+            assert len(glob(img_glob)) == 0
+        elif actual_file_func is not None and expected_file_func is not None and actual_file_func in (_create_geotiff,):
             assert len(glob(img_glob)) != 0
         else:
             assert len(glob(img_glob)) == 0
