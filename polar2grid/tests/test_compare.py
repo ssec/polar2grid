@@ -122,7 +122,6 @@ def _create_awips_tiled(base_dir, img_data):
 def _is_multivar_format(expected_file_func):
     return {
         _create_hdf5: True,
-        # _create_awips_tiled: True,
     }.get(expected_file_func, False)
 
 
