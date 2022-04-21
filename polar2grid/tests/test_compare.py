@@ -29,10 +29,14 @@ import numpy as np
 import pytest
 
 SHAPE1 = (200, 100)
-IMAGE1 = np.zeros(SHAPE1, dtype=np.uint8)
 SHAPE2 = (200, 101)
-IMAGE2 = np.zeros(SHAPE2, dtype=np.uint8)
-IMAGE3 = np.ones(SHAPE1, dtype=np.uint8)
+IMAGE1_L_UINT8_ZEROS = np.zeros(SHAPE1, dtype=np.uint8)
+IMAGE2_L_UINT8_ZEROS = np.zeros(SHAPE2, dtype=np.uint8)
+IMAGE3_L_UINT8_ONES = np.ones(SHAPE1, dtype=np.uint8)
+IMAGE4_RGB_UINT8_ZEROS = np.zeros((3,) + SHAPE1, dtype=np.uint8)
+IMAGE5_RGB_UINT8_ZEROS = np.zeros((3,) + SHAPE2, dtype=np.uint8)
+IMAGE6_RGBA_UINT8_ZEROS = np.zeros((4,) + SHAPE1, dtype=np.uint8)
+IMAGE7_RGB_UINT8_ONES = np.ones((3,) + SHAPE1, dtype=np.uint8)
 
 
 def _create_geotiff(gtiff_fn, img_data):
@@ -48,7 +52,10 @@ def _create_geotiff(gtiff_fn, img_data):
         width=img_data.shape[-1],
         dtype=img_data.dtype,
     ) as gtiff_file:
-        gtiff_file.write(img_data, 1)
+        if img_data.ndim == 2:
+            img_data = img_data[None, :, :]
+        for band_idx, band_arr in enumerate(img_data):
+            gtiff_file.write(band_arr, band_idx + 1)
 
 
 @pytest.mark.parametrize(
@@ -61,10 +68,15 @@ def _create_geotiff(gtiff_fn, img_data):
 @pytest.mark.parametrize(
     ("expected_data", "actual_data", "exp_num_diff"),
     [
-        (IMAGE1, IMAGE1, 0),
-        (IMAGE1, IMAGE2, 1),
-        (IMAGE1, IMAGE3, 1),
-        (IMAGE3, IMAGE3, 0),
+        (IMAGE1_L_UINT8_ZEROS, IMAGE1_L_UINT8_ZEROS, 0),
+        (IMAGE1_L_UINT8_ZEROS, IMAGE2_L_UINT8_ZEROS, 1),
+        (IMAGE1_L_UINT8_ZEROS, IMAGE3_L_UINT8_ONES, 1),
+        (IMAGE3_L_UINT8_ONES, IMAGE3_L_UINT8_ONES, 0),
+        (IMAGE4_RGB_UINT8_ZEROS, IMAGE4_RGB_UINT8_ZEROS, 0),
+        (IMAGE6_RGBA_UINT8_ZEROS, IMAGE6_RGBA_UINT8_ZEROS, 0),
+        (IMAGE4_RGB_UINT8_ZEROS, IMAGE5_RGB_UINT8_ZEROS, 1),
+        (IMAGE4_RGB_UINT8_ZEROS, IMAGE6_RGBA_UINT8_ZEROS, 1),
+        (IMAGE4_RGB_UINT8_ZEROS, IMAGE7_RGB_UINT8_ONES, 1),
     ],
 )
 @pytest.mark.parametrize("include_html", [False, True])

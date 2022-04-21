@@ -136,7 +136,6 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
 
 
 def compare_array(array1, array2, plot=False, **kwargs) -> ArrayComparisonResult:
-
     if plot:
         plot_array(array1, array2, **kwargs)
     return isclose_array(array1, array2, **kwargs)
@@ -179,14 +178,17 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwarg
     return [arr_compare]
 
 
-def _get_geotiff_array(gtiff_fn, dtype=None, band_idx=1):
+def _get_geotiff_array(gtiff_fn, dtype=None):
     import rasterio
 
+    band_arrays = []
     with rasterio.open(gtiff_fn, "r") as gtiff_file:
-        arr = gtiff_file.read(band_idx)
-    if dtype is not None:
-        arr = arr.astype(dtype)
-    return arr
+        for band_idx in range(gtiff_file.count):
+            arr = gtiff_file.read(band_idx + 1)
+            if dtype is not None:
+                arr = arr.astype(dtype)
+            band_arrays.append(arr)
+    return np.concatenate(band_arrays)
 
 
 def _get_geotiff_colormap(gtiff_fn, band_idx=1):
