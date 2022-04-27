@@ -240,4 +240,4 @@ def _check_html_output(include_html, html_file, exp_total_files, expected_file_f
 
 
 def _can_generate_thumbnails(creation_func) -> bool:
-    return creation_func in (_create_geotiffs, _create_hdf5)
+    return creation_func in (_create_geotiffs, _create_awips_tiled, _create_hdf5)
