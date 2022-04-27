@@ -430,26 +430,26 @@ HTML_TEMPLATE = """
 </html>
 """
 
-ROW_TEMPLATE = """
-<tr>
-    <td>{filename}</td>
-    <td>{status}</td>
-    <td>{variable}</td>
-    <td>{expected_img}</td>
-    <td>{actual_img}</td>
-    <td>{diff_percent:0.02f}%</td>
-    <td>{notes}</td>
-</tr>
-"""
 
-
-img_entry_tmpl = '<img src="{}"></img>'
+def _generate_html_summary(output_filename, file_comparison_results):
+    filename = os.path.basename(output_filename)
+    row_html = "\n\t" + "\n\t".join(_generate_table_rows(output_filename, file_comparison_results))
+    LOG.info(f"Creating HTML file {output_filename}")
+    dst_dir = os.path.dirname(output_filename)
+    if dst_dir:
+        os.makedirs(dst_dir, exist_ok=True)
+    with open(output_filename, "w") as html_file:
+        html_text = HTML_TEMPLATE.format(
+            title=filename,
+            rows=row_html,
+        )
+        html_file.write(html_text)
 
 
 def _generate_table_rows(
     output_filename: str,
     file_comparison_results: list[FileComparisonResults],
-) -> str:
+) -> list[str]:
     img_dst_dir = os.path.join(os.path.dirname(output_filename), "_images")
     os.makedirs(img_dst_dir, exist_ok=True)
     row_infos = []
@@ -474,6 +474,19 @@ def _generate_table_rows(
     return row_infos
 
 
+ROW_TEMPLATE = """
+<tr>
+    <td>{filename}</td>
+    <td>{status}</td>
+    <td>{variable}</td>
+    <td>{expected_img}</td>
+    <td>{actual_img}</td>
+    <td>{diff_percent:0.02f}%</td>
+    <td>{notes}</td>
+</tr>
+"""
+
+
 def _generate_subresult_table_row(
     img_dst_dir: str,
     exp_filename: str,
@@ -496,10 +509,10 @@ def _generate_subresult_table_row(
     file_ext = os.path.splitext(exp_filename)[1]
     if file_ext in file_ext_to_array_func:
         exp_tn_fn = exp_filename.replace(file_ext, f".{variable}.expected.png")
-        exp_tn_html = img_entry_tmpl.format("_images/" + exp_tn_fn)
+        exp_tn_html = IMG_ENTRY_TMPL.format("_images/" + exp_tn_fn)
         _generate_thumbnail(file_comparison_result.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
         act_tn_fn = exp_filename.replace(file_ext, f".{variable}.actual.png")
-        act_tn_html = img_entry_tmpl.format("_images/" + act_tn_fn)
+        act_tn_html = IMG_ENTRY_TMPL.format("_images/" + act_tn_fn)
         _generate_thumbnail(file_comparison_result.file2, os.path.join(img_dst_dir, act_tn_fn), max_width=512)
 
     row_info = ROW_TEMPLATE.format(
@@ -514,19 +527,7 @@ def _generate_subresult_table_row(
     return row_info
 
 
-def _generate_html_summary(output_filename, file_comparison_results):
-    filename = os.path.basename(output_filename)
-    row_html = "\n\t" + "\n\t".join(_generate_table_rows(output_filename, file_comparison_results))
-    LOG.info(f"Creating HTML file {output_filename}")
-    dst_dir = os.path.dirname(output_filename)
-    if dst_dir:
-        os.makedirs(dst_dir, exist_ok=True)
-    with open(output_filename, "w") as html_file:
-        html_text = HTML_TEMPLATE.format(
-            title=filename,
-            rows=row_html,
-        )
-        html_file.write(html_text)
+IMG_ENTRY_TMPL = '<img src="{}"></img>'
 
 
 def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
