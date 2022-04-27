@@ -469,7 +469,7 @@ def _generate_table_rows(
             continue
 
         for sub_result in fc.sub_results:
-            row_info = _generate_subresult_table_row(img_dst_dir, exp_filename, fc, sub_result)
+            row_info = _generate_subresult_table_row(img_dst_dir, fc, sub_result)
             row_infos.append(row_info)
     return row_infos
 
@@ -489,7 +489,6 @@ ROW_TEMPLATE = """
 
 def _generate_subresult_table_row(
     img_dst_dir: str,
-    exp_filename: str,
     file_comparison_result: FileComparisonResults,
     sub_result: ArrayComparisonResult,
 ) -> str:
@@ -504,43 +503,61 @@ def _generate_subresult_table_row(
         diff_percent = sub_result.num_diff_pixels / sub_result.total_pixels * 100
 
     variable = getattr(sub_result, "variable", None)
-    exp_tn_html = "N/A"
-    act_tn_html = "N/A"
-    file_ext = os.path.splitext(exp_filename)[1]
-    if file_ext in file_ext_to_array_func:
-        exp_tn_fn = exp_filename.replace(file_ext, f".{variable}.expected.png")
-        exp_tn_html = IMG_ENTRY_TMPL.format("_images/" + exp_tn_fn)
-        _generate_thumbnail(file_comparison_result.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
-        act_tn_fn = exp_filename.replace(file_ext, f".{variable}.actual.png")
-        act_tn_html = IMG_ENTRY_TMPL.format("_images/" + act_tn_fn)
-        _generate_thumbnail(file_comparison_result.file2, os.path.join(img_dst_dir, act_tn_fn), max_width=512)
-
+    exp_tn_html = _generate_thumbnail_html(file_comparison_result.file1, variable, img_dst_dir, "expected")
+    act_tn_html = _generate_thumbnail_html(file_comparison_result.file2, variable, img_dst_dir, "actual")
+    # exp_tn_html = "N/A"
+    # act_tn_html = "N/A"
+    # if file_ext in file_ext_to_array_func:
+    #     exp_tn_fn = exp_filename.replace(file_ext, f".{variable}.expected.png")
+    #     exp_tn_html = IMG_ENTRY_TMPL.format("_images/" + exp_tn_fn)
+    #     _generate_thumbnail(file_comparison_result.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
+    #     act_tn_fn = exp_filename.replace(file_ext, f".{variable}.actual.png")
+    #     act_tn_html = IMG_ENTRY_TMPL.format("_images/" + act_tn_fn)
+    #     _generate_thumbnail(file_comparison_result.file2, os.path.join(img_dst_dir, act_tn_fn), max_width=512)
+    # act_tn_html, exp_tn_html = _generate_thumbnails_html(sub_result, variable)
+    exp_filename = os.path.basename(file_comparison_result.file1)
     row_info = ROW_TEMPLATE.format(
         filename=exp_filename,
         status=status,
         variable=variable or "N/A",
-        expected_img=exp_tn_html,
         actual_img=act_tn_html,
+        expected_img=exp_tn_html,
         diff_percent=diff_percent,
         notes=notes,
     )
     return row_info
 
 
+def _generate_thumbnail_html(data_pathname: str, variable: Optional[str], img_dst_dir: str, tn_suffix: str) -> str:
+    data_arr = _get_thumbnail_array(data_pathname, variable)
+    if data_arr is None:
+        return "N/A"
+    data_filename = os.path.basename(data_pathname)
+    file_ext = os.path.splitext(data_filename)[1]
+    exp_tn_fn = data_filename.replace(file_ext, f".{variable}.{tn_suffix}.png")
+    _generate_thumbnail(data_arr, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
+    exp_tn_html = IMG_ENTRY_TMPL.format("_images/" + exp_tn_fn)
+    return exp_tn_html
+
+
+def _get_thumbnail_array(input_data_path: str, variable: Optional[str]) -> Optional[np.ndarray]:
+    input_ext = os.path.splitext(input_data_path)[1]
+    if input_ext not in file_ext_to_array_func:
+        return None
+    input_arr = file_ext_to_array_func[input_ext](input_data_path, variable)
+    return input_arr
+
+
 IMG_ENTRY_TMPL = '<img src="{}"></img>'
 
 
-def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
+def _generate_thumbnail(input_arr, output_thumbnail_path, max_width=512) -> bool:
     from PIL import Image
 
     # we may be dealing with large images that look like decompression bombs
     # let's turn off the check for the image size in PIL/Pillow
     Image.MAX_IMAGE_PIXELS = None
 
-    input_ext = os.path.splitext(input_data_path)[1]
-    input_arr = file_ext_to_array_func[input_ext](input_data_path)
-    if input_arr is None:
-        return
     full_img = Image.fromarray(input_arr)
     full_size = full_img.size
     max_width = min(full_size[0], max_width)
@@ -548,6 +565,7 @@ def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
     new_size = (max_width, full_size[1] // width_ratio)
     scaled_img = full_img.resize(new_size)
     scaled_img.save(output_thumbnail_path, format="PNG")
+    return True
 
 
 def main(argv=sys.argv[1:]):
