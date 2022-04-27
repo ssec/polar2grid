@@ -353,17 +353,16 @@ def _tranpose_for_thumbnail_if_multiband_array(arr: np.ndarray) -> np.ndarray:
 
 
 def _get_binary_array(
-    input_filename: str, variable: str, shape: Optional[tuple], dtype: Optional[np.dtype]
+    input_filename: str,
+    variable: str,
+    shape: Optional[tuple],
+    dtype: np.dtype,
 ) -> Optional[np.ndarray]:
     if variable is not None:
-        return variable
-    if dtype is None:
-        dtype = np.float32
+        return None
     mmap_kwargs = {"dtype": dtype, "mode": "r"}
     if shape is not None and shape[0] is not None:
         mmap_kwargs["shape"] = shape
-    if shape is None or len(shape) not in (2, 3):
-        return None
     array1 = np.memmap(input_filename, **mmap_kwargs)
     return array1
 
@@ -588,16 +587,6 @@ def _generate_subresult_table_row(
         getattr(file_comparison_result, "shape1", None),
         getattr(file_comparison_result, "dtype1", None),
     )
-    # exp_tn_html = "N/A"
-    # act_tn_html = "N/A"
-    # if file_ext in file_ext_to_array_func:
-    #     exp_tn_fn = exp_filename.replace(file_ext, f".{variable}.expected.png")
-    #     exp_tn_html = IMG_ENTRY_TMPL.format("_images/" + exp_tn_fn)
-    #     _generate_thumbnail(file_comparison_result.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
-    #     act_tn_fn = exp_filename.replace(file_ext, f".{variable}.actual.png")
-    #     act_tn_html = IMG_ENTRY_TMPL.format("_images/" + act_tn_fn)
-    #     _generate_thumbnail(file_comparison_result.file2, os.path.join(img_dst_dir, act_tn_fn), max_width=512)
-    # act_tn_html, exp_tn_html = _generate_thumbnails_html(sub_result, variable)
     exp_filename = os.path.basename(file_comparison_result.file1)
     row_info = ROW_TEMPLATE.format(
         filename=exp_filename,
@@ -647,6 +636,45 @@ IMG_ENTRY_TMPL = '<img src="{}"></img>'
 
 
 def _generate_thumbnail(input_arr, output_thumbnail_path, max_width=512) -> bool:
+    if input_arr.ndim == 1:
+        return _generate_matplotlib_1d_thumbnail(input_arr, output_thumbnail_path, max_width)
+    if input_arr.dtype == np.uint8:
+        return _generate_pillow_thumbnail(input_arr, output_thumbnail_path, max_width)
+    return _generate_matplotlib_thumbnail(input_arr, output_thumbnail_path, max_width)
+
+
+def _generate_matplotlib_1d_thumbnail(input_arr, output_thumbnail_path, max_width) -> bool:
+    import matplotlib.pyplot as plt
+
+    figsize = _get_mpl_figsize(input_arr.shape, max_width)
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.hist(input_arr, bins=10)
+    fig.savefig(output_thumbnail_path)
+    return True
+
+
+def _generate_matplotlib_thumbnail(input_arr, output_thumbnail_path, max_width=512) -> bool:
+    import matplotlib.pyplot as plt
+
+    figsize = _get_mpl_figsize(input_arr.shape, max_width)
+    fig, ax = plt.subplots(figsize=figsize)
+    img = ax.imshow(input_arr)
+    fig.colorbar(img, ax=ax)
+    fig.savefig(output_thumbnail_path)
+    return True
+
+
+def _get_mpl_figsize(input_shape, max_width) -> tuple[int, int]:
+    # dpi 100 => 51
+    fig_width = max_width / 100.0
+    if len(input_shape) == 1:
+        fig_height = fig_width
+    else:
+        fig_height = input_shape[0] * (fig_width / input_shape[1])
+    return fig_width, fig_height
+
+
+def _generate_pillow_thumbnail(input_arr, output_thumbnail_path, max_width=512) -> bool:
     from PIL import Image
 
     # we may be dealing with large images that look like decompression bombs

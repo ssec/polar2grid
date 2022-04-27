@@ -33,6 +33,7 @@ SHAPE2 = (200, 101)
 IMAGE1_L_UINT8_ZEROS = np.zeros(SHAPE1, dtype=np.uint8)
 IMAGE2_L_UINT8_ZEROS = np.zeros(SHAPE2, dtype=np.uint8)
 IMAGE3_L_UINT8_ONES = np.ones(SHAPE1, dtype=np.uint8)
+IMAGE4_L_FLOAT32_ZEROS = np.zeros(SHAPE1, dtype=np.float32)
 IMAGE4_RGB_UINT8_ZEROS = np.zeros((3,) + SHAPE1, dtype=np.uint8)
 IMAGE5_RGB_UINT8_ZEROS = np.zeros((3,) + SHAPE2, dtype=np.uint8)
 IMAGE6_RGBA_UINT8_ZEROS = np.zeros((4,) + SHAPE1, dtype=np.uint8)
@@ -145,6 +146,7 @@ def _create_awips_tiled(base_dir, img_data):
         (IMAGE_LIST1, IMAGE_LIST1, 0),
         (IMAGE_LIST2, IMAGE_LIST2, 0),
         (IMAGE_LIST2, IMAGE_LIST1, 2),
+        (IMAGE4_L_FLOAT32_ZEROS, IMAGE4_L_FLOAT32_ZEROS, 0),
     ],
 )
 @pytest.mark.parametrize("include_html", [False, True])
@@ -240,4 +242,4 @@ def _check_html_output(include_html, html_file, exp_total_files, expected_file_f
 
 
 def _can_generate_thumbnails(creation_func) -> bool:
-    return creation_func in (_create_geotiffs, _create_awips_tiled, _create_hdf5)
+    return creation_func in (_create_geotiffs, _create_awips_tiled, _create_hdf5, _create_binaries)
