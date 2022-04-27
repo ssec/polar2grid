@@ -179,8 +179,18 @@ def test_basic_compare(
         args.extend(["--html", str(html_file)])
 
     num_diff_files = main(args)
+    exp_num_png_files = _get_exp_num_png_files(actual_data, expected_data, expected_file_func)
     _check_num_diff_files(num_diff_files, exp_num_diff, expected_file_func, actual_file_func)
-    _check_html_output(include_html, html_file, expected_file_func, actual_file_func)
+    _check_html_output(include_html, html_file, exp_num_png_files, expected_file_func, actual_file_func)
+
+
+def _get_exp_num_png_files(actual_data, expected_data, expected_file_func):
+    exp_num_expected_png_files = len(expected_data) if isinstance(expected_data, list) else 1
+    exp_num_actual_png_files = len(actual_data) if isinstance(actual_data, list) else 1
+    # images are only generated when both files exist
+    exp_num_png_files = min(exp_num_expected_png_files, exp_num_actual_png_files) * 2
+    exp_num_png_files *= _files_per_variable(expected_file_func)
+    return exp_num_png_files
 
 
 def _check_num_diff_files(num_diff_files, exp_num_diff, expected_file_func, actual_file_func):
@@ -206,7 +216,7 @@ def _files_per_variable(expected_file_func):
     return {_create_awips_tiled: 2}.get(expected_file_func, 1)
 
 
-def _check_html_output(include_html, html_file, expected_file_func, actual_file_func):
+def _check_html_output(include_html, html_file, exp_total_files, expected_file_func, actual_file_func):
     base_dir = os.path.dirname(html_file)
     if include_html:
         assert os.path.isfile(html_file)
@@ -217,7 +227,9 @@ def _check_html_output(include_html, html_file, expected_file_func, actual_file_
         elif (
             actual_file_func is not None and expected_file_func is not None and actual_file_func in (_create_geotiffs,)
         ):
-            assert len(glob(img_glob)) != 0
+            print(len(glob(img_glob)))
+            assert len(glob(img_glob)) == exp_total_files
+            # assert len(glob(img_glob)) != 0
         else:
             assert len(glob(img_glob)) == 0
     else:
