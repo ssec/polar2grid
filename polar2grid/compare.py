@@ -29,6 +29,7 @@ import os
 import sys
 from dataclasses import dataclass, field
 from glob import glob
+from typing import Optional
 
 import numpy as np
 import xarray as xr
@@ -283,8 +284,12 @@ def compare_image(im1_name, im2_name, atol=0.0, margin_of_error=0.0, **kwargs) -
     return [compare_array(img1, img2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
 
 
-def _get_image_array(img_filename: str):
+def _get_image_array(img_filename: str, variable: str = None) -> Optional[np.ndarray]:
     from PIL import Image
+
+    if variable is not None:
+        # NotImplementedError (geotiff colormap)
+        return None
 
     # we may be dealing with large images that look like decompression bombs
     # let's turn off the check for the image size in PIL/Pillow
@@ -321,6 +326,7 @@ file_ext_to_array_func = {
     ".png": _get_image_array,
     ".jpg": _get_image_array,
     ".jpeg": _get_image_array,
+    # ".h5": _get_hdf5_array,
 }
 
 
@@ -488,8 +494,7 @@ def _generate_subresult_table_row(
     exp_tn_html = "N/A"
     act_tn_html = "N/A"
     file_ext = os.path.splitext(exp_filename)[1]
-    if variable is None and file_ext in file_ext_to_array_func:
-        # TODO: Support multi-variable formats
+    if file_ext in file_ext_to_array_func:
         exp_tn_fn = exp_filename.replace(file_ext, f".{variable}.expected.png")
         exp_tn_html = img_entry_tmpl.format("_images/" + exp_tn_fn)
         _generate_thumbnail(file_comparison_result.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
@@ -533,6 +538,8 @@ def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
 
     input_ext = os.path.splitext(input_data_path)[1]
     input_arr = file_ext_to_array_func[input_ext](input_data_path)
+    if input_arr is None:
+        return
     full_img = Image.fromarray(input_arr)
     full_size = full_img.size
     max_width = min(full_size[0], max_width)
