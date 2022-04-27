@@ -301,6 +301,20 @@ def _get_image_array(img_filename: str, variable: str = None) -> Optional[np.nda
     return np.array(img)
 
 
+def _get_hdf5_array(input_filename: str, variable: str) -> Optional[np.ndarray]:
+    import h5py
+
+    h = h5py.File(input_filename, "r")
+    if variable is None or variable not in h:
+        return None
+    arr = np.array(h[variable][:])
+    if arr.ndim == 3 and arr.shape[0] in (3, 4):
+        # assume RGB/RGBA with band dimension first
+        # need to transpose for PIL image RGB
+        arr = arr.transpose((1, 2, 0))
+    return arr
+
+
 type_name_to_compare_func = {
     "binary": compare_binary,
     "gtiff": compare_geotiff,
@@ -326,7 +340,7 @@ file_ext_to_array_func = {
     ".png": _get_image_array,
     ".jpg": _get_image_array,
     ".jpeg": _get_image_array,
-    # ".h5": _get_hdf5_array,
+    ".h5": _get_hdf5_array,
 }
 
 

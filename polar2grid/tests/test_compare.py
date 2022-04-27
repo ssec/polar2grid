@@ -187,8 +187,12 @@ def test_basic_compare(
 def _get_exp_num_png_files(actual_data, expected_data, expected_file_func):
     exp_num_expected_png_files = len(expected_data) if isinstance(expected_data, list) else 1
     exp_num_actual_png_files = len(actual_data) if isinstance(actual_data, list) else 1
-    # images are only generated when both files exist
-    exp_num_png_files = min(exp_num_expected_png_files, exp_num_actual_png_files) * 2
+    if _is_multivar_format(expected_file_func):
+        # if the file exists then we will be creating a thumbnail for every possible variable
+        exp_num_png_files = exp_num_actual_png_files + exp_num_expected_png_files
+    else:
+        # images are only generated when both files exist
+        exp_num_png_files = min(exp_num_expected_png_files, exp_num_actual_png_files) * 2
     exp_num_png_files *= _files_per_variable(expected_file_func)
     return exp_num_png_files
 
@@ -221,16 +225,19 @@ def _check_html_output(include_html, html_file, exp_total_files, expected_file_f
     if include_html:
         assert os.path.isfile(html_file)
         img_glob = os.path.join(base_dir, "_images", "*.png")
-        if actual_file_func is not expected_file_func:
-            # no files produced when files are missing
-            assert len(glob(img_glob)) == 0
-        elif (
-            actual_file_func is not None and expected_file_func is not None and actual_file_func in (_create_geotiffs,)
-        ):
+        formats_are_different = actual_file_func is not expected_file_func
+        files_were_generated = actual_file_func is not None and expected_file_func is not None
+        can_gen_tn = _can_generate_thumbnails(actual_file_func)
+        should_have_thumbnails = not formats_are_different and files_were_generated and can_gen_tn
+
+        if should_have_thumbnails:
             print(len(glob(img_glob)))
             assert len(glob(img_glob)) == exp_total_files
-            # assert len(glob(img_glob)) != 0
         else:
             assert len(glob(img_glob)) == 0
     else:
         assert len(glob(os.path.join(base_dir, "*.html"))) == 0
+
+
+def _can_generate_thumbnails(creation_func) -> bool:
+    return creation_func in (_create_geotiffs, _create_hdf5)
