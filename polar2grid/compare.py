@@ -613,7 +613,8 @@ def _generate_thumbnail_html(
         return "N/A"
     data_filename = os.path.basename(data_pathname)
     file_ext = os.path.splitext(data_filename)[1]
-    exp_tn_fn = data_filename.replace(file_ext, f".{variable}.{tn_suffix}.png")
+    var_name = variable.replace("/", "-") if variable is not None else "None"
+    exp_tn_fn = data_filename.replace(file_ext, f".{var_name}.{tn_suffix}.png")
     try:
         _generate_thumbnail(data_arr, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
     except (RuntimeError, ValueError):
