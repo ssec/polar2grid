@@ -79,6 +79,20 @@ def _create_hdf5(base_dir, img_data):
             ds.attrs["some_attr"] = f"some_value{idx}"
 
 
+def _create_hdf5_with_groups(base_dir, img_data):
+    import h5py
+
+    if not isinstance(img_data, (list, tuple)):
+        img_data = [img_data]
+
+    h5_fn = os.path.join(base_dir, "test.h5")
+    with h5py.File(h5_fn, "w") as h:
+        group = h.create_group("wgs84_fit")
+        for idx, img_arr in enumerate(img_data):
+            ds = group.create_dataset(f"image{idx}", data=img_arr)
+            ds.attrs["some_attr"] = f"some_value{idx}"
+
+
 def _create_binaries(base_dir, img_data):
     if not isinstance(img_data, (list, tuple)):
         img_data = [img_data]
@@ -127,6 +141,7 @@ def _create_awips_tiled(base_dir, img_data):
         (_create_geotiffs, _create_hdf5),
         (_create_geotiffs, _create_geotiffs),
         (_create_hdf5, _create_hdf5),
+        (_create_hdf5_with_groups, _create_hdf5_with_groups),
         (_create_binaries, _create_binaries),
         (_create_awips_tiled, _create_awips_tiled),
     ],
@@ -222,6 +237,7 @@ def _nonvariable_png_files(expected_file_func):
 def _is_multivar_format(expected_file_func):
     return {
         _create_hdf5: True,
+        _create_hdf5_with_groups: True,
     }.get(expected_file_func, False)
 
 
@@ -248,4 +264,10 @@ def _check_html_output(include_html, html_file, exp_total_files, expected_file_f
 
 
 def _can_generate_thumbnails(creation_func) -> bool:
-    return creation_func in (_create_geotiffs, _create_awips_tiled, _create_hdf5, _create_binaries)
+    return creation_func in (
+        _create_geotiffs,
+        _create_awips_tiled,
+        _create_hdf5,
+        _create_hdf5_with_groups,
+        _create_binaries,
+    )
