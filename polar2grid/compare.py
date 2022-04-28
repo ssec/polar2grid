@@ -325,7 +325,7 @@ def _get_netcdf_array(
     if variable not in ds:
         return None
     arr = ds[variable].data
-    if arr.ndim not in (2, 3):
+    if not arr.shape:
         return None
     arr = _tranpose_for_thumbnail_if_multiband_array(arr)
     return arr
@@ -584,8 +584,8 @@ def _generate_subresult_table_row(
         variable,
         img_dst_dir,
         "actual",
-        getattr(file_comparison_result, "shape1", None),
-        getattr(file_comparison_result, "dtype1", None),
+        getattr(file_comparison_result, "shape2", None),
+        getattr(file_comparison_result, "dtype2", None),
     )
     exp_filename = os.path.basename(file_comparison_result.file1)
     row_info = ROW_TEMPLATE.format(
@@ -650,6 +650,7 @@ def _generate_matplotlib_1d_thumbnail(input_arr, output_thumbnail_path, max_widt
     fig, ax = plt.subplots(figsize=figsize)
     ax.hist(input_arr, bins=10)
     fig.savefig(output_thumbnail_path)
+    plt.close(fig)
     return True
 
 
@@ -661,6 +662,7 @@ def _generate_matplotlib_thumbnail(input_arr, output_thumbnail_path, max_width=5
     img = ax.imshow(input_arr)
     fig.colorbar(img, ax=ax)
     fig.savefig(output_thumbnail_path)
+    plt.close(fig)
     return True
 
 
