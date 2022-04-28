@@ -195,7 +195,7 @@ def _get_exp_num_png_files(actual_data, expected_data, expected_file_func):
     else:
         # images are only generated when both files exist
         exp_num_png_files = min(exp_num_expected_png_files, exp_num_actual_png_files) * 2
-    exp_num_png_files *= _files_per_variable(expected_file_func)
+    exp_num_png_files *= _files_per_variable(expected_file_func) * (1 + _nonvariable_png_files(expected_file_func))
     return exp_num_png_files
 
 
@@ -210,6 +210,13 @@ def _check_num_diff_files(num_diff_files, exp_num_diff, expected_file_func, actu
         assert num_diff_files == (1 if exp_num_diff > 0 else 0)
     else:
         assert num_diff_files == exp_num_diff * _files_per_variable(expected_file_func)
+
+
+def _nonvariable_png_files(expected_file_func):
+    """Get number of PNG files that are produced from ancillary data in the files."""
+    return {
+        _create_awips_tiled: 2,
+    }.get(expected_file_func, 0)
 
 
 def _is_multivar_format(expected_file_func):
@@ -233,7 +240,6 @@ def _check_html_output(include_html, html_file, exp_total_files, expected_file_f
         should_have_thumbnails = not formats_are_different and files_were_generated and can_gen_tn
 
         if should_have_thumbnails:
-            print(len(glob(img_glob)))
             assert len(glob(img_glob)) == exp_total_files
         else:
             assert len(glob(img_glob)) == 0
