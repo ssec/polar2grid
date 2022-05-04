@@ -169,11 +169,11 @@ from polar2grid.core.script_utils import ExtendConstAction
 from ._base import ReaderProxyBase
 
 I_PRODUCTS = [
-    "i01",
-    "i02",
-    "i03",
-    "i04",
-    "i05",
+    "I01",
+    "I02",
+    "I03",
+    "I04",
+    "I05",
 ]
 I_ANGLE_PRODUCTS = [
     "i_solar_zenith_angle",
@@ -182,22 +182,22 @@ I_ANGLE_PRODUCTS = [
     "i_sat_azimuth_angle",
 ]
 M_PRODUCTS = [
-    "m01",
-    "m02",
-    "m03",
-    "m04",
-    "m05",
-    "m06",
-    "m07",
-    "m08",
-    "m09",
-    "m10",
-    "m11",
-    "m12",
-    "m13",
-    "m14",
-    "m15",
-    "m16",
+    "M01",
+    "M02",
+    "M03",
+    "M04",
+    "M05",
+    "M06",
+    "M07",
+    "M08",
+    "M09",
+    "M10",
+    "M11",
+    "M12",
+    "M13",
+    "M14",
+    "M15",
+    "M16",
 ]
 
 M_ANGLE_PRODUCTS = [
@@ -271,8 +271,8 @@ PRODUCT_ALIASES["i_satellite_azimuth_angle"] = DataQuery(name="satellite_azimuth
 
 DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS[1:] + OTHER_COMPS
 
-P2G_PRODUCTS = I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS
-P2G_PRODUCTS = DNB_ANGLE_PRODUCTS + M_ANGLE_PRODUCTS + I_ANGLE_PRODUCTS + OTHER_COMPS
+P2G_PRODUCTS = I_ALIASES + M_ALIASES + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS
+P2G_PRODUCTS += DNB_ANGLE_PRODUCTS + M_ANGLE_PRODUCTS + I_ANGLE_PRODUCTS + OTHER_COMPS
 
 FILTERS = {
     "day_only": {

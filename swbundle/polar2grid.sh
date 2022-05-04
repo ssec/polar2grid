@@ -43,4 +43,4 @@ export PYTROLL_CHUNK_SIZE=${PYTROLL_CHUNK_SIZE:-1024}
 # Call the python module to do the processing, passing all arguments
 export PROG_NAME="polar2grid.sh"
 export USE_POLAR2GRID_DEFAULTS=1
-python3 -m polar2grid.glue $@ -vv
+python3 -m polar2grid.glue "$@" -vv
