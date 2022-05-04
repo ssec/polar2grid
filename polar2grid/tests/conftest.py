@@ -534,32 +534,58 @@ def viirs_sdr_i01_scene(viirs_sdr_i01_data_array) -> Scene:
 
 @pytest.fixture
 def full_viirs_data_array_dict(
-    viirs_sdr_i01_data_array,
-    viirs_sdr_i04_data_array,
-    viirs_sdr_m01_data_array,
-    viirs_sdr_m12_data_array,
-    viirs_sdr_dnb_data_array,
+    viirs_sdr_i_dict,
+    viirs_sdr_m_dict,
+    viirs_sdr_dnb_dict,
 ):
+    data_arrays = {}
+    data_arrays.update(viirs_sdr_i_dict)
+    data_arrays.update(viirs_sdr_m_dict)
+    data_arrays.update(viirs_sdr_dnb_dict)
+    return data_arrays
+
+
+@pytest.fixture
+def viirs_sdr_i_dict(viirs_sdr_i01_data_array, viirs_sdr_i04_data_array):
     data_arrays = {}
     for data_id in VIIRS_I_IDS[:3]:
         data_arrays[data_id] = viirs_sdr_i01_data_array.copy()
     for data_id in VIIRS_I_IDS[3:]:
         data_arrays[data_id] = viirs_sdr_i04_data_array.copy()
+    data_arrays.update(_viirs_sdr_angles_dict(viirs_sdr_i01_data_array, VIIRS_I_ANGLES_IDS))
+    return data_arrays
+
+
+@pytest.fixture
+def viirs_sdr_m_dict(viirs_sdr_m01_data_array, viirs_sdr_m12_data_array):
+    data_arrays = {}
     for data_id in VIIRS_M_IDS[:12]:
         data_arrays[data_id] = viirs_sdr_m01_data_array.copy()
     for data_id in VIIRS_M_IDS[12:]:
         data_arrays[data_id] = viirs_sdr_m12_data_array.copy()
+    data_arrays.update(_viirs_sdr_angles_dict(viirs_sdr_m01_data_array, VIIRS_M_ANGLES_IDS))
+    return data_arrays
+
+
+@pytest.fixture
+def viirs_sdr_dnb_dict(viirs_sdr_dnb_data_array):
+    data_arrays = {}
     for data_id in VIIRS_DNB_IDS:
         data_arrays[data_id] = viirs_sdr_dnb_data_array.copy()
+    data_arrays.update(_viirs_sdr_angles_dict(viirs_sdr_dnb_data_array, VIIRS_DNB_ANGLES_IDS))
+    return data_arrays
 
-    all_angle_arrays = [viirs_sdr_i01_data_array, viirs_sdr_m01_data_array, viirs_sdr_dnb_data_array]
-    all_angle_ids = [VIIRS_I_ANGLES_IDS, VIIRS_M_ANGLES_IDS, VIIRS_DNB_ANGLES_IDS]
-    for base_data_arr, angle_ids in zip(all_angle_arrays, all_angle_ids):
-        for angle_id in angle_ids:
-            data_arr = base_data_arr.copy()
-            del data_arr.attrs["calibration"]
-            data_arr.attrs["name"] = angle_id["name"]
-            data_arrays[angle_id] = data_arr
+
+def _viirs_sdr_angles_dict(
+    base_data_arr,
+    angle_ids,
+):
+    data_arrays = {}
+    for angle_id in angle_ids:
+        data_arr = base_data_arr.copy()
+        del data_arr.attrs["calibration"]
+        data_arr.attrs["name"] = angle_id["name"]
+        data_arrays[angle_id] = data_arr
     return data_arrays
 
 
