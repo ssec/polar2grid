@@ -34,6 +34,7 @@ from typing import Optional, Union
 import dask
 import satpy
 from dask.diagnostics import ProgressBar
+from pyresample import SwathDefinition
 from satpy import DataID, Scene
 from satpy.writers import compute_writer_results
 
@@ -348,9 +349,12 @@ class _GlueProcessor:
             return 0
 
         products = reader_info.get_satpy_products_to_load()
+        persist_geolocation = not load_args.pop("no_persist_geolocation", True)
         if not products:
             return -1
         scn.load(products, **load_args)
+        if persist_geolocation:
+            _persist_swath_definition_in_scene(scn)
 
         reader_args = arg_parser._reader_args
         filter_kwargs = {
@@ -383,6 +387,26 @@ class _GlueProcessor:
         compute_writer_results(to_save)
         LOG.info("SUCCESS")
         return 0
+
+
+def _persist_swath_definition_in_scene(scn: Scene) -> None:
+    persisted_swath_defs = {}
+    for data_arr in scn.values():
+        swath_def = data_arr.attrs.get("area")
+        if not isinstance(swath_def, SwathDefinition):
+            continue
+        persisted_swath_def = persisted_swath_defs.get(swath_def)
+        if persisted_swath_def is None:
+            persisted_swath_def = _persist_swath_definition(swath_def)
+            persisted_swath_defs[swath_def] = persisted_swath_def
+        data_arr.attrs["area"] = persisted_swath_def
+
+
+def _persist_swath_definition(swath_def: SwathDefinition) -> SwathDefinition:
+    lons, lats = swath_def.lons, swath_def.lats
+    plons, plats = dask.persist(lons, lats)
+    persisted_swath_def = SwathDefinition(plons, plats)
+    return persisted_swath_def
 
 
 if __name__ == "__main__":
