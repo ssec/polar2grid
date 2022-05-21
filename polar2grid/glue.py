@@ -349,7 +349,7 @@ class _GlueProcessor:
             return 0
 
         products = reader_info.get_satpy_products_to_load()
-        persist_geolocation = not load_args.pop("no_persist_geolocation", True)
+        persist_geolocation = not arg_parser._reader_args.pop("no_persist_geolocation", False)
         if not products:
             return -1
         scn.load(products, **load_args)
@@ -400,6 +400,7 @@ def _persist_swath_definition_in_scene(scn: Scene) -> None:
             persisted_swath_def = _persist_swath_definition(swath_def)
             persisted_swath_defs[swath_def] = persisted_swath_def
         data_arr.attrs["area"] = persisted_swath_def
+    LOG.debug(f"{len(persisted_swath_defs)} unique swath definitions persisted")
 
 
 def _persist_swath_definition(swath_def: SwathDefinition) -> SwathDefinition:
