@@ -354,7 +354,7 @@ class _GlueProcessor:
             return -1
         scn.load(products, **load_args)
         if persist_geolocation:
-            _persist_swath_definition_in_scene(scn)
+            scn = _persist_swath_definition_in_scene(scn)
 
         reader_args = arg_parser._reader_args
         filter_kwargs = {
@@ -391,6 +391,7 @@ class _GlueProcessor:
 
 def _persist_swath_definition_in_scene(scn: Scene) -> None:
     persisted_swath_defs = {}
+    new_scn = scn.copy()
     for data_arr in scn.values():
         swath_def = data_arr.attrs.get("area")
         if not isinstance(swath_def, SwathDefinition):
@@ -399,8 +400,12 @@ def _persist_swath_definition_in_scene(scn: Scene) -> None:
         if persisted_swath_def is None:
             persisted_swath_def = _persist_swath_definition(swath_def)
             persisted_swath_defs[swath_def] = persisted_swath_def
-        data_arr.attrs["area"] = persisted_swath_def
+        new_data_arr = data_arr.copy()
+        new_data_arr.attrs["area"] = persisted_swath_def
+        scn._datasets[data_arr.attrs["_satpy_id"]] = new_data_arr
+        # data_arr.attrs["area"] = persisted_swath_def
     LOG.debug(f"{len(persisted_swath_defs)} unique swath definitions persisted")
+    return new_scn
 
 
 def _persist_swath_definition(swath_def: SwathDefinition) -> SwathDefinition:
