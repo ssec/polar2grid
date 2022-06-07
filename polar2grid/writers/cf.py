@@ -38,8 +38,6 @@ different grids, the CF compliant workaround is to save the datasets to separate
 import logging
 import json
 
-from polar2grid.core.script_utils import BooleanOptionalAction
-
 LOG = logging.getLogger(__name__)
 
 # reader_name -> filename
