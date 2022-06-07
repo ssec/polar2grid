@@ -35,8 +35,8 @@ different grids, the CF compliant workaround is to save the datasets to separate
 
 
 """
-import logging
 import json
+import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -52,7 +52,6 @@ DEFAULT_OUTPUT_FILENAMES = {
 
 
 def add_writer_argument_groups(parser, group=None):
-
     if group is None:
         group = parser.add_argument_group(title="cf Writer")
     group.add_argument(
