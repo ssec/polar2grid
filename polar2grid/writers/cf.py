@@ -45,7 +45,7 @@ DEFAULT_OUTPUT_FILENAMES = {
     "polar2grid": {
         None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.nc",
     },
-    "geo2grid": {
+        "geo2grid": {
         None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.nc",
     },
 }
