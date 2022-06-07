@@ -44,10 +44,10 @@ LOG = logging.getLogger(__name__)
 
 # reader_name -> filename
 DEFAULT_OUTPUT_FILENAMES = {
-        "polar2grid": {
+    "polar2grid": {
         None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.nc",
     },
-        "geo2grid": {
+    "geo2grid": {
         None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.nc",
     },
 }
@@ -80,8 +80,8 @@ def add_writer_argument_groups(parser, group=None):
         "--engine",
         default="netcdf4",
         help="Module to be used for writing netCDF files. Follows xarray's"
-              ":meth:`~xarray.Dataset.to_netcdf` engine choices with a"
-              "preference for 'netcdf4'.",
+        ":meth:`~xarray.Dataset.to_netcdf` engine choices with a"
+        "preference for 'netcdf4'.",
     )
     group.add_argument(
         "--epoch",
@@ -95,31 +95,30 @@ def add_writer_argument_groups(parser, group=None):
     )
     group.add_argument(
         "--no_lonlats",
-        dest='include_lonlats',
-        action='store_false',
-        help="Don't include latitude and longitude coordinates."
+        dest="include_lonlats",
+        action="store_false",
+        help="Don't include latitude and longitude coordinates.",
     )
 
-    group.add_argument(
-        "--not_pretty", dest="pretty", action='store_true',
-        help="Modify coordinate names"
-    )
+    group.add_argument("--not_pretty", dest="pretty", action="store_true", help="Modify coordinate names")
 
     group.add_argument(
-        "--no_include_orig_name", dest="include_orig_name", action='store_false',
-        help="Do not include the original dataset name as a variable attribute in the final netcdf."
+        "--no_include_orig_name",
+        dest="include_orig_name",
+        action="store_false",
+        help="Do not include the original dataset name as a variable attribute in the final netcdf.",
     )
 
     group.add_argument(
         "--flatten_attrs",
-        action='store_true',
+        action="store_true",
         help="If invoked, flatten dict-type attributes",
     )
 
     group.add_argument(
         "--numeric_name_prefix",
         default="CHANNEL_",
-        help="Prefix added to each variable. For name starting with a digit.Use '' or None to leave this out.."
+        help="Prefix added to each variable. For name starting with a digit.Use '' or None to leave this out..",
     )
 
     return group, None
