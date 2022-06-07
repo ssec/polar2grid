@@ -38,13 +38,11 @@ different grids, the CF compliant workaround is to save the datasets to separate
 import logging
 import json
 
-from polar2grid.core.script_utils import BooleanOptionalAction
-
 LOG = logging.getLogger(__name__)
 
 # reader_name -> filename
 DEFAULT_OUTPUT_FILENAMES = {
-        "polar2grid": {
+    "polar2grid": {
         None: "{platform_name}_{sensor}_{start_time:%Y%m%d_%H%M%S}.nc",
     },
     "geo2grid": {
@@ -54,7 +52,6 @@ DEFAULT_OUTPUT_FILENAMES = {
 
 
 def add_writer_argument_groups(parser, group=None):
-
     if group is None:
         group = parser.add_argument_group(title="cf Writer")
     group.add_argument(
@@ -80,8 +77,8 @@ def add_writer_argument_groups(parser, group=None):
         "--engine",
         default="netcdf4",
         help="Module to be used for writing netCDF files. Follows xarray's"
-              ":meth:`~xarray.Dataset.to_netcdf` engine choices with a"
-              "preference for 'netcdf4'.",
+             ":meth:`~xarray.Dataset.to_netcdf` engine choices with a"
+             "preference for 'netcdf4'.",
     )
     group.add_argument(
         "--epoch",
