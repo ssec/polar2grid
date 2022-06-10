@@ -445,6 +445,17 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
         "Less than this is day, greater than or equal to "
         "this value is night.",
     )
+    group_1.add_argument(
+        "--no-persist-geolocation",
+        action="store_true",
+        # help="After data is loaded, compute all geolocation arrays and hold "
+        #      "them in memory. This should allow processing to perform faster "
+        #      "in most cases at the cost of higher memory usage. This will "
+        #      "have the biggest impact on readers whose lon/lat arrays are "
+        #      "expensive to load (ex. modis_l1b). This currently only works "
+        #      "on swath-based geolocation data and has no effect otherwise.",
+        help=argparse.SUPPRESS,
+    )
     return (group_1,)
 
 
