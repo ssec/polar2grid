@@ -25,7 +25,7 @@ repos:
       - id: check-yaml
         args: [--unsafe]
   - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.5.0-1
+    rev: v3.5.1-1
     hooks:
       - id: shfmt  # native (requires Go to build)
         args: ["-i", "4"]
