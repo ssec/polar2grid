@@ -27,12 +27,17 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
-"""The cf writer puts gridded image data into a `CF-compliant` netCDF file.
+r"""The cf writer puts gridded image data into a `CF-compliant` netCDF file.
 
 All datasets to be saved must have the same projection coordinates ``x`` and ``y``. If a scene holds datasets with
 different grids, the CF compliant workaround is to save the datasets to separate files.
 
+Group key and list values  must use escapes before quoting.
 
+Example:
+  >>>  python glue.py -r clavrx -w cf -f clavrx_OR_ABI-L1b-RadC-M6C01_G16_s202212419011712.level2.nc \
+       -vvv -g WGS84_MESO --grid-configs mygrid.conf -p cld_press_acha cld_temp_acha --method nearest \
+       --groups "{\"WGS84_MESO\": [\"cld_press_acha\", \"cld_temp_acha\"]}"
 
 """
 import json
