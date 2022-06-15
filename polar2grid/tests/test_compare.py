@@ -168,7 +168,11 @@ def _create_awips_tiled(base_dir, img_data):
 def test_basic_compare(
     tmp_path, expected_file_func, actual_file_func, expected_data, actual_data, exp_num_diff, include_html
 ):
+    import os
+
     from polar2grid.compare import main
+
+    os.chmod(tmp_path, 0o777)
 
     expected_dir = tmp_path / "expected"
     expected_dir.mkdir()
