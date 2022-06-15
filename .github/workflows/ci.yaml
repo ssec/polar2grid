@@ -164,11 +164,14 @@ jobs:
           pip install --no-deps -e .
         if: runner.os == 'Windows'
 
-      - name: Run unit tests on Windows
+      - name: Run help usage tests on Windows
         shell: powershell
+        # Windows CI doesn't have enough memory for the tests
+#          pytest --cov=polar2grid polar2grid/tests --cov-report=
+#          if ($LASTEXITCODE) { exit $LASTEXITCODE }
         run: |
-          pytest --cov=polar2grid polar2grid/tests --cov-report=
           polar2grid --help
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           geo2grid --help
         if: runner.os == 'Windows'
 

@@ -561,13 +561,14 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
         )
         group_1.add_argument(
             "--ewa-persist",
-            default=argparse.SUPPRESS,
-            help="Pre-compute geolocation to determine what "
-            "chunks of data should be resampled "
-            '(--method "ewa"). This can reduce the '
-            "overall work required by the algorithm, "
-            "but only if a small amount of swath data "
-            "lies on the target area.",
+            action="store_true",
+            help=argparse.SUPPRESS,
+            # help="Pre-compute geolocation to determine what "
+            # "chunks of data should be resampled "
+            # '(--method "ewa"). This can reduce the '
+            # "overall work required by the algorithm, "
+            # "but only if a small amount of swath data "
+            # "lies on the target area.",
         )
     else:
         group_1.add_argument(
