@@ -45,6 +45,7 @@ from polar2grid.resample._resample_scene import resample_scene
         "max_computes",
         "is_polar2grid",
         "exp_resampler_cls",
+        "exp_cov_filter_count",
         "extra_kwargs",
         "exp_kwargs",
     ),
@@ -55,9 +56,10 @@ from polar2grid.resample._resample_scene import resample_scene
             lazy_fixture("builtin_grids_yaml"),
             None,
             ["I01"],
-            2,
+            1,
             True,
             DaskEWAResampler,
+            0,
             {},
             {"weight_delta_max": 40.0, "weight_distance_max": 2.0},
         ),
@@ -67,10 +69,24 @@ from polar2grid.resample._resample_scene import resample_scene
             [],
             None,
             ["I01"],
-            2,
+            1,
             True,
             DaskEWAResampler,
+            0,
             {},
+            {"weight_delta_max": 40.0, "weight_distance_max": 2.0},
+        ),
+        (
+            lazy_fixture("viirs_sdr_i01_scene"),
+            ["211e"],
+            [],
+            None,
+            ["I01"],
+            1,
+            True,
+            DaskEWAResampler,
+            1,
+            {"grid_coverage": 0.05},
             {"weight_delta_max": 40.0, "weight_distance_max": 2.0},
         ),
         (
@@ -79,9 +95,10 @@ from polar2grid.resample._resample_scene import resample_scene
             ["grids.conf"],
             None,
             ["I01"],
-            2,
+            1,
             True,
             DaskEWAResampler,
+            0,
             {},
             {"weight_delta_max": 40.0, "weight_distance_max": 2.0},
         ),
@@ -91,9 +108,10 @@ from polar2grid.resample._resample_scene import resample_scene
             ["grids.conf"],
             "ewa",
             ["I01"],
-            2,
+            1,
             True,
             DaskEWAResampler,
+            0,
             {"weight_distance_max": 3.0, "maximum_weight_mode": True},
             {"weight_delta_max": 40.0, "weight_distance_max": 3.0, "maximum_weight_mode": True},
         ),
@@ -103,9 +121,10 @@ from polar2grid.resample._resample_scene import resample_scene
             ["grids.conf"],
             None,
             ["I01"],
-            2,
+            1,
             True,
             DaskEWAResampler,
+            0,
             {"weight_distance_max": 3.0, "maximum_weight_mode": True},
             {"weight_delta_max": 40.0, "weight_distance_max": 3.0, "maximum_weight_mode": True},
         ),
@@ -118,6 +137,7 @@ from polar2grid.resample._resample_scene import resample_scene
             0,
             False,
             KDTreeResampler,
+            0,
             {},
             {},
         ),
@@ -130,6 +150,7 @@ from polar2grid.resample._resample_scene import resample_scene
             0,
             False,
             KDTreeResampler,
+            0,
             {},
             {},
         ),
@@ -142,6 +163,7 @@ from polar2grid.resample._resample_scene import resample_scene
             0,
             False,
             NativeResampler,
+            0,
             {},
             {},
         ),
@@ -152,6 +174,7 @@ def test_resample_single_result_per_grid(
     grids,
     grid_configs,
     resampler,
+    exp_cov_filter_count,
     exp_names,
     max_computes,
     is_polar2grid,
@@ -161,9 +184,13 @@ def test_resample_single_result_per_grid(
 ):
     from satpy.resample import resample
 
+    from polar2grid.filters.resample_coverage import ResampleCoverageFilter
+
     with dask.config.set(scheduler=CustomScheduler(max_computes)), mock.patch(
         "satpy.resample.resample", wraps=resample
-    ) as satpy_resample:
+    ) as satpy_resample, mock.patch(
+        "polar2grid.resample._resample_scene.ResampleCoverageFilter", wraps=ResampleCoverageFilter
+    ) as resamp_cov:
         input_scene.load(exp_names)
         scenes_to_save = resample_scene(
             input_scene,
@@ -173,6 +200,7 @@ def test_resample_single_result_per_grid(
             is_polar2grid=is_polar2grid,
             **extra_kwargs,
         )
+    assert resamp_cov.call_count == exp_cov_filter_count
     satpy_resample.assert_called_once()
     satpy_resample.assert_called_once_with(
         mock.ANY, mock.ANY, mock.ANY, fill_value=mock.ANY, resampler=mock.ANY, **exp_kwargs

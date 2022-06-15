@@ -195,7 +195,6 @@ def resample_scene(
             new_scn = _filter_and_resample_scene_to_single_area(
                 area_name,
                 area_def,
-                resampler,
                 _grid_cov,
                 has_dynamic_extents,
                 scene_to_resample,
@@ -268,7 +267,6 @@ def _get_default_resampler(resampler, area_name, area_def, input_scene):
 def _filter_and_resample_scene_to_single_area(
     area_name: str,
     area_def: Optional[PRGeometry],
-    resampler: str,
     grid_coverage: float,
     has_dynamic_extents: bool,
     input_scene: Scene,
@@ -280,7 +278,7 @@ def _filter_and_resample_scene_to_single_area(
     filtered_data_ids, filtered_scn = _filter_scene_with_grid_coverage(
         area_name,
         area_def,
-        resampler,
+        rs,
         grid_coverage,
         has_dynamic_extents,
         input_scene,
@@ -308,7 +306,6 @@ def _is_native_grid(grid, max_native_area):
         return False
     if not _crs_equal(max_native_area, grid):
         return False
-    # if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent), atol=grid.pixel_size_x):
     if not np.allclose(np.array(max_native_area.area_extent), np.array(grid.area_extent)):
         return False
     if max_native_area.width < grid.width:
