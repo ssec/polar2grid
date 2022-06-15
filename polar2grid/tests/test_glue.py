@@ -161,11 +161,7 @@ class TestGlueFakeScene:
         ],
     )
     def test_viirs_sdr_scene(self, scene_fixture, product_names, num_outputs, extra_flags, chtmpdir):
-        import os
-
         from polar2grid.glue import main
-
-        print("test_viirs_sdr_scene: ", scene_fixture, product_names, os.getcwd())
 
         with set_env(USE_POLAR2GRID_DEFAULTS="1"), mock.patch("polar2grid.glue._create_scene") as create_scene:
             create_scene.return_value = scene_fixture
