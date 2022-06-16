@@ -76,7 +76,33 @@ cleanup() {
     rm -f "$IN1_RGB_FN" 2>/dev/null
     rm -f "$IN2_RGB_FN" 2>/dev/null
 }
-trap cleanup 0 ERR
+
+get_compression_option_flags() {
+    python <<EOF
+import rasterio
+
+try:
+    ds = rasterio.open("$1")
+    compress = ds.compression.value
+    print(" -co COMPRESS={}".format(compress))
+except AttributeError:
+    pass
+EOF
+}
+
+get_tiled_option_flags() {
+    python <<EOF
+import rasterio
+
+try:
+    ds = rasterio.open("$1")
+    if ds.is_tiled and ds.block_shapes:
+        block_x, block_y = ds.block_shapes[0]
+        print(" -co TILED=YES -co BLOCKXSIZE={} -co BLOCKYSIZE={}".format(block_x, block_y))
+except AttributeError:
+    pass
+EOF
+}
 
 if [[ $# -ne 3 ]]; then
     echo "Usage: overlay.sh background.tif foreground.tif out.tif"
@@ -87,9 +113,22 @@ IN1=$1
 IN2=$2
 OUT=$3
 
+trap cleanup 0 ERR
+
+OTHER_ARGS=""
+OTHER_ARGS="${OTHER_ARGS} $()"
+compress_flags=$(get_compression_option_flags $IN1)
+if [[ $compress_flags != "" ]]; then
+    OTHER_ARGS="$OTHER_ARGS $compress_flags"
+fi
+tile_flags=$(get_tiled_option_flags $IN1)
+if [[ $tile_flags != "" ]]; then
+    OTHER_ARGS="$OTHER_ARGS $tile_flags"
+fi
+
 IN1_RGB_FN=${IN1/.tif/.__rgba__.tif}
 IN2_RGB_FN=${IN2/.tif/.__rgba__.tif}
 to_rgba ${IN1} ${IN1_RGB_FN} || oops "Could not create RGBA version of ${IN1}"
 to_rgba ${IN2} ${IN2_RGB_FN} || oops "Could not create RGBA version of ${IN2}"
-gdal_merge.py -o ${OUT} $IN1_RGB_FN $IN2_RGB_FN || oops "Could not create merged image"
+gdal_merge.py -o ${OUT} $OTHER_ARGS $IN1_RGB_FN $IN2_RGB_FN || oops "Could not create merged image"
 >&2 echo "SUCCESS"
