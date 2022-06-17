@@ -27,8 +27,10 @@ import os
 from glob import glob
 from unittest import mock
 
+import dask
 import pytest
 from pytest_lazyfixture import lazy_fixture
+from satpy.tests.utils import CustomScheduler
 
 
 @contextlib.contextmanager
@@ -129,16 +131,18 @@ class TestGlueWithVIIRS:
 
 class TestGlueFakeScene:
     @pytest.mark.parametrize(
-        ("scene_fixture", "product_names", "num_outputs"),
+        ("scene_fixture", "product_names", "num_outputs", "max_computes"),
         [
-            (lazy_fixture("abi_l1b_c01_scene"), ["C01"], 1),
-            (lazy_fixture("abi_l1b_airmass_scene"), ["airmass"], 1),
+            (lazy_fixture("abi_l1b_c01_scene"), ["C01"], 1, 1),
+            (lazy_fixture("abi_l1b_airmass_scene"), ["airmass"], 1, 1),
         ],
     )
-    def test_abi_scene(self, scene_fixture, product_names, num_outputs, chtmpdir):
+    def test_abi_scene(self, scene_fixture, product_names, num_outputs, max_computes, chtmpdir):
         from polar2grid.glue import main
 
-        with set_env(USE_POLAR2GRID_DEFAULTS="0"), mock.patch("polar2grid.glue._create_scene") as create_scene:
+        with set_env(USE_POLAR2GRID_DEFAULTS="0"), mock.patch(
+            "polar2grid.glue._create_scene"
+        ) as create_scene, dask.config.set(scheduler=CustomScheduler(max_computes)):
             create_scene.return_value = scene_fixture
             ret = main(["-r", "abi_l1b", "-w", "geotiff", "-f", str(chtmpdir), "-p"] + product_names)
         output_files = glob(str(chtmpdir / "*.tif"))
@@ -146,24 +150,32 @@ class TestGlueFakeScene:
         assert ret == 0
 
     @pytest.mark.parametrize(
-        ("scene_fixture", "product_names", "num_outputs", "extra_flags"),
+        ("scene_fixture", "product_names", "num_outputs", "extra_flags", "max_computes"),
         [
-            (lazy_fixture("viirs_sdr_i01_scene"), [], 1, []),
-            (lazy_fixture("viirs_sdr_i01_scene"), [], 1, ["--dnb-saturation-correction"]),
-            (lazy_fixture("viirs_sdr_full_scene"), [], 5 + 16 + 3 + 1 + 1 + 1, ["--dnb-saturation-correction"]),
+            # lon/lat persist -> day/night check (I band) -> dynamic grid -> final compute
+            (lazy_fixture("viirs_sdr_i01_scene"), [], 1, [], 4),
+            # lon/lat persist -> day/night check (I band) -> dynamic grid -> final compute
+            (lazy_fixture("viirs_sdr_i01_scene"), [], 1, ["--dnb-saturation-correction"], 4),
+            # lon/lat persist -> day/night check (x2 = I band + M band) -> dynamic grid -> final compute
+            (lazy_fixture("viirs_sdr_full_scene"), [], 5 + 16 + 3 + 1 + 1 + 1, ["--dnb-saturation-correction"], 5),
+            # lon/lat persist -> day/night check (x2 = I band + M band) -> dynamic grid -> final compute
             (
                 lazy_fixture("viirs_sdr_full_scene"),
                 [],
                 5,
                 ["-g", "lcc_conus_1km", "--awips-true-color", "--awips-false-color"],
+                5,
             ),
-            (lazy_fixture("viirs_sdr_i01_scene"), [], 1, ["--method", "native", "-g", "MAX"]),
+            # lon/lat persist -> day/night check (I band) -> final compute
+            (lazy_fixture("viirs_sdr_i01_scene"), [], 1, ["--method", "native", "-g", "MAX"], 3),
         ],
     )
-    def test_viirs_sdr_scene(self, scene_fixture, product_names, num_outputs, extra_flags, chtmpdir):
+    def test_viirs_sdr_scene(self, scene_fixture, product_names, num_outputs, extra_flags, max_computes, chtmpdir):
         from polar2grid.glue import main
 
-        with set_env(USE_POLAR2GRID_DEFAULTS="1"), mock.patch("polar2grid.glue._create_scene") as create_scene:
+        with set_env(USE_POLAR2GRID_DEFAULTS="1"), mock.patch(
+            "polar2grid.glue._create_scene"
+        ) as create_scene, dask.config.set(scheduler=CustomScheduler(max_computes)):
             create_scene.return_value = scene_fixture
             args = ["-r", "viirs_sdr", "-w", "geotiff", "-vvv", "-f", str(chtmpdir)]
             if product_names:

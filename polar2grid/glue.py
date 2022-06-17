@@ -390,29 +390,34 @@ class _GlueProcessor:
 
 
 def _persist_swath_definition_in_scene(scn: Scene) -> None:
-    persisted_swath_defs = {}
+    to_persist_swath_defs = _swaths_to_persist(scn)
+    if not to_persist_swath_defs:
+        return scn
+
+    to_update_data_arrays, to_persist_lonlats = zip(*to_persist_swath_defs.values())
+    LOG.info("Loading swath geolocation into memory...")
+    persisted_lonlats = dask.persist(*to_persist_lonlats)
+    persisted_swath_defs = [SwathDefinition(plons, plats) for plons, plats in persisted_lonlats]
     new_scn = scn.copy()
+    for arrays_to_update, persisted_swath_def in zip(to_update_data_arrays, persisted_swath_defs):
+        for array_to_update in arrays_to_update:
+            array_to_update.attrs["area"] = persisted_swath_def
+            new_scn._datasets[array_to_update.attrs["_satpy_id"]] = array_to_update
+    LOG.debug(f"{len(to_persist_swath_defs)} unique swath definitions persisted")
+    return new_scn
+
+
+def _swaths_to_persist(scn: Scene) -> dict:
+    to_persist_swath_defs = {}
     for data_arr in scn.values():
         swath_def = data_arr.attrs.get("area")
         if not isinstance(swath_def, SwathDefinition):
             continue
-        persisted_swath_def = persisted_swath_defs.get(swath_def)
-        if persisted_swath_def is None:
-            persisted_swath_def = _persist_swath_definition(swath_def)
-            persisted_swath_defs[swath_def] = persisted_swath_def
-        new_data_arr = data_arr.copy()
-        new_data_arr.attrs["area"] = persisted_swath_def
-        scn._datasets[data_arr.attrs["_satpy_id"]] = new_data_arr
-        # data_arr.attrs["area"] = persisted_swath_def
-    LOG.debug(f"{len(persisted_swath_defs)} unique swath definitions persisted")
-    return new_scn
-
-
-def _persist_swath_definition(swath_def: SwathDefinition) -> SwathDefinition:
-    lons, lats = swath_def.lons, swath_def.lats
-    plons, plats = dask.persist(lons, lats)
-    persisted_swath_def = SwathDefinition(plons, plats)
-    return persisted_swath_def
+        this_swath_data_array_copies, _ = to_persist_swath_defs.setdefault(
+            swath_def, ([], (swath_def.lons, swath_def.lats))
+        )
+        this_swath_data_array_copies.append(data_arr.copy())
+    return to_persist_swath_defs
 
 
 if __name__ == "__main__":

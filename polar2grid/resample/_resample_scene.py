@@ -153,7 +153,7 @@ class AreaDefResolver:
     def _freeze_area_if_dynamic(self, area_def: PRGeometry) -> PRGeometry:
         if isinstance(area_def, DynamicAreaDefinition):
             logger.info("Computing dynamic grid parameters...")
-            area_def = area_def.freeze(self.input_scene.max_area())
+            area_def = area_def.freeze(self.input_scene.finest_area())
             logger.debug("Frozen dynamic area: %s", area_def)
         return area_def
 
@@ -257,7 +257,11 @@ def _redict_hashable_kwargs(kwargs_tuple):
 
 def _get_default_resampler(resampler, area_name, area_def, input_scene):
     if resampler is None and area_def is not None:
-        rs = "native" if area_name in ["MIN", "MAX"] or _is_native_grid(area_def, input_scene.max_area()) else "nearest"
+        rs = (
+            "native"
+            if area_name in ["MIN", "MAX"] or _is_native_grid(area_def, input_scene.finest_area())
+            else "nearest"
+        )
         logger.debug("Setting default resampling to '{}' for grid '{}'".format(rs, area_name))
     else:
         rs = resampler
