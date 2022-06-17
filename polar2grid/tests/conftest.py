@@ -39,6 +39,15 @@ def pytest_configure(config):
     add_polar2grid_config_paths()
 
 
+@pytest.fixture(autouse=True)
+def clear_cached_functions():
+    from polar2grid.filters._utils import polygon_for_area
+    from polar2grid.filters.day_night import _get_sunlight_coverage
+
+    _get_sunlight_coverage.cache_clear()
+    polygon_for_area.cache_clear()
+
+
 @pytest.fixture
 def chtmpdir(tmp_path: Path):
     lwd = os.getcwd()

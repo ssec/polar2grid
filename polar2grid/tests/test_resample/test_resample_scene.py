@@ -234,7 +234,7 @@ def test_partial_filter(viirs_sdr_i01_data_array):
     new_scn["I01_2"] = new_i01
 
     # computation 1: input swath 1 polygon
-    # computation 3: input swath 2 polygon (filtered and not resampled)
+    # computation 2: input swath 2 polygon (filtered and not resampled)
     with dask.config.set(scheduler=CustomScheduler(2)):
         scenes_to_save = resample_scene(
             new_scn,
