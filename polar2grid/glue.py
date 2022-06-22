@@ -352,9 +352,10 @@ class _GlueProcessor:
         persist_geolocation = not arg_parser._reader_args.pop("no_persist_geolocation", False)
         if not products:
             return -1
-        scn.load(products, **load_args)
+        scn.load(products, **load_args, generate=False)
         if persist_geolocation:
             scn = _persist_swath_definition_in_scene(scn)
+        scn.generate_possible_composites(True)
 
         reader_args = arg_parser._reader_args
         filter_kwargs = {
