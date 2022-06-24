@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2018 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2022 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -20,14 +20,7 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    March 2016
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
-"""The cf writer puts gridded image data into a `CF-compliant` netCDF file.
+"""The CF writer puts gridded image data into a `CF-compliant` NetCDF file.
 
 All datasets to be saved must have the same projection coordinates ``x`` and ``y``. If a scene holds datasets with
 different grids, the CF compliant workaround is to save the datasets to separate files.
@@ -65,7 +58,7 @@ def add_writer_argument_groups(parser, group=None):
     )
 
     group.add_argument(
-        "--header_attrs",
+        "--header-attrs",
         dest="header_attrs",
         type=json.loads,
         help="Global attributes to be included.",
@@ -74,44 +67,49 @@ def add_writer_argument_groups(parser, group=None):
     group.add_argument(
         "--engine",
         default="netcdf4",
-        help="Module to be used for writing netCDF files. Follows xarray's"
-        ":meth:`~xarray.Dataset.to_netcdf` engine choices with a"
-        "preference for 'netcdf4'.",
+        help="Engine for writing NetCDF file \
+             (options: '"
+        "netcdf4"
+        "', '"
+        "scipy"
+        "', '"
+        "h5netcdf"
+        "').",
     )
-    group.add_argument(
-        "--epoch",
-        help="Reference time for encoding of time coordinates",
-    )
+    group.add_argument("--epoch-units", dest="epoch", help="Reference unit for the netCDF time coordinates.")
 
     group.add_argument(
-        "--exclude_attrs",
+        "--exclude-attrs",
+        dest="--exclude_attrs",
         nargs="+",
         help="List of dataset attributes to be excluded",
     )
     group.add_argument(
-        "--no_lonlats",
+        "--include-lonlats",
         dest="include_lonlats",
-        action="store_false",
-        help="Don't include latitude and longitude coordinates.",
+        action="store_true",
+        help="Include latitude and longitude coordinates.",
     )
 
-    group.add_argument("--not_pretty", dest="pretty", action="store_true", help="Modify coordinate names")
+    group.add_argument("--pretty", action="store_true", help="Do not prefix coordinate with corresponding dataset name")
 
     group.add_argument(
-        "--no_include_orig_name",
+        "--include-orig-name",
         dest="include_orig_name",
-        action="store_false",
-        help="Do not include the original dataset name as a variable attribute in the final netcdf.",
+        action="store_true",
+        help="Include the original dataset name as a variable attribute in the final netcdf.",
     )
 
     group.add_argument(
-        "--flatten_attrs",
+        "--flatten-attrs",
+        dest="--flatten_attrs",
         action="store_true",
         help="If invoked, flatten dict-type attributes",
     )
 
     group.add_argument(
-        "--numeric_name_prefix",
+        "--numeric-name-prefix",
+        dest="--numeric_name_prefix",
         default="CHANNEL_",
         help="Prefix added to each variable. For name starting with a digit.Use '' or None to leave this out..",
     )
