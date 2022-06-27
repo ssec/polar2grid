@@ -52,14 +52,12 @@ def add_writer_argument_groups(parser, group=None):
     )
     group.add_argument(
         "--groups",
-        dest="groups",
         type=json.loads,
         help="Group datasets according to the given assignment: `{'group_name': ['dataset1', 'dataset2', ...]}`.",
     )
 
     group.add_argument(
         "--header-attrs",
-        dest="header_attrs",
         type=json.loads,
         help="Global attributes to be included.",
     )
@@ -80,13 +78,11 @@ def add_writer_argument_groups(parser, group=None):
 
     group.add_argument(
         "--exclude-attrs",
-        dest="--exclude_attrs",
         nargs="+",
         help="List of dataset attributes to be excluded",
     )
     group.add_argument(
         "--include-lonlats",
-        dest="include_lonlats",
         action="store_true",
         help="Include latitude and longitude coordinates.",
     )
@@ -95,21 +91,18 @@ def add_writer_argument_groups(parser, group=None):
 
     group.add_argument(
         "--include-orig-name",
-        dest="include_orig_name",
         action="store_true",
         help="Include the original dataset name as a variable attribute in the final netcdf.",
     )
 
     group.add_argument(
         "--flatten-attrs",
-        dest="--flatten_attrs",
         action="store_true",
         help="If invoked, flatten dict-type attributes",
     )
 
     group.add_argument(
         "--numeric-name-prefix",
-        dest="--numeric_name_prefix",
         default="CHANNEL_",
         help="Prefix added to each variable. For name starting with a digit.Use '' or None to leave this out..",
     )
