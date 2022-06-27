@@ -53,11 +53,11 @@ more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | C05                       | Channel 5 (1.61um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| C06                       | Channel 6 (2.22um) Reflectance Band                 |
+| C06                       | Channel 6 (2.25um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| C07                       | Channel 7 (3.72um) Brightness Temperature Band      |
+| C07                       | Channel 7 (3.75um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| C08                       | Channel 8 (3.72um) Brightness Temperature Band      |
+| C08                       | Channel 8 (3.75um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
 | C09                       | Channel 9 (6.25um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
@@ -65,15 +65,11 @@ more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | C11                       | Channel 11 (8.5um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| C12                       | Channel 12 (10.8um) Brightness Temperature Band     |
+| C12                       | Channel 12 (10.7um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
 | C13                       | Channel 13 (12.0um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
 | C14                       | Channel 14 (13.5um) Brightness Temperature Band     |
-+---------------------------+-----------------------------------------------------+
-| C15                       | Channel 15 (12.0um) Brightness Temperature Band     |
-+---------------------------+-----------------------------------------------------+
-| C16                       | Channel 16 (13.5um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+
@@ -96,7 +92,7 @@ from typing import Optional
 
 from ._base import ReaderProxyBase
 
-READER_PRODUCTS = ["C{:02d}".format(x) for x in range(1, 17)]
+READER_PRODUCTS = ["C{:02d}".format(x) for x in range(1, 15)]
 COMPOSITE_PRODUCTS = [
     "true_color",
     "natural_color",
