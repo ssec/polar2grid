@@ -140,6 +140,12 @@ def add_writer_argument_groups(parser, group=None):
         "typically as powers of 2. Example: '2 4 8 16'",
     )
     group.add_argument(
+        "--overviews-resampling",
+        default="nearest",
+        choices=("nearest", "average", "bilinear", "cubic", "cubicspline", "lanczos"),
+        help="Specify resampling used when generating overviews",
+    )
+    group.add_argument(
         "--gdal-driver",
         dest="driver",
         help="Name of the GDAL driver to use when writing the geotiff. "
