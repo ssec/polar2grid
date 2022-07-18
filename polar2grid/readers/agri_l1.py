@@ -92,6 +92,8 @@ from typing import Optional
 
 from ._base import ReaderProxyBase
 
+PREFERRED_CHUNK_SIZE: int = 4096
+
 READER_PRODUCTS = ["C{:02d}".format(x) for x in range(1, 15)]
 COMPOSITE_PRODUCTS = [
     "true_color",
@@ -105,7 +107,7 @@ COMPOSITE_PRODUCTS = [
 class ReaderProxy(ReaderProxyBase):
     """Provide Polar2Grid-specific information about this reader's products."""
 
-    is_geo2grid_reader = True
+    is_geo2grid_reader: bool = True
 
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""

@@ -101,6 +101,8 @@ from typing import Optional
 from ..core.script_utils import BooleanOptionalAction
 from ._base import ReaderProxyBase
 
+PREFERRED_CHUNK_SIZE: int = 2200  # one segment
+
 READER_PRODUCTS = ["B{:02d}".format(x) for x in range(1, 17)]
 COMPOSITE_PRODUCTS = [
     "true_color",
