@@ -185,7 +185,7 @@ def _prepare_initial_logging(args, glue_name: str) -> bool:
         args.log_fn = glue_name + "_fail.log"
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
-    logging.getLogger("rasterio").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("rasterio").setLevel(levels[min(1, args.verbosity)])
     logging.getLogger("fsspec").setLevel(levels[min(2, args.verbosity)])
     logging.getLogger("s3fs").setLevel(levels[min(2, args.verbosity)])
     logging.getLogger("aiobotocore").setLevel(levels[min(2, args.verbosity)])
