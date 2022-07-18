@@ -54,6 +54,8 @@ from typing import Optional
 
 from ._base import ReaderProxyBase
 
+PREFERRED_CHUNK_SIZE: int = 1356
+
 READER_PRODUCTS = [
     "HT",
     "TEMP",

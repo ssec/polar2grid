@@ -48,6 +48,7 @@ from polar2grid.filters import filter_scene
 from polar2grid.readers._base import ReaderProxyBase
 from polar2grid.resample import resample_scene
 from polar2grid.utils.config import add_polar2grid_config_paths
+from polar2grid.utils.dynamic_imports import get_reader_attr
 
 LOG = logging.getLogger(__name__)
 
@@ -185,7 +186,7 @@ def _prepare_initial_logging(args, glue_name: str) -> bool:
         args.log_fn = glue_name + "_fail.log"
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
-    logging.getLogger("rasterio").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("rasterio").setLevel(levels[min(1, args.verbosity)])
     logging.getLogger("fsspec").setLevel(levels[min(2, args.verbosity)])
     logging.getLogger("s3fs").setLevel(levels[min(2, args.verbosity)])
     logging.getLogger("aiobotocore").setLevel(levels[min(2, args.verbosity)])
@@ -331,6 +332,8 @@ class _GlueProcessor:
     def _run_processing(self):
         LOG.info("Sorting and reading input files...")
         arg_parser = self.arg_parser
+        preferred_chunk_size = get_reader_attr(arg_parser._scene_creation["reader"], "PREFERRED_CHUNK_SIZE", 1024)
+        _set_preferred_chunk_size(preferred_chunk_size)
         scn = _create_scene(arg_parser._scene_creation)
         if scn is None:
             return -1
@@ -388,6 +391,17 @@ class _GlueProcessor:
         compute_writer_results(to_save)
         LOG.info("SUCCESS")
         return 0
+
+
+def _set_preferred_chunk_size(preferred_chunk_size: int) -> None:
+    pcs_in_mb = (preferred_chunk_size * preferred_chunk_size) * 8 // (1024 * 1024)
+    if "PYTROLL_CHUNK_SIZE" not in os.environ:
+        LOG.debug(f"Setting preferred chunk size to {preferred_chunk_size} pixels or {pcs_in_mb:d}MiB")
+        satpy.CHUNK_SIZE = preferred_chunk_size
+        os.environ["PYTROLL_CHUNK_SIZE"] = f"{preferred_chunk_size:d}"
+        dask.config.set({"array.chunk-size": f"{pcs_in_mb:d}MiB"})
+    else:
+        LOG.debug(f"Using environment variable chunk size: {os.environ['PYTROLL_CHUNK_SIZE']}")
 
 
 def _persist_swath_definition_in_scene(scn: Scene) -> None:

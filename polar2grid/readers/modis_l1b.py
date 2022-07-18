@@ -140,6 +140,8 @@ from polar2grid.core.script_utils import ExtendConstAction
 
 from ._base import ReaderProxyBase
 
+PREFERRED_CHUNK_SIZE: int = 1400  # at least one 1km swath width
+
 FILTERS = {
     "day_only": {
         "standard_name": [

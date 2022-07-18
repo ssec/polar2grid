@@ -103,6 +103,8 @@ from typing import Optional
 
 from ._base import ReaderProxyBase
 
+PREFERRED_CHUNK_SIZE: int = 1356
+
 READER_PRODUCTS = ["C{:02d}".format(x) for x in range(1, 17)]
 COMPOSITE_PRODUCTS = [
     "true_color",

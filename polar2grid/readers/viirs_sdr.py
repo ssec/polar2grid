@@ -186,6 +186,8 @@ from polar2grid.core.script_utils import ExtendConstAction
 
 from ._base import ReaderProxyBase
 
+PREFERRED_CHUNK_SIZE: int = 6400
+
 I_PRODUCTS = [
     "I01",
     "I02",
