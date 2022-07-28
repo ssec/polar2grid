@@ -1,0 +1,717 @@
+# Originally converted from the CSPP Polar2Grid SCMI Writer
+# Some datasets are named differently and have not been converted to
+# Satpy-style naming yet. These config entries are commented out.
+writer:
+  name: awips_tiled
+  description: AWIPS-compatible Tiled NetCDF4 Writer
+  writer: !!python/name:satpy.writers.awips_tiled.AWIPSTiledWriter
+  compress: True
+templates:
+  polar:
+    variables:
+      # VIIRS Corrected Reflectance
+      viirs_crefl01:
+        name: viirs_crefl01
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.67 um CR
+          units: {}
+      viirs_crefl02:
+        name: viirs_crefl02
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.87 um CR
+          units: {}
+      viirs_crefl03:
+        name: viirs_crefl03
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.49 um CR
+          units: {}
+      viirs_crefl04:
+        name: viirs_crefl04
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.56 um CR
+          units: {}
+      viirs_crefl05:
+        name: viirs_crefl05
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 1.24 um CR
+          units: {}
+      viirs_crefl06:
+        name: viirs_crefl06
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 1.61 um CR
+          units: {}
+      viirs_crefl07:
+        name: viirs_crefl07
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 2.25 um CR
+          units: {}
+      viirs_crefl08:
+        name: viirs_crefl08
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.64 um CR
+          units: {}
+      viirs_crefl09:
+        name: viirs_crefl09
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.87 um CR
+          units: {}
+      viirs_crefl10:
+        name: viirs_crefl10
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 1.61 um CR
+          units: {}
+
+      # MODIS L1B Products
+      modis_vis01:
+        name: vis01
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.65 um
+          units: {}
+      modis_vis02:
+        name: vis02
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.86 um
+          units: {}
+      modis_vis03:
+        name: vis03
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.47 um
+          units: {}
+      modis_vis04:
+        name: vis04
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.56 um
+          units: {}
+      modis_vis05:
+        name: vis05
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 1.24 um
+          units: {}
+      modis_vis06:
+        name: vis06
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 1.64 um
+          units: {}
+      modis_vis07:
+        name: vis07
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 2.13 um
+          units: {}
+      modis_vis26:
+        name: vis26
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 1.38 um
+          units: {}
+      modis_bt20:
+        name: bt20
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 3.75 um
+          units: {}
+      modis_bt21:
+        name: bt21
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: Fire
+          units: {}
+      modis_bt22:
+        name: bt22
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 3.96 um
+          units: {}
+      modis_bt23:
+        name: bt23
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 4.05 um
+          units: {}
+      modis_bt24:
+        name: bt24
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 4.47 um
+          units: {}
+      modis_bt25:
+        name: bt25
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 4.52 um
+          units: {}
+      modis_bt27:
+        name: bt27
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 6.7 um
+          units: {}
+      modis_bt28:
+        name: bt28
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 7.3 um
+          units: {}
+      modis_bt29:
+        name: bt29
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 8.6 um
+          units: {}
+      modis_bt30:
+        name: bt30
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 9.7 um
+          units: {}
+      modis_bt31:
+        name: bt31
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 11.0 um
+          units: {}
+      modis_bt32:
+        name: bt32
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 12.0 um
+          units: {}
+      modis_bt33:
+        name: bt33
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 13.3 um
+          units: {}
+      modis_bt34:
+        name: bt34
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 13.6 um
+          units: {}
+      modis_bt35:
+        name: bt35
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 13.9 um
+          units: {}
+      modis_bt36:
+        name: bt36
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 14.2 um
+          units: {}
+      modis_sst:
+        name: sst
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: SST
+          units: {}
+      modis_lst:
+        name: lst
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: LST
+          units: {}
+      modis_slst:
+        name: slst
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: LSTSUM
+          units: {}
+      modis_fog:
+        name: ssec_fog
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: Fog
+          units: {}
+      modis_ctt:
+        name: ctt
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: CTT
+          units: {}
+      modis_ndvi:
+        name: ndvi
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: NDVI
+          units: {}
+      modis_tpw:
+        name: tpw
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: TPW
+          units: {}
+      modis_ice_concentration:
+        name: ice_concentration
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: Ice Concentration
+          units: {}
+      modis_ist:
+        name: ist
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: Ice Surface Temperature
+          units: {}
+
+      # MODIS L1B Corrected Reflectances
+      modis_crefl01_250m:
+        name: modis_crefl01_250m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.65 um CR
+          units: {}
+      modis_crefl01_500m:
+        name: modis_crefl01_250m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.65 um CR
+          units: {}
+      modis_crefl01_1000m:
+        name: modis_crefl01_1000m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.65 um CR
+          units: {}
+      modis_crefl02_250m:
+        name: modis_crefl02_250m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.86 um CR
+          units: {}
+      modis_crefl02_500m:
+        name: modis_crefl02_500m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.86 um CR
+          units: {}
+      modis_crefl02_1000m:
+        name: modis_crefl02_1000m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.86 um CR
+          units: {}
+      modis_crefl03_250m:
+        name: modis_crefl03_250m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.47 um CR
+          units: {}
+      modis_crefl03_500m:
+        name: modis_crefl03_500m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.47 um CR
+          units: {}
+      modis_crefl03_1000m:
+        name: modis_crefl03_1000m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.47 um CR
+          units: {}
+      modis_crefl04_250m:
+        name: modis_crefl04_250m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.56 um CR
+          units: {}
+      modis_crefl04_500m:
+        name: modis_crefl04_500m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.56 um CR
+          units: {}
+      modis_crefl04_1000m:
+        name: modis_crefl04_1000m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 0.56 um CR
+          units: {}
+      modis_crefl05_500m:
+        name: modis_crefl05_500m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 1.24 um CR
+          units: {}
+      modis_crefl05_1000m:
+        name: modis_crefl05_1000m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 1.24 um CR
+          units: {}
+      modis_crefl06_500m:
+        name: modis_crefl06_500m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 1.64 um CR
+          units: {}
+      modis_crefl06_1000m:
+        name: modis_crefl06_1000m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 1.64 um CR
+          units: {}
+      modis_crefl07_500m:
+        name: modis_crefl07_500m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 2.13 um CR
+          units: {}
+      modis_crefl07_1000m:
+        name: modis_crefl07_1000m
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: 2.13 um CR
+          units: {}
+
+      # MIRS Products
+      mirs_btemp_23v:
+        name: btemp_23v
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 23 GHZ V
+          units: {}
+      mirs_btemp_31v:
+        name: btemp_31v
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 31 GHZ V
+          units: {}
+      mirs_btemp_50h:
+        name: btemp_50h
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 50 GHZ H
+          units: {}
+      mirs_btemp_51h:
+        name: btemp_51h
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 51 GHZ H
+          units: {}
+      mirs_btemp_52h:
+        name: btemp_52h
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 52 GHZ H
+          units: {}
+      mirs_btemp_53h:
+        name: btemp_53h
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 53 GHZ H
+          units: {}
+      mirs_btemp_54h1:
+        name: btemp_54h1
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 54 GHZ H-1
+          units: {}
+      mirs_btemp_54h2:
+        name: btemp_54h2
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 54 GHZ H-2
+          units: {}
+      mirs_btemp_55h:
+        name: btemp_55h
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 55 GHZ H
+          units: {}
+      mirs_btemp_57h1:
+        name: btemp_57h1
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 57 GHZ H-1
+          units: {}
+      mirs_btemp_57h2:
+        name: btemp_57h2
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 57 GHZ H-2
+          units: {}
+      mirs_btemp_57h3:
+        name: btemp_57h3
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 57 GHZ H-3
+          units: {}
+      mirs_btemp_57h4:
+        name: btemp_57h4
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 57 GHZ H-4
+          units: {}
+      mirs_btemp_57h5:
+        name: btemp_57h5
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 57 GHZ H-5
+          units: {}
+      mirs_btemp_57h6:
+        name: btemp_57h6
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 57 GHZ H-6
+          units: {}
+      mirs_btemp_88v:
+        name: btemp_88v
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 88 GHZ V
+          units: {}
+      mirs_btemp_165h:
+        name: btemp_165h
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 165 GHZ H
+          units: {}
+      mirs_btemp_183h1:
+        name: btemp_183h1
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 183 GHZ H-1
+          units: {}
+      mirs_btemp_183h2:
+        name: btemp_183h2
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 183 GHZ H-2
+          units: {}
+      mirs_btemp_183h3:
+        name: btemp_183h3
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 183 GHZ H-3
+          units: {}
+      mirs_btemp_183h4:
+        name: btemp_183h4
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 183 GHZ H-4
+          units: {}
+      mirs_btemp_183h5:
+        name: btemp_183h5
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 183 GHZ H-5
+          units: {}
+
+      # MIRS BTs - NOAA-18 - AMSU-A MHS
+      # MIRS BTs - NOAA-19 - AMSU-A MHS
+      # MIRS BTs - M1 (metopb) - AMSU-A MHS
+      # MIRS BTs - M2 (metopa) - AMSU-A MHS
+      mirs_btemp_50v:
+        name: btemp_50v
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 50 GHZ V
+          units: {}
+      mirs_btemp_52v:
+        name: btemp_52v
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 52 GHZ V
+          units: {}
+      mirs_btemp_54h:
+        name: btemp_54h
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 54 GHZ H
+          units: {}
+      mirs_btemp_54v:
+        name: btemp_54v
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 54 GHZ V
+          units: {}
+      mirs_btemp_89v1:
+        name: btemp_89v1
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 89 GHZ V-1
+          units: {}
+      mirs_btemp_89v2:
+        name: btemp_89v2
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 89 GHZ V-2
+          units: {}
+      # 157h on OPSO NOAA site
+      mirs_btemp_157v:
+        name: btemp_157v
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 157 GHZ V
+          units: {}
+      mirs_btemp_190v:
+        name: btemp_190v
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS 190 GHZ V
+          units: {}
+      mirs_rain_rate:
+        reader: mirs
+        name: rain_rate
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS Rain Rate
+          units: {}
+      mirs_snow_cover:
+        reader: mirs
+        name: snow_cover
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS Snow Cover
+          units: {}
+      mirs_sea_ice:
+        reader: mirs
+        name: sea_ice
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS Sea Ice
+          units: {}
+      mirs_swe:
+        reader: mirs
+        name: swe
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS SWE
+          units: {}
+      mirs_clw:
+        reader: mirs
+        name: clw
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS CLW
+          units: {}
+      mirs_tpw:
+        reader: mirs
+        name: tpw
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS TPW
+          units: {}
+      mirs_tskin:
+        reader: mirs
+        name: tskin
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS Skin Temperature
+          units: {}
