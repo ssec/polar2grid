@@ -585,6 +585,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
             nargs="*",
             help='Area definition to resample to. Empty means no resampling (default: "MAX")',
         )
+
     # shared options
     group_1.add_argument(
         "--grid-coverage",
@@ -616,6 +617,19 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
         "Coordinates must be valid in the source data "
         "projection. Can only be used with gridded "
         "input data.",
+    )
+    group_1.add_argument(
+        "--antimeridian-mode",
+        default="modify_crs",
+        choices=("modify_extents", "modify_crs", "global_extents"),
+        help="Behavior when dynamic grids are converted to 'frozen' grids and "
+        "data crosses the anti-meridian. Defaults to 'modify_crs' where "
+        "the prime meridian is shifted 180 degrees to make the result one "
+        "contiguous coordinate space. 'modify_extents' will attempt to "
+        "surround the data but will often cause artifacts over the "
+        "antimeridian. 'global_extents' will force the X extents to -180 "
+        "and 180 to create one large grid. This currently only affects "
+        "lon/lat projections.",
     )
 
     # nearest neighbor resampling
