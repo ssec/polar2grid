@@ -239,11 +239,13 @@ def _resample_scene_to_grids(
         return []
 
     areas_to_resample = resample_args.pop("grids")
+    antimeridian_mode = resample_args.pop("antimeridian_mode")
     if "ewa_persist" in resample_args:
         resample_args["persist"] = resample_args.pop("ewa_persist")
     scenes_to_save = resample_scene(
         scn,
         areas_to_resample,
+        antimeridian_mode=antimeridian_mode,
         preserve_resolution=preserve_resolution,
         is_polar2grid=use_polar2grid_defaults,
         **resample_args,

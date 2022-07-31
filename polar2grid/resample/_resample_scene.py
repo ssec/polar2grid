@@ -146,14 +146,14 @@ class AreaDefResolver:
         area_def = _get_area_def_from_name(area_name, self.input_scene, self.grid_manager, self.yaml_areas)
         return area_def
 
-    def get_frozen_area(self, area_name: Optional[str]) -> Optional[PRGeometry]:
+    def get_frozen_area(self, area_name: Optional[str], **kwargs) -> Optional[PRGeometry]:
         area_def = self[area_name]
-        return self._freeze_area_if_dynamic(area_def)
+        return self._freeze_area_if_dynamic(area_def, **kwargs)
 
-    def _freeze_area_if_dynamic(self, area_def: PRGeometry) -> PRGeometry:
+    def _freeze_area_if_dynamic(self, area_def: PRGeometry, **kwargs) -> PRGeometry:
         if isinstance(area_def, DynamicAreaDefinition):
             logger.info("Computing dynamic grid parameters...")
-            area_def = area_def.freeze(self.input_scene.finest_area())
+            area_def = area_def.freeze(self.input_scene.finest_area(), **kwargs)
             logger.debug("Frozen dynamic area: %s", area_def)
         return area_def
 
@@ -163,6 +163,7 @@ def resample_scene(
     areas_to_resample: ListOfAreas,
     grid_configs: list[str, ...],
     resampler: Optional[str],
+    antimeridian_mode: str = "modify_crs",
     preserve_resolution: bool = True,
     grid_coverage: Optional[float] = None,
     is_polar2grid: bool = True,
@@ -189,7 +190,7 @@ def resample_scene(
         if _grid_cov is None:
             _grid_cov = 0.1
         for area_name in areas:
-            area_def = area_resolver.get_frozen_area(area_name)
+            area_def = area_resolver.get_frozen_area(area_name, antimeridian_mode=antimeridian_mode)
             has_dynamic_extents = area_resolver.has_dynamic_extents(area_name)
             rs = _get_default_resampler(resampler, area_name, area_def, input_scene)
             new_scn = _filter_and_resample_scene_to_single_area(
