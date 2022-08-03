@@ -200,14 +200,14 @@ resampling:
     resampler: ewa
     kwargs:
       weight_delta_max: 40.0
-      weight_distance_max: 2.0
+      weight_distance_max: 1.0
   default_acspo_sst_modis:
     area_type: swath
     name: sst
     sensor: modis
     resampler: ewa
     kwargs:
-      weight_delta_max: 10.0
+      weight_delta_max: 40.0
       weight_distance_max: 1.0
   default_acspo_sst_avhrr:
     area_type: swath
