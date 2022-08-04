@@ -361,7 +361,7 @@ def main(argv=sys.argv[1:]):
 
     if args.output_filename is None:
         args.output_filename = [x[:-3] + "png" for x in args.input_tiff]
-    elif len(args.output_filename) == len(args.input_tiff):
+    elif len(args.output_filename) != len(args.input_tiff):
         LOG.error("Output filenames must be equal to number of input tiffs")
         return -1
 
@@ -381,6 +381,7 @@ def main(argv=sys.argv[1:]):
     colorbar_kwargs = _args_to_colorbar_kwargs(args) if args.add_colorbar else {}
     for input_tiff, output_filename in zip(args.input_tiff, args.output_filename):
         _process_one_image(input_tiff, output_filename, pycoast_options, args.shapes_dir, colorbar_kwargs)
+    return 0
 
 
 def _args_to_pycoast_dict(args):
