@@ -144,3 +144,16 @@ def test_add_coastlines_basic(add_overlay_mock, tmp_path, gen_func, has_colors, 
     b_uniques = np.unique(image_arr[:, :, 2])
     np.testing.assert_allclose(b_uniques, b_colors)
     assert (arr[940:] != 0).any()
+
+
+@mock.patch("polar2grid.add_coastlines.ContourWriterAGG.add_overlay_from_dict")
+def test_add_coastlines_bad_output_filenames(add_overlay_mock, tmp_path):
+    from polar2grid.add_coastlines import main
+
+    fp = str(tmp_path / "test.tif")
+    _create_fake_l_geotiff(fp)
+    extra_args = ["-o", "test1.png", "test2.png"]
+    ret = main(["--add-coastlines", "--add-colorbar", fp] + extra_args)
+    assert ret == -1
+    assert not os.path.isfile(tmp_path / "test.png")
+    add_overlay_mock.assert_not_called()
