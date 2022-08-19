@@ -102,7 +102,7 @@ are always available:
 
     .. code-block:: bash
 
-        polar2grid.sh -r viirs_sdr -w geotiff -p i01 adaptive_dnb -g polar_alaska_300 --grid-coverage=.25 -v -f <path to files>
+        polar2grid.sh -r viirs_sdr -w geotiff -p i01 dynamic_dnb -g polar_alaska_300 --grid-coverage=.25 -v -f <path to files>
 
         polar2grid.sh -r modis_l1b -w geotiff --list-products -f <path to files>/<list of files>
 
@@ -161,7 +161,7 @@ To access these features provide the "reader" and "writer" names to the
 
     .. code-block:: bash
 
-        $POLAR2GRID_HOME/bin/polar2grid.sh <reader> <writer> --list-products <options> -f /path/to/files
+        $POLAR2GRID_HOME/bin/polar2grid.sh -r <reader> -w <writer> --list-products <options> -f /path/to/files
 
 .. ifconfig:: is_geo2grid
 

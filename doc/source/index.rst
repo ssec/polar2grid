@@ -40,3 +40,4 @@
 
     design_overview
     misc_recipes
+    version_changes

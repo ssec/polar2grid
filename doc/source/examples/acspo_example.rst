@@ -14,85 +14,113 @@ Creating ACSPO GeoTIFF files
 
 Find the options available for creating ACSPO VIIRS SST GeoTIFFs:
 
-   ``polar2grid.sh acspo gtiff -h``
+   ``polar2grid.sh -r acspo -w geotiff -h``
 
 List the products that can be created from your ACSPO NetCDF dataset:
 
-    ``polar2grid.sh acspo gtiff --list-products -f <path_to_l1b_file>``
+    ``polar2grid.sh -r acspo -w geotiff --list-products -f <path_to_l1b_file>``
 
 To create the default product image, which is `sst` taken from
 the `sea_surface_temperature` array in the ACSPO file,
-use the following command.  The example data set is the S-NPP VIIRS
-direct broadcast overpass from 07:21 UTC, 17 December 2019. Since there is
+use the following command.  The example data set is the NOAA-20 VIIRS
+direct broadcast overpass from 18:43 UTC, 10 August 2022. Since there is
 often cloud cover and land in your datasets, use the ``--grid-coverage``
 option to bypass the requirement for 10% coverage of data in the output
-image.
+image. <<<<Mention use of --fill-value>>>>>
 
 .. code-block:: bash
 
-    polar2grid.sh acspo gtiff --grid-coverage 0 \
-      -f viirs/20191216072134-STAR-L2P_GHRSST-SSTskin-VIIRS_NPP-ACSPO_V2.61-v02.0-fv01.0.nc
+    polar2grid.sh r acspo -w geotiff acspo gtiff --grid-coverage 0 --fill-value 0 \
+      -f viirs/20220810184327-CSPP-L2P_GHRSST-SSTskin-VIIRS_N20-ACSPO_V2.80-v02.0-fv01.0.nc
 
 The data set is re-projected into the WGS84 (Platte Carrée) projection
-by default. The image scaling is defined in the
-`resclale.ini <https://github.com/ssec/polar2grid/blob/main/polar2grid/core/rescale_configs/rescale.ini>`_ file. This file contains product
-scaling information for all data parameters supported by Polar2Grid.
-The default scaling used for the ACSPO Version
-2.61 SST files can be found under data_kind `sea_surface_sub-skin_temperature`
-which is taken from the array `standard_name` attribute.
+by default. The image scaling is defined in the ``generic.yaml`` located in the 
+``$POLAR2GRID_HOME/libexec/python_runtime/etc/polar2grid/enhancements`` directory. 
+This file contains product scaling information for all data parameters supported by 
+Polar2Grid. It replaces the ``rescale.ini`` file that was used in previous versions of Polar2Grid.
+
+The default scaling used for the ACSPO Version 2.80 SST files can be found under 
+`sea_surface_temperature4` `sea_surface_subskin_temperature` which is taken from 
+the ACSPO array `standard_name` attribute. The section of the generic.yaml file that 
+references our SST product is listed below.
 
 .. parsed-literal::
 
-      50  [rescale:default_sst3]
-      51  data_kind=sea_surface_sub-skin_temperature
-      52  method=linear
-      53  min_in=267.317
-      54  max_in=309.816
+      395   sea_surface_temperature4:
+      396     standard_name: sea_surface_subskin_temperature
+      397     operations:
+      398       - name: linear_stretch
+      399         method: !!python/name:satpy.enhancements.stretch
+      400         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
 
 This is used in the Polar2Grid software to define the range of brightness
 values in the output GeoTIFF file (0-255) to the temperatures they represent - in this
-case 267.317 K to 309.816 K. Please Note: Previous versions of the ACSPO
-sst files use a standard_name attribute of `sea_surface_skin_temperature`.
+case 267.317 K to 309.816 K. There are a number of different sea surface temperature 
+arrays defined in the the generic.yaml file that allow Polar2Grid to support previous versions of 
+the ACSPO SST files. 
+
 The scaling is done linearly. The output greyscale image below shows the
-VIIRS M-Band 16 (11 micron) Brightness Temperature on the left, and
+VIIRS I-Band 2 (.86 micron) Reflectances on the left, and
 the ACSPO SST VIIRS image on the right.
 
 .. raw:: latex
 
     \newpage
 
-.. figure:: ../_static/example_images/VIIRS_M16_ACSPO_SST_composite_example.png
-    :name: VIIRS_M16_ACSPO_SST_composite_example.png
+.. figure:: ../_static/example_images/VIIRS_I02_ACSPO_SST_composite_example.png
+    :name: VIIRS_I02_ACSPO_SST_composite_example.png
     :width: 100%
     :align: center
 
-    S-NPP VIIRS M-Band 16 Brightness Temperature image (Left panel) and ACSPO Sea Surface Temperature image (Right Panel) from an entire direct broadcast pass acquired on 16 December 2019 covering the eastern portion of Canada and the United States. The default projection is WGS84 (Platte Carrée) and the default scaling is greyscale brightness values 0-255.
+    S-NPP VIIRS I-Band 02 Reflectance image (Left panel) and ACSPO Sea Surface Temperature image (Right Panel) from an 
+entire direct broadcast pass acquired on 10 August 2022 over North America.
+The default projection is WGS84 (Platte Carrée) and the default scaling is greyscale brightness values 0-255.
 
-Now I would like to create an image cutting out a subset of this pass over a
-region of interest that includes the waters surrounding the US state of Florida.
-To do this, I need to create a new grid.  I will use the
+Now I would like to create an image cutting out a subset of this pass over the Great Lakes 
+in the Northern United States.  To do this, I need to create a new grid.  I will use the 
 :ref:`util_p2g_grid_helper` script to do this.
 
-	``p2g_grid_helper.sh acspo_sst -80 30 1000 1000  1200 1200``
+	``p2g_grid_helper.sh great_lakes -83.5 45.1 750 750 1800 1200``
 
-I named my grid `acspo_sst`, centered it on `-80 E Longitude` and `30 N Latitude`,
-with `1000 m` spatial resolution in the X and Y directions, and defined the output
-grid to be `1200 x 1200` lines and elements.
+I named my grid `great_lakes`, centered it on `-83.5 E Longitude` and `45.1 N Latitude`,
+with `750 m` spatial resolution in the X and Y directions, and defined the output
+grid to be `1800 x 1200` elements and lines.
 
-Executing this command results in the following proj4 grid definition:
+Executing this command results in the following grid definition:
 
-	``acspo_sst, proj4, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=30.00000 +lat_1=30.00000 +lon_0=-80.00000 +units=m +no_defs, 1200, 1200, 1000.00000, -1000.00000, -86.56812deg, 35.24785deg``
+.. code-block:: bash
 
-I store this grid in an ASCII text file named `mygrid.conf`, which I can
+    great_lakes:
+      projection:
+        proj: lcc
+        lat_1: 45.1
+        lat_0: 45.1
+        lon_0: -83.5
+        datum: WGS84
+        units: m
+        no_defs: null
+        type: crs
+      shape:
+        height: 1200
+        width: 1800
+      center:
+        x: -83.5
+        y: 45.1
+        units: degrees
+      resolution:
+        dx: 750.0
+        dy: 750.0
+
+I store this grid in an ASCII text file named `my_grid.yaml`, which I can
 provide to `polar2grid.sh` to create an image over my subset region
 by executing this command:
 
 .. code-block:: bash
 
-    polar2grid.sh acspo gtiff --grid-coverage 0 --grid-configs mygrid.conf \
-      -g acspo_sst -f viirs/*.nc
+    polar2grid.sh acspo gtiff --grid-coverage 0 --grid-configs my_grid.yaml \
+      -g great_lakes -f viirs/*.nc
 
-Note that you need to provide the full path to the `mygrid.conf` if it is not located in the
+Note that you need to provide the full path to the `my_grid.yaml` if it is not located in the
 execution directory.  The subset image that is created from executing this command is
 shown below.
 
