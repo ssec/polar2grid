@@ -37,16 +37,7 @@ from pyproj import CRS, Proj
 
 from polar2grid.core.containers import GridDefinition
 
-try:
-    # try getting setuptools/distribute's version of resource retrieval first
-    from pkg_resources import resource_string as get_resource_string
-except ImportError:
-    from pkgutil import get_data as get_resource_string
-
 LOG = logging.getLogger(__name__)
-
-script_dir = os.path.dirname(os.path.realpath(__file__))
-GRIDS_CONFIG_FILEPATH = os.environ.get("POLAR2GRID_GRIDS_CONFIG", "grids.conf")
 
 
 def _parse_meter_degree_param(param) -> tuple[float, bool]:
@@ -247,18 +238,9 @@ def read_grids_config(config_filepath, convert_coords=True):
 
     """
     full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
-    if not os.path.exists(full_config_filepath):
-        try:
-            config_str = get_resource_string(__name__, config_filepath).decode()
-            return read_grids_config_str(config_str, convert_coords=convert_coords)
-        except ValueError:
-            LOG.error("Grids configuration file '%s' does not exist" % (config_filepath,))
-            LOG.debug("Grid configuration error: ", exc_info=1)
-            raise
-
-    config_file = open(full_config_filepath, "r")
-    config_str = config_file.read()
-    return read_grids_config_str(config_str, convert_coords=convert_coords)
+    with open(full_config_filepath, "r") as config_file:
+        config_str = config_file.read()
+        return read_grids_config_str(config_str, convert_coords=convert_coords)
 
 
 class GridManager:
@@ -266,17 +248,10 @@ class GridManager:
 
     grid_information: dict[str, dict] = {}
 
-    def __init__(self, *grid_configs, **kwargs):
-        load_defaults = not kwargs.pop("no_defaults", False)
-
-        if len(grid_configs) == 0 and load_defaults:
-            LOG.debug("Using default grid configuration: '%s' " % (GRIDS_CONFIG_FILEPATH,))
-            grid_configs = (GRIDS_CONFIG_FILEPATH,)
-
-        if len(grid_configs) != 0:
-            for grid_config in grid_configs:
-                LOG.debug("Loading grid configuration '%s'" % (grid_config,))
-                self.add_grid_config(grid_config)
+    def __init__(self, *grid_configs):
+        for grid_config in grid_configs:
+            LOG.debug("Loading grid configuration '%s'" % (grid_config,))
+            self.add_grid_config(grid_config)
 
     def __contains__(self, item):
         return item in self.grid_information
