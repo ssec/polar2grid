@@ -21,19 +21,17 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Helpers for setting up the Polar2Grid environment and configuration."""
+import importlib.resources as impr
 import os
-import sys
 
-import pkg_resources
 import satpy
 
 
 def get_polar2grid_etc():
-    dist = pkg_resources.get_distribution("polar2grid")
-    if dist_is_editable(dist):
-        p2g_etc = os.path.join(dist.module_path, "etc")
-    else:
-        p2g_etc = os.path.join(sys.prefix, "etc", "polar2grid")
+    # polar2grid installs "etc" directory at the "prefix" level as its own thing
+    etc_traversable = impr.files("etc")
+    first_path = next(etc_traversable.iterdir())
+    p2g_etc = str(first_path.parent)
     return p2g_etc
 
 
@@ -52,12 +50,3 @@ def add_polar2grid_config_paths():
     p2g_etc = get_polar2grid_etc()
     if p2g_etc not in config_path:
         satpy.config.set(config_path=config_path + [p2g_etc])
-
-
-def dist_is_editable(dist) -> bool:
-    """Determine if the current installation is an editable/dev install."""
-    for path_item in sys.path:
-        egg_link = os.path.join(path_item, dist.project_name + ".egg-link")
-        if os.path.isfile(egg_link):
-            return True
-    return False
