@@ -21,20 +21,27 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Helpers for setting up the Polar2Grid environment and configuration."""
+import importlib.metadata as impm
+import importlib.resources as impr
 import os
 import sys
 
-import pkg_resources
 import satpy
 
 
 def get_polar2grid_etc():
-    dist = pkg_resources.get_distribution("polar2grid")
-    if dist_is_editable(dist):
-        p2g_etc = os.path.join(dist.module_path, "etc")
-    else:
-        p2g_etc = os.path.join(sys.prefix, "etc", "polar2grid")
-    return p2g_etc
+    p2g_pkg_location = impr.files("polar2grid")
+    if _is_editable_installation():
+        return str(p2g_pkg_location.parent / "etc")
+    return os.path.join(sys.prefix, "etc", "polar2grid")
+
+
+def _is_editable_installation():
+    for installed_file in impm.files("polar2grid"):
+        str_fn = str(installed_file)
+        if "__editable__" in str_fn or "pyproject.toml" in str_fn:
+            return True
+    return False
 
 
 def get_polar2grid_home():
@@ -52,12 +59,3 @@ def add_polar2grid_config_paths():
     p2g_etc = get_polar2grid_etc()
     if p2g_etc not in config_path:
         satpy.config.set(config_path=config_path + [p2g_etc])
-
-
-def dist_is_editable(dist) -> bool:
-    """Determine if the current installation is an editable/dev install."""
-    for path_item in sys.path:
-        egg_link = os.path.join(path_item, dist.project_name + ".egg-link")
-        if os.path.isfile(egg_link):
-            return True
-    return False
