@@ -21,18 +21,27 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Helpers for setting up the Polar2Grid environment and configuration."""
+import importlib.metadata as impm
 import importlib.resources as impr
 import os
+import sys
 
 import satpy
 
 
 def get_polar2grid_etc():
-    # polar2grid installs "etc" directory at the "prefix" level as its own thing
-    etc_traversable = impr.files("etc")
-    first_path = next(etc_traversable.iterdir())
-    p2g_etc = str(first_path.parent)
-    return p2g_etc
+    p2g_pkg_location = impr.files("polar2grid")
+    if _is_editable_installation():
+        return str(p2g_pkg_location.parent / "etc")
+    return os.path.join(sys.prefix, "etc", "polar2grid")
+
+
+def _is_editable_installation():
+    for installed_file in impm.files("polar2grid"):
+        str_fn = str(installed_file)
+        if "__editable__" in str_fn or "pyproject.toml" in str_fn:
+            return True
+    return False
 
 
 def get_polar2grid_home():

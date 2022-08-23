@@ -114,7 +114,7 @@ setup(
         "netCDF4",
         "h5py",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     extras_require=extras_require,
     entry_points=entry_points,
     scripts=[file for file in glob("swbundle/*.sh") if file not in ["swbundle/env.sh", "swbundle/polar2grid_env.sh"]],
