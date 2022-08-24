@@ -612,7 +612,9 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
         nargs=4,
         type=float,
         metavar=("lon_min", "lat_min", "lon_max", "lat_max"),
-        help="Crop data to region specified by lon/lat "
+        help=argparse.SUPPRESS
+        if is_polar2grid
+        else "Crop data to region specified by lon/lat "
         "bounds (lon_min lat_min lon_max lat_max). "
         "Coordinates must be valid in the source data "
         "projection. Can only be used with gridded "
