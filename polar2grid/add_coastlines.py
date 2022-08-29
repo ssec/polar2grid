@@ -41,6 +41,7 @@ from aggdraw import Font
 from PIL import Image, ImageFont
 from pkg_resources import resource_filename as get_resource_filename
 from pycoast import ContourWriterAGG
+from pydecorate import DecoratorAGG
 from pyresample.utils import get_area_def_from_raster
 from trollimage.colormap import Colormap
 
@@ -72,16 +73,11 @@ def _get_rio_colormap(rio_ds, bidx):
         return None
 
 
-def _get_colorbar_vmin_vmax(arg_min, arg_max, rio_ds, input_dtype, is_palette=False):
-    metadata = rio_ds.tags()
+def _get_colorbar_vmin_vmax(arg_min, arg_max, metadata, input_dtype):
     scale = metadata.get("scale", metadata.get("scale_factor"))
     offset = metadata.get("offset", metadata.get("add_offset"))
     dtype_min = float(np.iinfo(input_dtype).min)
     dtype_max = float(np.iinfo(input_dtype).max)
-    if is_palette:
-        dtype_min = 0.0
-        dtype_max = 1.0
-
     if arg_min is None and scale is None:
         LOG.warning(
             "Colorbar min/max metadata not found and not provided "
@@ -139,8 +135,6 @@ def _apply_decorator_alignment(dc, align, is_vertical):
 
 
 def _add_colorbar_to_image(img, font, tick_color, align, vertical, **kwargs):
-    from pydecorate import DecoratorAGG
-
     dc = DecoratorAGG(img)
     _apply_decorator_alignment(dc, align, vertical)
     if vertical:
@@ -545,13 +539,13 @@ def _get_colormap_object(input_tiff, num_bands, cmin, cmax):
     input_dtype = np.dtype(rio_ds.meta["dtype"])
     colormap_csv = rio_ds.tags().get("colormap")
     rio_ct = _get_rio_colormap(rio_ds, 1)
-    is_palette = rio_ct is not None
+    metadata = rio_ds.tags()
     cmap = _convert_table_to_cmap_or_default_bw(input_dtype, rio_ct, num_bands)
     if num_bands in (3, 4) and colormap_csv is None:
         raise ValueError("RGB and RGBA geotiffs must have a colormap " "specified with '--colorbar-colormap-file'.")
     if num_bands in (3, 4) or colormap_csv is not None:
         cmap = Colormap.from_file(colormap_csv)
-    vmin, vmax = _get_colorbar_vmin_vmax(cmin, cmax, rio_ds, input_dtype, is_palette=is_palette)
+    vmin, vmax = _get_colorbar_vmin_vmax(cmin, cmax, metadata, input_dtype)
     cmap = cmap.set_range(vmin, vmax, inplace=False)
     return cmap
 
