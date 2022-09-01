@@ -59,6 +59,8 @@ _PLATFORM_ALIASES = {
     "n21": "noaa21",
     "n22": "noaa22",
     "n23": "noaa23",
+    "noaa-18": "noaa18",
+    "noaa-19": "noaa19",
     "noaa-20": "noaa20",
     "noaa-21": "noaa21",
     "noaa-22": "noaa22",
@@ -81,6 +83,7 @@ _PLATFORM_ALIASES = {
     "gcom-w1": "gcom-w1",
     "metop-a": "metopa",
     "metop-b": "metopb",
+    "metop-c": "metopc",
 }
 
 

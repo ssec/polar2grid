@@ -52,6 +52,14 @@ The frontend offers the following products:
     +--------------------+----------------------------------------------------+
     | swe                | Snow Water Equivalence                             |
     +--------------------+----------------------------------------------------+
+    | clw                | Cloud Liquid Water                                 |
+    +--------------------+----------------------------------------------------+
+    | sfr                | Snow Fall Rate                                     |
+    +--------------------+----------------------------------------------------+
+    | surface_type       | Surface Type                                       |
+    +--------------------+----------------------------------------------------+
+    | tskin              | Skin Temperature                                   |
+    +--------------------+----------------------------------------------------+
     | btemp_X            | Brightness Temperature for channel X (see below)   |
     +--------------------+----------------------------------------------------+
 
@@ -173,10 +181,12 @@ from ._base import ReaderProxyBase
 PRECIP_PRODUCTS = [
     "rain_rate",
     "tpw",
+    "clw",
 ]
 SNOW_PRODUCTS = [
     "snow_cover",
     "swe",
+    "sfr",
 ]
 SEAICE_PRODUCTS = [
     "sea_ice",
@@ -185,13 +195,18 @@ SEAICE_PRODUCTS = [
 PRODUCT_ALIASES = {}
 PRODUCT_ALIASES["rain_rate"] = "RR"
 PRODUCT_ALIASES["tpw"] = "TPW"
+PRODUCT_ALIASES["clw"] = "CLW"
 
 PRODUCT_ALIASES["snow_cover"] = "Snow"
 PRODUCT_ALIASES["swe"] = "SWE"
+PRODUCT_ALIASES["sfr"] = "SFR"
 
 PRODUCT_ALIASES["sea_ice"] = "SIce"
 
-P2G_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS
+PRODUCT_ALIASES["surface_type"] = "Sfc_type"
+PRODUCT_ALIASES["tskin"] = "TSkin"
+
+P2G_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS + ["surface_type", "tskin"]
 
 
 class ReaderProxy(ReaderProxyBase):
