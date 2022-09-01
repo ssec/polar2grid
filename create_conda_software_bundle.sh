@@ -91,26 +91,28 @@ else
     cp $BASE_P2G_DIR/NEWS_GEO2GRID.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 fi
 
-# Inject environment code into swbundle only.
-cd $SB_NAME/bin
-for file in *.sh; do
-    cp "$file" tmp.sh
-    sed "s/# __SWBUNDLE_ENVIRONMENT_INJECTION__/source \$POLAR2GRID_HOME\/bin\/env.sh/g" tmp.sh > "$file"
-done
-rm tmp.sh
-
 # Download pyspectral data
 echo "Downloading pyspectral data..."
-$SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
-
-# Add the download_from_internet: False to the config
-echo "download_from_internet: False" >> ${SB_NAME}/etc/polar2grid/pyspectral.yaml
+PSP_DATA_CACHE_ROOT="${CACHE_DIR}/p2g_pyspectral_cache"
+mkdir -p "${PSP_DATA_CACHE_ROOT}" || oops "Couldn't create pyspectral data cache"
+PSP_CONFIG_FILE=$POLAR2GRID_HOME/etc/polar2grid/pyspectral.yaml PSP_DATA_ROOT=$POLAR2GRID_HOME/pyspectral_data PSP_DATA_CACHE_ROOT=${PSP_DATA_CACHE_ROOT} $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
 
 # Download Satpy auxiliary data
 echo "Downloading Satpy auxiliary data..."
 AUX_CACHE_DIR="${CACHE_DIR}/satpy_aux_data_${USER}"
 SATPY_DATA_DIR="${SB_NAME}/share/polar2grid/data"
 ${PYTHON_RUNTIME_BASE}/bin/satpy_retrieve_all_aux_data --data-dir ${AUX_CACHE_DIR} || oops "Could not download Satpy auxiliary data"
+
+# Add the download_from_internet: False to the config
+echo "download_from_internet: False" >> ${SB_NAME}/etc/polar2grid/pyspectral.yaml
+
+# Inject environment code into swbundle only.
+# Do this *after* the above scripts are called to avoid running the one-time setup of the swbundle
+cd $SB_NAME/bin
+for bash_file in *.sh; do
+    sed -i "s/# __SWBUNDLE_ENVIRONMENT_INJECTION__/source \$POLAR2GRID_HOME\/bin\/env.sh/g" "$bash_file"
+done
+rm tmp.sh
 
 echo "Copying Satpy auxiliary data to software bundle..."
 mkdir -p ${SATPY_DATA_DIR} || oops "Could not create polar2grid auxiliary data directory"

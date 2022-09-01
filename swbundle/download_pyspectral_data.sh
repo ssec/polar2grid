@@ -35,5 +35,20 @@ export POLAR2GRID_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
 # Setup necessary environments
 # __SWBUNDLE_ENVIRONMENT_INJECTION__
 
+set -e
+
+ORIG_PSP_DATA_ROOT=${PSP_DATA_ROOT}
+if [ -n "${PSP_DATA_CACHE_ROOT}" ]; then
+  echo "Using pyspectral data cache root: ${PSP_DATA_CACHE_ROOT}"
+  export PSP_DATA_ROOT=${PSP_DATA_CACHE_ROOT}
+fi
+
 # Call the python module to do the processing, passing all arguments
-python3 -c "from pyspectral.utils import download_luts, download_rsr; download_luts(); download_rsr()"
+python3 -c "from pyspectral.rayleigh import check_and_download; import logging; logging.basicConfig(level=logging.DEBUG); check_and_download()"
+python3 -c "from pyspectral.rsr_reader import check_and_download; import logging; logging.basicConfig(level=logging.DEBUG); check_and_download()"
+
+if [ -n "${PSP_DATA_CACHE_ROOT}" ]; then
+  mkdir -p "${ORIG_PSP_DATA_ROOT}"
+  cp -r ${PSP_DATA_CACHE_ROOT}/* "${ORIG_PSP_DATA_ROOT}/"
+  export PSP_DATA_ROOT=${ORIG_PSP_DATA_ROOT}
+fi
