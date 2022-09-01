@@ -661,7 +661,7 @@ templates:
           units: {}
       mirs_rain_rate:
         reader: mirs
-        name: rain_rate
+        name: RR
         var_name: data
         attributes:
           physical_element:
@@ -669,7 +669,7 @@ templates:
           units: {}
       mirs_snow_cover:
         reader: mirs
-        name: snow_cover
+        name: Snow
         var_name: data
         attributes:
           physical_element:
@@ -677,7 +677,7 @@ templates:
           units: {}
       mirs_sea_ice:
         reader: mirs
-        name: sea_ice
+        name: SIce
         var_name: data
         attributes:
           physical_element:
@@ -685,7 +685,7 @@ templates:
           units: {}
       mirs_swe:
         reader: mirs
-        name: swe
+        name: SWE
         var_name: data
         attributes:
           physical_element:
@@ -693,7 +693,7 @@ templates:
           units: {}
       mirs_clw:
         reader: mirs
-        name: clw
+        name: CLW
         var_name: data
         attributes:
           physical_element:
@@ -701,7 +701,7 @@ templates:
           units: {}
       mirs_tpw:
         reader: mirs
-        name: tpw
+        name: TPW
         var_name: data
         attributes:
           physical_element:
@@ -709,7 +709,7 @@ templates:
           units: {}
       mirs_tskin:
         reader: mirs
-        name: tskin
+        name: TSkin
         var_name: data
         attributes:
           physical_element:
