@@ -23,12 +23,14 @@
 """Test initialization and fixtures."""
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 
 import pytest
 
 PKG_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+root_logger = logging.getLogger()
 
 pytest_plugins = ["polar2grid.tests._abi_fixtures", "polar2grid.tests._viirs_fixtures"]
 
@@ -66,3 +68,11 @@ def builtin_grids_yaml() -> list[str]:
 @pytest.fixture(scope="session")
 def builtin_test_grids_conf() -> list[str]:
     return [os.path.join(PKG_ROOT, "tests", "etc", "grids.conf")]
+
+
+@pytest.fixture(autouse=True)
+def ensure_logging_framework_not_altered():
+    """Protect logger handlers to avoid capsys closing files."""
+    before_handlers = list(root_logger.handlers)
+    yield
+    root_logger.handlers = before_handlers

@@ -230,7 +230,6 @@ class HDF5Writer(Writer):
         dtype=None,
         append=True,
         compute=True,
-        chunks=None,
         **kwargs,
     ):
         """Save HDF5 datasets."""
@@ -337,13 +336,18 @@ def add_writer_argument_groups(parser, group=None):
         type=str_to_dtype,
         help="Data type of the output file (8-bit unsigned " "integer by default - uint8)",
     )
-    group.add_argument("--compress", default="LZW", help="File compression algorithm (DEFLATE, LZW, NONE, etc)")
+    group.add_argument(
+        "--compress",
+        dest="compression",
+        choices=["none", "gzip", "lzf"],  # , "szip"],
+        default="none",
+        help="Dataset compression algorithm. Defaults to no compression.",
+    )
     group.add_argument(
         "--add-geolocation",
         action="store_true",
         help="Add 'longitude' and 'latitude' datasets for each grid",
     )
-
     group.add_argument(
         "--no-append",
         dest="append",

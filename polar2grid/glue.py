@@ -27,7 +27,10 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
+import shutil
 import sys
+import tempfile
+from collections.abc import Iterable
 from datetime import datetime
 from typing import Optional, Union
 
@@ -172,40 +175,6 @@ def _print_list_products(reader_info, is_polar2grid: bool, p2g_only: bool):
         print("\n".join(sorted(available_p2g_names)))
 
 
-def _add_extra_config_paths(extra_paths: list[str]):
-    config_path = satpy.config.get("config_path")
-    LOG.info(f"Adding additional configuration paths: {extra_paths}")
-    satpy.config.set(config_path=extra_paths + config_path)
-
-
-def _prepare_initial_logging(args, glue_name: str) -> bool:
-    global LOG
-    LOG = logging.getLogger(glue_name)
-
-    # Prepare logging
-    rename_log = False
-    if args.log_fn is None:
-        rename_log = True
-        args.log_fn = glue_name + "_fail.log"
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
-    logging.getLogger("rasterio").setLevel(levels[min(1, args.verbosity)])
-    logging.getLogger("fsspec").setLevel(levels[min(2, args.verbosity)])
-    logging.getLogger("s3fs").setLevel(levels[min(2, args.verbosity)])
-    logging.getLogger("aiobotocore").setLevel(levels[min(2, args.verbosity)])
-    logging.getLogger("botocore").setLevel(levels[min(2, args.verbosity)])
-    sys.excepthook = create_exc_handler(LOG.name)
-    if levels[min(3, args.verbosity)] > logging.DEBUG:
-        import warnings
-
-        warnings.filterwarnings("ignore")
-    LOG.debug("Starting script with arguments: %s", " ".join(sys.argv))
-    if args.extra_config_path:
-        _add_extra_config_paths(args.extra_config_path)
-    LOG.debug(f"Satpy config path is: {satpy.config.get('config_path')}")
-    return rename_log
-
-
 def _create_scene(scene_creation: dict) -> Optional[Scene]:
     try:
         scn = Scene(**scene_creation)
@@ -307,8 +276,17 @@ def _create_profile_html_if(create_profile: Union[False, None, str], project_nam
 
 
 def main(argv=sys.argv[1:]):
-    processor = _GlueProcessor(argv)
-    return processor()
+    ret = -1
+    try:
+        processor = _GlueProcessor(argv)
+    except FileNotFoundError:
+        return ret
+
+    try:
+        ret = processor()
+    finally:
+        processor.cleanup()
+    return ret
 
 
 class _GlueProcessor:
@@ -319,7 +297,34 @@ class _GlueProcessor:
         self.is_polar2grid = get_p2g_defaults_env_var()
         self.arg_parser = GlueArgumentParser(argv, self.is_polar2grid)
         self.glue_name = _get_glue_name(self.arg_parser._args)
-        self.rename_log = _prepare_initial_logging(self.arg_parser._args, self.glue_name)
+        self.rename_log = _prepare_initial_logging(self.arg_parser, self.glue_name)
+        self.tmp_config_paths = []
+        self._handle_extra_config_paths(self.arg_parser._args)
+        self._clean = False
+
+    def _handle_extra_config_paths(self, args):
+        if not args.extra_config_path:
+            return
+        _check_valid_config_paths(args.extra_config_path)
+
+        new_config_paths = []
+        # Preserve user's specified order to handle inheritance/overrides
+        for extra_config_path in args.extra_config_path:
+            if os.path.isdir(extra_config_path):
+                new_config_paths.append(extra_config_path)
+                continue
+
+            tmp_config_path = _create_tmp_enhancement_config_dir(extra_config_path)
+            new_config_paths.append(tmp_config_path)
+            self.tmp_config_paths.append(tmp_config_path)
+        _add_extra_config_paths(new_config_paths)
+        LOG.debug(f"Satpy config path is: {satpy.config.get('config_path')}")
+
+    def cleanup(self):
+        self._clean = True
+        for tmp_config_path in self.tmp_config_paths:
+            LOG.debug(f"Deleting temporary config directory: {tmp_config_path}")
+            shutil.rmtree(tmp_config_path, ignore_errors=True)
 
     def __call__(self):
         # Set up dask and the number of workers
@@ -396,6 +401,60 @@ class _GlueProcessor:
         compute_writer_results(to_save)
         LOG.info("SUCCESS")
         return 0
+
+
+def _prepare_initial_logging(arg_parser, glue_name: str) -> bool:
+    global LOG
+    LOG = logging.getLogger(glue_name)
+
+    # Prepare logging
+    args = arg_parser._args
+    rename_log = False
+    if args.log_fn is None:
+        rename_log = True
+        args.log_fn = glue_name + "_fail.log"
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    logging.getLogger("rasterio").setLevel(levels[min(1, args.verbosity)])
+    logging.getLogger("fsspec").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("s3fs").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("aiobotocore").setLevel(levels[min(2, args.verbosity)])
+    logging.getLogger("botocore").setLevel(levels[min(2, args.verbosity)])
+    sys.excepthook = create_exc_handler(LOG.name)
+    if levels[min(3, args.verbosity)] > logging.DEBUG:
+        import warnings
+
+        warnings.filterwarnings("ignore")
+    LOG.debug("Starting script with arguments: %s", " ".join(arg_parser.argv))
+    return rename_log
+
+
+def _add_extra_config_paths(extra_paths: list[str]):
+    config_path = satpy.config.get("config_path")
+    LOG.info(f"Adding additional configuration paths: {extra_paths}")
+    satpy.config.set(config_path=extra_paths + config_path)
+
+
+def _check_valid_config_paths(extra_config_paths: Iterable):
+    single_file_configs = [config_path for config_path in extra_config_paths if os.path.isfile(config_path)]
+    config_paths = [config_path for config_path in extra_config_paths if os.path.isdir(config_path)]
+    invalid_paths = set(extra_config_paths) - (set(single_file_configs) | set(config_paths))
+    if invalid_paths:
+        str_paths = "\n\t".join(sorted(invalid_paths))
+        msg = f"Specified extra config paths don't exist:\n\t{str_paths}"
+        LOG.error(msg)
+        raise FileNotFoundError(msg)
+
+
+def _create_tmp_enhancement_config_dir(enh_yaml_file: str) -> str:
+    config_dir = tempfile.mkdtemp(prefix="p2g_tmp_config")
+    enh_dir = os.path.join(config_dir, "enhancements")
+    LOG.debug(f"Creating temporary config directory for enhancement file '{enh_yaml_file}': {enh_dir}")
+    os.makedirs(enh_dir)
+
+    new_enh_file = os.path.join(enh_dir, "generic.yaml")
+    shutil.copy(enh_yaml_file, new_enh_file)
+    return config_dir
 
 
 def _set_preferred_chunk_size(preferred_chunk_size: int) -> None:

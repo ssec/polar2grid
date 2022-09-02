@@ -174,7 +174,9 @@ from __future__ import annotations
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional, Union
 
-from satpy import DataID
+from satpy import DataID, Scene
+
+from polar2grid.core.script_utils import ExtendConstAction
 
 from ._base import ReaderProxyBase
 
@@ -214,6 +216,15 @@ class ReaderProxy(ReaderProxyBase):
 
     is_polar2grid_reader = True
 
+    def __init__(self, scn: Scene, user_products: list[str]):
+        self._modified_aliases = PRODUCT_ALIASES.copy()
+        if "all_bt_channels" in user_products:
+            # they specified --bt-channels
+            user_products.remove("all_bt_channels")
+            bt_channels = self._btemp_channels_from_satpy(scn.all_dataset_names())
+            user_products.extend(set(bt_channels) - set(user_products))
+        super().__init__(scn, user_products)
+
     @staticmethod
     def _btemp_channels_from_satpy(satpy_ids: list[Union[str, DataID]]):
         for data_id in satpy_ids:
@@ -242,4 +253,14 @@ def add_reader_argument_groups(
     parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
 ) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
     """Add reader-specific command line arguments to an existing argument parser."""
+    if group is None:
+        group = parser.add_argument_group(title="VIIRS SDR Reader")
+
+    group.add_argument(
+        "--bt-channels",
+        dest="products",
+        action=ExtendConstAction,
+        const=["all_bt_channels"],
+        help="Add all I-band raw products to list of products",
+    )
     return None, None
