@@ -122,6 +122,7 @@ class GlueArgumentParser:
 
         reader_subgroups = _add_component_parser_args(parser, "readers", known_args.readers or [])
         writer_subgroups = _add_component_parser_args(parser, "writers", known_args.writers or [])
+        self.argv = argv
         self._args = parser.parse_args(argv)
         _validate_reader_writer_args(parser, self._args, self._is_polar2grid)
 
@@ -251,7 +252,9 @@ def _add_common_arguments(parser: argparse.ArgumentParser, binary_name: str) -> 
         "files. For example, to use custom enhancement YAML file named "
         "'generic.yaml' place it in a directory called 'enhancements' "
         "like '/path/to/my_configs/enhancements/generic.yaml' and then "
-        "set this flag to '/path/to/my_configs'.",
+        "set this flag to '/path/to/my_configs'. For backwards compatibility, "
+        "with older versions, this flag can also be given a single enhancement "
+        "YAML configuration file.",
     )
     parser.add_argument(
         "--match-resolution",

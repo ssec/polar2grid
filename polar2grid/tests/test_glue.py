@@ -29,6 +29,7 @@ from unittest import mock
 
 import dask
 import pytest
+import yaml
 from pytest_lazyfixture import lazy_fixture
 from satpy.tests.utils import CustomScheduler
 
@@ -77,6 +78,119 @@ VIIRS_SDR_FILENAMES = [
     "SVM15_npp_d20120225_t1801245_e1802487_b01708_c20120226002348350715_noaa_ops.h5",
     "SVM16_npp_d20120225_t1801245_e1802487_b01708_c20120226002204855751_noaa_ops.h5",
 ]
+
+
+@pytest.fixture(scope="session")
+def extra_viirs_composite_path(tmp_path_factory):
+    tmp_path = tmp_path_factory.mktemp("extra_viirs_composite_path")
+    _create_fake_comp(tmp_path)
+    _create_fake_comp_enh(tmp_path)
+    yield [tmp_path]
+
+
+def _create_fake_comp(tmp_path):
+    from satpy.composites import GenericCompositor
+
+    comps_dict = {
+        "composites": {
+            "myfakecomp": {
+                "compositor": GenericCompositor,
+                "prerequisites": [
+                    {"name": "I01"},
+                    {"name": "I01"},
+                    {"name": "I01"},
+                ],
+                "standard_name": "myfakecomp",
+            },
+        },
+    }
+
+    comp_path = tmp_path / "composites"
+    comp_path.mkdir(parents=True)
+    viirs_comp_path = comp_path / "viirs.yaml"
+    with open(viirs_comp_path, "w") as comp_file:
+        yaml.dump(comps_dict, comp_file)
+
+
+def _create_fake_comp_enh(tmp_path):
+    from satpy.enhancements import stretch
+
+    enh_dict = {
+        "enhancements": {
+            "myfakecomp_default": {
+                "standard_name": "myfakecomp",
+                "operations": [
+                    {
+                        "name": "myfakecomp_stretch",
+                        "method": stretch,
+                        "kwargs": {"stretch": "crude", "min_stretch": 0, "max_stretch": 1},
+                    },
+                ],
+            },
+        },
+    }
+
+    enh_path = tmp_path / "enhancements"
+    enh_path.mkdir(parents=True)
+    viirs_enh_file = enh_path / "viirs.yaml"
+    with open(viirs_enh_file, "w") as comp_file:
+        yaml.dump(enh_dict, comp_file)
+
+
+@pytest.fixture(scope="session")
+def extra_viirs_enhancement_file(tmp_path_factory):
+    import yaml
+    from satpy.enhancements import stretch
+
+    tmp_path = tmp_path_factory.mktemp("extra_viirs_enhancement_file")
+
+    enh_dict = {
+        "enhancements": {
+            "myfakeenh_i01": {
+                "name": "I01",
+                "operations": [
+                    {
+                        "name": "myfakeenh_i01_stretch",
+                        "method": stretch,
+                        "kwargs": {"stretch": "crude", "min_stretch": 0, "max_stretch": 1},
+                    },
+                ],
+            },
+            "myfakecomp_new_default": {
+                "name": "myfakecomp",
+                "standard_name": "myfakecomp",
+                "operations": [
+                    {
+                        "name": "myfakecomp_new_stretch",
+                        "method": stretch,
+                        "kwargs": {"stretch": "crude", "min_stretch": 0, "max_stretch": 1},
+                    },
+                ],
+            },
+        },
+    }
+
+    enh_path = tmp_path / "enhancements"
+    enh_path.mkdir(parents=True)
+    viirs_enh_file = enh_path / "blahblahblah.yaml"
+    with open(viirs_enh_file, "w") as comp_file:
+        yaml.dump(enh_dict, comp_file)
+    yield [viirs_enh_file]
+
+
+@pytest.fixture(scope="session")
+def extra_viirs_comp_and_enh(extra_viirs_composite_path, extra_viirs_enhancement_file):
+    yield extra_viirs_composite_path + extra_viirs_enhancement_file
+
+
+@contextlib.contextmanager
+def prepare_glue_exec(create_scene_func, max_computes=0, use_polar2grid=True):
+    use_str = "1" if use_polar2grid else "0"
+    with set_env(USE_POLAR2GRID_DEFAULTS=use_str), mock.patch(
+        "polar2grid.glue._create_scene"
+    ) as create_scene, dask.config.set(scheduler=CustomScheduler(max_computes)):
+        create_scene.return_value = create_scene_func
+        yield
 
 
 def _create_empty_viirs_sdrs(dst_dir):
@@ -140,10 +254,7 @@ class TestGlueFakeScene:
     def test_abi_scene(self, scene_fixture, product_names, num_outputs, max_computes, chtmpdir):
         from polar2grid.glue import main
 
-        with set_env(USE_POLAR2GRID_DEFAULTS="0"), mock.patch(
-            "polar2grid.glue._create_scene"
-        ) as create_scene, dask.config.set(scheduler=CustomScheduler(max_computes)):
-            create_scene.return_value = scene_fixture
+        with prepare_glue_exec(scene_fixture, max_computes=max_computes, use_polar2grid=False):
             ret = main(["-r", "abi_l1b", "-w", "geotiff", "-f", str(chtmpdir), "-p"] + product_names)
         output_files = glob(str(chtmpdir / "*.tif"))
         assert len(output_files) == num_outputs
@@ -173,10 +284,7 @@ class TestGlueFakeScene:
     def test_viirs_sdr_scene(self, scene_fixture, product_names, num_outputs, extra_flags, max_computes, chtmpdir):
         from polar2grid.glue import main
 
-        with set_env(USE_POLAR2GRID_DEFAULTS="1"), mock.patch(
-            "polar2grid.glue._create_scene"
-        ) as create_scene, dask.config.set(scheduler=CustomScheduler(max_computes)):
-            create_scene.return_value = scene_fixture
+        with prepare_glue_exec(scene_fixture, max_computes=max_computes):
             args = ["-r", "viirs_sdr", "-w", "geotiff", "-vvv", "-f", str(chtmpdir)]
             if product_names:
                 args.append("-p")
@@ -187,3 +295,37 @@ class TestGlueFakeScene:
         output_files = glob(str(chtmpdir / "*.tif"))
         assert len(output_files) == num_outputs
         assert ret == 0
+
+    @pytest.mark.parametrize(
+        ("extra_config_path", "exp_comps", "exp_enh_names"),
+        [
+            (lazy_fixture("extra_viirs_composite_path"), ["myfakecomp"], ["myfakecomp_stretch", "gamma"]),
+            (lazy_fixture("extra_viirs_enhancement_file"), [], ["myfakeenh_i01_stretch"]),
+            (
+                lazy_fixture("extra_viirs_comp_and_enh"),
+                ["myfakecomp"],
+                ["myfakeenh_i01_stretch", "myfakecomp_new_stretch"],
+            ),
+        ],
+    )
+    def test_extra_config_path(
+        self, extra_config_path, exp_comps, exp_enh_names, viirs_sdr_full_scene, chtmpdir, capsys
+    ):
+        from polar2grid.glue import main
+
+        args = ["-r", "viirs_sdr", "-w", "geotiff", "-vvv", "-f", str(chtmpdir)]
+        for extra_path in extra_config_path:
+            args += ["--extra-config-path", str(extra_path)]
+        with prepare_glue_exec(viirs_sdr_full_scene):
+            ret = main(args + ["--list-products-all"])
+        assert ret == 0
+        captured = capsys.readouterr()
+        for exp_comp in exp_comps:
+            assert exp_comp in captured.out
+
+        with prepare_glue_exec(viirs_sdr_full_scene, max_computes=4):
+            ret = main(args + ["-p"] + exp_comps + ["i01"])
+        assert ret == 0
+        captured = capsys.readouterr()
+        for exp_enh_name in exp_enh_names:
+            assert exp_enh_name in captured.err
