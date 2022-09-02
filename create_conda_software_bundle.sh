@@ -95,7 +95,7 @@ fi
 echo "Downloading pyspectral data..."
 PSP_DATA_CACHE_ROOT="${CACHE_DIR}/p2g_pyspectral_cache"
 mkdir -p "${PSP_DATA_CACHE_ROOT}" || oops "Couldn't create pyspectral data cache"
-PSP_CONFIG_FILE=$POLAR2GRID_HOME/etc/polar2grid/pyspectral.yaml PSP_DATA_ROOT=$POLAR2GRID_HOME/pyspectral_data PSP_DATA_CACHE_ROOT=${PSP_DATA_CACHE_ROOT} $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
+PSP_CONFIG_FILE=etc/polar2grid/pyspectral.yaml PSP_DATA_ROOT=pyspectral_data PSP_DATA_CACHE_ROOT=${PSP_DATA_CACHE_ROOT} $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
 
 # Download Satpy auxiliary data
 echo "Downloading Satpy auxiliary data..."
@@ -112,7 +112,6 @@ cd $SB_NAME/bin
 for bash_file in *.sh; do
     sed -i "s/# __SWBUNDLE_ENVIRONMENT_INJECTION__/source \$POLAR2GRID_HOME\/bin\/env.sh/g" "$bash_file"
 done
-rm tmp.sh
 
 echo "Copying Satpy auxiliary data to software bundle..."
 mkdir -p ${SATPY_DATA_DIR} || oops "Could not create polar2grid auxiliary data directory"
