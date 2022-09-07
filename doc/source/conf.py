@@ -446,7 +446,7 @@ if is_geo2grid:
     ]
 else:
     latex_appendices = [
-        "version_changes",
+        # "version_changes",
         "misc_recipes",
         "design_overview",
         "viirs_day_night_band",
