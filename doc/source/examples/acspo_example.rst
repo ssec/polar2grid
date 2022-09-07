@@ -72,7 +72,7 @@ the ACSPO SST VIIRS image on the right.
     :width: 100%
     :align: center
 
-    S-NPP VIIRS I-Band 02 Reflectance image (Left panel) and ACSPO Sea Surface Temperature image (Right Panel) from an 
+    NOAA-20 VIIRS I-Band 02 Reflectance image (Left panel) and ACSPO Sea Surface Temperature image (Right Panel) from an 
 entire direct broadcast pass acquired on 10 August 2022 over North America.
 The default projection is WGS84 (Platte Carrée) and the default scaling is greyscale brightness values 0-255.
 
@@ -84,7 +84,7 @@ in the Northern United States.  To do this, I need to create a new grid.  I will
 
 I named my grid `great_lakes`, centered it on `-83.5 E Longitude` and `45.1 N Latitude`,
 with `750 m` spatial resolution in the X and Y directions, and defined the output
-grid to be `1800 x 1200` elements and lines.
+grid to be `1800 x 1200` elements and lines.  
 
 Executing this command results in the following grid definition:
 
@@ -117,8 +117,8 @@ by executing this command:
 
 .. code-block:: bash
 
-    polar2grid.sh acspo gtiff --grid-coverage 0 --grid-configs my_grid.yaml \
-      -g great_lakes -f viirs/*.nc
+    polar2grid.sh -r acspo -w geotiff --grid-coverage 0 --grid-configs my_grid.yaml \
+      -g great_lakes --fill-value 0 -f viirs/*.nc
 
 Note that you need to provide the full path to the `my_grid.yaml` if it is not located in the
 execution directory.  The subset image that is created from executing this command is
@@ -128,24 +128,24 @@ shown below.
 
     \newpage
 
-.. figure:: ../_static/example_images/npp_viirs_sst_20191216_072134_acspo_sst.png
-    :name: npp_viirs_sst_20191216_072134_acspo_sst.png
-    :width: 80%
+.. figure:: ../_static/example_images/noaa20_viirs_sst_20220810_184327_great_lakes.png
+    :name: noaa20_viirs_sst_20220810_184327_great_lakes.png
+    :width: 100%
     :align: center
 
-    S-NPP VIIRS ACSPO SST subset image over our area of interest.
+    NOAA-20 VIIRS ACSPO SST subset image for our defined grid over the great lakes.
 
 To add a color enhancement to this image, I use the *add_colormap.sh* utility
 script and a rainbow color table `p2g_sst_palette.txt` that is included as part of
 the Polar2Grid package.  This table is formatted as described in the
 :ref:`util_add_colormap` section. You can view the file
-`online <https://github.com/ssec/polar2grid/blob/main/swbundle/colormaps/p2g_sst_palette.txt>`_.
+`online <https://github.com/ssec/polar2grid/blob/main/etc/colormaps/p2g_sst_palette.txt>`_.
 
 This colormap will assign a color value to each of the 0-255 brightness range
 in the GeoTIFF image.  Again, the default brightness range is associated with a
 temperature range of 267.317 K to 309.816 K.
 
-    ``add_colormap.sh $POLAR2GRID_HOME/colormaps/p2g_sst_palette.txt npp_viirs_sst_20191216_072134_acspo_sst.tif``
+    ``add_colormap.sh $POLAR2GRID_HOME/colormaps/p2g_sst_palette.txt noaa20_viirs_sst_20220810_184327_great_lakes.tif``
 
 The filename will not change, but a color enhancement will be added to the image
 as shown below.
@@ -154,49 +154,55 @@ as shown below.
 
     \newpage
 
-.. figure:: ../_static/example_images/npp_viirs_sst_20191216_072134_acspo_sst_wcolor.png
-    :name: npp_viirs_sst_20191216_072134_acspo_sst_wcolor.png
-    :width: 80%
+.. figure:: ../_static/example_images/noaa20_viirs_sst_20220810_184327_great_lakes_wcolor.png
+    :name: noaa20_viirs_sst_20220810_184327_great_lakes_wcolor.png
+    :width: 100%
     :align: center
 
-    S-NPP VIIRS ACSPO SST color enhanced subset image over our area of interest.
+    NOAA-20 VIIRS ACSPO SST color enhanced image for our defined grid over the great lakes.
 
 We can tighten the temperature range that is displayed in our region of interest
-by creating our own local rescale configuration file, thereby using the
-full range of brightness values.  Since I am superseding the standard
-rescale.ini file, I use the same default name and data_kind, but redefine the
-relationship between the brightness values and the data.  I tighten the
-temperature range to be between 279.0 K and 304.0 K.  The contents of
-my new rescale file is shown below (my_rescale.ini).
+by creating our own local rescaling. This allows us to use
+full range of brightness values. In order to do this, I need to create a new
+rescaling yaml file that I will then provide to polar2grid.sh.
+
+I chose an enhancment name of `great_lakes_sst` and use the same standard_name of
+`sea_surface_subskin_temperature` and redefined the relationship between the brightness 
+values and the data.  I tighten the temperature range to be between 275.0 K and 305.0 K.  The contents of
+my new rescale yaml file is shown below (my_rescale.yaml).
 
 .. parsed-literal::
 
-    [rescale:default_sst3]
-    data_kind=sea_surface_sub-skin_temperature
-    method=linear
-    min_in=279.00
-    max_in=304.00
+    enhancements:
+      great_lakes_sst:
+        standard_name: sea_surface_subskin_temperature
+        operations:
+          - name: linear_stretch
+            method: !!python/name:satpy.enhancements.stretch
+            kwargs: {stretch: 'crude', min_stretch: 275.0, max_stretch: 305.0}
 
 I can then apply this new rescaling file by referencing the file
-in the `polar2grid.sh` execution.  In the example below, my_rescale.ini
-file is located in the execution directory.  If it is not, you will need
-to provide the full path to the file. Please Note: Polar2Grid does not overwrite
+in the `polar2grid.sh` execution.  <<<<In the example below, `my_rescale.yaml`
+file is located in the execution directory. If it is not, you will need
+to provide the full path to the file. NEEDS REWRITING>>>> Please Note: Polar2Grid does not overwrite
 output files, so you will need to either rename or delete the original
 ACSPO GeoTIFF output file.
 
 .. code-block:: bash
 
-    polar2grid.sh acspo gtiff --rescale-configs my_rescale.ini \
-      --grid-coverage 0 --grid-configs mygrid.conf -g acspo_sst -f viirs/*.nc
+    This will need to be changed.
+
+    polar2grid.sh -r acspo -w geotiff --grid-coverage 0 --fill-value 0 --grid-configs my_grid.yaml \
+      -g great_lakes --extra-config-path ${PWD} -f viirs/*.nc
 
 The result of applying this rescaling to my image and applying my colormap is shown below.
 
-.. figure:: ../_static/example_images/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor.png
-    :name: npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor.png
-    :width: 80%
+.. figure:: ../_static/example_images/noaa20_viirs_sst_20220810_184327_great_lakes_rescaled_wcolor.png
+    :name: noaa20_viirs_sst_20220810_184327_great_lakes_rescaled_wcolor.png
+    :width: 100%
     :align: center
 
-    S-NPP VIIRS ACSPO SST color enhanced subset image over our area of interest using a customized rescaling that linearly maps brightness values of 0-255 to a temperature range of 279.0 K to 304.0 K.
+    S-NPP VIIRS ACSPO SST color enhanced subset image over our area of interest using a customized rescaling that linearly maps brightness values of 0-255 to a temperature range of 275.0 K to 305.0 K.
 
 To further enhance this ACSPO SST image I can add a color bar
 using the `add_coastlines.sh` script.  There are many options to this script
@@ -209,7 +215,7 @@ For example, executing the following command:
 
 .. code-block:: bash
 
-   add_coastlines.sh npp_viirs_sst_20191216_072134_acspo_sst.tif \
+   add_coastlines.sh noaa20_viirs_sst_20220810_184327_great_lakes.tif \
      --add-colorbar --colorbar-text-color="white" \
      --colorbar-units="°K" --colorbar-align top \
      --colorbar-title="VIIRS ACSPO SST  16 December 2019  07:21 UTC" \
