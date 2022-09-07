@@ -72,6 +72,8 @@ from satpy import DataQuery
 
 from ._base import ReaderProxyBase
 
+PREFERRED_CHUNK_SIZE: int = 1400  # at least one 1km swath width
+
 PRODUCTS = [
     "cloud_mask",
     "land_sea_mask",

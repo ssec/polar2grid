@@ -30,3 +30,26 @@ enhancements:
       - name: linear
         method: !!python/name:satpy.enhancements.stretch
         kwargs: {stretch: 'crude', min_stretch: 280., max_stretch: 180.}
+
+  # Level 2
+  cloud_top_height:
+    name: HT
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/abi_l2_modified_cloud_top.cmap
+              min_value: -300
+              max_value: 20000
+
+  cloud_top_temperature:
+    name: TEMP
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/abi_l2_modified_cloud_top.cmap
+              min_value: 300
+              max_value: 200

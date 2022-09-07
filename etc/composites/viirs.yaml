@@ -46,7 +46,7 @@ modifiers:
 composites:
 
   unsharp_true_color:
-    compositor: !!python/name:satpy.composites.RGBCompositor
+    compositor: !!python/name:satpy.composites.GenericCompositor
     prerequisites:
     - name: M05
       modifiers: [sunz_corrected, rayleigh_corrected]

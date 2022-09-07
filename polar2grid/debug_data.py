@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2019 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2019-2022 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -20,13 +20,6 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by David Hoese    March 2016
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     david.hoese@ssec.wisc.edu
 """Produce various text and image outputs for debugging input data."""
 
 import logging

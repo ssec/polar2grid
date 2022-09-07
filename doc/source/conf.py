@@ -268,8 +268,12 @@ else:
             "examples/ahi_example.rst",
             "examples/creating_animations_example.rst",
             "readers/abi_l1b.rst",
+            "readers/abi_l2_nc.rst",
+            "readers/agri_l1.rst",
             "readers/ahi_hrit.rst",
             "readers/ahi_hsd.rst",
+            "readers/ami_l1b.rst",
+            "readers/glm_l2.rst",
             "verification/abi_verification.rst",
         ]
     )

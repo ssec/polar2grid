@@ -7,6 +7,9 @@ concurrency:
 
 on: [push, pull_request]
 
+env:
+  CACHE_NUMBER: 0
+
 jobs:
   # build website
   website:
@@ -32,8 +35,25 @@ jobs:
           miniforge-variant: Mambaforge
           miniforge-version: latest
           use-mamba: true
-          environment-file: continuous_integration/environment.yaml
+          python-version: "3.10"
           activate-environment: test-environment
+
+      - name: Set cache environment variables
+        shell: bash -l {0}
+        run: |
+          echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+          CONDA_PREFIX=$(python -c "import sys; print(sys.prefix)")
+          echo "CONDA_PREFIX=$CONDA_PREFIX" >> $GITHUB_ENV
+
+      - uses: actions/cache@v3
+        with:
+          path: ${{ env.CONDA_PREFIX }}
+          key: ubuntu-latest-3.10-conda-${{ hashFiles('continuous_integration/environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+        id: cache
+
+      - name: Update environment
+        run: mamba env update -n test-environment -f continuous_integration/environment.yaml
+        if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Install Polar2Grid
         shell: bash -l {0}
@@ -87,7 +107,7 @@ jobs:
       fail-fast: true
       matrix:
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
-        python-version: ["3.8"]
+        python-version: ["3.10"]
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -105,13 +125,28 @@ jobs:
           miniforge-version: latest
           use-mamba: true
           python-version: ${{ matrix.python-version }}
-          environment-file: continuous_integration/environment.yaml
           activate-environment: test-environment
+
+      - name: Set cache environment variables
+        shell: bash -l {0}
+        run: |
+          echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+          CONDA_PREFIX=$(python -c "import sys; print(sys.prefix)")
+          echo "CONDA_PREFIX=$CONDA_PREFIX" >> $GITHUB_ENV
+
+      - uses: actions/cache@v3
+        with:
+          path: ${{ env.CONDA_PREFIX }}
+          key: ${{ matrix.os }}-${{matrix.python-version}}-conda-${{ hashFiles('continuous_integration/environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+        id: cache
+
+      - name: Update environment
+        run: mamba env update -n test-environment -f continuous_integration/environment.yaml
+        if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Install Polar2Grid on non-Windows
         shell: bash -l {0}
         run: |
-          pip install git+https://github.com/pytroll/satpy.git
           pip install --no-deps -e .
         if: runner.os != 'Windows'
 
@@ -126,15 +161,17 @@ jobs:
       - name: Install Polar2Grid on Windows
         shell: powershell
         run: |
-          pip install git+https://github.com/pytroll/satpy.git
           pip install --no-deps -e .
         if: runner.os == 'Windows'
 
-      - name: Run unit tests on Windows
+      - name: Run help usage tests on Windows
         shell: powershell
+        # Windows CI doesn't have enough memory for the tests
+#          pytest --cov=polar2grid polar2grid/tests --cov-report=
+#          if ($LASTEXITCODE) { exit $LASTEXITCODE }
         run: |
-          pytest --cov=polar2grid polar2grid/tests --cov-report=
           polar2grid --help
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           geo2grid --help
         if: runner.os == 'Windows'
 

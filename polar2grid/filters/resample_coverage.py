@@ -82,16 +82,14 @@ class ResampleCoverageFilter(BaseFilter):
         """
         if not self._matches_criteria(data_arr):
             return False
-
         source_area = data_arr.attrs.get("area")
         if source_area is None:
             return False
-
         if source_area.ndim == 1:
             logger.debug("Source data is 1 dimensional, will not filter based on resampling coverage.")
             return False
-        source_polygon = polygon_for_area(source_area)
-        coverage_fraction = _get_intersection_coverage(source_polygon, self._target_polygon)
+
+        coverage_fraction = self._get_and_cache_coverage_fraction(data_arr, source_area, _cache)
         if coverage_fraction >= self._coverage_fraction:
             logger.debug("Resampling found %f%% coverage.", coverage_fraction * 100)
             return False
@@ -101,3 +99,22 @@ class ResampleCoverageFilter(BaseFilter):
             data_arr.attrs["name"],
         )
         return True
+
+    def _get_and_cache_coverage_fraction(self, source_data: DataArray, source_area: PRGeometry, cache: dict) -> float:
+        platform_name = source_data.attrs.get("platform_name")
+        sensor_name = source_data.attrs.get("sensor")
+        if sensor_name and not isinstance(sensor_name, str):
+            sensor_name = "-".join(sorted(sensor_name))
+        key = (platform_name, sensor_name)
+        if key in cache:
+            logger.debug(f"Reusing cache coverage fraction for {key}")
+            return cache[key]
+
+        logger.debug(f"Computing coverage fraction for {key}")
+        source_polygon = polygon_for_area(source_area)
+        coverage_fraction = _get_intersection_coverage(source_polygon, self._target_polygon)
+        if platform_name is None or sensor_name is None:
+            logger.debug("Platform and sensor metadata missing from data. Won't cache coverage information.")
+            return coverage_fraction
+        cache[key] = coverage_fraction
+        return coverage_fraction

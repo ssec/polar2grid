@@ -42,7 +42,14 @@ done
 THIS_SCRIPT_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
 P2G_CONDA_BASE="${THIS_SCRIPT_HOME}/libexec/python_runtime"
 P2G_METADATA="${P2G_CONDA_BASE}/lib/python*/site-packages/polar2grid-*.dist-info/METADATA"
-METADATA_CHECKSUM=$(openssl sha256 $P2G_METADATA)
+METADATA_CHECKSUM=$(${P2G_CONDA_BASE}/bin/openssl sha256 $P2G_METADATA)
+
+
+oops() {
+    echo "ERROR: $*"
+    exit 1
+}
+
 
 # Only load the environment if it hasn't been done already
 if [[ "${_POLAR2GRID_ENV_LOADED}" != "${METADATA_CHECKSUM}" ]]; then
@@ -60,7 +67,8 @@ if [[ "${_POLAR2GRID_ENV_LOADED}" != "${METADATA_CHECKSUM}" ]]; then
     install_signal="${P2G_CONDA_BASE}/.installed"
     if [[ "$(head -n 1 ${install_signal} 2>/dev/null)" != "${P2G_CONDA_BASE}" ]]; then
         echo "Running one-time initialization of environment..."
-        conda-unpack
+        conda-unpack || oops "Unable to perform one-time initialization. If this installation "\
+        "(tarball extraction) was done by another user, that user should run 'geo2grid.sh -h' first."
         echo "${P2G_CONDA_BASE}" > "${install_signal}"
     fi
 

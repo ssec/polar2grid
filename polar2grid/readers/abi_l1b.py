@@ -21,10 +21,10 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The ABI Level 1B Reader operates on NOAA Level 1B (L1B) NetCDF files
-from the GOES-16 (GOES-East) and GOES-17 (GOES-West) Advanced Baseline
+from the GOES-16 (GOES-East) and GOES-17/18 (GOES-West) Advanced Baseline
 Imager (ABI) instrument. The ABI L1B reader works off of the input filenames
 to determine if a file is supported by Geo2Grid. Files usually have the
-following naming scheme:
+following naming scheme::
 
     OR_ABI-L1b-RadF-M3C16_G16_s20182531700311_e20182531711090_c20182531711149.nc
 
@@ -81,7 +81,7 @@ more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+
-| natural_color             | Ratio sharpened rayleigh corrected natural color    |
+| natural_color             | Ratio sharpened corrected natural color             |
 +---------------------------+-----------------------------------------------------+
 | airmass                   | Air mass RGB                                        |
 +---------------------------+-----------------------------------------------------+
@@ -102,6 +102,8 @@ from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
 from ._base import ReaderProxyBase
+
+PREFERRED_CHUNK_SIZE: int = 1356
 
 READER_PRODUCTS = ["C{:02d}".format(x) for x in range(1, 17)]
 COMPOSITE_PRODUCTS = [

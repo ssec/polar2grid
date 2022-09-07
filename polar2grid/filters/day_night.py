@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 @cache
-def _get_sunlight_coverage(area_def, start_time, sza_threshold=90, overpass=None):
+def _get_sunlight_coverage(area_def, start_time, sza_threshold=90.0, overpass=None):
     """Get the sunlight coverage of *area_def* at *start_time* as a value between 0 and 1."""
     if area_def.ndim == 1:
         logger.debug("Source data is 1 dimensional, will not filter based on sunlight coverage.")

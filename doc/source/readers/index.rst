@@ -30,5 +30,9 @@ using the  ``--list-products`` option.
     :polar2grid:virr_l1b
     :polar2grid:mersi2_l1b
     :geo2grid:abi_l1b
+    :geo2grid:abi_l2_nc
+    :geo2grid:agri_l1
     :geo2grid:ahi_hsd
     :geo2grid:ahi_hrit
+    :geo2grid:ami_l1b
+    :geo2grid:glm_l2

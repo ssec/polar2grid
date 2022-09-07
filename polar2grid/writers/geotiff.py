@@ -38,6 +38,7 @@ any invalid or missing data pixels. This results in invalid pixels showing up
 as transparent in most image viewers.
 
 """
+import argparse
 import logging
 import os
 
@@ -101,9 +102,27 @@ def add_writer_argument_groups(parser, group=None):
         help="When saving 'palettized' enhanced images, save the colormap as a "
         "geotiff color table instead of converting the image to RGB/A",
     )
-    group.add_argument("--tiled", action=BooleanOptionalAction, help="Tile geotiffs internally (default: True)")
+    group.add_argument(
+        "--tiled", action=BooleanOptionalAction, default=True, help="Tile geotiffs internally (default: True)"
+    )
     group.add_argument("--blockxsize", default=SUPPRESS, type=int, help="Set tile block X size")
     group.add_argument("--blockysize", default=SUPPRESS, type=int, help="Set tile block Y size")
+    group.add_argument(
+        "--scale-offset-tags",
+        default=["scale", "offset"],
+        type=_check_tags,
+        # help="Specify custom geotiff tags for enhancement metadata. Should be "
+        # "two comma-separated names for the metadata tags. Defaults to "
+        # "'scale,offset'. Specify 'NONE' to not save the tags.",
+        help=SUPPRESS,
+    )
+    group.add_argument(
+        "--colormap-tag",
+        default="colormap",
+        type=lambda input_str: None if input_str == "NONE" else input_str,
+        # help="Specify the custom geotiff tag where a CSV version of an applied " "colormap (if any) will be saved.",
+        help=SUPPRESS,
+    )
     group.add_argument(
         "--gdal-num-threads",
         dest="num_threads",
@@ -121,6 +140,12 @@ def add_writer_argument_groups(parser, group=None):
         "typically as powers of 2. Example: '2 4 8 16'",
     )
     group.add_argument(
+        "--overviews-resampling",
+        default="nearest",
+        choices=("nearest", "average", "bilinear", "cubic", "cubicspline", "lanczos"),
+        help="Specify resampling used when generating overviews",
+    )
+    group.add_argument(
         "--gdal-driver",
         dest="driver",
         help="Name of the GDAL driver to use when writing the geotiff. "
@@ -131,3 +156,12 @@ def add_writer_argument_groups(parser, group=None):
     # Saving specific keyword arguments
     # group_2 = parser.add_argument_group(title='Writer Save')
     return group, None
+
+
+def _check_tags(input_str):
+    if "none" in input_str.lower():
+        return None
+    split_names = input_str.split(",")
+    if len(split_names) != 2:
+        raise argparse.ArgumentError("Expected 2 comma-separated names or 'NONE'.")
+    return split_names

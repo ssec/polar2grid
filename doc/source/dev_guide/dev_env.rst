@@ -39,8 +39,8 @@ for more information.
 
        conda env create -n p2g_dev --file build_environment.yml
 
-    This script will walk you through a few questions including whether or not to use ShellB3 (linux only), provide
-    a preinstalled ShellB3, or build and install secondary polar2grid components.
+   This script will walk you through a few questions including whether or not to use ShellB3 (linux only), provide
+   a preinstalled ShellB3, or build and install secondary polar2grid components.
 
 3. Active the conda environment and install "polar2grid" in development mode:
 

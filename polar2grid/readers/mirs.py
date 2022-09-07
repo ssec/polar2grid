@@ -52,6 +52,14 @@ The frontend offers the following products:
     +--------------------+----------------------------------------------------+
     | swe                | Snow Water Equivalence                             |
     +--------------------+----------------------------------------------------+
+    | clw                | Cloud Liquid Water                                 |
+    +--------------------+----------------------------------------------------+
+    | sfr                | Snow Fall Rate                                     |
+    +--------------------+----------------------------------------------------+
+    | surface_type       | Surface Type                                       |
+    +--------------------+----------------------------------------------------+
+    | tskin              | Skin Temperature                                   |
+    +--------------------+----------------------------------------------------+
     | btemp_X            | Brightness Temperature for channel X (see below)   |
     +--------------------+----------------------------------------------------+
 
@@ -166,17 +174,21 @@ from __future__ import annotations
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional, Union
 
-from satpy import DataID
+from satpy import DataID, Scene
+
+from polar2grid.core.script_utils import ExtendConstAction
 
 from ._base import ReaderProxyBase
 
 PRECIP_PRODUCTS = [
     "rain_rate",
     "tpw",
+    "clw",
 ]
 SNOW_PRODUCTS = [
     "snow_cover",
     "swe",
+    "sfr",
 ]
 SEAICE_PRODUCTS = [
     "sea_ice",
@@ -185,19 +197,33 @@ SEAICE_PRODUCTS = [
 PRODUCT_ALIASES = {}
 PRODUCT_ALIASES["rain_rate"] = "RR"
 PRODUCT_ALIASES["tpw"] = "TPW"
+PRODUCT_ALIASES["clw"] = "CLW"
 
 PRODUCT_ALIASES["snow_cover"] = "Snow"
 PRODUCT_ALIASES["swe"] = "SWE"
+PRODUCT_ALIASES["sfr"] = "SFR"
 
 PRODUCT_ALIASES["sea_ice"] = "SIce"
 
-P2G_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS
+PRODUCT_ALIASES["surface_type"] = "Sfc_type"
+PRODUCT_ALIASES["tskin"] = "TSkin"
+
+P2G_PRODUCTS = PRECIP_PRODUCTS + SNOW_PRODUCTS + SEAICE_PRODUCTS + ["surface_type", "tskin"]
 
 
 class ReaderProxy(ReaderProxyBase):
     """Provide Polar2Grid-specific information about this reader's products."""
 
     is_polar2grid_reader = True
+
+    def __init__(self, scn: Scene, user_products: list[str]):
+        self._modified_aliases = PRODUCT_ALIASES.copy()
+        if "all_bt_channels" in user_products:
+            # they specified --bt-channels
+            user_products.remove("all_bt_channels")
+            bt_channels = self._btemp_channels_from_satpy(scn.all_dataset_names())
+            user_products.extend(set(bt_channels) - set(user_products))
+        super().__init__(scn, user_products)
 
     @staticmethod
     def _btemp_channels_from_satpy(satpy_ids: list[Union[str, DataID]]):
@@ -227,4 +253,14 @@ def add_reader_argument_groups(
     parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
 ) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
     """Add reader-specific command line arguments to an existing argument parser."""
+    if group is None:
+        group = parser.add_argument_group(title="VIIRS SDR Reader")
+
+    group.add_argument(
+        "--bt-channels",
+        dest="products",
+        action=ExtendConstAction,
+        const=["all_bt_channels"],
+        help="Add all I-band raw products to list of products",
+    )
     return None, None

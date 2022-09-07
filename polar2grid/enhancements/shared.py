@@ -26,7 +26,6 @@ import numpy as np
 from satpy.enhancements import colorize as _colorize
 from satpy.enhancements import palettize as _palettize
 
-from polar2grid.add_colormap import parse_color_table_file
 from polar2grid.utils.config import get_polar2grid_home
 
 
@@ -41,29 +40,23 @@ def temperature_difference(img, min_stretch, max_stretch, **kwargs):
     # we assume uint8 images for legacy AWIPS comparisons
     offset = 1 / 255.0
     factor = (205.0 - 5.0) / 255.0
-    img.data = img.data * factor
+    img.data.data = img.data.data * factor
     img.data.data = np.clip(img.data.data, -offset, factor + offset)  # 4 and 206 offset
-    img.data = img.data + 5 * offset  # lower bound of 5
+    img.data.data = img.data.data + 5 * offset  # lower bound of 5
     return img
 
 
 def _parse_palettes_for_p2g_cmap(palettes: list):
     for palette in palettes:
         filename = palette.get("filename", "")
-        if not filename or (filename.endswith(".npy") or filename.endswith(".npz")):
+        if not filename:
             yield palette
             continue
         p2g_home = get_polar2grid_home()
         filename = filename.replace("$POLAR2GRID_HOME", p2g_home)
         filename = filename.replace("$GEO2GRID_HOME", p2g_home)
-        colors = parse_color_table_file(filename)
-        values = [color[0] for color in colors]
-        colors = [color[1:] for color in colors]
-        new_palette = {
-            "colors": colors,
-            "values": values,
-        }
-        yield new_palette
+        palette["filename"] = filename
+        yield palette
 
 
 def colorize(img, **kwargs):

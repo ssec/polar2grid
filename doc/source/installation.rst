@@ -9,7 +9,7 @@ to run the features provided by |project|.
 The tarball uses bash scripts for conveniently
 calling the python software or utilities provided by third-party
 vendors.  The software bundle is only supported on CentOS-7.9 compatible systems,
-but has also been tested on Rocky Linux 8.5 and may work on other 
+but has also been tested on Rocky Linux 8.5 and may work on other
 compatible Linux 64-bit operating systems as well.  There are other ways to install
 |project| on other operating systems, but the instructions to do so are
 beyond the scope of this documentation.
@@ -100,6 +100,15 @@ beyond the scope of this documentation.
     .. code-block:: bash
 
         export PATH=$PATH:$POLAR2GRID_HOME/bin
+
+.. note::
+
+    A one-time initialization process is performed the first time any of
+    the bash scripts is run. The extracted directory can *NOT* be moved
+    after this is performed. In a shared user installation (multiple users
+    running the same installation), the user that extracted the tarball
+    should run a script to perform this initialization before any other
+    users (ex. ``-h`` to |script_literal|).
 
 See :doc:`getting_started` for more information on running |project|.
 

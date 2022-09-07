@@ -7,6 +7,9 @@ Polar2Grid and Geo2Grid
 .. image:: https://coveralls.io/repos/github/ssec/polar2grid/badge.svg
     :target: https://coveralls.io/github/ssec/polar2grid
 
+.. image:: https://codescene.io/projects/21812/status-badges/code-health
+    :target: https://codescene.io/projects/21812
+    :alt: CodeScene Code Health
 
 Polar2Grid and Geo2Grid are a set of tools for extracting data from earth-observing satellite instruments,
 remapping it to uniform grids, and writing that gridded data to a new file format.

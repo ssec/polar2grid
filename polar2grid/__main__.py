@@ -36,15 +36,15 @@ import sys
 def p2g_main(argv=sys.argv[1:]):
     from polar2grid.glue import main
 
-    os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "1")
-    main(argv=argv)
+    os.environ["USE_POLAR2GRID_DEFAULTS"] = "1"
+    return main(argv=argv)
 
 
 def g2g_main(argv=sys.argv[1:]):
     from polar2grid.glue import main
 
-    os.environ.setdefault("USE_POLAR2GRID_DEFAULTS", "0")
-    main(argv=argv)
+    os.environ["USE_POLAR2GRID_DEFAULTS"] = "0"
+    return main(argv=argv)
 
 
 if __name__ == "__main__":

@@ -28,7 +28,9 @@
 # Madison, WI  53706
 # david.hoese@ssec.wisc.edu
 """Script to add coastlines and borders to a geotiff while also creating a PNG."""
+from __future__ import annotations
 
+import argparse
 import logging
 import os
 import sys
@@ -37,28 +39,19 @@ import numpy as np
 import rasterio
 from aggdraw import Font
 from PIL import Image, ImageFont
+from pkg_resources import resource_filename as get_resource_filename
 from pycoast import ContourWriterAGG
+from pydecorate import DecoratorAGG
 from pyresample.utils import get_area_def_from_raster
+from trollimage.colormap import Colormap
 
-try:
-    # try getting setuptools/distribute's version of resource retrieval first
-    from pkg_resources import resource_filename as get_resource_filename
-except ImportError:
-    print("WARNING: Missing 'pkg_resources' dependency")
-
-    def get_resource_filename(mod_name, resource_name):
-        if mod_name != "polar2grid.fonts":
-            raise ValueError("Can only import resources from polar2grid (missing pkg_resources dependency)")
-        return os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "fonts", resource_name)
-
+from polar2grid.utils.config import add_polar2grid_config_paths
 
 LOG = logging.getLogger(__name__)
 PYCOAST_DIR = os.environ.get("GSHHS_DATA_ROOT")
 
 
-def get_colormap(band_dtype, band_ct, band_count):
-    from trollimage.colormap import Colormap
-
+def _convert_table_to_cmap_or_default_bw(band_dtype, band_ct, band_count):
     max_val = np.iinfo(band_dtype).max
     # if we have an alpha band then include the entire colormap
     # otherwise assume it is using 0 as a fill value
@@ -80,113 +73,57 @@ def _get_rio_colormap(rio_ds, bidx):
         return None
 
 
-def find_font(font_name, size):
-    try:
-        font = ImageFont.truetype(font_name, size)
-        return font.path
-    except IOError:
-        font_path = get_resource_filename("polar2grid.fonts", font_name)
-        if not os.path.exists(font_path):
-            raise ValueError("Font path does not exist: {}".format(font_path))
-        return font_path
-
-
-def _args_to_pycoast_dict(args):
-    opts = {}
-    if args.add_coastlines:
-        outline = (
-            args.coastlines_outline[0]
-            if len(args.coastlines_outline) == 1
-            else tuple(int(x) for x in args.coastlines_outline)
+def _get_colorbar_vmin_vmax(arg_min, arg_max, metadata, input_dtype):
+    scale = metadata.get("scale", metadata.get("scale_factor"))
+    offset = metadata.get("offset", metadata.get("add_offset"))
+    dtype_min = float(np.iinfo(input_dtype).min)
+    dtype_max = float(np.iinfo(input_dtype).max)
+    if arg_min is None and scale is None:
+        LOG.warning(
+            "Colorbar min/max metadata not found and not provided "
+            "on the command line. Defaulting to data type limits."
         )
-        if args.coastlines_fill:
-            fill = (
-                args.coastlines_fill[0]
-                if len(args.coastlines_fill) == 1
-                else tuple(int(x) for x in args.coastlines_fill)
-            )
-        else:
-            fill = None
-        opts["coasts"] = {
-            "resolution": args.coastlines_resolution,
-            "level": args.coastlines_level,
-            "width": args.coastlines_width,
-            "outline": outline,
-            "fill": fill,
-        }
+        return dtype_min, dtype_max
 
-    if args.add_rivers:
-        outline = (
-            args.rivers_outline[0] if len(args.rivers_outline) == 1 else tuple(int(x) for x in args.rivers_outline)
-        )
-        opts["rivers"] = {
-            "resolution": args.rivers_resolution,
-            "level": args.rivers_level,
-            "width": args.rivers_width,
-            "outline": outline,
-        }
-
-    if args.add_borders:
-        outline = (
-            args.borders_outline[0] if len(args.borders_outline) == 1 else tuple(int(x) for x in args.borders_outline)
-        )
-        opts["borders"] = {
-            "resolution": args.borders_resolution,
-            "level": args.borders_level,
-            "width": args.borders_width,
-            "outline": outline,
-        }
-
-    if args.add_grid:
-        outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
-        minor_outline = (
-            args.grid_minor_outline[0]
-            if len(args.grid_minor_outline) == 1
-            else tuple(int(x) for x in args.grid_minor_outline)
-        )
-        fill = args.grid_fill[0] if len(args.grid_fill) == 1 else tuple(int(x) for x in args.grid_fill)
-        font_path = find_font(args.grid_font, args.grid_text_size)
-        font = Font(outline, font_path, size=args.grid_text_size)
-        opts["grid"] = {
-            "lon_major": args.grid_D[0],
-            "lat_major": args.grid_D[1],
-            "lon_minor": args.grid_d[0],
-            "lat_minor": args.grid_d[1],
-            "font": font,
-            "fill": fill,
-            "outline": outline,
-            "minor_outline": minor_outline,
-            "write_text": args.grid_text,
-            "width": args.grid_width,
-            "lon_placement": args.grid_lon_placement,
-            "lat_placement": args.grid_lat_placement,
-        }
-
-    if args.cache_dir:
-        opts["cache"] = {
-            # add "add_coastlines" prefix to cached image name
-            "file": os.path.join(args.cache_dir, "add_coastlines"),
-            "regenerate": args.cache_regenerate,
-        }
-
-    return opts
-
-
-def _get_colorbar_vmin_vmax(arg_min, arg_max, rio_ds, input_dtype):
-    metadata = rio_ds.tags()
-    vmin = arg_min or metadata.get("min_in")
-    vmax = arg_max or metadata.get("max_in")
-    if isinstance(vmin, str):
-        vmin = float(vmin)
-    if isinstance(vmax, str):
-        vmax = float(vmax)
-    if vmin is None or vmax is None:
-        vmin = vmin or np.iinfo(input_dtype).min
-        vmax = vmax or np.iinfo(input_dtype).max
+    if arg_min is not None:
+        vmin = float(arg_min)
+        vmax = float(arg_max)
+    else:
+        scale, offset = _convert_scale_offset_to_float(scale, offset)
+        vmin, vmax = _vmin_vmax_from_scale_offset(scale, offset, dtype_min, dtype_max)
     return vmin, vmax
 
 
-def _apply_decorator_alignment(dc, align):
+def _convert_scale_offset_to_float(scale: str, offset: str) -> tuple[float, float]:
+    scale = float(scale)
+    offset = float(offset)
+    if np.isnan(scale) or np.isnan(offset):
+        raise ValueError(
+            "Can't automatically set colorbar limits with "
+            "geotiff metadata as scale/offset are set to "
+            "NaN. This indicates a non-linear enhancement or "
+            "RGB/A composite that was enhanced. These cases "
+            "cannot be represented properly by a colorbar."
+        )
+    return scale, offset
+
+
+def _vmin_vmax_from_scale_offset(scale: float, offset: float, dtype_min: int, dtype_max: int) -> tuple[float, float]:
+    delta = dtype_max - dtype_min
+    vmin = offset
+    vmax = delta * scale + offset
+    # floating point error made it not an integer
+    if abs(vmin - np.round(vmin, 0)) <= 0.001:
+        vmin = np.round(vmin, 0)
+    if abs(vmax - np.round(vmax, 0)) <= 0.001:
+        vmax = np.round(vmax, 0)
+    return vmin, vmax
+
+
+def _apply_decorator_alignment(dc, align, is_vertical):
+    default_align = "left" if is_vertical else "bottom"
+    if align is None:
+        align = default_align
     if align == "top":
         dc.align_top()
     elif align == "bottom":
@@ -197,60 +134,37 @@ def _apply_decorator_alignment(dc, align):
         dc.align_right()
 
 
-def _add_colorbar_to_image(input_tiff, img, num_bands, args):
-    from pydecorate import DecoratorAGG
-
-    font_color = args.colorbar_text_color
-    font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
-    font_path = find_font(args.colorbar_font, args.colorbar_text_size)
-    # this actually needs an aggdraw font
-    font = Font(font_color, font_path, size=args.colorbar_text_size)
-    if num_bands not in (1, 2):
-        raise ValueError("Can't add colorbar to RGB/RGBA image")
-
-    # figure out what colormap we are dealing with
-    rio_ds = rasterio.open(input_tiff)
-    input_dtype = np.dtype(rio_ds.meta["dtype"])
-    rio_ct = _get_rio_colormap(rio_ds, 1)
-    cmap = get_colormap(input_dtype, rio_ct, num_bands)
-    vmin, vmax = _get_colorbar_vmin_vmax(args.colorbar_min, args.colorbar_max, rio_ds, input_dtype)
-    cmap.set_range(vmin, vmax)
-
+def _add_colorbar_to_image(img, font, tick_color, align, vertical, **kwargs):
     dc = DecoratorAGG(img)
-    _apply_decorator_alignment(dc, args.colorbar_align)
-
-    if args.colorbar_vertical:
+    _apply_decorator_alignment(dc, align, vertical)
+    if vertical:
         dc.write_vertically()
     else:
         dc.write_horizontally()
 
-    if args.colorbar_width is None or args.colorbar_height is None:
-        LOG.warning("'--colorbar-width' or '--colorbar-height' were " "not specified. Forcing '--colorbar-extend'.")
-        args.colorbar_extend = True
-    kwargs = {}
-    if args.colorbar_width:
-        kwargs["width"] = args.colorbar_width
-    if args.colorbar_height:
-        kwargs["height"] = args.colorbar_height
     dc.add_scale(
-        cmap,
-        extend=args.colorbar_extend,
         font=font,
-        line=font_color,
-        tick_marks=args.colorbar_tick_marks,
-        title=args.colorbar_title,
-        unit=args.colorbar_units,
+        line=tick_color,
         **kwargs,
     )
 
 
 def get_parser():
-    import argparse
-
     parser = argparse.ArgumentParser(
         description="Add overlays to a GeoTIFF file and save as a PNG file.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    _add_coastlines_arguments(parser)
+    _add_rivers_arguments(parser)
+    _add_grid_arguments(parser)
+    _add_borders_arguments(parser)
+    _add_colorbar_arguments(parser)
+    _add_global_arguments(parser)
+    parser.add_argument("input_tiff", nargs="+", help="Input geotiff(s) to process")
+    return parser
+
+
+def _add_coastlines_arguments(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("coastlines")
     group.add_argument("--add-coastlines", action="store_true", help="Add coastlines")
     group.add_argument(
@@ -275,6 +189,8 @@ def get_parser():
     group.add_argument("--coastlines-fill", default=None, nargs="*", help="Color of land")
     group.add_argument("--coastlines-width", default=1.0, type=float, help="Width of coastline lines")
 
+
+def _add_rivers_arguments(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("rivers")
     group.add_argument("--add-rivers", action="store_true", help="Add rivers grid")
     group.add_argument(
@@ -291,6 +207,8 @@ def get_parser():
     )
     group.add_argument("--rivers-width", default=1.0, type=float, help="Width of rivers lines")
 
+
+def _add_grid_arguments(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("grid")
     group.add_argument("--add-grid", action="store_true", help="Add lat/lon grid")
     group.add_argument("--grid-no-text", dest="grid_text", action="store_false", help="Add labels to lat/lon grid")
@@ -319,6 +237,8 @@ def get_parser():
     )
     group.add_argument("--grid-width", default=1.0, type=float, help="Width of grid lines")
 
+
+def _add_borders_arguments(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("borders")
     group.add_argument("--add-borders", action="store_true", help="Add country and/or region borders")
     group.add_argument(
@@ -335,8 +255,19 @@ def get_parser():
     )
     group.add_argument("--borders-width", default=1.0, type=float, help="Width of border lines")
 
+
+def _add_colorbar_arguments(parser: argparse.ArgumentParser) -> None:
     group = parser.add_argument_group("colorbar")
     group.add_argument("--add-colorbar", action="store_true", help="Add colorbar on top of image")
+    group.add_argument(
+        "--colorbar-colormap-file",
+        help=argparse.SUPPRESS,
+        # help="Specify the colormap file that was used to "
+        # "colorize the provided RGB geotiff. Only used if "
+        # "the provided geotiff is RGB/A. Otherwise the "
+        # "geotiff is expected to include the colormap as "
+        # "a geotiff color table.",
+    )
     group.add_argument("--colorbar-width", type=int, help="Number of pixels wide")
     group.add_argument("--colorbar-height", type=int, help="Number of pixels high")
     group.add_argument(
@@ -351,7 +282,7 @@ def get_parser():
     group.add_argument(
         "--colorbar-align",
         choices=["left", "top", "right", "bottom"],
-        default="bottom",
+        default=None,
         help="Which direction to align colorbar (see --colorbar-vertical)",
     )
     group.add_argument("--colorbar-vertical", action="store_true", help="Position the colorbar vertically")
@@ -378,6 +309,8 @@ def get_parser():
     group.add_argument("--colorbar-units", help="Units marker to include in the colorbar text")
     group.add_argument("--colorbar-title", help="Title shown with the colorbar")
 
+
+def _add_global_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--shapes-dir",
         default=PYCOAST_DIR,
@@ -410,9 +343,6 @@ def get_parser():
         default=0,
         help="each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)",
     )
-    parser.add_argument("input_tiff", nargs="+", help="Input geotiff(s) to process")
-
-    return parser
 
 
 def main(argv=sys.argv[1:]):
@@ -421,13 +351,13 @@ def main(argv=sys.argv[1:]):
 
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
+    add_polar2grid_config_paths()
 
     if args.output_filename is None:
         args.output_filename = [x[:-3] + "png" for x in args.input_tiff]
-    else:
-        assert len(args.output_filename) == len(
-            args.input_tiff
-        ), "Output filenames must be equal to number of input tiffs"
+    elif len(args.output_filename) != len(args.input_tiff):
+        LOG.error("Output filenames must be equal to number of input tiffs")
+        return -1
 
     if not (args.add_borders or args.add_coastlines or args.add_grid or args.add_rivers or args.add_colorbar):
         LOG.error("Please specify one of the '--add-X' options to modify the image")
@@ -442,23 +372,182 @@ def main(argv=sys.argv[1:]):
     Image.MAX_IMAGE_PIXELS = None
     # gather all options into a single dictionary that we can pass to pycoast
     pycoast_options = _args_to_pycoast_dict(args)
+    colorbar_kwargs = _args_to_colorbar_kwargs(args) if args.add_colorbar else {}
     for input_tiff, output_filename in zip(args.input_tiff, args.output_filename):
-        LOG.info("Creating {} from {}".format(output_filename, input_tiff))
-        img = Image.open(input_tiff)
-        img_bands = img.getbands()
-        num_bands = len(img_bands)
-        # P = palette which we assume to be an RGBA colormap
-        img = img.convert("RGBA" if num_bands in (2, 4) or "P" in img_bands else "RGB")
-        if pycoast_options:
-            area_id = os.path.splitext(input_tiff[0])[0]
-            area_def = get_area_def_from_raster(input_tiff, area_id=area_id)
-            cw = ContourWriterAGG(args.shapes_dir)
-            cw.add_overlay_from_dict(pycoast_options, area_def, background=img)
+        _process_one_image(input_tiff, output_filename, pycoast_options, args.shapes_dir, colorbar_kwargs)
+    return 0
 
-        if args.add_colorbar:
-            _add_colorbar_to_image(input_tiff, img, num_bands, args)
 
-        img.save(output_filename)
+def _args_to_pycoast_dict(args):
+    opts = {}
+    if args.add_coastlines:
+        opts["coasts"] = _args_to_coastlines_dict(args)
+    if args.add_rivers:
+        opts["rivers"] = _args_to_rivers_dict(args)
+    if args.add_borders:
+        opts["borders"] = _args_to_borders_dict(args)
+    if args.add_grid:
+        opts["grid"] = _args_to_grid_dict(args)
+    if args.cache_dir:
+        opts["cache"] = {
+            # add "add_coastlines" prefix to cached image name
+            "file": os.path.join(args.cache_dir, "add_coastlines"),
+            "regenerate": args.cache_regenerate,
+        }
+
+    return opts
+
+
+def _args_to_coastlines_dict(args):
+    outline = (
+        args.coastlines_outline[0]
+        if len(args.coastlines_outline) == 1
+        else tuple(int(x) for x in args.coastlines_outline)
+    )
+    if args.coastlines_fill:
+        fill = (
+            args.coastlines_fill[0] if len(args.coastlines_fill) == 1 else tuple(int(x) for x in args.coastlines_fill)
+        )
+    else:
+        fill = None
+    coasts_dict = {
+        "resolution": args.coastlines_resolution,
+        "level": args.coastlines_level,
+        "width": args.coastlines_width,
+        "outline": outline,
+        "fill": fill,
+    }
+    return coasts_dict
+
+
+def _args_to_rivers_dict(args):
+    outline = args.rivers_outline[0] if len(args.rivers_outline) == 1 else tuple(int(x) for x in args.rivers_outline)
+    rivers_dict = {
+        "resolution": args.rivers_resolution,
+        "level": args.rivers_level,
+        "width": args.rivers_width,
+        "outline": outline,
+    }
+    return rivers_dict
+
+
+def _args_to_borders_dict(args):
+    outline = args.borders_outline[0] if len(args.borders_outline) == 1 else tuple(int(x) for x in args.borders_outline)
+    borders_dict = {
+        "resolution": args.borders_resolution,
+        "level": args.borders_level,
+        "width": args.borders_width,
+        "outline": outline,
+    }
+    return borders_dict
+
+
+def _args_to_grid_dict(args):
+    outline = args.grid_outline[0] if len(args.grid_outline) == 1 else tuple(int(x) for x in args.grid_outline)
+    minor_outline = (
+        args.grid_minor_outline[0]
+        if len(args.grid_minor_outline) == 1
+        else tuple(int(x) for x in args.grid_minor_outline)
+    )
+    fill = args.grid_fill[0] if len(args.grid_fill) == 1 else tuple(int(x) for x in args.grid_fill)
+    font_path = find_font(args.grid_font, args.grid_text_size)
+    font = Font(outline, font_path, size=args.grid_text_size)
+    grid_dict = {
+        "lon_major": args.grid_D[0],
+        "lat_major": args.grid_D[1],
+        "lon_minor": args.grid_d[0],
+        "lat_minor": args.grid_d[1],
+        "font": font,
+        "fill": fill,
+        "outline": outline,
+        "minor_outline": minor_outline,
+        "write_text": args.grid_text,
+        "width": args.grid_width,
+        "lon_placement": args.grid_lon_placement,
+        "lat_placement": args.grid_lat_placement,
+    }
+    return grid_dict
+
+
+def _args_to_colorbar_kwargs(args):
+    font_color = args.colorbar_text_color
+    font_color = font_color[0] if len(font_color) == 1 else tuple(int(x) for x in font_color)
+    font_path = find_font(args.colorbar_font, args.colorbar_text_size)
+    # this actually needs an aggdraw font
+    font = Font(font_color, font_path, size=args.colorbar_text_size)
+
+    if args.colorbar_width is None or args.colorbar_height is None:
+        LOG.warning("'--colorbar-width' or '--colorbar-height' were " "not specified. Forcing '--colorbar-extend'.")
+        args.colorbar_extend = True
+
+    colorbar_kwargs = {
+        "font": font,
+        "tick_color": font_color,
+        "cmin": args.colorbar_min,
+        "cmax": args.colorbar_max,
+        "align": args.colorbar_align,
+        "vertical": args.colorbar_vertical,
+        "extend": args.colorbar_extend,
+        "tick_marks": args.colorbar_tick_marks,
+        "title": args.colorbar_title,
+        "unit": args.colorbar_units,
+    }
+    if args.colorbar_width:
+        colorbar_kwargs["width"] = args.colorbar_width
+    if args.colorbar_height:
+        colorbar_kwargs["height"] = args.colorbar_height
+    return colorbar_kwargs
+
+
+def find_font(font_name, size):
+    try:
+        font = ImageFont.truetype(font_name, size)
+        return font.path
+    except IOError:
+        font_path = get_resource_filename("polar2grid.fonts", font_name)
+        if not os.path.exists(font_path):
+            raise ValueError("Font path does not exist: {}".format(font_path))
+        return font_path
+
+
+def _process_one_image(
+    input_tiff: str, output_filename: str, pycoast_options: dict, shapes_dir: str, colorbar_kwargs: dict
+) -> None:
+    LOG.info("Creating {} from {}".format(output_filename, input_tiff))
+    img = Image.open(input_tiff)
+    img_bands = img.getbands()
+    num_bands = len(img_bands)
+    # P = palette which we assume to be an RGBA colormap
+    img = img.convert("RGBA" if num_bands in (2, 4) or "P" in img_bands else "RGB")
+    if pycoast_options:
+        area_id = os.path.splitext(input_tiff[0])[0]
+        area_def = get_area_def_from_raster(input_tiff, area_id=area_id)
+        cw = ContourWriterAGG(shapes_dir)
+        cw.add_overlay_from_dict(pycoast_options, area_def, background=img)
+
+    if colorbar_kwargs:
+        cmin = colorbar_kwargs.pop("cmin")
+        cmax = colorbar_kwargs.pop("cmax")
+        cmap = _get_colormap_object(input_tiff, num_bands, cmin, cmax)
+        _add_colorbar_to_image(img, colormap=cmap, **colorbar_kwargs)
+
+    img.save(output_filename)
+
+
+def _get_colormap_object(input_tiff, num_bands, cmin, cmax):
+    rio_ds = rasterio.open(input_tiff)
+    input_dtype = np.dtype(rio_ds.meta["dtype"])
+    colormap_csv = rio_ds.tags().get("colormap")
+    rio_ct = _get_rio_colormap(rio_ds, 1)
+    metadata = rio_ds.tags()
+    cmap = _convert_table_to_cmap_or_default_bw(input_dtype, rio_ct, num_bands)
+    if num_bands in (3, 4) and colormap_csv is None:
+        raise ValueError("RGB and RGBA geotiffs must have a colormap " "specified with '--colorbar-colormap-file'.")
+    if num_bands in (3, 4) or colormap_csv is not None:
+        cmap = Colormap.from_file(colormap_csv)
+    vmin, vmax = _get_colorbar_vmin_vmax(cmin, cmax, metadata, input_dtype)
+    cmap = cmap.set_range(vmin, vmax, inplace=False)
+    return cmap
 
 
 if __name__ == "__main__":

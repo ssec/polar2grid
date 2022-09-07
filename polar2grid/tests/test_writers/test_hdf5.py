@@ -50,6 +50,7 @@ class TestHDF5Writer:
         """Test basic writing of gridded data."""
         import h5py
 
+        abi_l1b_c01_scene.load(["C01"])
         abi_l1b_c01_scene.save_datasets(
             writer="hdf5",
             base_dir=str(tmp_path),

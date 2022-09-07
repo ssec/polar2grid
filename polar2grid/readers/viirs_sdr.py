@@ -186,6 +186,8 @@ from polar2grid.core.script_utils import ExtendConstAction
 
 from ._base import ReaderProxyBase
 
+PREFERRED_CHUNK_SIZE: int = 6400
+
 I_PRODUCTS = [
     "I01",
     "I02",
@@ -313,15 +315,13 @@ class ReaderProxy(ReaderProxyBase):
     is_polar2grid_reader = True
 
     def __init__(self, scn: Scene, user_products: list[str]):
-        self.scn = scn
         self._modified_aliases = PRODUCT_ALIASES.copy()
         if "dynamic_dnb_saturation" in user_products:
             # they specified --dnb-saturation-correction
             # let's modify the aliases so dynamic_dnb points to this product
             user_products.remove("dynamic_dnb_saturation")
-            user_products.append("dynamic_dnb")
             self._modified_aliases["dynamic_dnb"] = DataQuery(name="dynamic_dnb_saturation")
-        self._orig_user_products = user_products
+        super().__init__(scn, user_products)
 
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
@@ -409,13 +409,13 @@ def add_reader_argument_groups(
         dest="products",
         action=ExtendConstAction,
         const=_AWIPS_TRUE_COLOR,
-        help="Add individual CREFL corrected products to create " "the 'true_color' composite in AWIPS.",
+        help="Add individual CREFL corrected products to create the 'true_color' composite in AWIPS.",
     )
     group.add_argument(
         "--awips-false-color",
         dest="products",
         action=ExtendConstAction,
         const=_AWIPS_FALSE_COLOR,
-        help="Add individual CREFL corrected products to create " "the 'false_color' composite in AWIPS.",
+        help="Add individual CREFL corrected products to create the 'false_color' composite in AWIPS.",
     )
     return group, None

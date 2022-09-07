@@ -98,7 +98,10 @@ from __future__ import annotations
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
+from ..core.script_utils import BooleanOptionalAction
 from ._base import ReaderProxyBase
+
+PREFERRED_CHUNK_SIZE: int = 2200  # one segment
 
 READER_PRODUCTS = ["B{:02d}".format(x) for x in range(1, 17)]
 COMPOSITE_PRODUCTS = [
@@ -138,4 +141,5 @@ def add_reader_argument_groups(
     """
     if group is None:
         group = parser.add_argument_group(title="AHI HSD Reader")
+    group.add_argument("--mask-space", action=BooleanOptionalAction, default=True, help="Mask space pixels.")
     return group, None

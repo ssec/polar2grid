@@ -25,7 +25,7 @@ Feature: Test polar2grid output images
 
     Examples: AVHRR
       | command                          | source            | output             |
-      | polar2grid.sh -r avhrr -w geotiff -vv -f | avhrr/input/test1 | avhrr/output/test1 |
+      | polar2grid.sh -r avhrr_l1b_aapp -w geotiff -vv -f | avhrr/input/test1 | avhrr/output/test1 |
 
     Examples: MODIS
       | command                                                                                                                                   | source            | output             |
@@ -58,3 +58,4 @@ Feature: Test polar2grid output images
     Examples: VIIRS_SDR List Products
       | command                                                                                      | source                      | output                       |
       | polar2grid.sh -r viirs_sdr -w geotiff -vv -f                                                 | viirs_sdr_day/input/test1   | true_color,i01,i01_rad,ifog  |
+      | polar2grid.sh -r viirs_l1b -w geotiff -vv -f                                                 | viirs_l1b_night/input/test1 | adaptive_dnb,m12,i04,ifog      |

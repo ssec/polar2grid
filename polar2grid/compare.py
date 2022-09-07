@@ -29,6 +29,7 @@ import os
 import sys
 from dataclasses import dataclass, field
 from glob import glob
+from typing import Optional
 
 import numpy as np
 import xarray as xr
@@ -49,8 +50,22 @@ class ArrayComparisonResult:
 
 
 @dataclass
+class FlatArrayComparisonResult(ArrayComparisonResult):
+    # add additional information for formats that don't contain it
+    shape1: tuple
+    shape2: tuple
+    dtype1: np.dtype
+    dtype2: np.dtype
+
+
+@dataclass
 class VariableComparisonResult(ArrayComparisonResult):
     variable: str
+    variable_missing: bool
+
+    @property
+    def failed(self):
+        return super().failed or self.variable_missing
 
 
 @dataclass
@@ -136,7 +151,6 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
 
 
 def compare_array(array1, array2, plot=False, **kwargs) -> ArrayComparisonResult:
-
     if plot:
         plot_array(array1, array2, **kwargs)
     return isclose_array(array1, array2, **kwargs)
@@ -151,7 +165,11 @@ def compare_binary(fn1, fn2, shape, dtype, atol=0.0, margin_of_error=0.0, **kwar
     array1 = np.memmap(fn1, **mmap_kwargs)
     array2 = np.memmap(fn2, **mmap_kwargs)
 
-    return [compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
+    array_comparison = compare_array(array1, array2, atol=atol, margin_of_error=margin_of_error, **kwargs)
+    flat_array_comparison = FlatArrayComparisonResult(
+        **array_comparison.__dict__, shape1=array1.shape, shape2=array2.shape, dtype1=array1.dtype, dtype2=array2.dtype
+    )
+    return [flat_array_comparison]
 
 
 def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
@@ -179,14 +197,17 @@ def compare_geotiff(gtiff_fn1, gtiff_fn2, atol=0.0, margin_of_error=0.0, **kwarg
     return [arr_compare]
 
 
-def _get_geotiff_array(gtiff_fn, dtype=None, band_idx=1):
+def _get_geotiff_array(gtiff_fn, dtype=None):
     import rasterio
 
+    band_arrays = []
     with rasterio.open(gtiff_fn, "r") as gtiff_file:
-        arr = gtiff_file.read(band_idx)
-    if dtype is not None:
-        arr = arr.astype(dtype)
-    return arr
+        for band_idx in range(gtiff_file.count):
+            arr = gtiff_file.read(band_idx + 1)
+            if dtype is not None:
+                arr = arr.astype(dtype)
+            band_arrays.append(arr)
+    return np.concatenate(band_arrays)
 
 
 def _get_geotiff_colormap(gtiff_fn, band_idx=1):
@@ -201,38 +222,15 @@ def _get_geotiff_colormap(gtiff_fn, band_idx=1):
 
 def _compare_gtiff_colormaps(cmap1: dict, cmap2: dict, **kwargs) -> VariableComparisonResult:
     if cmap1 is None and cmap2 is None:
-        return VariableComparisonResult(True, 0, 0, False, "colormap")
+        return VariableComparisonResult(True, 0, 0, False, "colormap", True)
     len1 = len(cmap1) if cmap1 is not None else 0
     len2 = len(cmap2) if cmap2 is not None else 0
     if len1 != len2:
-        return VariableComparisonResult(False, abs(len2 - len1), max(len1, len2), True, "colormap")
+        return VariableComparisonResult(False, abs(len2 - len1), max(len1, len2), True, "colormap", False)
     arr1 = np.array([[control_point] + list(color) for control_point, color in cmap1.items()])
     arr2 = np.array([[control_point] + list(color) for control_point, color in cmap2.items()])
     array_result = compare_array(arr1, arr2, **kwargs)
-    return VariableComparisonResult(**array_result.__dict__, variable="colormap")
-
-
-def compare_awips_netcdf(nc1_name, nc2_name, atol=0.0, margin_of_error=0.0, **kwargs) -> list[ArrayComparisonResult]:
-    """Compare 2 8-bit AWIPS-compatible NetCDF3 files.
-
-    .. note::
-
-        The binary arrays will be converted to 32-bit floats before
-        comparison.
-
-    """
-    from netCDF4 import Dataset
-
-    nc1 = Dataset(nc1_name, "r")
-    nc2 = Dataset(nc2_name, "r")
-    image1_var = nc1["data"]
-    image2_var = nc2["data"]
-    image1_var.set_auto_maskandscale(False)
-    image2_var.set_auto_maskandscale(False)
-    image1_data = image1_var[:].astype(np.uint8).astype(np.float32)
-    image2_data = image2_var[:].astype(np.uint8).astype(np.float32)
-
-    return [compare_array(image1_data, image2_data, atol=atol, margin_of_error=margin_of_error, **kwargs)]
+    return VariableComparisonResult(**array_result.__dict__, variable="colormap", variable_missing=False)
 
 
 def compare_netcdf(
@@ -251,7 +249,7 @@ def compare_netcdf(
         image2_var = nc2[v].data
         LOG.debug("Comparing data for variable '{}'".format(v))
         array_result = compare_array(image1_var, image2_var, atol=atol, margin_of_error=margin_of_error, **kwargs)
-        var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
+        var_result = VariableComparisonResult(**array_result.__dict__, variable=v, variable_missing=False)
         results.append(var_result)
     return results
 
@@ -278,11 +276,17 @@ def compare_hdf5(h1_name, h2_name, variables, atol=0.0, margin_of_error=0.0, **k
 
     results = []
     for v in variables:
-        image1_var = h1[v]
-        image2_var = h2[v]
         LOG.debug("Comparing data for variable '{}'".format(v))
-        array_result = compare_array(image1_var[:], image2_var[:], atol=atol, margin_of_error=margin_of_error, **kwargs)
-        var_result = VariableComparisonResult(**array_result.__dict__, variable=v)
+        image1_var = h1[v]
+        if v not in h2:
+            total_pixels = image1_var.size
+            var_result = VariableComparisonResult(False, total_pixels, total_pixels, True, v, True)
+        else:
+            image2_var = h2[v]
+            array_result = compare_array(
+                image1_var[:], image2_var[:], atol=atol, margin_of_error=margin_of_error, **kwargs
+            )
+            var_result = VariableComparisonResult(**array_result.__dict__, variable=v, variable_missing=False)
         results.append(var_result)
     return results
 
@@ -293,8 +297,14 @@ def compare_image(im1_name, im2_name, atol=0.0, margin_of_error=0.0, **kwargs) -
     return [compare_array(img1, img2, atol=atol, margin_of_error=margin_of_error, **kwargs)]
 
 
-def _get_image_array(img_filename: str):
+def _get_image_array(
+    img_filename: str, variable: str = None, shape: Optional[tuple] = None, dtype: Optional[np.dtype] = None
+) -> Optional[np.ndarray]:
     from PIL import Image
+
+    if variable is not None:
+        # NotImplementedError (geotiff colormap)
+        return None
 
     # we may be dealing with large images that look like decompression bombs
     # let's turn off the check for the image size in PIL/Pillow
@@ -306,11 +316,61 @@ def _get_image_array(img_filename: str):
     return np.array(img)
 
 
+def _get_netcdf_array(
+    input_filename: str, variable: str, shape: Optional[tuple], dtype: Optional[np.dtype]
+) -> Optional[np.ndarray]:
+    import xarray as xr
+
+    ds = xr.open_dataset(input_filename)
+    if variable not in ds:
+        return None
+    arr = ds[variable].data
+    if not arr.shape:
+        return None
+    arr = _tranpose_for_thumbnail_if_multiband_array(arr)
+    return arr
+
+
+def _get_hdf5_array(
+    input_filename: str, variable: str, shape: Optional[tuple], dtype: Optional[np.dtype]
+) -> Optional[np.ndarray]:
+    import h5py
+
+    h = h5py.File(input_filename, "r")
+    if variable is None or variable not in h:
+        return None
+    arr = np.array(h[variable][:])
+    arr = _tranpose_for_thumbnail_if_multiband_array(arr)
+    return arr
+
+
+def _tranpose_for_thumbnail_if_multiband_array(arr: np.ndarray) -> np.ndarray:
+    if arr.ndim == 3 and arr.shape[0] in (3, 4):
+        # assume RGB/RGBA with band dimension first
+        # need to transpose for PIL image RGB
+        arr = arr.transpose((1, 2, 0))
+    return arr
+
+
+def _get_binary_array(
+    input_filename: str,
+    variable: str,
+    shape: Optional[tuple],
+    dtype: np.dtype,
+) -> Optional[np.ndarray]:
+    if variable is not None:
+        return None
+    mmap_kwargs = {"dtype": dtype, "mode": "r"}
+    if shape is not None and shape[0] is not None:
+        mmap_kwargs["shape"] = shape
+    array1 = np.memmap(input_filename, **mmap_kwargs)
+    return array1
+
+
 type_name_to_compare_func = {
     "binary": compare_binary,
     "gtiff": compare_geotiff,
     "geotiff": compare_geotiff,
-    "awips": compare_awips_netcdf,
     "netcdf": compare_netcdf,
     "hdf5": compare_hdf5,
     "png": compare_image,
@@ -328,6 +388,9 @@ file_ext_to_compare_func = {
 }
 
 file_ext_to_array_func = {
+    ".dat": _get_binary_array,
+    ".nc": _get_netcdf_array,
+    ".h5": _get_hdf5_array,
     ".tif": _get_image_array,
     ".png": _get_image_array,
     ".jpg": _get_image_array,
@@ -435,24 +498,26 @@ HTML_TEMPLATE = """
 </html>
 """
 
-ROW_TEMPLATE = """
-<tr>
-    <td>{filename}</td>
-    <td>{status}</td>
-    <td>{variable}</td>
-    <td>{expected_img}</td>
-    <td>{actual_img}</td>
-    <td>{diff_percent:0.02f}%</td>
-    <td>{notes}</td>
-</tr>
-"""
+
+def _generate_html_summary(output_filename, file_comparison_results):
+    filename = os.path.basename(output_filename)
+    row_html = "\n\t" + "\n\t".join(_generate_table_rows(output_filename, file_comparison_results))
+    LOG.info(f"Creating HTML file {output_filename}")
+    dst_dir = os.path.dirname(output_filename)
+    if dst_dir:
+        os.makedirs(dst_dir, exist_ok=True)
+    with open(output_filename, "w") as html_file:
+        html_text = HTML_TEMPLATE.format(
+            title=filename,
+            rows=row_html,
+        )
+        html_file.write(html_text)
 
 
 def _generate_table_rows(
     output_filename: str,
     file_comparison_results: list[FileComparisonResults],
-) -> str:
-    img_entry_tmpl = '<img src="{}"></img>'
+) -> list[str]:
     img_dst_dir = os.path.join(os.path.dirname(output_filename), "_images")
     os.makedirs(img_dst_dir, exist_ok=True)
     row_infos = []
@@ -472,72 +537,161 @@ def _generate_table_rows(
             continue
 
         for sub_result in fc.sub_results:
-            status = "FAILED" if sub_result.failed else "PASSED"
-            notes = ""
-            diff_percent = 100
-            if sub_result.different_shape:
-                notes = "Different array shapes"
-            elif sub_result.failed:
-                notes = "Too many differing pixels"
-            else:
-                diff_percent = sub_result.num_diff_pixels / sub_result.total_pixels * 100
-
-            variable = getattr(sub_result, "variable", None)
-            exp_tn_html = "N/A"
-            act_tn_html = "N/A"
-            file_ext = os.path.splitext(exp_filename)[1]
-            if variable is None and file_ext in file_ext_to_array_func:
-                # TODO: Support multi-variable formats
-                exp_tn_fn = exp_filename.replace(file_ext, f".{variable}.expected.png")
-                exp_tn_html = img_entry_tmpl.format("_images/" + exp_tn_fn)
-                _generate_thumbnail(fc.file1, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
-                act_tn_fn = exp_filename.replace(file_ext, f".{variable}.actual.png")
-                act_tn_html = img_entry_tmpl.format("_images/" + act_tn_fn)
-                _generate_thumbnail(fc.file2, os.path.join(img_dst_dir, act_tn_fn), max_width=512)
-
-            row_info = ROW_TEMPLATE.format(
-                filename=exp_filename,
-                status=status,
-                variable=variable or "N/A",
-                expected_img=exp_tn_html,
-                actual_img=act_tn_html,
-                diff_percent=diff_percent,
-                notes=notes,
-            )
+            row_info = _generate_subresult_table_row(img_dst_dir, fc, sub_result)
             row_infos.append(row_info)
     return row_infos
 
 
-def _generate_html_summary(output_filename, file_comparison_results):
-    filename = os.path.basename(output_filename)
-    row_html = "\n\t" + "\n\t".join(_generate_table_rows(output_filename, file_comparison_results))
-    LOG.info(f"Creating HTML file {output_filename}")
-    dst_dir = os.path.dirname(output_filename)
-    if dst_dir:
-        os.makedirs(dst_dir, exist_ok=True)
-    with open(output_filename, "w") as html_file:
-        html_text = HTML_TEMPLATE.format(
-            title=filename,
-            rows=row_html,
-        )
-        html_file.write(html_text)
+ROW_TEMPLATE = """
+<tr>
+    <td>{filename}</td>
+    <td>{status}</td>
+    <td>{variable}</td>
+    <td>{expected_img}</td>
+    <td>{actual_img}</td>
+    <td>{diff_percent:0.02f}%</td>
+    <td>{notes}</td>
+</tr>
+"""
 
 
-def _generate_thumbnail(input_data_path, output_thumbnail_path, max_width=512):
+def _generate_subresult_table_row(
+    img_dst_dir: str,
+    file_comparison_result: FileComparisonResults,
+    sub_result: ArrayComparisonResult,
+) -> str:
+    status = "FAILED" if sub_result.failed else "PASSED"
+    notes = ""
+    diff_percent = 100
+    if sub_result.different_shape:
+        notes = "Different array shapes"
+    elif sub_result.failed:
+        notes = "Too many differing pixels"
+    else:
+        diff_percent = sub_result.num_diff_pixels / sub_result.total_pixels * 100
+
+    variable = getattr(sub_result, "variable", None)
+    exp_tn_html = _generate_thumbnail_html(
+        file_comparison_result.file1,
+        variable,
+        img_dst_dir,
+        "expected",
+        getattr(file_comparison_result, "shape1", None),
+        getattr(file_comparison_result, "dtype1", None),
+    )
+    act_tn_html = _generate_thumbnail_html(
+        file_comparison_result.file2,
+        variable,
+        img_dst_dir,
+        "actual",
+        getattr(file_comparison_result, "shape2", None),
+        getattr(file_comparison_result, "dtype2", None),
+    )
+    exp_filename = os.path.basename(file_comparison_result.file1)
+    row_info = ROW_TEMPLATE.format(
+        filename=exp_filename,
+        status=status,
+        variable=variable or "N/A",
+        actual_img=act_tn_html,
+        expected_img=exp_tn_html,
+        diff_percent=diff_percent,
+        notes=notes,
+    )
+    return row_info
+
+
+def _generate_thumbnail_html(
+    data_pathname: str,
+    variable: Optional[str],
+    img_dst_dir: str,
+    tn_suffix: str,
+    shape: Optional[tuple],
+    dtype: Optional[np.dtype],
+) -> str:
+    data_arr = _get_thumbnail_array(data_pathname, variable, shape, dtype)
+    if data_arr is None:
+        return "N/A"
+    data_filename = os.path.basename(data_pathname)
+    file_ext = os.path.splitext(data_filename)[1]
+    var_name = variable.replace("/", "-") if variable is not None else "None"
+    exp_tn_fn = data_filename.replace(file_ext, f".{var_name}.{tn_suffix}.png")
+    try:
+        _generate_thumbnail(data_arr, os.path.join(img_dst_dir, exp_tn_fn), max_width=512)
+    except (RuntimeError, ValueError):
+        return "Failed to generate thumbnail"
+    exp_tn_html = IMG_ENTRY_TMPL.format("_images/" + exp_tn_fn)
+    return exp_tn_html
+
+
+def _get_thumbnail_array(
+    input_data_path: str, variable: Optional[str], shape: Optional[tuple], dtype: Optional[np.dtype]
+) -> Optional[np.ndarray]:
+    input_ext = os.path.splitext(input_data_path)[1]
+    if input_ext not in file_ext_to_array_func:
+        return None
+    input_arr = file_ext_to_array_func[input_ext](input_data_path, variable, shape, dtype)
+    return input_arr
+
+
+IMG_ENTRY_TMPL = '<img src="{}"></img>'
+
+
+def _generate_thumbnail(input_arr, output_thumbnail_path, max_width=512) -> bool:
+    if input_arr.ndim == 1:
+        return _generate_matplotlib_1d_thumbnail(input_arr, output_thumbnail_path, max_width)
+    if input_arr.dtype == np.uint8:
+        return _generate_pillow_thumbnail(input_arr, output_thumbnail_path, max_width)
+    return _generate_matplotlib_thumbnail(input_arr, output_thumbnail_path, max_width)
+
+
+def _generate_matplotlib_1d_thumbnail(input_arr, output_thumbnail_path, max_width) -> bool:
+    import matplotlib.pyplot as plt
+
+    figsize = _get_mpl_figsize(input_arr.shape, max_width)
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.hist(input_arr, bins=10)
+    fig.savefig(output_thumbnail_path)
+    plt.close(fig)
+    return True
+
+
+def _generate_matplotlib_thumbnail(input_arr, output_thumbnail_path, max_width=512) -> bool:
+    import matplotlib.pyplot as plt
+
+    figsize = _get_mpl_figsize(input_arr.shape, max_width)
+    fig, ax = plt.subplots(figsize=figsize)
+    img = ax.imshow(input_arr)
+    fig.colorbar(img, ax=ax)
+    fig.savefig(output_thumbnail_path)
+    plt.close(fig)
+    return True
+
+
+def _get_mpl_figsize(input_shape, max_width) -> tuple[int, int]:
+    # dpi 100 => 51
+    fig_width = max_width / 100.0
+    if len(input_shape) == 1:
+        fig_height = fig_width
+    else:
+        fig_height = input_shape[0] * (fig_width / input_shape[1])
+    return fig_width, fig_height
+
+
+def _generate_pillow_thumbnail(input_arr, output_thumbnail_path, max_width=512) -> bool:
     from PIL import Image
 
     # we may be dealing with large images that look like decompression bombs
     # let's turn off the check for the image size in PIL/Pillow
     Image.MAX_IMAGE_PIXELS = None
 
-    input_ext = os.path.splitext(input_data_path)[1]
-    input_arr = file_ext_to_array_func[input_ext](input_data_path)
     full_img = Image.fromarray(input_arr)
     full_size = full_img.size
+    max_width = min(full_size[0], max_width)
     width_ratio = full_size[0] // max_width
     new_size = (max_width, full_size[1] // width_ratio)
     scaled_img = full_img.resize(new_size)
     scaled_img.save(output_thumbnail_path, format="PNG")
+    return True
 
 
 def main(argv=sys.argv[1:]):
@@ -598,7 +752,7 @@ def main(argv=sys.argv[1:]):
         "file_type",
         type=_file_type,
         nargs="?",
-        help="type of files being compare. If not provided it will be determined based on file extension.",
+        help="Type of files being compare. If not provided it will be determined based on file extension.",
     )
     parser.add_argument("input1", help="First filename or directory to compare. This is typically the expected output.")
     parser.add_argument("input2", help="Second filename or directory to compare. This is typicall the actual output.")

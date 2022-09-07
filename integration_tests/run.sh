@@ -284,7 +284,8 @@ for prefix in ${prefixes}; do
             publish_package "$prefix" "$package_name"
         fi
         exit ${test_status}
-    ) || exit_status=$? # Makes exit_status 1 if package status is a failing code.
+    )
+    [[ $? -eq 0 ]] || exit_status=$? # Makes exit_status 1 if package status is a failing code.
 done
 
 save_vars "finish_time=`date "+%Y-%m-%d %H:%M:%S"`"
