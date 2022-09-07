@@ -229,7 +229,7 @@ def _add_common_arguments(parser: argparse.ArgumentParser, binary_name: str) -> 
     parser.add_argument(
         "--progress",
         action="store_true",
-        help="show processing progress bar (not recommended for logged output)",
+        help="Show processing progress bar (Not recommended for logged output)",
     )
     parser.add_argument(
         "--create-profile",
@@ -243,7 +243,7 @@ def _add_common_arguments(parser: argparse.ArgumentParser, binary_name: str) -> 
         "--num-workers",
         type=int,
         default=os.getenv("DASK_NUM_WORKERS", 4),
-        help="specify number of worker threads to use (default: 4)",
+        help="Specify number of worker threads to use (Default: 4)",
     )
     parser.add_argument(
         "--extra-config-path",

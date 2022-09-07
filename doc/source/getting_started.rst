@@ -110,8 +110,8 @@ are always available:
 
     .. rst-class:: full_width_table
 
-        -r 	 	      Instrument input files to read from (choose from abi_l1b, ahi_hsd, and ahi_hrit).
-        -w  		      Output format to write to (Currently only option is geotiff).
+        -r 	 	              Instrument input files to read from.
+        -w  		          Output format to write to (Currently only option is geotiff).
         -h                    Print helpful information.
         --list-products       List all possible product options to use with -p from the given input data.
 
@@ -121,8 +121,8 @@ are always available:
                               See :doc:`grids` and :doc:`custom_grids` for information on other possible values.
         --cache-dir <dir>     Directory to store resampling intermediate results between executions.
                               Not used with 'native' resampling method.
-        --num-workers         Specify number of parallel processing worker threads to use (default: 4)
-        --progress            Display a timed progress bar to show processing progress
+        --num-workers NUM_WORKERS   Specify number of worker threads to use (Default: 4).
+        --progress            Show processing progress bar (Not recommended for logged output).
 
         --ll-bbox <lonmin latmin lonmax latmax>    Subset input data to the bounding coordinates specified.
 
