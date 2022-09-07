@@ -45,7 +45,7 @@ to with satellite data and the channels we have available. This means
 things like trees and grass are green, water is blue, deserts are
 red/brown, and clouds are white. The True Color GeoTIFF 24 bit
 image is an :ref:`RGB (Red, Green, Blue) image <explain_rgb_composite>`
-consisting of a combination of Red: VIIRS M-Band 5, Blue: VIIRS M-Band 4, 
+consisting of a combination of Red: VIIRS M-Band 5, Blue: VIIRS M-Band 4,
 and Blue: VIIRS M-Band 3 reflectance channels. Each
 channel goes through a series of adjustments to produce the final high
 quality image output by |project|.
@@ -64,12 +64,12 @@ used to make this product as a GeoTIFF and KMZ file.
 False Color
 ^^^^^^^^^^^
 
-A false color image is any combination of 3 bands outside of those used 
-to create a "true color" image (see above). These combinations can be used to 
+A false color image is any combination of 3 bands outside of those used
+to create a "true color" image (see above). These combinations can be used to
 highlight features in the observations that may not be easily identified in
 individual band imagery. |project| can readily create a preconfigured legacy
 false color (product false_color) GeoTIFF 24 bit image that consists of a combination
-:ref:`RGB (Red, Green, Blue) image <explain_rgb_composite>` using uses Red:VIIRS M-Band 11 (2.25 μm), Green:VIIRS M-Band 7 (.87 μm) and Blue:VIIRS M-Band 5 (.67 μm). 
+:ref:`RGB (Red, Green, Blue) image <explain_rgb_composite>` using uses Red:VIIRS M-Band 11 (2.25 μm), Green:VIIRS M-Band 7 (.87 μm) and Blue:VIIRS M-Band 5 (.67 μm).
 This band combination is very effective at distinguishing
 land/water boundaries as well as burn scars.
 
@@ -77,7 +77,7 @@ Creation of VIIRS legacy false color RGBs includes the following steps:
 
     * Atmospheric :ref:`Rayleigh Scattering Correction <crefl_rayleigh_correction>` of the RGB visible reflectances.
     * Combining the 3 channels into a 24 bit output file.
-    * :ref:`Sharpening of the image <ratio_sharpening>` to full 350m resolution 
+    * :ref:`Sharpening of the image <ratio_sharpening>` to full 350m resolution
       if the VIIRS I-Band 2 is provided as input.
     * Application of a :ref:`non-linear enhancement <nonlinear_true_color_scaling>`.
 
@@ -89,14 +89,14 @@ Fog - Temperature Difference
 
 The VIIRS SDR reader can also produce a "ifog" product which is a simple
 difference of the infrared brightness temperatures between the I05 (11.45 μm)
-and I04 (3.74 μm) bands (I05 - I04). The result is scaled linearly 
+and I04 (3.74 μm) bands (I05 - I04). The result is scaled linearly
 between -10.0 and 10.0 Kelvin before being saved to an output image.
 
 Day Night Band
 ^^^^^^^^^^^^^^
 
 |project| allows the user to create images from the VIIRS Day/Night Band, which
-contains observations of visible reflectance data for both day and night.  
+contains observations of visible reflectance data for both day and night.
 |project| provides 4 options for enhancing and scaling the DNB data.
 A full description of these options are described in detail in the :doc:`../viirs_day_night_band` appendix.
 

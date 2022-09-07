@@ -32,7 +32,7 @@ Execution Examples
 
     #### ##### #####polar2grid.sh -r mirs -w awips_tiled --bt-channels -g lcc_conus_750 --sector-id LCC --letters --compress -f ../input/NPR-MIRS-IMG_v11r1_NPP_s201611111032500_e201611111044016_c201611111121100.nc
 
-    polar2grid.sh -r mirs -w hdf5 --add-geolocation --dtype float32 -f ../metopc/NPR-MIRS-IMG_v11r8_ma3_s202208251542209_e202208251554261_c202208251742030.nc 
+    polar2grid.sh -r mirs -w hdf5 --add-geolocation --dtype float32 -f ../metopc/NPR-MIRS-IMG_v11r8_ma3_s202208251542209_e202208251554261_c202208251742030.nc
 
 .. raw:: latex
 

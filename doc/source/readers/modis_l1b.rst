@@ -46,10 +46,10 @@ The MODIS Level 1B "true_color" composite produced by |project| provides a view
 of the Earth as the human eye would see it; or as close as we can come
 to with satellite data and the channels we have available. This means
 things like trees and grass are green, water is blue, deserts are
-red/brown, and clouds are white. The True Color GeoTIFF 24 bit 
+red/brown, and clouds are white. The True Color GeoTIFF 24 bit
 image is an :ref:`RGB (Red, Green, Blue) image <explain_rgb_composite>`
-consisting of a combination of Red: MODIS Band 1, Green: MODIS Band 4, and Blue: MODIS 
-Band 3 reflectance channels. Each channel goes through a series of 
+consisting of a combination of Red: MODIS Band 1, Green: MODIS Band 4, and Blue: MODIS
+Band 3 reflectance channels. Each channel goes through a series of
 adjustments to produce the final high quality image output by |project|.
 
 Creation of true color RGBs includes the following steps:
@@ -68,13 +68,13 @@ False Color
 ^^^^^^^^^^^
 
 A false color image is any combination of 3 bands
-outside of those used to create a "true color" image (see above). These 
-combinations can be used to highlight features in the observations that 
-may not be easily identified in individual band imagery.  |project| 
-can readily create a preconfigured legacy false color (product false_color) 
-GeoTIFF 24 bit image that consists of a combination :ref:`RGB (Red, Green, Blue) 
+outside of those used to create a "true color" image (see above). These
+combinations can be used to highlight features in the observations that
+may not be easily identified in individual band imagery.  |project|
+can readily create a preconfigured legacy false color (product false_color)
+GeoTIFF 24 bit image that consists of a combination :ref:`RGB (Red, Green, Blue)
 image <explain_rgb_composite>` using Red: MODIS Band 7 (2.21 μm), Green: MODIS Band 2 (.86 μm)
-and Blue: MODIS Band 1 (.65 μm). This band combination is very effective 
+and Blue: MODIS Band 1 (.65 μm). This band combination is very effective
 at distinguishing land/water boundaries as well as burn scars.
 
 Creation of MODIS legacy false color RGBs includes the following steps:
