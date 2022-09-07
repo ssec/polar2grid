@@ -72,12 +72,9 @@ the ACSPO SST VIIRS image on the right.
     :width: 100%
     :align: center
 
-    NOAA-20 VIIRS I-Band 02 Reflectance image (Left panel) and ACSPO Sea Surface Temperature image (Right Panel) from an 
-entire direct broadcast pass acquired on 10 August 2022 over North America.
-The default projection is WGS84 (Platte Carrée) and the default scaling is greyscale brightness values 0-255.
+    NOAA-20 VIIRS I-Band 02 Reflectance image (Left panel) and ACSPO Sea Surface Temperature image (Right Panel) from an entire direct broadcast pass acquired on 10 August 2022 over North America. The default projection is WGS84 (Platte Carrée) and the default scaling is greyscale brightness values 0-255.
 
-Now I would like to create an image cutting out a subset of this pass over the Great Lakes 
-in the Northern United States.  To do this, I need to create a new grid.  I will use the 
+Now I would like to create an image cutting out a subset of this pass over the Great Lakes in the Northern United States.  To do this, I need to create a new grid.  I will use the 
 :ref:`util_p2g_grid_helper` script to do this.
 
 	``p2g_grid_helper.sh great_lakes -83.5 45.1 750 750 1800 1200``

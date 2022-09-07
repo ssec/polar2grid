@@ -101,7 +101,7 @@ contains observations of visible reflectance data for both day and night.
 A full description of these options are described in detail in the :doc:`../viirs_day_night_band` appendix.
 
 Reflectance I-Bands 01-03 and M-Bands 01-11
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The I01-I03 and M01-M11 bands are visible reflectance channels on the VIIRS
 instrument. Besides the basic calibration necessary to
@@ -111,7 +111,7 @@ square root operation has the effect of brightening dark regions of the
 image.
 
 Infrared I-Bands 04-05 and M-Bands 12-16
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The I04-I05 and M12-M16 bands are all brightness temperature (infrared/IR) channels. To
 produce a grayscale image with dark land and white clouds, the data is
