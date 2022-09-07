@@ -48,7 +48,7 @@ What's New?
 
 .. ifconfig:: not is_geo2grid
 
-    Polar2Grid Version 3.0 is now available. This is a major 
+    Polar2Grid Version 3.0 is now available. This is a major
     update that includes changes to basic Polar2Grid execution.
     These changes bring Polar2Grid in conformity with the execution strategy
     of Geo2Grid, taking advantage of the xarray Dask python library.

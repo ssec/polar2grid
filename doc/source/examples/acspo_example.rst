@@ -34,14 +34,14 @@ image. <<<<Mention use of --fill-value>>>>>
       -f viirs/20220810184327-CSPP-L2P_GHRSST-SSTskin-VIIRS_N20-ACSPO_V2.80-v02.0-fv01.0.nc
 
 The data set is re-projected into the WGS84 (Platte Carrée) projection
-by default. The image scaling is defined in the ``generic.yaml`` located in the 
-``$POLAR2GRID_HOME/libexec/python_runtime/etc/polar2grid/enhancements`` directory. 
-This file contains product scaling information for all data parameters supported by 
+by default. The image scaling is defined in the ``generic.yaml`` located in the
+``$POLAR2GRID_HOME/libexec/python_runtime/etc/polar2grid/enhancements`` directory.
+This file contains product scaling information for all data parameters supported by
 Polar2Grid. It replaces the ``rescale.ini`` file that was used in previous versions of Polar2Grid.
 
-The default scaling used for the ACSPO Version 2.80 SST files can be found under 
-`sea_surface_temperature4` `sea_surface_subskin_temperature` which is taken from 
-the ACSPO array `standard_name` attribute. The section of the generic.yaml file that 
+The default scaling used for the ACSPO Version 2.80 SST files can be found under
+`sea_surface_temperature4` `sea_surface_subskin_temperature` which is taken from
+the ACSPO array `standard_name` attribute. The section of the generic.yaml file that
 references our SST product is listed below.
 
 .. parsed-literal::
@@ -55,9 +55,9 @@ references our SST product is listed below.
 
 This is used in the Polar2Grid software to define the range of brightness
 values in the output GeoTIFF file (0-255) to the temperatures they represent - in this
-case 267.317 K to 309.816 K. There are a number of different sea surface temperature 
-arrays defined in the the generic.yaml file that allow Polar2Grid to support previous versions of 
-the ACSPO SST files. 
+case 267.317 K to 309.816 K. There are a number of different sea surface temperature
+arrays defined in the the generic.yaml file that allow Polar2Grid to support previous versions of
+the ACSPO SST files.
 
 The scaling is done linearly. The output greyscale image below shows the
 VIIRS I-Band 2 (.86 micron) Reflectances on the left, and
@@ -74,14 +74,14 @@ the ACSPO SST VIIRS image on the right.
 
     NOAA-20 VIIRS I-Band 02 Reflectance image (Left panel) and ACSPO Sea Surface Temperature image (Right Panel) from an entire direct broadcast pass acquired on 10 August 2022 over North America. The default projection is WGS84 (Platte Carrée) and the default scaling is greyscale brightness values 0-255.
 
-Now I would like to create an image cutting out a subset of this pass over the Great Lakes in the Northern United States.  To do this, I need to create a new grid.  I will use the 
+Now I would like to create an image cutting out a subset of this pass over the Great Lakes in the Northern United States.  To do this, I need to create a new grid.  I will use the
 :ref:`util_p2g_grid_helper` script to do this.
 
 	``p2g_grid_helper.sh great_lakes -83.5 45.1 750 750 1800 1200``
 
 I named my grid `great_lakes`, centered it on `-83.5 E Longitude` and `45.1 N Latitude`,
 with `750 m` spatial resolution in the X and Y directions, and defined the output
-grid to be `1800 x 1200` elements and lines.  
+grid to be `1800 x 1200` elements and lines.
 
 Executing this command results in the following grid definition:
 
@@ -164,7 +164,7 @@ full range of brightness values. In order to do this, I need to create a new
 rescaling yaml file that I will then provide to polar2grid.sh.
 
 I chose an enhancment name of `great_lakes_sst` and use the same standard_name of
-`sea_surface_subskin_temperature` and redefined the relationship between the brightness 
+`sea_surface_subskin_temperature` and redefined the relationship between the brightness
 values and the data.  I tighten the temperature range to be between 275.0 K and 305.0 K.  The contents of
 my new rescale yaml file is shown below (my_rescale.yaml).
 
