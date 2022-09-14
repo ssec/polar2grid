@@ -60,6 +60,7 @@ def convert_p2g_pattern_to_satpy(pattern):
         "instrument": "sensor",
         "begin_time": "start_time",
         "product_name": "p2g_name",
+        "grid_name": "area.area_id",
     }
     # If there is no other formatting before replacing begin_time,
     # add the old default formatting to the pattern and changed begin_time to

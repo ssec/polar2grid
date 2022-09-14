@@ -50,6 +50,7 @@ from polar2grid.core.dtype import (
     str_to_dtype,
 )
 from polar2grid.core.script_utils import NumpyDtypeList
+from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +138,7 @@ def add_writer_argument_groups(parser, group=None):
     group.add_argument(
         "--output-filename",
         dest="filename",
+        type=convert_p2g_pattern_to_satpy,
         help="Custom file pattern to save dataset to",
     )
     group.add_argument(
