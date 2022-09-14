@@ -32,7 +32,22 @@ from satpy import DataID, DataQuery, Scene
 logger = logging.getLogger(__name__)
 
 
-def convert_old_p2g_date_frmts(frmt):
+def convert_p2g_pattern_to_satpy(pattern):
+    """Convert old P2G output patterns to new format."""
+    replacements = {
+        "satellite": "platform_name",
+        "instrument": "sensor",
+        "product_name": "p2g_name",
+        "grid_name": "area.area_id",
+    }
+    replacements.update(_generate_old_p2g_date_formats())
+
+    for p2g_kw, satpy_kw in replacements.items():
+        pattern = _warn_on_format_replaced(pattern, p2g_kw, satpy_kw)
+    return pattern
+
+
+def _generate_old_p2g_date_formats():
     """Convert old P2G output pattern date formats."""
     dt_frmts = {
         "_YYYYMMDD": ":%Y%m%d",
@@ -40,37 +55,30 @@ def convert_old_p2g_date_frmts(frmt):
         "_HHMMSS": ":%H%M%S",
         "_HHMM": ":%H%M",
     }
+    date_replacements = {
+        "begin_time": "start_time:%Y%m%d_%H%M%S",
+        "end_time": "end_time:%Y%m%d_%H%M%S",
+    }
 
     for old_frmt, new_frmt in dt_frmts.items():
-        old_start = "start_time{}".format(old_frmt)
+        old_start = "begin_time{}".format(old_frmt)
         new_start = "start_time{}".format(new_frmt)
-        frmt = frmt.replace(old_start, new_start)
+        date_replacements[old_start] = new_start
 
         old_end = "end_time{}".format(old_frmt)
         new_end = "end_time{}".format(new_frmt)
-        frmt = frmt.replace(old_end, new_end)
+        date_replacements[old_end] = new_end
+    return date_replacements
 
-    return frmt
 
-
-def convert_p2g_pattern_to_satpy(pattern):
-    """Convert old P2G output patterns to new format."""
-    replacements = {
-        "satellite": "platform_name",
-        "instrument": "sensor",
-        "begin_time": "start_time",
-        "product_name": "p2g_name",
-        "grid_name": "area.area_id",
-    }
-    # If there is no other formatting before replacing begin_time,
-    # add the old default formatting to the pattern and changed begin_time to
-    # start_time
-    pattern = pattern.replace("{begin_time}", "{start_time:%Y%m%d_%H%M}")
-
-    for p2g_kw, satpy_kw in replacements.items():
-        pattern = pattern.replace(p2g_kw, satpy_kw)
-    pattern = convert_old_p2g_date_frmts(pattern)
-
+def _warn_on_format_replaced(pattern: str, old_format_param: str, new_format_param: str) -> str:
+    old_format_part = f"{{{old_format_param}}}"
+    if old_format_part in pattern:
+        logger.warning(
+            f"Filename pattern includes legacy parameter: {old_format_param!r}. "
+            f"Use {new_format_param!r} to avoid this warning."
+        )
+        return pattern.replace(old_format_part, f"{{{new_format_param}}}")
     return pattern
 
 
