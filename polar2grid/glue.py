@@ -165,18 +165,18 @@ def _print_list_products(reader_info, is_polar2grid: bool, p2g_only: bool):
     available_satpy_names = ["*" + _sname for _sname in available_satpy_names]
     available_custom_names = ["*" + _sname for _sname in available_custom_names]
     project_name = "Polar2Grid" if is_polar2grid else "Geo2Grid"
-    if available_satpy_names and not p2g_only:
-        print("### Custom/Satpy Products")
-        print("\n".join(sorted(available_satpy_names)) + "\n")
-    if available_custom_names:
-        print("### Custom User Products")
-        print("\n".join(sorted(available_custom_names)) + "\n")
+
+    print("### Custom User Products")
+    print("\n".join(sorted(available_custom_names)) if available_custom_names else "<None>")
+    print()
+
+    if not p2g_only:
+        print("### Non-standard Satpy Products")
+        print("\n".join(sorted(available_satpy_names)) if available_satpy_names else "<None>")
+        print()
 
     print(f"### Standard Available {project_name} Products")
-    if not available_p2g_names:
-        print("<None>")
-    else:
-        print("\n".join(sorted(available_p2g_names)))
+    print("\n".join(sorted(available_p2g_names)) if available_p2g_names else "<None>")
 
 
 def _create_scene(scene_creation: dict) -> Optional[Scene]:
