@@ -222,12 +222,13 @@ class AliasHandler:
             logger.debug("Mapping Satpy ID to P2G name: %s -> %s", data_id, p2g_name)
 
     def available_product_names(
-        self, all_p2g_products: list[str], available_satpy_ids: list[DataID]
-    ) -> tuple[list[str], list[str]]:
+        self, all_p2g_products: list[str], available_custom_ids: list[DataID], available_satpy_ids: list[DataID]
+    ) -> tuple[list[str], list[str], list[str]]:
         """Get separate lists of available Satpy products and Polar2Grid products."""
         available_ids_as_p2g_names = list(self.convert_satpy_to_p2g_name(available_satpy_ids, all_p2g_products))
         satpy_id_to_p2g_name = dict(zip(available_satpy_ids, available_ids_as_p2g_names))
         available_p2g_names = []
+        available_custom_names = []
         available_satpy_names = []
         for satpy_id in available_satpy_ids:
             p2g_name = satpy_id_to_p2g_name[satpy_id]
@@ -236,8 +237,10 @@ class AliasHandler:
                 continue
             if p2g_name in all_p2g_products:
                 available_p2g_names.append(p2g_name)
+            elif satpy_id in available_custom_ids:
+                available_custom_names.append(p2g_name)
             else:
                 available_satpy_names.append(satpy_id["name"])
 
         available_satpy_names = sorted(set(available_satpy_names))
-        return available_satpy_names, available_p2g_names
+        return available_p2g_names, available_custom_names, available_satpy_names

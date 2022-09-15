@@ -28,6 +28,7 @@ import logging
 from functools import cached_property
 from typing import Optional, Union
 
+import satpy
 from satpy import DataID, DataQuery, Scene
 
 from polar2grid.utils.dynamic_imports import get_reader_attr
@@ -100,6 +101,7 @@ class ReaderProxyBase:
         """Get custom/satpy products and polar2grid products that are available for loading."""
         if possible_satpy_ids is None:
             possible_satpy_ids = self.scn.available_dataset_ids(composites=True)
+        available_custom_products = self.get_user_custom_products()
         if p2g_product_names is None:
             p2g_product_names = self.get_all_products()
             if not p2g_product_names:
@@ -109,7 +111,17 @@ class ReaderProxyBase:
                     self._binary_name,
                 )
                 return sorted(set([x["name"] for x in possible_satpy_ids])), []
-        return self._alias_handler.available_product_names(p2g_product_names, possible_satpy_ids)
+        return self._alias_handler.available_product_names(
+            p2g_product_names, available_custom_products, possible_satpy_ids
+        )
+
+    def get_user_custom_products(
+        self,
+    ):
+        satpy_and_p2g_ids = self.scn.available_dataset_ids(composites=True)
+        with satpy.config.set(config_path=[]):
+            satpy_only_ids = self.scn.available_dataset_ids(composites=True)
+        return sorted(set(satpy_and_p2g_ids) - set(satpy_only_ids))
 
     def apply_p2g_name_to_scene(
         self,
