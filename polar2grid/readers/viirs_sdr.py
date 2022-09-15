@@ -292,6 +292,16 @@ DEFAULT_PRODUCTS = I_ALIASES + M_ALIASES + DNB_PRODUCTS[1:] + TRUE_COLOR_PRODUCT
 P2G_PRODUCTS = I_ALIASES + M_ALIASES + DNB_PRODUCTS + I_RAD_PRODUCTS + M_RAD_PRODUCTS
 P2G_PRODUCTS += I_ANGLE_PRODUCTS + M_ANGLE_PRODUCTS + DNB_ANGLE_PRODUCTS + OTHER_COMPS
 P2G_PRODUCTS += TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS
+P2G_PRODUCTS += [
+    "viirs_crefl01",
+    "viirs_crefl02",
+    "viirs_crefl03",
+    "viirs_crefl04",
+    "viirs_crefl07",
+    "viirs_crefl08",
+    "viirs_crefl09",
+]
+P2G_PRODUCTS += ["dynamic_dnb_saturation", "unsharp_true_color"]
 
 FILTERS = {
     "day_only": {
