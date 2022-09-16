@@ -31,6 +31,12 @@ resampling:
       weight_delta_max: 40.0
       weight_distance_max: 1.0
       maximum_weight_mode: true
+  default_amsr2:
+    area_type: swath
+    sensor: amsr2
+    resampler: nearest
+    kwargs:
+      radius_of_influence: 7200
   default_viirs_sdr:
     area_type: swath
     sensor: viirs
