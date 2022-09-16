@@ -269,7 +269,7 @@ PRODUCT_ALIASES["satellite_azimuth_angle"] = DataQuery(name="satellite_azimuth_a
 PRODUCT_ALIASES["i_satellite_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=371)
 PRODUCT_ALIASES["i_satellite_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=371)
 
-DEFAULT_PRODUCTS = I_PRODUCTS + M_PRODUCTS + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS[1:] + OTHER_COMPS
+DEFAULT_PRODUCTS = I_ALIASES + M_ALIASES + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS[1:] + OTHER_COMPS
 
 P2G_PRODUCTS = I_ALIASES + M_ALIASES + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + DNB_PRODUCTS
 P2G_PRODUCTS += DNB_ANGLE_PRODUCTS + M_ANGLE_PRODUCTS + I_ANGLE_PRODUCTS + OTHER_COMPS
@@ -323,14 +323,14 @@ def add_reader_argument_groups(
         "--i-bands",
         dest="products",
         action=ExtendConstAction,
-        const=I_PRODUCTS,
+        const=I_ALIASES,
         help="Add all I-band raw products to list of products",
     )
     group.add_argument(
         "--m-bands",
         dest="products",
         action=ExtendConstAction,
-        const=M_PRODUCTS,
+        const=M_ALIASES,
         help="Add all M-band raw products to list of products",
     )
     group.add_argument(
