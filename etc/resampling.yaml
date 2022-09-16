@@ -6,30 +6,31 @@ resampling:
     area_type: area
     # Default 'resampler' will be determined at runtime based on target area
     default_target: MAX
-  default_clavrx_rain_rate:
-    name: rain_rate
-    resampler: ewa
-    kwargs:
-      weight_delta_max: 40.0
-      weight_distance_max: 1.0
-  default_clavrx_cld_height:
-    name: cld_height_acha
-    resampler: ewa
-    kwargs:
-      weight_delta_max: 40.0
-      weight_distance_max: 1.0
-  default_clavrx_temp:
-    name: cld_temp_acha
+  default_clavrx_all_products:
+    reader: clavrx
+    area_type: swath
     resampler: ewa
     kwargs:
       weight_delta_max: 40.0
       weight_distance_max: 1.0
   default_clavrx_cloud_phase:
     name: cloud_phase
-    resampler: nearest
+    reader: clavrx
+    area_type: swath
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
+      maximum_weight_mode: true
   default_clavrx_cloud_type:
     name: cloud_type
-    resampler: nearest
+    reader: clavrx
+    area_type: swath
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
+      maximum_weight_mode: true
   default_viirs_sdr:
     area_type: swath
     sensor: viirs
