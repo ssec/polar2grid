@@ -19,12 +19,12 @@ Examples:
 
     polar2grid.sh -r clavrx -w geotiff -h
 
-    polar2grid.sh -r clavrx -w awips_tiled --sector-id LCC --list-products -f snpp/clavrx_npp*.hdf
+    polar2grid.sh -r clavrx -w awips_tiled --sector-id LCC --list-products -f clavrx_npp_d20220902_t0742031_e0756141_b56210.level2.hdf
 
-    polar2grid.sh -r clavrx -w geotiff -p cld_height_acha cloud_phase cloud_type -f clavrx_npp_d20170520_t2058143_e2059385_b28822.level2.hdf
+    polar2grid.sh -r clavrx -w geotiff -p cld_height_acha cloud_phase cloud_type -f noaa20/clavrx_j01*.hdf
 
-    polar2grid.sh -r clavrx -w hdf5 --grid-coverage=.01 -p cld_opd_nlcomp cld_reff_nlcomp refl_lunar_dnb_nom -f snpp/night/clavrx_npp*.hdf
+    polar2grid.sh -r clavrx -w hdf5 --grid-coverage 0.002 -p cld_opd_nlcomp cld_reff_nlcomp refl_lunar_dnb_nom -f snpp/night/clavrx_npp*.hdf
 
-    polar2grid.sh -r clavrx -w binary -f clavrx_hrpt_noaa19_20170517_0936_42605.l1b.level2.hdf
+    polar2grid.sh -r clavrx -w binary -f clavrx_a1.22245.0759.1000m.level2.hdf  
 
-    polar2grid.sh -r clavrx -w awips_tiled -g polar_alaska_1km --sector-id Polar --letters --compress -p cld_temp_acha --grid-coverage=.05 -f /modis/clavrx_a1.17140.2129.1000m.level2.hdf
+    polar2grid.sh -r clavrx -w awips_tiled --num-workers 6 -g lcc_conus_300 --sector-id LCC --letters --compress --grid-coverage 0.002 -p cld_temp_acha cld_height_acha cloud_phase cld_opd_dcomp -f noaa19/clavrx_hrpt_noaa19_*.hdf
