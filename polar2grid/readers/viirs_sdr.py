@@ -36,8 +36,8 @@ readers and ``polar2grid.sh``. The VIIRS reader can be specified to the ``polar2
 with the reader name ``viirs_sdr``.
 
 This reader's default remapping algorithm is ``ewa`` for Elliptical Weighted
-Averaging resampling. The ``--fornav-D`` parameter set to 40 and the
-``--fornav-d`` parameter set to 2.
+Averaging resampling. The ``--weight-delta-max`` parameter set to 40 and the
+``---weight-distance-max`` parameter set to 2.
 
 +---------------------------+-----------------------------------------------------+
 | Product Name              | Description                                         |
