@@ -52,6 +52,7 @@ from polar2grid.readers._base import ReaderProxyBase
 from polar2grid.resample import resample_scene
 from polar2grid.utils.config import add_polar2grid_config_paths
 from polar2grid.utils.dynamic_imports import get_reader_attr
+from polar2grid.utils.legacy_compat import get_sensor_alias
 
 LOG = logging.getLogger(__name__)
 
@@ -90,11 +91,6 @@ _PLATFORM_ALIASES = {
 }
 
 
-_SENSOR_ALIASES = {
-    "avhrr-3": "avhrr",
-}
-
-
 def _get_platform_name_alias(satpy_platform_name):
     return _PLATFORM_ALIASES.get(satpy_platform_name.lower(), satpy_platform_name)
 
@@ -108,21 +104,12 @@ def _overwrite_platform_name_with_aliases(scn):
         data_arr.attrs["platform_name"] = pname
 
 
-def _get_sensor_alias(satpy_sensor):
-    if not isinstance(satpy_sensor, set):
-        satpy_sensor = {satpy_sensor}
-    new_sensor = {_SENSOR_ALIASES.get(sname, sname) for sname in satpy_sensor}
-    if len(new_sensor) == 1:
-        return new_sensor.pop()
-    return new_sensor
-
-
 def _overwrite_sensor_with_aliases(scn):
     """Change 'sensor' for every DataArray to Polar2Grid expectations."""
     for data_arr in scn:
         if "sensor" not in data_arr.attrs:
             continue
-        pname = _get_sensor_alias(data_arr.attrs["sensor"])
+        pname = get_sensor_alias(data_arr.attrs["sensor"])
         data_arr.attrs["sensor"] = pname
 
 

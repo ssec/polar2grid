@@ -27,12 +27,11 @@ import dask.array as da
 import numpy as np
 import pytest
 import xarray as xr
-from numpy.typing import DTypeLike, NDArray
 from pyresample import SwathDefinition
 from satpy import Scene
 from satpy.tests.utils import make_dataid
 
-from ._fixture_utils import START_TIME, _TestingScene
+from ._fixture_utils import START_TIME, _TestingScene, generate_lonlat_data
 
 VIIRS_I_CHUNKS = (32 * 3, 6400)
 VIIRS_M_CHUNKS = (16 * 3, 3200)
@@ -142,17 +141,9 @@ VIIRS_ALL_IDS = (
 )
 
 
-def _generate_lonlat_data(shape: tuple[int, int], dtype: DTypeLike = np.float32) -> tuple[NDArray, NDArray]:
-    lat = np.repeat(np.linspace(25.0, 55.0, shape[0])[:, None], shape[1], 1)
-    lat *= np.linspace(0.9, 1.1, shape[1])
-    lon = np.repeat(np.linspace(-45.0, -65.0, shape[1])[None, :], shape[0], 0)
-    lon *= np.linspace(0.9, 1.1, shape[0])[:, None]
-    return lon.astype(dtype), lat.astype(dtype)
-
-
 @pytest.fixture(scope="session")
 def viirs_sdr_i_swath_def() -> SwathDefinition:
-    lons, lats = _generate_lonlat_data((1536, 6400))
+    lons, lats = generate_lonlat_data((1536, 6400))
     lons_data_arr = xr.DataArray(
         da.from_array(lons, chunks=VIIRS_I_CHUNKS),
         dims=("y", "x"),
@@ -184,7 +175,7 @@ def viirs_sdr_i_swath_def() -> SwathDefinition:
 
 @pytest.fixture(scope="session")
 def viirs_sdr_m_swath_def() -> SwathDefinition:
-    lons, lats = _generate_lonlat_data((768, 3200))
+    lons, lats = generate_lonlat_data((768, 3200))
     lons_data_arr = xr.DataArray(
         da.from_array(lons, chunks=VIIRS_M_CHUNKS),
         dims=("y", "x"),
@@ -216,7 +207,7 @@ def viirs_sdr_m_swath_def() -> SwathDefinition:
 
 @pytest.fixture(scope="session")
 def viirs_sdr_dnb_swath_def() -> SwathDefinition:
-    lons, lats = _generate_lonlat_data((768, 4064))
+    lons, lats = generate_lonlat_data((768, 4064))
     lons_data_arr = xr.DataArray(
         da.from_array(lons, chunks=VIIRS_DNB_CHUNKS),
         dims=("y", "x"),

@@ -167,6 +167,19 @@ from polar2grid.resample._resample_scene import resample_scene
             {},
             {},
         ),
+        (
+            lazy_fixture("avhrr_l1b_1_scene"),
+            ["wgs84_fit"],
+            lazy_fixture("builtin_grids_yaml"),
+            None,
+            ["1"],
+            1,
+            True,
+            DaskEWAResampler,
+            0,
+            {},
+            {"weight_delta_max": 10.0, "weight_distance_max": 1.0, "rows_per_scan": 0},
+        ),
     ],
 )
 def test_resample_single_result_per_grid(
