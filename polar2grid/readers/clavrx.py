@@ -80,21 +80,19 @@ if ADVERTISED_DATASETS == "all":
 elif ADVERTISED_DATASETS:
     ADVERTISED_DATASETS = ADVERTISED_DATASETS.split(" ")
 else:
-    ADVERTISED_DATASETS = set(
-        [
-            "cloud_type",
-            "cld_temp_acha",
-            "cld_height_acha",
-            "cloud_phase",
-            "cld_opd_dcomp",
-            "cld_opd_nlcomp",
-            "cld_reff_dcomp",
-            "cld_reff_nlcomp",
-            "cld_emiss_acha",
-            "refl_lunar_dnb_nom",
-            "rain_rate",
-        ]
-    )
+    ADVERTISED_DATASETS = {
+        "cloud_type",
+        "cld_temp_acha",
+        "cld_height_acha",
+        "cloud_phase",
+        "cld_opd_dcomp",
+        "cld_opd_nlcomp",
+        "cld_reff_dcomp",
+        "cld_reff_nlcomp",
+        "cld_emiss_acha",
+        "refl_lunar_dnb_nom",
+        "rain_rate",
+    }
 
 DEFAULT_DATASETS = [
     "cloud_type",
