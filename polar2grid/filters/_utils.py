@@ -75,6 +75,13 @@ def _compute_boundary_from_whole_swath(swath_def: SwathDefinition):
     min_lat = np.nanmin(lats)
     max_lat = np.nanmax(lats)
     min_lon, max_lon, min_lat, max_lat = da.compute(min_lon, max_lon, min_lat, max_lat)
+    x_passes_antimeridian = (max_lon - min_lon) > 355
+    epsilon = 0.1
+    y_is_pole = (max_lat >= 90 - epsilon) or (min_lat <= -90 + epsilon)
+    if x_passes_antimeridian and not y_is_pole:
+        wrapped_lons = lons % 360
+        min_lon, max_lon = da.compute(np.nanmin(wrapped_lons), np.nanmax(wrapped_lons))
+        max_lon -= 360
     sides = (
         ([min_lon, max_lon], [max_lat, max_lat]),  # top
         ([max_lon, max_lon], [max_lat, min_lat]),  # right

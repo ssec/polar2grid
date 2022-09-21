@@ -25,6 +25,7 @@
 import dask
 import dask.array as da
 import numpy as np
+import pytest
 from pyresample import SwathDefinition
 from pyresample.boundary import AreaBoundary
 from satpy.tests.utils import CustomScheduler
@@ -47,6 +48,21 @@ def _swath_def_nan_rows() -> SwathDefinition:
     return swath_def
 
 
+def _swath_def_antimeridian_nan_rows() -> SwathDefinition:
+    lons, lats = generate_lonlat_data((200, 100))
+    lons = lons - 115.0
+    lons[lons <= -180] += 360
+    lons[:9, :] = np.nan
+    lats[:9, :] = np.nan
+    lons_da = da.from_array(lons)
+    lats_da = da.from_array(lats)
+    swath_def = SwathDefinition(
+        lons_da,
+        lats_da,
+    )
+    return swath_def
+
+
 def _exp_boundary_nan_rows():
     exp_boundary = AreaBoundary(
         ([-71.5, -40.907036], [60.5, 60.5]),
@@ -57,9 +73,26 @@ def _exp_boundary_nan_rows():
     return exp_boundary
 
 
-def test_boundary_for_area():
-    geom_obj = _swath_def_nan_rows()
-    exp_boundary = _exp_boundary_nan_rows()
+def _exp_boundary_antimeridian_nan_rows():
+    exp_boundary = AreaBoundary(
+        ([-71.5 - 115.0 + 360.0, -40.907036 - 115.0], [60.5, 60.5]),
+        ([-40.907036 - 115.0, -40.907036 - 115.0], [60.5, 23.721106]),
+        ([-40.907036 - 115.0, -71.5 - 115.0 + 360.0], [23.721106, 23.721106]),
+        ([-71.5 - 115.0 + 360.0, -40.907036 - 115.0 + 360.0], [23.721106, 60.5]),
+    )
+    return exp_boundary
+
+
+@pytest.mark.parametrize(
+    ("geom_func", "exp_func"),
+    [
+        (_swath_def_nan_rows, _exp_boundary_nan_rows),
+        (_swath_def_antimeridian_nan_rows, _exp_boundary_antimeridian_nan_rows),
+    ],
+)
+def test_boundary_for_area(geom_func, exp_func):
+    geom_obj = geom_func()
+    exp_boundary = exp_func()
 
     with dask.config.set(scheduler=CustomScheduler(1)):
         boundary = boundary_for_area(geom_obj)
