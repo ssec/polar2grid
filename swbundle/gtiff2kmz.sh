@@ -64,8 +64,9 @@ gdal2tiles.py -p geodetic $input_fn $tile_dir || { echo "ERROR: Could not create
 
 # Zip the KML directory in to a KMZ file
 echo "Zipping KML directory in to a KMZ..."
+abs_output_fn=$(readlink -f $output_fn)
 cd $tile_dir
-zip -r ../$output_fn * || { echo "ERROR: Could not create zipped KMZ"; exit 1; }
+zip -r ${abs_output_fn} ./* || { echo "ERROR: Could not create zipped KMZ"; exit 1; }
 cd ..
 
 echo "Removing temporary tiled KML directory"
