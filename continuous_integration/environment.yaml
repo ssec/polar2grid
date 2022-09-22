@@ -48,5 +48,7 @@ dependencies:
   - s3fs
   - sphinxcontrib-apidoc
   - pyresample
-  - pip:
-      - git+https://github.com/pytroll/satpy.git
+  - satpy
+#  - pip:
+#      - git+https://github.com/pytroll/satpy.git
+#      - git+https://github.com/pytroll/pyresample.git
