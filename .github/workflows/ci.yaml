@@ -154,8 +154,8 @@ jobs:
         shell: bash -l {0}
         run: |
           python -c "import osgeo.gdal; import rasterio; print('import with osgeo successful')"
-          python -c "import scipy; import dask; import pyresample; from trollimage import xrimage; import rasterio; print('import with scipy successful')"
-          pytest --cov=polar2grid polar2grid/tests --cov-report=
+#          python -c "import scipy; import dask; import pyresample; from trollimage import xrimage; import rasterio; print('import with scipy successful')"
+#          pytest --cov=polar2grid polar2grid/tests --cov-report=
         if: runner.os != 'Windows'
 
       - name: Install Polar2Grid on Windows
@@ -170,9 +170,7 @@ jobs:
 #          pytest --cov=polar2grid polar2grid/tests --cov-report=
 #          if ($LASTEXITCODE) { exit $LASTEXITCODE }
         run: |
-          polar2grid --help
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          geo2grid --help
+          python -c "import osgeo.gdal; import rasterio; print('osgeo-based import successful')"
         if: runner.os == 'Windows'
 
       - name: Coveralls Parallel
