@@ -12,7 +12,7 @@ dependencies:
   - ffmpeg
   - fontconfig
   - freetype
-  - gdal
+  - gdal<3.5.2
   - h5py
   - matplotlib
   - netcdf4
@@ -47,8 +47,6 @@ dependencies:
   - fsspec
   - s3fs
   - sphinxcontrib-apidoc
-  - pyresample
-  - satpy
-#  - pip:
-#      - git+https://github.com/pytroll/satpy.git
-#      - git+https://github.com/pytroll/pyresample.git
+  - pip:
+      - git+https://github.com/pytroll/satpy.git
+      - git+https://github.com/pytroll/pyresample.git
