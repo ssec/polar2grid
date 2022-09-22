@@ -60,7 +60,7 @@ fi
 
 # Create a tiled KML directory
 echo "Creating temporary tiled KML directory..."
-${P2G_SHELLB3_DIR}/bin/gdal2tiles.py -p geodetic $input_fn $tile_dir || { echo "ERROR: Could not create tiled KML"; exit 1; }
+gdal2tiles.py -p geodetic $input_fn $tile_dir || { echo "ERROR: Could not create tiled KML"; exit 1; }
 
 # Zip the KML directory in to a KMZ file
 echo "Zipping KML directory in to a KMZ..."
