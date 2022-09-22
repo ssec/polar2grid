@@ -6,6 +6,7 @@ resampling:
     area_type: area
     # Default 'resampler' will be determined at runtime based on target area
     default_target: MAX
+
   default_clavrx_all_products:
     reader: clavrx
     area_type: swath
@@ -31,6 +32,38 @@ resampling:
       weight_delta_max: 40.0
       weight_distance_max: 1.0
       maximum_weight_mode: true
+
+  avhrr_clavrx_all_products:
+    reader: clavrx
+    area_type: swath
+    sensor: avhrr
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
+      rows_per_scan: 0
+  avhrr_clavrx_cloud_phase:
+    name: cloud_phase
+    reader: clavrx
+    area_type: swath
+    sensor: avhrr
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
+      maximum_weight_mode: true
+      rows_per_scan: 0
+  avhrr_clavrx_cloud_type:
+    name: cloud_type
+    reader: clavrx
+    area_type: swath
+    sensor: avhrr
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
+      maximum_weight_mode: true
+      rows_per_scan: 0
   default_amsr2:
     area_type: swath
     sensor: amsr2

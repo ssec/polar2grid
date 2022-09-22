@@ -24,6 +24,9 @@
 
 import logging
 
+import dask.array as da
+import numpy as np
+
 try:
     # Python 3.9+
     from functools import cache
@@ -32,10 +35,6 @@ except ImportError:
 
 from typing import Union
 
-import dask.array as da
-import numpy as np
-import pyresample
-from packaging.version import Version, parse
 from pyresample.boundary import AreaBoundary, AreaDefBoundary, Boundary
 from pyresample.geometry import (
     AreaDefinition,
@@ -45,40 +44,51 @@ from pyresample.geometry import (
 from pyresample.spherical import SphPolygon
 
 logger = logging.getLogger(__name__)
-FIXED_PR = parse(pyresample.__version__) >= Version("1.22.1")
 
 PRGeometry = Union[SwathDefinition, AreaDefinition]
 
 
 def boundary_for_area(area_def: PRGeometry) -> Boundary:
     """Create Boundary object representing the provided area."""
-    if not FIXED_PR and isinstance(area_def, SwathDefinition):
-        # TODO: Persist lon/lats if requested
-        lons, lats = area_def.get_bbox_lonlats()
-        freq = int(area_def.shape[0] * 0.05)
-        if hasattr(lons[0], "compute") and da is not None:
-            lons, lats = da.compute(lons, lats)
-        lons = [lon_side.astype(np.float64) for lon_side in lons]
-        lats = [lat_side.astype(np.float64) for lat_side in lats]
-        # compare the first two pixels in the right column
-        lat_is_increasing = lats[1][0] < lats[1][1]
-        # compare the first two pixels in the "top" column
-        lon_is_increasing = lons[0][0] < lons[0][1]
-        is_ccw = (lon_is_increasing and lat_is_increasing) or (not lon_is_increasing and not lat_is_increasing)
-        if is_ccw:
-            # going counter-clockwise
-            # swap the side order and the order of the values in each side
-            # to make it clockwise
-            lons = [lon[::-1] for lon in lons[::-1]]
-            lats = [lat[::-1] for lat in lats[::-1]]
-        adp = AreaBoundary(*zip(lons, lats))
-        adp.decimate(freq)
-    elif getattr(area_def, "is_geostationary", False):
+    if getattr(area_def, "is_geostationary", False):
         adp = Boundary(*get_geostationary_bounding_box(area_def, nb_points=100))
     else:
         freq_fraction = 0.05 if isinstance(area_def, SwathDefinition) else 0.30
-        adp = AreaDefBoundary(area_def, frequency=int(area_def.shape[0] * freq_fraction))
+        try:
+            adp = AreaDefBoundary(area_def, frequency=int(area_def.shape[0] * freq_fraction))
+        except ValueError:
+            if not isinstance(area_def, SwathDefinition):
+                logger.error("Unable to generate bounding geolocation polygon")
+                raise
+
+            logger.warning(
+                "Geolocation data contains invalid bounding values. Computing entire array to get bounds instead."
+            )
+            adp = _compute_boundary_from_whole_swath(area_def)
     return adp
+
+
+def _compute_boundary_from_whole_swath(swath_def: SwathDefinition):
+    lons, lats = swath_def.get_lonlats()
+    min_lon = np.nanmin(lons)
+    max_lon = np.nanmax(lons)
+    min_lat = np.nanmin(lats)
+    max_lat = np.nanmax(lats)
+    min_lon, max_lon, min_lat, max_lat = da.compute(min_lon, max_lon, min_lat, max_lat)
+    x_passes_antimeridian = (max_lon - min_lon) > 355
+    epsilon = 0.1
+    y_is_pole = (max_lat >= 90 - epsilon) or (min_lat <= -90 + epsilon)
+    if x_passes_antimeridian and not y_is_pole:
+        wrapped_lons = lons % 360
+        min_lon, max_lon = da.compute(np.nanmin(wrapped_lons), np.nanmax(wrapped_lons))
+        max_lon -= 360
+    sides = (
+        ([min_lon, max_lon], [max_lat, max_lat]),  # top
+        ([max_lon, max_lon], [max_lat, min_lat]),  # right
+        ([max_lon, min_lon], [min_lat, min_lat]),  # bot
+        ([min_lon, max_lon], [min_lat, max_lat]),  # left
+    )
+    return AreaBoundary(*sides)
 
 
 @cache

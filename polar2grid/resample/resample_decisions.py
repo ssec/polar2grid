@@ -31,6 +31,8 @@ from satpy._config import config_search_paths
 from satpy.utils import recursive_dict_update
 from satpy.writers import DecisionTree
 
+from polar2grid.utils.legacy_compat import get_sensor_alias
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,11 +45,11 @@ class ResamplerDecisionTree(DecisionTree):
             "match_keys",
             (
                 "name",
+                "reader",
                 "platform_name",
                 "sensor",
-                "standard_name",
                 "area_type",
-                "reader",
+                "standard_name",
                 "units",
             ),
         )
@@ -88,6 +90,7 @@ class ResamplerDecisionTree(DecisionTree):
     def find_match(self, **query_dict):
         """Find a match."""
         query_dict["area_type"] = "swath" if isinstance(query_dict["area"], SwathDefinition) else "area"
+        query_dict["sensor"] = get_sensor_alias(query_dict.get("sensor"))
 
         try:
             return super().find_match(**query_dict)

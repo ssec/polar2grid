@@ -158,7 +158,7 @@ class DayCoverageFilter(SunlightCoverageFilter):
 
 
 class NightCoverageFilter(SunlightCoverageFilter):
-    """Remove certain products when there is not enough day data."""
+    """Remove certain products when there is not enough night data."""
 
     FILTER_MSG = "Unloading '{}' because there is not enough night data."
 

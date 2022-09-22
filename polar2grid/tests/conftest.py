@@ -32,7 +32,11 @@ import pytest
 PKG_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
 root_logger = logging.getLogger()
 
-pytest_plugins = ["polar2grid.tests._abi_fixtures", "polar2grid.tests._viirs_fixtures"]
+pytest_plugins = [
+    "polar2grid.tests._abi_fixtures",
+    "polar2grid.tests._viirs_fixtures",
+    "polar2grid.tests._avhrr_fixtures",
+]
 
 
 def pytest_configure(config):

@@ -25,6 +25,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import numpy as np
+from numpy.typing import DTypeLike, NDArray
 from satpy import DatasetDict, Scene
 from satpy.readers.yaml_reader import FileYAMLReader
 
@@ -53,6 +55,7 @@ class _FakeReader(FileYAMLReader):
         return {
             "viirs_sdr": {"viirs"},
             "abi_l1b": {"abi"},
+            "avhrr_l1b_aapp": {"avhrr-3"},
         }[self._name]
 
     @property
@@ -91,3 +94,11 @@ class _TestingScene(Scene):
         return {
             reader: _FakeReader(reader, self._forced_products, self._forced_all_ids, self._forced_available_ids),
         }
+
+
+def generate_lonlat_data(shape: tuple[int, int], dtype: DTypeLike = np.float32) -> tuple[NDArray, NDArray]:
+    lat = np.repeat(np.linspace(25.0, 55.0, shape[0])[:, None], shape[1], 1)
+    lat *= np.linspace(0.9, 1.1, shape[1])
+    lon = np.repeat(np.linspace(-45.0, -65.0, shape[1])[None, :], shape[0], 0)
+    lon *= np.linspace(0.9, 1.1, shape[0])[:, None]
+    return lon.astype(dtype), lat.astype(dtype)

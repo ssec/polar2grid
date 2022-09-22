@@ -244,3 +244,17 @@ class AliasHandler:
 
         available_satpy_names = sorted(set(available_satpy_names))
         return available_p2g_names, available_custom_names, available_satpy_names
+
+
+_SENSOR_ALIASES = {
+    "avhrr-3": "avhrr",
+}
+
+
+def get_sensor_alias(satpy_sensor):
+    if not isinstance(satpy_sensor, set):
+        satpy_sensor = {satpy_sensor}
+    new_sensor = {_SENSOR_ALIASES.get(sname, sname) for sname in satpy_sensor}
+    if len(new_sensor) == 1:
+        return new_sensor.pop()
+    return new_sensor
