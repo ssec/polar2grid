@@ -27,3 +27,14 @@ Feature: Test polar2grid utility scripts
     Examples: ACSPO
       | command                                                                  | source            | output             |
       | add_coastlines.sh --add-colorbar --colorbar-text-color="white" --colorbar-units="K" --colorbar-align top --colorbar-title="VIIRS ACSPO SST" --colorbar-text-size 20 --colorbar-height=35 --add-coastlines --add-borders --  | add_coastlines/input/test1 | add_coastlines/output/test1 |
+
+  Scenario Outline: Test gtiff2kmz.sh
+    Given input data from <source>
+    Given an empty working directory
+    Given input data is copied to the working directory
+    When <command> runs
+    Then the same filenames as in <output> were produced
+
+    Examples: gtiff2kmz
+      | command                                                                  | source            | output             |
+      | gtiff2kmz.sh                                                             | gtiff2kmz/input/test1 | gtiff2kmz/output/test1 |

@@ -63,6 +63,12 @@ def step_impl_run_command(context, command):
         os.chdir(orig_dir)
 
 
+@then("the same filenames as in {output} were produced")
+def step_impl_match_output_filenames(context, output):
+    for exp_filename in os.listdir(os.path.join(context.datapath, output)):
+        assert os.path.isfile(os.path.join(context.temp_dir, exp_filename))
+
+
 @then("the output matches with the files in {output}")
 def step_impl_match_output_files(context, output):
     orig_dir = os.getcwd()
