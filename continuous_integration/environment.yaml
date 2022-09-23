@@ -12,7 +12,7 @@ dependencies:
   - ffmpeg
   - fontconfig
   - freetype
-  - gdal<3.5.2
+  - gdal
   - h5py
   - matplotlib
   - netcdf4
