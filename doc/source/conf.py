@@ -46,7 +46,7 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.basic_overlay_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.advanced_overlay.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/overlay/npp_viirs_true_color_20170305_193251_lcc_fit_overlay.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/images_basic/noaa20_viirs_true_color_20220919_175331_lcc_fit.jpg",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/images_basic/noaa20_viirs_true_color_20220919_175331_lcc_fit.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/overlay/noaa20_viirs_true_color_20220919_175331_lcc_fit_overlay.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/dnb/VIIRS_DNB_Enhancement_Comparison.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/images_basic/npp_viirs_true_color_20170319_183246_miami.jpg",
