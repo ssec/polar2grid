@@ -9,7 +9,7 @@ shown in Section 2.2 and execute the following commands:
     cd polar2grid_test/viirs
     mkdir work
     cd work
-    polar2grid.sh crefl gtiff --true-color --false-color --fornav-d 1 --grid-configs \
+    polar2grid.sh crefl gtiff --true-color --false-color --grid-configs \
       ${POLAR2GRID_HOME}/grid_configs/grid_example.yaml -g miami -f ../input
 
 The test case consists of 6 input direct broadcast HDF 5 SDR granules
@@ -18,10 +18,11 @@ at 18:32 UTC. In this test, the Polar2Grid software
 is using the example configuration file
 (${POLAR2GRID_HOME}/grid_configs/grid_example.yaml) and the lambert
 conformal conic (lcc) “miami” grid definition entry located
-within it. It will first create 6 VIIRS Corrected REFLectance
-(CREFL) I-Band and 6 CREFL M-Band HDF4 files, and then use those to
-create one true and one false color image at 300 m resolution, 500 lines
+within it. It one true and one false color image at 300 m resolution, 500 lines
 x 700 elements centered on the US city of Miami in the state of Florida.
+The creation of the true and false color images includes the Atmospheric
+Scattering Correction of Rayleigh Scattering 
+of Rayleigh Atmospheric Scattering 
 We are using a fornav "d" flag of "1" to inform the elliptical
 weight averaging (EWA) technique how to weight the effect of the input
 pixel to an output pixel based upon its location in the scan line and
