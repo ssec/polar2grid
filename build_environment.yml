@@ -10,6 +10,7 @@ dependencies:
   - curl
   - dask>=2022.6.1
   - distributed>=2022.6.1
+  - donfig
   - ffmpeg
   - fontconfig
   - freetype
@@ -18,6 +19,7 @@ dependencies:
   - netcdf4
   - pillow
   - pip
+  - pooch
   - pycoast>=1.5.0
   - pydecorate>=0.3.3
   - pyhdf
