@@ -257,3 +257,11 @@ resampling:
     kwargs:
       weight_delta_max: 40.0
       weight_distance_max: 1.0
+
+  default_mersi2_l1b:
+    area_type: swath
+    reader: mersi2_l1b
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 1.0
