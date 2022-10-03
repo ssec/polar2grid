@@ -12,9 +12,9 @@ Basic Usage
 
     The most common use of |project| is to convert satellite data files in to
     gridded image files.
-    The following command can be used to create GeoTIFF single band images of
-    all S-NPP VIIRS imager SDR calibrated data with accompanying geolocation
-    files found in ``<path to files>/<list of files>``.
+    As an example, the following command can be used to create GeoTIFF single 
+    band images of all S-NPP VIIRS imager SDR calibrated data with accompanying 
+    geolocation files found in ``<path to files>/<list of files>``.
 
     .. code-block:: bash
 
@@ -34,7 +34,8 @@ Basic Usage
     are provided to |script_literal| they will be aggregated together.
     By default the above command resamples the data to a Google Earth compatible
     Platte Carrée projected grid at ~600m resolution, but this can be changed
-    with command line arguments.
+    with command line arguments. The GeoTIFF contains 2 bands, including an 
+    Alpha band.
 
 .. ifconfig:: is_geo2grid
 
@@ -86,7 +87,7 @@ are always available:
         -r                    Instrument input files to read from.
         -w                    Output format to write to.
         -h                    Print helpful information.
-        --list-products       List all possible product options to use with -p from the given input data.
+        --list-products       List all possible product options to use with -p from the given input data and exit.
         --list-products-all   List available polar2grid products options and custom/Satpy products and exit.
         -p                    List of products you want to create.
         -f                    Input files and paths.
