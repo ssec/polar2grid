@@ -20,7 +20,7 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""The VIIRS SDR Reader operates on Science Data Record (SDR) HDF5 files from
+"""The VIIRS SDR Reader operates on Sensor Data Record (SDR) HDF5 files from
 the Suomi National Polar-orbiting Partnership's (NPP) and/or the NOAA20
 Visible/Infrared Imager Radiometer Suite (VIIRS) instrument. The VIIRS
 SDR reader ignores filenames and uses internal file content to determine
