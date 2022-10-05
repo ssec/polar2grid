@@ -45,7 +45,7 @@ to with satellite data and the channels we have available. This means
 things like trees and grass are green, water is blue, deserts are
 red/brown, and clouds are white. The True Color GeoTIFF 24 bit
 image is an :ref:`RGB (Red, Green, Blue) image <explain_rgb_composite>`
-consisting of a combination of Red: VIIRS M-Band 5, Blue: VIIRS M-Band 4,
+consisting of a combination of Red: VIIRS M-Band 5, Green: VIIRS M-Band 4,
 and Blue: VIIRS M-Band 3 reflectance channels. Each
 channel goes through a series of adjustments to produce the final high
 quality image output by |project|.
@@ -96,7 +96,7 @@ Day Night Band
 ^^^^^^^^^^^^^^
 
 |project| allows the user to create images from the VIIRS Day/Night Band, which
-contains observations of visible reflectance data for both day and night.
+contains observations of visible radiances for both day and night.
 |project| provides 4 options for enhancing and scaling the DNB data.
 A full description of these options are described in detail in the :doc:`../viirs_day_night_band` appendix.
 
@@ -107,14 +107,15 @@ The I01-I03 and M01-M11 bands are visible reflectance channels on the VIIRS
 instrument. Besides the basic calibration necessary to
 convert the radiance values to reflectances, the data is passed through
 a square root function before being written to a grayscale image. The
-square root operation has the effect of brightening dark regions of the
-image.
+square root operation has the effect of balancing the bright and dark 
+regions of the image.
 
 Infrared I-Bands 04-05 and M-Bands 12-16
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The I04-I05 and M12-M16 bands are all brightness temperature (infrared/IR) channels. To
-produce a grayscale image with dark land and white clouds, the data is
-inverted and scaled linearly in two segments. The first segment is from
-163K to 242K, the second 242K to 330K. This is a common scaling used by
-the National Weather Service (NWS) for their AWIPS visualization clients.
+The I04-I05 and M12-M16 bands are all brightness temperature 
+(infrared (IR)) channels. To produce a grayscale image with dark land 
+and white clouds, the data is inverted and scaled linearly in two 
+segments. The first segment is from 163K to 242K, the second 
+242K to 330K. This is a common scaling used by the National 
+Weather Service (NWS) for their AWIPS visualization clients.
