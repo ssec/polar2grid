@@ -54,8 +54,8 @@ reader.
     guaranteed.
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
-Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
-``--fornav-d`` parameter is set to 2.
+Averaging resampling. The ``--weight-delta-max`` parameter is set to 40 and the
+``--weight-distance-max`` parameter is set to 2.
 
 +---------------------------+-----------------------------------------------------+
 | Product Name              | Description                                         |

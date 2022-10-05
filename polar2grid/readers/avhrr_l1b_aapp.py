@@ -27,8 +27,8 @@ the ``polar2grid.sh`` command using the ``avhrr`` or ``avhrr_l1b_aapp`` reader
 name.
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
-Averaging resampling. The ``--fornav-D`` option is set to 10 and
-``--fornav-d`` is set to 1.
+Averaging resampling. The ``--weight-delta-max`` option is set to 10 and
+``--weight-distance-max`` is set to 1.
 
 The AVHRR reader provides the following products:
 

@@ -35,8 +35,8 @@ and 1000m resolution. Files usually have the following naming scheme:
     tf{start_time:%Y%j%H%M%S}.{platform_shortname}-{trans_band:1s}_MERSI_1000M_L1B.{ext}
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
-Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
-``--fornav-d`` parameter is set to 1.
+Averaging resampling. The ``--weight-delta-max`` parameter is set to 40 and the
+``--weight-distance-max`` parameter is set to 1.
 
 +---------------------------+-----------------------------------------------------+-------------------------+
 | **Product Name**          | **Description**                                     | Central Wavelength (um) |

@@ -34,8 +34,8 @@ The correction software was provided by Kexin Zhang of NOAA STAR, and
 is applied as part of the MIRS ATMS Polar2Grid execution.
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
-Averaging resampling. The ``--fornav-D`` option is set to 100 and the
-``--fornav-d`` option is set to 1.
+Averaging resampling. The ``--weight-delta-max`` option is set to 100 and the
+``--weight-distance-max`` option is set to 1.
 
 The frontend offers the following products:
 
