@@ -37,7 +37,7 @@ with the reader name ``viirs_sdr``.
 
 This reader's default remapping algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--weight-delta-max`` parameter set to 40 and the
-``---weight-distance-max`` parameter set to 2.
+``--weight-distance-max`` parameter set to 2.
 
 +---------------------------+-----------------------------------------------------+
 | Product Name              | Description                                         |
