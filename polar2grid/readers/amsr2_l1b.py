@@ -59,12 +59,12 @@ coastlines. This requires using an alternate non-default scaling configuration
 provided in the tarball. It can be used by providing the
 ``--extra-config-path $POLAR2GRID_HOME/example_enhancements/amsr2_png``
 flag when generating AMSR2 L1B GeoTIFFs. This allows the scaling provided
-in the ``-$POLAR2GRID_HOME/example_enhancements/amsr2_png/enhancements/generic.yaml``
+in the ``$POLAR2GRID_HOME/example_enhancements/amsr2_png/enhancements/generic.yaml``
 file to be used.  Once this rescaling has been done, colormap files can be 
 found in ``$POLAR2GRID_HOME/colormaps`` which can then be applied using the
 the `add_colormap.sh` script.
 
-See the :ref:`util_add_coastlines` and :ref:`util_add_colormap` documentation
+See the example section :doc:`../examples/amsr2_example`
 for more information on generating these NRL-like PNGs. 
 
 """
