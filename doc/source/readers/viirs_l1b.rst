@@ -19,10 +19,10 @@ Examples:
 
     $POLAR2GRID_HOME/bin/polar2grid.sh -r viirs_l1b -w geotiff -h
 
-    polar2grid.sh -r viirs_l1b -w geotiff --list-products -f ../l1b/*.nc
+    polar2grid.sh -r viirs_l1b -w geotiff --list-products -f ../data/*.nc
 
-    polar2grid.sh -r viirs_l1b -w geotiff -p m01 -f /data/VL1BM_snpp_d20170117_t191800_c20170118003207.nc /data/VGEOM_snpp_d20170117_t191800_c20170118003158.nc
+    polar2grid.sh -r viirs_l1b -w geotiff -p m01 -f /l1b/VJ102MOD.A2022257.1748.001.2022258055009.nc l1b/VJ103MOD.A2022257.1748.001.2022258054957.nc
 
-    polar2grid.sh -r viirs_l1b -w awips_tiled -g lcc_conus_300 --sector-id LCC --compress --letters -p adaptive_dnb dynamic_dnb --night-fraction=.04 -f /data
+    polar2grid.sh -r viirs_l1b -w hdf5 -g lcc_fit --add-geolocation -p i01 i02 -f VNP02IMG.A2022257.1842*.nc VNP03MOD.A2022257.1842*.nc
 
-    polar2grid.sh -r viirs_l1b -w geotiff -p true_color false_color -f /viirs_l1b/*.nc
+    polar2grid.sh -r viirs_l1b -w geotiff -p true_color false_color -f VNP02*.A2022257.1842*.nc VNP03*.A2022257.1842*.nc
