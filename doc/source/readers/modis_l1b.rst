@@ -25,15 +25,15 @@ Examples:
 
     polar2grid.sh -r modis_l1b -w geotiff -p true_color false_color -f ../l1b/a1.22261.1857.250m.hdf ../l1b/a1.22261.1857.500m.hdf  ../l1b/a1.22261.1857.1000m.hdf ../l1b/a1.22261.1857.geo.hdf  
 
-    polar2grid.sh -r modis_l1b -w geotiff -p vis01 -f ../l1b/a1.17006.1855.250m.hdf ../l1b/a1.17006.1855.geo.hdf
+    polar2grid.sh -r modis_l1b -w geotiff -p vis01 -f terra/t1.22061.1654.250m.hdf terra/t1.22061.1654.geo.hdf
 
-    polar2grid.sh -r modis_l1b -w geotiff --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.yaml -g my_latlon -f ../l1b/a1.17006.1855.250m.hdf ../l1b/a1.17006.1855.geo.hdf
+    polar2grid.sh -r modis_l1b -w geotiff --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.yaml -g my_latlon -f ../l1b/a1.17006.1855.1000m.hdf ../l1b/a1.17006.1855.geo.hdf
 
-    polar2grid.sh -r modis_l1b -w awips_tiled --sector-id LCC -g lcc_conus_1km --letters --compress --bt-products --grid-coverage=.05 -f MOD021KM.A2017004.1732*.hdf MOD03.A2017004.1732*.hdf
+    polar2grid.sh -r modis_l1b -w awips_tiled --awips-true-color --awips-false-color --sector-id LCC -g lcc_conus_300 --letters --compress --grid-coverage=.05 -f MOD021KM.A2017004.1732*.hdf MOD02HKM.A2017004.1732*.hdf MOD02QKM.A2017004.1732*.hdf MOD03.A2017004.1732*.hdf
 
-    polar2grid.sh -r modis_l1b -w hdf5 --bt-products --add-geolocation --grid-coverage=.05 -f /data/MOD*.hdf
+    polar2grid.sh -r modis_l1b -w hdf5 --bt-products --add-geolocation  -f /data/MOD*.hdf
 
-    polar2grid.sh -r modis_l1b -w hdf5 -g wgs84_fit_250 -f /data/rad/MOD02QKM.*.hdf /data/geo/MOD03.*.hdf
+    polar2grid.sh -r modis_l1b -w hdf5 -g wgs84_fit_250 -p vis01 vis02 -f /data/rad/MOD02QKM.*.hdf /data/geo/MOD03.*.hdf
 
 
 Product Explanation
