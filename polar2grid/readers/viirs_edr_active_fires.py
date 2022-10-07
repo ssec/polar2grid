@@ -25,15 +25,21 @@ M-Band Resolution (AFMOD) Environmental Data Record files.
 
 Files supported usually have the following naming schemes:
 
-   AFIMG_npp_d20200109_t0959025_e1000267_b42492_c20200109101744000538_cspp_dev.nc, and/or
-   AFMOD_j01_d20200109_t1711298_e1712525_b11100_c20200109173628141913_cspp_dev.nc
+   AFIMG_j01_d20221006_t2101052_e2102297_b25304_c20221006214545032016_cspp_dev.nc and/or,
+   AFMOD_npp_d20221006_t2017005_e2018247_b56701_c20221006205259096916_cspp_dev.nc
 
-This reader's default resampling algorithm is ``nearest`` for Nearest Neighbor resampling.
-The ``--remap_method`` parameter is set to ``nearest``.
+For more information about the this CSPP product, please 
+visit the CSPP LEO website: `https://cimss.ssec.wisc.edu/cspp/`.
+
+This reader's default resampling algorithm ``--method`` is 
+``nearest`` for Nearest Neighbor resampling. The frontend can 
+be specified with the ``polar2grid.sh`` command using the 
+``viirs_edr_active_fires`` frontend name. The VIIRS Active Fire 
+frontend provides the following products:
 
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
-+===========================+=====================================================+
++===========================+=====================================================+ 
 | confidence_cat            | Fire Confidence Category   (AFIMG Resolution Only)  |
 +---------------------------+-----------------------------------------------------+
 | T4                        | I-Band 4 Temperature       (AFIMG Resolution Only)  |
