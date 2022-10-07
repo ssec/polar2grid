@@ -7,7 +7,7 @@ AWIPS Tiled Writer
 Command Line Arguments
 ----------------------
 
-.. ifconfig:: is_geo2grid
+.. ifconfig:: not is_geo2grid
 
     .. argparse::
         :module: polar2grid.writers.awips_tiled
