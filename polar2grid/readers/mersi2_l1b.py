@@ -27,7 +27,7 @@
 #     1225 West Dayton Street
 #     Madison, WI  53706
 #     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
-"""The MERSI2 Level 1B reader operates on Level 1B (L1B) HDF5 files.
+"""The FY3-D MERSI2 Level 1B reader operates on Level 1B (L1B) HDF5 files.
 
 The files come in four varieties; band data and geolocation data, both at 250m
 and 1000m resolution. Files usually have the following naming scheme:
@@ -37,6 +37,9 @@ and 1000m resolution. Files usually have the following naming scheme:
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--weight-delta-max`` parameter is set to 40 and the
 ``--weight-distance-max`` parameter is set to 1.
+
+The frontend can be specified with the ``polar2grid.sh`` command using 
+the ``mersi2_l1b`` frontend name. The MERSI2 frontend provides the following products:
 
 +---------------------------+-----------------------------------------------------+-------------------------+
 | **Product Name**          | **Description**                                     | Central Wavelength (um) |
