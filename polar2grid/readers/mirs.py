@@ -38,7 +38,9 @@ This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--weight-delta-max`` option is set to 100 and the
 ``--weight-distance-max`` option is set to 1.
 
-The frontend offers the following products:
+The ACSPO output product format is NetCDF4. The frontend can be 
+specified with the `polar2grid.sh` command using the `mirs` 
+frontend name.The frontend offers the following products:
 
     +--------------------+----------------------------------------------------+
     | Product Name       | Description                                        |
