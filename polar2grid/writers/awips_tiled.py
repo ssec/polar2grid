@@ -30,11 +30,11 @@
 """The AWIPS Tiled writer is used to create AWIPS compatible tiled NetCDF4 files.
 
 The Advanced Weather Interactive Processing System (AWIPS) is a
-program used by the United States National Weather Service (NWS) and others
-to view
-different forms of weather imagery. Sectorized Cloud and Moisture Imagery
-(SCMI) is a NetCDF4 format accepted by AWIPS to store one image broken up
-in to one or more "tiles". This format has been used to support additional
+program used by the United States National Weather Service (NWS) and 
+others to display and analyze data relevant to meteorology.
+Sectorized Cloud and Moisture Imagery (SCMI) is a NetCDF4 
+format accepted by AWIPS to store one image broken up
+into one or more "tiles". This format has been used to support additional
 products over time and so this writer is now called "awips_tiled" to refer
 to the generic usse of these files. Once AWIPS is configured for specific products
 the AWIPS Tiled writer can be used to provide compatible products to the
@@ -69,7 +69,7 @@ default 2 rows by 2 columns. Lettered tiles are meant to make it easier for
 receiving AWIPS clients/stations to filter what tiles they receive; saving
 time, bandwidth, and space.
 
-Any tiles (numbered or lettered) not containing any valid data are not
+Tiles (numbered or lettered) not containing any valid data are not
 created.
 
  .. warning::
