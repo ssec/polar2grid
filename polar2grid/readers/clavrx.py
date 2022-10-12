@@ -110,13 +110,18 @@ DEFAULT_DATASETS = [
 
 FILTERS = {
     "day_only": {
-        "standard_name": [
-            "toa_bidirectional_reflectance",
-            "effective_radius_of_cloud_condensed_water_particles_at_cloud_top",
-            "atmosphere_optical_thickness_due_to_cloud",
-        ]
+        "name": [
+            "cld_opd_dcomp",
+            "cld_reff_dcomp",
+        ],
     },
-    "night_only": {"standard_name": ["refl_lunar_dnb_nom"]},
+    "night_only": {
+        "name": [
+            "cld_opd_nlcomp",
+            "cld_reff_nlcomp",
+            "refl_lunar_dnb_nom",
+        ],
+    },
 }
 
 
