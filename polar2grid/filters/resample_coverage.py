@@ -53,11 +53,16 @@ def _get_intersection_coverage(source_polygon: SphPolygon, target_polygon: SphPo
 
 
 class ResampleCoverageFilter(BaseFilter):
-    """Remove any DataArrays that would not have any results if resampled to the target area."""
+    """Remove any DataArrays that would not have any results if resampled to the target area.
+
+    This filter defaults to checking all products. Pass ``product_filter_critera=None`` to
+    disable checking for all products. See :class:`BaseFilter` for other options.
+
+    """
 
     def __init__(
         self,
-        product_filter_criteria: dict = None,
+        product_filter_criteria: dict = True,
         target_area: PRGeometry = None,
         coverage_fraction: float = None,
     ):
