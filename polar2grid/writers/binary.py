@@ -81,7 +81,10 @@ class FlatBinaryWriter(ImageWriter):
 
         """
         img = get_enhanced_image(
-            dataset.squeeze(), enhance=self.enhancer, overlay=overlay, decorate=decorate, fill_value=fill_value
+            dataset.squeeze(),
+            enhance=self.enhancer,
+            overlay=overlay,
+            decorate=decorate,
         )
         kwargs["dtype"] = kwargs.get("dtype") or self._get_default_dtype(dataset)
         return self.save_image(img, filename=filename, compute=compute, fill_value=fill_value, **kwargs)
@@ -145,20 +148,20 @@ def add_writer_argument_groups(parser, group=None):
         "--dtype",
         choices=NumpyDtypeList(NUMPY_DTYPE_STRS),
         type=str_to_dtype,
-        help="Data type of the output file (8-bit unsigned " "integer by default - uint8)",
+        help="Data type of the output file (8-bit unsigned integer by default - uint8)",
     )
     group.add_argument(
         "--no-enhance",
         dest="enhance",
         action="store_false",
-        help="Don't try to enhance the data before saving it",
+        help="Don't enhance the data before saving it",
     )
     group.add_argument(
         "--fill-value",
         dest="fill_value",
         type=int_or_float,
-        help="Instead of an alpha channel fill invalid "
-        "values with this value. Turns LA or RGBA "
-        "images in to L or RGB images respectively.",
+        help="Replace invalid values with the specified value. Floating-point "
+        "products typically use NaN while integer fields will use 0 or "
+        "the max value for that data type.",
     )
     return group, None
