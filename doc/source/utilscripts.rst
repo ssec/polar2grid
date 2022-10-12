@@ -102,10 +102,18 @@ Add Overlays (Borders, Coastlines, Grids Lines, Rivers)
 
 Examples:
 
-.. code-block:: bash
+.. ifconfig:: is_geo2grid
 
-    add_coastlines.sh --add-coastlines --add-rivers --rivers-resolution=h --add-grid GOES-16_ABI_RadF_true_color_20181112_063034_GOES-East.tif
-    add_coastlines.sh --add-coastlines --add-borders --borders-resolution=h --borders-outline='red' --add-grid GOES-16_ABI_RadF_natural_color_20181112_183034_GOES-East.tif -o abi_natural_color_coastlines.png
+    .. code-block:: bash
+
+       add_coastlines.sh --add-coastlines --add-rivers --rivers-resolution=h --add-grid GOES-16_ABI_RadF_true_color_20181112_063034_GOES-East.tif
+       add_coastlines.sh --add-coastlines --add-borders --borders-resolution=h --borders-outline='red' --add-grid GOES-16_ABI_RadF_natural_color_20181112_183034_GOES-East.tif -o abi_natural_color_coastlines.png
+
+.. ifconfig:: not is_geo2grid
+
+    .. code-block:: bash
+
+       add_coastlines.sh noaa20_viirs_true_color_20221011_174112_wgs84_fit.tif --add-coastlines --coastlines-outline yellow --coastlines-level 1 --coastlines-resolution=i --add-borders --borders-level 2 --borders-outline gray --add-grid --grid-text-size 16 --grid-fill white --grid-D 5 5 --grid-d 5 5 --grid-outline white
 
 .. _util_add_colormap:
 
@@ -206,20 +214,28 @@ filename with the extension changed to ``.kmz``.
 
 Example:
 
-.. code-block:: bash
+.. ifconfig:: is_geo2grid
 
-    gtiff2kmz.sh GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.tif
+    .. code-block:: bash
 
+        gtiff2kmz.sh GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.tif
+
+.. ifconfig:: not is_geo2grid
+
+    .. code-block:: bash
+
+        gtiff2kmz.sh noaa20_viirs_false_color_20221011_174112_wgs84_fit.tif
 
 .. _util_script_fireoverlay:
 
 Overlay GeoTIFF Images
 ----------------------
 
-The ``overlay.sh`` script can be used to overlay one image (ex. VIIRS EDR
-Active Fires) on top of another image (ex. VIIRS Adaptive DNB or True Color).
-This script uses GDAL's ``gdal_merge.py`` utility underneath, but converts
-everything to RGBA format first for better consistency in output images.
+The ``overlay.sh`` script can be used to overlay one GeoTIFF image 
+(ex. VIIRS EDR Active Fires) on top of another image (ex. VIIRS 
+Adaptive DNB or True Color).  This script uses GDAL's ``gdal_merge.py`` 
+utility underneath, but converts everything to RGBA format first 
+for better consistency in output images.
 
 .. code-block:: bash
 
