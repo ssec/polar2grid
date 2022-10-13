@@ -156,7 +156,10 @@ extensions = [
 # API docs
 apidoc_module_dir = "../../polar2grid"
 apidoc_output_dir = "dev_guide/api"
-apidoc_excluded_paths = []
+if is_geo2grid:
+    apidoc_excluded_paths = ["readers/amsr2_l1b.py"]
+else:
+    apidoc_excluded_paths = []
 apidoc_separate_modules = True
 apidoc_extra_args = ["-P"]
 
