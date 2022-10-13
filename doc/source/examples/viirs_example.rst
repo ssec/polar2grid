@@ -21,8 +21,8 @@ List the products that can be created from your VIIRS SDR dataset:
 
 This will provide a complete list of products that can be created
 including `Satpy` and local `Custom` products.  Please note that the
-`Satpy` products are available but are not officially supported.****
-Need better words here. ****************
+`Satpy` products are available but are not officially supported.**
+Need better words here. **
 
 To create VIIRS GeoTIFF files of all default products (including true
 and false color) found in your data set
