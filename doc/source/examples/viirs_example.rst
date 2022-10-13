@@ -44,7 +44,7 @@ Create only true color and false color GeoTIFFs with a black background (no alph
     polar2grid.sh -r viirs_sdr -w geotiff -p true_color false_color --fill-value 0 -f <path_to_sdr_files>
 
 Create a true color image from a S-NPP VIIRS pass acquired on 19 September 2022, 17:53 UTC,
-in Lambert Conic Conformal (LCC) projection:
+in Lambert Conformal Conic (LCC) projection:
 
 .. code-block:: bash
 
@@ -59,7 +59,7 @@ in Lambert Conic Conformal (LCC) projection:
     :align: center
     :class: with-border
 
-    VIIRS True color image in Lambert Conic Conformal (LCC) projection (noaa20_viirs_true_color_20220919_175331_lcc_fit.tif).
+    VIIRS True color image in Lambert Conformal Conic (LCC) projection (noaa20_viirs_true_color_20220919_175331_lcc_fit.tif).
 
 .. raw:: latex
 

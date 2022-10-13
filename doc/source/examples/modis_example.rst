@@ -17,7 +17,7 @@ Find the options available when creating MODIS AWIPS files:
 
 List the products that can be created from your MODIS L1B dataset.  For
 the new Sectorized Cloud and Moisture Imagery (SCMI) AWIPS writer, include
-the sector name (see Section 6.1.3) either Lambert Conic Conformal (LCC),
+the sector name (see Section 6.1.3) either Lambert Conformal Conic (LCC),
 Pacific, Mercator, or Polar:
 
     ``polar2grid.sh modis scmi --sector-id LCC --list-products -f <path_to_files>``
