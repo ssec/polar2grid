@@ -268,6 +268,7 @@ if is_geo2grid:
 else:
     exclude_patterns.extend(
         [
+            "compositors.rst",
             "data_access.rst",
             "examples/abi_example.rst",
             "examples/ahi_example.rst",

@@ -64,7 +64,7 @@ file to be used.  Once this rescaling has been done, colormap files can be
 found in ``$POLAR2GRID_HOME/colormaps`` which can then be applied using the
 the `add_colormap.sh` script.
 
-See the example section :doc:`../examples/amsr2_example`
+See the example section :doc:`../../examples/amsr2_example`
 for more information on generating these NRL-like PNGs.
 
 """

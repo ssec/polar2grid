@@ -65,7 +65,7 @@ in Lambert Conformal Conic (LCC) projection:
 
     \newpage
 
-Add coastlines,borders and latitude/longitude grid lines to the image, and write the output to the file "myfile.png" ** Make sure this works with latest P2G **:
+Add coastlines,borders and latitude/longitude grid lines to the image, and write the output to the file "myfile.png" **Make sure this works with latest P2G**:
 
 .. code-block:: bash
 
