@@ -19,7 +19,6 @@ using the  ``--list-products`` option.
     :polar2grid:viirs_sdr
     :polar2grid:viirs_l1b
     :polar2grid:modis_l1b
-    :polar2grid:modis_l2
     :polar2grid:avhrr
     :polar2grid:amsr2_l1b
     :polar2grid:nucaps
@@ -27,7 +26,6 @@ using the  ``--list-products`` option.
     :polar2grid:acspo
     :polar2grid:clavrx
     :polar2grid:viirs_edr_active_fires
-    :polar2grid:virr_l1b
     :polar2grid:mersi2_l1b
     :geo2grid:abi_l1b
     :geo2grid:abi_l2_nc

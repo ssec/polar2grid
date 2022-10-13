@@ -18,16 +18,16 @@ Execution Examples
 
 .. code-block:: bash
 
-    polar2grid.sh -r avhrr_l1b_aapp -w awips_tiled --list-products -f /l1b/hrpt_noaa18_20170202_2242_60321.l1b
+    polar2grid.sh -r avhrr_l1b_aapp -w awips_tiled --list-products -f /l1b/
 
-    polar2grid.sh -r avhrr -w geotiff -f ../input/hrpt_M01_20170202_0227_22708.l1b
+    polar2grid.sh -r avhrr_l1b_aapp -w geotiff -f ../input/hrpt_noaa19_20220917_1236_70145.l1b
 
-    polar2grid.sh -r avhrr -w geotiff -p band1_vis band4_bt -f /data/hrpt_noaa19_20170202_2042_41144.l1b
+    polar2grid.sh -r avhrr -w geotiff -p band3a_vis band4_bt -f /data/hrpt_M03*.l1b
 
-    polar2grid.sh -r avhrr -w awips_tiled -p band3a_vis -g lcc_conus_1km --sector-id LCC --letters --compress -f hrpt_M01_20170202_1457_22716.l1b
+    polar2grid.sh -r avhrr -w awips_tiled -p band3b_bt -g lcc_conus_1km --sector-id LCC --letters --compress -f hrpt_noaa18_20220918_1708_89324.l1b
 
-    polar2grid.sh -r avhrr -w awips_tiled --grid-coverage=0 -g polar_alaska_1km --sector-id Polar --letters --compress -f /avhrr
+    polar2grid.sh -r avhrr_l1b_aapp -w awips_tiled --num-workers 6 --grid-coverage .002 -g polar_alaska_1km --sector-id Polar --letters --compress -f /avhrr
 
-    polar2grid.sh -r avhrr -w hdf5 --add-geolocation --grid-configs /home/avhrr/grids/local_grid.conf -g my_grid  -f ../input/hrpt_*.l1b
+    polar2grid.sh -r avhrr -w hdf5 --add-geolocation --grid-configs /home/avhrr/grids/local_grid.yaml -g my_grid  -f ../input/hrpt_M01*.l1b
 
-    polar2grid.sh -r avhrr -w binary -p band1_vis band4_bt -g lcc_eu -f /data/avhrr/metoba
+    polar2grid.sh -r avhrr -w binary --num-workers 8 -p band1_vis band4_bt -g lcc_eu -f /data/avhrr/metoba

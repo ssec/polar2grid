@@ -31,7 +31,10 @@
 Satellite Processing Package (CSPP) Clouds from AVHRR Extended
 (CLAVR-x) processing system software. The CLAVR-x reader
 supports CSPP CLAVR-x product files created from VIIRS, MODIS
-and AVHRR imaging sensors in the native HDF4 format.
+and AVHRR imaging sensors in the native HDF4 format. For more
+information on this product, please visit the CSPP LEO
+website: `https://cimss.ssec.wisc.edu/cspp/`.
+
 The reader can be specified with the ``polar2grid.sh``
 command using the ``clavrx`` reader name.
 The CLAVR-x reader provides the following products, which include

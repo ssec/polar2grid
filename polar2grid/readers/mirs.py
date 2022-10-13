@@ -22,22 +22,25 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The MiRS frontend extracts data from files created by the Community
 Satellite Processing Package (CSPP) direct broadcast version of the
-NOAA/STAR Microwave Integrated Retrieval System (MIRS). The software
-supports the creation of atmospheric profile and surface parameters from
+NOAA/STAR Microwave integrated Retrieval System (MiRS). The software
+supports the creation of atmospheric and surface parameters from
 ATMS, AMSU-A, and MHS microwave sensor data. For more information
-on this product, please see the
+on this product, please visit the CSPP LEO website:
+`https://cimss.ssec.wisc.edu/cspp/`.
 
-When executed on Suomi-NPP Advanced Technology Microwave Sounder (ATMS)
-MIRS product files, a limb correction algorithm is applied for
+When executed on  Advanced Technology Microwave Sounder (ATMS)
+MiRS product files, a limb correction algorithm is applied for
 brightness temperatures reprojections for each of the 22 spectral bands.
 The correction software was provided by Kexin Zhang of NOAA STAR, and
 is applied as part of the MIRS ATMS Polar2Grid execution.
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
-Averaging resampling. The ``--fornav-D`` option is set to 100 and the
-``--fornav-d`` option is set to 1.
+Averaging resampling. The ``--weight-delta-max`` option is set to 100 and the
+``--weight-distance-max`` option is set to 1.
 
-The frontend offers the following products:
+The ACSPO output product format is NetCDF4. The frontend can be
+specified with the `polar2grid.sh` command using the `mirs`
+frontend name.The frontend offers the following products:
 
     +--------------------+----------------------------------------------------+
     | Product Name       | Description                                        |
@@ -261,6 +264,6 @@ def add_reader_argument_groups(
         dest="products",
         action=ExtendConstAction,
         const=["all_bt_channels"],
-        help="Add all I-band raw products to list of products",
+        help="Add all bands to list of products",
     )
     return None, None

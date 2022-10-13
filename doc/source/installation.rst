@@ -8,9 +8,9 @@ includes a python runtime and all of the necessary third-party software
 to run the features provided by |project|.
 The tarball uses bash scripts for conveniently
 calling the python software or utilities provided by third-party
-vendors. The software bundle is only supported on CentOS6-compatible systems,
-but may work on other Linux systems as well.
-There are other ways to install
+vendors.  The software bundle is only supported on CentOS-7.9 compatible systems,
+but has also been tested on Rocky Linux 8.5 and may work on other
+compatible Linux 64-bit operating systems as well.  There are other ways to install
 |project| on other operating systems, but the instructions to do so are
 beyond the scope of this documentation.
 
@@ -76,9 +76,9 @@ beyond the scope of this documentation.
 
     .. code-block:: bash
 
-        tar xf CSPP_POLAR2GRID_V2.3.tar.gz
+        tar xf CSPP_POLAR2GRID_V3.0.tar.gz
 
-    This will create a Polar2Grid software bundle directory, ``polar2grid_v_2_3``.
+    This will create a Polar2Grid software bundle directory, ``polar2grid_v_3_0``.
     To simplify calling scripts included in the bundle the following line should
     be added to your ``.bash_profile``:
 
@@ -104,7 +104,7 @@ beyond the scope of this documentation.
 .. note::
 
     A one-time initialization process is performed the first time any of
-    the bash scripts is run. The extracted directory can *NOT* be moved
+    the bash scripts are run. The extracted directory can *NOT* be moved
     after this is performed. In a shared user installation (multiple users
     running the same installation), the user that extracted the tarball
     should run a script to perform this initialization before any other
@@ -142,7 +142,7 @@ See :doc:`getting_started` for more information on running |project|.
 
     .. code-block:: bash
 
-        CSPP_POLAR2GRID_V2.3_TEST_DATA.tar.gz
+        CSPP_POLAR2GRID_V3.0_TEST_DATA.tar.gz
 
     The test data should be unpacked in a directory separate from the |project|
     installation:
@@ -150,7 +150,7 @@ See :doc:`getting_started` for more information on running |project|.
     .. code-block:: bash
 
         cd $HOME
-        tar xf CSPP_POLAR2GRID_V2.3_TEST_DATA.tar.gz
+        tar xf CSPP_POLAR2GRID_V3.0_TEST_DATA.tar.gz
 
     This will create a ``polar2grid_test`` directory containing the test input,
     output, and verification scripts for both MODIS and VIIRS instruments.

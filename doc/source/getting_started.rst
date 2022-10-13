@@ -12,9 +12,9 @@ Basic Usage
 
     The most common use of |project| is to convert satellite data files in to
     gridded image files.
-    The following command can be used to create GeoTIFF single band images of
-    all S-NPP VIIRS imager SDR calibrated data with accompanying geolocation
-    files found in ``<path to files>/<list of files>``.
+    As an example, the following command can be used to create GeoTIFF single
+    band images of all S-NPP VIIRS imager SDR calibrated data with accompanying
+    geolocation files found in ``<path to files>/<list of files>``.
 
     .. code-block:: bash
 
@@ -34,7 +34,8 @@ Basic Usage
     are provided to |script_literal| they will be aggregated together.
     By default the above command resamples the data to a Google Earth compatible
     Platte Carrée projected grid at ~600m resolution, but this can be changed
-    with command line arguments.
+    with command line arguments. The GeoTIFF contains 2 bands, including an
+    Alpha band.
 
 .. ifconfig:: is_geo2grid
 
@@ -83,32 +84,35 @@ are always available:
 
     .. rst-class:: full_width_table
 
+        -r                    Instrument input files to read from.
+        -w                    Output format to write to.
         -h                    Print helpful information.
-        --list-products       List all possible product options to use with -p from the given input data.
+        --list-products       List all possible product options to use with -p from the given input data and exit.
+        --list-products-all   List available polar2grid products options and custom/Satpy products and exit.
         -p                    List of products you want to create.
         -f                    Input files and paths.
         --grid-coverage       Fraction of grid that must be covered by valid data. Default is 0.1.
         -g <grid_name>        Specify the output grid to use. Default is the Platte Carrée projection, also
                               known as the wgs84 coordinate system. See :doc:`grids` and :doc:`custom_grids`
                               for information on possible values.
-        --num-workers         Specify number of parallel processing worker threads to use (default: 4)
-        --progress            Display a timed progress bar to show processing progress
+        --num-workers NUM_WORKERS   Specify number of worker threads to use (Default: 4).
+        --progress            Show processing progress bar (Not recommended for logged output).
         -v                    Print detailed log information.
 
     Examples:
 
     .. code-block:: bash
 
-        polar2grid.sh modis gtiff --list-products -f <path to files>/<list of files>
+        polar2grid.sh -r viirs_sdr -w geotiff -p i01 dynamic_dnb -g polar_alaska_300 --grid-coverage=.25 -v -f <path to files>
 
-        polar2grid.sh viirs gtiff -p i01 adaptive_dnb -g polar_alaska_300 --grid-coverage=.25 -v -f <path to files>
+        polar2grid.sh -r modis_l1b -w geotiff --list-products -f <path to files>/<list of files>
 
 .. ifconfig:: is_geo2grid
 
     .. rst-class:: full_width_table
 
-        -r 	 	      Instrument input files to read from (choose from abi_l1b, ahi_hsd, and ahi_hrit).
-        -w  		      Output format to write to (Currently only option is geotiff).
+        -r 	 	              Instrument input files to read from.
+        -w  		          Output format to write to (Currently only option is geotiff).
         -h                    Print helpful information.
         --list-products       List all possible product options to use with -p from the given input data.
 
@@ -118,8 +122,8 @@ are always available:
                               See :doc:`grids` and :doc:`custom_grids` for information on other possible values.
         --cache-dir <dir>     Directory to store resampling intermediate results between executions.
                               Not used with 'native' resampling method.
-        --num-workers         Specify number of parallel processing worker threads to use (default: 4)
-        --progress            Display a timed progress bar to show processing progress
+        --num-workers NUM_WORKERS   Specify number of worker threads to use (Default: 4).
+        --progress            Show processing progress bar (Not recommended for logged output).
 
         --ll-bbox <lonmin latmin lonmax latmax>    Subset input data to the bounding coordinates specified.
 
@@ -158,7 +162,7 @@ To access these features provide the "reader" and "writer" names to the
 
     .. code-block:: bash
 
-        $POLAR2GRID_HOME/bin/polar2grid.sh <reader> <writer> --list-products <options> -f /path/to/files
+        $POLAR2GRID_HOME/bin/polar2grid.sh -r <reader> -w <writer> --list-products <options> -f /path/to/files
 
 .. ifconfig:: is_geo2grid
 

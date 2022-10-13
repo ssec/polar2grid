@@ -46,15 +46,18 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.basic_overlay_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.advanced_overlay.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/overlay/npp_viirs_true_color_20170305_193251_lcc_fit_overlay.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/images_basic/npp_viirs_true_color_20170305_193251_lcc_fit.jpg",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/images_basic/noaa20_viirs_true_color_20220919_175331_lcc_fit.jpg",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/overlay/noaa20_viirs_true_color_20220919_175331_lcc_fit_overlay.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/dnb/VIIRS_DNB_Enhancement_Comparison.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/images_basic/npp_viirs_true_color_20170319_183246_miami.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/images_basic/terra_modis_false_color_20170319_163000_miami.jpg",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/modis/images_basic/terra_modis_false_color_20170319_163000_miami_p2g_v3.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/SSEC_AWIPS_aqua_modis_bt28_211e_20170308_181800.nc.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/SSEC_AWIPS_aqua_modis_vis02_211e_20170308_181800.nc.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit_color.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/merge/VIIRS_False_Color_Side_by_Side_Example_P2G.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/overlay/VIIRS_true_color_in_google_earth.jpg",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/images_basic/noaa20_viirs_true_color_20220919_175331_lcc_fit_in_google_earth.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/merge/my_false_color.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_true_color_awips_20170308_1818.png",
     "https://www.ssec.wisc.edu/~davidh/polar2grid/scmi_grids/scmi_grid_LCC.png",
@@ -68,12 +71,15 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/dnb/HNCC_DNB_Band_Example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_true_color_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_vis02_example.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/VIIRS_M16_ACSPO_SST_composite_example.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_wcolor.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/VIIRS_I02_ACSPO_SST_composite_example.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes_wcolor.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes_rescaled_wcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor_colortable_resize.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_final_resize.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/amsr2/gcom-w1_amsr2_btemp_89.0ah_20220910_233500_wgs84_fit.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/amsr2/gcom-w1_amsr2_btemp_89.0ah_20220910_233500_wgs84_lcc_fit_rescaled_and_colorized.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.jpg",
@@ -150,7 +156,10 @@ extensions = [
 # API docs
 apidoc_module_dir = "../../polar2grid"
 apidoc_output_dir = "dev_guide/api"
-apidoc_excluded_paths = []
+if is_geo2grid:
+    apidoc_excluded_paths = ["readers/amsr2_l1b.py"]
+else:
+    apidoc_excluded_paths = []
 apidoc_separate_modules = True
 apidoc_extra_args = ["-P"]
 
@@ -262,6 +271,7 @@ if is_geo2grid:
 else:
     exclude_patterns.extend(
         [
+            "compositors.rst",
             "data_access.rst",
             "examples/abi_example.rst",
             "examples/ahi_example.rst",
@@ -445,6 +455,7 @@ if is_geo2grid:
     ]
 else:
     latex_appendices = [
+        # "version_changes",
         "misc_recipes",
         "design_overview",
         "viirs_day_night_band",
