@@ -12,8 +12,8 @@ Basic Usage
 
     The most common use of |project| is to convert satellite data files in to
     gridded image files.
-    As an example, the following command can be used to create GeoTIFF single 
-    band images of all S-NPP VIIRS imager SDR calibrated data with accompanying 
+    As an example, the following command can be used to create GeoTIFF single
+    band images of all S-NPP VIIRS imager SDR calibrated data with accompanying
     geolocation files found in ``<path to files>/<list of files>``.
 
     .. code-block:: bash
@@ -34,7 +34,7 @@ Basic Usage
     are provided to |script_literal| they will be aggregated together.
     By default the above command resamples the data to a Google Earth compatible
     Platte Carrée projected grid at ~600m resolution, but this can be changed
-    with command line arguments. The GeoTIFF contains 2 bands, including an 
+    with command line arguments. The GeoTIFF contains 2 bands, including an
     Alpha band.
 
 .. ifconfig:: is_geo2grid

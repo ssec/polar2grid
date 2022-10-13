@@ -38,7 +38,7 @@ This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--weight-delta-max`` parameter is set to 40 and the
 ``--weight-distance-max`` parameter is set to 1.
 
-The frontend can be specified with the ``polar2grid.sh`` command using 
+The frontend can be specified with the ``polar2grid.sh`` command using
 the ``mersi2_l1b`` frontend name. The MERSI2 frontend provides the following products:
 
 +---------------------------+-----------------------------------------------------+-------------------------+

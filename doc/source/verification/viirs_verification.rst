@@ -18,8 +18,8 @@ at 18:32 UTC. In this test, the Polar2Grid software
 is using the example configuration file
 (${POLAR2GRID_HOME}/grid_configs/grid_example.yaml) and the lambert
 conformal conic (lcc) “miami” grid definition entry located
-within it. We will create one true and one false color image at 
-300 m resolution, 750 lines x 1000 elements centered on the US city of 
+within it. We will create one true and one false color image at
+300 m resolution, 750 lines x 1000 elements centered on the US city of
 Miami in the state of Florida.
 
 The creation of the true and false color images includes the Atmospheric
@@ -32,7 +32,7 @@ other calculated coefficients. Although this may result in the
 "sharpest" output resolution image, the user should be aware that
 with reprojecting VIIRS terrain corrected imagery this may lead to
 black missing data sections in regions of varying terrains, especially
-at higher view angles.  That is why the default `--weight-distance-max` 
+at higher view angles.  That is why the default `--weight-distance-max`
 value is "2".
 
 The processing should run in less than 2 minutes and create 2 atmospherically
@@ -52,7 +52,7 @@ UW/SSEC, execute the following commands:
     p2g_compare.sh output work
 
 This script compares the values of all bands in the GeoTIFF file
-for the true and false color high resolution images. The verification 
+for the true and false color high resolution images. The verification
 text string from our test system is shown below.
 
 .. code-block:: bash

@@ -23,8 +23,8 @@
 """The ACSPO reader is for reading files created by the NOAA Community
 Satellite Processing Package (CSPP) Advanced Clear-Sky
 Processor for Oceans (ACSPO) system software. The ACSPO reader supports
-product files created from VIIRS, MODIS and AVHRR imaging sensors. 
-For more information on this product, please visit the CSPP LEO 
+product files created from VIIRS, MODIS and AVHRR imaging sensors.
+For more information on this product, please visit the CSPP LEO
 website: `https://cimss.ssec.wisc.edu/cspp/`.
 
 The ACSPO output product format is NetCDF4.  The frontend can be specified

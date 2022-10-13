@@ -23,7 +23,7 @@ Examples:
 
     polar2grid.sh -r modis_l1b -w geotiff --list-products-all -f /data
 
-    polar2grid.sh -r modis_l1b -w geotiff -p true_color false_color -f ../l1b/a1.22261.1857.250m.hdf ../l1b/a1.22261.1857.500m.hdf  ../l1b/a1.22261.1857.1000m.hdf ../l1b/a1.22261.1857.geo.hdf  
+    polar2grid.sh -r modis_l1b -w geotiff -p true_color false_color -f ../l1b/a1.22261.1857.250m.hdf ../l1b/a1.22261.1857.500m.hdf  ../l1b/a1.22261.1857.1000m.hdf ../l1b/a1.22261.1857.geo.hdf
 
     polar2grid.sh -r modis_l1b -w geotiff -p vis01 -f terra/t1.22061.1654.250m.hdf terra/t1.22061.1654.geo.hdf
 

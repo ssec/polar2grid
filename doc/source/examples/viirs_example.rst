@@ -20,11 +20,11 @@ List the products that can be created from your VIIRS SDR dataset:
     polar2grid.sh -r viirs_sdr -w geotiff --list-products-all -f <path_to_sdr_files>
 
 This will provide a complete list of products that can be created
-including `Satpy` and local `Custom` products.  Please note that the 
+including `Satpy` and local `Custom` products.  Please note that the
 `Satpy` products are available but are not officially supported.****
 Need better words here. ****************
 
-To create VIIRS GeoTIFF files of all default products (including true 
+To create VIIRS GeoTIFF files of all default products (including true
 and false color) found in your data set
 and reprojected in default Platte Carrée projection using the default
 4 workers:

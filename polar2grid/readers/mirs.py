@@ -25,7 +25,7 @@ Satellite Processing Package (CSPP) direct broadcast version of the
 NOAA/STAR Microwave integrated Retrieval System (MiRS). The software
 supports the creation of atmospheric and surface parameters from
 ATMS, AMSU-A, and MHS microwave sensor data. For more information
-on this product, please visit the CSPP LEO website: 
+on this product, please visit the CSPP LEO website:
 `https://cimss.ssec.wisc.edu/cspp/`.
 
 When executed on  Advanced Technology Microwave Sounder (ATMS)
@@ -38,8 +38,8 @@ This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--weight-delta-max`` option is set to 100 and the
 ``--weight-distance-max`` option is set to 1.
 
-The ACSPO output product format is NetCDF4. The frontend can be 
-specified with the `polar2grid.sh` command using the `mirs` 
+The ACSPO output product format is NetCDF4. The frontend can be
+specified with the `polar2grid.sh` command using the `mirs`
 frontend name.The frontend offers the following products:
 
     +--------------------+----------------------------------------------------+

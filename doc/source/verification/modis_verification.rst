@@ -8,7 +8,7 @@ shown in Section 2.2 and execute the following commands:
 
     cd polar2grid_test/modis
     mkdir work
-    cd work 
+    cd work
     polar2grid.sh -r modis -w geotiff -p true_color false_color --fill-value 0 \
       --grid-configs ${POLAR2GRID_HOME}/grid_configs/grid_example.yaml -g miami -f ../input/
 

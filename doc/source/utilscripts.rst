@@ -231,10 +231,10 @@ Example:
 Overlay GeoTIFF Images
 ----------------------
 
-The ``overlay.sh`` script can be used to overlay one GeoTIFF image 
-(ex. VIIRS EDR Active Fires) on top of another image (ex. VIIRS 
-Adaptive DNB or True Color).  This script uses GDAL's ``gdal_merge.py`` 
-utility underneath, but converts everything to RGBA format first 
+The ``overlay.sh`` script can be used to overlay one GeoTIFF image
+(ex. VIIRS EDR Active Fires) on top of another image (ex. VIIRS
+Adaptive DNB or True Color).  This script uses GDAL's ``gdal_merge.py``
+utility underneath, but converts everything to RGBA format first
 for better consistency in output images.
 
 .. code-block:: bash

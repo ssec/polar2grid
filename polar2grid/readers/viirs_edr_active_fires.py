@@ -28,18 +28,18 @@ Files supported usually have the following naming schemes:
    AFIMG_j01_d20221006_t2101052_e2102297_b25304_c20221006214545032016_cspp_dev.nc and/or,
    AFMOD_npp_d20221006_t2017005_e2018247_b56701_c20221006205259096916_cspp_dev.nc
 
-For more information about the this CSPP product, please 
+For more information about the this CSPP product, please
 visit the CSPP LEO website: `https://cimss.ssec.wisc.edu/cspp/`.
 
-This reader's default resampling algorithm ``--method`` is 
-``nearest`` for Nearest Neighbor resampling. The frontend can 
-be specified with the ``polar2grid.sh`` command using the 
-``viirs_edr_active_fires`` frontend name. The VIIRS Active Fire 
+This reader's default resampling algorithm ``--method`` is
+``nearest`` for Nearest Neighbor resampling. The frontend can
+be specified with the ``polar2grid.sh`` command using the
+``viirs_edr_active_fires`` frontend name. The VIIRS Active Fire
 frontend provides the following products:
 
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
-+===========================+=====================================================+ 
++===========================+=====================================================+
 | confidence_cat            | Fire Confidence Category   (AFIMG Resolution Only)  |
 +---------------------------+-----------------------------------------------------+
 | T4                        | I-Band 4 Temperature       (AFIMG Resolution Only)  |

@@ -29,9 +29,9 @@
 #     david.hoese@ssec.wisc.edu
 """The VIIRS Level 1B Reader operates on NASA Level 1B (L1B) NetCDF files.
 
-The files are from the Visible/Infrared Imager Radiometer Suite (VIIRS) 
-instrument. The VIIRS L1B reader analyzes the user provided filenames 
-to determine if a file can be used. Files usually have the following 
+The files are from the Visible/Infrared Imager Radiometer Suite (VIIRS)
+instrument. The VIIRS L1B reader analyzes the user provided filenames
+to determine if a file can be used. Files usually have the following
 naming scheme (example from the SNPP VIIRS instrument)::
 
     VL1BI_snpp_d20160101_t185400_c20160301041812.nc

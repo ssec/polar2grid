@@ -107,15 +107,15 @@ The I01-I03 and M01-M11 bands are visible reflectance channels on the VIIRS
 instrument. Besides the basic calibration necessary to
 convert the radiance values to reflectances, the data is passed through
 a square root function before being written to a grayscale image. The
-square root operation has the effect of balancing the bright and dark 
+square root operation has the effect of balancing the bright and dark
 regions of the image.
 
 Infrared I-Bands 04-05 and M-Bands 12-16
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The I04-I05 and M12-M16 bands are all brightness temperature 
-(infrared (IR)) channels. To produce a grayscale image with dark land 
-and white clouds, the data is inverted and scaled linearly in two 
-segments. The first segment is from 163K to 242K, the second 
-242K to 330K. This is a common scaling used by the National 
+The I04-I05 and M12-M16 bands are all brightness temperature
+(infrared (IR)) channels. To produce a grayscale image with dark land
+and white clouds, the data is inverted and scaled linearly in two
+segments. The first segment is from 163K to 242K, the second
+242K to 330K. This is a common scaling used by the National
 Weather Service (NWS) for their AWIPS visualization clients.
