@@ -533,9 +533,10 @@ def _convert_table_to_cmap_or_default_bw(band_dtype, band_ct, band_count):
     # otherwise assume it is using 0 as a fill value
     start_idx = 1 if band_count == 1 else 0
     if band_ct is None:
-        # grayscale colormap
-        # NOTE: the comma is needed to make this a tuple
-        color_iter = ((idx / float(max_val), (idx / max_val,) * 3 + (1.0,)) for idx in range(max_val))
+        # all black colormap
+        # don't assume anything about the colors or scaling of the image if the
+        # user didn't provide enough information
+        color_iter = ((idx / float(max_val), (0.0, 0.0, 0.0, 1.0)) for idx in range(max_val))
         color_iter = list(color_iter)
     else:
         color_iter = ((idx / float(max_val), color) for idx, color in sorted(band_ct.items())[start_idx:])
