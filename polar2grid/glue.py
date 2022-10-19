@@ -423,7 +423,7 @@ def _prepare_initial_logging(arg_parser, glue_name: str) -> bool:
 def _add_extra_config_paths(extra_paths: list[str]):
     config_path = satpy.config.get("config_path")
     LOG.info(f"Adding additional configuration paths: {extra_paths}")
-    satpy.config.set(config_path=extra_paths + config_path)
+    satpy.config.set(config_path=config_path + extra_paths)
 
 
 def _check_valid_config_paths(extra_config_paths: Iterable):
