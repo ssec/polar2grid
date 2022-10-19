@@ -95,7 +95,7 @@ class BaseFilter:
         if not remaining_ids:
             return None
         new_scn = scene.copy(remaining_ids)
-        new_scn._wishlist = scene.wishlist.copy()
+        new_scn._wishlist = scene.wishlist.copy() - set(filtered_ids)
         return new_scn
 
     @staticmethod

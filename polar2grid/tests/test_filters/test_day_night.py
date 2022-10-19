@@ -66,3 +66,29 @@ def test_daynight_filter_filter_cases(filter_cls, kwargs, viirs_sdr_i01_data_arr
     new_scn = filter.filter_scene(scn)
     assert new_scn is None  # all filtered
     assert "I01" in scn
+
+
+def test_daynight_filter_basic_composite_case(viirs_sdr_i04_data_array):
+    """Test that composites are removed from the wishlist and not recomputed after resampling.
+
+    See https://github.com/ssec/polar2grid/issues/544.
+
+    """
+    from polar2grid.utils.config import add_polar2grid_config_paths
+
+    add_polar2grid_config_paths()
+
+    scn = Scene()
+    scn["I04"] = viirs_sdr_i04_data_array
+    i05_data_arr = viirs_sdr_i04_data_array.copy(deep=True)
+    i05_data_arr.attrs["name"] = "I05"
+    scn["I05"] = i05_data_arr
+    scn.load(["ifog"])
+
+    filter = NightCoverageFilter({"standard_name": "temperature_difference"}, night_fraction=0.2)
+    new_scn = filter.filter_scene(scn)
+    assert new_scn is not None
+    assert "ifog" not in new_scn
+
+    resampled_scn = new_scn.resample(resampler="native")
+    assert "ifog" not in resampled_scn
