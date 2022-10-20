@@ -75,6 +75,8 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes_wcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes_rescaled_wcolor.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes_rescaled_wcolor_colortable_resize.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes_sst_final_resize.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor_colortable_resize.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_final_resize.png",
