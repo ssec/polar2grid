@@ -28,15 +28,15 @@ dependencies:
   - pyproj>=3.1.0
   - pyresample>=1.25.0
   - pyshp
-  - pyspectral>=0.12.0
+  - pyspectral>=0.12.2
   - python=3.10
-  - python-geotiepoints>=1.4.1
+  - python-geotiepoints>=1.5.0
   - pyyaml
   - rasterio>=1.2.10
   - requests
   - setuptools
   - six
-  - trollimage>=1.18.3
+  - trollimage>=1.19.0
   - trollsift>=0.4.0
   - scipy
   - zarr
