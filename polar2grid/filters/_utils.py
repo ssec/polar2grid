@@ -56,6 +56,9 @@ def boundary_for_area(area_def: PRGeometry) -> Boundary:
         freq_fraction = 0.05 if isinstance(area_def, SwathDefinition) else 0.30
         try:
             adp = AreaDefBoundary(area_def, frequency=int(area_def.shape[0] * freq_fraction))
+            contour_lons, contour_lats = adp.contour()
+            if np.isnan(contour_lons).any() or np.isnan(contour_lats).any():
+                raise ValueError("Polygon vertices contain NaNs")
         except ValueError:
             if not isinstance(area_def, SwathDefinition):
                 logger.error("Unable to generate bounding geolocation polygon")
