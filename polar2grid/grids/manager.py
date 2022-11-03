@@ -62,22 +62,16 @@ def get_proj4_info(proj4_str):
     parts = [x.replace("+", "") for x in proj4_str.split(" ")]
     if "no_defs" in parts:
         parts.remove("no_defs")
-    if "over" in parts:
-        add_over = True
-        parts.remove("over")
-    else:
-        add_over = False
 
-    proj4_dict = dict(p.split("=") for p in parts)
-    # Convert numeric parameters to floats
+    proj4_dict = dict(p.split("=") if "=" in p else (p, True) for p in parts)
+    _convert_numeric_parameters_to_floats(proj4_dict)
+    return proj4_dict
+
+
+def _convert_numeric_parameters_to_floats(proj4_dict):
     for k in ["lat_0", "lat_1", "lat_2", "lat_ts", "lat_b", "lat_t", "lon_0", "lon_1", "lon_2", "lonc", "a", "b", "es"]:
         if k in proj4_dict:
             proj4_dict[k] = float(proj4_dict[k])
-
-    if add_over:
-        proj4_dict["over"] = True
-
-    return proj4_dict
 
 
 def _parse_proj4_str(proj4_str, grid_name):
@@ -90,62 +84,26 @@ def _parse_proj4_str(proj4_str, grid_name):
     return proj4_str, crs
 
 
-def _parse_optional_config_param(str_part, convert_func, unspecified_info=None):
-    static = True
-    if str_part == "None" or str_part == "":
-        if unspecified_info is not None:
-            grid_name, param_name = unspecified_info
-            LOG.warning(f"Grid '{grid_name}' may not process properly due to unspecified {param_name}")
-        static = False
-        param_value = None
-    else:
-        param_value = convert_func(str_part)
-    return static, param_value
-
-
 def parse_proj4_config_line(grid_name, parts):
     proj4_str, crs = _parse_proj4_str(parts[2], grid_name)
+    parts = [None if part in ("None", "") else part for part in parts]
+    is_static = any(part is None for part in parts[3:9])
 
     try:
-        # Some parts can be None, but not all
-        static = True
-        _static, grid_width = _parse_optional_config_param(parts[3], int)
-        static = static and _static
-        _static, grid_height = _parse_optional_config_param(parts[4], int)
-        static = static and _static
-        _static, pixel_size_x = _parse_optional_config_param(parts[5], float, (grid_name, "pixel_size"))
-        static = static and _static
-        _static, pixel_size_y = _parse_optional_config_param(parts[6], float, (grid_name, "pixel size"))
-        static = static and _static
-        _static, xorigin_res = _parse_optional_config_param(parts[7], _parse_meter_degree_param)
-        grid_origin_x, xorigin_is_deg = xorigin_res if xorigin_res is not None else (None, False)
-        static = static and _static
-        _static, yorigin_res = _parse_optional_config_param(parts[8], _parse_meter_degree_param)
-        grid_origin_y, yorigin_is_deg = yorigin_res if yorigin_res is not None else (None, False)
-        static = static and _static
+        grid_width, grid_height = _parse_grid_width_and_height(grid_name, parts[3], parts[4])
+        pixel_size_x, pixel_size_y = _parse_pixel_size_x_y(grid_name, parts[5], parts[6])
+        grid_origin_x, grid_origin_y, grid_units = _parse_origin_x_y(grid_name, parts[7], parts[8], crs)
     except ValueError:
         LOG.error("Could not parse proj4 grid configuration: '%s'" % (grid_name,))
         raise
 
-    if (pixel_size_x is None and pixel_size_y is not None) or (pixel_size_x is not None and pixel_size_y is None):
-        LOG.error("Both or neither pixel sizes must be specified for '%s'" % grid_name)
-        raise ValueError("Both or neither pixel sizes must be specified for '%s'" % grid_name)
-    if (grid_width is None and grid_height is not None) or (grid_width is not None and grid_height is None):
-        LOG.error("Both or neither grid sizes must be specified for '%s'" % grid_name)
-        raise ValueError("Both or neither grid sizes must be specified for '%s'" % grid_name)
-    if (grid_origin_x is None and grid_origin_y is not None) or (grid_origin_x is not None and grid_origin_y is None):
-        LOG.error("Both or neither grid origins must be specified for '%s'" % grid_name)
-        raise ValueError("Both or neither grid origins must be specified for '%s'" % grid_name)
     if grid_width is None and pixel_size_x is None:
         LOG.error("Either grid size or pixel size must be specified for '%s'" % grid_name)
         raise ValueError("Either grid size or pixel size must be specified for '%s'" % grid_name)
-    if xorigin_is_deg != yorigin_is_deg:
-        LOG.error("Grid origin parameters must be in the same units (meters vs degrees)")
-        raise ValueError("Grid origin parameters must be in the same units (meters vs degrees)")
 
     info = {}
     info["grid_kind"] = "proj4"
-    info["static"] = static
+    info["static"] = is_static
     info["proj4_str"] = proj4_str
     info["pixel_size_x"] = pixel_size_x
     info["pixel_size_y"] = pixel_size_y
@@ -153,8 +111,56 @@ def parse_proj4_config_line(grid_name, parts):
     info["grid_origin_y"] = grid_origin_y
     info["grid_width"] = grid_width
     info["grid_height"] = grid_height
-    info["grid_origin_units"] = "degrees" if xorigin_is_deg or crs.is_geographic else "meters"
+    info["grid_origin_units"] = grid_units
     return info
+
+
+def _parse_grid_width_and_height(grid_name, width_part, height_part):
+    grid_width = _parse_optional_config_param(width_part, int)
+    grid_height = _parse_optional_config_param(height_part, int)
+    if _only_one_specified(grid_width, grid_height):
+        LOG.error("Both or neither grid sizes must be specified for '%s'" % grid_name)
+        raise ValueError("Both or neither grid sizes must be specified for '%s'" % grid_name)
+    return grid_width, grid_height
+
+
+def _parse_pixel_size_x_y(grid_name, x_part, y_part):
+    pixel_size_x = _parse_optional_config_param(x_part, float, (grid_name, "pixel_size"))
+    pixel_size_y = _parse_optional_config_param(y_part, float, (grid_name, "pixel size"))
+    if _only_one_specified(pixel_size_y, pixel_size_y):
+        LOG.error("Both or neither pixel sizes must be specified for '%s'" % grid_name)
+        raise ValueError("Both or neither pixel sizes must be specified for '%s'" % grid_name)
+    return pixel_size_x, pixel_size_y
+
+
+def _parse_origin_x_y(grid_name, x_part, y_part, crs):
+    xorigin_res = _parse_optional_config_param(x_part, _parse_meter_degree_param)
+    grid_origin_x, xorigin_is_deg = xorigin_res if xorigin_res is not None else (None, False)
+    yorigin_res = _parse_optional_config_param(y_part, _parse_meter_degree_param)
+    grid_origin_y, yorigin_is_deg = yorigin_res if yorigin_res is not None else (None, False)
+    if _only_one_specified(grid_origin_x, grid_origin_x):
+        LOG.error("Both or neither grid origins must be specified for '%s'" % grid_name)
+        raise ValueError("Both or neither grid origins must be specified for '%s'" % grid_name)
+    if xorigin_is_deg != yorigin_is_deg:
+        LOG.error("Grid origin parameters must be in the same units (meters vs degrees)")
+        raise ValueError("Grid origin parameters must be in the same units (meters vs degrees)")
+    grid_units = "degrees" if xorigin_is_deg or crs.is_geographic else "meters"
+    return grid_origin_x, grid_origin_y, grid_units
+
+
+def _only_one_specified(a, b):
+    only_a_specified = a is not None and b is None
+    only_b_specified = a is None and b is not None
+    return only_a_specified or only_b_specified
+
+
+def _parse_optional_config_param(str_part, convert_func, unspecified_info=None):
+    if str_part is not None:
+        return convert_func(str_part)
+    if unspecified_info is not None:
+        grid_name, param_name = unspecified_info
+        LOG.warning(f"Grid '{grid_name}' may not process properly due to unspecified {param_name}")
+    return None
 
 
 def parse_and_convert_proj4_config_line(grid_name, parts):
@@ -163,8 +169,13 @@ def parse_and_convert_proj4_config_line(grid_name, parts):
     ``parts`` should be every comma-separated part of the line including the ``grid_name``.
     """
     info = parse_proj4_config_line(grid_name, parts)
+    _convert_origin_degrees_to_meters_if_needed(grid_name, info)
+    proj4_dict = get_proj4_info(info["proj4_str"])
+    info.update(**proj4_dict)
+    return info
 
-    # Convert any parameters from degrees to meters (we already made sure both need to be converted above)
+
+def _convert_origin_degrees_to_meters_if_needed(grid_name, info):
     p = Proj(info["proj4_str"])
     if info["grid_origin_units"] == "degrees" and not p.crs.is_geographic:
         meters_x, meters_y = p(info["grid_origin_x"], info["grid_origin_y"])
@@ -182,15 +193,32 @@ def parse_and_convert_proj4_config_line(grid_name, parts):
         LOG.error("Lat/Lon grid '%s' must have its origin in degrees", grid_name)
         raise ValueError("Lat/Lon grid '%s' must have its origin in degrees" % (grid_name,))
 
-    proj4_dict = get_proj4_info(info["proj4_str"])
-    info.update(**proj4_dict)
-    return info
-
 
 def read_grids_config_str(config_str, convert_coords=True):
     grid_information = {}
     this_configs_grids = []
 
+    for parts in _generate_valid_parts_in_config_str(config_str):
+        grid_name = parts[0]
+        # Help the user out by checking if they are adding a grid more than once
+        if grid_name not in this_configs_grids:
+            this_configs_grids.append(grid_name)
+        else:
+            LOG.warning("Grid '%s' is in grid config more than once" % (grid_name,))
+
+        grid_type = parts[1].lower()
+        if grid_type != "proj4":
+            LOG.error("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type, grid_name))
+            raise ValueError("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type, grid_name))
+        if convert_coords:
+            grid_information[grid_name] = parse_and_convert_proj4_config_line(grid_name, parts)
+        else:
+            grid_information[grid_name] = parse_proj4_config_line(grid_name, parts)
+
+    return grid_information
+
+
+def _generate_valid_parts_in_config_str(config_str: str):
     for line in config_str.split("\n"):
         # Skip comments and empty lines
         if not line or line.startswith("#") or line.startswith("\n"):
@@ -203,27 +231,7 @@ def read_grids_config_str(config_str, convert_coords=True):
         if len(parts) != 11 and len(parts) != 9:
             LOG.error("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
             raise ValueError("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
-
-        grid_name = parts[0]
-        # Help the user out by checking if they are adding a grid more than once
-        if grid_name not in this_configs_grids:
-            this_configs_grids.append(grid_name)
-        else:
-            LOG.warning("Grid '%s' is in grid config more than once" % (grid_name,))
-
-        grid_type = parts[1].lower()
-        if grid_type == "gpd":
-            LOG.warning("GPD grids are no longer supported (ignoring grid '%s')", grid_name)
-        elif grid_type == "proj4":
-            if convert_coords:
-                grid_information[grid_name] = parse_and_convert_proj4_config_line(grid_name, parts)
-            else:
-                grid_information[grid_name] = parse_proj4_config_line(grid_name, parts)
-        else:
-            LOG.error("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type, grid_name))
-            raise ValueError("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type, grid_name))
-
-    return grid_information
+        yield parts
 
 
 def read_grids_config(config_filepath, convert_coords=True):
