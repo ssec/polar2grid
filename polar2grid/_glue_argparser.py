@@ -413,7 +413,7 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
     group_1.add_argument(
         "--filter-day-products",
         nargs="?",
-        type=float,
+        type=float_or_false,
         default=filter_dn_products,
         metavar="fraction_of_day",
         help="Don't produce products that require "
@@ -427,7 +427,7 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
     group_1.add_argument(
         "--filter-night-products",
         nargs="?",
-        type=float,
+        type=float_or_false,
         default=filter_dn_products,
         metavar="fraction_of_night",
         help="Don't produce products that require "
@@ -460,6 +460,12 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
         help=argparse.SUPPRESS,
     )
     return (group_1,)
+
+
+def float_or_false(val):
+    if isinstance(val, str) and val.lower() == "false":
+        return False
+    return float(val)
 
 
 def _supported_writers(is_polar2grid: bool = False) -> list[str]:
