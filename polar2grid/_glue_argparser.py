@@ -540,7 +540,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
             type=float,
             help="Maximum distance in grid cells over which "
             'to distribute an input swath pixel (--method "ewa"). '
-            'This is equivalent to the old "--fornav-D" flag.'
+            'This is equivalent to the old "--fornav-D" flag. '
             "Default is 10.0.",
         )
         group_1.add_argument(
@@ -549,7 +549,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
             type=float,
             help="Distance in grid cell units at which to "
             'apply a minimum weight. (--method "ewa"). '
-            'This is equivalent to the old "--fornav-d" flag.'
+            'This is equivalent to the old "--fornav-d" flag. '
             "Default is 1.0.",
         )
         group_1.add_argument(
