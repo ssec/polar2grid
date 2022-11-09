@@ -188,7 +188,7 @@ file will be overwritten by using this command.
 .. code-block:: bash
 
     polar2grid.sh -r acspo -w geotiff --extra-config-path my_rescale.yaml \
-      --grid-coverage 0 --grid-configs my_grid.yaml -g great_lakes \ 
+      --grid-coverage 0 --grid-configs my_grid.yaml -g great_lakes \
       --fill-value 0 -f  viirs/*.nc
 
 The result of applying this rescaling to my image and applying my colormap is shown below.
@@ -241,9 +241,9 @@ with a color bar in Degrees Celsius.
     add_coastlines.sh noaa20_viirs_sst_20220810_184327_great_lakes.tif \
       --add-colorbar --colorbar-text-color "white" \
       --colorbar-units "°C" --colorbar-align bottom --colorbar-min 1.85 \
-      --colorbar-max 31.85 --colorbar-tick-marks 5 --colorbar-text-size=20 \ 
+      --colorbar-max 31.85 --colorbar-tick-marks 5 --colorbar-text-size=20 \
       --colorbar-title "VIIRS ACSPO SST 10 August 2022 18:43 UTC" \
-      --colorbar-height 35 
+      --colorbar-height 35
 
 I can perform a similar conversion of the temperature range to
 Degrees Fahrenheit and create an image with a color bar labeled
@@ -256,7 +256,7 @@ in those units.
       --colorbar-units "°F" --colorbar-align bottom --colorbar-min 35.33 \
       --colorbar-max 89.33 --colorbar-tick-marks 5 --colorbar-text-size=20 \
       --colorbar-title "VIIRS ACSPO SST 10 August 2022 18:43 UTC" \
-      --colorbar-height 35 
+      --colorbar-height 35
 
 I can also use the same add_coastlines.sh command to overlay maps
 including borders and latitiude longitude grids. For example, if

@@ -39,8 +39,8 @@ Create only true color and false color GeoTIFFs with a black background (no alph
 
     polar2grid.sh -r viirs_sdr -w geotiff -p true_color false_color --fill-value 0 -f <path_to_sdr_files>
 
-Create a true color image from a S-NPP VIIRS pass acquired on 
-19 September 2022, 17:53 UTC, in a US Centric Lambert Conformal Conic 
+Create a true color image from a S-NPP VIIRS pass acquired on
+19 September 2022, 17:53 UTC, in a US Centric Lambert Conformal Conic
 (LCC) projection:
 
 .. code-block:: bash
@@ -62,7 +62,7 @@ Create a true color image from a S-NPP VIIRS pass acquired on
 
     \newpage
 
-Add coastlines, borders and latitude/longitude grid lines to the true color image, and write the output to the file "myfile.png". 
+Add coastlines, borders and latitude/longitude grid lines to the true color image, and write the output to the file "myfile.png".
 
 .. code-block:: bash
 
