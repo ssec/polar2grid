@@ -19,10 +19,10 @@ the Polar2Grid software is using the example configuration file
 (${POLAR2GRID_HOME}/grid_configs/grid_example.yaml) and the lambert
 conformal conic (lcc) “miami” grid definition entry located
 within it. The software goes through a number of steps to produce
-the true and false color imagery, include the removal of the atmospheric
+the true and false color imagery, including the removal of the atmospheric
 Rayleigh Scattering, creation of reflectances from the normalized
 radiances, sharpening the image to full resolution and combining
-the 3 bands into on 24-bit output GeoTIFF files. The end result
+the 3 bands into 24-bit output GeoTIFF files. The end result
 is one true and one false color image at
 300 m resolution, 750 lines x 1000 elements centered on the US city of
 Miami in the state of Florida. The processing should run in less than
@@ -39,7 +39,7 @@ UW/SSEC, execute the following commands:
 .. code-block:: bash
 
     cd ..
-    ./p2g_compare.sh output work
+    p2g_compare.sh output work
 
 This script compares the values of all bands in the GeoTIFF file
 for the true and false color high resolution images. The verification
@@ -47,13 +47,12 @@ text string from our test system is shown below.
 
 .. code-block:: bash
 
-    ./p2g_compare.sh output work
+    p2g_compare.sh output work
 
-
-    Comparing output/terra_modis_false_color_20170319_163000_miami.tif to known valid file
-    SUCCESS: 0 pixels out of 750000 pixels are different
-    Comparing output/terra_modis_true_color_20170319_163000_miami.tif to known valid file
-    SUCCESS: 0 pixels out of 750000 pixels are different
+    INFO:__main__:Comparing 'work/terra_modis_false_color_20170319_163000_miami.tif' to known valid file 'output/terra_modis_false_color_20170319_163000_miami.tif'.
+    INFO:__main__:0 pixels out of 2250000 pixels are different
+    INFO:__main__:Comparing 'work/terra_modis_true_color_20170319_163000_miami.tif' to known valid file 'output/terra_modis_true_color_20170319_163000_miami.tif'.
+    INFO:__main__:0 pixels out of 2250000 pixels are different
     All files passed
     SUCCESS
 
