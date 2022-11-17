@@ -52,23 +52,40 @@ def boundary_for_area(area_def: PRGeometry) -> Boundary:
     """Create Boundary object representing the provided area."""
     if getattr(area_def, "is_geostationary", False):
         adp = Boundary(*get_geostationary_bounding_box(area_def, nb_points=100))
-    else:
-        freq_fraction = 0.05 if isinstance(area_def, SwathDefinition) else 0.30
+    elif isinstance(area_def, AreaDefinition):
+        freq_fraction = 0.30
         try:
             adp = AreaDefBoundary(area_def, frequency=int(area_def.shape[0] * freq_fraction))
-            contour_lons, contour_lats = adp.contour()
-            if np.isnan(contour_lons).any() or np.isnan(contour_lats).any():
-                raise ValueError("Polygon vertices contain NaNs")
         except ValueError:
-            if not isinstance(area_def, SwathDefinition):
-                logger.error("Unable to generate bounding geolocation polygon")
-                raise
-
+            logger.error("Unable to generate bounding geolocation polygon")
+            raise
+    else:
+        freq_fraction = 0.05
+        try:
+            adp = SwathDefBoundary(area_def, frequency=int(area_def.shape[0] * freq_fraction))
+        except ValueError:
             logger.warning(
                 "Geolocation data contains invalid bounding values. Computing entire array to get bounds instead."
             )
             adp = _compute_boundary_from_whole_swath(area_def)
     return adp
+
+
+class SwathDefBoundary(AreaBoundary):
+    def __init__(self, swath_def: SwathDefinition, frequency: int = 1):
+        # TODO: This doesn't work for the test cases I wanted it to. A fix will have to be implemented in pyresample
+        lons, lats = swath_def.get_bbox_lonlats()
+        side_masks = [np.isnan(side_lons) | np.isnan(side_lats) for side_lons, side_lats in zip(lons, lats)]
+        good_sides = list(
+            (side_lons[~side_mask], side_lats[~side_mask])
+            for side_mask, side_lons, side_lats in zip(side_masks, lons, lats)
+        )
+        if any(side_lons.size == 0 for side_lons, _ in good_sides):
+            raise ValueError("Swath data didn't have enough valid points to create a bounding polygon")
+        AreaBoundary.__init__(self, *good_sides)
+
+        if frequency != 1:
+            self.decimate(frequency)
 
 
 def _compute_boundary_from_whole_swath(swath_def: SwathDefinition):

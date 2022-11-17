@@ -21,8 +21,11 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Tests day/night filtering."""
-
+import dask.array as da
+import numpy as np
 import pytest
+import xarray as xr
+from pyresample import SwathDefinition
 from satpy import Scene
 
 from polar2grid.filters.day_night import DayCoverageFilter, NightCoverageFilter
@@ -57,15 +60,32 @@ def test_daynight_filter_no_filter_check_cases(filter_cls, criteria, viirs_sdr_i
         (NightCoverageFilter, {"night_fraction": 0.5}),
     ],
 )
-def test_daynight_filter_filter_cases(filter_cls, kwargs, viirs_sdr_i01_data_array):
+@pytest.mark.parametrize("add_nans", [False, True])
+def test_daynight_filter_filter_cases(filter_cls, add_nans, kwargs, viirs_sdr_i01_data_array):
     scn = Scene()
     scn["I01"] = viirs_sdr_i01_data_array  # calculates to ~0.8 day
+    if add_nans:
+        _replace_swath_def_with_some_bounding_nans(scn["I01"])
 
     criteria = {"standard_name": ["toa_bidirectional_reflectance"]}
     filter = filter_cls(criteria, **kwargs)
     new_scn = filter.filter_scene(scn)
     assert new_scn is None  # all filtered
     assert "I01" in scn
+
+
+def _replace_swath_def_with_some_bounding_nans(data_arr: xr.DataArray) -> None:
+    swath_def = data_arr.attrs["area"]
+    lons = swath_def.lons
+    lats = swath_def.lats
+    lons_np = lons.compute()
+    lons_np.data[: lons_np.shape[0], -1] = np.nan
+    new_lons = xr.DataArray(
+        da.from_array(lons_np.data, chunks=lons.chunks),
+        attrs=lons.attrs.copy(),
+    )
+    new_swath_def = SwathDefinition(new_lons, lats)
+    data_arr.attrs["swath_def"] = new_swath_def
 
 
 def test_daynight_filter_basic_composite_case(viirs_sdr_i04_data_array):

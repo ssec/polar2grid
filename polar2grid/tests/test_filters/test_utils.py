@@ -63,6 +63,18 @@ def _swath_def_antimeridian_nan_rows() -> SwathDefinition:
     return swath_def
 
 
+def _swath_def_nans_in_right_column() -> SwathDefinition:
+    lons, lats = generate_lonlat_data((200, 100))
+    lons[:100, -1] = np.nan
+    lons_da = da.from_array(lons)
+    lats_da = da.from_array(lats)
+    swath_def = SwathDefinition(
+        lons_da,
+        lats_da,
+    )
+    return swath_def
+
+
 def _exp_boundary_nan_rows():
     exp_boundary = AreaBoundary(
         ([-71.5, -40.907036], [60.5, 60.5]),
@@ -83,11 +95,23 @@ def _exp_boundary_antimeridian_nan_rows():
     return exp_boundary
 
 
+def _exp_boundary_nans_in_right_column():
+    # FIXME: These aren't the actual expected values. These are just the min/max bounds of the whole valid swath
+    exp_boundary = AreaBoundary(
+        ([-71.5, -40.5], [60.5, 60.5]),
+        ([-40.5, -40.5], [60.5, 22.5]),
+        ([-40.5, -71.5], [22.5, 22.5]),
+        ([-71.5, -40.5], [22.5, 60.5]),
+    )
+    return exp_boundary
+
+
 @pytest.mark.parametrize(
     ("geom_func", "exp_func"),
     [
         (_swath_def_nan_rows, _exp_boundary_nan_rows),
         (_swath_def_antimeridian_nan_rows, _exp_boundary_antimeridian_nan_rows),
+        (_swath_def_nans_in_right_column, _exp_boundary_nans_in_right_column),
     ],
 )
 def test_boundary_for_area(geom_func, exp_func):
