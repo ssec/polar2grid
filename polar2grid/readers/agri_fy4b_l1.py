@@ -130,5 +130,5 @@ def add_reader_argument_groups(
 
     """
     if group is None:
-        group = parser.add_argument_group(title="ABI L1b Reader")
+        group = parser.add_argument_group(title="AGRI FY-4B Level 1 Reader")
     return group, None
