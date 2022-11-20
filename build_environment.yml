@@ -20,7 +20,7 @@ dependencies:
   - pillow
   - pip
   - pooch
-  - pycoast>=1.6.0
+  - pycoast>=1.6.1
   - pydecorate>=0.3.3
   - pyhdf
   - pykdtree
