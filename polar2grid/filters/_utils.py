@@ -52,18 +52,14 @@ def boundary_for_area(area_def: PRGeometry) -> Boundary:
     """Create Boundary object representing the provided area."""
     if getattr(area_def, "is_geostationary", False):
         adp = Boundary(*get_geostationary_bounding_box(area_def, nb_points=100))
-    elif isinstance(area_def, AreaDefinition):
-        freq_fraction = 0.30
+    else:
+        freq_fraction = 0.30 if isinstance(area_def, AreaDefinition) else 0.05
         try:
             adp = AreaDefBoundary(area_def, frequency=int(area_def.shape[0] * freq_fraction))
         except ValueError:
-            logger.error("Unable to generate bounding geolocation polygon")
-            raise
-    else:
-        freq_fraction = 0.05
-        try:
-            adp = SwathDefBoundary(area_def, frequency=int(area_def.shape[0] * freq_fraction))
-        except ValueError:
+            if not isinstance(area_def, SwathDefinition):
+                logger.error("Unable to generate bounding geolocation polygon")
+                raise
             logger.warning(
                 "Geolocation data contains invalid bounding values. Computing entire array to get bounds instead."
             )
