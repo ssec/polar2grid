@@ -30,8 +30,8 @@ have the following naming scheme::
 
 The AGRI L1 reader supports all instrument spectral bands, identified in
 Geo2Grid as the products shown in the table below. The
-AGRI L1 reader can be provided to the main geo2grid.sh script
-using the ``-r`` option and the reader name ``agri_l1``.
+AGRI L1 reader for FY-4A can be provided to the main geo2grid.sh script
+using the ``-r`` option and the reader name ``agri_fy4a_l1``.
 
 The list of supported products includes true and natural color imagery.
 These are created by means of a python based atmospheric Rayleigh

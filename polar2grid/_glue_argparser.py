@@ -356,7 +356,8 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
         readers = [
             "abi_l1b",
             "abi_l2_nc",
-            "agri_l1",
+            "agri_fy4a_l1",
+            "agri_fy4b_l1",
             "ahi_hrit",
             "ahi_hsd",
             "ami_l1b",
