@@ -279,6 +279,7 @@ else:
             "readers/abi_l1b.rst",
             "readers/abi_l2_nc.rst",
             "readers/agri_fy4a_l1.rst",
+            "readers/agri_fy4b_l1.rst",
             "readers/ahi_hrit.rst",
             "readers/ahi_hsd.rst",
             "readers/ami_l1b.rst",
