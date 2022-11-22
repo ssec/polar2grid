@@ -23,3 +23,13 @@
       - IMG_DK01B??_YYYYMMDDHHMM
 
         **Ex: IMG_DK01B05_201811121230**
+    * - ami_l1b
+      - GEO-KOMPSAT AMI from KMA
+      - gk2a_ami_le1b_????_fd0??ge_YYYYMMDDHHMM.nc
+
+        **Ex: gk2a_ami_le1b_vi006_fd005ge_201909300300.nc**
+    * - agri_l1
+      - FY4A AGRI from CMA
+      - FY4A-_AGRI--_N_DISK_1047E_L1-_???-MULT_NOM_YYYYMMDDHHMMSS_*_????M_V0001.HDF
+
+        **Ex: FY4A-_AGRI--_N_DISK_1047E_L1-_FDI-_MULT_NOM_20220120040000_*_1000M_V0001.HDF**

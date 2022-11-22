@@ -50,7 +50,7 @@ Basic Usage
     along with true and natural color images. Only one time step
     can be processed with each script execution.
 
-    For example, executing the following command above will create
+    For example, executing the following command will create
     8-bit GeoTIFF files of all 16 ABI imager channels, a true
     color RGB, and natural color RGB in the native resolution of the
     instrument channel (500m for RGB composites).  This can be
@@ -111,13 +111,14 @@ are always available:
 
     .. rst-class:: full_width_table
 
-        -r 	 	              Instrument input files to read from.
-        -w  		          Output format to write to (Currently only option is geotiff).
+        -r 	 	      Instrument input files to read from.
+        -w  		      Output format to write to (Currently only option is geotiff).
         -h                    Print helpful information.
-        --list-products       List all possible product options to use with -p from the given input data.
-
+        --list-products       List all possible product options to use with -p from the given input data and exit.
+        --list-products-all   List available polar2grid products options and custom/Satpy products and exit.
         -p                    List of products you want to create.
         -f                    Input files and paths.
+        --grid-coverage       Fraction of grid that must be covered by valid data. Default is 0.1.
         -g <grid_name>        Specify the output grid to use. Default is the native instrument projection.
                               See :doc:`grids` and :doc:`custom_grids` for information on other possible values.
         --cache-dir <dir>     Directory to store resampling intermediate results between executions.
@@ -126,7 +127,6 @@ are always available:
         --progress            Show processing progress bar (Not recommended for logged output).
 
         --ll-bbox <lonmin latmin lonmax latmax>    Subset input data to the bounding coordinates specified.
-
         -v                    Print detailed log information.
 
     Examples:
@@ -142,7 +142,10 @@ are always available:
         geo2grid.sh -r ahi_hsd -w geotiff -p B03 B04 B05 B14 -f /ahi/*FLDK*.DAT
 
         geo2grid.sh -r ahi_hrit -w geotiff -f /ahi/IMG_DK01*
+  
+        geo2grid.sh -r ami_l1b -w geotiff -p IR112 VI006 --num-workers 12 -f /ami/gk2a_ami_l31b*.nc
 
+        geo2grid.sh -r agri_l1 -w geotiff -p C07 natural_color --progress -f /fy4a/FY4A-_AGRI--*.HDF
 
 For information on other scripts and features provided by |project| see
 the :doc:`utilscripts` section or the various examples throughout
@@ -206,10 +209,10 @@ To access these features provide the "reader" and "writer" names to the
 
         * Check for required spectral bands used in RGB creation among input files.
         * Upsample and sharpen composite bands to the highest spatial resolution (500m).
-        * Creation of pseudo "green" band for the ABI instruments.
+        * Creation of pseudo "green" band for the ABI and AGRI instruments.
         * Reflectance adjustment (dividing by cosine of the solar zenith angle).
         * Removal of atmospheric Rayleigh scattering (atmospheric correction).
-        * Nonlinear scaling before writing data to disk
+        * Nonlinear scaling before writing data to disk.
 
         Geo2Grid also supports the creation of other RGBs (this varies depending on
         the instrument), however these files are not produced by default.  The
@@ -220,10 +223,10 @@ To access these features provide the "reader" and "writer" names to the
 Creating Your Own Custom Grids
 ------------------------------
 
-The |project| software bundle comes with a wrapper script for the
-:ref:`Custom Grid Utility <util_p2g_grid_helper>` for easily creating |project| grid definitions over
-a user determined longitude and latitude region. Once these definitions have
-been created, they can be provided to polar2grid.sh. To run the utility script
+The |project| software bundle comes with a script for 
+:ref:`Custom Grid Utility <util_p2g_grid_helper>` that allows users to easily create |project| 
+custom grid definitions over a user determined longitude and latitude region. Once these 
+definitions have been created, they can be provided to |project|. To run the utility script
 from the software bundle wrapper run:
 
 .. ifconfig:: not is_geo2grid
