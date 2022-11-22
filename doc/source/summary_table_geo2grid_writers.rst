@@ -19,7 +19,12 @@
         **Ex: HIMAWARI-8_AHI_B03_20181112_183020_FLDK.tif**
       - 8-bit single band GeoTIFF
     * - geotiff
-      - HIMAWARI-8_AHI_B??_YYYYMMDD_HHMMSS_*.tif
+      - GEO-KOMPSAT-2A_AMI_?????_YYYYMMDD_HHMMSS_ami_geos_fd.tif
 
-        **Ex: HIMAWARI-8_AHI_B15_20181112_183000_FLDK.tif**
+        **Ex: GEO-KOMPSAT-2A_AMI_VI006_20190930_030031_ami_geos_fd.tif**
+      - 8-bit single band GeoTIFF
+    * - geotiff
+      - FY-4A_AGRI_C??_YYYYMMDD_HHMMSS_DISK_????m.tif
+
+        **Ex: FY-4A_AGRI_C07_20220120_040004_DISK_2000m.tif**
       - 8-bit single band GeoTIFF
