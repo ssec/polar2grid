@@ -21,10 +21,11 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The AHI HSD Reader operates on standard files from the Japan
-Meteorological Agency (JMA) Himawari-8 Advanced Himawari Imager (AHI)
-instrument. The AHI HSD reader works off of the input filenames
-to determine if a file is supported by Geo2Grid. Files usually
-have the following naming scheme:
+Meteorological Agency (JMA) Himawari-8 and Himawari-9 Advanced 
+Himawari Imager (AHI) instrument. The AHI Himawari Standard Data 
+(HSD) reader works off of the input filenames to determine if a 
+file is supported by Geo2Grid. Files usually have the following 
+naming scheme:
 
     HS_H08_20181022_0300_B09_FLDK_R20_S1010.DAT
 
@@ -44,37 +45,37 @@ more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
-| B01                       | Channel 1 Reflectance Band                          |
+| B01                       | Channel 1 (0.47um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| B02                       | Channel 2 Reflectance Band                          |
+| B02                       | Channel 2 (0.51um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| B03                       | Channel 3 Reflectance Band                          |
+| B03                       | Channel 3 (0.64um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| B04                       | Channel 4 Reflectance Band                          |
+| B04                       | Channel 4 (0.86um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| B05                       | Channel 5 Reflectance Band                          |
+| B05                       | Channel 5 (1.6um) Reflectance Band                  |
 +---------------------------+-----------------------------------------------------+
-| B06                       | Channel 6 Reflectance Band                          |
+| B06                       | Channel 6 (2.3um) Reflectance Band                  |
 +---------------------------+-----------------------------------------------------+
-| B07                       | Channel 7 Brightness Temperature Band               |
+| B07                       | Channel 7 (3.9um) Brightness Temperature Band       |
 +---------------------------+-----------------------------------------------------+
-| B08                       | Channel 8 Brightness Temperature Band               |
+| B08                       | Channel 8 (6.2um) Brightness Temperature Band       |
 +---------------------------+-----------------------------------------------------+
-| B09                       | Channel 9 Brightness Temperature Band               |
+| B09                       | Channel 9 (6.9um) Brightness Temperature Band       |
 +---------------------------+-----------------------------------------------------+
-| B10                       | Channel 10 Brightness Temperature Band              |
+| B10                       | Channel 10 (7.3um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| B11                       | Channel 11 Brightness Temperature Band              |
+| B11                       | Channel 11 (8.6um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| B12                       | Channel 12 Brightness Temperature Band              |
+| B12                       | Channel 12 (9.6um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| B13                       | Channel 13 Brightness Temperature Band              |
+| B13                       | Channel 13 (10.4um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| B14                       | Channel 14 Brightness Temperature Band              |
+| B14                       | Channel 14 (11.2um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| B15                       | Channel 15 Brightness Temperature Band              |
+| B15                       | Channel 15 (12.4um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| B16                       | Channel 16 Brightness Temperature Band              |
+| B16                       | Channel 16 (13.3um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+

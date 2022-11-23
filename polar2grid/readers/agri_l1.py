@@ -22,7 +22,7 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The AGRI L1 Reader operates on Level 1 (L1) HDF5 files for the
 Advanced Geostationary Radiation Imager (AGRI) instrument on board the
-Feng-Yun - 4A (FY-4A) satellite. Geo2Grid determines if it supports files
+Feng-Yun - 4 (FY-4A, FY-4B) satellites. Geo2Grid determines if it supports files
 based on the input filename. Files for AGRI supported by Geo2Grid usually
 have the following naming scheme::
 
