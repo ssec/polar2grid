@@ -25,7 +25,7 @@
         **Ex: IMG_DK01B05_201811121230**
     * - ami_l1b
       - GEO-KOMPSAT AMI from KMA
-      - gk2a_ami_le1b_????_fd0??ge_YYYYMMDDHHMM.nc
+      - gk2a_ami_le1b_?????_fd0??ge_YYYYMMDDHHMM.nc
 
         **Ex: gk2a_ami_le1b_vi006_fd005ge_201909300300.nc**
     * - agri_l1
@@ -33,3 +33,10 @@
       - FY4A-_AGRI--_N_DISK_1047E_L1-_???-MULT_NOM_YYYYMMDDHHMMSS_*_????M_V0001.HDF
 
         **Ex: FY4A-_AGRI--_N_DISK_1047E_L1-_FDI-_MULT_NOM_20220120040000_*_1000M_V0001.HDF**
+    * - abi_l2_nc
+      - ABI Product Cloud Height and Cloud Top Temperature
+      - CG_ABI-L2-{PROD}F-M6_G??_sYYYYDDDHHMMSSS_*.nc
+
+        **Ex: CG_ABI-L2-ACHAF-M6_G17_s20223271830316_e20223271839394_c20223271842100.nc**     
+
+        **Ex: CG_ABI-L2-ACHTF-M6_G17_s20223271830316_e20223271839394_c20223271842100.nc**

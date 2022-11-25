@@ -28,3 +28,10 @@
 
         **Ex: FY-4A_AGRI_C07_20220120_040004_DISK_2000m.tif**
       - 8-bit single band GeoTIFF
+    * - geotiff
+      - GOES-17_ABI_????_YYYYMMDD_HHMMSS_GOES-West.tif
+
+        **Ex: GOES-17_ABI_TEMP_20221123_183031_GOES-West.tif**
+
+        **Ex: GOES-17_ABI_HT_20221123_183031_GOES-West.tif**
+      - 8-bit single band GeoTIFF
