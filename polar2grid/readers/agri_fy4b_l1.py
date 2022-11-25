@@ -22,16 +22,16 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The AGRI L1 Reader operates on Level 1 (L1) HDF5 files for the
 Advanced Geostationary Radiation Imager (AGRI) instrument on board the
-Feng-Yun - 4A (FY-4A) satellite. Geo2Grid determines if it supports files
+Feng-Yun - 4B (FY-4B) satellite. Geo2Grid determines if it supports files
 based on the input filename. Files for AGRI supported by Geo2Grid usually
 have the following naming scheme::
 
-    FY4A-_AGRI--_N_DISK_1047E_L1-_FDI-_MULT_NOM_20220117000000_20220117001459_0500M_V0001.HDF
+    FY4B-_AGRI--_N_DISK_1047E_L1-_FDI-_MULT_NOM_20220117000000_20220117001459_0500M_V0001.HDF
 
 The AGRI L1 reader supports all instrument spectral bands, identified in
 Geo2Grid as the products shown in the table below. The
-AGRI L1 reader can be provided to the main geo2grid.sh script
-using the ``-r`` option and the reader name ``agri_l1``.
+AGRI L1 reader for FY-4B can be provided to the main geo2grid.sh script
+using the ``-r`` option and the reader name ``agri_fy4b_l1``.
 
 The list of supported products includes true and natural color imagery.
 These are created by means of a python based atmospheric Rayleigh
@@ -61,15 +61,17 @@ more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | C09                       | Channel 9 (6.25um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| C10                       | Channel 10 (7.10um) Brightness Temperature Band     |
+| C10                       | Channel 10 (6.95um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| C11                       | Channel 11 (8.5um) Brightness Temperature Band      |
+| C11                       | Channel 11 (7.42um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| C12                       | Channel 12 (10.7um) Brightness Temperature Band     |
+| C12                       | Channel 12 (8.5um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| C13                       | Channel 13 (12.0um) Brightness Temperature Band     |
+| C13                       | Channel 13 (10.8um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| C14                       | Channel 14 (13.5um) Brightness Temperature Band     |
+| C14                       | Channel 14 (12.0um) Brightness Temperature Band     |
++---------------------------+-----------------------------------------------------+
+| C15                       | Channel 15 (13.5um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+
@@ -94,7 +96,7 @@ from ._base import ReaderProxyBase
 
 PREFERRED_CHUNK_SIZE: int = 4096
 
-READER_PRODUCTS = ["C{:02d}".format(x) for x in range(1, 15)]
+READER_PRODUCTS = ["C{:02d}".format(x) for x in range(1, 16)]
 COMPOSITE_PRODUCTS = [
     "true_color",
     "natural_color",
@@ -128,5 +130,5 @@ def add_reader_argument_groups(
 
     """
     if group is None:
-        group = parser.add_argument_group(title="ABI L1b Reader")
+        group = parser.add_argument_group(title="AGRI FY-4B Level 1 Reader")
     return group, None
