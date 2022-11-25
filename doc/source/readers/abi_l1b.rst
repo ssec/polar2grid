@@ -21,7 +21,7 @@ Examples:
 
     geo2grid.sh -r abi_l1b -w geotiff --list-products -f /data/goes16/abi
 
-    geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 -f /data/goes16/abi
+    geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 -f /data/goes18/abi
 
     geo2grid.sh -r abi_l1b -w geotiff -p C02 C03 C04 C05 C06 true_color -f OR_ABI-L1b-RadC*.nc
 

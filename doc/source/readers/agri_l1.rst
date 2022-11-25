@@ -23,8 +23,6 @@ Examples:
 
     geo2grid.sh -r agri_l1 -w geotiff --num-workers 8 -f /data/fy4a/agri
 
-    geo2grid.sh -r agri_l1 -w geotiff -p VI005 VI006 VI008 NR013 NR016 true_color -f FY4A-_AGRI--*.HDF
+    geo2grid.sh -r agri_l1 -w geotiff -p C02 C03 C08 C10 C12 -f FY4A-_AGRI--*.HDF
 
-    geo2grid.sh -r agri_l1 -w geotiff --ll-bbox -95.0 40.0 -85.0 50.0 -f FY4A-_AGRI--*.HDF
-
-    geo2grid.sh -r agri_l1 -w geotiff -p airmass dust --num-workers 4 --grid-configs=/home/g2g/my_grid.conf -g madison --method nearest -f /data/fy4a/agri/
+    geo2grid.sh -r agri_l1 -w geotiff --ll-bbox 100 20 120 40 -p true_color -f /data/*.HDF

@@ -25,4 +25,4 @@ Examples:
 
     geo2grid.sh -r ahi_hrit -w geotiff -p B03 B04 B05 B06 B16 natural_color --num-workers 8 -f /hrit/ahi/
 
-    geo2grid.sh -r ahi_hrit -w geotiff --ll-bbox 125 -15 160 10 -f /data/hsd/IMG_DK01*
+    geo2grid.sh -r ahi_hrit -w geotiff --ll-bbox 125 -15 160 10 -f /data/IMG_DK01*
