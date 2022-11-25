@@ -96,12 +96,11 @@ class ResampleCoverageFilter(BaseFilter):
 
         coverage_fraction = self._get_and_cache_coverage_fraction(data_arr, source_area, _cache)
         if coverage_fraction >= self._coverage_fraction:
-            logger.debug("Resampling found %f%% coverage.", coverage_fraction * 100)
+            logger.debug(f"Resampling found {coverage_fraction * 100:0.02f}% coverage.")
             return False
         logger.warning(
-            "Resampling found %f%% of the output grid covered. " "Will skip producing this product: %s",
-            coverage_fraction * 100,
-            data_arr.attrs["name"],
+            f"Resampling found {coverage_fraction * 100:0.02f}% of the output grid "
+            f"'{self._target_area.area_id}' covered. Will skip producing this product: {data_arr.attrs['name']}",
         )
         return True
 

@@ -202,7 +202,8 @@ resampling:
     name: T4
     resampler: nearest
     kwargs:
-        grid_coverage: 0
+      grid_coverage: 0
+      radius_of_influence: 2000
   default_viirs_fire_T13:
     area_type: swath
     sensor: viirs
@@ -210,6 +211,7 @@ resampling:
     resampler: nearest
     kwargs:
       grid_coverage: 0
+      radius_of_influence: 2000
   default_viirs_fire_confidence_cat:
     area_type: swath
     sensor: viirs
@@ -217,6 +219,7 @@ resampling:
     resampler: nearest
     kwargs:
       grid_coverage: 0
+      radius_of_influence: 2000
   default_viirs_fire_confidence_pct:
     area_type: swath
     sensor: viirs
@@ -224,6 +227,7 @@ resampling:
     resampler: nearest
     kwargs:
       grid_coverage: 0
+      radius_of_influence: 2000
   default_viirs_fire_power:
     area_type: swath
     sensor: viirs
@@ -231,6 +235,7 @@ resampling:
     resampler: nearest
     kwargs:
       grid_coverage: 0
+      radius_of_influence: 2000
 
   # ACSPO SST
   default_acspo_sst_viirs:
