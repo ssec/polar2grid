@@ -67,23 +67,6 @@ def boundary_for_area(area_def: PRGeometry) -> Boundary:
     return adp
 
 
-class SwathDefBoundary(AreaBoundary):
-    def __init__(self, swath_def: SwathDefinition, frequency: int = 1):
-        # TODO: This doesn't work for the test cases I wanted it to. A fix will have to be implemented in pyresample
-        lons, lats = swath_def.get_bbox_lonlats()
-        side_masks = [np.isnan(side_lons) | np.isnan(side_lats) for side_lons, side_lats in zip(lons, lats)]
-        good_sides = list(
-            (side_lons[~side_mask], side_lats[~side_mask])
-            for side_mask, side_lons, side_lats in zip(side_masks, lons, lats)
-        )
-        if any(side_lons.size == 0 for side_lons, _ in good_sides):
-            raise ValueError("Swath data didn't have enough valid points to create a bounding polygon")
-        AreaBoundary.__init__(self, *good_sides)
-
-        if frequency != 1:
-            self.decimate(frequency)
-
-
 def _compute_boundary_from_whole_swath(swath_def: SwathDefinition):
     lons, lats = swath_def.get_lonlats()
     min_lon = np.nanmin(lons)
