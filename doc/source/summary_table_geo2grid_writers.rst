@@ -9,27 +9,27 @@
       - **Output Filename Pattern**
       - **Output Format**
     * - geotiff
-      - GOES-??_ABI_Rad?_C??_YYYYMMDD_HHMMSS_*.tif
+      - ``GOES-??_ABI_Rad?_C??_YYYYMMDD_HHMMSS_*.tif``
 
         **Ex: GOES-16_ABI_RadF_C03_20181112_183034_GOES-East.tif**
       - 8-bit single band GeoTIFF
     * - geotiff
-      - HIMAWARI-8_AHI_B??_YYYYMMDD_HHMMSS_*.tif
+      - ``HIMAWARI-8_AHI_B??_YYYYMMDD_HHMMSS_*.tif``
 
         **Ex: HIMAWARI-8_AHI_B03_20181112_183020_FLDK.tif**
       - 8-bit single band GeoTIFF
     * - geotiff
-      - GEO-KOMPSAT-2A_AMI_?????_YYYYMMDD_HHMMSS_ami_geos_fd.tif
+      - ``GEO-KOMPSAT-2A_AMI_?????_YYYYMMDD_HHMMSS_ami_geos_fd.tif``
 
         **Ex: GEO-KOMPSAT-2A_AMI_VI006_20190930_030031_ami_geos_fd.tif**
       - 8-bit single band GeoTIFF
     * - geotiff
-      - FY-4A_AGRI_C??_YYYYMMDD_HHMMSS_DISK_????m.tif
+      - ``FY-4A_AGRI_C??_YYYYMMDD_HHMMSS_DISK_????m.tif``
 
         **Ex: FY-4A_AGRI_C07_20220120_040004_DISK_2000m.tif**
       - 8-bit single band GeoTIFF
     * - geotiff
-      - GOES-17_ABI_????_YYYYMMDD_HHMMSS_GOES-West.tif
+      - ``GOES-17_ABI_????_YYYYMMDD_HHMMSS_GOES-West.tif``
 
         **Ex: GOES-17_ABI_TEMP_20221123_183031_GOES-West.tif**
 
