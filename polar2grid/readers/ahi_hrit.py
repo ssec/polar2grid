@@ -21,11 +21,11 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The AHI High Rate Information Transmission (HRIT) Reader operates on
-standard Japan Meteorological Agency (JMA) Himawari-8 and Himawari-9 
-Advanced Himawari Imager (AHI) HRIT Digital Video Broadcast (DVB) 
-HimawariCast files.  This broadcast consists of a subset of 14 bands 
-at reduced spatial resolution.  The AHI HRIT reader works off of 
-the input filenames to determine if a file is supported by Geo2Grid.  
+standard Japan Meteorological Agency (JMA) Himawari-8 and Himawari-9
+Advanced Himawari Imager (AHI) HRIT Digital Video Broadcast (DVB)
+HimawariCast files.  This broadcast consists of a subset of 14 bands
+at reduced spatial resolution.  The AHI HRIT reader works off of
+the input filenames to determine if a file is supported by Geo2Grid.
 Files usually have the following naming scheme:
 
     IMG_DK01B04_201809100300

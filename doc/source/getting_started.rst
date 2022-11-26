@@ -142,7 +142,7 @@ are always available:
         geo2grid.sh -r ahi_hsd -w geotiff -p B03 B04 B05 B14 -f /ahi/*FLDK*.DAT
 
         geo2grid.sh -r ahi_hrit -w geotiff -f /ahi/IMG_DK01*
-  
+
         geo2grid.sh -r ami_l1b -w geotiff -p IR112 VI006 --num-workers 12 -f /ami/gk2a_ami_l31b*.nc
 
         geo2grid.sh -r agri_l1 -w geotiff -p C07 natural_color --progress -f /fy4a/FY4A-_AGRI--*.HDF
@@ -223,9 +223,9 @@ To access these features provide the "reader" and "writer" names to the
 Creating Your Own Custom Grids
 ------------------------------
 
-The |project| software bundle comes with a script for 
-:ref:`Custom Grid Utility <util_p2g_grid_helper>` that allows users to easily create |project| 
-custom grid definitions over a user determined longitude and latitude region. Once these 
+The |project| software bundle comes with a script for
+:ref:`Custom Grid Utility <util_p2g_grid_helper>` that allows users to easily create |project|
+custom grid definitions over a user determined longitude and latitude region. Once these
 definitions have been created, they can be provided to |project|. To run the utility script
 from the software bundle wrapper run:
 

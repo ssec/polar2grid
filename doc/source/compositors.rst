@@ -92,7 +92,7 @@ go over some basic examples of how to make your own composites.
 
     This ``abi.yaml`` file is meant to hold all custom user composites for the
     ABI instrument. There are separate .yaml configuration files for each supported
-    instrument available in the ``$GEO2GRID_HOME/etc/polar2grid/composites`` 
+    instrument available in the ``$GEO2GRID_HOME/etc/polar2grid/composites``
     directory.  This ``abi.yaml`` file contains the ``true_color_night``
     composite recipe which combines the visible reflectance daytime ``true_color``
     composite with the nighttime ABI Channel 14 ``C14`` infrared 11 micron
@@ -136,7 +136,7 @@ go over some basic examples of how to make your own composites.
 
     Once the composite recipe has been added to the ``<instrument>.yaml``
     file it will appear in the list of available products when using the
-    ``--list-products`` option under the ``### Custom User Products`` 
+    ``--list-products`` option under the ``### Custom User Products``
     heading.  It can then be invoked like any other product to |script_literal|.
 
     The existing ``true_color_night`` composite can be modified directly or

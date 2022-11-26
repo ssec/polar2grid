@@ -21,10 +21,10 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The AHI HSD Reader operates on standard files from the Japan
-Meteorological Agency (JMA) Himawari-8 and Himawari-9 Advanced 
-Himawari Imager (AHI) instrument. The AHI Himawari Standard Data 
-(HSD) reader works off of the input filenames to determine if a 
-file is supported by Geo2Grid. Files usually have the following 
+Meteorological Agency (JMA) Himawari-8 and Himawari-9 Advanced
+Himawari Imager (AHI) instrument. The AHI Himawari Standard Data
+(HSD) reader works off of the input filenames to determine if a
+file is supported by Geo2Grid. Files usually have the following
 naming scheme:
 
     HS_H08_20181022_0300_B09_FLDK_R20_S1010.DAT
