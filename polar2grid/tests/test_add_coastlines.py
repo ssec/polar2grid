@@ -185,7 +185,7 @@ def _check_used_colormap(passed_cmap, has_colors, include_cmap_tag, include_scal
     assert cmax == exp_cmax
 
     if not has_colors:
-        # no colormap, pure black colorbar
+        # no colormap, all black default colormap
         np.testing.assert_allclose(passed_cmap.colors[:, :3], 0)
 
 

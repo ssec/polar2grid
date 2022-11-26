@@ -356,7 +356,8 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
         readers = [
             "abi_l1b",
             "abi_l2_nc",
-            "agri_l1",
+            "agri_fy4a_l1",
+            "agri_fy4b_l1",
             "ahi_hrit",
             "ahi_hsd",
             "ami_l1b",
@@ -413,7 +414,7 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
     group_1.add_argument(
         "--filter-day-products",
         nargs="?",
-        type=float,
+        type=float_or_false,
         default=filter_dn_products,
         metavar="fraction_of_day",
         help="Don't produce products that require "
@@ -427,7 +428,7 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
     group_1.add_argument(
         "--filter-night-products",
         nargs="?",
-        type=float,
+        type=float_or_false,
         default=filter_dn_products,
         metavar="fraction_of_night",
         help="Don't produce products that require "
@@ -460,6 +461,12 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
         help=argparse.SUPPRESS,
     )
     return (group_1,)
+
+
+def float_or_false(val):
+    if isinstance(val, str) and val.lower() == "false":
+        return False
+    return float(val)
 
 
 def _supported_writers(is_polar2grid: bool = False) -> list[str]:
@@ -534,7 +541,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
             type=float,
             help="Maximum distance in grid cells over which "
             'to distribute an input swath pixel (--method "ewa"). '
-            'This is equivalent to the old "--fornav-D" flag.'
+            'This is equivalent to the old "--fornav-D" flag. '
             "Default is 10.0.",
         )
         group_1.add_argument(
@@ -543,7 +550,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
             type=float,
             help="Distance in grid cell units at which to "
             'apply a minimum weight. (--method "ewa"). '
-            'This is equivalent to the old "--fornav-d" flag.'
+            'This is equivalent to the old "--fornav-d" flag. '
             "Default is 1.0.",
         )
         group_1.add_argument(

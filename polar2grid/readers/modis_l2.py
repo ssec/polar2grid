@@ -72,7 +72,7 @@ from satpy import DataQuery
 
 from ._base import ReaderProxyBase
 
-PREFERRED_CHUNK_SIZE: int = 1400  # at least one 1km swath width
+PREFERRED_CHUNK_SIZE: int = 1354 * 2  # roughly the number columns in a 500m dataset
 
 PRODUCTS = [
     "cloud_mask",
