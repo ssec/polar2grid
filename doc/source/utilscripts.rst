@@ -271,6 +271,8 @@ Overlay GeoTIFF Images
 
       overlay.sh GOES-17_ABI_RadF_C14_20221123_183031_GOES-West.tif GOES-17_ABI_TEMP_20221123_183031_GOES-West.tif abi17_fd_overlay.tif
 
+     overlay GOES-18_ABI_RadF_true_color_20221110_190020_GOES-West.tif  GOES-18_GLM_flash_extent_density_20221110_190000_GOES-West.tif overlay_true_color_flash_extent_density.tif
+
 .. ifconfig:: is_geo2grid
 
 .. _util_convert_to_video:
