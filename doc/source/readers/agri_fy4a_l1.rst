@@ -1,5 +1,5 @@
-AGRI L1 Reader
-==============
+AGRI FY-4A L1 Reader
+====================
 
 .. automodule:: polar2grid.readers.agri_fy4a_l1
     :noindex:
