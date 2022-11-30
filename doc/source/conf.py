@@ -270,6 +270,7 @@ if is_geo2grid:
             "writers/awips_tiled.rst",
             "writers/binary.rst",
             "writers/hdf5.rst",
+            "misc_recipes.rst",
         ]
     )
 else:
@@ -455,7 +456,7 @@ latex_logo = "_static/{}2G_PDF_Logos.png".format("G" if is_geo2grid else "P")
 # Documents to append as an appendix to all manuals.
 if is_geo2grid:
     latex_appendices = [
-        "misc_recipes",
+        # "misc_recipes",
         "design_overview",
     ]
 else:
