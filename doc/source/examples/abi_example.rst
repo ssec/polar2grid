@@ -31,9 +31,9 @@ Create ABI images over the given latitude/longitude region:
     ``geo2grid.sh -r abi_l1b -w geotiff --ll-bbox <lonmin latmin lonmax latmax> -f <path_to_abi_files>``
 
 
-Create a natural color full resolution GeoTIFF from GOES-18 ABI 
+Create a natural color full resolution GeoTIFF from GOES-18 ABI
 observations acquired on 15 November 2022, 18:30 UTC over a latitude/
-longitude bounding box of 128W,30N to -118W,40N .  This command 
+longitude bounding box of 128W,30N to -118W,40N .  This command
 assumes that all bands required to create the false color image are available:
 
 .. code-block:: bash
