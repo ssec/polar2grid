@@ -39,4 +39,4 @@
     :excludebuilder: latex
 
     design_overview
-    misc_recipes
+    :polar2grid:misc_recipes
