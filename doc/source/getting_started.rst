@@ -145,7 +145,11 @@ are always available:
 
         geo2grid.sh -r ami_l1b -w geotiff -p IR112 VI006 --num-workers 12 -f /ami/gk2a_ami_l31b*.nc
 
-        geo2grid.sh -r agri_l1 -w geotiff -p C07 natural_color --progress -f /fy4a/FY4A-_AGRI--*.HDF
+        geo2grid.sh -r agri_fy4a_l1 -w geotiff -p C07 natural_color --progress -f /fy4a/FY4A-_AGRI--*.HDF
+
+        geo2grid.sh -r abi_l2_nc -w geotiff -f /cloud_products/CG_ABI-L2-ACH?C-M6_G16*.nc
+
+        geo2grid.sh -r glm_l2 -w geotiff -p flash_extent_density -f CG_GLM-L2-GLMF-M3_G18*.nc
 
 For information on other scripts and features provided by |project| see
 the :doc:`utilscripts` section or the various examples throughout
