@@ -282,6 +282,7 @@ else:
             "compositors.rst",
             "data_access.rst",
             "examples/abi_example.rst",
+            "examples/abi_l2_example.rst",
             "examples/ahi_example.rst",
             "examples/creating_animations_example.rst",
             "readers/abi_l1b.rst",
