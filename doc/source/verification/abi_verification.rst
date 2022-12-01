@@ -50,14 +50,14 @@ UW/SSEC, execute the following commands:
 .. code-block:: bash
 
     cd ..
-    ./g2g_compare_geotiff.sh output work
+    ./p2g_compare_geotiff.sh output work
 
 This script compares the values of all the GeoTIFF files for all
 ABI Bands found. The output from our test system is shown below.
 
 .. code-block:: bash
 
-    ./g2g_compare_geotiff.sh output work
+    ./p2g_compare_geotiff.sh output work
     Comparing work/GOES-16_ABI_RadF_C01_20181219_174533_GOES-East.tif to known valid file
     SUCCESS: 0 pixels out of 117679104 pixels are different
     Comparing work/GOES-16_ABI_RadF_C02_20181219_174533_GOES-East.tif to known valid file
