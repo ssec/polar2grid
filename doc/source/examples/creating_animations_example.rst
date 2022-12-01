@@ -2,7 +2,7 @@ Using Geo2Grid to Create Animations
 -----------------------------------
 
 The advantage of Geostationary Satellites is the temporal resolution of the
-observations.  Geo2Grid offers an easy interface to creating animations from
+observations.  Geo2Grid offers an easy interface for creating animations from
 Geo2Grid GeoTIFF files.  The following example demonstrates how
 Geo2Grid software can be used to create an animation of
 files from a latitude/longitude subset of GOES-16 ABI CONUS GeoTIFF images
@@ -20,7 +20,7 @@ natural color images from all time periods that are available.
 
 	# Set GEO2GRID environment variables
 
-	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_0_2
+	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_1
 	export PATH=$PATH:$GEO2GRID_HOME/bin
 
 	# Get input list of files/times based upon ABI Band 1 files
