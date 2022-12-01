@@ -28,11 +28,16 @@
       - ``gk2a_ami_le1b_?????_fd0??ge_YYYYMMDDHHMM.nc``
 
         **Ex: gk2a_ami_le1b_vi006_fd005ge_201909300300.nc**
-    * - agri_l1
-      - FY4A AGRI from CMA
+    * - agri_fy4a_l1
+        agri_fy4b_l1
+      - FY4A, FY4B AGRI from CMA
       - ``FY4A-_AGRI--_N_DISK_1047E_L1-_???-MULT_NOM_YYYYMMDDHHMMSS_*_????M_V0001.HDF``
 
+        ``FY4B-_AGRI--_N_DISK_1330E_L1-_???-MULT_NOM_YYYYMMDDHHMMSS_*_????M_V0001.HDF``
+
         **Ex: FY4A-_AGRI--_N_DISK_1047E_L1-_FDI-_MULT_NOM_20220120040000_*_1000M_V0001.HDF**
+
+        **Ex: FY4B-_AGRI--_N_DISK_1330E_L1-_FDI-_MULT_NOM_20221115030000_*_0500M_V0001.HDF**
     * - abi_l2_nc
       - ABI Product Cloud Height and Cloud Top Temperature
       - ``CG_ABI-L2-{PROD}F-M6_G??_sYYYYDDDHHMMSSS_*.nc``
@@ -40,3 +45,8 @@
         **Ex: CG_ABI-L2-ACHAF-M6_G17_s20223271830316_e20223271839394_c20223271842100.nc**
 
         **Ex: CG_ABI-L2-ACHTF-M6_G17_s20223271830316_e20223271839394_c20223271842100.nc**
+    * - glm_l2
+      - CSPP Gridded GLM Product
+      - ``CG_GLM-L2-GLM?-M3_G??_sYYYYDDDHHMMSSS_*.nc``
+
+        **Ex: CG_GLM-L2-GLMF-M3_G18_s20223141900000_e20223141901000_c20223142002160.nc**
