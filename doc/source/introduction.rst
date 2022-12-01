@@ -68,7 +68,7 @@ What's New?
 
     .. include:: NEWS_GEO2GRID.rst
         :start-line: 6
-        :end-line: 7
+        :end-line: 16
 
     For more details on what's new in this version and past versions see the
     `Geo2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/main/NEWS_GEO2GRID.rst>`_
@@ -89,8 +89,8 @@ System Requirements
 
     * Intel or AMD CPU with 64-bit instruction support (2+ cores - 2.4GHz)
     * 16 GB RAM (minimum)
-    * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)
-    * 5 GB disk space (minimum)
+    * CentOS 7.9 64-bit Linux (or other compatible 64-bit Linux distribution)
+    * 10 GB disk space (minimum)
 
     For a more demanding processing load, like realtime generation of all
     GOES-16 ABI channels, true color, and natural color RGB images at full
@@ -98,7 +98,7 @@ System Requirements
 
     * Intel or AMD CPU with 64-bit instruction support (20+ cores - 2.4GHz)
     * 64 GB RAM (minimum)
-    * CentOS 6 64-bit Linux (or other compatible 64-bit Linux distribution)
+    * CentOS 7.9 64-bit Linux (or other compatible 64-bit Linux distribution)
     * 1 TB disk space (minimum for ~1 week of images, does not include long-term storage)
 
     Local storage (i.e. not network file systems) are preferred to limit any
