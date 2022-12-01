@@ -94,6 +94,9 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_new.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes16_abi_naturalcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes18_abi_naturalcolor.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-17_ABI_TEMP_20221123_183117_GOES-West_original.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/goes17_overlay_true_color_cloud_temperature.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/my_goes17_abi_ctt.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/flood/Flood_Legend.png",
 )
 script_path = os.path.dirname(os.path.realpath(__file__))
