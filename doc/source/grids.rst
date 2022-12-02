@@ -5,9 +5,8 @@ Grids
 defines the uniform geographic area that an output image covers. |project|
 comes with various grids to choose from that should suit most users and their
 use cases. Some grids are provided for specific writers (like Tiled AWIPS), but
-can be used for other writers as well. For those cases that the provided
-grids aren't enough it is possible to create your own custom grids. See the
-:doc:`custom_grids` documentation for help with this.
+can be used for other writers as well. Users can also specify their own
+custom grids. See the :doc:`custom_grids` documentation for help with this.
 
 Provided Grids
 --------------

@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Version 1.1 (2022-11-25)
+------------------------
+
+* GOES-18 ABI reader support added
+* ABI Level 2 (abi_l2_nc) reader added
+* Gridded GLM (glm_l2) reader added
+* GEO-KOMPSAT AMI (ami_l1b) reader added
+* FY-4A AGRI (agri_fy4a_l1) reader added
+* FY-4B AGRI (agri_fy4b_l1) reader added
+* Various optimizations
+* Support for additional RGBs
+* Use of yaml files for grid definitions
+* Various bug fixes
+
 Version 1.0.2 (unreleased)
 --------------------------
 

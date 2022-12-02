@@ -73,8 +73,7 @@ center longitude and latitude.
 
 Once this text has been output, it can be added to a text file ending in
 ``.yaml`` and referenced in the |script_literal| command line.  For instance,
-if I save
-the output text grid line to a file named ``/home/user/my_grids.yaml``, I can
+if I save the output text to a file named ``/home/user/my_grids.yaml``, I can
 create a GeoTIFF from satellite data by executing a command like this:
 
 .. ifconfig:: is_geo2grid
@@ -106,8 +105,8 @@ Examples:
 
     .. code-block:: bash
 
-       add_coastlines.sh --add-coastlines --add-rivers --rivers-resolution=h --add-grid GOES-16_ABI_RadF_true_color_20181112_063034_GOES-East.tif
-       add_coastlines.sh --add-coastlines --add-borders --borders-resolution=h --borders-outline='red' --add-grid GOES-16_ABI_RadF_natural_color_20181112_183034_GOES-East.tif -o abi_natural_color_coastlines.png
+       add_coastlines.sh GOES-18_ABI_RadF_true_color_night_microphysics_20221115_123020_GOES-West.tif --add-coastlines --add-rivers --rivers-resolution=h --add-grid -o abi_true_color_coastlines.png
+       add_coastlines.sh --add-coastlines --add-borders --borders-resolution=h --borders-outline='red' --add-grid GOES-17_ABI_RadF_natural_color_20181211_183038_GOES-West.tif -o abi_natural_color_coastlines.png
 
 .. ifconfig:: not is_geo2grid
 
@@ -218,7 +217,7 @@ Example:
 
     .. code-block:: bash
 
-        gtiff2kmz.sh GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.tif
+        gtiff2kmz.sh  GOES-18_ABI_RadF_natural_color_20221115_183020_GOES-West.tif
 
 .. ifconfig:: not is_geo2grid
 
@@ -231,71 +230,96 @@ Example:
 Overlay GeoTIFF Images
 ----------------------
 
-The ``overlay.sh`` script can be used to overlay one GeoTIFF image
-(ex. VIIRS EDR Active Fires) on top of another image (ex. VIIRS
-Adaptive DNB or True Color).  This script uses GDAL's ``gdal_merge.py``
-utility underneath, but converts everything to RGBA format first
-for better consistency in output images.
+.. ifconfig:: not is_geo2grid
+
+  The ``overlay.sh`` script can be used to overlay one GeoTIFF image
+  (ex. VIIRS EDR Active Fires) on top of another image (ex. VIIRS
+  Adaptive DNB or True Color).  This script uses GDAL's ``gdal_merge.py``
+  utility underneath, but converts everything to RGBA format first
+  for better consistency in output images.
+
+.. ifconfig:: is_geo2grid
+
+  The ``overlay.sh`` script can be used to overlay one GeoTIFF image
+  (ex. Gridded Geostationary Lightning Mapper (GLM)) on top of another image (ex. GOES
+  infrared brightness temperature Image).  This script uses GDAL's ``gdal_merge.py``
+  utility underneath, but converts everything to RGBA format first
+  for better consistency in output images.
 
 .. code-block:: bash
 
     usage: overlay.sh background.tif foreground.tif out.tif
 
-Example:
-The following example shows how you would overlay the VIIRS Active
-Fire AFMOD resolution Fire Confidence Percentage GeoTIFF image on top of a
-VIIRS Day/Night Band GeoTIFF image.
+.. ifconfig:: not is_geo2grid
+
+   Example:
+   The following example shows how you would overlay the VIIRS Active
+   Fire AFMOD resolution Fire Confidence Percentage GeoTIFF image on top of a
+   VIIRS Day/Night Band GeoTIFF image.
+
+  .. code-block:: bash
+
+      overlay.sh noaa20_viirs_dynamic_dnb_20191120_151043_wgs84_fit.tif noaa20_viirs_confidence_pct_20191120_151043_wgs84_fit.tif afmod_overlay_confidence_cat.tif
+
+.. ifconfig:: is_geo2grid
+
+   Example:
+   The following example shows how you would overlay the GOES ABI AIT Level-2 Cloud
+   top Tempetaure Product on top of a GOES ABI Band 14 brithtness temperature image.
+
+  .. code-block:: bash
+
+      overlay.sh GOES-17_ABI_RadF_C14_20221123_183031_GOES-West.tif GOES-17_ABI_TEMP_20221123_183031_GOES-West.tif abi17_fd_overlay.tif
+
+     overlay GOES-18_ABI_RadF_true_color_20221110_190020_GOES-West.tif  GOES-18_GLM_flash_extent_density_20221110_190000_GOES-West.tif overlay_true_color_flash_extent_density.tif
+
+.. ifconfig:: is_geo2grid
+
+.. _util_convert_to_video:
+
+Convert GeoTIFFs to MP4 Video
+-----------------------------
+
+The ``gtiff2mp4.sh`` script converts a series of GeoTIFF files in to a
+single MP4 video file. This script uses default video creation settings
+to support most video players. If an image is too large for the video
+creation they will be automatically scaled to a smaller size.
 
 .. code-block:: bash
 
-    overlay.sh noaa20_viirs_dynamic_dnb_20191120_151043_wgs84_fit.tif noaa20_viirs_confidence_pct_20191120_151043_wgs84_fit.tif afmod_overlay_confidence_cat.tif
+    gtiff2mp4.sh out.mp4 in1.tif in2.tif ...
 
+This will create a MP4 video file called ``out.mp4`` with 24 images (frames)
+per second.
 
-.. ifconfig:: is_geo2grid
+Example:
 
-  Convert GeoTIFFs to MP4 Video
-  -----------------------------
+.. code-block:: bash
 
-  The ``gtiff2mp4.sh`` script converts a series of GeoTIFF files in to a
-  single MP4 video file. This script uses default video creation settings
-  to support most video players. If an image is too large for the video
-  creation they will be automatically scaled to a smaller size.
-
-  .. code-block:: bash
-
-      gtiff2mp4.sh out.mp4 in1.tif in2.tif ...
-
-  This will create a MP4 video file called ``out.mp4`` with 24 images (frames)
-  per second.
-
-  Example:
-
-  .. code-block:: bash
-
-      gtiff2mp4.sh my_natural_color_animation.mp4  *natural_color*.tif
+    gtiff2mp4.sh my_natural_color_animation.mp4  *natural_color*.tif
 
 .. ifconfig:: is_geo2grid
 
-  Remap GOES GeoTIFFs
-  -------------------
+Remap GOES GeoTIFFs
+-------------------
 
-  The projection of the GOES-East and GOES-West satellites uses special
-  parameters that are not always supported by older visualization tools.
-  While new versions of GDAL and PROJ.4 libraries can often fix these issues,
-  this is not always an option. |project| provides the ``reproject_goes.sh``
-  script to remap GOES GeoTIFFs to a nearly identical projection that is more
-  compatible with older visualization tools. The script can be called by
-  executing:
+The projection of the GOES-East and GOES-West satellites uses special
+parameters that are not always supported by older visualization tools.
+While new versions of GDAL and PROJ.4 libraries can often fix these issues,
+this is not always an option. |project| provides the ``reproject_goes.sh``
+script to remap GOES GeoTIFFs to a nearly identical projection that is more
+compatible with older visualization tools. The script can be called by
+executing:
 
-  .. code-block:: bash
+.. code-block:: bash
 
-      reproject_goes.sh in1.tif in2.tif in3.tif
+    reproject_goes.sh in1.tif in2.tif in3.tif
 
-  The script will take the original name and add a ``-y`` to the end. So in
-  the above example the results would be ``in1-y.tif``, ``in2-y.tif``,
-  and ``in3-y.tif``. The ``y`` refers to the sweep angle axis projection
-  parameter that differs between the input geotiff (``x``) and the output
-  geotiff (``y``).
+The script will take the original name and add a ``-y`` to the end. So in
+the above example the results would be ``in1-y.tif``, ``in2-y.tif``,
+and ``in3-y.tif``. The ``y`` refers to the sweep angle axis projection
+parameter that differs between the input geotiff (``x``) and the output
+geotiff (``y``).
 
 .. _util_convert_grids:
 

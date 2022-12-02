@@ -91,8 +91,9 @@ go over some basic examples of how to make your own composites.
         $GEO2GRID_HOME/etc/polar2grid/composites/abi.yaml
 
     This ``abi.yaml`` file is meant to hold all custom user composites for the
-    ABI instrument. There is also an ``ahi.yaml`` file in the same directory
-    for the AHI instrument. This file contains the ``true_color_night``
+    ABI instrument. There are separate .yaml configuration files for each supported
+    instrument available in the ``$GEO2GRID_HOME/etc/polar2grid/composites``
+    directory.  This ``abi.yaml`` file contains the ``true_color_night``
     composite recipe which combines the visible reflectance daytime ``true_color``
     composite with the nighttime ABI Channel 14 ``C14`` infrared 11 micron
     brightness temperatures into one image. The ``abi.yaml`` file contents
@@ -116,7 +117,7 @@ go over some basic examples of how to make your own composites.
         The name of the composite which will be used to request the product
         on the command line with the ``-p`` flag. In this example
         it is ``true_color_night``. The name for a composite should be unique
-        within a single file or it may be overwritten.
+        within a single yaml file or it may be overwritten.
     2. Compositor:
         The ``compositor`` is a pointer to the python code that does the work
         of combining the products together. In this case we are using the
@@ -135,8 +136,8 @@ go over some basic examples of how to make your own composites.
 
     Once the composite recipe has been added to the ``<instrument>.yaml``
     file it will appear in the list of available products when using the
-    ``--list-products`` option.  It can then be invoked like any other
-    product to |script_literal|.
+    ``--list-products`` option under the ``### Custom User Products``
+    heading.  It can then be invoked like any other product to |script_literal|.
 
     The existing ``true_color_night`` composite can be modified directly or
     used as a template for additional composites. Make sure to change the

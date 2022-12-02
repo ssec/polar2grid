@@ -20,7 +20,7 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""The AGRI L1 Reader operates on Level 1 (L1) HDF5 files for the
+"""The AGRI FY-4B L1 Reader operates on Level 1 (L1) HDF5 files for the
 Advanced Geostationary Radiation Imager (AGRI) instrument on board the
 Feng-Yun - 4B (FY-4B) satellite. Geo2Grid determines if it supports files
 based on the input filename. Files for AGRI supported by Geo2Grid usually

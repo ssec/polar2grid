@@ -38,7 +38,7 @@ produce an image that is typically higher quality than those produced by
 nearest neighbor. It fits an ellipse to the data in the two
 axes based upon the ``--weight-delta-max`` and the ``--weight-distance-max``
 options and then filters the texture with a Gaussian filter function.
-It can be specified on the command line by using ``method ewa``.
+It can be specified on the command line by using ``--method ewa``.
 
 
 Nearest Neighbor Resampling

@@ -75,6 +75,8 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes_wcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes_rescaled_wcolor.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes_rescaled_wcolor_colortable_resize.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/acspo/noaa20_viirs_sst_20220810_184327_great_lakes_sst_final_resize.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor_colortable_resize.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_final_resize.png",
@@ -84,12 +86,17 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-18_ABI_RadF_natural_color_20221115_183020_GOES-West_cutout.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_true_color_20190104_195718_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East_new.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_new.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes16_abi_naturalcolor.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes18_abi_naturalcolor.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-17_ABI_TEMP_20221123_183117_GOES-West_original.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/goes17_overlay_true_color_cloud_temperature.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/my_goes17_abi_ctt.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/flood/Flood_Legend.png",
 )
 script_path = os.path.dirname(os.path.realpath(__file__))
@@ -185,8 +192,8 @@ master_doc = "index"
 # General information about the project.
 if is_geo2grid:
     project = "Geo2Grid"
-    version = "1.0.2"
-    release = "1.0.2"
+    version = "1.1"
+    release = "1.1"
 else:
     project = "Polar2Grid"
 
@@ -266,6 +273,7 @@ if is_geo2grid:
             "writers/awips_tiled.rst",
             "writers/binary.rst",
             "writers/hdf5.rst",
+            "misc_recipes.rst",
         ]
     )
 else:
@@ -274,6 +282,7 @@ else:
             "compositors.rst",
             "data_access.rst",
             "examples/abi_example.rst",
+            "examples/abi_l2_example.rst",
             "examples/ahi_example.rst",
             "examples/creating_animations_example.rst",
             "readers/abi_l1b.rst",
@@ -451,7 +460,7 @@ latex_logo = "_static/{}2G_PDF_Logos.png".format("G" if is_geo2grid else "P")
 # Documents to append as an appendix to all manuals.
 if is_geo2grid:
     latex_appendices = [
-        "misc_recipes",
+        # "misc_recipes",
         "design_overview",
     ]
 else:
