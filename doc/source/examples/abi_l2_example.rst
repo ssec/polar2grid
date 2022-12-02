@@ -10,7 +10,7 @@ The Basics of Geo2Grid ABI L2 GeoTIFF File Creation
 Find the options available when creating GOES-16, -17 and -18
 ABI Level 2 GeoTIFFs:
 
-    ``geo2grid.sh -r abi_l2b -w geotiff -h``
+    ``geo2grid.sh -r abi_l2 -w geotiff -h``
 
 List the products that can be created from your ABI dataset:
 
