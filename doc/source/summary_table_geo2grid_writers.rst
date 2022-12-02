@@ -42,4 +42,3 @@
 
         **Ex: GOES-18_GLM_group_extent_density_20221110_190000_GOES-West.tif**
       - 8-bit single band GeoTIFF
-
