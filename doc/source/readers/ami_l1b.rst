@@ -25,4 +25,4 @@ Examples:
 
     geo2grid.sh -r ami_l1b -w geotiff -p VI005 VI006 VI008 NR013 NR016 true_color -f gk2a_ami*.nc
 
-    geo2grid.sh -r ami_l2b -w geotiff --ll-bbox 125 -15 160 10 -f /ami_data
+    geo2grid.sh -r ami_l1b -w geotiff --ll-bbox 125 -15 160 10 -f /ami_data

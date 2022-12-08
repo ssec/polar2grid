@@ -22,8 +22,8 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The AMI L1B Reader operates on Level 1B (L1B) NetCDF files for the
 Advanced Meteorological Imager (AMI) instrument on board the Korean
-Meteorological Administration (KMA) GEO-KOMPSAT-1 (GK-2A) and
-GEO-KOMPSAT-2 (GK-2B) satellites. Geo2Grid determines if it supports files
+Meteorological Administration (KMA) GEO-KOMPSAT-1 (GK-2A)
+satellite. Geo2Grid determines if it supports files
 based on the input filename. Files for AMI supported by Geo2Grid usually
 have the following naming scheme::
 

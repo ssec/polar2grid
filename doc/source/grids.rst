@@ -13,7 +13,8 @@ Provided Grids
 
 Below are descriptions for a few of the grids provided with |project|.
 For information on all of the grids provided by |project| see the
-`Grids Configuration File <https://github.com/ssec/polar2grid/blob/main/polar2grid/grids/grids.conf>`_.
+`Grids Configuration YAML File
+<https://github.com/ssec/polar2grid/blob/main/polar2grid/grids/grids.yaml>`_.
 
 The grids' projections are defined using PROJ.4. Go to
 the `PROJ documentation <https://proj4.org/usage/projections.html>`_

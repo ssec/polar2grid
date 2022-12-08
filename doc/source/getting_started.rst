@@ -115,7 +115,7 @@ are always available:
         -w  		      Output format to write to (Currently only option is geotiff).
         -h                    Print helpful information.
         --list-products       List all possible product options to use with -p from the given input data and exit.
-        --list-products-all   List available polar2grid products options and custom/Satpy products and exit.
+        --list-products-all   List available geo2grid products options and custom/Satpy products and exit.
         -p                    List of products you want to create.
         -f                    Input files and paths.
         --grid-coverage       Fraction of grid that must be covered by valid data. Default is 0.1.
