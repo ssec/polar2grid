@@ -2,7 +2,7 @@ Release Notes
 =============
 
 Version 1.1.0 (2022-12-12)
-------------------------
+--------------------------
 
 * GOES-18 ABI reader support added
 * ABI Level 2 (abi_l2_nc) reader added
