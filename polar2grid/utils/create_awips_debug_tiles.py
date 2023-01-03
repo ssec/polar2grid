@@ -41,6 +41,54 @@ SCALE_FACTOR = 0.25
 ADD_OFFSET = 2000.0
 
 
+def main():
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser(description="Create single AWIPS tile example file for debugging")
+    parser.add_argument(
+        "physical_element", help="Name of the product in AWIPS. No spaces or special characters allowed."
+    )
+    parser.add_argument(
+        "--units", default="1", help="CF-compatible units. Will be converted if necessary to AWIPS-compatible units."
+    )
+    args = parser.parse_args()
+
+    add_polar2grid_config_paths()
+
+    name = args.physical_element.replace(" ", "_")
+    data = _gradient_data(dtype=np.uint16)
+    area = create_area_def(
+        "fakelcc",
+        {"proj": "lcc", "lon_0": -95.0, "lat_0": 25, "lat_1": 25},
+        shape=data.shape,
+        resolution=(10000.0, 10000.0),
+        center=(0, 0),
+    )
+    data_arr = xr.DataArray(
+        data,
+        attrs={
+            "platform_name": "P2G-DEBUG",
+            "sensor": "TEST",
+            "name": name,
+            "start_time": datetime.utcnow(),
+            "units": args.units,
+            "area": area,
+        },
+        dims=("y", "x"),
+    )
+    scn = Scene()
+    scn[name] = data_arr
+
+    os.environ["ORGANIZATION"] = "P2G_DEBUG_ORG"
+    with add_fake_awips_template(name):
+        scn.save_datasets(
+            writer="awips_tiled",
+            sector_id="LCC",
+            tile_count=(4, 4),
+            source_name="SSEC",
+        )
+
+
 @contextlib.contextmanager
 def add_fake_awips_template(product_name):
     with tempfile.TemporaryDirectory(prefix="p2g_awips_debug_") as tdir:
@@ -77,54 +125,6 @@ def add_fake_awips_template(product_name):
 
         with satpy.config.set(config_path=[tdir] + satpy.config.get("config_path")):
             yield
-
-
-def main():
-    from argparse import ArgumentParser
-
-    parser = ArgumentParser(description="Create single AWIPS tile example file for debugging")
-    parser.add_argument(
-        "physical_element", help="Name of the product in AWIPS. No spaces or special characters allowed."
-    )
-    parser.add_argument(
-        "units", default="1", help="CF-compatible units. Will be converted if necessary to AWIPS-compatible units."
-    )
-    args = parser.parse_args()
-
-    add_polar2grid_config_paths()
-
-    name = args.physical_element.replace(" ", "_")
-    data = _gradient_data(dtype=np.uint16)
-    area = create_area_def(
-        "fakelcc",
-        {"proj": "lcc", "lon_0": -95.0, "lat_0": 25, "lat_1": 25},
-        shape=data.shape,
-        resolution=(10000.0, 10000.0),
-        center=(0, 0),
-    )
-    data_arr = xr.DataArray(
-        data,
-        attrs={
-            "platform_name": "DEBUG",
-            "sensor": "TEST",
-            "name": name,
-            "start_time": datetime.utcnow(),
-            "units": args.units,
-            "area": area,
-        },
-        dims=("y", "x"),
-    )
-    scn = Scene()
-    scn[name] = data_arr
-
-    os.environ["ORGANIZATION"] = "P2G_DEBUG_ORG"
-    with add_fake_awips_template(name):
-        scn.save_datasets(
-            writer="awips_tiled",
-            sector_id="LCC",
-            tile_count=(1, 1),
-            source_name="SSEC",
-        )
 
 
 def _gradient_data(dtype=np.uint16):
