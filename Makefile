@@ -41,9 +41,8 @@ ALL_PKG_DEV = $(ALL_PKG_DIRS:=_dev)
 DOC_DIR ?= /webdata/web/www/htdocs/software/polar2grid
 GEO_DOC_DIR ?= /webdata/web/www/htdocs/software/geo2grid
 
-EGG_REPOS_MACHINE = birch
-EGG_REPOS_DIR = /var/apache/larch/htdocs/eggs/repos/polar2grid/
 DEV_FLAGS = -d $(INSTALL_DIR)
+DOC_SERVER = $(DOC_SERVER:=webaccess.ssec.wisc.edu)
 
 all: all_sdist
 
@@ -65,13 +64,10 @@ $(ALL_PKG_SDIST):
 	python setup.py sdist
 
 $(ALL_PKG_DEV): $(INSTALL_DIR)
-	python setup.py develop $(DEV_FLAGS)
+	pip install -e . $(DEV_FLAGS)
 
 $(INSTALL_DIR):
 	mkdir -p $(INSTALL_DIR)
-
-torepos:
-	scp $(DIST_DIR)/*.tar.gz $(EGG_REPOS_MACHINE):$(EGG_REPOS_DIR)
 
 ### Documentation Stuff ###
 build_doc_html:
@@ -85,8 +81,8 @@ update_doc: build_doc_html
 	cd doc/build/html; \
 	echo $(FN); \
 	tar -czf $(FN) *; \
-	scp $(FN) webaccess.ssec.wisc.edu:/tmp/; \
-	ssh webaccess.ssec.wisc.edu "cd '$(DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
+	scp $(FN) $(DOC_SERVER):/tmp/; \
+	ssh $(DOC_SERVER) "cd '$(DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
 
 build_doc_html_geo:
 	cd doc; \
@@ -97,8 +93,8 @@ update_doc_geo: build_doc_html_geo
 	cd doc/build/html; \
 	echo $(FN); \
 	tar -czf $(FN) *; \
-	scp $(FN) webaccess.ssec.wisc.edu:/tmp/; \
-	ssh webaccess.ssec.wisc.edu "cd '$(GEO_DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
+	scp $(FN) $(DOC_SERVER):/tmp/; \
+	ssh $(DOC_SERVER) "cd '$(GEO_DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
 
 ### Clean up what we've done ###
 clean_sdist:

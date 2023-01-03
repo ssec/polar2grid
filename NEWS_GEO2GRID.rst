@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-Version 1.1 (2022-11-25)
-------------------------
+Version 1.1.0 (2022-12-12)
+--------------------------
 
 * GOES-18 ABI reader support added
 * ABI Level 2 (abi_l2_nc) reader added
@@ -15,7 +15,7 @@ Version 1.1 (2022-11-25)
 * Use of yaml files for grid definitions
 * Various bug fixes
 
-Version 1.0.2 (unreleased)
+Version 1.0.2 (2020-08-17)
 --------------------------
 
 * Add workaround for threading issue in pyresample
