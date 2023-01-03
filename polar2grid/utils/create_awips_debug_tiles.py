@@ -46,17 +46,39 @@ def main():
 
     parser = ArgumentParser(description="Create single AWIPS tile example file for debugging")
     parser.add_argument(
-        "physical_element", help="Name of the product in AWIPS. No spaces or special characters allowed."
+        "physical_element_prefix", help="Name of the product in AWIPS. No spaces or special characters allowed."
     )
     parser.add_argument(
         "--units", default="1", help="CF-compatible units. Will be converted if necessary to AWIPS-compatible units."
+    )
+    parser.add_argument(
+        "--idtype", default="uint16", help="Numpy data type of the data created and then stored in the NetCDF file."
+    )
+    parser.add_argument(
+        "--odtype", default="int16", help="Numpy data type of the data created and then stored in the NetCDF file."
+    )
+    parser.add_argument(
+        "--ounsigned",
+        action="store_true",
+        help="Whether or not to include the special 'Unsigned' flag in the NetCDF file. No effect if odtype "
+        "isn't signed.",
     )
     args = parser.parse_args()
 
     add_polar2grid_config_paths()
 
-    name = args.physical_element.replace(" ", "_")
-    data = _gradient_data(dtype=np.uint16)
+    start_time = datetime.utcnow()
+    idtype_str = args.idtype
+    idtype = getattr(np, idtype_str)
+    odtype_str = args.odtype
+    set_unsigned = args.ounsigned
+    set_unsigned_str = "U" if set_unsigned else ""
+    units = args.units
+    physical_element = (
+        args.physical_element_prefix.replace(" ", "-") + f"-{units}-{idtype_str}-{set_unsigned_str}{odtype_str}"
+    )
+
+    data = _gradient_data(dtype=idtype)
     area = create_area_def(
         "fakelcc",
         {"proj": "lcc", "lon_0": -95.0, "lat_0": 25, "lat_1": 25},
@@ -68,19 +90,19 @@ def main():
         data,
         attrs={
             "platform_name": "P2G-DEBUG",
-            "sensor": "TEST",
-            "name": name,
-            "start_time": datetime.utcnow(),
-            "units": args.units,
+            "sensor": "P2G-INST",
+            "name": physical_element,
+            "start_time": start_time,
+            "units": units,
             "area": area,
         },
         dims=("y", "x"),
     )
     scn = Scene()
-    scn[name] = data_arr
+    scn[physical_element] = data_arr
 
     os.environ["ORGANIZATION"] = "P2G_DEBUG_ORG"
-    with add_fake_awips_template(name):
+    with add_fake_awips_template(physical_element, odtype_str, set_unsigned):
         scn.save_datasets(
             writer="awips_tiled",
             sector_id="LCC",
@@ -90,32 +112,34 @@ def main():
 
 
 @contextlib.contextmanager
-def add_fake_awips_template(product_name):
+def add_fake_awips_template(product_name, odtype_str, set_unsigned):
     with tempfile.TemporaryDirectory(prefix="p2g_awips_debug_") as tdir:
         writers_dir = os.path.join(tdir, "writers")
         os.makedirs(writers_dir)
         yaml_filename = os.path.join(writers_dir, "awips_tiled.yaml")
         with open(yaml_filename, "w") as yaml_file:
+            var_config = {
+                "name": product_name,
+                "var_name": "data",
+                "attributes": {
+                    "physical_element": {"value": "{name}"},
+                    "units": {},
+                },
+                "encoding": {
+                    "dtype": odtype_str,
+                    "scale_factor": SCALE_FACTOR,
+                    "add_offset": ADD_OFFSET,
+                    "_FillValue": 10,
+                },
+            }
+            if set_unsigned:
+                var_config["encoding"]["_Unsigned"] = "true"
             yaml.dump(
                 {
                     "templates": {
                         "polar": {
                             "variables": {
-                                "my_fake_var": {
-                                    "name": product_name,
-                                    "var_name": "data",
-                                    "attributes": {
-                                        "physical_element": {"value": "{name}"},
-                                        "units": {},
-                                    },
-                                    "encoding": {
-                                        "dtype": "int16",
-                                        "_Unsigned": "true",
-                                        "scale_factor": SCALE_FACTOR,
-                                        "add_offset": ADD_OFFSET,
-                                        "_FillValue": 10,
-                                    },
-                                },
+                                "my_fake_var": var_config,
                             },
                         },
                     },
@@ -127,7 +151,7 @@ def add_fake_awips_template(product_name):
             yield
 
 
-def _gradient_data(dtype=np.uint16):
+def _gradient_data(dtype):
     num_rows = 300
     num_cols = 100
     min_val = np.iinfo(dtype).min
