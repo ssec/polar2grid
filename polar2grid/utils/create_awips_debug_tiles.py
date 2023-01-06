@@ -95,6 +95,7 @@ def main():
             "start_time": start_time,
             "units": units,
             "area": area,
+            "valid_range": _valid_range_for_idtype(idtype),
         },
         dims=("y", "x"),
     )
@@ -127,9 +128,9 @@ def add_fake_awips_template(product_name, odtype_str, set_unsigned):
                 },
                 "encoding": {
                     "dtype": odtype_str,
-                    "scale_factor": SCALE_FACTOR,
-                    "add_offset": ADD_OFFSET,
-                    "_FillValue": 10,
+                    # "scale_factor": SCALE_FACTOR,
+                    # "add_offset": ADD_OFFSET,
+                    # "_FillValue": 10,
                 },
             }
             if set_unsigned:
@@ -151,11 +152,16 @@ def add_fake_awips_template(product_name, odtype_str, set_unsigned):
             yield
 
 
+def _valid_range_for_idtype(dtype):
+    min_val = np.iinfo(dtype).min
+    max_val = np.iinfo(dtype).max
+    return [min_val, max_val]
+
+
 def _gradient_data(dtype):
     num_rows = 300
     num_cols = 100
-    min_val = np.iinfo(dtype).min
-    max_val = np.iinfo(dtype).max
+    min_val, max_val = _valid_range_for_idtype(dtype)
     unscaled_min = min_val * SCALE_FACTOR + ADD_OFFSET
     unscaled_max = max_val * SCALE_FACTOR + ADD_OFFSET
     data = np.repeat(np.linspace(unscaled_min, unscaled_max, num_cols)[np.newaxis, :], num_rows, axis=0)
