@@ -100,7 +100,7 @@ class ResampleCoverageFilter(BaseFilter):
             return False
         logger.warning(
             f"Resampling found {coverage_fraction * 100:0.02f}% of the output grid "
-            f"'{self._target_area.area_id}' covered. Will skip producing this product: {data_arr.attrs['name']}",
+            f"{self._target_area.area_id!r} covered. Will skip producing this product: {data_arr.attrs['name']}",
         )
         return True
 

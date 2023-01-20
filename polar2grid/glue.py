@@ -440,7 +440,7 @@ def _check_valid_config_paths(extra_config_paths: Iterable):
 def _create_tmp_enhancement_config_dir(enh_yaml_file: str) -> str:
     config_dir = tempfile.mkdtemp(prefix="p2g_tmp_config")
     enh_dir = os.path.join(config_dir, "enhancements")
-    LOG.debug(f"Creating temporary config directory for enhancement file '{enh_yaml_file}': {enh_dir}")
+    LOG.debug(f"Creating temporary config directory for enhancement file {enh_yaml_file!r}: {enh_dir}")
     os.makedirs(enh_dir)
 
     new_enh_file = os.path.join(enh_dir, "generic.yaml")

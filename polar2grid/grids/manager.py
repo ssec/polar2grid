@@ -159,7 +159,7 @@ def _parse_optional_config_param(str_part, convert_func, unspecified_info=None):
         return convert_func(str_part)
     if unspecified_info is not None:
         grid_name, param_name = unspecified_info
-        LOG.warning(f"Grid '{grid_name}' may not process properly due to unspecified {param_name}")
+        LOG.warning(f"Grid {grid_name!r} may not process properly due to unspecified {param_name}")
     return None
 
 

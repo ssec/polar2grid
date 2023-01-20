@@ -425,7 +425,7 @@ class CompareHelper:
         if file_type is None:
             LOG.error(f"Could not determine how to compare file type (extension not recognized): {file1}.")
             return FileComparisonResults(file1, file2, False, True)
-        LOG.info(f"Comparing '{file2}' to known valid file '{file1}'.")
+        LOG.info(f"Comparing {file2!r} to known valid file {file1!r}.")
         comparison_results = file_type(
             file1,
             file2,
