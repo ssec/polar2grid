@@ -101,7 +101,10 @@ PSP_CONFIG_FILE=etc/polar2grid/pyspectral.yaml PSP_DATA_ROOT=pyspectral_data PSP
 echo "Downloading Satpy auxiliary data..."
 AUX_CACHE_DIR="${CACHE_DIR}/satpy_aux_data_${USER}"
 SATPY_DATA_DIR="${SB_NAME}/share/polar2grid/data"
-${PYTHON_RUNTIME_BASE}/bin/satpy_retrieve_all_aux_data --data-dir ${AUX_CACHE_DIR} || oops "Could not download Satpy auxiliary data"
+P2G_ETC_DIR="${SB_NAME}/libexec/python_runtime/etc/polar2grid"
+SATPY_CONFIG_PATH="${P2G_ETC_DIR}" \
+    ${PYTHON_RUNTIME_BASE}/bin/satpy_retrieve_all_aux_data \
+    --data-dir ${AUX_CACHE_DIR} || oops "Could not download Satpy auxiliary data"
 
 # Add the download_from_internet: False to the config
 echo "download_from_internet: False" >> ${SB_NAME}/etc/polar2grid/pyspectral.yaml
