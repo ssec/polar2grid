@@ -25,6 +25,6 @@ Examples:
 
     geo2grid.sh -r glm_l2 -w geotiff -p flash_extent_density minimum_flash_area -f OR_GLM-L2-GLMC*.nc
 
-    geo2grid.sh -r glm_l2 -w geotiff --ll-bbox -95.0 40.0 -85.0 50.0 -f OR_GLM-L2-GLMC*.nc
+    geo2grid.sh -r glm_l2 -w geotiff --ll-bbox -175 -2 -155 18 -f CG_GLM-L2-GLMF-M3_G18*.nc
 
-    geo2grid.sh -r glm_l2 -w geotiff -p average_flash_area total_energy --num-workers 4 --grid-configs=/home/g2g/my_grid.conf -g madison --method nearest -f /data/goes17/glm/
+    geo2grid.sh -r glm_l2 -w geotiff -p average_flash_area total_energy --num-workers 4 --grid-configs=/home/g2g/my_grid.conf -g madison --method nearest -f /data/goes16/glm

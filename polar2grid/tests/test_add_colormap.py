@@ -21,6 +21,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Basic usability tests for the add_colormap script."""
+from __future__ import annotations
 
 import os
 

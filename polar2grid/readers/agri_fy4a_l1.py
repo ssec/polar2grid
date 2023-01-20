@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # encoding: utf-8
-# Copyright (C) 2018 Space Science and Engineering Center (SSEC),
+# Copyright (C) 2022 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
 #     This program is free software: you can redistribute it and/or modify
@@ -20,68 +20,60 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""The AHI High Rate Information Transmission (HRIT) Reader operates on
-standard Japan Meteorological Agency (JMA) Himawari-8 and Himawari-9
-Advanced Himawari Imager (AHI) HRIT Digital Video Broadcast (DVB)
-HimawariCast files.  This broadcast consists of a subset of 14 bands
-at reduced spatial resolution.  The AHI HRIT reader works off of
-the input filenames to determine if a file is supported by Geo2Grid.
-Files usually have the following naming scheme:
+"""The AGRI FY-4A L1 Reader operates on Level 1 (L1) HDF5 files for the
+Advanced Geostationary Radiation Imager (AGRI) instrument on board the
+Feng-Yun - 4 (FY-4A) satellite. Geo2Grid determines if it supports files
+based on the input filename. Files for AGRI supported by Geo2Grid usually
+have the following naming scheme::
 
-    IMG_DK01B04_201809100300
+    FY4A-_AGRI--_N_DISK_1047E_L1-_FDI-_MULT_NOM_20220117000000_20220117001459_0500M_V0001.HDF
 
-These are the mission compliant radiance file naming conventions
-used by JMA. The AHI HRIT reader supports a subset of instrument spectral bands,
-identified in Geo2Grid as the products shown in the table below. The
-AHI HRIT reader can be provided to the main geo2grid.sh script
-using the ``-r`` option and the reader name ``ahi_hrit``.
+The AGRI L1 reader supports all instrument spectral bands, identified in
+Geo2Grid as the products shown in the table below. The
+AGRI L1 reader for FY-4A can be provided to the main geo2grid.sh script
+using the ``-r`` option and the reader name ``agri_fy4a_l1``.
 
-The list of supported products includes natural color imagery.
-This is created by means of a python based atmospheric Rayleigh
-scattering correction algorithm that is executed as part of the |project| AHI
-HRIT reader, along with sharpening to the highest spatial resolution.
-
-Please note that true color image RGB creation is not supported for
-HimawariCast because AHI Band 1 (Blue) and Band 2 (Green) are not
-included.
-
-For more information on the creation of RGBs, please see the
+The list of supported products includes true and natural color imagery.
+These are created by means of a python based atmospheric Rayleigh
+scattering correction algorithm that is executed as part of the |project| AGRI
+L1 reader, along with sharpening to the highest spatial resolution. For
+more information on the creation of RGBs, please see the
 :ref:`RGB section <getting_started_rgb>`.
 
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
-| B03                       | Channel 3 (0.64um) Reflectance Band                 |
+| C01                       | Channel 1 (0.47um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| B04                       | Channel 4 (0.86um) Reflectance Band                 |
+| C02                       | Channel 2 (0.65um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| B05                       | Channel 5 (1.6um) Reflectance Band                  |
+| C03                       | Channel 3 (0.83um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| B06                       | Channel 6 (2.3um) Reflectance Band                  |
+| C04                       | Channel 4 (1.37um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| B07                       | Channel 7 (3.9um) Brightness Temperature Band       |
+| C05                       | Channel 5 (1.61um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| B08                       | Channel 8 (6.2um) Brightness Temperature Band       |
+| C06                       | Channel 6 (2.25um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| B09                       | Channel 9 (6.9um) Brightness Temperature Band       |
+| C07                       | Channel 7 (3.75um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| B10                       | Channel 10 (7.3um) Brightness Temperature Band      |
+| C08                       | Channel 8 (3.75um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| B11                       | Channel 11 (8.6um) Brightness Temperature Band      |
+| C09                       | Channel 9 (6.25um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| B12                       | Channel 12 (9.6um) Brightness Temperature Band      |
+| C10                       | Channel 10 (7.10um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| B13                       | Channel 13 (10.4um) Brightness Temperature Band     |
+| C11                       | Channel 11 (8.5um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| B14                       | Channel 14 (11.2um) Brightness Temperature Band     |
+| C12                       | Channel 12 (10.7um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| B15                       | Channel 15 (12.4um) Brightness Temperature Band     |
+| C13                       | Channel 13 (12.0um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| B16                       | Channel 16 (13.3um) Brightness Temperature Band     |
+| C14                       | Channel 14 (13.5um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| natural_color             | Ratio sharpened rayleigh corrected natural color    |
+| true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+
-| airmass                   | Air mass RGB                                        |
+| natural_color             | Ratio sharpened corrected natural color             |
 +---------------------------+-----------------------------------------------------+
 | ash                       | Ash RGB                                             |
 +---------------------------+-----------------------------------------------------+
@@ -89,8 +81,7 @@ For more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | fog                       | Fog RGB                                             |
 +---------------------------+-----------------------------------------------------+
-| night_microphysics        | Night Microphysics RGB                              |
-+---------------------------+-----------------------------------------------------+
+
 
 """
 
@@ -101,25 +92,26 @@ from typing import Optional
 
 from ._base import ReaderProxyBase
 
-READER_PRODUCTS = ["B{:02d}".format(x) for x in range(3, 17)]
+PREFERRED_CHUNK_SIZE: int = 4096
+
+READER_PRODUCTS = ["C{:02d}".format(x) for x in range(1, 15)]
 COMPOSITE_PRODUCTS = [
+    "true_color",
     "natural_color",
-    "airmass",
     "ash",
     "dust",
     "fog",
-    "night_microphysics",
 ]
 
 
 class ReaderProxy(ReaderProxyBase):
     """Provide Polar2Grid-specific information about this reader's products."""
 
-    is_geo2grid_reader = True
+    is_geo2grid_reader: bool = True
 
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
-        return READER_PRODUCTS + COMPOSITE_PRODUCTS[:1]
+        return READER_PRODUCTS + COMPOSITE_PRODUCTS[:2]
 
     def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
@@ -136,5 +128,5 @@ def add_reader_argument_groups(
 
     """
     if group is None:
-        group = parser.add_argument_group(title="AHI HRIT Reader")
+        group = parser.add_argument_group(title="AGRI FY-4B Level 1 Reader")
     return group, None

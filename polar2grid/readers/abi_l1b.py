@@ -26,7 +26,7 @@ Imager (ABI) instrument. The ABI L1B reader works off of the input filenames
 to determine if a file is supported by Geo2Grid. Files usually have the
 following naming scheme::
 
-    OR_ABI-L1b-RadF-M3C16_G16_s20182531700311_e20182531711090_c20182531711149.nc
+    OR_ABI-L1b-RadF-M6C02_G18_s20223191830206_e20223191839514_c20223191839547.nc
 
 These are the mission compliant radiance file naming conventions
 used by the NOAA Comprehensive Large Array-data Stewardship
@@ -47,37 +47,37 @@ more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
-| C01                       | Channel 1 Reflectance Band                          |
+| C01                       | Channel 1 (0.47um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| C02                       | Channel 2 Reflectance Band                          |
+| C02                       | Channel 2 (0.64um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| C03                       | Channel 3 Reflectance Band                          |
+| C03                       | Channel 3 (0.86um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| C04                       | Channel 4 Reflectance Band                          |
+| C04                       | Channel 4 (1.37um) Reflectance Band                 |
 +---------------------------+-----------------------------------------------------+
-| C05                       | Channel 5 Reflectance Band                          |
+| C05                       | Channel 5 (1.6um) Reflectance Band                  |
 +---------------------------+-----------------------------------------------------+
-| C06                       | Channel 6 Reflectance Band                          |
+| C06                       | Channel 6 (2.2um) Reflectance Band                  |
 +---------------------------+-----------------------------------------------------+
-| C07                       | Channel 7 Brightness Temperature Band               |
+| C07                       | Channel 7 (3.9um) Brightness Temperature Band       |
 +---------------------------+-----------------------------------------------------+
-| C08                       | Channel 8 Brightness Temperature Band               |
+| C08                       | Channel 8 (6.2um) Brightness Temperature Band       |
 +---------------------------+-----------------------------------------------------+
-| C09                       | Channel 9 Brightness Temperature Band               |
+| C09                       | Channel 9 (6.9um) Brightness Temperature Band       |
 +---------------------------+-----------------------------------------------------+
-| C10                       | Channel 10 Brightness Temperature Band              |
+| C10                       | Channel 10 (7.3um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| C11                       | Channel 11 Brightness Temperature Band              |
+| C11                       | Channel 11 (8.4um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| C12                       | Channel 12 Brightness Temperature Band              |
+| C12                       | Channel 12 (9.6um) Brightness Temperature Band      |
 +---------------------------+-----------------------------------------------------+
-| C13                       | Channel 13 Brightness Temperature Band              |
+| C13                       | Channel 13 (10.3um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| C14                       | Channel 14 Brightness Temperature Band              |
+| C14                       | Channel 14 (11.2um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| C15                       | Channel 15 Brightness Temperature Band              |
+| C15                       | Channel 15 (12.3um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
-| C16                       | Channel 16 Brightness Temperature Band              |
+| C16                       | Channel 16 (13.3um) Brightness Temperature Band     |
 +---------------------------+-----------------------------------------------------+
 | true_color                | Ratio sharpened rayleigh corrected true color       |
 +---------------------------+-----------------------------------------------------+

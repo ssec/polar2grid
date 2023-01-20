@@ -21,6 +21,8 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Basic usability tests for the add_coastlines script."""
+from __future__ import annotations
+
 import contextlib
 import os
 from unittest import mock
@@ -171,6 +173,40 @@ def test_add_coastlines_basic(add_overlay_mock, tmp_path, gen_func, include_scal
     assert (arr[940:] != 0).any()
 
 
+@mock.patch("polar2grid.add_coastlines.ContourWriterAGG.add_overlay_from_dict")
+def test_add_coastlines_multiple_inputs(add_overlay_mock, tmp_path):
+    from polar2grid.add_coastlines import main
+
+    colormap = REDS_MIN_CMAP
+    fp1 = str(tmp_path / "test1.tif")
+    _create_fake_l_geotiff_colormap(fp1, colormap, include_scale_offset=True, include_colormap_tag=True)
+    fp2 = str(tmp_path / "test2.tif")
+    _create_fake_l_geotiff_colormap(fp2, colormap, include_scale_offset=True, include_colormap_tag=True)
+    extra_args = ["--colorbar-minor-tick-marks", "5.0", "--colorbar-tick-marks", "15.0"]
+
+    with mocked_pydecorate_add_scale() as add_scale_mock:
+        ret = main(["--add-coastlines", "--add-colorbar", fp1, fp2] + extra_args)
+
+    assert ret in [None, 0]
+    assert os.path.isfile(tmp_path / "test1.png")
+    assert os.path.isfile(tmp_path / "test2.png")
+    assert add_overlay_mock.call_count == 2
+    assert "coasts" in add_overlay_mock.call_args.args[0]
+    assert add_scale_mock.call_count == 2
+    passed_cmap = add_scale_mock.call_args.kwargs["colormap"]
+    _check_used_colormap(passed_cmap, True, True, True)
+
+    for out_fn in ("test1.png", "test2.png"):
+        img = Image.open(tmp_path / out_fn)
+        arr = np.asarray(img)
+        # bottom of the image is a colorbar
+        image_arr = arr[:940]
+        _check_exp_image_colors(image_arr, colormap, 0, True)
+        _check_exp_image_colors(image_arr, colormap, 1, True)
+        _check_exp_image_colors(image_arr, colormap, 2, True)
+        assert (arr[940:] != 0).any()
+
+
 def _check_used_colormap(passed_cmap, has_colors, include_cmap_tag, include_scale_offset):
     cmin = passed_cmap.values[0]
     cmax = passed_cmap.values[-1]
@@ -183,7 +219,7 @@ def _check_used_colormap(passed_cmap, has_colors, include_cmap_tag, include_scal
     assert cmax == exp_cmax
 
     if not has_colors:
-        # no colormap, pure black colorbar
+        # no colormap, all black default colormap
         np.testing.assert_allclose(passed_cmap.colors[:, :3], 0)
 
 

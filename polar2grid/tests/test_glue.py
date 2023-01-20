@@ -25,6 +25,7 @@
 import contextlib
 import os
 from glob import glob
+from tempfile import gettempdir
 from unittest import mock
 
 import dask
@@ -32,6 +33,8 @@ import pytest
 import yaml
 from pytest_lazyfixture import lazy_fixture
 from satpy.tests.utils import CustomScheduler
+
+from polar2grid.utils.config import get_polar2grid_etc
 
 
 @contextlib.contextmanager
@@ -329,3 +332,13 @@ class TestGlueFakeScene:
         captured = capsys.readouterr()
         for exp_enh_name in exp_enh_names:
             assert exp_enh_name in captured.err
+
+        # ensure p2g builtins are processed/added before user custom configs
+        p2g_etc = get_polar2grid_etc()
+        builtin_path_idx = captured.err.index(f"Adding enhancement configuration from file: {p2g_etc}")  # the first one
+        for extra_cpath in extra_config_path:
+            if str(extra_cpath).endswith(".yaml"):
+                # the YAML was copied to a temp directory, check for that
+                extra_cpath = gettempdir()
+            path_idx = captured.err.index(f"Adding enhancement configuration from file: {str(extra_cpath)}")
+            assert builtin_path_idx < path_idx

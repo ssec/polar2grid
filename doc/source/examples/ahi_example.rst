@@ -34,15 +34,36 @@ resolution and projection .
 
     ``p2g_grid_helper.sh perth 117.9 -32.4 500 500 1500 1500``
 
-    ``perth, proj4, +proj=lcc +datum=WGS84 +ellps=WGS84 +lat_0=-32.40000 +lat_1=-32.40000 +lon_0=117.90000 +units=m +no_defs, 1500, 1500, 500.00000, -500.00000, 114.05895deg, -28.95876deg``
+.. code-block:: bash
+
+    perth:
+      projection:
+        proj: lcc
+        lat_1: -32.4
+        lat_0: -32.4
+        lon_0: 117.9
+        datum: WGS84
+        units: m
+        no_defs: null
+        type: crs
+      shape:
+        height: 1500
+        width: 1500
+      center:
+        x: 117.9
+        y: -32.4
+        units: degrees
+      resolution:
+        dx: 500.0
+        dy: 500.0
 
 Copy the output grid projection information into a grid configuration
-text file. Use the grid to create an HSD AHI true color image from
+yaml file (my_grid.yaml). Use the grid to create an HSD AHI true color image from
 data observed on 12 November 2017, at 23:30 UTC.
 
 .. code-block:: bash
 
-    geo2grid.sh -r ahi_hsd -w geotiff -p true_color --grid-configs=/geo/hsd/my_grid.conf -g perth --method nearest -f /data/ahi8/hsd/2330/*FLDK*.DAT
+    geo2grid.sh -r ahi_hsd -w geotiff -p true_color --grid-configs /geo/hsd/my_grid.yaml -g perth --method nearest -f /data/ahi8/hsd/2330/*FLDK*.DAT
 
 The resulting image is displayed beow.
 

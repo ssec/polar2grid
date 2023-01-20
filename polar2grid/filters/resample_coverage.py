@@ -53,11 +53,16 @@ def _get_intersection_coverage(source_polygon: SphPolygon, target_polygon: SphPo
 
 
 class ResampleCoverageFilter(BaseFilter):
-    """Remove any DataArrays that would not have any results if resampled to the target area."""
+    """Remove any DataArrays that would not have any results if resampled to the target area.
+
+    This filter defaults to checking all products. Pass ``product_filter_critera=None`` to
+    disable checking for all products. See :class:`BaseFilter` for other options.
+
+    """
 
     def __init__(
         self,
-        product_filter_criteria: dict = None,
+        product_filter_criteria: dict = True,
         target_area: PRGeometry = None,
         coverage_fraction: float = None,
     ):
@@ -91,12 +96,11 @@ class ResampleCoverageFilter(BaseFilter):
 
         coverage_fraction = self._get_and_cache_coverage_fraction(data_arr, source_area, _cache)
         if coverage_fraction >= self._coverage_fraction:
-            logger.debug("Resampling found %f%% coverage.", coverage_fraction * 100)
+            logger.debug(f"Resampling found {coverage_fraction * 100:0.02f}% coverage.")
             return False
         logger.warning(
-            "Resampling found %f%% of the output grid covered. " "Will skip producing this product: %s",
-            coverage_fraction * 100,
-            data_arr.attrs["name"],
+            f"Resampling found {coverage_fraction * 100:0.02f}% of the output grid "
+            f"{self._target_area.area_id!r} covered. Will skip producing this product: {data_arr.attrs['name']}",
         )
         return True
 

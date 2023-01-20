@@ -36,8 +36,9 @@ class BaseFilter:
     This class uses a series of metadata comparisons to check if a product
     should be checked for filtering. If any of the product metadata criteria
     match then filtering checks are continued. Otherwise, the product is
-    ignored. If the criteria is not provided, then all products will be
-    checked.
+    ignored. If the criteria is not provided or is ``None`` or is empty then
+    no products will be checked. If the criteria is passed as ``True`` then
+    all products will be checked.
 
     By default, no extra filtering is performed and only the metadata criteria
     is used. This means that if no criteria is provided, this class will
@@ -49,13 +50,16 @@ class BaseFilter:
 
     def __init__(self, product_filter_criteria: dict = None):
         """Initialize thresholds and default search criteria."""
-        self._filter_criteria = product_filter_criteria or {}
+        self._filter_criteria = product_filter_criteria
 
     def _matches_criteria(self, data_arr: DataArray):
         attrs = data_arr.attrs
-        if not self._filter_criteria:
-            # if not criteria was provided then filtering should be performed
+        if self._filter_criteria is True:
+            # check all products
             return True
+        if not self._filter_criteria:
+            # if no criteria was provided then no products will be checked
+            return False
 
         for filter_key, filter_list in self._filter_criteria.items():
             if attrs.get(filter_key) in filter_list:
@@ -91,7 +95,7 @@ class BaseFilter:
         if not remaining_ids:
             return None
         new_scn = scene.copy(remaining_ids)
-        new_scn._wishlist = scene.wishlist.copy()
+        new_scn._wishlist = scene.wishlist.copy() - set(filtered_ids)
         return new_scn
 
     @staticmethod

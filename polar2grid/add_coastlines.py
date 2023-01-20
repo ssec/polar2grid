@@ -51,21 +51,6 @@ LOG = logging.getLogger(__name__)
 PYCOAST_DIR = os.environ.get("GSHHS_DATA_ROOT")
 
 
-def _convert_table_to_cmap_or_default_bw(band_dtype, band_ct, band_count):
-    max_val = np.iinfo(band_dtype).max
-    # if we have an alpha band then include the entire colormap
-    # otherwise assume it is using 0 as a fill value
-    start_idx = 1 if band_count == 1 else 0
-    if band_ct is None:
-        # NOTE: the comma is needed to make this a tuple
-        color_iter = ((idx / float(max_val), (int(idx / float(max_val)),) * 3 + (1.0,)) for idx in range(max_val))
-    else:
-        color_iter = ((idx / float(max_val), color) for idx, color in sorted(band_ct.items())[start_idx:])
-        color_iter = ((idx, tuple(x / float(max_val) for x in color)) for idx, color in color_iter)
-    cmap = Colormap(*color_iter)
-    return cmap
-
-
 def _get_rio_colormap(rio_ds, bidx):
     try:
         return rio_ds.colormap(bidx)
@@ -120,28 +105,24 @@ def _vmin_vmax_from_scale_offset(scale: float, offset: float, dtype_min: int, dt
     return vmin, vmax
 
 
-def _apply_decorator_alignment(dc, align, is_vertical):
-    default_align = "left" if is_vertical else "bottom"
-    if align is None:
-        align = default_align
+def _apply_decorator_alignment(dc, align):
     if align == "top":
         dc.align_top()
+        dc.write_horizontally()
     elif align == "bottom":
         dc.align_bottom()
+        dc.write_horizontally()
     elif align == "left":
         dc.align_left()
+        dc.write_vertically()
     elif align == "right":
         dc.align_right()
-
-
-def _add_colorbar_to_image(img, font, tick_color, align, vertical, **kwargs):
-    dc = DecoratorAGG(img)
-    _apply_decorator_alignment(dc, align, vertical)
-    if vertical:
         dc.write_vertically()
-    else:
-        dc.write_horizontally()
 
+
+def _add_colorbar_to_image(img, font, tick_color, align, **kwargs):
+    dc = DecoratorAGG(img)
+    _apply_decorator_alignment(dc, align)
     dc.add_scale(
         font=font,
         line=tick_color,
@@ -273,7 +254,10 @@ def _add_colorbar_arguments(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--colorbar-extend", action="store_true", help="Extend colorbar to full width/height of the image"
     )
-    group.add_argument("--colorbar-tick-marks", type=float, default=5.0, help="Tick interval in data units")
+    group.add_argument(
+        "--colorbar-tick-marks", type=float, default=5.0, help="Major tick and tick label interval in data units"
+    )
+    group.add_argument("--colorbar-minor-tick-marks", type=float, default=1.0, help="Minor tick interval in data units")
     group.add_argument("--colorbar-text-size", default=32, type=int, help="Tick label font size")
     group.add_argument(
         "--colorbar-text-color", nargs="*", default=["black"], help="Color of tick text (color name or 3 RGB integers)"
@@ -282,16 +266,10 @@ def _add_colorbar_arguments(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--colorbar-align",
         choices=["left", "top", "right", "bottom"],
-        default=None,
-        help="Which direction to align colorbar (see --colorbar-vertical)",
+        default="bottom",
+        help="Which side of the image to place the colorbar",
     )
-    group.add_argument("--colorbar-vertical", action="store_true", help="Position the colorbar vertically")
-    group.add_argument(
-        "--colorbar-no-ticks",
-        dest="colorbar_ticks",
-        action="store_false",
-        help="Don't include ticks and tick labels on colorbar",
-    )
+    group.add_argument("--colorbar-vertical", action="store_true", help="DEPRECATED")
     group.add_argument(
         "--colorbar-min",
         type=float,
@@ -477,7 +455,10 @@ def _args_to_colorbar_kwargs(args):
     font = Font(font_color, font_path, size=args.colorbar_text_size)
 
     if args.colorbar_width is None or args.colorbar_height is None:
-        LOG.warning("'--colorbar-width' or '--colorbar-height' were " "not specified. Forcing '--colorbar-extend'.")
+        if args.colorbar_width is not None or args.colorbar_height is not None:
+            LOG.warning(
+                "'--colorbar-width' and '--colorbar-height' were not both specified. " "Forcing '--colorbar-extend'."
+            )
         args.colorbar_extend = True
 
     colorbar_kwargs = {
@@ -486,9 +467,9 @@ def _args_to_colorbar_kwargs(args):
         "cmin": args.colorbar_min,
         "cmax": args.colorbar_max,
         "align": args.colorbar_align,
-        "vertical": args.colorbar_vertical,
         "extend": args.colorbar_extend,
         "tick_marks": args.colorbar_tick_marks,
+        "minor_tick_marks": args.colorbar_minor_tick_marks,
         "title": args.colorbar_title,
         "unit": args.colorbar_units,
     }
@@ -526,6 +507,7 @@ def _process_one_image(
         cw.add_overlay_from_dict(pycoast_options, area_def, background=img)
 
     if colorbar_kwargs:
+        colorbar_kwargs = colorbar_kwargs.copy()
         cmin = colorbar_kwargs.pop("cmin")
         cmax = colorbar_kwargs.pop("cmax")
         cmap = _get_colormap_object(input_tiff, num_bands, cmin, cmax)
@@ -547,6 +529,24 @@ def _get_colormap_object(input_tiff, num_bands, cmin, cmax):
         cmap = Colormap.from_file(colormap_csv)
     vmin, vmax = _get_colorbar_vmin_vmax(cmin, cmax, metadata, input_dtype)
     cmap = cmap.set_range(vmin, vmax, inplace=False)
+    return cmap
+
+
+def _convert_table_to_cmap_or_default_bw(band_dtype, band_ct, band_count):
+    max_val = np.iinfo(band_dtype).max
+    # if we have an alpha band then include the entire colormap
+    # otherwise assume it is using 0 as a fill value
+    start_idx = 1 if band_count == 1 else 0
+    if band_ct is None:
+        # all black colormap
+        # don't assume anything about the colors or scaling of the image if the
+        # user didn't provide enough information
+        color_iter = ((idx / float(max_val), (0.0, 0.0, 0.0, 1.0)) for idx in range(max_val))
+        color_iter = list(color_iter)
+    else:
+        color_iter = ((idx / float(max_val), color) for idx, color in sorted(band_ct.items())[start_idx:])
+        color_iter = ((idx, tuple(x / float(max_val) for x in color)) for idx, color in color_iter)
+    cmap = Colormap(*color_iter)
     return cmap
 
 

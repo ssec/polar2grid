@@ -5,16 +5,16 @@ Grids
 defines the uniform geographic area that an output image covers. |project|
 comes with various grids to choose from that should suit most users and their
 use cases. Some grids are provided for specific writers (like Tiled AWIPS), but
-can be used for other writers as well. For those cases that the provided
-grids aren't enough it is possible to create your own custom grids. See the
-:doc:`custom_grids` documentation for help with this.
+can be used for other writers as well. Users can also specify their own
+custom grids. See the :doc:`custom_grids` documentation for help with this.
 
 Provided Grids
 --------------
 
 Below are descriptions for a few of the grids provided with |project|.
 For information on all of the grids provided by |project| see the
-`Grids Configuration File <https://github.com/ssec/polar2grid/blob/main/polar2grid/grids/grids.conf>`_.
+`Grids Configuration YAML File
+<https://github.com/ssec/polar2grid/blob/main/polar2grid/grids/grids.yaml>`_.
 
 The grids' projections are defined using PROJ.4. Go to
 the `PROJ documentation <https://proj4.org/usage/projections.html>`_

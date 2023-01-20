@@ -30,6 +30,10 @@ MOD021KM.A2017004.1732.005.2017023210017.hdf).  The
 reader can be specified to the ``polar2grid.sh`` script by using the reader
 name ``modis`` or ``modis_l1b``.
 
+This reader’s default remapping algorithm is ewa for Elliptical Weighted
+Averaging resampling. The ``--weight-delta-max`` parameter set to 10
+and the ``--weight-distance-max`` parameter set to 1.
+
 It provides the following products:
 
     +--------------------+-----------------------------------------------------+
@@ -140,7 +144,7 @@ from polar2grid.core.script_utils import ExtendConstAction
 
 from ._base import ReaderProxyBase
 
-PREFERRED_CHUNK_SIZE: int = 1400  # at least one 1km swath width
+PREFERRED_CHUNK_SIZE: int = 1354 * 2  # roughly the number columns in a 500m dataset
 
 FILTERS = {
     "day_only": {

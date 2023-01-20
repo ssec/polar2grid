@@ -147,10 +147,6 @@ class DayCoverageFilter(SunlightCoverageFilter):
 
     def __init__(self, product_filter_criteria: dict = None, sza_threshold: float = 100.0, day_fraction: float = 0.1):
         """Initialize thresholds and default search criteria."""
-        product_filter_criteria = product_filter_criteria or {}
-        matching_standard_names = ["toa_bidirectional_reflectance", "true_color", "natural_color", "false_color"]
-        product_filter_criteria.setdefault("standard_name", matching_standard_names)
-
         super().__init__(product_filter_criteria, sza_threshold=sza_threshold, fraction=day_fraction)
 
     def _should_be_filtered(self, sunlight_coverage):
@@ -164,10 +160,6 @@ class NightCoverageFilter(SunlightCoverageFilter):
 
     def __init__(self, product_filter_criteria: dict = None, sza_threshold: float = 100.0, night_fraction: float = 0.1):
         """Initialize thresholds and default search criteria."""
-        product_filter_criteria = product_filter_criteria or {}
-        matching_standard_names = ["temperature_difference"]
-        product_filter_criteria.setdefault("standard_name", matching_standard_names)
-
         super().__init__(product_filter_criteria, sza_threshold=sza_threshold, fraction=night_fraction)
 
     def _should_be_filtered(self, sunlight_coverage):

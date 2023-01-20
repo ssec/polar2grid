@@ -12,9 +12,9 @@ Basic Usage
 
     The most common use of |project| is to convert satellite data files in to
     gridded image files.
-    The following command can be used to create GeoTIFF single band images of
-    all S-NPP VIIRS imager SDR calibrated data with accompanying geolocation
-    files found in ``<path to files>/<list of files>``.
+    As an example, the following command can be used to create GeoTIFF single
+    band images of all S-NPP VIIRS imager SDR calibrated data with accompanying
+    geolocation files found in ``<path to files>/<list of files>``.
 
     .. code-block:: bash
 
@@ -34,7 +34,8 @@ Basic Usage
     are provided to |script_literal| they will be aggregated together.
     By default the above command resamples the data to a Google Earth compatible
     Platte Carrée projected grid at ~600m resolution, but this can be changed
-    with command line arguments.
+    with command line arguments. The GeoTIFF contains 2 bands, including an
+    Alpha band.
 
 .. ifconfig:: is_geo2grid
 
@@ -49,7 +50,7 @@ Basic Usage
     along with true and natural color images. Only one time step
     can be processed with each script execution.
 
-    For example, executing the following command above will create
+    For example, executing the following command will create
     8-bit GeoTIFF files of all 16 ABI imager channels, a true
     color RGB, and natural color RGB in the native resolution of the
     instrument channel (500m for RGB composites).  This can be
@@ -83,46 +84,49 @@ are always available:
 
     .. rst-class:: full_width_table
 
+        -r                    Instrument input files to read from.
+        -w                    Output format to write to.
         -h                    Print helpful information.
-        --list-products       List all possible product options to use with -p from the given input data.
+        --list-products       List all possible product options to use with -p from the given input data and exit.
+        --list-products-all   List available polar2grid products options and custom/Satpy products and exit.
         -p                    List of products you want to create.
         -f                    Input files and paths.
         --grid-coverage       Fraction of grid that must be covered by valid data. Default is 0.1.
         -g <grid_name>        Specify the output grid to use. Default is the Platte Carrée projection, also
                               known as the wgs84 coordinate system. See :doc:`grids` and :doc:`custom_grids`
                               for information on possible values.
-        --num-workers         Specify number of parallel processing worker threads to use (default: 4)
-        --progress            Display a timed progress bar to show processing progress
+        --num-workers NUM_WORKERS   Specify number of worker threads to use (Default: 4).
+        --progress            Show processing progress bar (Not recommended for logged output).
         -v                    Print detailed log information.
 
     Examples:
 
     .. code-block:: bash
 
-        polar2grid.sh modis gtiff --list-products -f <path to files>/<list of files>
+        polar2grid.sh -r viirs_sdr -w geotiff -p i01 dynamic_dnb -g polar_alaska_300 --grid-coverage=.25 -v -f <path to files>
 
-        polar2grid.sh viirs gtiff -p i01 adaptive_dnb -g polar_alaska_300 --grid-coverage=.25 -v -f <path to files>
+        polar2grid.sh -r modis_l1b -w geotiff --list-products -f <path to files>/<list of files>
 
 .. ifconfig:: is_geo2grid
 
     .. rst-class:: full_width_table
 
-        -r 	 	      Instrument input files to read from (choose from abi_l1b, ahi_hsd, and ahi_hrit).
+        -r 	 	      Instrument input files to read from.
         -w  		      Output format to write to (Currently only option is geotiff).
         -h                    Print helpful information.
-        --list-products       List all possible product options to use with -p from the given input data.
-
+        --list-products       List all possible product options to use with -p from the given input data and exit.
+        --list-products-all   List available geo2grid products options and custom/Satpy products and exit.
         -p                    List of products you want to create.
         -f                    Input files and paths.
+        --grid-coverage       Fraction of grid that must be covered by valid data. Default is 0.1.
         -g <grid_name>        Specify the output grid to use. Default is the native instrument projection.
                               See :doc:`grids` and :doc:`custom_grids` for information on other possible values.
         --cache-dir <dir>     Directory to store resampling intermediate results between executions.
                               Not used with 'native' resampling method.
-        --num-workers         Specify number of parallel processing worker threads to use (default: 4)
-        --progress            Display a timed progress bar to show processing progress
+        --num-workers NUM_WORKERS   Specify number of worker threads to use (Default: 4).
+        --progress            Show processing progress bar (Not recommended for logged output).
 
         --ll-bbox <lonmin latmin lonmax latmax>    Subset input data to the bounding coordinates specified.
-
         -v                    Print detailed log information.
 
     Examples:
@@ -139,6 +143,13 @@ are always available:
 
         geo2grid.sh -r ahi_hrit -w geotiff -f /ahi/IMG_DK01*
 
+        geo2grid.sh -r ami_l1b -w geotiff -p IR112 VI006 --num-workers 12 -f /ami/gk2a_ami_l31b*.nc
+
+        geo2grid.sh -r agri_fy4a_l1 -w geotiff -p C07 natural_color --progress -f /fy4a/FY4A-_AGRI--*.HDF
+
+        geo2grid.sh -r abi_l2_nc -w geotiff -f /cloud_products/CG_ABI-L2-ACH?C-M6_G16*.nc
+
+        geo2grid.sh -r glm_l2 -w geotiff -p flash_extent_density -f CG_GLM-L2-GLMF-M3_G18*.nc
 
 For information on other scripts and features provided by |project| see
 the :doc:`utilscripts` section or the various examples throughout
@@ -158,7 +169,7 @@ To access these features provide the "reader" and "writer" names to the
 
     .. code-block:: bash
 
-        $POLAR2GRID_HOME/bin/polar2grid.sh <reader> <writer> --list-products <options> -f /path/to/files
+        $POLAR2GRID_HOME/bin/polar2grid.sh -r <reader> -w <writer> --list-products <options> -f /path/to/files
 
 .. ifconfig:: is_geo2grid
 
@@ -202,10 +213,10 @@ To access these features provide the "reader" and "writer" names to the
 
         * Check for required spectral bands used in RGB creation among input files.
         * Upsample and sharpen composite bands to the highest spatial resolution (500m).
-        * Creation of pseudo "green" band for the ABI instruments.
+        * Creation of pseudo "green" band for the ABI and AGRI instruments.
         * Reflectance adjustment (dividing by cosine of the solar zenith angle).
         * Removal of atmospheric Rayleigh scattering (atmospheric correction).
-        * Nonlinear scaling before writing data to disk
+        * Nonlinear scaling before writing data to disk.
 
         Geo2Grid also supports the creation of other RGBs (this varies depending on
         the instrument), however these files are not produced by default.  The
@@ -216,10 +227,10 @@ To access these features provide the "reader" and "writer" names to the
 Creating Your Own Custom Grids
 ------------------------------
 
-The |project| software bundle comes with a wrapper script for the
-:ref:`Custom Grid Utility <util_p2g_grid_helper>` for easily creating |project| grid definitions over
-a user determined longitude and latitude region. Once these definitions have
-been created, they can be provided to polar2grid.sh. To run the utility script
+The |project| software bundle comes with a script for
+:ref:`Custom Grid Utility <util_p2g_grid_helper>` that allows users to easily create |project|
+custom grid definitions over a user determined longitude and latitude region. Once these
+definitions have been created, they can be provided to |project|. To run the utility script
 from the software bundle wrapper run:
 
 .. ifconfig:: not is_geo2grid

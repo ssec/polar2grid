@@ -26,7 +26,7 @@ images are by default atmospherically corrected and spatially
 sharpened to 500 m resolution in native satellite
 projection.  As it is executing, a progress bar will update, and
 8 CPU threads will be used if available. On modern computers, the
-execution should take around 6-8 minutes.
+execution should take around 4-6 minutes.
 
 The output files are large, including the true and natural color
 images that are greater than 1 GB (21696 lines x 21696 elements).
@@ -50,32 +50,32 @@ UW/SSEC, execute the following commands:
 .. code-block:: bash
 
     cd ..
-    ./g2g_compare_geotiff.sh output work
+    p2g_compare.sh output work
 
 This script compares the values of all the GeoTIFF files for all
 ABI Bands found. The output from our test system is shown below.
 
 .. code-block:: bash
 
-    ./g2g_compare_geotiff.sh output work
-    Comparing work/GOES-16_ABI_RadF_C01_20181219_174533_GOES-East.tif to known valid file
-    SUCCESS: 0 pixels out of 117679104 pixels are different
-    Comparing work/GOES-16_ABI_RadF_C02_20181219_174533_GOES-East.tif to known valid file
-    SUCCESS: 0 pixels out of 470716416 pixels are different
-    Comparing work/GOES-16_ABI_RadF_C03_20181219_174533_GOES-East.tif to known valid file
-    SUCCESS: 0 pixels out of 117679104 pixels are different
-    Comparing work/GOES-16_ABI_RadF_C05_20181219_174533_GOES-East.tif to known valid file
-    SUCCESS: 0 pixels out of 117679104 pixels are different
-    Comparing work/GOES-16_ABI_RadF_C07_20181219_174533_GOES-East.tif to known valid file
-    SUCCESS: 0 pixels out of 29419776 pixels are different
-    Comparing work/GOES-16_ABI_RadF_C09_20181219_174533_GOES-East.tif to known valid file
-    SUCCESS: 0 pixels out of 29419776 pixels are different
-    Comparing work/GOES-16_ABI_RadF_C14_20181219_174533_GOES-East.tif to known valid file
-    SUCCESS: 0 pixels out of 29419776 pixels are different
-    Comparing work/GOES-16_ABI_RadF_natural_color_20181219_174533_GOES-East.tif to known valid file
-    SUCCESS: 0 pixels out of 470716416 pixels are different
-    Comparing work/GOES-16_ABI_RadF_true_color_20181219_174533_GOES-East.tif to known valid file
-    SUCCESS: 0 pixels out of 470716416 pixels are different
+    p2g_compare.sh output work
+    Comparing 'work/GOES-16_ABI_RadF_C01_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C01_20181219_174533_GOES-East.tif'.
+    0 pixels out of 235358208 pixels are different
+    Comparing 'work/GOES-16_ABI_RadF_C05_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C05_20181219_174533_GOES-East.tif'.
+    0 pixels out of 235358208 pixels are different
+    Comparing 'work/GOES-16_ABI_RadF_natural_color_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_natural_color_20181219_174533_GOES-East.tif'.
+    0 pixels out of 1882865664 pixels are different
+    Comparing 'work/GOES-16_ABI_RadF_C07_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C07_20181219_174533_GOES-East.tif'.
+    0 pixels out of 58839552 pixels are different
+    Comparing 'work/GOES-16_ABI_RadF_C02_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C02_20181219_174533_GOES-East.tif'.
+    0 pixels out of 941432832 pixels are different
+    Comparing 'work/GOES-16_ABI_RadF_C14_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C14_20181219_174533_GOES-East.tif'.
+    0 pixels out of 58839552 pixels are different
+    Comparing 'work/GOES-16_ABI_RadF_C03_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C03_20181219_174533_GOES-East.tif'.
+    0 pixels out of 235358208 pixels are different
+    Comparing 'work/GOES-16_ABI_RadF_C09_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C09_20181219_174533_GOES-East.tif'.
+    0 pixels out of 58839552 pixels are different
+    Comparing 'work/GOES-16_ABI_RadF_true_color_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_true_color_20181219_174533_GOES-East.tif'.
+    0 pixels out of 1882865664 pixels are different
     All files passed
     SUCCESS
 

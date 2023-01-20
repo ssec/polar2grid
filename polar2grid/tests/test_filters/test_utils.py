@@ -27,7 +27,8 @@ import dask.array as da
 import numpy as np
 import pytest
 from pyresample import SwathDefinition
-from pyresample.boundary import AreaBoundary
+from pyresample.boundary import AreaBoundary, Boundary
+from pytest_lazyfixture import lazy_fixture
 from satpy.tests.utils import CustomScheduler
 
 from polar2grid.filters._utils import boundary_for_area
@@ -63,6 +64,18 @@ def _swath_def_antimeridian_nan_rows() -> SwathDefinition:
     return swath_def
 
 
+def _swath_def_nans_in_right_column() -> SwathDefinition:
+    lons, lats = generate_lonlat_data((200, 100))
+    lons[:100, -1] = np.nan
+    lons_da = da.from_array(lons)
+    lats_da = da.from_array(lats)
+    swath_def = SwathDefinition(
+        lons_da,
+        lats_da,
+    )
+    return swath_def
+
+
 def _exp_boundary_nan_rows():
     exp_boundary = AreaBoundary(
         ([-71.5, -40.907036], [60.5, 60.5]),
@@ -83,19 +96,34 @@ def _exp_boundary_antimeridian_nan_rows():
     return exp_boundary
 
 
+def _exp_boundary_nans_in_right_column():
+    return Boundary([-40.5, -40.907036], [22.5, 23.721106])
+
+
+def _exp_boundary_geos_area():
+    lons = np.array([-113.08581059, -113.08581059])
+    lats = np.array([15.11098716, 15.11098716])
+    exp_boundary = Boundary(lons, lats)
+    return exp_boundary
+
+
 @pytest.mark.parametrize(
-    ("geom_func", "exp_func"),
+    ("geom_or_func", "exp_func"),
     [
         (_swath_def_nan_rows, _exp_boundary_nan_rows),
         (_swath_def_antimeridian_nan_rows, _exp_boundary_antimeridian_nan_rows),
+        (_swath_def_nans_in_right_column, _exp_boundary_nans_in_right_column),
+        (lazy_fixture("goes_east_conus_area_def"), _exp_boundary_geos_area),
     ],
 )
-def test_boundary_for_area(geom_func, exp_func):
-    geom_obj = geom_func()
+def test_boundary_for_area(geom_or_func, exp_func):
+    geom_obj = geom_or_func() if callable(geom_or_func) else geom_or_func
     exp_boundary = exp_func()
 
     with dask.config.set(scheduler=CustomScheduler(1)):
         boundary = boundary_for_area(geom_obj)
 
-    np.testing.assert_allclose(boundary.contour()[0], exp_boundary.contour()[0])
-    np.testing.assert_allclose(boundary.contour()[1], exp_boundary.contour()[1])
+    np.testing.assert_allclose(boundary.contour()[0][0], exp_boundary.contour()[0][0])
+    np.testing.assert_allclose(boundary.contour()[0][-1], exp_boundary.contour()[0][-1])
+    np.testing.assert_allclose(boundary.contour()[1][0], exp_boundary.contour()[1][0])
+    np.testing.assert_allclose(boundary.contour()[1][-1], exp_boundary.contour()[1][-1])

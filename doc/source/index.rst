@@ -11,7 +11,7 @@
     installation
     getting_started
     readers/index
-    compositors
+    :geo2grid:compositors
     remapping
     writers/index
     utilscripts
@@ -29,7 +29,8 @@
     :excludebuilder: latex
 
     dev_guide/index
-    NEWS
+    :polar2grid:NEWS
+    :geo2grid:NEWS_GEO2GRID
     enhancements
     :polar2grid:viirs_day_night_band
     custom_config
@@ -39,4 +40,4 @@
     :excludebuilder: latex
 
     design_overview
-    misc_recipes
+    :polar2grid:misc_recipes

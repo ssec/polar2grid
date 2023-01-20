@@ -425,7 +425,7 @@ class CompareHelper:
         if file_type is None:
             LOG.error(f"Could not determine how to compare file type (extension not recognized): {file1}.")
             return FileComparisonResults(file1, file2, False, True)
-        LOG.info(f"Comparing '{file2}' to known valid file '{file1}'.")
+        LOG.info(f"Comparing {file2!r} to known valid file {file1!r}.")
         comparison_results = file_type(
             file1,
             file2,
@@ -576,16 +576,16 @@ def _generate_subresult_table_row(
         variable,
         img_dst_dir,
         "expected",
-        getattr(file_comparison_result, "shape1", None),
-        getattr(file_comparison_result, "dtype1", None),
+        getattr(sub_result, "shape1", None),
+        getattr(sub_result, "dtype1", None),
     )
     act_tn_html = _generate_thumbnail_html(
         file_comparison_result.file2,
         variable,
         img_dst_dir,
         "actual",
-        getattr(file_comparison_result, "shape2", None),
-        getattr(file_comparison_result, "dtype2", None),
+        getattr(sub_result, "shape2", None),
+        getattr(sub_result, "dtype2", None),
     )
     exp_filename = os.path.basename(file_comparison_result.file1)
     row_info = ROW_TEMPLATE.format(

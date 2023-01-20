@@ -29,10 +29,10 @@
 #     david.hoese@ssec.wisc.edu
 """The VIIRS Level 1B Reader operates on NASA Level 1B (L1B) NetCDF files.
 
-The files are from the Suomi National Polar-orbiting Partnership's (NPP) Visible/Infrared
-Imager Radiometer Suite (VIIRS) instrument. The VIIRS L1B reader analyzes
-the user provided filenames to determine if a file can be used. Files usually
-have the following naming scheme::
+The files are from the Visible/Infrared Imager Radiometer Suite (VIIRS)
+instrument. The VIIRS L1B reader analyzes the user provided filenames
+to determine if a file can be used. Files usually have the following
+naming scheme (example from the SNPP VIIRS instrument)::
 
     VL1BI_snpp_d20160101_t185400_c20160301041812.nc
 
@@ -54,8 +54,8 @@ reader.
     guaranteed.
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
-Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
-``--fornav-d`` parameter is set to 2.
+Averaging resampling. The ``--weight-delta-max`` parameter is set to 40 and the
+``--weight-distance-max`` parameter is set to 2.
 
 +---------------------------+-----------------------------------------------------+
 | Product Name              | Description                                         |

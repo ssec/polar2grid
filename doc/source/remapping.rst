@@ -35,7 +35,11 @@ for a lot of scan-based polar-orbiting instrument data. This method uses the
 size of each instrument scan to determine a weight for each pixel. All input
 pixels that map to output pixels are weighted and averaged. This helps
 produce an image that is typically higher quality than those produced by
-nearest neighbor.
+nearest neighbor. It fits an ellipse to the data in the two
+axes based upon the ``--weight-delta-max`` and the ``--weight-distance-max``
+options and then filters the texture with a Gaussian filter function.
+It can be specified on the command line by using ``--method ewa``.
+
 
 Nearest Neighbor Resampling
 ---------------------------
@@ -88,13 +92,12 @@ SatPy's typical "areas.yaml" file.
 For information on defining your own custom grids see the
 :doc:`Custom Grid <custom_grids>` documentation.
 
-Command Line Argument
----------------------
-
+Remapping and Grid Command Line Arguments
+-----------------------------------------
 
 .. argparse::
     :module: polar2grid._glue_argparser
     :func: add_resample_argument_groups
-    :prog: geo2grid.sh -r <reader> -w <writer>
+    :prog: polar2grid.sh -r <reader> -w <writer>
     :passparser:
     :nodefaultconst:
