@@ -9,6 +9,6 @@ reader:
     - url: "https://github.com/ssec/polar2grid/raw/p2g-v2.3.0b0/polar2grid/mirs/limball_atmssea.txt"
       filename: "limbcoef_atmssea_snpp.txt"
       known_hash: "6f72b793edded6284f3abc75e7da3530a405eccffb4485b2071c159c62fbcae6"
-    - url: "https://github.com/ssec/polar2grid/raw/p2g-v2.3.0b0/polar2grid/mirs/limball_atmsland.txt"
+    - url: "https://github.com/ssec/polar2grid/raw/p2g-v2.3.0b0/polar2grid/mirs/limball_atmssea.txt"
       filename: "limbcoef_atmssea_noaa20.txt"
       known_hash: "6f72b793edded6284f3abc75e7da3530a405eccffb4485b2071c159c62fbcae6"
