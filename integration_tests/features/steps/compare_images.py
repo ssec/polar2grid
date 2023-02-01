@@ -130,7 +130,7 @@ def step_impl_compare_output(context, output):
     output = context.output
     try:
         for product_name in names_to_check:
-            num_products_in_output = output.count(product_name + "\n")
+            num_products_in_output = output.count(f"\n{product_name}\n")
             assert num_products_in_output != 0, f"Missing {product_name} in command output"
             assert num_products_in_output == 1, f"Too many of {product_name} in command output"
     finally:
