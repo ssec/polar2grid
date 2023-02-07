@@ -236,7 +236,6 @@ def _compare_gtiff_colormaps(cmap1: dict, cmap2: dict, **kwargs) -> VariableComp
 def compare_netcdf(
     nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs
 ) -> list[VariableComparisonResult]:
-
     nc1 = xr.open_dataset(nc1_name)
     nc2 = xr.open_dataset(nc2_name)
 

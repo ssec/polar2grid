@@ -162,7 +162,6 @@ class HDF5Writer(Writer):
             group.attrs["height"], group.attrs["width"] = area_def.shape
             group.attrs["description"] = "No projection: native format"
         else:
-
             group.attrs["proj4_definition"] = area_def.proj4_string
             for a in ["height", "width"]:
                 ds_attr = getattr(area_def, a, None)
