@@ -83,175 +83,200 @@ templates:
 
       # MODIS L1B Products
       modis_vis01:
-        name: vis01
+        name: "1"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 0.65 um
           units: {}
       modis_vis02:
-        name: vis02
+        name: "2"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 0.86 um
           units: {}
       modis_vis03:
-        name: vis03
+        name: "3"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 0.47 um
           units: {}
       modis_vis04:
-        name: vis04
+        name: "4"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 0.56 um
           units: {}
       modis_vis05:
-        name: vis05
+        name: "5"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 1.24 um
           units: {}
       modis_vis06:
-        name: vis06
+        name: "6"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 1.64 um
           units: {}
       modis_vis07:
-        name: vis07
+        name: "7"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 2.13 um
           units: {}
       modis_vis26:
-        name: vis26
+        name: "26"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 1.38 um
           units: {}
       modis_bt20:
-        name: bt20
+        name: "20"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 3.75 um
           units: {}
       modis_bt21:
-        name: bt21
+        name: "21"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: Fire
           units: {}
       modis_bt22:
-        name: bt22
+        name: "22"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 3.96 um
           units: {}
       modis_bt23:
-        name: bt23
+        name: "23"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 4.05 um
           units: {}
       modis_bt24:
-        name: bt24
+        name: "24"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 4.47 um
           units: {}
       modis_bt25:
-        name: bt25
+        name: "25"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 4.52 um
           units: {}
       modis_bt27:
-        name: bt27
+        name: "27"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 6.7 um
           units: {}
       modis_bt28:
-        name: bt28
+        name: "28"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 7.3 um
           units: {}
       modis_bt29:
-        name: bt29
+        name: "29"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 8.6 um
           units: {}
       modis_bt30:
-        name: bt30
+        name: "30"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 9.7 um
           units: {}
       modis_bt31:
-        name: bt31
+        name: "31"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 11.0 um
           units: {}
       modis_bt32:
-        name: bt32
+        name: "32"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 12.0 um
           units: {}
       modis_bt33:
-        name: bt33
+        name: "33"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 13.3 um
           units: {}
       modis_bt34:
-        name: bt34
+        name: "34"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 13.6 um
           units: {}
       modis_bt35:
-        name: bt35
+        name: "35"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 13.9 um
           units: {}
       modis_bt36:
-        name: bt36
+        name: "36"
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: 14.2 um
           units: {}
       modis_sst:
-        name: sst
+        name: sea_surface_temperature
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
@@ -259,6 +284,7 @@ templates:
           units: {}
       modis_lst:
         name: lst
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
@@ -266,6 +292,7 @@ templates:
           units: {}
       modis_slst:
         name: slst
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
@@ -273,13 +300,15 @@ templates:
           units: {}
       modis_fog:
         name: ssec_fog
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: Fog
           units: {}
       modis_ctt:
-        name: ctt
+        name: cloud_top_temperature
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
@@ -287,13 +316,15 @@ templates:
           units: {}
       modis_ndvi:
         name: ndvi
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: NDVI
           units: {}
       modis_tpw:
-        name: tpw
+        name: water_vapor
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
@@ -301,13 +332,15 @@ templates:
           units: {}
       modis_ice_concentration:
         name: ice_concentration
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
             raw_value: Ice Concentration
           units: {}
       modis_ist:
-        name: ist
+        name: ice_surface_temperatue
+        sensor: "modis"
         var_name: data
         attributes:
           physical_element:
@@ -323,7 +356,7 @@ templates:
             raw_value: 0.65 um CR
           units: {}
       modis_crefl01_500m:
-        name: modis_crefl01_250m
+        name: modis_crefl01_500m
         var_name: data
         attributes:
           physical_element:
