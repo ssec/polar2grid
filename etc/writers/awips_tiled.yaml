@@ -9,6 +9,15 @@ writer:
 templates:
   polar:
     variables:
+      # Custom VIIRS
+      # Hacky composite to support --dnb-saturation-correction
+      viirs_dynamic_dnb_saturation:
+        name: dynamic_dnb_saturation
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: Dynamic DNB
+
       # VIIRS Corrected Reflectance
       viirs_crefl01:
         name: viirs_crefl01
