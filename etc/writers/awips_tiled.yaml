@@ -17,6 +17,7 @@ templates:
         attributes:
           physical_element:
             raw_value: Dynamic DNB
+          units: {}
 
       # VIIRS Corrected Reflectance
       viirs_crefl01:
