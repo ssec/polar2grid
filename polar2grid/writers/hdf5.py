@@ -333,7 +333,7 @@ def add_writer_argument_groups(parser, group=None):
         "--dtype",
         choices=NumpyDtypeList(NUMPY_DTYPE_STRS),
         type=str_to_dtype,
-        help="Data type of the output file (8-bit unsigned " "integer by default - uint8)",
+        help="Data type of the output file (8-bit unsigned integer by default - uint8)",
     )
     group.add_argument(
         "--compress",
