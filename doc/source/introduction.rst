@@ -51,8 +51,13 @@ What's New?
     Polar2Grid Version 3.0 is now available. This is a major
     update that includes changes to basic Polar2Grid execution.
     These changes bring Polar2Grid in conformity with the execution strategy
-    of Geo2Grid, taking advantage of the xarray Dask python library.
-    Major changes include .......
+    of Geo2Grid, and takes advantage of the Xarray and Dask python libraries.
+
+    Please see the example executions listed at the end of every reader
+    description in this document, as well as the updated examples in the 
+    :doc:`examples/index` section. Finally, the Appendix includes a 
+    longer list of changes and direct comparisons of Polar2Grid V2.3
+    to V3.0 executions. See :doc:`version3_implementation`.
 
     .. include:: NEWS.rst
         :start-line: 6
@@ -67,8 +72,8 @@ What's New?
     Included in this release:
 
     .. include:: NEWS_GEO2GRID.rst
-        :start-line: 6
-        :end-line: 16
+        :start-line: 7
+        :end-line: 15
 
     For more details on what's new in this version and past versions see the
     `Geo2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/main/NEWS_GEO2GRID.rst>`_
@@ -140,6 +145,32 @@ System Requirements
     * 16 GB RAM (minimum)
     * CentOS 7.9 64-bit Linux; the software has been tested successfully on Rocky Linux 8.5
     * 5 GB disk space (minimum)
+
+Improved Execution Times
+-------------------------
+
+Updates in Polar2grid Version 3.0 result in improved image creation times.  The table
+below presents a comparison of the unix `real` time required to create
+VIIRS and MODIS imager GeoTIFF files for the given segments of data in the default
+WGS84 projection. In these examples, the default 4 computer threads were used in the 
+Version 3.0 executions. Execution times decrease when fewer bands and smaller data 
+segments are processed.
+
+**Table of Execution Times for Creating GeoTIFF Default Projection Images**
+
++------------------+-----------------+-----------------+------------------------+-----------------------+
+|**Instrument**    |**Polar2Grid**   |**Polar2grid**   |**Polar2Grid2 V2.3 All**|**Polar2Grid V3.0 All**|
+|**Input**         |**V2.3 True and**|**V3.0 True and**|**Bands plus True**     |**Bands plus True**    |
+|                  |**False Color**  |**False Color**  |**and False Color**     |**and False Color**    |
++==================+=================+=================+========================+=======================+
+|**VIIRS SDR**     |                 |                 |                        |                       |
+|10 - 86 second    |    4m52s        |      2m46s      |      12m54s            |       4m32s           |
+|granules          |                 |                 |                        |                       |
++------------------+-----------------+-----------------+------------------------+-----------------------+
+|**MODIS Level 1B**|                 |                 |                        |                       |
+|3 - 5 minute      |    4m11s        |      3m55s      |      9m08s             |      4m51s            |
+|granules          |                 |                 |                        |                       |
++------------------+-----------------+-----------------+------------------------+-----------------------+
 
 License and Disclaimer
 ----------------------
