@@ -1,3 +1,5 @@
+:orphan:
+
 Version 2.3 to Version 3.0 Command Changes
 ==========================================
 
@@ -12,7 +14,7 @@ Important Changes
 
    * For example: GeoTIFF writer is now ``geotiff``.
 
-* Improved execution speeds using the xarray and Dask python library.  
+* Improved execution speeds using the xarray and Dask python library.
 * Option now available to choose how many worker threads to use: ``--num-workers``.  Default is 4.
 * NOAA20 output file names standardized to "noaa20" prefix.  For instance, ``n20_viirs_sst*`` is now ``noaa20_viirs_sst*``.
 * The crefl reader is no longer supported.  Use ``-p true_color false_color`` with the MODIS or VIIRS readers.
@@ -37,7 +39,7 @@ Important Changes
   * ``-–weight-delta-max`` (replaces ``--fornav-D`` option)
   * ``--weight-distance-max`` (replaces ``--fornav-d`` option)
 
-* Reflectances in HD5 files and binary files are now stored as 0-100%?  
+* Reflectances in HD5 files and binary files are now stored as 0-100%?
 * The standard convention for grid configuration is now .yaml file formatting. The legacy .conf files can still be used. A script was made to convert .conf style to .yaml style grid configuration.
 
 Examples
@@ -49,7 +51,7 @@ files in Polar2Grid Version 3.0.
 
 Create VIIRS GeoTIFF default output files. The default GeoTIFF now includes
 an Alpha Band which will make the background transparent along with
-along with the creation of true and false color images. 
+along with the creation of true and false color images.
 Version 3 also provides the user with the option to choose how many computer worker
 threads to use. The default is 4.
 
