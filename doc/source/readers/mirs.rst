@@ -30,7 +30,7 @@ Execution Examples
 
     polar2grid.sh -r mirs -w awips_tiled --num-workers 4 --grid-coverage 0 -g merc_pacific_1km --sector-id Pacific --letters --compress -p swe tpw sea_ice rain_rate btemp_89v1 -f /noaa19/NPR-MIRS-IMG_v11r8_n19_s202208250310331_e202208250314143_c202208251718490.nc
 
-    #### ##### #####polar2grid.sh -r mirs -w awips_tiled --bt-channels -g lcc_conus_750 --sector-id LCC --letters --compress -f ../input/NPR-MIRS-IMG_v11r1_NPP_s201611111032500_e201611111044016_c201611111121100.nc
+    polar2grid.sh -r mirs -w awips_tiled --bt-channels -g lcc_conus_750 --sector-id LCC --letters --compress -f ../input/NPR-MIRS-IMG_v11r1_NPP_s201611111032500_e201611111044016_c201611111121100.nc
 
     polar2grid.sh -r mirs -w hdf5 --add-geolocation --dtype float32 -f ../metopc/NPR-MIRS-IMG_v11r8_ma3_s202208251542209_e202208251554261_c202208251742030.nc
 
