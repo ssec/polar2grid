@@ -270,6 +270,7 @@ if is_geo2grid:
             "verification/modis_verification.rst",
             "verification/viirs_verification.rst",
             "viirs_day_night_band.rst",
+            "version3_implementation.rst",
             "writers/awips_tiled.rst",
             "writers/binary.rst",
             "writers/hdf5.rst",
@@ -465,7 +466,7 @@ if is_geo2grid:
     ]
 else:
     latex_appendices = [
-        # "version_changes",
+        "version3_implementation",
         "misc_recipes",
         "design_overview",
         "viirs_day_night_band",
