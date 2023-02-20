@@ -21,7 +21,7 @@ dependencies:
   - pip
   - pooch
   - pycoast>=1.6.1
-  - pydecorate>=0.3.3
+  - pydecorate>=0.3.4
   - pyhdf
   - pykdtree
   - pyorbital>=1.7.3

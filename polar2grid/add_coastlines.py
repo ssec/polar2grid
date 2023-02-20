@@ -254,7 +254,10 @@ def _add_colorbar_arguments(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--colorbar-extend", action="store_true", help="Extend colorbar to full width/height of the image"
     )
-    group.add_argument("--colorbar-tick-marks", type=float, default=5.0, help="Tick interval in data units")
+    group.add_argument(
+        "--colorbar-tick-marks", type=float, default=5.0, help="Major tick and tick label interval in data units"
+    )
+    group.add_argument("--colorbar-minor-tick-marks", type=float, default=1.0, help="Minor tick interval in data units")
     group.add_argument("--colorbar-text-size", default=32, type=int, help="Tick label font size")
     group.add_argument(
         "--colorbar-text-color", nargs="*", default=["black"], help="Color of tick text (color name or 3 RGB integers)"
@@ -466,6 +469,7 @@ def _args_to_colorbar_kwargs(args):
         "align": args.colorbar_align,
         "extend": args.colorbar_extend,
         "tick_marks": args.colorbar_tick_marks,
+        "minor_tick_marks": args.colorbar_minor_tick_marks,
         "title": args.colorbar_title,
         "unit": args.colorbar_units,
     }
@@ -503,6 +507,7 @@ def _process_one_image(
         cw.add_overlay_from_dict(pycoast_options, area_def, background=img)
 
     if colorbar_kwargs:
+        colorbar_kwargs = colorbar_kwargs.copy()
         cmin = colorbar_kwargs.pop("cmin")
         cmax = colorbar_kwargs.pop("cmax")
         cmap = _get_colormap_object(input_tiff, num_bands, cmin, cmax)

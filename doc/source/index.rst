@@ -29,7 +29,8 @@
     :excludebuilder: latex
 
     dev_guide/index
-    NEWS
+    :polar2grid:NEWS
+    :geo2grid:NEWS_GEO2GRID
     enhancements
     :polar2grid:viirs_day_night_band
     :polar2grid:version3_implementation

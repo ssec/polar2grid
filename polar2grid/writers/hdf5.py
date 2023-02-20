@@ -162,7 +162,6 @@ class HDF5Writer(Writer):
             group.attrs["height"], group.attrs["width"] = area_def.shape
             group.attrs["description"] = "No projection: native format"
         else:
-
             group.attrs["proj4_definition"] = area_def.proj4_string
             for a in ["height", "width"]:
                 ds_attr = getattr(area_def, a, None)
@@ -334,7 +333,7 @@ def add_writer_argument_groups(parser, group=None):
         "--dtype",
         choices=NumpyDtypeList(NUMPY_DTYPE_STRS),
         type=str_to_dtype,
-        help="Data type of the output file (8-bit unsigned " "integer by default - uint8)",
+        help="Data type of the output file (8-bit unsigned integer by default - uint8)",
     )
     group.add_argument(
         "--compress",

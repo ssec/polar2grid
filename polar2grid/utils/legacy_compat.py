@@ -104,7 +104,6 @@ class AliasHandler:
         all_aliases: dict[str, Union[str, DataQuery]],
         user_products: list[str],
     ):
-
         self._all_aliases = all_aliases
         self._user_products = self._unique_ordered_list(user_products)
 

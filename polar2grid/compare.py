@@ -236,7 +236,6 @@ def _compare_gtiff_colormaps(cmap1: dict, cmap2: dict, **kwargs) -> VariableComp
 def compare_netcdf(
     nc1_name, nc2_name, variables, atol=0.0, margin_of_error=0.0, **kwargs
 ) -> list[VariableComparisonResult]:
-
     nc1 = xr.open_dataset(nc1_name)
     nc2 = xr.open_dataset(nc2_name)
 
@@ -425,7 +424,7 @@ class CompareHelper:
         if file_type is None:
             LOG.error(f"Could not determine how to compare file type (extension not recognized): {file1}.")
             return FileComparisonResults(file1, file2, False, True)
-        LOG.info(f"Comparing '{file2}' to known valid file '{file1}'.")
+        LOG.info(f"Comparing {file2!r} to known valid file {file1!r}.")
         comparison_results = file_type(
             file1,
             file2,

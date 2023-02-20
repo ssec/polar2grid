@@ -101,8 +101,8 @@ def _exp_boundary_nans_in_right_column():
 
 
 def _exp_boundary_geos_area():
-    lons = np.array([-113.08581059, -113.08581059])
-    lats = np.array([15.11098716, 15.11098716])
+    lons = np.array([-146.85662892, -113.08581059])
+    lats = np.array([46.54997995, 15.11098716])
     exp_boundary = Boundary(lons, lats)
     return exp_boundary
 

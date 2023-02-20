@@ -1,0 +1,14 @@
+reader:
+  data_files:
+    - url: "https://github.com/ssec/polar2grid/raw/p2g-v2.3.0b0/polar2grid/mirs/limball_atmsland.txt"
+      filename: "limbcoef_atmsland_snpp.txt"
+      known_hash: "396b5473dfb2ec8ef72687658bd383f4a06452892f9850e2ee0b557f1855a076"
+    - url: "https://github.com/ssec/polar2grid/raw/p2g-v2.3.0b0/polar2grid/mirs/limball_atmsland.txt"
+      filename: "limbcoef_atmsland_noaa20.txt"
+      known_hash: "396b5473dfb2ec8ef72687658bd383f4a06452892f9850e2ee0b557f1855a076"
+    - url: "https://github.com/ssec/polar2grid/raw/p2g-v2.3.0b0/polar2grid/mirs/limball_atmssea.txt"
+      filename: "limbcoef_atmssea_snpp.txt"
+      known_hash: "6f72b793edded6284f3abc75e7da3530a405eccffb4485b2071c159c62fbcae6"
+    - url: "https://github.com/ssec/polar2grid/raw/p2g-v2.3.0b0/polar2grid/mirs/limball_atmssea.txt"
+      filename: "limbcoef_atmssea_noaa20.txt"
+      known_hash: "6f72b793edded6284f3abc75e7da3530a405eccffb4485b2071c159c62fbcae6"

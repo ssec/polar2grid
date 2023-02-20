@@ -190,7 +190,7 @@ COMPOSITES = [
 DEFAULTS.extend(COMPOSITES)
 
 _AWIPS_TRUE_COLOR = ["modis_crefl01_250m", "modis_crefl04_250m", "modis_crefl03_250m"]
-_AWIPS_FALSE_COLOR = ["modis_crefl07_500m", "modis_crefl02_250m", "modis_crefl01_500m"]
+_AWIPS_FALSE_COLOR = ["modis_crefl07_500m", "modis_crefl02_250m", "modis_crefl01_250m"]
 
 
 class ReaderProxy(ReaderProxyBase):
