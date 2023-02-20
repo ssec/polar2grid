@@ -69,7 +69,7 @@ for our default products.
 
 .. code-block:: bash
 
-    polar2grid.sh -r amsr2_l1b -w geotiff --extra-config-path $POLAR2GRID_HOME/example_enhancements/amsr2_png --fill-value 0 -f GW1AM2_202209102335_181A_L1DLBTBR_1110110.h5
+    polar2grid.sh -r amsr2_l1b -w geotiff --extra-config-path $POLAR2GRID_HOME/example_enhancements/amsr2_png -g lcc_fit --fill-value 0 -f GW1AM2_202209102335_181A_L1DLBTBR_1110110.h5
 
 Executing this command produces these AMSR2 LCC GeoTIFF files:
 
