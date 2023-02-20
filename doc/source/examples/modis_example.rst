@@ -28,7 +28,7 @@ using the ``awips_tiled`` scmi server, it is advised that a specific grid be cho
 that the ``--letters`` and ``--compress`` options are used.
 In our LCC example, we will use the 1km grid:
 
-    ``polar2grid.sh -r modis -w scmi --sector-id LCC --letters --compress -g lcc_conus_1km -f <path_to_files>``
+    ``polar2grid.sh -r modis -w awips_tiled --sector-id LCC --letters --compress -g lcc_conus_1km -f <path_to_files>``
 
 Create a subset of MODIS reprojected AWIPS products for a specfic AWIPS grid:
 
