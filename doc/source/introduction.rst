@@ -54,8 +54,8 @@ What's New?
     of Geo2Grid, and takes advantage of the Xarray and Dask python libraries.
 
     Please see the example executions listed at the end of every reader
-    description in this document, as well as the updated examples in the 
-    :doc:`examples/index` section. Finally, the Appendix includes a 
+    description in this document, as well as the updated examples in the
+    :doc:`examples/index` section. Finally, the Appendix includes a
     longer list of changes and direct comparisons of Polar2Grid V2.3
     to V3.0 executions. See :doc:`version3_implementation`.
 
@@ -152,8 +152,8 @@ Improved Execution Times
 Updates in Polar2grid Version 3.0 result in improved image creation times.  The table
 below presents a comparison of the unix `real` time required to create
 VIIRS and MODIS imager GeoTIFF files for the given segments of data in the default
-WGS84 projection. In these examples, the default 4 computer threads were used in the 
-Version 3.0 executions. Execution times decrease when fewer bands and smaller data 
+WGS84 projection. In these examples, the default 4 computer threads were used in the
+Version 3.0 executions. Execution times decrease when fewer bands and smaller data
 segments are processed.
 
 **Table of Execution Times for Creating GeoTIFF Default Projection Images**
