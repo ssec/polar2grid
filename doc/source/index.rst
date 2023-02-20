@@ -32,6 +32,7 @@
     NEWS
     enhancements
     :polar2grid:viirs_day_night_band
+    :polar2grid:version3_implementation
     custom_config
 
 .. toctree-filt::
