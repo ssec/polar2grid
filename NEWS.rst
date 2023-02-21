@@ -4,13 +4,13 @@ Release Notes
 Version 3.0.0 (2023-02-21)
 --------------------------
 
-* New Implementation "polar2grid.sh -r <reader> -w <writer>.
+* New Implementation "polar2grid.sh -r <reader> -w <writer>"
 * Reader name changes and replacements
 * Writer name changes
 * NOAA20 output file names standardized to "noaa20" prefix
 * Alpha Band now included as default. Use ``--fill-value 0`` to not include
-* Specify number of CPU's to use `--num-workers <num>``
-* ``--list-products`` and ``list-product-all`` now available.
+* Specify number of CPU's to use ``--num-workers <num>``
+* ``--list-products`` and ``--list-product-all`` now available.
 * Scaling ".ini" files no longer supported. Replaced with ".yaml"
 * Longer list of updates included in the documentation
 
