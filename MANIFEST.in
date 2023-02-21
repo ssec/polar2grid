@@ -5,3 +5,5 @@ recursive-include polar2grid/fonts *
 recursive-include etc *
 include LICENSE.txt
 include README.rst
+recursive-exclude doc/source/_static/example_images *.png *.jpeg *.jpg
+recursive-exclude doc/source/_static *.psd *.xcf
