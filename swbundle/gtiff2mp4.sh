@@ -94,7 +94,7 @@ echo "Creating video file from: "
 printf '%s\n' ${INPUT_FILES[@]}
 echo "Total number of input files: ${#INPUT_FILES[@]}"
 
-FILE_EXT=${INPUT_FILES[0]##.}
+FILE_EXT=${INPUT_FILES[0]##*.}
 
 x=1
 echo "Preparing images for video conversion..."
@@ -102,10 +102,11 @@ for i in "${INPUT_FILES[@]}"; do
     counter=$(printf %03d $x)
     img_width_height=`gdal_size $i`
     img_width=`echo $img_width_height | cut -f1 -d' '`
-    img_height=`echo $img_height | cut -f3 -d' '`
+    img_height=`echo $img_width_height | cut -f3 -d' '`
     new_width=`get_new_image_width $img_width $img_height`
     if [[ $new_width -eq $img_width ]]; then
-        ln -s "../$i" "${TMP_FRAME_DIR}/${counter}.${FILE_EXT}"
+        # if a geotiff, make sure it isn't tiled (ffmpeg can't handle tiled tiffs)
+        gdal_translate "${i}" "${TMP_FRAME_DIR}/${counter}.${FILE_EXT}"
     else
         echo "Scaling image to work with ffmpeg (New width=${new_width})"
         gdal_translate -outsize $new_width 0 $i "${TMP_FRAME_DIR}/${counter}.${FILE_EXT}"
