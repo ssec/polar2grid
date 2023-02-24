@@ -43,14 +43,25 @@ def test_add_colormap_help():
 
 
 @pytest.mark.parametrize(
-    ("cmap_path", "exp_first_color", "exp_last_color"),
+    ("cmap_path", "exp_first_color", "exp_middle_color", "exp_last_color"),
     [
-        (os.path.join(TEST_ETC_DIR, "colormaps", "amsr2_36h.cmap"), (0, 0, 0, 255), (128, 0, 0, 255)),
-        (os.path.join("colormaps", "amsr2_36h.cmap"), (0, 0, 0, 255), (128, 0, 0, 255)),
-        (os.path.join(TEST_ETC_DIR, "colormaps", "WV_Chile_Short.cmap"), (0, 0, 0, 255), (127, 127, 127, 255)),
+        (
+            os.path.join(TEST_ETC_DIR, "colormaps", "amsr2_36h.cmap"),
+            (0, 0, 0, 255),
+            (128, 255, 130, 255),
+            (128, 0, 0, 255),
+        ),
+        (os.path.join("colormaps", "amsr2_36h.cmap"), (0, 0, 0, 255), (128, 255, 130, 255), (128, 0, 0, 255)),
+        (
+            os.path.join(TEST_ETC_DIR, "colormaps", "WV_Chile_Short.cmap"),
+            (0, 0, 0, 255),
+            (21, 18, 126, 255),
+            (127, 127, 127, 255),
+        ),
+        (os.path.join(TEST_ETC_DIR, "colormaps", "reds.cmap"), (0, 0, 0, 255), (113, 8, 0, 255), (255, 0, 0, 255)),
     ],
 )
-def test_add_colormap_basic_l(tmp_path, cmap_path, exp_first_color, exp_last_color):
+def test_add_colormap_basic_l(tmp_path, cmap_path, exp_first_color, exp_middle_color, exp_last_color):
     from polar2grid.add_colormap import main
 
     fp = str(tmp_path / "test.tif")
@@ -63,4 +74,5 @@ def test_add_colormap_basic_l(tmp_path, cmap_path, exp_first_color, exp_last_col
         cmap = ds.colormap(1)
         assert len(cmap) == 256
         assert cmap[0] == exp_first_color
+        assert cmap[127] == exp_middle_color
         assert cmap[255] == exp_last_color

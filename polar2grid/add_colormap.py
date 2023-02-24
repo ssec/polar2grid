@@ -52,6 +52,7 @@ def create_colortable(ct_file_or_entries):
     if isinstance(ct_file_or_entries, Colormap):
         values = np.arange(256)
         new_colors = ct_file_or_entries.colorize(values)
+        new_colors = np.clip(new_colors, 0.0, 1.0)
         ct_file_or_entries = (
             (color_idx,) + tuple(np.round(new_colors[:, color_idx] * 255.0)) for color_idx in range(new_colors.shape[1])
         )
