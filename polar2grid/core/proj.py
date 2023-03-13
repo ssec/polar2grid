@@ -43,7 +43,7 @@ except ImportError:
     # This module is loaded by meta.py which could be all a user needs so we shouldn't fail if they don't have pyproj
     import warnings
 
-    warnings.warn("Package 'pyproj' could not be imported. Some functionality will be missing")
+    warnings.warn("Package 'pyproj' could not be imported. Some functionality will be missing", stacklevel=2)
     Proj = object
 
 
