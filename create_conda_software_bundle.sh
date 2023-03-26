@@ -7,7 +7,7 @@
 BASE_P2G_DIR="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PY_DIR="$BASE_P2G_DIR"
 BUNDLE_SCRIPTS_DIR="$BASE_P2G_DIR"/swbundle
-CACHE_DIR="/tmp"
+CACHE_DIR="/data/tmp"
 
 oops() {
     echo "OOPS: $*"
