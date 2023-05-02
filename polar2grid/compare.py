@@ -48,6 +48,12 @@ class ArrayComparisonResult:
     def failed(self):
         return self.different_shape or not self.almost_equal
 
+    @property
+    def diff_percentage(self):
+        if not self.total_pixels or self.different_shape:
+            return 100.0
+        return self.num_diff_pixels / self.total_pixels * 100
+
 
 @dataclass
 class FlatArrayComparisonResult(ArrayComparisonResult):
@@ -561,13 +567,11 @@ def _generate_subresult_table_row(
 ) -> str:
     status = "FAILED" if sub_result.failed else "PASSED"
     notes = ""
-    diff_percent = 100
+    diff_percent = sub_result.diff_percentage
     if sub_result.different_shape:
         notes = "Different array shapes"
     elif sub_result.failed:
         notes = "Too many differing pixels"
-    else:
-        diff_percent = sub_result.num_diff_pixels / sub_result.total_pixels * 100
 
     variable = getattr(sub_result, "variable", None)
     exp_tn_html = _generate_thumbnail_html(
