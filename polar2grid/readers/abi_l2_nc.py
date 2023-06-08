@@ -44,6 +44,10 @@ using the ``-r`` option and the reader name ``abi_l2_nc``.
 +---------------------------+-----------------------------------------------------+
 | **Product Name**          | **Description**                                     |
 +===========================+=====================================================+
+| AOD                       | Aerosol Optical Depth                               |
++---------------------------+-----------------------------------------------------+
+| LST                       | Land Surface Temperature                            |
++---------------------------+-----------------------------------------------------+
 | HT                        | Cloud Top Height                                    |
 +---------------------------+-----------------------------------------------------+
 | TEMP                      | Cloud Top Temperature                               |
@@ -61,7 +65,9 @@ from ._base import ReaderProxyBase
 PREFERRED_CHUNK_SIZE: int = 1356
 
 READER_PRODUCTS = [
+    "AOD",
     "HT",
+    "LST",
     "TEMP",
 ]
 COMPOSITE_PRODUCTS = []
