@@ -56,7 +56,7 @@ Example Grid Configuration File: :download:`grid_example.yaml <../../swbundle/gr
 
 Grid configuration files follow the format used by the Satpy and Pyresample
 Python libraries in their
-:doc:`areas.yaml files <pyresample:geometry_utils>` and are in the
+:doc:`areas.yaml files <pyresample:howtos/geometry_utils>` and are in the
 `YAML text format <https://en.wikipedia.org/wiki/YAML>`_.
 Comments can be added by prefixing lines with a ``#`` character. There is an
 example file provided in the |project| bundle at:
