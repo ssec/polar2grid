@@ -41,7 +41,7 @@ enhancements:
           palettes:
             - filename: colormaps/abi_l2_modified_cloud_top.cmap
               min_value: 0.0
-              max_value: 3.0
+              max_value: 1.0
 
   cloud_top_height:
     name: HT
