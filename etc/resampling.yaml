@@ -86,6 +86,14 @@ resampling:
     kwargs:
       weight_delta_max: 40.0
       weight_distance_max: 2.0
+  default_viirs_edr:
+    area_type: swath
+    sensor: viirs
+    reader: viirs_edr
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 2.0
   default_nucaps:
     area_type: swath
     reader: nucaps
