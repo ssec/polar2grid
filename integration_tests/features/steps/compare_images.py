@@ -30,7 +30,15 @@ def step_impl_input_data(context, source):
 
 @given("an empty working directory")
 def step_impl_empty_work_dir(context):
-    context.temp_dir = tempfile.mkdtemp(prefix=os.path.join(context.base_temp_dir, "p2g_tests_"))
+    prefix = os.path.join(context.base_temp_dir, "p2g_tests__")
+    scen_name = context.scenario.name
+    if "@" in scen_name:
+        # "outline" test
+        outline_info = scen_name[scen_name.find("@") + 1 :].strip()
+        outline_info = outline_info.replace(" ", "_").replace(".", "-").lower()
+        prefix += outline_info + "__"
+
+    context.temp_dir = tempfile.mkdtemp(prefix=prefix)
 
 
 @given("input data is copied to the working directory")
