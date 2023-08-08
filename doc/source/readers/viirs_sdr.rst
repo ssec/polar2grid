@@ -25,7 +25,7 @@ Examples:
 
     polar2grid.sh -r viirs_sdr -w geotiff --fill-value 0 -f ../sdr/*.h5
 
-    polar2grid.sh -r viirs_sdr -w geotiff -p true_color false_color --num-workers 8 --tiled -f ../sdr/*.h5
+    polar2grid.sh -r viirs_sdr -w geotiff -p true_color false_color --num-workers 8 --no-tiled -f ../sdr/*.h5
 
     polar2grid.sh -r viirs_sdr -w awips_tiled -p i04 adaptive_dnb dynamic_dnb --awips-true-color --awips-false-color --sza-threshold=90.0 --letters --compress --sector-id Polar -g polar_alaska_1km --dnb-saturation-correction -f <path to files>
 
