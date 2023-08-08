@@ -37,27 +37,7 @@ handles any projection string that `pyproj` can handle (like 'latlong' which the
 
 import sys
 
-try:
-    from pyproj import Proj as BaseProj
-except ImportError:
-    # This module is loaded by meta.py which could be all a user needs so we shouldn't fail if they don't have pyproj
-    import warnings
-
-    warnings.warn("Package 'pyproj' could not be imported. Some functionality will be missing", stacklevel=2)
-    Proj = object
-
-
-class Proj(BaseProj):
-    def is_latlong(self):
-        if hasattr(self, "crs"):
-            return self.crs.is_geographic
-        return super(Proj, self).is_latlong()
-
-    def __call__(self, data1, data2, **kwargs):
-        if self.is_latlong():
-            return data1, data2
-
-        return super(Proj, self).__call__(data1, data2, **kwargs)
+from pyproj import Proj
 
 
 def get_parser():
