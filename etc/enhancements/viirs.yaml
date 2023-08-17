@@ -198,3 +198,25 @@ enhancements:
                 [1.0, 0.0, 0.0],
               ]
               color_scale: 1.0
+
+  cloud_top_height:
+    name: CldTopHght
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/abi_l2_modified_cloud_top.cmap
+              min_value: -300
+              max_value: 20000
+
+  cloud_top_temperature:
+    name: CldTopTemp
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/abi_l2_modified_cloud_top.cmap
+              min_value: 300
+              max_value: 200
