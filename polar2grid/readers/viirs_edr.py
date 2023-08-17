@@ -54,13 +54,9 @@ Averaging resampling. The ``--weight-delta-max`` parameter set to 40 and the
 +---------------------------+-----------------------------------------------------+
 | surf_refl_m05             | M05 Surface Reflectance Band                        |
 +---------------------------+-----------------------------------------------------+
-| surf_refl_m06             | M06 Surface Reflectance Band                        |
-+---------------------------+-----------------------------------------------------+
 | surf_refl_m07             | M07 Surface Reflectance Band                        |
 +---------------------------+-----------------------------------------------------+
 | surf_refl_m08             | M08 Surface Reflectance Band                        |
-+---------------------------+-----------------------------------------------------+
-| surf_refl_m09             | M09 Surface Reflectance Band                        |
 +---------------------------+-----------------------------------------------------+
 | surf_refl_m10             | M10 Surface Reflectance Band                        |
 +---------------------------+-----------------------------------------------------+
@@ -77,8 +73,6 @@ Averaging resampling. The ``--weight-delta-max`` parameter set to 40 and the
 | CldTopTemp                | Cloud Top Temperature                               |
 +---------------------------+-----------------------------------------------------+
 | CldTopHght                | Cloud Top Height                                    |
-+---------------------------+-----------------------------------------------------+
-| CldTopPres                | Cloud Top Pressure                                  |
 +---------------------------+-----------------------------------------------------+
 | AOD550                    | Aerosol Optical Depth                               |
 +---------------------------+-----------------------------------------------------+
@@ -98,9 +92,9 @@ from ._base import ReaderProxyBase
 PREFERRED_CHUNK_SIZE: int = 6400
 
 I_PRODUCTS = ["surf_refl_I{:02d}".format(chan_num) for chan_num in range(1, 4)]
-M_PRODUCTS = ["surf_refl_M{:02d}".format(chan_num) for chan_num in range(1, 12)]
+M_PRODUCTS = ["surf_refl_M{:02d}".format(chan_num) for chan_num in range(1, 12) if chan_num not in (6, 9)]
 SURF_COMPS = ["true_color_surf", "false_color_ref"]
-OTHER_PRODS = ["NDVI", "EVI", "CldTopTemp", "CldTopHght", "CldTopPres", "AOD550", "VLST"]
+OTHER_PRODS = ["NDVI", "EVI", "CldTopTemp", "CldTopHght", "AOD550", "VLST"]
 
 PRODUCT_ALIASES = {}
 SURF_ALIASES = []
