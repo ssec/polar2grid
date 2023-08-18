@@ -55,8 +55,30 @@ def _parse_palettes_for_p2g_cmap(palettes: list):
         p2g_home = get_polar2grid_home()
         filename = filename.replace("$POLAR2GRID_HOME", p2g_home)
         filename = filename.replace("$GEO2GRID_HOME", p2g_home)
+        # if _is_awips_cmap(filename):
+        #     color_arr = _get_awips_colors(filename)
+        #     palette["colors"] = color_arr
+        #     palette["color_scale"] = 1.0
+        #     del palette["filename"]
+        # else:
         palette["filename"] = filename
         yield palette
+
+
+# def _is_awips_cmap(cmap_filename: str) -> bool:
+#     if not cmap_filename.endswith(".cmap"):
+#         return False
+#     with open(cmap_filename, "r") as cmap_file:
+#         return "xml" in cmap_file.read()
+#
+#
+# def _get_awips_colors(cmap_file: str) -> list[tuple[float, float, float]]:
+#     # TODO: If this is used, add it to the dependencies
+#     from defusedxml import ElementTree
+#
+#     tree = ElementTree.parse(cmap_file)
+#     colors = [(float(c.get("r")), float(c.get("g")), float(c.get("b"))) for c in tree.findall("color")]
+#     return colors
 
 
 def colorize(img, **kwargs):

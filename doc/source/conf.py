@@ -266,6 +266,7 @@ if is_geo2grid:
             "readers/viirs_edr_active_fires.rst",
             "readers/viirs_l1b.rst",
             "readers/viirs_sdr.rst",
+            "readers/viirs_edr.rst",
             "readers/virr_l1b.rst",
             "verification/modis_verification.rst",
             "verification/viirs_verification.rst",
