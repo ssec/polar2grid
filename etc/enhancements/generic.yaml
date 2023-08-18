@@ -34,6 +34,15 @@ enhancements:
     - name: gamma
       method: !!python/name:satpy.enhancements.gamma
       kwargs: {gamma: 2.0}
+  surface_reflectance_default:
+    standard_name: surface_bidirectional_reflectance
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 100.}
+      - name: gamma
+        method: !!python/name:satpy.enhancements.gamma
+        kwargs: {gamma: 2.0}
   day_night_mix:
     standard_name: day_night_mix
     operations:

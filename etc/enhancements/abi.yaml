@@ -32,17 +32,6 @@ enhancements:
         kwargs: {stretch: 'crude', min_stretch: 280., max_stretch: 180.}
 
   # Level 2
-  aerosol_optical_depth:
-    name: AOD
-    operations:
-      - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
-        kwargs:
-          palettes:
-            - filename: colormaps/abi_l2_modified_cloud_top.cmap
-              min_value: 0.0
-              max_value: 1.0
-
   cloud_top_height:
     name: HT
     operations:
@@ -54,17 +43,6 @@ enhancements:
               min_value: -300
               max_value: 20000
 
-  land_surface_temp:
-    name: LST
-    operations:
-      - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
-        kwargs:
-          palettes:
-            - filename: colormaps/abi_l2_modified_cloud_top.cmap
-              min_value: 223.15
-              max_value: 323.15
-
   cloud_top_temperature:
     name: TEMP
     operations:
@@ -75,3 +53,80 @@ enhancements:
             - filename: colormaps/abi_l2_modified_cloud_top.cmap
               min_value: 300
               max_value: 200
+  lst:
+    name: LST
+    sensor: abi
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            # AWIPS "VTRSB.cmap"
+            - min_value: 223.15
+              max_value: 429.15
+              values: [
+                0.0,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.5,
+                0.6,
+                0.7,
+                0.8,
+                0.9,
+                1.0,
+              ]
+              colors: [
+                [0.0, 0.0, 0.0],
+                [0.5, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.5, 1.0],
+                [0.0, 1.0, 1.0],
+                [0.0, 1.0, 0.5],
+                [0.0, 1.0, 0.0],
+                [0.5, 1.0, 0.0],
+                [1.0, 1.0, 0.0],
+                [1.0, 0.5, 0.0],
+                [1.0, 0.0, 0.0],
+              ]
+              color_scale: 1.0
+
+  aod:
+    name: AOD
+    sensor: abi
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          # AWIPS "VTRSB.cmap"
+          palettes:
+            - min_value: 0.0
+              max_value: 1.0
+              values: [
+                0.0,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.5,
+                0.6,
+                0.7,
+                0.8,
+                0.9,
+                1.0,
+              ]
+              colors: [
+                [0.0, 0.0, 0.0],
+                [0.5, 0.0, 1.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.5, 1.0],
+                [0.0, 1.0, 1.0],
+                [0.0, 1.0, 0.5],
+                [0.0, 1.0, 0.0],
+                [0.5, 1.0, 0.0],
+                [1.0, 1.0, 0.0],
+                [1.0, 0.5, 0.0],
+                [1.0, 0.0, 0.0],
+              ]
+              color_scale: 1.0

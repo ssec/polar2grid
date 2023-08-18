@@ -526,7 +526,7 @@ def _get_colormap_object(input_tiff, num_bands, cmin, cmax):
     if num_bands in (3, 4) and colormap_csv is None:
         raise ValueError("RGB and RGBA geotiffs must have a colormap " "specified with '--colorbar-colormap-file'.")
     if num_bands in (3, 4) or colormap_csv is not None:
-        cmap = Colormap.from_file(colormap_csv)
+        cmap = Colormap.from_string(colormap_csv)
     vmin, vmax = _get_colorbar_vmin_vmax(cmin, cmax, metadata, input_dtype)
     cmap = cmap.set_range(vmin, vmax, inplace=False)
     return cmap
