@@ -20,19 +20,12 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-#
-#     Written by William Roberts and David Hoese    May 2019
-#     University of Wisconsin-Madison
-#     Space Science and Engineering Center
-#     1225 West Dayton Street
-#     Madison, WI  53706
-#     wroberts4@wisc.edu and david.hoese@ssec.wisc.edu
-"""The FY3-D MERSI2 Level 1B reader operates on Level 1B (L1B) HDF5 files.
+"""The FY-3D MERSI2 Level 1B reader operates on Level 1B (L1B) HDF5 files.
 
 The files come in four varieties; band data and geolocation data, both at 250m
 and 1000m resolution. Files usually have the following naming scheme:
 
-    tf{start_time:%Y%j%H%M%S}.{platform_shortname}-{trans_band:1s}_MERSI_1000M_L1B.{ext}
+    tf{start_time:%Y%j%H%M%S}.FY3D-X_MERSI_1000M_L1B.{ext}
 
 This reader's default resampling algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--weight-delta-max`` parameter is set to 40 and the
