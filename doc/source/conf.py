@@ -259,6 +259,7 @@ if is_geo2grid:
             "readers/avhrr.rst",
             "readers/clavrx.rst",
             "readers/mersi2_l1b.rst",
+            "readers/mersi_ll_l1b.rst",
             "readers/mirs.rst",
             "readers/modis_l1b.rst",
             "readers/modis_l2.rst",
