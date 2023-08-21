@@ -74,7 +74,8 @@ ALL_ANGLES = [
 ]
 ALL_COMPS = ["histogram_dnb", "adaptive_dnb"]
 
-DEFAULT_PRODUCTS = ALL_BANDS + ALL_COMPS
+# band 1 (DNB) is not useful by itself, histogram_dnb is not a default
+DEFAULT_PRODUCTS = ALL_BANDS[1:] + ALL_COMPS[1:]
 
 PRODUCT_ALIASES = {}
 
