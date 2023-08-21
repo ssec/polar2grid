@@ -49,6 +49,10 @@ the ``mersi_ll_l1b`` frontend name. The MERSI-LL frontend provides the following
 +---------------------------+-----------------------------------------------------+-------------------------+
 | 7                         | Channel 7 Brightness Temperature Band               | 12.0                    |
 +---------------------------+-----------------------------------------------------+-------------------------+
+| histogram_dnb             | Histogram Equalized DNB Band                        | N/A                     |
++---------------------------+-----------------------------------------------------+-------------------------+
+| adaptive_dnb              | Adaptive Histogram Equalized DNB Band               | N/A                     |
++---------------------------+-----------------------------------------------------+-------------------------+
 
 """
 
@@ -68,7 +72,7 @@ ALL_ANGLES = [
     "moon_zenith_angle",
     "moon_azimuth_angle",
 ]
-ALL_COMPS = []
+ALL_COMPS = ["histogram_dnb", "adaptive_dnb"]
 
 DEFAULT_PRODUCTS = ALL_BANDS + ALL_COMPS
 
