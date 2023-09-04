@@ -76,3 +76,14 @@ enhancements:
             - min_value: 0.0
               max_value: 1.0
               colors: "rainbow"
+  fog_depth:
+    name: Fog_Depth
+    sensor: abi
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 1000.0
+              filename: colormaps/gridded_data.cmap
