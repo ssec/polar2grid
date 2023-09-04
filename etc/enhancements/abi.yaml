@@ -76,6 +76,7 @@ enhancements:
             - min_value: 0.0
               max_value: 1.0
               colors: "rainbow"
+
   fog_depth:
     name: Fog_Depth
     sensor: abi
@@ -87,3 +88,39 @@ enhancements:
             - min_value: 0.0
               max_value: 1000.0
               filename: colormaps/gridded_data.cmap
+
+  ifr_prob:
+    name: IFR_Fog_Prob
+    sensor: abi
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 100.0
+              filename: colormaps/IFR_PROB.cmap
+
+  lifr_prob:
+    name: LIFR_Fog_Prob
+    sensor: abi
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 100.0
+              filename: colormaps/LIFR_PROB.cmap
+
+  mvfr_prob:
+    name: MVFR_Fog_Prob
+    sensor: abi
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 100.0
+              filename: colormaps/MVFR_PROB.cmap
