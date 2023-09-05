@@ -52,6 +52,18 @@ using the ``-r`` option and the reader name ``abi_l2_nc``.
 +---------------------------+-----------------------------------------------------+
 | TEMP                      | Cloud Top Temperature                               |
 +---------------------------+-----------------------------------------------------+
+| Fog_Depth                 | Fog Depth                                           |
++---------------------------+-----------------------------------------------------+
+| IFR_Fog_Prob              | Instrument Flight Rules Probability                 |
++---------------------------+-----------------------------------------------------+
+| LIFR_Fog_Prob             | Low Instrument Flight Rules Probability             |
++---------------------------+-----------------------------------------------------+
+| MVFR_Fog_Prob             | Marginal Visible Flight Rules Probability           |
++---------------------------+-----------------------------------------------------+
+
+More information on the flight rules products can be found at:
+
+https://www.experimentalaircraft.info/wx/colors-metar-taf.php
 
 """
 
@@ -69,6 +81,10 @@ READER_PRODUCTS = [
     "HT",
     "LST",
     "TEMP",
+    "Fog_Depth",
+    "IFR_Fog_Prob",
+    "LIFR_Fog_Prob",
+    "MVFR_Fog_Prob",
 ]
 COMPOSITE_PRODUCTS = []
 
