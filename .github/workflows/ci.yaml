@@ -35,7 +35,7 @@ jobs:
           miniforge-variant: Mambaforge
           miniforge-version: latest
           use-mamba: true
-          python-version: "3.10"
+          python-version: "3.11"
           activate-environment: test-environment
 
       - name: Set cache environment variables
@@ -88,18 +88,6 @@ jobs:
           make clean
           make latexpdf POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
 
-#      - name: deploy website
-#        if: github.event_name == 'push'
-#        uses: peaceiris/actions-gh-pages@v3
-#        with:
-#          personal_token: ${{ secrets.VISPY_WEBSITE_TOKEN }}
-#          publish_dir: doc/_build/html
-#          publish_branch: main
-#          cname: vispy.org
-#          allow_empty_commit: true
-#          external_repository: vispy/vispy.github.com
-#          full_commit_message: "Deploy vispy.org website for SHA:$GITHUB_SHA (Tag: $GITHUB_REF)"
-
   test:
     name: Tests
     runs-on: ${{ matrix.os }}
@@ -107,7 +95,7 @@ jobs:
       fail-fast: true
       matrix:
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
-        python-version: ["3.10"]
+        python-version: ["3.11"]
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
