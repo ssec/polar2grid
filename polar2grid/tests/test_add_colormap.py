@@ -55,10 +55,10 @@ def test_add_colormap_help():
         (
             os.path.join(TEST_ETC_DIR, "colormaps", "WV_Chile_Short.cmap"),
             (0, 0, 0, 255),
-            (21, 18, 126, 255),
+            (0, 47, 144, 255),
             (127, 127, 127, 255),
         ),
-        (os.path.join(TEST_ETC_DIR, "colormaps", "reds.cmap"), (0, 0, 0, 255), (113, 8, 0, 255), (255, 0, 0, 255)),
+        (os.path.join(TEST_ETC_DIR, "colormaps", "reds.cmap"), (0, 0, 0, 255), (129, 3, 39, 255), (255, 0, 0, 255)),
     ],
 )
 def test_add_colormap_basic_l(tmp_path, cmap_path, exp_first_color, exp_middle_color, exp_last_color):
