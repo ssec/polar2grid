@@ -61,36 +61,9 @@ enhancements:
         method: !!python/name:polar2grid.enhancements.colorize
         kwargs:
           palettes:
-            # AWIPS "VTRSB.cmap"
             - min_value: 223.15
               max_value: 429.15
-              values: [
-                0.0,
-                0.1,
-                0.2,
-                0.3,
-                0.4,
-                0.5,
-                0.6,
-                0.7,
-                0.8,
-                0.9,
-                1.0,
-              ]
-              colors: [
-                [0.0, 0.0, 0.0],
-                [0.5, 0.0, 1.0],
-                [0.0, 0.0, 1.0],
-                [0.0, 0.5, 1.0],
-                [0.0, 1.0, 1.0],
-                [0.0, 1.0, 0.5],
-                [0.0, 1.0, 0.0],
-                [0.5, 1.0, 0.0],
-                [1.0, 1.0, 0.0],
-                [1.0, 0.5, 0.0],
-                [1.0, 0.0, 0.0],
-              ]
-              color_scale: 1.0
+              colors: "rainbow"
 
   aod:
     name: AOD
@@ -99,34 +72,55 @@ enhancements:
       - name: colorize
         method: !!python/name:polar2grid.enhancements.colorize
         kwargs:
-          # AWIPS "VTRSB.cmap"
           palettes:
             - min_value: 0.0
               max_value: 1.0
-              values: [
-                0.0,
-                0.1,
-                0.2,
-                0.3,
-                0.4,
-                0.5,
-                0.6,
-                0.7,
-                0.8,
-                0.9,
-                1.0,
-              ]
-              colors: [
-                [0.0, 0.0, 0.0],
-                [0.5, 0.0, 1.0],
-                [0.0, 0.0, 1.0],
-                [0.0, 0.5, 1.0],
-                [0.0, 1.0, 1.0],
-                [0.0, 1.0, 0.5],
-                [0.0, 1.0, 0.0],
-                [0.5, 1.0, 0.0],
-                [1.0, 1.0, 0.0],
-                [1.0, 0.5, 0.0],
-                [1.0, 0.0, 0.0],
-              ]
-              color_scale: 1.0
+              colors: "rainbow"
+
+  fog_depth:
+    name: Fog_Depth
+    sensor: abi
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 1000.0
+              filename: colormaps/gridded_data.cmap
+
+  ifr_prob:
+    name: IFR_Fog_Prob
+    sensor: abi
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 100.0
+              filename: colormaps/IFR_PROB.cmap
+
+  lifr_prob:
+    name: LIFR_Fog_Prob
+    sensor: abi
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 100.0
+              filename: colormaps/LIFR_PROB.cmap
+
+  mvfr_prob:
+    name: MVFR_Fog_Prob
+    sensor: abi
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 100.0
+              filename: colormaps/MVFR_PROB.cmap
