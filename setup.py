@@ -38,7 +38,7 @@ from glob import glob
 
 from setuptools import find_packages, setup
 
-version = "3.0.2"
+version = "3.1.0"
 
 
 def readme():
