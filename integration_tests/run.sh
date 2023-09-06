@@ -185,6 +185,8 @@ create_documentation()
 
     # Make docs.
     cd "$WORKSPACE"/doc
+    # Clean any past runs
+    make clean
     make latexpdf POLAR2GRID_DOC="$prefix"
     # Copy pdfs to package directory.
     cp "$WORKSPACE"/doc/build/latex/*.pdf "${WORKSPACE}/$package_name"
