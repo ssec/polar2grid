@@ -96,10 +96,9 @@ more information on the creation of RGBs, please see the
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup
+from argparse import ArgumentParser, BooleanOptionalAction, _ArgumentGroup
 from typing import Optional
 
-from ..core.script_utils import BooleanOptionalAction
 from ._base import ReaderProxyBase
 
 PREFERRED_CHUNK_SIZE: int = 2200  # one segment

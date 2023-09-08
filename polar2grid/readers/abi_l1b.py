@@ -142,4 +142,5 @@ def add_reader_argument_groups(
     """
     if group is None:
         group = parser.add_argument_group(title="ABI L1b Reader")
+    group.add_argument("--clip-negative-radiances")
     return group, None
