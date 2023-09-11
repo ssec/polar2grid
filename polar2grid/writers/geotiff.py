@@ -41,9 +41,10 @@ as transparent in most image viewers.
 import argparse
 import logging
 import os
+from argparse import BooleanOptionalAction
 
 from polar2grid.core.dtype import NUMPY_DTYPE_STRS, int_or_float, str_to_dtype
-from polar2grid.core.script_utils import BooleanOptionalAction, NumpyDtypeList
+from polar2grid.core.script_utils import NumpyDtypeList
 from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
 
 LOG = logging.getLogger(__name__)

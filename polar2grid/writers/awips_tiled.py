@@ -82,8 +82,8 @@ see the Satpy documentation :mod:`here <satpy.writers.awips_tiled>`.
 
 """
 import logging
+from argparse import BooleanOptionalAction
 
-from polar2grid.core.script_utils import BooleanOptionalAction
 from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
 
 LOG = logging.getLogger(__name__)
