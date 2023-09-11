@@ -98,7 +98,7 @@ more information on the creation of RGBs, please see the
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup
+from argparse import ArgumentParser, BooleanOptionalAction, _ArgumentGroup
 from typing import Optional
 
 from ._base import ReaderProxyBase
@@ -142,5 +142,10 @@ def add_reader_argument_groups(
     """
     if group is None:
         group = parser.add_argument_group(title="ABI L1b Reader")
-    group.add_argument("--clip-negative-radiances")
+    group.add_argument(
+        "--clip-negative-radiances",
+        action=BooleanOptionalAction,
+        default=True,
+        help="Clip negative radiances for IR bands. Default is to perform the clipping.",
+    )
     return group, None
