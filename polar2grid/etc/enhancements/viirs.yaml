@@ -166,3 +166,11 @@ enhancements:
             - filename: colormaps/abi_l2_modified_cloud_top.cmap
               min_value: 300
               max_value: 200
+
+  nbr:
+    sensor: viirs
+    standard_name: normalized_burn_ratio
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: { stretch: 'crude', min_stretch: -1.0, max_stretch: 1.0 }
