@@ -496,6 +496,7 @@ def _process_one_image(
 ) -> None:
     LOG.info("Creating {} from {}".format(output_filename, input_tiff))
     img = Image.open(input_tiff)
+    all_tiff_tags = img.tag_v2
     img_bands = img.getbands()
     num_bands = len(img_bands)
     # P = palette which we assume to be an RGBA colormap
@@ -513,7 +514,12 @@ def _process_one_image(
         cmap = _get_colormap_object(input_tiff, num_bands, cmin, cmax)
         _add_colorbar_to_image(img, colormap=cmap, **colorbar_kwargs)
 
-    img.save(output_filename)
+    kwargs = {}
+    if output_filename.endswith(".tif") or output_filename.endswith(".tiff"):
+        # Copy geotiff/tiff tags if output is TIFF
+        geotiff_tags = {tag_num: tag_val for tag_num, tag_val in all_tiff_tags.items() if tag_num > 30000}
+        kwargs = {"tiffinfo": geotiff_tags}
+    img.save(output_filename, **kwargs)
 
 
 def _get_colormap_object(input_tiff, num_bands, cmin, cmax):

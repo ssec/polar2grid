@@ -129,19 +129,23 @@ def _create_csv_cmap_and_extra_tags(colormap):
 
 
 @pytest.mark.parametrize(
-    ("gen_func", "include_scale_offset", "include_cmap_tag"),
+    ("gen_func", "include_scale_offset", "include_cmap_tag", "output_ext"),
     [
-        (_create_fake_l_geotiff, False, False),
-        (_create_fake_l_geotiff_colormap, False, False),
-        (_create_fake_l_geotiff_colormap, True, False),
-        (_create_fake_l_geotiff_colormap, True, True),
-        (_create_fake_rgb_geotiff, False, True),
-        (_create_fake_rgb_geotiff, True, True),
+        (_create_fake_l_geotiff, False, False, ""),
+        (_create_fake_l_geotiff, False, False, "png"),
+        (_create_fake_l_geotiff, False, False, "tif"),
+        (_create_fake_l_geotiff_colormap, False, False, ""),
+        (_create_fake_l_geotiff_colormap, True, False, ""),
+        (_create_fake_l_geotiff_colormap, True, True, ""),
+        (_create_fake_rgb_geotiff, False, True, ""),
+        (_create_fake_rgb_geotiff, True, True, ""),
     ],
 )
 @pytest.mark.parametrize("colormap", [REDS_SPREAD_CMAP, REDS_MIN_CMAP])
 @mock.patch("polar2grid.add_coastlines.ContourWriterAGG.add_overlay_from_dict")
-def test_add_coastlines_basic(add_overlay_mock, tmp_path, gen_func, include_scale_offset, include_cmap_tag, colormap):
+def test_add_coastlines_basic(
+    add_overlay_mock, tmp_path, gen_func, include_scale_offset, include_cmap_tag, output_ext, colormap
+):
     from polar2grid.add_coastlines import main
 
     is_rgb = "rgb" in gen_func.__name__
@@ -149,21 +153,25 @@ def test_add_coastlines_basic(add_overlay_mock, tmp_path, gen_func, include_scal
     has_colors = colormap is not None and (has_colormap or is_rgb)
 
     fp = str(tmp_path / "test.tif")
+    output_fp = fp.replace(".tif", ".png")
     gen_func(fp, colormap, include_scale_offset=include_scale_offset, include_colormap_tag=include_cmap_tag)
     extra_args = []
+    if output_ext:
+        output_fp = fp.replace(".tif", f"_new.{output_ext}")
+        extra_args.extend(["-o", output_fp])
 
     with mocked_pydecorate_add_scale() as add_scale_mock:
         ret = main(["--add-coastlines", "--add-colorbar", fp] + extra_args)
 
     assert ret in [None, 0]
-    assert os.path.isfile(tmp_path / "test.png")
+    assert os.path.isfile(output_fp)
     add_overlay_mock.assert_called_once()
     assert "coasts" in add_overlay_mock.call_args.args[0]
     add_scale_mock.assert_called_once()
     passed_cmap = add_scale_mock.call_args.kwargs["colormap"]
     _check_used_colormap(passed_cmap, has_colors, include_cmap_tag, include_scale_offset)
 
-    img = Image.open(tmp_path / "test.png")
+    img = Image.open(output_fp)
     arr = np.asarray(img)
     # bottom of the image is a colorbar
     image_arr = arr[:940]
@@ -171,6 +179,16 @@ def test_add_coastlines_basic(add_overlay_mock, tmp_path, gen_func, include_scal
     _check_exp_image_colors(image_arr, colormap, 1, has_colors)
     _check_exp_image_colors(image_arr, colormap, 2, has_colors)
     assert (arr[940:] != 0).any()
+
+    if output_fp.endswith(".tif"):
+        out_tags = dict(img.tag_v2)
+        in_img = Image.open(fp)
+        in_tags = dict(in_img.tag_v2)
+        assert len(out_tags) >= 14
+        for key, val in out_tags.items():
+            if key < 30000:
+                continue
+            assert in_tags[key] == val
 
 
 @mock.patch("polar2grid.add_coastlines.ContourWriterAGG.add_overlay_from_dict")
