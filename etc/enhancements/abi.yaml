@@ -12,6 +12,18 @@ enhancements:
          xp: [0., 25., 55., 100., 255.]
          fp: [0., 90., 140., 175., 255.]
          reference_scale_factor: 255
+  channel_7_default:
+    name: C07
+    operations:
+      - name: reflectance_range
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 400.0, max_stretch: 190.0}
+      - name: Linear interpolation
+        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        kwargs:
+          xp: [0.0, 85.0, 191.857, 255.0]
+          fp: [0.0, 14.0, 190.0, 255.0]
+          reference_scale_factor: 255
   channel_8_default:
     name: C08
     operations:
