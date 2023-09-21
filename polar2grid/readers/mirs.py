@@ -257,7 +257,7 @@ def add_reader_argument_groups(
 ) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
     """Add reader-specific command line arguments to an existing argument parser."""
     if group is None:
-        group = parser.add_argument_group(title="VIIRS SDR Reader")
+        group = parser.add_argument_group(title="MiRS Reader")
 
     group.add_argument(
         "--bt-channels",
