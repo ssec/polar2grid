@@ -12,6 +12,12 @@ enhancements:
          xp: [0., 25., 55., 100., 255.]
          fp: [0., 90., 140., 175., 255.]
          reference_scale_factor: 255
+  channel_7_default:
+    name: SW038
+    operations:
+      - name: linear
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 400.15, max_stretch: 164.15}
   channel_8_default:
     name: WV063
     operations:
