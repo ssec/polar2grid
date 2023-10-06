@@ -452,7 +452,6 @@ def _set_preferred_chunk_size(preferred_chunk_size: int) -> None:
     pcs_in_mb = (preferred_chunk_size * preferred_chunk_size) * 8 // (1024 * 1024)
     if "PYTROLL_CHUNK_SIZE" not in os.environ:
         LOG.debug(f"Setting preferred chunk size to {preferred_chunk_size} pixels or {pcs_in_mb:d}MiB")
-        satpy.CHUNK_SIZE = preferred_chunk_size
         os.environ["PYTROLL_CHUNK_SIZE"] = f"{preferred_chunk_size:d}"
         dask.config.set({"array.chunk-size": f"{pcs_in_mb:d}MiB"})
     else:
