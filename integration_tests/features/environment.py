@@ -43,13 +43,17 @@ def before_all(context):
         import polar2grid
 
         os.environ["POLAR2GRID_HOME"] = os.path.join(os.path.dirname(polar2grid.__file__), "..", "swbundle")
+
+
+def before_feature(context, feature):
     tmpdir = tempfile.gettempdir()
-    context.base_temp_dir = os.path.join(tmpdir, "p2g_integration_tests")
+    feature_name = os.path.basename(feature.filename).replace("<", "").replace(">", "").replace(".feature", "")
+    context.base_temp_dir = os.path.join(tmpdir, "p2g_integration_tests", feature_name)
 
     # remove any previous test results
     if os.path.isdir(context.base_temp_dir):
         shutil.rmtree(context.base_temp_dir, ignore_errors=True)
-    os.mkdir(context.base_temp_dir)
+    os.makedirs(context.base_temp_dir, exist_ok=True)
 
 
 def after_all(context):
