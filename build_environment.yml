@@ -28,7 +28,7 @@ dependencies:
   - pyproj>=3.1.0
   - pyresample>=1.27.1
   - pyshp
-  - pyspectral>=0.12.3
+  - pyspectral>=0.12.5
   - python=3.11
   - python-geotiepoints>=1.6.0
   - pyyaml
