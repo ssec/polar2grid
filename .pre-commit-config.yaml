@@ -25,9 +25,9 @@ repos:
       - id: check-yaml
         args: [--unsafe]
   - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.7.0-2
+    rev: v3.7.0-3
     hooks:
-      - id: shfmt-src  # native (requires Go to build)
+      - id: shfmt
         args: ["-i", "4"]
 ci:
   # To trigger manually, comment on a pull request with "pre-commit.ci autofix"
