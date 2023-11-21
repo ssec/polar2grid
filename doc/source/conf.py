@@ -295,6 +295,7 @@ else:
             "readers/ahi_hsd.rst",
             "readers/ami_l1b.rst",
             "readers/glm_l2.rst",
+            "readers/fci_l1c_nc.rst",
             "verification/abi_verification.rst",
         ]
     )

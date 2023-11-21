@@ -444,7 +444,7 @@ class CompareHelper:
 
     def compare_dirs(self, dir1, dir2, **kwargs) -> list[FileComparisonResults]:
         results = []
-        for expected_path in glob(os.path.join(dir1, "*")):
+        for expected_path in sorted(glob(os.path.join(dir1, "*"))):
             if expected_path.endswith(".log"):
                 continue
             test_path = os.path.join(dir2, os.path.basename(expected_path))
