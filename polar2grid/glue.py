@@ -34,6 +34,15 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Optional, Union
 
+# isort: off
+# hdf5plugin must be imported before h5py and xarray or it won't be available
+# Used by the FCI reader
+try:
+    import hdf5plugin
+except ImportError:
+    hdf5plugin = None  # type: ignore
+# isort: on
+
 import dask
 import satpy
 from dask.diagnostics import ProgressBar
