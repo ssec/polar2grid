@@ -36,11 +36,7 @@ except ImportError:
 from typing import Union
 
 from pyresample.boundary import AreaBoundary, AreaDefBoundary, Boundary
-from pyresample.geometry import (
-    AreaDefinition,
-    SwathDefinition,
-    get_geostationary_bounding_box,
-)
+from pyresample.geometry import AreaDefinition, SwathDefinition, get_geostationary_bounding_box
 from pyresample.spherical import SphPolygon
 
 logger = logging.getLogger(__name__)

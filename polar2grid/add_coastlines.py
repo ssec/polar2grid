@@ -351,7 +351,7 @@ def main(argv=sys.argv[1:]):
     # gather all options into a single dictionary that we can pass to pycoast
     pycoast_options = _args_to_pycoast_dict(args)
     colorbar_kwargs = _args_to_colorbar_kwargs(args) if args.add_colorbar else {}
-    for input_tiff, output_filename in zip(args.input_tiff, args.output_filename):
+    for input_tiff, output_filename in zip(args.input_tiff, args.output_filename, strict=True):
         _process_one_image(input_tiff, output_filename, pycoast_options, args.shapes_dir, colorbar_kwargs)
     return 0
 
@@ -484,10 +484,10 @@ def find_font(font_name, size):
     try:
         font = ImageFont.truetype(font_name, size)
         return font.path
-    except IOError:
+    except IOError as err:
         font_path = get_resource_filename("polar2grid.fonts", font_name)
         if not os.path.exists(font_path):
-            raise ValueError("Font path does not exist: {}".format(font_path))
+            raise ValueError("Font path does not exist: {}".format(font_path)) from err
         return font_path
 
 

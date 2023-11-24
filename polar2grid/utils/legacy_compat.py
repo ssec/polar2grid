@@ -129,7 +129,7 @@ class AliasHandler:
         """
         satpy_names = self.convert_p2g_name_to_satpy(self._user_products)
         new_user_products = []
-        for user_name, satpy_name in zip(self._user_products, satpy_names):
+        for user_name, satpy_name in zip(self._user_products, satpy_names, strict=True):
             # convert DataID/DataQuery to string
             satpy_name = satpy_name if isinstance(satpy_name, str) else satpy_name["name"]
             if satpy_name not in known_dataset_names:
@@ -212,7 +212,7 @@ class AliasHandler:
         """
         all_ids = list(scn.keys())
         all_p2g_names = list(self.convert_satpy_to_p2g_name(all_ids))
-        for data_id, p2g_name in zip(all_ids, all_p2g_names):
+        for data_id, p2g_name in zip(all_ids, all_p2g_names, strict=True):
             if p2g_name is None:
                 # the Satpy ID doesn't have a Polar2Grid compatible name
                 logger.debug("Satpy DataID %s does not have a compatible polar2grid name.", data_id)
@@ -225,7 +225,7 @@ class AliasHandler:
     ) -> tuple[list[str], list[str], list[str]]:
         """Get separate lists of available Satpy products and Polar2Grid products."""
         available_ids_as_p2g_names = list(self.convert_satpy_to_p2g_name(available_satpy_ids, all_p2g_products))
-        satpy_id_to_p2g_name = dict(zip(available_satpy_ids, available_ids_as_p2g_names))
+        satpy_id_to_p2g_name = dict(zip(available_satpy_ids, available_ids_as_p2g_names, strict=True))
         available_p2g_names = []
         available_custom_names = []
         available_satpy_names = []

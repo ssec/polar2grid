@@ -94,6 +94,8 @@ class ResamplerDecisionTree(DecisionTree):
 
         try:
             return super().find_match(**query_dict)
-        except KeyError:
+        except KeyError as err:
             # give a more understandable error message
-            raise KeyError(f"No resampling configuration found for {query_dict['area_type']=} | {query_dict['name']=}")
+            raise KeyError(
+                f"No resampling configuration found for {query_dict['area_type']=} | {query_dict['name']=}"
+            ) from err

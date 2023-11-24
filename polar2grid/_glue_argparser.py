@@ -163,7 +163,7 @@ class GlueArgumentParser:
     def _parse_reader_args(self, reader_subgroups: list) -> tuple[dict, dict]:
         reader_args = {}
         load_args = {}
-        for reader_name, (sgrp1, sgrp2) in zip(self._reader_names, reader_subgroups):
+        for reader_name, (sgrp1, sgrp2) in zip(self._reader_names, reader_subgroups, strict=True):
             if sgrp1 is None:
                 continue
             rargs = _args_to_dict(self._args, sgrp1._group_actions)
@@ -175,7 +175,7 @@ class GlueArgumentParser:
     def _parse_one_writer_args(self, writer_subgroups: list) -> dict:
         writer_names: list[str] = self._writer_args["writers"]
         writer_specific_args = {}
-        for writer_name, (sgrp1, sgrp2) in zip(writer_names, writer_subgroups):
+        for writer_name, (sgrp1, sgrp2) in zip(writer_names, writer_subgroups, strict=True):
             wargs = _args_to_dict(self._args, sgrp1._group_actions)
             if sgrp2 is not None:
                 wargs.update(_args_to_dict(self._args, sgrp2._group_actions))
@@ -283,8 +283,9 @@ def _validate_reader_writer_args(parser, args, use_polar2grid_defaults):
         parser.print_usage()
         parser.exit(
             1,
-            "\nERROR: Reader must be provided (-r flag).\n"
-            "Supported readers:\n\t{}\n".format("\n\t".join(_supported_readers(use_polar2grid_defaults))),
+            "\nERROR: Reader must be provided (-r flag).\n" "Supported readers:\n\t{}\n".format(
+                "\n\t".join(_supported_readers(use_polar2grid_defaults))
+            ),
         )
     elif len(args.readers) > 1:
         parser.print_usage()
@@ -297,8 +298,9 @@ def _validate_reader_writer_args(parser, args, use_polar2grid_defaults):
         parser.print_usage()
         parser.exit(
             1,
-            "\nERROR: Writer must be provided (-w flag) with one or more writer.\n"
-            "Supported writers:\n\t{}\n".format("\n\t".join(_supported_writers(use_polar2grid_defaults))),
+            "\nERROR: Writer must be provided (-w flag) with one or more writer.\n" "Supported writers:\n\t{}\n".format(
+                "\n\t".join(_supported_writers(use_polar2grid_defaults))
+            ),
         )
 
 

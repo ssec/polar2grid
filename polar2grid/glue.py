@@ -51,11 +51,7 @@ from satpy import DataID, Scene
 from satpy.writers import compute_writer_results
 
 from polar2grid._glue_argparser import GlueArgumentParser, get_p2g_defaults_env_var
-from polar2grid.core.script_utils import (
-    create_exc_handler,
-    rename_log_file,
-    setup_logging,
-)
+from polar2grid.core.script_utils import create_exc_handler, rename_log_file, setup_logging
 from polar2grid.filters import filter_scene
 from polar2grid.readers._base import ReaderProxyBase
 from polar2grid.resample import resample_scene
@@ -150,7 +146,7 @@ def _write_scene_with_writer(scn: Scene, writer_name: str, data_ids: list[DataID
     res = scn.save_datasets(writer=writer_name, compute=False, datasets=data_ids, **wargs)
     if res and isinstance(res[0], (tuple, list)):
         # list of (dask-array, file-obj) tuples
-        to_save.extend(zip(*res))
+        to_save.extend(zip(*res, strict=True))
     else:
         # list of delayed objects
         to_save.extend(res)
@@ -472,12 +468,12 @@ def _persist_swath_definition_in_scene(scn: Scene) -> None:
     if not to_persist_swath_defs:
         return scn
 
-    to_update_data_arrays, to_persist_lonlats = zip(*to_persist_swath_defs.values())
+    to_update_data_arrays, to_persist_lonlats = zip(*to_persist_swath_defs.values(), strict=True)
     LOG.info("Loading swath geolocation into memory...")
     persisted_lonlats = dask.persist(*to_persist_lonlats)
     persisted_swath_defs = [SwathDefinition(plons, plats) for plons, plats in persisted_lonlats]
     new_scn = scn.copy()
-    for arrays_to_update, persisted_swath_def in zip(to_update_data_arrays, persisted_swath_defs):
+    for arrays_to_update, persisted_swath_def in zip(to_update_data_arrays, persisted_swath_defs, strict=True):
         for array_to_update in arrays_to_update:
             array_to_update.attrs["area"] = persisted_swath_def
             new_scn._datasets[array_to_update.attrs["_satpy_id"]] = array_to_update
