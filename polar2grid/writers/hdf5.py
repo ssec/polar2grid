@@ -52,7 +52,8 @@ import xarray as xr
 from pyresample.geometry import SwathDefinition
 from satpy.writers import Writer, compute_writer_results, split_results
 
-from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy, ignore_pyproj_proj_warnings
+from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
+from polar2grid.utils.warnings import ignore_pyproj_proj_warnings
 from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList, str_to_dtype
 
 LOG = logging.getLogger(__name__)

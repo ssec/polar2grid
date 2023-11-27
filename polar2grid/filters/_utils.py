@@ -36,7 +36,7 @@ except ImportError:
 from typing import Union
 
 from pyresample.boundary import AreaBoundary, AreaDefBoundary, Boundary
-from pyresample.geometry import AreaDefinition, SwathDefinition, get_geostationary_bounding_box
+from pyresample.geometry import AreaDefinition, SwathDefinition, get_geostationary_bounding_box_in_lonlats
 from pyresample.spherical import SphPolygon
 
 logger = logging.getLogger(__name__)
@@ -47,11 +47,12 @@ PRGeometry = Union[SwathDefinition, AreaDefinition]
 def boundary_for_area(area_def: PRGeometry) -> Boundary:
     """Create Boundary object representing the provided area."""
     if getattr(area_def, "is_geostationary", False):
-        adp = Boundary(*get_geostationary_bounding_box(area_def, nb_points=100))
+        adp = Boundary(*get_geostationary_bounding_box_in_lonlats(area_def, nb_points=100))
     else:
         freq_fraction = 0.30 if isinstance(area_def, AreaDefinition) else 0.05
         try:
-            adp = AreaDefBoundary(area_def, frequency=int(area_def.shape[0] * freq_fraction))
+            adp = area_def.boundary()
+            adp.decimate(int(freq_fraction * area_def.shape[0]))
         except ValueError:
             if not isinstance(area_def, SwathDefinition):
                 logger.error("Unable to generate bounding geolocation polygon")

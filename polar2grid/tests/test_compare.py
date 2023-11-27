@@ -21,13 +21,13 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Tests for the compare.py script."""
-import contextlib
 import os
-import warnings
 from glob import glob
 
 import numpy as np
 import pytest
+
+from polar2grid.utils.warnings import ignore_no_georef
 
 SHAPE1 = (200, 100)
 SHAPE2 = (200, 101)
@@ -42,20 +42,6 @@ IMAGE6_RGBA_UINT8_ZEROS = np.zeros((4,) + SHAPE1, dtype=np.uint8)
 IMAGE7_RGB_UINT8_ONES = np.ones((3,) + SHAPE1, dtype=np.uint8)
 IMAGE_LIST1 = [IMAGE1_L_UINT8_ZEROS, IMAGE1_L_UINT8_ZEROS]
 IMAGE_LIST2 = [IMAGE1_L_UINT8_ZEROS, IMAGE2_L_UINT8_ZEROS, IMAGE4_RGB_UINT8_ZEROS]
-
-
-@contextlib.contextmanager
-def ignore_no_georef():
-    """Wrap operations that we know will produce a rasterio geolocation warning."""
-    from rasterio.errors import NotGeoreferencedWarning
-
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            "Dataset has no geotransform",
-            NotGeoreferencedWarning,
-        )
-        yield
 
 
 def _create_geotiffs(base_dir, img_data):

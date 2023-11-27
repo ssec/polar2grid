@@ -35,9 +35,10 @@ def pytest_generate_tests(metafunc):
 
     """
     if "yaml_config_file" in metafunc.fixturenames:
-        root_dir = os.path.join(os.path.dirname(__file__), "..", "..")
+        root_dir = os.path.join(os.path.dirname(__file__), "..")
         glob_pat = os.path.join(root_dir, "etc", "**", "*.yaml")
         p2g_yaml_files = sorted(glob(glob_pat, recursive=True))
+        assert len(p2g_yaml_files) != 0
         metafunc.parametrize("yaml_config_file", p2g_yaml_files)
 
 

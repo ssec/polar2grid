@@ -57,7 +57,16 @@ include-package-data = true
 find = {}
 
 [tool.pytest.ini_options]
-minversion = 7.0
+minversion = 6.0
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+log_cli_level = "info"
+testpaths = ["polar2grid/tests"]
+filterwarnings = [
+    "error",
+    "ignore:numpy.ndarray size changed, may indicate binary incompatibility:RuntimeWarning",
+    "ignore:The `frequency` argument is pending deprecation:PendingDeprecationWarning"
+]
 
 [tool.coverage.run]
 relative_files = true

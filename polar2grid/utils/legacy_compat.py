@@ -24,9 +24,7 @@
 
 from __future__ import annotations
 
-import contextlib
 import logging
-import warnings
 from typing import Generator, Iterable, Optional, Union
 
 from satpy import DataID, DataQuery, Scene
@@ -259,22 +257,3 @@ def get_sensor_alias(satpy_sensor):
     if len(new_sensor) == 1:
         return new_sensor.pop()
     return new_sensor
-
-
-@contextlib.contextmanager
-def ignore_pyproj_proj_warnings():
-    """Wrap operations that we know will produce a PROJ.4 precision warning.
-
-    Only to be used internally to Pyresample when we have no other choice but
-    to use PROJ.4 strings/dicts. For example, serialization to YAML or other
-    human-readable formats or testing the methods that produce the PROJ.4
-    versions of the CRS.
-
-    """
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            "You will likely lose important projection information",
-            UserWarning,
-        )
-        yield

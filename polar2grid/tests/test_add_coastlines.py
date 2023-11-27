@@ -171,8 +171,10 @@ def test_add_coastlines_basic(
     passed_cmap = add_scale_mock.call_args.kwargs["colormap"]
     _check_used_colormap(passed_cmap, has_colors, include_cmap_tag, include_scale_offset)
 
-    img = Image.open(output_fp)
-    arr = np.asarray(img)
+    with Image.open(output_fp) as img:
+        img.load()
+        arr = np.asarray(img)
+        out_tags = dict(img.tag_v2) if output_fp.endswith(".tif") else {}
     # bottom of the image is a colorbar
     image_arr = arr[:940]
     _check_exp_image_colors(image_arr, colormap, 0, has_colors)
@@ -181,9 +183,9 @@ def test_add_coastlines_basic(
     assert (arr[940:] != 0).any()
 
     if output_fp.endswith(".tif"):
-        out_tags = dict(img.tag_v2)
-        in_img = Image.open(fp)
-        in_tags = dict(in_img.tag_v2)
+        with Image.open(fp) as in_img:
+            in_img.load()
+            in_tags = dict(in_img.tag_v2)
         assert len(out_tags) >= 14
         for key, val in out_tags.items():
             if key < 30000:
