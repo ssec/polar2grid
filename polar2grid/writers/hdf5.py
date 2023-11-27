@@ -121,6 +121,7 @@ class HDF5Writer(Writer):
 
         Args:
             datasets (list[xr.DataArray]):  A list of dataArray objects stored in Scene.
+
         Returns:
             dictionary:  a dictionary of {AreaDef:  list[xr.DataArray]}
         """

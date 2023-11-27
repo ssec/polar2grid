@@ -103,8 +103,8 @@ def str_to_dtype(dtype_str):
 
     try:
         return str2dtype[dtype_str]
-    except KeyError:
-        raise ValueError("Not a valid data type string: %s" % (dtype_str,))
+    except KeyError as err:
+        raise ValueError("Not a valid data type string: %s" % (dtype_str,)) from err
 
 
 def dtype_to_str(numpy_dtype):
@@ -114,8 +114,8 @@ def dtype_to_str(numpy_dtype):
 
     try:
         return dtype2str[np.dtype(numpy_dtype).type]
-    except KeyError:
-        raise ValueError("Unsupported np data type: %r" % (numpy_dtype,))
+    except KeyError as err:
+        raise ValueError("Unsupported np data type: %r" % (numpy_dtype,)) from err
 
 
 def clip_to_data_type(data, data_type):

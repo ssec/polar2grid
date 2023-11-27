@@ -64,5 +64,5 @@ def test_conf_conversion(tmpdir, capsys, conf_content, num_areas, area_types):
     s.seek(0)
     areas = parse_area_file([s])
     assert len(areas) == num_areas
-    for area_obj, area_type in zip(areas, area_types):
+    for area_obj, area_type in zip(areas, area_types, strict=True):
         assert isinstance(area_obj, area_type)

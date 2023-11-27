@@ -105,6 +105,12 @@ def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwa
     Args:
         array1: numpy array for comparison
         array2: numpy array for comparison
+        atol: absolute tolerance (see numpy ``isclose``)
+        rtol: relative tolerance (see numpy ``isclose``)
+        margin_of_error: percentage of pixels that can be different and still
+            be considered a passing amount.
+        kwargs: Unused.
+
 
     Returns:
         1 if more than margin_of_error pixels are different, 0 otherwise.

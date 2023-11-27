@@ -20,7 +20,7 @@ enhancements:
         method: !!python/name:polar2grid.enhancements.palettize
         kwargs:
           palettes:
-            - filename: $POLAR2GRID_HOME/../etc/colormaps/amsr2_36h.cmap
+            - filename: $POLAR2GRID_HOME/../polar2grid/etc/colormaps/amsr2_36h.cmap
               min_value: 180
               max_value: 280
   test_p2g_palettize2:
@@ -62,6 +62,6 @@ enhancements:
         method: !!python/name:polar2grid.enhancements.colorize
         kwargs:
           palettes:
-            - filename: $POLAR2GRID_HOME/../etc/colormaps/amsr2_36h.cmap
+            - filename: $POLAR2GRID_HOME/../polar2grid/etc/colormaps/amsr2_36h.cmap
               min_value: 180
               max_value: 280

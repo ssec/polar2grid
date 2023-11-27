@@ -1,8 +1,81 @@
 [build-system]
-requires = ["setuptools>=45", "wheel"]
+requires = ["setuptools>=45"]
 build-backend = "setuptools.build_meta"
 
-[tool.black]
+[project]
+name = "polar2grid"
+version = "3.1.0"
+authors = [
+    {name = "David Hoese", email = "david.hoese@ssec.wisc.edu"},
+]
+description = "Library and scripts to remap satellite data to a gridded image"
+readme = "README.rst"
+license = {text = "GPLv3"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS :: MacOS X",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "satpy",
+    "rasterio",
+    "netCDF4",
+    "h5py",
+]
+
+[project.optional-dependencies]
+utils = ["matplotlib"]
+docs = ["sphinx", "rst2pdf", "sphinx-argparse", "sphinxcontrib-apidoc", "pytest"]
+tests = ["pytest"]
+coastlines = ["pycoast", "pydecorate"]
+all = ["matplotlib", "sphinx", "rst2pdf", "sphinx-argparse", "sphinxcontrib-apidoc", "pytest", "pycoast", "pydecorate"]
+
+[project.urls]
+Documentation = "https://www.ssec.wisc.edu/software/polar2grid/"
+Home-page = "https://cimss.ssec.wisc.edu/cspp/"
+Download-URL = "https://pypi.org/project/polar2grid/"
+Project-URL = "https://github.com/ssec/polar2grid/"
+
+[project.scripts]
+polar2grid = "polar2grid.__main__:p2g_main"
+geo2grid = "polar2grid.__main__:g2g_main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.coverage.run]
+relative_files = true
+
+[tool.ruff]
+# See https://docs.astral.sh/ruff/rules/
+select = ["E", "W", "B", "D", "T10", "C90"]
+# Remove D416 when all docstrings have been converted to google-style
+ignore = ["D101", "D102", "D103", "D104", "D105", "D106", "D107", "E203", "D416"]
 line-length = 120
-target-version = ['py38']
-include = '\.pyi?$'
+
+[tool.ruff.per-file-ignores]
+"doc/source/conf.py" = ["E501"]
+"polar2grid/readers/*.py" = ["D205", "D400", "D415", "S101"]  # assert allowed in tests
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+known-first-party = ["polar2grid"]
+known-third-party = ["src"]

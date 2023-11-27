@@ -58,6 +58,7 @@ class TestP2GEnhancements:
         add_polar2grid_config_paths()
         # add test specific configs
         curr_path = satpy.config.get("config_path")
+        print(curr_path, TEST_ETC_DIR)
         satpy.config.set(config_path=[TEST_ETC_DIR] + curr_path)
 
     def teardown_method(self):

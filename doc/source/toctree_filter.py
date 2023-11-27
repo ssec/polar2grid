@@ -49,7 +49,7 @@ class TocTreeFilt(TocTree):
         for e in entries:
             m = self.hasPat.match(e)
             if m is not None:
-                if not m.groups()[0] in excl:
+                if m.groups()[0] not in excl:
                     filtered.append(m.groups()[1])
             else:
                 filtered.append(e)
