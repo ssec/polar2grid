@@ -21,8 +21,9 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Tests for the compare.py script."""
-
+import contextlib
 import os
+import warnings
 from glob import glob
 
 import numpy as np
@@ -43,6 +44,20 @@ IMAGE_LIST1 = [IMAGE1_L_UINT8_ZEROS, IMAGE1_L_UINT8_ZEROS]
 IMAGE_LIST2 = [IMAGE1_L_UINT8_ZEROS, IMAGE2_L_UINT8_ZEROS, IMAGE4_RGB_UINT8_ZEROS]
 
 
+@contextlib.contextmanager
+def ignore_no_georef():
+    """Wrap operations that we know will produce a rasterio geolocation warning."""
+    from rasterio.errors import NotGeoreferencedWarning
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            "Dataset has no geotransform",
+            NotGeoreferencedWarning,
+        )
+        yield
+
+
 def _create_geotiffs(base_dir, img_data):
     import rasterio
 
@@ -52,19 +67,20 @@ def _create_geotiffs(base_dir, img_data):
     for idx, img_arr in enumerate(img_data):
         band_count = 1 if img_arr.ndim == 2 else img_arr.shape[0]
         gtiff_fn = os.path.join(base_dir, f"test{idx}.tif")
-        with rasterio.open(
-            gtiff_fn,
-            "w",
-            driver="GTiff",
-            count=band_count,
-            height=img_arr.shape[-2],
-            width=img_arr.shape[-1],
-            dtype=img_arr.dtype,
-        ) as gtiff_file:
-            if img_arr.ndim == 2:
-                img_arr = img_arr[None, :, :]
-            for band_idx, band_arr in enumerate(img_arr):
-                gtiff_file.write(band_arr, band_idx + 1)
+        with ignore_no_georef():
+            with rasterio.open(
+                gtiff_fn,
+                "w",
+                driver="GTiff",
+                count=band_count,
+                height=img_arr.shape[-2],
+                width=img_arr.shape[-1],
+                dtype=img_arr.dtype,
+            ) as gtiff_file:
+                if img_arr.ndim == 2:
+                    img_arr = img_arr[None, :, :]
+                for band_idx, band_arr in enumerate(img_arr):
+                    gtiff_file.write(band_arr, band_idx + 1)
 
 
 def _create_hdf5(base_dir, img_data):
@@ -196,7 +212,8 @@ def test_basic_compare(
     if include_html:
         args.extend(["--html", str(html_file)])
 
-    num_diff_files = main(args)
+    with ignore_no_georef():
+        num_diff_files = main(args)
     exp_num_png_files = _get_exp_num_png_files(actual_data, expected_data, expected_file_func)
     _check_num_diff_files(num_diff_files, exp_num_diff, expected_file_func, actual_file_func)
     _check_html_output(include_html, html_file, exp_num_png_files, expected_file_func, actual_file_func)
