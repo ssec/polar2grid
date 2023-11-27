@@ -63,7 +63,6 @@ cd ${SB_NAME} || oops "Couldn't change to software bundle directory"
 echo "Copying user grid directory to software bundle"
 cp -r ${BUNDLE_SCRIPTS_DIR}/grid_configs .
 cp -r ${BUNDLE_SCRIPTS_DIR}/example_enhancements .
-ln -s etc/polar2grid/colormaps .
 
 mkdir -p gshhg_data || oops "Could not make GSHHG data directory"
 pushd gshhg_data
@@ -75,10 +74,13 @@ chmod 444 `find . -type f` || oops "Could not make GSHHG shapefiles readable by 
 popd
 
 echo "Copying bash scripts to software bundle bin"
-cd "$SB_NAME"
+cd "${SB_NAME}"
 mkdir -p bin || oops "Couldn't make 'bin' directory"
 mkdir -p etc || oops "Couldn't make 'etc' directory"
-ln -s ../libexec/python_runtime/etc/polar2grid etc/polar2grid
+# expand glob pattern
+P2G_ETC_DIR=$(echo libexec/python_runtime/lib/python*/site-package/polar2grid/etc)
+ln -s ../${P2G_ETC_DIR} etc/polar2grid || oops "Couldn't link to package etc directory"
+ln -s etc/polar2grid/colormaps . || oops "Couldn't create softlink for colormaps directory"
 cp -P ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/ || echo "Couldn't copy scripts to bin/ directory"
 # clean up readmes and add release notes
 if [[ $PROJECT == "P2G" ]]; then
@@ -101,7 +103,6 @@ PSP_CONFIG_FILE=etc/polar2grid/pyspectral.yaml PSP_DATA_ROOT=pyspectral_data PSP
 echo "Downloading Satpy auxiliary data..."
 AUX_CACHE_DIR="${CACHE_DIR}/satpy_aux_data_${USER}"
 SATPY_DATA_DIR="${SB_NAME}/share/polar2grid/data"
-P2G_ETC_DIR="${SB_NAME}/libexec/python_runtime/etc/polar2grid"
 SATPY_CONFIG_PATH="${P2G_ETC_DIR}" \
     ${PYTHON_RUNTIME_BASE}/bin/satpy_retrieve_all_aux_data \
     --data-dir ${AUX_CACHE_DIR} || oops "Could not download Satpy auxiliary data"
