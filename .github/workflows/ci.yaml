@@ -5,7 +5,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}-${{ github.event.type }}
   cancel-in-progress: true
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 env:
   CACHE_NUMBER: 1

@@ -37,7 +37,7 @@ dependencies:
   - requests
   - setuptools
   - six
-  - trollimage>=1.21.0
+  - trollimage>=1.22.2
   - trollsift>=0.5.0
   - scipy
   - zarr

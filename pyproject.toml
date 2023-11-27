@@ -56,6 +56,9 @@ include-package-data = true
 [tool.setuptools.packages]
 find = {}
 
+[tool.pytest.ini_options]
+minversion = 7.0
+
 [tool.coverage.run]
 relative_files = true
 
