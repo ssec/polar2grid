@@ -78,7 +78,11 @@ cd "${SB_NAME}"
 mkdir -p bin || oops "Couldn't make 'bin' directory"
 mkdir -p etc || oops "Couldn't make 'etc' directory"
 # expand glob pattern
-P2G_ETC_DIR=$(echo libexec/python_runtime/lib/python*/site-package/polar2grid/etc)
+P2G_ETC_DIR=$(echo libexec/python_runtime/lib/python?.??/site-packages/polar2grid/etc)
+if [ ! -d "${P2G_ETC_DIR}" ]; then
+    oops "Couldn't find polar2grid etc directory"
+fi
+echo "Package etc directory found at: ${P2G_ETC_DIR}"
 ln -s ../${P2G_ETC_DIR} etc/polar2grid || oops "Couldn't link to package etc directory"
 ln -s etc/polar2grid/colormaps . || oops "Couldn't create softlink for colormaps directory"
 cp -P ${BUNDLE_SCRIPTS_DIR}/*.sh ${BUNDLE_SCRIPTS_DIR}/*.txt bin/ || echo "Couldn't copy scripts to bin/ directory"
