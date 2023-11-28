@@ -35,6 +35,7 @@ from pytest_lazyfixture import lazy_fixture
 from satpy.tests.utils import CustomScheduler
 
 from polar2grid.utils.config import get_polar2grid_etc
+from polar2grid.utils.warnings import ignore_no_georef
 
 
 @contextlib.contextmanager
@@ -294,7 +295,8 @@ class TestGlueFakeScene:
                 args.extend(product_names)
             if extra_flags:
                 args.extend(extra_flags)
-            ret = main(args)
+            with ignore_no_georef():
+                ret = main(args)
         output_files = glob(str(chtmpdir / "*.tif"))
         assert len(output_files) == num_outputs
         assert ret == 0

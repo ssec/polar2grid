@@ -53,6 +53,7 @@ from pyresample.geometry import SwathDefinition
 from satpy.writers import Writer, compute_writer_results, split_results
 
 from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
+from polar2grid.utils.warnings import ignore_pyproj_proj_warnings
 from polar2grid.writers.geotiff import NUMPY_DTYPE_STRS, NumpyDtypeList, str_to_dtype
 
 LOG = logging.getLogger(__name__)
@@ -163,7 +164,8 @@ class HDF5Writer(Writer):
             group.attrs["height"], group.attrs["width"] = area_def.shape
             group.attrs["description"] = "No projection: native format"
         else:
-            group.attrs["proj4_definition"] = area_def.proj4_string
+            with ignore_pyproj_proj_warnings():
+                group.attrs["proj4_definition"] = area_def.crs.to_string()
             for a in ["height", "width"]:
                 ds_attr = getattr(area_def, a, None)
                 if ds_attr is None:

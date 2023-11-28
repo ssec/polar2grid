@@ -34,12 +34,12 @@ import argparse
 import logging
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
 import rasterio
 from aggdraw import Font
 from PIL import Image, ImageFont
-from pkg_resources import resource_filename as get_resource_filename
 from pycoast import ContourWriterAGG
 from pydecorate import DecoratorAGG
 from pyresample.utils import get_area_def_from_raster
@@ -485,10 +485,10 @@ def find_font(font_name, size):
         font = ImageFont.truetype(font_name, size)
         return font.path
     except IOError as err:
-        font_path = get_resource_filename("polar2grid.fonts", font_name)
-        if not os.path.exists(font_path):
-            raise ValueError("Font path does not exist: {}".format(font_path)) from err
-        return font_path
+        font_path = Path(__file__).parent / "fonts" / font_name
+        if not font_path.is_file():
+            raise ValueError(f"Font path does not exist: {font_path}") from err
+        return str(font_path)
 
 
 def _process_one_image(
