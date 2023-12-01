@@ -62,42 +62,43 @@ from polar2grid.utils.legacy_compat import get_sensor_alias
 LOG = logging.getLogger(__name__)
 
 _PLATFORM_ALIASES = {
-    "suomi-npp": "npp",
+    "suominpp": "npp",
+    "npp": "npp",
     "snpp": "npp",
     "n20": "noaa20",
     "n21": "noaa21",
     "n22": "noaa22",
     "n23": "noaa23",
-    "noaa-18": "noaa18",
-    "noaa-19": "noaa19",
-    "noaa-20": "noaa20",
-    "noaa-21": "noaa21",
-    "noaa-22": "noaa22",
-    "noaa-23": "noaa23",
-    "jpss-1": "noaa20",
-    "jpss-2": "noaa21",
-    "jpss-3": "noaa22",
-    "jpss-4": "noaa23",
+    "noaa18": "noaa18",
+    "noaa19": "noaa19",
+    "noaa20": "noaa20",
+    "noaa21": "noaa21",
+    "noaa22": "noaa22",
+    "noaa23": "noaa23",
+    "jpss1": "noaa20",
+    "jpss2": "noaa21",
+    "jpss3": "noaa22",
+    "jpss4": "noaa23",
     "j1": "noaa20",
     "j2": "noaa21",
     "j3": "noaa22",
     "j4": "noaa23",
-    "fy-3b": "fy3b",
-    "fy-3c": "fy3c",
-    "fy-3d": "fy3d",
+    "fy3b": "fy3b",
+    "fy3c": "fy3c",
+    "fy3d": "fy3d",
     "eos-aqua": "aqua",
     "eos-terra": "terra",
     "aqua": "aqua",
     "terra": "terra",
-    "gcom-w1": "gcom-w1",
-    "metop-a": "metopa",
-    "metop-b": "metopb",
-    "metop-c": "metopc",
+    "gcomw1": "gcom-w1",
+    "metopa": "metopa",
+    "metopb": "metopb",
+    "metopc": "metopc",
 }
 
 
 def _get_platform_name_alias(satpy_platform_name):
-    return _PLATFORM_ALIASES.get(satpy_platform_name.lower(), satpy_platform_name)
+    return _PLATFORM_ALIASES.get(satpy_platform_name.lower().replace("-", ""), satpy_platform_name)
 
 
 def _overwrite_platform_name_with_aliases(scn):
