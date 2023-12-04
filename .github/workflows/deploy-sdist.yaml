@@ -23,7 +23,7 @@ jobs:
       - name: Publish package to PyPI
         # upload to PyPI on every release for a tag starting with 'v'
         if: github.event.action == 'published' && startsWith(github.event.release.tag_name, 'v')
-        uses: pypa/gh-action-pypi-publish@v1.8.10
+        uses: pypa/gh-action-pypi-publish@v1.8.11
         with:
           user: __token__
           password: ${{ secrets.pypi_password }}
