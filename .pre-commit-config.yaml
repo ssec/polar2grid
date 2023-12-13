@@ -2,7 +2,7 @@ exclude: '^$'
 fail_fast: false
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.1.6'
+    rev: 'v0.1.7'
     hooks:
       - id: ruff
         args: ["--fix"]
@@ -22,3 +22,4 @@ repos:
 ci:
   # To trigger manually, comment on a pull request with "pre-commit.ci autofix"
   autofix_prs: false
+  autoupdate_schedule: "monthly"
