@@ -49,7 +49,7 @@ enhancements:
       - name: stretch
         method: !!python/name:satpy.enhancements.stretch
         kwargs: {stretch: crude, min_stretch: [0, 0, 0], max_stretch: [1, 1, 1]}
-  temperature_differenece:  # ifog, fog
+  temperature_difference:  # ifog, fog
     standard_name: temperature_difference
     operations:
       - name: temp_diff_stretch
