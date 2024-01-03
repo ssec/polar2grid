@@ -174,7 +174,7 @@ As an example, the ATMS band options are:
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup
+from argparse import ArgumentParser, _ArgumentGroup, BooleanOptionalAction
 from typing import Optional, Union
 
 from satpy import DataID, Scene
@@ -266,4 +266,10 @@ def add_reader_argument_groups(
         const=["all_bt_channels"],
         help="Add all bands to list of products",
     )
-    return None, None
+    group.add_argument(
+        "--limb-correction",
+        default=True,
+        action=BooleanOptionalAction,
+        help="Perform limb correction on ATMS instrument BT channels (enabled by default)",
+    )
+    return group, None
