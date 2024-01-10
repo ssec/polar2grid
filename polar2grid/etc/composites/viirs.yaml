@@ -327,9 +327,9 @@ composites:
           - compositor: !!python/name:satpy.composites.DifferenceCompositor
             prerequisites:
               - name: M11
-              - name: M07
+              - name: I02
           - compositor: !!python/name:satpy.composites.SumCompositor
             prerequisites:
               - name: M11
-              - name: M07
+              - name: I02
     standard_name: normalized_burn_ratio
