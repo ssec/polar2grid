@@ -318,3 +318,18 @@ composites:
     standard_name: equalized_radiance
     units: "1"
     saturation_correction: true
+
+  nbr:
+    compositor: !!python/name:satpy.composites.viirs.GenericCompositor
+    prerequisites:
+      - compositor: !!python/name:satpy.composites.RatioCompositor
+        prerequisites:
+          - compositor: !!python/name:satpy.composites.DifferenceCompositor
+            prerequisites:
+              - name: M11
+              - name: I02
+          - compositor: !!python/name:satpy.composites.SumCompositor
+            prerequisites:
+              - name: M11
+              - name: I02
+    standard_name: normalized_burn_ratio
