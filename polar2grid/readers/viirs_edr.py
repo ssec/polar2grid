@@ -82,7 +82,7 @@ Averaging resampling. The ``--weight-delta-max`` parameter set to 40 and the
 """
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup
+from argparse import ArgumentParser, _ArgumentGroup, BooleanOptionalAction
 from typing import Optional
 
 from satpy import DataQuery
@@ -149,4 +149,26 @@ def add_reader_argument_groups(
     if group is None:
         group = parser.add_argument_group(title="VIIRS EDR Reader")
 
+    group.add_argument(
+        "--filter-veg",
+        action=BooleanOptionalAction,
+        default=True,
+        help="Filter vegetation index variables by various quality flags. Default is enabled.",
+    )
+    group.add_argument(
+        "--aod-qc-filter",
+        default=1,
+        type=_int_or_none,
+        choices=[None, 0, 1, 2, 3],
+        help="Filter AOD550 variable by QCAll variable. Value specifies the maximum "
+        "quality to include (0-high, 1-medium, 2-low, 3-no retrieval). Defaults to "
+        "1 which means medium and high quality data are included.",
+    )
+
     return group, None
+
+
+def _int_or_none(value: str) -> None | int:
+    if value.lower() == "none":
+        return None
+    return int(value)
