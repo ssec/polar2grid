@@ -11,5 +11,6 @@ dependencies:
   - matplotlib
   - pip:
     - graphviz
-    - sphinx-argparse
+#    - sphinx-argparse
+    - git+https://github.com/djhoese/sphinx-argparse.git@bugfix-section-nums
     - sphinxcontrib-apidoc

@@ -43,10 +43,11 @@ dependencies:
   - sphinx
   - pip
   - python-graphviz
-  - sphinx-argparse
+#  - sphinx-argparse
   - fsspec
   - s3fs
   - sphinxcontrib-apidoc
   - pip:
       - git+https://github.com/pytroll/satpy.git
       - git+https://github.com/pytroll/pyresample.git
+      - git+https://github.com/djhoese/sphinx-argparse.git@bugfix-section-nums
