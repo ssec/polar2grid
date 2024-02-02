@@ -37,7 +37,7 @@ dependencies:
   - scipy
   - zarr
   - xarray
-  - pytest
+  - pytest <8.0
   - pytest-cov
   - pytest-lazy-fixture
   - sphinx
