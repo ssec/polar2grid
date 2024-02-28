@@ -8,8 +8,8 @@ dependencies:
   - conda-pack
   - configobj
   - curl
-  - dask>=2023.11.0
-  - distributed>=2023.11.0
+  - dask>=2024.2.1
+  - distributed>=2022.2.1
   - donfig>=0.8.1
   - ffmpeg
   - fontconfig
@@ -24,24 +24,23 @@ dependencies:
   - pycoast>=1.7.0
   - pydecorate>=0.4.0
   - pyhdf
-  - pykdtree>=1.3.10
-  - pyorbital>=1.8.0
+  - pykdtree>=1.3.11
+  - pyorbital>=1.8.2
   - pyproj>=3.6.1
-  - pyresample>=1.27.1
-  - pyshp
+  - pyresample>=1.28.1
+  - pyshp>=2.3.1
   - pyspectral>=0.13.0
   - python=3.11
-  - python-geotiepoints>=1.7.1
-  - pyyaml
+  - python-geotiepoints>=1.7.2
+  - pyyaml>=6.0.1
   - rasterio>=1.3.9
   - requests
   - setuptools
-  - six
-  - trollimage>=1.22.2
+  - trollimage>=1.23.1
   - trollsift>=0.5.1
   - scipy
   - zarr
-  - xarray>=2023.11.0
+  - xarray>=2024.2.0
   - fsspec
   - s3fs
   - pip:
