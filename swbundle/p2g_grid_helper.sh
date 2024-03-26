@@ -31,7 +31,7 @@
 #     david.hoese@ssec.wisc.edu
 
 if [ -z "$POLAR2GRID_HOME" ]; then
-  export POLAR2GRID_HOME="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+  export POLAR2GRID_HOME="$( cd -P "$( dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && cd .. && pwd )"
 fi
 
 # Setup necessary environments
