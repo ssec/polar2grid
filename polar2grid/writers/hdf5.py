@@ -40,6 +40,7 @@ See the command line arguments for HDF5 compression options, the flag to include
 longitude and latitude data in the file, instructions for output-filename
 patterns, and product selection.
 """
+
 from __future__ import annotations
 
 import logging

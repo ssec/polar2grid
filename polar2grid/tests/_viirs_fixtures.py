@@ -21,6 +21,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Test fixtures representing VIIRS swath data."""
+
 from __future__ import annotations
 
 import dask.array as da

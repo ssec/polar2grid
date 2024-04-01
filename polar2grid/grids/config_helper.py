@@ -27,6 +27,7 @@ parameters, and a configuration line is printed to stdout that can be added
 to a user's own grid configuration file.
 
 """
+
 from __future__ import annotations
 
 import os

@@ -199,11 +199,13 @@ def test_resample_single_result_per_grid(
 
     from polar2grid.filters.resample_coverage import ResampleCoverageFilter
 
-    with dask.config.set(scheduler=CustomScheduler(max_computes)), mock.patch(
-        "satpy.resample.resample", wraps=resample
-    ) as satpy_resample, mock.patch(
-        "polar2grid.resample._resample_scene.ResampleCoverageFilter", wraps=ResampleCoverageFilter
-    ) as resamp_cov:
+    with (
+        dask.config.set(scheduler=CustomScheduler(max_computes)),
+        mock.patch("satpy.resample.resample", wraps=resample) as satpy_resample,
+        mock.patch(
+            "polar2grid.resample._resample_scene.ResampleCoverageFilter", wraps=ResampleCoverageFilter
+        ) as resamp_cov,
+    ):
         input_scene.load(exp_names)
         scenes_to_save = resample_scene(
             input_scene,
