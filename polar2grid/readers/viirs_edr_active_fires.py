@@ -51,6 +51,7 @@ frontend provides the following products:
 | T13                       | M-Band 13 Temperature      (AFMOD Resolution Only)  |
 +---------------------------+-----------------------------------------------------+
 """
+
 from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup

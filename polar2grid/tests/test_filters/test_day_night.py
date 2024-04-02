@@ -21,6 +21,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Tests day/night filtering."""
+
 import dask.array as da
 import numpy as np
 import pytest

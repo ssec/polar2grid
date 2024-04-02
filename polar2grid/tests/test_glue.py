@@ -190,9 +190,11 @@ def extra_viirs_comp_and_enh(extra_viirs_composite_path, extra_viirs_enhancement
 @contextlib.contextmanager
 def prepare_glue_exec(create_scene_func, max_computes=0, use_polar2grid=True):
     use_str = "1" if use_polar2grid else "0"
-    with set_env(USE_POLAR2GRID_DEFAULTS=use_str), mock.patch(
-        "polar2grid.glue._create_scene"
-    ) as create_scene, dask.config.set(scheduler=CustomScheduler(max_computes)):
+    with (
+        set_env(USE_POLAR2GRID_DEFAULTS=use_str),
+        mock.patch("polar2grid.glue._create_scene") as create_scene,
+        dask.config.set(scheduler=CustomScheduler(max_computes)),
+    ):
         create_scene.return_value = create_scene_func
         yield
 

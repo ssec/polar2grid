@@ -68,6 +68,7 @@ See the example section :doc:`../../examples/amsr2_example`
 for more information on generating these NRL-like PNGs.
 
 """
+
 from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup

@@ -63,6 +63,7 @@ It provides the following products:
     +--------------------+--------------------------------------------+
 
 """
+
 from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup

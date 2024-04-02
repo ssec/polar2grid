@@ -81,6 +81,7 @@ For more detailed information on templates and other options for this writer
 see the Satpy documentation :mod:`here <satpy.writers.awips_tiled>`.
 
 """
+
 import logging
 from argparse import BooleanOptionalAction
 

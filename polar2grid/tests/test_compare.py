@@ -21,6 +21,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Tests for the compare.py script."""
+
 import os
 from glob import glob
 
