@@ -91,7 +91,7 @@ READER_PRODUCTS = [
     "nir_13",
     "nir_16",
     "nir_22",
-    "ir_23",
+    "ir_38",
     "wv_63",
     "wv_73",
     "ir_87",
