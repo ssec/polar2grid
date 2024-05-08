@@ -8,9 +8,9 @@ includes a python runtime and all of the necessary third-party software
 to run the features provided by |project|.
 The tarball uses bash scripts for conveniently
 calling the python software or utilities provided by third-party
-vendors.  The software bundle is only supported on CentOS-7.9 compatible systems,
-but has also been tested on Rocky Linux 8.5 and may work on other
-compatible Linux 64-bit operating systems as well.  There are other ways to install
+vendors.  The software bundle is supported on Rocky 8.9 compatible systems,
+but has also been tested on #### Rocky Linux 9.3 and CentOS 7.9 ### and may work on other
+compatible Linux 64-bit operating systems as well. There are other ways to install
 |project| on other operating systems, but the instructions to do so are
 beyond the scope of this documentation.
 
@@ -39,15 +39,15 @@ beyond the scope of this documentation.
 
     .. code-block:: bash
 
-        tar xf CSPP_GEO2GRID_V1.1.tar.gz
+        tar xf CSPP_GEO2GRID_V1.2.tar.gz
 
-    This will create a |project| software bundle directory, ``geo2grid_v_1_1``.
+    This will create a |project| software bundle directory, ``geo2grid_v_1_2``.
     To simplify calling scripts included in the bundle the following line should
     be added to your ``.bash_profile``:
 
     .. code-block:: bash
 
-        export GEO2GRID_HOME=/path/to/geo2grid_v_1_1
+        export GEO2GRID_HOME=/path/to/geo2grid_v_1_2
 
     All other environment information needed to run is automatically loaded by the
     scripts provided by |project|. Scripts are typically invoked using:
@@ -76,9 +76,9 @@ beyond the scope of this documentation.
 
     .. code-block:: bash
 
-        tar xf CSPP_POLAR2GRID_V3.0.tar.gz
+        tar xf CSPP_POLAR2GRID_V3.1.tar.gz
 
-    This will create a Polar2Grid software bundle directory, ``polar2grid_v_3_0``.
+    This will create a Polar2Grid software bundle directory, ``polar2grid_v_3_1``.
     To simplify calling scripts included in the bundle the following line should
     be added to your ``.bash_profile``:
 
@@ -112,6 +112,8 @@ beyond the scope of this documentation.
 
 See :doc:`getting_started` for more information on running |project|.
 
+.. _target to section:
+
 |project| Test Data
 -------------------
 
@@ -122,7 +124,7 @@ See :doc:`getting_started` for more information on running |project|.
 
     .. code-block:: bash
 
-        CSPP_GEO2GRID_V1.1_TEST_DATA.tar.gz
+        CSPP_GEO2GRID_V1.2_TEST_DATA.tar.gz
 
     The test data should be unpacked in a directory separate from the |project|
     installation:
@@ -130,7 +132,7 @@ See :doc:`getting_started` for more information on running |project|.
     .. code-block:: bash
 
         cd $HOME
-        tar xf CSPP_GEO2GRID_V1.1_TEST_DATA.tar.gz
+        tar xf CSPP_GEO2GRID_V1.2_TEST_DATA.tar.gz
 
     This will create a ``geo2grid_test`` directory containing the test input,
     output, and verification scripts for the ABI instrument.
@@ -142,7 +144,7 @@ See :doc:`getting_started` for more information on running |project|.
 
     .. code-block:: bash
 
-        CSPP_POLAR2GRID_V3.0_TEST_DATA.tar.gz
+        CSPP_POLAR2GRID_V3.1_TEST_DATA.tar.gz
 
     The test data should be unpacked in a directory separate from the |project|
     installation:
@@ -150,7 +152,7 @@ See :doc:`getting_started` for more information on running |project|.
     .. code-block:: bash
 
         cd $HOME
-        tar xf CSPP_POLAR2GRID_V3.0_TEST_DATA.tar.gz
+        tar xf CSPP_POLAR2GRID_V3.1_TEST_DATA.tar.gz
 
     This will create a ``polar2grid_test`` directory containing the test input,
     output, and verification scripts for both MODIS and VIIRS instruments.
