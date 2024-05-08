@@ -173,7 +173,7 @@ go over some basic examples of how to make your own composites.
             - night_microphysics
           standard_name: day_night_mix
 
-    Once the .yaml files has been updated, the composite can be generated using the following
+    Once the .yaml file has been updated, the composite can be generated using the following
     command:
 
     .. code-block:: bash
