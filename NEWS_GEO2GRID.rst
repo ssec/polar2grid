@@ -1,9 +1,24 @@
 Release Notes
 =============
 
+Version 1.2.0 (2023-05-10)
+--------------------------
+* Preliminary GOES-19 ABI reader support added
+* Preliminary EUMETSAT MTG FCI (fci_l1c_nc) reader support added
+* Additional ABI Product readers support added:
+
+  * Aerosol Optical Depth (AOD)
+  * Low Cloud and Fog (FLS)
+  * Land Surface Temperature (LST)
+
+* New 3.9 micron band scaling
+* Added ABI AOD product example to documenation
+* Support for additional RGBs
+* Optimizations
+* Bug fixes
+
 Version 1.1.0 (2022-12-12)
 --------------------------
-
 * GOES-18 ABI reader support added
 * ABI Level 2 (abi_l2_nc) reader added
 * Gridded GLM (glm_l2) reader added
