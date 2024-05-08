@@ -23,6 +23,6 @@ Examples:
 
     geo2grid.sh -r fci_l1c_nc -w geotiff --num-workers 8 -f /data/mtg/fci
 
-    geo2grid.sh -r fci_l1c_nc -w geotiff -p vis_04 vis_05 vis_06 vis_08 nir_13 nir_16 true_color -f W_XX*.nc
+    geo2grid.sh -r fci_l1c_nc -w geotiff -p vis_04 vis_05 vis_06 vis_08 nir_13 nir_16 true_color -f *_N_JLS_C_0072*.nc
 
     geo2grid.sh -r fci_l1c_nc -w geotiff --ll-bbox 10 -15 40 10 -f /fci_data
