@@ -84,6 +84,7 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/amsr2/gcom-w1_amsr2_btemp_89.0ah_20220910_233500_wgs84_lcc_fit_rescaled_and_colorized.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-18_ABI_RadF_natural_color_20221115_183020_GOES-West_cutout.png",
@@ -97,6 +98,9 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-17_ABI_TEMP_20221123_183117_GOES-West_original.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/goes17_overlay_true_color_cloud_temperature.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/my_goes17_abi_ctt.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/my_goes17_abi_ctt1.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-16_ABI_AOD_20240429_225020_GOES-East.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-16_ABI_AOD_20240429_225020_GOES-East_woverlays.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/flood/Flood_Legend.png",
 )
 script_path = os.path.dirname(os.path.realpath(__file__))
@@ -192,8 +196,8 @@ master_doc = "index"
 # General information about the project.
 if is_geo2grid:
     project = "Geo2Grid"
-    version = "1.1"
-    release = "1.1"
+    version = "1.2"
+    release = "1.2"
 else:
     project = "Polar2Grid"
 
@@ -202,10 +206,10 @@ else:
     # built documents.
     #
     # The short X.Y version.
-    version = "3.0"
+    version = "3.1"
 
     # The full version, including alpha/beta/rc tags.
-    release = "3.0"
+    release = "3.1"
 
 # Tell Polar2Grid scripts which system we are running
 os.environ["USE_POLAR2GRID_DEFAULTS"] = str(int(not is_geo2grid))
