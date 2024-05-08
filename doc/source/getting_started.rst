@@ -95,7 +95,7 @@ are always available:
         -g <grid_name>        Specify the output grid to use. Default is the Platte Carrée projection, also
                               known as the wgs84 coordinate system. See :doc:`grids` and :doc:`custom_grids`
                               for information on possible values.
-        --num-workers NUM_WORKERS   Specify number of worker threads to use (Default: 4).
+        --num-workers num_workers   Specify number of worker threads to use (Default: 4).
         --progress            Show processing progress bar (Not recommended for logged output).
         -v                    Print detailed log information.
 
@@ -114,7 +114,7 @@ are always available:
         -r 	 	      Instrument input files to read from.
         -w  		      Output format to write to (Currently only option is geotiff).
         -h                    Print helpful information.
-        --list-products       List all possible product options to use with -p from the given input data and exit.
+        --list-products       List all possible geo2grid product options to use with -p from the given input data and exit.
         --list-products-all   List available geo2grid products options and custom/Satpy products and exit.
         -p                    List of products you want to create.
         -f                    Input files and paths.
@@ -123,7 +123,7 @@ are always available:
                               See :doc:`grids` and :doc:`custom_grids` for information on other possible values.
         --cache-dir <dir>     Directory to store resampling intermediate results between executions.
                               Not used with 'native' resampling method.
-        --num-workers NUM_WORKERS   Specify number of worker threads to use (Default: 4).
+        --num-workers num_workers   Specify number of worker threads to use (Default: 4).
         --progress            Show processing progress bar (Not recommended for logged output).
 
         --ll-bbox <lonmin latmin lonmax latmax>    Subset input data to the bounding coordinates specified.
@@ -145,7 +145,11 @@ are always available:
 
         geo2grid.sh -r ami_l1b -w geotiff -p IR112 VI006 --num-workers 12 -f /ami/gk2a_ami_l31b*.nc
 
+        geo2grid.sh -r fci_l1c_nc -w geotiff -p ir_38 true_color -f /fci/MTG-FCI-L1C/*_N_JLS_C_0072*
+
         geo2grid.sh -r agri_fy4a_l1 -w geotiff -p C07 natural_color --progress -f /fy4a/FY4A-_AGRI--*.HDF
+
+        geo2grid.sh -r agri_fy4b_l1 -w geotiff -p C01 C02 C03 -f FY4B-_AGRI--_N_DISK_1330E_L1*_V0001.HDF
 
         geo2grid.sh -r abi_l2_nc -w geotiff -f /cloud_products/CG_ABI-L2-ACH?C-M6_G16*.nc
 
@@ -208,20 +212,24 @@ To access these features provide the "reader" and "writer" names to the
         create high quality reprojections in the lowest latency possible
         thanks to the dask python library. Dask splits data arrays in to
         multiple "chunks" and processes them in parallel. The creation of
-        these RGBs includes the following steps, which are performed by
+        these two RGBs includes the following steps, which are performed by
         default with each execution:
 
         * Check for required spectral bands used in RGB creation among input files.
-        * Upsample and sharpen composite bands to the highest spatial resolution (500m).
-        * Creation of pseudo "green" band for the ABI and AGRI instruments.
+        * Upsample and sharpen composite bands to the highest spatial resolution.
+        * Creation of pseudo "green" band if necessary (for instance ABI).
         * Reflectance adjustment (dividing by cosine of the solar zenith angle).
         * Removal of atmospheric Rayleigh scattering (atmospheric correction).
         * Nonlinear scaling before writing data to disk.
 
         Geo2Grid also supports the creation of other RGBs (this varies depending on
         the instrument), however these files are not produced by default.  The
-        recipes for creating these RGBs come from historical EUMETSAT recipes that
-        have been adjusted to work with the data being used in |project|.
+        recipes for creating these RGBs come from recipes that have been
+	decided upon by different satellite governing Agencies. For more
+	information on RGB recipes, please see `this site
+        <https://rammb2.cira.colostate.edu/training/visit/quick_reference/#tab17>`_.
+        Please `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Geo%20Questions>`__
+        if you have any specific questions regarding RGB creation.
 
 
 Creating Your Own Custom Grids
