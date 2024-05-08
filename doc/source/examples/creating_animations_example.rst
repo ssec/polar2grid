@@ -3,7 +3,7 @@ Using Geo2Grid to Create Animations
 
 The advantage of Geostationary Satellites is the temporal resolution of the
 observations.  Geo2Grid offers an easy interface for creating animations from
-Geo2Grid GeoTIFF files.  The following example demonstrates how
+Geo2Grid GeoTIFF and PNG files. The following example demonstrates how
 Geo2Grid software can be used to create an animation of
 files from a latitude/longitude subset of GOES-16 ABI CONUS GeoTIFF images
 located over the Southeastern United States.
@@ -20,7 +20,7 @@ natural color images from all time periods that are available.
 
 	# Set GEO2GRID environment variables
 
-	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_1
+	export GEO2GRID_HOME=/home/g2g/geo2grid_v_1_2
 	export PATH=$PATH:$GEO2GRID_HOME/bin
 
 	# Get input list of files/times based upon ABI Band 1 files
@@ -64,7 +64,7 @@ filename of ``my_true_color_animation.mp4``. The software can also
 create animations from input ``.png`` files.
 
 The figure below is the last image in the 120 loop sequence.  The
-output MP4 animation is available for viewing at `this site <ftp://ftp.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_true_color_animation.mp4>`_.
+output MP4 animation is available for viewing at `this site <https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_true_color_animation.mp4>`_.
 
 .. figure:: ../_static/example_images/GOES-16_ABI_RadC_true_color_20190104_195718_GOES-East.png
     :width: 100%
