@@ -72,8 +72,8 @@ What's New?
     Included in this release:
 
     .. include:: NEWS_GEO2GRID.rst
-        :start-line: 7
-        :end-line: 15
+        :start-line: 5
+        :end-line: 18
 
     For more details on what's new in this version and past versions see the
     `Geo2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/main/NEWS_GEO2GRID.rst>`_
@@ -94,7 +94,7 @@ System Requirements
 
     * Intel or AMD CPU with 64-bit instruction support (2+ cores - 2.4GHz)
     * 16 GB RAM (minimum)
-    * CentOS 7.9 64-bit Linux (or other compatible 64-bit Linux distribution)
+    * Rocky 8 or Rocky 9 64-bit Linux (or other compatible 64-bit Linux distribution)
     * 10 GB disk space (minimum)
 
     For a more demanding processing load, like realtime generation of all
@@ -103,7 +103,7 @@ System Requirements
 
     * Intel or AMD CPU with 64-bit instruction support (20+ cores - 2.4GHz)
     * 64 GB RAM (minimum)
-    * CentOS 7.9 64-bit Linux (or other compatible 64-bit Linux distribution)
+    * Rocky 8 or Rocky 9 64-bit Linux (or other compatible 64-bit Linux distribution)
     * 1 TB disk space (minimum for ~1 week of images, does not include long-term storage)
 
     Local storage (i.e. not network file systems) are preferred to limit any
@@ -126,16 +126,20 @@ System Requirements
     +------------------+---------------------+-----------------+-----------------------------+
     |**Instrument**    |**Full Disk Sector** |**CONUS Sector** |  **1000x1000 pixel subset** |
     +==================+=====================+=================+=============================+
-    | GOES ABI         |    2m50s            |    29s          |         14s                 |
+    | GOES ABI         |    2m45s            |    29s          |         16s                 |
     +------------------+---------------------+-----------------+-----------------------------+
-    | AHI HSD          |    5m40s            |    N/A          |         23s                 |
+    | AHI HSD          |    3m20s            |    N/A          |         33s                 |
     +------------------+---------------------+-----------------+-----------------------------+
-    | AHI HimawariCast |      23s            |    N/A          |         11s                 |
+    | MTG FCI*         |    2m32s            |    N/A          |         50s                 |
     +------------------+---------------------+-----------------+-----------------------------+
-    | GEO-KOMPSAT AMI  |    2m48s            |    N/A          |         12s                 |
+    | AHI HimawariCast |      24s            |    N/A          |         12s                 |
     +------------------+---------------------+-----------------+-----------------------------+
-    | FY4 AGRI         |    5m45s            |    N/A          |         29s                 |
+    | GEO-KOMPSAT AMI  |    2m36s            |    N/A          |         14s                 |
     +------------------+---------------------+-----------------+-----------------------------+
+    | FY4 AGRI         |    5m45s            |    N/A          |         30s                 |
+    +------------------+---------------------+-----------------+-----------------------------+
+
+       \* Using preliminary test data.
 
 .. ifconfig:: not is_geo2grid
 
@@ -143,34 +147,34 @@ System Requirements
 
     * Intel or AMD CPU with 64-bit instruction support (2+ cores - 2.4GHz)
     * 16 GB RAM (minimum)
-    * CentOS 7.9 64-bit Linux; the software has been tested successfully on Rocky Linux 8.5
+    * Rocky Linux 9.3; the software has been tested successfully on Rocky Linux 8.9 and (#####)
     * 5 GB disk space (minimum)
 
-Improved Execution Times
--------------------------
+    Improved Execution Times
+    -------------------------
 
-Updates in Polar2grid Version 3.0 result in improved image creation times.  The table
-below presents a comparison of the unix `real` time required to create
-VIIRS and MODIS imager GeoTIFF files for the given segments of data in the default
-WGS84 projection. In these examples, the default 4 computer threads were used in the
-Version 3.0 executions. Execution times decrease when fewer bands and smaller data
-segments are processed.
+    Updates in Polar2grid Version 3.0 result in improved image creation times.  The table
+    below presents a comparison of the unix `real` time required to create
+    VIIRS and MODIS imager GeoTIFF files for the given segments of data in the default
+    WGS84 projection. In these examples, the default 4 computer threads were used in the
+    Version 3.0 executions. Execution times decrease when fewer bands and smaller data
+    segments are processed.
 
-**Table of Execution Times for Creating GeoTIFF Default Projection Images**
+    **Table of Execution Times for Creating GeoTIFF Default Projection Images**
 
-+------------------+-----------------+-----------------+------------------------+-----------------------+
-|**Instrument**    |**Polar2Grid**   |**Polar2grid**   |**Polar2Grid2 V2.3 All**|**Polar2Grid V3.0 All**|
-|**Input**         |**V2.3 True and**|**V3.0 True and**|**Bands plus True**     |**Bands plus True**    |
-|                  |**False Color**  |**False Color**  |**and False Color**     |**and False Color**    |
-+==================+=================+=================+========================+=======================+
-|**VIIRS SDR**     |                 |                 |                        |                       |
-|10 - 86 second    |    4m52s        |      2m46s      |      12m54s            |       4m32s           |
-|granules          |                 |                 |                        |                       |
-+------------------+-----------------+-----------------+------------------------+-----------------------+
-|**MODIS Level 1B**|                 |                 |                        |                       |
-|3 - 5 minute      |    4m11s        |      3m55s      |      9m08s             |      4m51s            |
-|granules          |                 |                 |                        |                       |
-+------------------+-----------------+-----------------+------------------------+-----------------------+
+    +------------------+-----------------+-----------------+------------------------+-----------------------+
+    |**Instrument**    |**Polar2Grid**   |**Polar2grid**   |**Polar2Grid2 V2.3 All**|**Polar2Grid V3.0 All**|
+    |**Input**         |**V2.3 True and**|**V3.0 True and**|**Bands plus True**     |**Bands plus True**    |
+    |                  |**False Color**  |**False Color**  |**and False Color**     |**and False Color**    |
+    +==================+=================+=================+========================+=======================+
+    |**VIIRS SDR**     |                 |                 |                        |                       |
+    |10 - 86 second    |    4m52s        |      2m46s      |      12m54s            |       4m32s           |
+    |granules          |                 |                 |                        |                       |
+    +------------------+-----------------+-----------------+------------------------+-----------------------+
+    |**MODIS Level 1B**|                 |                 |                        |                       |
+    |3 - 5 minute      |    4m11s        |      3m55s      |      9m08s             |      4m51s            |
+    |granules          |                 |                 |                        |                       |
+    +------------------+-----------------+-----------------+------------------------+-----------------------+
 
 License and Disclaimer
 ----------------------
