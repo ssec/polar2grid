@@ -5,7 +5,7 @@ To confirm a successful Geo2Grid installation, follow these
 instructions to create a set of GOES-16 ABI GeoTIFF files from
 a single time period.
 
-Unpack the test data as shown in Section 2.2 and
+Unpack the test data as shown in :ref:`target to section` and
 execute the following commands:
 
 .. code-block:: bash
@@ -82,7 +82,7 @@ ABI Bands found. The output from our test system is shown below.
 A montage of the 9 output GeoTIFF files (7 single band and 2 RGB images)
 is displayed below.
 
-.. figure:: ../_static/example_images/abi_20181219_1745_montage.jpg
+.. figure:: ../_static/example_images/abi_20181219_1745_montage.png
     :width: 100%
     :align: center
 
