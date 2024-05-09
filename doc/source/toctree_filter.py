@@ -4,6 +4,7 @@ See https://stackoverflow.com/questions/15001888/conditional-toctree-in-sphinx
 for more information.
 
 """
+
 import re
 
 from docutils.parsers.rst import directives

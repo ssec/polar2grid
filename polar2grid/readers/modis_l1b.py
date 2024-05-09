@@ -132,6 +132,7 @@ For reflectance/visible products a check is done to make sure that at least
 angle is less than 90 degrees.
 
 """
+
 from __future__ import annotations
 
 import argparse

@@ -64,6 +64,7 @@ Averaging resampling. The ``--fornav-D`` parameter is set to 40 and the
 | true_color                | Ratio sharpened rayleigh corrected true color       |N/A                      |
 +---------------------------+-----------------------------------------------------+-------------------------+
 """
+
 from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup

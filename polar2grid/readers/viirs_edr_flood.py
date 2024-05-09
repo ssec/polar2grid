@@ -37,6 +37,7 @@ The ``--remap_method`` parameter is set to ``nearest``.
 | WaterDetection            | Channel 1 Reflectance Band                          |
 +---------------------------+-----------------------------------------------------+
 """
+
 from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup

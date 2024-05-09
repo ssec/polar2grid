@@ -22,9 +22,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
-export POLAR2GRID_HOME="$( cd -P "$( dirname "$SOURCE" )" && cd .. && pwd )"
+export POLAR2GRID_HOME="$( cd -P "$( dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && cd .. && pwd )"
 
 # Setup necessary environments
 # __SWBUNDLE_ENVIRONMENT_INJECTION__

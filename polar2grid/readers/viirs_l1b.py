@@ -155,6 +155,7 @@ For reflectance/visible products a check is done to make sure that at least
 angle is less than 100 degrees.
 
 """
+
 from __future__ import annotations
 
 __docformat__ = "restructuredtext en"
