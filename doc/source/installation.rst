@@ -8,11 +8,11 @@ includes a python runtime and all of the necessary third-party software
 to run the features provided by |project|.
 The tarball uses bash scripts for conveniently
 calling the python software or utilities provided by third-party
-vendors.  The software bundle is supported on Rocky 8.9 compatible systems,
-but has also been tested on #### Rocky Linux 9.3 and CentOS 7.9 ### and may work on other
-compatible Linux 64-bit operating systems as well. There are other ways to install
-|project| on other operating systems, but the instructions to do so are
-beyond the scope of this documentation.
+vendors.  The software bundle is supported on Rocky Linux 9.3 compatible systems,
+but has also been tested on Rocky Linux 8.9 and may work on other
+compatible Linux 64-bit operating systems as well. There are other ways
+to install |project| on other operating systems, but the instructions to
+do so are beyond the scope of this documentation.
 
 .. ifconfig:: is_geo2grid
 
