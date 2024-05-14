@@ -19,6 +19,11 @@
         **Ex: HIMAWARI-8_AHI_B03_20181112_183020_FLDK.tif**
       - 8-bit single band GeoTIFF
     * - geotiff
+      - ``MTG-I1_FCI_???_??_YYYYMMDD_HHMMSS_mtg_fci_fdss_1km.tif``
+
+        **Ex: MTG-I1_FCI_nir_16_20231201_115000_mtg_fci_fdss_1km.tif**
+      - 8-bit single band GeoTIFF
+    * - geotiff
       - ``GEO-KOMPSAT-2A_AMI_?????_YYYYMMDD_HHMMSS_ami_geos_fd.tif``
 
         **Ex: GEO-KOMPSAT-2A_AMI_VI006_20190930_030031_ami_geos_fd.tif**

@@ -173,7 +173,7 @@ go over some basic examples of how to make your own composites.
             - night_microphysics
           standard_name: day_night_mix
 
-    Once the .yaml files has been updated, the composite can be generated using the following
+    Once the .yaml file has been updated, the composite can be generated using the following
     command:
 
     .. code-block:: bash
@@ -183,7 +183,7 @@ go over some basic examples of how to make your own composites.
     The image created by executing the command on a GOES-16 ABI Full Disk dataset from 12:30 UTC,
     12 November 2018 is shown below.
 
-    .. figure:: _static/example_images/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_new.png
+    .. figure:: _static/example_images/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_newenhancement.png
         :width: 90%
         :align: center
 

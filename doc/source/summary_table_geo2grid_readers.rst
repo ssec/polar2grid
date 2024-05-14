@@ -23,6 +23,11 @@
       - ``IMG_DK01B??_YYYYMMDDHHMM``
 
         **Ex: IMG_DK01B05_201811121230**
+    * - fci_l1c_nc
+      -  MTG FCI Level 1C from EUMETSAT
+      - ``W_XX-EUMETSAT-Darmstadt,IMG+SAT,MTI1+FCI-1C-RRAD-FDHSI-FD*_N_JLS_C_*.nc``
+
+        **Ex: W_XX-EUMETSAT-Darmstadt,IMG+SAT,MTI1+FCI-1C-RRAD-FDHSI-FD--CHK-BODY--DIS-NC4E_C_EUMT_20231201115940_IDPFI_OPE_20231201115729_20231201115803_N_JLS_C_0072_0032.nc**
     * - ami_l1b
       - GEO-KOMPSAT AMI from KMA
       - ``gk2a_ami_le1b_?????_fd0??ge_YYYYMMDDHHMM.nc``

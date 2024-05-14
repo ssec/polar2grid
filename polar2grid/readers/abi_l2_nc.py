@@ -21,18 +21,18 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The ABI Level 2 Reader operates on NOAA Level 2 (L2) NetCDF files
-from the GOES-16 (GOES-East) and GOES-17 (GOES-West) Advanced Baseline
+from the GOES-16 (GOES-East), GOES-17/18 (GOES-West) Advanced Baseline
 Imager (ABI) instrument. The ABI L2 NetCDF reader works off of the input
 filenames to determine if a file is supported by Geo2Grid. Files usually have
 the following naming scheme::
 
-    OR_ABI-L2-{PROD}F-M3_G16_s20182531700311_e20182531711090_c20182531711149.nc
+    OR_ABI-L2-{PROD}F-M3_G{SAT}_s20182531700311_e20182531711090_c20182531711149.nc
 
 and::
 
-    CG_ABI-L2-{PROD}F-M6_G17_s20223271830316_e20223271839394_c20223271842100.nc
+    CG_ABI-L2-{PROD}F-M6_G{SAT}_s20223271830316_e20223271839394_c20223271842100.nc
 
-These are the mission compliant radiance file naming conventions
+These are the mission compliant file naming conventions
 used by the NOAA Comprehensive Large Array-data Stewardship
 System (CLASS) archive and the CSPP Geo AIT Framework Level 2 software.
 The ABI L2 NetCDF reader supports most L2 products, but Geo2Grid is tested with
