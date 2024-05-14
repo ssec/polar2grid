@@ -17,13 +17,13 @@ do so are beyond the scope of this documentation.
 .. ifconfig:: is_geo2grid
 
     Please
-    `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Geo%20Questions>`__
+    `Contact Us <https://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Geo%20Questions>`__
     if you have questions about installation.
 
 .. ifconfig:: not is_geo2grid
 
     Please
-    `Contact Us <http://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`__
+    `Contact Us <https://cimss.ssec.wisc.edu/contact-form/index.php?name=CSPP%20Questions>`__
     if you have questions about installation.
 
 |project| Software
@@ -33,7 +33,7 @@ do so are beyond the scope of this documentation.
 .. ifconfig:: is_geo2grid
 
     The |project| tarball can be downloaded from the CSPP Geo website:
-    http://cimss.ssec.wisc.edu/csppgeo/
+    https://cimss.ssec.wisc.edu/csppgeo/
 
     To install the software, unpack the tarball:
 
@@ -70,7 +70,7 @@ do so are beyond the scope of this documentation.
 .. ifconfig:: not is_geo2grid
 
     The |project| tarball can be downloaded from the CSPP LEO website:
-    http://cimss.ssec.wisc.edu/cspp/
+    https://cimss.ssec.wisc.edu/cspp/
 
     To install the software, unpack the tarball:
 
