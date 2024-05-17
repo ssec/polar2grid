@@ -28,7 +28,7 @@ import numpy as np
 import pytest
 from pyresample import SwathDefinition
 from pyresample.boundary import AreaBoundary, Boundary
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf as lazy_fixture
 from satpy.tests.utils import CustomScheduler
 
 from polar2grid.filters._utils import boundary_for_area

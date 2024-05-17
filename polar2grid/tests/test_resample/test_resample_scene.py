@@ -27,7 +27,7 @@ from unittest import mock
 import dask
 import pytest
 from pyresample.geometry import SwathDefinition
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf as lazy_fixture
 from satpy import Scene
 from satpy.resample import DaskEWAResampler, KDTreeResampler, NativeResampler
 from satpy.tests.utils import CustomScheduler

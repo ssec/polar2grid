@@ -37,9 +37,8 @@ dependencies:
   - scipy
   - zarr
   - xarray
-  - pytest <8.0
+  - pytest
   - pytest-cov
-  - pytest-lazy-fixture
   - sphinx
   - pip
   - python-graphviz
@@ -48,6 +47,7 @@ dependencies:
   - s3fs
   - sphinxcontrib-apidoc
   - pip:
+      - pytest-lazy-fixtures
       - git+https://github.com/pytroll/satpy.git
       - git+https://github.com/pytroll/pyresample.git
       - git+https://github.com/djhoese/sphinx-argparse.git@bugfix-section-nums
