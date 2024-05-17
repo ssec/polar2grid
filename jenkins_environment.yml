@@ -7,9 +7,9 @@ dependencies:
   - pip
   - sphinx
   - pytest
-  - pytest-lazy-fixture
   - matplotlib
   - pip:
+    - pytest-lazy-fixtures
     - graphviz
 #    - sphinx-argparse
     - git+https://github.com/djhoese/sphinx-argparse.git@bugfix-section-nums

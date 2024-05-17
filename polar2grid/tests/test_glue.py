@@ -31,7 +31,7 @@ from unittest import mock
 import dask
 import pytest
 import yaml
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf as lazy_fixture
 from satpy.tests.utils import CustomScheduler
 
 from polar2grid.utils.config import get_polar2grid_etc
