@@ -94,7 +94,7 @@ PREFERRED_CHUNK_SIZE: int = 6400
 
 I_PRODUCTS = ["surf_refl_I{:02d}".format(chan_num) for chan_num in range(1, 4)]
 M_PRODUCTS = ["surf_refl_M{:02d}".format(chan_num) for chan_num in range(1, 12) if chan_num not in (6, 9)]
-SURF_COMPS = ["true_color_surf", "false_color_ref"]
+SURF_COMPS = ["true_color_surf", "false_color_surf"]
 OTHER_PRODS = ["NDVI", "EVI", "CldTopTemp", "CldTopHght", "AOD550", "VLST"]
 
 PRODUCT_ALIASES = {}
