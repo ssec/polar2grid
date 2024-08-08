@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 3.1.0 (2024-08-08)
+--------------------------
+
+* Support for additional VIIRS EDRs, including
+
+  * Aerosol Optical Depth (AOD)
+  * Cloud Top Height and Cloud Top Temperature
+  * Surface Reflectances, including True Color
+  * Vegetation Indices (NDVI, EVI)
+
+* Support added for FY-3E MERSI-LL instrument
+* Re-organization of software directories
+* Optimizations
+* Bug fixes
+
 Version 3.0.0 (2023-02-21)
 --------------------------
 
