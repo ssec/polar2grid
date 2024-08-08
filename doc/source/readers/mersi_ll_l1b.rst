@@ -1,5 +1,5 @@
-MERSI-2 L1B Reader
-==================
+MERSI-LL L1B Reader
+===================
 
 .. automodule:: polar2grid.readers.mersi_ll_l1b
     :noindex:
