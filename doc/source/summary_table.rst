@@ -2,7 +2,7 @@
 
 .. tabularcolumns:: |L|L|L|l|l|
 
-.. list-table:: Reader/Writer Summary Table (Subset of Readers)
+.. list-table:: Reader/Writer Summary Table (**NOTE: Subset of Available Readers**)
     :header-rows: 1
 
     * - **Input Source**
@@ -107,21 +107,6 @@
       - Binary
       - amsr2_l1b
       - binary
-    * - **FY3-D MERSI2 L1B**
-      - tf\*.FY3D\-X_MERSI_*_L1B.HDF
-      - 8 bit single band GeoTIFF, 24-bit true and false color GeoTIFF
-      - mersi2_l1b
-      - geotiff
-    * - "
-      - "
-      - HDF5
-      - mersi2_l1b
-      - hdf5
-    * - "
-      - "
-      - Binary
-      - mersi2_l1b
-      - binary
     * - **CLAVR-x Cloud Retrievals**
       - clavrx*.hdf
       - 8 bit single band GeoTIFF
@@ -161,4 +146,119 @@
       - "
       - Binary
       - acspo
+      - binary
+    * - **CSPP ASCI Aerosols**
+      - \*JRR-AOD\_\*.nc
+      - 8 bit colorized GeoTIFF
+      - viirs_edr
+      - geotiff
+    * - "
+      - "
+      - AWIPS NetCDF
+      - viirs_edr
+      - awips_tiled
+    * - "
+      - "
+      - HDF5
+      - viirs_edr
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - viirs_edr
+      - binary
+    * - **CSPP ASCI Cloud**
+      - \*JRR_CloudHeight\*.nc
+      - 8 bit colorized GeoTIFF
+      - viirs_edr
+      - geotiff
+    * - "
+      - "
+      - AWIPS NetCDF
+      - viirs_edr
+      - awips_tiled
+    * - "
+      - "
+      - HDF5
+      - viirs_edr
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - viirs_edr
+      - binary
+    * - **CSPP Land Surface Reflectance**
+      - \*SurfRefl\*.nc
+      - 8 bit GeoTIFF
+      - viirs_edr
+      - geotiff
+    * - "
+      - "
+      - HDF5
+      - viirs_edr
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - viirs_edr
+      - binary
+    * - "
+      - "
+      - 24-bit true color GeoTIFF
+      - viirs_edr
+      - geotiff
+    * - **CSPP NDVI/EVI**
+      - \*SurfRefl\*.nc
+      - 8 bit colorized GeoTIFF
+      - viirs_edr
+      - geotiff
+    * - "
+      - "
+      - AWIPS NetCDF
+      - viirs_edr
+      - awips_tiled
+    * - "
+      - "
+      - HDF5
+      - viirs_edr
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - viirs_edr
+      - binary
+    * - **FY3-D MERSI2 L1B**
+      - tf\*.FY3D\-X_MERSI_*_L1B.HDF
+      - 8 bit GeoTIFF
+      - mersi2_l1b
+      - geotiff
+    * - "
+      - "
+      - HDF5
+      - mersi2_l1b
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - mersi2_l1b
+      - binary
+    * - "
+      - "
+      - 24-bit true and false color GeoTIFF
+      - viirs_sdr
+      - geotiff
+    * - **FY3-E MERSI-LL L1B**
+      - tf\*.FY3E\-X_MERSI_*_L1B.HDF
+      - 8 bit GeoTIFF
+      - mersi_ll_l1b
+      - geotiff
+    * - "
+      - "
+      - HDF5
+      - mersi_ll_l1b
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - mersi_ll_l1b
       - binary
