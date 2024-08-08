@@ -64,7 +64,9 @@ Examples:
 
         polar2grid.sh -r amsr2_l1b -w awips_tiled --grid-coverage 0 -g merc_pacific_1km --sector-id Pacific --letters --compress -f GW1AM2_202209120018_188A_L1DLBTBR_1110110.h5
 
-         polar2grid.sh -r clavrx -w awips_tiled -p cld_height_acha cloud_type cld_temp_acha -g lcc_conus_300 --sector-id LCC --letters --compress --grid-coverage 0.002 -f clavrx_a1.22245.0759.1000m.level2.hdf
+        polar2grid.sh -r viirs_edr -w awips_tiled -p AOD -g lcc_conus_300 --sector-id LCC --letters --compress --grid-coverage 0.002 -f JRR-AOD_*.nc
+
+        polar2grid.sh -r viirs_edr -w awips_tiled -p NDVI -g lcc_conus_300 --sector-id LCC --letters --compress --grid-coverage 0.002 --maximum-weight-mode -f SurfRefl*.nc
 
         polar2grid.sh -r acspo -w awips_tiled --num-workers 8 --grid-coverage 0 -g lcc_conus_750 --sector-id LCC --letters --compress --method ewa --weight-delta-max 40.0 --weight-distance-max 1.0 -f $data_dir/202*VIIRS_NPP-ACSPO_V2.80*.nc
 

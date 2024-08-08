@@ -48,20 +48,14 @@ What's New?
 
 .. ifconfig:: not is_geo2grid
 
-    Polar2Grid Version 3.0 is now available. This is a major
-    update that includes changes to basic Polar2Grid execution.
-    These changes bring Polar2Grid in conformity with the execution strategy
-    of Geo2Grid, and takes advantage of the Xarray and Dask python libraries.
+    Polar2Grid Version 3.1 is now available. This is a minor
+    update that includes support for more VIIRS Science Products.
 
-    Please see the example executions listed at the end of every reader
-    description in this document, as well as the updated examples in the
-    :doc:`examples/index` section. Finally, the Appendix includes a
-    longer list of changes and direct comparisons of Polar2Grid V2.3
-    to V3.0 executions. See :doc:`version3_implementation`.
+    Included in this release:
 
     .. include:: NEWS.rst
         :start-line: 6
-        :end-line: 14
+        :end-line: 17
 
     For more details on what's new in this version and past versions see the
     `Polar2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/main/NEWS.rst>`_
@@ -147,32 +141,33 @@ System Requirements
 
     * Intel or AMD CPU with 64-bit instruction support (2+ cores - 2.4GHz)
     * 16 GB RAM (minimum)
-    * Rocky Linux 9.3; the software has been tested successfully on Rocky Linux 8.9 and (#####)
+    * Rocky 8 or Rocky 9 64-bit Linux (or other compatible 64-bit Linux distribution)
     * 5 GB disk space (minimum)
 
     Improved Execution Times
     -------------------------
 
-    Updates in Polar2grid Version 3.0 result in improved image creation times.  The table
+    We continue to work to improve the efficiencies of Polar2grid.  The table
     below presents a comparison of the unix `real` time required to create
     VIIRS and MODIS imager GeoTIFF files for the given segments of data in the default
     WGS84 projection. In these examples, the default 4 computer threads were used in the
-    Version 3.0 executions. Execution times decrease when fewer bands and smaller data
-    segments are processed.
+    Version 3.1 executions. Execution times decrease when fewer bands and smaller data
+    segments are processed. The table compares the execution times using Polar2Grid Version
+    3.1 with with those of Version 2.3.
 
     **Table of Execution Times for Creating GeoTIFF Default Projection Images**
 
     +------------------+-----------------+-----------------+------------------------+-----------------------+
-    |**Instrument**    |**Polar2Grid**   |**Polar2grid**   |**Polar2Grid2 V2.3 All**|**Polar2Grid V3.0 All**|
-    |**Input**         |**V2.3 True and**|**V3.0 True and**|**Bands plus True**     |**Bands plus True**    |
+    |**Instrument**    |**Polar2Grid**   |**Polar2grid**   |**Polar2Grid2 V2.3 All**|**Polar2Grid V3.1 All**|
+    |**Input**         |**V2.3 True and**|**V3.1 True and**|**Bands plus True**     |**Bands plus True**    |
     |                  |**False Color**  |**False Color**  |**and False Color**     |**and False Color**    |
     +==================+=================+=================+========================+=======================+
     |**VIIRS SDR**     |                 |                 |                        |                       |
-    |10 - 86 second    |    4m52s        |      2m46s      |      12m54s            |       4m32s           |
+    |10 - 86 second    |    4m52s        |      1m35s      |      12m54s            |       4m23s           |
     |granules          |                 |                 |                        |                       |
     +------------------+-----------------+-----------------+------------------------+-----------------------+
     |**MODIS Level 1B**|                 |                 |                        |                       |
-    |3 - 5 minute      |    4m11s        |      3m55s      |      9m08s             |      4m51s            |
+    |3 - 5 minute      |    4m11s        |      2m34s      |      9m08s             |      2m32s            |
     |granules          |                 |                 |                        |                       |
     +------------------+-----------------+-----------------+------------------------+-----------------------+
 
