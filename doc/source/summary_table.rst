@@ -227,7 +227,7 @@
       - Binary
       - viirs_edr
       - binary
-    * - **FY3-D MERSI2 L1B**
+    * - **FY-3D MERSI2 L1B**
       - tf\*.FY3D\-X_MERSI_*_L1B.HDF
       - 8 bit GeoTIFF
       - mersi2_l1b
@@ -245,9 +245,9 @@
     * - "
       - "
       - 24-bit true and false color GeoTIFF
-      - viirs_sdr
+      - mersi2_l1b
       - geotiff
-    * - **FY3-E MERSI-LL L1B**
+    * - **FY-3E MERSI-LL L1B**
       - tf\*.FY3E\-X_MERSI_*_L1B.HDF
       - 8 bit GeoTIFF
       - mersi_ll_l1b
