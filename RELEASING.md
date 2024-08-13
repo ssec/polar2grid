@@ -1,6 +1,6 @@
 # Releasing the Polar2Grid Python Package
 
-1. Update setup.py with the new version.
+1. Update pyproject.toml with the new version.
 2. Create a git tag for the new version:
 
    ```bash
