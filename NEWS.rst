@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 3.1.0 (2024-08-08)
+Version 3.1.0 (2024-08-13)
 --------------------------
 
 * Support for additional VIIRS EDRs, including
