@@ -2,7 +2,7 @@
 
 .. tabularcolumns:: |L|L|L|l|l|
 
-.. list-table:: Reader/Writer Summary Table (Subset of Readers)
+.. list-table:: Reader/Writer Summary Table (**NOTE: This is Not a Complete List Available Readers**)
     :header-rows: 1
 
     * - **Input Source**
@@ -106,21 +106,6 @@
       - "
       - Binary
       - amsr2_l1b
-      - binary
-    * - **FY3-D MERSI2 L1B**
-      - tf\*.FY3D\-X_MERSI_*_L1B.HDF
-      - 8 bit single band GeoTIFF, 24-bit true and false color GeoTIFF
-      - mersi2_l1b
-      - geotiff
-    * - "
-      - "
-      - HDF5
-      - mersi2_l1b
-      - hdf5
-    * - "
-      - "
-      - Binary
-      - mersi2_l1b
       - binary
     * - **CLAVR-x Cloud Retrievals**
       - clavrx*.hdf

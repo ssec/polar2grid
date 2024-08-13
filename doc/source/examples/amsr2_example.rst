@@ -64,7 +64,7 @@ page:  http://www.nrlmry.navy.mil/TC.html
 First, create a reprojected GeoTIFF in Lambert Conic Conformal (LCC) projection
 and rescale the data. The data in this example is from 10 September 2022. We are pointing
 to the rescale information that is stored in the `$POLAR2GRID_HOME/example_enhancements/amsr2_png/enhancements/generic.yaml` file.
-This will produce a linear scaled output of data rangeing from 180.0 K to 280.0 K brightness temperatures
+This will produce a linear scaled output of data ranging from 180.0 K to 280.0 K brightness temperatures
 for our default products.
 
 .. code-block:: bash
@@ -83,11 +83,11 @@ Executing this command produces these AMSR2 LCC GeoTIFF files:
     gcom-w1_amsr2_btemp_89\.0bv_20220910_233500_lcc_fit\.tif
 
 Once the data has been rescaled, you are ready to apply the NRL colormaps to the data. In this example we
-are using the 89A/H GHz file.
+are using the 89A/H GHz file. There is also a 36 GHz colormap that can be used.
 
 .. code-block:: bash
 
-    add_colormap.sh $POLAR2GRID_HOME/libexec/python_runtime/etc/polar2grid/colormaps/amsr2_89h.cmap gcom-w1_amsr2_btemp_89.0ah_20220910_233500_lcc_fit.tif
+    add_colormap.sh $POLAR2GRID_HOME/libexec/python_runtime/lib/python3.11/site-packages/polar2grid/etc/colormaps/amsr2_89h.cmap gcom-w1_amsr2_btemp_89.0ah_20220910_233500_lcc_fit.tif
 
 This command adds the enhancement to the original GeoTIFF.  The rescaled and final color enhanced product are shown below:
 

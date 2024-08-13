@@ -31,12 +31,12 @@ band output file with a black background.
 
 .. code-block:: bash
 
-    polar2grid.sh -r acspo -w geotiff acspo gtiff --grid-coverage 0 --fill-value 0 \
+    polar2grid.sh -r acspo -w geotiff --grid-coverage 0 --fill-value 0 \
       -f viirs/20220810184327-CSPP-L2P_GHRSST-SSTskin-VIIRS_N20-ACSPO_V2.80-v02.0-fv01.0.nc
 
 The data set is re-projected into the WGS84 (Platte Carrée) projection
-by default. The image scaling is defined in the ``generic.yaml`` located in the
-``$POLAR2GRID_HOME/libexec/python_runtime/etc/polar2grid/enhancements`` directory.
+by default. The image scaling is defined in the ``generic.yaml`` file located in the
+``$POLAR2GRID_HOME/etc/polar2grid/enhancements`` directory.
 This file contains product scaling information for all data parameters supported by
 Polar2Grid. It replaces the ``rescale.ini`` file that was used in previous versions of Polar2Grid.
 
@@ -47,12 +47,12 @@ references our SST product is listed below.
 
 .. parsed-literal::
 
-      395   sea_surface_temperature4:
-      396     standard_name: sea_surface_subskin_temperature
-      397     operations:
-      398       - name: linear_stretch
-      399         method: !!python/name:satpy.enhancements.stretch
-      400         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
+      404   sea_surface_temperature4:
+      405     standard_name: sea_surface_subskin_temperature
+      406     operations:
+      407       - name: linear_stretch
+      408         method: !!python/name:satpy.enhancements.stretch
+      409         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
 
 This is used in the Polar2Grid software to define the range of brightness
 values in the output GeoTIFF file (0-255) to the temperatures they represent - in this
