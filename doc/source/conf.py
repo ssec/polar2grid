@@ -264,6 +264,7 @@ if is_geo2grid:
             "examples/amsr2_example.rst",
             "examples/modis_example.rst",
             "examples/viirs_example.rst",
+            "examples/asci_example.rst",
             "readers/acspo.rst",
             "readers/amsr2_l1b.rst",
             "readers/avhrr.rst",
