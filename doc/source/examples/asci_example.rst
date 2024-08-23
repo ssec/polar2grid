@@ -57,7 +57,7 @@ data files, I would use this command:
 
 .. code-block:: bash
 
-    polar2grid.sh -r acspo -w geotiff -p AOD550 -f viirs/JRR-AOD_*j01_s20240605185*.nc
+    polar2grid.sh -r viirs_edr -w geotiff -p AOD550 -f viirs/JRR-AOD_*j01_s20240605185*.nc
 
 An aggregated GeoTIFF image will be created from the 7 granule input files with the data
 re-projected into the WGS84 (Platte Carrée) projection by default. The image scaling
@@ -173,7 +173,7 @@ is shown below, followed by the output image.
     --colorbar-title="Normalized Difference Vegetation Index (NDVI)" --add-coastlines \
     --coastlines-outline "black" --coastlines-level 1 \
     --coastlines-resolution=i --add-borders --borders-level 2 \
-    --borders-outline gray --coastlines-width 2 --colorbar-tick-marks 10 \
+    --borders-outline gray --coastlines-width 2 --colorbar-tick-marks 0.1 \
     --colorbar-height 150 --colorbar-text-size 100
 
 .. raw:: latex
