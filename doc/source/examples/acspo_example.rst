@@ -18,7 +18,7 @@ Find the options available for creating ACSPO VIIRS SST GeoTIFFs:
 
 List the products that can be created from your ACSPO NetCDF dataset:
 
-    ``polar2grid.sh -r acspo -w geotiff --list-products -f <path_to_l1b_file>``
+    ``polar2grid.sh -r acspo -w geotiff --list-products -f <path_to_acspo_file>``
 
 To create the default product image, which is `sst` taken from
 the `sea_surface_temperature` array in the ACSPO file,
@@ -137,7 +137,7 @@ To add a color enhancement to this image, I use the *add_colormap.sh* utility
 script and a rainbow color table `p2g_sst_palette.txt` that is included as part of
 the Polar2Grid package.  This table is formatted as described in the
 :ref:`util_add_colormap` section. You can view the file
-`online <https://github.com/ssec/polar2grid/blob/main/etc/colormaps/p2g_sst_palette.txt>`_.
+`online <https://github.com/ssec/polar2grid/blob/main/polar2grid/etc/colormaps/p2g_sst_palette.txt>`_.
 
 This colormap will assign a color value to each of the 0-255 brightness range
 in the GeoTIFF image.  Again, the default brightness range is associated with a
@@ -165,7 +165,7 @@ full range of brightness values. In order to do this, I need to create a new
 rescaling `yaml` file that I will then provide to polar2grid.sh.
 
 I chose an enhancment name of `great_lakes_sst` and will use the same standard_name of
-`sea_surface_subskin_temperature` and then redefined the relationship between the brightness
+`sea_surface_subskin_temperature` and then redefine the relationship between the brightness
 values and the data.  I tighten the temperature range to be between 275.0 K and 305.0 K.  The contents of
 my new rescale yaml file is shown below (`my_rescale.yaml`).
 
