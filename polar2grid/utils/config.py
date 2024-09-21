@@ -34,7 +34,7 @@ def get_polar2grid_etc():
     p2g_pkg_location = impr.files("polar2grid")
     if _is_editable_installation():
         return str(p2g_pkg_location / "etc")
-    return p2g_pkg_location / "etc" / "polar2grid"
+    return p2g_pkg_location / "etc"
 
 
 def _is_editable_installation():
