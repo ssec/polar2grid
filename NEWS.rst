@@ -1,6 +1,10 @@
 Release Notes
 =============
 
+Version 3.2.0 (unreleased)
+
+* Change default visible band output to apply '/ cos(SZA)'. Use '--normalized-radiances' for old behavior.
+
 Version 3.1.0 (2024-08-13)
 --------------------------
 

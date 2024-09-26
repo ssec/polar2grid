@@ -188,20 +188,23 @@ from ._base import ReaderProxyBase
 
 PREFERRED_CHUNK_SIZE: int = 6400
 
-I_PRODUCTS = [
+I_VIS_PRODUCTS = [
     "I01",
     "I02",
     "I03",
+]
+I_IR_PRODUCTS = [
     "I04",
     "I05",
 ]
+I_PRODUCTS = I_VIS_PRODUCTS + I_IR_PRODUCTS
 I_ANGLE_PRODUCTS = [
     "i_solar_zenith_angle",
     "i_solar_azimuth_angle",
     "i_sat_zenith_angle",
     "i_sat_azimuth_angle",
 ]
-M_PRODUCTS = [
+M_VIS_PRODUCTS = [
     "M01",
     "M02",
     "M03",
@@ -213,12 +216,15 @@ M_PRODUCTS = [
     "M09",
     "M10",
     "M11",
+]
+M_IR_PRODUCTS = [
     "M12",
     "M13",
     "M14",
     "M15",
     "M16",
 ]
+M_PRODUCTS = M_VIS_PRODUCTS + M_IR_PRODUCTS
 M_ANGLE_PRODUCTS = [
     "m_solar_zenith_angle",
     "m_solar_azimuth_angle",
