@@ -98,9 +98,15 @@ the ``mersi2_l1b`` frontend name. The MERSI2 frontend provides the following pro
 from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup
+import logging
 from typing import Optional
 
+from satpy import Scene, DataQuery
+
 from ._base import ReaderProxyBase
+from ..core.script_utils import ExtendConstAction
+
+logger = logging.getLogger(__name__)
 
 ALL_BANDS = [str(x) for x in range(1, 26)]
 ALL_ANGLES = ["solar_zenith_angle", "solar_azimuth_angle", "sensor_zenith_angle", "sensor_azimuth_angle"]
@@ -127,6 +133,23 @@ class ReaderProxy(ReaderProxyBase):
 
     is_polar2grid_reader = True
 
+    def __init__(self, scn: Scene, user_products: list[str]):
+        self._modified_aliases = PRODUCT_ALIASES.copy()
+
+        try:
+            # they specified --normalized-radiances
+            user_products.remove("normalized_radiances")
+            apply_sunz = False
+        except ValueError:
+            apply_sunz = True
+
+        modifiers = ("sunz_corrected",) if apply_sunz else ()
+        for chan_num in range(1, 20):
+            if modifiers:
+                logger.debug(f"Using visible channel modifiers: {modifiers}")
+            self._modified_aliases[f"{chan_num}"] = DataQuery(name=f"{chan_num}", modifiers=modifiers)
+        super().__init__(scn, user_products)
+
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
         return DEFAULT_PRODUCTS
@@ -137,11 +160,20 @@ class ReaderProxy(ReaderProxyBase):
 
     @property
     def _aliases(self) -> dict:
-        return PRODUCT_ALIASES
+        return self._modified_aliases
 
 
 def add_reader_argument_groups(
     parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
 ) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
     """Add reader-specific command line arguments to an existing argument parser."""
-    return None, None
+    if group is None:
+        group = parser.add_argument_group(title="MERSI-2 L1B Reader")
+    group.add_argument(
+        "--normalized-radiances",
+        dest="products",
+        action=ExtendConstAction,
+        const=["normalized_radiances"],
+        help="Do not apply '/ cos(SZA)' when loading visible bands.",
+    )
+    return group, None
