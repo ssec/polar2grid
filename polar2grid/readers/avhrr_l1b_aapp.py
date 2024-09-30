@@ -53,11 +53,15 @@ The AVHRR reader provides the following products:
 from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup
+import logging
 from typing import Optional
 
-from satpy import DataQuery
+from satpy import DataQuery, Scene
 
 from ._base import ReaderProxyBase
+from ..core.script_utils import ExtendConstAction
+
+logger = logging.getLogger(__name__)
 
 FILTERS = {
     "day_only": {
@@ -95,6 +99,25 @@ class ReaderProxy(ReaderProxyBase):
 
     is_polar2grid_reader = True
 
+    def __init__(self, scn: Scene, user_products: list[str]):
+        self._modified_aliases = PRODUCT_ALIASES.copy()
+
+        try:
+            # they specified --normalized-radiances
+            user_products.remove("normalized_radiances")
+            apply_sunz = False
+        except ValueError:
+            apply_sunz = True
+
+        modifiers = ("sunz_corrected",) if apply_sunz else ()
+        for chan_name in ["1", "2", "3a", "band1_vis", "band2_vis", "band3a_vis"]:
+            if modifiers:
+                logger.debug(f"Using visible channel modifiers: {modifiers}")
+            self._modified_aliases[chan_name] = DataQuery(
+                name=chan_name, calibration="reflectance", modifiers=modifiers
+            )
+        super().__init__(scn, user_products)
+
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
         return VIS_PRODUCTS + IR_PRODUCTS
@@ -105,7 +128,7 @@ class ReaderProxy(ReaderProxyBase):
 
     @property
     def _aliases(self) -> dict[str, DataQuery]:
-        return PRODUCT_ALIASES
+        return self._modified_aliases
 
 
 def add_reader_argument_groups(
@@ -119,4 +142,11 @@ def add_reader_argument_groups(
     """
     if group is None:
         group = parser.add_argument_group(title="AVHRR L1b AAPP Reader")
+    group.add_argument(
+        "--normalized-radiances",
+        dest="products",
+        action=ExtendConstAction,
+        const=["normalized_radiances"],
+        help="Do not apply '/ cos(SZA)' when loading visible bands.",
+    )
     return group, None

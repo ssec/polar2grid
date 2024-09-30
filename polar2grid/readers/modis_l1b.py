@@ -137,13 +137,16 @@ from __future__ import annotations
 
 import argparse
 from argparse import ArgumentParser, _ArgumentGroup
+import logging
 from typing import Optional
 
-from satpy import DataQuery
+from satpy import DataQuery, Scene
 
 from polar2grid.core.script_utils import ExtendConstAction
 
 from ._base import ReaderProxyBase
+
+logger = logging.getLogger(__name__)
 
 PREFERRED_CHUNK_SIZE: int = 1354 * 2  # roughly the number columns in a 500m dataset
 
@@ -199,6 +202,24 @@ class ReaderProxy(ReaderProxyBase):
 
     is_polar2grid_reader = True
 
+    def __init__(self, scn: Scene, user_products: list[str]):
+        self._modified_aliases = PRODUCT_ALIASES.copy()
+
+        try:
+            # they specified --normalized-radiances
+            user_products.remove("normalized_radiances")
+            apply_sunz = False
+        except ValueError:
+            apply_sunz = True
+
+        modifiers = ("sunz_corrected",) if apply_sunz else ()
+        for chan_num in list(range(1, 8)) + [26]:
+            if modifiers:
+                logger.debug(f"Using visible channel modifiers: {modifiers}")
+            self._modified_aliases[f"{chan_num}"] = DataQuery(name=f"{chan_num}", modifiers=modifiers)
+            self._modified_aliases[f"vis{chan_num:02d}"] = DataQuery(name=f"{chan_num}", modifiers=modifiers)
+        super().__init__(scn, user_products)
+
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
         return DEFAULTS
@@ -209,7 +230,7 @@ class ReaderProxy(ReaderProxyBase):
 
     @property
     def _aliases(self) -> dict[str, DataQuery]:
-        return PRODUCT_ALIASES
+        return self._modified_aliases
 
 
 def add_reader_argument_groups(
@@ -243,6 +264,13 @@ def add_reader_argument_groups(
         action=ExtendConstAction,
         const=VIS_PRODUCTS,
         help="Add Visible products to list of products",
+    )
+    group.add_argument(
+        "--normalized-radiances",
+        dest="products",
+        action=ExtendConstAction,
+        const=["normalized_radiances"],
+        help="Do not apply '/ cos(SZA)' when loading visible bands.",
     )
     group.add_argument(
         "--awips-true-color",

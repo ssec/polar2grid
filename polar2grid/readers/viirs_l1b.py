@@ -160,29 +160,35 @@ from __future__ import annotations
 
 __docformat__ = "restructuredtext en"
 
+import logging
 from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
-from satpy import DataQuery
+from satpy import DataQuery, Scene
 
 from polar2grid.core.script_utils import ExtendConstAction
 
 from ._base import ReaderProxyBase
 
-I_PRODUCTS = [
+logger = logging.getLogger(__name__)
+
+I_VIS_PRODUCTS = [
     "I01",
     "I02",
     "I03",
+]
+I_IR_PRODUCTS = [
     "I04",
     "I05",
 ]
+I_PRODUCTS = I_VIS_PRODUCTS + I_IR_PRODUCTS
 I_ANGLE_PRODUCTS = [
     "i_solar_zenith_angle",
     "i_solar_azimuth_angle",
     "i_sat_zenith_angle",
     "i_sat_azimuth_angle",
 ]
-M_PRODUCTS = [
+M_VIS_PRODUCTS = [
     "M01",
     "M02",
     "M03",
@@ -194,12 +200,15 @@ M_PRODUCTS = [
     "M09",
     "M10",
     "M11",
+]
+M_IR_PRODUCTS = [
     "M12",
     "M13",
     "M14",
     "M15",
     "M16",
 ]
+M_PRODUCTS = M_VIS_PRODUCTS + M_IR_PRODUCTS
 
 M_ANGLE_PRODUCTS = [
     "m_solar_zenith_angle",
@@ -235,8 +244,13 @@ PRODUCT_ALIASES = {}
 def _process_legacy_products(satpy_names, band_aliases):
     """Map all lowercase band names to uppercase names and add radiance product."""
     for band in satpy_names:
+        query = band
         # P2G name is lowercase, Satpy is uppercase
-        PRODUCT_ALIASES[band.lower()] = band
+        if band in I_VIS_PRODUCTS:
+            query = DataQuery(name=band, modifiers=("sunz_corrected_iband",))
+        if band in M_VIS_PRODUCTS:
+            query = DataQuery(name=band, modifiers=("sunz_corrected",))
+        PRODUCT_ALIASES[band.lower()] = query
         band_aliases.append(band.lower())
 
 
@@ -296,6 +310,31 @@ class ReaderProxy(ReaderProxyBase):
 
     is_polar2grid_reader = True
 
+    def __init__(self, scn: Scene, user_products: list[str]):
+        self._modified_aliases = PRODUCT_ALIASES.copy()
+
+        try:
+            # they specified --normalized-radiances
+            user_products.remove("normalized_radiances")
+            apply_sunz = False
+        except ValueError:
+            apply_sunz = True
+
+        i_modifiers = ("sunz_corrected_iband",) if apply_sunz else ()
+        if i_modifiers:
+            logger.debug(f"Using I-band visible channel modifiers: {i_modifiers}")
+        for vis_product in I_VIS_PRODUCTS:
+            self._modified_aliases[vis_product] = DataQuery(name=vis_product, modifiers=i_modifiers)
+            self._modified_aliases[vis_product.lower()] = DataQuery(name=vis_product, modifiers=i_modifiers)
+
+        m_modifiers = ("sunz_corrected",) if apply_sunz else ()
+        if m_modifiers:
+            logger.debug(f"Using M-band visible channel modifiers: {m_modifiers}")
+        for vis_product in M_VIS_PRODUCTS:
+            self._modified_aliases[vis_product] = DataQuery(name=vis_product, modifiers=m_modifiers)
+            self._modified_aliases[vis_product.lower()] = DataQuery(name=vis_product, modifiers=m_modifiers)
+        super().__init__(scn, user_products)
+
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
         return DEFAULT_PRODUCTS
@@ -306,7 +345,7 @@ class ReaderProxy(ReaderProxyBase):
 
     @property
     def _aliases(self) -> dict[str, DataQuery]:
-        return PRODUCT_ALIASES
+        return self._modified_aliases
 
 
 def add_reader_argument_groups(
@@ -333,6 +372,13 @@ def add_reader_argument_groups(
         action=ExtendConstAction,
         const=M_ALIASES,
         help="Add all M-band raw products to list of products",
+    )
+    group.add_argument(
+        "--normalized-radiances",
+        dest="products",
+        action=ExtendConstAction,
+        const=["normalized_radiances"],
+        help="Do not apply '/ cos(SZA)' when loading visible bands.",
     )
     group.add_argument(
         "--awips-true-color",
