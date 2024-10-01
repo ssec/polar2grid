@@ -109,11 +109,11 @@ jobs:
       - name: Setup Conda Environment
         uses: conda-incubator/setup-miniconda@v3
         with:
-          miniforge-variant: Mambaforge
           miniforge-version: latest
-          use-mamba: true
           python-version: ${{ matrix.python-version }}
+          mamba-version: "1.5.10"
           activate-environment: test-environment
+          channels: conda-forge
 
       - name: Set cache environment variables
         shell: bash -l {0}
