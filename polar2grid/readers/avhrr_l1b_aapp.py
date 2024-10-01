@@ -110,10 +110,13 @@ class ReaderProxy(ReaderProxyBase):
             apply_sunz = True
 
         modifiers = ("sunz_corrected",) if apply_sunz else ()
-        for chan_name in ["1", "2", "3a", "band1_vis", "band2_vis", "band3a_vis"]:
+        for chan_name in ["1", "2", "3a"]:
             if modifiers:
                 logger.debug(f"Using visible channel modifiers: {modifiers}")
             self._modified_aliases[chan_name] = DataQuery(
+                name=chan_name, calibration="reflectance", modifiers=modifiers
+            )
+            self._modified_aliases[f"band{chan_name}_vis"] = DataQuery(
                 name=chan_name, calibration="reflectance", modifiers=modifiers
             )
         super().__init__(scn, user_products)
