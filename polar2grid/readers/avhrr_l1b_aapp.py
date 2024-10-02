@@ -113,12 +113,12 @@ class ReaderProxy(ReaderProxyBase):
         for chan_name in ["1", "2", "3a"]:
             if modifiers:
                 logger.debug(f"Using visible channel modifiers: {modifiers}")
-            self._modified_aliases[chan_name] = DataQuery(
-                name=chan_name, calibration="reflectance", modifiers=modifiers
-            )
             self._modified_aliases[f"band{chan_name}_vis"] = DataQuery(
                 name=chan_name, calibration="reflectance", modifiers=modifiers
             )
+            # self._modified_aliases[chan_name] = DataQuery(
+            #     name=chan_name, calibration="reflectance", modifiers=modifiers
+            # )
         super().__init__(scn, user_products)
 
     def get_default_products(self) -> list[str]:

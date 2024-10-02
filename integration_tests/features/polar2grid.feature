@@ -59,3 +59,4 @@ Feature: Test polar2grid output images
       | command                                                                                      | source                      | output                       |
       | polar2grid.sh -r viirs_sdr -w geotiff -vv -f                                                 | viirs_sdr_day/input/test1   | true_color,i01,i01_rad,ifog  |
       | polar2grid.sh -r viirs_l1b -w geotiff -vv -f                                                 | viirs_l1b_night/input/test1 | adaptive_dnb,m12,i04,ifog      |
+      | polar2grid.sh -r avhrr_l1b -w geotiff -vv -f                                                 | avhrr/input/test1           | band1_vis,band2_vis,band3a_vis,band4_bt,band5_bt |

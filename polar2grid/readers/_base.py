@@ -97,7 +97,7 @@ class ReaderProxyBase:
         self,
         p2g_product_names: Optional[list[str]] = None,
         possible_satpy_ids: Optional[list[DataID]] = None,
-    ) -> tuple[list[str], list[str]]:
+    ) -> tuple[list[str], list[str], list[str]]:
         """Get custom/satpy products and polar2grid products that are available for loading."""
         if possible_satpy_ids is None:
             possible_satpy_ids = self.scn.available_dataset_ids(composites=True)
@@ -110,7 +110,7 @@ class ReaderProxyBase:
                     "products will be listed with internal Satpy names.",
                     self._binary_name,
                 )
-                return sorted(set([x["name"] for x in possible_satpy_ids])), []
+                return sorted(set([x["name"] for x in possible_satpy_ids])), [], []
         return self._alias_handler.available_product_names(
             p2g_product_names, available_custom_products, possible_satpy_ids
         )
