@@ -346,3 +346,19 @@ class TestGlueFakeScene:
                 extra_cpath = gettempdir()
             path_idx = captured.err.index(f"Adding enhancement configuration from file: {str(extra_cpath)}")
             assert builtin_path_idx < path_idx
+
+    def test_avhrr_list_products(self, avhrr_l1b_1_scene, chtmpdir, capsys):
+        """Test list products includes expected products."""
+        from polar2grid.glue import main
+
+        with prepare_glue_exec(avhrr_l1b_1_scene, max_computes=0):
+            args = ["-r", "avhrr_l1b_aapp", "-w", "geotiff", "--list-products", "-f", str(chtmpdir)]
+            ret = main(args)
+        output_files = glob(str(chtmpdir / "*.tif"))
+        assert len(output_files) == 0
+        assert ret == 0
+        captured = capsys.readouterr()
+        stdout = captured.out
+        print(stdout)
+        for exp_product in ("band1_vis", "band2_vis", "band3a_vis", "band4_bt", "band5_bt"):
+            assert exp_product in stdout

@@ -27,7 +27,7 @@ from __future__ import annotations
 import logging
 from typing import Generator, Iterable, Optional, Union
 
-from satpy import DataID, DataQuery, Scene
+from satpy import DataID, DataQuery, Scene, DatasetDict
 
 logger = logging.getLogger(__name__)
 
@@ -173,9 +173,9 @@ class AliasHandler:
         satpy_id_to_p2g_name = {}
         for p2g_name in possible_p2g_names:
             satpy_data_query = self._all_aliases.get(p2g_name, p2g_name)
-            try:
-                matching_satpy_id = satpy_id_dict[satpy_data_query]
-            except KeyError:
+            matching_satpy_id = _get_matching_satpy_id(satpy_id_dict, satpy_data_query)
+            if matching_satpy_id is None:
+                # no match
                 continue
 
             if matching_satpy_id in satpy_id_to_p2g_name:
@@ -243,6 +243,20 @@ class AliasHandler:
 
         available_satpy_names = sorted(set(available_satpy_names))
         return available_p2g_names, available_custom_names, available_satpy_names
+
+
+def _get_matching_satpy_id(satpy_id_dict: DatasetDict, satpy_data_query: DataQuery | str) -> DataID:
+    matching_satpy_id = None
+    while matching_satpy_id is None:
+        # iterate until no modifiers exist in the query and we still can't find it
+        try:
+            matching_satpy_id = satpy_id_dict[satpy_data_query]
+            return matching_satpy_id
+        except KeyError:
+            if isinstance(satpy_data_query, str) or not satpy_data_query.is_modified():
+                break
+            satpy_data_query = satpy_data_query.create_less_modified_query()
+    return matching_satpy_id
 
 
 _SENSOR_ALIASES = {

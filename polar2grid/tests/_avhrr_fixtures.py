@@ -38,7 +38,42 @@ AVHRR_SHAPE = (2361, 2048)
 AVHRR_CHUNKS = AVHRR_SHAPE
 
 AVHRR_IDS = [
-    make_dataid(name="1", wavelength=(0.58, 0.63, 0.68), resolution=1050, calibration="reflectance"),
+    make_dataid(
+        name="1",
+        wavelength=(0.58, 0.63, 0.68),
+        resolution=1050,
+        calibration="reflectance",
+    ),
+    make_dataid(
+        name="2",
+        wavelength=(0.725, 0.8625, 1.0),
+        resolution=1050,
+        calibration="reflectance",
+    ),
+    make_dataid(
+        name="3a",
+        wavelength=(1.58, 1.61, 1.64),
+        resolution=1050,
+        calibration="reflectance",
+    ),
+    make_dataid(
+        name="3b",
+        wavelength=(3.55, 3.74, 3.93),
+        resolution=1050,
+        calibration="brightness_temperature",
+    ),
+    make_dataid(
+        name="4",
+        wavelength=(10.3, 10.8, 11.3),
+        resolution=1050,
+        calibration="brightness_temperature",
+    ),
+    make_dataid(
+        name="5",
+        wavelength=(11.5, 12.0, 12.5),
+        resolution=1050,
+        calibration="brightness_temperature",
+    ),
 ]
 
 
@@ -94,14 +129,111 @@ def avhrr_l1b_1_data_array(avhrr_l1b_swath_def) -> xr.DataArray:
 
 
 @pytest.fixture
-def avhrr_l1b_1_scene(avhrr_l1b_1_data_array) -> Scene:
+def avhrr_l1b_2_data_array(avhrr_l1b_swath_def) -> xr.DataArray:
+    return xr.DataArray(
+        da.zeros(AVHRR_SHAPE, dtype=np.float32),
+        dims=("y", "x"),
+        attrs={
+            "area": avhrr_l1b_swath_def,
+            "platform_name": "noaa19",
+            "sensor": "avhrr-3",
+            "name": "2",
+            "start_time": START_TIME,
+            "end_time": START_TIME,
+            "resolution": 1050,
+            "reader": "avhrr_l1b_aapp",
+            "calibration": "reflectance",
+            "standard_name": "toa_bidirectional_reflectance",
+            "units": "%",
+        },
+    )
+
+
+@pytest.fixture
+def avhrr_l1b_3a_data_array(avhrr_l1b_swath_def) -> xr.DataArray:
+    return xr.DataArray(
+        da.zeros(AVHRR_SHAPE, dtype=np.float32),
+        dims=("y", "x"),
+        attrs={
+            "area": avhrr_l1b_swath_def,
+            "platform_name": "noaa19",
+            "sensor": "avhrr-3",
+            "name": "3a",
+            "start_time": START_TIME,
+            "end_time": START_TIME,
+            "resolution": 1050,
+            "reader": "avhrr_l1b_aapp",
+            "calibration": "reflectance",
+            "standard_name": "toa_bidirectional_reflectance",
+            "units": "%",
+        },
+    )
+
+
+# No 3b. Assume day time scene
+
+
+@pytest.fixture
+def avhrr_l1b_4_data_array(avhrr_l1b_swath_def) -> xr.DataArray:
+    return xr.DataArray(
+        da.zeros(AVHRR_SHAPE, dtype=np.float32),
+        dims=("y", "x"),
+        attrs={
+            "area": avhrr_l1b_swath_def,
+            "platform_name": "noaa19",
+            "sensor": "avhrr-3",
+            "name": "4",
+            "start_time": START_TIME,
+            "end_time": START_TIME,
+            "resolution": 1050,
+            "reader": "avhrr_l1b_aapp",
+            "calibration": "brightness_temperature",
+            "standard_name": "toa_brightness_temperature",
+            "units": "K",
+        },
+    )
+
+
+@pytest.fixture
+def avhrr_l1b_5_data_array(avhrr_l1b_swath_def) -> xr.DataArray:
+    return xr.DataArray(
+        da.zeros(AVHRR_SHAPE, dtype=np.float32),
+        dims=("y", "x"),
+        attrs={
+            "area": avhrr_l1b_swath_def,
+            "platform_name": "noaa19",
+            "sensor": "avhrr-3",
+            "name": "5",
+            "start_time": START_TIME,
+            "end_time": START_TIME,
+            "resolution": 1050,
+            "reader": "avhrr_l1b_aapp",
+            "calibration": "brightness_temperature",
+            "standard_name": "toa_brightness_temperature",
+            "units": "K",
+        },
+    )
+
+
+@pytest.fixture
+def avhrr_l1b_1_scene(
+    avhrr_l1b_1_data_array,
+    avhrr_l1b_2_data_array,
+    avhrr_l1b_3a_data_array,
+    avhrr_l1b_4_data_array,
+    avhrr_l1b_5_data_array,
+) -> Scene:
     scn = _TestingScene(
         reader="avhrr_l1b_aapp",
         filenames=["/fake/filename"],
         data_array_dict={
             AVHRR_IDS[0]: avhrr_l1b_1_data_array.copy(),
+            AVHRR_IDS[1]: avhrr_l1b_2_data_array.copy(),
+            AVHRR_IDS[2]: avhrr_l1b_3a_data_array.copy(),
+            AVHRR_IDS[4]: avhrr_l1b_4_data_array.copy(),
+            AVHRR_IDS[5]: avhrr_l1b_5_data_array.copy(),
         },
         all_dataset_ids=AVHRR_IDS,
-        available_dataset_ids=AVHRR_IDS[:1],
+        available_dataset_ids=AVHRR_IDS[:3] + AVHRR_IDS[4:],
     )
     return scn
