@@ -2,20 +2,20 @@ exclude: '^$'
 fail_fast: false
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.6.3'
+    rev: 'v0.7.2'
     hooks:
       - id: ruff
         args: ["--fix"]
       - id: ruff-format
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
         args: [--unsafe]
   - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.9.0-1
+    rev: v3.10.0-1
     hooks:
       - id: shfmt-src  # native (requires Go to build)
         args: ["-i", "4"]
