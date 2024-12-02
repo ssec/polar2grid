@@ -2,7 +2,7 @@ exclude: '^$'
 fail_fast: false
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.7.2'
+    rev: 'v0.8.1'
     hooks:
       - id: ruff
         args: ["--fix"]
@@ -15,7 +15,7 @@ repos:
       - id: check-yaml
         args: [--unsafe]
   - repo: https://github.com/scop/pre-commit-shfmt
-    rev: v3.10.0-1
+    rev: v3.10.0-2
     hooks:
       - id: shfmt-src  # native (requires Go to build)
         args: ["-i", "4"]
