@@ -53,8 +53,9 @@ def boundary_for_area(area_def: PRGeometry) -> Boundary:
         try:
             adp = area_def.boundary()
             adp.decimate(int(freq_fraction * area_def.shape[0]))
-            if adp.contour_poly.area() < 0:
+            if adp.contour_poly.area() < 0 or ((adp.vertices[:, 0] > 170).any() and (adp.vertices[:, 0] < -170).any()):
                 # https://github.com/ssec/polar2grid/issues/696
+                # https://github.com/ssec/polar2grid/issues/722
                 raise ValueError("Failed to generate valid polygon for area. Polygon has a negative area.")
         except ValueError:
             if not isinstance(area_def, SwathDefinition):
