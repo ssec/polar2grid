@@ -64,6 +64,20 @@ def _swath_def_antimeridian_nan_rows() -> SwathDefinition:
     return swath_def
 
 
+def _swath_def_antimeridian_descending() -> SwathDefinition:
+    lons, lats = generate_lonlat_data((200, 100))
+    lons = lons - 115.0
+    lons[lons <= -180] += 360
+    lats = lats[::-1, :]
+    lons_da = da.from_array(lons)
+    lats_da = da.from_array(lats)
+    swath_def = SwathDefinition(
+        lons_da,
+        lats_da,
+    )
+    return swath_def
+
+
 def _swath_def_nans_in_right_column() -> SwathDefinition:
     lons, lats = generate_lonlat_data((200, 100))
     lons[:100, -1] = np.nan
@@ -122,8 +136,18 @@ def test_boundary_for_area(geom_or_func, exp_func):
 
     with dask.config.set(scheduler=CustomScheduler(1)):
         boundary = boundary_for_area(geom_obj)
+    print(boundary.contour_poly.area())
 
     np.testing.assert_allclose(boundary.contour()[0][0], exp_boundary.contour()[0][0])
     np.testing.assert_allclose(boundary.contour()[0][-1], exp_boundary.contour()[0][-1])
     np.testing.assert_allclose(boundary.contour()[1][0], exp_boundary.contour()[1][0])
     np.testing.assert_allclose(boundary.contour()[1][-1], exp_boundary.contour()[1][-1])
+
+
+def test_boundary_area_for_descending_orbit():
+    geom_obj = _swath_def_antimeridian_descending()
+    with dask.config.set(scheduler=CustomScheduler(1)):
+        boundary = boundary_for_area(geom_obj)
+    # if the polgyon is not clockwise then area is poorly calculated at ~12.4
+    # if clockwise then it should be less than 0.2
+    assert boundary.contour_poly.area() < 0.2

@@ -51,7 +51,7 @@ def boundary_for_area(area_def: PRGeometry) -> Boundary:
     else:
         freq_fraction = 0.30 if isinstance(area_def, AreaDefinition) else 0.05
         try:
-            adp = area_def.boundary()
+            adp = area_def.boundary(force_clockwise=True)
             adp.decimate(int(freq_fraction * area_def.shape[0]))
             if adp.contour_poly.area() < 0:
                 # https://github.com/ssec/polar2grid/issues/696
