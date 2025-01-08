@@ -34,9 +34,10 @@ jobs:
         with:
           miniforge-version: latest
           python-version: "3.11"
-          mamba-version: "*"
           activate-environment: test-environment
           channels: conda-forge
+          conda-remove-defaults: true
+          channel-priority: strict
 
       - name: Set cache environment variables
         shell: bash -l {0}
@@ -111,9 +112,10 @@ jobs:
         with:
           miniforge-version: latest
           python-version: ${{ matrix.python-version }}
-          mamba-version: "*"
           activate-environment: test-environment
           channels: conda-forge
+          conda-remove-defaults: true
+          channel-priority: strict
 
       - name: Set cache environment variables
         shell: bash -l {0}
