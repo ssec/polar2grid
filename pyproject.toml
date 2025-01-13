@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=45"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "polar2grid"
@@ -50,11 +50,15 @@ Project-URL = "https://github.com/ssec/polar2grid/"
 polar2grid = "polar2grid.__main__:p2g_main"
 geo2grid = "polar2grid.__main__:g2g_main"
 
-[tool.setuptools]
-include-package-data = true
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "polar2grid",
+    "NEWS.rst",
+    "NEWS_GEO2GRID.rst",
+]
 
-[tool.setuptools.packages]
-find = {}
+[tool.hatch.build.targets.wheel]
+packages = ["polar2grid"]
 
 [tool.pytest.ini_options]
 minversion = 6.0
