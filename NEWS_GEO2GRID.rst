@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 1.3.0 (unreleased)
+--------------------------
+
+* Fix resampling coverage calculations
+
 Version 1.2.0 (2023-05-10)
 --------------------------
 * Preliminary GOES-19 ABI reader support added
