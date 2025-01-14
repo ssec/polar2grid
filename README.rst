@@ -87,18 +87,18 @@ of both projects.
 Directories
 -----------
 
-The majority of Polar2Grid is written in python, but some of the components may use third-party C or Fortran binaries
-for various processing algorithms.
-To make it easier to create our CSPP distribution (aka the software bundle) and for any pure python users we provide
-the source for some of these executables in the root of the repository.
+In addition to the source for the Polar2Grid Python package, there are other
+directories containing useful information for users, but most importantly
+for those wanting to contribute to the project. These directories are
+described below.
 
 - polar2grid: The Polar2Grid python package.
 - swbundle: Helper scripts and other files provided in the Polar2Grid Software Bundle released by the CSPP team.
-- modis_crefl: Copy of the MODIS Corrected Reflectance software (CREFL) that includes updates for building with Makefile
-- viirs_crefl: Copy of the VIIRS Corrected Reflectance software (CREFL) that includes updates for building with Makefile
-- ms2gt: Custom version of the `ms2gt <http://nsidc.org/data/modis/ms2gt/>`_ software package with bug fixes and
-         optimizations. This is not used as of P2Gv2.0 and will be removed in future revisions.
-- etc: Configuration files used to customize the SatPy package for Polar2Grid users.
+- awips_scmi: Configuration files meant to be copied to an AWIPS data server
+- continuous_integration: Scripts and configuration for Continuous Integration (CI) workflows. GitHub Actions
+  are defined in the ``.github/workflows/`` directory.
+- doc: Documentation source files for generating sphinx documentation website and PDF file
+- integration_tests: Scripts and configuration for more in-depth integration tests run on SSEC servers
 
 Copyright and License
 ---------------------
