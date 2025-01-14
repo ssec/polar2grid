@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=45"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "polar2grid"
@@ -50,11 +50,29 @@ Project-URL = "https://github.com/ssec/polar2grid/"
 polar2grid = "polar2grid.__main__:p2g_main"
 geo2grid = "polar2grid.__main__:g2g_main"
 
-[tool.setuptools]
-include-package-data = true
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "polar2grid",
+    "NEWS.rst",
+    "NEWS_GEO2GRID.rst",
+    "swbundle",
+]
 
-[tool.setuptools.packages]
-find = {}
+[tool.hatch.build.targets.wheel]
+packages = ["polar2grid"]
+
+[tool.hatch.build.targets.wheel.shared-scripts]
+"swbundle/add_coastlines.sh" = "add_coastlines.sh"
+"swbundle/add_colormap.sh" = "add_colormap.sh"
+"swbundle/convert_grids_conf_to_yaml.sh" = "convert_grids_conf_to_yaml.sh"
+"swbundle/download_pyspectral_data.sh" = "download_pyspectral_data.sh"
+"swbundle/geo2grid.sh" = "geo2grid.sh"
+"swbundle/gtiff2kmz.sh" = "gtiff2kmz.sh"
+"swbundle/gtiff2mp4.sh" = "gtiff2mp4.sh"
+"swbundle/overlay.sh" = "overlay.sh"
+"swbundle/p2g_compare.sh" = "p2g_compare.sh"
+"swbundle/p2g_grid_helper.sh" = "p2g_grid_helper.sh"
+"swbundle/polar2grid.sh" = "polar2grid.sh"
 
 [tool.pytest.ini_options]
 minversion = 6.0
