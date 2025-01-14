@@ -121,10 +121,6 @@ for bash_file in *.sh; do
     sed -i "s/# __SWBUNDLE_ENVIRONMENT_INJECTION__/source \$POLAR2GRID_HOME\/bin\/env.sh/g" "$bash_file"
 done
 
-# Softlink bin/ scripts in python runtime so env.sh adds them to PATH
-cd  ${PYTHON_RUNTIME_BASE}/bin
-find ../../../bin/ -name "*.sh" ! -name "*env*" -exec ln -s {} . \;
-
 echo "Copying Satpy auxiliary data to software bundle..."
 mkdir -p ${SATPY_DATA_DIR} || oops "Could not create polar2grid auxiliary data directory"
 # don't include large geotiff files that we don't use in P2G/G2G
