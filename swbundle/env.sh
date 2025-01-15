@@ -63,6 +63,9 @@ if [[ "${_POLAR2GRID_ENV_LOADED}" != "${METADATA_CHECKSUM}" ]]; then
         echo "${P2G_CONDA_BASE}" > "${install_signal}"
     fi
 
+    # Add bundle scripts so they have priority over Python package-installed scripts
+    export PATH="${POLAR2GRID_HOME}/bin:${PATH}"
+
     # Point gdal utilities to the proper data location
     export GDAL_DATA=$P2G_CONDA_BASE/share/gdal
     export SATPY_CONFIG_PATH=$POLAR2GRID_HOME/etc/polar2grid
