@@ -130,7 +130,7 @@ def _write_scene(
 
     _assign_default_native_area_id(scn, data_ids)
     for writer_name in writers:
-        wargs = writer_args[writer_name]
+        wargs = writer_args.get(writer_name, {})
         _write_scene_with_writer(scn, writer_name, data_ids, wargs, to_save)
     return to_save
 
@@ -144,7 +144,13 @@ def _assign_default_native_area_id(scn: Scene, data_ids: list[DataID]) -> None:
 
 
 def _write_scene_with_writer(scn: Scene, writer_name: str, data_ids: list[DataID], wargs: dict, to_save: list) -> None:
-    res = scn.save_datasets(writer=writer_name, compute=False, datasets=data_ids, **wargs)
+    try:
+        res = scn.save_datasets(writer=writer_name, compute=False, datasets=data_ids, **wargs)
+    except ValueError as err:
+        err_msg = str(err)
+        if "Unknown writer" in err_msg:
+            LOG.error(err_msg)
+        raise
     if res and isinstance(res[0], (tuple, list)):
         # list of (dask-array, file-obj) tuples
         to_save.extend(zip(*res, strict=True))

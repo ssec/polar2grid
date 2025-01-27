@@ -166,6 +166,7 @@ class GlueArgumentParser:
         load_args = {}
         for reader_name, (sgrp1, sgrp2) in zip(self._reader_names, reader_subgroups, strict=True):
             if sgrp1 is None:
+                # satpy-only reader or no command line arguments
                 continue
             rargs = _args_to_dict(self._args, sgrp1._group_actions)
             reader_args[reader_name] = rargs
@@ -177,6 +178,9 @@ class GlueArgumentParser:
         writer_names: list[str] = self._writer_args["writers"]
         writer_specific_args = {}
         for writer_name, (sgrp1, sgrp2) in zip(writer_names, writer_subgroups, strict=True):
+            if sgrp1 is None:
+                # satpy-only writer or no command line arguments
+                continue
             wargs = _args_to_dict(self._args, sgrp1._group_actions)
             if sgrp2 is not None:
                 wargs.update(_args_to_dict(self._args, sgrp2._group_actions))

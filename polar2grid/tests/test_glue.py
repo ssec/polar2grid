@@ -215,6 +215,14 @@ def test_polar2grid_help():
     assert e.value.code == 0
 
 
+def test_polar2grid_help_unknown_writer():
+    from polar2grid.glue import main
+
+    with pytest.raises(SystemExit) as e, set_env(USE_POLAR2GRID_DEFAULTS="1"):
+        main(["-r", "viirs_sdr", "-w", "gtiff", "--help"])
+    assert e.value.code == 0
+
+
 def test_geo2grid_help():
     from polar2grid.glue import main
 
@@ -302,6 +310,12 @@ class TestGlueFakeScene:
         output_files = glob(str(chtmpdir / "*.tif"))
         assert len(output_files) == num_outputs
         assert ret == 0
+
+    def test_polar2grid_viirs_sdr_unknown_writer(self, viirs_sdr_i01_scene, tmp_path):
+        from polar2grid.glue import main
+
+        with prepare_glue_exec(viirs_sdr_i01_scene, max_computes=3), pytest.raises(ValueError, match="Unknown writer"):
+            main(["-r", "viirs_sdr", "-w", "gtiff", "-f", str(tmp_path)])
 
     @pytest.mark.parametrize(
         ("extra_config_path", "exp_comps", "exp_enh_names"),
