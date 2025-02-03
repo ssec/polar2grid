@@ -66,8 +66,7 @@ def _get_colorbar_vmin_vmax(arg_min, arg_max, metadata, input_dtype):
     dtype_max = float(np.iinfo(input_dtype).max)
     if arg_min is None and scale is None:
         LOG.warning(
-            "Colorbar min/max metadata not found and not provided "
-            "on the command line. Defaulting to data type limits."
+            "Colorbar min/max metadata not found and not provided on the command line. Defaulting to data type limits."
         )
         return dtype_min, dtype_max
 
@@ -458,7 +457,7 @@ def _args_to_colorbar_kwargs(args):
     if args.colorbar_width is None or args.colorbar_height is None:
         if args.colorbar_width is not None or args.colorbar_height is not None:
             LOG.warning(
-                "'--colorbar-width' and '--colorbar-height' were not both specified. " "Forcing '--colorbar-extend'."
+                "'--colorbar-width' and '--colorbar-height' were not both specified. Forcing '--colorbar-extend'."
             )
         args.colorbar_extend = True
 
@@ -531,7 +530,7 @@ def _get_colormap_object(input_tiff, num_bands, cmin, cmax):
     metadata = rio_ds.tags()
     cmap = _convert_table_to_cmap_or_default_bw(input_dtype, rio_ct, num_bands)
     if num_bands in (3, 4) and colormap_csv is None:
-        raise ValueError("RGB and RGBA geotiffs must have a colormap " "specified with '--colorbar-colormap-file'.")
+        raise ValueError("RGB and RGBA geotiffs must have a colormap specified with '--colorbar-colormap-file'.")
     if num_bands in (3, 4) or colormap_csv is not None:
         cmap = Colormap.from_string(colormap_csv)
     vmin, vmax = _get_colorbar_vmin_vmax(cmin, cmax, metadata, input_dtype)

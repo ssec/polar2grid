@@ -106,8 +106,7 @@ class ReaderProxyBase:
             p2g_product_names = self.get_all_products()
             if not p2g_product_names:
                 logger.warning(
-                    "Provided readers are not configured in %s. All "
-                    "products will be listed with internal Satpy names.",
+                    "Provided readers are not configured in %s. All products will be listed with internal Satpy names.",
                     self._binary_name,
                 )
                 return sorted(set([x["name"] for x in possible_satpy_ids])), [], []
