@@ -277,14 +277,14 @@ def add_reader_argument_groups(
         dest="products",
         action=ExtendConstAction,
         const=_AWIPS_TRUE_COLOR,
-        help="Add individual CREFL corrected products to create " "the 'true_color' composite in AWIPS.",
+        help="Add individual CREFL corrected products to create the 'true_color' composite in AWIPS.",
     )
     group.add_argument(
         "--awips-false-color",
         dest="products",
         action=ExtendConstAction,
         const=_AWIPS_FALSE_COLOR,
-        help="Add individual CREFL corrected products to create " "the 'false_color' composite in AWIPS.",
+        help="Add individual CREFL corrected products to create the 'false_color' composite in AWIPS.",
     )
     group.add_argument(
         "--mask-saturated",

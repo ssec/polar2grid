@@ -588,7 +588,7 @@ with open(grids_list_filename, "w") as grids_list_file:
 {title_underline}
 
 :Grid Name: {area_name}
-:Description: {area_dict['description']}
+:Description: {area_dict["description"]}
 :Projection: {crs.to_string()}
 """
 

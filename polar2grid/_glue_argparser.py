@@ -228,7 +228,7 @@ def _add_common_arguments(parser: argparse.ArgumentParser, binary_name: str) -> 
         dest="verbosity",
         action="count",
         default=0,
-        help="each occurrence increases verbosity 1 level through " "ERROR-WARNING-INFO-DEBUG (default INFO)",
+        help="each occurrence increases verbosity 1 level through ERROR-WARNING-INFO-DEBUG (default INFO)",
     )
     parser.add_argument("-l", "--log", dest="log_fn", default=None, help="specify the log filename")
     parser.add_argument(
@@ -288,7 +288,7 @@ def _validate_reader_writer_args(parser, args, use_polar2grid_defaults):
         parser.print_usage()
         parser.exit(
             1,
-            "\nERROR: Reader must be provided (-r flag).\n" "Supported readers:\n\t{}\n".format(
+            "\nERROR: Reader must be provided (-r flag).\nSupported readers:\n\t{}\n".format(
                 "\n\t".join(_supported_readers(use_polar2grid_defaults))
             ),
         )
@@ -296,14 +296,14 @@ def _validate_reader_writer_args(parser, args, use_polar2grid_defaults):
         parser.print_usage()
         parser.exit(
             1,
-            "\nMultiple readers is not currently supported. Got:\n\t" "{}\n".format("\n\t".join(args.readers)),
+            "\nMultiple readers is not currently supported. Got:\n\t{}\n".format("\n\t".join(args.readers)),
         )
         return -1
     if args.writers is None:
         parser.print_usage()
         parser.exit(
             1,
-            "\nERROR: Writer must be provided (-w flag) with one or more writer.\n" "Supported writers:\n\t{}\n".format(
+            "\nERROR: Writer must be provided (-w flag) with one or more writer.\nSupported writers:\n\t{}\n".format(
                 "\n\t".join(_supported_writers(use_polar2grid_defaults))
             ),
         )
@@ -390,7 +390,7 @@ def add_scene_argument_groups(parser, is_polar2grid=False):
         dest="readers",
         metavar="READER",
         type=_convert_reader_name,
-        help="Name of reader used to read provided files. " "Supported readers: " + ", ".join(readers),
+        help="Name of reader used to read provided files. Supported readers: " + ", ".join(readers),
     )
     group_1.add_argument(
         "-f",
@@ -502,7 +502,7 @@ def add_writer_argument_groups(parser, is_polar2grid=False):
         dest="writers",
         type=_convert_writer_name,
         metavar="WRITER",
-        help="Writer used to save datasets. " "Supported writers: " + ", ".join(writers),
+        help="Writer used to save datasets. Supported writers: " + ", ".join(writers),
         # help="Writers to save datasets with. Multiple writers "
         #      "can be provided by specifying '-w' multiple "
         #      "times (ex. '-w geotiff -w awips_tiled'). "
@@ -608,7 +608,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
         "--grid-coverage",
         default=0.1,
         type=float,
-        help="Fraction of target grid that must contain " "data to continue processing product.",
+        help="Fraction of target grid that must contain data to continue processing product.",
     )
     group_1.add_argument(
         "--cache-dir",
@@ -620,9 +620,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
         "--grid-configs",
         nargs="+",
         default=tuple(),
-        help="Specify additional grid configuration files. "
-        "(.conf for legacy CSV grids, .yaml for "
-        "SatPy-style areas)",
+        help="Specify additional grid configuration files. (.conf for legacy CSV grids, .yaml for SatPy-style areas)",
     )
     group_1.add_argument(
         "--ll-bbox",

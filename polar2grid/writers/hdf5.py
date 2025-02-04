@@ -185,7 +185,7 @@ class HDF5Writer(Writer):
         self, fh, fname: str, parent: str, area_def, dtype: np.dtype, append: bool, compression, chunks: tuple[int, int]
     ) -> tuple[list, list[FakeHDF5]]:
         """Delayed Geolocation Data write."""
-        msg = ("Adding geolocation 'longitude' and " "'latitude' datasets for grid %s", parent)
+        msg = ("Adding geolocation 'longitude' and 'latitude' datasets for grid %s", parent)
         LOG.info(msg)
         lon_data, lat_data = area_def.get_lonlats(chunks=chunks)
 
@@ -216,7 +216,7 @@ class HDF5Writer(Writer):
         d_dtype = data_arr.dtype if dtype is None else dtype
 
         if hdf_subgroup in hdf_fh:
-            LOG.warning("Product %s already in HDF5 group," "will delete existing dataset", hdf_subgroup)
+            LOG.warning("Product %s already in HDF5 group,will delete existing dataset", hdf_subgroup)
             del hdf_fh[hdf_subgroup]
 
         dset = hdf_fh.create_dataset(hdf_subgroup, shape=data_arr.shape, dtype=d_dtype, compression=compression)
@@ -252,7 +252,7 @@ class HDF5Writer(Writer):
 
         filename = output_names[0]
         if not all_equal(output_names):
-            LOG.warning("More than one output filename possible. " "Writing to only '{}'.".format(filename))
+            LOG.warning("More than one output filename possible. Writing to only '{}'.".format(filename))
 
         HDF5_fh = self.open_HDF5_filehandle(filename, append=append)
 
