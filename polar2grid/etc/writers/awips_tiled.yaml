@@ -758,3 +758,11 @@ templates:
           physical_element:
             raw_value: MIRS Skin Temperature
           units: {}
+      mirs_snow_grain_size:
+        reader: mirs
+        name: SnowGS
+        var_name: data
+        attributes:
+          physical_element:
+            raw_value: MIRS Snow Grain Size
+          units: {}
