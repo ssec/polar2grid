@@ -93,6 +93,26 @@ more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | night_microphysics        | Night Microphysics RGB                              |
 +---------------------------+-----------------------------------------------------+
+| cloud_phase_distinction   | Day Cloud Phase Distinction RGB                     |
++---------------------------+-----------------------------------------------------+
+| cira_fire_temperature     | Fire Temperature RGB                                |
++---------------------------+-----------------------------------------------------+
+| snow_fog                  | Day Snow Fog RGB                                    |
++---------------------------+-----------------------------------------------------+
+| convection                | Day Convection RGB                                  |
++---------------------------+-----------------------------------------------------+
+| land_cloud                | Day Land Cloud RGB                                  |
++---------------------------+-----------------------------------------------------+
+| so2                       | SO2 RGB                                             |
++---------------------------+-----------------------------------------------------+
+| blowing_snow              | Blowing Snow RGB                                    |
++---------------------------+-----------------------------------------------------+
+| water_vapors1             | Simple Water Vapor RGB                              |
++---------------------------+-----------------------------------------------------+
+| water_vapors2             | Differential Water Vapor RGB                        |
++---------------------------+-----------------------------------------------------+
+| cloud_type                | Day Cloud Type RGB                                  |
++---------------------------+-----------------------------------------------------+
 
 """
 
@@ -114,6 +134,18 @@ COMPOSITE_PRODUCTS = [
     "dust",
     "fog",
     "night_microphysics",
+    # 2025 new
+    "cloud_phase_distinction",  # day cloud phase distinction
+    # "cloud_phase_distinction_raw",  # day cloud phase distinction
+    "cira_fire_temperature",
+    "snow_fog",  # day snow fog
+    "convection",  # day convection
+    "land_cloud",  # day land cloud
+    "water_vapors2",  # differential water vapor
+    "so2",  # SO2
+    "blowing_snow",
+    "water_vapors1",  # simple water vapor
+    "cloud_type",
 ]
 
 
