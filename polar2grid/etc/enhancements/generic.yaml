@@ -333,54 +333,64 @@ enhancements:
   # Polar2Grid - CLAVR-x products
   clavrx_cloud_type:
     name: cloud_type
+    reader: clavrx
     operations: {}
   clavrx_cld_temp_acha:
     name: cld_temp_acha
+    reader: clavrx
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 160, max_stretch: 320.}
   clavrx_cld_height_acha:
     name: cld_height_acha
+    reader: clavrx
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 20000.}
   clavrx_cloud_phase:
     name: cloud_phase
+    reader: clavrx
     operations: {}
   clavrx_cld_opd_dcomp:
     name: cld_opd_dcomp
+    reader: clavrx
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -0.2, max_stretch: 160.}
   clavrx_cld_opd_nlcomp:
     name: cld_opd_nlcomp
+    reader: clavrx
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -0.2, max_stretch: 160.}
   clavrx_cld_reff_dcomp:
     name: cld_reff_dcomp
+    reader: clavrx
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 160.}
   clavrx_cld_reff_nlcomp:
     name: cld_reff_nlcomp
+    reader: clavrx
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 160.}
   clavrx_cld_emiss_acha:
     name: cld_emiss_acha
+    reader: clavrx
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 1.}
   clavrx_refl_lunar_dnb_nom:
     name: refl_lunar_dnb_nom
+    reader: clavrx
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.contrast.stretch
