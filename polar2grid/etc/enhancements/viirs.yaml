@@ -156,6 +156,17 @@ enhancements:
               min_value: -300
               max_value: 20000
 
+  cloud_base_height:
+    name: CldBaseHght
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/abi_l2_modified_cloud_top.cmap
+              min_value: -300
+              max_value: 20000
+
   cloud_top_temperature:
     name: CldTopTemp
     operations:
@@ -166,6 +177,137 @@ enhancements:
             - filename: colormaps/abi_l2_modified_cloud_top.cmap
               min_value: 300
               max_value: 200
+
+  cloud_phase:
+    name: CloudPhase
+    sensor: viirs
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - {
+              values: [-0.5, 0.5, 0.5001, 1.5, 1.5001, 2.5, 2.5001, 3.5, 3.5001, 4.5, 4.5001, 5.5],
+              colors: [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [2, 188, 252, 255],
+                [2, 188, 252, 255],
+                [1, 251, 0, 255],
+                [1, 251, 0, 255],
+                [0, 103, 1, 255],
+                [0, 103, 1, 255],
+                [250, 249, 0, 255],
+                [250, 249, 0, 255],
+                [246, 0, 253, 255],
+                [246, 0, 253, 255],
+              ]
+            }
+#            - {
+#              values: [0, 1, 2, 3, 4, 5],
+#              colors: [
+#                [0, 0, 0, 0],
+#                [2, 188, 252, 255],
+#                [1, 251, 0, 255],
+#                [0, 103, 1, 255],
+#                [250, 249, 0, 255],
+#                [246, 0, 253, 255],
+#              ]
+#            }
+
+  cloud_layer:
+    name: CloudLayer
+    sensor: viirs
+    operations:
+      - name: cloud_layer_recat
+        method: !!python/name:polar2grid.enhancements.viirs.cloud_layers_lmh
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            # labels_name = ["Clear", "Low", "Mid", "M+L", "High", "H+L", "H+M", "H+M+L"]
+            #R_index = [0,  255,   255,    0,    0, 255,   0, 90]
+            #G_index = [0,  160,   255,  140,  255, 110,   0,  0]
+            #B_index = [0,    0,     0,    0,  255, 200, 255, 90]
+            # Data bit map
+            #00000 (0) : Clear
+            #00001 (1) : First Layer cloudy (< 5kft)
+            #00010 (2) : Second Layer cloudy (f-10kft)
+            #00100 (4) : Third Layer (10-18 kft)
+            #01000 (8) : Fourth Layer (18-24 kft)
+            #10000 (16): Fifth Layer (> 24 kft)
+            #00101 (5=2^2+1) : Third and First
+            #00110 (6=2^2+2^1) : Third and Second
+            #00011 (3=2^1+1) : Second and First
+            - {
+              values: [
+                -0.5,
+                0.5,
+                0.5001,
+                1.5,
+                1.5001,
+                2.5,
+                2.5001,
+                3.5,
+                3.5001,
+                4.5,
+                4.5001,
+                5.5,
+                5.5001,
+                6.5,
+                6.5001,
+                7.5,
+              ],
+              colors: [
+                [0, 0, 0, 255],  # 0 - Clear
+                [0, 0, 0, 255],  # 0 - Clear
+                [255, 160, 0, 255],  # 1 - Low - 1st and 2nd layer
+                [255, 160, 0, 255],  # 1 - Low - 1st and 2nd layer
+                [255, 255, 0, 255],  # 2 - Mid - 3rd or 4th layer
+                [255, 255, 0, 255],  # 2 - Mid - 3rd or 4th layer
+                [0, 140, 0, 255],  # 3 - Low + Mid
+                [0, 140, 0, 255],  # 3 - Low + Mid
+                [0, 255, 255, 255],  # 4 - High - 5th layer
+                [0, 255, 255, 255],  # 4 - High - 5th layer
+                [255, 110, 200, 255],  # 5 - High + Low
+                [255, 110, 200, 255],  # 5 - High + Low
+                [0, 0, 255, 255],  # 6 - High + Mid
+                [0, 0, 255, 255],  # 6 - High + Mid
+                [90, 0, 90, 255],  # 7 - High + Mid + Low
+                [90, 0, 90, 255],  # 7 - High + Mid + Low
+              ]
+            }
+
+  total_cloud_fraction:
+    name: Total_Cloud_Fraction
+    sensor: viirs
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - {
+              values: [
+                0,
+                0.125,
+                0.12501,
+                0.375,
+                0.37501,
+                0.624,
+                0.62401,
+                1.0,
+              ],
+              colors: [
+                [0, 0, 0, 255],
+                [0, 0, 0, 255],
+                [0, 0, 184, 255],
+                [0, 0, 184, 255],
+                [42, 135, 255, 255],
+                [42, 135, 255, 255],
+                [255, 255, 255, 255],
+                [255, 255, 255, 255],
+              ]
+            }
 
   nbr:
     sensor: viirs

@@ -95,7 +95,18 @@ PREFERRED_CHUNK_SIZE: int = 6400
 I_PRODUCTS = ["surf_refl_I{:02d}".format(chan_num) for chan_num in range(1, 4)]
 M_PRODUCTS = ["surf_refl_M{:02d}".format(chan_num) for chan_num in range(1, 12) if chan_num not in (6, 9)]
 SURF_COMPS = ["true_color_surf", "false_color_surf"]
-OTHER_PRODS = ["NDVI", "EVI", "CldTopTemp", "CldTopHght", "AOD550", "VLST"]
+OTHER_PRODS = [
+    "NDVI",
+    "EVI",
+    "CldTopTemp",
+    "CldTopHght",
+    "AOD550",
+    "VLST",
+    "CloudPhase",
+    "CldBaseHght",
+    "Total_Cloud_Fraction",
+    "CloudLayer",
+]
 
 PRODUCT_ALIASES = {}
 SURF_ALIASES = []
@@ -155,6 +166,12 @@ def add_reader_argument_groups(
         action=BooleanOptionalAction,
         default=True,
         help="Filter vegetation index variables by various quality flags. Default is enabled.",
+    )
+    group.add_argument(
+        "--filter-cbh",
+        action=BooleanOptionalAction,
+        default=True,
+        help="Filter cloud base height (CldBaseHght) variables by various quality flags. Default is enabled.",
     )
     group.add_argument(
         "--aod-qc-filter",

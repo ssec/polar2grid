@@ -29,7 +29,11 @@ import yaml
 from pyresample.geometry import SwathDefinition
 from satpy._config import config_search_paths
 from satpy.utils import recursive_dict_update
-from satpy.writers import DecisionTree
+
+try:
+    from satpy.decision_tree import DecisionTree
+except ImportError:
+    from satpy.writers import DecisionTree
 
 from polar2grid.utils.legacy_compat import get_sensor_alias
 

@@ -35,7 +35,7 @@ dependencies = [
 
 [project.optional-dependencies]
 utils = ["matplotlib"]
-docs = ["sphinx", "rst2pdf", "sphinx-argparse", "sphinxcontrib-apidoc", "pytest"]
+docs = ["sphinx", "rst2pdf", "sphinx-argparse", "pytest"]
 tests = ["pytest"]
 coastlines = ["pycoast", "pydecorate"]
 all = ["matplotlib", "sphinx", "rst2pdf", "sphinx-argparse", "sphinxcontrib-apidoc", "pytest", "pycoast", "pydecorate"]
