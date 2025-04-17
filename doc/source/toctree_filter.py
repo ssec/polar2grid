@@ -32,7 +32,7 @@ class TocTreeFilt(TocTree):
     list of exclusions is stored in the **toc_filter_exclusion** list. Any
     table of content entry prefixed by one of these strings will be excluded.
     If `toc_filter_exclusion=['secret','draft']` then all toc entries of the
-    form `:secret:ultra-api` or `:draft:new-features` will be excuded from
+    form `:secret:ultra-api` or `:draft:new-features` will be excluded from
     the final table of contents. Entries without a prefix are always included.
     """
 
