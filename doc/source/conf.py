@@ -148,8 +148,8 @@ rst_epilog = """
 .. |viirs| replace:: :abbr:`VIIRS (Visible/Infrared Imager Radiometer Suite)`
 """
 
-# If your documentation needs a minimal Sphinx version, state it here.
-# needs_sphinx = '1.0'
+# sphinxcontrib.apidoc was added to sphinx in 8.2.0 as sphinx.etx.apidoc
+needs_sphinx = "8.2.0"
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
@@ -167,18 +167,24 @@ extensions = [
     "sphinxarg.ext",
     "doi_role",
     "toctree_filter",
-    "sphinxcontrib.apidoc",
+    "sphinx.ext.apidoc",
 ]
 
 # API docs
-apidoc_module_dir = "../../polar2grid"
-apidoc_output_dir = "dev_guide/api"
 if is_geo2grid:
-    apidoc_excluded_paths = ["readers/amsr2_l1b.py"]
+    _apidoc_excluded_paths = ["../../polar2grid/readers/amsr2_l1b.py"]
 else:
-    apidoc_excluded_paths = []
+    _apidoc_excluded_paths = []
 apidoc_separate_modules = True
-apidoc_extra_args = ["-P"]
+apidoc_include_private = True
+
+apidoc_modules = [
+    {
+        "path": "../../polar2grid",
+        "destination": "dev_guide/api/",
+        "exclude_patterns": _apidoc_excluded_paths,
+    },
+]
 
 # Autodoc
 autodoc_mock_imports = []
@@ -260,6 +266,7 @@ exclude_patterns = [
 if is_geo2grid:
     exclude_patterns.extend(
         [
+            "NEWS.rst",
             "examples/acspo_example.rst",
             "examples/amsr2_example.rst",
             "examples/modis_example.rst",
@@ -292,6 +299,7 @@ if is_geo2grid:
 else:
     exclude_patterns.extend(
         [
+            "NEWS_GEO2GRID.rst",
             "compositors.rst",
             "data_access.rst",
             "examples/abi_example.rst",

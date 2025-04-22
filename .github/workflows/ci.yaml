@@ -77,17 +77,19 @@ jobs:
 
       - name: Build Polar2Grid PDF
         shell: bash -l {0}
+        # don't treat warnings as errors because html-only sections will miss some documents
         run: |
           cd doc
           make clean
-          make latexpdf SPHINXOPTS="-W --keep-going"
+          make latexpdf SPHINXOPTS="--keep-going"
 
       - name: Build Geo2Grid PDF
         shell: bash -l {0}
+        # don't treat warnings as errors because html-only sections will miss some documents
         run: |
           cd doc
           make clean
-          make latexpdf POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
+          make latexpdf POLAR2GRID_DOC="geo" SPHINXOPTS="--keep-going"
 
   test:
     name: Tests

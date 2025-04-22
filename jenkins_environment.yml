@@ -5,7 +5,7 @@ dependencies:
   - behave
   - graphviz
   - pip
-  - sphinx
+  - sphinx<8.2.0
   - pytest
   - matplotlib
   - pip:
@@ -13,4 +13,3 @@ dependencies:
     - graphviz
 #    - sphinx-argparse
     - git+https://github.com/djhoese/sphinx-argparse.git@bugfix-section-nums
-    - sphinxcontrib-apidoc

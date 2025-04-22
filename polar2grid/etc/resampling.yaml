@@ -94,6 +94,14 @@ resampling:
     kwargs:
       weight_delta_max: 40.0
       weight_distance_max: 2.0
+  default_viirs_edr:
+    area_type: swath
+    sensor: viirs
+    reader: viirs_edr
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 2.0
   default_nucaps:
     area_type: swath
     reader: nucaps
@@ -244,6 +252,26 @@ resampling:
     kwargs:
       grid_coverage: 0
       radius_of_influence: 2000
+
+  # viirs edr
+  default_viirs_cloud_phase:
+    name: CloudPhase
+    reader: viirs_edr
+    area_type: swath
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 2.0
+      maximum_weight_mode: true
+  default_viirs_cloud_layer:
+    name: CloudLayer
+    reader: viirs_edr
+    area_type: swath
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 2.0
+      maximum_weight_mode: true
 
   # ACSPO SST
   default_acspo_sst_viirs:
