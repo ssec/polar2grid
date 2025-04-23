@@ -85,6 +85,8 @@ READER_PRODUCTS = [
     "IFR_Fog_Prob",
     "LIFR_Fog_Prob",
     "MVFR_Fog_Prob",
+    "PRES",
+    "Phase",
 ]
 COMPOSITE_PRODUCTS = []
 

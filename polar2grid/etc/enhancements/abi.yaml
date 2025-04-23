@@ -130,3 +130,54 @@ enhancements:
             - min_value: 0.0
               max_value: 100.0
               filename: colormaps/MVFR_PROB.cmap
+
+  cloud_phase_l2:
+    name: Phase
+    sensor: abi
+    reader: abi_l2_nc
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - {
+              values: [-0.5, 0.5, 0.5001, 1.5, 1.5001, 2.5, 2.5001, 3.5, 3.5001, 4.5, 4.5001, 5.5],
+              colors: [
+                [0, 0, 0, 0],
+                [0, 0, 0, 0],
+                [2, 188, 252, 255],
+                [2, 188, 252, 255],
+                [1, 251, 0, 255],
+                [1, 251, 0, 255],
+                [0, 103, 1, 255],
+                [0, 103, 1, 255],
+                [250, 249, 0, 255],
+                [250, 249, 0, 255],
+                [246, 0, 253, 255],
+                [246, 0, 253, 255],
+              ]
+            }
+#            - {
+#              values: [0, 1, 2, 3, 4, 5],
+#              colors: [
+#                [0, 0, 0, 0],
+#                [2, 188, 252, 255],
+#                [1, 251, 0, 255],
+#                [0, 103, 1, 255],
+#                [250, 249, 0, 255],
+#                [246, 0, 253, 255],
+#              ]
+#            }
+
+  cloud_top_pressure_l2:
+    name: PRES
+    sensor: abi
+    reader: abi_l2_nc
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/abi_l2_modified_cloud_top.cmap
+              min_value: 100
+              max_value: 1000

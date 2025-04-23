@@ -28,7 +28,6 @@ import os
 import yaml
 from pyresample.geometry import SwathDefinition
 from satpy._config import config_search_paths
-from satpy.utils import recursive_dict_update
 
 try:
     from satpy.decision_tree import DecisionTree
@@ -36,6 +35,7 @@ except ImportError:
     from satpy.writers import DecisionTree
 
 from polar2grid.utils.legacy_compat import get_sensor_alias
+from polar2grid.utils.config import recursive_dict_update
 
 logger = logging.getLogger(__name__)
 
@@ -80,15 +80,15 @@ class ResamplerDecisionTree(DecisionTree):
                     if not resampling_section:
                         logging.debug("Config '{}' has no '{}' section or it is empty".format(config_file, self.prefix))
                         continue
-                    conf = recursive_dict_update(conf, resampling_section)
+                    recursive_dict_update(conf, resampling_section)
             elif isinstance(config_file, dict):
-                conf = recursive_dict_update(conf, config_file)
+                recursive_dict_update(conf, config_file)
             else:
                 logger.debug("Loading resampling config string")
                 d = yaml.load(config_file, Loader=yaml.UnsafeLoader)
                 if not isinstance(d, dict):
                     raise ValueError("YAML file doesn't exist or string is not YAML dict: {}".format(config_file))
-                conf = recursive_dict_update(conf, d)
+                recursive_dict_update(conf, d)
         self._build_tree(conf)
 
     def find_match(self, **query_dict):
