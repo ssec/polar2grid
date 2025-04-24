@@ -179,5 +179,5 @@ enhancements:
         kwargs:
           palettes:
             - filename: colormaps/abi_l2_modified_cloud_top.cmap
-              min_value: 100
-              max_value: 1000
+              min_value: 1000
+              max_value: 100
