@@ -1,0 +1,144 @@
+enhancements:
+  gaasp_clw:
+    name: CLW
+    sensor: amsr2
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 0.7}
+  gaasp_sst:
+    name: SST
+    sensor: amsr2
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
+  gaasp_tpw:
+    name: TPW
+    sensor: amsr2
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/idl_rainbow.cmap
+              min_value: 0
+              max_value: 75
+  gaasp_wspd:
+    name: WSPD
+    sensor: amsr2
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'linear'}
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/idl_rainbow.cmap
+              min_value: 0
+              max_value: 1
+  # Snow_Cover unscaled (category product)
+  gaasp_snow_cover:
+    name: Snow_Cover
+    sensor: amsr2
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - {
+              values: [-0.5, 0.5, 0.5001, 1.5, 1.5001, 2.5, 2.5001, 3.5, 3.5001, 4.5],
+              colors: [
+                [0, 0, 0, 0],  # missing
+                [0, 0, 0, 0],
+                [45, 104, 196, 255],  # ocean
+                [45, 104, 196, 255],
+                [46, 111, 64, 255],  # land without snow
+                [46, 111, 64, 255],
+                [211, 211, 211, 255],  # land with wet snow
+                [211, 211, 211, 255],
+                [250, 250, 250, 255],  # land with dry snow
+                [250, 250, 250, 255],
+              ]
+            }
+  gaasp_snow_depth:
+    name: Snow_Depth
+    sensor: amsr2
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/idl_rainbow.cmap
+              min_value: 0
+              max_value: 100
+  gaasp_swe:
+    name: SWE
+    sensor: amsr2
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/idl_rainbow.cmap
+              min_value: 0
+              max_value: 250
+  gaasp_soil_moisture:
+    name: Soil_Moisture
+    sensor: amsr2
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/idl_rainbow.cmap
+              min_value: 0
+              max_value: 1
+  gaasp_ice_concentration_nh:
+    name: NASA_Team_2_Ice_Concentration_NH
+    sensor: amsr2
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/idl_rainbow.cmap
+              min_value: 0
+              max_value: 100
+  gaasp_ice_concentration_sh:
+    name: NASA_Team_2_Ice_Concentration_SH
+    sensor: amsr2
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/idl_rainbow.cmap
+              min_value: 0
+              max_value: 100
+  #  gaasp_latency_nh:
+  #    name: Latency_NH
+  #    sensor: amsr2
+  #    operations:
+  #      - name: linear_stretch
+  #        method: !!python/name:satpy.enhancements.stretch
+  #        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 100.0}
+  #  gaasp_latency_sh:
+  #    name: Latency_SH
+  #    sensor: amsr2
+  #    operations:
+  #      - name: linear_stretch
+  #        method: !!python/name:satpy.enhancements.stretch
+  #        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 100.0}
+  gaasp_rain_rate:
+    name: Rain_Rate
+    sensor: amsr2
+    operations:
+      - name: colorize
+        method: !!python/name:satpy.enhancements.colorize
+        kwargs:
+          palettes:
+            - filename: colormaps/idl_rainbow.cmap
+              min_value: 0
+              max_value: 60
