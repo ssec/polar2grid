@@ -22,10 +22,13 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Helpers for setting up the Polar2Grid environment and configuration."""
 
+from __future__ import annotations
+
 import importlib.metadata as impm
 import importlib.resources as impr
 import os
 import sys
+from collections.abc import Mapping, MutableMapping
 
 import satpy
 
@@ -60,3 +63,20 @@ def add_polar2grid_config_paths():
     p2g_etc = get_polar2grid_etc()
     if p2g_etc not in config_path:
         satpy.config.set(config_path=config_path + [p2g_etc])
+
+
+def recursive_dict_update(d: MutableMapping, u: Mapping) -> None:
+    """Recursive dictionary update.
+
+    Copied from:
+
+        http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
+
+    """
+    for k, v in u.items():
+        if isinstance(v, Mapping):
+            r = d.get(k, {})
+            recursive_dict_update(r, v)
+            d[k] = r
+        else:
+            d[k] = u[k]
