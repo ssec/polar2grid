@@ -76,30 +76,35 @@ enhancements:
   # MIRS non-BT products
   snow_cover:
     name: Snow
+    reader: mirs
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 1.0}
   sea_ice:
     name: SIce
+    reader: mirs
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 100.0}
   snow_water_equivalence:
     name: SWE
+    reader: mirs
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 20.0}
   cloud_liquid_water:
     name: CLW
+    reader: mirs
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 0.7}
   snow_fall_rate:
     name: SFR
+    reader: mirs
     operations:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.stretch
