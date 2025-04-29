@@ -116,6 +116,13 @@ enhancements:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 50.0}
+  snow_grain_size:
+    name: SnowGS
+    # Uses NOAA STAR Snow Grain Size range: https://www.star.nesdis.noaa.gov/mirs/highresolutionv.php
+    operations:
+      - name: linear_stretch
+        method: !!python/name:satpy.enhancements.stretch
+        kwargs: {stretch: 'crude', min_stretch: 0.3, max_stretch: 0.7}
   # mirs_tpw: See higher up in configuration
 
   # MIRS BTs - ATMS

@@ -63,6 +63,8 @@ frontend name.The frontend offers the following products:
     +--------------------+----------------------------------------------------+
     | tskin              | Skin Temperature                                   |
     +--------------------+----------------------------------------------------+
+    | snow_grain_size    | Snow Grain Size                                    |
+    +--------------------+----------------------------------------------------+
     | btemp_X            | Brightness Temperature for channel X (see below)   |
     +--------------------+----------------------------------------------------+
 
@@ -192,6 +194,7 @@ SNOW_PRODUCTS = [
     "snow_cover",
     "swe",
     "sfr",
+    "snow_grain_size",
 ]
 SEAICE_PRODUCTS = [
     "sea_ice",
@@ -205,6 +208,7 @@ PRODUCT_ALIASES["clw"] = "CLW"
 PRODUCT_ALIASES["snow_cover"] = "Snow"
 PRODUCT_ALIASES["swe"] = "SWE"
 PRODUCT_ALIASES["sfr"] = "SFR"
+PRODUCT_ALIASES["snow_grain_size"] = "SnowGS"
 
 PRODUCT_ALIASES["sea_ice"] = "SIce"
 
