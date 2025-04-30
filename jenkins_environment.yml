@@ -5,7 +5,7 @@ dependencies:
   - behave
   - graphviz
   - pip
-  - sphinx<8.2.0
+  - sphinx>=8.2.2
   - pytest
   - matplotlib
   - pip:
