@@ -28,17 +28,6 @@ import numpy as np
 
 log = logging.getLogger(__name__)
 
-DTYPE_UINT8 = "uint1"
-DTYPE_UINT16 = "uint2"
-DTYPE_UINT32 = "uint4"
-DTYPE_UINT64 = "uint8"
-DTYPE_INT8 = "int1"
-DTYPE_INT16 = "int2"
-DTYPE_INT32 = "int4"
-DTYPE_INT64 = "int8"
-DTYPE_FLOAT32 = "real4"
-DTYPE_FLOAT64 = "real8"
-
 NUMPY_DTYPE_STRS = [
     "uint8",
     "uint16",
@@ -52,70 +41,22 @@ NUMPY_DTYPE_STRS = [
     "float64",
 ]
 
-# Map data type to np type for conversion
-str2dtype = {
-    DTYPE_UINT8: np.uint8,
-    DTYPE_UINT16: np.uint16,
-    DTYPE_UINT32: np.uint32,
-    DTYPE_UINT64: np.uint64,
-    DTYPE_INT8: np.int8,
-    DTYPE_INT16: np.int16,
-    DTYPE_INT32: np.int32,
-    DTYPE_INT64: np.int64,
-    DTYPE_FLOAT32: np.float32,
-    DTYPE_FLOAT64: np.float64,
-}
-dtype2str = dict((v, k) for k, v in str2dtype.items())
 
-# Map data type to valid data range
-# Since float32 is polar2grid's intermediate type, float32 and float64 don't
-# get clipped
-dtype2range = {
-    DTYPE_UINT8: (0, 2**8 - 1),
-    DTYPE_UINT16: (0, 2**16 - 1),
-    DTYPE_UINT32: (0, 2**32 - 1),
-    DTYPE_UINT64: (0, 2**64 - 1),
-    DTYPE_INT8: (-1 * (2**7), 2**7 - 1),
-    DTYPE_INT16: (-1 * (2**15), 2**15 - 1),
-    DTYPE_INT32: (-1 * (2**31), 2**31 - 1),
-    DTYPE_INT64: (-1 * (2**63), 2**63 - 1),
-    DTYPE_FLOAT32: None,
-    DTYPE_FLOAT64: None,
-}
-
-
-def normalize_dtype_string(dtype_str):
-    if dtype_str in str2dtype:
-        return dtype_str
-    else:
-        msg = "Unknown data type string '%s'" % (dtype_str,)
-        log.error(msg)
-        raise ValueError(msg)
-
-
-def str_to_dtype(dtype_str):
-    if np.issubclass_(dtype_str, np.number):
-        # if they gave us a np dtype
-        return dtype_str
-    elif isinstance(dtype_str, str) and hasattr(np, dtype_str):
-        # they gave us the np name of the dtype
-        return getattr(np, dtype_str)
-
+def str_to_dtype(dtype_str: str) -> np.dtype:
     try:
-        return str2dtype[dtype_str]
-    except KeyError as err:
+        return getattr(np, dtype_str)
+    except AttributeError:
         raise ValueError("Not a valid data type string: %s" % (dtype_str,)) from err
 
 
-def dtype_to_str(numpy_dtype):
-    if isinstance(numpy_dtype, str):
-        # if they gave us a string, make sure it's valid
-        return normalize_dtype_string(numpy_dtype)
+def dtype_to_str(numpy_dtype: np.dtype | str) -> str:
+    if isinstance(numpy_dtype, str) or not hasattr(numpy_dtype, "name"):
+        numpy_dtype = np.dtype(numpy_dtype)
 
     try:
-        return dtype2str[np.dtype(numpy_dtype).type]
+        return numpy_dtype.name
     except KeyError as err:
-        raise ValueError("Unsupported np data type: %r" % (numpy_dtype,)) from err
+        raise ValueError("Unsupported numpy data type: %r" % (numpy_dtype,)) from err
 
 
 def clip_to_data_type(data, data_type):
