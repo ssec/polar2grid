@@ -332,21 +332,23 @@ class _GlueProcessor:
     def __call__(self):
         # Set up dask and the number of workers
         common_args = self.arg_parser._args
+        workers_cm = contextlib.nullcontext()
         if common_args.num_workers:
-            dask.config.set(num_workers=common_args.num_workers)
+            workers_cm = dask.config.set(num_workers=common_args.num_workers)
 
-        with _create_profile_html_if(
+        preferred_chunk_size = get_reader_attr(self.arg_parser._scene_creation["reader"], "PREFERRED_CHUNK_SIZE", 1024)
+        chunk_cm = _set_preferred_chunk_size(preferred_chunk_size)
+        profile_cm = _create_profile_html_if(
             common_args.create_profile,
             "polar2grid" if self.is_polar2grid else "geo2grid",
             self.glue_name,
-        ):
+        )
+        with workers_cm, profile_cm, chunk_cm:
             return self._run_processing()
 
     def _run_processing(self):
         LOG.info("Sorting and reading input files...")
         arg_parser = self.arg_parser
-        preferred_chunk_size = get_reader_attr(arg_parser._scene_creation["reader"], "PREFERRED_CHUNK_SIZE", 1024)
-        _set_preferred_chunk_size(preferred_chunk_size)
         scn = _create_scene(arg_parser._scene_creation)
         if scn is None:
             return -1
@@ -460,14 +462,19 @@ def _create_tmp_enhancement_config_dir(enh_yaml_file: str) -> str:
     return config_dir
 
 
-def _set_preferred_chunk_size(preferred_chunk_size: int) -> None:
+@contextlib.contextmanager
+def _set_preferred_chunk_size(preferred_chunk_size: int) -> Iterator[None]:
     pcs_in_mb = (preferred_chunk_size * preferred_chunk_size) * 8 // (1024 * 1024)
     if "PYTROLL_CHUNK_SIZE" not in os.environ:
         LOG.debug(f"Setting preferred chunk size to {preferred_chunk_size} pixels or {pcs_in_mb:d}MiB")
         os.environ["PYTROLL_CHUNK_SIZE"] = f"{preferred_chunk_size:d}"
-        dask.config.set({"array.chunk-size": f"{pcs_in_mb:d}MiB"})
+        with dask.config.set({"array.chunk-size": f"{pcs_in_mb:d}MiB"}):
+            yield
+        # reset environment variables
+        del os.environ["PYTROLL_CHUNK_SIZE"]
     else:
         LOG.debug(f"Using environment variable chunk size: {os.environ['PYTROLL_CHUNK_SIZE']}")
+        yield
 
 
 def _persist_swath_definition_in_scene(scn: Scene) -> None:
