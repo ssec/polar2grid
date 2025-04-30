@@ -6,6 +6,7 @@ Version 3.2.0 (unreleased)
 
 * Change default visible band output to apply '/ cos(SZA)'. Use '--normalized-radiances' for old behavior.
 * Fix resampling coverage calculations
+* Change binary writer output filename "data_type" to numpy-style names (ex. "uint8")
 
 Version 3.1.0 (2024-08-13)
 --------------------------
