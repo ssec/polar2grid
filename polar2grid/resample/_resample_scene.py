@@ -96,6 +96,12 @@ def _get_legacy_and_yaml_areas(grid_configs: list[str, ...]) -> tuple[GridManage
     p2g_grid_configs = [x for x in grid_configs if x.endswith(".conf")]
     pyresample_area_configs = [x for x in grid_configs if not x.endswith(".conf")]
     if p2g_grid_configs:
+        configs_str = "\t\n".join(p2g_grid_configs)
+        logger.warning(
+            "Legacy '.conf' grid configuration files are deprecated. Convert "
+            "the following files by using the "
+            f"'convert_grids_conf_to_yaml.sh' script:\n\t{configs_str}"
+        )
         grid_manager = GridManager(*p2g_grid_configs)
     else:
         grid_manager = {}
