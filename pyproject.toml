@@ -27,7 +27,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "satpy",
+    "satpy>=0.57.0",
     "rasterio",
     "netCDF4",
     "h5py",

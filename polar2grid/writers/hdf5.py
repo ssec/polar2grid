@@ -51,7 +51,8 @@ import h5py
 import numpy as np
 import xarray as xr
 from pyresample.geometry import SwathDefinition
-from satpy.writers import Writer, compute_writer_results, split_results
+from satpy.writers.core.base import Writer
+from satpy.writers.core.compute import compute_writer_results, split_results
 
 from polar2grid.utils.legacy_compat import convert_p2g_pattern_to_satpy
 from polar2grid.utils.warnings import ignore_pyproj_proj_warnings
