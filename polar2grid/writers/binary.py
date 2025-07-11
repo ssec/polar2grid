@@ -47,7 +47,8 @@ import logging
 import dask.array as da
 import numpy as np
 import xarray as xr
-from satpy.writers import ImageWriter, get_enhanced_image
+from satpy.writers.core.image import ImageWriter
+from satpy.enhancements.enhancer import get_enhanced_image
 
 from polar2grid.core.dtype import NUMPY_DTYPE_STRS, clip_to_data_type, dtype_to_str, int_or_float, str_to_dtype
 from polar2grid.core.script_utils import NumpyDtypeList

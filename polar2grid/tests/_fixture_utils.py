@@ -29,7 +29,7 @@ from datetime import datetime
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
 from satpy import DatasetDict, Scene
-from satpy.readers.yaml_reader import FileYAMLReader
+from satpy.readers.core.yaml_reader import FileYAMLReader
 
 START_TIME = datetime(2021, 1, 1, 12, 0, 0)
 

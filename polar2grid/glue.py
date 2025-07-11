@@ -48,7 +48,7 @@ import satpy
 from dask.diagnostics import ProgressBar
 from pyresample import SwathDefinition
 from satpy import DataID, Scene
-from satpy.writers import compute_writer_results
+from satpy.writers.core.compute import compute_writer_results
 
 from polar2grid._glue_argparser import GlueArgumentParser, get_p2g_defaults_env_var
 from polar2grid.core.script_utils import create_exc_handler, rename_log_file, setup_logging

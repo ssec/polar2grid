@@ -33,7 +33,7 @@ from pyproj import Proj
 from pyresample import parse_area_file
 from pyresample.geometry import AreaDefinition, DynamicAreaDefinition
 from satpy import Scene
-from satpy.resample import get_area_def
+from satpy.area import get_area_def
 
 from polar2grid.filters.resample_coverage import ResampleCoverageFilter
 from polar2grid.grids import GridManager
