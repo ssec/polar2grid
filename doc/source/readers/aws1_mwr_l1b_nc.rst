@@ -24,7 +24,7 @@ Execution Examples
 
     polar2grid.sh -r aws1_mwr_l1b_nc -w geotiff -p btemp03 btemp04  -f /data/*.nc
 
-    polar2grid.sh -r aws1_mwr_l1b_nc -w awips_tiled -p bt03 -g lcc_conus_1km --sector-id LCC --letters --compress -f hrpt_noaa18_20220918_1708_89324.l1b
+    polar2grid.sh -r aws1_mwr_l1b_nc -w awips_tiled -p btemp03 -g lcc_conus_1km --sector-id LCC --letters --compress -f hrpt_noaa18_20220918_1708_89324.l1b
 
     polar2grid.sh -r aws1_mwr_l1b_nc -w awips_tiled --num-workers 6 --grid-coverage .002 -g polar_alaska_1km --sector-id Polar --letters --compress -f /aws1_mwr
 
