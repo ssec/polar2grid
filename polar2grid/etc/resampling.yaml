@@ -317,8 +317,4 @@ resampling:
   default_aws_mwr:
     area_type: swath
     sensor: mwr
-    resampler: ewa
-    kwargs:
-      weight_delta_max: 100.0
-      weight_distance_max: 1.0
-      rows_per_scan: 0
+    resampler: nearest
