@@ -69,7 +69,7 @@ https://www.experimentalaircraft.info/wx/colors-metar-taf.php
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup
+from argparse import ArgumentParser, _ArgumentGroup, BooleanOptionalAction
 from typing import Optional
 
 from ._base import ReaderProxyBase
@@ -116,4 +116,10 @@ def add_reader_argument_groups(
     """
     if group is None:
         group = parser.add_argument_group(title="ABI L2 Reader")
+    group.add_argument(
+        "--filter-sst",
+        action=BooleanOptionalAction,
+        default=True,
+        help="Enable or disable quality flag filtering of the SST product (default on)",
+    )
     return group, None
