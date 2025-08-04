@@ -108,7 +108,6 @@ def add_writer_argument_groups(parser, group=None):
     # group_1.add_argument('--file-pattern', default=DEFAULT_OUTPUT_PATTERN,
     #                      help="Custom file pattern to save dataset to")
     group.add_argument("--compress", action="store_true", help="zlib compress each netcdf file")
-    group.add_argument("--fix-awips", action="store_true", help=argparse.SUPPRESS)
     # help="modify NetCDF output to work with the old/broken AWIPS NetCDF library")
     group.add_argument(
         "--output-filename",

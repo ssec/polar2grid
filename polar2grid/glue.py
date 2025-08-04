@@ -274,7 +274,7 @@ def _create_profile_html_if(create_profile: Union[False, None, str], project_nam
         end_time=end_time,
     )
     profile_filename = os.path.abspath(profile_filename)
-    visualize([prof, rprof, cprof], file_path=profile_filename, show=False)
+    visualize([prof, rprof, cprof], filename=profile_filename, show=False)
     print(f"Profile HTML: file://{profile_filename}")
 
 
