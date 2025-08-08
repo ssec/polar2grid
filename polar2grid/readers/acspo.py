@@ -41,12 +41,13 @@ The ACSPO frontend provides the following products:
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup, BooleanOptionalAction
+from argparse import ArgumentParser, _ArgumentGroup
 from typing import Optional
 
 from satpy import DataQuery
 
 from ._base import ReaderProxyBase
+from ..core.script_utils import BooleanFilterAction
 
 DEFAULT_PRODUCTS = ["sst"]
 
@@ -82,8 +83,10 @@ def add_reader_argument_groups(
         group = parser.add_argument_group(title="AVHRR L1b AAPP Reader")
     group.add_argument(
         "--cloud-clear",
-        action=BooleanOptionalAction,
-        default=True,
+        action=BooleanFilterAction,
+        dest="filters",
+        const="cloud_clear",
+        default=["cloud_clear"],
         help="Enable or disable cloud clearing for the 'sst' product (default on).",
     )
     return group, None
