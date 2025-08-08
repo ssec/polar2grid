@@ -105,7 +105,7 @@ go over some basic examples of how to make your own composites.
 
         composites:
           true_color_night:
-            compositor: !!python/name:satpy.composites.DayNightCompositor
+            compositor: !!python/name:satpy.composites.fill.DayNightCompositor
             prerequisites:
               - true_color
               - C14
@@ -167,7 +167,7 @@ go over some basic examples of how to make your own composites.
     .. code-block:: yaml
 
         true_color_night_microphysics:
-          compositor: !!python/name:satpy.composites.DayNightCompositor
+          compositor: !!python/name:satpy.composites.fill.DayNightCompositor
           prerequisites:
             - true_color
             - night_microphysics

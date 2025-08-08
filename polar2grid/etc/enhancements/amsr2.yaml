@@ -18,7 +18,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -32,7 +32,7 @@ enhancements:
         method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'linear'}
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -44,7 +44,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - {
@@ -67,7 +67,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -78,7 +78,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -89,7 +89,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -100,7 +100,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -111,7 +111,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -136,7 +136,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap

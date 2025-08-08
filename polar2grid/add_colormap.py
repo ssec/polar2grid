@@ -37,7 +37,7 @@ def load_color_table_file_to_colormap(ct_file):
     with the current environment variable value of ``POLAR2GRID_HOME``.
 
     """
-    from satpy.enhancements import create_colormap
+    from satpy.enhancements.colormap import create_colormap
 
     p2g_home = os.getenv("POLAR2GRID_HOME", "")
     ct_file = ct_file.replace("$POLAR2GRID_HOME", p2g_home)

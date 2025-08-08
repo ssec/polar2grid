@@ -2,7 +2,7 @@ sensor_name: visir/ahi
 
 composites:
   true_color_night:
-    compositor: !!python/name:satpy.composites.DayNightCompositor
+    compositor: !!python/name:satpy.composites.fill.DayNightCompositor
     prerequisites:
       - true_color
       - B14
