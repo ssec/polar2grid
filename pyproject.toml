@@ -83,7 +83,9 @@ testpaths = ["polar2grid/tests"]
 filterwarnings = [
     "error",
     "ignore:numpy.ndarray size changed, may indicate binary incompatibility:RuntimeWarning",
-    "ignore:The `frequency` argument is pending deprecation:PendingDeprecationWarning"
+    "ignore:The `frequency` argument is pending deprecation:PendingDeprecationWarning",
+    # remove after dask 2025.8.0 release
+    "ignore:The `token=` keyword to:FutureWarning"
 ]
 
 [tool.coverage.run]
