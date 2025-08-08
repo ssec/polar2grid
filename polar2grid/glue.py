@@ -419,7 +419,11 @@ def _prepare_initial_logging(arg_parser, glue_name: str) -> bool:
         rename_log = True
         args.log_fn = glue_name + "_fail.log"
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    setup_logging(console_level=levels[min(3, args.verbosity)], log_filename=args.log_fn)
+    if os.getenv("P2G_ALLOW_TRACE"):
+        from satpy.utils import TRACE_LEVEL
+
+        levels.append(TRACE_LEVEL)
+    setup_logging(console_level=levels[min(len(levels) - 1, args.verbosity)], log_filename=args.log_fn)
     logging.getLogger("rasterio").setLevel(levels[min(1, args.verbosity)])
     logging.getLogger("fsspec").setLevel(levels[min(2, args.verbosity)])
     logging.getLogger("s3fs").setLevel(levels[min(2, args.verbosity)])
