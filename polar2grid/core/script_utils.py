@@ -223,6 +223,29 @@ class ExtendConstAction(argparse.Action):
         setattr(namespace, self.dest, current_values)
 
 
+class BooleanFilterAction(argparse.BooleanOptionalAction):
+    """Action to add or not add a filter string to a list of filters."""
+
+    def __init__(self, option_strings, dest, const: str, **kwargs):
+        super().__init__(option_strings, dest, **kwargs)
+        self.const = const
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if option_string in self.option_strings:
+            prev = getattr(namespace, self.dest, None)
+            if prev is None:
+                prev = []
+                setattr(namespace, self.dest, prev)
+
+            should_include = not option_string.startswith("--no-")
+            has_const = self.const in prev
+            # modify list inplace
+            if should_include and not has_const:
+                prev.append(self.const)
+            elif not should_include and has_const:
+                prev.remove(self.const)
+
+
 class ArgumentParser(argparse.ArgumentParser):
     def _get_group_actions(self, group):
         """Get all the options/actions in a group including those from subgroups of the provided group.
