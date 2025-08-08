@@ -23,8 +23,8 @@
 """Enhancement functions shared between multiple sensors."""
 
 import numpy as np
-from satpy.enhancements import colorize as _colorize
-from satpy.enhancements import palettize as _palettize
+from satpy.enhancements.colormap import colorize as _colorize
+from satpy.enhancements.colormap import palettize as _palettize
 
 from polar2grid.utils.config import get_polar2grid_home
 

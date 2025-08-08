@@ -3,7 +3,7 @@ enhancements:
     standard_name: test_arange
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 500.}
   test_temperature_difference:
     name: test_temperature_difference

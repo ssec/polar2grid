@@ -76,7 +76,7 @@ product is listed below.
       138     sensor: viirs
       139     operations:
       140       - name: colorize
-      141         method: !!python/name:polar2grid.enhancements.colorize
+      141         method: !!python/name:polar2grid.enhancements.colormap.colorize
       142         kwargs:
       143           palettes:
       144             - min_value: 0.0

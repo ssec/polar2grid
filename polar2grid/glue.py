@@ -465,15 +465,12 @@ def _create_tmp_enhancement_config_dir(enh_yaml_file: str) -> str:
 @contextlib.contextmanager
 def _set_preferred_chunk_size(preferred_chunk_size: int) -> Iterator[None]:
     pcs_in_mb = (preferred_chunk_size * preferred_chunk_size) * 8 // (1024 * 1024)
-    if "PYTROLL_CHUNK_SIZE" not in os.environ:
+    if "DASK_ARRAY__CHUNK_SIZE" not in os.environ:
         LOG.debug(f"Setting preferred chunk size to {preferred_chunk_size} pixels or {pcs_in_mb:d}MiB")
-        os.environ["PYTROLL_CHUNK_SIZE"] = f"{preferred_chunk_size:d}"
         with dask.config.set({"array.chunk-size": f"{pcs_in_mb:d}MiB"}):
             yield
-        # reset environment variables
-        del os.environ["PYTROLL_CHUNK_SIZE"]
     else:
-        LOG.debug(f"Using environment variable chunk size: {os.environ['PYTROLL_CHUNK_SIZE']}")
+        LOG.debug(f"Using environment variable chunk size: {os.environ['DASK_ARRAY__CHUNK_SIZE']}")
         yield
 
 

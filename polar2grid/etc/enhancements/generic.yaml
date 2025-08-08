@@ -3,7 +3,7 @@ enhancements:
     standard_name: toa_brightness_temperature
     operations:
     - name: btemp_threshold
-      method: !!python/name:satpy.enhancements.btemp_threshold
+      method: !!python/name:satpy.enhancements.contrast.btemp_threshold
       kwargs:
         threshold: 242.0
         min_in: 163.0
@@ -13,7 +13,7 @@ enhancements:
     units: celsius
     operations:
     - name: btemp_threshold
-      method: !!python/name:satpy.enhancements.btemp_threshold
+      method: !!python/name:satpy.enhancements.contrast.btemp_threshold
       kwargs:
         threshold: -31.15
         min_in: -110.15
@@ -23,31 +23,31 @@ enhancements:
     standard_name: toa_outgoing_radiance_per_unit_wavelength
     operations:
       - name: stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: crude, min_stretch: 0, max_stretch: 1}
   reflectance_default:
     standard_name: toa_bidirectional_reflectance
     operations:
     - name: linear_stretch
-      method: !!python/name:satpy.enhancements.stretch
+      method: !!python/name:satpy.enhancements.contrast.stretch
       kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 100.}
     - name: gamma
-      method: !!python/name:satpy.enhancements.gamma
+      method: !!python/name:satpy.enhancements.contrast.gamma
       kwargs: {gamma: 2.0}
   surface_reflectance_default:
     standard_name: surface_bidirectional_reflectance
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 100.}
       - name: gamma
-        method: !!python/name:satpy.enhancements.gamma
+        method: !!python/name:satpy.enhancements.contrast.gamma
         kwargs: {gamma: 2.0}
   day_night_mix:
     standard_name: day_night_mix
     operations:
       - name: stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: crude, min_stretch: [0, 0, 0], max_stretch: [1, 1, 1]}
   temperature_difference:  # ifog, fog
     standard_name: temperature_difference
@@ -62,14 +62,14 @@ enhancements:
     name: TPW
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -1.333, max_stretch: 7.1666}
   mirs_tpw:
     name: TPW
     units: mm
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -13.33, max_stretch: 71.666}
 
   # Polar2Grid - MiRS Products
@@ -79,49 +79,49 @@ enhancements:
     reader: mirs
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 1.0}
   sea_ice:
     name: SIce
     reader: mirs
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 100.0}
   snow_water_equivalence:
     name: SWE
     reader: mirs
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 20.0}
   cloud_liquid_water:
     name: CLW
     reader: mirs
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 0.7}
   snow_fall_rate:
     name: SFR
     reader: mirs
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 5.0}
   mirs_rain_rate:
     name: RR
     reader: mirs
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 50.0}
   snow_grain_size:
     name: SnowGS
     # Uses NOAA STAR Snow Grain Size range: https://www.star.nesdis.noaa.gov/mirs/highresolutionv.php
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.3, max_stretch: 0.7}
   # mirs_tpw: See higher up in configuration
 
@@ -130,135 +130,135 @@ enhancements:
     name: btemp_23v
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 140, max_stretch: 300.}
   btemp_31v:
     name: btemp_31v
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 140, max_stretch: 300.}
   btemp_50h:
     name: btemp_50h
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 170, max_stretch: 290.}
   btemp_51h:
     name: btemp_51h
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 170, max_stretch: 290.}
   btemp_52h:
     name: btemp_52h
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 170, max_stretch: 290.}
   btemp_53h:
     name: btemp_53h
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 270.}
   btemp_54h1:
     name: btemp_54h1
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 250.}
   btemp_54h2:
     name: btemp_54h2
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 210, max_stretch: 230.}
   btemp_55h:
     name: btemp_55h
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 230.}
   btemp_57h1:
     name: btemp_57h1
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 230.}
   btemp_57h2:
     name: btemp_57h2
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 180, max_stretch: 230.}
   btemp_57h3:
     name: btemp_57h3
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 180, max_stretch: 250.}
   btemp_57h4:
     name: btemp_57h4
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 180, max_stretch: 250.}
   btemp_57h5:
     name: btemp_57h5
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 180, max_stretch: 280.}
   btemp_57h6:
     name: btemp_57h6
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 290.}
   btemp_88v:
     name: btemp_88v
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 150, max_stretch: 300.}
   btemp_165h:
     name: btemp_165h
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 150, max_stretch: 300.}
   btemp_183h1_npp:
     name: btemp_183h1
     platform_name: npp
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 300.}
   btemp_183h2_npp:
     name: btemp_183h2
     platform_name: npp
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 300.}
   btemp_183h3:
     name: btemp_183h3
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 280.}
   btemp_183h4:
     name: btemp_183h4
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 300.}
   btemp_183h5:
     name: btemp_183h5
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 265.}
 
   # MIRS BTs - NOAA-18 - AMSU-A MHS
@@ -269,44 +269,44 @@ enhancements:
     name: btemp_50v
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 170, max_stretch: 290.}
   btemp_52v:
     name: btemp_52v
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 170, max_stretch: 290.}
   btemp_54h:
     name: btemp_54h
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 250.}
   btemp_54v:
     name: btemp_54v
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 210, max_stretch: 230.}
   btemp_89v1:
     name: btemp_89v1
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 150, max_stretch: 300.}
   btemp_89v2:
     name: btemp_89v2
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 150, max_stretch: 300.}
   # 157h on OPSO NOAA site
   btemp_157v:
     name: btemp_157v
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 150, max_stretch: 300.}
   # 184h on OSPO NOAA site
   # http://www.ospo.noaa.gov/Products/atmosphere/mirs/prod_mon.html?sat=JPSS
@@ -314,20 +314,20 @@ enhancements:
     name: btemp_183h1
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 265.}
   # 186h on OSPO NOAA site
   btemp_183h2:
     name: btemp_183h2
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 220, max_stretch: 280.}
   btemp_190v:
     name: btemp_190v
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 200, max_stretch: 300.}
 
   # Polar2Grid - CLAVR-x products
@@ -338,13 +338,13 @@ enhancements:
     name: cld_temp_acha
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 160, max_stretch: 320.}
   clavrx_cld_height_acha:
     name: cld_height_acha
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 20000.}
   clavrx_cloud_phase:
     name: cloud_phase
@@ -353,37 +353,37 @@ enhancements:
     name: cld_opd_dcomp
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -0.2, max_stretch: 160.}
   clavrx_cld_opd_nlcomp:
     name: cld_opd_nlcomp
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -0.2, max_stretch: 160.}
   clavrx_cld_reff_dcomp:
     name: cld_reff_dcomp
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 160.}
   clavrx_cld_reff_nlcomp:
     name: cld_reff_nlcomp
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 160.}
   clavrx_cld_emiss_acha:
     name: cld_emiss_acha
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 1.}
   clavrx_refl_lunar_dnb_nom:
     name: refl_lunar_dnb_nom
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -2.0, max_stretch: 150.}
   # NOTE: rain_rate is slightly different in CLAVR-X versus MiRS
   clavrx_rain_rate:
@@ -391,7 +391,7 @@ enhancements:
     reader: clavrx
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0, max_stretch: 32.}
 
   # Various SST products
@@ -399,25 +399,25 @@ enhancements:
     standard_name: sea_surface_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
   sea_surface_temperature2:
     standard_name: sea_surface_skin_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
   sea_surface_temperature3:
     standard_name: sea_surface_sub-skin_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
   sea_surface_temperature4:
     standard_name: sea_surface_subskin_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
   # SST - celsius
   sea_surface_temperature_celsius:
@@ -425,7 +425,7 @@ enhancements:
     units: C
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -5.8333, max_stretch: 36.666}
 
   land_surface_temperature:
@@ -433,50 +433,50 @@ enhancements:
     standard_name: land_surface_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 233.2, max_stretch: 322.0}
   total_precipitable_water:
     standard_name: total_precipitable_water
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -1.333, max_stretch: 7.1666}
   total_precipitable_water_mm:
     units: mm
     standard_name: total_precipitable_water
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -13.33, max_stretch: 71.666}
   cloud_top_temperature:
     standard_name: cloud_top_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 173.16, max_stretch: 300.26}
   cloud_top_pressure:
     standard_name: cloud_top_pressure
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 1.0, max_stretch: 851.0}
   lifted_index:
     standard_name: lifted_index
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 41.9562, max_stretch: -20.4018}
   cloud_optical_thickness:
     standard_name: cloud_optical_thickness
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 12.75}
   depth:
     standard_name: depth
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -1.33, max_stretch: 7.17}
   ndvi:
     standard_name: ndvi
@@ -485,7 +485,7 @@ enhancements:
       # with control point mapping 0 to 0.19 in the output.
       # output threshold is ~49/255 to match legacy AWIPS scaling
       - name: Linear interpolation
-        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        method: !!python/name:satpy.enhancements.contrast.piecewise_linear_stretch
         kwargs:
           xp: [-1.0, 0.0, 1.0]
           fp: [0.0, 0.192156863, 1.0]
@@ -495,10 +495,10 @@ enhancements:
     standard_name: true_color
     operations:
       - name: reflectance_range
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
       - name: Linear interpolation
-        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        method: !!python/name:satpy.enhancements.contrast.piecewise_linear_stretch
         kwargs:
           xp: [0., 25., 55., 100., 255.]
           fp: [0., 90., 140., 175., 255.]
@@ -507,10 +507,10 @@ enhancements:
     standard_name: false_color
     operations:
       - name: reflectance_range
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
       - name: Linear interpolation
-        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        method: !!python/name:satpy.enhancements.contrast.piecewise_linear_stretch
         kwargs:
           xp: [0., 25., 55., 100., 255.]
           fp: [0., 90., 140., 175., 255.]
@@ -519,10 +519,10 @@ enhancements:
     standard_name: corrected_reflectance
     operations:
       - name: reflectance_range
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
       - name: Linear interpolation
-        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        method: !!python/name:satpy.enhancements.contrast.piecewise_linear_stretch
         kwargs:
           xp: [0., 25., 55., 100., 255.]
           fp: [0., 90., 140., 175., 255.]

@@ -24,7 +24,7 @@
 
 import numpy as np
 from trollimage.xrimage import XRImage
-from satpy.enhancements import colorize as _colorize, palettize as _palettize, using_map_blocks
+from satpy.enhancements.wrappers import using_map_blocks
 
 
 def cloud_layers_lmh(img: XRImage) -> XRImage:

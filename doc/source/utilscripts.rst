@@ -183,7 +183,7 @@ AMSR-2 L1B product "btemp_36.5h" we could add the following to a
     sensor: amsr2
     operations:
       - name: add_colormap
-        method: !!python/name:polar2grid.enhancements.palettize
+        method: !!python/name:polar2grid.enhancements.colormap.palettize
         kwargs:
           palettes:
             - filename: $POLAR2GRID_HOME/colormaps/amsr2_36h.cmap

@@ -4,7 +4,7 @@ enhancements:
     standard_name: equalized_radiance
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: { stretch: 'crude', min_stretch: 0.0, max_stretch: 1.0 }
   pre_enhanced_viirs_crefl:
     sensor: viirs
@@ -17,7 +17,7 @@ enhancements:
     sensor: viirs
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - {colors: ylorrd, min_value: 7, max_value: 9}
@@ -26,7 +26,7 @@ enhancements:
     sensor: viirs
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - {colors: ylorrd, min_value: 0, max_value: 100}
@@ -35,7 +35,7 @@ enhancements:
     sensor: viirs
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - {colors: ylorrd, min_value: 0, max_value: 250}
@@ -51,7 +51,7 @@ enhancements:
     sensor: viirs
     operations:
       - name: colorize
-        method: !!python/name:polar2grid.enhancements.colorize
+        method: !!python/name:polar2grid.enhancements.shared.colorize
         kwargs:
           palettes:
             - {
@@ -126,7 +126,7 @@ enhancements:
     sensor: viirs
     operations:
       - name: colorize
-        method: !!python/name:polar2grid.enhancements.colorize
+        method: !!python/name:polar2grid.enhancements.shared.colorize
         kwargs:
           palettes:
             - min_value: 223.15
@@ -138,7 +138,7 @@ enhancements:
     sensor: viirs
     operations:
       - name: colorize
-        method: !!python/name:polar2grid.enhancements.colorize
+        method: !!python/name:polar2grid.enhancements.shared.colorize
         kwargs:
           palettes:
             - min_value: 0.0
@@ -149,7 +149,7 @@ enhancements:
     name: CldTopHght
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/abi_l2_modified_cloud_top.cmap
@@ -160,7 +160,7 @@ enhancements:
     name: CldBaseHght
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/abi_l2_modified_cloud_top.cmap
@@ -171,7 +171,7 @@ enhancements:
     name: CldTopTemp
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/abi_l2_modified_cloud_top.cmap
@@ -183,7 +183,7 @@ enhancements:
     sensor: viirs
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - {
@@ -222,7 +222,7 @@ enhancements:
       - name: cloud_layer_recat
         method: !!python/name:polar2grid.enhancements.viirs.cloud_layers_lmh
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             # labels_name = ["Clear", "Low", "Mid", "M+L", "High", "H+L", "H+M", "H+M+L"]
@@ -283,7 +283,7 @@ enhancements:
     sensor: viirs
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - {
@@ -314,5 +314,5 @@ enhancements:
     standard_name: normalized_burn_ratio
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: { stretch: 'crude', min_stretch: -1.0, max_stretch: 1.0 }
