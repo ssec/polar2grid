@@ -13,7 +13,7 @@ modifiers:
       - name: solar_zenith_angle
 composites:
   true_color:
-    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+    compositor: !!python/name:satpy.composites.resolution.RatioSharpenedRGB
     prerequisites:
       - name: '1'
         resolution: 500
@@ -31,7 +31,7 @@ composites:
     standard_name: true_color
     high_resolution_band: red
   false_color:
-    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+    compositor: !!python/name:satpy.composites.resolution.RatioSharpenedRGB
     prerequisites:
       - name: '7'
         resolution: 500
@@ -49,7 +49,7 @@ composites:
     standard_name: true_color
     high_resolution_band: green
   fog:
-    compositor: !!python/name:satpy.composites.DifferenceCompositor
+    compositor: !!python/name:satpy.composites.arithmetic.DifferenceCompositor
     prerequisites:
       - "31"
       - "20"
@@ -163,43 +163,43 @@ composites:
     band_index: 'R'
 
   _crefl01:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.arithmetic.SumCompositor
     prerequisites:
       - name: "1"
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl02:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.arithmetic.SumCompositor
     prerequisites:
       - name: "2"
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl03:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.arithmetic.SumCompositor
     prerequisites:
       - name: "3"
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl04:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.arithmetic.SumCompositor
     prerequisites:
       - name: "4"
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl05:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.arithmetic.SumCompositor
     prerequisites:
       - name: "5"
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl06:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.arithmetic.SumCompositor
     prerequisites:
       - name: "6"
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl07:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.arithmetic.SumCompositor
     prerequisites:
       - name: "7"
         modifiers: [sunz_corrected, rayleigh_corrected]

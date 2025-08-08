@@ -93,7 +93,7 @@ def extra_viirs_composite_path(tmp_path_factory):
 
 
 def _create_fake_comp(tmp_path):
-    from satpy.composites import GenericCompositor
+    from satpy.composites.core import GenericCompositor
 
     comps_dict = {
         "composites": {
@@ -117,7 +117,7 @@ def _create_fake_comp(tmp_path):
 
 
 def _create_fake_comp_enh(tmp_path):
-    from satpy.enhancements import stretch
+    from satpy.enhancements.contrast import stretch
 
     enh_dict = {
         "enhancements": {
@@ -144,7 +144,7 @@ def _create_fake_comp_enh(tmp_path):
 @pytest.fixture(scope="session")
 def extra_viirs_enhancement_file(tmp_path_factory):
     import yaml
-    from satpy.enhancements import stretch
+    from satpy.enhancements.contrast import stretch
 
     tmp_path = tmp_path_factory.mktemp("extra_viirs_enhancement_file")
 

@@ -47,8 +47,10 @@ from typing import Optional
 from satpy import DataQuery
 
 from ._base import ReaderProxyBase
+from ..core.script_utils import BooleanFilterAction
 
 DEFAULT_PRODUCTS = ["sst"]
+PREFERRED_CHUNK_SIZE = 2048
 
 
 class ReaderProxy(ReaderProxyBase):
@@ -80,34 +82,12 @@ def add_reader_argument_groups(
     """
     if group is None:
         group = parser.add_argument_group(title="ACSPO Reader")
+    group.add_argument(
+        "--cloud-clear",
+        action=BooleanFilterAction,
+        dest="filters",
+        const="cloud_clear",
+        default=["cloud_clear"],
+        help="Enable or disable cloud clearing for the 'sst' product (default on).",
+    )
     return group, None
-
-
-def add_frontend_argument_groups(parser):
-    """Add command line arguments to an existing parser.
-
-    :returns: list of group titles added
-    """
-    from polar2grid.core.script_utils import ExtendAction
-
-    # Set defaults for other components that may be used in polar2grid processing
-    parser.set_defaults(fornav_D=40, fornav_d=1)
-
-    # Use the append_const action to handle adding products to the list
-    group_title = "Frontend Initialization"
-    group = parser.add_argument_group(title=group_title, description="swath extraction initialization options")
-    group.add_argument(
-        "--list-products", dest="list_products", action="store_true", help="List available frontend products and exit"
-    )
-    group_title = "Frontend Swath Extraction"
-    group = parser.add_argument_group(title=group_title, description="swath extraction options")
-    group.add_argument(
-        "-p",
-        "--products",
-        dest="products",
-        nargs="+",
-        default=None,
-        action=ExtendAction,
-        help="Specify frontend products to process",
-    )
-    return ["Frontend Initialization", "Frontend Swath Extraction"]

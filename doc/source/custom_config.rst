@@ -121,7 +121,7 @@ For example here is a section of an enhancement configuration file:
       units: celsius
       operations:
       - name: btemp_threshold
-        method: !!python/name:satpy.enhancements.btemp_threshold
+        method: !!python/name:satpy.enhancements.contrast.btemp_threshold
         kwargs:
           threshold: -31.15
           min_in: -110.15

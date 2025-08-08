@@ -5,7 +5,7 @@ enhancements:
     standard_name: toa_brightness_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}
   amsr2_btemp_36.5h:
     name: btemp_36.5h
@@ -13,7 +13,7 @@ enhancements:
     standard_name: toa_brightness_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}
   amsr2_btemp_89.0av:
     name: btemp_89.0av
@@ -21,7 +21,7 @@ enhancements:
     standard_name: toa_brightness_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}
   amsr2_btemp_89.0ah:
     name: btemp_89.0ah
@@ -29,7 +29,7 @@ enhancements:
     standard_name: toa_brightness_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}
   amsr2_btemp_89.0bv:
     name: btemp_89.0bv
@@ -37,7 +37,7 @@ enhancements:
     standard_name: toa_brightness_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}
   amsr2_btemp_89.0bh:
     name: btemp_89.0bh
@@ -45,5 +45,5 @@ enhancements:
     standard_name: toa_brightness_temperature
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 180.0, max_stretch: 280.0}

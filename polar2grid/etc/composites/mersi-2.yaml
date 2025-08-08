@@ -2,7 +2,7 @@ sensor_name: visir/mersi-2
 
 composites:
   false_color:
-    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+    compositor: !!python/name:satpy.composites.resolution.RatioSharpenedRGB
     prerequisites:
       - name: '7'
         modifiers: [sunz_corrected]

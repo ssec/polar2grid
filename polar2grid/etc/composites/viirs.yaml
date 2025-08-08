@@ -46,7 +46,7 @@ modifiers:
 composites:
 
   unsharp_true_color:
-    compositor: !!python/name:satpy.composites.GenericCompositor
+    compositor: !!python/name:satpy.composites.core.GenericCompositor
     prerequisites:
     - name: M05
       modifiers: [sunz_corrected, rayleigh_corrected]
@@ -60,7 +60,7 @@ composites:
     standard_name: true_color
 
   true_color:
-    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+    compositor: !!python/name:satpy.composites.resolution.RatioSharpenedRGB
     prerequisites:
       - name: M05
         modifiers: [sunz_corrected, rayleigh_corrected]
@@ -75,7 +75,7 @@ composites:
     high_resolution_band: red
 
 #  true_color:
-#    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+#    compositor: !!python/name:satpy.composites.resolution.RatioSharpenedRGB
 #    prerequisites:
 #      # M05
 #      - name: _crefl01
@@ -146,68 +146,68 @@ composites:
     band_index: 'G'
 
   _crefl01:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.core.SingleBandCompositor
     prerequisites:
       - name: M05
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl02:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.core.SingleBandCompositor
     prerequisites:
       - name: M07
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl03:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.core.SingleBandCompositor
     prerequisites:
       - name: M03
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl04:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.core.SingleBandCompositor
     prerequisites:
       - name: M04
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl05:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.core.SingleBandCompositor
     prerequisites:
       - name: M08
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl06:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.core.SingleBandCompositor
     prerequisites:
       - name: M10
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl07:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.core.SingleBandCompositor
     prerequisites:
       - name: M11
         modifiers: [sunz_corrected, rayleigh_corrected]
     standard_name: corrected_reflectance
   _crefl08:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.core.SingleBandCompositor
     prerequisites:
       - name: I01
         modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
     standard_name: corrected_reflectance
   _crefl09:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.core.SingleBandCompositor
     prerequisites:
       - name: I02
         modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
     standard_name: corrected_reflectance
   _crefl10:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.core.SingleBandCompositor
     prerequisites:
       - name: I03
         modifiers: [sunz_corrected_iband, rayleigh_corrected_iband]
     standard_name: corrected_reflectance
 
   false_color:
-    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+    compositor: !!python/name:satpy.composites.resolution.RatioSharpenedRGB
     prerequisites:
       - name: M11
         modifiers: [sunz_corrected, rayleigh_corrected]
@@ -221,7 +221,7 @@ composites:
     standard_name: false_color
     high_resolution_band: green
 #  false_color:
-#    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+#    compositor: !!python/name:satpy.composites.resolution.RatioSharpenedRGB
 #    prerequisites:
 #      # M11
 #      - name: _crefl07
@@ -236,7 +236,7 @@ composites:
 #    high_resolution_band: green
 
   natural_color:
-    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+    compositor: !!python/name:satpy.composites.resolution.RatioSharpenedRGB
     prerequisites:
       - name: M10
         modifiers: [sunz_corrected, rayleigh_corrected]
@@ -250,7 +250,7 @@ composites:
     standard_name: natural_color
     high_resolution_band: green
 #  natural_color:
-#    compositor: !!python/name:satpy.composites.RatioSharpenedRGB
+#    compositor: !!python/name:satpy.composites.resolution.RatioSharpenedRGB
 #    prerequisites:
 #      # M10
 #      - name: _crefl06
@@ -265,7 +265,7 @@ composites:
 #    high_resolution_band: green
 
   true_color_raw:
-    compositor: !!python/name:satpy.composites.GenericCompositor
+    compositor: !!python/name:satpy.composites.core.GenericCompositor
     prerequisites:
     - name: M05
       modifiers: [sunz_corrected]
@@ -276,7 +276,7 @@ composites:
     standard_name: true_color
 
   night_overview:
-    compositor: !!python/name:satpy.composites.GenericCompositor
+    compositor: !!python/name:satpy.composites.core.GenericCompositor
     prerequisites:
     - DNB
     - DNB
@@ -284,7 +284,7 @@ composites:
     standard_name: overview
 
   night_microphysics:
-    compositor: !!python/name:satpy.composites.GenericCompositor
+    compositor: !!python/name:satpy.composites.core.GenericCompositor
     prerequisites:
     - DNB
     - M12
@@ -292,7 +292,7 @@ composites:
     standard_name: night_microphysics
 
   ifog:
-    compositor: !!python/name:satpy.composites.DifferenceCompositor
+    compositor: !!python/name:satpy.composites.arithmetic.DifferenceCompositor
     prerequisites:
     - I05
     - I04
@@ -320,15 +320,15 @@ composites:
     saturation_correction: true
 
   nbr:
-    compositor: !!python/name:satpy.composites.viirs.GenericCompositor
+    compositor: !!python/name:satpy.composites.core.GenericCompositor
     prerequisites:
-      - compositor: !!python/name:satpy.composites.RatioCompositor
+      - compositor: !!python/name:satpy.composites.arithmetic.RatioCompositor
         prerequisites:
-          - compositor: !!python/name:satpy.composites.DifferenceCompositor
+          - compositor: !!python/name:satpy.composites.arithmetic.DifferenceCompositor
             prerequisites:
               - name: M11
               - name: I02
-          - compositor: !!python/name:satpy.composites.SumCompositor
+          - compositor: !!python/name:satpy.composites.arithmetic.SumCompositor
             prerequisites:
               - name: M11
               - name: I02

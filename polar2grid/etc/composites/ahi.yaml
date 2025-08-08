@@ -2,8 +2,14 @@ sensor_name: visir/ahi
 
 composites:
   true_color_night:
-    compositor: !!python/name:satpy.composites.DayNightCompositor
+    compositor: !!python/name:satpy.composites.fill.DayNightCompositor
     prerequisites:
       - true_color
       - B14
     standard_name: day_night_mix
+  B01_rc:
+    compositor: !!python/name:satpy.composites.arithmetic.SumCompositor
+    prerequisites:
+      - name: B01
+        modifiers: ["sunz_corrected", "rayleigh_corrected"]
+    standard_name: toa_bidirectional_reflectance

@@ -4,21 +4,21 @@ enhancements:
     sensor: amsr2
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 0.7}
   gaasp_sst:
     name: SST
     sensor: amsr2
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
   gaasp_tpw:
     name: TPW
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -29,10 +29,10 @@ enhancements:
     sensor: amsr2
     operations:
       - name: linear_stretch
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'linear'}
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -44,7 +44,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - {
@@ -67,7 +67,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -78,7 +78,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -89,7 +89,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -100,7 +100,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -111,7 +111,7 @@ enhancements:
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap
@@ -122,21 +122,21 @@ enhancements:
   #    sensor: amsr2
   #    operations:
   #      - name: linear_stretch
-  #        method: !!python/name:satpy.enhancements.stretch
+  #        method: !!python/name:satpy.enhancements.contrast.stretch
   #        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 100.0}
   #  gaasp_latency_sh:
   #    name: Latency_SH
   #    sensor: amsr2
   #    operations:
   #      - name: linear_stretch
-  #        method: !!python/name:satpy.enhancements.stretch
+  #        method: !!python/name:satpy.enhancements.contrast.stretch
   #        kwargs: {stretch: 'crude', min_stretch: 0.0, max_stretch: 100.0}
   gaasp_rain_rate:
     name: Rain_Rate
     sensor: amsr2
     operations:
       - name: colorize
-        method: !!python/name:satpy.enhancements.colorize
+        method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
             - filename: colormaps/idl_rainbow.cmap

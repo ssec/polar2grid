@@ -275,6 +275,7 @@ if is_geo2grid:
             "readers/acspo.rst",
             "readers/amsr2_l1b.rst",
             "readers/avhrr.rst",
+            "readers/aws1_mwr_l1b_nc.rst",
             "readers/clavrx.rst",
             "readers/mersi2_l1b.rst",
             "readers/mersi_ll_l1b.rst",
