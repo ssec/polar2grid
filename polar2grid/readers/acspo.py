@@ -81,7 +81,7 @@ def add_reader_argument_groups(
 
     """
     if group is None:
-        group = parser.add_argument_group(title="AVHRR L1b AAPP Reader")
+        group = parser.add_argument_group(title="ACSPO Reader")
     group.add_argument(
         "--cloud-clear",
         action=BooleanFilterAction,
