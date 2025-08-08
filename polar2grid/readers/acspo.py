@@ -50,6 +50,7 @@ from ._base import ReaderProxyBase
 from ..core.script_utils import BooleanFilterAction
 
 DEFAULT_PRODUCTS = ["sst"]
+PREFERRED_CHUNK_SIZE = 2048
 
 
 class ReaderProxy(ReaderProxyBase):
