@@ -51,7 +51,7 @@ references our SST product is listed below.
       405     standard_name: sea_surface_subskin_temperature
       406     operations:
       407       - name: linear_stretch
-      408         method: !!python/name:satpy.enhancements.stretch
+      408         method: !!python/name:satpy.enhancements.contrast.stretch
       409         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
 
 This is used in the Polar2Grid software to define the range of brightness
@@ -176,7 +176,7 @@ my new rescale yaml file is shown below (`my_rescale.yaml`).
         standard_name: sea_surface_subskin_temperature
         operations:
           - name: linear_stretch
-            method: !!python/name:satpy.enhancements.stretch
+            method: !!python/name:satpy.enhancements.contrast.stretch
             kwargs: {stretch: 'crude', min_stretch: 275.0, max_stretch: 305.0}
 
 I can then apply this new rescaling by referencing the file

@@ -4,10 +4,10 @@ enhancements:
     standard_name: true_color
     operations:
       - name: reflectance_range
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 0., max_stretch: 100.}
       - name: Linear interpolation
-        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        method: !!python/name:satpy.enhancements.contrast.piecewise_linear_stretch
         kwargs:
           xp: [0., 25., 55., 100., 255.]
           fp: [0., 90., 140., 175., 255.]
@@ -16,23 +16,23 @@ enhancements:
     name: B07
     operations:
       - name: linear
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 400.15, max_stretch: 164.15}
   channel_8_default:
     name: B08
     operations:
       - name: linear
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 280., max_stretch: 180.}
   channel_9_default:
     name: B09
     operations:
       - name: linear
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 280., max_stretch: 180.}
   channel_10_default:
     name: B10
     operations:
       - name: linear
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: 280., max_stretch: 180.}

@@ -8,7 +8,7 @@ composites:
       - B14
     standard_name: day_night_mix
   B01_rc:
-    compositor: !!python/name:satpy.composites.SingleBandCompositor
+    compositor: !!python/name:satpy.composites.arithmetic.SumCompositor
     prerequisites:
       - name: B01
         modifiers: ["sunz_corrected", "rayleigh_corrected"]

@@ -27,7 +27,7 @@ go over some basic examples of how to make your own composites.
     .. code-block:: yaml
 
       true_color_raw:
-        compositor: !!python/name:satpy.composites.GenericCompositor
+        compositor: !!python/name:satpy.composites.core.GenericCompositor
         prerequisites:
         - name: M05
           modifiers: [sunz_corrected]

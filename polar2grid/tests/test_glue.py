@@ -93,7 +93,7 @@ def extra_viirs_composite_path(tmp_path_factory):
 
 
 def _create_fake_comp(tmp_path):
-    from satpy.composites import GenericCompositor
+    from satpy.composites.core import GenericCompositor
 
     comps_dict = {
         "composites": {

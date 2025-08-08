@@ -3,10 +3,10 @@ enhancements:
     standard_name: natural_color
     operations:
       - name: reflectance_range
-        method: !!python/name:satpy.enhancements.stretch
+        method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: {stretch: 'crude', min_stretch: -1., max_stretch: 110.}
       - name: Linear interpolation
-        method: !!python/name:satpy.enhancements.piecewise_linear_stretch
+        method: !!python/name:satpy.enhancements.contrast.piecewise_linear_stretch
         kwargs:
           xp: [0., 25., 55., 100., 255.]
           fp: [0., 90., 140., 175., 255.]

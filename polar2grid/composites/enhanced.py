@@ -22,7 +22,7 @@
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """Composites that apply enhancements during the compositing phase."""
 
-from satpy.composites import SingleBandCompositor, enhance2dataset
+from satpy.composites.core import SingleBandCompositor, enhance2dataset
 
 
 class SingleEnhancedBandCompositor(SingleBandCompositor):
