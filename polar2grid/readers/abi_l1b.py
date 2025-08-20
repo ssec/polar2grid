@@ -97,7 +97,7 @@ more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | day_severe_storms         | Day Severe Storms RGB (aka. Day Convection)         |
 +---------------------------+-----------------------------------------------------+
-| volcanic_emissions_so2    | Volcanic Emissions (SO2 and Ash) (aka. SO2)         |
+| volcanic_emissions        | Volcanic Emissions (SO2 and Ash) (aka. SO2)         |
 +---------------------------+-----------------------------------------------------+
 | day_blowing_snow          | Day Blowing Snow RGB                                |
 +---------------------------+-----------------------------------------------------+
@@ -125,7 +125,7 @@ COMPOSITE_PRODUCTS = [
     # 2025 new
     "day_cloud_type",
     "day_severe_storms",
-    "volanic_emissions_so2",  # old name: so2
+    "volanic_emissions",  # old name: so2
     "day_blowing_snow",
     # "day_cloud_type_distinction",  # aka: day cloud phase distinction
     # "cira_fire_temperature",
