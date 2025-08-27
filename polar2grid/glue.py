@@ -120,10 +120,12 @@ def _overwrite_sensor_with_aliases(scn):
 
 
 def _write_scene(
-    scn: Scene, writers: list[str], writer_args: dict[str, dict], data_ids: list[DataID], to_save: Optional[list] = None
+    scn: Scene,
+    writers: list[str],
+    writer_args: dict[str, dict],
+    data_ids: list[DataID],
 ):
-    if to_save is None:
-        to_save = []
+    to_save = []
     if not data_ids:
         # no datasets to save
         return to_save
@@ -131,7 +133,8 @@ def _write_scene(
     _assign_default_native_area_id(scn, data_ids)
     for writer_name in writers:
         wargs = writer_args.get(writer_name, {})
-        _write_scene_with_writer(scn, writer_name, data_ids, wargs, to_save)
+        res = _write_scene_with_writer(scn, writer_name, data_ids, wargs)
+        to_save.append(res)
     return to_save
 
 
@@ -143,7 +146,7 @@ def _assign_default_native_area_id(scn: Scene, data_ids: list[DataID]) -> None:
         scn[data_id].attrs["area"].area_id = "native"
 
 
-def _write_scene_with_writer(scn: Scene, writer_name: str, data_ids: list[DataID], wargs: dict, to_save: list) -> None:
+def _write_scene_with_writer(scn: Scene, writer_name: str, data_ids: list[DataID], wargs: dict) -> list | tuple:
     try:
         res = scn.save_datasets(writer=writer_name, compute=False, datasets=data_ids, **wargs)
     except ValueError as err:
@@ -151,12 +154,7 @@ def _write_scene_with_writer(scn: Scene, writer_name: str, data_ids: list[DataID
         if "Unknown writer" in err_msg:
             LOG.error(err_msg)
         raise
-    if res and isinstance(res[0], (tuple, list)):
-        # list of (dask-array, file-obj) tuples
-        to_save.extend(zip(*res, strict=True))
-    else:
-        # list of delayed objects
-        to_save.extend(res)
+    return res
 
 
 def _print_list_products(reader_info, is_polar2grid: bool, p2g_only: bool):
@@ -229,19 +227,19 @@ def _resample_scene_to_grids(
 
 
 def _save_scenes(scenes_to_save: list[tuple], reader_info, writer_args) -> list:
-    to_save = []
+    all_to_save = []
     for scene_to_save, products_to_save in scenes_to_save:
         _overwrite_platform_name_with_aliases(scene_to_save)
         _overwrite_sensor_with_aliases(scene_to_save)
         reader_info.apply_p2g_name_to_scene(scene_to_save)
-        to_save = _write_scene(
+        this_scene_to_save = _write_scene(
             scene_to_save,
             writer_args["writers"],
             writer_args,
             products_to_save,
-            to_save=to_save,
         )
-    return to_save
+        all_to_save.extend(this_scene_to_save)
+    return all_to_save
 
 
 def _get_glue_name(args):
