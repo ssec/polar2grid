@@ -93,6 +93,14 @@ more information on the creation of RGBs, please see the
 +---------------------------+-----------------------------------------------------+
 | night_microphysics        | Night Microphysics RGB                              |
 +---------------------------+-----------------------------------------------------+
+| day_cloud_type            | Day Cloud Type RGB                                  |
++---------------------------+-----------------------------------------------------+
+| day_severe_storms         | Day Severe Storms RGB (aka. Day Convection)         |
++---------------------------+-----------------------------------------------------+
+| volcanic_emissions        | Volcanic Emissions (SO2 and Ash) (aka. SO2)         |
++---------------------------+-----------------------------------------------------+
+| day_blowing_snow          | Day Blowing Snow RGB                                |
++---------------------------+-----------------------------------------------------+
 
 """
 
@@ -108,12 +116,23 @@ PREFERRED_CHUNK_SIZE: int = 1356
 READER_PRODUCTS = ["C{:02d}".format(x) for x in range(1, 17)]
 COMPOSITE_PRODUCTS = [
     "true_color",
-    "natural_color",
+    "natural_color",  # <-- considered legacy RGB Workshop 2025
     "airmass",
-    "ash",
-    "dust",
-    "fog",
+    "ash",  # <-- deprecated name as of RGB Workshop 2025 (preferred: 24h_microphysics_ash)
+    "dust",  # <-- deprecated name as of RGB Workshop 2025 (preferred: 24h_microphysics_dust)
+    "fog",  # <-- deprecated name as of RGB Workshop 2025 (preferred: night_microphysics)?
     "night_microphysics",
+    # 2025 new
+    "day_cloud_type",
+    "day_severe_storms",
+    "volcanic_emissions",  # old name: so2
+    "day_blowing_snow",
+    # "day_cloud_type_distinction",  # aka: day cloud phase distinction
+    # "cira_fire_temperature",
+    # "snow_fog",  # day snow fog - considered legacy RGB Workshop 2025
+    # "land_cloud",  # day land cloud - considered legacy RGB Workshop 2025
+    # "water_vapors2",  # differential water vapor - considered legacy RGB Workshop 2025
+    # "simple_water_vapor",  # aka: water_vapors1 (deprecated in Satpy)
 ]
 
 

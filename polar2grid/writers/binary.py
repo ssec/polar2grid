@@ -108,8 +108,8 @@ class FlatBinaryWriter(ImageWriter):
         dst = np.memmap(filename, shape=img.data.shape, dtype=dtype, mode="w+")
         if compute:
             da.store(data, dst)
-            return
-        return [[data], [dst]]
+            return filename
+        return [data], [dst]
 
     def _prep_data(self, data: xr.DataArray, dtype: np.dtype, fill_value) -> da.Array:
         fill = data.attrs.get("_FillValue", np.nan)
