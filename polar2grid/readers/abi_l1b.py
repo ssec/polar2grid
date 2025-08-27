@@ -125,7 +125,7 @@ COMPOSITE_PRODUCTS = [
     # 2025 new
     "day_cloud_type",
     "day_severe_storms",
-    "volanic_emissions",  # old name: so2
+    "volcanic_emissions",  # old name: so2
     "day_blowing_snow",
     # "day_cloud_type_distinction",  # aka: day cloud phase distinction
     # "cira_fire_temperature",
