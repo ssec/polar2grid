@@ -34,6 +34,8 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Optional, Union
 
+from satpy.node import MissingDependencies
+
 # isort: off
 # hdf5plugin must be imported before h5py and xarray or it won't be available
 # Used by the FCI reader
@@ -368,7 +370,11 @@ class _GlueProcessor:
         persist_geolocation = not arg_parser._reader_args.pop("no_persist_geolocation", False)
         if not products:
             return -1
-        scn.load(products, **load_args, generate=False)
+        try:
+            scn.load(products, **load_args, generate=False)
+        except KeyError as dep_key_error:
+            _handle_missing_deps_keyerror(dep_key_error)
+            return -1
         if persist_geolocation:
             scn = _persist_swath_definition_in_scene(scn)
         scn.generate_possible_composites(True)
@@ -474,6 +480,25 @@ def _set_preferred_chunk_size(preferred_chunk_size: int) -> Iterator[None]:
     else:
         LOG.debug(f"Using environment variable chunk size: {os.environ['DASK_ARRAY__CHUNK_SIZE']}")
         yield
+
+
+def _handle_missing_deps_keyerror(dep_key_error: KeyError) -> None:
+    miss_dep_exc = getattr(dep_key_error, "__context__", None)
+    if not isinstance(miss_dep_exc, MissingDependencies):
+        raise
+    flat_queries = sorted(set(data_query for dep_set in miss_dep_exc.missing_dependencies for data_query in dep_set))
+    flat_queries_dicts = [dq.to_dict() for dq in flat_queries]
+    plural_s = "s" if len(flat_queries_dicts) > 1 else ""
+    LOG.error(
+        "Unknown product{} requested:\n\t{}".format(
+            plural_s,
+            "\n\t".join(
+                (dq_dict["name"] if len(dq_dict) == 1 and "name" in dq_dict else repr(dq_dict))
+                for dq_dict in flat_queries_dicts
+            ),
+        )
+    )
+    LOG.debug("Unknown product requested", exc_info=True)
 
 
 def _persist_swath_definition_in_scene(scn: Scene) -> None:
