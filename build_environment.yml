@@ -15,6 +15,7 @@ dependencies:
   - fontconfig
   - freetype
   - gdal
+  - libgdal-netcdf
   - hdf5plugin
   - h5py
   - netcdf4
