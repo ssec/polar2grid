@@ -11,7 +11,7 @@ dependencies:
   - dask>=2024.2.1
   - distributed>=2022.2.1
   - donfig>=0.8.1
-  - ffmpeg
+  - ffmpeg>=8
   - fontconfig
   - freetype
   - gdal
