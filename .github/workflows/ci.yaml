@@ -21,14 +21,6 @@ jobs:
         with:
           lfs: true
 
-      - name: Prepare System Environment
-        run: |
-          # opengl system libraries
-          sudo apt-get update
-          # Additional latex dependencies
-          sudo apt-get -y install texlive-xetex texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra latexmk
-          sudo apt-get -y install dvipng
-
       - name: Setup Conda Environment
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -74,22 +66,6 @@ jobs:
           cd doc
           make clean
           make html POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
-
-      - name: Build Polar2Grid PDF
-        shell: bash -l {0}
-        # don't treat warnings as errors because html-only sections will miss some documents
-        run: |
-          cd doc
-          make clean
-          make latexpdf SPHINXOPTS="--keep-going"
-
-      - name: Build Geo2Grid PDF
-        shell: bash -l {0}
-        # don't treat warnings as errors because html-only sections will miss some documents
-        run: |
-          cd doc
-          make clean
-          make latexpdf POLAR2GRID_DOC="geo" SPHINXOPTS="--keep-going"
 
   test:
     name: Tests
