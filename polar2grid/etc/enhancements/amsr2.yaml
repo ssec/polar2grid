@@ -139,6 +139,6 @@ enhancements:
         method: !!python/name:satpy.enhancements.colormap.colorize
         kwargs:
           palettes:
-            - filename: colormaps/idl_rainbow.cmap
+            - filename: colormaps/MIRS_RainRate.cmap
               min_value: 0
-              max_value: 60
+              max_value: 50
