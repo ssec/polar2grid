@@ -77,7 +77,7 @@ SEAICE_PRODUCTS = [
     # "Latency_NH",
 ]
 
-DEFAULT_PRODUCTS = OCEAN_PRECIP_PRODUCTS + SNOW_PRODUCTS + SOIL_PRODUCTS + SEAICE_PRODUCTS
+DEFAULT_PRODUCTS = OCEAN_PRECIP_PRODUCTS + SNOW_PRODUCTS + SOIL_PRODUCTS
 
 
 class ReaderProxy(ReaderProxyBase):
@@ -91,7 +91,7 @@ class ReaderProxy(ReaderProxyBase):
 
     def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
-        return DEFAULT_PRODUCTS
+        return OCEAN_PRECIP_PRODUCTS + SNOW_PRODUCTS + SOIL_PRODUCTS + SEAICE_PRODUCTS
 
     @property
     def _aliases(self) -> dict[str, DataQuery]:
