@@ -83,15 +83,6 @@ def ensure_logging_framework_not_altered():
     root_logger.handlers = before_handlers
 
 
-# @pytest.mark.fixture(autouse=True, scope="session")
-# def _mock_pyspectral(tmp_path_factory):
-#     from pyspectral.testing import mock_pyspectral_downloads
-#
-#     tmp_path = tmp_path_factory.mktemp("pyspectral_fake_root_")
-#     with mock_pyspectral_downloads(tmp_path=tmp_path):
-#         yield
-
-
 @pytest.fixture(autouse=True, scope="session")
 def _forbid_pyspectral_downloads():
     from pyspectral.testing import forbid_pyspectral_downloads
