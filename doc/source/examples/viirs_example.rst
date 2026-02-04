@@ -39,7 +39,7 @@ Create only true color and false color GeoTIFFs with a black background (no alph
 
     polar2grid.sh -r viirs_sdr -w geotiff -p true_color false_color --fill-value 0 -f <path_to_sdr_files>
 
-Create a true color image from a S-NPP VIIRS pass acquired on
+Create a true color image from a NOAA-20 VIIRS pass acquired on
 19 September 2022, 17:53 UTC, in a US Centric Lambert Conformal Conic
 (LCC) projection:
 
