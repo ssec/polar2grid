@@ -38,7 +38,7 @@ The data set is re-projected into the WGS84 (Platte Carrée) projection
 by default. The image scaling is defined in the ``generic.yaml`` file located in the
 ``$POLAR2GRID_HOME/etc/polar2grid/enhancements`` directory.
 This file contains product scaling information for all data parameters supported by
-Polar2Grid. It replaces the ``rescale.ini`` file that was used in previous versions of Polar2Grid.
+Polar2Grid. It replaces the ``rescale.ini`` file that was used in some previous versions of Polar2Grid.
 
 The default scaling used for the ACSPO Version 2.80 SST files can be found under
 `sea_surface_temperature4` `sea_surface_subskin_temperature` which is taken from
@@ -47,12 +47,12 @@ references our SST product is listed below.
 
 .. parsed-literal::
 
-      404   sea_surface_temperature4:
-      405     standard_name: sea_surface_subskin_temperature
-      406     operations:
-      407       - name: linear_stretch
-      408         method: !!python/name:satpy.enhancements.contrast.stretch
-      409         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
+      430   sea_surface_temperature4:
+      431     standard_name: sea_surface_subskin_temperature
+      432     operations:
+      433       - name: linear_stretch
+      434         method: !!python/name:satpy.enhancements.contrast.stretch
+      435         kwargs: {stretch: 'crude', min_stretch: 267.317, max_stretch: 309.816}
 
 This is used in the Polar2Grid software to define the range of brightness
 values in the output GeoTIFF file (0-255) to the temperatures they represent - in this
@@ -198,7 +198,7 @@ The result of applying this rescaling to my image and applying my colormap is sh
     :width: 100%
     :align: center
 
-    S-NPP VIIRS ACSPO SST color enhanced subset image over our area of interest using a customized rescaling that linearly maps brightness values of 0-255 to a temperature range of 275.0 K to 305.0 K.
+    NOAA-20 VIIRS ACSPO SST color enhanced subset image over our area of interest using a customized rescaling that linearly maps brightness values of 0-255 to a temperature range of 275.0 K to 305.0 K.
 
 To further enhance this ACSPO SST image I can add a color bar
 using the `add_coastlines.sh` script.  There are many options to this script
@@ -225,7 +225,7 @@ as displayed below.
     :width: 85%
     :align: center
 
-    S-NPP VIIRS ACSPO SST color enhanced subset image over the great lakes using a customized rescaling that linearly maps brightness values of 0-255 to a temperature range of 275.0 K to 305.0 K including a overlaid color table.
+    NOAA-20 VIIRS ACSPO SST color enhanced subset image over the great lakes using a customized rescaling that linearly maps brightness values of 0-255 to a temperature range of 275.0 K to 305.0 K including a overlaid color table.
 
 If you wanted to create a display using a more familiar SST temperature scale such as Celsius
 or Fahrenheit, you can do that by using the ``--colorbar-min`` and
@@ -274,7 +274,7 @@ I execute the command,
 
 it will result in the creation of the final image product that
 is a re-gridded, re-scaled, color enhanced image with a color bar labeled in
-Degrees Celsius and border overlays.
+Degrees Celsius with border overlays.
 
 .. raw:: latex
 
@@ -285,4 +285,4 @@ Degrees Celsius and border overlays.
     :width: 95%
     :align: center
 
-    Final S-NPP VIIRS ACSPO SST image created from data acquired by direct broadcast on 10 August 2022 beginning at 18: UTC. The image creation includes re-gridding, re-scaling, color enhanced with color table and map overlays.
+    Final NOAA-20 VIIRS ACSPO SST image created from data acquired by direct broadcast on 10 August 2022 beginning at 18: UTC. The image creation includes re-gridding, re-scaling, applying a color enhancement using a color table and map overlays.

@@ -21,6 +21,7 @@ using the  ``--list-products`` option.
     :polar2grid:modis_l1b
     :polar2grid:avhrr
     :polar2grid:amsr2_l1b
+    :polar2grid:amsr2_l2_gaasp
     :polar2grid:nucaps
     :polar2grid:mirs
     :polar2grid:acspo
