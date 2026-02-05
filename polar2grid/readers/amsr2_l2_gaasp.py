@@ -50,7 +50,7 @@
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup
+from argparse import ArgumentParser, _ArgumentGroup, BooleanOptionalAction
 from typing import Optional
 
 from satpy import DataQuery
@@ -109,4 +109,11 @@ def add_reader_argument_groups(
     """
     if group is None:
         group = parser.add_argument_group(title="AMSR2 L2 GAASP Reader")
+    group.add_argument(
+        "--filter-wind-speed",
+        action=BooleanOptionalAction,
+        default=True,
+        help="Filter 'WSPD' variable using the 'WSPD_QC' variable. "
+        "Enabled by default. Use '--no-filter-wind-speed' to disable.",
+    )
     return group, None
