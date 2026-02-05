@@ -144,33 +144,6 @@ System Requirements
     * Rocky 8 or Rocky 9 64-bit Linux (or other compatible 64-bit Linux distribution)
     * 5 GB disk space (minimum)
 
-    Improved Execution Times
-    -------------------------
-
-    We continue to work to improve the efficiencies of Polar2grid.  The table
-    below presents a comparison of the unix `real` time required to create
-    VIIRS and MODIS imager GeoTIFF files for the given segments of data in the default
-    WGS84 projection. In these examples, the default 4 computer threads were used in the
-    Version 3.1 executions. Execution times decrease when fewer bands and smaller data
-    segments are processed. The table compares the execution times using Polar2Grid Version
-    3.1 with with those of Version 2.3.
-
-    **Table of Execution Times for Creating GeoTIFF Default Projection Images**
-
-    +------------------+-----------------+-----------------+------------------------+-----------------------+
-    |**Instrument**    |**Polar2Grid**   |**Polar2grid**   |**Polar2Grid2 V2.3 All**|**Polar2Grid V3.1 All**|
-    |**Input**         |**V2.3 True and**|**V3.1 True and**|**Bands plus True**     |**Bands plus True**    |
-    |                  |**False Color**  |**False Color**  |**and False Color**     |**and False Color**    |
-    +==================+=================+=================+========================+=======================+
-    |**VIIRS SDR**     |                 |                 |                        |                       |
-    |10 - 86 second    |    4m52s        |      1m35s      |      12m54s            |       4m23s           |
-    |granules          |                 |                 |                        |                       |
-    +------------------+-----------------+-----------------+------------------------+-----------------------+
-    |**MODIS Level 1B**|                 |                 |                        |                       |
-    |3 - 5 minute      |    4m11s        |      2m34s      |      9m08s             |      2m32s            |
-    |granules          |                 |                 |                        |                       |
-    +------------------+-----------------+-----------------+------------------------+-----------------------+
-
 License and Disclaimer
 ----------------------
 
