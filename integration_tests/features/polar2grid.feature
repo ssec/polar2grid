@@ -23,6 +23,11 @@ Feature: Test polar2grid output images
       | polar2grid.sh -r amsr2_l1b -w geotiff -vv -f | amsr2/input/test1 | amsr2/output/test2 |
       | polar2grid.sh -r amsr2_l1b -w geotiff --extra-config-path ${POLAR2GRID_HOME}/example_enhancements/amsr2_png -g lcc_fit -vv -f | amsr2/input/test1 | amsr2/output/test3 |
 
+    Examples: AMSR2_L2_GAASP
+      | command                                                                  | source            | output             |
+      | polar2grid.sh -r amsr2_l2_gaasp -w geotiff -g polar_alaska -f            | gaasp/input/test1 | gaasp/output/test1 |
+      | polar2grid.sh -r amsr2_l2_gaasp -w geotiff -f                            | gaasp/input/test2 | gaasp/output/test2 |
+
     Examples: AVHRR
       | command                          | source            | output             |
       | polar2grid.sh -r avhrr_l1b_aapp -w geotiff -vv -f | avhrr/input/test1 | avhrr/output/test1 |
