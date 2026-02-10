@@ -68,8 +68,6 @@ GAASP Level 2 product files acquired in Alaska on 29 January 2025, at 22:27 23:3
 we would use the following command. Pleae note that we
 are using the `polar_alaska` Polar2Grid grid projection for this data:
 
-.. code-block:: bash
-
     ``polar2grid.sh -r amsr2_l2_gaasp -w geotiff -g polar_alaska -f *.nc``
 
 Executing this command produces these files in a Polar-stereographic Alaska 
@@ -98,7 +96,7 @@ We can add overlays to the GAASP Rain Rate GeoTIFF including a colortable using 
 
     add_coastlines.sh gcom-w1_amsr2_Rain_Rate_20260129_222710_polar_alaska.tif \
     --add-colorbar --colorbar-text-color="black" \
-    --colorbar-title="AMSR2 GAASP Rain Rate (mm/hr)" 
+    --colorbar-title="AMSR2 GAASP Rain Rate (mm/hr)" \
     --add-coastlines --coastlines-outline "black" \
     --coastlines-level 1 --coastlines-resolution=i \
     --add-borders --borders-level 2 --borders-outline "gray" \
@@ -119,7 +117,8 @@ The result is a PNG Rain Rate image shown below.
 
 Similarly, we can create GeoTIFF images and add overlays to other AMSR2 GAASP Polar2Grid parameters
 as well. Using a dataset collected over Central America and surrounding waters on February 2,2026, the 
-following commands are an example of the steps needed to create an Ocean `Wind Speed` parameter PNG. 
+following commands are an example of the steps needed to create an Ocean `Wind Speed` parameter PNG. This product is dynamically scaled based upon the range of values in the given 
+data.  
 
 .. code-block:: bash
 
@@ -132,7 +131,7 @@ following commands are an example of the steps needed to create an Ocean `Wind S
     --coastlines-level 1 --coastlines-resolution=i \
     --add-borders --borders-level 2 --borders-outline "gray" \
     --borders-width 1 --coastlines-width 2 --colorbar-height 125 \
-    --colorbar-text-size 100
+    --colorbar-text-size 100 --colorbar-tick-marks 2.5
 
 The result is a PNG Ocean Wind Speed image shown below.
 
@@ -140,9 +139,9 @@ The result is a PNG Ocean Wind Speed image shown below.
 
     \newpage
 
-.. figure:: ../_static/example_images/GAASP_Rain_Rate_example_with_overlays.png
+.. figure:: ../_static/example_images/GAASP_WSPD_example_with_overlays.png
     :width: 90%
     :align: center
 
-    CSPP AMSR2 GAASP Rain Rate PNG image with added borders, coastlines and an annotated colorbar in Polar Stereographic projection. The retrievals were created from January 29, 2026, 22:27 UTC observations collected over the US State of Alaska.
+    CSPP AMSR2 GAASP Wind Speed PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from February 2, 2026, 07:36 UTC observations collected over Central America and surrounding waters.
 

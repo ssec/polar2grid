@@ -10,7 +10,7 @@ Basic Usage
 
 .. ifconfig:: not is_geo2grid
 
-    The most common use of |project| is to convert satellite data files in to
+    The most common use of |project| is to convert satellite data files into
     gridded image files.
     As an example, the following command can be used to create GeoTIFF single
     band images of all S-NPP VIIRS imager SDR calibrated data with accompanying

@@ -10,6 +10,7 @@ Examples
     :polar2grid:viirs_edr_example
     :polar2grid:amsr2_example
     :polar2grid:amsr2_gaasp_example
+    :polar2grid:jpss_aws_marketplace.rst
     :geo2grid:abi_example
     :geo2grid:abi_l2_example
     :geo2grid:ahi_example

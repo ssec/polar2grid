@@ -21,13 +21,13 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The VIIRS SDR Reader operates on Sensor Data Record (SDR) HDF5 files from
-the Suomi National Polar-orbiting Partnership's (NPP) and/or the NOAA20
-Visible/Infrared Imager Radiometer Suite (VIIRS) instrument. The VIIRS
+the Suomi National Polar-orbiting Partnership (SNPP), NOAA21 and  NOAA20
+Visible/Infrared Imager Radiometer Suite (VIIRS) instruments. The VIIRS
 SDR reader requires filenames to match one of a couple different standard
 filename schemes used for official products. SDR files are typically named
 as below and have corresponding geolocation files::
 
-    SVI01_npp_d20120225_t1801245_e1802487_b01708_c20120226002130255476_noaa_ops.h5
+    SVI01_j02_d20260205_t1911178_e1912424_b16791_c20260205194106784585_cspp_dev.h5
 
 The VIIRS SDR reader supports all instrument spectral bands, identified as
 the products shown below. It supports terrain corrected or non-terrain corrected
