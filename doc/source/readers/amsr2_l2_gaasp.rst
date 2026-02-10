@@ -17,14 +17,15 @@ Examples:
 
 .. code-block:: bash
 
-    polar2grid.sh -r viirs_edr -w geotiff -f <path to files>/<list of files>
+    polar2grid.sh -r amsr2_l2_gaasp -w geotiff -f <path to files>/<list of files>
 
-    polar2grid.sh -r viirs_edr -w geotiff -h
+    polar2grid.sh -r amsr2_l2_gaasp -w geotiff -h
 
-    polar2grid.sh -r viirs_edr -w geotiff --list-products -f ../edr/*.nc
+    polar2grid.sh -r amsr2_l2_gaasp -w geotiff --list-products -f gaasp/*.nc
 
-    polar2grid.sh -r viirs_edr -w geotiff -p true_color_surf false_color_surf --num-workers 8 -f ../edr/edr/SurfRefl*.nc
+    polar2grid.sh -r amsr2_l2_gaasp -w geotiff -p SST WSPD CLW TPW --num-workers 8 -f gaasp/AMSR2-OCEAN*.nc
 
-    polar2grid.sh -r viirs_edr -w hdf5 --add-geolocation --dtype float32 -p NDVI EVI --maximum-weight-mode -f SurfRefl*.nc
+    polar2grid.sh -r amsr2_l2_gaasp -w geotiff -g polar_alaska -p SWE Snow_Depth Soil_Moisture --fill-value 0 -f  AMSR2-SNOW_v2r2_GW1_s202601292227100_e202601292237440_c202601292245210.nc AMSR2-SOIL_v2r2_GW1_s202601292227100_e202601292237440_c202601292245210.nc
 
-    polar2grid.sh -r viirs_edr -w awips_tiled -p AOD550 CldTopHght CldTopTemp  -g lcc_conus_300 --sector-id LCC --letters --compress -f /viirs/JRR-AOD_v3r0_j01_s202406051854471_e202406051856116_c202406052204237.nc /viirs/JRR-CloudHeight_v3r0_j01_s202406051854471_e202406051856116_c202406052204237.nc
+    polar2grid.sh -r amsr2_l2_gaasp -w hdf5 --add-geolocation --dtype float32 -p Rain_Rate -f AMSR2-PRECIP_v2r2_GW1_s202602020736030_e202602020746510_c202602020759490.nc
+

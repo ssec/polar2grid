@@ -88,5 +88,3 @@ Creation of MODIS legacy false color RGBs includes the following steps:
 
 See the :doc:`../examples/modis_example` example to see how |project| can be
 used to make this product as AWIPS compatible NetCDF files.
-
-    polar2grid.sh -r modis_l1b -w geotiff -p true_color false_color -f /aqua/a1.17006.1855.250m.hdf /aqua/a1.17006.1855.500m.hdf /aqua/a1.17006.1855.geo.hdf

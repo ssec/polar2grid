@@ -2,7 +2,7 @@
 
 .. tabularcolumns:: |L|L|L|l|l|
 
-.. list-table:: Reader/Writer Summary Table (**NOTE: This is Not a Complete List Available Readers**)
+.. list-table:: Reader/Writer Summary Table (**NOTE: This is a sample of available Readers**)
     :header-rows: 1
 
     * - **Input Source**
@@ -67,8 +67,8 @@
       - 24-bit true and false color GeoTIFF
       - modis_l1b
       - geotiff
-    * - **NOAA-18, NOAA-19,Metop-A,-B,-C AVHRR AAPP Level 1b**
-      - hrpt_noaa18_*.l1b
+    * - **Metop-B,-C AVHRR AAPP Level 1b**
+      - hrpt_M03_*.l1b
       - 8 bit single band GeoTIFF
       - avhrr_l1b
       - geotiff
@@ -106,26 +106,6 @@
       - "
       - Binary
       - amsr2_l1b
-      - binary
-    * - **CLAVR-x Cloud Retrievals**
-      - clavrx*.hdf
-      - 8 bit single band GeoTIFF
-      - clavrx
-      - geotiff
-    * - "
-      - "
-      - AWIPS NetCDF
-      - clavrx
-      - awips_tiled
-    * - "
-      - "
-      - HDF5
-      - clavrx
-      - hdf5
-    * - "
-      - "
-      - Binary
-      - clavrx
       - binary
     * - **ACSPO Sea Surface Temperatures**
       - \*-STAR-L2P_GHRSST-SSTskin-\*.nc
