@@ -19,7 +19,6 @@ Code repository: https://github.com/ssec/polar2grid
 
     dev_env
     swbundle
-    json_input
     adding_readers
     Python API <api/modules>
 
