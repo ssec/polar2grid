@@ -5,8 +5,9 @@
 Working with Data from the JPSS AWS Marketplace
 -----------------------------------------------
 
-Polar2Grid now supports basic image creation using data from the
-JPSS Amazon Web Services (AWS) Marketplace as input.
+Polar2Grid now supports basic image creation using data directly from the
+JPSS Amazon Web Services (AWS) Marketplace as input. Pleaes note
+that these examples are supported when using the Bourne-Again Shell (bash).
 
 Creating JPSS AWS VIIRS SDR Images
 **********************************
@@ -14,23 +15,25 @@ Creating JPSS AWS VIIRS SDR Images
 One of the ways that NOAA distributes satellite data is through the
 `JPSS AWS Marketplace <https://registry.opendata.aws/noaa-jpss/>`_.
 Polar2Grid is able to access this freely available data allowing 
-users the capability to make images without downloading data. The
-basic `polar2grid.sh` commands are the essentially the same, you
-are just pointing at the input data from an external location. The 
+users the capability to make images from the archive without downloading data. The
+basic `polar2grid.sh` commands are the the same; users can just
+point to the input data from an external location. The 
 following examples demonstrate how to make VIIRS SDR images from
 JPSS AWS data. 
 
 To make an image from one NOAA-21 VIIRS February 8, 2026, granule and a single band, you need
-to provide the input files from the NOAA AWS s3 bucket using
-a command like this:
+to provide the input files from the NOAA AWS s3 Command Line Interface (CLI) using a command like this:
 
 .. code-block:: bash
 
     polar2grid.sh -r viirs_sdr -w geotiff -p i01 -f s3://noaa-nesdis-n21-pds/VIIRS-I1-SDR/2026/02/08/SVI01_j02_d20260208_t1956574_e1958221_b16834_c20260208202125135000_oebc_ops.h5 s3://noaa-nesdis-n21-pds/VIIRS-IMG-GEO-TC/2026/02/08/GITCO_j02_d20260208_t1956574_e1958221_b16834_*.h5
 
-This `polar2grid.sh` command provides the exact URL and single granule filename that I want to use, along with
-the accompanying geolocation file. It creates an `I-Band 01` GeoTIFF file in the default 
-WGS84 projection. Notice the use of the wild card in place of the
+This `polar2grid.sh` command provides a URL and single granule filename that I want to use, along with
+the accompanying geolocation file. Note that the AWS JPSS Marketplace data online Browse Bucket URLs 
+use a different https address, but the directory structures and filenames are the same.  
+
+This command results in the creation an `I-Band 01` GeoTIFF file in the default 
+WGS84 projection from February 8, 2026. Notice the use of the wild card in place of the
 creation date and time of the `GITCO` file. The remainder of the command execution
 is the same as when using a local VIIRS SDR dataset. 
 
@@ -78,7 +81,7 @@ archives for many LEO meteorological satellites at this
 The orbit tracks are overlaid on a global map as well as higher resolution
 maps of the different continents for a given day. In our example, we want to 
 identify the time range of data needed to make a NOAA-21 VIIRS image that
-covers the Western United States on 8 February 2026. `The North American overpass schedule for 
+includes coverage of the entire Western United States on 8 February 2026. `The North American overpass schedule for 
 that day <https://www.ssec.wisc.edu/datacenter/polar_orbit_tracks/data/NOAA21/2026/2026_02_08_039/NA.gif>`_ 
 is overlaid on a map as shown below.
 
@@ -92,14 +95,14 @@ is overlaid on a map as shown below.
 
     NOAA21 satellite overpass locations and times for February 8, 2026, in University Time Coordinated (UTC). 
 
-The single granule true color image that we intially created was from a granule
+The single granule true color image that we initially created was from a granule
 with a start time of 19:56 UTC and an end time of 19:58 UTC. Now I want to create a 
 true color image that includes all of the Western United States. Looking at the
 orbit track map, I can see that I will need to choose a data range between
 19:54 to 20:00 UTC for complete coverage for this day. Remember that the 
 orbit tracks represent the sub-satellite point on the earth; the actual swath 
 width of the VIIRS observations is approximately 3000km. Using this information
-I can execute the following single `Polar2Grid` command that inclues globbing 
+I can execute the following single `Polar2Grid` command that includes globbing 
 in the file start time to stream 5 granules into memory while the image is being 
 made. The values in the curly brackets are expanded as part of the script execution.
 
