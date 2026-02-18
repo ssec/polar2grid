@@ -50,7 +50,7 @@ and Blue: VIIRS M-Band 3 reflectance channels. Each
 channel goes through a series of adjustments to produce the final high
 quality image output by |project|. 
 
-In addition to the calibrated radiance band files, the VIIRS Terrain
+In addition to the calibrated radiance band files, the coincident VIIRS Terrain
 Corrected geolocation files are also required (GMTCO prefix).
 
 Creation of true color RGBs includes the following steps:
@@ -77,7 +77,7 @@ Green:VIIRS M-Band 7 (.87 μm) and Blue:VIIRS M-Band 5 (.67 μm).
 This band combination is very effective at distinguishing land/water boundaries 
 as well as burn scars.
 
-In addition to the required VIIRS SDR calibrated radiance files, the VIIRS Terrain
+In addition to the required VIIRS SDR calibrated radiance files, the coincident VIIRS Terrain
 Corrected geolocation files are also required (GMTCO prefix).
 
 Creation of VIIRS legacy false color RGBs includes the following steps:
