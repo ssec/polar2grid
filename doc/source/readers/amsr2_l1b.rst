@@ -27,4 +27,4 @@ Examples:
 
     polar2grid.sh -r amsr2_l1b -w awips_tiled --list-products -f /amsr2/GW1AM2_202209120729_019D_L1DLBTBR_2220220.h5
 
-    polar2grid.sh -r amsr2_l1b -w awips_tiled -g lcc_conus_1km -p btemp_36.5h btemp_89.0av --sector-id LCC --letters --compress -f GW1AM2_201607191903_137A_L1DLBTBR_1110110.h5
+    polar2grid.sh -r amsr2_l1b -w awips_tiled -g lcc_conus_1km -p btemp_36.5h btemp_89.0av --sector-id LCC --letters --compress -f GW1AM2_202503181759_125A_L1DLBTBR_2220220.h5
