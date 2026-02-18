@@ -22,17 +22,17 @@ Execution Examples
 
 .. code-block:: bash
 
-    polar2grid.sh -r mirs -w geotiff --list-products -f /atms/NPR-MIRS-IMG_v11r8_n20_s202208250741413_e202208250753249_c202208250817490.nc
+    polar2grid.sh -r mirs -w geotiff --list-products -f /atms/NPR-MIRS-IMG_v11r9_n21_s202602180700298_e202602180712134_c202602180739560.nc
 
-    polar2grid.sh -r mirs -w geotiff --list-products-all -f /atms/NPR-MIRS-IMG_v11r8_npp_s202208250653413_e202208250704529_c202208250730310.nc
+    polar2grid.sh -r mirs -w geotiff --list-products-all -f /atms/NPR-MIRS-IMG_v11r9_n20_s202602181730163_e202602181743039_c202602181809040.nc
 
     polar2grid.sh -r mirs -w geotiff -p btemp_88v btemp_183h3 swe -g lcc_fit -f /atms/
 
-    polar2grid.sh -r mirs -w awips_tiled --num-workers 4 --grid-coverage 0 -g merc_pacific_1km --sector-id Pacific --letters --compress -p swe tpw sea_ice rain_rate btemp_89v1 -f /noaa19/NPR-MIRS-IMG_v11r8_n19_s202208250310331_e202208250314143_c202208251718490.nc
+    polar2grid.sh -r mirs -w awips_tiled --num-workers 4 --grid-coverage 0 -g merc_pacific_1km --sector-id Pacific --letters --compress -p swe tpw sea_ice rain_rate btemp_89v1 -f /metopc/NPR-MIRS-IMG_v11r9_ma3_s202602111553000_e202602111605000_c202602111613350.nc
 
-    polar2grid.sh -r mirs -w awips_tiled --bt-channels -g lcc_conus_750 --sector-id LCC --letters --compress -f ../input/NPR-MIRS-IMG_v11r1_NPP_s201611111032500_e201611111044016_c201611111121100.nc
+    polar2grid.sh -r mirs -w awips_tiled --bt-channels -g lcc_conus_750 --sector-id LCC --letters --compress -f ../input/NPR-MIRS-IMG_v11r9_npp_s202602181711063_e202602181722179_c202602181745360.nc
 
-    polar2grid.sh -r mirs -w hdf5 --add-geolocation --dtype float32 -f ../metopc/NPR-MIRS-IMG_v11r8_ma3_s202208251542209_e202208251554261_c202208251742030.nc
+    polar2grid.sh -r mirs -w hdf5 --add-geolocation --dtype float32 -f ../metopc/NPR-MIRS-IMG_v11r9_ma3_s202602111553000_e202602111605000_c202602111613350.nc
 
 .. raw:: latex
 
