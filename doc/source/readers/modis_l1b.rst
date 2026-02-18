@@ -52,6 +52,9 @@ consisting of a combination of Red: MODIS Band 1, Green: MODIS Band 4, and Blue:
 Band 3 reflectance channels. Each channel goes through a series of
 adjustments to produce the final high quality image output by |project|.
 
+In addition to the calibrated radiance band files, the coincident MODIS 
+Geolocation files are also required.
+
 Creation of true color RGBs includes the following steps:
 
     * Atmospheric :ref:`Rayleigh Scattering Correction <crefl_rayleigh_correction>` of the RGB visible reflectances.
@@ -76,6 +79,9 @@ GeoTIFF 24 bit image that consists of a combination :ref:`RGB (Red, Green, Blue)
 image <explain_rgb_composite>` using Red: MODIS Band 7 (2.21 μm), Green: MODIS Band 2 (.86 μm)
 and Blue: MODIS Band 1 (.65 μm). This band combination is very effective
 at distinguishing land/water boundaries as well as burn scars.
+
+In addition to the calibrated radiance band files, the coincident MODIS
+Geolocation files are also required.
 
 Creation of MODIS legacy false color RGBs includes the following steps:
 
