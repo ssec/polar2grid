@@ -25,8 +25,8 @@ M-Band Resolution (AFMOD) Environmental Data Record files.
 
 Files supported usually have the following naming schemes:
 
-   AFIMG_j01_d20221006_t2101052_e2102297_b25304_c20221006214545032016_cspp_dev.nc and/or,
-   AFMOD_npp_d20221006_t2017005_e2018247_b56701_c20221006205259096916_cspp_dev.nc
+   AFIMG_j02_d20260218_t1820114_e1821361_b16975_c20260218185944448763_cspp_dev.nc and/or,
+   AFMOD_j01_d20260218_t1911238_e1912483_b42768_c20260218195139550487_cspp_dev.nc
 
 For more information about the this CSPP product, please
 visit the CSPP LEO website: `https://cimss.ssec.wisc.edu/cspp/`.
