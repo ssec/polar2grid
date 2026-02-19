@@ -19,7 +19,7 @@ Examples:
 
     $POLAR2GRID_HOME/bin/polar2grid.sh -r mersi_ll_l1b -w geotiff -h
 
-    polar2grid.sh -r mersi_ll_l1b -w geotiff --list-products -f tf2019259173245.FY3E-X_MERSI*.HDF
+    polar2grid.sh -r mersi_ll_l1b -w geotiff --list-products -f tf2025360233551.FY3E-X_MERSI_*.HDF
 
     polar2grid.sh -r mersi_ll_l1b -w geotiff -p 1 2 3 4 6 7 -f tf2019233172521.FY3E-X_MERSI_0250M_L1B.HDF tf2019233172521.FY3E-X_MERSI_1000M_L1B.HDF tf2019233172521.FY3E-X_MERSI_GEOQK_L1B.HDF tf2019233172521.FY3E-X_MERSI_GEO1K_L1B.HDF
 
