@@ -25,6 +25,11 @@ Examples:
 
     polar2grid.sh -r viirs_edr -w geotiff -p true_color_surf false_color_surf --num-workers 8 -f ../edr/edr/SurfRefl*.nc
 
+    polar2grid.sh -r viirs_edr -w geotiff -p CldBaseHght -f noaa21/JRR-CloudBase_v3r2_n21_s202602191808237_e202602191809466_c202602191906141.nc
+
+    polar2grid.sh -r viirs_edr -w geotiff -p CloudLayer Total_Cloud_Fraction -g polar_alaska  -f JRR-CloudCoverLayers_*.nc
+
     polar2grid.sh -r viirs_edr -w hdf5 --add-geolocation --dtype float32 -p NDVI EVI --maximum-weight-mode -f SurfRefl*.nc
 
     polar2grid.sh -r viirs_edr -w awips_tiled -p AOD550 CldTopHght CldTopTemp  -g lcc_conus_300 --sector-id LCC --letters --compress -f /viirs/JRR-AOD_v3r0_j01_s202406051854471_e202406051856116_c202406052204237.nc /viirs/JRR-CloudHeight_v3r0_j01_s202406051854471_e202406051856116_c202406052204237.nc
+
