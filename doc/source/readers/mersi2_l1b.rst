@@ -19,7 +19,7 @@ Examples:
 
     $POLAR2GRID_HOME/bin/polar2grid.sh -r mersi2_l1b -w geotiff -h
 
-    polar2grid.sh -r mersi2_l1b -w geotiff --list-products -f tf2019259173245.FY3D-X_MERSI*.HDF
+    polar2grid.sh -r mersi2_l1b -w geotiff --list-products -f tf2025360200716.FY3D-X_MERSI_*.HDF
 
     polar2grid.sh -r mersi2_l1b -w geotiff -p 1 2 3 4 6 7 20 25 -f tf2019233172521.FY3D-X_MERSI_0250M_L1B.HDF tf2019233172521.FY3D-X_MERSI_1000M_L1B.HDF tf2019233172521.FY3D-X_MERSI_GEOQK_L1B.HDF tf2019233172521.FY3D-X_MERSI_GEO1K_L1B.HDF
 
@@ -27,4 +27,4 @@ Examples:
 
     polar2grid.sh -r mersi2_l1b -w hdf5 -p 20 21 22 23 24 25  --grid-configs ${HOME}/my_grid.yaml -g shanghai seoul -f ../data/*.HDF
 
-    polar2grid.sh -r mersi2_l1b -w binary --sza-threshold=90  -p 1 2 3 4 6 7 20 25 -f tf2019226095418.FY3D-X_MERSI_*.HDF
+    polar2grid.sh -r mersi2_l1b -w binary --sza-threshold=90  -p 1 2 3 4 6 7 20 25 -f tf2025360200716.FY3D-X_MERSI_*.HDF
