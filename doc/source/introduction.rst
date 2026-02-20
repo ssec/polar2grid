@@ -48,7 +48,7 @@ What's New?
 
 .. ifconfig:: not is_geo2grid
 
-    Polar2Grid Version 3.1 is now available. This is a minor
+    Polar2Grid Version 3.2 is now available. This is a minor
     update that includes support for more VIIRS Science Products.
 
     Included in this release:
