@@ -36,7 +36,7 @@ Sectorized Cloud and Moisture Imagery (SCMI) is a NetCDF4
 format accepted by AWIPS to store one image broken up
 into one or more "tiles". This format has been used to support additional
 products over time and so this writer is now called "awips_tiled" to refer
-to the generic usse of these files. Once AWIPS is configured for specific products
+to the generic use of these files. Once AWIPS is configured for specific products
 the AWIPS Tiled writer can be used to provide compatible products to the
 system. The files created by this writer are compatible with AWIPS II.
 
