@@ -33,7 +33,7 @@ the "raw" band data.
 
 .. warning::
 
-   Starting in Polar2Grid 3.3.0, output filename "data_type" fields now follow numpy-style naming.
+   Starting in Polar2Grid 3.2.0, output filename "data_type" fields now follow numpy-style naming.
    For example, 32-bit floats are now "float32" instead of "real4".
    Unsigned 8-bit integers are now "uint8" instead of "uint1".
    The dtype passed to the ``--dtype`` flag is unchanged (numpy style).
