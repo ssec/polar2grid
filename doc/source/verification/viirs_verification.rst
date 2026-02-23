@@ -12,9 +12,9 @@ shown in Section 2.2 and execute the following commands:
     polar2grid.sh -r viirs_sdr -w geotiff -p true_color false_color --grid-configs \
       ${POLAR2GRID_HOME}/grid_configs/grid_example.yaml -g miami --weight-distance-max 1 -f ../input
 
-The test case consists of 6 input direct broadcast HDF 5 SDR granules
-for a selection of VIIRS bands from a pass acquired on 19 March 2017
-at 18:32 UTC. In this test, the Polar2Grid software
+The test case consists of a 10 granule aggregated input direct broadcast 
+HDF 5 SDR for a selection of VIIRS bands from a NOAA-21 pass acquired on 23 February 2026
+at 18:26 UTC. In this test, the Polar2Grid software
 is using the example configuration file
 (${POLAR2GRID_HOME}/grid_configs/grid_example.yaml) and the lambert
 conformal conic (lcc) miami grid definition entry located
@@ -23,7 +23,7 @@ within it. We will create one true and one false color image at
 Miami in the state of Florida.
 
 The creation of the true and false color images includes the Atmospheric
-Rayleigh Scattering Correction, and sharpening of the
+Rayleigh Scattering Correction and sharpening of the
 image to the spatial resolution of the VIIRS I-Bands.
 We are using a ``--weight-distance-max`` option of ``1`` to inform the elliptical
 weight averaging (EWA) technique how to weight the effect of the input
@@ -35,7 +35,7 @@ black missing data sections in regions of varying terrains, especially
 at higher view angles.  That is why the default ``--weight-distance-max``
 value is ``2``.
 
-The processing should run in less than 2 minutes and create 2 atmospherically
+The processing should run in about 1 minute and create 2 atmospherically
 corrected and sharpened output VIIRS GeoTIFF true and false
 color images.
 
@@ -59,10 +59,9 @@ text string from our test system is shown below.
 
     p2g_compare.sh output work
 
-    Comparing work/npp_viirs_false_color_20170319_183246_miami.tif to known valid file
-    INFO:__main__:Comparing 'work/npp_viirs_false_color_20170319_183246_miami.tif' to known valid file 'output/npp_viirs_false_color_20170319_183246_miami.tif'.
+    INFO:__main__:Comparing 'work/noaa21_viirs_false_color_20260223_182634_miami.tif' to known valid file 'output/noaa21_viirs_false_color_20260223_182634_miami.tif'.
     INFO:__main__:0 pixels out of 3000000 pixels are different
-    INFO:__main__:Comparing 'work/npp_viirs_true_color_20170319_183246_miami.tif' to known valid file 'output/npp_viirs_true_color_20170319_183246_miami.tif'.
+    INFO:__main__:Comparing 'work/noaa21_viirs_true_color_20260223_182634_miami.tif' to known valid file 'output/noaa21_viirs_true_color_20260223_182634_miami.tif'.
     INFO:__main__:0 pixels out of 3000000 pixels are different
     All files passed
     SUCCESS
@@ -70,8 +69,8 @@ text string from our test system is shown below.
 The VIIRS true color GeoTIFF image created from the test data
 is displayed below:
 
-.. figure:: ../_static/example_images/npp_viirs_true_color_20170319_183246_miami.jpg
+.. figure:: ../_static/example_images/noaa21_viirs_true_color_20260223_182634_miami.png
     :width: 100%
     :align: center
 
-    GeoTIFF true color image created from the 19 March 2017 VIIRS test data centered on Miami, Florida.
+    GeoTIFF true color image created from the 23 February 2026 NOAA-21 VIIRS test data centered on Miami, Florida.
