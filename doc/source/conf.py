@@ -49,7 +49,7 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/images_basic/noaa20_viirs_true_color_20220919_175331_lcc_fit.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/overlay/noaa20_viirs_true_color_20220919_175331_lcc_fit_overlay.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/dnb/VIIRS_DNB_Enhancement_Comparison.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/images_basic/noaa21_viirs_true_color_20260223_182634_miami.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/images_basic/noaa21_viirs_true_color_20260223_182634_miami.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/images_basic/terra_modis_false_color_20170319_163000_miami.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/modis/images_basic/terra_modis_false_color_20170319_163000_miami_p2g_v3.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/SSEC_AWIPS_aqua_modis_bt28_211e_20170308_181800.nc.png",
