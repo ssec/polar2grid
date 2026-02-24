@@ -142,7 +142,7 @@ System Requirements
     * Intel or AMD CPU with 64-bit instruction support (2+ cores - 2.4GHz)
     * 16 GB RAM (minimum)
     * Rocky 8 or Rocky 9 64-bit Linux (or other compatible 64-bit Linux distribution)
-    * 5 GB disk space (minimum)
+    * 10 GB disk space (minimum)
 
 License and Disclaimer
 ----------------------
