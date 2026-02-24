@@ -17,13 +17,10 @@ Find the options available for creating AMSR2 GAASP Level 2 GeoTIFFs:
 
    ``polar2grid.sh -r amsr2_l2_gaasp -w geotiff -h``
 
-List the supported products that can be created from your GAASP Level 2 dataset:
-
-    ``polar2grid.sh -r amsr2_l2_gaasp -w geotiff --list-products -f <path_to_l1b_file>``
-
 There are 7 CSPP GAASP Level 2 product files that are created from input 
-AMSR2 Level 1 input files.  The following list shows the Polar2Grid default output products associated
-with the given Level 2 NetCDF file:
+AMSR2 Level 1 input files; 4 of those files contain arrays supported by Polar2Grid. 
+The following list shows the Polar2Grid default output products associated
+with the given Level 2 GAASP NetCDF file:
 
 .. list-table:: GAASP Level 2 Products Supported by Polar2Grid
    :header-rows: 1
@@ -58,14 +55,18 @@ One command can be used to create all of the default products listed
 in the table above as long as all of the NetCDF product files are in the directory
 provided.  
 
-To create AMSR2 GAASP GeoTIFF files of all default parameters found in your data set
+List the supported products that can be created from your GAASP Level 2 dataset:
+
+    ``polar2grid.sh -r amsr2_l2_gaasp -w geotiff --list-products -f <path_to_l1b_file>``
+
+To create AMSR2 GAASP GeoTIFF files of all default parameters, found in your data set
 and reprojected to the default Platte Carrée projection:
 
     ``polar2grid.sh -r amsr2_l2_gaasp -w geotiff -f <path_to_l1b_file>``
 
-So as an example, to create the default set of GeoTIFF images from the AMSR2 
+As an example, to create the default set of GeoTIFF images from the AMSR2 
 GAASP Level 2 product files acquired in Alaska on 29 January 2025, at 22:27 23:35 UTC,
-we would use the following command. Pleae note that we
+we would use the following command. Please note that we
 are using the `polar_alaska` Polar2Grid grid projection for this data:
 
     ``polar2grid.sh -r amsr2_l2_gaasp -w geotiff -g polar_alaska -f *.nc``
@@ -73,11 +74,11 @@ are using the `polar_alaska` Polar2Grid grid projection for this data:
 Executing this command produces these files in a Polar-stereographic Alaska 
 centered projection:
 
-
 .. parsed-literal::
 
     gcom-w1_amsr2_CLW_20260129_222710_polar_alaska.tif
     gcom-w1_amsr2_Rain_Rate_20260129_222710_polar_alaska.tif
+    gcom-w1_amsr2_Snow_Cover_20260129_222710_polar_alaska.tif
     gcom-w1_amsr2_Snow_Depth_20260129_222710_polar_alaska.tif
     gcom-w1_amsr2_Soil_Moisture_20260129_222710_polar_alaska.tif
     gcom-w1_amsr2_SST_20260129_222710_polar_alaska.tif

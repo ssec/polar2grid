@@ -226,10 +226,10 @@ else:
     # built documents.
     #
     # The short X.Y version.
-    version = "3.1"
+    version = "3.2"
 
     # The full version, including alpha/beta/rc tags.
-    release = "3.1"
+    release = "3.2"
 
 # Tell Polar2Grid scripts which system we are running
 os.environ["USE_POLAR2GRID_DEFAULTS"] = str(int(not is_geo2grid))

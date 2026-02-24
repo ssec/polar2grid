@@ -6,7 +6,7 @@ Working with Data from the JPSS AWS Marketplace
 -----------------------------------------------
 
 Polar2Grid now supports basic image creation using data directly from the
-JPSS Amazon Web Services (AWS) Marketplace as input. Pleaes note
+JPSS Amazon Web Services (AWS) Marketplace as input. Please note
 that these examples are supported when using the Bourne-Again Shell (bash).
 
 Creating JPSS AWS VIIRS SDR Images
@@ -16,7 +16,7 @@ One of the ways that NOAA distributes satellite data is through the
 `JPSS AWS Marketplace <https://registry.opendata.aws/noaa-jpss/>`_.
 Polar2Grid is able to access this freely available data allowing 
 users the capability to make images from the archive without downloading data. The
-basic `polar2grid.sh` commands are the the same; users can just
+basic `polar2grid.sh` commands are the same; users can just
 point to the input data from an external location. The 
 following examples demonstrate how to make VIIRS SDR images from
 JPSS AWS data. 
@@ -28,11 +28,14 @@ to provide the input files from the NOAA AWS s3 Command Line Interface (CLI) usi
 
     polar2grid.sh -r viirs_sdr -w geotiff -p i01 -f s3://noaa-nesdis-n21-pds/VIIRS-I1-SDR/2026/02/08/SVI01_j02_d20260208_t1956574_e1958221_b16834_c20260208202125135000_oebc_ops.h5 s3://noaa-nesdis-n21-pds/VIIRS-IMG-GEO-TC/2026/02/08/GITCO_j02_d20260208_t1956574_e1958221_b16834_*.h5
 
-This `polar2grid.sh` command provides a URL and single granule filename that I want to use, along with
-the accompanying geolocation file. Note that the AWS JPSS Marketplace data online Browse Bucket URLs 
-use a different https address, but the directory structures and filenames are the same.  
+This `polar2grid.sh` command provides an Amazon Simple Storage Service (S3) URL and 
+single granule filename that I want to use, along with
+the accompanying location of the coincident geolocation file. 
+Note that the AWS JPSS Marketplace data online Browse Bucket URLs 
+use a different https address, but the directory structures and filenames are the same, in this case, 
+``VIIRS-I1-SDR/2026/02/08/SVI01_j02_d20260208_t1956574_e1958221_b16834_c20260208202125135000_oebc_ops.h5``.
 
-This command results in the creation an `I-Band 01` GeoTIFF file in the default 
+This command results in the creation of a VIIRS `I-Band 01` GeoTIFF file in the default 
 WGS84 projection from February 8, 2026. Notice the use of the wild card in place of the
 creation date and time of the `GITCO` file. The remainder of the command execution
 is the same as when using a local VIIRS SDR dataset. 
@@ -52,7 +55,7 @@ I would use the following command:
 
    polar2grid.sh -r viirs_sdr -w geotiff -p true_color -vvv -f s3://noaa-nesdis-n21-pds/VIIRS-I1-SDR/2026/02/08/SVI01_j02_d20260208_t1956574_e1958221_b16834_*.h5 s3://noaa-nesdis-n21-pds/VIIRS-M{3,4,5}-SDR/2026/02/08/SVM0{3,4,5}_j02_d20260208_t1956574_e1958221_b16834_*.h5 s3://noaa-nesdis-n21-pds/VIIRS-{IMG,MOD}-GEO-TC/2026/02/08/G{I,M}TCO_j02_d20260208_t1956574_e1958221_b16834_*.h5 
 
-To create true color VIIRS images, M-Bands 3,4 and 5 are used along with I-Band 1 which is used for image sharpening.
+To create true color VIIRS images, M-Bands 3,4 and 5 are required along with I-Band 1 which is used for image sharpening.
 I also need to use the Terrain Corrected Geolocation files for both I- and M-Band resolution. The image
 below shows the GeoTIFF created when using this command.
 
@@ -69,7 +72,7 @@ below shows the GeoTIFF created when using this command.
 
 The final example demonstrates how a user can create a GeoTIFF image
 from multiple consecutive granules using AWS data with one command 
-to produce an aggregated image.  Again, we will be using globbling to 
+to produce an aggregated image.  Again, we will be using globbing to 
 locate the file start times that we want to be included in the image.  
 
 A helpful tool for determining when a satellite is observing a region
@@ -93,12 +96,12 @@ is overlaid on a map as shown below.
     :width: 90%
     :align: center
 
-    NOAA21 satellite overpass locations and times for February 8, 2026, in University Time Coordinated (UTC). 
+    NOAA21 satellite overpass locations and times over North America for February 8, 2026, in Universal Time Coordinated (UTC). 
 
 The single granule true color image that we initially created was from a granule
 with a start time of 19:56 UTC and an end time of 19:58 UTC. Now I want to create a 
 true color image that includes all of the Western United States. Looking at the
-orbit track map, I can see that I will need to choose a data range between
+orbit track map, I can see that I will need to choose a data time range between
 19:54 to 20:00 UTC for complete coverage for this day. Remember that the 
 orbit tracks represent the sub-satellite point on the earth; the actual swath 
 width of the VIIRS observations is approximately 3000km. Using this information

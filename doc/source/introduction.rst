@@ -55,7 +55,7 @@ What's New?
 
     .. include:: NEWS.rst
         :start-line: 6
-        :end-line: 19
+        :end-line: 18
 
     For more details on what's new in this version and past versions see the
     `Polar2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/main/NEWS.rst>`_

@@ -35,11 +35,10 @@ Execution of this command results in the following list of Standard Products:
            CldTopHght
            CldTopTemp
            CloudLayer
-           AOD550
-           CldTopHght
-           CldTopTemp
            EVI
            NDVI
+           Total_Cloud_Fraction
+           false_color_surf
            surf_refl_i01
            surf_refl_i02
            surf_refl_i03
@@ -63,7 +62,7 @@ data files, I would use this command:
 
 .. code-block:: bash
 
-    polar2grid.sh -r viirs_edr -w geotiff -p AOD550 -f viirs/JRR-AOD_*j01_s20240605185*.nc
+    polar2grid.sh -r viirs_edr -w geotiff -p AOD550 -f JRR-AOD_*j01_s20240605185*.nc
 
 An aggregated GeoTIFF image will be created from the 7 granule input files with the data
 re-projected into the WGS84 (Platte Carrée) projection by default. The image scaling
@@ -72,7 +71,7 @@ is defined in the ``viirs.yaml`` file located in the
 This file contains VIIRS product scaling information.
 
 The default scaling used for the VIIRS AOD files can be found under
-`aod550`. The section of the viirs.yaml file that references the VIIRS AOD
+`aod550`. The section of the ``viirs.yaml`` file that references the VIIRS AOD
 product is listed below.
 
 .. parsed-literal::
@@ -93,8 +92,8 @@ This is used in the Polar2Grid software to scale the range of brightness
 values in the output GeoTIFF file (0-255) to the AOD values they represent - in this
 case 0.0 to 1.0. In addition, this product is by default color enhanced using the
 ``rainbow`` color map. AOD values above 1.0 are color enhanced using the last color value (dark red).
-The scaling is done linearly. AOD values are filtered based upon a Quality Flag (QCAll)
-that is either 0 or 1 (high or medium).  The output GeoTIFF image below shows the
+The scaling is done linearly. AOD values are filtered based upon a Quality Flag (``QCAll``)
+that is either 0 or 1 (``high or medium``).  The output GeoTIFF image below shows the
 end result of the polar2grid.sh command execution for this data.
 
 .. raw:: latex
@@ -166,7 +165,7 @@ And the resulting image is shown below:
 
     CSPP VIIRS NOAA-20 Cloud Top Temperature PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from June 5, 2024, 18:50 UTC observations.
 
-From the same VIIRS EDR files, the Cloud Height product images can be created as described 
+From the same VIIRS EDR files, the Cloud Height product images can be created using the commands 
 below.
 
 .. code-block:: bash
