@@ -48,7 +48,7 @@ image is an :ref:`RGB (Red, Green, Blue) image <explain_rgb_composite>`
 consisting of a combination of Red: VIIRS M-Band 5, Green: VIIRS M-Band 4,
 and Blue: VIIRS M-Band 3 reflectance channels. Each
 channel goes through a series of adjustments to produce the final high
-quality image output by |project|. 
+quality image output by |project|.
 
 In addition to the calibrated radiance band files, the coincident VIIRS Terrain
 Corrected geolocation files are also required (GMTCO prefix).
@@ -72,9 +72,9 @@ to create a "true color" image (see above). These combinations can be used to
 highlight features in the observations that may not be easily identified in
 individual band imagery. |project| can readily create a preconfigured legacy
 false color (product false_color) GeoTIFF 24 bit image that consists of a combination
-:ref:`RGB (Red, Green, Blue) image <explain_rgb_composite>` using uses Red:VIIRS M-Band 11 (2.25 μm), 
+:ref:`RGB (Red, Green, Blue) image <explain_rgb_composite>` using uses Red:VIIRS M-Band 11 (2.25 μm),
 Green:VIIRS M-Band 7 (.87 μm) and Blue:VIIRS M-Band 5 (.67 μm).
-This band combination is very effective at distinguishing land/water boundaries 
+This band combination is very effective at distinguishing land/water boundaries
 as well as burn scars.
 
 In addition to the required VIIRS SDR calibrated radiance files, the coincident VIIRS Terrain

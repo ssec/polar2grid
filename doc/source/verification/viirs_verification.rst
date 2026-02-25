@@ -12,7 +12,7 @@ shown in Section 2.2 and execute the following commands:
     polar2grid.sh -r viirs_sdr -w geotiff -p true_color false_color --grid-configs \
       ${POLAR2GRID_HOME}/grid_configs/grid_example.yaml -g miami --weight-distance-max 1 -f ../input
 
-The test case consists of a 10 granule aggregated input direct broadcast 
+The test case consists of a 10 granule aggregated input direct broadcast
 HDF 5 SDR for a selection of VIIRS bands from a NOAA-21 pass acquired on 23 February 2026
 at 18:26 UTC. In this test, the Polar2Grid software
 is using the example configuration file
