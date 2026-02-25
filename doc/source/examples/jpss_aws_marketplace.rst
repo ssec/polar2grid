@@ -28,14 +28,14 @@ to provide the input files from the NOAA AWS s3 Command Line Interface (CLI) usi
 
     polar2grid.sh -r viirs_sdr -w geotiff -p i01 -f s3://noaa-nesdis-n21-pds/VIIRS-I1-SDR/2026/02/08/SVI01_j02_d20260208_t1956574_e1958221_b16834_c20260208202125135000_oebc_ops.h5 s3://noaa-nesdis-n21-pds/VIIRS-IMG-GEO-TC/2026/02/08/GITCO_j02_d20260208_t1956574_e1958221_b16834_*.h5
 
-This `polar2grid.sh` command provides an Amazon Simple Storage Service (S3) URL and 
+This `polar2grid.sh` command provides an Amazon Simple Storage Service (S3) URI and 
 single granule filename that I want to use, along with
 the accompanying location of the coincident geolocation file. 
-Note that the AWS JPSS Marketplace data online Browse Bucket URLs 
-use a different https address, but the directory structures and filenames are the same, in this case, 
+Note that the AWS JPSS Marketplace online data Browse Bucket URLs 
+use an https address, but the directory structures and filenames are the same, in this case, 
 ``VIIRS-I1-SDR/2026/02/08/SVI01_j02_d20260208_t1956574_e1958221_b16834_c20260208202125135000_oebc_ops.h5``.
 
-This command results in the creation of a VIIRS `I-Band 01` GeoTIFF file in the default 
+Executing the command results in the creation of a VIIRS `I-Band 01` GeoTIFF file in the default 
 WGS84 projection from February 8, 2026. Notice the use of the wild card in place of the
 creation date and time of the `GITCO` file. The remainder of the command execution
 is the same as when using a local VIIRS SDR dataset. 
@@ -106,7 +106,7 @@ orbit track map, I can see that I will need to choose a data time range between
 orbit tracks represent the sub-satellite point on the earth; the actual swath 
 width of the VIIRS observations is approximately 3000km. Using this information
 I can execute the following single `Polar2Grid` command that includes globbing 
-in the file start time to stream 5 granules into memory while the image is being 
+in the file start time to download 5 granules into memory while the image is being 
 made. The values in the curly brackets are expanded as part of the script execution.
 
 .. code-block:: bash
