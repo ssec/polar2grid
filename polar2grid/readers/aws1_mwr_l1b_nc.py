@@ -20,7 +20,8 @@
 # satellite observation data, remaps it, and writes it to a file format for
 #     input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""The Arctic Weather Satellite-1 (AWS-1) MicroWave Radiometer (MWR) reader is for reading L1B files for the MWR instrument.
+"""The Arctic Weather Satellite-1 (AWS-1) MicroWave Radiometer (MWR) reader
+is for reading L1B files for the MWR instrument.
 
 These files are NetCDF4 files. The reader can be specified with
 the ``polar2grid.sh`` command using the ``aws1_mwr_l1b_nc`` reader name.
