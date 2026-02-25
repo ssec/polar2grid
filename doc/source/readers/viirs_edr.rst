@@ -32,4 +32,3 @@ Examples:
     polar2grid.sh -r viirs_edr -w hdf5 --add-geolocation --dtype float32 -p NDVI EVI --maximum-weight-mode -f SurfRefl*.nc
 
     polar2grid.sh -r viirs_edr -w awips_tiled -p AOD550 CldTopHght CldTopTemp  -g lcc_conus_300 --sector-id LCC --letters --compress -f /viirs/JRR-AOD_v3r0_j01_s202406051854471_e202406051856116_c202406052204237.nc /viirs/JRR-CloudHeight_v3r0_j01_s202406051854471_e202406051856116_c202406052204237.nc
-

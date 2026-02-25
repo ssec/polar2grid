@@ -20,7 +20,7 @@ Execution Examples
 
     polar2grid.sh -r aws1_mwr_l1b_nc -w geotiff -h
 
-    polar2grid.sh -r aws1_mwr_l1b_nc -w geotiff --list-products -f W_XX-OHB-Stockholm,SAT,AWS1-MWR-1B-RAD_C_OHB__20250724183721_G_D_20250626042546_20250626043506_T_B____.nc 
+    polar2grid.sh -r aws1_mwr_l1b_nc -w geotiff --list-products -f W_XX-OHB-Stockholm,SAT,AWS1-MWR-1B-RAD_C_OHB__20250724183721_G_D_20250626042546_20250626043506_T_B____.nc
 
     polar2grid.sh -r aws1_mwr_l1b_nc -w geotiff -f ../aws_input/
 

@@ -52,7 +52,7 @@ consisting of a combination of Red: MODIS Band 1, Green: MODIS Band 4, and Blue:
 Band 3 reflectance channels. Each channel goes through a series of
 adjustments to produce the final high quality image output by |project|.
 
-In addition to the calibrated radiance band files, the coincident MODIS 
+In addition to the calibrated radiance band files, the coincident MODIS
 Geolocation files are also required.
 
 Creation of true color RGBs includes the following steps:

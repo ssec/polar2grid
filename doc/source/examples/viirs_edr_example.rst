@@ -165,7 +165,7 @@ And the resulting image is shown below:
 
     CSPP VIIRS NOAA-20 Cloud Top Temperature PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from June 5, 2024, 18:50 UTC observations.
 
-From the same VIIRS EDR files, the Cloud Height product images can be created using the commands 
+From the same VIIRS EDR files, the Cloud Height product images can be created using the commands
 below.
 
 .. code-block:: bash
@@ -195,7 +195,7 @@ And results in the creation of the following image:
 
     CSPP VIIRS NOAA-20 Cloud Top Height PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from June 5, 2024, 18:50 UTC observations.
 
-Using the same color enhancement and scale, the Polar2Grid commands to create a VIIRS Cloud Base Height 
+Using the same color enhancement and scale, the Polar2Grid commands to create a VIIRS Cloud Base Height
 image with overlays are shown below.
 
 .. code-block:: bash

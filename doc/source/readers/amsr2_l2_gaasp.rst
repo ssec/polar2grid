@@ -28,4 +28,3 @@ Examples:
     polar2grid.sh -r amsr2_l2_gaasp -w geotiff -g polar_alaska -p SWE Snow_Depth Soil_Moisture --fill-value 0 -f  AMSR2-SNOW_v2r2_GW1_s202601292227100_e202601292237440_c202601292245210.nc AMSR2-SOIL_v2r2_GW1_s202601292227100_e202601292237440_c202601292245210.nc
 
     polar2grid.sh -r amsr2_l2_gaasp -w hdf5 --add-geolocation --dtype float32 -p Rain_Rate -f AMSR2-PRECIP_v2r2_GW1_s202602020736030_e202602020746510_c202602020759490.nc
-
