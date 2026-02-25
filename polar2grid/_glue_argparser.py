@@ -82,7 +82,7 @@ def _fsfiles_for_s3(input_filenames):
 
     """
     import fsspec
-    from satpy.readers import FSFile
+    from satpy.readers.core.remote import FSFile
 
     kwargs = {"anon": True}
     if "simplecache::" in input_filenames[0]:
