@@ -42,7 +42,7 @@ DOC_DIR ?= /webdata/web/www/htdocs/software/polar2grid
 GEO_DOC_DIR ?= /webdata/web/www/htdocs/software/geo2grid
 
 DEV_FLAGS = -d $(INSTALL_DIR)
-DOC_SERVER = $(DOC_SERVER:=webaccess.ssec.wisc.edu)
+DOC_SERVER = webaccess.ssec.wisc.edu
 
 all: all_sdist
 
