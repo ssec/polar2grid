@@ -134,7 +134,7 @@ The annotated image with overlays is shown below.
     :width: 100%
     :align: center
 
-    CSPP VIIRS NOAA-20 Aerosol Optical Depth PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from June 5, 2024, 18:50 UTC observations.
+    CSPP VIIRS NOAA-20 Aerosol Optical Depth PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from 5 June 2024, 18:50 UTC observations.
 
 Other CSPP VIIRS EDR product images can be created in a similar manner.
 For example, the Polar2Grid commands to create a VIIRS Cloud Top Temperature
@@ -163,7 +163,7 @@ And the resulting image is shown below:
     :width: 100%
     :align: center
 
-    CSPP VIIRS NOAA-20 Cloud Top Temperature PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from June 5, 2024, 18:50 UTC observations.
+    CSPP VIIRS NOAA-20 Cloud Top Temperature PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from 5 June 2024, 18:50 UTC observations.
 
 From the same VIIRS EDR files, the Cloud Height product images can be created using the commands
 below.
@@ -193,7 +193,7 @@ And results in the creation of the following image:
     :width: 100%
     :align: center
 
-    CSPP VIIRS NOAA-20 Cloud Top Height PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from June 5, 2024, 18:50 UTC observations.
+    CSPP VIIRS NOAA-20 Cloud Top Height PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from 5 June 2024, 18:50 UTC observations.
 
 Using the same color enhancement and scale, the Polar2Grid commands to create a VIIRS Cloud Base Height
 image with overlays are shown below.
@@ -223,7 +223,7 @@ And results in the creation of the following image:
     :width: 100%
     :align: center
 
-    CSPP VIIRS NOAA-20 Cloud Base Height PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from June 5, 2024, 18:50 UTC observations.
+    CSPP VIIRS NOAA-20 Cloud Base Height PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from 5 June 2024, 18:50 UTC observations.
 
 Next, the Polar2Grid commands to create a VIIRS Total Cloud Fraction image with overlays are shown below.
 
@@ -251,7 +251,7 @@ And results in the creation of the following image:
     :width: 100%
     :align: center
 
-    CSPP VIIRS NOAA-20 Total Cloud Fraction PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from June 5, 2024, 18:50 UTC observations.
+    CSPP VIIRS NOAA-20 Total Cloud Fraction PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from 5 June 2024, 18:50 UTC observations.
 
 
 Similarly, the commands to create a Normalized Difference Vegetation Index (NDVI)
@@ -280,7 +280,7 @@ is shown below, followed by the output image.
     :align: center
 
 
-    CSPP VIIRS NOAA-20 NDVI PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from June 5, 2024, 18:50 UTC observations.
+    CSPP VIIRS NOAA-20 NDVI PNG image with added borders, coastlines and an annotated colorbar. The retrievals were created from 5 June 2024, 18:50 UTC observations.
 
 Polar2Grid supports the creation of individual band and true color images from VIIRS EDR Land Surface
 Reflectance output files (SurfRefl*.nc).  Surface reflectances differ from
@@ -313,4 +313,4 @@ valid only over land.  The commands are followed by the resulting output image.
     :align: center
 
 
-    CSPP VIIRS NOAA-20 Land Surface Reflectance True Color image with added borders and coastlines. The retrievals were created from June 5, 2024, 18:50 UTC observations.
+    CSPP VIIRS NOAA-20 Land Surface Reflectance True Color image with added borders and coastlines. The retrievals were created from 5 June 2024, 18:50 UTC observations.

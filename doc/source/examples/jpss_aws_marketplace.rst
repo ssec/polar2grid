@@ -31,7 +31,7 @@ to provide the input files from the NOAA AWS s3 Command Line Interface (CLI) usi
 This `polar2grid.sh` command provides an Amazon Simple Storage Service (S3) URI and
 single granule filename that I want to use, along with
 the accompanying location of the coincident geolocation file.
-Note that the AWS JPSS Marketplace online data Browse Bucket URLs
+Note that the JPSS AWS Marketplace online data Browse Bucket URLs
 use an https address, but the directory structures and filenames are the same, in this case,
 ``VIIRS-I1-SDR/2026/02/08/SVI01_j02_d20260208_t1956574_e1958221_b16834_c20260208202125135000_oebc_ops.h5``.
 
@@ -104,7 +104,7 @@ true color image that includes all of the Western United States. Looking at the
 orbit track map, I can see that I will need to choose a data time range between
 19:54 to 20:00 UTC for complete coverage for this day. Remember that the
 orbit tracks represent the sub-satellite point on the earth; the actual swath
-width of the VIIRS observations is approximately 3000km. Using this information
+width of the VIIRS observations is approximately 3000 km. Using this information
 I can execute the following single `Polar2Grid` command that includes globbing
 in the file start time to download 5 granules into memory while the image is being
 made. The values in the curly brackets are expanded as part of the script execution.
