@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "polar2grid"
-version = "3.2.0"
+version = "3.3.0"
 authors = [
     {name = "David Hoese", email = "david.hoese@ssec.wisc.edu"},
 ]
