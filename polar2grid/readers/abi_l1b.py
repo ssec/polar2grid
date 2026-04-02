@@ -21,12 +21,12 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The ABI Level 1B Reader operates on NOAA Level 1B (L1B) NetCDF files
-from the GOES-16 (GOES-East) and GOES-17/18 (GOES-West) Advanced Baseline
-Imager (ABI) instrument. The ABI L1B reader works off of the input filenames
+from the GOES-16,-17,-18, and -19 GOES-East and GOES-West Advanced Baseline
+Imager (ABI) instruments. The ABI L1B reader works off of the input filenames
 to determine if a file is supported by Geo2Grid. Files usually have the
 following naming scheme::
 
-    OR_ABI-L1b-RadF-M6C02_G18_s20223191830206_e20223191839514_c20223191839547.nc
+    OR_ABI-L1b-RadF-M6C02_G19_s20260621830203_e20260621839511_c20260621839542.nc
 
 These are the mission compliant radiance file naming conventions
 used by the NOAA Comprehensive Large Array-data Stewardship
