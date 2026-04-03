@@ -3,7 +3,7 @@ modifiers:
   # overwrite default 'rayleigh_corrected' with crefl
   rayleigh_corrected:
     modifier: !!python/name:satpy.modifiers.atmosphere.ReflectanceCorrector
-    url: "https://bin.ssec.wisc.edu/pub/CSPP/p2g/data/CMGDEM.hdf"
+    url: "https://bin.ssec.wisc.edu/pub/CSPP/p2g/data/tbase.hdf"
     known_hash: "sha256:ed5183cddce905361c1cac8ae6e3a447212875ea421a05747751efe76f8a068e"
     dem_sds: "Elevation"
     prerequisites:
