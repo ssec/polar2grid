@@ -316,3 +316,51 @@ enhancements:
       - name: linear_stretch
         method: !!python/name:satpy.enhancements.contrast.stretch
         kwargs: { stretch: 'crude', min_stretch: -1.0, max_stretch: 1.0 }
+
+  iceage:
+    name: IceAge
+    sensor: viirs
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.shared.colorize
+        kwargs:
+          palettes:
+            - min_value: 1.0
+              max_value: 8.0
+              colors: "rainbow"
+
+  icethickness:
+    name: IceThickness
+    sensor: viirs
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.shared.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 6.0
+              colors: "rainbow"
+
+  iceconc:
+    name: IceConc
+    sensor: viirs
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.shared.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 100.0
+              colors: "rainbow"
+
+  icesrftemp:
+    name: IceSrfTemp
+    sensor: viirs
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.shared.colorize
+        kwargs:
+          palettes:
+            - min_value: 100.0
+              max_value: 390.0
+              colors: "rainbow"
