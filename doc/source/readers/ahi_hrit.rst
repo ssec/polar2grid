@@ -19,7 +19,7 @@ Examples:
 
     geo2grid.sh -r ahi_hrit -h
 
-    geo2grid.sh -r ahi_hrit -w geotiff --list-products -f /ahi8/hcast/2330
+    geo2grid.sh -r ahi_hrit -w geotiff --list-products -f /ahi9/hcast/0630
 
     geo2grid.sh -r ahi_hrit -w geotiff -f /ahi8/hcast/IMG_DK01IR4_201811122330
 
