@@ -338,7 +338,7 @@ enhancements:
         kwargs:
           palettes:
             - min_value: 0.0
-              max_value: 6.0
+              max_value: 3.0
               colors: "rainbow"
 
   iceconc:
@@ -361,6 +361,6 @@ enhancements:
         method: !!python/name:polar2grid.enhancements.shared.colorize
         kwargs:
           palettes:
-            - min_value: 100.0
-              max_value: 390.0
+            - min_value: 230.0
+              max_value: 275.0
               colors: "rainbow"
