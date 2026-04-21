@@ -114,6 +114,12 @@ OTHER_PRODS = [
     "CldBaseHght",
     "Total_Cloud_Fraction",
     "CloudLayer",
+    # IceAge variables:
+    "IceAge",
+    "IceThickness",
+    # IceConcentration variables:
+    "IceConc",
+    "IceSrfTemp",
 ]
 
 PRODUCT_ALIASES = {}
