@@ -26,9 +26,9 @@ Advanced Himawari Imager (AHI) HRIT Digital Video Broadcast (DVB)
 HimawariCast files.  This broadcast consists of a subset of 14 bands
 at reduced spatial resolution.  The AHI HRIT reader works off of
 the input filenames to determine if a file is supported by Geo2Grid.
-Files usually have the following naming scheme:
+Files usually have the following naming schemes:
 
-    IMG_DK01B04_201809100300
+  IMG_DK01B04_201809100300 or IMG_DK01B04_202603110630_008.bz2
 
 These are the mission compliant radiance file naming conventions
 used by JMA. The AHI HRIT reader supports a subset of instrument spectral bands,
