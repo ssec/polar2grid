@@ -1,0 +1,34 @@
+enhancements:
+  reflectivity331:
+    name: Reflectivity331
+    sensor: omps
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.shared.colorize
+        kwargs:
+          palettes:
+            - min_value: 0.0
+              max_value: 100.0
+              colors: "rainbow"
+  aerosol_index:
+    name: AerosolIndex
+    sensor: omps
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.shared.colorize
+        kwargs:
+          palettes:
+            - min_value: -2.0
+              max_value: 5.0
+              colors: "rainbow"
+  column_amount_o3:
+    name: ColumnAmountO3
+    sensor: omps
+    operations:
+      - name: colorize
+        method: !!python/name:polar2grid.enhancements.shared.colorize
+        kwargs:
+          palettes:
+            - min_value: 100.0
+              max_value: 600.0
+              colors: "rainbow"
