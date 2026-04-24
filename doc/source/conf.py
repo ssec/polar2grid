@@ -94,6 +94,7 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-18_ABI_RadF_natural_color_20221115_183020_GOES-West_cutout.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_true_color_20190104_195718_GOES-East.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-19_ABI_RadM1_true_color_20251028_150027_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East_new.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_newenhancement.png",
