@@ -142,12 +142,14 @@ def file_start_time(filename: str) -> datetime | None:
     """Parse the granule start time from a VIIRS SDR filename."""
     m = _FNAME_RE.search(filename)
     if not m:
+        print(f"Unexpected filename scheme discovered: {filename}", file=sys.stderr)
         return None
     date_str = m.group("date")  # YYYYMMDD
     tstart = m.group("tstart")[:6]  # HHMMSS (drop tenths digit)
     try:
         return datetime.strptime(date_str + tstart, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
     except ValueError:
+        print(f"Could not parse time information: {filename}", file=sys.stderr)
         return None
 
 
@@ -167,6 +169,7 @@ def file_end_time(filename: str) -> datetime | None:
             dt += timedelta(days=1)
         return dt
     except ValueError:
+        print(f"Could not parse time information: {filename}", file=sys.stderr)
         return None
 
 
@@ -212,11 +215,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Latest granule end time (UTC).",
     )
     p.add_argument(
-        "--profile",
-        default=None,
-        help="AWS profile name to use for authenticated access.",
-    )
-    p.add_argument(
         "--print-urls",
         action="store_true",
         help="Print HTTPS URLs instead of s3:// paths.",
@@ -239,29 +237,16 @@ def main():
     bands = [b for b in VALID_BANDS if b in requested]
     satellite = args.satellite.lower()
 
-    if args.profile is None:
-        fs = s3fs.S3FileSystem(anon=True)
-    else:
-        fs = s3fs.S3FileSystem(anon=False, profile=args.profile)
-
+    fs = s3fs.S3FileSystem(anon=True)
     found = []
     for glob_pattern in _generate_glob_patterns(bands, args.start_time, args.end_time, satellite):
-        print(f"Glob pattern: {glob_pattern=}", file=sys.stderr)
         glob_matches = _glob_s3_fs(fs, glob_pattern)
         found.extend(_filter_by_start_end(glob_matches, args.start_time, args.end_time))
 
     if not found:
         print("No matching objects found.", file=sys.stderr)
         sys.exit(1)
-
-    for path in sorted(found):
-        if args.print_urls:
-            # s3://bucket/key  ->  https://bucket.s3.amazonaws.com/key
-            parts = path.split("/", 1)
-            bkt, key = parts[0], parts[1] if len(parts) > 1 else ""
-            print(f"https://{bkt}.s3.amazonaws.com/{key}")
-        else:
-            print(f"s3://{path}")
+    _print_uris(found, args.print_urls)
 
 
 def _generate_glob_patterns(
@@ -310,18 +295,25 @@ def _glob_s3_fs(fs: s3fs.S3FileSystem, glob_pattern: str) -> Iterator[str]:
 def _filter_by_start_end(possible_paths: Iterable[str], start_time: datetime, end_time: datetime) -> Iterator[str]:
     for path in possible_paths:
         fname = path.rsplit("/", 1)[-1]
-        t_start = file_start_time(fname)
-        t_end = file_end_time(fname)
-
-        # Filter: granule must overlap [args.start_time, args.end_time]
-        if t_start is not None and t_end is not None:
-            if t_end < start_time or t_start > end_time:
-                continue
-        elif t_start is not None:
-            if t_start > end_time:
-                continue
+        if (t_start := file_start_time(fname)) is None:
+            continue
+        if (t_end := file_end_time(fname)) is None:
+            continue
+        if t_end < start_time or t_start > end_time:
+            continue
 
         yield path
+
+
+def _print_uris(paths: Iterable[str], print_urls: bool) -> None:
+    for path in paths:
+        if print_urls:
+            # s3://bucket/key  ->  https://bucket.s3.amazonaws.com/key
+            parts = path.split("/", 1)
+            bkt, key = parts[0], parts[1] if len(parts) > 1 else ""
+            print(f"https://{bkt}.s3.amazonaws.com/{key}")
+        else:
+            print(f"s3://{path}")
 
 
 if __name__ == "__main__":
