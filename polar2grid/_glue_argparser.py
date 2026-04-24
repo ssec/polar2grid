@@ -127,6 +127,13 @@ class GlueArgumentParser:
         self._args = parser.parse_args(argv)
         _validate_reader_writer_args(parser, self._args, self._is_polar2grid)
 
+        if self._args.filenames == ["-"]:
+            # parse filenames from stdin
+            self._args.filenames = [line.rstrip("\n") for line in sys.stdin]
+        if not self._args.filenames:
+            parser.print_usage()
+            parser.exit(1, "\nERROR: No data files provided (-f flag)\n")
+
         self._reader_args = _args_to_dict(self._args, reader_group._group_actions)
         self._reader_names = self._reader_args.pop("readers")
         self._separate_scene_init_load_args(reader_subgroups)
@@ -134,10 +141,6 @@ class GlueArgumentParser:
         self._writer_args = _args_to_dict(self._args, writer_group._group_actions)
         writer_specific_args = self._parse_one_writer_args(writer_subgroups)
         self._writer_args.update(writer_specific_args)
-
-        if not self._args.filenames:
-            parser.print_usage()
-            parser.exit(1, "\nERROR: No data files provided (-f flag)\n")
 
     def _separate_scene_init_load_args(self, reader_subgroups) -> None:
         products = self._reader_args.pop("products") or []
@@ -207,7 +210,6 @@ basic processing with limited products:
     parser = argparse.ArgumentParser(
         prog=prog,
         usage=usage,
-        fromfile_prefix_chars="@",
         description="Load, composite, resample, and save datasets.",
     )
     _add_common_arguments(parser, binary_name)
@@ -218,6 +220,10 @@ basic processing with limited products:
 
     _retitle_optional_arguments(parser)
     args, _ = parser.parse_known_args(argv_without_help)
+    # we didn't parse fromfile arguments before, but we will next time so enable it now
+    # NOTE: This means that if @ is used for arguments that require a specific number of arguments
+    #       or for arguments themselves, they won't be parsed until next time.
+    parser.fromfile_prefix_chars = "@"
     return parser, args, reader_group, resampling_group, writer_group
 
 

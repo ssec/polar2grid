@@ -283,13 +283,13 @@ composites:
     - M15
     standard_name: overview
 
-  night_microphysics:
-    compositor: !!python/name:satpy.composites.core.GenericCompositor
-    prerequisites:
-    - DNB
-    - M12
-    - M15
-    standard_name: night_microphysics
+#  night_microphysics:
+#    compositor: !!python/name:satpy.composites.core.GenericCompositor
+#    prerequisites:
+#    - DNB
+#    - M12
+#    - M15
+#    standard_name: night_microphysics
 
   ifog:
     compositor: !!python/name:satpy.composites.arithmetic.DifferenceCompositor
