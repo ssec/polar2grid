@@ -138,44 +138,29 @@ _FNAME_RE = re.compile(
 )
 
 
-def file_start_time(filename: str) -> datetime | None:
+def file_start_end_time(filename: str) -> tuple[datetime, datetime] | tuple[None, None]:
     """Parse the granule start time from a VIIRS SDR filename."""
-    m = _FNAME_RE.search(filename)
-    if not m:
+    if (m := _FNAME_RE.search(filename)) is None:
         print(f"Unexpected filename scheme discovered: {filename}", file=sys.stderr)
-        return None
-    date_str = m.group("date")  # YYYYMMDD
-    tstart = m.group("tstart")[:6]  # HHMMSS (drop tenths digit)
+        return None, None
+
     try:
-        return datetime.strptime(date_str + tstart, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+        return _convert_file_times_to_datetimes(
+            m.group("date"),  # YYYYMMDD
+            m.group("tstart")[:6],  # HHMMSS (drop microseconds)
+            m.group("tend")[:6],
+        )
     except ValueError:
         print(f"Could not parse time information: {filename}", file=sys.stderr)
-        return None
+        return None, None
 
 
-def file_end_time(filename: str) -> datetime | None:
-    """Parse the granule end time from a VIIRS SDR filename."""
-    m = _FNAME_RE.search(filename)
-    if not m:
-        return None
-    date_str = m.group("date")
-    tend = m.group("tend")[:6]
-    try:
-        dt = datetime.strptime(date_str + tend, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
-        # Granules that cross midnight: end time can be earlier than start
-        # on the same calendar day -- advance by one day when that happens.
-        tstart = file_start_time(filename)
-        if tstart and dt < tstart:
-            dt += timedelta(days=1)
-        return dt
-    except ValueError:
-        print(f"Could not parse time information: {filename}", file=sys.stderr)
-        return None
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
+def _convert_file_times_to_datetimes(date_str: str, tstart: str, tend: str) -> tuple[datetime, datetime]:
+    start_dt = datetime.strptime(date_str + tstart, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+    end_dt = datetime.strptime(date_str + tend, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+    if end_dt < start_dt:
+        end_dt += timedelta(days=1)
+    return start_dt, end_dt
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -295,14 +280,14 @@ def _glob_s3_fs(fs: s3fs.S3FileSystem, glob_pattern: str) -> Iterator[str]:
 def _filter_by_start_end(possible_paths: Iterable[str], start_time: datetime, end_time: datetime) -> Iterator[str]:
     for path in possible_paths:
         fname = path.rsplit("/", 1)[-1]
-        if (t_start := file_start_time(fname)) is None:
-            continue
-        if (t_end := file_end_time(fname)) is None:
-            continue
-        if t_end < start_time or t_start > end_time:
-            continue
+        if _overlaps_time_range(fname, start_time, end_time):
+            yield path
 
-        yield path
+
+def _overlaps_time_range(fname: str, start_time: datetime, end_time: datetime) -> bool:
+    t_start, t_end = file_start_end_time(fname)
+
+    return t_start is not None and t_end is not None and not (t_end < start_time or t_start > end_time)
 
 
 def _print_uris(paths: Iterable[str], print_urls: bool) -> None:
