@@ -19,6 +19,7 @@ Example usage:
 from __future__ import annotations
 
 import argparse
+from glob import fnmatch
 import os
 import re
 import sys
@@ -63,14 +64,11 @@ def parse_band(value: str) -> list[str]:
 
 
 def band_to_prefix(band: str) -> str:
-    """Convert a band name to the SDR product-prefix segment used in the S3 key.
+    """Convert a band name to the SDR or GEO product-prefix segment used in the S3 key.
 
-    I01 -> I1   I05 -> I5
-    M01 -> M1   M16 -> M16
-    DNB -> DNB
+    For example, the I01 SDR band is converted to "VIIRS-I1-SDR". The geolocation
+    "band" GITCO is converted to "VIIRS-IMG-GEO-TC".
 
-    GITCO -> GITCO   GMTCO -> GMTCO
-    GDNBO -> GDNBO
     """
     if band.startswith("G"):
         # M-band and I-band geolocation are only available for terrain-corrected (TC)
@@ -114,18 +112,19 @@ def parse_datetime(s: str) -> datetime:
 
 
 def iter_day_prefixes(start: datetime, end: datetime):
-    """Yield every unique YYYY/MM/DD string between start and end (inclusive)."""
-    day = start.replace(hour=0, minute=0, second=0, microsecond=0)
-    if (start - day).total_seconds() < GRANULE_DURATION_SECONDS:
-        # if we might get a partial granule on the midnight boundary, then search the previous day
-        day = day - timedelta(days=1)
-    end_day = end.replace(hour=0, minute=0, second=0, microsecond=0)
-    if ((end_day + timedelta(days=1)) - end).total_seconds() < GRANULE_DURATION_SECONDS:
-        # if we might get a partial granule on the end of the day over midnight then search the next day too
-        end_day = end_day + timedelta(days=1)
-    while day <= end_day:
-        yield day.strftime("%Y/%m/%d")
-        day += timedelta(days=1)
+    """Yield every unique date/time between start and end (inclusive) at hour resolution."""
+    curr_time = start.replace(minute=0, second=0, microsecond=0)
+    if start.hour == 0 and (start - curr_time).total_seconds() < GRANULE_DURATION_SECONDS:
+        # if we might get a partial granule on the midnight boundary, then search the 23rd hour of the previous day
+        curr_time = curr_time - timedelta(hours=1)
+    end_day = end.replace(minute=0, second=0, microsecond=0)
+    if end_day.hour == 23 and ((end_day + timedelta(hours=1)) - end).total_seconds() < GRANULE_DURATION_SECONDS:
+        # if we might get a partial granule on the end of the day over midnight
+        # then search the first hour of the next day
+        end_day = end_day + timedelta(hours=1)
+    while curr_time <= end_day:
+        yield curr_time
+        curr_time += timedelta(hours=1)
 
 
 # ---------------------------------------------------------------------------
@@ -247,17 +246,9 @@ def main():
 
     found = []
     for glob_pattern in _generate_glob_patterns(bands, args.start_time, args.end_time, satellite):
-        try:
-            # TODO: Use fs.find and then filter with glob/fnmatch. Might be faster
-            matches = fs.glob(glob_pattern)
-        except FileNotFoundError:
-            # Prefix doesn't exist yet -- no data for that day/band
-            continue
-        except Exception as exc:
-            print(f"Warning: error listing {glob_pattern}: {exc}", file=sys.stderr)
-            continue
-
-        found.extend(_filter_by_start_end(matches, args.start_time, args.end_time))
+        print(f"Glob pattern: {glob_pattern=}", file=sys.stderr)
+        glob_matches = _glob_s3_fs(fs, glob_pattern)
+        found.extend(_filter_by_start_end(glob_matches, args.start_time, args.end_time))
 
     if not found:
         print("No matching objects found.", file=sys.stderr)
@@ -289,13 +280,31 @@ def _generate_glob_patterns(
         prefix_code = band_to_prefix(band)  # e.g. "I5", "M3", "DNB"
         fn_band_id = f"SV{band}" if band[0] in ("M", "I", "D") else band
 
-        for day_path in iter_day_prefixes(start_time, end_time):
+        for glob_datetime in iter_day_prefixes(start_time, end_time):
+            day_path = glob_datetime.strftime("%Y/%m/%d")
+            fn_day_str = day_path.replace("/", "")
+            fn_time_hour = glob_datetime.strftime("%H")
             # e.g. noaa-nesdis-n20-pds/VIIRS-I5-SDR/2026/04/24/
             prefix = f"{bucket}/{prefix_code}/{day_path}/"
-            fn_day_str = day_path.replace("/", "")
-            # TODO: Also iterate by hour, half orbit is ~51 minutes
-            glob_pattern = f"{prefix}{fn_band_id}_{fn_platform}_d{fn_day_str}_t*.h5"
+            # later process (see _glob_s3_fs) is very particular about how many wildcards are used
+            glob_pattern = f"{prefix}{fn_band_id}_{fn_platform}_d{fn_day_str}_t{fn_time_hour}*.h5"
             yield glob_pattern
+
+
+def _glob_s3_fs(fs: s3fs.S3FileSystem, glob_pattern: str) -> Iterator[str]:
+    # At the time of writing fs.glob is slow because it iterates over all
+    # objects in the bucket instead of using a prefix
+    # yield from fs.glob(glob_pattern)
+    # return
+
+    uri_path, uri_fn = glob_pattern.rsplit("/", 1)
+    uri_fn = uri_fn.rstrip("/")
+    static_fn_prefix = uri_fn.split("*", 1)[0]
+    for result in fs.find(uri_path, prefix=static_fn_prefix):
+        res_fn = result.rsplit("/", 1)[1]
+        if not fnmatch.fnmatch(res_fn, uri_fn):
+            continue
+        yield result
 
 
 def _filter_by_start_end(possible_paths: Iterable[str], start_time: datetime, end_time: datetime) -> Iterator[str]:
