@@ -19,12 +19,14 @@ Examples:
 
     geo2grid.sh -r abi_l2_nc -h
 
-    geo2grid.sh -r abi_l2_nc -w geotiff --list-products -f abi/full_disk/CG_ABI-L2-ACHAF-M6_G17_*.nc
+    geo2grid.sh -r abi_l2_nc -w geotiff --list-products -f abi/full_disk/CG_ABI-L2-*-M6_G19*.nc
 
-    geo2grid.sh -r abi_l2_nc -w geotiff -p TEMP -f CG_ABI-L2-ACHTF-M6_G17_s20223271830316_e20223271839394_c20223271842100.nc
+    geo2grid.sh -r abi_l2_nc -w geotiff -p TEMP -f CG_ABI-L2-ACHTF-M6_G19_s20261181500205_e20261181509525_c20261181512030.nc
 
-     geo2grid.sh -r abi_l2_nc -w geotiff  -p MVFR_Fog_Prob LIFR_Fog_Prob IFR_Fog_Prob -f ABI-L2-GFLSF-M6_v3r1_g16_s202404231820204_e202404231829524_c202404231836180.nc
+     geo2grid.sh -r abi_l2_nc -w geotiff  -p MVFR_Fog_Prob LIFR_Fog_Prob IFR_Fog_Prob -f ABI-L2-GFLSM-M6_v3r1_g19_s202604281500278_e202604281500347_c202604281501310.nc
 
-    geo2grid.sh -r abi_l2_nc -w geotiff -f /data/conus/CG_ABI-L2-*-M6_G18_s20241141826172*.nc
+    geo2grid.sh -r abi_l2_nc -w geotiff -f /data/conus/CG_ABI-L2-*C-M6_G19_s20261181501170_*.nc
 
     geo2grid.sh -r abi_l2_nc -w geotiff -p AOD LST -f /abi/meso1/CG_ABI-L2-AODM1-M6_G18_s2024114182*.nc CG_ABI-L2-LSTM1-M6_G18_s2024114182*.nc
+
+    geo2grid.sh -r abi_l2_nc -w geotiff -p PRES Phase -f CG_ABI-L2-ACTPC-M6_G19_s20261181501*.nc CG_ABI-L2-CTPC-M6_G19_s20261181501*.nc
