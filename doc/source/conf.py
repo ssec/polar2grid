@@ -89,6 +89,8 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/aws/NOAA21_VIIRS_Aggregated_AWS_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-9_AHI_true_color_20221128_233000_perth.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-9_AHI_true_color_20221128_233000_perth_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.png",
