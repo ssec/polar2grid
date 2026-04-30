@@ -66,8 +66,8 @@ What's New?
     Included in this release:
 
     .. include:: NEWS_GEO2GRID.rst
-        :start-line: 5
-        :end-line: 18
+        :start-line: 4
+        :end-line: 26
 
     For more details on what's new in this version and past versions see the
     `Geo2Grid Release Notes <https://raw.githubusercontent.com/ssec/polar2grid/main/NEWS_GEO2GRID.rst>`_

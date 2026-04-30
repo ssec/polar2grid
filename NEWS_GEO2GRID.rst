@@ -4,7 +4,26 @@ Release Notes
 Version 1.3.0 (unreleased)
 --------------------------
 
-* Fix resampling coverage calculations
+* Finalized GOES-19 ABI reader support
+* Finalized EUMETSAT MTG FCI reader support
+* Additional ABI Product readers support added:
+
+  * Cloud Top Pressure
+  * Cloud Top Phase
+
+* Additional ABI RGB support added:
+
+  * Airmass (airmass)
+  * Nighttime Microphysics (night_microphysics)
+  * Day Cloud Type (day_cloud_type)
+  * Day Severe Storms (day_severe_storms)
+  * Ash (ash)
+  * Dust (dust)
+  * Volcanic Emissions (volcanic_emissions)
+  * Fog (fog)
+
+* Optimizations
+* Bug fixes
 
 Version 1.2.0 (2024-05-10)
 --------------------------
