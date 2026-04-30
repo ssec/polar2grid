@@ -19,7 +19,7 @@ Examples:
 
     geo2grid.sh -r abi_l1b -h
 
-    geo2grid.sh -r abi_l1b -w geotiff --list-products -f /data/goes16/abi
+    geo2grid.sh -r abi_l1b -w geotiff --list-products -f /data/goes19/abi
 
     geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 -f /data/goes18/abi
 
@@ -27,7 +27,7 @@ Examples:
 
     geo2grid.sh -r abi_l1b -w geotiff --ll-bbox -95.0 40.0 -85.0 50.0 -f OR_ABI-L1b-RadC*.nc
 
-    geo2grid.sh -r abi_l1b -w geotiff -p airmass dust --num-workers 4 --grid-configs=/home/g2g/my_grid.yaml -g madison --method nearest -f /data/goes17/abi/
+    geo2grid.sh -r abi_l1b -w geotiff -p airmass dust --num-workers 4 --grid-configs=/home/g2g/my_grid.yaml -g madison --method nearest -f /data/goes19/abi/
 
 Product Explanation
 -------------------
