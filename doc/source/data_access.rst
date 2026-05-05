@@ -13,6 +13,6 @@ can be found at this website:
     https://www.noaa.gov/nodd/datasets
 
 And a very nice interface that allows direct downloads from
-the AWS can be found here:
+AWS can be found here:
 
-    http://home.chpc.utah.edu/~u0553130/Brian_Blaylock/cgi-bin/goes16_download.cgi
+    https://coliveir-aer.github.io/goes-data-explorer/
