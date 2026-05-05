@@ -263,13 +263,16 @@ Overlay GeoTIFF Images
 
 .. ifconfig:: is_geo2grid
 
-   Example:
+   Examples:
    The following example shows how you would overlay the GOES ABI AIT Level-2 Cloud
-   top Tempetaure Product on top of a GOES ABI Band 14 brithtness temperature image.
+   top Temperature Product on top of a GOES ABI Band 14 brithtness temperature image,
+   and how to overlay the GLM Level 2 flash denisty product over a GOES 18 
+   true color GeoTIFF image. 
+
 
   .. code-block:: bash
 
-      overlay.sh GOES-17_ABI_RadF_C14_20221123_183031_GOES-West.tif GOES-17_ABI_TEMP_20221123_183031_GOES-West.tif abi17_fd_overlay.tif
+     overlay.sh GOES-17_ABI_RadF_C14_20221123_183031_GOES-West.tif GOES-17_ABI_TEMP_20221123_183031_GOES-West.tif abi17_fd_overlay.tif
 
      overlay GOES-18_ABI_RadF_true_color_20221110_190020_GOES-West.tif  GOES-18_GLM_flash_extent_density_20221110_190000_GOES-West.tif overlay_true_color_flash_extent_density.tif
 
