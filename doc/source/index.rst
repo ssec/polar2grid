@@ -28,7 +28,7 @@
     :numbered:
     :excludebuilder: latex
 
-    dev_guide/index
+    :polar2grid:dev_guide/index
     :polar2grid:NEWS
     :geo2grid:NEWS_GEO2GRID
     enhancements
