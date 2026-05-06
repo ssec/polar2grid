@@ -28,12 +28,12 @@
     :numbered:
     :excludebuilder: latex
 
-    :polar2grid:dev_guide/index
     :polar2grid:NEWS
     :geo2grid:NEWS_GEO2GRID
     enhancements
     :polar2grid:viirs_day_night_band
     custom_config
+    dev_guide/index
 
 .. toctree-filt::
     :hidden:
