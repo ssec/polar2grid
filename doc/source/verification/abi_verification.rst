@@ -2,7 +2,7 @@ Executing the ABI Geo2Grid Test Case
 ------------------------------------
 
 To confirm a successful Geo2Grid installation, follow these
-instructions to create a set of GOES-16 ABI GeoTIFF files from
+instructions to create a set of GOES-19 ABI GeoTIFF files from
 a single time period.
 
 Unpack the test data as shown in :ref:`target to section` and
@@ -16,8 +16,8 @@ execute the following commands:
     geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 --progress  -f ../input
 
 The test case consists of a 7 band subset of Full Disk Level 1B
-GOES-16 ABI calibrated NetCDF files from 17:45 UTC on 19 December 2018.
-The dataset includes GOES-16 ABI Bands 1, 2, 3, 5, 7, 9, and 14.
+GOES-19 ABI calibrated NetCDF files from 18:30 UTC on 3 March 2026.
+The dataset includes GOES-19 ABI Bands 1, 2, 3, 5, 7, 9, and 14.
 
 In this test, the Geo2Grid software will create by default as many
 single band full resolution Full Disk GeoTIFF files as possible, as
@@ -58,35 +58,35 @@ ABI Bands found. The output from our test system is shown below.
 .. code-block:: bash
 
     p2g_compare.sh output work
-    Comparing 'work/GOES-16_ABI_RadF_C01_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C01_20181219_174533_GOES-East.tif'.
-    0 pixels out of 235358208 pixels are different
-    Comparing 'work/GOES-16_ABI_RadF_C05_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C05_20181219_174533_GOES-East.tif'.
-    0 pixels out of 235358208 pixels are different
-    Comparing 'work/GOES-16_ABI_RadF_natural_color_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_natural_color_20181219_174533_GOES-East.tif'.
-    0 pixels out of 1882865664 pixels are different
-    Comparing 'work/GOES-16_ABI_RadF_C07_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C07_20181219_174533_GOES-East.tif'.
-    0 pixels out of 58839552 pixels are different
-    Comparing 'work/GOES-16_ABI_RadF_C02_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C02_20181219_174533_GOES-East.tif'.
-    0 pixels out of 941432832 pixels are different
-    Comparing 'work/GOES-16_ABI_RadF_C14_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C14_20181219_174533_GOES-East.tif'.
-    0 pixels out of 58839552 pixels are different
-    Comparing 'work/GOES-16_ABI_RadF_C03_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C03_20181219_174533_GOES-East.tif'.
-    0 pixels out of 235358208 pixels are different
-    Comparing 'work/GOES-16_ABI_RadF_C09_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_C09_20181219_174533_GOES-East.tif'.
-    0 pixels out of 58839552 pixels are different
-    Comparing 'work/GOES-16_ABI_RadF_true_color_20181219_174533_GOES-East.tif' to known valid file 'output/GOES-16_ABI_RadF_true_color_20181219_174533_GOES-East.tif'.
-    0 pixels out of 1882865664 pixels are different
+    INFO:__main__:Comparing 'work/GOES-19_ABI_RadF_C01_20260303_183020_GOES-East.tif' to known valid file 'output/GOES-19_ABI_RadF_C01_20260303_183020_GOES-East.tif'.
+    INFO:__main__:0 pixels out of 235358208 pixels are different
+    INFO:__main__:Comparing 'work/GOES-19_ABI_RadF_C02_20260303_183020_GOES-East.tif' to known valid file 'output/GOES-19_ABI_RadF_C02_20260303_183020_GOES-East.tif'.
+    INFO:__main__:0 pixels out of 941432832 pixels are different
+    INFO:__main__:Comparing 'work/GOES-19_ABI_RadF_C03_20260303_183020_GOES-East.tif' to known valid file 'output/GOES-19_ABI_RadF_C03_20260303_183020_GOES-East.tif'.
+    INFO:__main__:0 pixels out of 235358208 pixels are different
+    INFO:__main__:Comparing 'work/GOES-19_ABI_RadF_C05_20260303_183020_GOES-East.tif' to known valid file 'output/GOES-19_ABI_RadF_C05_20260303_183020_GOES-East.tif'.
+    INFO:__main__:0 pixels out of 235358208 pixels are different
+    INFO:__main__:Comparing 'work/GOES-19_ABI_RadF_C07_20260303_183020_GOES-East.tif' to known valid file 'output/GOES-19_ABI_RadF_C07_20260303_183020_GOES-East.tif'.
+    INFO:__main__:0 pixels out of 58839552 pixels are different
+    INFO:__main__:Comparing 'work/GOES-19_ABI_RadF_C09_20260303_183020_GOES-East.tif' to known valid file 'output/GOES-19_ABI_RadF_C09_20260303_183020_GOES-East.tif'.
+    INFO:__main__:0 pixels out of 58839552 pixels are different
+    INFO:__main__:Comparing 'work/GOES-19_ABI_RadF_C14_20260303_183020_GOES-East.tif' to known valid file 'output/GOES-19_ABI_RadF_C14_20260303_183020_GOES-East.tif'.
+    INFO:__main__:0 pixels out of 58839552 pixels are different
+    INFO:__main__:Comparing 'work/GOES-19_ABI_RadF_natural_color_20260303_183020_GOES-East.tif' to known valid file 'output/GOES-19_ABI_RadF_natural_color_20260303_183020_GOES-East.tif'.
+    INFO:__main__:0 pixels out of 1882865664 pixels are different
+    INFO:__main__:Comparing 'work/GOES-19_ABI_RadF_true_color_20260303_183020_GOES-East.tif' to known valid file 'output/GOES-19_ABI_RadF_true_color_20260303_183020_GOES-East.tif'.
+    INFO:__main__:0 pixels out of 1882865664 pixels are different
     All files passed
     SUCCESS
 
 A montage of the 9 output GeoTIFF files (7 single band and 2 RGB images)
 is displayed below.
 
-.. figure:: ../_static/example_images/abi_20181219_1745_montage.png
+.. figure:: ../_static/example_images/abi_20260303_1830_montage.png
     :width: 100%
     :align: center
 
-    GOES-16 ABI montage of images created from the Geo2Grid verification
-    data observed on 19 December 2018 at 17:45 UTC. The images are
+    GOES-19 ABI montage of images created from the Geo2Grid verification
+    data observed on 3 March 2026 at 18:30 UTC. The images are
     from top to bottom, left to right, bands 1, 2, 3, 5, 7, 9, 14,
     natural color and true color.

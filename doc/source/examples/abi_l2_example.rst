@@ -4,7 +4,7 @@ Working with ABI Level 2 Product Files
 This example walks through the creation of GOES ABI
 Level 2 Product GeoTIFF image files and adding overlays.
 
-Find the options available when creating GOES-16, -17 and -18
+Find the options available when creating GOES-16, -17, -18 and -19
 ABI Level 2 GeoTIFFs:
 
     ``geo2grid.sh -r abi_l2_nc -w geotiff -h``
@@ -14,15 +14,16 @@ List the products that can be created from your ABI dataset:
     ``geo2grid.sh -r abi_l2_nc -w geotiff --list-products -f <path_to_files>``
 
 Geo2Grid now supports a number of different CSPP Geo ABI Science Products, including
-cloud top height (HT), cloud top temperature (TEMP), low cloud and fog
+cloud top height (HT), cloud top pressure (PRES), cloud top temperature (TEMP), 
+cloud top phase (Phase), low cloud and fog
 (IFR_Fog_Prob,LIFR_Fog_Prob,MVFR_Fog_Prob,Fog_Depth), Land
 Surface Temperature (LST) and aerosol optical depth (AOD).
 
 Creating ABI L2 GeoTIFF Cloud Product Images
 ********************************************
 
-Geo2Grid supports two cloud ABI cloud NetCDF products; cloud height which uses
-a file product name of ``ACHA`` and  cloud temperature files use which use
+This exmaple demonstrates the creation of Geo2Grid ABI cloud NetCDF products; cloud height which uses
+a file product name of ``ACHA`` and  cloud top temperature files which use
 ``ACHT``.  For instance
 
     ``CG_ABI-L2-ACHAC-M6_G17_s20223271831172_e20223271833556_c20223271834370.nc``
@@ -45,7 +46,7 @@ Create just a Cloud Top Height GeoTIFF image:
     ``geo2grid.sh -r abi_l2_nc -w geotiff -p HT -f <path_to_abi_files>``
 
 Create a Cloud Top Temperature image from the GOES-17 CONUS domain
-product created from 23 November 2022, 18:31 UTC ABI observations.
+product from 23 November 2022, 18:31 UTC ABI observations.
 
 .. code-block:: bash
 
@@ -75,7 +76,7 @@ choice (provide the path to the font location on your local machine):
 
 .. code-block:: bash
 
-    add_coastlines.sh GOES-17_ABI_TEMP_20221123_183117_GOES-West.tif --add-colorbar --colorbar-text-color="black"   --colorbar-title="GOES-17 ABI Cloud Top Temperature (°K)  23 November 2022  18:30 UTC"   --add-coastlines --coastlines-outline "black" --coastlines-level 1 --coastlines-resolution=i --add-borders --borders-level 2 --borders-outline gray --coastlines-width 2  --colorbar-tick-marks 10 --colorbar-font /usr/share/fonts/gnu-free/FreeSerifBold.ttf -o my_goes17_abi_ctt.png
+    add_coastlines.sh GOES-17_ABI_TEMP_20221123_183117_GOES-West.tif --add-colorbar --colorbar-text-color="black"   --colorbar-title="GOES-17 ABI Cloud Top Temperature (°K)  23 November 2022  18:30 UTC"   --add-coastlines --coastlines-outline "black" --coastlines-level 1 --coastlines-resolution=i --add-borders --borders-level 2 --borders-outline gray --coastlines-width 2  --colorbar-tick-marks 10 --colorbar-font /usr/share/fonts/gnu-freefont/FreeSerifBold.otf -o my_goes17_abi_ctt.png
 
 .. figure:: ../_static/example_images/my_goes17_abi_ctt1.png
     :width: 100%
@@ -106,7 +107,7 @@ The new combined GeoTIFF is displayed below.
 Creating ABI L2 GeoTIFF AOD Product Images
 ******************************************
 
-One new supported Level 2 is the NOAA GOES-16 Aersol Optical Depth (AOD).
+Another supported Level 2 product is the NOAA GOES-16 Aersol Optical Depth (AOD).
 This product is a satellite retrieval of the extinction of light due to aerosols
 in the atmosphere (for example, dust, smoke and pollution). The NetCDF product
 files include ``AOD`` in the filenames.  For example:

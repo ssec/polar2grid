@@ -22,7 +22,7 @@ RGBs in standard satellite projection using 8 worker threads:
 
     ``geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 -f <path_to_files>``
 
-Create a subset of ABI band output Geotiff image files for Channels 1, 2, 3 and 5:
+Create a subset of ABI band output GeoTIFF image files for Channels 1, 2, 3 and 5:
 
     ``geo2grid.sh -r abi_l1b -w geotiff -p C01 C02 C03 C05 true_color -f <path_to_abi_files>``
 
@@ -33,7 +33,7 @@ Create ABI images over the given latitude/longitude region:
 
 Create a natural color full resolution GeoTIFF from GOES-18 ABI
 observations acquired on 15 November 2022, 18:30 UTC over a latitude/
-longitude bounding box of 128W,30N to -118W,40N .  This command
+longitude bounding box of 128W,30N to 118W,40N .  This command
 assumes that all bands required to create the false color image are available:
 
 .. code-block:: bash

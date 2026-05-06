@@ -89,16 +89,22 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/aws/NOAA21_VIIRS_Aggregated_AWS_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-9_AHI_true_color_20221128_233000_perth.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-9_AHI_true_color_20221128_233000_perth_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.jpg",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20260303_1830_montage.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-18_ABI_RadF_natural_color_20221115_183020_GOES-West_cutout.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_true_color_20190104_195718_GOES-East.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-19_ABI_RadM1_true_color_20251028_150027_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East_new.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-19_ABI_RadF_true_color_night_20260303_123020_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_newenhancement.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_new.png",
+    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-19_ABI_RadF_true_color_night_microphysics_20260303_123020_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes16_abi_naturalcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes18_abi_naturalcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-17_ABI_TEMP_20221123_183117_GOES-West_original.png",
@@ -208,8 +214,8 @@ master_doc = "index"
 # General information about the project.
 if is_geo2grid:
     project = "Geo2Grid"
-    version = "1.2"
-    release = "1.2"
+    version = "1.3"
+    release = "1.3"
 else:
     project = "Polar2Grid"
 

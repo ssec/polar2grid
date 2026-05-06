@@ -21,16 +21,16 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The ABI Level 2 Reader operates on NOAA Level 2 (L2) NetCDF files
-from the GOES-16 (GOES-East), GOES-17/18 (GOES-West) Advanced Baseline
+from the GOES-16,-17,-18 and -19 Advanced Baseline
 Imager (ABI) instrument. The ABI L2 NetCDF reader works off of the input
 filenames to determine if a file is supported by Geo2Grid. Files usually have
 the following naming scheme::
 
-    OR_ABI-L2-{PROD}F-M3_G{SAT}_s20182531700311_e20182531711090_c20182531711149.nc
+    OR_ABI-L2-{PROD}{DOMAIN}-M3_G{SAT}_s20182531700311_e20182531711090_c20182531711149.nc
 
 and::
 
-    CG_ABI-L2-{PROD}F-M6_G{SAT}_s20223271830316_e20223271839394_c20223271842100.nc
+    CG_ABI-L2-{PROD}{DOMAIN}-M6_G{SAT}_s20223271830316_e20223271839394_c20223271842100.nc
 
 These are the mission compliant file naming conventions
 used by the NOAA Comprehensive Large Array-data Stewardship
@@ -50,7 +50,11 @@ using the ``-r`` option and the reader name ``abi_l2_nc``.
 +---------------------------+-----------------------------------------------------+
 | HT                        | Cloud Top Height                                    |
 +---------------------------+-----------------------------------------------------+
+| PRES                      | Cloud Top Pressure                                  |
++---------------------------+-----------------------------------------------------+
 | TEMP                      | Cloud Top Temperature                               |
++---------------------------+-----------------------------------------------------+
+| Phase                     | Cloud Top Phase                                     |
 +---------------------------+-----------------------------------------------------+
 | Fog_Depth                 | Fog Depth                                           |
 +---------------------------+-----------------------------------------------------+

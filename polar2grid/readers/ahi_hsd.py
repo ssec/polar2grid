@@ -27,7 +27,7 @@ Himawari Imager (AHI) instrument. The AHI Himawari Standard Data
 file is supported by Geo2Grid. Files usually have the following
 naming scheme:
 
-    HS_H08_20181022_0300_B09_FLDK_R20_S1010.DAT
+    HS_H09_20260420_2330_B09_FLDK_R20_S1010.DAT
 
 These are the mission compliant radiance file naming conventions
 used by JMA. The AHI HSD reader supports all instrument spectral bands,

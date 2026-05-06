@@ -25,4 +25,4 @@ Examples:
 
     geo2grid.sh -r agri_fy4b_l1 -w geotiff -p C02 C03 C08 C10 C12 -f FY4B-_AGRI--*.HDF
 
-    geo2grid.sh -r agri_fy4b_l1 -w geotiff --ll-bbox 100 20 120 40 -p true_color -f /data/*.HDF
+    geo2grid.sh -r agri_fy4b_l1 -w geotiff --ll-bbox 100 20 120 40 -p ash dust fog true_color  -f /data/*.HDF

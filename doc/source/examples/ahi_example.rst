@@ -22,7 +22,7 @@ RGBs in standard satellite projection using 8 worker threads:
 
     ``geo2grid.sh -r ahi_hsd -w geotiff --num-workers 8 -f <path_to_files>``
 
-Create a subset of AHI band output Geotiff image files for Bands 1, 2, 3, 4 and 5:
+Create a subset of AHI band output GeoTIFF image files for Bands 1, 2, 3, 4, 5 and natural color:
 
     ``geo2grid.sh -r ahi_hsd -w geotiff -p B01 B02 B03 B04 B05 natural_color -f <path_to_ahi_files>``
 
@@ -58,12 +58,12 @@ resolution and projection .
         dy: 500.0
 
 Copy the output grid projection information into a grid configuration
-yaml file (my_grid.yaml). Use the grid to create an HSD AHI true color image from
-data observed on 12 November 2017, at 23:30 UTC.
+yaml file (my_grid.yaml). Use the grid to create an Himawari-9 AHI HSD true color image from
+data observed on 28 November 2022, at 23:30 UTC.
 
 .. code-block:: bash
 
-    geo2grid.sh -r ahi_hsd -w geotiff -p true_color --grid-configs /geo/hsd/my_grid.yaml -g perth --method nearest -f /data/ahi8/hsd/2330/*FLDK*.DAT
+    geo2grid.sh -r ahi_hsd -w geotiff -p true_color --grid-configs /geo/hsd/my_grid.yaml -g perth --method nearest -f /data/ahi9/hsd/2330/*FLDK*.DAT
 
 The resulting image is displayed beow.
 
@@ -71,11 +71,11 @@ The resulting image is displayed beow.
 
     \newpage
 
-.. figure:: ../_static/example_images/HIMAWARI-8_AHI_true_color_20181112_233020_perth_example.png
+.. figure:: ../_static/example_images/HIMAWARI-9_AHI_true_color_20221128_233000_perth_example.png
     :width: 100%
     :align: center
 
-    AHI True color GeoTIFF image centered on Perth, Australia (HIMAWARI-8_AHI_true_color_20181112_233020_perth.tif).
+    AHI True color GeoTIFF image centered on Perth, Australia (HIMAWARI-9_AHI_true_color_20221128_233000_perth.tif).
 
 .. raw:: latex
 
@@ -85,10 +85,10 @@ Add coastlines, borders and latitude/longitude grid lines and rivers to the imag
 
 .. code-block:: bash
 
-    add_coastlines.sh --add-coastlines --add-rivers --rivers-resolution=h --add-grid HIMAWARI-8_AHI_true_color_20181112_233020_perth.tif
+    add_coastlines.sh --add-coastlines --add-rivers --rivers-resolution=h --add-grid HIMAWARI-9_AHI_true_color_20221128_233000_perth.tif
 
-.. figure:: ../_static/example_images/HIMAWARI-8_AHI_true_color_20181112_233020_perth.png
+.. figure:: ../_static/example_images/HIMAWARI-9_AHI_true_color_20221128_233000_perth.png
     :width: 100%
     :align: center
 
-    Himawari-8 AHI true color image with overlays (HIMAWARI-8_AHI_true_color_20181112_233020_perth.png)
+    Himawari-9 AHI true color image with overlays (HIMAWARI-9_AHI_true_color_20221128_233000_perth.png)
