@@ -66,7 +66,7 @@ What's New?
     Included in this release:
 
     .. include:: NEWS_GEO2GRID.rst
-        :start-line: 4
+        :start-line: 5
         :end-line: 26
 
     For more details on what's new in this version and past versions see the
