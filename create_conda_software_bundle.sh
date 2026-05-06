@@ -94,6 +94,7 @@ if [[ $PROJECT == "P2G" ]]; then
     cp $BASE_P2G_DIR/NEWS.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
 else
     rm -f bin/polar2grid.sh
+    rm -f bin/search_noaa_s3_viirs.sh
     rm -f bin/POLAR2GRID_README.txt
     mv bin/GEO2GRID_README.txt README.txt
     cp $BASE_P2G_DIR/NEWS_GEO2GRID.rst $SB_NAME/RELEASE_NOTES.txt || oops "Couldn't copy release notes to destination directory"
