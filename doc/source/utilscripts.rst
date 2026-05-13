@@ -266,8 +266,8 @@ Overlay GeoTIFF Images
    Examples:
    The following example shows how you would overlay the GOES ABI AIT Level-2 Cloud
    top Temperature Product on top of a GOES ABI Band 14 brithtness temperature image,
-   and how to overlay the GLM Level 2 flash denisty product over a GOES 18 
-   true color GeoTIFF image. 
+   and how to overlay the GLM Level 2 flash denisty product over a GOES 18
+   true color GeoTIFF image.
 
 
   .. code-block:: bash

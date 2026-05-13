@@ -9,10 +9,10 @@ files from a latitude/longitude subset of GOES-19 ABI Mesoscale Sector images
 centered over Hurricane Melissa in October 2025.
 
 Create a series of GOES-19 ABI GeoTIFF files from a time sequence of data. In
-the bash shell script example below, I use the ABI MESO Sector 1, Band 1 
-files to search for files that are available from October 28, 2025, 
+the bash shell script example below, I use the ABI MESO Sector 1, Band 1
+files to search for files that are available from October 28, 2025,
 limiting the search to files with an hour prefix of 15, 16, 17, or 18. These files
-were produced at 1 minute resolution. I then create true color images 
+were produced at 1 minute resolution. I then create true color images
 from all time periods that are available.
 
 .. code-block:: bash
@@ -40,7 +40,7 @@ from all time periods that are available.
            datetime=`basename $file | cut -c27-39`
            echo "datetime :"$datetime
 
-           # Cut out a box with lat/lon bounds of 80W, 16N to 74W 20N 
+           # Cut out a box with lat/lon bounds of 80W, 16N to 74W 20N
            geo2grid.sh -r abi_l1b -w geotiff --num-workers 8 --ll-bbox -80 16 -74 20  -p true_color -f /data/abi19/20251028/*${datetime}*.nc
 
 	done
@@ -50,8 +50,8 @@ from all time periods that are available.
 This script creates 239 GeoTIFF images for my time range, 15:00 through 18:59 UTC,
 with a time step of every 1 minute.
 
-Upon completion of the script, I add overlays to all of the GeoTIFF images using the ``add_coastlines.sh`` 
-utility script.  
+Upon completion of the script, I add overlays to all of the GeoTIFF images using the ``add_coastlines.sh``
+utility script.
 
 .. code-block:: bash
 
