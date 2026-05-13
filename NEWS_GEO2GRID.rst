@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 1.3.0 (unreleased)
+Version 1.3.0 (2026-05-13)
 --------------------------
 
 * Finalized GOES-19 ABI reader support
