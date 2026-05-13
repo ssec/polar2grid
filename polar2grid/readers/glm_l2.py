@@ -21,7 +21,7 @@
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
 """The GLM Level 2 Reader operates on Gridded GLM Level 2 NetCDF files
-from the GOES-16,-17,-18 and -19 Geostationary Lightning Mapper (GLM). 
+from the GOES-16,-17,-18 and -19 Geostationary Lightning Mapper (GLM).
 The GLM L2 reader works off of the input filenames
 to determine if a file is supported by Geo2Grid. Files usually have the
 following naming scheme::

@@ -14,7 +14,7 @@ List the products that can be created from your ABI dataset:
     ``geo2grid.sh -r abi_l2_nc -w geotiff --list-products -f <path_to_files>``
 
 Geo2Grid now supports a number of different CSPP Geo ABI Science Products, including
-cloud top height (HT), cloud top pressure (PRES), cloud top temperature (TEMP), 
+cloud top height (HT), cloud top pressure (PRES), cloud top temperature (TEMP),
 cloud top phase (Phase), low cloud and fog
 (IFR_Fog_Prob,LIFR_Fog_Prob,MVFR_Fog_Prob,Fog_Depth), Land
 Surface Temperature (LST) and aerosol optical depth (AOD).
