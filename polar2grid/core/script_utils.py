@@ -228,7 +228,7 @@ class BooleanFilterAction(argparse.BooleanOptionalAction):
 
     def __init__(self, option_strings, dest, const: str, **kwargs):
         super().__init__(option_strings, dest, **kwargs)
-        self.const = const
+        self.const = [const] if not isinstance(const, (list, tuple)) else const
 
     def __call__(self, parser, namespace, values, option_string=None):
         if option_string in self.option_strings:
@@ -238,12 +238,15 @@ class BooleanFilterAction(argparse.BooleanOptionalAction):
                 setattr(namespace, self.dest, prev)
 
             should_include = not option_string.startswith("--no-")
-            has_const = self.const in prev
+            has_const = all(x in prev for x in self.const)
+
             # modify list inplace
             if should_include and not has_const:
-                prev.append(self.const)
+                for c in self.const:
+                    prev.append(c)
             elif not should_include and has_const:
-                prev.remove(self.const)
+                for c in self.const:
+                    prev.remove(c)
 
 
 class ArgumentParser(argparse.ArgumentParser):

@@ -18,7 +18,7 @@
 # satellite observation data, remaps it, and writes it to a file format for
 # input into another program.
 # Documentation: http://www.ssec.wisc.edu/software/polar2grid/
-"""The VIIRS EDR Reader operates on Environmental Data Record (SDR) HDF5 files
+"""The VIIRS EDR Reader operates on Environmental Data Record (EDR) NetCDF4 files
 from the Suomi National Polar-orbiting Partnership's (NPP), the NOAA20, or the
 NOAA-21 Visible/Infrared Imager Radiometer Suite (VIIRS) instrument. The VIIRS
 EDR reader requires filenames to match one of a couple different standard
