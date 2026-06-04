@@ -104,12 +104,12 @@ def add_reader_argument_groups(
         action=BooleanFilterAction,
         dest="filter_by_error_flag",
         type=int,
-        default=[0, 1],
+        default=[],
         const=[0, 1],
         help="Filter total ozone products by the 'ErrorFlag' variable. "
-        "Defaults to being enabled where valid pixels are those where "
-        "'ErrorFlag' is 0 or 1. Specify '--no-filter-o3' to disable "
-        "filtering.",
+        "When enabled valid pixels are those where "
+        "'ErrorFlag' is 0 or 1. Defaults to off. Specify '--filter-o3' to "
+        "enable filtering.",
     )
 
     return group, None
