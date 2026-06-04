@@ -159,7 +159,6 @@ class GlueArgumentParser:
             "reader": self._reader_names[0],
             "reader_kwargs": reader_specific_args.get(self._reader_names[0], {}),
         }
-        print(self._scene_creation["reader_kwargs"])
         self._load_args = {
             "products": products,
         }
