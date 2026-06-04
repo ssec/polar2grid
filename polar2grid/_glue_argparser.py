@@ -358,10 +358,12 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
             "mirs",
             "modis_l1b",
             "modis_l2",
+            "omps_edr",
             "nucaps",
             "viirs_edr_active_fires",
             "viirs_edr_flood",
             "viirs_l1b",
+            "viirs_edr",
             "viirs_sdr",
             "virr_l1b",
         ]
