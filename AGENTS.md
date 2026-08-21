@@ -360,7 +360,10 @@ One source tree builds both projects (`make html` vs `make html POLAR2GRID_DOC=g
 * Use the `toctree-filt` directive with `:polar2grid:` / `:geo2grid:` entry prefixes
   (`doc/source/toctree_filter.py`), and `.. ifconfig:: is_geo2grid` for inline conditionals.
 * A new `.rst` must be added to a toctree **and** to the *other* project's `exclude_patterns` in
-  `conf.py`, or the CI `-W` build fails with "document isn't included in any toctree".
+  `conf.py`, or the CI `-W` build fails with "document isn't included in any toctree". The two
+  project lists are the `_GEO2GRID_EXCLUDES` / `_POLAR2GRID_EXCLUDES` constants; a check at the
+  bottom of `conf.py` raises if either one names a file that does not exist, so a page that is
+  removed must also be removed from the list.
 
 Do not hand-edit `doc/source/grids_list.rst`, `doc/source/dev_guide/api/`, or
 `doc/source/_static/example_images/` — all three are generated at build time and gitignored.
@@ -389,7 +392,6 @@ Known stale spots — verify before trusting:
 * `doc/source/dev_guide/adding_readers.rst` has two empty `TODO` sections and says to register a
   new reader in `polar2grid/glue.py`; the list is actually `_supported_readers()` in
   `polar2grid/_glue_argparser.py`. Prefer the `add-reader` skill.
-* `conf.py`'s `exclude_patterns` references some `.rst` files that no longer exist.
 * The root `Makefile` has targets that call `python setup.py`; the build backend is hatchling and
   there is no `setup.py`.
 * `modis_l2`, `omps_edr`, and `virr_l1b` are advertised in `_supported_readers()` but have no page
