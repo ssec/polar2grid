@@ -351,10 +351,12 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
         readers = [
             "acspo",
             "amsr2_l1b",
-            "amsr_l2_gaasp",
+            "amsr2_l2_gaasp",
             "avhrr_l1b_aapp",
+            "aws1_mwr_l1b_nc",
             "clavrx",
             "mersi2_l1b",
+            "mersi_ll_l1b",
             "mirs",
             "modis_l1b",
             "modis_l2",
@@ -376,6 +378,7 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
             "ahi_hrit",
             "ahi_hsd",
             "ami_l1b",
+            "fci_l1c_nc",
             "glm_l2",
         ]
     return sorted(readers)
