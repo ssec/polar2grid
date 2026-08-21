@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2014-2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -29,7 +28,6 @@ import os
 import sys
 from dataclasses import dataclass, field
 from glob import glob
-from typing import Optional
 
 import numpy as np
 import xarray as xr
@@ -124,9 +122,9 @@ def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwa
     equal_pixels = np.count_nonzero(np.isclose(array1, array2, rtol=rtol, atol=atol, equal_nan=True))
     diff_pixels = total_pixels - equal_pixels
     if diff_pixels > margin_of_error / 100 * total_pixels:
-        LOG.warning("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
+        LOG.warning("%d pixels out of %d pixels are different", diff_pixels, total_pixels)
         return ArrayComparisonResult(False, diff_pixels, total_pixels, False)
-    LOG.info("%d pixels out of %d pixels are different" % (diff_pixels, total_pixels))
+    LOG.info("%d pixels out of %d pixels are different", diff_pixels, total_pixels)
     return ArrayComparisonResult(True, diff_pixels, total_pixels, False)
 
 
@@ -309,8 +307,8 @@ def compare_image(im1_name, im2_name, atol=0.0, margin_of_error=0.0, **kwargs) -
 
 
 def _get_image_array(
-    img_filename: str, variable: str = None, shape: Optional[tuple] = None, dtype: Optional[np.dtype] = None
-) -> Optional[np.ndarray]:
+    img_filename: str, variable: str = None, shape: tuple | None = None, dtype: np.dtype | None = None
+) -> np.ndarray | None:
     from PIL import Image
 
     if variable is not None:
@@ -328,8 +326,8 @@ def _get_image_array(
 
 
 def _get_netcdf_array(
-    input_filename: str, variable: str, shape: Optional[tuple], dtype: Optional[np.dtype]
-) -> Optional[np.ndarray]:
+    input_filename: str, variable: str, shape: tuple | None, dtype: np.dtype | None
+) -> np.ndarray | None:
     import xarray as xr
 
     ds = xr.open_dataset(input_filename)
@@ -343,8 +341,8 @@ def _get_netcdf_array(
 
 
 def _get_hdf5_array(
-    input_filename: str, variable: str, shape: Optional[tuple], dtype: Optional[np.dtype]
-) -> Optional[np.ndarray]:
+    input_filename: str, variable: str, shape: tuple | None, dtype: np.dtype | None
+) -> np.ndarray | None:
     import h5py
 
     h = h5py.File(input_filename, "r")
@@ -366,9 +364,9 @@ def _tranpose_for_thumbnail_if_multiband_array(arr: np.ndarray) -> np.ndarray:
 def _get_binary_array(
     input_filename: str,
     variable: str,
-    shape: Optional[tuple],
+    shape: tuple | None,
     dtype: np.dtype,
-) -> Optional[np.ndarray]:
+) -> np.ndarray | None:
     if variable is not None:
         return None
     mmap_kwargs = {"dtype": dtype, "mode": "r"}
@@ -611,11 +609,11 @@ def _generate_subresult_table_row(
 
 def _generate_thumbnail_html(
     data_pathname: str,
-    variable: Optional[str],
+    variable: str | None,
     img_dst_dir: str,
     tn_suffix: str,
-    shape: Optional[tuple],
-    dtype: Optional[np.dtype],
+    shape: tuple | None,
+    dtype: np.dtype | None,
 ) -> str:
     data_arr = _get_thumbnail_array(data_pathname, variable, shape, dtype)
     if data_arr is None:
@@ -633,8 +631,8 @@ def _generate_thumbnail_html(
 
 
 def _get_thumbnail_array(
-    input_data_path: str, variable: Optional[str], shape: Optional[tuple], dtype: Optional[np.dtype]
-) -> Optional[np.ndarray]:
+    input_data_path: str, variable: str | None, shape: tuple | None, dtype: np.dtype | None
+) -> np.ndarray | None:
     input_ext = os.path.splitext(input_data_path)[1]
     if input_ext not in file_ext_to_array_func:
         return None

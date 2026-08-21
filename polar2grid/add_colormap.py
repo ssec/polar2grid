@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2016-2022 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #

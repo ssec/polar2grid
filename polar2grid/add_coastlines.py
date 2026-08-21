@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2016-2021 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
@@ -484,7 +483,7 @@ def find_font(font_name, size):
     try:
         font = ImageFont.truetype(font_name, size)
         return font.path
-    except IOError as err:
+    except OSError as err:
         font_path = Path(__file__).parent / "fonts" / font_name
         if not font_path.is_file():
             raise ValueError(f"Font path does not exist: {font_path}") from err

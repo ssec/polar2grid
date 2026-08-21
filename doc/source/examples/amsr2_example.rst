@@ -87,7 +87,7 @@ are using the 89A/H GHz file. There is also a 36 GHz colormap that can be used.
 
 .. code-block:: bash
 
-    add_colormap.sh $POLAR2GRID_HOME/libexec/python_runtime/lib/python3.11/site-packages/polar2grid/etc/colormaps/amsr2_89h.cmap gcom-w1_amsr2_btemp_89.0ah_20220910_233500_lcc_fit.tif
+    add_colormap.sh $POLAR2GRID_HOME/libexec/python_runtime/lib/python3.13/site-packages/polar2grid/etc/colormaps/amsr2_89h.cmap gcom-w1_amsr2_btemp_89.0ah_20220910_233500_lcc_fit.tif
 
 This command adds the enhancement to the original GeoTIFF.  The rescaled and final color enhanced product are shown below:
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 # Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -23,12 +22,7 @@
 """Filter classes for making decisions based on day or night percentages."""
 
 import logging
-
-try:
-    # Python 3.9+
-    from functools import cache
-except ImportError:
-    from functools import lru_cache as cache
+from functools import cache
 
 import numpy as np
 from pyorbital.astronomy import sun_zenith_angle

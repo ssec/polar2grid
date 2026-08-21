@@ -25,7 +25,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v4
         with:
           miniforge-version: latest
-          python-version: "3.11"
+          python-version: "3.13"
           activate-environment: test-environment
           channels: conda-forge
           conda-remove-defaults: true
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: ${{ env.CONDA_PREFIX }}
-          key: ubuntu-latest-3.10-conda-${{ hashFiles('continuous_integration/environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+          key: ubuntu-latest-3.13-conda-${{ hashFiles('continuous_integration/environment.yaml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
         id: cache
 
       - name: Update environment
@@ -74,7 +74,7 @@ jobs:
       fail-fast: true
       matrix:
         os: ["windows-latest", "ubuntu-latest", "macos-latest"]
-        python-version: ["3.11"]
+        python-version: ["3.13"]
 
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}

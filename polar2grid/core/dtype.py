@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
@@ -65,7 +64,7 @@ def clip_to_data_type(data, data_type):
     info = np.iinfo(data_type)
     rmin = info.min
     rmax = info.max
-    log.debug("Clipping data to a %d - %d data range" % (rmin, rmax))
+    log.debug("Clipping data to a %d - %d data range", rmin, rmax)
     return data.clip(rmin, rmax)
 
 

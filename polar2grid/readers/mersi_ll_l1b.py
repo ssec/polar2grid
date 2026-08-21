@@ -59,7 +59,6 @@ the ``mersi_ll_l1b`` frontend name. The MERSI-LL frontend provides the following
 from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup
-from typing import Optional
 
 from ._base import ReaderProxyBase
 
@@ -110,7 +109,7 @@ class ReaderProxy(ReaderProxyBase):
 
 
 def add_reader_argument_groups(
-    parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
-) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
+    parser: ArgumentParser, group: _ArgumentGroup | None = None
+) -> tuple[_ArgumentGroup | None, _ArgumentGroup | None]:
     """Add reader-specific command line arguments to an existing argument parser."""
     return None, None

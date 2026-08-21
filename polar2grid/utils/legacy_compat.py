@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 # Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -25,7 +24,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Generator, Iterable, Optional, Union
+from collections.abc import Generator, Iterable
 
 from satpy import DataID, DataQuery, Scene, DatasetDict
 
@@ -101,7 +100,7 @@ class AliasHandler:
 
     def __init__(
         self,
-        all_aliases: dict[str, Union[str, DataQuery]],
+        all_aliases: dict[str, str | DataQuery],
         user_products: list[str],
     ):
         self._all_aliases = all_aliases
@@ -145,8 +144,8 @@ class AliasHandler:
 
     def convert_p2g_name_to_satpy(
         self,
-        products: Optional[Iterable[str]] = None,
-    ) -> Generator[Union[str, DataID], None, None]:
+        products: Iterable[str] | None = None,
+    ) -> Generator[str | DataID]:
         """Convert P2G names to corresponding Satpy name or DataID."""
         if products is None:
             products = self._user_products
@@ -155,8 +154,8 @@ class AliasHandler:
 
     def convert_satpy_to_p2g_name(
         self,
-        satpy_products: Iterable[Union[DataID]],
-        possible_p2g_names: Optional[list[str]] = None,
+        satpy_products: Iterable[DataID],
+        possible_p2g_names: list[str] | None = None,
     ):
         """Get the P2G name for a series of Satpy names or DataIDs.
 

@@ -24,7 +24,7 @@ import os
 import re
 import sys
 from collections.abc import Iterable, Iterator
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 import s3fs
 
@@ -105,7 +105,7 @@ def parse_datetime(s: str) -> datetime:
     """
     for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M", "%Y-%m-%d"):
         try:
-            return datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
+            return datetime.strptime(s, fmt).replace(tzinfo=UTC)
         except ValueError:
             pass
     raise argparse.ArgumentTypeError(f"Cannot parse datetime {s!r}. Use YYYY-MM-DDTHH:MM[:SS] or YYYY-MM-DD.")
@@ -156,8 +156,8 @@ def file_start_end_time(filename: str) -> tuple[datetime, datetime] | tuple[None
 
 
 def _convert_file_times_to_datetimes(date_str: str, tstart: str, tend: str) -> tuple[datetime, datetime]:
-    start_dt = datetime.strptime(date_str + tstart, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
-    end_dt = datetime.strptime(date_str + tend, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+    start_dt = datetime.strptime(date_str + tstart, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
+    end_dt = datetime.strptime(date_str + tend, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
     if end_dt < start_dt:
         end_dt += timedelta(days=1)
     return start_dt, end_dt

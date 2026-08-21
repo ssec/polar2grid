@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Script manually called to generate the summary table in the documentation.
 
 The Polar2Grid summary table contains the possible input and output, reader
@@ -45,7 +44,7 @@ class TableRow(
     def __new__(cls, *args):
         if len(args) < 6:
             args = args + ("{reader}2{writer}.sh".format(reader=args[3], writer=args[4]),)
-        return super(TableRow, cls).__new__(cls, *args)
+        return super().__new__(cls, *args)
 
 
 summary_table = [

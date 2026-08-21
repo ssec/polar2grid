@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -44,5 +43,5 @@ def pytest_generate_tests(metafunc):
 
 def test_valid_yaml_files(yaml_config_file):
     """Test basic YAML syntax for all config files."""
-    with open(yaml_config_file, "r") as yaml_file:
+    with open(yaml_config_file) as yaml_file:
         yaml.load(yaml_file, Loader=yaml.UnsafeLoader)

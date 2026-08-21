@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 # Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -26,7 +25,6 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import List, Optional, Union
 
 import numpy as np
 from pyproj import Proj
@@ -44,8 +42,8 @@ from .resample_decisions import ResamplerDecisionTree
 logger = logging.getLogger(__name__)
 
 # TypeAlias
-AreaSpecifier = Union[AreaDefinition, str, None]
-ListOfAreas = List[Union[AreaDefinition, str, None]]
+AreaSpecifier = AreaDefinition | str | None
+ListOfAreas = list[AreaDefinition | str | None]
 
 GRIDS_YAML_FILEPATH = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "grids", "grids.yaml"))
 
@@ -116,8 +114,8 @@ def _get_legacy_and_yaml_areas(grid_configs: list[str, ...]) -> tuple[GridManage
 
 
 def _get_area_def_from_name(
-    area_name: Optional[str], input_scene: Scene, grid_manager: GridManager, yaml_areas: list
-) -> Optional[PRGeometry]:
+    area_name: str | None, input_scene: Scene, grid_manager: GridManager, yaml_areas: list
+) -> PRGeometry | None:
     if area_name is None:
         # no resampling
         area_def = None
@@ -143,16 +141,16 @@ class AreaDefResolver:
         self.grid_manager = grid_manager
         self.yaml_areas = yaml_areas
 
-    def has_dynamic_extents(self, area_name: Optional[str]) -> bool:
+    def has_dynamic_extents(self, area_name: str | None) -> bool:
         area_def = self[area_name]
         is_dynamic = isinstance(area_def, DynamicAreaDefinition)
         return is_dynamic and area_def.area_extent is None
 
-    def __getitem__(self, area_name: Optional[str]) -> Optional[PRGeometry]:
+    def __getitem__(self, area_name: str | None) -> PRGeometry | None:
         area_def = _get_area_def_from_name(area_name, self.input_scene, self.grid_manager, self.yaml_areas)
         return area_def
 
-    def get_frozen_area(self, area_name: Optional[str], **kwargs) -> Optional[PRGeometry]:
+    def get_frozen_area(self, area_name: str | None, **kwargs) -> PRGeometry | None:
         area_def = self[area_name]
         return self._freeze_area_if_dynamic(area_def, **kwargs)
 
@@ -168,10 +166,10 @@ def resample_scene(
     input_scene: Scene,
     areas_to_resample: ListOfAreas,
     grid_configs: list[str, ...],
-    resampler: Optional[str],
+    resampler: str | None,
     antimeridian_mode: str = "modify_crs",
     preserve_resolution: bool = True,
-    grid_coverage: Optional[float] = None,
+    grid_coverage: float | None = None,
     is_polar2grid: bool = True,
     **resample_kwargs,
 ) -> list[tuple[Scene, set]]:
@@ -277,7 +275,7 @@ def _get_default_resampler(resampler, area_name, area_def, input_scene):
 
 def _filter_and_resample_scene_to_single_area(
     area_name: str,
-    area_def: Optional[PRGeometry],
+    area_def: PRGeometry | None,
     grid_coverage: float,
     has_dynamic_extents: bool,
     input_scene: Scene,
@@ -285,7 +283,7 @@ def _filter_and_resample_scene_to_single_area(
     rs: str,
     resample_kwargs: dict,
     preserve_resolution: bool,
-) -> Optional[Scene]:
+) -> Scene | None:
     filtered_data_ids, filtered_scn = _filter_scene_with_grid_coverage(
         area_name,
         area_def,
@@ -354,7 +352,7 @@ def _resample_scene_to_single_area(
     data_ids: list,
     resample_kwargs: dict,
     preserve_resolution: bool,
-) -> Optional[Scene]:
+) -> Scene | None:
     if area_def is not None:
         logger.info("Resampling to '%s' using '%s' resampling...", area_name, rs)
         logger.debug("Resampling to '%s' using resampler '%s' with %s", area_name, rs, resample_kwargs)
@@ -372,7 +370,7 @@ def _resample_scene_to_single_area(
 
 
 def _areas_to_resample(
-    areas_to_resample: Optional[ListOfAreas], resampler: Optional[str], default_target: Optional[AreaSpecifier]
+    areas_to_resample: ListOfAreas | None, resampler: str | None, default_target: AreaSpecifier | None
 ) -> ListOfAreas:
     areas = areas_to_resample
     if areas is None:

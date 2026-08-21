@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 # Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -30,9 +29,9 @@ import os
 import shutil
 import sys
 import tempfile
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from datetime import datetime
-from typing import Optional, Union
+from typing import Literal
 
 from satpy.node import MissingDependencies
 
@@ -178,7 +177,7 @@ def _print_list_products(reader_info, is_polar2grid: bool, p2g_only: bool):
     print("\n".join(sorted(available_p2g_names)) if available_p2g_names else "<None>")
 
 
-def _create_scene(scene_creation: dict) -> Optional[Scene]:
+def _create_scene(scene_creation: dict) -> Scene | None:
     try:
         scn = Scene(**scene_creation)
     except ValueError as e:
@@ -251,7 +250,7 @@ def _get_glue_name(args):
 
 
 @contextlib.contextmanager
-def _create_profile_html_if(create_profile: Union[False, None, str], project_name: str, glue_name: str):
+def _create_profile_html_if(create_profile: Literal[False] | None | str, project_name: str, glue_name: str):
     from dask.diagnostics import CacheProfiler, Profiler, ResourceProfiler, visualize
 
     if create_profile is False:

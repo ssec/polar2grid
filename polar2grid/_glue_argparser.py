@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 # Copyright (C) 2022 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -28,7 +27,7 @@ import argparse
 import os
 import sys
 from glob import glob
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from polar2grid.core.script_utils import ExtendAction
 from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr
@@ -37,11 +36,11 @@ from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr
 ComponentParserFunc = Callable[[argparse.ArgumentParser], tuple]
 
 
-def get_reader_parser_function(reader_name: str) -> Optional[ComponentParserFunc]:
+def get_reader_parser_function(reader_name: str) -> ComponentParserFunc | None:
     return get_reader_attr(reader_name, "add_reader_argument_groups")
 
 
-def get_writer_parser_function(writer_name: str) -> Optional[ComponentParserFunc]:
+def get_writer_parser_function(writer_name: str) -> ComponentParserFunc | None:
     return get_writer_attr(writer_name, "add_writer_argument_groups")
 
 
