@@ -371,6 +371,10 @@ Do not hand-edit `doc/source/grids_list.rst`, `doc/source/dev_guide/api/`, or
 `summary_table*.rst` is hand-maintained and committed — despite its name there is no
 generator for it; edit it directly.
 
+The root `Makefile` holds documentation targets only: `build_doc_html` / `build_doc_html_geo` wrap
+the `doc/` build, and `update_doc` / `update_doc_geo` build and then scp the result to the SSEC web
+server. CI and `integration_tests/run.sh` call `doc/Makefile` directly instead.
+
 Anything more involved — build invocations, the forked sphinx-argparse, the generated-file
 mechanics — is in `.claude/skills/build-docs/SKILL.md`.
 
@@ -397,8 +401,6 @@ Known stale spots — verify before trusting:
 * `doc/source/dev_guide/adding_readers.rst` has two empty `TODO` sections and says to register a
   new reader in `polar2grid/glue.py`; the list is actually `_supported_readers()` in
   `polar2grid/_glue_argparser.py`. Prefer the `add-reader` skill.
-* The root `Makefile` has targets that call `python setup.py`; the build backend is hatchling and
-  there is no `setup.py`.
 * `modis_l2`, `omps_edr`, and `virr_l1b` are advertised in `_supported_readers()` but have no page
   under `doc/source/readers/`, so do not use them as the model when adding a reader's
   documentation. (`avhrr_l1b_aapp` is documented as `avhrr.rst`, and `viirs_edr_flood.rst` is

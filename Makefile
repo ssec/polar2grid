@@ -1,4 +1,4 @@
-# Makefile to simplify polar2grid package operations
+# Makefile to build the polar2grid/geo2grid documentation and upload it to the web server
 #
 # Copyright (C) 2013 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
@@ -28,46 +28,13 @@
 #     Madison, WI  53706
 #     david.hoese@ssec.wisc.edu
 
-INSTALL_DIR ?= ./python
-DIST_DIR ?= ./dist
-MAIN_PKG_DIR   = polar2grid
-
-# Make sure target names are just the dir name with a suffix
-# See targets for substitution
-ALL_PKG_DIRS = $(MAIN_PKG_DIR)
-ALL_PKG_INSTALL = $(ALL_PKG_DIRS:=_install)
-ALL_PKG_SDIST = $(ALL_PKG_DIRS:=_sdist)
-ALL_PKG_DEV = $(ALL_PKG_DIRS:=_dev)
 DOC_DIR ?= /webdata/web/www/htdocs/software/polar2grid
 GEO_DOC_DIR ?= /webdata/web/www/htdocs/software/geo2grid
 
-DEV_FLAGS = -d $(INSTALL_DIR)
 DOC_SERVER = webaccess.ssec.wisc.edu
 
-all: all_sdist
-
-### PYTHON PACKAGING ###
-
-all_install: $(ALL_PKG_INSTALL)
-
-all_install2:
-	pip install --no-deps dist/*.tar.gz
-
-all_sdist: $(ALL_PKG_SDIST) clean_sdist_build
-
-all_dev: $(ALL_PKG_DEV)
-
-$(ALL_PKG_INSTALL): $(INSTALL_DIR)
-	python setup.py install --prefix=$(INSTALL_DIR)
-
-$(ALL_PKG_SDIST):
-	python setup.py sdist
-
-$(ALL_PKG_DEV): $(INSTALL_DIR)
-	pip install -e . $(DEV_FLAGS)
-
-$(INSTALL_DIR):
-	mkdir -p $(INSTALL_DIR)
+.PHONY: build_doc_html build_doc_html_geo update_doc update_doc_geo
+.DEFAULT_GOAL := build_doc_html
 
 ### Documentation Stuff ###
 build_doc_html:
@@ -95,14 +62,3 @@ update_doc_geo: build_doc_html_geo
 	tar -czf $(FN) *; \
 	scp $(FN) $(DOC_SERVER):/tmp/; \
 	ssh $(DOC_SERVER) "cd '$(GEO_DOC_DIR)'; rm -rf *; tar -xmzf /tmp/$(FN)"
-
-### Clean up what we've done ###
-clean_sdist:
-	rm -rf $(DIST_DIR)
-
-# This is ugly, but not sure how to make it better
-clean_sdist_build:
-	rm -rf $$pkg_dir/dist; \
-	rm -rf $$pkg_dir/build;
-
-clean:	clean_sdist	clean_sdist_build
