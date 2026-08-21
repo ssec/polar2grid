@@ -398,9 +398,6 @@ mechanics — is in `.claude/skills/build-docs/SKILL.md`.
 
 Known stale spots — verify before trusting:
 
-* `doc/source/dev_guide/adding_readers.rst` has two empty `TODO` sections and says to register a
-  new reader in `polar2grid/glue.py`; the list is actually `_supported_readers()` in
-  `polar2grid/_glue_argparser.py`. Prefer the `add-reader` skill.
 * `modis_l2`, `omps_edr`, and `virr_l1b` are advertised in `_supported_readers()` but have no page
   under `doc/source/readers/`, so do not use them as the model when adding a reader's
   documentation. (`avhrr_l1b_aapp` is documented as `avhrr.rst`, and `viirs_edr_flood.rst` is
@@ -410,7 +407,7 @@ Known stale spots — verify before trusting:
 
 | Task | Document |
 |---|---|
-| Add a reader | The `add-reader` skill. `doc/source/dev_guide/adding_readers.rst` covers the same ground but is partly stale (see above). |
+| Add a reader | The `add-reader` skill. `doc/source/dev_guide/adding_readers.rst` is the prose version of the same checklist. |
 | Add a writer | The `add-writer` skill. There is no dev-guide page; read `polar2grid/writers/geotiff.py` and `hdf5.py`. |
 | Build or edit documentation | The `build-docs` skill |
 | Set up a dev environment | `doc/source/dev_guide/dev_env.rst` |
