@@ -60,8 +60,18 @@ PREFERRED_CHUNK_SIZE: int = 6400
 PRODUCT_ALIASES = {}
 
 TO3_PRODUCTS = ["Reflectivity331", "AerosolIndex", "ColumnAmountO3"]
-DEFAULT_PRODUCTS = TO3_PRODUCTS
-P2G_PRODUCTS = TO3_PRODUCTS
+TOS_PRODUCTS = [
+    "ColumnAmountO3",
+    "s_ColumnamountSO2_PBL",
+    "s_ColumnamountSO2_TRL",
+    "s_ColumnamountSO2_TRM",
+    "s_ColumnamountSO2_STL",
+    "s_STLO3",
+    "s_TRLO3",
+    "s_TRMO3",
+]
+DEFAULT_PRODUCTS = TO3_PRODUCTS + TOS_PRODUCTS
+P2G_PRODUCTS = TO3_PRODUCTS + TOS_PRODUCTS
 
 FILTERS = {
     "day_only": {},
