@@ -103,7 +103,6 @@ def add_reader_argument_groups(
         "--filter-o3",
         action=BooleanFilterAction,
         dest="filter_by_error_flag",
-        type=int,
         default=[],
         const=[0, 1],
         help="Filter total ozone products by the 'ErrorFlag' variable. "
