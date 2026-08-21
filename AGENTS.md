@@ -219,10 +219,12 @@ products. Read `omps_edr.py` for a minimal polar reader, `abi_l1b.py` for a geos
 `_supported_readers(is_polar2grid: bool)` in `polar2grid/_glue_argparser.py` returns a plain
 `list[str]` — one hardcoded list per project. It is **only** the `-r` help text: the argument has
 no `choices=`, so any Satpy reader name is accepted whether or not it is listed. That makes the
-list a **second source of truth** which is not derived from the `is_*_reader` attributes and has
-drifted: `aws1_mwr_l1b_nc`, `fci_l1c_nc`, and `mersi_ll_l1b` have modules and documentation pages
-but appear in neither list, and `amsr2_l2_gaasp` appears only under the misspelling
-`amsr_l2_gaasp`. All four work when named correctly; they are just unadvertised.
+list a **second source of truth** which is not derived from the `is_*_reader` attributes. The two
+were reconciled in August 2026 — every module in `polar2grid/readers/` is now advertised exactly
+once, on the project its `is_*_reader` flag and its `doc/source/readers/index.rst` entry agree on —
+but nothing enforces that, so adding a reader module without editing the list silently leaves it
+unadvertised (it still works when named correctly). One disagreement is left on purpose: `clavrx`
+sets both `is_polar2grid_reader` and `is_geo2grid_reader` but is listed under Polar2Grid only.
 
 ## Product Names and Aliases
 
@@ -390,8 +392,6 @@ Known stale spots — verify before trusting:
 * `conf.py`'s `exclude_patterns` references some `.rst` files that no longer exist.
 * The root `Makefile` has targets that call `python setup.py`; the build backend is hatchling and
   there is no `setup.py`.
-* `_supported_readers()` lists `amsr_l2_gaasp`, but the Satpy reader and the wrapper module are
-  both named `amsr2_l2_gaasp`.
 * `modis_l2`, `omps_edr`, and `virr_l1b` are advertised in `_supported_readers()` but have no page
   under `doc/source/readers/`, so do not use them as the model when adding a reader's
   documentation. (`avhrr_l1b_aapp` is documented as `avhrr.rst`, and `viirs_edr_flood.rst` is
