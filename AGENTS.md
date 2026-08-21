@@ -368,7 +368,8 @@ One source tree builds both projects (`make html` vs `make html POLAR2GRID_DOC=g
 
 Do not hand-edit `doc/source/grids_list.rst`, `doc/source/dev_guide/api/`, or
 `doc/source/_static/example_images/` — all three are generated at build time and gitignored.
-`summary_table*.rst` looks generated but is not; edit it directly.
+`summary_table*.rst` is hand-maintained and committed — despite its name there is no
+generator for it; edit it directly.
 
 Anything more involved — build invocations, the forked sphinx-argparse, the generated-file
 mechanics — is in `.claude/skills/build-docs/SKILL.md`.
@@ -382,8 +383,11 @@ mechanics — is in `.claude/skills/build-docs/SKILL.md`.
 * Changelogs are manual and split: `NEWS.rst` for Polar2Grid, `NEWS_GEO2GRID.rst` for Geo2Grid.
   Each is excluded from the other project's documentation build.
 * Images in the repository are Git LFS (`.gitattributes`).
-* The version in `pyproject.toml` is hand-maintained (no setuptools-scm). The versions in
-  `doc/source/conf.py` are separate and currently lag it.
+* There are three hand-maintained versions and they are **intentionally not in sync**: the
+  `polar2grid` Python package (`pyproject.toml`, no setuptools-scm), the Polar2Grid bundle, and the
+  Geo2Grid bundle. Both bundle versions live in `doc/source/conf.py` and track the newest entry of
+  `NEWS.rst` / `NEWS_GEO2GRID.rst`; the documentation shows the bundle version, not the package
+  version.
 * Running the test suite drops `*_fail.log` and timestamped `.log` files in the current working
   directory. The working tree may also already contain large untracked output artifacts (GeoTIFFs,
   logs, unpacked bundles) at the repository root. Never `git add -A`.
@@ -399,8 +403,6 @@ Known stale spots — verify before trusting:
   under `doc/source/readers/`, so do not use them as the model when adding a reader's
   documentation. (`avhrr_l1b_aapp` is documented as `avhrr.rst`, and `viirs_edr_flood.rst` is
   excluded on purpose.)
-* `doc/source/generate_summary_table.py` has diverged from the committed `summary_table*.rst` it
-  claims to produce. Do not run it — it overwrites in place and would revert the tables.
 
 # Where to Read More
 
