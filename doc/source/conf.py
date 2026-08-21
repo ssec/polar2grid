@@ -263,71 +263,67 @@ copyright = "2012-{:%Y}, University of Wisconsin SSEC".format(datetime.utcnow())
 # Else, today_fmt is used as the format for a strftime call.
 # today_fmt = '%B %d, %Y'
 
+# Pages that belong to only one of the two projects and are dropped from the other
+# project's build. Kept as module-level constants so the consistency check at the
+# bottom of this file can validate both lists no matter which project is built.
+_GEO2GRID_EXCLUDES = [
+    "NEWS.rst",
+    "examples/acspo_example.rst",
+    "examples/amsr2_example.rst",
+    "examples/amsr2_gaasp_example.rst",
+    "examples/jpss_aws_marketplace.rst",
+    "examples/modis_example.rst",
+    "examples/viirs_edr_example.rst",
+    "examples/viirs_example.rst",
+    "readers/acspo.rst",
+    "readers/amsr2_l1b.rst",
+    "readers/amsr2_l2_gaasp.rst",
+    "readers/avhrr.rst",
+    "readers/aws1_mwr_l1b_nc.rst",
+    "readers/clavrx.rst",
+    "readers/mersi2_l1b.rst",
+    "readers/mersi_ll_l1b.rst",
+    "readers/mirs.rst",
+    "readers/modis_l1b.rst",
+    "readers/nucaps.rst",
+    "readers/viirs_edr_active_fires.rst",
+    "readers/viirs_l1b.rst",
+    "readers/viirs_sdr.rst",
+    "readers/viirs_edr.rst",
+    "verification/viirs_verification.rst",
+    "viirs_day_night_band.rst",
+    "writers/awips_tiled.rst",
+    "writers/binary.rst",
+    "writers/hdf5.rst",
+    "misc_recipes.rst",
+]
+_POLAR2GRID_EXCLUDES = [
+    "NEWS_GEO2GRID.rst",
+    "compositors.rst",
+    "data_access.rst",
+    "examples/abi_example.rst",
+    "examples/abi_l2_example.rst",
+    "examples/ahi_example.rst",
+    "examples/creating_animations_example.rst",
+    "readers/abi_l1b.rst",
+    "readers/abi_l2_nc.rst",
+    "readers/agri_fy4a_l1.rst",
+    "readers/agri_fy4b_l1.rst",
+    "readers/ahi_hrit.rst",
+    "readers/ahi_hsd.rst",
+    "readers/ami_l1b.rst",
+    "readers/glm_l2.rst",
+    "readers/fci_l1c_nc.rst",
+    "verification/abi_verification.rst",
+]
+
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = [
     "readers/viirs_edr_flood.rst",  # not advertised
     "grids_list.rst",  # included directly in grids.rst
 ]
-if is_geo2grid:
-    exclude_patterns.extend(
-        [
-            "NEWS.rst",
-            "examples/acspo_example.rst",
-            "examples/amsr2_example.rst",
-            "examples/amsr2_gaasp_example.rst",
-            "examples/jpss_aws_marketplace.rst",
-            "examples/modis_example.rst",
-            "examples/viirs_edr_example.rst",
-            "examples/viirs_example.rst",
-            "readers/acspo.rst",
-            "readers/amsr2_l1b.rst",
-            "readers/amsr2_l2_gaasp.rst",
-            "readers/avhrr.rst",
-            "readers/aws1_mwr_l1b_nc.rst",
-            "readers/clavrx.rst",
-            "readers/mersi2_l1b.rst",
-            "readers/mersi_ll_l1b.rst",
-            "readers/mirs.rst",
-            "readers/modis_l1b.rst",
-            "readers/modis_l2.rst",
-            "readers/nucaps.rst",
-            "readers/viirs_edr_active_fires.rst",
-            "readers/viirs_l1b.rst",
-            "readers/viirs_sdr.rst",
-            "readers/viirs_edr.rst",
-            "readers/virr_l1b.rst",
-            "verification/modis_verification.rst",
-            "verification/viirs_verification.rst",
-            "viirs_day_night_band.rst",
-            "writers/awips_tiled.rst",
-            "writers/binary.rst",
-            "writers/hdf5.rst",
-            "misc_recipes.rst",
-        ]
-    )
-else:
-    exclude_patterns.extend(
-        [
-            "NEWS_GEO2GRID.rst",
-            "compositors.rst",
-            "data_access.rst",
-            "examples/abi_example.rst",
-            "examples/abi_l2_example.rst",
-            "examples/ahi_example.rst",
-            "examples/creating_animations_example.rst",
-            "readers/abi_l1b.rst",
-            "readers/abi_l2_nc.rst",
-            "readers/agri_fy4a_l1.rst",
-            "readers/agri_fy4b_l1.rst",
-            "readers/ahi_hrit.rst",
-            "readers/ahi_hsd.rst",
-            "readers/ami_l1b.rst",
-            "readers/glm_l2.rst",
-            "readers/fci_l1c_nc.rst",
-            "verification/abi_verification.rst",
-        ]
-    )
+exclude_patterns.extend(_GEO2GRID_EXCLUDES if is_geo2grid else _POLAR2GRID_EXCLUDES)
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 # default_role = None
@@ -624,3 +620,16 @@ with open(grids_list_filename, "w") as grids_list_file:
         if "area_extent" in area_dict:
             rst_str += f":Extent: {area_dict['area_extent']}\n"
         grids_list_file.write(rst_str)
+
+# Guard against `exclude_patterns` rotting: every literal (non-glob) entry must name a
+# file that actually exists. Both projects' lists are checked, not just the one being
+# built. This must stay at the end of the file -- `grids_list.rst` is excluded but is
+# generated just above.
+_all_excludes = set(exclude_patterns) | set(_GEO2GRID_EXCLUDES) | set(_POLAR2GRID_EXCLUDES)
+_missing_excludes = sorted(
+    pattern
+    for pattern in _all_excludes
+    if not any(glob_char in pattern for glob_char in "*?[") and not os.path.exists(os.path.join(script_path, pattern))
+)
+if _missing_excludes:
+    raise RuntimeError("conf.py 'exclude_patterns' names files that do not exist: " + ", ".join(_missing_excludes))
