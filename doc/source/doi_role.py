@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Create sphinx roles for referencing the DOI of a published paper.
 
 Extension to add links to DOIs. With this extension you can use e.g.

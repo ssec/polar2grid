@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -26,7 +25,6 @@ from __future__ import annotations
 
 import logging
 from functools import cached_property
-from typing import Optional, Union
 
 import satpy
 from satpy import DataID, DataQuery, Scene
@@ -82,7 +80,7 @@ class ReaderProxyBase:
         return "polar2grid"
 
     @property
-    def _aliases(self) -> dict[str, Union[DataQuery, str]]:
+    def _aliases(self) -> dict[str, DataQuery | str]:
         return {}
 
     def get_default_products(self) -> list[str]:
@@ -95,8 +93,8 @@ class ReaderProxyBase:
 
     def get_available_products(
         self,
-        p2g_product_names: Optional[list[str]] = None,
-        possible_satpy_ids: Optional[list[DataID]] = None,
+        p2g_product_names: list[str] | None = None,
+        possible_satpy_ids: list[DataID] | None = None,
     ) -> tuple[list[str], list[str], list[str]]:
         """Get custom/satpy products and polar2grid products that are available for loading."""
         if possible_satpy_ids is None:
@@ -129,7 +127,7 @@ class ReaderProxyBase:
         """Add a 'p2g_name' attribute to each DataArray in the provided Scene."""
         self._alias_handler.apply_p2g_name_to_scene(scn)
 
-    def get_satpy_products_to_load(self) -> Optional[list[Union[DataQuery, str]]]:
+    def get_satpy_products_to_load(self) -> list[DataQuery | str] | None:
         """Get Satpy product names and DataQuery objects to load."""
         no_handler = self._alias_handler is None
         no_user_products = not self._orig_user_products

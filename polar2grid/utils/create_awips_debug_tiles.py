@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2022 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
@@ -26,7 +25,7 @@ import contextlib
 import os
 import sys
 import tempfile
-from datetime import datetime
+from datetime import datetime, UTC
 
 import dask.array as da
 import numpy as np
@@ -68,7 +67,8 @@ def main():
 
     add_polar2grid_config_paths()
 
-    start_time = datetime.utcnow()
+    # naive UTC, matching Satpy's convention for the ``start_time`` attribute
+    start_time = datetime.now(UTC).replace(tzinfo=None)
     idtype_str = args.idtype
     idtype = getattr(np, idtype_str)
     odtype_str = args.odtype

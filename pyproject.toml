@@ -25,7 +25,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Atmospheric Science",
     "Topic :: Scientific/Engineering :: GIS",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 dependencies = [
     "satpy>=0.58.0",
     "rasterio",
@@ -96,9 +96,11 @@ line-length = 120
 
 [tool.ruff.lint]
 # See https://docs.astral.sh/ruff/rules/
-select = ["E", "W", "B", "D", "T10", "C90"]
+select = ["E", "W", "B", "D", "T10", "C90", "UP"]
 # Remove D416 when all docstrings have been converted to google-style
-ignore = ["D101", "D102", "D103", "D104", "D105", "D106", "D107", "E203", "D416"]
+# UP031/UP032 (%-format and .format() -> f-string) are deferred: ~73 sites, and the
+# %-formatting in logging calls must stay lazy. Handle them in a separate pass.
+ignore = ["D101", "D102", "D103", "D104", "D105", "D106", "D107", "E203", "D416", "UP031", "UP032"]
 
 [tool.ruff.lint.per-file-ignores]
 "doc/source/conf.py" = ["E501"]

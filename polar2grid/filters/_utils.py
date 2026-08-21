@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 # Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -23,25 +22,17 @@
 """Utilities related to filtering."""
 
 import logging
+from functools import cache
 
 import dask.array as da
 import numpy as np
-
-try:
-    # Python 3.9+
-    from functools import cache
-except ImportError:
-    from functools import lru_cache as cache
-
-from typing import Union
-
 from pyresample.boundary import AreaBoundary, AreaDefBoundary, Boundary
 from pyresample.geometry import AreaDefinition, SwathDefinition, get_geostationary_bounding_box_in_lonlats
 from pyresample.spherical import SphPolygon
 
 logger = logging.getLogger(__name__)
 
-PRGeometry = Union[SwathDefinition, AreaDefinition]
+PRGeometry = SwathDefinition | AreaDefinition
 
 
 def boundary_for_area(area_def: PRGeometry) -> Boundary:

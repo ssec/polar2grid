@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2012-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
@@ -95,7 +94,7 @@ class HDF5Writer(Writer):
 
     def __init__(self, **kwargs):
         """Init the writer."""
-        super(HDF5Writer, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         if self.filename_parser is None:
             raise RuntimeError("No filename pattern or specific filename provided")

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 # Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -23,12 +22,7 @@
 """Filter classes dealing with resampling output coverage."""
 
 import logging
-
-try:
-    # Python 3.9+
-    from functools import cache
-except ImportError:
-    from functools import lru_cache as cache
+from functools import cache
 
 from pyresample.spherical import SphPolygon
 from xarray import DataArray

@@ -321,8 +321,9 @@ Sphinx. `continuous_integration/environment.yaml` is what CI uses and adds `pyte
 (`djhoese/sphinx-argparse@bugfix-section-nums`) that `make html` requires. Use the CI file, or
 update an existing environment from it, if you intend to run tests or build docs.
 
-`pyproject.toml` declares `requires-python = ">=3.10"`. CI happens to run only Python 3.11, so
-3.10 and 3.12+ are supported but less exercised.
+`pyproject.toml` declares `requires-python = ">=3.13"`, and CI, the CI conda environment, and the
+software bundle environment (`build_environment.yml`) all pin 3.13, so the tested and shipped
+version is the same one. The floor is set by Satpy `main`, which requires `>=3.12`.
 
 CI (`.github/workflows/ci.yaml`) builds **both** documentation variants with
 `SPHINXOPTS="-W --keep-going"` and runs pytest on Linux/macOS/Windows. Windows runs only the

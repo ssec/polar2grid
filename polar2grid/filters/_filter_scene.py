@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -23,7 +22,6 @@
 """Helper functions for filtering certain products."""
 
 import logging
-from typing import Dict, List, Optional, Union
 
 from satpy import Scene
 
@@ -33,7 +31,7 @@ from .day_night import DayCoverageFilter, NightCoverageFilter
 logger = logging.getLogger(__name__)
 
 
-def _merge_filter_critera(*readers_criteria: Dict[str, Union[List[str], None]]):
+def _merge_filter_critera(*readers_criteria: dict[str, list[str] | None]):
     result = {}
     for reader_criteria in readers_criteria:
         if reader_criteria is None:
@@ -52,7 +50,7 @@ def _get_single_reader_filter_criteria(reader: str, filter_name: str):
     return filter_criteria.get(filter_name)
 
 
-def get_reader_filter_criteria(reader_names: List[str], filter_name: str):
+def get_reader_filter_criteria(reader_names: list[str], filter_name: str):
     """Get reader configured filter information."""
     readers_criteria = [_get_single_reader_filter_criteria(reader, filter_name) for reader in reader_names]
     criteria = _merge_filter_critera(*readers_criteria)
@@ -60,7 +58,7 @@ def get_reader_filter_criteria(reader_names: List[str], filter_name: str):
 
 
 def _filter_scene_day_only_products(
-    input_scene: Scene, filter_criteria: dict, sza_threshold: float = 100.0, day_fraction: Optional[float] = None
+    input_scene: Scene, filter_criteria: dict, sza_threshold: float = 100.0, day_fraction: float | None = None
 ):
     """Run filtering for products that need a certain amount of day data."""
     if day_fraction is None:
@@ -71,7 +69,7 @@ def _filter_scene_day_only_products(
 
 
 def _filter_scene_night_only_products(
-    input_scene: Scene, filter_criteria: dict, sza_threshold: float = 100.0, night_fraction: Optional[float] = None
+    input_scene: Scene, filter_criteria: dict, sza_threshold: float = 100.0, night_fraction: float | None = None
 ):
     """Run filtering for products that need a certain amount of day data."""
     if night_fraction is None:
@@ -83,10 +81,10 @@ def _filter_scene_night_only_products(
 
 def filter_scene(
     input_scene: Scene,
-    reader_names: List[str],
+    reader_names: list[str],
     sza_threshold: float = 100.0,
-    day_fraction: Optional[float] = None,
-    night_fraction: Optional[float] = None,
+    day_fraction: float | None = None,
+    night_fraction: float | None = None,
 ):
     if input_scene is not None and day_fraction is not False:
         criteria = get_reader_filter_criteria(reader_names, "day_only")

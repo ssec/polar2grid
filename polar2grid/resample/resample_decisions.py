@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# encoding: utf-8
 # Copyright (C) 2021 Space Science and Engineering Center (SSEC),
 #  University of Wisconsin-Madison.
 #
@@ -59,7 +58,7 @@ class ResamplerDecisionTree(DecisionTree):
         )
         self.prefix = kwargs.pop("config_section", "resampling")
         multival_keys = kwargs.pop("multival_keys", ["sensor"])
-        super(ResamplerDecisionTree, self).__init__(decision_dicts, match_keys, multival_keys)
+        super().__init__(decision_dicts, match_keys, multival_keys)
 
     @classmethod
     def from_configs(cls, config_filename="resampling.yaml"):

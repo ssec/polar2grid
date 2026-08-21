@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2014 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
@@ -69,7 +68,7 @@ class ThirdPartyFilter(logging.Filter):
     def __init__(self, ignored_packages, level=logging.WARNING, name=""):
         self.ignored_packages = ignored_packages
         self.level_filter = level
-        super(ThirdPartyFilter, self).__init__(name)
+        super().__init__(name)
 
     def filter(self, record):
         for pkg in self.ignored_packages:
@@ -125,7 +124,7 @@ def setup_logging(console_level=logging.INFO, log_filename="polar2grid.log", log
     if log_numpy:
         import numpy
 
-        class TempLog(object):
+        class TempLog:
             def write(self, msg):
                 logging.getLogger("numpy").debug(msg)
 
@@ -151,7 +150,7 @@ def rename_log_file(new_filename):
     # move the old file
     if os.path.isfile(new_filename):
         with open(new_filename, "a") as new_file:
-            with open(fn, "r") as old_file:
+            with open(fn) as old_file:
                 new_file.write(old_file.read())
         os.remove(fn)
     else:
@@ -192,10 +191,10 @@ class NumpyDtypeList(list):
     """Magic list to allow dtype objects to match string versions of themselves."""
 
     def __contains__(self, item):
-        if super(NumpyDtypeList, self).__contains__(item):
+        if super().__contains__(item):
             return True
         try:
-            return super(NumpyDtypeList, self).__contains__(item().dtype.name)
+            return super().__contains__(item().dtype.name)
         except AttributeError:
             return False
 
@@ -215,7 +214,7 @@ class ExtendConstAction(argparse.Action):
     def __init__(self, option_strings, dest, nargs=0, **kwargs):
         if nargs:
             raise ValueError("nargs is not allowed")
-        super(ExtendConstAction, self).__init__(option_strings, dest, nargs=0, **kwargs)
+        super().__init__(option_strings, dest, nargs=0, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
         current_values = getattr(namespace, self.dest, []) or []
@@ -274,7 +273,7 @@ class ArgumentParser(argparse.ArgumentParser):
         """
         subgroup_titles = kwargs.pop("subgroup_titles", [])
         global_keywords = kwargs.pop("global_keywords", [])
-        args = super(ArgumentParser, self).parse_args(*args, **kwargs)
+        args = super().parse_args(*args, **kwargs)
         args.global_kwargs = {kw: getattr(args, kw) for kw in global_keywords}
         # a dictionary that holds arguments from the specified subgroups (defaultdict for easier user by caller)
         args.subgroup_args = defaultdict(dict)

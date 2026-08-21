@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2012-2021 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
@@ -177,7 +176,6 @@ As an example, the ATMS band options are:
 from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup, BooleanOptionalAction
-from typing import Optional, Union
 
 from satpy import DataID, Scene
 
@@ -233,7 +231,7 @@ class ReaderProxy(ReaderProxyBase):
         super().__init__(scn, user_products)
 
     @staticmethod
-    def _btemp_channels_from_satpy(satpy_ids: list[Union[str, DataID]]):
+    def _btemp_channels_from_satpy(satpy_ids: list[str | DataID]):
         for data_id in satpy_ids:
             dname = data_id if isinstance(data_id, str) else data_id["name"]
             if dname.startswith("btemp_"):
@@ -257,8 +255,8 @@ class ReaderProxy(ReaderProxyBase):
 
 
 def add_reader_argument_groups(
-    parser: ArgumentParser, group: Optional[_ArgumentGroup] = None
-) -> tuple[Optional[_ArgumentGroup], Optional[_ArgumentGroup]]:
+    parser: ArgumentParser, group: _ArgumentGroup | None = None
+) -> tuple[_ArgumentGroup | None, _ArgumentGroup | None]:
     """Add reader-specific command line arguments to an existing argument parser."""
     if group is None:
         group = parser.add_argument_group(title="MiRS Reader")

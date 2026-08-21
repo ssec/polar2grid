@@ -25,7 +25,7 @@ dependencies:
   - pyproj
   - pyshp
   - pyspectral
-  - python=3.11
+  - python=3.13
   - python-geotiepoints
   - pyyaml
   - rasterio

@@ -54,7 +54,7 @@ The "polar2grid" package that powers the official CSPP Polar2Grid and CSPP Geo
 Geo2Grid all-in-one tarballs is also released as a traditional python package
 on PyPI and conda-forge. Installing the package in this way allows Polar2Grid
 and Geo2Grid functionality to be used from non-Linux systems.
-The python package can be installed into your normal Python 3.8+
+The python package can be installed into your normal Python 3.13+
 environment by doing the following in a conda environment (recommended):
 
 .. code-block:: bash

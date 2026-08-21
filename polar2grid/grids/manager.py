@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 # Copyright (C) 2013-2015 Space Science and Engineering Center (SSEC),
 # University of Wisconsin-Madison.
 #
@@ -80,7 +79,7 @@ def _parse_proj4_str(proj4_str, grid_name):
     try:
         crs = CRS.from_proj4(proj4_str)
     except ValueError:
-        LOG.error("Invalid proj4 string in '%s' : '%s'" % (grid_name, proj4_str))
+        LOG.error("Invalid proj4 string in '%s' : '%s'", grid_name, proj4_str)
         raise
     return proj4_str, crs
 
@@ -95,11 +94,11 @@ def parse_proj4_config_line(grid_name, parts):
         pixel_size_x, pixel_size_y = _parse_pixel_size_x_y(grid_name, parts[5], parts[6])
         grid_origin_x, grid_origin_y, grid_units = _parse_origin_x_y(grid_name, parts[7], parts[8], crs)
     except ValueError:
-        LOG.error("Could not parse proj4 grid configuration: '%s'" % (grid_name,))
+        LOG.error("Could not parse proj4 grid configuration: '%s'", grid_name)
         raise
 
     if grid_width is None and pixel_size_x is None:
-        LOG.error("Either grid size or pixel size must be specified for '%s'" % grid_name)
+        LOG.error("Either grid size or pixel size must be specified for '%s'", grid_name)
         raise ValueError("Either grid size or pixel size must be specified for '%s'" % grid_name)
 
     info = {}
@@ -120,7 +119,7 @@ def _parse_grid_width_and_height(grid_name, width_part, height_part):
     grid_width = _parse_optional_config_param(width_part, int)
     grid_height = _parse_optional_config_param(height_part, int)
     if _only_one_specified(grid_width, grid_height):
-        LOG.error("Both or neither grid sizes must be specified for '%s'" % grid_name)
+        LOG.error("Both or neither grid sizes must be specified for '%s'", grid_name)
         raise ValueError("Both or neither grid sizes must be specified for '%s'" % grid_name)
     return grid_width, grid_height
 
@@ -129,7 +128,7 @@ def _parse_pixel_size_x_y(grid_name, x_part, y_part):
     pixel_size_x = _parse_optional_config_param(x_part, float, (grid_name, "pixel_size"))
     pixel_size_y = _parse_optional_config_param(y_part, float, (grid_name, "pixel size"))
     if _only_one_specified(pixel_size_y, pixel_size_y):
-        LOG.error("Both or neither pixel sizes must be specified for '%s'" % grid_name)
+        LOG.error("Both or neither pixel sizes must be specified for '%s'", grid_name)
         raise ValueError("Both or neither pixel sizes must be specified for '%s'" % grid_name)
     return pixel_size_x, pixel_size_y
 
@@ -140,7 +139,7 @@ def _parse_origin_x_y(grid_name, x_part, y_part, crs):
     yorigin_res = _parse_optional_config_param(y_part, _parse_meter_degree_param)
     grid_origin_y, yorigin_is_deg = yorigin_res if yorigin_res is not None else (None, False)
     if _only_one_specified(grid_origin_x, grid_origin_x):
-        LOG.error("Both or neither grid origins must be specified for '%s'" % grid_name)
+        LOG.error("Both or neither grid origins must be specified for '%s'", grid_name)
         raise ValueError("Both or neither grid origins must be specified for '%s'" % grid_name)
     if xorigin_is_deg != yorigin_is_deg:
         LOG.error("Grid origin parameters must be in the same units (meters vs degrees)")
@@ -205,11 +204,11 @@ def read_grids_config_str(config_str, convert_coords=True):
         if grid_name not in this_configs_grids:
             this_configs_grids.append(grid_name)
         else:
-            LOG.warning("Grid '%s' is in grid config more than once" % (grid_name,))
+            LOG.warning("Grid '%s' is in grid config more than once", grid_name)
 
         grid_type = parts[1].lower()
         if grid_type != "proj4":
-            LOG.error("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type, grid_name))
+            LOG.error("Unknown grid type '%s' for grid '%s' in grid config", grid_type, grid_name)
             raise ValueError("Unknown grid type '%s' for grid '%s' in grid config" % (grid_type, grid_name))
         if convert_coords:
             grid_information[grid_name] = parse_and_convert_proj4_config_line(grid_name, parts)
@@ -230,7 +229,7 @@ def _generate_valid_parts_in_config_str(config_str: str):
         parts = [part.strip() for part in line.split(",")]
 
         if len(parts) != 11 and len(parts) != 9:
-            LOG.error("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
+            LOG.error("Grid configuration line '%s' in grid config does not have the correct format", line)
             raise ValueError("Grid configuration line '%s' in grid config does not have the correct format" % (line,))
         yield parts
 
@@ -247,7 +246,7 @@ def read_grids_config(config_filepath, convert_coords=True):
 
     """
     full_config_filepath = os.path.realpath(os.path.expanduser(config_filepath))
-    with open(full_config_filepath, "r") as config_file:
+    with open(full_config_filepath) as config_file:
         config_str = config_file.read()
         return read_grids_config_str(config_str, convert_coords=convert_coords)
 
@@ -259,7 +258,7 @@ class GridManager:
 
     def __init__(self, *grid_configs):
         for grid_config in grid_configs:
-            LOG.debug("Loading grid configuration '%s'" % (grid_config,))
+            LOG.debug("Loading grid configuration '%s'", grid_config)
             self.add_grid_config(grid_config)
 
     def __contains__(self, item):
@@ -317,5 +316,5 @@ class GridManager:
         if grid_name in self.grid_information:
             return self.grid_information[grid_name].copy()
         else:
-            LOG.error("Unknown grid '%s'" % (grid_name,))
+            LOG.error("Unknown grid '%s'", grid_name)
             raise ValueError("Unknown grid '%s'" % (grid_name,))
