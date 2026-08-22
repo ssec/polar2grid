@@ -279,12 +279,12 @@ _GEO2GRID_EXCLUDES = [
     "readers/amsr2_l2_gaasp.rst",
     "readers/avhrr.rst",
     "readers/aws1_mwr_l1b_nc.rst",
-    "readers/clavrx.rst",
     "readers/mersi2_l1b.rst",
     "readers/mersi_ll_l1b.rst",
     "readers/mirs.rst",
     "readers/modis_l1b.rst",
     "readers/nucaps.rst",
+    "readers/omps_edr.rst",
     "readers/viirs_edr_active_fires.rst",
     "readers/viirs_l1b.rst",
     "readers/viirs_sdr.rst",
@@ -319,6 +319,7 @@ _POLAR2GRID_EXCLUDES = [
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = [
+    "readers/clavrx.rst",  # not advertised
     "readers/viirs_edr_flood.rst",  # not advertised
     "grids_list.rst",  # included directly in grids.rst
 ]

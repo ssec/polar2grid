@@ -25,9 +25,9 @@ using the  ``--list-products`` option.
     :polar2grid:nucaps
     :polar2grid:mirs
     :polar2grid:acspo
-    :polar2grid:clavrx
     :polar2grid:viirs_edr_active_fires
     :polar2grid:viirs_edr
+    :polar2grid:omps_edr
     :polar2grid:mersi2_l1b
     :polar2grid:mersi_ll_l1b
     :polar2grid:aws1_mwr_l1b_nc
