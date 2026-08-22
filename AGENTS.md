@@ -219,11 +219,11 @@ products. Read `omps_edr.py` for a minimal polar reader, `abi_l1b.py` for a geos
 `_supported_readers(is_polar2grid: bool)` in `polar2grid/_glue_argparser.py` returns a plain
 `list[str]` — one hardcoded list per project. It is **only** the `-r` help text: the argument has
 no `choices=`, so any Satpy reader name is accepted whether or not it is listed. That makes the
-list a **second source of truth** which is not derived from the `is_*_reader` attributes. The two
-were reconciled in August 2026 — the advertised names and the `doc/source/readers/index.rst`
-toctree are now exactly one-to-one, so everything in the `-r` help text has a documentation page —
-but nothing enforces that, so adding a reader module without editing the list silently leaves it
-unadvertised (it still works when named correctly).
+list a **second source of truth** which is not derived from the `is_*_reader` attributes. The
+advertised names and the `doc/source/readers/index.rst` toctree are exactly one-to-one, so
+everything in the `-r` help text has a documentation page — but nothing enforces that, so adding
+a reader module without editing the list silently leaves it unadvertised (it still works when
+named correctly).
 
 The list is therefore **narrower than the set of reader modules**, on purpose. `clavrx`,
 `modis_l2`, `viirs_edr_flood`, and `virr_l1b` each have a working wrapper module that is
