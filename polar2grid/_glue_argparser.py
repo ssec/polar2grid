@@ -353,20 +353,16 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
             "amsr2_l2_gaasp",
             "avhrr_l1b_aapp",
             "aws1_mwr_l1b_nc",
-            "clavrx",
             "mersi2_l1b",
             "mersi_ll_l1b",
             "mirs",
             "modis_l1b",
-            "modis_l2",
             "omps_edr",
             "nucaps",
             "viirs_edr_active_fires",
-            "viirs_edr_flood",
             "viirs_l1b",
             "viirs_edr",
             "viirs_sdr",
-            "virr_l1b",
         ]
     else:
         readers = [

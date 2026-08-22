@@ -28,20 +28,42 @@ as below::
     V8TOZ-EDR_v4r3_j01_s202604071740387_e202604071741162_c202604071754380.nc
 
 The OMPS EDR reader can be specified to the ``polar2grid.sh`` script
-with the reader name ``viirs_edr``.
+with the reader name ``omps_edr``.
 
 This reader's default remapping algorithm is ``nearest`` for nearest neighbor
 resampling.
 
-+---------------------------+-----------------------------------------------------+
-| Product Name              | Description                                         |
-+===========================+=====================================================+
-| Reflectivity331           | Reflectivity at 331nm                               |
-+---------------------------+-----------------------------------------------------+
-| AerosolIndex              | Aerosol index                                       |
-+---------------------------+-----------------------------------------------------+
-| ColumnAmountO3            | Total Column of Ozone                               |
-+---------------------------+-----------------------------------------------------+
+The products below come from two groups of files. The "TO3" products are
+read from the total column ozone (``V8TOZ``) files shown above. The "TOS"
+products are read from the sulfur dioxide EDR files and use the ``s_``
+name prefix. Some products are available from both files.
+
++-----------------------+-------------------------------------------------------------+
+| Product Name          | Description                                                 |
++=======================+=============================================================+
+| Reflectivity331       | Reflectivity at 331nm                                       |
++-----------------------+-------------------------------------------------------------+
+| AerosolIndex          | Aerosol index                                               |
++-----------------------+-------------------------------------------------------------+
+| ColumnAmountO3        | Total Column of Ozone                                       |
++-----------------------+-------------------------------------------------------------+
+| s_ColumnamountSO2_PBL | Total SO2, planetary boundary layer                         |
++-----------------------+-------------------------------------------------------------+
+| s_ColumnamountSO2_TRL | Total SO2, 0~5km layer                                      |
++-----------------------+-------------------------------------------------------------+
+| s_ColumnamountSO2_TRM | Total SO2, 5~10km layer                                     |
++-----------------------+-------------------------------------------------------------+
+| s_ColumnamountSO2_STL | Total SO2, 15-19km layer                                    |
++-----------------------+-------------------------------------------------------------+
+| s_TRLO3               | Corrected total O3 by assuming SO2 located in 0~5km layer   |
++-----------------------+-------------------------------------------------------------+
+| s_TRMO3               | Corrected total O3 by assuming SO2 located in 5~10km layer  |
++-----------------------+-------------------------------------------------------------+
+| s_STLO3               | Corrected total O3 by assuming SO2 located in 15-19km layer |
++-----------------------+-------------------------------------------------------------+
+
+The ``--filter-o3`` flag described below applies only to the total column
+ozone products.
 
 """
 

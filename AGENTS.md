@@ -220,11 +220,18 @@ products. Read `omps_edr.py` for a minimal polar reader, `abi_l1b.py` for a geos
 `list[str]` — one hardcoded list per project. It is **only** the `-r` help text: the argument has
 no `choices=`, so any Satpy reader name is accepted whether or not it is listed. That makes the
 list a **second source of truth** which is not derived from the `is_*_reader` attributes. The two
-were reconciled in August 2026 — every module in `polar2grid/readers/` is now advertised exactly
-once, on the project its `is_*_reader` flag and its `doc/source/readers/index.rst` entry agree on —
+were reconciled in August 2026 — the advertised names and the `doc/source/readers/index.rst`
+toctree are now exactly one-to-one, so everything in the `-r` help text has a documentation page —
 but nothing enforces that, so adding a reader module without editing the list silently leaves it
-unadvertised (it still works when named correctly). One disagreement is left on purpose: `clavrx`
-sets both `is_polar2grid_reader` and `is_geo2grid_reader` but is listed under Polar2Grid only.
+unadvertised (it still works when named correctly).
+
+The list is therefore **narrower than the set of reader modules**, on purpose. `clavrx`,
+`modis_l2`, `viirs_edr_flood`, and `virr_l1b` each have a working wrapper module that is
+deliberately not advertised and not documented; `clavrx` and `viirs_edr_flood` keep their
+`.rst` pages on disk, excluded from *both* builds via the base `exclude_patterns` in
+`doc/source/conf.py`. Do not "fix" this by adding them back. The `is_*_reader` attributes were
+left alone, so `clavrx` still sets both of them despite being advertised by neither project —
+another reminder that those flags are informational only.
 
 ## Product Names and Aliases
 
@@ -398,10 +405,11 @@ mechanics — is in `.claude/skills/build-docs/SKILL.md`.
 
 Known stale spots — verify before trusting:
 
-* `modis_l2`, `omps_edr`, and `virr_l1b` are advertised in `_supported_readers()` but have no page
-  under `doc/source/readers/`, so do not use them as the model when adding a reader's
-  documentation. (`avhrr_l1b_aapp` is documented as `avhrr.rst`, and `viirs_edr_flood.rst` is
-  excluded on purpose.)
+* Not every module in `polar2grid/readers/` has a documentation page, so check that a reader is
+  advertised before using it as the model for a new one. `clavrx`, `modis_l2`, `viirs_edr_flood`,
+  and `virr_l1b` are intentionally unadvertised and undocumented (see Readers above);
+  `polar2grid/writers/cf.py` is the writer equivalent, and says so in its docstring.
+  (`avhrr_l1b_aapp` is documented as `avhrr.rst` — the filename does not always match the module.)
 
 # Where to Read More
 

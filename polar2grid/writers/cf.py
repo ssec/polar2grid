@@ -24,6 +24,13 @@
 All datasets to be saved must have the same projection coordinates ``x`` and ``y``. If a scene holds datasets with
 different grids, the CF compliant workaround is to save the datasets to separate files.
 
+.. note::
+
+    This writer is experimental and unsupported. It is not listed in the ``-w``
+    help text and has no documentation page of its own. It can still be used by
+    naming it explicitly (``-w cf``), but its arguments and defaults may change
+    without notice.
+
 """
 
 import json
