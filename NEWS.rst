@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 3.3.0 (unreleased)
+--------------------------
+
+* New Metop-SG METimage (VII) Level 1b reader.
+
 Version 3.2.0 (2026-03-02)
 --------------------------
 

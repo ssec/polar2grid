@@ -95,6 +95,9 @@ _PLATFORM_ALIASES = {
     "metopa": "metopa",
     "metopb": "metopb",
     "metopc": "metopc",
+    "metopsga1": "metop-sga1",
+    "metopsga2": "metop-sga2",
+    "metopsga3": "metop-sga3",
 }
 
 

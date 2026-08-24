@@ -355,6 +355,7 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
             "aws1_mwr_l1b_nc",
             "mersi2_l1b",
             "mersi_ll_l1b",
+            "metimage_l1b_nc",
             "mirs",
             "modis_l1b",
             "omps_edr",

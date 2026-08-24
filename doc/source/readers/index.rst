@@ -30,6 +30,7 @@ using the  ``--list-products`` option.
     :polar2grid:omps_edr
     :polar2grid:mersi2_l1b
     :polar2grid:mersi_ll_l1b
+    :polar2grid:metimage_l1b_nc
     :polar2grid:aws1_mwr_l1b_nc
     :geo2grid:abi_l1b
     :geo2grid:abi_l2_nc
