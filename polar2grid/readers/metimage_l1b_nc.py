@@ -35,10 +35,11 @@ This reader's default remapping algorithm is ``ewa`` for Elliptical Weighted
 Averaging resampling. The ``--weight-delta-max`` option is set to 40 and
 ``--weight-distance-max`` is set to 2.
 
-All 20 imaging bands are loaded by default, as is the ``true_color``
-composite. Band products are named after their nominal wavelength in
-nanometers. The 11 shortest wavelength bands are calibrated to reflectance
-(percent) and the 9 longest to brightness temperature (Kelvin).
+All 20 imaging bands are loaded by default, as are the ``true_color`` and
+``natural_color`` composites. Band products are named after their nominal
+wavelength in nanometers. The 11 shortest wavelength bands are calibrated
+to reflectance (percent) and the 9 longest to brightness temperature
+(Kelvin).
 
 +--------------------+--------------------------------------------------------+
 | Product Name       | Description                                            |
@@ -85,12 +86,14 @@ nanometers. The 11 shortest wavelength bands are calibrated to reflectance
 +--------------------+--------------------------------------------------------+
 | true_color         | Rayleigh corrected true color RGB                      |
 +--------------------+--------------------------------------------------------+
+| natural_color      | Natural color RGB                                      |
++--------------------+--------------------------------------------------------+
 
 Additional RGB composites provided by Satpy for this instrument, such as
-``natural_color``, ``snow``, ``dust``, and ``day_microphysics``, are not
-loaded by default but can still be requested by name with the ``--products``
-flag. Use ``--list-products-all`` to see everything available for a set of
-input files.
+``snow``, ``dust``, and ``day_microphysics``, are not loaded by default but
+can still be requested by name with the ``--products`` flag. Use
+``--list-products-all`` to see everything available for a set of input
+files.
 
 """
 
@@ -129,7 +132,7 @@ BT_BANDS = [
     "vii_13345",
 ]
 ALL_BANDS = REFLECTANCE_BANDS + BT_BANDS
-COMPOSITES = ["true_color"]
+COMPOSITES = ["true_color", "natural_color"]
 
 # Satpy's product naming is kept as-is for this reader
 PRODUCT_ALIASES = {}
@@ -142,6 +145,7 @@ FILTERS = {
         "standard_name": [
             "toa_bidirectional_reflectance",
             "true_color",
+            "natural_color",
         ],
     },
     "night_only": {},
