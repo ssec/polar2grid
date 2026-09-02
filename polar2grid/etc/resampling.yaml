@@ -320,3 +320,11 @@ resampling:
     area_type: swath
     sensor: mwr
     resampler: nearest
+
+  default_metimage:
+    area_type: swath
+    sensor: metimage
+    resampler: ewa
+    kwargs:
+      weight_delta_max: 40.0
+      weight_distance_max: 2.0

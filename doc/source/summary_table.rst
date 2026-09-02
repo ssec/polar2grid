@@ -87,6 +87,31 @@
       - Binary
       - avhrr_l1b
       - binary
+    * - **Metop-SGA1 METimage (VII) Level 1b**
+      - W_XX-EUMETSAT-Darmstadt,SAT,SGA1-VII-1B-RAD\*.nc
+      - 8 bit single band GeoTIFF
+      - metimage_l1b_nc
+      - geotiff
+    * - "
+      - "
+      - AWIPS NetCDF
+      - metimage_l1b_nc
+      - awips_tiled
+    * - "
+      - "
+      - HDF5
+      - metimage_l1b_nc
+      - hdf5
+    * - "
+      - "
+      - Binary
+      - metimage_l1b_nc
+      - binary
+    * - "
+      - "
+      - 24-bit true color GeoTIFF
+      - metimage_l1b_nc
+      - geotiff
     * - **GCOM-W1 ASMR2 L1B**
       - GW1AM2\*L1DLBTBR\*.h5
       - 8 bit single band GeoTIFF
