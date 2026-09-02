@@ -26,8 +26,8 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from glob import glob
 from collections.abc import Callable
+from glob import glob
 
 from polar2grid.core.script_utils import ExtendAction
 from polar2grid.utils.dynamic_imports import get_reader_attr, get_writer_attr

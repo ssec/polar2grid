@@ -74,8 +74,8 @@ from __future__ import annotations
 
 from argparse import ArgumentParser, _ArgumentGroup
 
-from ._base import ReaderProxyBase
 from ..core.script_utils import BooleanFilterAction
+from ._base import ReaderProxyBase
 
 PREFERRED_CHUNK_SIZE: int = 1356
 

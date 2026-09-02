@@ -44,8 +44,8 @@ from argparse import ArgumentParser, _ArgumentGroup
 
 from satpy import DataQuery
 
-from ._base import ReaderProxyBase
 from ..core.script_utils import BooleanFilterAction
+from ._base import ReaderProxyBase
 
 DEFAULT_PRODUCTS = ["sst"]
 PREFERRED_CHUNK_SIZE = 2048

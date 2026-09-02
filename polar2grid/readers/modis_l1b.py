@@ -135,8 +135,8 @@ angle is less than 90 degrees.
 from __future__ import annotations
 
 import argparse
-from argparse import ArgumentParser, _ArgumentGroup
 import logging
+from argparse import ArgumentParser, _ArgumentGroup
 
 from satpy import DataQuery, Scene
 

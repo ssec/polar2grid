@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Generator, Iterable
 
-from satpy import DataID, DataQuery, Scene, DatasetDict
+from satpy import DataID, DataQuery, DatasetDict, Scene
 
 logger = logging.getLogger(__name__)
 

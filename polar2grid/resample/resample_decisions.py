@@ -33,8 +33,8 @@ try:
 except ImportError:
     from satpy.writers import DecisionTree
 
-from polar2grid.utils.legacy_compat import get_sensor_alias
 from polar2grid.utils.config import recursive_dict_update
+from polar2grid.utils.legacy_compat import get_sensor_alias
 
 logger = logging.getLogger(__name__)
 

@@ -100,7 +100,7 @@ line-length = 120
 
 [tool.ruff.lint]
 # See https://docs.astral.sh/ruff/rules/
-select = ["E", "W", "B", "D", "T10", "C90", "UP"]
+select = ["E", "W", "B", "D", "I", "T10", "C90", "UP"]
 # Remove D416 when all docstrings have been converted to google-style
 # UP031/UP032 (%-format and .format() -> f-string) are deferred: ~73 sites, and the
 # %-formatting in logging calls must stay lazy. Handle them in a separate pass.

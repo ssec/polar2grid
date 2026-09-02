@@ -25,7 +25,7 @@ import contextlib
 import os
 import sys
 import tempfile
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import dask.array as da
 import numpy as np
