@@ -23,7 +23,9 @@ Examples:
 
     polar2grid.sh -r omps_edr -w geotiff -f /omps/edr/
 
-    polar2grid.sh -r omps_edr -w geotiff -p ColumnAmountO3 --filter-o3 -f ../omps/V8TOZ-EDR_v4r3_j01_*.nc
+    polar2grid.sh -r omps_edr -w geotiff -p ColumnAmountO3 --filter-by-error-flag -f ../omps/V8TOZ-EDR_v4r3_j01_*.nc
+
+    polar2grid.sh -r omps_edr -w geotiff -p s_ColumnamountSO2_PBL --no-filter-negative-so2 -f ../omps/V8TOS-EDR_v4r5_j02_*.nc
 
     polar2grid.sh -r omps_edr -w geotiff -p AerosolIndex Reflectivity331 -g lcc_fit -f ../omps/*.nc
 
