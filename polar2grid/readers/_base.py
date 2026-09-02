@@ -107,7 +107,7 @@ class ReaderProxyBase:
                     "Provided readers are not configured in %s. All products will be listed with internal Satpy names.",
                     self._binary_name,
                 )
-                return sorted(set([x["name"] for x in possible_satpy_ids])), [], []
+                return sorted({x["name"] for x in possible_satpy_ids}), [], []
         return self._alias_handler.available_product_names(
             p2g_product_names, available_custom_products, possible_satpy_ids
         )

@@ -73,7 +73,7 @@ class GridDefinition(dict):
     @property
     def is_static(self):
         return all(
-            [self[x] is not None for x in ["height", "width", "cell_height", "cell_width", "origin_x", "origin_y"]]
+            self[x] is not None for x in ["height", "width", "cell_height", "cell_width", "origin_x", "origin_y"]
         )
 
     @property

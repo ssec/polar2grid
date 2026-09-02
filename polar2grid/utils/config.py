@@ -26,7 +26,6 @@ from __future__ import annotations
 import importlib.metadata as impm
 import importlib.resources as impr
 import os
-import sys
 from collections.abc import Mapping, MutableMapping
 
 import satpy

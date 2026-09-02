@@ -245,7 +245,7 @@ def _check_used_colormap(passed_cmap, has_colors, include_cmap_tag, include_scal
 
 def _check_exp_image_colors(image_arr, colormap, color_idx, has_colors):
     exp_raw_values = list(colormap.keys())
-    cmap_colors = list(set(color[color_idx] for color in colormap.values()))
+    cmap_colors = list({color[color_idx] for color in colormap.values()})
     exp_colors = cmap_colors if has_colors else exp_raw_values
     r_uniques = np.unique(image_arr[:, :, color_idx])
     np.testing.assert_allclose(r_uniques, exp_colors)

@@ -123,7 +123,7 @@ for image_url in images:
     image_pathname = os.path.join(image_dst, image_fn)
     if os.path.isfile(image_pathname):
         continue
-    elif image_url.startswith("http://") or image_url.startswith("https://"):  # or image_url.startswith('ftp://'):
+    elif image_url.startswith(("http://", "https://")):  # or image_url.startswith('ftp://'):
         print("Downloading example image: {}".format(image_url))
         with urllib.request.urlopen(image_url) as remote_img, open(image_pathname, "wb") as local_img:
             copyfileobj(remote_img, local_img)

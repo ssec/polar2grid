@@ -51,7 +51,7 @@ def main():
     writer_init_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[2]._group_actions}
     writer_call_args = {ga.dest: getattr(args, ga.dest) for ga in subgroups[3]._group_actions}
 
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    levels = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)], filename=args.log_fn)
 
     scn = Scene(**scene_args)

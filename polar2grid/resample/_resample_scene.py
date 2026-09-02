@@ -334,8 +334,8 @@ def _filter_scene_with_grid_coverage(
 ):
     if area_def is not None and resampler != "native" and coverage_threshold > 0.0 and not has_dynamic_extents:
         logger.info("Checking products for sufficient output grid coverage (grid: '%s')...", area_name)
-        filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=coverage_threshold)
-        scene_to_resample = filter.filter_scene(scene_to_resample)
+        coverage_filter = ResampleCoverageFilter(target_area=area_def, coverage_fraction=coverage_threshold)
+        scene_to_resample = coverage_filter.filter_scene(scene_to_resample)
         if scene_to_resample is None:
             logger.warning("No products were found to overlap with '%s' grid.", area_name)
             return None, None
@@ -374,13 +374,13 @@ def _areas_to_resample(
 ) -> ListOfAreas:
     areas = areas_to_resample
     if areas is None:
-        if resampler in ["native"]:
-            logging.debug("Using default resampling target area 'MAX'.")
+        if resampler == "native":
+            logger.debug("Using default resampling target area 'MAX'.")
             areas = ["MAX"]
         elif default_target is None:
             raise ValueError("No destination grid/area specified and no default available (use -g flag).")
         else:
-            logging.debug("Using default resampling target area '%s'.", default_target)
+            logger.debug("Using default resampling target area '%s'.", default_target)
             areas = [default_target]
     elif not areas:
         areas = [None]

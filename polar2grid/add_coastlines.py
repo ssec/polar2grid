@@ -179,9 +179,7 @@ def _add_rivers_arguments(parser: argparse.ArgumentParser) -> None:
         default="c",
         help="Resolution of rivers to add (crude, low, intermediate, high, full)",
     )
-    group.add_argument(
-        "--rivers-level", choices=range(0, 11), type=int, default=5, help="Level of detail for river lines"
-    )
+    group.add_argument("--rivers-level", choices=range(11), type=int, default=5, help="Level of detail for river lines")
     group.add_argument(
         "--rivers-outline", default=["blue"], nargs="*", help="Color of river lines (color name or 3 RGB integers)"
     )
@@ -326,7 +324,7 @@ def main(argv=sys.argv[1:]):
     parser = get_parser()
     args = parser.parse_args(argv)
 
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    levels = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
     add_polar2grid_config_paths()
 
@@ -514,7 +512,7 @@ def _process_one_image(
         _add_colorbar_to_image(img, colormap=cmap, **colorbar_kwargs)
 
     kwargs = {}
-    if output_filename.endswith(".tif") or output_filename.endswith(".tiff"):
+    if output_filename.endswith((".tif", ".tiff")):
         # Copy geotiff/tiff tags if output is TIFF
         geotiff_tags = {tag_num: tag_val for tag_num, tag_val in all_tiff_tags.items() if tag_num > 30000}
         kwargs = {"tiffinfo": geotiff_tags}

@@ -37,7 +37,7 @@ class TocTreeFilt(TocTree):
     """
 
     option_spec = FILTER_OPTION_SPEC
-    hasPat = re.compile(r"^\s*:(.+):(.+)$")
+    has_pat = re.compile(r"^\s*:(.+):(.+)$")
 
     # Remove any entries in the content that we dont want and strip
     # out any filter prefixes that we want but obviously don't want the
@@ -48,7 +48,7 @@ class TocTreeFilt(TocTree):
         excl = self.state.document.settings.env.config.toc_filter_exclude
         filtered = []
         for e in entries:
-            m = self.hasPat.match(e)
+            m = self.has_pat.match(e)
             if m is not None:
                 if m.groups()[0] not in excl:
                     filtered.append(m.groups()[1])

@@ -26,7 +26,7 @@ from functools import cache
 
 import dask.array as da
 import numpy as np
-from pyresample.boundary import AreaBoundary, AreaDefBoundary, Boundary
+from pyresample.boundary import AreaBoundary, Boundary
 from pyresample.geometry import AreaDefinition, SwathDefinition, get_geostationary_bounding_box_in_lonlats
 from pyresample.spherical import SphPolygon
 
