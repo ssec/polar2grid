@@ -47,7 +47,7 @@ class BaseFilter:
 
     FILTER_MSG = "Unloading '{}' due to filtering."
 
-    def __init__(self, product_filter_criteria: dict = None):
+    def __init__(self, product_filter_criteria: dict | bool | None = None):
         """Initialize thresholds and default search criteria."""
         self._filter_criteria = product_filter_criteria
 

@@ -101,7 +101,9 @@ class SunlightCoverageFilter(BaseFilter):
 
     FILTER_MSG = "Unloading '{}' because there is not enough day/night coverage."
 
-    def __init__(self, product_filter_criteria: dict = None, sza_threshold: float = 100.0, fraction: float = 0.1):
+    def __init__(
+        self, product_filter_criteria: dict | None = None, sza_threshold: float = 100.0, fraction: float = 0.1
+    ):
         """Initialize thresholds and default search criteria."""
         super().__init__(product_filter_criteria)
         self._sza_threshold = sza_threshold
@@ -139,7 +141,9 @@ class DayCoverageFilter(SunlightCoverageFilter):
 
     FILTER_MSG = "Unloading '{}' because there is not enough day data."
 
-    def __init__(self, product_filter_criteria: dict = None, sza_threshold: float = 100.0, day_fraction: float = 0.1):
+    def __init__(
+        self, product_filter_criteria: dict | None = None, sza_threshold: float = 100.0, day_fraction: float = 0.1
+    ):
         """Initialize thresholds and default search criteria."""
         super().__init__(product_filter_criteria, sza_threshold=sza_threshold, fraction=day_fraction)
 
@@ -152,7 +156,9 @@ class NightCoverageFilter(SunlightCoverageFilter):
 
     FILTER_MSG = "Unloading '{}' because there is not enough night data."
 
-    def __init__(self, product_filter_criteria: dict = None, sza_threshold: float = 100.0, night_fraction: float = 0.1):
+    def __init__(
+        self, product_filter_criteria: dict | None = None, sza_threshold: float = 100.0, night_fraction: float = 0.1
+    ):
         """Initialize thresholds and default search criteria."""
         super().__init__(product_filter_criteria, sza_threshold=sza_threshold, fraction=night_fraction)
 

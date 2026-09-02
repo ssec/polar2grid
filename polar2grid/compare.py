@@ -304,7 +304,7 @@ def compare_image(im1_name, im2_name, atol=0.0, margin_of_error=0.0, **kwargs) -
 
 
 def _get_image_array(
-    img_filename: str, variable: str = None, shape: tuple | None = None, dtype: np.dtype | None = None
+    img_filename: str, variable: str | None = None, shape: tuple | None = None, dtype: np.dtype | None = None
 ) -> np.ndarray | None:
     from PIL import Image
 
