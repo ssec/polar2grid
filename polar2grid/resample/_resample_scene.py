@@ -33,10 +33,10 @@ from pyresample.geometry import AreaDefinition, DynamicAreaDefinition
 from satpy import Scene
 from satpy.area import get_area_def
 
+from polar2grid.filters._utils import PRGeometry
 from polar2grid.filters.resample_coverage import ResampleCoverageFilter
 from polar2grid.grids import GridManager
 
-from ..filters._utils import PRGeometry
 from .resample_decisions import ResamplerDecisionTree
 
 logger = logging.getLogger(__name__)

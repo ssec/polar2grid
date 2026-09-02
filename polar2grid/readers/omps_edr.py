@@ -78,7 +78,8 @@ from argparse import ArgumentParser, BooleanOptionalAction, _ArgumentGroup
 
 from satpy import DataQuery
 
-from ..core.script_utils import BooleanFilterAction
+from polar2grid.core.script_utils import BooleanFilterAction
+
 from ._base import ReaderProxyBase
 
 PREFERRED_CHUNK_SIZE: int = 6400

@@ -56,7 +56,8 @@ from argparse import ArgumentParser, _ArgumentGroup
 
 from satpy import DataQuery, Scene
 
-from ..core.script_utils import ExtendConstAction
+from polar2grid.core.script_utils import ExtendConstAction
+
 from ._base import ReaderProxyBase
 
 logger = logging.getLogger(__name__)

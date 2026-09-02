@@ -104,8 +104,8 @@ line-length = 120
 # file in nearly every run, so lazy %-formatting in log calls buys nothing. Use f-strings.
 select = [
     "A", "B", "C4", "C90", "D", "DTZ", "E", "F", "FA", "FURB", "I", "ISC",
-    "LOG", "N", "NPY", "PERF", "PIE", "PLE", "PT", "Q", "RUF", "SIM",
-    "T10", "UP", "W",
+    "LOG", "N", "NPY", "PERF", "PIE", "PLE", "PT", "Q", "RUF", "S", "SIM",
+    "T10", "TID", "UP", "W",
 ]
 # Remove D416 when all docstrings have been converted to google-style
 # UP031/UP032 (%-format and .format() -> f-string) are deferred: ~73 sites.
@@ -118,11 +118,16 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# Sphinx requires the module-level name `copyright`.
-"doc/source/conf.py" = ["E501", "A001"]
+# Sphinx requires the module-level name `copyright`. The example-image downloader checks
+# the URL scheme itself (S310) and supports FTP servers on purpose (S321).
+"doc/source/conf.py" = ["E501", "A001", "S310", "S321"]
 "polar2grid/readers/*.py" = ["D205", "D400", "D415"]
 # Satpy represents observation times as naive UTC datetimes; the fixtures mirror that.
-"polar2grid/tests/*" = ["DTZ001"]
+# S101: `assert` is how tests assert.
+"polar2grid/tests/*" = ["DTZ001", "S101"]
+# behave harness: `assert` is the assertion mechanism, and the steps deliberately shell
+# out to the built software bundle.
+"integration_tests/*" = ["S101", "S602"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

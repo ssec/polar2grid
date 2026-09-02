@@ -44,7 +44,8 @@ from argparse import ArgumentParser, _ArgumentGroup
 
 from satpy import DataQuery
 
-from ..core.script_utils import BooleanFilterAction
+from polar2grid.core.script_utils import BooleanFilterAction
+
 from ._base import ReaderProxyBase
 
 DEFAULT_PRODUCTS = ["sst"]

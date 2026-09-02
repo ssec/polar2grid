@@ -43,5 +43,6 @@ def test_main_call(main_func, exp_reader, capsys):
 
 def test_call_main_script():
     import subprocess
+    import sys
 
-    subprocess.check_call(["python3", "-m", "polar2grid", "-h"])
+    subprocess.check_call([sys.executable, "-m", "polar2grid", "-h"])
