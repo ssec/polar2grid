@@ -87,7 +87,7 @@
       - Binary
       - avhrr_l1b
       - binary
-    * - **Metop-SGA1 METimage (VII) Level 1b**
+    * - **Metop-SG METimage (VII) Level 1b**
       - W_XX-EUMETSAT-Darmstadt,SAT,SGA1-VII-1B-RAD\*.nc
       - 8 bit single band GeoTIFF
       - metimage_l1b_nc
