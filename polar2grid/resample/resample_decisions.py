@@ -71,7 +71,9 @@ class ResamplerDecisionTree(DecisionTree):
         for config_file in config_files:
             if os.path.isfile(config_file):
                 with open(config_file) as fd:
-                    resample_config = yaml.load(fd, Loader=yaml.UnsafeLoader)
+                    # These are config files shipped with the package or named by the
+                    # user via --extra-config-path, not untrusted input.
+                    resample_config = yaml.load(fd, Loader=yaml.UnsafeLoader)  # noqa: S506
                     if resample_config is None:
                         # empty file
                         continue
@@ -84,7 +86,7 @@ class ResamplerDecisionTree(DecisionTree):
                 recursive_dict_update(conf, config_file)
             else:
                 logger.debug("Loading resampling config string")
-                d = yaml.load(config_file, Loader=yaml.UnsafeLoader)
+                d = yaml.load(config_file, Loader=yaml.UnsafeLoader)  # noqa: S506  (trusted local config)
                 if not isinstance(d, dict):
                     raise ValueError("YAML file doesn't exist or string is not YAML dict: {}".format(config_file))
                 recursive_dict_update(conf, d)

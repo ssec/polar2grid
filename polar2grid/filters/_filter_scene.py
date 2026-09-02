@@ -25,7 +25,8 @@ import logging
 
 from satpy import Scene
 
-from ..utils.dynamic_imports import get_reader_attr
+from polar2grid.utils.dynamic_imports import get_reader_attr
+
 from .day_night import DayCoverageFilter, NightCoverageFilter
 
 logger = logging.getLogger(__name__)

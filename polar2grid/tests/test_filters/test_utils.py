@@ -31,8 +31,7 @@ from pytest_lazy_fixtures import lf as lazy_fixture
 from satpy.tests.utils import CustomScheduler
 
 from polar2grid.filters._utils import boundary_for_area
-
-from .._fixture_utils import generate_lonlat_data
+from polar2grid.tests._fixture_utils import generate_lonlat_data
 
 
 def _swath_def_nan_rows() -> SwathDefinition:

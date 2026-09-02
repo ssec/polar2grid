@@ -44,7 +44,7 @@ VALID_BANDS = (
 DEFAULT_BANDS = VALID_BANDS
 
 # Special token accepted by --band that expands to every band
-ALL_BANDS_TOKEN = "ALL"
+ALL_BANDS_TOKEN = "ALL"  # noqa: S105  (a CLI keyword, not a credential)
 
 
 def parse_band(value: str) -> list[str]:
