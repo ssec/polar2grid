@@ -16,7 +16,7 @@ import os
 import sys
 import urllib.request
 import warnings
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from shutil import copyfileobj
 
 import yaml

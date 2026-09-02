@@ -92,8 +92,8 @@ The MWS reader provides the following products:
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup
 import logging
+from argparse import ArgumentParser, _ArgumentGroup
 
 from ._base import ReaderProxyBase
 

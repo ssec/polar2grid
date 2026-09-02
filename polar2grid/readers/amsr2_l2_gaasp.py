@@ -49,7 +49,7 @@
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup, BooleanOptionalAction
+from argparse import ArgumentParser, BooleanOptionalAction, _ArgumentGroup
 
 from satpy import DataQuery
 

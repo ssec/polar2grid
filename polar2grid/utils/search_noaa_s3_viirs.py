@@ -19,12 +19,12 @@ Example usage:
 from __future__ import annotations
 
 import argparse
-from glob import fnmatch
 import os
 import re
 import sys
 from collections.abc import Iterable, Iterator
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
+from glob import fnmatch
 
 import s3fs
 

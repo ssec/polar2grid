@@ -22,8 +22,8 @@
 """Enhancement functions for VIIRS."""
 
 import numpy as np
-from trollimage.xrimage import XRImage
 from satpy.enhancements.wrappers import using_map_blocks
+from trollimage.xrimage import XRImage
 
 
 def cloud_layers_lmh(img: XRImage) -> XRImage:

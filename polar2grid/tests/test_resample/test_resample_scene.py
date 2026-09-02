@@ -31,7 +31,6 @@ from pytest_lazy_fixtures import lf as lazy_fixture
 from satpy import Scene
 from satpy.resample.kdtree import KDTreeResampler
 from satpy.resample.native import NativeResampler
-
 from satpy.tests.utils import CustomScheduler
 
 from polar2grid.resample._resample_scene import resample_scene

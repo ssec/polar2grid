@@ -99,7 +99,7 @@ Averaging resampling. The ``--weight-delta-max`` parameter set to 40 and the
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup, BooleanOptionalAction
+from argparse import ArgumentParser, BooleanOptionalAction, _ArgumentGroup
 
 from satpy import DataQuery
 

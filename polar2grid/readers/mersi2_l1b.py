@@ -96,13 +96,13 @@ the ``mersi2_l1b`` frontend name. The MERSI2 frontend provides the following pro
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup
 import logging
+from argparse import ArgumentParser, _ArgumentGroup
 
-from satpy import Scene, DataQuery
+from satpy import DataQuery, Scene
 
-from ._base import ReaderProxyBase
 from ..core.script_utils import ExtendConstAction
+from ._base import ReaderProxyBase
 
 logger = logging.getLogger(__name__)
 
