@@ -133,8 +133,8 @@ def plot_array(array1, array2, cmap="viridis", vmin=None, vmax=None, **kwargs):
     import matplotlib.pyplot as plt
 
     LOG.info("Plotting arrays...")
-    vmin = vmin if vmin else -10
-    vmax = vmax if vmax else 10
+    vmin = vmin or -10
+    vmax = vmax or 10
 
     fig, (ax1, ax2) = plt.subplots(2, 2)
     array3 = array1 - array2
@@ -765,7 +765,7 @@ def main(argv=sys.argv[1:]):
     parser.add_argument("input2", help="Second filename or directory to compare. This is typicall the actual output.")
     args = parser.parse_args(argv)
 
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    levels = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
     compare_kwargs = {
         "shape": tuple(args.shape),

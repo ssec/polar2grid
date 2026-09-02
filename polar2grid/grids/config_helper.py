@@ -64,7 +64,7 @@ def determine_projection(center_lon: float, center_lat: float, proj4_str: str = 
                 "+lon_0=%(center_lon)0.5f +units=m"
             )
 
-    proj4_str = proj4_str % dict(center_lon=center_lon, center_lat=center_lat)
+    proj4_str = proj4_str % {"center_lon": center_lon, "center_lat": center_lat}
     return CRS.from_user_input(proj4_str)
 
 

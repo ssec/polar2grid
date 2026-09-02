@@ -149,7 +149,7 @@ class GlueArgumentParser:
         reader_specific_args, reader_specific_load_args = self._parse_reader_args(reader_subgroups)
         # argparse will combine "extended" arguments like `products` automatically
         # and products should only be provided to the load arguments, not reader creation
-        for _reader_name, _reader_args in reader_specific_args.items():
+        for _reader_args in reader_specific_args.values():
             _reader_args.pop("products", None)
 
         # Parse provided files and search for files if provided directories
@@ -527,9 +527,9 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
 
     group_1 = parser.add_argument_group(title="Resampling")
     if is_polar2grid:
-        DEBUG_EWA = bool(int(os.getenv("P2G_EWA_LEGACY", "0")))
+        debug_ewa = bool(int(os.getenv("P2G_EWA_LEGACY", "0")))
         methods = ["ewa", "native", "nearest"]
-        if DEBUG_EWA:
+        if debug_ewa:
             methods.append("ewa_legacy")
 
         group_1.add_argument(
@@ -627,7 +627,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
     group_1.add_argument(
         "--grid-configs",
         nargs="+",
-        default=tuple(),
+        default=(),
         help="Specify additional grid configuration files. (.conf for legacy CSV grids, .yaml for SatPy-style areas)",
     )
     group_1.add_argument(
@@ -667,7 +667,7 @@ def add_resample_argument_groups(parser, is_polar2grid=None):
         "Value is in geocentric meters regardless of input or output projection. "
         "By default this will be estimated based on input and output projection and pixel size.",
     )
-    return tuple([group_1])
+    return (group_1,)
 
 
 def _retitle_optional_arguments(parser):

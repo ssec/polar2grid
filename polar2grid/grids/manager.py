@@ -221,7 +221,7 @@ def read_grids_config_str(config_str, convert_coords=True):
 def _generate_valid_parts_in_config_str(config_str: str):
     for line in config_str.split("\n"):
         # Skip comments and empty lines
-        if not line or line.startswith("#") or line.startswith("\n"):
+        if not line or line.startswith(("#", "\n")):
             continue
 
         # Clean up the configuration line

@@ -53,7 +53,7 @@ def main():
     parser.add_argument("files", nargs="*", help="Files to load data from")
     args = parser.parse_args()
 
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    levels = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[min(3, args.verbosity)])
 
     dask.config.set(num_workers=4)

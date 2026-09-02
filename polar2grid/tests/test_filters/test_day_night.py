@@ -44,10 +44,10 @@ def test_daynight_filter_no_filter_check_cases(filter_cls, criteria, viirs_sdr_i
     scn["I01"] = viirs_sdr_i01_data_array
 
     if criteria == "default":
-        filter = filter_cls()
+        dn_filter = filter_cls()
     else:
-        filter = filter_cls(criteria)
-    new_scn = filter.filter_scene(scn)
+        dn_filter = filter_cls(criteria)
+    new_scn = dn_filter.filter_scene(scn)
     assert new_scn is not None
     assert new_scn is not scn
     assert "I01" in new_scn
@@ -68,8 +68,8 @@ def test_daynight_filter_filter_cases(filter_cls, add_nans, kwargs, viirs_sdr_i0
         _replace_swath_def_with_some_bounding_nans(scn["I01"])
 
     criteria = {"standard_name": ["toa_bidirectional_reflectance"]}
-    filter = filter_cls(criteria, **kwargs)
-    new_scn = filter.filter_scene(scn)
+    dn_filter = filter_cls(criteria, **kwargs)
+    new_scn = dn_filter.filter_scene(scn)
     assert new_scn is None  # all filtered
     assert "I01" in scn
 
@@ -105,8 +105,8 @@ def test_daynight_filter_basic_composite_case(viirs_sdr_i04_data_array):
     scn["I05"] = i05_data_arr
     scn.load(["ifog"])
 
-    filter = NightCoverageFilter({"standard_name": "temperature_difference"}, night_fraction=0.2)
-    new_scn = filter.filter_scene(scn)
+    dn_filter = NightCoverageFilter({"standard_name": "temperature_difference"}, night_fraction=0.2)
+    new_scn = dn_filter.filter_scene(scn)
     assert new_scn is not None
     assert "ifog" not in new_scn
 

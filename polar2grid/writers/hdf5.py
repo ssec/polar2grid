@@ -134,7 +134,7 @@ class HDF5Writer(Writer):
         return datasets_by_area.items()
 
     @staticmethod
-    def open_HDF5_filehandle(output_filename: str, append: bool = True):
+    def _open_hdf5_filehandle(output_filename: str, append: bool = True):
         """Open a HDF5 file handle."""
         if os.path.isfile(output_filename):
             if append:
@@ -254,7 +254,7 @@ class HDF5Writer(Writer):
         if not all_equal(output_names):
             LOG.warning("More than one output filename possible. Writing to only '{}'.".format(filename))
 
-        HDF5_fh = self.open_HDF5_filehandle(filename, append=append)
+        hdf5_fh = self._open_hdf5_filehandle(filename, append=append)
 
         datasets_by_area = self.iter_by_area(dataset)
         # Initialize source/targets at start of each new AREA grouping.
@@ -266,7 +266,7 @@ class HDF5Writer(Writer):
                 area,
                 data_arrs,
                 filename,
-                HDF5_fh,
+                hdf5_fh,
                 dtype,
                 append,
                 compression,
@@ -288,17 +288,17 @@ class HDF5Writer(Writer):
             return targets, sources
 
     def _save_data_arrays_and_area(
-        self, area, data_arrs, filename, HDF5_fh, dtype, append, compression, add_geolocation
+        self, area, data_arrs, filename, hdf5_fh, dtype, append, compression, add_geolocation
     ):
         # open HDF5 file handle, check if group already exists.
-        parent_group = self.create_proj_group(filename, HDF5_fh, area)
+        parent_group = self.create_proj_group(filename, hdf5_fh, area)
 
         dsets = []
         targets = []
         if add_geolocation:
             chunks = data_arrs[0].chunks
             geo_sets, file_targets = self.write_geolocation(
-                HDF5_fh, filename, parent_group, area, dtype, append, compression, chunks
+                hdf5_fh, filename, parent_group, area, dtype, append, compression, chunks
             )
             dsets.extend(geo_sets)
             targets.extend(file_targets)
@@ -306,7 +306,7 @@ class HDF5Writer(Writer):
         for data_arr in data_arrs:
             try:
                 dask_arr, target_file = self._save_data_array(
-                    HDF5_fh, filename, data_arr, parent_group, dtype, compression
+                    hdf5_fh, filename, data_arr, parent_group, dtype, compression
                 )
             except ValueError:
                 if os.path.isfile(filename):
@@ -316,10 +316,10 @@ class HDF5Writer(Writer):
             targets.append(target_file)
         return dsets, targets
 
-    def _save_data_array(self, HDF5_fh, filename, data_arr, parent_group, dtype, compression):
+    def _save_data_array(self, hdf5_fh, filename, data_arr, parent_group, dtype, compression):
         hdf_subgroup = "{}/{}".format(parent_group, data_arr.attrs.get("p2g_name", data_arr.attrs["name"]))
         file_var = FakeHDF5(filename, hdf_subgroup)
-        self.create_variable(HDF5_fh, hdf_subgroup, data_arr, dtype, compression)
+        self.create_variable(hdf5_fh, hdf_subgroup, data_arr, dtype, compression)
         return data_arr.data, file_var
 
 

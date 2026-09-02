@@ -77,7 +77,7 @@ class ResamplerDecisionTree(DecisionTree):
                         continue
                     resampling_section = resample_config.get(self.prefix, {})
                     if not resampling_section:
-                        logging.debug("Config '{}' has no '{}' section or it is empty".format(config_file, self.prefix))
+                        logger.debug("Config '{}' has no '{}' section or it is empty".format(config_file, self.prefix))
                         continue
                     recursive_dict_update(conf, resampling_section)
             elif isinstance(config_file, dict):

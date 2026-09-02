@@ -88,7 +88,7 @@ def extra_viirs_composite_path(tmp_path_factory):
     tmp_path = tmp_path_factory.mktemp("extra_viirs_composite_path")
     _create_fake_comp(tmp_path)
     _create_fake_comp_enh(tmp_path)
-    yield [tmp_path]
+    return [tmp_path]
 
 
 def _create_fake_comp(tmp_path):
@@ -178,12 +178,12 @@ def extra_viirs_enhancement_file(tmp_path_factory):
     viirs_enh_file = enh_path / "blahblahblah.yaml"
     with open(viirs_enh_file, "w") as comp_file:
         yaml.dump(enh_dict, comp_file)
-    yield [viirs_enh_file]
+    return [viirs_enh_file]
 
 
 @pytest.fixture(scope="session")
 def extra_viirs_comp_and_enh(extra_viirs_composite_path, extra_viirs_enhancement_file):
-    yield extra_viirs_composite_path + extra_viirs_enhancement_file
+    return extra_viirs_composite_path + extra_viirs_enhancement_file
 
 
 @contextlib.contextmanager

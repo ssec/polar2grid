@@ -100,15 +100,23 @@ line-length = 120
 
 [tool.ruff.lint]
 # See https://docs.astral.sh/ruff/rules/
-select = ["E", "W", "B", "D", "I", "T10", "C90", "UP"]
+# "G" (flake8-logging-format) is deliberately not selected: Polar2Grid logs at DEBUG to a
+# file in nearly every run, so lazy %-formatting in log calls buys nothing. Use f-strings.
+select = [
+    "A", "B", "C4", "C90", "D", "DTZ", "E", "F", "FA", "FURB", "I", "ISC",
+    "LOG", "N", "NPY", "PERF", "PIE", "PLE", "PT", "Q", "T10", "UP", "W",
+]
 # Remove D416 when all docstrings have been converted to google-style
-# UP031/UP032 (%-format and .format() -> f-string) are deferred: ~73 sites, and the
-# %-formatting in logging calls must stay lazy. Handle them in a separate pass.
+# UP031/UP032 (%-format and .format() -> f-string) are deferred: ~73 sites.
+# Handle them in a separate pass.
 ignore = ["D101", "D102", "D103", "D104", "D105", "D106", "D107", "E203", "D416", "UP031", "UP032"]
 
 [tool.ruff.lint.per-file-ignores]
-"doc/source/conf.py" = ["E501"]
-"polar2grid/readers/*.py" = ["D205", "D400", "D415", "S101"]  # assert allowed in tests
+# Sphinx requires the module-level name `copyright`.
+"doc/source/conf.py" = ["E501", "A001"]
+"polar2grid/readers/*.py" = ["D205", "D400", "D415"]
+# Satpy represents observation times as naive UTC datetimes; the fixtures mirror that.
+"polar2grid/tests/*" = ["DTZ001"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -118,4 +126,3 @@ max-complexity = 10
 
 [tool.ruff.lint.isort]
 known-first-party = ["polar2grid"]
-known-third-party = ["src"]

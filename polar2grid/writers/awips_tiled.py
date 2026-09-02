@@ -100,8 +100,6 @@ DEFAULT_OUTPUT_FILENAMES = {
 
 
 def add_writer_argument_groups(parser, group=None):
-    import argparse
-
     if group is None:
         group = parser.add_argument_group(title="AWIPS Tiled Writer")
     # group_1.add_argument('--file-pattern', default=DEFAULT_OUTPUT_PATTERN,

@@ -44,7 +44,7 @@ NUMPY_DTYPE_STRS = [
 def str_to_dtype(dtype_str: str) -> np.dtype:
     try:
         return getattr(np, dtype_str)
-    except AttributeError:
+    except AttributeError as err:
         raise ValueError("Not a valid data type string: %s" % (dtype_str,)) from err
 
 

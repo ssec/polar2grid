@@ -241,7 +241,7 @@ class ReaderProxy(ReaderProxyBase):
         """Get products to load if users hasn't specified any others."""
         all_btemps = list(self._btemp_channels_from_satpy(self.scn.all_dataset_names()))
         defaults = ["rain_rate"]
-        defaults += set(all_btemps) & set(["btemp_88v", "btemp_89v1"])
+        defaults += set(all_btemps) & {"btemp_88v", "btemp_89v1"}
         return defaults
 
     def get_all_products(self):

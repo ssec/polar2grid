@@ -257,7 +257,7 @@ class ArgumentParser(argparse.ArgumentParser):
             This does not group the subgroup options as their own dictionaries.
 
         """
-        these_actions = [action for action in group._group_actions]
+        these_actions = list(group._group_actions)
         # get actions if this group has even more subgroups
         for subgroup in group._action_groups:
             these_actions += self._get_group_actions(subgroup)

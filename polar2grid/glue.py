@@ -264,10 +264,10 @@ def _create_profile_html_if(create_profile: Literal[False] | None | str, project
     else:
         profile_filename = create_profile
 
-    start_time = datetime.now()
+    start_time = datetime.now().astimezone()
     with CacheProfiler() as cprof, ResourceProfiler() as rprof, Profiler() as prof:
         yield
-    end_time = datetime.now()
+    end_time = datetime.now().astimezone()
 
     profile_filename = profile_filename.format(
         project_name=project_name,
@@ -424,7 +424,7 @@ def _prepare_initial_logging(arg_parser, glue_name: str) -> bool:
     if args.log_fn is None:
         rename_log = True
         args.log_fn = glue_name + "_fail.log"
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    levels = [logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG]
     if os.getenv("P2G_ALLOW_TRACE"):
         from satpy.utils import TRACE_LEVEL
 
@@ -487,8 +487,8 @@ def _set_preferred_chunk_size(preferred_chunk_size: int) -> Iterator[None]:
 def _handle_missing_deps_keyerror(dep_key_error: KeyError) -> None:
     miss_dep_exc = getattr(dep_key_error, "__context__", None)
     if not isinstance(miss_dep_exc, MissingDependencies):
-        raise
-    flat_queries = sorted(set(data_query for dep_set in miss_dep_exc.missing_dependencies for data_query in dep_set))
+        raise dep_key_error
+    flat_queries = sorted({data_query for dep_set in miss_dep_exc.missing_dependencies for data_query in dep_set})
     flat_queries_dicts = [dq.to_dict() for dq in flat_queries]
     plural_s = "s" if len(flat_queries_dicts) > 1 else ""
     LOG.error(
@@ -500,7 +500,7 @@ def _handle_missing_deps_keyerror(dep_key_error: KeyError) -> None:
             ),
         )
     )
-    LOG.debug("Unknown product requested", exc_info=True)
+    LOG.debug("Unknown product requested", exc_info=dep_key_error)
 
 
 def _persist_swath_definition_in_scene(scn: Scene) -> None:

@@ -80,7 +80,7 @@ from __future__ import annotations
 import logging
 from argparse import ArgumentParser, _ArgumentGroup
 
-from satpy import DataQuery, Scene
+from satpy import DataQuery
 
 from ._base import ReaderProxyBase
 

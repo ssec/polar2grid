@@ -110,7 +110,7 @@ def _add_origin(grid_info: dict, area_dict: dict, crs: CRS, dx: float, dy: float
         area_dict["upper_left_extent"] = {"x": ox, "y": oy, "units": grid_info["grid_origin_units"]}
 
 
-def ordered_dump(data, stream=None, Dumper=yaml.Dumper, **kwds):
+def ordered_dump(data, stream=None, Dumper=yaml.Dumper, **kwds):  # noqa: N803  (mirrors the PyYAML API)
     """Dump the data to YAML in ordered fashion."""
 
     class OrderedDumper(Dumper):
