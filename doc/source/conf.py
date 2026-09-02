@@ -284,6 +284,7 @@ _GEO2GRID_EXCLUDES = [
     "readers/metimage_l1b_nc.rst",
     "readers/mirs.rst",
     "readers/modis_l1b.rst",
+    "readers/mws_l1b_nc.rst",
     "readers/nucaps.rst",
     "readers/omps_edr.rst",
     "readers/viirs_edr_active_fires.rst",

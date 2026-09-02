@@ -85,7 +85,11 @@ filterwarnings = [
     "ignore:numpy.ndarray size changed, may indicate binary incompatibility:RuntimeWarning",
     "ignore:The `frequency` argument is pending deprecation:PendingDeprecationWarning",
     # remove after dask 2025.8.0 release
-    "ignore:The `token=` keyword to:FutureWarning"
+    "ignore:The `token=` keyword to:FutureWarning",
+    # rasterio composes affine transforms with `*` (ex. rasterio.transform.from_bounds, used by
+    # trollimage when writing geotiffs); affine 3.1 made that a PendingDeprecationWarning.
+    # Remove once rasterio switches to the `@` matmul operator.
+    "ignore:Use `@` matmul instead of:PendingDeprecationWarning:rasterio",
 ]
 
 [tool.coverage.run]

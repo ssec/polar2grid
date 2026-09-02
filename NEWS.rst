@@ -4,7 +4,8 @@ Release Notes
 Version 3.3.0 (unreleased)
 --------------------------
 
-* New Metop-SG METimage (VII) Level 1b reader.
+* New Metop-SG MetImage (VII) Level 1b reader.
+* New Metop-SG MicroWave Sounder (MWS) reader.
 
 Version 3.2.0 (2026-03-02)
 --------------------------

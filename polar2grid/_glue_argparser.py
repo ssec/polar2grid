@@ -358,6 +358,7 @@ def _supported_readers(is_polar2grid: bool = False) -> list[str]:
             "metimage_l1b_nc",
             "mirs",
             "modis_l1b",
+            "mws_l1b_nc",
             "omps_edr",
             "nucaps",
             "viirs_edr_active_fires",

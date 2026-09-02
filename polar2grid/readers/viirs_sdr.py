@@ -171,6 +171,14 @@ Averaging resampling. The ``--weight-delta-max`` parameter set to 40 and the
 +---------------------------+-----------------------------------------------------+
 | false_color               | Ratio sharpened rayleigh corrected false color      |
 +---------------------------+-----------------------------------------------------+
+| night_microphysics        | Night Microphysics RGB Composite                    |
++---------------------------+-----------------------------------------------------+
+| dust                      | Dust RGB Composite                                  |
++---------------------------+-----------------------------------------------------+
+| ash                       | Ash RGB Composite                                   |
++---------------------------+-----------------------------------------------------+
+| day_cloud_type            | Day Cloud Type RGB Composite                        |
++---------------------------+-----------------------------------------------------+
 
 """
 
@@ -245,8 +253,14 @@ DNB_ANGLE_PRODUCTS = [
 ]
 TRUE_COLOR_PRODUCTS = ["true_color"]
 FALSE_COLOR_PRODUCTS = ["false_color"]
-OTHER_COMPS = [
+OTHER_DEFAULT_COMPS = [
     "ifog",
+]
+OTHER_COMPS = [
+    "night_microphysics",
+    "dust",
+    "ash",
+    "day_cloud_type",
 ]
 
 
@@ -292,10 +306,12 @@ PRODUCT_ALIASES["i_solar_azimuth_angle"] = DataQuery(name="solar_azimuth_angle",
 PRODUCT_ALIASES["i_sat_zenith_angle"] = DataQuery(name="satellite_zenith_angle", resolution=371)
 PRODUCT_ALIASES["i_sat_azimuth_angle"] = DataQuery(name="satellite_azimuth_angle", resolution=371)
 
-DEFAULT_PRODUCTS = I_ALIASES + M_ALIASES + DNB_PRODUCTS[1:] + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + OTHER_COMPS
+DEFAULT_PRODUCTS = (
+    I_ALIASES + M_ALIASES + DNB_PRODUCTS[1:] + TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + OTHER_DEFAULT_COMPS
+)
 P2G_PRODUCTS = I_ALIASES + M_ALIASES + DNB_PRODUCTS + I_RAD_PRODUCTS + M_RAD_PRODUCTS
-P2G_PRODUCTS += I_ANGLE_PRODUCTS + M_ANGLE_PRODUCTS + DNB_ANGLE_PRODUCTS + OTHER_COMPS
-P2G_PRODUCTS += TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS
+P2G_PRODUCTS += I_ANGLE_PRODUCTS + M_ANGLE_PRODUCTS + DNB_ANGLE_PRODUCTS + OTHER_DEFAULT_COMPS
+P2G_PRODUCTS += TRUE_COLOR_PRODUCTS + FALSE_COLOR_PRODUCTS + OTHER_COMPS
 P2G_PRODUCTS += [
     "viirs_crefl01",
     "viirs_crefl02",
