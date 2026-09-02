@@ -115,8 +115,6 @@ ignore = [
     "UP031", "UP032",
     # RUF005: `[*a, b]` over `a + [b]` is a readability preference, ~22 sites.
     "RUF005",
-    # RUF013: implicit Optional (`x: str = None`); 7 sites, deferred to a typing pass.
-    "RUF013",
 ]
 
 [tool.ruff.lint.per-file-ignores]

@@ -56,9 +56,9 @@ class ResampleCoverageFilter(BaseFilter):
 
     def __init__(
         self,
-        product_filter_criteria: dict = True,
-        target_area: PRGeometry = None,
-        coverage_fraction: float = None,
+        product_filter_criteria: dict | bool = True,
+        target_area: PRGeometry | None = None,
+        coverage_fraction: float | None = None,
     ):
         """Initialize thresholds and default search criteria."""
         super().__init__(product_filter_criteria)

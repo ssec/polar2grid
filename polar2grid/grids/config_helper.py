@@ -44,7 +44,7 @@ CONFIG_LINE_FORMAT = (
 )
 
 
-def determine_projection(center_lon: float, center_lat: float, proj4_str: str = None) -> CRS:
+def determine_projection(center_lon: float, center_lat: float, proj4_str: str | None = None) -> CRS:
     """Get the 'best' projection to be used based on the center longitude and latitude provided."""
     abs_lat = abs(center_lat)
     if proj4_str is None:
