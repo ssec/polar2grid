@@ -254,9 +254,8 @@ def read_grids_config(config_filepath, convert_coords=True):
 class GridManager:
     """Object that holds grid information about the grids added to it."""
 
-    grid_information: dict[str, dict] = {}
-
     def __init__(self, *grid_configs):
+        self.grid_information: dict[str, dict] = {}
         for grid_config in grid_configs:
             LOG.debug("Loading grid configuration '%s'", grid_config)
             self.add_grid_config(grid_config)

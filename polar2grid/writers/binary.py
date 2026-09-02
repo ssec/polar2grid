@@ -122,7 +122,7 @@ class FlatBinaryWriter(ImageWriter):
             final_data = final_data * (rmax - rmin) + rmin
         final_data = clip_to_data_type(final_data, dtype)
 
-        same_fill = np.isnan(fill) and np.isnan(fill_value) or fill == fill_value
+        same_fill = (np.isnan(fill) and np.isnan(fill_value)) or fill == fill_value
         if data.dtype == dtype and same_fill:
             return final_data
 

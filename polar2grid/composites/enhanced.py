@@ -45,7 +45,7 @@ class SingleEnhancedBandCompositor(SingleBandCompositor):
         data = enhance2dataset(data)
         data.attrs = new_attrs
         if isinstance(data.attrs.get("sensor"), set) and len(data.attrs["sensor"]) == 1:
-            data.attrs["sensor"] = list(data.attrs["sensor"])[0]
+            data.attrs["sensor"] = next(iter(data.attrs["sensor"]))
         return super().__call__([data], **attrs)
 
 

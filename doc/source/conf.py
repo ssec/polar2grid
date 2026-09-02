@@ -133,8 +133,8 @@ for image_url in images:
         server = parts[2]
         ftp_fn = "/".join(parts[3:])
         ftp = ftplib.FTP(server, user="ftp")  # hope for anonymous
-        out_file = open(image_pathname, "wb")
-        ftp.retrbinary("RETR {}".format(ftp_fn), out_file.write)
+        with open(image_pathname, "wb") as out_file:
+            ftp.retrbinary("RETR {}".format(ftp_fn), out_file.write)
     else:
         raise ValueError("Not sure how to download image: {}".format(image_url))
 
@@ -176,10 +176,7 @@ extensions = [
 ]
 
 # API docs
-if is_geo2grid:
-    _apidoc_excluded_paths = ["../../polar2grid/readers/amsr2_l1b.py"]
-else:
-    _apidoc_excluded_paths = []
+_apidoc_excluded_paths = ["../../polar2grid/readers/amsr2_l1b.py"] if is_geo2grid else []
 apidoc_separate_modules = True
 apidoc_include_private = True
 
@@ -595,7 +592,7 @@ with open(grids_list_filename, "w") as grids_list_file:
         if area_title is None:
             continue
         proj = area_dict["projection"]
-        crs = CRS.from_user_input(proj["EPSG"] if "EPSG" in proj else proj)
+        crs = CRS.from_user_input(proj.get("EPSG", proj))
         title_underline = "^" * len(area_title)
         rst_str = f"""
 .. _grid_{area_name}:

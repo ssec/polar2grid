@@ -149,9 +149,8 @@ def rename_log_file(new_filename):
 
     # move the old file
     if os.path.isfile(new_filename):
-        with open(new_filename, "a") as new_file:
-            with open(fn) as old_file:
-                new_file.write(old_file.read())
+        with open(new_filename, "a") as new_file, open(fn) as old_file:
+            new_file.write(old_file.read())
         os.remove(fn)
     else:
         os.rename(fn, new_filename)
@@ -279,8 +278,8 @@ class ArgumentParser(argparse.ArgumentParser):
         args.subgroup_args = defaultdict(dict)
         for subgroup_title in subgroup_titles:
             try:
-                subgroup = [x for x in self._action_groups if x.title == subgroup_title][0]
-            except IndexError:
+                subgroup = next(x for x in self._action_groups if x.title == subgroup_title)
+            except StopIteration:
                 # we don't have any loggers configured at this point
                 print("WARNING: Couldn't find argument group '%s' in configured parser" % (subgroup_title,))
                 continue

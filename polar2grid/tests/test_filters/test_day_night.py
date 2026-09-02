@@ -43,10 +43,7 @@ def test_daynight_filter_no_filter_check_cases(filter_cls, criteria, viirs_sdr_i
     scn = Scene()
     scn["I01"] = viirs_sdr_i01_data_array
 
-    if criteria == "default":
-        dn_filter = filter_cls()
-    else:
-        dn_filter = filter_cls(criteria)
+    dn_filter = filter_cls() if criteria == "default" else filter_cls(criteria)
     new_scn = dn_filter.filter_scene(scn)
     assert new_scn is not None
     assert new_scn is not scn

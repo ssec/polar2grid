@@ -261,5 +261,5 @@ def test_partial_filter(viirs_sdr_i01_data_array):
             grid_coverage=0.05,
         )
     assert len(scenes_to_save) == 1
-    new_scn, data_ids = scenes_to_save[0]
+    new_scn, _data_ids = scenes_to_save[0]
     assert len(new_scn.keys()) == 1  # I01
