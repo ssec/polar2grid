@@ -230,7 +230,8 @@ def _get_groups_to_resample(
 ) -> dict:
     resampling_dtree = ResamplerDecisionTree.from_configs()
     resampling_groups = {}
-    for data_id in input_scene.keys():
+    # NOTE: iterating a Scene yields DataArrays, not DataIDs -- .keys() is required here.
+    for data_id in input_scene.keys():  # noqa: SIM118
         resampling_args = resampling_dtree.find_match(**input_scene[data_id].attrs)
         default_resampler = resampling_args.get("resampler")
         resampler_kwargs = resampling_args.get("kwargs", {}).copy()
@@ -246,10 +247,8 @@ def _get_groups_to_resample(
 
 def _default_grid(resampler, is_polar2grid):
     if resampler in [None, "native"]:
-        default_target = "MAX"
-    else:
-        default_target = "wgs84_fit" if is_polar2grid else "MAX"
-    return default_target
+        return "MAX"
+    return "wgs84_fit" if is_polar2grid else "MAX"
 
 
 def _hashable_kwargs(kwargs):

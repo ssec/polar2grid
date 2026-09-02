@@ -70,7 +70,7 @@ def band_to_prefix(band: str) -> str:
     "band" GITCO is converted to "VIIRS-IMG-GEO-TC".
 
     """
-    if band.startswith("G"):
+    if band.startswith("G"):  # noqa: SIM108  (nesting these ternaries is less readable)
         # M-band and I-band geolocation are only available for terrain-corrected (TC)
         band_type = "GEO" if band[1] == "D" else "GEO-TC"
     else:

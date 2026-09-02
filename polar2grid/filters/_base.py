@@ -60,10 +60,7 @@ class BaseFilter:
             # if no criteria was provided then no products will be checked
             return False
 
-        for filter_key, filter_list in self._filter_criteria.items():
-            if attrs.get(filter_key) in filter_list:
-                return True
-        return False
+        return any(attrs.get(filter_key) in filter_list for filter_key, filter_list in self._filter_criteria.items())
 
     def _filter_data_array(self, data_arr: DataArray, _cache: dict):
         """Check if this DataArray should be removed.
@@ -74,10 +71,8 @@ class BaseFilter:
             meaning it should be kept.
 
         """
-        if not self._matches_criteria(data_arr):
-            return False
         # Subclasses should implement further logic here
-        return True
+        return self._matches_criteria(data_arr)
 
     def filter_scene(self, scene: Scene):
         """Create a new Scene with filtered DataArrays removed."""

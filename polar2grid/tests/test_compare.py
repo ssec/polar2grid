@@ -53,8 +53,9 @@ def _create_geotiffs(base_dir, img_data):
     for idx, img_arr in enumerate(img_data):
         band_count = 1 if img_arr.ndim == 2 else img_arr.shape[0]
         gtiff_fn = os.path.join(base_dir, f"test{idx}.tif")
-        with ignore_no_georef():
-            with rasterio.open(
+        with (
+            ignore_no_georef(),
+            rasterio.open(
                 gtiff_fn,
                 "w",
                 driver="GTiff",
@@ -62,11 +63,12 @@ def _create_geotiffs(base_dir, img_data):
                 height=img_arr.shape[-2],
                 width=img_arr.shape[-1],
                 dtype=img_arr.dtype,
-            ) as gtiff_file:
-                if img_arr.ndim == 2:
-                    img_arr = img_arr[None, :, :]
-                for band_idx, band_arr in enumerate(img_arr):
-                    gtiff_file.write(band_arr, band_idx + 1)
+            ) as gtiff_file,
+        ):
+            if img_arr.ndim == 2:
+                img_arr = img_arr[None, :, :]
+            for band_idx, band_arr in enumerate(img_arr):
+                gtiff_file.write(band_arr, band_idx + 1)
 
 
 def _create_hdf5(base_dir, img_data):

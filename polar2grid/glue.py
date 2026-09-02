@@ -253,7 +253,7 @@ def _get_glue_name(args):
 
 
 @contextlib.contextmanager
-def _create_profile_html_if(create_profile: Literal[False] | None | str, project_name: str, glue_name: str):
+def _create_profile_html_if(create_profile: Literal[False] | str | None, project_name: str, glue_name: str):
     from dask.diagnostics import CacheProfiler, Profiler, ResourceProfiler, visualize
 
     if create_profile is False:

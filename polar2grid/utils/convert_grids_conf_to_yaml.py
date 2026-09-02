@@ -65,10 +65,7 @@ def grid_info_to_yaml_dict(grid_info: dict) -> dict:
 
 def crs_to_proj_dict(crs: CRS) -> dict:
     warnings.filterwarnings("ignore", module="pyproj", category=UserWarning)
-    if crs.to_epsg() is not None:
-        proj_dict = {"EPSG": crs.to_epsg()}
-    else:
-        proj_dict = crs.to_dict()
+    proj_dict = {"EPSG": crs.to_epsg()} if crs.to_epsg() is not None else crs.to_dict()
     _remove_unnecessary_proj_params(proj_dict)
     return proj_dict
 

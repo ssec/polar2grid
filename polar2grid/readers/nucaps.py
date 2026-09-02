@@ -291,7 +291,7 @@ class ReaderProxy(ReaderProxyBase):
 
     def get_all_products(self) -> list[str]:
         """Get all polar2grid products that could be loaded."""
-        reader = self.scn._readers["nucaps"]  # noqa
+        reader = self.scn._readers["nucaps"]
         products = ["Topography", "Surface_Pressure", "Skin_Temperature"]
         for base_name in PRESSURE_BASED:
             products.extend(reader.pressure_dataset_names[base_name])

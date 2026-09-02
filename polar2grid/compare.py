@@ -84,10 +84,7 @@ class FileComparisonResults:
     def any_failed(self) -> bool:
         if self.files_missing or self.unknown_file_type:
             return True
-        for sub_result in self.sub_results:
-            if sub_result.failed:
-                return True
-        return False
+        return any(sub_result.failed for sub_result in self.sub_results)
 
 
 def isclose_array(array1, array2, atol=0.0, rtol=0.0, margin_of_error=0.0, **kwargs) -> ArrayComparisonResult:
@@ -677,10 +674,7 @@ def _generate_matplotlib_thumbnail(input_arr, output_thumbnail_path, max_width=5
 def _get_mpl_figsize(input_shape, max_width) -> tuple[int, int]:
     # dpi 100 => 51
     fig_width = max_width / 100.0
-    if len(input_shape) == 1:
-        fig_height = fig_width
-    else:
-        fig_height = input_shape[0] * (fig_width / input_shape[1])
+    fig_height = fig_width if len(input_shape) == 1 else input_shape[0] * (fig_width / input_shape[1])
     return fig_width, fig_height
 
 

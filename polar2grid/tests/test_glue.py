@@ -357,7 +357,7 @@ class TestGlueFakeScene:
             if str(extra_cpath).endswith(".yaml"):
                 # the YAML was copied to a temp directory, check for that
                 extra_cpath = gettempdir()
-            path_idx = captured.err.index(f"Adding enhancement configuration from file: {str(extra_cpath)}")
+            path_idx = captured.err.index(f"Adding enhancement configuration from file: {extra_cpath!s}")
             assert builtin_path_idx < path_idx
 
     def test_avhrr_list_products(self, avhrr_l1b_1_scene, chtmpdir, capsys):

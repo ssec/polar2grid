@@ -485,18 +485,9 @@ def float_or_false(val):
 
 
 def _supported_writers(is_polar2grid: bool = False) -> list[str]:
+    writers = ["geotiff", "awips_tiled"]
     if is_polar2grid:
-        writers = [
-            "geotiff",
-            "awips_tiled",
-            "binary",
-            "hdf5",
-        ]
-    else:
-        writers = [
-            "geotiff",
-            "awips_tiled",
-        ]
+        writers += ["binary", "hdf5"]
     return writers
 
 

@@ -159,7 +159,7 @@ def add_reader_argument_groups(
     return group, None
 
 
-def _int_or_none(value: str) -> None | int:
+def _int_or_none(value: str) -> int | None:
     if value.lower() == "none":
         return None
     return int(value)

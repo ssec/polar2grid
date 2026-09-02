@@ -104,12 +104,20 @@ line-length = 120
 # file in nearly every run, so lazy %-formatting in log calls buys nothing. Use f-strings.
 select = [
     "A", "B", "C4", "C90", "D", "DTZ", "E", "F", "FA", "FURB", "I", "ISC",
-    "LOG", "N", "NPY", "PERF", "PIE", "PLE", "PT", "Q", "T10", "UP", "W",
+    "LOG", "N", "NPY", "PERF", "PIE", "PLE", "PT", "Q", "RUF", "SIM",
+    "T10", "UP", "W",
 ]
 # Remove D416 when all docstrings have been converted to google-style
 # UP031/UP032 (%-format and .format() -> f-string) are deferred: ~73 sites.
 # Handle them in a separate pass.
-ignore = ["D101", "D102", "D103", "D104", "D105", "D106", "D107", "E203", "D416", "UP031", "UP032"]
+ignore = [
+    "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D416", "E203",
+    "UP031", "UP032",
+    # RUF005: `[*a, b]` over `a + [b]` is a readability preference, ~22 sites.
+    "RUF005",
+    # RUF013: implicit Optional (`x: str = None`); 7 sites, deferred to a typing pass.
+    "RUF013",
+]
 
 [tool.ruff.lint.per-file-ignores]
 # Sphinx requires the module-level name `copyright`.
