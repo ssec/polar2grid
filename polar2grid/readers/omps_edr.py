@@ -62,19 +62,24 @@ name prefix. Some products are available from both files.
 | s_STLO3               | Corrected total O3 by assuming SO2 located in 15-19km layer |
 +-----------------------+-------------------------------------------------------------+
 
-The ``--filter-o3`` flag described below applies only to the total column
-ozone products.
+The ``--filter-by-error-flag`` flag described below applies to every product
+loaded from a file, as both the total column ozone and the sulfur dioxide files
+contain the ``ErrorFlag`` variable. It is off by default.
+
+The ``--filter-negative-so2`` flag applies only to the SO2 column amount
+products (``s_ColumnamountSO2_*``). Unlike the above, it is on by default;
+use ``--no-filter-negative-so2`` to keep the negative retrieval values.
 
 """
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup
+from argparse import ArgumentParser, BooleanOptionalAction, _ArgumentGroup
 
 from satpy import DataQuery
 
-from ._base import ReaderProxyBase
 from ..core.script_utils import BooleanFilterAction
+from ._base import ReaderProxyBase
 
 PREFERRED_CHUNK_SIZE: int = 6400
 
@@ -131,15 +136,24 @@ def add_reader_argument_groups(
         group = parser.add_argument_group(title="OMPS EDR Reader")
 
     group.add_argument(
-        "--filter-o3",
+        "--filter-by-error-flag",
         action=BooleanFilterAction,
         dest="filter_by_error_flag",
         default=[],
         const=[0, 1],
-        help="Filter total ozone products by the 'ErrorFlag' variable. "
+        help="Filter ozone and SO2 products by the 'ErrorFlag' variable. "
         "When enabled valid pixels are those where "
-        "'ErrorFlag' is 0 or 1. Defaults to off. Specify '--filter-o3' to "
+        "'ErrorFlag' is 0 or 1. Defaults to off. Specify '--filter-by-error-flag' to "
         "enable filtering.",
+    )
+    group.add_argument(
+        "--filter-negative-so2",
+        action=BooleanOptionalAction,
+        default=True,
+        dest="filter_negative_so2",
+        help="Remove negative values from the SO2 column amount products "
+        "('s_ColumnamountSO2_*'). This is on by default, specify "
+        "'--no-filter-negative-so2' to disable it.",
     )
 
     return group, None
