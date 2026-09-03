@@ -13,8 +13,12 @@ env:
 jobs:
   # build website
   website:
-    name: Build Documentation
+    name: Build Documentation (${{ matrix.p2g_doc }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        p2g_doc: ["polar", "geo"]
     steps:
       - name: Checkout source
         uses: actions/checkout@v7
@@ -53,19 +57,12 @@ jobs:
         run: |
           pip install --no-deps -e .
 
-      - name: Build Polar2Grid Website
+      - name: Build Website
         shell: bash -l {0}
         run: |
           cd doc
           make clean
-          make html SPHINXOPTS="-W --keep-going"
-
-      - name: Build Geo2Grid Website
-        shell: bash -l {0}
-        run: |
-          cd doc
-          make clean
-          make html POLAR2GRID_DOC="geo" SPHINXOPTS="-W --keep-going"
+          make html POLAR2GRID_DOC="${{ matrix.p2g_doc }}" SPHINXOPTS="-W --keep-going"
 
   test:
     name: Tests
