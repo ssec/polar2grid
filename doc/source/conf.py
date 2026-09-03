@@ -38,27 +38,17 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 # Handle building documentation for polar2grid or geo2grid
 is_geo2grid = "geo" in os.getenv("POLAR2GRID_DOC", "polar").lower()
 
-# Hack to download example images instead of storing them in git
-images = (
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_basic/gcom-w1_amsr2_btemp_36.5h_20160719_190300_wgs84_fit.jpg",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.jpg",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.basic_overlay_example.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit.advanced_overlay.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/overlay/npp_viirs_true_color_20170305_193251_lcc_fit_overlay.png",
+# Hack to download example images instead of storing them in git.
+# Split per project so each documentation build only downloads the images its own
+# pages render; no image is currently shared between the two projects.
+_POLAR2GRID_IMAGES = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/images_basic/noaa20_viirs_true_color_20220919_175331_lcc_fit.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/overlay/noaa20_viirs_true_color_20220919_175331_lcc_fit_overlay.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/dnb/VIIRS_DNB_Enhancement_Comparison.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/images_basic/noaa21_viirs_true_color_20260223_182634_miami.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/images_basic/terra_modis_false_color_20170319_163000_miami.jpg",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/modis/images_basic/terra_modis_false_color_20170319_163000_miami_p2g_v3.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/SSEC_AWIPS_aqua_modis_bt28_211e_20170308_181800.nc.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/SSEC_AWIPS_aqua_modis_vis02_211e_20170308_181800.nc.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/amsr2/images_nrl/gcom-w1_amsr2_btemp_89.0ah_20160719_190300_lcc_fit_color.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/merge/VIIRS_False_Color_Side_by_Side_Example_P2G.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/overlay/VIIRS_true_color_in_google_earth.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/images_basic/noaa20_viirs_true_color_20220919_175331_lcc_fit_in_google_earth.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/merge/my_false_color.jpg",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_true_color_awips_20170308_1818.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/viirs/dnb/HNCC_DNB_Band_Example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_true_color_example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/modis/awips/modis_vis02_example.png",
@@ -76,9 +66,6 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/asci/VIIRS_TCF_example_with_overlays.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/asci/VIIRS_NDVI_example_with_overlays.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/asci/VIIRS_SurfReflectance_True_Color_example_with_overlays.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_rescaled_wcolor_colortable_resize.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/acspo/npp_viirs_sst_20191216_072134_acspo_sst_final_resize.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/amsr2/gcom-w1_amsr2_btemp_89.0ah_20220910_233500_wgs84_fit.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/amsr2/gcom-w1_amsr2_btemp_89.0ah_20220910_233500_wgs84_lcc_fit_rescaled_and_colorized.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/amsr2/GAASP_Rain_Rate_example_with_overlays.png",
@@ -86,34 +73,26 @@ images = (
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/aws/JPSS_AWS_VIIRS_Single_Granule_True_Color_Example.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/aws/NOAA21_NA_orbit_track_2026_02_08.gif",
     "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_3_0_examples/viirs/aws/NOAA21_VIIRS_Aggregated_AWS_example.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth_example.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-8_AHI_true_color_20181112_233020_perth.png",
+    # Only used by readers/viirs_edr_flood.rst, which is excluded from both builds.
+    # Left here pending review rather than deleted:
+    # "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/flood/Flood_Legend.png",
+)
+_GEO2GRID_IMAGES = (
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-9_AHI_true_color_20221128_233000_perth.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/ahi/HIMAWARI-9_AHI_true_color_20221128_233000_perth_example.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20181219_1745_montage.jpg",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/abi_20260303_1830_montage.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_natural_color_20181219_174215_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-18_ABI_RadF_natural_color_20221115_183020_GOES-West_cutout.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadC_true_color_20190104_195718_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-19_ABI_RadM1_true_color_20251028_150027_GOES-East.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East.jpg",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_20181112_123034_GOES-East_new.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-19_ABI_RadF_true_color_night_20260303_123020_GOES-East.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_newenhancement.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East.jpg",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-16_ABI_RadF_true_color_night_microphysics_20181112_123034_GOES-East_new.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/GOES-19_ABI_RadF_true_color_night_microphysics_20260303_123020_GOES-East.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes16_abi_naturalcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi/my_goes18_abi_naturalcolor.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-17_ABI_TEMP_20221123_183117_GOES-West_original.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/goes17_overlay_true_color_cloud_temperature.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/my_goes17_abi_ctt.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/my_goes17_abi_ctt1.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-16_ABI_AOD_20240429_225020_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-16_ABI_AOD_20240429_225020_GOES-East_woverlays.png",
-    "https://bin.ssec.wisc.edu/pub/CSPP/p2g_v_2_1_examples/flood/Flood_Legend.png",
 )
+images = _GEO2GRID_IMAGES if is_geo2grid else _POLAR2GRID_IMAGES
 script_path = os.path.dirname(os.path.realpath(__file__))
 image_dst = os.path.join(script_path, "_static", "example_images")
 os.makedirs(image_dst, exist_ok=True)
@@ -543,7 +522,6 @@ texinfo_documents = [
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy", None),
     "xarray": ("https://docs.xarray.dev/en/stable", None),
     "dask": ("https://docs.dask.org/en/latest", None),
     "pyresample": ("https://pyresample.readthedocs.io/en/stable", None),
@@ -551,6 +529,8 @@ intersphinx_mapping = {
     "satpy": ("https://satpy.readthedocs.io/en/stable", None),
     "trollimage": ("https://trollimage.readthedocs.io/en/stable", None),
 }
+# Don't let an unreachable inventory hang the build for the OS TCP timeout.
+intersphinx_timeout = 10
 
 # Generate builtin grids list
 
