@@ -118,9 +118,12 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# Sphinx requires the module-level name `copyright`. The example-image downloader checks
-# the URL scheme itself (S310) and supports FTP servers on purpose (S321).
-"doc/source/conf.py" = ["E501", "A001", "S310", "S321"]
+# E501: the example image URLs are longer than the line limit.
+# A001: Sphinx requires the module-level name `copyright`.
+"doc/source/conf.py" = ["E501", "A001"]
+# The example-image downloader checks the URL scheme itself (S310) and supports FTP
+# servers on purpose (S321).
+"doc/source/_ext/example_images.py" = ["S310", "S321"]
 "polar2grid/readers/*.py" = ["D205", "D400", "D415"]
 # Satpy represents observation times as naive UTC datetimes; the fixtures mirror that.
 # S101: `assert` is how tests assert.

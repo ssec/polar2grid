@@ -184,7 +184,7 @@ entry with no prefix is included in both.
 
 If the reader is specific to one project, the new document must also be added
 to the *other* project's ``exclude_patterns`` list in ``doc/source/conf.py``
-(``_POLAR2GRID_EXCLUDES`` or ``_GEO2GRID_EXCLUDES``). Both projects'
+(``polar2grid_excludes`` or ``geo2grid_excludes``). Both projects'
 documentation is built in continuous integration with warnings treated as
 errors, so a document that is in neither a table of contents nor the exclude
 list fails the build with "document isn't included in any toctree".

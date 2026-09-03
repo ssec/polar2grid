@@ -170,7 +170,7 @@ section.
 `:geo2grid:` prefix inside the `toctree-filt` block.
 
 If the reader serves **both** projects, either drop the prefix (unprefixed entries are always
-included, see `doc/source/toctree_filter.py`) or list it once per prefix — the repo does the latter
+included, see `doc/source/_ext/toctree_filter.py`) or list it once per prefix — the repo does the latter
 for `geotiff` in `doc/source/writers/index.rst`. Either way skip step 7 entirely. Note
 that setting both `is_polar2grid_reader` and `is_geo2grid_reader` does not by itself make a reader
 dual-project in the docs — the toctree entry does.

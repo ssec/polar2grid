@@ -11,16 +11,9 @@
 # serve to show the default.
 """Polar2Grid project's sphinx documentation configuration."""
 
-import ftplib
 import os
 import sys
-import urllib.request
-import warnings
 from datetime import UTC, datetime
-from shutil import copyfileobj
-
-import yaml
-from pyproj import CRS
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -92,30 +85,8 @@ _GEO2GRID_IMAGES = (
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-16_ABI_AOD_20240429_225020_GOES-East.png",
     "https://bin.ssec.wisc.edu/pub/CSPP/g2g_examples/abi_l2/GOES-16_ABI_AOD_20240429_225020_GOES-East_woverlays.png",
 )
-images = _GEO2GRID_IMAGES if is_geo2grid else _POLAR2GRID_IMAGES
-script_path = os.path.dirname(os.path.realpath(__file__))
-image_dst = os.path.join(script_path, "_static", "example_images")
-os.makedirs(image_dst, exist_ok=True)
-
-for image_url in images:
-    image_fn = os.path.basename(image_url)
-    image_pathname = os.path.join(image_dst, image_fn)
-    if os.path.isfile(image_pathname):
-        continue
-    elif image_url.startswith(("http://", "https://")):  # or image_url.startswith('ftp://'):
-        print("Downloading example image: {}".format(image_url))
-        with urllib.request.urlopen(image_url) as remote_img, open(image_pathname, "wb") as local_img:
-            copyfileobj(remote_img, local_img)
-    elif image_url.startswith("ftp://"):
-        print("Downloading example image: {}".format(image_url))
-        parts = image_url.split("/")
-        server = parts[2]
-        ftp_fn = "/".join(parts[3:])
-        ftp = ftplib.FTP(server, user="ftp")  # hope for anonymous
-        with open(image_pathname, "wb") as out_file:
-            ftp.retrbinary("RETR {}".format(ftp_fn), out_file.write)
-    else:
-        raise ValueError("Not sure how to download image: {}".format(image_url))
+# Downloaded by the `_ext.example_images` extension.
+example_images = _GEO2GRID_IMAGES if is_geo2grid else _POLAR2GRID_IMAGES
 
 # -- Customize setup -----------------------------------------------------------
 
@@ -149,9 +120,12 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "sphinxarg.ext",
-    "doi_role",
-    "toctree_filter",
     "sphinx.ext.apidoc",
+    "_ext.doi_role",
+    "_ext.toctree_filter",
+    "_ext.example_images",
+    "_ext.grids_list",
+    "_ext.config_checks",
 ]
 
 # API docs
@@ -239,9 +213,9 @@ copyright = "2012-{:%Y}, University of Wisconsin SSEC".format(datetime.now(UTC))
 # today_fmt = '%B %d, %Y'
 
 # Pages that belong to only one of the two projects and are dropped from the other
-# project's build. Kept as module-level constants so the consistency check at the
-# bottom of this file can validate both lists no matter which project is built.
-_GEO2GRID_EXCLUDES = [
+# project's build. Both are Sphinx configuration values so that `_ext.config_checks`
+# can validate both lists no matter which project is being built.
+geo2grid_excludes = [
     "NEWS.rst",
     "examples/acspo_example.rst",
     "examples/amsr2_example.rst",
@@ -274,7 +248,7 @@ _GEO2GRID_EXCLUDES = [
     "writers/hdf5.rst",
     "misc_recipes.rst",
 ]
-_POLAR2GRID_EXCLUDES = [
+polar2grid_excludes = [
     "NEWS_GEO2GRID.rst",
     "compositors.rst",
     "data_access.rst",
@@ -301,7 +275,7 @@ exclude_patterns = [
     "readers/viirs_edr_flood.rst",  # not advertised
     "grids_list.rst",  # included directly in grids.rst
 ]
-exclude_patterns.extend(_GEO2GRID_EXCLUDES if is_geo2grid else _POLAR2GRID_EXCLUDES)
+exclude_patterns.extend(geo2grid_excludes if is_geo2grid else polar2grid_excludes)
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 # default_role = None
@@ -531,84 +505,3 @@ intersphinx_mapping = {
 }
 # Don't let an unreachable inventory hang the build for the OS TCP timeout.
 intersphinx_timeout = 10
-
-# Generate builtin grids list
-
-grid_titles = {
-    "wgs84_fit": "WGS84 Dynamic Fit",
-    "wgs84_fit_250": "WGS84 Dynamic Fit 250m",
-    "lcc_fit": "Lambert Conic Conformal Dynamic Fit",
-    "lcc_fit_hr": "High Resolution Lambert Conic Conformal Dynamic Fit",
-    "lcc_sa": "Lambert Conic Conformal - South America Centered",
-    "lcc_eu": "Lambert Conic Conformal - Europe Centered",
-    "lcc_south_africa": "Lambert Conic Conformal - South Africa Centered",
-    "lcc_aus": "Lambert Conic Conformal - Australia Centered",
-    "lcc_asia": "Lambert Conic Conformal - Asia Centered",
-    "polar_north_pacific": "Polar-Stereographic North Pacific",
-    "polar_south_pacific": "Polar-Stereographic South Pacific",
-    "polar_alaska": "Polar-Stereographic Alaska",
-    "polar_canada": "Polar-Stereographic Canada",
-    "polar_russia": "Polar-Stereographic Russia",
-    "eqc_fit": "Equirectangular Fit",
-    "goes_east_1km": "GOES-East 1km",
-    "goes_east_4km": "GOES-East 4km",
-    "goes_east_8km": "GOES-East 8km",
-    "goes_east_10km": "GOES-East 10km",
-    "goes_west_1km": "GOES-West 1km",
-    "goes_west_4km": "GOES-West 4km",
-    "goes_west_8km": "GOES-West 8km",
-    "goes_west_10km": "GOES-West 10km",
-}
-
-warnings.filterwarnings("ignore", module="pyproj", category=UserWarning)
-builtin_areas_filename = os.path.join(script_path, "..", "..", "polar2grid", "grids", "grids.yaml")
-with open(builtin_areas_filename) as yaml_file:
-    areas_dict = yaml.load(yaml_file, Loader=yaml.SafeLoader)
-# builtin_areas = parse_area_file(os.path.join(script_path, "..", "..", "polar2grid", "grids", "grids.yaml"))
-grids_list_filename = os.path.join(script_path, "grids_list.rst")
-with open(grids_list_filename, "w") as grids_list_file:
-    for area_name, area_dict in areas_dict.items():
-        area_title = grid_titles.get(area_name)
-        if area_title is None:
-            continue
-        proj = area_dict["projection"]
-        crs = CRS.from_user_input(proj.get("EPSG", proj))
-        title_underline = "^" * len(area_title)
-        rst_str = f"""
-.. _grid_{area_name}:
-
-{area_title}
-{title_underline}
-
-:Grid Name: {area_name}
-:Description: {area_dict["description"]}
-:Projection: {crs.to_string()}
-"""
-
-        if "resolution" in area_dict:
-            res = area_dict["resolution"]
-            xres = res["dx"]
-            yres = res["dy"]
-            def_units = "degrees" if crs.is_geographic else "meters"
-            units = res.get("units", def_units)
-            if xres != yres:
-                rst_str += f":Resolution (X): {xres} {units}\n"
-                rst_str += f":Resolution (Y): {yres} {units}\n"
-            else:
-                rst_str += f":Resolution: {xres} {units}\n"
-        if "area_extent" in area_dict:
-            rst_str += f":Extent: {area_dict['area_extent']}\n"
-        grids_list_file.write(rst_str)
-
-# Guard against `exclude_patterns` rotting: every literal (non-glob) entry must name a
-# file that actually exists. Both projects' lists are checked, not just the one being
-# built. This must stay at the end of the file -- `grids_list.rst` is excluded but is
-# generated just above.
-_all_excludes = set(exclude_patterns) | set(_GEO2GRID_EXCLUDES) | set(_POLAR2GRID_EXCLUDES)
-_missing_excludes = sorted(
-    pattern
-    for pattern in _all_excludes
-    if not any(glob_char in pattern for glob_char in "*?[") and not os.path.exists(os.path.join(script_path, pattern))
-)
-if _missing_excludes:
-    raise RuntimeError("conf.py 'exclude_patterns' names files that do not exist: " + ", ".join(_missing_excludes))
