@@ -15,18 +15,12 @@ import os
 import sys
 from datetime import UTC, datetime
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-# sys.path.insert(0, os.path.abspath('.'))
-print("Adding the following directories to PYTHONPATH:")
-BASE_PATH = "../../../"
-for dirname in [
-    x for x in os.listdir(BASE_PATH) if os.path.isdir(os.path.join(BASE_PATH, x)) and x.startswith("polar2grid")
-]:
-    print("\t ", os.path.realpath(os.path.join(BASE_PATH, dirname)))
-    sys.path.insert(0, os.path.abspath(os.path.join(BASE_PATH, dirname)))
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+# Make the polar2grid package (and this directory's ``_ext`` extensions) importable
+# no matter what directory sphinx-build was run from.
+DOC_SOURCE_PATH = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT_PATH = os.path.dirname(os.path.dirname(DOC_SOURCE_PATH))
+sys.path.insert(0, REPO_ROOT_PATH)
+sys.path.append(DOC_SOURCE_PATH)
 
 # Handle building documentation for polar2grid or geo2grid
 is_geo2grid = "geo" in os.getenv("POLAR2GRID_DOC", "polar").lower()
