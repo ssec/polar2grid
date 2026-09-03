@@ -366,12 +366,18 @@ One source tree builds both projects (`make html` vs `make html POLAR2GRID_DOC=g
 * Use the `rst_epilog` substitutions from `doc/source/conf.py` — `|project|`, `|script|`,
   `|script_literal|`, `|project_env|`, `|cspp_abbr|`, `|cspp_title|`.
 * Use the `toctree-filt` directive with `:polar2grid:` / `:geo2grid:` entry prefixes
-  (`doc/source/toctree_filter.py`), and `.. ifconfig:: is_geo2grid` for inline conditionals.
+  (`doc/source/_ext/toctree_filter.py`), and `.. ifconfig:: is_geo2grid` for inline conditionals.
 * A new `.rst` must be added to a toctree **and** to the *other* project's `exclude_patterns` in
   `conf.py`, or the CI `-W` build fails with "document isn't included in any toctree". The two
-  project lists are the `_GEO2GRID_EXCLUDES` / `_POLAR2GRID_EXCLUDES` constants; a check at the
-  bottom of `conf.py` raises if either one names a file that does not exist, so a page that is
-  removed must also be removed from the list.
+  project lists are the `geo2grid_excludes` / `polar2grid_excludes` configuration values; a
+  `config-inited` check in `doc/source/_ext/config_checks.py` raises if either one names a file
+  that does not exist, so a page that is removed must also be removed from the list.
+
+`doc/source/_ext/` is a package of local Sphinx extensions loaded by the `extensions` list in
+`conf.py`. Alongside `doi_role` and `toctree_filter` it holds the code that used to sit inline in
+`conf.py`: `example_images` (downloads the example images), `grids_list` (generates
+`grids_list.rst`), and `config_checks` (the two `config-inited` consistency checks). Keep
+`conf.py` to configuration and data; put logic here.
 
 Do not hand-edit `doc/source/grids_list.rst`, `doc/source/dev_guide/api/`, or
 `doc/source/_static/example_images/` — all three are generated at build time and gitignored.

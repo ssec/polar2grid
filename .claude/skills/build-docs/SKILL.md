@@ -50,12 +50,12 @@ Three mechanisms select content:
    name or script name in a shared page. Available: `|project|`, `|script|` (`polar2grid.sh` /
    `geo2grid.sh`), `|script_literal|`, `|project_env|` (`$POLAR2GRID_HOME` / `$GEO2GRID_HOME`),
    `|cspp_abbr|`, `|cspp_title|`, plus `|ssec|`, `|cspp|`, `|viirs|`.
-2. **`toctree-filt`** (`doc/source/toctree_filter.py`). Prefix entries with `:polar2grid:` or
+2. **`toctree-filt`** (`doc/source/_ext/toctree_filter.py`). Prefix entries with `:polar2grid:` or
    `:geo2grid:`; `toc_filter_exclude` (`conf.py:252`) drops the other project's. It also accepts
    `:excludebuilder: latex`. A page shared by both projects gets no prefix, or is listed once per
    prefix.
 3. **`exclude_patterns`** (`conf.py:266`). A hand-maintained per-project list of files dropped
-   from the build entirely, held in the `_GEO2GRID_EXCLUDES` and `_POLAR2GRID_EXCLUDES` constants.
+   from the build entirely, held in the `geo2grid_excludes` and `polar2grid_excludes` values.
    Inline conditionals use `.. ifconfig:: is_geo2grid`.
 
 ## Adding a page
@@ -74,20 +74,23 @@ WARNING: document isn't included in any toctree
 That means the file is present in a build where nothing references it — add it to that project's
 `exclude_patterns`.
 
-The reverse mistake is caught eagerly: a check at the bottom of `conf.py` validates **both**
-projects' lists and raises `RuntimeError` before the build starts if either names a file that does
-not exist. So deleting or renaming a page means updating the list in the same commit.
+The reverse mistake is caught eagerly: `check_excluded_pages_exist()` in
+`doc/source/_ext/config_checks.py` validates **both** projects' lists on `config-inited` and
+raises `ConfigError` before the build starts if either names a file that does not exist. So
+deleting or renaming a page means updating the list in the same commit.
 
 ## Generated versus hand-maintained
 
 Generated at build time, gitignored, **do not edit**:
 
-- `doc/source/grids_list.rst` — built from `polar2grid/grids/grids.yaml` by `conf.py`. A new
-  built-in grid also needs an entry in the `grid_titles` dict in `conf.py`, or it is silently
-  omitted.
+- `doc/source/grids_list.rst` — built from `polar2grid/grids/grids.yaml` by
+  `doc/source/_ext/grids_list.py`. A new built-in grid also needs an entry in that module's
+  `GRID_TITLES` dict, or it is silently omitted.
 - `doc/source/dev_guide/api/` — `sphinx.ext.apidoc` output (`apidoc_modules` in `conf.py`).
-- `doc/source/_static/example_images/` — ~90 images downloaded from `bin.ssec.wisc.edu` at build
-  time. A new documentation image means adding a URL to the tuple near the top of `conf.py`.
+- `doc/source/_static/example_images/` — images downloaded from `bin.ssec.wisc.edu` at build time
+  by `doc/source/_ext/example_images.py`. A new documentation image means adding a URL to
+  `_POLAR2GRID_IMAGES` or `_GEO2GRID_IMAGES` near the top of `conf.py`; `check_example_images_used()`
+  in `_ext/config_checks.py` fails the build if a listed image is unused or a used one is unlisted.
 
 Generated from Python at build time (edit the Python, not the `.rst`): reader and writer pages use
 `.. automodule::` for the module docstring and the `sphinxarg.ext` `.. argparse::` directive for
@@ -114,6 +117,6 @@ diverged by several releases and overwrote `summary_table.rst` in place). Edit t
 - `conf.py`'s `version` / `release` are the **bundle** versions (Polar2Grid `3.2`, Geo2Grid `1.3`),
   tracking `NEWS.rst` / `NEWS_GEO2GRID.rst`. They are meant to differ from the `polar2grid` package
   version in `pyproject.toml` — do not "sync" them.
-- `doc/source/doi_role.py` provides a `:doi:` role.
+- `doc/source/_ext/doi_role.py` provides a `:doi:` role.
 - PDF output is built with `make latexpdf`; `latex_documents`, `latex_logo`, and
   `latex_appendices` are also project-conditional in `conf.py`.
