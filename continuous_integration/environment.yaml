@@ -48,6 +48,7 @@ dependencies:
   - sphinxcontrib-apidoc
   - pip:
       - pytest-lazy-fixtures
-      - git+https://github.com/pytroll/satpy.git
+      # - git+https://github.com/pytroll/satpy.git
+      - git+https://github.com/djhoese/satpy.git@polar2grid-dev
       - git+https://github.com/pytroll/pyresample.git
       - git+https://github.com/djhoese/sphinx-argparse.git@bugfix-section-nums
