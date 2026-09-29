@@ -89,12 +89,6 @@ to reflectance (percent) and the 9 longest to brightness temperature
 | natural_color      | Natural color RGB                                      |
 +--------------------+--------------------------------------------------------+
 
-Additional RGB composites provided by Satpy for this instrument, such as
-``snow``, ``dust``, and ``day_microphysics``, are not loaded by default but
-can still be requested by name with the ``--products`` flag. Use
-``--list-products-all`` to see everything available for a set of input
-files.
-
 """
 
 from __future__ import annotations
@@ -185,9 +179,9 @@ def add_reader_argument_groups(
     group.add_argument(
         "--orthorectify",
         dest="orthorect",
-        action="store_true",
+        action="store_false",
         help="Apply the digital elevation model (DEM) based orthorectification "
-        "correction to longitude and latitude. Defaults to off.",
+        "correction to longitude and latitude. Defaults to on.",
     )
 
     return group, None

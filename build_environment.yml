@@ -16,6 +16,7 @@ dependencies:
   - freetype
   - gdal
   - libgdal-netcdf
+  - hdf5>=2.1.0
   - hdf5plugin
   - h5py
   - netcdf4
@@ -45,4 +46,5 @@ dependencies:
   - fsspec
   - s3fs
   - pip:
-    - git+https://github.com/pytroll/satpy.git
+    #- git+https://github.com/pytroll/satpy.git
+    - git+https://github.com/djhoese/satpy.git@polar2grid-dev
