@@ -93,7 +93,7 @@ to reflectance (percent) and the 9 longest to brightness temperature
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _ArgumentGroup
+from argparse import ArgumentParser, BooleanOptionalAction, _ArgumentGroup
 
 from satpy import DataQuery
 
@@ -179,7 +179,8 @@ def add_reader_argument_groups(
     group.add_argument(
         "--orthorectify",
         dest="orthorect",
-        action="store_false",
+        default=True,
+        action=BooleanOptionalAction,
         help="Apply the digital elevation model (DEM) based orthorectification "
         "correction to longitude and latitude. Defaults to on.",
     )
