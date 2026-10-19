@@ -32,7 +32,7 @@ dependencies:
   - requests
   - setuptools
   - six
-  - trollimage
+  - trollimage=1.28.0
   - trollsift
   - scipy
   - zarr
