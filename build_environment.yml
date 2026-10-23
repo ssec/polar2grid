@@ -4,6 +4,7 @@ channels:
 dependencies:
   - aggdraw
   - appdirs
+  - certifi>=2026.10.19
   - cftime
   - conda-pack
   - configobj
@@ -21,7 +22,7 @@ dependencies:
   - h5py
   - netcdf4
   - pillow
-  - pip
+  - pip>=26.2.2
   - pooch
   - pycoast>=1.7.0
   - pydecorate>=0.4.0
