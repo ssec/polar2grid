@@ -4,7 +4,8 @@ channels:
 dependencies:
   - aggdraw
   - appdirs
-  - certifi>=2026.10.19
+  - certifi>=2026.10.23
+  - ca-certificates>=2026.10.23
   - cftime
   - conda-pack
   - configobj
