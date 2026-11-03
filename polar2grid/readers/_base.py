@@ -53,6 +53,12 @@ class ReaderProxyBase:
     * **_aliases**: A property that returns a dictionary mapping Polar2Grid
       name for a product to a Satpy DataQuery or name.
 
+    Less commonly, a subclass may also override:
+
+    * **convert_reader_kwargs**: A classmethod that converts the reader's
+      command line arguments into the keyword arguments passed to Satpy's
+      reader. Called before the Scene (and this proxy) is created.
+
     """
 
     is_polar2grid_reader: bool = False
@@ -67,11 +73,28 @@ class ReaderProxyBase:
         return self._create_alias_handler()
 
     @classmethod
-    def from_reader_name(cls, reader_name: str, *args):
+    def get_proxy_class(cls, reader_name: str) -> type[ReaderProxyBase]:
+        """Get the ``ReaderProxy`` class for a reader or this class if the reader doesn't define one."""
         reader_info_cls = get_reader_attr(reader_name, "ReaderProxy")
         if reader_info_cls is None:
             reader_info_cls = cls
-        return reader_info_cls(*args)
+        return reader_info_cls
+
+    @classmethod
+    def from_reader_name(cls, reader_name: str, *args):
+        return cls.get_proxy_class(reader_name)(*args)
+
+    @classmethod
+    def convert_reader_kwargs(cls, reader_kwargs: dict) -> dict:
+        """Convert command line reader arguments to the keyword arguments passed to Satpy's reader.
+
+        This is called before the ``Scene`` is created so it can't depend on
+        any instance state. Use it when a Polar2Grid command line flag doesn't
+        map one-to-one to a Satpy reader keyword argument. By default the
+        arguments are returned unchanged (as a copy).
+
+        """
+        return dict(reader_kwargs)
 
     @property
     def _binary_name(self):

@@ -86,6 +86,15 @@ so the lists are easy to find and compose. The methods are what the framework ca
 `__init__` only if the aliases depend on user arguments — `viirs_sdr.py` does this for
 `--dnb-saturation-correction`.
 
+If a command line flag does not map one-to-one onto a Satpy reader keyword argument, override the
+`convert_reader_kwargs(cls, reader_kwargs) -> dict` **classmethod**. It is called with the dict of
+reader-group arguments *before* the `Scene` (and therefore the proxy instance) exists, and its
+return value is passed as `Scene(reader_kwargs=...)`. The base implementation returns a copy
+unchanged. `omps_edr.py` uses it to turn `--filter-ozone-by-error-flag` /
+`--filter-so2-by-error-flag` into Satpy's per-variable `filter_by_error_flag` mapping. Pop any
+Polar2Grid-only keys. Satpy hands every key to the reader and its file handlers, and those may
+reject or silently ignore a key they don't know.
+
 ### Optional module-level names (read directly by the framework)
 
 * `PREFERRED_CHUNK_SIZE: int` — the preferred square dask chunk edge in **pixels**. `glue.py`

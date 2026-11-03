@@ -351,7 +351,12 @@ class _GlueProcessor:
     def _run_processing(self):
         LOG.info("Sorting and reading input files...")
         arg_parser = self.arg_parser
-        scn = _create_scene(arg_parser._scene_creation)
+        reader_proxy_cls = ReaderProxyBase.get_proxy_class(arg_parser._scene_creation["reader"])
+        scene_creation = {
+            **arg_parser._scene_creation,
+            "reader_kwargs": reader_proxy_cls.convert_reader_kwargs(arg_parser._scene_creation["reader_kwargs"]),
+        }
+        scn = _create_scene(scene_creation)
         if scn is None:
             return -1
 
@@ -363,7 +368,7 @@ class _GlueProcessor:
         LOG.info("Loading product metadata from files...")
         load_args = arg_parser._load_args.copy()
         user_products = load_args.pop("products")
-        reader_info = ReaderProxyBase.from_reader_name(arg_parser._scene_creation["reader"], scn, user_products)
+        reader_info = reader_proxy_cls(scn, user_products)
         if arg_parser._args.list_products or arg_parser._args.list_products_all:
             _print_list_products(reader_info, self.is_polar2grid, not arg_parser._args.list_products_all)
             return 0

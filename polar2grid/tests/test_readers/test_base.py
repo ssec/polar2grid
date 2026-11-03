@@ -47,3 +47,20 @@ def test_reader_parser_arguments(reader_name):
     parser = argparse.ArgumentParser()
     groups = mod.add_reader_argument_groups(parser)
     assert len(groups) == 2
+
+
+def test_base_convert_reader_kwargs_unchanged():
+    from polar2grid.readers._base import ReaderProxyBase
+
+    reader_kwargs = {"some_kwarg": [1, 2], "other_kwarg": True}
+    new_kwargs = ReaderProxyBase.convert_reader_kwargs(reader_kwargs)
+    assert new_kwargs == reader_kwargs
+    assert new_kwargs is not reader_kwargs
+
+
+def test_get_proxy_class():
+    from polar2grid.readers._base import ReaderProxyBase
+    from polar2grid.readers.omps_edr import ReaderProxy as OMPSReaderProxy
+
+    assert ReaderProxyBase.get_proxy_class("omps_edr") is OMPSReaderProxy
+    assert ReaderProxyBase.get_proxy_class("not_a_p2g_reader") is ReaderProxyBase

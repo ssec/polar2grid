@@ -62,13 +62,25 @@ name prefix. Some products are available from both files.
 | s_STLO3               | Corrected total O3 by assuming SO2 located in 15-19km layer |
 +-----------------------+-------------------------------------------------------------+
 
-The ``--filter-by-error-flag`` flag described below applies to every product
-loaded from a file, as both the total column ozone and the sulfur dioxide files
-contain the ``ErrorFlag`` variable. It is off by default.
+By default, the products are filtered based on the quality recommendations of
+the algorithm developers. Each filter can be turned off with the ``--no-``
+form of its flag (see below).
 
-The ``--filter-negative-so2`` flag applies only to the SO2 column amount
-products (``s_ColumnamountSO2_*``). Unlike the above, it is on by default;
-use ``--no-filter-negative-so2`` to keep the negative retrieval values.
+The ``--filter-ozone-by-error-flag`` flag removes pixels from the ozone
+products (``ColumnAmountO3``, ``AerosolIndex``, and ``Reflectivity331``) where
+the ``ErrorFlag`` variable is not 0, 1, or 2. These products are filtered the
+same way whether they are read from the total column ozone or the sulfur
+dioxide files.
+
+The ``--filter-so2-by-error-flag`` flag removes pixels from the sulfur dioxide
+file products (``s_ColumnamountSO2_*`` and ``s_*O3``) where the ``ErrorFlag``
+variable is not 0, 1, or 5 (5 marks high SO2 values).
+
+The ``--filter-eclipse`` flag removes pixels affected by a solar eclipse
+(``EclipseFlag`` is not 0) from all products.
+
+The ``--filter-negative-so2`` flag removes negative retrieval values from the
+SO2 column amount products (``s_ColumnamountSO2_*``).
 
 """
 
@@ -77,8 +89,6 @@ from __future__ import annotations
 from argparse import ArgumentParser, BooleanOptionalAction, _ArgumentGroup
 
 from satpy import DataQuery
-
-from polar2grid.core.script_utils import BooleanFilterAction
 
 from ._base import ReaderProxyBase
 
@@ -99,6 +109,13 @@ TOS_PRODUCTS = [
 ]
 DEFAULT_PRODUCTS = TO3_PRODUCTS + ["s_ColumnamountSO2_STL", "s_STLO3"]
 P2G_PRODUCTS = TO3_PRODUCTS + TOS_PRODUCTS
+
+# 'ErrorFlag' values to keep for each group of products
+# Product names are the same as the Satpy/file variable names
+OZONE_ERROR_FLAG_KEEP = [0, 1, 2]
+OZONE_ERROR_FLAG_PRODUCTS = TO3_PRODUCTS
+SO2_ERROR_FLAG_KEEP = [0, 1, 5]
+SO2_ERROR_FLAG_PRODUCTS = [prod for prod in TOS_PRODUCTS if prod not in TO3_PRODUCTS]
 
 FILTERS = {
     "day_only": {},
@@ -123,6 +140,18 @@ class ReaderProxy(ReaderProxyBase):
     def _aliases(self) -> dict[str, DataQuery | str]:
         return PRODUCT_ALIASES
 
+    @classmethod
+    def convert_reader_kwargs(cls, reader_kwargs: dict) -> dict:
+        """Convert per-product-group error flag filtering flags to Satpy's per-variable mapping."""
+        reader_kwargs = dict(reader_kwargs)
+        error_flag_filters = {}
+        if reader_kwargs.pop("filter_ozone_by_error_flag", False):
+            error_flag_filters.update(dict.fromkeys(OZONE_ERROR_FLAG_PRODUCTS, OZONE_ERROR_FLAG_KEEP))
+        if reader_kwargs.pop("filter_so2_by_error_flag", False):
+            error_flag_filters.update(dict.fromkeys(SO2_ERROR_FLAG_PRODUCTS, SO2_ERROR_FLAG_KEEP))
+        reader_kwargs["filter_by_error_flag"] = error_flag_filters or None
+        return reader_kwargs
+
 
 def add_reader_argument_groups(
     parser: ArgumentParser, group: _ArgumentGroup | None = None
@@ -137,15 +166,34 @@ def add_reader_argument_groups(
         group = parser.add_argument_group(title="OMPS EDR Reader")
 
     group.add_argument(
-        "--filter-by-error-flag",
-        action=BooleanFilterAction,
-        dest="filter_by_error_flag",
-        default=[],
-        const=[0, 1],
-        help="Filter ozone and SO2 products by the 'ErrorFlag' variable. "
-        "When enabled valid pixels are those where "
-        "'ErrorFlag' is 0 or 1. Defaults to off. Specify '--filter-by-error-flag' to "
-        "enable filtering.",
+        "--filter-ozone-by-error-flag",
+        action=BooleanOptionalAction,
+        default=True,
+        dest="filter_ozone_by_error_flag",
+        help="Remove pixels from the ozone products ("
+        + ", ".join(OZONE_ERROR_FLAG_PRODUCTS)
+        + ") where the 'ErrorFlag' variable is not "
+        + _human_list(OZONE_ERROR_FLAG_KEEP)
+        + ". This is on by default, specify '--no-filter-ozone-by-error-flag' to disable it.",
+    )
+    group.add_argument(
+        "--filter-so2-by-error-flag",
+        action=BooleanOptionalAction,
+        default=True,
+        dest="filter_so2_by_error_flag",
+        help="Remove pixels from the SO2 file products ("
+        + ", ".join(SO2_ERROR_FLAG_PRODUCTS)
+        + ") where the 'ErrorFlag' variable is not "
+        + _human_list(SO2_ERROR_FLAG_KEEP)
+        + ". This is on by default, specify '--no-filter-so2-by-error-flag' to disable it.",
+    )
+    group.add_argument(
+        "--filter-eclipse",
+        action=BooleanOptionalAction,
+        default=True,
+        dest="filter_eclipse",
+        help="Remove pixels affected by a solar eclipse ('EclipseFlag' is not 0) from all "
+        "products. This is on by default, specify '--no-filter-eclipse' to disable it.",
     )
     group.add_argument(
         "--filter-negative-so2",
@@ -158,6 +206,12 @@ def add_reader_argument_groups(
     )
 
     return group, None
+
+
+def _human_list(values: list[int]) -> str:
+    """Format values as a readable list (ex. '0, 1, or 2')."""
+    str_values = [str(val) for val in values]
+    return ", ".join(str_values[:-1]) + ", or " + str_values[-1]
 
 
 def _int_or_none(value: str) -> int | None:

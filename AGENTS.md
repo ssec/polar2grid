@@ -163,8 +163,11 @@ From there, `glue.main()` builds a `_GlueProcessor` (`polar2grid/glue.py`) which
    the selected reader and writer modules contribute. The resulting flat namespace is then sliced
    back into `_scene_creation`, `_load_args`, `_reader_args`, `_resample_args`, and `_writer_args`.
 3. Handles `--extra-config-path` and sets up logging.
-4. `_create_scene()` → `satpy.Scene(filenames=..., reader=..., reader_kwargs=...)`.
-5. `ReaderProxyBase.from_reader_name(...)` → the reader's `ReaderProxy`, which converts requested
+4. `ReaderProxyBase.get_proxy_class(...)` finds the reader's `ReaderProxy` class, whose
+   `convert_reader_kwargs()` classmethod rewrites the CLI reader arguments into Satpy
+   `reader_kwargs` (identity by default; `omps_edr.py` overrides it), then
+   `_create_scene()` → `satpy.Scene(filenames=..., reader=..., reader_kwargs=...)`.
+5. That class is instantiated as `ReaderProxy(scn, user_products)` and converts requested
    Polar2Grid product names into Satpy names / `DataQuery` objects.
 6. `scn.load(products, generate=False)`, then `_persist_swath_definition_in_scene()` (unless
    `--no-persist-geolocation`) and `scn.generate_possible_composites(True)`.
