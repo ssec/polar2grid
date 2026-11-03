@@ -41,6 +41,39 @@ oops() {
     exit 1
 }
 
+# conda-unpack replaces the prefix stored in its _prefix_records with the
+# environment's current location. Once it has run, the files contain the current
+# location instead, so store that in conda-unpack too. Otherwise an initialized
+# bundle that is copied or re-archived (ex. after validating a release) is never
+# relocated again: conda-unpack would look for a prefix that no file contains.
+_record_conda_unpack_prefix() {
+    "${P2G_CONDA_BASE}/bin/python" -I - "${P2G_CONDA_BASE}/bin/conda-unpack" "${P2G_CONDA_BASE}" <<'PYTHON'
+import os
+import runpy
+import shutil
+import sys
+import tempfile
+
+script, new_prefix = sys.argv[1:]
+records = runpy.run_path(script, run_name="conda_unpack_records")["_prefix_records"]
+with open(script, encoding="utf-8") as script_file:
+    old_source = new_source = script_file.read()
+for old_prefix in {placeholder for _, placeholder, _ in records} - {new_prefix}:
+    # Each record is the repr of a (path, placeholder, mode) tuple
+    old_entry = ", %r, " % (old_prefix,)
+    num_records = sum(placeholder == old_prefix for _, placeholder, _ in records)
+    if new_source.count(old_entry) != num_records:
+        sys.exit("Unexpected conda-unpack format; could not replace prefix %r" % (old_prefix,))
+    new_source = new_source.replace(old_entry, ", %r, " % (new_prefix,))
+if new_source != old_source:
+    fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(script))
+    with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
+        tmp_file.write(new_source)
+    shutil.copymode(script, tmp_path)
+    os.replace(tmp_path, script)
+PYTHON
+}
+
 
 # Only load the environment if it hasn't been done already
 if [[ "${_POLAR2GRID_ENV_LOADED}" != "${METADATA_CHECKSUM}" ]]; then
@@ -54,12 +87,16 @@ if [[ "${_POLAR2GRID_ENV_LOADED}" != "${METADATA_CHECKSUM}" ]]; then
     unset LD_LIBRARY_PATH
 
     source $P2G_CONDA_BASE/bin/activate
-    # Check if we already ran conda-unpack
+    # Check if we already ran conda-unpack in this location. The marker only
+    # decides whether to run; conda-unpack itself records which prefix to replace.
     install_signal="${P2G_CONDA_BASE}/.installed"
-    if [[ "$(head -n 1 ${install_signal} 2>/dev/null)" != "${P2G_CONDA_BASE}" ]]; then
+    if [[ "$(head -n 1 "${install_signal}" 2>/dev/null)" != "${P2G_CONDA_BASE}" ]]; then
         echo "Running one-time initialization of environment..."
-        conda-unpack || oops "Unable to perform one-time initialization. If this installation "\
+        # Run by full path so the prefix conda-unpack writes (derived from its own
+        # location) is exactly the P2G_CONDA_BASE recorded below.
+        "${P2G_CONDA_BASE}/bin/conda-unpack" || oops "Unable to perform one-time initialization. If this installation "\
         "(tarball extraction) was done by another user, that user should run 'geo2grid.sh -h' first."
+        _record_conda_unpack_prefix || oops "Unable to record the environment location for future relocation."
         echo "${P2G_CONDA_BASE}" > "${install_signal}"
     fi
 
