@@ -157,8 +157,8 @@ master_doc = "index"
 # General information about the project.
 if is_geo2grid:
     project = "Geo2Grid"
-    version = "1.3"
-    release = "1.3"
+    version = "1.3.1"
+    release = "1.3.1"
 else:
     project = "Polar2Grid"
 
@@ -167,10 +167,10 @@ else:
     # built documents.
     #
     # The short X.Y version.
-    version = "3.2"
+    version = "3.3"
 
     # The full version, including alpha/beta/rc tags.
-    release = "3.2"
+    release = "3.3"
 
 # Tell Polar2Grid scripts which system we are running
 os.environ["USE_POLAR2GRID_DEFAULTS"] = str(int(not is_geo2grid))
