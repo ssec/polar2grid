@@ -60,7 +60,7 @@ def test_error_flag_product_groups():
 
 
 @pytest.mark.parametrize(
-    ("extra_flags", "exp_error_flag_filters", "exp_eclipse", "exp_negative_so2"),
+    ("extra_flags", "exp_error_flags_to_keep", "exp_eclipse", "exp_negative_so2"),
     [
         ([], OZONE_FILTERS | SO2_FILTERS, True, True),
         (["--no-filter-ozone-by-error-flag"], SO2_FILTERS, True, True),
@@ -70,7 +70,7 @@ def test_error_flag_product_groups():
         (["--no-filter-negative-so2"], OZONE_FILTERS | SO2_FILTERS, True, False),
     ],
 )
-def test_convert_reader_kwargs(tmp_path, extra_flags, exp_error_flag_filters, exp_eclipse, exp_negative_so2):
+def test_convert_reader_kwargs(tmp_path, extra_flags, exp_error_flags_to_keep, exp_eclipse, exp_negative_so2):
     """Test that command line flags are converted to the Satpy reader's keyword arguments."""
     cli_kwargs = _cli_reader_kwargs(tmp_path, extra_flags)
     orig_cli_kwargs = cli_kwargs.copy()
@@ -79,7 +79,7 @@ def test_convert_reader_kwargs(tmp_path, extra_flags, exp_error_flag_filters, ex
 
     assert cli_kwargs == orig_cli_kwargs
     assert satpy_kwargs == {
-        "filter_by_error_flag": exp_error_flag_filters,
+        "error_flags_to_keep": exp_error_flags_to_keep,
         "filter_eclipse": exp_eclipse,
         "filter_negative_so2": exp_negative_so2,
     }
@@ -100,7 +100,7 @@ def test_glue_passes_converted_reader_kwargs(chtmpdir):
     scene_creation = create_scene.call_args.args[0]
     assert scene_creation["reader"] == "omps_edr"
     reader_kwargs = scene_creation["reader_kwargs"]
-    assert reader_kwargs["filter_by_error_flag"] == OZONE_FILTERS
+    assert reader_kwargs["error_flags_to_keep"] == OZONE_FILTERS
     assert reader_kwargs["filter_eclipse"] is True
     for p2g_only_kwarg in P2G_ONLY_KWARGS:
         assert p2g_only_kwarg not in reader_kwargs
