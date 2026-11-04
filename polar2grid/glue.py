@@ -107,7 +107,7 @@ def _get_platform_name_alias(satpy_platform_name):
 
 def _overwrite_platform_name_with_aliases(scn):
     """Change 'platform_name' for every DataArray to Polar2Grid expectations."""
-    for data_arr in scn:
+    for data_arr in scn.values():
         if "platform_name" not in data_arr.attrs:
             continue
         pname = _get_platform_name_alias(data_arr.attrs["platform_name"])
@@ -116,7 +116,7 @@ def _overwrite_platform_name_with_aliases(scn):
 
 def _overwrite_sensor_with_aliases(scn):
     """Change 'sensor' for every DataArray to Polar2Grid expectations."""
-    for data_arr in scn:
+    for data_arr in scn.values():
         if "sensor" not in data_arr.attrs:
             continue
         pname = get_sensor_alias(data_arr.attrs["sensor"])
