@@ -39,15 +39,15 @@ do so are beyond the scope of this documentation.
 
     .. code-block:: bash
 
-        tar xf CSPP_GEO2GRID_V1.3.tar.gz
+        tar xf CSPP_GEO2GRID_V1.3.1.tar.gz
 
-    This will create a |project| software bundle directory, ``geo2grid_v_1_3``.
+    This will create a |project| software bundle directory, ``geo2grid_v_1_3_1``.
     To simplify calling scripts included in the bundle the following line should
     be added to your ``.bash_profile``:
 
     .. code-block:: bash
 
-        export GEO2GRID_HOME=/path/to/geo2grid_v_1_3
+        export GEO2GRID_HOME=/path/to/geo2grid_v_1_3_1
 
     All other environment information needed to run is automatically loaded by the
     scripts provided by |project|. Scripts are typically invoked using:
@@ -76,9 +76,9 @@ do so are beyond the scope of this documentation.
 
     .. code-block:: bash
 
-        tar xf CSPP_POLAR2GRID_V3.2.tar.gz
+        tar xf CSPP_POLAR2GRID_V3.3.tar.gz
 
-    This will create a Polar2Grid software bundle directory, ``polar2grid_v_3_2``.
+    This will create a Polar2Grid software bundle directory, ``polar2grid_v_3_3``.
     To simplify calling scripts included in the bundle the following line should
     be added to your ``.bash_profile``:
 

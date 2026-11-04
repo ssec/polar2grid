@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 1.3.1 Security Patch (2026-11-06)
+-----------------------------------------
+
+This bundle is Geo2Grid 1.3.0 with the following changes:
+
+* Updated ca-certificates and certifi to 2026.10.23 and pip to 26.2.2 to remove
+  certificate authorities affected by the October 2026 eMudhra/emSign
+  incident (GHSA-6q48-6c7w-9gw2).
+* Removed support for reading input files directly from AWS S3 (s3:// paths).
+  Download the files first and provide the local paths instead.
+* Removed the bin/download_pyspectral_data.sh script. The pyspectral data it
+  downloads is already included in this bundle.
+
 Version 1.3.0 (2026-05-13)
 --------------------------
 
