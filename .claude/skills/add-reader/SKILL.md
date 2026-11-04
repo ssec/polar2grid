@@ -91,7 +91,7 @@ If a command line flag does not map one-to-one onto a Satpy reader keyword argum
 reader-group arguments *before* the `Scene` (and therefore the proxy instance) exists, and its
 return value is passed as `Scene(reader_kwargs=...)`. The base implementation returns a copy
 unchanged. `omps_edr.py` uses it to turn `--filter-ozone-by-error-flag` /
-`--filter-so2-by-error-flag` into Satpy's per-variable `filter_by_error_flag` mapping. Pop any
+`--filter-so2-by-error-flag` into Satpy's per-variable `error_flags_to_keep` mapping. Pop any
 Polar2Grid-only keys. Satpy hands every key to the reader and its file handlers, and those may
 reject or silently ignore a key they don't know.
 

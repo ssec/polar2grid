@@ -144,12 +144,12 @@ class ReaderProxy(ReaderProxyBase):
     def convert_reader_kwargs(cls, reader_kwargs: dict) -> dict:
         """Convert per-product-group error flag filtering flags to Satpy's per-variable mapping."""
         reader_kwargs = dict(reader_kwargs)
-        error_flag_filters = {}
+        error_flags_to_keep = {}
         if reader_kwargs.pop("filter_ozone_by_error_flag", False):
-            error_flag_filters.update(dict.fromkeys(OZONE_ERROR_FLAG_PRODUCTS, OZONE_ERROR_FLAG_KEEP))
+            error_flags_to_keep.update(dict.fromkeys(OZONE_ERROR_FLAG_PRODUCTS, OZONE_ERROR_FLAG_KEEP))
         if reader_kwargs.pop("filter_so2_by_error_flag", False):
-            error_flag_filters.update(dict.fromkeys(SO2_ERROR_FLAG_PRODUCTS, SO2_ERROR_FLAG_KEEP))
-        reader_kwargs["filter_by_error_flag"] = error_flag_filters or None
+            error_flags_to_keep.update(dict.fromkeys(SO2_ERROR_FLAG_PRODUCTS, SO2_ERROR_FLAG_KEEP))
+        reader_kwargs["error_flags_to_keep"] = error_flags_to_keep or None
         return reader_kwargs
 
 
