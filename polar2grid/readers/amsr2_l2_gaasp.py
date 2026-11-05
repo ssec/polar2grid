@@ -45,6 +45,11 @@
 | NASA_Team_2_Ice_Concentration_NH  |  Ice Concentration (Northern Hemisphere)   |
 +-----------------------------------+--------------------------------------------+
 
+By default, the ``--filter-sea-ice`` flag removes pixels from the ice
+concentration product that the ``Flags`` variable does not mark as good. Open
+water (0% ice concentration) pixels are not typically marked as good so this
+usually removes them as well. Use ``--no-filter-sea-ice`` to turn this off.
+
 """
 
 from __future__ import annotations
@@ -113,5 +118,13 @@ def add_reader_argument_groups(
         default=True,
         help="Filter 'WSPD' variable using the 'WSPD_QC' variable. "
         "Enabled by default. Use '--no-filter-wind-speed' to disable.",
+    )
+    group.add_argument(
+        "--filter-sea-ice",
+        action=BooleanOptionalAction,
+        default=True,
+        help="Filter 'NASA_Team_2_Ice_Concentration' products using the 'Flags' variable, keeping only "
+        "pixels marked as good. This usually removes open water (0 percent ice concentration) pixels too. "
+        "Enabled by default. Use '--no-filter-sea-ice' to disable.",
     )
     return group, None
