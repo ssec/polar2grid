@@ -48,16 +48,29 @@ oops() {
 # relocated again: conda-unpack would look for a prefix that no file contains.
 _record_conda_unpack_prefix() {
     "${P2G_CONDA_BASE}/bin/python" -I - "${P2G_CONDA_BASE}/bin/conda-unpack" "${P2G_CONDA_BASE}" <<'PYTHON'
+import ast
 import os
-import runpy
 import shutil
 import sys
 import tempfile
 
 script, new_prefix = sys.argv[1:]
-records = runpy.run_path(script, run_name="conda_unpack_records")["_prefix_records"]
 with open(script, encoding="utf-8") as script_file:
     old_source = new_source = script_file.read()
+# Read the records without running conda-unpack, which imports modules from its own
+# directory. The text replacement below already relies on the list being a literal.
+records_node = next(
+    (
+        node.value
+        for node in ast.parse(old_source).body
+        if isinstance(node, ast.Assign)
+        and [getattr(target, "id", None) for target in node.targets] == ["_prefix_records"]
+    ),
+    None,
+)
+if records_node is None:
+    sys.exit("Unexpected conda-unpack format; could not find _prefix_records")
+records = ast.literal_eval(records_node)
 for old_prefix in {placeholder for _, placeholder, _ in records} - {new_prefix}:
     # Each record is the repr of a (path, placeholder, mode) tuple
     old_entry = ", %r, " % (old_prefix,)
