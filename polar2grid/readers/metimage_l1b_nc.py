@@ -41,6 +41,10 @@ wavelength in nanometers. The 11 shortest wavelength bands are calibrated
 to reflectance (percent) and the 9 longest to brightness temperature
 (Kelvin).
 
+By default, reflectance bands are corrected for the solar zenith angle
+(SZA) by dividing by ``cos(SZA)``. Use the ``--normalized-radiances`` flag
+to load the uncorrected reflectances instead.
+
 +--------------------+--------------------------------------------------------+
 | Product Name       | Description                                            |
 +====================+========================================================+
@@ -93,11 +97,16 @@ to reflectance (percent) and the 9 longest to brightness temperature
 
 from __future__ import annotations
 
+import logging
 from argparse import ArgumentParser, BooleanOptionalAction, _ArgumentGroup
 
-from satpy import DataQuery
+from satpy import DataQuery, Scene
+
+from polar2grid.core.script_utils import ExtendConstAction
 
 from ._base import ReaderProxyBase
+
+logger = logging.getLogger(__name__)
 
 PREFERRED_CHUNK_SIZE: int = 3144  # roughly the number of columns in a granule
 
@@ -128,8 +137,10 @@ BT_BANDS = [
 ALL_BANDS = REFLECTANCE_BANDS + BT_BANDS
 COMPOSITES = ["true_color", "natural_color"]
 
-# Satpy's product naming is kept as-is for this reader
+# Satpy's product naming is kept as-is for this reader. Reflectance band
+# queries (sun zenith corrected or not) are added by the ReaderProxy.
 PRODUCT_ALIASES = {}
+NORMALIZED_RADIANCES_FLAG = "normalized_radiances"
 
 DEFAULT_PRODUCTS = ALL_BANDS + COMPOSITES
 P2G_PRODUCTS = ALL_BANDS + COMPOSITES
@@ -151,6 +162,19 @@ class ReaderProxy(ReaderProxyBase):
 
     is_polar2grid_reader = True
 
+    def __init__(self, scn: Scene, user_products: list[str]):
+        # they specified --normalized-radiances
+        apply_sunz = NORMALIZED_RADIANCES_FLAG not in user_products
+        user_products = [prod for prod in user_products if prod != NORMALIZED_RADIANCES_FLAG]
+
+        modifiers = ("sunz_corrected",) if apply_sunz else ()
+        if modifiers:
+            logger.debug(f"Using reflectance band modifiers: {modifiers}")
+        self._modified_aliases = PRODUCT_ALIASES | {
+            band: DataQuery(name=band, modifiers=modifiers) for band in REFLECTANCE_BANDS
+        }
+        super().__init__(scn, user_products)
+
     def get_default_products(self) -> list[str]:
         """Get products to load if users hasn't specified any others."""
         return DEFAULT_PRODUCTS
@@ -161,7 +185,7 @@ class ReaderProxy(ReaderProxyBase):
 
     @property
     def _aliases(self) -> dict[str, DataQuery | str]:
-        return PRODUCT_ALIASES
+        return self._modified_aliases
 
 
 def add_reader_argument_groups(
@@ -183,6 +207,13 @@ def add_reader_argument_groups(
         action=BooleanOptionalAction,
         help="Apply the digital elevation model (DEM) based orthorectification "
         "correction to longitude and latitude. Defaults to on.",
+    )
+    group.add_argument(
+        "--normalized-radiances",
+        dest="products",
+        action=ExtendConstAction,
+        const=[NORMALIZED_RADIANCES_FLAG],
+        help="Do not apply '/ cos(SZA)' when loading reflectance bands.",
     )
 
     return group, None
