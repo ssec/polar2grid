@@ -58,13 +58,21 @@ fi
 
 # Create a tiled KML directory
 echo "Creating temporary tiled KML directory..."
-gdal2tiles.py -p geodetic $input_fn $tile_dir || { echo "ERROR: Could not create tiled KML"; exit 1; }
+# Equivalent of the deprecated 'gdal2tiles.py -p geodetic --zoom=1-' (requires GDAL 3.11+).
+# Only the maximum zoom level is built unless a minimum is given.
+# Zoom 0 is skipped because its tile in this tiling scheme extends to latitude 270.
+gdal raster tile --tiling-scheme GlobalGeodeticOriginLat270 --convention tms --kml --skip-blank \
+    --min-zoom 1 -r average --webviewer none \
+    $input_fn $tile_dir || { echo "ERROR: Could not create tiled KML"; exit 1; }
 
 # Zip the KML directory in to a KMZ file
+# Google Earth uses the first .kml file in a KMZ, so doc.kml must be added first
 echo "Zipping KML directory in to a KMZ..."
 abs_output_fn=$(readlink -f $output_fn)
+rm -f ${abs_output_fn}
 cd $tile_dir
-zip -r ${abs_output_fn} ./* || { echo "ERROR: Could not create zipped KMZ"; exit 1; }
+zip ${abs_output_fn} doc.kml || { echo "ERROR: Could not create zipped KMZ"; exit 1; }
+zip -r ${abs_output_fn} . -x doc.kml || { echo "ERROR: Could not create zipped KMZ"; exit 1; }
 cd ..
 
 echo "Removing temporary tiled KML directory"

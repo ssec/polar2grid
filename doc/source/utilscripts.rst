@@ -201,7 +201,7 @@ GeoTIFF to KMZ Conversion
 
 The ``gtiff2kmz.sh`` script converts a single GeoTIFF file into a Google Earth
 compatible Keyhole Markup language Zipped (KMZ) file. It is a wrapper around the
-GDAL tool ``gdal2tiles.py``.  The script can be executed with:
+GDAL command ``gdal raster tile``.  The script can be executed with:
 
 .. code-block:: bash
 
