@@ -16,7 +16,7 @@ dependencies:
   - ffmpeg>=8
   - fontconfig
   - freetype
-  - gdal
+  - gdal>=3.13
   - libgdal-netcdf
   - hdf5>=2.1.0
   - hdf5plugin
