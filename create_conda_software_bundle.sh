@@ -105,6 +105,8 @@ echo "Downloading pyspectral data..."
 PSP_DATA_CACHE_ROOT="${CACHE_DIR}/p2g_pyspectral_cache"
 mkdir -p "${PSP_DATA_CACHE_ROOT}" || oops "Couldn't create pyspectral data cache"
 PSP_CONFIG_FILE=etc/polar2grid/pyspectral.yaml PSP_DATA_ROOT=pyspectral_data PSP_DATA_CACHE_ROOT=${PSP_DATA_CACHE_ROOT} $SB_NAME/bin/download_pyspectral_data.sh || oops "Couldn't download pyspectral data"
+# The data is included in the bundle so users don't need (and shouldn't have) a script that reaches out to the internet
+rm -f "${SB_NAME}/bin/download_pyspectral_data.sh" || oops "Couldn't remove pyspectral download script from software bundle"
 
 # Download Satpy auxiliary data
 echo "Downloading Satpy auxiliary data..."
