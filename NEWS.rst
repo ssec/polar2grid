@@ -6,6 +6,8 @@ Version 3.3.0 (unreleased)
 
 * New Metop-SG METimage (VII) Level 1b reader.
 * New Metop-SG MicroWave Sounder (MWS) reader.
+* Removed the bin/download_pyspectral_data.sh script. The pyspectral data it
+  downloads is already included in this bundle.
 
 Version 3.2.0 (2026-03-02)
 --------------------------

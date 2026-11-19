@@ -41,6 +41,17 @@ if [ -n "${PSP_DATA_CACHE_ROOT}" ]; then
   export PSP_DATA_ROOT=${PSP_DATA_CACHE_ROOT}
 fi
 
+# pyspectral only reads PSP_CONFIG_FILE when it is set (no merging with its
+# builtin config) and treats a missing 'download_from_internet' as False. This
+# script exists to download, so force it on in a temporary copy of the config.
+if [ -n "${PSP_CONFIG_FILE}" ]; then
+  TMP_PSP_CONFIG_FILE=$(mktemp)
+  trap 'rm -f "${TMP_PSP_CONFIG_FILE}"' EXIT
+  grep -v '^download_from_internet:' "${PSP_CONFIG_FILE}" >"${TMP_PSP_CONFIG_FILE}" || [ $? -eq 1 ]
+  echo "download_from_internet: True" >>"${TMP_PSP_CONFIG_FILE}"
+  export PSP_CONFIG_FILE=${TMP_PSP_CONFIG_FILE}
+fi
+
 # Call the python module to do the processing, passing all arguments
 python3 -c "from pyspectral.rayleigh import check_and_download; import logging; logging.basicConfig(level=logging.DEBUG); check_and_download()"
 python3 -c "from pyspectral.rsr_reader import check_and_download; import logging; logging.basicConfig(level=logging.DEBUG); check_and_download()"
